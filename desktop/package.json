@@ -1,0 +1,64 @@
+{
+  "name": "@fabushi/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 1420",
+    "build:renderer": "tsc --noEmit && vite build",
+    "build:host": "cargo build --release -p mahayana-app-host --manifest-path ../third_party/mahayana/mahayana-rs/Cargo.toml && node scripts/stage-host.mjs",
+    "build": "npm run build:host && npm run build:renderer",
+    "package": "npm run build:host && npm run build:renderer && electron-builder",
+    "test:e2e": "playwright test",
+    "start": "electron ."
+  },
+  "dependencies": {
+    "lucide-react": "^1.14.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "^24.0.0",
+    "@types/react": "19.1.10",
+    "@types/react-dom": "19.1.7",
+    "@vitejs/plugin-react": "4.3.4",
+    "electron": "43.4.0",
+    "electron-builder": "26.15.3",
+    "typescript": "5.9.2",
+    "vite": "6.1.0"
+  },
+  "build": {
+    "appId": "com.ombhrum.fabushi",
+    "productName": "全球法布施",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/bin",
+        "to": "bin"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.lifestyle",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "target": ["dmg", "zip"]
+    },
+    "win": {
+      "target": ["nsis"]
+    },
+    "linux": {
+      "category": "Utility",
+      "target": ["AppImage", "deb"]
+    }
+  }
+}
