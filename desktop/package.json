@@ -94,6 +94,21 @@
           "fabushi"
         ]
       }
-    ]
+    ],
+    "mas": {
+      "target": [
+        "mas"
+      ],
+      "category": "public.app-category.lifestyle",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "entitlements": "resources/mas/entitlements.mas.plist",
+      "entitlementsInherit": "resources/mas/entitlements.mas.inherit.plist",
+      "provisioningProfile": "resources/mas/Fabushi_AppStore.provisionprofile",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音输入和离线语音识别。"
+      },
+      "forceCodeSigning": true
+    }
   }
 }
