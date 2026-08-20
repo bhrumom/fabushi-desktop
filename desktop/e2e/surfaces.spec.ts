@@ -237,7 +237,9 @@ test('installed desktop exposes product surfaces, browser lifecycle, and safe na
       expect(failures, JSON.stringify(failures, null, 2)).toEqual([]);
       const asr = results.getOfflineAsrStatus.value as { binaryPath?: string; available?: boolean };
       if (packagedExecutable) {
-        expect(asr.binaryPath).toContain('resources/asr/linux-x64/whisper-cli');
+        const asrExecutable = process.platform === 'win32' ? 'whisper-cli.exe' : 'whisper-cli';
+        const asrPath = String(asr.binaryPath ?? '').replaceAll('\\', '/');
+        expect(asrPath).toContain(`/asr/${process.platform}-${process.arch}/${asrExecutable}`);
       } else {
         expect(results.getOfflineAsrStatus.ok).toBe(true);
       }
