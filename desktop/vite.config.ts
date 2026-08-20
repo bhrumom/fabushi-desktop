@@ -11,7 +11,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@fabushi/shared': path.resolve(here, '../frontend/packages/shared/src/index.ts'),
+      react: path.resolve(here, 'node_modules/react'),
+      'react-dom': path.resolve(here, 'node_modules/react-dom'),
+      'lucide-react': path.resolve(here, 'node_modules/lucide-react'),
     },
+    dedupe: ['react', 'react-dom'],
   },
   server: {
     host: '127.0.0.1',

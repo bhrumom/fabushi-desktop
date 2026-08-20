@@ -1,0 +1,13 @@
+{
+  "whisperCpp": {
+    "tag": "v1.9.2",
+    "commit": "306c88f4d1286aec1bf96e544632897886af5501",
+    "repository": "https://github.com/ggerganov/whisper.cpp.git"
+  },
+  "defaultModel": {
+    "id": "tiny",
+    "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",
+    "sha256": "be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21",
+    "sizeBytes": 77691713
+  }
+}

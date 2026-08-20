@@ -1,13 +1,18 @@
 {
   "name": "@fabushi/desktop",
   "version": "0.1.0",
+  "description": "全球法布施 Electron desktop client",
+  "homepage": "https://fabushi.ombhrum.com/",
+  "author": "bhrumom",
+  "desktopName": "com.ombhrum.fabushi",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 1420",
     "build:renderer": "tsc --noEmit && vite build",
-    "build:host": "cargo build --release -p mahayana-app-host --manifest-path ../third_party/mahayana/mahayana-rs/Cargo.toml && node scripts/stage-host.mjs",
+    "build:host": "cargo build --release -p mahayana-app-host-desktop --bin mahayana-app-host --manifest-path ../third_party/mahayana/mahayana-rs/Cargo.toml && node scripts/stage-host.mjs",
+    "build:host:ci": "cargo build --profile ci -p mahayana-app-host-desktop --bin mahayana-app-host --manifest-path ../third_party/mahayana/mahayana-rs/Cargo.toml && node scripts/stage-host.mjs ci",
     "build": "npm run build:host && npm run build:renderer",
     "package": "npm run build:host && npm run build:renderer && electron-builder",
     "test:e2e": "playwright test",
@@ -27,11 +32,12 @@
     "electron": "43.4.0",
     "electron-builder": "26.15.3",
     "typescript": "5.9.2",
-    "vite": "6.1.0"
+    "vite": "6.4.3"
   },
   "build": {
     "appId": "com.ombhrum.fabushi",
     "productName": "全球法布施",
+    "executableName": "fabushi",
     "asar": true,
     "directories": {
       "output": "release"
@@ -45,20 +51,49 @@
       {
         "from": "resources/bin",
         "to": "bin"
+      },
+      {
+        "from": "resources/asr",
+        "to": "asr",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "mac": {
       "category": "public.app-category.lifestyle",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "win": {
-      "target": ["nsis"]
+      "target": [
+        "nsis"
+      ]
     },
     "linux": {
       "category": "Utility",
-      "target": ["AppImage", "deb"]
-    }
+      "maintainer": "bhrumom",
+      "syncDesktopName": true,
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
+    "deb": {
+      "packageName": "fabushi",
+      "artifactName": "fabushi-${version}-${arch}.${ext}"
+    },
+    "protocols": [
+      {
+        "name": "Fabushi",
+        "schemes": [
+          "fabushi"
+        ]
+      }
+    ]
   }
 }

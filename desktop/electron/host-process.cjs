@@ -3,6 +3,8 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 const readline = require('node:readline');
 
+const DEFAULT_DESKTOP_PRODUCT_API_BASE_URL = 'https://mahayana-platform.bhrumom.workers.dev';
+
 class MahayanaHostProcess {
   constructor() {
     this.child = null;
@@ -28,6 +30,7 @@ class MahayanaHostProcess {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
+        MAHAYANA_API_BASE_URL: process.env.MAHAYANA_API_BASE_URL?.trim() || DEFAULT_DESKTOP_PRODUCT_API_BASE_URL,
         FABUSHI_APP_DATA: app.getPath('userData'),
       },
       windowsHide: true,

@@ -6,13 +6,14 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.resolve(scriptDir, '..');
 const repoRoot = path.resolve(desktopRoot, '..');
 const executable = process.platform === 'win32' ? 'mahayana-app-host.exe' : 'mahayana-app-host';
+const profile = process.argv[2] || process.env.MAHAYANA_HOST_PROFILE || 'release';
 const source = path.join(
   repoRoot,
   'third_party',
   'mahayana',
   'mahayana-rs',
   'target',
-  'release',
+  profile,
   executable,
 );
 const destinationDir = path.join(desktopRoot, 'resources', 'bin');
