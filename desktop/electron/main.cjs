@@ -3,11 +3,13 @@ const fs = require('node:fs/promises');
 const fsSync = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL, URL } = require('node:url');
+const { Readable } = require('node:stream');
 const { MahayanaHostProcess } = require('./host-process.cjs');
 const { serveMainEdge } = require('./edge-ipc.cjs');
 const { MAHAYANA_EDGE } = require('./mahayana-edge.cjs');
 const { NATIVE_EDGE } = require('./native-edge.cjs');
 const { createNativeCapabilityHandlers } = require('./native-capability-handlers.cjs');
+const { MessagingSignalingClient } = require('./messaging-signaling-client.cjs');
 
 const appDataOverride = process.env.FABUSHI_APP_DATA?.trim();
 if (appDataOverride) app.setPath('userData', path.resolve(appDataOverride));
@@ -17,6 +19,10 @@ protocol.registerSchemesAsPrivileged([
     scheme: 'app',
     privileges: { standard: true, secure: true, supportFetchAPI: true },
   },
+  {
+    scheme: 'fabushi-blob',
+    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+  },
 ]);
 
 const host = new MahayanaHostProcess();
@@ -25,6 +31,80 @@ let mahayanaEdgeServer = null;
 let nativeEdgeServer = null;
 let hostEventPumpStopped = false;
 let hostEventPump = null;
+const messagingAccessCache = new Map();
+let messagingSignalingClient = null;
+
+function normalizeMessagingAccessParams(params) {
+  const deviceId = String(params?.deviceId || 'desktop:electron').trim();
+  const sessionId = String(params?.sessionId || '').trim();
+  if (!deviceId || deviceId.length > 200 || !sessionId || sessionId.length > 200) {
+    throw new Error('Messaging access requires a valid deviceId and sessionId.');
+  }
+  return { deviceId, sessionId };
+}
+
+async function getOrIssueMessagingAccess(params, requestedScopes) {
+  const { deviceId, sessionId } = normalizeMessagingAccessParams(params);
+  const scopes = [...new Set(requestedScopes.map((scope) => String(scope)))].sort();
+  const key = `${deviceId}|${sessionId}|${scopes.join(',')}`;
+  const cached = messagingAccessCache.get(key);
+  if (cached && Number(cached.expiresAtMs || 0) > Date.now() + 60_000) return cached;
+  const credential = await host.request('feature.messaging.access.issue', {
+    deviceId,
+    sessionId,
+    scopes,
+    ttlMs: 24 * 60 * 60 * 1000,
+  });
+  if (!credential || typeof credential !== 'object'
+      || typeof credential.actorId !== 'string'
+      || typeof credential.accessToken !== 'string'
+      || credential.accessToken.length < 32) {
+    throw new Error('Fabushi account session did not return a valid messaging credential.');
+  }
+  const normalized = { ...credential, deviceId, sessionId, scopes };
+  messagingAccessCache.set(key, normalized);
+  return normalized;
+}
+
+function callIceServers() {
+  const raw = String(process.env.FABUSHI_CALL_ICE_SERVERS_JSON || '').trim();
+  if (!raw) return [];
+  let parsed;
+  try { parsed = JSON.parse(raw); } catch { throw new Error('FABUSHI_CALL_ICE_SERVERS_JSON must be valid JSON.'); }
+  if (!Array.isArray(parsed) || parsed.length > 16) throw new Error('Fabushi call ICE server configuration is invalid.');
+  return parsed.map((entry) => {
+    if (!entry || typeof entry !== 'object') throw new Error('Fabushi call ICE server entry is invalid.');
+    const urls = (Array.isArray(entry.urls) ? entry.urls : [entry.urls])
+      .map((value) => String(value || '').trim())
+      .filter(Boolean);
+    if (!urls.length || urls.some((url) => !/^(stun|turn|turns):/i.test(url))) {
+      throw new Error('Fabushi call ICE server URLs must use stun:, turn:, or turns:.');
+    }
+    const normalized = { urls };
+    if (entry.username != null) normalized.username = String(entry.username);
+    if (entry.credential != null) normalized.credential = String(entry.credential);
+    return normalized;
+  });
+}
+
+function safeMessagingIdentity(credential) {
+  return {
+    actorId: String(credential.actorId),
+    deviceId: String(credential.deviceId),
+    sessionId: String(credential.sessionId),
+    expiresAtMs: Number(credential.expiresAtMs || 0),
+    scopes: Array.isArray(credential.scopes) ? [...credential.scopes] : [],
+  };
+}
+
+function callSignalingClient() {
+  if (messagingSignalingClient) return messagingSignalingClient;
+  messagingSignalingClient = new MessagingSignalingClient({
+    onSignal(signal) { broadcastNativeEvent('messaging-call-signal', signal); },
+    onStatus(status) { broadcastNativeEvent('messaging-call-status', status); },
+  });
+  return messagingSignalingClient;
+}
 
 const DEEP_LINK_PROTOCOL = 'fabushi:';
 const DEEP_LINK_PENDING_LIMIT = 32;
@@ -352,6 +432,38 @@ function installNativeEdge() {
   const handlers = {
     async openExternal(params) {
       await shell.openExternal(safeHttpsUrl(params.url));
+      return true;
+    },
+    async getMessagingIdentity(params) {
+      const credential = await getOrIssueMessagingAccess(params, [
+        'messaging', 'calls', 'blobsRead', 'blobsWrite', 'payments', 'miniApps',
+      ]);
+      return safeMessagingIdentity(credential);
+    },
+    async connectMessagingSignaling(params) {
+      const credential = await getOrIssueMessagingAccess(params, ['calls']);
+      const endpoint = String(process.env.FABUSHI_CALL_SIGNAL_ENDPOINT || 'tcp://127.0.0.1:9410').trim();
+      const connection = await callSignalingClient().connect(endpoint, {
+        actorId: credential.actorId,
+        deviceId: credential.deviceId,
+        sessionId: credential.sessionId,
+        accessToken: credential.accessToken,
+      });
+      return {
+        ...safeMessagingIdentity(credential),
+        secure: connection.secure === true,
+        iceServers: callIceServers(),
+      };
+    },
+    sendMessagingSignal(params) {
+      const signal = params?.signal;
+      if (!signal || typeof signal !== 'object' || Array.isArray(signal)) {
+        throw new Error('Fabushi call signaling requires a signal object.');
+      }
+      return callSignalingClient().send(signal);
+    },
+    disconnectMessagingSignaling() {
+      callSignalingClient().disconnect();
       return true;
     },
     getDesktopEnvironment() {
@@ -759,6 +871,87 @@ function installApplicationMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+function messagingBlobRoot() {
+  return path.join(app.getPath('userData'), 'feature-host', 'runtime', 'agents', '_messaging', 'blobs');
+}
+
+function parseMessagingBlobId(requestUrl) {
+  const url = new URL(requestUrl);
+  const id = decodeURIComponent(url.hostname || url.pathname.replace(/^\/+/, ''));
+  if (!id || id.length > 128 || !/^[A-Za-z0-9._-]+$/.test(id) || id === '.' || id === '..') {
+    throw new Error('Invalid Fabushi blob id.');
+  }
+  return id;
+}
+
+function parseSingleRange(rangeHeader, size) {
+  if (!rangeHeader) return null;
+  const match = /^bytes=(\d*)-(\d*)$/.exec(String(rangeHeader).trim());
+  if (!match) return { invalid: true };
+  let start;
+  let end;
+  if (!match[1] && !match[2]) return { invalid: true };
+  if (!match[1]) {
+    const suffix = Number(match[2]);
+    if (!Number.isSafeInteger(suffix) || suffix <= 0) return { invalid: true };
+    start = Math.max(0, size - suffix);
+    end = size - 1;
+  } else {
+    start = Number(match[1]);
+    end = match[2] ? Number(match[2]) : size - 1;
+  }
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start >= size || end < start) {
+    return { invalid: true };
+  }
+  return { start, end: Math.min(end, size - 1) };
+}
+
+async function handleMessagingBlobRequest(request) {
+  if (!['GET', 'HEAD'].includes(request.method)) return new Response('Method not allowed', { status: 405 });
+  let id;
+  try { id = parseMessagingBlobId(request.url); } catch { return new Response('Bad blob id', { status: 400 }); }
+  const root = messagingBlobRoot();
+  const blobPath = path.join(root, `${id}.blob`);
+  const metadataPath = path.join(root, `${id}.json`);
+  let metadata;
+  let stat;
+  try {
+    const [rawMetadata, fileStat] = await Promise.all([fs.readFile(metadataPath, 'utf8'), fs.stat(blobPath)]);
+    metadata = JSON.parse(rawMetadata);
+    stat = fileStat;
+  } catch (error) {
+    if (error?.code === 'ENOENT') return new Response('Not found', { status: 404 });
+    console.error('[messaging-blob] failed to read blob metadata', error);
+    return new Response('Blob unavailable', { status: 500 });
+  }
+  const expectedId = typeof metadata?.id === 'string' ? metadata.id : '';
+  const mimeType = String(metadata?.mimeType || 'application/octet-stream');
+  if (expectedId !== id || !/^[-\w.+]+\/[-\w.+]+$/.test(mimeType)) {
+    return new Response('Invalid blob metadata', { status: 500 });
+  }
+  const size = Number(stat.size);
+  const range = parseSingleRange(request.headers.get('range'), size);
+  if (range?.invalid) {
+    return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } });
+  }
+  const start = range?.start ?? 0;
+  const end = range?.end ?? Math.max(0, size - 1);
+  const length = size === 0 ? 0 : end - start + 1;
+  const headers = new Headers({
+    'Content-Type': mimeType,
+    'Accept-Ranges': 'bytes',
+    'Content-Length': String(length),
+    'Cache-Control': 'private, max-age=31536000, immutable',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  if (range) headers.set('Content-Range', `bytes ${start}-${end}/${size}`);
+  if (request.method === 'HEAD' || size === 0) {
+    return new Response(null, { status: range ? 206 : 200, headers });
+  }
+  const nodeStream = fsSync.createReadStream(blobPath, { start, end });
+  return new Response(Readable.toWeb(nodeStream), { status: range ? 206 : 200, headers });
+}
+
 function installAppProtocol() {
   const distRoot = path.resolve(__dirname, '..', 'dist');
   protocol.handle('app', (request) => {
@@ -770,6 +963,7 @@ function installAppProtocol() {
     if (!withinRoot) return new Response('Forbidden', { status: 403 });
     return net.fetch(pathToFileURL(resolved).toString());
   });
+  protocol.handle('fabushi-blob', handleMessagingBlobRequest);
 }
 
 applyStartupNativePreferences();
@@ -794,5 +988,8 @@ app.on('before-quit', () => {
   mahayanaEdgeServer = null;
   nativeEdgeServer?.dispose();
   nativeEdgeServer = null;
+  messagingSignalingClient?.disconnect('app_quit');
+  messagingSignalingClient = null;
+  messagingAccessCache.clear();
   host.close();
 });

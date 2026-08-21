@@ -6,6 +6,10 @@ export const NATIVE_DESKTOP_METHODS = {
   openExternal: { args: 'object' },
   submitFeedback: { args: 'object' },
   getDesktopEnvironment: { args: 'none' },
+  getMessagingIdentity: { args: 'object' },
+  connectMessagingSignaling: { args: 'object' },
+  sendMessagingSignal: { args: 'object' },
+  disconnectMessagingSignaling: { args: 'none' },
   getWindowState: { args: 'none' },
   minimizeWindow: { args: 'none' },
   toggleMaximizeWindow: { args: 'none' },
@@ -184,6 +188,8 @@ export const NATIVE_DESKTOP_EVENTS = [
   'skip-onboarding',
   'theme-changed',
   'update-status',
+  'messaging-call-signal',
+  'messaging-call-status',
 ] as const;
 
 export const NATIVE_DESKTOP_EDGE = defineEdge(

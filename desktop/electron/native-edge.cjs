@@ -6,6 +6,10 @@ const methods = {
   openExternal: { args: 'object' },
   submitFeedback: { args: 'object' },
   getDesktopEnvironment: { args: 'none' },
+  getMessagingIdentity: { args: 'object' },
+  connectMessagingSignaling: { args: 'object' },
+  sendMessagingSignal: { args: 'object' },
+  disconnectMessagingSignaling: { args: 'none' },
   getWindowState: { args: 'none' },
   minimizeWindow: { args: 'none' },
   toggleMaximizeWindow: { args: 'none' },
@@ -184,6 +188,8 @@ const NATIVE_EDGE = defineEdge('native-desktop', methods, [
   'skip-onboarding',
   'theme-changed',
   'update-status',
+  'messaging-call-signal',
+  'messaging-call-status',
 ]);
 
 module.exports = { NATIVE_EDGE };

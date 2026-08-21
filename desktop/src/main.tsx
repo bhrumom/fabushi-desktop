@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import HostClient from '../../frontend/apps/web/src/app/host/host-client';
+import DesktopShellV2 from './messaging-shell-v2';
 
 const root = document.querySelector<HTMLDivElement>('#root');
 if (!root) {
@@ -9,6 +9,6 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <HostClient />
+    <DesktopShellV2 />
   </StrictMode>,
 );

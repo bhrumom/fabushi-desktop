@@ -35,6 +35,8 @@ const NATIVE_EVENTS = new Set([
   'skip-onboarding',
   'theme-changed',
   'update-status',
+  'messaging-call-signal',
+  'messaging-call-status',
 ]);
 
 function callChannel(edge, method) {
