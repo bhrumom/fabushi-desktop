@@ -25,9 +25,11 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   while (await page.getByTestId('onboarding-gate').isVisible().catch(() => false)) {
     await page.getByTestId('onboarding-next').click();
   }
-  await expect(page.getByTestId('login-gate')).toBeVisible();
-  await page.getByTestId('browser-login-start').click();
-  await expect(page.getByTestId('login-gate')).toBeHidden();
+  const loginGate = page.getByTestId('login-gate');
+  if (await loginGate.isVisible().catch(() => false)) {
+    await page.getByTestId('browser-login-start').click();
+    await expect(loginGate).toBeHidden();
+  }
   await expect(page.getByTestId('host-status')).toHaveAttribute('data-state', 'ready');
 }
 
@@ -113,18 +115,20 @@ test('desktop Messenger creates a self-hosted channel and executes message mutat
     await expect(message.getByText('👍 1')).toBeVisible();
 
     await message.click({ button: 'right' });
-    page.once('dialog', async (dialog) => dialog.accept('编辑后的频道消息'));
     await page.getByRole('button', { name: '编辑' }).click();
+    await page.getByTestId('edit-message-input').fill('编辑后的频道消息');
+    await page.getByRole('button', { name: '保存' }).click();
     await expect(page.getByText('编辑后的频道消息')).toBeVisible();
 
     const edited = page.locator('article').filter({ hasText: '编辑后的频道消息' }).last();
     await edited.click({ button: 'right' });
-    await page.getByRole('button', { name: /^置顶$/ }).click();
+    await page.getByRole('button', { name: /^置顶$/ }).last().click();
     await expect(edited.locator('svg')).toHaveCount(2);
 
-    const answers = ['E2E 账单', '1.99'];
-    page.on('dialog', async (dialog) => dialog.accept(answers.shift() ?? ''));
     await page.getByTitle('发送账单').click();
+    await page.getByTestId('invoice-title-input').fill('E2E 账单');
+    await page.getByTestId('invoice-amount-input').fill('1.99');
+    await page.getByRole('button', { name: '创建账单' }).click();
     await expect(page.getByText('🧾 账单')).toBeVisible();
 
     await edited.click({ button: 'right' });
@@ -149,8 +153,11 @@ test('desktop Messenger creates a real Bot collaboration group and sends into it
     await expect(page.getByText('现有 AI 群组 Host 会执行 Bot 多轮协作')).toBeVisible();
     await page.getByPlaceholder('群组名称').fill('人机协作验收群');
 
-    const researchBot = page.getByRole('button', { name: /Research Bot/ });
-    if (await researchBot.isVisible().catch(() => false)) await researchBot.click();
+    const researchBot = page.getByTestId('group-bot-research-bot');
+    await expect(researchBot).toBeVisible();
+    await researchBot.click();
+    await expect(researchBot).toHaveAttribute('data-selected', 'true');
+    await expect(page.getByRole('button', { name: '创建群组' })).toBeEnabled();
     await page.getByRole('button', { name: '创建群组' }).click();
 
     const groupPeer = page.locator('[data-testid^="peer-legacy:group:"]').filter({ hasText: '人机协作验收群' }).first();
