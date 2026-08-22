@@ -133,20 +133,21 @@ test('desktop package drives every declared Host journey through Electron IPC an
       nodeRequire: typeof (window as unknown as { require?: unknown }).require,
       processGlobal: typeof (window as unknown as { process?: unknown }).process,
       bridgeKeys: Object.keys(window.fabushi).sort(),
+      mahayanaKeys: Object.keys(window.mahayana ?? {}).sort(),
     }));
     expect(security.nodeRequire).toBe('undefined');
     expect(security.processGlobal).toBe('undefined');
     expect(security.bridgeKeys).toEqual([
-      'invoke',
+      'contractVersion',
       'notify',
       'openExternal',
       'openSystemSettings',
       'pickFile',
-      'subscribe',
       'windowFocused',
     ]);
+    expect(security.mahayanaKeys).toEqual(['contractVersion', 'invoke', 'subscribe']);
 
-    const hostInfo = await page.evaluate(() => window.fabushi.invoke<{
+    const hostInfo = await page.evaluate(() => window.mahayana!.invoke<{
       platform: string;
       protocolVersion: string;
       runtimeVersion: string;

@@ -98,10 +98,10 @@ test('installed desktop exposes product surfaces, browser lifecycle, and safe na
 
     await test.step('browser auth start, secure reopen, and cancel stay secret-free', async () => {
       const lifecycle = await page.evaluate(async () => {
-        const start = await window.fabushi.invoke<Record<string, unknown>>('feature.auth.browserStart');
+        const start = await window.mahayana!.invoke<Record<string, unknown>>('feature.auth.browserStart');
         const attemptId = String(start.attemptId ?? '');
-        const reopen = await window.fabushi.invoke<Record<string, unknown>>('feature.auth.browserReopen', { attemptId });
-        const cancel = await window.fabushi.invoke<Record<string, unknown>>('feature.auth.browserCancel', { attemptId });
+        const reopen = await window.mahayana!.invoke<Record<string, unknown>>('feature.auth.browserReopen', { attemptId });
+        const cancel = await window.mahayana!.invoke<Record<string, unknown>>('feature.auth.browserCancel', { attemptId });
         return { start, reopen, cancel };
       });
       expect(String(lifecycle.start.attemptId ?? '')).not.toBe('');

@@ -12,10 +12,12 @@ function pushChannel(edge, event) {
   return `fabushi-edge:${edge}:event:${event}`;
 }
 
-function defineEdge(edge, methods, events = []) {
+function defineEdge(edge, methods, events = [], version = 1) {
+  if (!Number.isInteger(version) || version < 1) throw new Error('Edge contract version must be a positive integer.');
   const eventNames = Object.freeze([...events]);
   return Object.freeze({
     edge,
+    version,
     methods: Object.freeze({ ...methods }),
     events: eventNames,
     eventSet: new Set(eventNames),

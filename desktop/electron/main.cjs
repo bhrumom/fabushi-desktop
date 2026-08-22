@@ -26,7 +26,6 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 const host = new MahayanaHostProcess();
-const allowedHostMethods = new Set(Object.keys(MAHAYANA_EDGE.methods));
 let mahayanaEdgeServer = null;
 let nativeEdgeServer = null;
 let hostEventPumpStopped = false;
@@ -679,15 +678,6 @@ function startHostEventPump() {
 function installIpcHandlers() {
   installMahayanaEdge();
   installNativeEdge();
-
-  // Temporary compatibility channel for older renderer builds. Current preload
-  // routes window.fabushi.invoke through MAHAYANA_EDGE instead.
-  ipcMain.handle('fabushi:host', async (event, request) => {
-    assertTrustedSender(event);
-    const method = String(request?.method || '');
-    if (!allowedHostMethods.has(method)) throw new Error(`Host method is not allowed: ${method}`);
-    return host.request(method, normalizeParams(request?.params));
-  });
 
   ipcMain.handle('fabushi:pick-file', async (event) => {
     assertTrustedSender(event);

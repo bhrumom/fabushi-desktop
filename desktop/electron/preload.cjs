@@ -8,6 +8,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 const MAHAYANA_EDGE = 'mahayana-host';
 const NATIVE_EDGE = 'native-desktop';
 const MAHAYANA_RUNTIME_EVENT = 'runtime-event';
+const EDGE_CONTRACT_VERSION = 1;
 const NATIVE_EVENTS = new Set([
   'mcp-auth-completed',
   'focus-agent',
@@ -72,6 +73,7 @@ function subscribeEdge(edge, eventName, listener) {
 }
 
 const mahayana = Object.freeze({
+  contractVersion: EDGE_CONTRACT_VERSION,
   invoke(method, params = {}) {
     return invokeEdge(MAHAYANA_EDGE, method, params);
   },
@@ -83,6 +85,7 @@ const mahayana = Object.freeze({
 contextBridge.exposeInMainWorld('mahayana', mahayana);
 
 contextBridge.exposeInMainWorld('fabushiNative', Object.freeze({
+  contractVersion: EDGE_CONTRACT_VERSION,
   invoke(method, params = {}) {
     return invokeEdge(NATIVE_EDGE, method, params);
   },
@@ -98,14 +101,7 @@ contextBridge.exposeInMainWorld('fabushiNative', Object.freeze({
 }));
 
 contextBridge.exposeInMainWorld('fabushi', Object.freeze({
-  // Compatibility facade while HostClient call sites migrate to the explicit
-  // Mahayana and native desktop bridges.
-  invoke(method, params = {}) {
-    return mahayana.invoke(method, params);
-  },
-  subscribe(listener) {
-    return mahayana.subscribe(listener);
-  },
+  contractVersion: EDGE_CONTRACT_VERSION,
   pickFile() {
     return ipcRenderer.invoke('fabushi:pick-file');
   },
