@@ -3,7 +3,20 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 const readline = require('node:readline');
 
-const DEFAULT_DESKTOP_PRODUCT_API_BASE_URL = 'https://mahayana-platform.bhrumom.workers.dev';
+const PRODUCTION_PRODUCT_API_BASE_URL = 'https://api.ombhrum.com';
+const DEVELOPMENT_PRODUCT_API_BASE_URL = 'https://mahayana-platform.bhrumom.workers.dev';
+
+function productApiBaseUrl() {
+  const configured = process.env.MAHAYANA_API_BASE_URL?.trim();
+  if (configured) {
+    const parsed = new URL(configured);
+    if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.search || parsed.hash) {
+      throw new Error('MAHAYANA_API_BASE_URL must be a clean HTTPS origin/base URL');
+    }
+    return parsed.toString().replace(/\/$/, '');
+  }
+  return app.isPackaged ? PRODUCTION_PRODUCT_API_BASE_URL : DEVELOPMENT_PRODUCT_API_BASE_URL;
+}
 
 class MahayanaHostProcess {
   constructor() {
@@ -13,14 +26,11 @@ class MahayanaHostProcess {
   }
 
   executablePath() {
-    if (process.env.MAHAYANA_APP_HOST_BIN) {
+    if (!app.isPackaged && process.env.MAHAYANA_APP_HOST_BIN) {
       return process.env.MAHAYANA_APP_HOST_BIN;
     }
-    if (app.isPackaged) {
-      const name = process.platform === 'win32' ? 'mahayana-app-host.exe' : 'mahayana-app-host';
-      return path.join(process.resourcesPath, 'bin', name);
-    }
     const name = process.platform === 'win32' ? 'mahayana-app-host.exe' : 'mahayana-app-host';
+    if (app.isPackaged) return path.join(process.resourcesPath, 'bin', name);
     return path.resolve(__dirname, '..', '..', 'third_party', 'mahayana', 'mahayana-rs', 'target', 'release', name);
   }
 
@@ -30,7 +40,7 @@ class MahayanaHostProcess {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        MAHAYANA_API_BASE_URL: process.env.MAHAYANA_API_BASE_URL?.trim() || DEFAULT_DESKTOP_PRODUCT_API_BASE_URL,
+        MAHAYANA_API_BASE_URL: productApiBaseUrl(),
         FABUSHI_APP_DATA: app.getPath('userData'),
       },
       windowsHide: true,
