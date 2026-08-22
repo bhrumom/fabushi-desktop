@@ -466,8 +466,16 @@ export class SelfHostedMessagingClientV2 {
     });
   }
 
-  async sync(limit = 1000): Promise<void> {
-    await this.execute({ type: 'sync', cursor: null, limit });
+  async sync(limit = 1000, cursor: string | null = null): Promise<void> {
+    await this.execute({ type: 'sync', cursor, limit });
+  }
+
+  startTyping(conversationId: string, action = 'typing'): Promise<void> {
+    return this.execute({ type: 'startTyping', conversationId, action });
+  }
+
+  stopTyping(conversationId: string): Promise<void> {
+    return this.execute({ type: 'stopTyping', conversationId });
   }
 
   async createConversation(kind: ConversationKind, title: string, description = '', participantActorIds: string[] = []): Promise<MessagingConversation> {

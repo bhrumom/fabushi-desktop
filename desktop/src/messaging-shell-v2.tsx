@@ -145,6 +145,9 @@ type InfoTab = 'media' | 'files' | 'links';
 
 const rootSurfaceKey = 'fabushi.desktop.root-surface.v2';
 const messengerSettingsKey = 'fabushi.desktop.messenger-settings.v2';
+const messengerDraftsKey = 'fabushi.desktop.messenger-drafts.v2';
+const initialPeerRenderCount = 120;
+const initialMessageRenderCount = 240;
 const defaultMiniApps = [
   { id: 'global-dharma', title: '全球法布施', description: '任务、日志与部署' },
   { id: 'faliu-flashcards', title: '法流记忆卡', description: '经文牌组与复习' },
@@ -329,14 +332,19 @@ function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
   const [activePeerKey, setActivePeerKey] = useState<string | null>(null);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [composer, setComposer] = useState('');
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [replyTo, setReplyTo] = useState<DisplayMessage | null>(null);
   const [silentSend, setSilentSend] = useState(false);
   const [scheduledAtMs, setScheduledAtMs] = useState<number | undefined>();
   const [search, setSearch] = useState('');
   const [conversationSearchOpen, setConversationSearchOpen] = useState(false);
+  const [conversationSearch, setConversationSearch] = useState('');
+  const [peerRenderCount, setPeerRenderCount] = useState(initialPeerRenderCount);
+  const [messageRenderCount, setMessageRenderCount] = useState(initialMessageRenderCount);
   const [infoOpen, setInfoOpen] = useState(true);
   const [infoTab, setInfoTab] = useState<InfoTab>('media');
   const [pendingSend, setPendingSend] = useState(false);
+  const [typingByConversation, setTypingByConversation] = useState<Record<string, Record<string, number>>>({});
   const [newDialog, setNewDialog] = useState<NewDialog>(null);
   const [messageMenu, setMessageMenu] = useState<MessageMenu>(null);
   const [forwardDialog, setForwardDialog] = useState<ForwardDialogState>(null);
@@ -352,6 +360,9 @@ function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
   const [pinnedPeerKeys, setPinnedPeerKeys] = useState<Set<string>>(() => new Set());
   const [archivedPeerKeys, setArchivedPeerKeys] = useState<Set<string>>(() => new Set());
   const activePeerKeyRef = useRef<string | null>(null);
+  const messagingCursorRef = useRef<string | null>(null);
+  const syncInFlightRef = useRef(false);
+  const typingStopTimerRef = useRef<number | null>(null);
   const peersRef = useRef<PeerItem[]>([]);
   const webRtcRef = useRef<FabushiWebRtcController | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -363,6 +374,30 @@ function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
 
   useEffect(() => {
     activePeerKeyRef.current = activePeerKey;
+  }, [activePeerKey]);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(messengerDraftsKey) || '{}') as Record<string, unknown>;
+      setDrafts(Object.fromEntries(Object.entries(stored).filter((entry): entry is [string, string] => typeof entry[1] === 'string')));
+    } catch {
+      setDrafts({});
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(messengerDraftsKey, JSON.stringify(drafts));
+    } catch {
+      // Draft persistence is best-effort and must never block messaging.
+    }
+  }, [drafts]);
+
+  useEffect(() => {
+    if (!activePeerKey) return;
+    setComposer(drafts[activePeerKey] ?? '');
+    setConversationSearch('');
+    setMessageRenderCount(initialMessageRenderCount);
   }, [activePeerKey]);
 
   useEffect(() => {
@@ -475,6 +510,27 @@ function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
     };
   }, [transport, selfHosted]);
 
+  useEffect(() => {
+    if (!hostReady) return;
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      setTypingByConversation((current) => {
+        const next: Record<string, Record<string, number>> = {};
+        for (const [conversationId, actors] of Object.entries(current)) {
+          const active = Object.fromEntries(Object.entries(actors).filter(([, expiresAt]) => expiresAt > now));
+          if (Object.keys(active).length) next[conversationId] = active;
+        }
+        return next;
+      });
+      if (syncInFlightRef.current) return;
+      syncInFlightRef.current = true;
+      void selfHosted.sync(1000, messagingCursorRef.current)
+        .catch(() => {})
+        .finally(() => { syncInFlightRef.current = false; });
+    }, 2_000);
+    return () => window.clearInterval(timer);
+  }, [hostReady, selfHosted]);
+
   function nextRequestId(prefix: string): string {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }
@@ -522,6 +578,7 @@ function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
   function handleSelfHostedEvent(runtimeEvent: RuntimeEvent): boolean {
     const hostEvent = asMessagingHostEvent(runtimeEvent);
     if (!hostEvent) return false;
+    if (hostEvent.envelope.cursor) messagingCursorRef.current = hostEvent.envelope.cursor;
     const event = hostEvent.envelope.event;
     switch (event.type) {
       case 'syncBatch': {
@@ -592,6 +649,20 @@ function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
       case 'actorChanged': {
         const actor = (event as unknown as { actor: MessagingActor }).actor;
         setSelfActors((current) => upsertById(current, actor));
+        break;
+      }
+      case 'typingChanged': {
+        const payload = event as unknown as { conversationId: string; actorId: string; action?: string | null; expiresAtMs?: number | null };
+        if (payload.actorId === selfHosted.actorId) break;
+        setTypingByConversation((current) => {
+          const actors = { ...(current[payload.conversationId] ?? {}) };
+          if (payload.action && (payload.expiresAtMs ?? 0) > Date.now()) actors[payload.actorId] = payload.expiresAtMs!;
+          else delete actors[payload.actorId];
+          const next = { ...current };
+          if (Object.keys(actors).length) next[payload.conversationId] = actors;
+          else delete next[payload.conversationId];
+          return next;
+        });
         break;
       }
       case 'storyChanged': {
@@ -809,15 +880,55 @@ function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
 
   peersRef.current = peers;
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
+  const activeTypingActors = activePeer?.source === 'selfhosted' && activePeer.conversationId
+    ? Object.keys(typingByConversation[activePeer.conversationId] ?? {})
+    : [];
   const visiblePeers = peers.filter((peer) => {
     if (['chats', 'contacts', 'bots', 'groups', 'channels', 'saved', 'archive'].includes(section) && !matchesSection(peer, section)) return false;
     const query = search.trim().toLowerCase();
     return !query || `${peer.title} ${peer.subtitle}`.toLowerCase().includes(query);
   });
   const sectionIsPeerList = ['chats', 'contacts', 'bots', 'groups', 'channels', 'saved', 'archive'].includes(section);
+  const renderedPeers = visiblePeers.slice(0, peerRenderCount);
+  const conversationQuery = conversationSearch.trim().toLowerCase();
+  const matchingMessages = conversationQuery
+    ? messages.filter((message) => message.text.toLowerCase().includes(conversationQuery))
+    : messages;
+  const renderedMessages = matchingMessages.slice(Math.max(0, matchingMessages.length - messageRenderCount));
+
+  useEffect(() => {
+    setPeerRenderCount(initialPeerRenderCount);
+  }, [section, search]);
+
+  function updateComposer(value: string) {
+    setComposer(value);
+    const activeKey = activePeerKeyRef.current;
+    if (!activeKey) return;
+    if (activeKey.startsWith('selfhosted:')) {
+      const conversationId = activeKey.slice('selfhosted:'.length);
+      if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
+      if (value.trim()) {
+        void selfHosted.startTyping(conversationId).catch(() => {});
+        typingStopTimerRef.current = window.setTimeout(() => {
+          void selfHosted.stopTyping(conversationId).catch(() => {});
+        }, 3_000);
+      } else {
+        void selfHosted.stopTyping(conversationId).catch(() => {});
+      }
+    }
+    setDrafts((current) => {
+      const next = { ...current };
+      if (value) next[activePeerKeyRef.current!] = value;
+      else delete next[activePeerKeyRef.current!];
+      return next;
+    });
+  }
 
   async function openPeer(peer: PeerItem) {
     setActivePeerKey(peer.key);
+    setComposer(drafts[peer.key] ?? '');
+    setConversationSearch('');
+    setMessageRenderCount(initialMessageRenderCount);
     setReplyTo(null);
     setError(null);
     setConversationSearchOpen(false);
@@ -852,7 +963,7 @@ function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
     const text = composer.trim();
     if (!text || !activePeer || pendingSend) return;
     setPendingSend(true);
-    setComposer('');
+    updateComposer('');
     try {
       if (activePeer.source === 'selfhosted' && activePeer.conversationId) {
         await selfHosted.sendText(activePeer.conversationId, text, {
@@ -874,7 +985,7 @@ function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
       setReplyTo(null);
       setScheduledAtMs(undefined);
     } catch (cause) {
-      setComposer(text);
+      updateComposer(text);
       setPendingSend(false);
       setError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -1404,7 +1515,7 @@ async function saveInvoiceDialog() {
               <button type="button" onClick={() => setNewDialog({ type: 'group', name: '', selectedBotIds: new Set() })}><Users size={17} /><span>新建群组</span></button>
               <button type="button" onClick={() => setNewDialog({ type: 'channel', name: '', description: '' })}><Radio size={17} /><span>新建频道</span></button>
             </div>
-            {visiblePeers.map((peer) => (
+            {renderedPeers.map((peer) => (
               <button data-testid={`peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
                 <span className={styles.avatar}>{peer.avatar ? <img src={peer.avatar} alt="" /> : avatarText(peer.title)}<i data-kind={peer.kind} /></span>
                 <span className={styles.peerCopy}>
@@ -1414,6 +1525,7 @@ async function saveInvoiceDialog() {
                 <span className={styles.peerMeta}>{peer.pinned ? <Pin size={12} /> : null}{mutedPeerKeys.has(peer.key) ? <BellOff size={12} /> : null}{peer.unread ? <b>{peer.unread}</b> : null}</span>
               </button>
             ))}
+            {visiblePeers.length > renderedPeers.length ? <button type="button" data-testid="peer-list-load-more" onClick={() => setPeerRenderCount((count) => count + initialPeerRenderCount)}>显示更多会话</button> : null}
             {!visiblePeers.length ? <EmptyList section={section} /> : null}
           </div>
         ) : (
@@ -1427,7 +1539,7 @@ async function saveInvoiceDialog() {
             <header className={styles.chatHeader}>
               <div className={styles.chatIdentity}>
                 <span className={styles.avatar}>{avatarText(activePeer.title)}<i data-kind={activePeer.kind} /></span>
-                <div><strong>{activePeer.title}</strong><small>{activePeer.subtitle}{hostReady ? ' · 在线' : ' · 正在连接'}</small></div>
+                <div><strong>{activePeer.title}</strong><small data-testid="conversation-status">{activeTypingActors.length ? '正在输入…' : `${activePeer.subtitle}${hostReady ? ' · 在线' : ' · 正在连接'}`}</small></div>
               </div>
               <div className={styles.headerActions}>
                 <button type="button" title="语音通话" onClick={() => void startCall('voice')}><PhoneCall size={18} /></button>
@@ -1439,11 +1551,12 @@ async function saveInvoiceDialog() {
                 <button type="button" title="资料" data-active={infoOpen} onClick={() => setInfoOpen((value) => !value)}><MoreVertical size={18} /></button>
               </div>
             </header>
-            {conversationSearchOpen ? <label className={styles.inChatSearch}><Search size={15} /><input placeholder="在当前会话中搜索" autoFocus /><button type="button" onClick={() => setConversationSearchOpen(false)}><X size={14} /></button></label> : null}
+            {conversationSearchOpen ? <label className={styles.inChatSearch}><Search size={15} /><input data-testid="conversation-search-input" value={conversationSearch} onChange={(event) => { setConversationSearch(event.target.value); setMessageRenderCount(initialMessageRenderCount); }} placeholder="在当前会话中搜索" autoFocus /><button type="button" onClick={() => { setConversationSearch(''); setConversationSearchOpen(false); }}><X size={14} /></button></label> : null}
             {error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
             <div className={styles.messageArea}>
               <div className={styles.dayDivider}>今天</div>
-              {messages.map((message) => (
+              {matchingMessages.length > renderedMessages.length ? <button type="button" data-testid="message-list-load-earlier" onClick={() => setMessageRenderCount((count) => count + initialMessageRenderCount)}>加载更早消息</button> : null}
+              {renderedMessages.map((message) => (
                 <article
                   key={`${message.source}:${message.id}`}
                   className={message.role === 'me' ? styles.messageMine : styles.messagePeer}
@@ -1462,7 +1575,7 @@ async function saveInvoiceDialog() {
                   <small>{formatTime(message.createdAtMs)} {message.role === 'me' ? <Check size={12} /> : null}</small>
                 </article>
               ))}
-              {!messages.length ? <div className={styles.chatEmpty}><span className={styles.avatarLarge}>{avatarText(activePeer.title)}</span><strong>{activePeer.title}</strong><p>联系人、AI Bot、群组和频道使用同一个 Fabushi 消息产品层。</p></div> : null}
+              {!matchingMessages.length ? <div className={styles.chatEmpty} data-testid="message-search-empty"><span className={styles.avatarLarge}>{avatarText(activePeer.title)}</span><strong>{conversationQuery ? '没有匹配消息' : activePeer.title}</strong><p>{conversationQuery ? '换一个关键词继续搜索。' : '联系人、AI Bot、群组和频道使用同一个 Fabushi 消息产品层。'}</p></div> : null}
             </div>
             {replyTo ? <div className={extra.composerBanner}><Reply size={15} /><div><strong>回复</strong><span>{replyTo.text}</span></div><button type="button" onClick={() => setReplyTo(null)}><X size={14} /></button></div> : null}
             {scheduledAtMs ? <div className={extra.composerBanner}><span>⏱</span><div><strong>定时发送</strong><span>{new Date(scheduledAtMs).toLocaleString()}</span></div><button type="button" onClick={() => setScheduledAtMs(undefined)}><X size={14} /></button></div> : null}
@@ -1478,7 +1591,7 @@ async function saveInvoiceDialog() {
               <input ref={mediaInputRef} type="file" accept="image/*,video/*" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
               <input ref={fileInputRef} type="file" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
               {attachmentProgress ? <span className={extra.uploadProgress}>{attachmentProgress}</span> : null}
-              <textarea data-testid="messenger-input" value={composer} onChange={(event) => setComposer(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="消息" rows={1} />
+              <textarea data-testid="messenger-input" value={composer} onChange={(event) => updateComposer(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="消息" rows={1} />
               <button type="button" title="表情"><Smile size={20} /></button>
               <button type="button" data-active={silentSend} title={silentSend ? '关闭静默发送' : '静默发送'} onClick={() => setSilentSend((value) => !value)}><BellOff size={19} /></button>
               {composer.trim() ? <button data-testid="messenger-send" className={styles.sendButton} type="submit" disabled={!hostReady || pendingSend}><Send size={19} /></button> : <button type="button" title="语音消息"><Mic size={20} /></button>}

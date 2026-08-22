@@ -39,6 +39,56 @@ async function openMessenger(page: Page): Promise<void> {
   await expect(page.getByTitle('聊天')).toBeVisible();
 }
 
+async function getMessagingIdentity(page: Page): Promise<{ actorId: string; deviceId: string; sessionId: string }> {
+  return page.evaluate(async () => {
+    const bridge = (window as unknown as {
+      fabushiNative: {
+        invoke<T>(method: string, params?: Record<string, unknown>): Promise<T>;
+      };
+    }).fabushiNative;
+    return bridge.invoke<{ actorId: string; deviceId: string; sessionId: string }>('getMessagingIdentity', {
+      deviceId: 'desktop:e2e-unread',
+      sessionId: `messenger-e2e:${Date.now()}`,
+    });
+  });
+}
+
+async function executeMessagingCommand(
+  page: Page,
+  actorId: string,
+  command: Record<string, unknown>,
+  suffix: string,
+): Promise<void> {
+  await page.evaluate(
+    async ({ actorId: envelopeActorId, command: envelopeCommand, suffix: requestSuffix }) => {
+      const bridge = (window as unknown as {
+        mahayana: {
+          invoke<T>(method: string, params?: Record<string, unknown>): Promise<T>;
+        };
+      }).mahayana;
+      const requestId = `messaging-e2e-${requestSuffix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      await bridge.invoke('feature.execute', {
+        command: {
+          type: 'messaging.execute',
+          requestId,
+          envelope: {
+            protocolVersion: 2,
+            context: {
+              requestId,
+              deviceId: `e2e:${envelopeActorId}`,
+              actorId: envelopeActorId,
+              sessionId: `e2e:${envelopeActorId}`,
+              sentAtMs: Date.now(),
+            },
+            command: envelopeCommand,
+          },
+        },
+      });
+    },
+    { actorId, command, suffix },
+  );
+}
+
 test('desktop Messenger exposes Telegram-class navigation and preserves the real AI Host', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-e2e-'));
   const app = await launchDesktopApp(appDataDir);
@@ -191,6 +241,133 @@ test('installed Mini App opens from the unified Messenger surface', async () => 
     await page.getByRole('button', { name: /全球法布施/ }).last().click();
     await expect(page.getByText('Mini App · 受控宿主容器')).toBeVisible();
     await expect(page.locator('iframe[title="global-dharma"]')).toBeVisible();
+  } finally {
+    await app.close();
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+test('desktop Messenger persists per-peer drafts and performs real in-conversation search', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-draft-search-e2e-'));
+  const app = await launchDesktopApp(appDataDir);
+
+  try {
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMessenger(page);
+
+    const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+    await assistant.click();
+    const input = page.getByTestId('messenger-input');
+    const draft = '每个会话独立保存的草稿';
+    await input.fill(draft);
+
+    await page.reload();
+    await completeBrowserLogin(page);
+    await openMessenger(page);
+    await page.getByTestId('peer-legacy:conversation:codex:agent:assistant').click();
+    await expect(page.getByTestId('messenger-input')).toHaveValue(draft);
+
+    const marker = `会话搜索唯一标记-${Date.now()}`;
+    await page.getByTestId('messenger-input').fill(marker);
+    await page.getByTestId('messenger-send').click();
+    await expect(page.getByText(marker, { exact: true })).toBeVisible();
+
+    await page.getByTitle('搜索当前会话').click();
+    const search = page.getByTestId('conversation-search-input');
+    await search.fill(marker);
+    await expect(page.locator('article').filter({ hasText: marker })).toHaveCount(1);
+
+    await search.fill('绝对不存在的会话内搜索结果-20260822');
+    await expect(page.getByTestId('message-search-empty')).toBeVisible();
+  } finally {
+    await app.close();
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+test('desktop Messenger projects unread from another self-hosted actor and consumes it on open', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-unread-e2e-'));
+  const app = await launchDesktopApp(appDataDir);
+
+  try {
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMessenger(page);
+
+    const identity = await getMessagingIdentity(page);
+    const now = Date.now();
+    const peerActorId = `human:e2e:unread:${now}`;
+    const conversationId = `direct:e2e-unread-${now}`;
+    const permissions = {
+      canSendMessages: true,
+      canSendMedia: true,
+      canSendPolls: true,
+      canAddMembers: true,
+      canPinMessages: true,
+      canManageTopics: true,
+      canManageCalls: true,
+    };
+
+    await executeMessagingCommand(page, peerActorId, {
+      type: 'upsertProfile',
+      actor: {
+        id: peerActorId,
+        kind: 'human',
+        displayName: 'Unread E2E Peer',
+        capabilities: ['messages'],
+        presence: { status: 'online', lastSeenAtMs: now },
+        verified: false,
+      },
+    }, 'peer-profile');
+
+    await executeMessagingCommand(page, identity.actorId, {
+      type: 'createConversation',
+      conversation: {
+        id: conversationId,
+        kind: 'direct',
+        title: 'Unread E2E Conversation',
+        participants: [
+          { actorId: identity.actorId, role: 'owner', joinedAtMs: now },
+          { actorId: peerActorId, role: 'member', joinedAtMs: now },
+        ],
+        ownerId: identity.actorId,
+        unreadCount: 0,
+        mentionCount: 0,
+        pinnedMessageIds: [],
+        notificationSettings: { showPreview: true, notifyMentions: true },
+        permissions,
+        historyVisibility: 'allMembers',
+        topics: [],
+        folderIds: [],
+        archived: false,
+        pinned: false,
+        markedUnread: false,
+        createdAtMs: now,
+        updatedAtMs: now,
+      },
+    }, 'conversation');
+
+    const incomingText = `unread-e2e-${now}`;
+    await executeMessagingCommand(page, peerActorId, {
+      type: 'sendMessage',
+      conversationId,
+      clientMessageId: `e2e:${now}`,
+      content: { type: 'text', data: { text: { text: incomingText, entities: [] } } },
+      replyToMessageId: null,
+      threadRootMessageId: null,
+      scheduledAtMs: null,
+      silent: false,
+      protectedContent: false,
+    }, 'incoming-message');
+
+    const peer = page.getByTestId(`peer-selfhosted:${conversationId}`);
+    await expect(peer).toBeVisible({ timeout: 15_000 });
+    await expect(peer.locator('b')).toHaveText('1');
+
+    await peer.click();
+    await expect(page.getByText(incomingText, { exact: true })).toBeVisible();
+    await expect(peer.locator('b')).toHaveCount(0, { timeout: 15_000 });
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });
