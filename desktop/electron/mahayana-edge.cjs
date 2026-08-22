@@ -19,20 +19,6 @@ const methodNames = [
   'feature.auth.oauthStart',
   'feature.auth.oauthPoll',
   'feature.auth.logout',
-  'marketplace.browse',
-  'marketplace.release',
-  'plugin.install',
-  'plugin.uninstall',
-  'plugin.active',
-  'plugin.permissions',
-  'plugin.permission.grant',
-  'plugin.permission.revoke',
-  'plugin.compatibility',
-  'plugin.uiDocument',
-  'runtime.start',
-  'runtime.stop',
-  'runtime.tools',
-  'runtime.callTool',
 ];
 
 const methods = Object.fromEntries(methodNames.map((name) => [name, { args: 'object' }]));
