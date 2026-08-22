@@ -906,6 +906,7 @@ function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
         description: '',
         memberIds: [...newDialog.selectedBotIds],
       });
+      await execute({ type: 'group.list', requestId: nextRequestId('group-list-after-create') });
       setNewDialog(null);
       setSection('groups');
     } catch (cause) {

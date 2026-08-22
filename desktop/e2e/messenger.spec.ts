@@ -60,7 +60,7 @@ test('desktop Messenger exposes Telegram-class navigation and preserves the real
       '支付',
       '设置',
     ]) {
-      await expect(page.getByTitle(label)).toBeVisible();
+      await expect(page.getByTitle(label, { exact: true })).toBeVisible();
     }
 
     const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
@@ -99,8 +99,9 @@ test('desktop Messenger creates a self-hosted channel and executes message mutat
     await page.getByPlaceholder('频道简介').fill('不依赖 Telegram API');
     await page.getByRole('button', { name: '创建频道' }).click();
 
-    await expect(page.getByText('自建频道验收')).toBeVisible();
-    await expect(page.getByText('不依赖 Telegram API')).toBeVisible();
+    const channelPeer = page.locator('[data-testid^="peer-selfhosted:channel:"]').filter({ hasText: '自建频道验收' }).first();
+    await expect(channelPeer).toBeVisible();
+    await expect(page.getByText('不依赖 Telegram API').first()).toBeVisible();
 
     await page.getByTestId('messenger-input').fill('自建频道消息');
     await page.getByTestId('messenger-send').click();
@@ -152,8 +153,9 @@ test('desktop Messenger creates a real Bot collaboration group and sends into it
     if (await researchBot.isVisible().catch(() => false)) await researchBot.click();
     await page.getByRole('button', { name: '创建群组' }).click();
 
-    await expect(page.getByText('人机协作验收群')).toBeVisible();
-    await page.getByText('人机协作验收群').click();
+    const groupPeer = page.locator('[data-testid^="peer-legacy:group:"]').filter({ hasText: '人机协作验收群' }).first();
+    await expect(groupPeer).toBeVisible();
+    await groupPeer.click();
     await page.getByTestId('messenger-input').fill('群组消息链路验收');
     await page.getByTestId('messenger-send').click();
     await expect(page.getByText('群组消息链路验收')).toBeVisible();
