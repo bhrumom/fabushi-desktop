@@ -884,3 +884,144 @@
   color: #d7ceff;
   background: rgba(139,92,246,.1);
 }
+
+
+/* Telegram/Grok convergence: search stays in the left column and creation lives in a compact popover. */
+.createMenuWrap { position: relative; display: grid; place-items: center; }
+.createMenu {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  width: 176px;
+  padding: 6px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px;
+  background: rgba(21,20,30,.98);
+  box-shadow: 0 20px 52px rgba(0,0,0,.46);
+  backdrop-filter: blur(24px) saturate(1.18);
+  z-index: 45;
+}
+.createMenu button {
+  width: 100% !important;
+  height: 38px !important;
+  padding: 0 10px !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start !important;
+  gap: 9px;
+  color: #d7d3df !important;
+  font-size: 12px;
+}
+.createMenu button:hover { color: #fff !important; background: rgba(255,255,255,.07) !important; }
+
+.searchScope {
+  min-height: 34px;
+  margin: -2px 10px 8px;
+  padding: 5px 7px 5px 9px;
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) 26px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(167,139,250,.18);
+  border-radius: 11px;
+  color: #d7d1e2;
+  background: rgba(139,92,246,.09);
+}
+.searchScope > span {
+  padding: 2px 6px;
+  border-radius: 7px;
+  color: #c9baff;
+  background: rgba(139,92,246,.16);
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.searchScope strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.searchScope button { width: 26px; height: 26px; padding: 0; border: 0; border-radius: 8px; display: grid; place-items: center; color: #aaa4b6; background: transparent; cursor: pointer; }
+.searchScope button:hover { color: #fff; background: rgba(255,255,255,.07); }
+
+.updateCloudButton {
+  width: 100%;
+  min-height: 34px;
+  margin-bottom: 4px;
+  padding: 0 10px;
+  border: 1px solid rgba(112,193,255,.22);
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #bfe5ff;
+  background: rgba(45,146,224,.1);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 680;
+}
+.updateCloudButton:hover { color: #fff; background: rgba(45,146,224,.17); border-color: rgba(112,193,255,.34); }
+.updateCloudButton:disabled { cursor: progress; opacity: .72; }
+.updateCloudButton[data-state="downloading"] svg,
+.updateCloudButton[data-state="staging"] svg { animation: updateCloudPulse 1.25s ease-in-out infinite; }
+@keyframes updateCloudPulse { 50% { transform: translateY(1px) scale(.92); opacity: .55; } }
+
+.chatList[data-collapsed="true"] .createMenuWrap,
+.chatList[data-collapsed="true"] .searchScope { display: none; }
+.chatList[data-collapsed="true"] .updateCloudButton { width: 44px; height: 40px; margin: 0 auto 5px; padding: 0; }
+.chatList[data-collapsed="true"] .updateCloudButton span { display: none; }
+
+
+/* Search result workspace is a child of the sidebar, never a replacement for the conversation workspace. */
+.fabushiUnified .globalSearch {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  height: auto;
+  display: grid;
+  grid-template-rows: auto minmax(0,1fr);
+  overflow: hidden;
+  background: transparent;
+}
+.fabushiUnified .globalSearchTabs {
+  min-width: 0;
+  padding: 0 8px;
+  background: transparent;
+  border-bottom-color: rgba(255,255,255,.06);
+}
+.fabushiUnified .globalSearchTabs button { min-height: 36px; padding: 0 8px; font-size: 10.5px; }
+.fabushiUnified .globalSearchResults { min-height: 0; overflow: auto; padding: 7px 6px 18px; }
+.fabushiUnified .searchResultRow {
+  min-height: 62px;
+  padding: 7px 6px;
+  border-radius: 12px;
+  grid-template-columns: 44px minmax(0,1fr) auto;
+  gap: 8px;
+}
+.fabushiUnified .searchAppResults { gap: 5px; }
+.fabushiUnified .searchAppCard {
+  min-height: 72px;
+  padding: 8px;
+  grid-template-columns: 46px minmax(0,1fr);
+  gap: 8px;
+  border-radius: 13px;
+}
+.fabushiUnified .searchAppCard aside { grid-column: 2; flex-wrap: wrap; }
+.fabushiUnified .searchAppCard button { min-height: 27px; padding: 0 8px; font-size: 10px; }
+.fabushiUnified .searchMessageResult { min-height: 58px; padding: 8px 6px; gap: 8px; }
+.fabushiUnified .searchMessageResult p { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 11.5px; line-height: 1.35; }
+.fabushiUnified .globalSearchEmpty { min-height: 240px; padding: 24px 12px; }
+.fabushiUnified .globalSearchEmpty strong { font-size: 12px; }
+.fabushiUnified .globalSearchEmpty small { max-width: 210px; font-size: 9.5px; line-height: 1.45; }
+
+/* Keep the create popover above the first conversation row; the second action
+   otherwise overlaps the peer list hit target even though it is visually shown. */
+.fabushiUnified .listHeader {
+  position: relative;
+  z-index: 70;
+}
+.fabushiUnified .createMenuWrap,
+.fabushiUnified .createMenu {
+  z-index: 80;
+}

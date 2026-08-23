@@ -10,14 +10,14 @@ const { createNativeCapabilityHandlers } = require('./native-capability-handlers
 
 async function harness(run, options = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'fabushi-native-cap-test-'));
-  let state = { preferences: {}, clientPersistence: {} };
+  let state = options.initialState ?? { preferences: {}, clientPersistence: {} };
   const safeStorage = options.safeStorage ?? {
     isEncryptionAvailable: () => true,
     encryptString: (value) => Buffer.from(`encrypted:${value}`, 'utf8'),
     decryptString: (bytes) => bytes.toString('utf8').replace(/^encrypted:/, ''),
   };
   const app = {
-    isPackaged: false,
+    isPackaged: options.isPackaged ?? false,
     getPath(name) {
       if (name === 'userData') return path.join(root, 'user-data');
       if (name === 'downloads') return path.join(root, 'downloads');
@@ -29,7 +29,7 @@ async function harness(run, options = {}) {
   for (const name of ['userData', 'downloads', 'temp']) await fs.mkdir(app.getPath(name), { recursive: true });
   const handlers = createNativeCapabilityHandlers({
     app,
-    autoUpdater: {},
+    autoUpdater: options.autoUpdater ?? {},
     dialog: {},
     net: options.net ?? { fetch: async () => { throw new Error('unexpected fetch'); } },
     nativeTheme: {},
@@ -148,5 +148,30 @@ test('diagnostic reports redact nested secrets before persistence', async () => 
     assert.equal(record.payload.ordinary, 'safe-value');
     assert.equal(raw.includes('token-value'), false);
     assert.equal(raw.includes('password-value'), false);
+  });
+});
+
+
+test('desktop update click downloads a GitHub release and schedules replacement restart', async () => {
+  const calls = [];
+  const autoUpdater = {
+    async downloadUpdate() { calls.push('download'); return ['/tmp/fabushi-update.zip']; },
+    quitAndInstall(silent, forceRunAfter) { calls.push(['install', silent, forceRunAfter]); },
+  };
+  await harness(async ({ handlers, getState }) => {
+    const result = await handlers.quitAndInstallUpdate({ expectedVersion: '1.0.3' });
+    assert.equal(result.installed, true);
+    assert.equal(result.version, '1.0.3');
+    assert.equal(getState().updateStatus.type, 'ready');
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(calls, ['download', ['install', false, true]]);
+  }, {
+    isPackaged: true,
+    autoUpdater,
+    initialState: {
+      preferences: {},
+      clientPersistence: {},
+      updateStatus: { type: 'available', version: '1.0.3' },
+    },
   });
 });

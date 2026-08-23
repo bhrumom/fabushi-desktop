@@ -1,4 +1,5 @@
-const { app, autoUpdater, BrowserWindow, dialog, ipcMain, Menu, net, nativeTheme, Notification, protocol, safeStorage, shell, session } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, net, nativeTheme, Notification, protocol, safeStorage, shell, session } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const fs = require('node:fs/promises');
 const fsSync = require('node:fs');
 const path = require('node:path');
@@ -32,6 +33,7 @@ let hostEventPumpStopped = false;
 let hostEventPump = null;
 const messagingAccessCache = new Map();
 let messagingSignalingClient = null;
+let availableDesktopUpdateVersion = null;
 
 function normalizeMessagingAccessParams(params) {
   const deviceId = String(params?.deviceId || 'desktop:electron').trim();
@@ -804,22 +806,34 @@ function createWindow() {
 
 function installAutoUpdaterEvents() {
   if (!autoUpdater?.on) return;
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.allowPrerelease = false;
   autoUpdater.on('checking-for-update', () => {
-    void mutateNativeState((state) => ({ ...state, updateStatus: { type: 'checking', version: app.getVersion() } }));
-    broadcastNativeEvent('update-status', { type: 'checking', version: app.getVersion() });
+    const status = { type: 'checking', version: app.getVersion() };
+    void mutateNativeState((state) => ({ ...state, updateStatus: status }));
+    broadcastNativeEvent('update-status', status);
   });
   autoUpdater.on('update-not-available', (info) => {
+    availableDesktopUpdateVersion = null;
     const status = { type: 'upToDate', version: info?.version ?? app.getVersion() };
     void mutateNativeState((state) => ({ ...state, updateStatus: status }));
     broadcastNativeEvent('update-status', status);
   });
   autoUpdater.on('update-available', (info) => {
-    const status = { type: 'downloading', version: info?.version ?? null };
+    availableDesktopUpdateVersion = info?.version ?? app.getVersion();
+    const status = { type: 'available', version: availableDesktopUpdateVersion, notes: typeof info?.releaseNotes === 'string' ? info.releaseNotes : undefined };
     void mutateNativeState((state) => ({ ...state, updateStatus: status }));
     broadcastNativeEvent('update-status', status);
   });
-  autoUpdater.on('update-downloaded', (_event, _notes, version) => {
-    const status = { type: 'ready', version: version ?? null };
+  autoUpdater.on('download-progress', (progress) => {
+    const status = { type: 'downloading', version: availableDesktopUpdateVersion ?? app.getVersion(), progress: Number.isFinite(progress?.percent) ? Math.round(progress.percent) : undefined };
+    void mutateNativeState((state) => ({ ...state, updateStatus: status }));
+    broadcastNativeEvent('update-status', status);
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    availableDesktopUpdateVersion = info?.version ?? availableDesktopUpdateVersion ?? app.getVersion();
+    const status = { type: 'ready', version: availableDesktopUpdateVersion };
     void mutateNativeState((state) => ({ ...state, updateStatus: status }));
     broadcastNativeEvent('update-status', status);
   });
@@ -995,6 +1009,9 @@ app.whenReady().then(() => {
   host.start();
   createWindow();
   startHostEventPump();
+  if (app.isPackaged) {
+    setTimeout(() => { void autoUpdater.checkForUpdates().catch(() => undefined); }, 4_000);
+  }
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 

@@ -141,7 +141,12 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
     await expect(sidebar).not.toHaveAttribute('data-collapsed', 'true');
 
     await page.getByTestId('global-search-trigger').click();
-    await expect(page.getByTestId('global-search-surface')).toBeVisible();
+    const searchSurface = page.getByTestId('global-search-surface');
+    await expect(searchSurface).toBeVisible();
+    const searchSurfaceBox = await searchSurface.boundingBox();
+    const searchSidebarBox = await sidebar.boundingBox();
+    expect(searchSurfaceBox?.x ?? 9999).toBeGreaterThanOrEqual(searchSidebarBox?.x ?? 0);
+    expect((searchSurfaceBox?.x ?? 0) + (searchSurfaceBox?.width ?? 9999)).toBeLessThanOrEqual((searchSidebarBox?.x ?? 0) + (searchSidebarBox?.width ?? 0) + 1);
     for (const category of ['chats', 'channels', 'apps', 'posts', 'images', 'videos', 'downloads', 'links', 'files', 'music', 'audio']) {
       await expect(page.getByTestId(`global-search-tab-${category}`)).toBeVisible();
     }
@@ -162,7 +167,9 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
     await expect(page.getByTitle('开启通知')).toBeVisible();
 
     await page.getByTitle('搜索当前会话').click();
-    await expect(page.getByPlaceholder('在当前会话中搜索')).toBeVisible();
+    await expect(page.getByTestId('conversation-search-scope')).toContainText('此聊天');
+    await expect(page.getByTestId('global-search-input')).toBeFocused();
+    await expect(page.getByTestId('global-search-surface')).toHaveAttribute('data-scoped', 'true');
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });
@@ -178,7 +185,8 @@ test('desktop Messenger creates a self-hosted channel and executes message mutat
     await completeBrowserLogin(page);
     await openMessenger(page);
 
-    await page.getByRole('button', { name: '新建频道' }).first().click();
+    await page.getByRole('button', { name: '新建', exact: true }).click();
+    await page.getByRole('button', { name: '新建频道' }).click();
     await expect(page.getByText('Fabushi 自建广播会话')).toBeVisible();
     await page.getByPlaceholder('频道名称').fill('自建频道验收');
     await page.getByPlaceholder('频道简介').fill('不依赖 Telegram API');
@@ -232,7 +240,8 @@ test('desktop Messenger creates a real Bot collaboration group and sends into it
     await completeBrowserLogin(page);
     await openMessenger(page);
 
-    await page.getByRole('button', { name: '新建群组' }).first().click();
+    await page.getByRole('button', { name: '新建', exact: true }).click();
+    await page.getByRole('button', { name: '新建群组' }).click();
     await expect(page.getByText('现有 AI 群组 Host 会执行 Bot 多轮协作')).toBeVisible();
     await page.getByPlaceholder('群组名称').fill('人机协作验收群');
 
@@ -311,13 +320,16 @@ test('desktop Messenger persists per-peer drafts and performs real in-conversati
     await expect(page.getByText(marker, { exact: true })).toBeVisible();
 
     await page.getByTitle('搜索当前会话').click();
-    const search = page.getByTestId('conversation-search-input');
+    await expect(page.getByTestId('conversation-search-scope')).toContainText('此聊天');
+    const search = page.getByTestId('global-search-input');
     await search.fill(marker);
-    await expect(page.getByText(marker, { exact: true })).toHaveCount(1);
-    await expect(page.getByText('收到：' + marker, { exact: true })).toHaveCount(1);
+    const scopedSurface = page.getByTestId('global-search-surface');
+    await expect(scopedSurface).toContainText(marker);
+    await expect(page.getByTestId('global-search-tab-posts')).toHaveText('消息');
+    await expect(page.getByTestId('global-search-tab-chats')).toHaveCount(0);
 
     await search.fill('绝对不存在的会话内搜索结果-20260822');
-    await expect(page.getByTestId('message-search-empty')).toBeVisible();
+    await expect(scopedSurface.getByText('当前已加载内容中没有匹配结果')).toBeVisible();
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });

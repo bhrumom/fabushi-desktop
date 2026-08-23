@@ -361,13 +361,24 @@ function createNativeCapabilityHandlers(deps) {
     },
 
     async quitAndInstallUpdate(params) {
-      const status = await currentUpdateStatus();
+      let status = await currentUpdateStatus();
       const expected = cleanString(params.expectedVersion, 80);
       if (expected && status.version && expected !== status.version) throw new Error('Update version changed before install.');
-      if (!autoUpdater?.quitAndInstall || status.type !== 'ready') {
+      if (!autoUpdater?.quitAndInstall) {
+        return { installed: false, reason: 'Desktop updater is unavailable.' };
+      }
+      if (status.type === 'available' || status.type === 'downloading' || status.type === 'staging') {
+        if (!autoUpdater?.downloadUpdate) {
+          return { installed: false, reason: 'Desktop updater cannot download this release.' };
+        }
+        await writeUpdateStatus({ type: 'downloading', version: status.version ?? expected ?? null, progress: 0 });
+        await autoUpdater.downloadUpdate();
+        status = await writeUpdateStatus({ type: 'ready', version: status.version ?? expected ?? null });
+      }
+      if (status.type !== 'ready') {
         return { installed: false, reason: 'No downloaded desktop update is ready.' };
       }
-      setImmediate(() => autoUpdater.quitAndInstall());
+      setImmediate(() => autoUpdater.quitAndInstall(false, true));
       return { installed: true, version: status.version ?? null };
     },
 
