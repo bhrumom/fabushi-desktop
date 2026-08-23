@@ -48,7 +48,7 @@ import type {
 } from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import { ElectronMahayanaHostTransport, isElectronMahayanaHostAvailable } from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
 import { MockMahayanaHostTransport } from '../../frontend/apps/web/src/lib/mahayana-host/mock-transport';
-import type { MahayanaHostTransport } from '../../frontend/apps/web/src/lib/mahayana-host/transport';
+import type { InstalledPluginPointer, MahayanaHostTransport, MarketplacePluginSummary } from '../../frontend/apps/web/src/lib/mahayana-host/transport';
 import {
   SelfHostedMessagingClientV2,
   asMessagingHostEvent,
@@ -147,12 +147,6 @@ const messengerSettingsKey = 'fabushi.desktop.messenger-settings.v2';
 const messengerDraftsKey = 'fabushi.desktop.messenger-drafts.v2';
 const initialPeerRenderCount = 120;
 const initialMessageRenderCount = 240;
-const defaultMiniApps = [
-  { id: 'global-dharma', title: '全球法布施', description: '任务、日志与部署' },
-  { id: 'faliu-flashcards', title: '法流记忆卡', description: '经文牌组与复习' },
-  { id: 'platform-publish', title: '平台发布', description: '内容发布与自动化' },
-  { id: 'bot-father', title: 'Bot Father', description: '创建和管理机器人' },
-];
 
 function createTransport(): MahayanaHostTransport {
   if (isElectronMahayanaHostAvailable()) return new ElectronMahayanaHostTransport();
@@ -379,7 +373,12 @@ function MessengerWorkspace() {
   const [attachmentProgress, setAttachmentProgress] = useState<string | null>(null);
   const [localCall, setLocalCall] = useState<LocalCall | null>(null);
   const [incomingCall, setIncomingCall] = useState<IncomingFabushiCall | null>(null);
-  const [miniApp, setMiniApp] = useState<{ id: string; html?: string } | null>(null);
+  const [miniApp, setMiniApp] = useState<{ id: string; title: string; html: string } | null>(null);
+  const [marketplaceApps, setMarketplaceApps] = useState<MarketplacePluginSummary[]>([]);
+  const [installedMiniApps, setInstalledMiniApps] = useState<Record<string, InstalledPluginPointer>>({});
+  const [miniAppQuery, setMiniAppQuery] = useState('');
+  const [miniAppLoading, setMiniAppLoading] = useState(false);
+  const [miniAppBusy, setMiniAppBusy] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<string | null>(null);
   const [mutedPeerKeys, setMutedPeerKeys] = useState<Set<string>>(() => new Set());
   const [pinnedPeerKeys, setPinnedPeerKeys] = useState<Set<string>>(() => new Set());
@@ -534,6 +533,14 @@ function MessengerWorkspace() {
       void transport.close();
     };
   }, [transport, selfHosted]);
+
+  useEffect(() => {
+    if (!hostReady || section !== 'miniapps') return;
+    const timer = window.setTimeout(() => {
+      void refreshMiniApps(miniAppQuery);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [hostReady, section, miniAppQuery]);
 
   useEffect(() => {
     if (!hostReady) return;
@@ -1527,17 +1534,77 @@ async function saveInvoiceDialog() {
     toggleLocalSet(setMutedPeerKeys, peer.key);
   }
 
-  async function openMiniApp(id: string) {
-    setError(null);
+  async function refreshMiniApps(query = miniAppQuery) {
+    setMiniAppLoading(true);
     try {
-      // The unified Messenger owns the complete Mini App path. The production
-      // Host intentionally refuses to open an app that has not been installed
-      // in the current runtime, so install/refresh the bundled capability first
-      // instead of bouncing users back to the retired Host marketplace UI.
-      await execute({ type: 'marketplace.install', requestId: nextRequestId('miniapp-install'), miniAppId: id });
-      await execute({ type: 'miniapp.open', requestId: nextRequestId('miniapp-open'), miniAppId: id });
+      const [catalog, installed] = await Promise.all([
+        transport.marketplaceBrowse(query),
+        transport.pluginListInstalled(),
+      ]);
+      setMarketplaceApps(catalog.plugins);
+      setInstalledMiniApps(Object.fromEntries(installed.plugins.map((plugin) => [plugin.pluginId, plugin])));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setMiniAppLoading(false);
+    }
+  }
+
+  function setMiniAppBusyState(id: string, busy: boolean) {
+    setMiniAppBusy((current) => {
+      const next = new Set(current);
+      if (busy) next.add(id); else next.delete(id);
+      return next;
+    });
+  }
+
+  async function installMiniApp(app: MarketplacePluginSummary) {
+    setError(null);
+    setMiniAppBusyState(app.pluginId, true);
+    try {
+      const release = await transport.marketplaceRelease(app.pluginId, app.latestVersion);
+      if (release.releaseStatus && release.releaseStatus !== 'approved') {
+        throw new Error(`Mini App release is not approved: ${release.releaseStatus}`);
+      }
+      if (release.releaseManifest?.protocol !== 'mahayana.external-release.v1') {
+        throw new Error('Mini App release is missing a verified external release manifest');
+      }
+      await transport.pluginInstall(release.releaseManifest, 'desktop');
+      await refreshMiniApps(miniAppQuery);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setMiniAppBusyState(app.pluginId, false);
+    }
+  }
+
+  async function uninstallMiniApp(id: string) {
+    setError(null);
+    setMiniAppBusyState(id, true);
+    try {
+      await transport.pluginUninstall(id);
+      if (miniApp?.id === id) setMiniApp(null);
+      await refreshMiniApps(miniAppQuery);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setMiniAppBusyState(id, false);
+    }
+  }
+
+  async function openMiniApp(id: string) {
+    setError(null);
+    setMiniAppBusyState(id, true);
+    try {
+      const installed = installedMiniApps[id] ?? await transport.pluginActive(id);
+      if (!installed) throw new Error('请先从在线 Mini App 市场安装此应用');
+      const document = await transport.pluginUiDocument(id);
+      const title = marketplaceApps.find((app) => app.pluginId === id)?.displayName ?? id;
+      setMiniApp({ id, title, html: document.html });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setMiniAppBusyState(id, false);
     }
   }
 
@@ -1612,7 +1679,7 @@ async function saveInvoiceDialog() {
             {!visiblePeers.length ? <EmptyList section={section} /> : null}
           </div>
         ) : (
-          <SectionPanel section={section} onOpenMiniApp={openMiniApp} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} />
+          <SectionPanel section={section} onOpenMiniApp={openMiniApp} onInstallMiniApp={installMiniApp} onUninstallMiniApp={uninstallMiniApp} miniApps={marketplaceApps} installedMiniApps={installedMiniApps} miniAppQuery={miniAppQuery} onMiniAppQuery={setMiniAppQuery} miniAppLoading={miniAppLoading} miniAppBusy={miniAppBusy} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} />
         )}
       </aside>
 
@@ -1689,7 +1756,7 @@ async function saveInvoiceDialog() {
             </form>
           </>
         ) : (
-          <FeatureWorkspace section={section} onOpenMiniApp={openMiniApp} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} />
+          <FeatureWorkspace section={section} onOpenMiniApp={openMiniApp} onInstallMiniApp={installMiniApp} onUninstallMiniApp={uninstallMiniApp} miniApps={marketplaceApps} installedMiniApps={installedMiniApps} miniAppQuery={miniAppQuery} onMiniAppQuery={setMiniAppQuery} miniAppLoading={miniAppLoading} miniAppBusy={miniAppBusy} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} />
         )}
       </section>
 
@@ -1974,8 +2041,8 @@ function CallDialog({
   </section></div>;
 }
 
-function MiniAppDialog({ app, onClose }: { app: { id: string; html?: string }; onClose: () => void }) {
-  return <div className={styles.backdrop} onMouseDown={onClose}><section className={styles.miniAppDialog} onMouseDown={(event) => event.stopPropagation()}><header><div><strong>{defaultMiniApps.find((item) => item.id === app.id)?.title ?? app.id}</strong><small>Mini App · 受控宿主容器</small></div><button type="button" onClick={onClose}><X size={17} /></button></header>{app.html ? <iframe title={app.id} sandbox="allow-scripts allow-forms" srcDoc={app.html} /> : <div className={styles.miniAppEmpty}><AppWindow size={38} /><strong>Mini App 已由 Host 打开</strong><p>生产构建将使用受控页面/WebView 容器。</p></div>}</section></div>;
+function MiniAppDialog({ app, onClose }: { app: { id: string; title: string; html: string }; onClose: () => void }) {
+  return <div className={styles.backdrop} onMouseDown={onClose}><section className={styles.miniAppDialog} onMouseDown={(event) => event.stopPropagation()}><header><div><strong>{app.title}</strong><small>Mini App · 已安装线上包 · 受控宿主容器</small></div><button type="button" onClick={onClose}><X size={17} /></button></header><iframe title={app.id} sandbox="allow-scripts allow-forms" srcDoc={app.html} /></section></div>;
 }
 
 type PaymentUiState = {
@@ -2008,16 +2075,81 @@ function PaymentOverview({ payment, onInvoice, onRefund, compact = false }: { pa
   </div>;
 }
 
-function SectionPanel({ section, onOpenMiniApp, onInvoice, payment, onRefund }: { section: MessengerSection; onOpenMiniApp: (id: string) => Promise<void>; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void }) {
-  if (section === 'miniapps') return <div className={styles.sectionList}>{defaultMiniApps.map((app) => <button type="button" key={app.id} onClick={() => void onOpenMiniApp(app.id)}><span className={styles.appIcon}><AppWindow size={18} /></span><div><strong>{app.title}</strong><small>{app.description}</small></div></button>)}</div>;
+type MiniAppMarketplaceProps = {
+  miniApps: MarketplacePluginSummary[];
+  installedMiniApps: Record<string, InstalledPluginPointer>;
+  miniAppQuery: string;
+  onMiniAppQuery: (query: string) => void;
+  miniAppLoading: boolean;
+  miniAppBusy: Set<string>;
+  onOpenMiniApp: (id: string) => Promise<void>;
+  onInstallMiniApp: (app: MarketplacePluginSummary) => Promise<void>;
+  onUninstallMiniApp: (id: string) => Promise<void>;
+};
+
+function MiniAppMarketplaceSearch({ query, onChange }: { query: string; onChange: (query: string) => void }) {
+  return <label className={styles.marketplaceSearch}><Search size={15} /><input value={query} onChange={(event) => onChange(event.target.value)} placeholder="搜索线上 Mini App" />{query ? <button type="button" onClick={() => onChange('')}><X size={13} /></button> : null}</label>;
+}
+
+function MiniAppMarketplaceList(props: MiniAppMarketplaceProps) {
+  return <div className={styles.sectionList}>
+    <MiniAppMarketplaceSearch query={props.miniAppQuery} onChange={props.onMiniAppQuery} />
+    {props.miniAppLoading ? <div className={styles.marketplaceStatus}>正在搜索在线市场…</div> : null}
+    {!props.miniAppLoading && !props.miniApps.length ? <div className={styles.marketplaceStatus}>没有找到可安装的 Mini App</div> : null}
+    {props.miniApps.map((app) => {
+      const installed = props.installedMiniApps[app.pluginId];
+      const busy = props.miniAppBusy.has(app.pluginId);
+      const update = Boolean(installed && installed.version !== app.latestVersion);
+      return <div className={styles.marketplaceRow} key={app.pluginId} data-testid={`miniapp-market-${app.pluginId}`}>
+        <span className={styles.appIcon}><AppWindow size={18} /></span>
+        <div className={styles.marketplaceCopy}><strong>{app.displayName}</strong><small>{app.description}</small><em>{installed ? `已安装 ${installed.version}` : `在线 · ${app.latestVersion}`}</em></div>
+        <div className={styles.marketplaceActions}>
+          {installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}
+          {!installed || update ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中' : update ? '更新' : '安装'}</button> : null}
+          {installed ? <button type="button" disabled={busy} title="卸载" onClick={() => void props.onUninstallMiniApp(app.pluginId)}><Trash2 size={13} /></button> : null}
+        </div>
+      </div>;
+    })}
+  </div>;
+}
+
+function MiniAppMarketplaceWorkspace(props: MiniAppMarketplaceProps) {
+  return <div className={styles.featureWorkspace}>
+    <AppWindow size={54} />
+    <h2>Mini Apps</h2>
+    <p>所有官方与第三方 Mini App 都从线上市场搜索、验证并安装；Fabushi 主程序不预装应用。</p>
+    <MiniAppMarketplaceSearch query={props.miniAppQuery} onChange={props.onMiniAppQuery} />
+    {props.miniAppLoading ? <div className={styles.marketplaceStatus}>正在搜索在线市场…</div> : null}
+    <div className={styles.featureGrid}>{props.miniApps.map((app) => {
+      const installed = props.installedMiniApps[app.pluginId];
+      const busy = props.miniAppBusy.has(app.pluginId);
+      const update = Boolean(installed && installed.version !== app.latestVersion);
+      return <article className={styles.marketplaceCard} key={app.pluginId}>
+        <AppWindow size={24} />
+        <strong>{app.displayName}</strong>
+        <small>{app.description}</small>
+        <em>{installed ? `已安装 ${installed.version}` : `线上版本 ${app.latestVersion}`}</em>
+        <div>
+          {installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}
+          {!installed || update ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中…' : update ? '更新' : '安装'}</button> : null}
+          {installed ? <button type="button" disabled={busy} onClick={() => void props.onUninstallMiniApp(app.pluginId)}>卸载</button> : null}
+        </div>
+      </article>;
+    })}</div>
+    {!props.miniAppLoading && !props.miniApps.length ? <div className={styles.marketplaceStatus}>没有找到可安装的 Mini App</div> : null}
+  </div>;
+}
+
+function SectionPanel({ section, onInvoice, payment, onRefund, ...miniAppProps }: { section: MessengerSection; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void } & MiniAppMarketplaceProps) {
+  if (section === 'miniapps') return <MiniAppMarketplaceList {...miniAppProps} />;
   if (section === 'payments') return <div className={styles.sectionList}><PaymentOverview payment={payment} onInvoice={onInvoice} onRefund={onRefund} compact /></div>;
   if (section === 'folders') return <div className={styles.sectionList}><div className={styles.panelHint}><Folder size={24} /><strong>聊天文件夹</strong><p>按联系人、Bot、群组、频道、未读和静音状态组织。</p></div></div>;
   if (section === 'calls') return <div className={styles.sectionList}><div className={styles.panelHint}><Phone size={24} /><strong>最近通话</strong><p>从会话顶部发起语音/视频。</p></div></div>;
   return <div className={styles.sectionList}><div className={styles.panelHint}><Settings size={24} /><strong>{sectionTitle(section)}</strong><p>该功能入口已合并进统一 Messenger。</p></div></div>;
 }
 
-function FeatureWorkspace({ section, onOpenMiniApp, onInvoice, payment, onRefund }: { section: MessengerSection; onOpenMiniApp: (id: string) => Promise<void>; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void }) {
-  if (section === 'miniapps') return <div className={styles.featureWorkspace}><AppWindow size={54} /><h2>Mini Apps</h2><p>Mini App 与 Bot、会话、支付共享身份和权限上下文。</p><div className={styles.featureGrid}>{defaultMiniApps.map((app) => <button type="button" key={app.id} onClick={() => void onOpenMiniApp(app.id)}><AppWindow size={22} /><strong>{app.title}</strong><small>{app.description}</small></button>)}</div></div>;
+function FeatureWorkspace({ section, onInvoice, payment, onRefund, ...miniAppProps }: { section: MessengerSection; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void } & MiniAppMarketplaceProps) {
+  if (section === 'miniapps') return <MiniAppMarketplaceWorkspace {...miniAppProps} />;
   if (section === 'payments') return <div className={styles.featureWorkspace}><WalletCards size={54} /><h2>Fabushi Pay</h2><p>自建余额、Invoice、Order、退款与外部 settlement 都由 Rust 账本结算。</p><PaymentOverview payment={payment} onInvoice={onInvoice} onRefund={onRefund} /></div>;
   if (section === 'calls') return <div className={styles.featureWorkspace}><Phone size={54} /><h2>通话</h2><p>本机媒体已接通，Rust realtime 已具备一对一/群组通话信令状态。</p></div>;
   return <div className={styles.featureWorkspace}><MessageCircle size={54} /><h2>{sectionTitle(section)}</h2><p>联系人、Bot、群组和频道正在统一到同一个 Fabushi Actor/Conversation 模型。</p></div>;

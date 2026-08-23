@@ -535,3 +535,24 @@
     filter: none;
   }
 }
+
+.marketplaceSearch { width:calc(100% - 8px); min-height:36px; margin:6px 4px 10px; padding:0 10px; border:1px solid #dfe7ec; border-radius:10px; background:#f7fafc; display:flex; align-items:center; gap:7px; color:#6e7f8b; }
+.marketplaceSearch input { min-width:0; flex:1; border:0; outline:0; background:transparent; color:#2c3d49; font:inherit; }
+.marketplaceSearch button { border:0; background:transparent; color:#7c8a94; display:grid; place-items:center; cursor:pointer; }
+.marketplaceStatus { padding:14px 10px; color:#7f8e98; font-size:12px; text-align:center; }
+.marketplaceRow { width:100%; min-height:70px; padding:9px; display:flex; align-items:center; gap:9px; border-radius:11px; }
+.marketplaceRow:hover { background:#f3f6f8; }
+.marketplaceCopy { min-width:0; flex:1; display:grid; gap:2px; text-align:left; }
+.marketplaceCopy strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.marketplaceCopy small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.marketplaceCopy em { color:#2b91cd; font-size:10px; font-style:normal; }
+.marketplaceActions { display:flex; align-items:center; gap:4px; }
+.marketplaceActions button { min-height:28px; padding:0 8px; border:1px solid #d7e4eb; border-radius:8px; background:#fff; color:#258ecf; font-size:11px; cursor:pointer; }
+.marketplaceActions button:disabled { opacity:.55; cursor:default; }
+.marketplaceCard { min-height:150px; padding:15px 12px; border:1px solid #e2e8ec; border-radius:13px; background:#fff; display:grid; justify-items:center; align-content:center; gap:6px; color:#268fcf; }
+.marketplaceCard strong { color:#33434f; }
+.marketplaceCard small { color:#7e8d97; line-height:1.35; }
+.marketplaceCard em { color:#268fcf; font-size:10px; font-style:normal; }
+.marketplaceCard > div { display:flex; flex-wrap:wrap; justify-content:center; gap:5px; margin-top:3px; }
+.marketplaceCard > div button { min-height:30px; padding:0 10px; border:1px solid #d7e4eb; border-radius:8px; background:#fff; display:inline-flex; align-items:center; justify-content:center; color:#258ecf; font-size:11px; cursor:pointer; }
+.marketplaceCard > div button:disabled { opacity:.55; cursor:default; }
