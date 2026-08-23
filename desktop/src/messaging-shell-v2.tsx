@@ -563,7 +563,6 @@ function MessengerWorkspace() {
   function execute(command: Parameters<MahayanaHostTransport['execute']>[0]) {
     return transport.execute(command).catch((cause: unknown) => {
       setError(cause instanceof Error ? cause.message : String(cause));
-      throw cause;
     });
   }
 
@@ -1529,7 +1528,17 @@ async function saveInvoiceDialog() {
   }
 
   async function openMiniApp(id: string) {
-    await execute({ type: 'miniapp.open', requestId: nextRequestId('miniapp-open'), miniAppId: id });
+    setError(null);
+    try {
+      // The unified Messenger owns the complete Mini App path. The production
+      // Host intentionally refuses to open an app that has not been installed
+      // in the current runtime, so install/refresh the bundled capability first
+      // instead of bouncing users back to the retired Host marketplace UI.
+      await execute({ type: 'marketplace.install', requestId: nextRequestId('miniapp-install'), miniAppId: id });
+      await execute({ type: 'miniapp.open', requestId: nextRequestId('miniapp-open'), miniAppId: id });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
   }
 
   return (
