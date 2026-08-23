@@ -125,3 +125,22 @@ test('renderer subscriptions are scoped to declared events and can be disposed i
   dispose();
   assert.deepEqual(renderer.listeners.get(channel), []);
 });
+
+
+test('structured invocation traces contain correlation/status/duration but never args or results', async () => {
+  const edge = defineEdge('trace', { echo: { args: 'object' } });
+  const ipcMain = fakeIpcMain();
+  const traces = [];
+  let now = 100;
+  serveMainEdge(ipcMain, edge, { echo: async ({ secret }) => ({ secret, token: 'result-token' }) }, {
+    now: () => now += 5,
+    nextCorrelationId: () => 'corr-1',
+    onInvocation: (record) => traces.push(record),
+  });
+  const reply = await ipcMain.handlers.get(callChannel('trace', 'echo'))({}, { secret: 'input-secret' });
+  assert.equal(reply.ok, true);
+  assert.deepEqual(traces, [{ edge: 'trace', method: 'echo', correlationId: 'corr-1', status: 'ok', code: null, durationMs: 5 }]);
+  const serialized = JSON.stringify(traces);
+  assert.equal(serialized.includes('input-secret'), false);
+  assert.equal(serialized.includes('result-token'), false);
+});

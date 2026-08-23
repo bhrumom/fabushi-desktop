@@ -3,6 +3,7 @@
 const BRIDGE_MISSING_HANDLER = 'bridge/missing-handler';
 const BRIDGE_INVOKE_FAILED = 'bridge/invoke-failed';
 const BRIDGE_UNTRUSTED_SENDER = 'bridge/untrusted-sender';
+let invocationSequence = 0;
 
 function callChannel(edge, method) {
   return `fabushi-edge:${edge}:call:${method}`;
@@ -87,21 +88,40 @@ function createRendererEdge(ipcRenderer, edge) {
 
 function serveMainEdge(ipcMain, edge, handlers, options = {}) {
   const registered = [];
+  const now = options.now ?? Date.now;
+  const nextCorrelationId = options.nextCorrelationId ?? (() => `${edge.edge}-${now().toString(36)}-${(++invocationSequence).toString(36)}`);
+  const trace = (method, correlationId, startedAt, status, code = null) => {
+    options.onInvocation?.(Object.freeze({
+      edge: edge.edge,
+      method,
+      correlationId,
+      status,
+      code,
+      durationMs: Math.max(0, now() - startedAt),
+    }));
+  };
   for (const method of Object.keys(edge.methods)) {
     const channel = callChannel(edge.edge, method);
     registered.push(channel);
     ipcMain.handle(channel, async (event, args) => {
+      const startedAt = now();
+      const correlationId = nextCorrelationId();
       if (options.isTrustedSender && !options.isTrustedSender(event)) {
+        trace(method, correlationId, startedAt, 'denied', BRIDGE_UNTRUSTED_SENDER);
         return { ok: false, failure: { code: BRIDGE_UNTRUSTED_SENDER, detail: 'IPC sender is not trusted.' } };
       }
       const handler = handlers[method];
       if (typeof handler !== 'function') {
+        trace(method, correlationId, startedAt, 'failed', BRIDGE_MISSING_HANDLER);
         return { ok: false, failure: { code: BRIDGE_MISSING_HANDLER, detail: `No handler for ${method}.` } };
       }
       try {
-        return { ok: true, value: await handler(args ?? {}, event) };
+        const value = await handler(args ?? {}, event);
+        trace(method, correlationId, startedAt, 'ok');
+        return { ok: true, value };
       } catch (error) {
         options.onHandlerError?.(method, error);
+        trace(method, correlationId, startedAt, 'failed', BRIDGE_INVOKE_FAILED);
         return { ok: false, failure: failure(BRIDGE_INVOKE_FAILED, error) };
       }
     });

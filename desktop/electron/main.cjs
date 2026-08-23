@@ -427,6 +427,12 @@ function broadcastNativeEvent(eventName, payload) {
   }
 }
 
+function logEdgeInvocation(record) {
+  // Deliberately exclude args/results/URLs/tokens. This record is safe to retain as
+  // operational telemetry and gives renderer -> edge correlation without secrets.
+  console.info(JSON.stringify({ type: 'fabushi.edge.invoke', ...record }));
+}
+
 function installNativeEdge() {
   const handlers = {
     async openExternal(params) {
@@ -601,6 +607,7 @@ function installNativeEdge() {
 
   nativeEdgeServer = serveMainEdge(ipcMain, NATIVE_EDGE, handlers, {
     isTrustedSender,
+    onInvocation: logEdgeInvocation,
     onHandlerError(method, error) {
       console.error(`[native-edge] ${method} failed`, error);
     },
@@ -617,6 +624,7 @@ function installMahayanaEdge() {
 
   mahayanaEdgeServer = serveMainEdge(ipcMain, MAHAYANA_EDGE, handlers, {
     isTrustedSender,
+    onInvocation: logEdgeInvocation,
     onHandlerError(method, error) {
       console.error(`[mahayana-edge] ${method} failed`, error);
     },
