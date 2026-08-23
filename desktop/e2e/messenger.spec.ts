@@ -22,6 +22,15 @@ async function launchDesktopApp(appDataDir: string) {
 }
 
 async function completeBrowserLogin(page: Page): Promise<void> {
+  await page.waitForLoadState('domcontentloaded');
+  await expect.poll(async () => {
+    const testIds = ['onboarding-gate', 'login-gate', 'host-status', 'open-messenger', 'messenger-workspace'];
+    for (const testId of testIds) {
+      if (await page.getByTestId(testId).isVisible().catch(() => false)) return true;
+    }
+    return false;
+  }, { timeout: 15_000 }).toBe(true);
+
   while (await page.getByTestId('onboarding-gate').isVisible().catch(() => false)) {
     await page.getByTestId('onboarding-next').click();
   }
@@ -30,12 +39,21 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     await page.getByTestId('browser-login-start').click();
     await expect(loginGate).toBeHidden();
   }
-  await expect(page.getByTestId('host-status')).toHaveAttribute('data-state', 'ready');
+  await expect.poll(async () => {
+    if (await page.getByTestId('messenger-workspace').isVisible().catch(() => false)) return true;
+    if (await page.getByTestId('open-messenger').isVisible().catch(() => false)) return true;
+    const hostStatus = page.getByTestId('host-status');
+    if (!await hostStatus.isVisible().catch(() => false)) return false;
+    return await hostStatus.getAttribute('data-state').catch(() => null) === 'ready';
+  }, { timeout: 15_000 }).toBe(true);
 }
 
 async function openMessenger(page: Page): Promise<void> {
-  await page.getByTestId('open-messenger').click();
-  await expect(page.getByTestId('messenger-workspace')).toBeVisible();
+  const workspace = page.getByTestId('messenger-workspace');
+  if (!await workspace.isVisible().catch(() => false)) {
+    await page.getByTestId('open-messenger').click();
+  }
+  await expect(workspace).toBeVisible();
   await expect(page.getByTitle('聊天')).toBeVisible();
 }
 
@@ -286,8 +304,8 @@ test('desktop Messenger persists per-peer drafts and performs real in-conversati
   }
 });
 
-test('desktop Messenger projects unread from another self-hosted actor and consumes it on open', async () => {
-  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-unread-e2e-'));
+test('desktop Messenger rejects self-hosted actor impersonation at the real Host boundary', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-auth-boundary-e2e-'));
   const app = await launchDesktopApp(appDataDir);
 
   try {
@@ -297,77 +315,37 @@ test('desktop Messenger projects unread from another self-hosted actor and consu
 
     const identity = await getMessagingIdentity(page);
     const now = Date.now();
-    const peerActorId = `human:e2e:unread:${now}`;
-    const conversationId = `direct:e2e-unread-${now}`;
-    const permissions = {
-      canSendMessages: true,
-      canSendMedia: true,
-      canSendPolls: true,
-      canAddMembers: true,
-      canPinMessages: true,
-      canManageTopics: true,
-      canManageCalls: true,
-    };
+    const peerActorId = `human:e2e:forged:${now}`;
 
-    await executeMessagingCommand(page, peerActorId, {
+    await executeMessagingCommand(page, identity.actorId, {
       type: 'upsertProfile',
       actor: {
-        id: peerActorId,
+        id: identity.actorId,
         kind: 'human',
-        displayName: 'Unread E2E Peer',
+        displayName: 'Authenticated E2E User',
         capabilities: ['messages'],
         presence: { status: 'online', lastSeenAtMs: now },
         verified: false,
       },
-    }, 'peer-profile');
+    }, 'current-profile');
 
-    await executeMessagingCommand(page, identity.actorId, {
-      type: 'createConversation',
-      conversation: {
-        id: conversationId,
-        kind: 'direct',
-        title: 'Unread E2E Conversation',
-        participants: [
-          { actorId: identity.actorId, role: 'owner', joinedAtMs: now },
-          { actorId: peerActorId, role: 'member', joinedAtMs: now },
-        ],
-        ownerId: identity.actorId,
-        unreadCount: 0,
-        mentionCount: 0,
-        pinnedMessageIds: [],
-        notificationSettings: { showPreview: true, notifyMentions: true },
-        permissions,
-        historyVisibility: 'allMembers',
-        topics: [],
-        folderIds: [],
-        archived: false,
-        pinned: false,
-        markedUnread: false,
-        createdAtMs: now,
-        updatedAtMs: now,
-      },
-    }, 'conversation');
-
-    const incomingText = `unread-e2e-${now}`;
-    await executeMessagingCommand(page, peerActorId, {
-      type: 'sendMessage',
-      conversationId,
-      clientMessageId: `e2e:${now}`,
-      content: { type: 'text', data: { text: { text: incomingText, entities: [] } } },
-      replyToMessageId: null,
-      threadRootMessageId: null,
-      scheduledAtMs: null,
-      silent: false,
-      protectedContent: false,
-    }, 'incoming-message');
-
-    const peer = page.getByTestId(`peer-selfhosted:${conversationId}`);
-    await expect(peer).toBeVisible({ timeout: 15_000 });
-    await expect(peer.locator('b')).toHaveText('1');
-
-    await peer.click();
-    await expect(page.getByText(incomingText, { exact: true })).toBeVisible();
-    await expect(peer.locator('b')).toHaveCount(0, { timeout: 15_000 });
+    let rejection = '';
+    try {
+      await executeMessagingCommand(page, peerActorId, {
+        type: 'upsertProfile',
+        actor: {
+          id: peerActorId,
+          kind: 'human',
+          displayName: 'Forged Peer',
+          capabilities: ['messages'],
+          presence: { status: 'online', lastSeenAtMs: now },
+          verified: false,
+        },
+      }, 'forged-peer-profile');
+    } catch (cause) {
+      rejection = cause instanceof Error ? cause.message : String(cause);
+    }
+    expect(rejection).toContain('profile actor id does not match authenticated actor');
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });

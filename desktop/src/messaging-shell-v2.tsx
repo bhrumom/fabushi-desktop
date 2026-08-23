@@ -617,22 +617,63 @@ function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
       }
       case 'conversationChanged': {
         const conversation = (event as unknown as { conversation: MessagingConversation }).conversation;
-        setSelfConversations((current) => upsertById(current, conversation));
+        setSelfConversations((current) => {
+          const existing = current.find((item) => item.id === conversation.id);
+          return upsertById(current, existing
+            ? {
+                ...conversation,
+                lastReadMessageId: existing.lastReadMessageId,
+                unreadCount: existing.unreadCount,
+                markedUnread: existing.markedUnread,
+              }
+            : conversation);
+        });
         break;
       }
       case 'messageAdded':
       case 'messageChanged': {
         const message = (event as unknown as { message: MessagingMessage }).message;
+        const isActiveConversation = activePeerKeyRef.current === `selfhosted:${message.conversationId}`;
+        const isIncoming = message.senderId !== selfHosted.actorId;
         setSelfMessages((current) => {
           const list = upsertById(current[message.conversationId] ?? [], message)
             .sort((a, b) => a.createdAtMs - b.createdAtMs);
           const next = { ...current, [message.conversationId]: list };
-          if (activePeerKeyRef.current === `selfhosted:${message.conversationId}`) {
+          if (isActiveConversation) {
             setMessages(list.filter((item) => !item.deleted).map(displaySelfMessage));
           }
           return next;
         });
+        if (event.type === 'messageAdded') {
+          setSelfConversations((current) => current.map((conversation) => conversation.id === message.conversationId
+            ? {
+                ...conversation,
+                lastMessageId: message.id,
+                updatedAtMs: Math.max(conversation.updatedAtMs, message.createdAtMs),
+                unreadCount: isIncoming && !isActiveConversation
+                  ? conversation.unreadCount + 1
+                  : conversation.unreadCount,
+              }
+            : conversation));
+          if (isIncoming && isActiveConversation) {
+            void selfHosted.markRead(message.conversationId, message.id).catch(() => {});
+          }
+        }
         setPendingSend(false);
+        break;
+      }
+      case 'readChanged': {
+        const payload = event as unknown as { conversationId: string; actorId: string; messageId: string };
+        if (payload.actorId === selfHosted.actorId) {
+          setSelfConversations((current) => current.map((conversation) => conversation.id === payload.conversationId
+            ? {
+                ...conversation,
+                lastReadMessageId: payload.messageId,
+                unreadCount: 0,
+                markedUnread: false,
+              }
+            : conversation));
+        }
         break;
       }
       case 'messagesDeleted': {
