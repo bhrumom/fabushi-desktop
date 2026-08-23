@@ -120,10 +120,19 @@ async function runJourneyStep(page: Page, step: MahayanaHostJourneyStep): Promis
       });
       return;
     case 'openMiniApp':
-      await page.getByTestId('profile-navigation-trigger').click();
-      await page.getByTitle('Mini Apps', { exact: true }).click();
       if (step.miniAppId === 'global-dharma') {
-        await page.getByRole('button', { name: /全球法布施/ }).last().click();
+        await page.getByTestId('global-search-trigger').click();
+        await page.getByTestId('global-search-tab-apps').click();
+        await page.getByTestId('global-search-input').fill('全球法布施');
+        const appResult = page.getByTestId('global-search-app-global-dharma');
+        await expect(appResult).toBeVisible();
+        const install = appResult.getByRole('button', { name: '安装' });
+        if (await install.isVisible().catch(() => false)) {
+          await install.click();
+        }
+        const open = appResult.getByRole('button', { name: '打开' });
+        await expect(open).toBeVisible();
+        await open.click();
         await expect(page.getByText('Mini App · 受控宿主容器')).toBeVisible();
         await expect(page.locator('iframe[title="global-dharma"]')).toBeVisible();
       } else {

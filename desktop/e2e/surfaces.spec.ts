@@ -63,23 +63,30 @@ async function waitForNativeEventAfterMenu(
   label: string,
   eventName: string,
 ): Promise<Record<string, unknown>> {
-  const waiter = page.evaluate((wantedEvent) => new Promise<Record<string, unknown>>((resolve, reject) => {
-    const native = (window as any).fabushiNative;
+  const probeId = `native-menu-${eventName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  await page.evaluate(({ wantedEvent, id }) => {
+    const target = window as any;
+    const probes = target.__fabushiNativeMenuProbes ??= {};
+    probes[id] = { payload: null };
     let unsubscribe = () => {};
-    const timer = window.setTimeout(() => {
-      unsubscribe();
-      reject(new Error(`Timed out waiting for native event ${wantedEvent}`));
-    }, 5_000);
-    unsubscribe = native.subscribe({
+    unsubscribe = target.fabushiNative.subscribe({
       [wantedEvent]: (payload: Record<string, unknown>) => {
-        window.clearTimeout(timer);
+        probes[id].payload = payload ?? {};
         unsubscribe();
-        resolve(payload ?? {});
       },
     });
-  }), eventName);
+  }, { wantedEvent: eventName, id: probeId });
   await clickApplicationMenuItem(app, label);
-  return waiter;
+  await expect.poll(async () => page.evaluate((id) => {
+    return (window as any).__fabushiNativeMenuProbes?.[id]?.payload ?? null;
+  }, probeId), { timeout: 5_000 }).not.toBeNull();
+  const payload = await page.evaluate((id) => {
+    const target = window as any;
+    const value = target.__fabushiNativeMenuProbes?.[id]?.payload ?? {};
+    if (target.__fabushiNativeMenuProbes) delete target.__fabushiNativeMenuProbes[id];
+    return value;
+  }, probeId) as Record<string, unknown>;
+  return payload;
 }
 
 async function executeHostCommand(page: Page, type: string, extra: Record<string, unknown> = {}) {

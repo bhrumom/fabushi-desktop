@@ -186,13 +186,13 @@ function createNativeCapabilityHandlers(deps) {
   }
 
   async function installedPluginPointers() {
-    const catalog = await host.request('marketplace.browse', { query: '', platform: 'desktop' }).catch(() => []);
+    const catalog = await host.request('feature.marketplace.browse', { query: '', platform: 'desktop' }).catch(() => []);
     const entries = Array.isArray(catalog) ? catalog : Array.isArray(catalog?.plugins) ? catalog.plugins : [];
     const pointers = [];
     for (const entry of entries.slice(0, 200)) {
       const pluginId = cleanString(entry?.id ?? entry?.pluginId, 200);
       if (!pluginId) continue;
-      const pointer = await host.request('plugin.active', { pluginId }).catch(() => null);
+      const pointer = await host.request('feature.plugin.active', { pluginId }).catch(() => null);
       if (pointer) pointers.push({ pluginId, ...pointer });
     }
     return pointers;
@@ -1246,12 +1246,12 @@ function createNativeCapabilityHandlers(deps) {
     },
 
     async getMcpCatalog() {
-      const catalog = await host.request('marketplace.browse', { query: 'mcp', platform: 'desktop' });
+      const catalog = await host.request('feature.marketplace.browse', { query: 'mcp', platform: 'desktop' });
       return Array.isArray(catalog) ? catalog : catalog?.plugins ?? catalog;
     },
 
     async getMcpTeamPopularity() {
-      const catalog = await host.request('marketplace.browse', { query: 'mcp', platform: 'desktop' }).catch(() => []);
+      const catalog = await host.request('feature.marketplace.browse', { query: 'mcp', platform: 'desktop' }).catch(() => []);
       const entries = Array.isArray(catalog) ? catalog : Array.isArray(catalog?.plugins) ? catalog.plugins : [];
       const items = entries
         .map((item) => ({
@@ -1268,7 +1268,7 @@ function createNativeCapabilityHandlers(deps) {
 
     async getMcpPluginLogo(params) {
       const pluginId = cleanString(params.pluginId ?? params.id, 200);
-      const catalog = await host.request('marketplace.browse', { query: pluginId, platform: 'desktop' }).catch(() => []);
+      const catalog = await host.request('feature.marketplace.browse', { query: pluginId, platform: 'desktop' }).catch(() => []);
       const entries = Array.isArray(catalog) ? catalog : catalog?.plugins ?? [];
       const match = entries.find((item) => cleanString(item?.id ?? item?.pluginId, 200) === pluginId) ?? entries[0];
       return match?.logo ?? match?.icon ?? null;
@@ -1278,8 +1278,8 @@ function createNativeCapabilityHandlers(deps) {
       const pluginId = cleanString(params.pluginId ?? params.id ?? params.entry?.id, 200);
       const version = cleanString(params.version ?? params.entry?.version, 100);
       if (!pluginId || !version) throw new Error('Plugin ID and version are required.');
-      const release = params.release ?? await host.request('marketplace.release', { pluginId, version });
-      return host.request('plugin.install', { release, platform: process.platform });
+      const release = params.release ?? await host.request('feature.marketplace.release', { pluginId, version });
+      return host.request('feature.plugin.install', { release, platform: 'desktop' });
     },
 
     updatePluginInstall(params) {
@@ -1296,7 +1296,7 @@ function createNativeCapabilityHandlers(deps) {
     async uninstallPlugin(params) {
       const pluginId = cleanString(params.pluginId ?? params.id, 200);
       if (!pluginId) throw new Error('Plugin ID is required.');
-      return host.request('plugin.uninstall', { pluginId });
+      return host.request('feature.plugin.uninstall', { pluginId });
     },
 
     async authenticateMcpServer(params) {

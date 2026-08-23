@@ -255,7 +255,7 @@ test('desktop Messenger creates a real Bot collaboration group and sends into it
   }
 });
 
-test('installed Mini App opens from the unified Messenger surface', async () => {
+test('online Mini App installs and opens from global Application search', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-miniapp-e2e-'));
   const app = await launchDesktopApp(appDataDir);
 
@@ -269,7 +269,13 @@ test('installed Mini App opens from the unified Messenger surface', async () => 
     await page.getByTestId('global-search-input').fill('全球法布施');
     const appResult = page.getByTestId('global-search-app-global-dharma');
     await expect(appResult).toBeVisible();
-    await appResult.getByRole('button', { name: '打开' }).click();
+    const install = appResult.getByRole('button', { name: '安装' });
+    if (await install.isVisible().catch(() => false)) {
+      await install.click();
+    }
+    const open = appResult.getByRole('button', { name: '打开' });
+    await expect(open).toBeVisible();
+    await open.click();
     await expect(page.getByText('Mini App · 受控宿主容器')).toBeVisible();
     await expect(page.locator('iframe[title="global-dharma"]')).toBeVisible();
   } finally {

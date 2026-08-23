@@ -48,6 +48,39 @@ async function harness(run, options = {}) {
   }
 }
 
+
+test('marketplace native capabilities use canonical Feature Host method names', async () => {
+  const calls = [];
+  const host = {
+    async request(method, params = {}) {
+      calls.push([method, params]);
+      if (method === 'feature.marketplace.browse') {
+        return { plugins: [{ pluginId: 'mcp-demo', displayName: 'MCP Demo', latestVersion: '1.0.0' }] };
+      }
+      if (method === 'feature.marketplace.release') {
+        return { pluginId: params.pluginId, version: params.version, releaseManifest: { pluginId: params.pluginId, version: params.version } };
+      }
+      if (method === 'feature.plugin.active') return null;
+      if (method === 'feature.plugin.install') return { pluginId: 'mcp-demo', version: '1.0.0' };
+      if (method === 'feature.plugin.uninstall') return { pluginId: params.pluginId, removed: true };
+      throw new Error(`unexpected Host method ${method}`);
+    },
+  };
+  await harness(async ({ handlers }) => {
+    const catalog = await handlers.getMcpCatalog({});
+    assert.equal(catalog[0].pluginId, 'mcp-demo');
+    await handlers.getEffectivePlugins({});
+    await handlers.installEntry({ pluginId: 'mcp-demo', version: '1.0.0' });
+    await handlers.uninstallPlugin({ pluginId: 'mcp-demo' });
+  }, { host });
+  assert.ok(calls.some(([method]) => method === 'feature.marketplace.browse'));
+  assert.ok(calls.some(([method]) => method === 'feature.marketplace.release'));
+  assert.ok(calls.some(([method]) => method === 'feature.plugin.active'));
+  assert.ok(calls.some(([method]) => method === 'feature.plugin.install'));
+  assert.ok(calls.some(([method]) => method === 'feature.plugin.uninstall'));
+  assert.equal(calls.some(([method]) => /^(marketplace|plugin)\./.test(method)), false);
+});
+
 test('local tool permission cannot exceed the administrator ceiling', async () => {
   const previous = process.env.FABUSHI_LOCAL_TOOL_PERMISSION_CEILING;
   process.env.FABUSHI_LOCAL_TOOL_PERMISSION_CEILING = 'ask';
