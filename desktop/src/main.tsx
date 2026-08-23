@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import DesktopShellV2 from './messaging-shell-v2';
+import './messenger-layout-regressions.css';
 
 const root = document.querySelector<HTMLDivElement>('#root');
 if (!root) {

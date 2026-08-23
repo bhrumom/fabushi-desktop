@@ -1,0 +1,24 @@
+/*
+ * Layout safety net for the unified Electron Messenger.
+ *
+ * The chat column is a clipped flex container. Flex items default to
+ * min-height:auto, which lets the scrolling message region keep its intrinsic
+ * minimum height and displace the composer below the clipped viewport. These
+ * rules make the chat column and its direct content shrinkable while keeping
+ * the composer itself non-shrinking.
+ */
+[data-testid="messenger-workspace"] > section {
+  min-height: 0;
+}
+
+[data-testid="messenger-workspace"] > section > div {
+  min-height: 0;
+}
+
+[data-testid="messenger-workspace"] form:has(textarea[data-testid="messenger-input"]) {
+  flex: 0 0 auto;
+}
+
+[data-testid="messenger-workspace"] textarea[data-testid="messenger-input"] {
+  min-width: 0;
+}
