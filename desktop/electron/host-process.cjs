@@ -71,6 +71,7 @@ class MahayanaHostProcess {
       env: {
         ...this.env,
         MAHAYANA_API_BASE_URL: productApiBaseUrl(this.app, this.env),
+        MAHAYANA_AUTH_STORAGE_NAMESPACE: this.env.MAHAYANA_AUTH_STORAGE_NAMESPACE || 'fabushi-desktop-v2',
         FABUSHI_APP_DATA: this.app.getPath('userData'),
       },
       windowsHide: true,

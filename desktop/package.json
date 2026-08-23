@@ -67,7 +67,15 @@
       "target": [
         "dmg",
         "zip"
-      ]
+      ],
+      "artifactName": "fabushi-${version}-macos-${arch}.${ext}",
+      "entitlements": "resources/mac/entitlements.plist",
+      "entitlementsInherit": "resources/mac/entitlements.plist",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音消息、语音输入和离线语音识别。",
+        "NSCameraUsageDescription": "全球法布施使用摄像头进行视频通话。"
+      },
+      "icon": "resources/icon.png"
     },
     "win": {
       "target": [
@@ -108,7 +116,10 @@
       "extendInfo": {
         "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音输入和离线语音识别。"
       },
-      "forceCodeSigning": true
-    }
+      "forceCodeSigning": true,
+      "icon": "resources/icon.png"
+    },
+    "afterSign": "scripts/notarize-after-sign.cjs",
+    "copyright": "Copyright © 2026 Fabushi. All rights reserved."
   }
 }
