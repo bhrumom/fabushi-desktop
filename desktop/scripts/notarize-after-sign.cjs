@@ -5,19 +5,123 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-function run(command, args, options = {}) {
+function execute(command, args, options = {}) {
+  const capture = options.capture === true;
   const result = spawnSync(command, args, {
-    stdio: options.capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
-    encoding: options.capture ? 'utf8' : undefined,
+    stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+    encoding: capture ? 'utf8' : undefined,
     env: process.env,
     maxBuffer: 16 * 1024 * 1024,
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    const detail = options.capture ? `\n${result.stderr || result.stdout || ''}` : '';
+    const detail = capture ? `\n${result.stderr || result.stdout || ''}` : '';
     throw new Error(`${command} ${args[0] || ''} failed with exit code ${result.status}${detail}`);
   }
+  return result;
+}
+
+function run(command, args, options = {}) {
+  const result = execute(command, args, options);
   return options.capture ? String(result.stdout || '') : '';
+}
+
+function runWithRetry(command, args, options = {}) {
+  const attempts = Number(options.attempts || 3);
+  const retryDelaySeconds = Number(options.retryDelaySeconds || 3);
+  const label = String(options.label || `${command} ${args[0] || ''}`).trim();
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return run(command, args, options);
+    } catch (error) {
+      lastError = error;
+      if (attempt >= attempts) break;
+      const delay = retryDelaySeconds * attempt;
+      console.warn(`${label} failed on attempt ${attempt}/${attempts}; retrying in ${delay}s.`);
+      run('sleep', [String(delay)]);
+    }
+  }
+  throw lastError;
+}
+
+function codesignDetails(target) {
+  const result = execute('codesign', ['-dv', '--verbose=4', target], { capture: true });
+  return `${result.stdout || ''}\n${result.stderr || ''}`;
+}
+
+function assertCodeIdentifier(target, expected) {
+  const details = codesignDetails(target);
+  const actual = details.match(/^Identifier=(.+)$/m)?.[1]?.trim() || '';
+  if (actual !== expected) {
+    throw new Error(`Unexpected code identifier for ${target}: ${actual || 'missing'} (expected ${expected})`);
+  }
+}
+
+function signWithSecureTimestamp(target, identity, options = {}) {
+  const args = ['--force', '--options', 'runtime', '--timestamp'];
+  if (options.identifier) args.push('--identifier', options.identifier);
+  if (options.entitlements) args.push('--entitlements', options.entitlements);
+  args.push('--sign', identity, target);
+  runWithRetry('codesign', args, {
+    label: `Secure-timestamp signing ${path.basename(target)}`,
+    attempts: 3,
+    retryDelaySeconds: 3,
+  });
+}
+
+function findPackagedAsrBinaries(appPath) {
+  const asrRoot = path.join(appPath, 'Contents', 'Resources', 'asr');
+  if (!fs.existsSync(asrRoot)) return [];
+  const binaries = [];
+  for (const entry of fs.readdirSync(asrRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory() || !entry.name.startsWith('darwin-')) continue;
+    const binary = path.join(asrRoot, entry.name, 'whisper-cli');
+    if (fs.existsSync(binary)) binaries.push(binary);
+  }
+  return binaries;
+}
+
+function restoreCanonicalNestedSignatures(context, appPath) {
+  const identity = String(process.env.MACOS_CODESIGN_IDENTITY || '').trim();
+  if (!identity) {
+    throw new Error('MACOS_CODESIGN_IDENTITY is required to finalize the canonical Developer ID package.');
+  }
+
+  const projectDir = context.packager.projectDir || process.cwd();
+  const entitlements = path.join(projectDir, 'resources', 'mac', 'entitlements.plist');
+  if (!fs.existsSync(entitlements)) throw new Error(`macOS entitlements are missing: ${entitlements}`);
+
+  const host = path.join(appPath, 'Contents', 'Resources', 'bin', 'mahayana-app-host');
+  if (!fs.existsSync(host)) throw new Error(`Packaged Mahayana Host is missing: ${host}`);
+
+  // electron-builder signs nested executables as part of app sealing and may replace
+  // their explicit code identifiers with filename-derived identifiers. Re-apply the
+  // Fabushi-owned identifiers after electron-builder has finished, then reseal the app.
+  signWithSecureTimestamp(host, identity, {
+    identifier: 'com.ombhrum.fabushi.mahayana-app-host',
+  });
+
+  const asrBinaries = findPackagedAsrBinaries(appPath);
+  if (asrBinaries.length === 0) {
+    throw new Error(`Packaged macOS offline ASR executable is missing under ${path.join(appPath, 'Contents', 'Resources', 'asr')}`);
+  }
+  for (const binary of asrBinaries) {
+    signWithSecureTimestamp(binary, identity, {
+      identifier: 'com.ombhrum.fabushi.whisper-cli',
+    });
+  }
+
+  // Re-sign only the outer application after touching nested code. This updates the
+  // application seal while preserving electron-builder's framework/helper signatures.
+  signWithSecureTimestamp(appPath, identity, { entitlements });
+
+  assertCodeIdentifier(host, 'com.ombhrum.fabushi.mahayana-app-host');
+  for (const binary of asrBinaries) {
+    assertCodeIdentifier(binary, 'com.ombhrum.fabushi.whisper-cli');
+  }
+  assertCodeIdentifier(appPath, 'com.ombhrum.fabushi');
+  run('codesign', ['--verify', '--deep', '--strict', '--verbose=2', appPath]);
 }
 
 function notaryCredentials(tempRoot) {
@@ -48,6 +152,8 @@ module.exports = async function notarizeAfterSign(context) {
   const appName = context.packager.appInfo.productFilename;
   const appPath = path.join(context.appOutDir, `${appName}.app`);
   if (!fs.existsSync(appPath)) throw new Error(`Signed macOS app bundle is missing: ${appPath}`);
+
+  restoreCanonicalNestedSignatures(context, appPath);
 
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'fabushi-notary-app-'));
   const zipPath = path.join(tempRoot, 'Fabushi-notary.zip');
