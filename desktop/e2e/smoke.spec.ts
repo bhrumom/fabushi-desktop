@@ -48,7 +48,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     await expect(loginGate).toBeHidden();
   }
   await expect(page.getByTestId('messenger-workspace')).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByTitle('聊天', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('profile-navigation-trigger')).toBeVisible();
 }
 
 async function executeFeature(page: Page, command: Record<string, unknown>) {
@@ -120,6 +120,7 @@ async function runJourneyStep(page: Page, step: MahayanaHostJourneyStep): Promis
       });
       return;
     case 'openMiniApp':
+      await page.getByTestId('profile-navigation-trigger').click();
       await page.getByTitle('Mini Apps', { exact: true }).click();
       if (step.miniAppId === 'global-dharma') {
         await page.getByRole('button', { name: /全球法布施/ }).last().click();
@@ -241,7 +242,7 @@ test('desktop package drives every declared Host journey through the unified Mes
     });
 
     await expect(page.getByTestId('messenger-workspace')).toBeVisible();
-    await expect(page.getByTitle('聊天', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('profile-navigation-trigger')).toBeVisible();
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });

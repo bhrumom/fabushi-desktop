@@ -45,7 +45,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
 async function openMessenger(page: Page): Promise<void> {
   const workspace = page.getByTestId('messenger-workspace');
   await expect(workspace).toBeVisible();
-  await expect(page.getByTitle('聊天')).toBeVisible();
+  await expect(page.getByTestId('profile-navigation-trigger')).toBeVisible();
   await expect(page.getByTestId('open-messenger')).toHaveCount(0);
 }
 
@@ -108,6 +108,8 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
     await completeBrowserLogin(page);
     await openMessenger(page);
 
+    await page.getByTestId('profile-navigation-trigger').click();
+    await expect(page.getByTestId('profile-navigation-menu')).toBeVisible();
     for (const label of [
       '聊天',
       '联系人',
@@ -124,6 +126,24 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
     ]) {
       await expect(page.getByTitle(label, { exact: true })).toBeVisible();
     }
+    await page.getByTestId('profile-navigation-trigger').click();
+
+    const sidebar = page.getByTestId('messenger-sidebar');
+    const expandedBox = await sidebar.boundingBox();
+    expect(expandedBox?.width ?? 0).toBeGreaterThan(200);
+    await page.getByTestId('sidebar-resizer').dblclick();
+    await expect(sidebar).toHaveAttribute('data-collapsed', 'true');
+    const collapsedBox = await sidebar.boundingBox();
+    expect(collapsedBox?.width ?? 999).toBeLessThanOrEqual(112);
+    await page.getByTestId('sidebar-resizer').dblclick();
+    await expect(sidebar).not.toHaveAttribute('data-collapsed', 'true');
+
+    await page.getByTestId('global-search-trigger').click();
+    await expect(page.getByTestId('global-search-surface')).toBeVisible();
+    for (const category of ['chats', 'channels', 'apps', 'posts', 'images', 'videos', 'downloads', 'links', 'files', 'music', 'audio']) {
+      await expect(page.getByTestId(`global-search-tab-${category}`)).toBeVisible();
+    }
+    await page.getByRole('button', { name: '关闭搜索' }).click();
 
     const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
     await expect(assistant).toBeVisible();
@@ -242,8 +262,12 @@ test('installed Mini App opens from the unified Messenger surface', async () => 
     await completeBrowserLogin(page);
 
     await openMessenger(page);
-    await page.getByTitle('Mini Apps').click();
-    await page.getByRole('button', { name: /全球法布施/ }).last().click();
+    await page.getByTestId('global-search-trigger').click();
+    await page.getByTestId('global-search-tab-apps').click();
+    await page.getByTestId('global-search-input').fill('全球法布施');
+    const appResult = page.getByTestId('global-search-app-global-dharma');
+    await expect(appResult).toBeVisible();
+    await appResult.getByRole('button', { name: '打开' }).click();
     await expect(page.getByText('Mini App · 受控宿主容器')).toBeVisible();
     await expect(page.locator('iframe[title="global-dharma"]')).toBeVisible();
   } finally {

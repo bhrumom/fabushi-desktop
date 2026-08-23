@@ -13,7 +13,6 @@ import {
   Image,
   Link2,
   MapPin,
-  Menu,
   MessageCircle,
   Mic,
   MoreVertical,
@@ -142,20 +141,31 @@ type ForwardDialogState = { sourceConversationId: string; message: DisplayMessag
 type EditDialogState = { conversationId: string; messageId: string; originalText: string; text: string } | null;
 type InvoiceDialogState = { conversationId: string; title: string; amount: string } | null;
 type InfoTab = 'media' | 'files' | 'links';
+type SearchCategory = 'chats' | 'channels' | 'apps' | 'posts' | 'images' | 'videos' | 'downloads' | 'links' | 'files' | 'music' | 'audio';
+
+const searchCategories: ReadonlyArray<{ id: SearchCategory; label: string }> = [
+  { id: 'chats', label: '聊天' },
+  { id: 'channels', label: '频道' },
+  { id: 'apps', label: '应用' },
+  { id: 'posts', label: '贴文' },
+  { id: 'images', label: '图片' },
+  { id: 'videos', label: '视频' },
+  { id: 'downloads', label: '下载' },
+  { id: 'links', label: '链接' },
+  { id: 'files', label: '文件' },
+  { id: 'music', label: '音乐' },
+  { id: 'audio', label: '声音' },
+];
 
 const messengerSettingsKey = 'fabushi.desktop.messenger-settings.v2';
 const messengerDraftsKey = 'fabushi.desktop.messenger-drafts.v2';
+const messengerSidebarWidthKey = 'fabushi.desktop.sidebar-width.v3';
 const initialPeerRenderCount = 120;
 const initialMessageRenderCount = 240;
 
 function createTransport(): MahayanaHostTransport {
   if (isElectronMahayanaHostAvailable()) return new ElectronMahayanaHostTransport();
   return new MockMahayanaHostTransport({ authenticated: true });
-}
-
-function avatarText(title: string): string {
-  const value = title.trim();
-  return value ? Array.from(value)[0] ?? '聊' : '聊';
 }
 
 
@@ -356,6 +366,10 @@ function MessengerWorkspace() {
   const [silentSend, setSilentSend] = useState(false);
   const [scheduledAtMs, setScheduledAtMs] = useState<number | undefined>();
   const [search, setSearch] = useState('');
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const [globalSearchCategory, setGlobalSearchCategory] = useState<SearchCategory>('chats');
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(330);
   const [conversationSearchOpen, setConversationSearchOpen] = useState(false);
   const [conversationSearch, setConversationSearch] = useState('');
   const [peerRenderCount, setPeerRenderCount] = useState(initialPeerRenderCount);
@@ -399,6 +413,15 @@ function MessengerWorkspace() {
   useEffect(() => {
     activePeerKeyRef.current = activePeerKey;
   }, [activePeerKey]);
+
+  useEffect(() => {
+    const stored = Number(window.localStorage.getItem(messengerSidebarWidthKey));
+    if (Number.isFinite(stored) && stored >= 84 && stored <= 460) setSidebarWidth(stored);
+  }, []);
+
+  useEffect(() => {
+    try { window.localStorage.setItem(messengerSidebarWidthKey, String(Math.round(sidebarWidth))); } catch { /* best effort */ }
+  }, [sidebarWidth]);
 
   useEffect(() => {
     try {
@@ -541,6 +564,12 @@ function MessengerWorkspace() {
     }, 250);
     return () => window.clearTimeout(timer);
   }, [hostReady, section, miniAppQuery]);
+
+  useEffect(() => {
+    if (!hostReady || !globalSearchOpen || globalSearchCategory !== 'apps') return;
+    const timer = window.setTimeout(() => { void refreshMiniApps(search); }, 250);
+    return () => window.clearTimeout(timer);
+  }, [hostReady, globalSearchOpen, globalSearchCategory, search]);
 
   useEffect(() => {
     if (!hostReady) return;
@@ -1611,45 +1640,63 @@ async function saveInvoiceDialog() {
     }
   }
 
-  return (
-    <main className={`${styles.messenger} ${styles.fabushiUnified}`} data-testid="messenger-workspace" onClick={() => setMessageMenu(null)}>
-      <aside className={styles.navRail}>
-        <button className={styles.railBrand} type="button" onClick={() => setSection('chats')} title="Fabushi">法</button>
-        <RailButton icon={<MessageCircle />} label="聊天" active={section === 'chats'} onClick={() => setSection('chats')} />
-        <RailButton icon={<Users />} label="联系人" active={section === 'contacts'} onClick={() => setSection('contacts')} />
-        <RailButton icon={<Bot />} label="Bots" active={section === 'bots'} onClick={() => setSection('bots')} />
-        <RailButton icon={<Users />} label="群组" active={section === 'groups'} onClick={() => setSection('groups')} />
-        <RailButton icon={<Radio />} label="频道" active={section === 'channels'} onClick={() => setSection('channels')} />
-        <RailButton icon={<Phone />} label="通话" active={section === 'calls'} onClick={() => setSection('calls')} />
-        <RailButton icon={<Bookmark />} label="收藏" active={section === 'saved'} onClick={() => void ensureSavedMessages()} />
-        <RailButton icon={<Archive />} label="归档" active={section === 'archive'} onClick={() => setSection('archive')} />
-        <RailButton icon={<Folder />} label="文件夹" active={section === 'folders'} onClick={() => setSection('folders')} />
-        <div className={styles.railSpacer} />
-        <RailButton icon={<AppWindow />} label="Mini Apps" active={section === 'miniapps'} onClick={() => setSection('miniapps')} />
-        <RailButton icon={<WalletCards />} label="支付" active={section === 'payments'} onClick={() => setSection('payments')} />
-        <RailButton icon={<Settings />} label="设置" active={section === 'settings'} onClick={() => setSection('settings')} />
-      </aside>
 
-      <aside className={styles.chatList}>
+  function startSidebarResize(event: React.PointerEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = sidebarWidth;
+    const onMove = (moveEvent: PointerEvent) => {
+      const next = Math.max(84, Math.min(460, startWidth + moveEvent.clientX - startX));
+      setSidebarWidth(next);
+    };
+    const onUp = (upEvent: PointerEvent) => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      const finalWidth = Math.max(84, Math.min(460, startWidth + upEvent.clientX - startX));
+      setSidebarWidth(finalWidth < 145 ? 88 : finalWidth);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
+  function navigateFromProfile(next: MessengerSection) {
+    setProfileMenuOpen(false);
+    setGlobalSearchOpen(false);
+    if (next === 'saved') {
+      void ensureSavedMessages();
+      return;
+    }
+    setSection(next);
+  }
+
+  return (
+    <main
+      className={`${styles.messenger} ${styles.fabushiUnified}`}
+      data-testid="messenger-workspace"
+      data-sidebar-collapsed={sidebarWidth <= 112 || undefined}
+      style={{ gridTemplateColumns: !globalSearchOpen && infoOpen && activePeer && sectionIsPeerList ? `${sidebarWidth}px minmax(420px,1fr) 286px` : `${sidebarWidth}px minmax(420px,1fr)` }}
+      onClick={() => { setMessageMenu(null); setProfileMenuOpen(false); }}
+    >
+      <aside className={styles.chatList} data-testid="messenger-sidebar" data-collapsed={sidebarWidth <= 112 || undefined} onClick={(event) => event.stopPropagation()}>
         <header className={styles.listHeader}>
-          <button type="button" className={styles.iconButton} aria-label="菜单"><Menu size={19} /></button>
+          <span className={styles.sidebarBrand} title="Fabushi"><BotMark botId="fabushi:brand" state="idle" size={30} label="Fabushi" /></span>
           <strong>{sectionTitle(section)}</strong>
           <button type="button" className={styles.iconButton} aria-label="新建" onClick={() => setNewDialog({ type: 'group', name: '', selectedBotIds: new Set() })}><SquarePen size={18} /></button>
         </header>
-        <label className={styles.searchBox}>
+        <label className={styles.searchBox} data-testid="global-search-trigger" onClick={() => setGlobalSearchOpen(true)}>
           <Search size={16} />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索消息、联系人和 Bot" />
-          {search ? <button type="button" onClick={() => setSearch('')}><X size={14} /></button> : null}
+          <input value={search} onFocus={() => setGlobalSearchOpen(true)} onChange={(event) => setSearch(event.target.value)} placeholder="搜索" />
+          {search ? <button type="button" aria-label="清除搜索" onClick={(event) => { event.stopPropagation(); setSearch(''); }}><X size={14} /></button> : null}
         </label>
-        {['chats', 'contacts'].includes(section) ? <div className={extra.storyStrip}>
+        {['chats', 'contacts'].includes(section) && sidebarWidth > 112 ? <div className={extra.storyStrip}>
           <button type="button" className={extra.storyItem} onClick={() => storyInputRef.current?.click()} title="发布动态">
-            <span className={extra.storyRing} data-own="true">{avatarText('我')}<b>+</b></span><small>我的动态</small>
+            <span className={extra.storyRing} data-own="true"><BotMark botId={`story:self:${selfHosted.actorId || 'local'}`} state="idle" size={40} label="我的动态" /><b>+</b></span><small>我的动态</small>
           </button>
           {visibleStories.map((story) => {
             const actor = selfActors.find((item) => item.id === story.ownerId);
             const name = actor?.displayName ?? (story.ownerId === selfHosted.actorId ? '我' : story.ownerId);
             return <button type="button" className={extra.storyItem} key={story.id} onClick={() => void openStory(story)} title={name}>
-              <span className={extra.storyRing}>{actor?.avatarUrl ? <img src={actor.avatarUrl} alt="" /> : avatarText(name)}</span><small>{name}</small>
+              <span className={extra.storyRing}><BotMark botId={`story:${story.ownerId}`} state="idle" size={40} label={name} /></span><small>{name}</small>
             </button>;
           })}
           <input ref={storyInputRef} type="file" accept="image/*,video/*" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void publishStoryFile(file); }} />
@@ -1662,15 +1709,13 @@ async function saveInvoiceDialog() {
             </div>
             {renderedPeers.map((peer) => (
               <button data-testid={`peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
-                {isAgentPeer(peer) ? (
-                  <BotMark
-                    botId={peer.actorId ?? peer.id}
-                    state={botMarkStateForPeer(peer, selfBotExecutions, peer.key === activePeerKey && pendingSend, hostReady)}
-                    size={48}
-                    className={styles.agentAvatarMark}
-                    label={peer.title}
-                  />
-                ) : <span className={styles.avatar}>{peer.avatar ? <img src={peer.avatar} alt="" /> : avatarText(peer.title)}<i data-kind={peer.kind} /></span>}
+                <BotMark
+                  botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`}
+                  state={isAgentPeer(peer) ? botMarkStateForPeer(peer, selfBotExecutions, peer.key === activePeerKey && pendingSend, hostReady) : peer.unread ? 'notifying' : 'idle'}
+                  size={48}
+                  className={styles.agentAvatarMark}
+                  label={peer.title}
+                />
                 <span className={styles.peerCopy}>
                   <span><strong>{peer.title}</strong><time>{formatTime(peer.updatedAtMs)}</time></span>
                   <small>{peer.subtitle}</small>
@@ -1684,22 +1729,60 @@ async function saveInvoiceDialog() {
         ) : (
           <SectionPanel section={section} onOpenMiniApp={openMiniApp} onInstallMiniApp={installMiniApp} onUninstallMiniApp={uninstallMiniApp} miniApps={marketplaceApps} installedMiniApps={installedMiniApps} miniAppQuery={miniAppQuery} onMiniAppQuery={setMiniAppQuery} miniAppLoading={miniAppLoading} miniAppBusy={miniAppBusy} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} />
         )}
+        <div className={styles.sidebarFooter}>
+          {profileMenuOpen ? <ProfileNavigationMenu section={section} onNavigate={navigateFromProfile} /> : null}
+          <button
+            type="button"
+            className={styles.profileNavigationTrigger}
+            data-testid="profile-navigation-trigger"
+            title="个人与导航"
+            onClick={(event) => { event.stopPropagation(); setProfileMenuOpen((value) => !value); }}
+          >
+            <BotMark botId={`self:${selfHosted.actorId || 'local'}`} state="idle" size={38} label="我的头像" />
+            <span><strong>我</strong><small>导航与设置</small></span>
+          </button>
+        </div>
+        <div
+          className={styles.sidebarResizer}
+          data-testid="sidebar-resizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="调整会话栏宽度"
+          onPointerDown={startSidebarResize}
+          onDoubleClick={() => setSidebarWidth((width) => width <= 112 ? 330 : 88)}
+        />
       </aside>
 
       <section className={styles.chatWorkspace}>
-        {activePeer && sectionIsPeerList ? (
+        {globalSearchOpen ? (
+          <GlobalSearchWorkspace
+            query={search}
+            onQuery={setSearch}
+            category={globalSearchCategory}
+            onCategory={setGlobalSearchCategory}
+            peers={peers}
+            messages={messages}
+            miniApps={marketplaceApps}
+            installedMiniApps={installedMiniApps}
+            miniAppBusy={miniAppBusy}
+            miniAppLoading={miniAppLoading}
+            onOpenPeer={(peer) => { setGlobalSearchOpen(false); setSearch(''); setSection(peer.kind === 'channel' ? 'channels' : 'chats'); void openPeer(peer); }}
+            onOpenMiniApp={openMiniApp}
+            onInstallMiniApp={installMiniApp}
+            onUninstallMiniApp={uninstallMiniApp}
+            onClose={() => { setGlobalSearchOpen(false); setSearch(''); }}
+          />
+        ) : activePeer && sectionIsPeerList ? (
           <>
             <header className={styles.chatHeader}>
               <div className={styles.chatIdentity}>
-                {isAgentPeer(activePeer) ? (
-                  <BotMark
-                    botId={activePeer.actorId ?? activePeer.id}
-                    state={botMarkStateForPeer(activePeer, selfBotExecutions, pendingSend, hostReady)}
-                    size={40}
-                    className={styles.agentAvatarMark}
-                    label={activePeer.title}
-                  />
-                ) : <span className={styles.avatar}>{avatarText(activePeer.title)}<i data-kind={activePeer.kind} /></span>}
+                <BotMark
+                  botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+                  state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, pendingSend, hostReady) : 'idle'}
+                  size={40}
+                  className={styles.agentAvatarMark}
+                  label={activePeer.title}
+                />
                 <div><strong>{activePeer.title}</strong><small data-testid="conversation-status">{activeTypingActors.length ? '正在输入…' : `${activePeer.subtitle}${hostReady ? ' · 在线' : ' · 正在连接'}`}</small></div>
               </div>
               <div className={styles.headerActions}>
@@ -1736,7 +1819,7 @@ async function saveInvoiceDialog() {
                   <small>{formatTime(message.createdAtMs)} {message.role === 'me' ? <Check size={12} /> : null}</small>
                 </article>
               ))}
-              {!matchingMessages.length ? <div className={styles.chatEmpty} data-testid="message-search-empty">{isAgentPeer(activePeer) ? <BotMark botId={activePeer.actorId ?? activePeer.id} state={botMarkStateForPeer(activePeer, selfBotExecutions, false, hostReady)} size={78} className={styles.agentAvatarMark} label={activePeer.title} /> : <span className={styles.avatarLarge}>{avatarText(activePeer.title)}</span>}<strong>{conversationQuery ? '没有匹配消息' : activePeer.title}</strong><p>{conversationQuery ? '换一个关键词继续搜索。' : '联系人、AI Bot、群组和频道使用同一个 Fabushi 消息产品层。'}</p></div> : null}
+              {!matchingMessages.length ? <div className={styles.chatEmpty} data-testid="message-search-empty"><BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, false, hostReady) : 'idle'} size={78} className={styles.agentAvatarMark} label={activePeer.title} /><strong>{conversationQuery ? '没有匹配消息' : activePeer.title}</strong><p>{conversationQuery ? '换一个关键词继续搜索。' : '联系人、AI Bot、群组和频道使用同一个 Fabushi 消息产品层。'}</p></div> : null}
             </div>
             {replyTo ? <div className={extra.composerBanner}><Reply size={15} /><div><strong>回复</strong><span>{replyTo.text}</span></div><button type="button" onClick={() => setReplyTo(null)}><X size={14} /></button></div> : null}
             {scheduledAtMs ? <div className={extra.composerBanner}><span>⏱</span><div><strong>定时发送</strong><span>{new Date(scheduledAtMs).toLocaleString()}</span></div><button type="button" onClick={() => setScheduledAtMs(undefined)}><X size={14} /></button></div> : null}
@@ -1763,11 +1846,11 @@ async function saveInvoiceDialog() {
         )}
       </section>
 
-      {infoOpen && activePeer && sectionIsPeerList ? (
+      {!globalSearchOpen && infoOpen && activePeer && sectionIsPeerList ? (
         <aside className={styles.infoPanel}>
           <header><strong>资料</strong><button type="button" onClick={() => setInfoOpen(false)}><X size={17} /></button></header>
           <div className={styles.profileCard}>
-            {isAgentPeer(activePeer) ? <BotMark botId={activePeer.actorId ?? activePeer.id} state={botMarkStateForPeer(activePeer, selfBotExecutions, pendingSend, hostReady)} size={92} className={styles.agentProfileMark} label={activePeer.title} /> : <span className={styles.avatarHuge}>{avatarText(activePeer.title)}</span>}
+            <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, pendingSend, hostReady) : 'idle'} size={92} className={styles.agentProfileMark} label={activePeer.title} />
             <strong>{activePeer.title}</strong><small>{activePeer.subtitle}</small>
             <div><button type="button" onClick={() => void startCall('voice')}><PhoneCall size={18} /><span>通话</span></button><button type="button" onClick={() => void startCall('video')}><Video size={18} /><span>视频</span></button><button type="button" onClick={() => setConversationSearchOpen(true)}><Search size={18} /><span>搜索</span></button></div>
           </div>
@@ -1795,8 +1878,89 @@ async function saveInvoiceDialog() {
   );
 }
 
-function RailButton({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
-  return <button type="button" data-active={active} onClick={onClick} title={label}><span>{icon}</span><small>{label}</small></button>;
+function ProfileNavigationMenu({ section, onNavigate }: { section: MessengerSection; onNavigate: (section: MessengerSection) => void }) {
+  const items: Array<{ section: MessengerSection; label: string; icon: React.ReactNode }> = [
+    { section: 'chats', label: '聊天', icon: <MessageCircle size={17} /> },
+    { section: 'contacts', label: '联系人', icon: <Users size={17} /> },
+    { section: 'bots', label: 'Bots', icon: <Bot size={17} /> },
+    { section: 'groups', label: '群组', icon: <Users size={17} /> },
+    { section: 'channels', label: '频道', icon: <Radio size={17} /> },
+    { section: 'calls', label: '通话', icon: <Phone size={17} /> },
+    { section: 'saved', label: '收藏', icon: <Bookmark size={17} /> },
+    { section: 'archive', label: '归档', icon: <Archive size={17} /> },
+    { section: 'folders', label: '文件夹', icon: <Folder size={17} /> },
+    { section: 'miniapps', label: 'Mini Apps', icon: <AppWindow size={17} /> },
+    { section: 'payments', label: '支付', icon: <WalletCards size={17} /> },
+    { section: 'settings', label: '设置', icon: <Settings size={17} /> },
+  ];
+  return <div className={styles.profileNavigationMenu} data-testid="profile-navigation-menu" onClick={(event) => event.stopPropagation()}>
+    <header><BotMark botId="fabushi:navigation" state="idle" size={34} label="Fabushi" /><div><strong>Fabushi</strong><small>统一导航</small></div></header>
+    <div>{items.map((item) => <button key={item.section} type="button" title={item.label} data-active={section === item.section} onClick={() => onNavigate(item.section)}>{item.icon}<span>{item.label}</span></button>)}</div>
+  </div>;
+}
+
+type GlobalSearchWorkspaceProps = {
+  query: string;
+  onQuery: (value: string) => void;
+  category: SearchCategory;
+  onCategory: (value: SearchCategory) => void;
+  peers: PeerItem[];
+  messages: DisplayMessage[];
+  miniApps: MarketplacePluginSummary[];
+  installedMiniApps: Record<string, InstalledPluginPointer>;
+  miniAppBusy: Set<string>;
+  miniAppLoading: boolean;
+  onOpenPeer: (peer: PeerItem) => void;
+  onOpenMiniApp: (id: string) => Promise<void>;
+  onInstallMiniApp: (app: MarketplacePluginSummary) => Promise<void>;
+  onUninstallMiniApp: (id: string) => Promise<void>;
+  onClose: () => void;
+};
+
+function GlobalSearchWorkspace(props: GlobalSearchWorkspaceProps) {
+  const normalized = props.query.trim().toLocaleLowerCase();
+  const matches = (value: string) => !normalized || value.toLocaleLowerCase().includes(normalized);
+  const peerResults = props.peers.filter((peer) => matches(`${peer.title} ${peer.subtitle}`));
+  const messageResults = props.messages.filter((message) => matches(message.text));
+  const mediaResults = messageResults.filter((message) => {
+    if (props.category === 'images') return message.mediaType === 'photo';
+    if (props.category === 'videos') return message.mediaType === 'video';
+    if (props.category === 'files' || props.category === 'downloads') return message.mediaType === 'document';
+    if (props.category === 'links') return /https?:\/\//iu.test(message.text);
+    return props.category === 'posts';
+  });
+  const appResults = props.miniApps.filter((app) => matches(`${app.displayName} ${app.description} ${app.pluginId}`));
+  const unsupportedMediaCategory = props.category === 'music' || props.category === 'audio';
+
+  return <div className={styles.globalSearch} data-testid="global-search-surface">
+    <header className={styles.globalSearchHeader}>
+      <label><Search size={20} /><input data-testid="global-search-input" value={props.query} onChange={(event) => props.onQuery(event.target.value)} placeholder="搜索聊天、频道、应用、文件…" autoFocus />{props.query ? <button type="button" aria-label="清除搜索" onClick={() => props.onQuery('')}><X size={18} /></button> : null}</label>
+      <button type="button" aria-label="关闭搜索" onClick={props.onClose}><X size={20} /></button>
+    </header>
+    <nav className={styles.globalSearchTabs} aria-label="搜索分类">
+      {searchCategories.map((item) => <button key={item.id} type="button" data-testid={`global-search-tab-${item.id}`} data-active={props.category === item.id} onClick={() => props.onCategory(item.id)}>{item.label}</button>)}
+    </nav>
+    <div className={styles.globalSearchResults}>
+      {props.category === 'chats' ? peerResults.filter((peer) => peer.kind !== 'channel').map((peer) => <button key={peer.key} type="button" className={styles.searchResultRow} onClick={() => props.onOpenPeer(peer)}><BotMark botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`} state="idle" size={46} label={peer.title} /><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><time>{formatTime(peer.updatedAtMs)}</time></button>) : null}
+      {props.category === 'channels' ? peerResults.filter((peer) => peer.kind === 'channel').map((peer) => <button key={peer.key} type="button" className={styles.searchResultRow} onClick={() => props.onOpenPeer(peer)}><BotMark botId={`peer:channel:${peer.id}`} state="idle" size={46} label={peer.title} /><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><time>{formatTime(peer.updatedAtMs)}</time></button>) : null}
+      {props.category === 'apps' ? <div className={styles.searchAppResults}>{props.miniAppLoading ? <div className={styles.marketplaceStatus}>正在搜索在线应用市场…</div> : appResults.map((app) => {
+        const installed = props.installedMiniApps[app.pluginId];
+        const busy = props.miniAppBusy.has(app.pluginId);
+        const update = Boolean(installed && installed.version !== app.latestVersion);
+        return <article key={app.pluginId} className={styles.searchAppCard} data-testid={`global-search-app-${app.pluginId}`}><BotMark botId={`miniapp:${app.pluginId}`} state={installed ? 'idle' : 'sleeping'} size={52} label={app.displayName} /><div><strong>{app.displayName}</strong><small>{app.description}</small><em>{installed ? `已安装 ${installed.version}` : `在线 · ${app.latestVersion}`}</em></div><aside>{installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}{!installed || update ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中' : update ? '更新' : '安装'}</button> : null}{installed ? <button type="button" disabled={busy} onClick={() => void props.onUninstallMiniApp(app.pluginId)}>卸载</button> : null}</aside></article>;
+      })}</div> : null}
+      {['posts', 'images', 'videos', 'downloads', 'links', 'files'].includes(props.category) ? mediaResults.map((message) => <article key={message.id} className={styles.searchMessageResult}><BotMark botId={`search-message:${message.id}`} state="idle" size={38} label="消息" /><div><p>{message.text || (message.mediaType === 'photo' ? '图片' : message.mediaType === 'video' ? '视频' : '文件')}</p><small>{new Date(message.createdAtMs).toLocaleString()}</small></div></article>) : null}
+      {unsupportedMediaCategory ? <SearchEmptyState label="当前会话尚无可搜索的音频索引" /> : null}
+      {props.category === 'chats' && !peerResults.filter((peer) => peer.kind !== 'channel').length ? <SearchEmptyState label={normalized ? '没有匹配的聊天' : '最近搜索结果将显示在此处'} /> : null}
+      {props.category === 'channels' && !peerResults.filter((peer) => peer.kind === 'channel').length ? <SearchEmptyState label={normalized ? '没有匹配的频道' : '最近搜索结果将显示在此处'} /> : null}
+      {props.category === 'apps' && !props.miniAppLoading && !appResults.length ? <SearchEmptyState label="没有匹配的在线应用" /> : null}
+      {['posts', 'images', 'videos', 'downloads', 'links', 'files'].includes(props.category) && !mediaResults.length ? <SearchEmptyState label={normalized ? '当前已加载内容中没有匹配结果' : '最近搜索结果将显示在此处'} /> : null}
+    </div>
+  </div>;
+}
+
+function SearchEmptyState({ label }: { label: string }) {
+  return <div className={styles.globalSearchEmpty}><Search size={58} /><strong>{label}</strong><small>输入关键词或切换分类继续搜索。</small></div>;
 }
 
 function EmptyList({ section }: { section: MessengerSection }) {
@@ -1830,7 +1994,7 @@ function ForwardMessageDialog({ message, peers, onClose, onSelect }: { message: 
   return <div className={styles.backdrop} onMouseDown={onClose}><section className={styles.dialog} onMouseDown={(event) => event.stopPropagation()}>
     <header><div><strong>转发消息</strong><small>{message.text || '媒体消息'}</small></div><button type="button" onClick={onClose}><X size={17} /></button></header>
     <div className={extra.forwardList}>
-      {peers.length ? peers.map((peer) => <button key={peer.key} type="button" onClick={() => onSelect(peer)}><span className={styles.avatar}>{avatarText(peer.title)}</span><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><Forward size={16} /></button>) : <p>暂无可转发的自建会话，请先创建群组、频道或收藏消息。</p>}
+      {peers.length ? peers.map((peer) => <button key={peer.key} type="button" onClick={() => onSelect(peer)}><BotMark botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`} state="idle" size={40} label={peer.title} /><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><Forward size={16} /></button>) : <p>暂无可转发的自建会话，请先创建群组、频道或收藏消息。</p>}
     </div>
   </section></div>;
 }
@@ -1866,7 +2030,7 @@ function NewConversationDialog({ dialog, bots, onChange, onClose, onSave }: { di
         const selectedBotIds = new Set(current.selectedBotIds);
         if (selectedBotIds.has(bot.id)) selectedBotIds.delete(bot.id); else selectedBotIds.add(bot.id);
         return { ...current, selectedBotIds };
-      })}><span className={styles.avatarSmall}>{avatarText(bot.name)}</span><div><strong>{bot.name}</strong><small>{bot.description}</small></div>{selected ? <Check size={16} /> : <Plus size={16} />}</button>;
+      })}><BotMark botId={`bot:${bot.id}`} state="idle" size={34} label={bot.name} /><div><strong>{bot.name}</strong><small>{bot.description}</small></div>{selected ? <Check size={16} /> : <Plus size={16} />}</button>;
     })}</div> : null}
     <footer><button type="button" onClick={onClose}>取消</button><button type="button" className={styles.primaryButton} disabled={!dialog.name.trim() || (dialog.type === 'group' && dialog.selectedBotIds.size === 0)} onClick={onSave}>{dialog.type === 'group' ? '创建群组' : '创建频道'}</button></footer>
   </section></div>;
@@ -1988,7 +2152,7 @@ function StoryViewer({ story, owner, own, onClose, onReact, onDelete }: { story:
   const isVideo = story.media.mimeType?.startsWith('video/') === true;
   return <div className={extra.storyBackdrop} onMouseDown={onClose}>
     <section className={extra.storyViewer} onMouseDown={(event) => event.stopPropagation()}>
-      <header><span className={styles.avatar}>{owner?.avatarUrl ? <img src={owner.avatarUrl} alt="" /> : avatarText(owner?.displayName ?? story.ownerId)}</span><div><strong>{owner?.displayName ?? story.ownerId}</strong><small>{new Date(story.createdAtMs).toLocaleString()}</small></div><button type="button" onClick={onClose}><X size={18} /></button></header>
+      <header><BotMark botId={`story:${story.ownerId}`} state="idle" size={40} label={owner?.displayName ?? story.ownerId} /><div><strong>{owner?.displayName ?? story.ownerId}</strong><small>{new Date(story.createdAtMs).toLocaleString()}</small></div><button type="button" onClick={onClose}><X size={18} /></button></header>
       <div className={extra.storyMedia}>{source ? isVideo ? <video src={source} autoPlay controls playsInline /> : <img src={source} alt={story.caption.text || 'Story'} /> : <span>媒体不可用</span>}</div>
       {story.caption.text ? <p>{story.caption.text}</p> : null}
       <footer>{['👍', '❤️', '🔥', '🙏'].map((reaction) => <button key={reaction} type="button" onClick={() => onReact(reaction)}>{reaction}</button>)}{own ? <button type="button" onClick={onDelete}><Trash2 size={16} />删除</button> : null}</footer>
@@ -2031,7 +2195,7 @@ function CallDialog({
           ? '通话连接失败'
           : '通话已结束';
   return <div className={styles.backdrop}><section className={styles.callDialog}>
-    <header><span className={styles.avatarHuge}>{avatarText(call.title)}</span><strong>{call.title}</strong><small>{statusText}</small></header>
+    <header><BotMark botId={`call:${call.title}`} state={call.status === "connected" ? "speaking" : "listening"} size={78} label={call.title} /><strong>{call.title}</strong><small>{statusText}</small></header>
     {call.kind === 'video' ? <div className={extra.callVideoStage}><video ref={remoteVideoRef} autoPlay playsInline className={extra.remoteVideo} /><video ref={localVideoRef} autoPlay muted playsInline className={extra.localVideoPip} /></div> : <audio ref={remoteAudioRef} autoPlay />}
     {call.error ? <p>{call.error}</p> : null}
     {canAccept && call.incoming && call.status === 'ringing' ? <div className={styles.callActions}><button type="button" onClick={onDecline} className={styles.hangup}><Phone size={20} /></button><button type="button" onClick={onAccept}><PhoneCall size={20} /></button></div> : <div className={styles.callActions}>
@@ -2104,7 +2268,7 @@ function MiniAppMarketplaceList(props: MiniAppMarketplaceProps) {
       const busy = props.miniAppBusy.has(app.pluginId);
       const update = Boolean(installed && installed.version !== app.latestVersion);
       return <div className={styles.marketplaceRow} key={app.pluginId} data-testid={`miniapp-market-${app.pluginId}`}>
-        <span className={styles.appIcon}><AppWindow size={18} /></span>
+        <span className={styles.appIcon}><BotMark botId={`miniapp:${app.pluginId}`} state={installed ? "idle" : "sleeping"} size={34} label={app.displayName} /></span>
         <div className={styles.marketplaceCopy}><strong>{app.displayName}</strong><small>{app.description}</small><em>{installed ? `已安装 ${installed.version}` : `在线 · ${app.latestVersion}`}</em></div>
         <div className={styles.marketplaceActions}>
           {installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}
@@ -2128,7 +2292,7 @@ function MiniAppMarketplaceWorkspace(props: MiniAppMarketplaceProps) {
       const busy = props.miniAppBusy.has(app.pluginId);
       const update = Boolean(installed && installed.version !== app.latestVersion);
       return <article className={styles.marketplaceCard} key={app.pluginId}>
-        <AppWindow size={24} />
+        <BotMark botId={`miniapp:${app.pluginId}`} state={installed ? "idle" : "sleeping"} size={48} label={app.displayName} />
         <strong>{app.displayName}</strong>
         <small>{app.description}</small>
         <em>{installed ? `已安装 ${installed.version}` : `线上版本 ${app.latestVersion}`}</em>

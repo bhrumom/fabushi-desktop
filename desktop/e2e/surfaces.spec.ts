@@ -153,6 +153,8 @@ test('installed desktop exposes unified Messenger, native menu routing, browser 
     await test.step('Telegram-class navigation and Grok/Fabushi agent identity share one shell', async () => {
       await expect(page.getByTestId('messenger-workspace')).toBeVisible();
       await expect(page.locator('.desktop-mode-switch')).toHaveCount(0);
+      await page.getByTestId('profile-navigation-trigger').click();
+      await expect(page.getByTestId('profile-navigation-menu')).toBeVisible();
       for (const label of ['聊天', '联系人', 'Bots', '群组', '频道', '通话', '收藏', '归档', '文件夹', 'Mini Apps', '支付', '设置']) {
         await expect(page.getByTitle(label, { exact: true })).toBeVisible();
       }
