@@ -614,11 +614,30 @@ function installNativeEdge() {
   });
 }
 
+async function authorizeMahayanaParams(method, params) {
+  const normalized = normalizeParams(params);
+  if (method !== 'feature.execute') return normalized;
+  const command = normalized.command;
+  if (!command || command.type !== 'messaging.execute') return normalized;
+  const context = command.envelope?.context;
+  const deviceId = String(context?.deviceId || '').trim();
+  const sessionId = String(context?.sessionId || '').trim();
+  const actorId = String(context?.actorId || '').trim();
+  if (!deviceId || !sessionId || !actorId) {
+    throw new Error('Messaging envelope requires account-bound actor, device, and session identity.');
+  }
+  const credential = await getOrIssueMessagingAccess({ deviceId, sessionId }, ['messaging']);
+  if (String(credential.actorId || '') !== actorId) {
+    throw new Error('Messaging envelope actor does not match authenticated account.');
+  }
+  return normalized;
+}
+
 function installMahayanaEdge() {
   const handlers = Object.fromEntries(
     Object.keys(MAHAYANA_EDGE.methods).map((method) => [
       method,
-      async (params) => host.request(method, normalizeParams(params)),
+      async (params) => host.request(method, await authorizeMahayanaParams(method, params)),
     ]),
   );
 

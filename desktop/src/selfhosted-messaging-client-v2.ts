@@ -456,6 +456,7 @@ export class SelfHostedMessagingClientV2 {
   }
 
   async ensureCurrentActor(displayName = '当前用户'): Promise<void> {
+    await this.ensureNativeIdentity();
     await this.ensureActor({
       id: this.actorId,
       kind: 'human',

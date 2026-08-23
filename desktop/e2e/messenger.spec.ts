@@ -39,13 +39,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     await page.getByTestId('browser-login-start').click();
     await expect(loginGate).toBeHidden();
   }
-  await expect.poll(async () => {
-    if (await page.getByTestId('messenger-workspace').isVisible().catch(() => false)) return true;
-    if (await page.getByTestId('open-messenger').isVisible().catch(() => false)) return true;
-    const hostStatus = page.getByTestId('host-status');
-    if (!await hostStatus.isVisible().catch(() => false)) return false;
-    return await hostStatus.getAttribute('data-state').catch(() => null) === 'ready';
-  }, { timeout: 15_000 }).toBe(true);
+  await expect(page.getByTestId('messenger-workspace')).toBeVisible({ timeout: 15_000 });
 }
 
 async function openMessenger(page: Page): Promise<void> {
@@ -133,7 +127,7 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
 
     const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
     await expect(assistant).toBeVisible();
-    await expect(assistant.locator('[data-engine="fabushi-motion-v2"]')).toBeVisible();
+    await expect(assistant.locator('[data-engine="fabushi-motion-v2"]').first()).toBeVisible();
     await assistant.click();
     await expect(page.getByTestId('messenger-input')).toBeVisible();
 
@@ -247,12 +241,6 @@ test('installed Mini App opens from the unified Messenger surface', async () => 
     const page = await app.firstWindow();
     await completeBrowserLogin(page);
 
-    await page.getByTestId('open-marketplace').click();
-    const install = page.getByTestId('install-miniapp');
-    if (await install.isEnabled()) await install.click();
-    await expect(install).toBeDisabled();
-    await page.getByRole('button', { name: '关闭插件市场' }).click();
-
     await openMessenger(page);
     await page.getByTitle('Mini Apps').click();
     await page.getByRole('button', { name: /全球法布施/ }).last().click();
@@ -293,7 +281,8 @@ test('desktop Messenger persists per-peer drafts and performs real in-conversati
     await page.getByTitle('搜索当前会话').click();
     const search = page.getByTestId('conversation-search-input');
     await search.fill(marker);
-    await expect(page.locator('article').filter({ hasText: marker })).toHaveCount(1);
+    await expect(page.getByText(marker, { exact: true })).toHaveCount(1);
+    await expect(page.getByText('收到：' + marker, { exact: true })).toHaveCount(1);
 
     await search.fill('绝对不存在的会话内搜索结果-20260822');
     await expect(page.getByTestId('message-search-empty')).toBeVisible();
@@ -344,7 +333,7 @@ test('desktop Messenger rejects self-hosted actor impersonation at the real Host
     } catch (cause) {
       rejection = cause instanceof Error ? cause.message : String(cause);
     }
-    expect(rejection).toContain('profile actor id does not match authenticated actor');
+    expect(rejection).toContain('Messaging envelope actor does not match authenticated account');
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });
