@@ -176,6 +176,60 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
   }
 });
 
+test('Telegram-inspired settings bind supported preferences and persist fast-start projection', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-settings-e2e-'));
+  const app = await launchDesktopApp(appDataDir);
+
+  try {
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMessenger(page);
+
+    await page.getByTestId('profile-navigation-trigger').click();
+    await page.getByTitle('设置', { exact: true }).click();
+    await expect(page.getByTestId('telegram-settings-navigation')).toBeVisible();
+    await expect(page.getByTestId('telegram-settings-workspace')).toBeVisible();
+
+    for (const category of ['account', 'notifications', 'privacy', 'data', 'chat', 'folders', 'devices', 'calls', 'language', 'advanced', 'fabushi']) {
+      await expect(page.getByTestId(`settings-category-${category}`)).toBeVisible();
+    }
+
+    await page.getByTestId('settings-category-chat').click();
+    await expect(page.getByText('Enter 发送消息')).toBeVisible();
+    await expect(page.getByText('显示资料侧栏')).toBeVisible();
+    await expect(page.getByText('减少动态效果')).toBeVisible();
+    await page.getByTestId('settings-toggle-reduced-motion').check();
+    await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-reduce-motion', 'true');
+
+    const preferences = await page.evaluate(() => JSON.parse(localStorage.getItem('fabushi.desktop.telegram-settings.v1') || '{}'));
+    expect(preferences.reducedMotion).toBe(true);
+
+    await page.getByTestId('profile-navigation-trigger').click();
+    await page.getByTitle('聊天', { exact: true }).click();
+    await page.getByRole('button', { name: '新建', exact: true }).click();
+    await page.getByRole('button', { name: '新建频道' }).click();
+    await page.getByPlaceholder('频道名称').fill('本地优先投影验收');
+    await page.getByPlaceholder('频道简介').fill('Telegram-style local-first');
+    await page.getByRole('button', { name: '创建频道' }).click();
+    const channelPeer = page.locator('[data-testid^="peer-selfhosted:channel:"]').filter({ hasText: '本地优先投影验收' }).first();
+    await expect(channelPeer).toBeVisible();
+    await channelPeer.click();
+
+    await expect.poll(async () => page.evaluate(() => {
+      const projection = JSON.parse(localStorage.getItem('fabushi.desktop.messenger-projection.v1') || 'null');
+      return Boolean(projection?.activePeerKey?.startsWith('selfhosted:') && projection?.selfConversations?.some((item: { title?: string }) => item.title === '本地优先投影验收'));
+    }), { timeout: 5_000 }).toBe(true);
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByTestId('messenger-workspace')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-testid-ready-projection', 'true');
+    await expect(page.getByText('本地优先投影验收').first()).toBeVisible();
+  } finally {
+    await app.close();
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
 test('desktop Messenger creates a self-hosted channel and executes message mutation commands', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-channel-e2e-'));
   const app = await launchDesktopApp(appDataDir);

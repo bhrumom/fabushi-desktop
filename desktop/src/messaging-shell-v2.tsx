@@ -145,6 +145,26 @@ type EditDialogState = { conversationId: string; messageId: string; originalText
 type InvoiceDialogState = { conversationId: string; title: string; amount: string } | null;
 type InfoTab = 'media' | 'files' | 'links';
 type SearchCategory = 'chats' | 'channels' | 'apps' | 'posts' | 'images' | 'videos' | 'downloads' | 'links' | 'files' | 'music' | 'audio';
+type SettingsCategory = 'account' | 'notifications' | 'privacy' | 'data' | 'chat' | 'folders' | 'devices' | 'calls' | 'language' | 'advanced' | 'fabushi';
+
+type DesktopMessengerPreferences = {
+  showInfoPanel: boolean;
+  messagePreview: boolean;
+  autoPlayMedia: boolean;
+  enterToSend: boolean;
+  reducedMotion: boolean;
+};
+
+type MessengerProjection = {
+  version: 1;
+  savedAtMs: number;
+  actorId?: string;
+  cursor?: string | null;
+  activePeerKey?: string | null;
+  selfActors: MessagingActor[];
+  selfConversations: MessagingConversation[];
+  selfMessages: Record<string, MessagingMessage[]>;
+};
 
 const searchCategories: ReadonlyArray<{ id: SearchCategory; label: string }> = [
   { id: 'chats', label: '聊天' },
@@ -163,8 +183,51 @@ const searchCategories: ReadonlyArray<{ id: SearchCategory; label: string }> = [
 const messengerSettingsKey = 'fabushi.desktop.messenger-settings.v2';
 const messengerDraftsKey = 'fabushi.desktop.messenger-drafts.v2';
 const messengerSidebarWidthKey = 'fabushi.desktop.sidebar-width.v3';
+const messengerProjectionKey = 'fabushi.desktop.messenger-projection.v1';
+const messengerPreferencesKey = 'fabushi.desktop.telegram-settings.v1';
 const initialPeerRenderCount = 120;
 const initialMessageRenderCount = 240;
+const initialSyncLimit = 20;
+const backgroundSyncLimit = 100;
+const projectionConversationLimit = 80;
+const projectionMessageLimit = 80;
+
+const defaultDesktopMessengerPreferences: DesktopMessengerPreferences = {
+  showInfoPanel: true,
+  messagePreview: true,
+  autoPlayMedia: false,
+  enterToSend: true,
+  reducedMotion: false,
+};
+
+function readMessengerProjection(): MessengerProjection | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(messengerProjectionKey) || 'null') as MessengerProjection | null;
+    if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.selfConversations) || !parsed.selfMessages) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function readDesktopMessengerPreferences(): DesktopMessengerPreferences {
+  if (typeof window === 'undefined') return defaultDesktopMessengerPreferences;
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(messengerPreferencesKey) || '{}') as Partial<DesktopMessengerPreferences>;
+    return { ...defaultDesktopMessengerPreferences, ...stored };
+  } catch {
+    return defaultDesktopMessengerPreferences;
+  }
+}
+
+function persistMessengerProjection(projection: MessengerProjection): void {
+  try {
+    window.localStorage.setItem(messengerProjectionKey, JSON.stringify(projection));
+  } catch {
+    // Fast-start projection is best effort; Rust SQLite remains authoritative.
+  }
+}
 
 function createTransport(): MahayanaHostTransport {
   if (isElectronMahayanaHostAvailable()) return new ElectronMahayanaHostTransport();
@@ -320,6 +383,7 @@ function upsertById<T extends { id: string }>(items: T[], item: T): T[] {
 
 export default function DesktopShellV2() {
   const authTransport = useMemo(() => createTransport(), []);
+  const [hasReturningProjection] = useState(() => Boolean(readMessengerProjection()));
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -345,24 +409,26 @@ export default function DesktopShellV2() {
     };
   }, [authTransport]);
 
+  const showMessenger = authenticated === true || (authenticated === null && hasReturningProjection);
   return (
-    <div className={styles.desktopRoot} data-testid="desktop-shell">
-      {authenticated === true ? <MessengerWorkspace /> : <HostClient />}
+    <div className={styles.desktopRoot} data-testid="desktop-shell" data-local-first={showMessenger && authenticated === null ? 'true' : undefined}>
+      {showMessenger ? <MessengerWorkspace /> : <HostClient />}
     </div>
   );
 }
 
 function MessengerWorkspace() {
   const transport = useMemo(() => createTransport(), []);
-  const selfHosted = useMemo(() => new SelfHostedMessagingClientV2(transport), [transport]);
+  const startupProjection = useMemo(() => readMessengerProjection(), []);
+  const selfHosted = useMemo(() => new SelfHostedMessagingClientV2(transport, { actorId: startupProjection?.actorId }), [transport, startupProjection]);
   const [hostReady, setHostReady] = useState(false);
   const [section, setSection] = useState<MessengerSection>('chats');
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [bots, setBots] = useState<BotSummary[]>([]);
   const [groups, setGroups] = useState<GroupSummary[]>([]);
-  const [selfActors, setSelfActors] = useState<MessagingActor[]>([]);
-  const [selfConversations, setSelfConversations] = useState<MessagingConversation[]>([]);
-  const [selfMessages, setSelfMessages] = useState<Record<string, MessagingMessage[]>>({});
+  const [selfActors, setSelfActors] = useState<MessagingActor[]>(startupProjection?.selfActors ?? []);
+  const [selfConversations, setSelfConversations] = useState<MessagingConversation[]>(startupProjection?.selfConversations ?? []);
+  const [selfMessages, setSelfMessages] = useState<Record<string, MessagingMessage[]>>(startupProjection?.selfMessages ?? {});
   const [selfStories, setSelfStories] = useState<MessagingStory[]>([]);
   const [selfCommunities, setSelfCommunities] = useState<MessagingCommunityState[]>([]);
   const [selfBotProfiles, setSelfBotProfiles] = useState<MessagingBotProfile[]>([]);
@@ -373,7 +439,7 @@ function MessengerWorkspace() {
   const [selfOrders, setSelfOrders] = useState<MessagingOrder[]>([]);
   const [walletAccount, setWalletAccount] = useState<MessagingWalletAccount | null>(null);
   const [walletEntries, setWalletEntries] = useState<MessagingLedgerEntry[]>([]);
-  const [activePeerKey, setActivePeerKey] = useState<string | null>(null);
+  const [activePeerKey, setActivePeerKey] = useState<string | null>(startupProjection?.activePeerKey ?? null);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [composer, setComposer] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -391,7 +457,10 @@ function MessengerWorkspace() {
   const [desktopUpdateBusy, setDesktopUpdateBusy] = useState(false);
   const [peerRenderCount, setPeerRenderCount] = useState(initialPeerRenderCount);
   const [messageRenderCount, setMessageRenderCount] = useState(initialMessageRenderCount);
-  const [infoOpen, setInfoOpen] = useState(true);
+  const [desktopPreferences, setDesktopPreferences] = useState<DesktopMessengerPreferences>(() => readDesktopMessengerPreferences());
+  const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>('account');
+  const [infoOpen, setInfoOpen] = useState(() => readDesktopMessengerPreferences().showInfoPanel);
+  const [wideInfoLayout, setWideInfoLayout] = useState(() => typeof window === 'undefined' ? true : window.innerWidth > 1280);
   const [infoTab, setInfoTab] = useState<InfoTab>('media');
   const [pendingSend, setPendingSend] = useState(false);
   const [typingByConversation, setTypingByConversation] = useState<Record<string, Record<string, number>>>({});
@@ -415,7 +484,7 @@ function MessengerWorkspace() {
   const [pinnedPeerKeys, setPinnedPeerKeys] = useState<Set<string>>(() => new Set());
   const [archivedPeerKeys, setArchivedPeerKeys] = useState<Set<string>>(() => new Set());
   const activePeerKeyRef = useRef<string | null>(null);
-  const messagingCursorRef = useRef<string | null>(null);
+  const messagingCursorRef = useRef<string | null>(startupProjection?.cursor ?? null);
   const syncInFlightRef = useRef(false);
   const typingStopTimerRef = useRef<number | null>(null);
   const peersRef = useRef<PeerItem[]>([]);
@@ -430,6 +499,63 @@ function MessengerWorkspace() {
   useEffect(() => {
     activePeerKeyRef.current = activePeerKey;
   }, [activePeerKey]);
+
+  useEffect(() => {
+    const onResize = () => setWideInfoLayout(window.innerWidth > 1280);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(messengerPreferencesKey, JSON.stringify(desktopPreferences));
+    } catch {
+      // Desktop-only preferences are best effort.
+    }
+  }, [desktopPreferences]);
+
+  useEffect(() => {
+    if (!startupProjection?.activePeerKey?.startsWith('selfhosted:')) return;
+    const conversationId = startupProjection.activePeerKey.slice('selfhosted:'.length);
+    const cached = (startupProjection.selfMessages[conversationId] ?? []).filter((message) => !message.deleted);
+    setMessages(cached.map(displaySelfMessage));
+  }, [startupProjection]);
+
+  useEffect(() => {
+    if (!selfConversations.length && !selfActors.length) return;
+    const timer = window.setTimeout(() => {
+      const conversationIds = new Set(
+        [...selfConversations]
+          .sort((left, right) => right.updatedAtMs - left.updatedAtMs)
+          .slice(0, projectionConversationLimit)
+          .map((conversation) => conversation.id),
+      );
+      const boundedMessages = Object.fromEntries(
+        Object.entries(selfMessages)
+          .filter(([conversationId]) => conversationIds.has(conversationId))
+          .map(([conversationId, list]) => [conversationId, list.slice(-projectionMessageLimit)]),
+      );
+      persistMessengerProjection({
+        version: 1,
+        savedAtMs: Date.now(),
+        actorId: selfHosted.actorId,
+        cursor: messagingCursorRef.current,
+        activePeerKey,
+        selfActors,
+        selfConversations: [...selfConversations]
+          .sort((left, right) => right.updatedAtMs - left.updatedAtMs)
+          .slice(0, projectionConversationLimit),
+        selfMessages: boundedMessages,
+      });
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [activePeerKey, selfActors, selfConversations, selfMessages, selfHosted.actorId]);
+
+  function updateDesktopPreference<K extends keyof DesktopMessengerPreferences>(key: K, value: DesktopMessengerPreferences[K]) {
+    setDesktopPreferences((current) => ({ ...current, [key]: value }));
+    if (key === 'showInfoPanel') setInfoOpen(Boolean(value));
+  }
 
   useEffect(() => {
     const stored = Number(window.localStorage.getItem(messengerSidebarWidthKey));
@@ -581,7 +707,7 @@ function MessengerWorkspace() {
         refreshLegacy();
         try {
           await selfHosted.ensureCurrentActor();
-          await selfHosted.sync();
+          await selfHosted.sync(initialSyncLimit, messagingCursorRef.current);
           void webRtcRef.current?.connect().catch(() => {});
         } catch (cause) {
           setError(cause instanceof Error ? cause.message : String(cause));
@@ -623,7 +749,7 @@ function MessengerWorkspace() {
       });
       if (syncInFlightRef.current) return;
       syncInFlightRef.current = true;
-      void selfHosted.sync(1000, messagingCursorRef.current)
+      void selfHosted.sync(backgroundSyncLimit, messagingCursorRef.current)
         .catch(() => {})
         .finally(() => { syncInFlightRef.current = false; });
     }, 2_000);
@@ -676,6 +802,7 @@ function MessengerWorkspace() {
   function handleSelfHostedEvent(runtimeEvent: RuntimeEvent): boolean {
     const hostEvent = asMessagingHostEvent(runtimeEvent);
     if (!hostEvent) return false;
+    const previousCursor = messagingCursorRef.current;
     if (hostEvent.envelope.cursor) messagingCursorRef.current = hostEvent.envelope.cursor;
     const event = hostEvent.envelope.event;
     switch (event.type) {
@@ -691,26 +818,32 @@ function MessengerWorkspace() {
           bots?: MessagingBotProfile[];
           botExecutions?: MessagingBotExecution[];
         };
-        const nextConversations = payload.conversations ?? [];
         const grouped: Record<string, MessagingMessage[]> = {};
         for (const message of payload.messages ?? []) {
           (grouped[message.conversationId] ??= []).push(message);
         }
         for (const list of Object.values(grouped)) list.sort((a, b) => a.createdAtMs - b.createdAtMs);
-        setSelfActors(payload.actors ?? []);
-        setSelfConversations(nextConversations);
-        setSelfMessages(grouped);
-        setSelfInvoices(payload.invoices ?? []);
-        setSelfOrders(payload.orders ?? []);
-        setSelfStories(payload.stories ?? []);
-        setSelfCommunities(payload.communities ?? []);
-        setSelfBotProfiles(payload.bots ?? []);
-        setSelfBotExecutions(payload.botExecutions ?? []);
-        const active = activePeerKeyRef.current;
-        if (active?.startsWith('selfhosted:')) {
-          const conversationId = active.slice('selfhosted:'.length);
-          setMessages((grouped[conversationId] ?? []).filter((message) => !message.deleted).map(displaySelfMessage));
-        }
+        setSelfActors((current) => (payload.actors ?? []).reduce((items, actor) => upsertById(items, actor), previousCursor ? current : []));
+        setSelfConversations((current) => (payload.conversations ?? []).reduce((items, conversation) => upsertById(items, conversation), previousCursor ? current : []));
+        setSelfMessages((current) => {
+          const next = previousCursor ? { ...current } : {};
+          for (const [conversationId, incoming] of Object.entries(grouped)) {
+            next[conversationId] = incoming.reduce((items, message) => upsertById(items, message), next[conversationId] ?? [])
+              .sort((a, b) => a.createdAtMs - b.createdAtMs);
+          }
+          const active = activePeerKeyRef.current;
+          if (active?.startsWith('selfhosted:')) {
+            const conversationId = active.slice('selfhosted:'.length);
+            setMessages((next[conversationId] ?? []).filter((message) => !message.deleted).map(displaySelfMessage));
+          }
+          return next;
+        });
+        setSelfInvoices((current) => (payload.invoices ?? []).reduce((items, item) => upsertById(items, item), previousCursor ? current : []));
+        setSelfOrders((current) => (payload.orders ?? []).reduce((items, item) => upsertById(items, item), previousCursor ? current : []));
+        setSelfStories((current) => (payload.stories ?? []).reduce((items, item) => upsertById(items, item), previousCursor ? current : []));
+        setSelfCommunities((current) => (payload.communities ?? []).reduce((items, item) => [...items.filter((existing) => existing.conversationId !== item.conversationId), item], previousCursor ? current : []));
+        setSelfBotProfiles((current) => (payload.bots ?? []).reduce((items, item) => [...items.filter((existing) => existing.actorId !== item.actorId), item], previousCursor ? current : []));
+        setSelfBotExecutions((current) => (payload.botExecutions ?? []).reduce((items, item) => upsertById(items, item), previousCursor ? current : []));
         break;
       }
       case 'conversationChanged': {
@@ -1031,6 +1164,8 @@ function MessengerWorkspace() {
     return !query || `${peer.title} ${peer.subtitle}`.toLowerCase().includes(query);
   });
   const sectionIsPeerList = ['chats', 'contacts', 'bots', 'groups', 'channels', 'saved', 'archive'].includes(section);
+  const infoPanelVisible = Boolean(infoOpen && wideInfoLayout && activePeer && sectionIsPeerList);
+  const currentActor = selfActors.find((actor) => actor.id === selfHosted.actorId);
   const renderedPeers = visiblePeers.slice(0, peerRenderCount);
   const matchingMessages = messages;
   const renderedMessages = matchingMessages.slice(Math.max(0, matchingMessages.length - messageRenderCount));
@@ -1692,7 +1827,9 @@ async function saveInvoiceDialog() {
       className={`${styles.messenger} ${styles.fabushiUnified}`}
       data-testid="messenger-workspace"
       data-sidebar-collapsed={sidebarWidth <= 112 || undefined}
-      style={{ gridTemplateColumns: infoOpen && activePeer && sectionIsPeerList ? `${sidebarWidth}px minmax(420px,1fr) 286px` : `${sidebarWidth}px minmax(420px,1fr)` }}
+      data-reduce-motion={desktopPreferences.reducedMotion || undefined}
+      data-testid-ready-projection={startupProjection ? 'true' : undefined}
+      style={{ gridTemplateColumns: infoPanelVisible ? `${sidebarWidth}px minmax(420px,1fr) 286px` : `${sidebarWidth}px minmax(420px,1fr)` }}
       onClick={() => { setMessageMenu(null); setProfileMenuOpen(false); setCreateMenuOpen(false); }}
     >
       <aside className={styles.chatList} data-testid="messenger-sidebar" data-collapsed={sidebarWidth <= 112 || undefined} onClick={(event) => event.stopPropagation()}>
@@ -1762,7 +1899,7 @@ async function saveInvoiceDialog() {
                 />
                 <span className={styles.peerCopy}>
                   <span><strong>{peer.title}</strong><time>{formatTime(peer.updatedAtMs)}</time></span>
-                  <small>{peer.subtitle}</small>
+                  <small>{desktopPreferences.messagePreview ? peer.subtitle : peer.unread ? '有新消息' : '消息预览已关闭'}</small>
                 </span>
                 <span className={styles.peerMeta}>{peer.pinned ? <Pin size={12} /> : null}{mutedPeerKeys.has(peer.key) ? <BellOff size={12} /> : null}{peer.unread ? <b>{peer.unread}</b> : null}</span>
               </button>
@@ -1771,7 +1908,7 @@ async function saveInvoiceDialog() {
             {!visiblePeers.length ? <EmptyList section={section} /> : null}
           </div>
         ) : (
-          <SectionPanel section={section} onOpenMiniApp={openMiniApp} onInstallMiniApp={installMiniApp} onUninstallMiniApp={uninstallMiniApp} miniApps={marketplaceApps} installedMiniApps={installedMiniApps} miniAppQuery={miniAppQuery} onMiniAppQuery={setMiniAppQuery} miniAppLoading={miniAppLoading} miniAppBusy={miniAppBusy} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} />
+          <SectionPanel section={section} onOpenMiniApp={openMiniApp} onInstallMiniApp={installMiniApp} onUninstallMiniApp={uninstallMiniApp} miniApps={marketplaceApps} installedMiniApps={installedMiniApps} miniAppQuery={miniAppQuery} onMiniAppQuery={setMiniAppQuery} miniAppLoading={miniAppLoading} miniAppBusy={miniAppBusy} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} settings={{ category: settingsCategory, onCategory: setSettingsCategory }} />
         )}
         <div className={styles.sidebarFooter}>
           {profileMenuOpen ? <ProfileNavigationMenu section={section} onNavigate={navigateFromProfile} /> : null}
@@ -1856,7 +1993,7 @@ async function saveInvoiceDialog() {
                 >
                   {message.pinned ? <Pin size={11} /> : null}
                   {message.mediaType === 'photo' && blobMediaUrl(message.media) ? <img className={extra.messageMedia} src={blobMediaUrl(message.media)} alt={message.media?.fileName ?? '图片'} /> : null}
-                  {message.mediaType === 'video' && blobMediaUrl(message.media) ? <video className={extra.messageMedia} controls playsInline src={blobMediaUrl(message.media)} /> : null}
+                  {message.mediaType === 'video' && blobMediaUrl(message.media) ? <video className={extra.messageMedia} controls playsInline autoPlay={desktopPreferences.autoPlayMedia} src={blobMediaUrl(message.media)} /> : null}
                   {message.mediaType === 'document' && blobMediaUrl(message.media) ? <a className={extra.messageFile} href={blobMediaUrl(message.media)} download={message.media?.fileName}><FileText size={17} />{message.media?.fileName ?? '文件'}</a> : null}
                   <p>{message.text}</p>
                   {message.reactions?.length ? <div className={extra.reactions}>{message.reactions.map((reaction) => <span key={reaction}>{reaction}</span>)}</div> : null}
@@ -1879,18 +2016,22 @@ async function saveInvoiceDialog() {
               <input ref={mediaInputRef} type="file" accept="image/*,video/*" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
               <input ref={fileInputRef} type="file" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
               {attachmentProgress ? <span className={extra.uploadProgress}>{attachmentProgress}</span> : null}
-              <textarea data-testid="messenger-input" value={composer} onChange={(event) => updateComposer(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="消息" rows={1} />
+              <textarea data-testid="messenger-input" value={composer} onChange={(event) => updateComposer(event.target.value)} onKeyDown={(event) => {
+                const submitWithEnter = desktopPreferences.enterToSend && event.key === 'Enter' && !event.shiftKey;
+                const submitWithShortcut = !desktopPreferences.enterToSend && event.key === 'Enter' && (event.metaKey || event.ctrlKey);
+                if (submitWithEnter || submitWithShortcut) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); }
+              }} placeholder="消息" rows={1} />
               <button type="button" title="表情"><Smile size={20} /></button>
               <button type="button" data-active={silentSend} title={silentSend ? '关闭静默发送' : '静默发送'} onClick={() => setSilentSend((value) => !value)}><BellOff size={19} /></button>
               {composer.trim() ? <button data-testid="messenger-send" className={styles.sendButton} type="submit" disabled={!hostReady || pendingSend}><Send size={19} /></button> : <button type="button" title="语音消息"><Mic size={20} /></button>}
             </form>
           </>
         ) : (
-          <FeatureWorkspace section={section} onOpenMiniApp={openMiniApp} onInstallMiniApp={installMiniApp} onUninstallMiniApp={uninstallMiniApp} miniApps={marketplaceApps} installedMiniApps={installedMiniApps} miniAppQuery={miniAppQuery} onMiniAppQuery={setMiniAppQuery} miniAppLoading={miniAppLoading} miniAppBusy={miniAppBusy} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} />
+          <FeatureWorkspace section={section} onOpenMiniApp={openMiniApp} onInstallMiniApp={installMiniApp} onUninstallMiniApp={uninstallMiniApp} miniApps={marketplaceApps} installedMiniApps={installedMiniApps} miniAppQuery={miniAppQuery} onMiniAppQuery={setMiniAppQuery} miniAppLoading={miniAppLoading} miniAppBusy={miniAppBusy} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} settings={{ category: settingsCategory, onCategory: setSettingsCategory, preferences: desktopPreferences, onPreference: updateDesktopPreference, actor: currentActor, actorId: selfHosted.actorId }} />
         )}
       </section>
 
-      {infoOpen && activePeer && sectionIsPeerList ? (
+      {infoPanelVisible && activePeer ? (
         <aside className={styles.infoPanel}>
           <header><strong>资料</strong><button type="button" onClick={() => setInfoOpen(false)}><X size={17} /></button></header>
           <div className={styles.profileCard}>
@@ -2349,17 +2490,102 @@ function MiniAppMarketplaceWorkspace(props: MiniAppMarketplaceProps) {
   </div>;
 }
 
-function SectionPanel({ section, onInvoice, payment, onRefund, ...miniAppProps }: { section: MessengerSection; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void } & MiniAppMarketplaceProps) {
+type SettingsNavigationProps = {
+  category: SettingsCategory;
+  onCategory: (category: SettingsCategory) => void;
+};
+
+type SettingsWorkspaceProps = SettingsNavigationProps & {
+  preferences: DesktopMessengerPreferences;
+  onPreference: <K extends keyof DesktopMessengerPreferences>(key: K, value: DesktopMessengerPreferences[K]) => void;
+  actor?: MessagingActor;
+  actorId: string;
+};
+
+const settingsNavigationItems: ReadonlyArray<{ id: SettingsCategory; label: string; subtitle: string; glyph: string }> = [
+  { id: 'account', label: '我的资料', subtitle: '头像、姓名、用户名', glyph: '👤' },
+  { id: 'notifications', label: '通知与声音', subtitle: '通知、预览与静音', glyph: '🔔' },
+  { id: 'privacy', label: '隐私与安全', subtitle: '屏蔽、密码、隐私控制', glyph: '🔒' },
+  { id: 'data', label: '数据与存储', subtitle: '下载、缓存与媒体', glyph: '💾' },
+  { id: 'chat', label: '聊天设置', subtitle: '外观、发送与动画', glyph: '💬' },
+  { id: 'folders', label: '聊天文件夹', subtitle: '组织会话', glyph: '📁' },
+  { id: 'devices', label: '设备', subtitle: '活动会话与登录设备', glyph: '💻' },
+  { id: 'calls', label: '通话', subtitle: '麦克风、摄像头与网络', glyph: '📞' },
+  { id: 'language', label: '语言', subtitle: '界面与翻译语言', glyph: '🌐' },
+  { id: 'advanced', label: '高级', subtitle: '网络、更新与系统集成', glyph: '⚙️' },
+  { id: 'fabushi', label: 'AI 与 Mini Apps', subtitle: 'Fabushi 原生能力', glyph: '✦' },
+];
+
+function SettingsNavigation({ category, onCategory }: SettingsNavigationProps) {
+  return <div className={styles.settingsNavigation} data-testid="telegram-settings-navigation">
+    {settingsNavigationItems.map((item) => <button key={item.id} type="button" data-testid={`settings-category-${item.id}`} data-active={category === item.id} onClick={() => onCategory(item.id)}>
+      <span>{item.glyph}</span><div><strong>{item.label}</strong><small>{item.subtitle}</small></div>
+    </button>)}
+  </div>;
+}
+
+function SettingsToggleRow({ title, description, checked, onChange, testId }: { title: string; description: string; checked: boolean; onChange: (checked: boolean) => void; testId?: string }) {
+  return <label className={styles.settingsRow}><div><strong>{title}</strong><small>{description}</small></div><input data-testid={testId} type="checkbox" role="switch" checked={checked} onChange={(event) => onChange(event.target.checked)} /></label>;
+}
+
+function SettingsPlannedRow({ title, description }: { title: string; description: string }) {
+  return <div className={`${styles.settingsRow} ${styles.settingsRowDisabled}`}><div><strong>{title}</strong><small>{description}</small></div><em>后端接入中</em></div>;
+}
+
+function SettingsWorkspace({ category, preferences, onPreference, actor, actorId }: SettingsWorkspaceProps) {
+  const meta = settingsNavigationItems.find((item) => item.id === category)!;
+  const profileName = actor?.displayName || '当前用户';
+  return <div className={styles.settingsWorkspace} data-testid="telegram-settings-workspace">
+    <header><span className={styles.settingsGlyph}>{meta.glyph}</span><div><h2>{meta.label}</h2><p>{meta.subtitle} · 参考 Telegram Desktop 的分组方式，并绑定 Fabushi 自建能力。</p></div></header>
+    {category === 'account' ? <section className={styles.settingsGroup}>
+      <div className={styles.settingsProfile}><BotMark botId={`self:${actorId}`} state="idle" size={72} label={profileName} /><div><strong>{profileName}</strong><small>{actor?.username ? `@${actor.username}` : actorId}</small><p>{actor?.bio || 'Fabushi 统一 Actor 资料由 Rust 消息核心管理。'}</p></div></div>
+      <SettingsPlannedRow title="编辑个人资料" description="姓名、用户名、简介与头像写回 Actor Profile。" />
+      <SettingsPlannedRow title="账号与手机号" description="账号身份与恢复渠道将在统一账户服务接入后开放。" />
+    </section> : null}
+    {category === 'notifications' ? <section className={styles.settingsGroup}>
+      <SettingsToggleRow testId="settings-toggle-message-preview" title="消息预览" description="在会话列表显示最近消息摘要。" checked={preferences.messagePreview} onChange={(value) => onPreference('messagePreview', value)} />
+      <SettingsPlannedRow title="桌面通知" description="按私聊、群组和频道分别控制系统通知。" />
+      <SettingsPlannedRow title="通知声音" description="选择提示音，并支持按会话覆盖。" />
+    </section> : null}
+    {category === 'privacy' ? <section className={styles.settingsGroup}>
+      <SettingsPlannedRow title="屏蔽用户" description="查看和管理已屏蔽 Actor。" />
+      <SettingsPlannedRow title="最后上线与在线状态" description="基于 Fabushi presence ACL 控制可见范围。" />
+      <SettingsPlannedRow title="两步验证与本地锁" description="接入统一账户安全策略后启用。" />
+    </section> : null}
+    {category === 'data' ? <section className={styles.settingsGroup}>
+      <SettingsToggleRow testId="settings-toggle-autoplay-media" title="自动播放视频" description="聊天内视频加载后自动播放；默认关闭以节省资源。" checked={preferences.autoPlayMedia} onChange={(value) => onPreference('autoPlayMedia', value)} />
+      <div className={styles.settingsInfoRow}><strong>本地消息数据库</strong><small>Rust SQLite 是权威本地存储；Renderer 只保存有界快速启动投影。</small><em>已启用</em></div>
+      <SettingsPlannedRow title="自动下载媒体" description="按网络类型、会话类型和文件大小设置策略。" />
+      <SettingsPlannedRow title="存储占用" description="按媒体类型查看缓存并执行安全清理。" />
+    </section> : null}
+    {category === 'chat' ? <section className={styles.settingsGroup}>
+      <SettingsToggleRow testId="settings-toggle-info-panel" title="显示资料侧栏" description="宽屏聊天时显示右侧资料栏；窄屏自动收起且不占布局宽度。" checked={preferences.showInfoPanel} onChange={(value) => onPreference('showInfoPanel', value)} />
+      <SettingsToggleRow testId="settings-toggle-enter-send" title="Enter 发送消息" description="关闭后使用 Command/Ctrl + Enter 发送，Enter 换行。" checked={preferences.enterToSend} onChange={(value) => onPreference('enterToSend', value)} />
+      <SettingsToggleRow testId="settings-toggle-reduced-motion" title="减少动态效果" description="关闭大部分界面过渡动画，适合低功耗或辅助功能场景。" checked={preferences.reducedMotion} onChange={(value) => onPreference('reducedMotion', value)} />
+      <SettingsPlannedRow title="聊天背景与气泡" description="主题、背景、字号与消息密度将在统一主题引擎中开放。" />
+    </section> : null}
+    {category === 'folders' ? <section className={styles.settingsGroup}><SettingsPlannedRow title="聊天文件夹" description="创建、排序并共享自定义会话过滤器。" /><SettingsPlannedRow title="归档行为" description="设置新消息到来时是否自动移出归档。" /></section> : null}
+    {category === 'devices' ? <section className={styles.settingsGroup}><SettingsPlannedRow title="活动会话" description="列出已授权设备、最近活动与远程退出操作。" /><SettingsPlannedRow title="新设备登录提醒" description="设备身份系统接入后开启安全提醒。" /></section> : null}
+    {category === 'calls' ? <section className={styles.settingsGroup}><div className={styles.settingsInfoRow}><strong>通话引擎</strong><small>Fabushi 自建信令 + WebRTC，支持语音、视频与屏幕共享。</small><em>可用</em></div><SettingsPlannedRow title="输入/输出设备" description="选择麦克风、摄像头和扬声器，并进行测试。" /><SettingsPlannedRow title="点对点与 TURN 策略" description="按隐私策略选择直连或中继。" /></section> : null}
+    {category === 'language' ? <section className={styles.settingsGroup}><div className={styles.settingsInfoRow}><strong>界面语言</strong><small>当前跟随系统语言。</small><em>跟随系统</em></div><SettingsPlannedRow title="翻译语言" description="为消息翻译和 AI 翻译指定首选语言。" /></section> : null}
+    {category === 'advanced' ? <section className={styles.settingsGroup}><div className={styles.settingsInfoRow}><strong>增量同步</strong><small>首轮最多 20 条；后续基于 cursor 每批最多 100 条，避免启动大同步。</small><em>已启用</em></div><div className={styles.settingsInfoRow}><strong>应用更新</strong><small>检测到 GitHub Release 新版本后可从头像旁云朵入口下载并安装。</small><em>自动检测</em></div><SettingsPlannedRow title="代理与网络" description="支持直连、系统代理与自建代理节点。" /></section> : null}
+    {category === 'fabushi' ? <section className={styles.settingsGroup}><div className={styles.settingsInfoRow}><strong>AI Bot / Agent</strong><small>联系人、Bot、群组与频道共用 Actor/Conversation 消息模型。</small><em>已融合</em></div><div className={styles.settingsInfoRow}><strong>Mini Apps</strong><small>从在线市场搜索、验证、安装，并在受控宿主容器运行。</small><em>已融合</em></div><SettingsPlannedRow title="AI 权限中心" description="统一管理电脑控制、敏感输入、Mini App 与 Bot 权限。" /></section> : null}
+  </div>;
+}
+
+function SectionPanel({ section, onInvoice, payment, onRefund, settings, ...miniAppProps }: { section: MessengerSection; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void; settings: SettingsNavigationProps } & MiniAppMarketplaceProps) {
   if (section === 'miniapps') return <MiniAppMarketplaceList {...miniAppProps} />;
   if (section === 'payments') return <div className={styles.sectionList}><PaymentOverview payment={payment} onInvoice={onInvoice} onRefund={onRefund} compact /></div>;
   if (section === 'folders') return <div className={styles.sectionList}><div className={styles.panelHint}><Folder size={24} /><strong>聊天文件夹</strong><p>按联系人、Bot、群组、频道、未读和静音状态组织。</p></div></div>;
   if (section === 'calls') return <div className={styles.sectionList}><div className={styles.panelHint}><Phone size={24} /><strong>最近通话</strong><p>从会话顶部发起语音/视频。</p></div></div>;
+  if (section === 'settings') return <div className={styles.sectionList}><SettingsNavigation {...settings} /></div>;
   return <div className={styles.sectionList}><div className={styles.panelHint}><Settings size={24} /><strong>{sectionTitle(section)}</strong><p>该功能入口已合并进统一 Messenger。</p></div></div>;
 }
 
-function FeatureWorkspace({ section, onInvoice, payment, onRefund, ...miniAppProps }: { section: MessengerSection; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void } & MiniAppMarketplaceProps) {
+function FeatureWorkspace({ section, onInvoice, payment, onRefund, settings, ...miniAppProps }: { section: MessengerSection; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void; settings: SettingsWorkspaceProps } & MiniAppMarketplaceProps) {
   if (section === 'miniapps') return <MiniAppMarketplaceWorkspace {...miniAppProps} />;
   if (section === 'payments') return <div className={styles.featureWorkspace}><WalletCards size={54} /><h2>Fabushi Pay</h2><p>自建余额、Invoice、Order、退款与外部 settlement 都由 Rust 账本结算。</p><PaymentOverview payment={payment} onInvoice={onInvoice} onRefund={onRefund} /></div>;
   if (section === 'calls') return <div className={styles.featureWorkspace}><Phone size={54} /><h2>通话</h2><p>本机媒体已接通，Rust realtime 已具备一对一/群组通话信令状态。</p></div>;
+  if (section === 'settings') return <SettingsWorkspace {...settings} />;
   return <div className={styles.featureWorkspace}><MessageCircle size={54} /><h2>{sectionTitle(section)}</h2><p>联系人、Bot、群组和频道正在统一到同一个 Fabushi Actor/Conversation 模型。</p></div>;
 }

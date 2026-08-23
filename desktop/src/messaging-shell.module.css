@@ -1025,3 +1025,202 @@
 .fabushiUnified .createMenu {
   z-index: 80;
 }
+
+
+/* Telegram-inspired settings information architecture, rendered with Fabushi materials. */
+.settingsNavigation {
+  display: grid;
+  gap: 3px;
+  padding: 2px 0 14px;
+}
+
+.settingsNavigation > button {
+  width: 100%;
+  min-height: 58px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.settingsNavigation > button:hover,
+.settingsNavigation > button[data-active="true"] {
+  background: rgba(139, 92, 246, .14);
+}
+
+.settingsNavigation > button[data-active="true"] {
+  box-shadow: inset 2px 0 #8b5cf6;
+}
+
+.settingsNavigation > button > span {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, .065);
+  font-size: 16px;
+}
+
+.settingsNavigation > button > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.settingsNavigation strong { font-size: 13px; }
+.settingsNavigation small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #8f8c9f;
+  font-size: 10px;
+}
+
+.settingsWorkspace {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 100%;
+  overflow: auto;
+  padding: 34px clamp(24px, 6vw, 88px) 54px;
+  background:
+    radial-gradient(circle at 82% 8%, rgba(139, 92, 246, .12), transparent 28%),
+    #0b0b11;
+  color: #f7f5fb;
+}
+
+.settingsWorkspace > header {
+  width: min(760px, 100%);
+  margin: 0 auto 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.settingsGlyph {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, rgba(167, 139, 250, .24), rgba(91, 65, 190, .2));
+  box-shadow: inset 0 1px rgba(255, 255, 255, .12);
+  font-size: 23px;
+}
+
+.settingsWorkspace > header div { min-width: 0; }
+.settingsWorkspace h2 { margin: 0; font-size: 23px; font-weight: 760; letter-spacing: -.02em; }
+.settingsWorkspace > header p { margin: 4px 0 0; color: #9996a8; font-size: 12px; line-height: 1.45; }
+
+.settingsGroup {
+  width: min(760px, 100%);
+  margin: 0 auto 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .075);
+  border-radius: 16px;
+  background: rgba(21, 20, 30, .82);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, .16), inset 0 1px rgba(255, 255, 255, .035);
+  backdrop-filter: blur(22px) saturate(1.12);
+}
+
+.settingsRow,
+.settingsInfoRow {
+  min-height: 64px;
+  padding: 11px 15px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, .065);
+}
+
+.settingsGroup > :last-child { border-bottom: 0; }
+.settingsRow > div,
+.settingsInfoRow { min-width: 0; }
+.settingsRow > div { display: grid; gap: 3px; }
+.settingsRow strong,
+.settingsInfoRow strong { font-size: 13px; font-weight: 690; }
+.settingsRow small,
+.settingsInfoRow small { color: #9693a5; font-size: 11px; line-height: 1.42; }
+.settingsRow em,
+.settingsInfoRow em {
+  padding: 4px 7px;
+  border-radius: 8px;
+  background: rgba(139, 92, 246, .14);
+  color: #c4b5fd;
+  font-size: 10px;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.settingsRow input[role="switch"] {
+  width: 38px;
+  height: 22px;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .16);
+  cursor: pointer;
+  position: relative;
+  transition: background .16s ease;
+}
+
+.settingsRow input[role="switch"]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+  transition: transform .16s ease;
+}
+
+.settingsRow input[role="switch"]:checked { background: #8b5cf6; }
+.settingsRow input[role="switch"]:checked::after { transform: translateX(16px); }
+.settingsRowDisabled { opacity: .63; cursor: default; }
+
+.settingsInfoRow {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.settingsInfoRow strong,
+.settingsInfoRow small { grid-column: 1; }
+.settingsInfoRow em { grid-column: 2; grid-row: 1 / span 2; }
+
+.settingsProfile {
+  padding: 18px 16px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, .065);
+}
+.settingsProfile > div { min-width: 0; display: grid; gap: 3px; }
+.settingsProfile strong { font-size: 17px; }
+.settingsProfile small { color: #aaa7b8; font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
+.settingsProfile p { margin: 3px 0 0; color: #8e8b9c; font-size: 11px; line-height: 1.4; }
+
+.fabushiUnified[data-reduce-motion="true"] *,
+.fabushiUnified[data-reduce-motion="true"] *::before,
+.fabushiUnified[data-reduce-motion="true"] *::after {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .001ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (max-width: 900px) {
+  .settingsWorkspace { padding: 24px 18px 40px; }
+  .settingsWorkspace > header { align-items: flex-start; }
+}
