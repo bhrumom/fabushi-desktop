@@ -109,7 +109,7 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
     await openMessenger(page);
 
     const profileNavigation = page.getByTestId('profile-navigation-trigger');
-    await expect(profileNavigation.locator('[data-engine="fabushi-motion-v2"]')).toBeVisible();
+    await expect(profileNavigation.locator('[data-engine="fabushi-motion-v2"]').first()).toBeVisible();
     await profileNavigation.click();
     await expect(page.getByTestId('profile-navigation-menu')).toBeVisible();
     for (const label of [
@@ -276,7 +276,7 @@ test('online Mini App installs and opens from global Application search', async 
     const open = appResult.getByRole('button', { name: '打开' });
     await expect(open).toBeVisible();
     await open.click();
-    await expect(page.getByText('Mini App · 受控宿主容器')).toBeVisible();
+    await expect(page.getByText('Mini App · 已安装线上包 · 受控宿主容器')).toBeVisible();
     await expect(page.locator('iframe[title="global-dharma"]')).toBeVisible();
   } finally {
     await app.close();
