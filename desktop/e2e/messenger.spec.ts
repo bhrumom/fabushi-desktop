@@ -50,11 +50,9 @@ async function completeBrowserLogin(page: Page): Promise<void> {
 
 async function openMessenger(page: Page): Promise<void> {
   const workspace = page.getByTestId('messenger-workspace');
-  if (!await workspace.isVisible().catch(() => false)) {
-    await page.getByTestId('open-messenger').click();
-  }
   await expect(workspace).toBeVisible();
   await expect(page.getByTitle('聊天')).toBeVisible();
+  await expect(page.getByTestId('open-messenger')).toHaveCount(0);
 }
 
 async function getMessagingIdentity(page: Page): Promise<{ actorId: string; deviceId: string; sessionId: string }> {
@@ -107,7 +105,7 @@ async function executeMessagingCommand(
   );
 }
 
-test('desktop Messenger exposes Telegram-class navigation and preserves the real AI Host', async () => {
+test('desktop Messenger unifies Telegram-class navigation with Fabushi agent identity', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-e2e-'));
   const app = await launchDesktopApp(appDataDir);
 
@@ -135,6 +133,7 @@ test('desktop Messenger exposes Telegram-class navigation and preserves the real
 
     const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
     await expect(assistant).toBeVisible();
+    await expect(assistant.locator('[data-engine="fabushi-motion-v2"]')).toBeVisible();
     await assistant.click();
     await expect(page.getByTestId('messenger-input')).toBeVisible();
 

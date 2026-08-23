@@ -4,7 +4,7 @@
   width: 100vw;
   height: 100vh;
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   overflow: hidden;
   background: #0d1117;
   color: #17212b;
@@ -297,8 +297,241 @@
 }
 
 @media (max-width: 900px) {
-  .desktopRoot { grid-template-columns: 48px minmax(0,1fr); }
+  .desktopRoot { grid-template-columns: minmax(0,1fr); }
   .messenger { grid-template-columns: 60px 280px minmax(360px,1fr); }
   .navRail > button small { display:none; }
   .navRail > button { min-height:44px; }
+}
+
+/* Fabushi unified Messenger: Telegram-class information density with the
+   motion, depth and dark material language inherited from Fabushi/Grok UX. */
+.fabushiUnified {
+  --fabushi-app: #0b0b11;
+  --fabushi-panel: rgba(18, 18, 27, .94);
+  --fabushi-panel-strong: rgba(24, 23, 35, .97);
+  --fabushi-line: rgba(255, 255, 255, .08);
+  --fabushi-muted: #9694a6;
+  --fabushi-accent: #8b5cf6;
+  --fabushi-accent-soft: rgba(139, 92, 246, .18);
+  color: #f7f5fb;
+  background: var(--fabushi-app);
+}
+
+.fabushiUnified .navRail {
+  background:
+    radial-gradient(circle at 50% 4%, rgba(139, 92, 246, .22), transparent 28%),
+    linear-gradient(180deg, #0c0c13 0%, #11101a 100%);
+  border-right: 1px solid var(--fabushi-line);
+  color: #918fa2;
+}
+
+.fabushiUnified .navRail > button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, .07);
+}
+
+.fabushiUnified .navRail > button[data-active="true"] {
+  color: #fff;
+  background: linear-gradient(145deg, rgba(139, 92, 246, .96), rgba(92, 67, 205, .94));
+  box-shadow: 0 10px 28px rgba(91, 58, 204, .28), inset 0 1px rgba(255, 255, 255, .16);
+}
+
+.fabushiUnified .navRail .railBrand {
+  background: linear-gradient(145deg, #a78bfa, #6d4be8 58%, #4733a9);
+  box-shadow: 0 9px 30px rgba(109, 75, 232, .34), inset 0 1px rgba(255, 255, 255, .3);
+}
+
+.fabushiUnified .chatList,
+.fabushiUnified .infoPanel {
+  background: var(--fabushi-panel);
+  border-color: var(--fabushi-line);
+  backdrop-filter: blur(26px) saturate(1.18);
+}
+
+.fabushiUnified .listHeader,
+.fabushiUnified .chatHeader,
+.fabushiUnified .infoPanel > header,
+.fabushiUnified .inChatSearch {
+  background: rgba(18, 18, 27, .82);
+  border-color: var(--fabushi-line);
+  backdrop-filter: blur(24px) saturate(1.22);
+}
+
+.fabushiUnified .iconButton,
+.fabushiUnified .listHeader button,
+.fabushiUnified .headerActions button,
+.fabushiUnified .infoPanel > header button {
+  color: #aaa7ba;
+}
+
+.fabushiUnified .iconButton:hover,
+.fabushiUnified .listHeader button:hover,
+.fabushiUnified .headerActions button:hover,
+.fabushiUnified .headerActions button[data-active="true"] {
+  color: #fff;
+  background: var(--fabushi-accent-soft);
+}
+
+.fabushiUnified .searchBox {
+  background: rgba(255, 255, 255, .065);
+  color: #8f8c9f;
+  border: 1px solid transparent;
+}
+
+.fabushiUnified .searchBox:focus-within {
+  background: rgba(255, 255, 255, .085);
+  border-color: rgba(167, 139, 250, .56);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, .11);
+}
+
+.fabushiUnified .searchBox input,
+.fabushiUnified .inChatSearch input {
+  color: #f7f5fb;
+}
+
+.fabushiUnified .quickActions button {
+  color: #c8b9ff;
+  background: rgba(139, 92, 246, .09);
+  border: 1px solid rgba(167, 139, 250, .11);
+}
+
+.fabushiUnified .quickActions button:hover {
+  background: rgba(139, 92, 246, .17);
+}
+
+.fabushiUnified .peer,
+.fabushiUnified .peerActive {
+  color: #f4f2f8;
+  border-radius: 14px;
+  margin: 2px 7px;
+  width: calc(100% - 14px);
+}
+
+.fabushiUnified .peer:hover {
+  background: rgba(255, 255, 255, .055);
+}
+
+.fabushiUnified .peerActive,
+.fabushiUnified .peerActive:hover {
+  background: linear-gradient(100deg, rgba(139, 92, 246, .27), rgba(92, 67, 205, .14));
+  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, .18), 0 8px 26px rgba(0, 0, 0, .14);
+}
+
+.fabushiUnified .peerCopy small,
+.fabushiUnified .peerCopy time,
+.fabushiUnified .peerMeta,
+.fabushiUnified .chatIdentity small,
+.fabushiUnified .profileCard > small {
+  color: var(--fabushi-muted);
+}
+
+.fabushiUnified .peerActive .peerCopy small,
+.fabushiUnified .peerActive .peerCopy time {
+  color: #c9c4d8;
+}
+
+.fabushiUnified .chatWorkspace {
+  background:
+    radial-gradient(circle at 78% 8%, rgba(127, 84, 235, .14), transparent 33%),
+    radial-gradient(circle at 18% 82%, rgba(52, 107, 255, .08), transparent 30%),
+    #0d0d14;
+}
+
+.fabushiUnified .chatWorkspace::before {
+  opacity: .13;
+  background-image: radial-gradient(circle at 12px 12px, rgba(201, 188, 255, .2) 1px, transparent 1.2px);
+}
+
+.fabushiUnified .messageMine,
+.fabushiUnified .messagePeer {
+  border: 1px solid rgba(255, 255, 255, .07);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .18);
+}
+
+.fabushiUnified .messageMine {
+  color: #f9f7ff;
+  background: linear-gradient(145deg, rgba(110, 76, 220, .92), rgba(74, 55, 157, .96));
+}
+
+.fabushiUnified .messagePeer {
+  color: #f2f0f6;
+  background: rgba(31, 30, 42, .94);
+}
+
+.fabushiUnified .messageMine small,
+.fabushiUnified .messagePeer small {
+  color: #b9b3c9;
+}
+
+.fabushiUnified .composer {
+  background: rgba(27, 26, 38, .94);
+  border: 1px solid rgba(255, 255, 255, .08);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, .32), inset 0 1px rgba(255, 255, 255, .04);
+  backdrop-filter: blur(24px) saturate(1.2);
+}
+
+.fabushiUnified .composer textarea {
+  color: #f7f5fb;
+  background: transparent;
+}
+
+.fabushiUnified .composer > button {
+  color: #9e9bad;
+}
+
+.fabushiUnified .composer > button:hover {
+  color: #fff;
+  background: rgba(139, 92, 246, .14);
+}
+
+.fabushiUnified .composer .sendButton,
+.fabushiUnified .composer .sendButton:hover {
+  color: #fff;
+  background: linear-gradient(145deg, #9b72ff, #7350e8);
+  box-shadow: 0 6px 18px rgba(115, 80, 232, .32);
+}
+
+.fabushiUnified .profileCard,
+.fabushiUnified .profileActions,
+.fabushiUnified .infoTabs {
+  border-color: var(--fabushi-line);
+}
+
+.fabushiUnified .profileActions button {
+  color: #d8d4e2;
+}
+
+.fabushiUnified .profileActions button:hover {
+  background: rgba(139, 92, 246, .09);
+}
+
+.fabushiUnified .infoTabs button {
+  color: #908d9e;
+}
+
+.fabushiUnified .infoTabs button[data-active="true"] {
+  color: #c5b5ff;
+  border-bottom-color: #8b5cf6;
+}
+
+.fabushiUnified .infoContent,
+.fabushiUnified .infoContent strong {
+  color: #aaa6b7;
+}
+
+.agentAvatarMark,
+.agentProfileMark {
+  flex: none;
+  filter: drop-shadow(0 7px 16px rgba(82, 55, 186, .22));
+}
+
+.agentProfileMark {
+  margin: 2px 0 5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agentAvatarMark,
+  .agentProfileMark {
+    filter: none;
+  }
 }

@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import HostClient from '../../frontend/apps/web/src/app/host/host-client';
+import { BotMark, type BotMarkState } from '../../frontend/apps/web/src/app/host/bot-mark';
 import type {
   BotSummary,
   ConversationSummary,
@@ -75,7 +76,6 @@ import {
   type WebRtcCallStatus,
 } from './webrtc-call-controller';
 
-type RootSurface = 'ai' | 'messages';
 type MessengerSection =
   | 'chats'
   | 'contacts'
@@ -143,7 +143,6 @@ type EditDialogState = { conversationId: string; messageId: string; originalText
 type InvoiceDialogState = { conversationId: string; title: string; amount: string } | null;
 type InfoTab = 'media' | 'files' | 'links';
 
-const rootSurfaceKey = 'fabushi.desktop.root-surface.v2';
 const messengerSettingsKey = 'fabushi.desktop.messenger-settings.v2';
 const messengerDraftsKey = 'fabushi.desktop.messenger-drafts.v2';
 const initialPeerRenderCount = 120;
@@ -163,6 +162,34 @@ function createTransport(): MahayanaHostTransport {
 function avatarText(title: string): string {
   const value = title.trim();
   return value ? Array.from(value)[0] ?? '聊' : '聊';
+}
+
+
+function isAgentPeer(peer: PeerItem): boolean {
+  const identity = `${peer.kind} ${peer.id} ${peer.actorId ?? ''} ${peer.title}`.toLocaleLowerCase();
+  return peer.kind === 'bot' || /(agent|assistant|mahayana|codex|grok|大乘|智能体)/u.test(identity);
+}
+
+function botMarkStateForPeer(
+  peer: PeerItem,
+  executions: MessagingBotExecution[],
+  busy: boolean,
+  hostReady: boolean,
+): BotMarkState {
+  if (busy) return 'sending';
+  const identities = [peer.id, peer.actorId].filter((value): value is string => Boolean(value));
+  const execution = [...executions]
+    .sort((left, right) => (right.startedAtMs ?? 0) - (left.startedAtMs ?? 0))
+    .find((candidate) => identities.includes(candidate.botId));
+  if (!execution) return hostReady ? 'idle' : 'waking';
+  switch (execution.state) {
+    case 'queued': return 'waking';
+    case 'running': return 'working';
+    case 'waitingForApproval': return 'alerting';
+    case 'failed': return 'error';
+    case 'cancelled': return 'sleeping';
+    case 'completed': return 'result';
+  }
 }
 
 function formatTime(timestamp: number): string {
@@ -273,42 +300,40 @@ function upsertById<T extends { id: string }>(items: T[], item: T): T[] {
 }
 
 export default function DesktopShellV2() {
-  const [surface, setSurface] = useState<RootSurface>(() => {
-    try {
-      return window.localStorage.getItem(rootSurfaceKey) === 'messages' ? 'messages' : 'ai';
-    } catch {
-      return 'ai';
-    }
-  });
+  const authTransport = useMemo(() => createTransport(), []);
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(rootSurfaceKey, surface);
-    } catch {
-      // The shell remains usable when storage is unavailable.
-    }
-  }, [surface]);
+    let closed = false;
+    let retryTimer: number | undefined;
+    const checkAuth = async () => {
+      try {
+        const state = await authTransport.authStatus();
+        if (closed) return;
+        setAuthenticated(state.loggedIn);
+        if (!state.loggedIn) retryTimer = window.setTimeout(() => void checkAuth(), 900);
+      } catch {
+        if (closed) return;
+        setAuthenticated(false);
+        retryTimer = window.setTimeout(() => void checkAuth(), 1_800);
+      }
+    };
+    void checkAuth();
+    return () => {
+      closed = true;
+      if (retryTimer) window.clearTimeout(retryTimer);
+      void authTransport.close();
+    };
+  }, [authTransport]);
 
   return (
     <div className={styles.desktopRoot} data-testid="desktop-shell">
-      <nav className={styles.productRail} aria-label="Fabushi 主视图">
-        <button type="button" data-active={surface === 'ai'} onClick={() => setSurface('ai')} title="AI 工作区">
-          <span className={styles.brandOrb}>法</span>
-          <small>AI</small>
-        </button>
-        <button data-testid="open-messenger" type="button" data-active={surface === 'messages'} onClick={() => setSurface('messages')} title="消息">
-          <MessageCircle size={21} />
-          <small>消息</small>
-        </button>
-      </nav>
-      <div className={styles.productSurface}>
-        {surface === 'ai' ? <HostClient /> : <MessengerWorkspace onOpenAi={() => setSurface('ai')} />}
-      </div>
+      {authenticated === true ? <MessengerWorkspace /> : <HostClient />}
     </div>
   );
 }
 
-function MessengerWorkspace({ onOpenAi }: { onOpenAi: () => void }) {
+function MessengerWorkspace() {
   const transport = useMemo(() => createTransport(), []);
   const selfHosted = useMemo(() => new SelfHostedMessagingClientV2(transport), [transport]);
   const [hostReady, setHostReady] = useState(false);
@@ -1508,9 +1533,9 @@ async function saveInvoiceDialog() {
   }
 
   return (
-    <main className={styles.messenger} data-testid="messenger-workspace" onClick={() => setMessageMenu(null)}>
+    <main className={`${styles.messenger} ${styles.fabushiUnified}`} data-testid="messenger-workspace" onClick={() => setMessageMenu(null)}>
       <aside className={styles.navRail}>
-        <button className={styles.railBrand} type="button" onClick={onOpenAi} title="返回 AI 工作区">法</button>
+        <button className={styles.railBrand} type="button" onClick={() => setSection('chats')} title="Fabushi">法</button>
         <RailButton icon={<MessageCircle />} label="聊天" active={section === 'chats'} onClick={() => setSection('chats')} />
         <RailButton icon={<Users />} label="联系人" active={section === 'contacts'} onClick={() => setSection('contacts')} />
         <RailButton icon={<Bot />} label="Bots" active={section === 'bots'} onClick={() => setSection('bots')} />
@@ -1558,7 +1583,15 @@ async function saveInvoiceDialog() {
             </div>
             {renderedPeers.map((peer) => (
               <button data-testid={`peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
-                <span className={styles.avatar}>{peer.avatar ? <img src={peer.avatar} alt="" /> : avatarText(peer.title)}<i data-kind={peer.kind} /></span>
+                {isAgentPeer(peer) ? (
+                  <BotMark
+                    botId={peer.actorId ?? peer.id}
+                    state={botMarkStateForPeer(peer, selfBotExecutions, peer.key === activePeerKey && pendingSend, hostReady)}
+                    size={48}
+                    className={styles.agentAvatarMark}
+                    label={peer.title}
+                  />
+                ) : <span className={styles.avatar}>{peer.avatar ? <img src={peer.avatar} alt="" /> : avatarText(peer.title)}<i data-kind={peer.kind} /></span>}
                 <span className={styles.peerCopy}>
                   <span><strong>{peer.title}</strong><time>{formatTime(peer.updatedAtMs)}</time></span>
                   <small>{peer.subtitle}</small>
@@ -1579,7 +1612,15 @@ async function saveInvoiceDialog() {
           <>
             <header className={styles.chatHeader}>
               <div className={styles.chatIdentity}>
-                <span className={styles.avatar}>{avatarText(activePeer.title)}<i data-kind={activePeer.kind} /></span>
+                {isAgentPeer(activePeer) ? (
+                  <BotMark
+                    botId={activePeer.actorId ?? activePeer.id}
+                    state={botMarkStateForPeer(activePeer, selfBotExecutions, pendingSend, hostReady)}
+                    size={40}
+                    className={styles.agentAvatarMark}
+                    label={activePeer.title}
+                  />
+                ) : <span className={styles.avatar}>{avatarText(activePeer.title)}<i data-kind={activePeer.kind} /></span>}
                 <div><strong>{activePeer.title}</strong><small data-testid="conversation-status">{activeTypingActors.length ? '正在输入…' : `${activePeer.subtitle}${hostReady ? ' · 在线' : ' · 正在连接'}`}</small></div>
               </div>
               <div className={styles.headerActions}>
@@ -1616,7 +1657,7 @@ async function saveInvoiceDialog() {
                   <small>{formatTime(message.createdAtMs)} {message.role === 'me' ? <Check size={12} /> : null}</small>
                 </article>
               ))}
-              {!matchingMessages.length ? <div className={styles.chatEmpty} data-testid="message-search-empty"><span className={styles.avatarLarge}>{avatarText(activePeer.title)}</span><strong>{conversationQuery ? '没有匹配消息' : activePeer.title}</strong><p>{conversationQuery ? '换一个关键词继续搜索。' : '联系人、AI Bot、群组和频道使用同一个 Fabushi 消息产品层。'}</p></div> : null}
+              {!matchingMessages.length ? <div className={styles.chatEmpty} data-testid="message-search-empty">{isAgentPeer(activePeer) ? <BotMark botId={activePeer.actorId ?? activePeer.id} state={botMarkStateForPeer(activePeer, selfBotExecutions, false, hostReady)} size={78} className={styles.agentAvatarMark} label={activePeer.title} /> : <span className={styles.avatarLarge}>{avatarText(activePeer.title)}</span>}<strong>{conversationQuery ? '没有匹配消息' : activePeer.title}</strong><p>{conversationQuery ? '换一个关键词继续搜索。' : '联系人、AI Bot、群组和频道使用同一个 Fabushi 消息产品层。'}</p></div> : null}
             </div>
             {replyTo ? <div className={extra.composerBanner}><Reply size={15} /><div><strong>回复</strong><span>{replyTo.text}</span></div><button type="button" onClick={() => setReplyTo(null)}><X size={14} /></button></div> : null}
             {scheduledAtMs ? <div className={extra.composerBanner}><span>⏱</span><div><strong>定时发送</strong><span>{new Date(scheduledAtMs).toLocaleString()}</span></div><button type="button" onClick={() => setScheduledAtMs(undefined)}><X size={14} /></button></div> : null}
@@ -1647,7 +1688,7 @@ async function saveInvoiceDialog() {
         <aside className={styles.infoPanel}>
           <header><strong>资料</strong><button type="button" onClick={() => setInfoOpen(false)}><X size={17} /></button></header>
           <div className={styles.profileCard}>
-            <span className={styles.avatarHuge}>{avatarText(activePeer.title)}</span>
+            {isAgentPeer(activePeer) ? <BotMark botId={activePeer.actorId ?? activePeer.id} state={botMarkStateForPeer(activePeer, selfBotExecutions, pendingSend, hostReady)} size={92} className={styles.agentProfileMark} label={activePeer.title} /> : <span className={styles.avatarHuge}>{avatarText(activePeer.title)}</span>}
             <strong>{activePeer.title}</strong><small>{activePeer.subtitle}</small>
             <div><button type="button" onClick={() => void startCall('voice')}><PhoneCall size={18} /><span>通话</span></button><button type="button" onClick={() => void startCall('video')}><Video size={18} /><span>视频</span></button><button type="button" onClick={() => setConversationSearchOpen(true)}><Search size={18} /><span>搜索</span></button></div>
           </div>
