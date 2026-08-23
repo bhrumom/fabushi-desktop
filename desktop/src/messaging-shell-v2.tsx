@@ -857,7 +857,10 @@ function MessengerWorkspace() {
         });
         break;
       case 'miniapp.opened':
-        setMiniApp({ id: event.miniAppId, html: event.html });
+        if (event.html) {
+          const title = marketplaceApps.find((app) => app.pluginId === event.miniAppId)?.displayName ?? event.miniAppId;
+          setMiniApp({ id: event.miniAppId, title, html: event.html });
+        }
         break;
       case 'operation.failed':
         setPendingSend(false);
