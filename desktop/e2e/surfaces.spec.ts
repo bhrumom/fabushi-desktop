@@ -165,6 +165,8 @@ test('installed desktop exposes unified Messenger, native menu routing, browser 
       for (const label of ['聊天', '联系人', 'Bots', '群组', '频道', '通话', '收藏', '归档', '文件夹', 'Mini Apps', '支付', '设置']) {
         await expect(page.getByTitle(label, { exact: true })).toBeVisible();
       }
+      await page.getByTestId('profile-navigation-trigger').click();
+      await expect(page.getByTestId('profile-navigation-menu')).toHaveCount(0);
       const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
       await expect(assistant).toBeVisible();
       await expect(assistant.locator('[data-engine="fabushi-motion-v2"]').first()).toBeVisible();
