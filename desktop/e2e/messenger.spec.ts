@@ -185,6 +185,13 @@ test('Telegram-inspired settings bind supported preferences and persist fast-sta
     await completeBrowserLogin(page);
     await openMessenger(page);
 
+    const cachedLegacyPeer = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+    await expect(cachedLegacyPeer).toBeVisible();
+    await expect.poll(async () => page.evaluate(() => {
+      const projection = JSON.parse(localStorage.getItem('fabushi.desktop.messenger-projection.v1') || 'null');
+      return Boolean(projection?.legacyConversations?.some((item: { id?: string }) => item.id === 'codex:agent:assistant'));
+    }), { timeout: 5_000 }).toBe(true);
+
     await page.getByTestId('profile-navigation-trigger').click();
     await page.getByTitle('设置', { exact: true }).click();
     await expect(page.getByTestId('telegram-settings-navigation')).toBeVisible();
@@ -224,6 +231,7 @@ test('Telegram-inspired settings bind supported preferences and persist fast-sta
     await expect(page.getByTestId('messenger-workspace')).toBeVisible({ timeout: 5_000 });
     await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-testid-ready-projection', 'true');
     await expect(page.getByText('本地优先投影验收').first()).toBeVisible();
+    await expect(page.getByTestId('peer-legacy:conversation:codex:agent:assistant')).toBeVisible();
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });

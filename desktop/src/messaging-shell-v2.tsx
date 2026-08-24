@@ -161,6 +161,11 @@ type MessengerProjection = {
   actorId?: string;
   cursor?: string | null;
   activePeerKey?: string | null;
+  // The complete lightweight left-rail model is persisted for first-frame paint.
+  // Rust/Host remains authoritative and reconciles these display-only summaries in background.
+  legacyConversations?: ConversationSummary[];
+  legacyBots?: BotSummary[];
+  legacyGroups?: GroupSummary[];
   selfActors: MessagingActor[];
   selfConversations: MessagingConversation[];
   selfMessages: Record<string, MessagingMessage[]>;
@@ -205,6 +210,9 @@ function asMessengerProjection(value: unknown): MessengerProjection | null {
   const parsed = value as Partial<MessengerProjection>;
   if (parsed.version !== 1 || !Array.isArray(parsed.selfConversations) || !Array.isArray(parsed.selfActors)) return null;
   if (!parsed.selfMessages || typeof parsed.selfMessages !== 'object' || Array.isArray(parsed.selfMessages)) return null;
+  if (parsed.legacyConversations !== undefined && !Array.isArray(parsed.legacyConversations)) return null;
+  if (parsed.legacyBots !== undefined && !Array.isArray(parsed.legacyBots)) return null;
+  if (parsed.legacyGroups !== undefined && !Array.isArray(parsed.legacyGroups)) return null;
   return parsed as MessengerProjection;
 }
 
@@ -509,9 +517,9 @@ function MessengerWorkspace({ initialProjection }: { initialProjection?: Messeng
   const selfHosted = useMemo(() => new SelfHostedMessagingClientV2(transport, { actorId: startupProjection?.actorId }), [transport, startupProjection]);
   const [hostReady, setHostReady] = useState(false);
   const [section, setSection] = useState<MessengerSection>('chats');
-  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
-  const [bots, setBots] = useState<BotSummary[]>([]);
-  const [groups, setGroups] = useState<GroupSummary[]>([]);
+  const [conversations, setConversations] = useState<ConversationSummary[]>(startupProjection?.legacyConversations ?? []);
+  const [bots, setBots] = useState<BotSummary[]>(startupProjection?.legacyBots ?? []);
+  const [groups, setGroups] = useState<GroupSummary[]>(startupProjection?.legacyGroups ?? []);
   const [selfActors, setSelfActors] = useState<MessagingActor[]>(startupProjection?.selfActors ?? []);
   const [selfConversations, setSelfConversations] = useState<MessagingConversation[]>(startupProjection?.selfConversations ?? []);
   const [selfMessages, setSelfMessages] = useState<Record<string, MessagingMessage[]>>(startupProjection?.selfMessages ?? {});
@@ -609,7 +617,7 @@ function MessengerWorkspace({ initialProjection }: { initialProjection?: Messeng
   }, [startupProjection]);
 
   useEffect(() => {
-    if (!selfConversations.length && !selfActors.length) return;
+    if (!selfConversations.length && !selfActors.length && !conversations.length && !bots.length && !groups.length) return;
     const timer = window.setTimeout(() => {
       const conversationIds = new Set(
         [...selfConversations]
@@ -628,6 +636,9 @@ function MessengerWorkspace({ initialProjection }: { initialProjection?: Messeng
         actorId: selfHosted.actorId,
         cursor: messagingCursorRef.current,
         activePeerKey,
+        legacyConversations: conversations,
+        legacyBots: bots,
+        legacyGroups: groups,
         selfActors,
         selfConversations: [...selfConversations]
           .sort((left, right) => right.updatedAtMs - left.updatedAtMs)
@@ -636,7 +647,7 @@ function MessengerWorkspace({ initialProjection }: { initialProjection?: Messeng
       });
     }, 60);
     return () => window.clearTimeout(timer);
-  }, [activePeerKey, selfActors, selfConversations, selfMessages, selfHosted.actorId]);
+  }, [activePeerKey, bots, conversations, groups, selfActors, selfConversations, selfMessages, selfHosted.actorId]);
 
   function updateDesktopPreference<K extends keyof DesktopMessengerPreferences>(key: K, value: DesktopMessengerPreferences[K]) {
     setDesktopPreferences((current) => ({ ...current, [key]: value }));
