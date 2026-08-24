@@ -1,30 +1,30 @@
 /*
  * Fabushi Grok parity surface v1.
  *
- * This is a product-owned behavior/visual reimplementation layer. It intentionally
- * keeps the existing Messenger component tree and runtime contracts intact while
- * converging the visible desktop surface on one dark Fabushi/Grok material system.
+ * Product-owned clean-room visual implementation. The historical Grok renderer is
+ * used only as an observable design reference; the canonical Fabushi Messenger,
+ * Rust Host and Mahayana runtime remain the only production implementation.
  */
 
 :root {
   color-scheme: dark;
   --gbf-app: #070707;
-  --gbf-panel: #101010;
-  --gbf-panel-raised: #171717;
-  --gbf-card: #1d1d1d;
-  --gbf-card-hover: #252525;
-  --gbf-card-active: #2c2c2c;
-  --gbf-inset: #0c0c0c;
-  --gbf-line: rgb(255 255 255 / 8%);
-  --gbf-line-strong: rgb(255 255 255 / 13%);
-  --gbf-text: #f7f7f5;
-  --gbf-muted: rgb(247 247 245 / 61%);
-  --gbf-faint: rgb(247 247 245 / 39%);
+  --gbf-panel: #111111;
+  --gbf-card: #242424;
+  --gbf-raised: #2f2f2f;
+  --gbf-raised-hover: #3b3b3b;
+  --gbf-inset: #191919;
+  --gbf-line: #333333;
+  --gbf-line-soft: rgb(255 255 255 / 8%);
+  --gbf-line-strong: rgb(255 255 255 / 12%);
+  --gbf-text: #fcfcfc;
+  --gbf-muted: rgb(252 252 252 / 58%);
+  --gbf-faint: rgb(252 252 252 / 38%);
   --gbf-accent: #1687ff;
   --gbf-accent-soft: rgb(22 135 255 / 15%);
   --gbf-success: #38d591;
   --gbf-danger: #ff6174;
-  --gbf-shadow: 0 20px 70px rgb(0 0 0 / 42%);
+  --gbf-shadow: 0 16px 44px rgb(0 0 0 / 45%);
   --gbf-radius-xs: 8px;
   --gbf-radius-sm: 10px;
   --gbf-radius-md: 14px;
@@ -61,9 +61,7 @@ body[data-fabushi-surface="grok-parity-v1"] select {
 /* Desktop/Messenger shell */
 body[data-fabushi-surface="grok-parity-v1"] [class*="_desktopRoot_"],
 body[data-fabushi-surface="grok-parity-v1"] [class*="_messenger_"] {
-  background:
-    radial-gradient(circle at 48% -18%, rgb(70 51 113 / 17%), transparent 36%),
-    var(--gbf-app) !important;
+  background: var(--gbf-app) !important;
   color: var(--gbf-text) !important;
 }
 
@@ -74,23 +72,22 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_messenger_"] {
 
 /* Conversation sidebar */
 body[data-fabushi-surface="grok-parity-v1"] [class*="_chatList_"] {
-  background: rgb(16 16 16 / 96%) !important;
+  background: var(--gbf-panel) !important;
   color: var(--gbf-text) !important;
-  border-right: 1px solid var(--gbf-line) !important;
-  backdrop-filter: blur(24px) saturate(118%);
+  border-right: 1px solid var(--gbf-line-soft) !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_listHeader_"] {
-  min-height: 58px;
+  min-height: 54px;
   color: var(--gbf-text) !important;
-  border-color: var(--gbf-line) !important;
+  border-color: var(--gbf-line-soft) !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_listHeader_"] strong {
   color: var(--gbf-text) !important;
-  font-size: 15px !important;
+  font-size: 14px !important;
   font-weight: 650 !important;
-  letter-spacing: -0.01em;
+  letter-spacing: .01em;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_iconButton_"],
@@ -98,13 +95,13 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_listHeader_"] button,
 body[data-fabushi-surface="grok-parity-v1"] [class*="_headerActions_"] button {
   color: var(--gbf-muted) !important;
   background: transparent !important;
-  border-radius: var(--gbf-radius-sm) !important;
+  border-radius: 8px !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_iconButton_"]:hover,
 body[data-fabushi-surface="grok-parity-v1"] [class*="_listHeader_"] button:hover,
 body[data-fabushi-surface="grok-parity-v1"] [class*="_headerActions_"] button:hover {
-  background: var(--gbf-card-hover) !important;
+  background: var(--gbf-raised) !important;
   color: var(--gbf-text) !important;
 }
 
@@ -112,9 +109,9 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_headerActions_"] button:ho
 body[data-fabushi-surface="grok-parity-v1"] [class*="_searchBox_"],
 body[data-fabushi-surface="grok-parity-v1"] [class*="_marketplaceSearch_"] {
   color: var(--gbf-muted) !important;
-  background: rgb(255 255 255 / 7%) !important;
+  background: rgb(255 255 255 / 8%) !important;
   border: 1px solid transparent !important;
-  border-radius: 11px !important;
+  border-radius: 9px !important;
   box-shadow: none !important;
 }
 
@@ -140,10 +137,12 @@ body[data-fabushi-surface="grok-parity-v1"] textarea::placeholder {
 /* Peer rows */
 body[data-fabushi-surface="grok-parity-v1"] [class*="_peer_"],
 body[data-fabushi-surface="grok-parity-v1"] [class*="_peerActive_"] {
-  min-height: 64px !important;
-  margin: 1px 6px !important;
-  width: calc(100% - 12px) !important;
-  border-radius: 12px !important;
+  min-height: 62px !important;
+  margin: 1px 7px !important;
+  width: calc(100% - 14px) !important;
+  padding: 9px 10px !important;
+  gap: 11px !important;
+  border-radius: 11px !important;
   color: var(--gbf-text) !important;
   transition: background-color 120ms ease, transform 120ms ease;
 }
@@ -153,12 +152,13 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_peer_"]:hover {
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_peerActive_"] {
-  background: var(--gbf-card-active) !important;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 4%);
+  background: var(--gbf-raised) !important;
+  box-shadow: none !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_peerCopy_"] strong {
   color: var(--gbf-text) !important;
+  font-size: 14px !important;
   font-weight: 610 !important;
 }
 
@@ -166,6 +166,7 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_peerCopy_"] small,
 body[data-fabushi-surface="grok-parity-v1"] [class*="_peerCopy_"] time,
 body[data-fabushi-surface="grok-parity-v1"] [class*="_peerMeta_"] {
   color: var(--gbf-muted) !important;
+  font-size: 11px !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_peerMeta_"] b {
@@ -176,8 +177,8 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_peerMeta_"] b {
 /* Workspace */
 body[data-fabushi-surface="grok-parity-v1"] [class*="_chatWorkspace_"] {
   background:
-    radial-gradient(circle at 50% 0%, rgb(91 65 151 / 11%), transparent 38%),
-    #090909 !important;
+    radial-gradient(circle at 50% -20%, rgb(73 56 120 / 18%), transparent 38%),
+    var(--gbf-app) !important;
   color: var(--gbf-text) !important;
 }
 
@@ -186,63 +187,71 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_chatWorkspace_"]::before {
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_chatHeader_"] {
-  min-height: 62px !important;
-  background: rgb(9 9 9 / 84%) !important;
+  min-height: 68px !important;
+  padding-right: 22px !important;
+  padding-left: 22px !important;
+  background: transparent !important;
   color: var(--gbf-text) !important;
-  border-bottom: 1px solid var(--gbf-line) !important;
-  backdrop-filter: blur(22px) saturate(120%);
+  border-bottom: 1px solid var(--gbf-line-soft) !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_chatIdentity_"] strong {
   color: var(--gbf-text) !important;
+  font-size: 14px !important;
   font-weight: 620 !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_chatIdentity_"] small {
   color: var(--gbf-muted) !important;
+  font-size: 11px !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_inChatSearch_"] {
-  background: rgb(14 14 14 / 96%) !important;
+  background: var(--gbf-panel) !important;
   color: var(--gbf-muted) !important;
-  border-bottom: 1px solid var(--gbf-line) !important;
+  border-bottom: 1px solid var(--gbf-line-soft) !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_messageArea_"] {
-  padding-top: 24px !important;
+  padding: 20px clamp(18px, 5vw, 70px) 14px !important;
   gap: 8px !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_dayDivider_"] {
-  background: rgb(255 255 255 / 7%) !important;
+  background: rgb(255 255 255 / 6%) !important;
   color: var(--gbf-muted) !important;
-  border: 1px solid var(--gbf-line) !important;
-  backdrop-filter: blur(12px);
+  border: 1px solid var(--gbf-line-soft) !important;
 }
 
-/* Message material: quieter than Telegram bubbles, closer to Grok conversation density. */
+/* Grok-style conversation: user is a compact raised bubble, assistant reads as content. */
 body[data-fabushi-surface="grok-parity-v1"] [class*="_messageMine_"],
 body[data-fabushi-surface="grok-parity-v1"] [class*="_messagePeer_"] {
-  border-radius: 15px !important;
   box-shadow: none !important;
   color: var(--gbf-text) !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_messageMine_"] {
-  background: #303030 !important;
-  border-bottom-right-radius: 5px !important;
+  max-width: 76% !important;
+  padding: 10px 13px !important;
+  background: #4a4a4a !important;
+  border-radius: 14px 14px 3px 14px !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_messagePeer_"] {
-  background: transparent !important;
-  border: 1px solid transparent !important;
+  max-width: 82% !important;
+  padding-top: 3px !important;
+  padding-right: 0 !important;
+  padding-bottom: 3px !important;
   padding-left: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_messageMine_"] p,
 body[data-fabushi-surface="grok-parity-v1"] [class*="_messagePeer_"] p {
   color: var(--gbf-text) !important;
-  line-height: 1.52 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_messageMine_"] small,
@@ -258,48 +267,57 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_reactions_"] span {
 
 /* Composer */
 body[data-fabushi-surface="grok-parity-v1"] [class*="_composer_"] {
+  width: min(760px, calc(100% - 36px)) !important;
   min-height: 58px !important;
-  padding: 8px 9px !important;
-  background: #1b1b1b !important;
+  margin: 20px auto 12px !important;
+  padding: 11px !important;
+  background: #1c1c1c !important;
   color: var(--gbf-text) !important;
   border: 1px solid var(--gbf-line-strong) !important;
-  border-radius: 17px !important;
+  border-radius: 16px !important;
   box-shadow: 0 18px 45px rgb(0 0 0 / 28%) !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_composer_"]:focus-within {
-  border-color: rgb(255 255 255 / 20%) !important;
-  box-shadow: 0 18px 50px rgb(0 0 0 / 34%), 0 0 0 3px rgb(22 135 255 / 7%) !important;
+  border-color: rgb(255 255 255 / 24%) !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_composer_"] textarea {
+  min-height: 38px !important;
+  max-height: 150px !important;
   color: var(--gbf-text) !important;
   background: transparent !important;
+  line-height: 1.5 !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_composer_"] > button,
 body[data-fabushi-surface="grok-parity-v1"] [class*="_attachmentAnchor_"] > button {
   color: var(--gbf-muted) !important;
   background: transparent !important;
-  border-radius: 10px !important;
+  border-radius: 8px !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_composer_"] > button:hover,
 body[data-fabushi-surface="grok-parity-v1"] [class*="_attachmentAnchor_"] > button:hover {
   color: var(--gbf-text) !important;
-  background: var(--gbf-card-hover) !important;
+  background: var(--gbf-raised) !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_composer_"] [class*="_sendButton_"] {
+  width: 36px !important;
+  height: 36px !important;
   color: #111 !important;
-  background: #f4f4f2 !important;
-  border-radius: 11px !important;
+  background: #fff !important;
+  border-radius: 10px !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_composerBanner_"] {
-  background: #171717 !important;
+  width: min(760px, calc(100% - 36px)) !important;
+  margin-right: auto !important;
+  margin-left: auto !important;
+  background: var(--gbf-inset) !important;
   color: #9fcaff !important;
-  border: 1px solid var(--gbf-line) !important;
+  border: 1px solid var(--gbf-line-soft) !important;
   border-left: 2px solid var(--gbf-accent) !important;
   box-shadow: none !important;
 }
@@ -308,18 +326,18 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_composerBanner_"] span {
   color: var(--gbf-muted) !important;
 }
 
-/* Right context/info column */
+/* Right context/info column — equivalent to Grok's activity panel material. */
 body[data-fabushi-surface="grok-parity-v1"] [class*="_infoPanel_"] {
-  background: #0f0f0f !important;
+  background: var(--gbf-panel) !important;
   color: var(--gbf-text) !important;
-  border-left: 1px solid var(--gbf-line) !important;
+  border-left: 1px solid var(--gbf-line-soft) !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_infoPanel_"] > header,
 body[data-fabushi-surface="grok-parity-v1"] [class*="_profileCard_"],
 body[data-fabushi-surface="grok-parity-v1"] [class*="_profileActions_"],
 body[data-fabushi-surface="grok-parity-v1"] [class*="_infoTabs_"] {
-  border-color: var(--gbf-line) !important;
+  border-color: var(--gbf-line-soft) !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_profileCard_"] small,
@@ -360,7 +378,7 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_marketplaceRow_"],
 body[data-fabushi-surface="grok-parity-v1"] [class*="_marketplaceCard_"] {
   color: var(--gbf-text) !important;
   background: transparent !important;
-  border-color: var(--gbf-line) !important;
+  border-color: var(--gbf-line-soft) !important;
   border-radius: 12px !important;
 }
 
@@ -385,10 +403,10 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_dialog_"],
 body[data-fabushi-surface="grok-parity-v1"] [class*="_Dialog_"],
 body[data-fabushi-surface="grok-parity-v1"] [class*="_communityDialog_"] {
   color: var(--gbf-text) !important;
-  background: rgb(28 28 28 / 96%) !important;
+  background: rgb(32 32 32 / 98%) !important;
   border: 1px solid var(--gbf-line-strong) !important;
   box-shadow: var(--gbf-shadow) !important;
-  backdrop-filter: blur(26px) saturate(120%);
+  backdrop-filter: blur(20px) saturate(112%);
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_popover_"] button,
@@ -400,24 +418,30 @@ body[data-fabushi-surface="grok-parity-v1"] [class*="_contextMenu_"] button {
 body[data-fabushi-surface="grok-parity-v1"] [class*="_popover_"] button:hover,
 body[data-fabushi-surface="grok-parity-v1"] [class*="_contextMenu_"] button:hover:not(:disabled) {
   color: var(--gbf-text) !important;
-  background: rgb(255 255 255 / 7%) !important;
+  background: var(--gbf-raised) !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [class*="_backdrop_"] {
-  background: rgb(0 0 0 / 68%) !important;
-  backdrop-filter: blur(12px);
+  background: rgb(0 0 0 / 72%) !important;
+  backdrop-filter: blur(10px);
 }
 
-/* BotMark integration: preserve engine motion; visually seat it in the dark surface. */
+/* BotMark remains Fabushi's own engine; state drives the surface accent. */
 body[data-fabushi-surface="grok-parity-v1"] [data-engine="fabushi-motion-v2"] {
   isolation: isolate;
   filter: saturate(1.04) contrast(1.03);
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [data-engine="fabushi-motion-v2"][data-agent-state="thinking"],
+body[data-fabushi-surface="grok-parity-v1"] [data-engine="fabushi-motion-v2"][data-agent-state="searching"],
 body[data-fabushi-surface="grok-parity-v1"] [data-engine="fabushi-motion-v2"][data-agent-state="working"],
 body[data-fabushi-surface="grok-parity-v1"] [data-engine="fabushi-motion-v2"][data-agent-state="tool-running"] {
   filter: saturate(1.13) contrast(1.04) drop-shadow(0 8px 18px rgb(22 135 255 / 14%));
+}
+
+body[data-fabushi-surface="grok-parity-v1"] [data-engine="fabushi-motion-v2"][data-agent-state="speaking"],
+body[data-fabushi-surface="grok-parity-v1"] [data-engine="fabushi-motion-v2"][data-agent-state="result"] {
+  filter: saturate(1.1) contrast(1.03) drop-shadow(0 8px 18px rgb(56 213 145 / 12%));
 }
 
 body[data-fabushi-surface="grok-parity-v1"] [data-engine="fabushi-motion-v2"][data-agent-state="error"],
