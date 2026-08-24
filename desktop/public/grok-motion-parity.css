@@ -1,0 +1,265 @@
+/*
+ * Fabushi Grok motion parity v1.
+ *
+ * Product-owned state choreography layered around fabushi-motion-v2. The SVG
+ * physics engine remains authoritative for the mark itself; this file only gives
+ * the already-existing aura / secondary aura / particle shells distinct runtime
+ * personalities so one real Agent state does not read as one generic pulse.
+ */
+
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state]
+> [class*="_botMarkAura_"],
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state]
+> [class*="_botMarkAuraSecondary_"],
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state]
+> [class*="_botMarkParticles_"] {
+  pointer-events: none !important;
+  will-change: transform, opacity, filter;
+  transform-origin: 50% 50%;
+}
+
+/* Thinking: slower inward/outward focus, with a smaller secondary beat. */
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="thinking"]
+> [class*="_botMarkAura_"] {
+  animation: gbfGrokThinkingAura 3.2s cubic-bezier(.42, 0, .28, 1) infinite !important;
+}
+
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="thinking"]
+> [class*="_botMarkAuraSecondary_"] {
+  animation: gbfGrokThinkingAuraSecondary 2.35s ease-in-out -.65s infinite !important;
+}
+
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="thinking"]
+> [class*="_botMarkParticles_"] i {
+  animation: gbfGrokThoughtParticle 2.7s ease-in-out infinite !important;
+}
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="thinking"]
+> [class*="_botMarkParticles_"] i:nth-child(2) { animation-delay: -.9s !important; }
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="thinking"]
+> [class*="_botMarkParticles_"] i:nth-child(3) { animation-delay: -1.8s !important; }
+
+/* Search: a faster radar-like perimeter sweep. */
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="searching"]
+> [class*="_botMarkAura_"] {
+  animation: gbfGrokSearchAura 1.9s linear infinite !important;
+}
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="searching"]
+> [class*="_botMarkAuraSecondary_"] {
+  animation: gbfGrokSearchScan 1.25s ease-in-out infinite alternate !important;
+}
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="searching"]
+> [class*="_botMarkParticles_"] {
+  animation: gbfGrokSearchParticles 1.55s linear infinite !important;
+}
+
+/* Active work/tool use: a four-beat microcycle — focus, act, settle, re-check. */
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"]:is(
+  [data-agent-state="working"],
+  [data-agent-state="tool-running"],
+  [data-agent-state="writing"],
+  [data-agent-state="sending"],
+  [data-agent-state="receiving"],
+  [data-agent-state="uploading"],
+  [data-agent-state="dragging"]
+)
+> [class*="_botMarkAura_"] {
+  animation: gbfGrokWorkAura 3.6s cubic-bezier(.4, 0, .2, 1) infinite !important;
+}
+
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"]:is(
+  [data-agent-state="working"],
+  [data-agent-state="tool-running"],
+  [data-agent-state="writing"],
+  [data-agent-state="sending"],
+  [data-agent-state="receiving"],
+  [data-agent-state="uploading"],
+  [data-agent-state="dragging"]
+)
+> [class*="_botMarkAuraSecondary_"] {
+  animation: gbfGrokWorkAuraSecondary 1.8s ease-in-out -.45s infinite !important;
+}
+
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"]:is(
+  [data-agent-state="working"],
+  [data-agent-state="tool-running"],
+  [data-agent-state="writing"],
+  [data-agent-state="sending"],
+  [data-agent-state="receiving"],
+  [data-agent-state="uploading"],
+  [data-agent-state="dragging"]
+)
+> [class*="_botMarkParticles_"] i {
+  animation: gbfGrokWorkParticle 1.8s cubic-bezier(.3, .7, .25, 1) infinite !important;
+}
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"]:is([data-agent-state="working"],[data-agent-state="tool-running"],[data-agent-state="writing"],[data-agent-state="sending"],[data-agent-state="receiving"],[data-agent-state="uploading"],[data-agent-state="dragging"])
+> [class*="_botMarkParticles_"] i:nth-child(2) { animation-delay: -.6s !important; }
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"]:is([data-agent-state="working"],[data-agent-state="tool-running"],[data-agent-state="writing"],[data-agent-state="sending"],[data-agent-state="receiving"],[data-agent-state="uploading"],[data-agent-state="dragging"])
+> [class*="_botMarkParticles_"] i:nth-child(3) { animation-delay: -1.2s !important; }
+
+/* Speech: tighter, more frequent energy that reads like voice cadence. */
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="speaking"]
+> [class*="_botMarkAura_"] {
+  animation: gbfGrokSpeakingAura 1.15s ease-in-out infinite !important;
+}
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="speaking"]
+> [class*="_botMarkAuraSecondary_"] {
+  animation: gbfGrokSpeakingAuraSecondary .72s ease-in-out -.22s infinite alternate !important;
+}
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="speaking"]
+> [class*="_botMarkParticles_"] {
+  animation: gbfGrokSpeakingParticles 1.05s ease-in-out infinite !important;
+}
+
+/* Result: one calm confirmation bloom rather than continuous high energy. */
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="result"]
+> [class*="_botMarkAura_"] {
+  animation: gbfGrokResultAura 2.8s cubic-bezier(.2, .75, .25, 1) infinite !important;
+}
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="result"]
+> [class*="_botMarkAuraSecondary_"] {
+  animation: gbfGrokResultAuraSecondary 2.8s ease-out -.18s infinite !important;
+}
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"][data-agent-state="result"]
+> [class*="_botMarkParticles_"] i {
+  animation: gbfGrokResultParticle 2.8s ease-out infinite !important;
+}
+
+/* Error/approval alert: deliberate two-beat signal, not constant frantic jitter. */
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"]:is([data-agent-state="error"],[data-agent-state="alerting"])
+> [class*="_botMarkAura_"] {
+  animation: gbfGrokAlertAura 1.45s cubic-bezier(.55, 0, .35, 1) infinite !important;
+}
+body[data-fabushi-surface="grok-parity-v1"]
+[data-engine="fabushi-motion-v2"]:is([data-agent-state="error"],[data-agent-state="alerting"])
+> [class*="_botMarkAuraSecondary_"] {
+  animation: gbfGrokAlertAuraSecondary 1.45s ease-in-out -.18s infinite !important;
+}
+
+@keyframes gbfGrokThinkingAura {
+  0%, 100% { opacity: .12; transform: scale(.9) rotate(-2deg); filter: blur(.4px); }
+  38% { opacity: .34; transform: scale(1.08) rotate(2.4deg); filter: blur(1.1px); }
+  68% { opacity: .21; transform: scale(.98) rotate(.6deg); filter: blur(.7px); }
+}
+@keyframes gbfGrokThinkingAuraSecondary {
+  0%, 100% { opacity: .05; transform: scale(.84) rotate(0deg); }
+  50% { opacity: .24; transform: scale(1.17) rotate(8deg); }
+}
+@keyframes gbfGrokThoughtParticle {
+  0%, 100% { opacity: .08; transform: translate3d(0, 2px, 0) scale(.65); }
+  42% { opacity: .58; transform: translate3d(1px, -4px, 0) scale(1); }
+  72% { opacity: .22; transform: translate3d(-1px, -7px, 0) scale(.78); }
+}
+@keyframes gbfGrokSearchAura {
+  0% { opacity: .15; transform: rotate(0deg) scale(.94); filter: blur(.4px); }
+  50% { opacity: .36; transform: rotate(180deg) scale(1.08); filter: blur(.9px); }
+  100% { opacity: .15; transform: rotate(360deg) scale(.94); filter: blur(.4px); }
+}
+@keyframes gbfGrokSearchScan {
+  from { opacity: .07; transform: translateX(-3px) scale(.88,.98) rotate(-5deg); }
+  to { opacity: .3; transform: translateX(3px) scale(1.14,1.02) rotate(5deg); }
+}
+@keyframes gbfGrokSearchParticles {
+  0% { opacity: .08; transform: rotate(0deg) scale(.92); }
+  55% { opacity: .42; transform: rotate(210deg) scale(1.08); }
+  100% { opacity: .08; transform: rotate(360deg) scale(.92); }
+}
+@keyframes gbfGrokWorkAura {
+  0%, 100% { opacity: .13; transform: scale(.9) rotate(-1deg); filter: blur(.35px); }
+  18% { opacity: .31; transform: scale(1.09,.96) rotate(2deg); filter: blur(.8px); }
+  42% { opacity: .19; transform: scale(.97,1.06) rotate(-2.4deg); filter: blur(.55px); }
+  62% { opacity: .38; transform: scale(1.12) rotate(3.2deg); filter: blur(1px); }
+  82% { opacity: .18; transform: scale(.95) rotate(.4deg); filter: blur(.5px); }
+}
+@keyframes gbfGrokWorkAuraSecondary {
+  0%, 100% { opacity: .06; transform: scale(.82) rotate(-5deg); }
+  50% { opacity: .28; transform: scale(1.16) rotate(7deg); }
+}
+@keyframes gbfGrokWorkParticle {
+  0% { opacity: .06; transform: translate3d(-1px, 3px, 0) scale(.62); }
+  28% { opacity: .48; transform: translate3d(1px, -2px, 0) scale(.9); }
+  62% { opacity: .62; transform: translate3d(-1px, -6px, 0) scale(1.05); }
+  100% { opacity: .05; transform: translate3d(2px, -9px, 0) scale(.62); }
+}
+@keyframes gbfGrokSpeakingAura {
+  0%, 100% { opacity: .14; transform: scale(.93, .9); }
+  30% { opacity: .32; transform: scale(1.08, 1.14); }
+  57% { opacity: .21; transform: scale(.98, .94); }
+  78% { opacity: .38; transform: scale(1.13, 1.07); }
+}
+@keyframes gbfGrokSpeakingAuraSecondary {
+  from { opacity: .08; transform: scale(.88); }
+  to { opacity: .28; transform: scale(1.16); }
+}
+@keyframes gbfGrokSpeakingParticles {
+  0%, 100% { opacity: .08; transform: translateY(1px) scale(.86); }
+  50% { opacity: .43; transform: translateY(-2px) scale(1.07); }
+}
+@keyframes gbfGrokResultAura {
+  0%, 12% { opacity: .08; transform: scale(.86); filter: blur(.3px); }
+  28% { opacity: .46; transform: scale(1.2); filter: blur(1px); }
+  48% { opacity: .18; transform: scale(1.02); filter: blur(.6px); }
+  100% { opacity: .08; transform: scale(.92); filter: blur(.35px); }
+}
+@keyframes gbfGrokResultAuraSecondary {
+  0%, 15% { opacity: .04; transform: scale(.82); }
+  34% { opacity: .3; transform: scale(1.25); }
+  55%, 100% { opacity: .04; transform: scale(.95); }
+}
+@keyframes gbfGrokResultParticle {
+  0%, 14% { opacity: 0; transform: translateY(2px) scale(.6); }
+  33% { opacity: .62; transform: translateY(-5px) scale(1); }
+  56%, 100% { opacity: 0; transform: translateY(-10px) scale(.7); }
+}
+@keyframes gbfGrokAlertAura {
+  0%, 100% { opacity: .13; transform: scale(.9); filter: blur(.2px); }
+  18% { opacity: .48; transform: scale(1.13); filter: blur(.8px); }
+  34% { opacity: .18; transform: scale(.96); filter: blur(.3px); }
+  54% { opacity: .42; transform: scale(1.08); filter: blur(.7px); }
+  72% { opacity: .14; transform: scale(.94); filter: blur(.3px); }
+}
+@keyframes gbfGrokAlertAuraSecondary {
+  0%, 100% { opacity: .04; transform: scale(.82) rotate(-2deg); }
+  22%, 58% { opacity: .24; transform: scale(1.15) rotate(2deg); }
+  38%, 76% { opacity: .07; transform: scale(.9); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-fabushi-surface="grok-parity-v1"]
+  [data-engine="fabushi-motion-v2"][data-agent-state]
+  > [class*="_botMarkAura_"],
+  body[data-fabushi-surface="grok-parity-v1"]
+  [data-engine="fabushi-motion-v2"][data-agent-state]
+  > [class*="_botMarkAuraSecondary_"],
+  body[data-fabushi-surface="grok-parity-v1"]
+  [data-engine="fabushi-motion-v2"][data-agent-state]
+  > [class*="_botMarkParticles_"],
+  body[data-fabushi-surface="grok-parity-v1"]
+  [data-engine="fabushi-motion-v2"][data-agent-state]
+  > [class*="_botMarkParticles_"] i {
+    animation: none !important;
+    transition: none !important;
+  }
+}
