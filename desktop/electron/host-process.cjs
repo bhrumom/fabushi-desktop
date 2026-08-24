@@ -1,5 +1,6 @@
 const { app } = require('electron');
 const { spawn } = require('node:child_process');
+const { EventEmitter } = require('node:events');
 const path = require('node:path');
 const readline = require('node:readline');
 
@@ -37,6 +38,10 @@ class MahayanaHostProcess {
     this.startedAt = null;
     this.lastExit = null;
     this.unexpectedExitCount = 0;
+    this.lifecycleSequence = 0;
+    this.lastLifecycleEvent = null;
+    this.events = new EventEmitter();
+    this.events.setMaxListeners(32);
   }
 
   executablePath() {
@@ -58,7 +63,32 @@ class MahayanaHostProcess {
       startedAt: this.startedAt,
       lastExit: this.lastExit ? { ...this.lastExit } : null,
       unexpectedExitCount: this.unexpectedExitCount,
+      lifecycleSequence: this.lifecycleSequence,
+      lastLifecycleEvent: this.lastLifecycleEvent ? { ...this.lastLifecycleEvent } : null,
     });
+  }
+
+  onLifecycle(listener) {
+    if (typeof listener !== 'function') throw new TypeError('Mahayana host lifecycle listener must be a function.');
+    this.events.on('lifecycle', listener);
+    return () => this.events.off('lifecycle', listener);
+  }
+
+  emitLifecycle(type, detail = {}) {
+    const event = Object.freeze({
+      type,
+      sequence: ++this.lifecycleSequence,
+      at: this.now(),
+      state: this.state,
+      generation: this.currentGeneration,
+      pid: this.child?.pid ?? null,
+      pending: this.pending.size,
+      unexpectedExitCount: this.unexpectedExitCount,
+      ...detail,
+    });
+    this.lastLifecycleEvent = event;
+    this.events.emit('lifecycle', event);
+    return event;
   }
 
   start() {
@@ -66,21 +96,35 @@ class MahayanaHostProcess {
     if (this.child) return this.child;
 
     const generation = this.currentGeneration + 1;
-    const child = this.spawn(this.executablePath(), [], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: {
-        ...this.env,
-        MAHAYANA_API_BASE_URL: productApiBaseUrl(this.app, this.env),
-        MAHAYANA_AUTH_STORAGE_NAMESPACE: this.env.MAHAYANA_AUTH_STORAGE_NAMESPACE || 'fabushi-desktop-v2',
-        FABUSHI_APP_DATA: this.app.getPath('userData'),
-      },
-      windowsHide: true,
-    });
-
     this.currentGeneration = generation;
+    this.state = 'starting';
+    this.emitLifecycle('starting');
+
+    let child;
+    try {
+      child = this.spawn(this.executablePath(), [], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: {
+          ...this.env,
+          MAHAYANA_API_BASE_URL: productApiBaseUrl(this.app, this.env),
+          MAHAYANA_AUTH_STORAGE_NAMESPACE: this.env.MAHAYANA_AUTH_STORAGE_NAMESPACE || 'fabushi-desktop-v2',
+          FABUSHI_APP_DATA: this.app.getPath('userData'),
+        },
+        windowsHide: true,
+      });
+    } catch (error) {
+      this.state = 'stopped';
+      this.startedAt = null;
+      this.unexpectedExitCount += 1;
+      this.lastExit = Object.freeze({ error: error instanceof Error ? error.message : String(error), at: this.now() });
+      this.emitLifecycle('spawn-failed', { error: this.lastExit.error });
+      throw error;
+    }
+
     this.child = child;
     this.state = 'running';
     this.startedAt = this.now();
+    this.emitLifecycle('running');
 
     const lines = this.readline.createInterface({ input: child.stdout });
     lines.on('line', (line) => {
@@ -89,6 +133,7 @@ class MahayanaHostProcess {
         message = JSON.parse(line);
       } catch (error) {
         this.rejectGeneration(generation, new Error(`Invalid Mahayana host response: ${error}`));
+        this.emitLifecycle('protocol-error', { error: error instanceof Error ? error.message : String(error) });
         return;
       }
       const key = String(message.id ?? '');
@@ -125,6 +170,7 @@ class MahayanaHostProcess {
         this.state = 'stopped';
         this.unexpectedExitCount += 1;
         this.lastExit = Object.freeze({ ...metadata, at: this.now() });
+        this.emitLifecycle('stopped', { ...metadata, recoverable: true });
       }
     }
     this.rejectGeneration(generation, error);
@@ -145,6 +191,7 @@ class MahayanaHostProcess {
         const pending = this.pending.get(key);
         if (!pending || pending.generation !== generation) return;
         this.pending.delete(key);
+        this.emitLifecycle('request-timeout', { method: String(method), requestId: id });
         reject(new Error(`Mahayana host request timed out: ${method}`));
       }, timeoutMs);
       timer.unref?.();
@@ -176,10 +223,11 @@ class MahayanaHostProcess {
     if (this.closed) throw new Error('Mahayana host is closed.');
     const child = this.child;
     const generation = this.currentGeneration;
+    this.state = 'restarting';
+    this.emitLifecycle('restarting', { reason: String(reason) });
     if (child) {
       this.child = null;
       this.startedAt = null;
-      this.state = 'stopped';
       this.rejectGeneration(generation, new Error(`Mahayana host restarted: ${reason}`));
       child.kill();
     }
@@ -195,7 +243,9 @@ class MahayanaHostProcess {
     this.child = null;
     this.startedAt = null;
     this.rejectGeneration(generation, new Error('Mahayana host closed.'));
+    this.emitLifecycle('closed');
     child?.kill();
+    this.events.removeAllListeners();
   }
 }
 

@@ -105,7 +105,39 @@ test('host resolves structured requests and reports health for the active genera
   assert.equal(health.pid, 7000);
   assert.equal(health.pending, 0);
   assert.equal(health.unexpectedExitCount, 0);
+  assert.equal(health.lastLifecycleEvent.type, 'running');
   host.close();
+});
+
+test('lifecycle stream exposes start, crash recovery generation, restart, and terminal close', async () => {
+  const { host, children } = harness();
+  const events = [];
+  const unsubscribe = host.onLifecycle((event) => events.push(event));
+
+  const first = host.request('feature.receive', {});
+  assert.deepEqual(events.slice(0, 2).map((event) => event.type), ['starting', 'running']);
+  assert.equal(events[1].generation, 1);
+  children[0].emit('error', new Error('crash'));
+  await assert.rejects(first, /crash/);
+  assert.equal(events.at(-1).type, 'stopped');
+  assert.equal(events.at(-1).recoverable, true);
+
+  const second = host.request('feature.info', {});
+  assert.deepEqual(events.slice(-2).map((event) => event.type), ['starting', 'running']);
+  assert.equal(events.at(-1).generation, 2);
+  const request = children[1].requestAt();
+  children[1].respond(request.id, { ok: true });
+  await second;
+
+  host.restart('test restart');
+  assert.ok(events.some((event) => event.type === 'restarting' && event.reason === 'test restart'));
+  assert.equal(events.at(-1).type, 'running');
+  assert.equal(events.at(-1).generation, 3);
+
+  host.close();
+  assert.equal(events.at(-1).type, 'closed');
+  assert.equal(host.health().closed, true);
+  unsubscribe();
 });
 
 test('stale process termination cannot reject requests from a newer generation', async () => {
