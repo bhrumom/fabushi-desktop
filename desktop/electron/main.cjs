@@ -34,6 +34,7 @@ let hostEventPump = null;
 const messagingAccessCache = new Map();
 let messagingSignalingClient = null;
 let availableDesktopUpdateVersion = null;
+let runtimeDesktopUpdateStatus = null;
 const DESKTOP_UPDATE_CHECK_MIN_INTERVAL_MS = 60_000;
 const DESKTOP_UPDATE_FOREGROUND_INTERVAL_MS = 5 * 60_000;
 let lastAutomaticDesktopUpdateCheckAt = 0;
@@ -313,6 +314,36 @@ async function mutateNativeState(mutator) {
     await fs.rename(temp, file);
   });
   return nativeStateWrite;
+}
+
+function normalizePersistedDesktopUpdateStatus(status) {
+  const currentVersion = app.getVersion();
+  if (!status || typeof status !== 'object') return { type: 'upToDate', version: currentVersion };
+  const version = typeof status.version === 'string' && status.version ? status.version : currentVersion;
+  if (status.type === 'upToDate') return { ...status, version: currentVersion };
+  if (version === currentVersion && ['available', 'downloading', 'ready', 'staging'].includes(status.type)) {
+    return { type: 'upToDate', version: currentVersion };
+  }
+  return { ...status, version };
+}
+
+async function getDesktopUpdateStatus() {
+  if (runtimeDesktopUpdateStatus) return runtimeDesktopUpdateStatus;
+  const state = await readNativeState();
+  runtimeDesktopUpdateStatus = normalizePersistedDesktopUpdateStatus(state.updateStatus);
+  return runtimeDesktopUpdateStatus;
+}
+
+function setDesktopUpdateStatus(status, { broadcast = true } = {}) {
+  // The updater is a live process state machine. Set memory before broadcasting so
+  // a renderer click triggered by this exact event can never read stale disk state.
+  runtimeDesktopUpdateStatus = status;
+  if (broadcast) broadcastNativeEvent('update-status', status);
+  return mutateNativeState((state) => ({ ...state, updateStatus: status }))
+    .catch((error) => {
+      console.warn('[updater] unable to persist live update status', error instanceof Error ? error.message : String(error));
+    })
+    .then(() => status);
 }
 
 function persistenceKey(value) {
@@ -607,6 +638,8 @@ function installNativeEdge() {
     host,
     readNativeState,
     mutateNativeState,
+    getDesktopUpdateStatus,
+    setDesktopUpdateStatus,
     windowForEvent,
     broadcastNativeEvent,
     markDeepLinksReady: () => deepLinkRouter.markReady(),
@@ -816,36 +849,30 @@ function installAutoUpdaterEvents() {
   autoUpdater.allowPrerelease = false;
   autoUpdater.on('checking-for-update', () => {
     const status = { type: 'checking', version: app.getVersion() };
-    void mutateNativeState((state) => ({ ...state, updateStatus: status }));
-    broadcastNativeEvent('update-status', status);
+    void setDesktopUpdateStatus(status);
   });
   autoUpdater.on('update-not-available', (info) => {
     availableDesktopUpdateVersion = null;
     const status = { type: 'upToDate', version: info?.version ?? app.getVersion() };
-    void mutateNativeState((state) => ({ ...state, updateStatus: status }));
-    broadcastNativeEvent('update-status', status);
+    void setDesktopUpdateStatus(status);
   });
   autoUpdater.on('update-available', (info) => {
     availableDesktopUpdateVersion = info?.version ?? app.getVersion();
     const status = { type: 'available', version: availableDesktopUpdateVersion, notes: typeof info?.releaseNotes === 'string' ? info.releaseNotes : undefined };
-    void mutateNativeState((state) => ({ ...state, updateStatus: status }));
-    broadcastNativeEvent('update-status', status);
+    void setDesktopUpdateStatus(status);
   });
   autoUpdater.on('download-progress', (progress) => {
     const status = { type: 'downloading', version: availableDesktopUpdateVersion ?? app.getVersion(), progress: Number.isFinite(progress?.percent) ? Math.round(progress.percent) : undefined };
-    void mutateNativeState((state) => ({ ...state, updateStatus: status }));
-    broadcastNativeEvent('update-status', status);
+    void setDesktopUpdateStatus(status);
   });
   autoUpdater.on('update-downloaded', (info) => {
     availableDesktopUpdateVersion = info?.version ?? availableDesktopUpdateVersion ?? app.getVersion();
     const status = { type: 'ready', version: availableDesktopUpdateVersion };
-    void mutateNativeState((state) => ({ ...state, updateStatus: status }));
-    broadcastNativeEvent('update-status', status);
+    void setDesktopUpdateStatus(status);
   });
   autoUpdater.on('error', (error) => {
     const status = { type: 'error', message: error instanceof Error ? error.message : String(error) };
-    void mutateNativeState((state) => ({ ...state, updateStatus: status }));
-    broadcastNativeEvent('update-status', status);
+    void setDesktopUpdateStatus(status);
   });
 }
 

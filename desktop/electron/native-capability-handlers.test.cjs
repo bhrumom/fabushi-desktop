@@ -39,6 +39,8 @@ async function harness(run, options = {}) {
     host: options.host ?? { request: async () => ({ ok: true, data: null }) },
     readNativeState: async () => state,
     mutateNativeState: async (mutator) => { state = await mutator(state); return state; },
+    getDesktopUpdateStatus: options.getDesktopUpdateStatus,
+    setDesktopUpdateStatus: options.setDesktopUpdateStatus,
     windowForEvent: () => ({}),
     broadcastNativeEvent: () => {},
   });
@@ -152,6 +154,32 @@ test('diagnostic reports redact nested secrets before persistence', async () => 
   });
 });
 
+
+test('desktop update click uses live status even while persisted state is stale', async () => {
+  const calls = [];
+  let liveStatus = { type: 'available', version: '1.0.9' };
+  const autoUpdater = new EventEmitter();
+  autoUpdater.downloadUpdate = async () => {
+    calls.push('download');
+    setImmediate(() => autoUpdater.emit('update-downloaded', { version: '1.0.9' }));
+    return ['/tmp/fabushi-update.zip'];
+  };
+  autoUpdater.quitAndInstall = (silent, forceRunAfter) => { calls.push(['install', silent, forceRunAfter]); };
+  await harness(async ({ handlers, getState }) => {
+    assert.equal(getState().updateStatus.version, '1.0.798', 'disk intentionally begins stale');
+    const result = await handlers.quitAndInstallUpdate({ expectedVersion: '1.0.9' });
+    assert.equal(result.installed, true);
+    assert.equal(result.version, '1.0.9');
+    await new Promise((resolve) => setTimeout(resolve, 180));
+    assert.deepEqual(calls, ['download', ['install', false, true]]);
+  }, {
+    isPackaged: true,
+    autoUpdater,
+    initialState: { preferences: {}, clientPersistence: {}, updateStatus: { type: 'upToDate', version: '1.0.798' } },
+    getDesktopUpdateStatus: async () => liveStatus,
+    setDesktopUpdateStatus: async (status) => { liveStatus = status; return status; },
+  });
+});
 
 test('desktop update click downloads a GitHub release and schedules replacement restart', async () => {
   const calls = [];

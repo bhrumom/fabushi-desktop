@@ -97,6 +97,8 @@ function createNativeCapabilityHandlers(deps) {
     host,
     readNativeState,
     mutateNativeState,
+    getDesktopUpdateStatus,
+    setDesktopUpdateStatus,
     windowForEvent,
     broadcastNativeEvent,
   } = deps;
@@ -199,6 +201,7 @@ function createNativeCapabilityHandlers(deps) {
   }
 
   async function currentUpdateStatus() {
+    if (typeof getDesktopUpdateStatus === 'function') return getDesktopUpdateStatus();
     const state = await readNativeState();
     return state.updateStatus ?? {
       type: 'upToDate',
@@ -208,6 +211,7 @@ function createNativeCapabilityHandlers(deps) {
   }
 
   async function writeUpdateStatus(status) {
+    if (typeof setDesktopUpdateStatus === 'function') return setDesktopUpdateStatus(status);
     await mutateNativeState((state) => ({ ...state, updateStatus: status }));
     broadcastNativeEvent('update-status', status);
     return status;
