@@ -40,9 +40,12 @@ async function completeBrowserLogin(page: Page): Promise<void> {
 }
 
 async function attachScreenshot(page: Page, name: string): Promise<void> {
-  await page.waitForTimeout(220);
+  // Visual evidence is intentionally deterministic. Motion behavior is verified
+  // separately by grok-motion-parity.spec.ts; screenshots freeze CSS animations so
+  // Xvfb/Chromium never captures an arbitrary transition frame or waits forever on
+  // continuously animated BotMark aura layers.
   await test.info().attach(name, {
-    body: await page.screenshot({ animations: 'allow', fullPage: false }),
+    body: await page.screenshot({ animations: 'disabled', fullPage: false }),
     contentType: 'image/png',
   });
 }
@@ -72,12 +75,6 @@ test('capture Grok parity packaged visual evidence', async () => {
     await page.getByTestId('messenger-send').click();
     await expect(page.getByText('收到：Grok parity visual evidence')).toBeVisible();
     await attachScreenshot(page, 'grok-parity-conversation-1440x900');
-
-    const profileMark = page.getByTestId('profile-navigation-trigger').locator('[data-engine="fabushi-motion-v2"]').first();
-    await expect(profileMark).toBeVisible();
-    await profileMark.evaluate((element) => element.setAttribute('data-agent-state', 'thinking'));
-    await page.waitForTimeout(180);
-    await attachScreenshot(page, 'grok-parity-thinking-mark-1440x900');
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });
