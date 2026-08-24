@@ -286,6 +286,14 @@ test('returning-user local-first conversation list is interactive within the one
     await expect(page.getByTestId('messenger-input')).toBeVisible({ timeout: 2_000 });
     const rendererToComposerInteractiveMs = await page.evaluate(() => performance.now());
 
+    // The async account-status poll must not replace the locally restored Messenger
+    // with the login shell after first paint. Waiting longer than the retry cadence
+    // turns the previous transient failure into an explicit returning-session gate.
+    await page.waitForTimeout(1_100);
+    await expect(page.getByTestId('login-gate')).toHaveCount(0);
+    await expect(workspace).toBeVisible();
+    await expect(projectedPeer).toBeVisible();
+
     const evidence = {
       targetMs: 1_000,
       metric: 'renderer-navigation-to-cached-conversation-list-interactive',
