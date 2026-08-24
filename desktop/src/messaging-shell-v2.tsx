@@ -200,12 +200,35 @@ const defaultDesktopMessengerPreferences: DesktopMessengerPreferences = {
   reducedMotion: false,
 };
 
+function asMessengerProjection(value: unknown): MessengerProjection | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const parsed = value as Partial<MessengerProjection>;
+  if (parsed.version !== 1 || !Array.isArray(parsed.selfConversations) || !Array.isArray(parsed.selfActors)) return null;
+  if (!parsed.selfMessages || typeof parsed.selfMessages !== 'object' || Array.isArray(parsed.selfMessages)) return null;
+  return parsed as MessengerProjection;
+}
+
 function readMessengerProjection(): MessengerProjection | null {
   if (typeof window === 'undefined') return null;
   try {
-    const parsed = JSON.parse(window.localStorage.getItem(messengerProjectionKey) || 'null') as MessengerProjection | null;
-    if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.selfConversations) || !parsed.selfMessages) return null;
-    return parsed;
+    return asMessengerProjection(JSON.parse(window.localStorage.getItem(messengerProjectionKey) || 'null'));
+  } catch {
+    return null;
+  }
+}
+
+async function readDurableMessengerProjection(): Promise<MessengerProjection | null> {
+  const local = readMessengerProjection();
+  if (local) return local;
+  try {
+    const durable = asMessengerProjection(await invokeNativeDesktop<unknown>('readClientPersistence', { key: messengerProjectionKey }));
+    if (!durable) return null;
+    try {
+      window.localStorage.setItem(messengerProjectionKey, JSON.stringify(durable));
+    } catch {
+      // The native client-persistence mirror remains available for the next launch.
+    }
+    return durable;
   } catch {
     return null;
   }
@@ -227,6 +250,12 @@ function persistMessengerProjection(projection: MessengerProjection): void {
   } catch {
     // Fast-start projection is best effort; Rust SQLite remains authoritative.
   }
+  void invokeNativeDesktop<boolean>('writeClientPersistence', {
+    key: messengerProjectionKey,
+    value: projection,
+  }).catch(() => {
+    // Native persistence is a durability mirror only; canonical Rust SQLite remains authoritative.
+  });
 }
 
 function createTransport(): MahayanaHostTransport {
@@ -383,8 +412,21 @@ function upsertById<T extends { id: string }>(items: T[], item: T): T[] {
 
 export default function DesktopShellV2() {
   const authTransport = useMemo(() => createTransport(), []);
-  const [hasReturningProjection] = useState(() => Boolean(readMessengerProjection()));
+  const localProjection = useMemo(() => readMessengerProjection(), []);
+  const [startupProjection, setStartupProjection] = useState<MessengerProjection | null>(localProjection);
+  const [projectionLookupComplete, setProjectionLookupComplete] = useState(Boolean(localProjection));
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (localProjection) return;
+    let closed = false;
+    void readDurableMessengerProjection().then((projection) => {
+      if (closed) return;
+      setStartupProjection(projection);
+      setProjectionLookupComplete(true);
+    });
+    return () => { closed = true; };
+  }, [localProjection]);
 
   useEffect(() => {
     let closed = false;
@@ -409,17 +451,22 @@ export default function DesktopShellV2() {
     };
   }, [authTransport]);
 
-  const showMessenger = authenticated === true || (authenticated === null && hasReturningProjection);
+  const showMessenger = projectionLookupComplete
+    && (authenticated === true || (authenticated === null && Boolean(startupProjection)));
   return (
     <div className={styles.desktopRoot} data-testid="desktop-shell" data-local-first={showMessenger && authenticated === null ? 'true' : undefined}>
-      {showMessenger ? <MessengerWorkspace /> : <HostClient />}
+      {showMessenger
+        ? <MessengerWorkspace initialProjection={startupProjection} />
+        : projectionLookupComplete
+          ? <HostClient />
+          : <div className={styles.desktopRoot} data-testid="desktop-fast-start-bootstrap" aria-hidden="true" />}
     </div>
   );
 }
 
-function MessengerWorkspace() {
+function MessengerWorkspace({ initialProjection }: { initialProjection?: MessengerProjection | null }) {
   const transport = useMemo(() => createTransport(), []);
-  const startupProjection = useMemo(() => readMessengerProjection(), []);
+  const startupProjection = useMemo(() => initialProjection ?? readMessengerProjection(), [initialProjection]);
   const selfHosted = useMemo(() => new SelfHostedMessagingClientV2(transport, { actorId: startupProjection?.actorId }), [transport, startupProjection]);
   const [hostReady, setHostReady] = useState(false);
   const [section, setSection] = useState<MessengerSection>('chats');
@@ -548,7 +595,7 @@ function MessengerWorkspace() {
           .slice(0, projectionConversationLimit),
         selfMessages: boundedMessages,
       });
-    }, 180);
+    }, 60);
     return () => window.clearTimeout(timer);
   }, [activePeerKey, selfActors, selfConversations, selfMessages, selfHosted.actorId]);
 

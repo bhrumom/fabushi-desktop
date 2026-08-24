@@ -251,6 +251,18 @@ test('returning-user local-first conversation list is interactive within the one
       const projection = JSON.parse(localStorage.getItem('fabushi.desktop.messenger-projection.v1') || 'null');
       return Boolean(projection?.activePeerKey?.startsWith('selfhosted:') && projection?.selfConversations?.some((item: { title?: string }) => item.title === '首屏性能验收'));
     }), { timeout: 5_000 }).toBe(true);
+    await expect.poll(async () => page.evaluate(async () => {
+      const bridge = (window as unknown as {
+        fabushiNative?: { invoke<T>(method: string, params?: Record<string, unknown>): Promise<T> };
+      }).fabushiNative;
+      if (!bridge) return false;
+      const projection = await bridge.invoke<{ activePeerKey?: string; selfConversations?: Array<{ title?: string }> } | null>(
+        'readClientPersistence',
+        { key: 'fabushi.desktop.messenger-projection.v1' },
+      );
+      return Boolean(projection?.activePeerKey?.startsWith('selfhosted:')
+        && projection?.selfConversations?.some((item) => item.title === '首屏性能验收'));
+    }), { timeout: 5_000 }).toBe(true);
 
     await app.close();
 
@@ -262,6 +274,10 @@ test('returning-user local-first conversation list is interactive within the one
 
     await expect(workspace).toBeVisible({ timeout: 5_000 });
     await expect(workspace).toHaveAttribute('data-testid-ready-projection', 'true');
+    await expect.poll(async () => page.evaluate(() => {
+      const projection = JSON.parse(localStorage.getItem('fabushi.desktop.messenger-projection.v1') || 'null');
+      return Boolean(projection?.selfConversations?.some((item: { title?: string }) => item.title === '首屏性能验收'));
+    }), { timeout: 2_000 }).toBe(true);
     await expect(projectedPeer).toBeVisible({ timeout: 5_000 });
 
     const rendererToConversationListMs = await page.evaluate(() => performance.now());
