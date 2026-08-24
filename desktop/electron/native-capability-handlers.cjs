@@ -5,6 +5,7 @@ const { inspectOfflineAsr, downloadOfflineAsrModel, transcribeOfflineAudio } = r
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const os = require('node:os');
 
 const MAX_TEXT_BYTES = 5 * 1024 * 1024;
 const MAX_BINARY_BYTES = 32 * 1024 * 1024;
@@ -13,9 +14,14 @@ const MAX_DIAGNOSTIC_BYTES = 256 * 1024;
 const SENSITIVE_KEY = /(secret|token|password|authorization|cookie|credential|private.?key)/i;
 const LOCAL_TOOL_PERMISSIONS = new Set(['never', 'ask', 'always']);
 const UPDATE_TRACKS = new Set(['stable', 'beta', 'alpha']);
+const DEFAULT_DOCKER_IMAGE = 'mcr.microsoft.com/devcontainers/base:ubuntu24.04@sha256:c5cc2b45afe06a1df3aba17e58ba0dc4a02b999493198dab37dd0ccd4e2b0705';
 
 function cleanString(value, limit = 4096) {
   return String(value ?? '').replace(/\0/g, '').trim().slice(0, limit);
+}
+
+function isPinnedContainerImage(value) {
+  return /^[^\s@]+@sha256:[a-fA-F0-9]{64}$/.test(cleanString(value, 1000));
 }
 
 function safeFileName(value, fallback = 'attachment.bin') {
@@ -181,6 +187,56 @@ function createNativeCapabilityHandlers(deps) {
     await fs.rename(temp, secretPath());
   }
 
+  function vaultSecretConfigured(vault, name) {
+    const ciphertext = vault?.[name]?.ciphertext;
+    if (typeof ciphertext !== 'string' || !ciphertext || !safeStorage?.isEncryptionAvailable?.()) return false;
+    try {
+      const value = safeStorage.decryptString(Buffer.from(ciphertext, 'base64'));
+      return Boolean(value) && !/[\r\n]/.test(value);
+    } catch {
+      return false;
+    }
+  }
+
+  async function isRegularFile(filePath) {
+    if (!filePath) return false;
+    try { return (await fs.stat(filePath)).isFile(); } catch { return false; }
+  }
+
+  async function inspectCodexAuth(filePath) {
+    if (!filePath) return { authenticated: false, reason: 'missing' };
+    try {
+      const metadata = await fs.lstat(filePath);
+      if (!metadata.isFile() || metadata.isSymbolicLink()) {
+        return { authenticated: false, reason: 'unsafe-file-type' };
+      }
+      if (process.platform !== 'win32' && (metadata.mode & 0o077) !== 0) {
+        return { authenticated: false, reason: 'unsafe-permissions' };
+      }
+      if (metadata.size > 1024 * 1024) return { authenticated: false, reason: 'oversized' };
+      const value = JSON.parse(await fs.readFile(filePath, 'utf8'));
+      const apiKey = cleanString(value?.OPENAI_API_KEY, 16);
+      const accessToken = cleanString(value?.tokens?.access_token, 16);
+      const idToken = cleanString(value?.tokens?.id_token, 16);
+      const authenticated = Boolean(apiKey || accessToken || idToken);
+      return { authenticated, reason: authenticated ? 'credential-present' : 'credential-missing' };
+    } catch {
+      return { authenticated: false, reason: 'unreadable' };
+    }
+  }
+
+  async function firstAvailableExecutable(explicitPath, command) {
+    const suffix = process.platform === 'win32' ? '.exe' : '';
+    const candidates = [
+      cleanString(explicitPath, 4096),
+      ...(process.env.PATH ?? '').split(path.delimiter).filter(Boolean).map((directory) => path.join(directory, `${command}${suffix}`)),
+    ].filter(Boolean);
+    for (const candidate of candidates) {
+      if (await isRegularFile(candidate)) return candidate;
+    }
+    return null;
+  }
+
   function requireSecretEncryption() {
     if (!safeStorage?.isEncryptionAvailable?.()) {
       throw new Error('OS-backed secret encryption is not available on this device.');
@@ -201,13 +257,14 @@ function createNativeCapabilityHandlers(deps) {
   }
 
   async function currentUpdateStatus() {
-    if (typeof getDesktopUpdateStatus === 'function') return getDesktopUpdateStatus();
     const state = await readNativeState();
-    return state.updateStatus ?? {
+    const status = typeof getDesktopUpdateStatus === 'function'
+      ? await getDesktopUpdateStatus()
+      : state.updateStatus ?? {
       type: 'upToDate',
       version: app.getVersion(),
-      track: state.preferences?.updateTrack ?? 'stable',
     };
+    return { ...status, track: status?.track ?? state.preferences?.updateTrack ?? 'stable' };
   }
 
   async function writeUpdateStatus(status) {
@@ -819,6 +876,31 @@ function createNativeCapabilityHandlers(deps) {
     async getUsageSummary() {
       const weekly = await this.getWeeklyUsage();
       const state = await readNativeState();
+      const entries = Array.isArray(state.usageEvents) ? state.usageEvents : [];
+      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const byProvider = Object.values(entries.filter((item) => Number(item.timestampMs) >= cutoff).reduce((result, item) => {
+        const provider = cleanString(item.provider, 80) || 'fabushi';
+        const current = result[provider] ?? {
+          provider,
+          requests: 0,
+          inputTokens: 0,
+          cachedInputTokens: 0,
+          outputTokens: 0,
+          reasoningTokens: 0,
+          totalTokens: 0,
+          lifetimeTokens: Number(state.usageLifetimeByProvider?.[provider] ?? 0),
+          lastUsedAtMs: null,
+        };
+        current.requests += 1;
+        current.inputTokens += Number(item.inputTokens ?? 0);
+        current.cachedInputTokens += Number(item.cachedInputTokens ?? 0);
+        current.outputTokens += Number(item.outputTokens ?? 0);
+        current.reasoningTokens += Number(item.reasoningTokens ?? 0);
+        current.totalTokens += Number(item.totalTokens ?? 0);
+        current.lastUsedAtMs = Math.max(Number(current.lastUsedAtMs ?? 0), Number(item.timestampMs ?? 0)) || null;
+        result[provider] = current;
+        return result;
+      }, {}));
       let membership = null;
       try { membership = await platformRequest('GET', '/api/stripe/membership-status'); } catch { /* offline/not logged in */ }
       return {
@@ -826,7 +908,47 @@ function createNativeCapabilityHandlers(deps) {
         membership,
         lifetimeTokens: Number(state.usageLifetimeTokens ?? weekly.totalTokens),
         updatedAtMs: state.usageUpdatedAtMs ?? null,
+        byProvider,
       };
+    },
+
+    async getInferenceRouterStatus() {
+      const home = os.homedir();
+      const codexHome = cleanString(process.env.CODEX_HOME, 4096) || path.join(home, '.codex');
+      const codexAuth = path.join(codexHome, 'auth.json');
+      const claudeCredentials = path.join(home, '.claude', '.credentials.json');
+      const [codexCli, claudeCli, codexAuthStatus, claudeCredentialFile, vault] = await Promise.all([
+        firstAvailableExecutable(process.env.CODEX_PATH, 'codex'),
+        firstAvailableExecutable(process.env.CLAUDE_CODE_PATH, 'claude'),
+        inspectCodexAuth(codexAuth),
+        isRegularFile(claudeCredentials),
+        loadSecretVault(),
+      ]);
+      const claudeAuthenticated = claudeCredentialFile || Boolean(cleanString(process.env.ANTHROPIC_API_KEY, 16));
+      const codexAuthenticated = codexAuthStatus.authenticated;
+      const openRouterConfigured = vaultSecretConfigured(vault, 'inference/openrouter/api-key');
+      const claudeApiConfigured = vaultSecretConfigured(vault, 'inference/claude/api-key')
+        || Boolean(cleanString(process.env.ANTHROPIC_API_KEY, 16));
+      const dockerCli = await firstAvailableExecutable(process.env.DOCKER_PATH, 'docker');
+      const dockerImagePinned = isPinnedContainerImage(process.env.MAHAYANA_DOCKER_IMAGE || DEFAULT_DOCKER_IMAGE);
+      return {
+        schemaVersion: 1,
+        providers: [
+          { id: 'fabushi', label: 'Fabushi', available: true, authenticated: true, source: 'mahayana' },
+          { id: 'codex', label: 'Codex', available: codexCli != null && codexAuthenticated, authenticated: codexAuthenticated, installed: codexCli != null, source: 'local-session', reason: codexAuthStatus.reason },
+          { id: 'claude-code', label: 'Claude', available: claudeApiConfigured, authenticated: claudeApiConfigured, installed: claudeCli != null, localSessionAuthenticated: claudeAuthenticated, source: claudeApiConfigured ? 'os-secret-vault' : 'local-session-diagnostic' },
+          { id: 'openrouter', label: 'OpenRouter', available: openRouterConfigured, authenticated: openRouterConfigured, installed: true, source: 'os-secret-vault' },
+        ],
+        sandboxes: [
+          { id: 'host', label: 'Fabushi Host', available: true, source: 'mahayana' },
+          { id: 'local-docker', label: 'Local Docker', available: dockerCli != null && dockerImagePinned, installed: dockerCli != null, imagePinned: dockerImagePinned, source: 'local-cli+pinned-image' },
+        ],
+      };
+    },
+
+    restartInferenceRouter() {
+      host.restart('inference Provider credential changed');
+      return host.health();
     },
 
     async getReviewPreferences() {

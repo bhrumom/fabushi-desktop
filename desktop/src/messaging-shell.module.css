@@ -1055,22 +1055,108 @@
 }
 
 
-/* Telegram-inspired settings information architecture, rendered with Fabushi materials. */
+/* Grok Router-style centered settings surface, extended with Fabushi controls. */
+.settingsModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 240;
+  display: grid;
+  place-items: center;
+  padding: 34px 40px;
+  background: rgba(0, 0, 0, .72);
+  backdrop-filter: blur(3px);
+}
+
+.settingsModal {
+  width: min(1120px, 100%);
+  height: min(740px, 100%);
+  min-height: 520px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 246px minmax(0, 1fr);
+  border: 1px solid #393939;
+  border-radius: 18px;
+  background: #191919;
+  color: #f5f5f5;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .65);
+}
+
+.settingsModalSidebar {
+  min-width: 0;
+  overflow: auto;
+  padding: 24px 14px 18px;
+  border-right: 1px solid #3a3a3a;
+  background: #2b2b2b;
+}
+
+.settingsModalSidebar > header {
+  padding: 0 12px 18px;
+  font-size: 20px;
+  letter-spacing: -.02em;
+}
+
+.settingsModalContent {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.settingsModalClose {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.settingsModalClose:hover { background: #303030; color: #fff; }
+
+.settingsModalError {
+  position: absolute;
+  z-index: 4;
+  top: 18px;
+  left: 50%;
+  width: min(520px, calc(100% - 130px));
+  padding: 9px 10px 9px 13px;
+  border: 1px solid rgba(248, 113, 113, .38);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transform: translateX(-50%);
+  background: #3a2020;
+  color: #fecaca;
+  font-size: 11px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
+}
+
+.settingsModalError button { border: 0; background: transparent; color: inherit; cursor: pointer; }
+
 .settingsNavigation {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   padding: 2px 0 14px;
 }
 
 .settingsNavigation > button {
   width: 100%;
-  min-height: 58px;
-  padding: 8px 10px;
+  min-height: 46px;
+  padding: 7px 10px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 9px;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  gap: 9px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
   align-items: center;
   text-align: left;
   background: transparent;
@@ -1080,21 +1166,21 @@
 
 .settingsNavigation > button:hover,
 .settingsNavigation > button[data-active="true"] {
-  background: rgba(139, 92, 246, .14);
+  background: #464646;
 }
 
 .settingsNavigation > button[data-active="true"] {
-  box-shadow: inset 2px 0 #8b5cf6;
+  box-shadow: none;
 }
 
 .settingsNavigation > button > span {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: 27px;
+  height: 27px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, .065);
-  font-size: 16px;
+  background: transparent;
+  font-size: 15px;
 }
 
 .settingsNavigation > button > div {
@@ -1103,13 +1189,9 @@
   gap: 2px;
 }
 
-.settingsNavigation strong { font-size: 13px; }
+.settingsNavigation strong { font-size: 12.5px; font-weight: 580; }
 .settingsNavigation small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #8f8c9f;
-  font-size: 10px;
+  display: none;
 }
 
 .settingsWorkspace {
@@ -1118,16 +1200,14 @@
   min-width: 0;
   min-height: 100%;
   overflow: auto;
-  padding: 34px clamp(24px, 6vw, 88px) 54px;
-  background:
-    radial-gradient(circle at 82% 8%, rgba(139, 92, 246, .12), transparent 28%),
-    #0b0b11;
+  padding: 36px clamp(28px, 5vw, 64px) 54px;
+  background: #191919;
   color: #f7f5fb;
 }
 
 .settingsWorkspace > header {
-  width: min(760px, 100%);
-  margin: 0 auto 22px;
+  width: min(720px, 100%);
+  margin: 0 auto 24px;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -1146,22 +1226,37 @@
 }
 
 .settingsWorkspace > header div { min-width: 0; }
-.settingsWorkspace h2 { margin: 0; font-size: 23px; font-weight: 760; letter-spacing: -.02em; }
+.settingsWorkspace h2 { margin: 0; font-size: 21px; font-weight: 650; letter-spacing: -.02em; }
 .settingsWorkspace > header p { margin: 4px 0 0; color: #9996a8; font-size: 12px; line-height: 1.45; }
 
+.settingsInlineError {
+  width: min(720px, 100%);
+  margin: 0 auto 14px;
+  padding: 9px 11px;
+  border: 1px solid rgba(248, 113, 113, .35);
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  background: #3a2020;
+  color: #fecaca;
+  font-size: 11px;
+}
+.settingsInlineError button { border: 0; background: transparent; color: inherit; cursor: pointer; }
+
 .settingsGroup {
-  width: min(760px, 100%);
+  width: min(720px, 100%);
   margin: 0 auto 18px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, .075);
+  border: 1px solid #373737;
   border-radius: 16px;
-  background: rgba(21, 20, 30, .82);
-  box-shadow: 0 18px 54px rgba(0, 0, 0, .16), inset 0 1px rgba(255, 255, 255, .035);
-  backdrop-filter: blur(22px) saturate(1.12);
+  background: #292929;
+  box-shadow: none;
 }
 
 .settingsRow,
-.settingsInfoRow {
+.settingsInfoRow,
+.settingsActionRow {
   min-height: 64px;
   padding: 11px 15px;
   display: grid;
@@ -1172,6 +1267,112 @@
 }
 
 .settingsGroup > :last-child { border-bottom: 0; }
+.settingsActionRow > div { min-width: 0; display: grid; gap: 3px; }
+.settingsActionRow strong { font-size: 13px; font-weight: 690; }
+.settingsActionRow small { color: #9693a5; font-size: 11px; line-height: 1.42; }
+.settingsActionRow button {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: #444;
+  color: #fff;
+  cursor: pointer;
+}
+.settingsChoiceRow {
+  width: 100%;
+  min-height: 70px;
+  padding: 12px 15px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .065);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .16s ease, opacity .16s ease;
+}
+.settingsChoiceRow:hover:not(:disabled),
+.settingsChoiceRow[data-selected="true"] { background: rgba(139, 92, 246, .09); }
+.settingsChoiceRow:disabled { cursor: default; opacity: .58; }
+.settingsChoiceRow > div { min-width: 0; display: grid; gap: 3px; }
+.settingsChoiceRow strong { font-size: 13px; font-weight: 690; }
+.settingsChoiceRow small { color: #9693a5; font-size: 11px; line-height: 1.42; }
+.settingsChoiceRow em {
+  padding: 4px 7px;
+  border-radius: 8px;
+  background: rgba(139, 92, 246, .14);
+  color: #c4b5fd;
+  font-size: 10px;
+  font-style: normal;
+  white-space: nowrap;
+}
+.settingsChoiceDot {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, .3);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px rgba(21, 20, 30, .9);
+}
+.settingsChoiceRow[data-selected="true"] .settingsChoiceDot {
+  border-color: #a78bfa;
+  background: #8b5cf6;
+}
+.settingsSelectRow {
+  min-height: 84px;
+  padding: 12px 15px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, .065);
+}
+.settingsSelectRow > div { min-width: 0; display: grid; gap: 4px; }
+.settingsSelectRow strong { font-size: 13px; font-weight: 690; }
+.settingsSelectRow small { color: #9693a5; font-size: 11px; line-height: 1.42; }
+.settingsSelectRow select {
+  max-width: 180px;
+  padding: 8px 30px 8px 11px;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 10px;
+  background: #302f36;
+  color: #f4f2f8;
+  font: inherit;
+  font-size: 12px;
+}
+.settingsSecretRow {
+  min-height: 76px;
+  padding: 12px 15px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px) auto;
+  gap: 10px;
+  align-items: center;
+}
+.settingsSecretRow > div { min-width: 0; display: grid; gap: 4px; }
+.settingsSecretRow strong { font-size: 13px; font-weight: 690; }
+.settingsSecretRow small { color: #9693a5; font-size: 11px; line-height: 1.42; }
+.settingsSecretRow input {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 9px;
+  background: rgba(7, 7, 10, .66);
+  color: #f4f2f8;
+}
+.settingsSecretRow button {
+  padding: 8px 11px;
+  border: 0;
+  border-radius: 9px;
+  background: #8b5cf6;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+}
+.settingsSecretRow button:disabled { opacity: .5; }
+.settingsSecretActions { display: flex; gap: 6px; align-items: center; }
+.settingsSecretActions button[data-secondary="true"] { background: #414141; color: #d6d6d6; }
 .settingsRow > div,
 .settingsInfoRow { min-width: 0; }
 .settingsRow > div { display: grid; gap: 3px; }
@@ -1249,6 +1450,19 @@
 }
 
 @media (max-width: 900px) {
+  .settingsModalBackdrop { padding: 18px; }
+  .settingsModal { grid-template-columns: 210px minmax(0, 1fr); }
   .settingsWorkspace { padding: 24px 18px 40px; }
   .settingsWorkspace > header { align-items: flex-start; }
+}
+
+@media (max-width: 680px) {
+  .settingsModalBackdrop { padding: 0; }
+  .settingsModal { width: 100%; height: 100%; min-height: 0; border: 0; border-radius: 0; grid-template-columns: 72px minmax(0, 1fr); }
+  .settingsModalSidebar { padding-inline: 9px; }
+  .settingsModalSidebar > header { display: none; }
+  .settingsNavigation > button { grid-template-columns: 1fr; justify-items: center; padding-inline: 4px; }
+  .settingsNavigation > button > div { display: none; }
+  .settingsSecretRow { grid-template-columns: 1fr auto; }
+  .settingsSecretRow > div { grid-column: 1 / -1; }
 }

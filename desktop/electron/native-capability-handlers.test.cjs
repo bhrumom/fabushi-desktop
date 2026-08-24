@@ -119,6 +119,107 @@ test('secret vault never persists plaintext and listSecrets does not reveal valu
   });
 });
 
+test('inference Router readiness reports local sessions and encrypted OpenRouter configuration without secrets', async () => {
+  const previous = {
+    CODEX_HOME: process.env.CODEX_HOME,
+    CODEX_PATH: process.env.CODEX_PATH,
+    CLAUDE_CODE_PATH: process.env.CLAUDE_CODE_PATH,
+    DOCKER_PATH: process.env.DOCKER_PATH,
+    MAHAYANA_DOCKER_IMAGE: process.env.MAHAYANA_DOCKER_IMAGE,
+  };
+  try {
+    await harness(async ({ root, handlers }) => {
+      const codexHome = path.join(root, 'codex-home');
+      const bin = path.join(root, process.platform === 'win32' ? 'provider.exe' : 'provider');
+      await fs.mkdir(codexHome, { recursive: true });
+      await fs.writeFile(path.join(codexHome, 'auth.json'), JSON.stringify({ tokens: { access_token: 'test-access-token' } }), { mode: 0o600 });
+      await fs.writeFile(bin, 'test');
+      process.env.CODEX_HOME = codexHome;
+      process.env.CODEX_PATH = bin;
+      process.env.CLAUDE_CODE_PATH = bin;
+      process.env.DOCKER_PATH = bin;
+      process.env.MAHAYANA_DOCKER_IMAGE = `ghcr.io/bhrumom/fabushi-sandbox@sha256:${'a'.repeat(64)}`;
+      await handlers.upsertSecrets({ name: 'inference/openrouter/api-key', value: 'never-return-this-key' });
+      await handlers.upsertSecrets({ name: 'inference/claude/api-key', value: 'never-return-this-claude-key' });
+
+      const status = await handlers.getInferenceRouterStatus();
+      assert.equal(status.schemaVersion, 1);
+      assert.equal(status.providers.find((provider) => provider.id === 'fabushi').available, true);
+      assert.equal(status.providers.find((provider) => provider.id === 'codex').authenticated, true);
+      assert.equal(status.providers.find((provider) => provider.id === 'openrouter').available, true);
+      assert.equal(status.providers.find((provider) => provider.id === 'claude-code').available, true);
+      assert.equal(status.sandboxes.find((sandbox) => sandbox.id === 'local-docker').available, true);
+      assert.equal(JSON.stringify(status).includes('never-return-this-key'), false);
+      assert.equal(JSON.stringify(status).includes('never-return-this-claude-key'), false);
+    });
+  } finally {
+    for (const [name, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+});
+
+test('inference readiness rejects an unreadable encrypted Provider credential', async () => {
+  await harness(async ({ app, handlers }) => {
+    const secureRoot = path.join(app.getPath('userData'), 'secure');
+    await fs.mkdir(secureRoot, { recursive: true });
+    await fs.writeFile(path.join(secureRoot, 'secrets.json'), JSON.stringify({
+      'inference/openrouter/api-key': { ciphertext: Buffer.from('corrupt').toString('base64') },
+    }));
+    const status = await handlers.getInferenceRouterStatus();
+    assert.equal(status.providers.find((provider) => provider.id === 'openrouter').available, false);
+  }, {
+    safeStorage: {
+      isEncryptionAvailable: () => true,
+      encryptString: (value) => Buffer.from(value),
+      decryptString: () => { throw new Error('corrupt ciphertext'); },
+    },
+  });
+});
+
+test('usage summary preserves provider-reported token breakdown without prompt content', async () => {
+  const timestampMs = Date.now();
+  await harness(async ({ handlers }) => {
+    const summary = await handlers.getUsageSummary();
+    const codex = summary.byProvider.find((item) => item.provider === 'codex');
+    assert.deepEqual(codex, {
+      provider: 'codex',
+      requests: 1,
+      inputTokens: 120,
+      cachedInputTokens: 40,
+      outputTokens: 30,
+      reasoningTokens: 10,
+      totalTokens: 160,
+      lifetimeTokens: 900,
+      lastUsedAtMs: timestampMs,
+    });
+    assert.equal(JSON.stringify(summary).includes('prompt'), false);
+  }, {
+    initialState: {
+      preferences: {},
+      clientPersistence: {},
+      usageEvents: [{ timestampMs, provider: 'codex', inputTokens: 120, cachedInputTokens: 40, outputTokens: 30, reasoningTokens: 10, totalTokens: 160 }],
+      usageLifetimeTokens: 900,
+      usageLifetimeByProvider: { codex: 900 },
+      usageUpdatedAtMs: timestampMs,
+    },
+  });
+});
+
+test('credential changes can restart only the inference Host generation', async () => {
+  const reasons = [];
+  const host = {
+    restart(reason) { reasons.push(reason); },
+    health() { return { state: 'running', generation: 2 }; },
+    async request() { return { ok: true, data: null }; },
+  };
+  await harness(async ({ handlers }) => {
+    assert.deepEqual(handlers.restartInferenceRouter(), { state: 'running', generation: 2 });
+  }, { host });
+  assert.deepEqual(reasons, ['inference Provider credential changed']);
+});
+
 test('managed attachment operations reject path escape attempts', async () => {
   await harness(async ({ root, handlers }) => {
     const outside = path.join(root, 'outside.bin');

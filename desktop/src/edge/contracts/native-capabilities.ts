@@ -85,6 +85,8 @@ export const NATIVE_DESKTOP_METHODS = {
   getAccountAvatar: { args: 'none' },
   getWeeklyUsage: { args: 'none' },
   getUsageSummary: { args: 'none' },
+  getInferenceRouterStatus: { args: 'none' },
+  restartInferenceRouter: { args: 'none' },
   getReviewPreferences: { args: 'none' },
   getPrivacyModeEnabled: { args: 'none' },
   getRuntimeAccess: { args: 'none' },

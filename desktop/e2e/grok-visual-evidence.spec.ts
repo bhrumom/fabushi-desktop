@@ -67,6 +67,16 @@ test('capture Grok parity packaged visual evidence', async () => {
     await attachScreenshot(page, 'grok-parity-global-search-1440x900');
     await page.getByRole('button', { name: '关闭搜索' }).click();
 
+    await page.getByTestId('profile-navigation-trigger').click();
+    await page.getByTitle('设置', { exact: true }).click();
+    await page.getByTestId('settings-category-router').click();
+    await expect(page.getByTestId('router-provider-settings')).toBeVisible();
+    await attachScreenshot(page, 'grok-parity-router-settings-1440x900');
+    await page.getByTestId('settings-close').click();
+    await expect(page.getByTestId('settings-modal-backdrop')).toHaveCount(0);
+    await page.getByTestId('profile-navigation-trigger').click();
+    await page.getByTitle('聊天', { exact: true }).click();
+
     const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
     await expect(assistant).toBeVisible();
     await assistant.click();

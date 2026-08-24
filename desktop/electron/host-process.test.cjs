@@ -22,6 +22,8 @@ const {
   DEVELOPMENT_PRODUCT_API_BASE_URL,
   MahayanaHostProcess,
   PRODUCTION_PRODUCT_API_BASE_URL,
+  persistedInferenceProvider,
+  persistedRouterSettings,
   productApiBaseUrl,
 } = require('./host-process.cjs');
 Module._load = originalLoad;
@@ -63,17 +65,44 @@ class FakeChild extends EventEmitter {
   }
 }
 
-function harness() {
+function harness(options = {}) {
   const children = [];
   let now = 1000;
+  const expectedProvider = options.inferenceProvider ?? 'fabushi';
   const host = new MahayanaHostProcess({
     app: defaultApp,
-    env: { MAHAYANA_API_BASE_URL: 'https://api.example.test/' },
+    env: { MAHAYANA_API_BASE_URL: 'https://api.example.test/', ...(options.env ?? {}) },
     platform: 'linux',
     now: () => ++now,
-    spawn: (_bin, _args, options) => {
-      assert.equal(options.env.MAHAYANA_API_BASE_URL, 'https://api.example.test');
-      assert.equal(options.env.FABUSHI_APP_DATA, '/tmp/fabushi-host-test');
+    fs: {
+      readFileSync() {
+        if (options.inferenceProvider === undefined) throw Object.assign(new Error('missing'), { code: 'ENOENT' });
+        return JSON.stringify({ inferenceProvider: options.inferenceProvider, sandboxRuntime: options.sandboxRuntime });
+      },
+    },
+    providerEnvironment: options.providerEnvironment,
+    spawn: (_bin, _args, spawnOptions) => {
+      assert.equal(spawnOptions.env.MAHAYANA_API_BASE_URL, 'https://api.example.test');
+      assert.equal(spawnOptions.env.FABUSHI_APP_DATA, '/tmp/fabushi-host-test');
+      assert.equal(spawnOptions.env.MAHAYANA_AGENT_ENGINE, expectedProvider === 'codex' ? 'codex' : '');
+      assert.equal(spawnOptions.env.MAHAYANA_USE_CODEX_ACCOUNT, expectedProvider === 'codex' ? '1' : '0');
+      assert.equal(Boolean(spawnOptions.env.MAHAYANA_CODEX_HOME), expectedProvider === 'codex');
+      assert.equal(spawnOptions.env.MAHAYANA_INFERENCE_PROVIDER, expectedProvider);
+      assert.equal(spawnOptions.env.ANTHROPIC_API_KEY, '');
+      assert.equal(spawnOptions.env.OPENROUTER_API_KEY, '');
+      assert.equal(spawnOptions.env.MAHAYANA_SANDBOX_RUNTIME, options.sandboxRuntime ?? 'host');
+      assert.match(spawnOptions.env.MAHAYANA_DOCKER_IMAGE, /@sha256:[a-f0-9]{64}$/);
+      if (expectedProvider === 'openrouter') {
+        assert.equal(spawnOptions.env.MAHAYANA_MODEL_BEARER_TOKEN, 'encrypted-vault-value');
+        assert.equal(spawnOptions.env.MAHAYANA_OPENROUTER_MODEL, 'openai/test');
+      }
+      if (expectedProvider === 'claude-code') {
+        assert.equal(spawnOptions.env.MAHAYANA_MODEL_BEARER_TOKEN, 'encrypted-claude-value');
+        assert.equal(spawnOptions.env.MAHAYANA_CLAUDE_MODEL, 'claude-sonnet-4-6');
+      }
+      if (expectedProvider === 'fabushi' || expectedProvider === 'codex') {
+        assert.equal(spawnOptions.env.MAHAYANA_MODEL_BEARER_TOKEN, '');
+      }
       const child = new FakeChild(7000 + children.length);
       children.push(child);
       return child;
@@ -89,6 +118,67 @@ test('product API base URL is environment-aware and rejects unsafe overrides', (
   assert.throws(() => productApiBaseUrl({ isPackaged: true }, { MAHAYANA_API_BASE_URL: 'http://api.example.test' }), /clean HTTPS/);
   assert.throws(() => productApiBaseUrl({ isPackaged: true }, { MAHAYANA_API_BASE_URL: 'https://u:p@api.example.test' }), /clean HTTPS/);
   assert.throws(() => productApiBaseUrl({ isPackaged: true }, { MAHAYANA_API_BASE_URL: 'https://api.example.test?x=1' }), /clean HTTPS/);
+});
+
+test('persisted provider selection defaults safely and starts Codex through the existing Host boundary', () => {
+  assert.equal(persistedInferenceProvider(defaultApp, { readFileSync: () => '{"inferenceProvider":"codex"}' }), 'codex');
+  assert.equal(persistedInferenceProvider(defaultApp, { readFileSync: () => '{"inferenceProvider":"unknown"}' }), 'fabushi');
+  assert.equal(persistedInferenceProvider(defaultApp, { readFileSync: () => { throw new Error('missing'); } }), 'fabushi');
+  assert.deepEqual(
+    persistedRouterSettings(defaultApp, { readFileSync: () => '{"inferenceProvider":"codex","sandboxRuntime":"local-docker"}' }),
+    { inferenceProvider: 'codex', sandboxRuntime: 'local-docker' },
+  );
+
+  const { host, children } = harness({ inferenceProvider: 'codex' });
+  host.start();
+  assert.equal(children.length, 1);
+  assert.equal(host.health().inferenceProvider, 'codex');
+  host.close();
+});
+
+test('Local Docker selection is scoped to the same Host generation', () => {
+  const { host, children } = harness({ inferenceProvider: 'fabushi', sandboxRuntime: 'local-docker' });
+  host.start();
+  assert.equal(children.length, 1);
+  assert.equal(host.health().sandboxRuntime, 'local-docker');
+  host.close();
+});
+
+test('Claude receives only the scoped model credential environment', () => {
+  const { host, children } = harness({
+    inferenceProvider: 'claude-code',
+    providerEnvironment: (provider) => provider === 'claude-code'
+      ? { MAHAYANA_MODEL_BEARER_TOKEN: 'encrypted-claude-value', MAHAYANA_CLAUDE_MODEL: 'claude-sonnet-4-6' }
+      : {},
+  });
+  host.start();
+  assert.equal(children.length, 1);
+  assert.equal(host.health().inferenceProvider, 'claude-code');
+  host.close();
+});
+
+test('OpenRouter receives only the scoped model credential environment', () => {
+  const { host, children } = harness({
+    inferenceProvider: 'openrouter',
+    providerEnvironment: (provider) => provider === 'openrouter'
+      ? { MAHAYANA_MODEL_BEARER_TOKEN: 'encrypted-vault-value', MAHAYANA_OPENROUTER_MODEL: 'openai/test' }
+      : {},
+  });
+  host.start();
+  assert.equal(children.length, 1);
+  assert.equal(host.health().inferenceProvider, 'openrouter');
+  host.close();
+});
+
+test('unselected provider credentials are scrubbed from the Host environment', () => {
+  const { host, children } = harness({
+    inferenceProvider: 'fabushi',
+    env: { ANTHROPIC_API_KEY: 'must-not-leak', OPENROUTER_API_KEY: 'must-not-leak' },
+  });
+  host.start();
+  const spawned = children.length;
+  assert.equal(spawned, 1);
+  host.close();
 });
 
 test('host resolves structured requests and reports health for the active generation', async () => {

@@ -26,7 +26,49 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-const host = new MahayanaHostProcess();
+function encryptedProviderSecret(name) {
+  if (!safeStorage?.isEncryptionAvailable?.()) {
+    return null;
+  }
+  const secretFile = path.join(app.getPath('userData'), 'secure', 'secrets.json');
+  let vault;
+  try { vault = JSON.parse(fsSync.readFileSync(secretFile, 'utf8')); }
+  catch { return null; }
+  const ciphertext = vault?.[name]?.ciphertext;
+  if (typeof ciphertext !== 'string' || !ciphertext) {
+    return null;
+  }
+  try {
+    const value = safeStorage.decryptString(Buffer.from(ciphertext, 'base64'));
+    return value && !/[\r\n]/.test(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function providerEnvironment(inferenceProvider) {
+  if (inferenceProvider === 'openrouter') {
+    const value = encryptedProviderSecret('inference/openrouter/api-key');
+    if (!value) return {};
+    return {
+      MAHAYANA_MODEL_BEARER_TOKEN: value,
+      MAHAYANA_OPENROUTER_MODEL: process.env.MAHAYANA_OPENROUTER_MODEL || 'openai/gpt-5.2',
+    };
+  }
+  if (inferenceProvider === 'claude-code') {
+    const value = encryptedProviderSecret('inference/claude/api-key') || process.env.ANTHROPIC_API_KEY?.trim();
+    if (!value || /[\r\n]/.test(value)) return {};
+    return {
+      MAHAYANA_MODEL_BEARER_TOKEN: value,
+      MAHAYANA_CLAUDE_MODEL: process.env.MAHAYANA_CLAUDE_MODEL || 'claude-sonnet-4-6',
+    };
+  }
+  return {
+    // Never forward provider credentials to the Fabushi/Codex Host generation.
+  };
+}
+
+const host = new MahayanaHostProcess({ providerEnvironment });
 let mahayanaEdgeServer = null;
 let nativeEdgeServer = null;
 let hostEventPumpStopped = false;
@@ -692,8 +734,13 @@ function installMahayanaEdge() {
 
 function noteRuntimeUsage(event) {
   if (!event || event.type !== 'usage.updated') return;
+  const provider = String(host.activeInferenceProvider || 'fabushi');
+  const inputTokens = Math.max(0, Number(event.inputTokens ?? 0));
+  const cachedInputTokens = Math.max(0, Number(event.cachedInputTokens ?? 0));
+  const outputTokens = Math.max(0, Number(event.outputTokens ?? 0));
+  const reasoningTokens = Math.max(0, Number(event.reasoningTokens ?? 0));
   const totalTokens = Math.max(0, Number(event.totalTokens ?? 0));
-  const item = { timestampMs: Date.now(), totalTokens };
+  const item = { timestampMs: Date.now(), provider, inputTokens, cachedInputTokens, outputTokens, reasoningTokens, totalTokens };
   void mutateNativeState((state) => {
     const previous = Array.isArray(state.usageEvents) ? state.usageEvents : [];
     const cutoff = Date.now() - 35 * 24 * 60 * 60 * 1000;
@@ -702,6 +749,10 @@ function noteRuntimeUsage(event) {
       ...state,
       usageEvents,
       usageLifetimeTokens: Number(state.usageLifetimeTokens ?? 0) + totalTokens,
+      usageLifetimeByProvider: {
+        ...(state.usageLifetimeByProvider ?? {}),
+        [provider]: Number(state.usageLifetimeByProvider?.[provider] ?? 0) + totalTokens,
+      },
       usageUpdatedAtMs: item.timestampMs,
     };
   }).catch((error) => console.error('[native-edge] failed to persist usage telemetry', error));
@@ -719,6 +770,16 @@ function broadcastMahayanaEvent(event) {
   for (const win of BrowserWindow.getAllWindows()) {
     if (win.isDestroyed() || win.webContents.isDestroyed()) continue;
     mahayanaEdgeServer.emit(win.webContents, 'runtime-event', event);
+  }
+  if (event?.type === 'settings.changed'
+      && ((typeof event.settings?.inferenceProvider === 'string'
+        && event.settings.inferenceProvider !== host.activeInferenceProvider)
+        || (typeof event.settings?.sandboxRuntime === 'string'
+          && event.settings.sandboxRuntime !== host.activeSandboxRuntime))) {
+    setImmediate(() => {
+      try { host.restart('inference Router settings changed'); }
+      catch (error) { console.error('[mahayana-edge] Router restart failed', error); }
+    });
   }
 }
 

@@ -178,7 +178,7 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
   }
 });
 
-test('Telegram-inspired settings bind supported preferences and persist fast-start projection', async () => {
+test('Router settings modal binds providers, usage, sandbox, preferences and fast-start projection', async ({}, testInfo) => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-settings-e2e-'));
   const app = await launchDesktopApp(appDataDir);
 
@@ -196,14 +196,38 @@ test('Telegram-inspired settings bind supported preferences and persist fast-sta
 
     await page.getByTestId('profile-navigation-trigger').click();
     await page.getByTitle('设置', { exact: true }).click();
+    await expect(page.getByTestId('settings-modal-backdrop')).toBeVisible();
     await expect(page.getByTestId('telegram-settings-navigation')).toBeVisible();
     await expect(page.getByTestId('telegram-settings-workspace')).toBeVisible();
 
-    for (const category of ['account', 'notifications', 'privacy', 'data', 'chat', 'folders', 'devices', 'calls', 'language', 'advanced', 'fabushi']) {
+    for (const category of ['account', 'router', 'usage', 'updates']) {
       await expect(page.getByTestId(`settings-category-${category}`)).toBeVisible();
     }
 
-    await page.getByTestId('settings-category-chat').click();
+    await page.getByTestId('settings-category-router').click();
+    await expect(page.getByTestId('router-provider-settings')).toBeVisible();
+    await expect(page.getByTestId('router-provider-select')).toHaveValue('fabushi');
+    // Native <option> disabled-state accessibility differs across Electron's
+    // platform builds. The DOM attribute is the cross-platform product contract.
+    await expect(page.getByTestId('router-provider-claude-code')).toHaveAttribute('disabled', '');
+    await expect(page.getByTestId('router-provider-openrouter')).toHaveAttribute('disabled', '');
+    await expect(page.getByTestId('router-usage-settings')).toContainText('tokens');
+    await expect(page.getByTestId('router-sandbox-host')).toHaveAttribute('data-selected', 'true');
+    const localDockerSandbox = page.getByTestId('router-sandbox-local-docker');
+    const localDockerAvailable = (await localDockerSandbox.textContent())?.includes('可用') ?? false;
+    expect(await localDockerSandbox.getAttribute('disabled')).toBe(localDockerAvailable ? null : '');
+    await testInfo.attach('router-settings-modal', { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
+
+    await page.getByTestId('settings-category-usage').click();
+    await expect(page.getByTestId('usage-billing-settings')).toContainText('最近 7 天');
+    await page.getByTestId('settings-category-updates').click();
+    await expect(page.getByTestId('updates-settings')).toContainText('electron-updater');
+    await expect(page.getByTestId('settings-update-track')).toHaveValue('stable');
+
+    await page.getByTestId('settings-category-account').click();
+    await expect(page.getByTestId('settings-theme')).toBeVisible();
+    await expect(page.getByTestId('settings-local-tool-permission')).toBeVisible();
+    await expect(page.getByTestId('settings-time-zone')).toBeVisible();
     await expect(page.getByText('Enter 发送消息')).toBeVisible();
     await expect(page.getByText('显示资料侧栏')).toBeVisible();
     await expect(page.getByText('减少动态效果')).toBeVisible();
@@ -213,6 +237,8 @@ test('Telegram-inspired settings bind supported preferences and persist fast-sta
     const preferences = await page.evaluate(() => JSON.parse(localStorage.getItem('fabushi.desktop.telegram-settings.v1') || '{}'));
     expect(preferences.reducedMotion).toBe(true);
 
+    await page.getByTestId('settings-close').click();
+    await expect(page.getByTestId('settings-modal-backdrop')).toHaveCount(0);
     await page.getByTestId('profile-navigation-trigger').click();
     await page.getByTitle('聊天', { exact: true }).click();
     await page.getByRole('button', { name: '新建', exact: true }).click();
