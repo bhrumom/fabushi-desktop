@@ -34,6 +34,11 @@ let hostEventPump = null;
 const messagingAccessCache = new Map();
 let messagingSignalingClient = null;
 let availableDesktopUpdateVersion = null;
+const DESKTOP_UPDATE_CHECK_MIN_INTERVAL_MS = 60_000;
+const DESKTOP_UPDATE_FOREGROUND_INTERVAL_MS = 5 * 60_000;
+let lastAutomaticDesktopUpdateCheckAt = 0;
+let automaticDesktopUpdateCheckTimer = null;
+let automaticDesktopUpdateCheckPromise = null;
 
 function normalizeMessagingAccessParams(params) {
   const deviceId = String(params?.deviceId || 'desktop:electron').trim();
@@ -690,7 +695,7 @@ function startHostEventPump() {
   hostEventPump = (async () => {
     while (!hostEventPumpStopped) {
       try {
-        const event = await host.request('feature.receive', {});
+        const event = await host.request('feature.receive', { timeoutMs: 500 });
         if (event) broadcastMahayanaEvent(event);
         else await sleep(10);
       } catch (error) {
@@ -842,6 +847,33 @@ function installAutoUpdaterEvents() {
     void mutateNativeState((state) => ({ ...state, updateStatus: status }));
     broadcastNativeEvent('update-status', status);
   });
+}
+
+async function checkForDesktopUpdateAutomatically({ force = false } = {}) {
+  if (!app.isPackaged || !autoUpdater?.checkForUpdates) return null;
+  const now = Date.now();
+  if (!force && now - lastAutomaticDesktopUpdateCheckAt < DESKTOP_UPDATE_CHECK_MIN_INTERVAL_MS) return null;
+  if (automaticDesktopUpdateCheckPromise) return automaticDesktopUpdateCheckPromise;
+  lastAutomaticDesktopUpdateCheckAt = now;
+  automaticDesktopUpdateCheckPromise = autoUpdater.checkForUpdates()
+    .catch((error) => {
+      console.warn('[updater] automatic update check failed', error instanceof Error ? error.message : String(error));
+      return null;
+    })
+    .finally(() => { automaticDesktopUpdateCheckPromise = null; });
+  return automaticDesktopUpdateCheckPromise;
+}
+
+function installAutomaticDesktopUpdateChecks() {
+  if (!app.isPackaged) return;
+  const startupTimer = setTimeout(() => { void checkForDesktopUpdateAutomatically({ force: true }); }, 4_000);
+  startupTimer.unref?.();
+  app.on('browser-window-focus', () => { void checkForDesktopUpdateAutomatically(); });
+  automaticDesktopUpdateCheckTimer = setInterval(() => {
+    const hasFocusedWindow = BrowserWindow.getAllWindows().some((win) => !win.isDestroyed() && win.isFocused());
+    if (hasFocusedWindow) void checkForDesktopUpdateAutomatically();
+  }, DESKTOP_UPDATE_FOREGROUND_INTERVAL_MS);
+  automaticDesktopUpdateCheckTimer.unref?.();
 }
 
 function installApplicationMenu() {
@@ -1009,14 +1041,17 @@ app.whenReady().then(() => {
   host.start();
   createWindow();
   startHostEventPump();
-  if (app.isPackaged) {
-    setTimeout(() => { void autoUpdater.checkForUpdates().catch(() => undefined); }, 4_000);
-  }
-  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+  installAutomaticDesktopUpdateChecks();
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    void checkForDesktopUpdateAutomatically();
+  });
 });
 
 app.on('window-all-closed', () => { deepLinkRouter.markNotReady(); if (process.platform !== 'darwin') app.quit(); });
 app.on('before-quit', () => {
+  if (automaticDesktopUpdateCheckTimer) clearInterval(automaticDesktopUpdateCheckTimer);
+  automaticDesktopUpdateCheckTimer = null;
   hostEventPumpStopped = true;
   mahayanaEdgeServer?.dispose();
   mahayanaEdgeServer = null;
