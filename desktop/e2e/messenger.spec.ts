@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type Page } from '@playwright/test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -226,6 +226,71 @@ test('Telegram-inspired settings bind supported preferences and persist fast-sta
     await expect(page.getByText('本地优先投影验收').first()).toBeVisible();
   } finally {
     await app.close();
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+test('returning-user local-first conversation list is interactive within the one-second target', async ({}, testInfo) => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-startup-perf-e2e-'));
+  let app = await launchDesktopApp(appDataDir);
+
+  try {
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMessenger(page);
+
+    await page.getByRole('button', { name: '新建', exact: true }).click();
+    await page.getByRole('button', { name: '新建频道' }).click();
+    await page.getByPlaceholder('频道名称').fill('首屏性能验收');
+    await page.getByPlaceholder('频道简介').fill('local-first startup timing');
+    await page.getByRole('button', { name: '创建频道' }).click();
+    const seededPeer = page.locator('[data-testid^="peer-selfhosted:channel:"]').filter({ hasText: '首屏性能验收' }).first();
+    await expect(seededPeer).toBeVisible();
+    await seededPeer.click();
+    await expect.poll(async () => page.evaluate(() => {
+      const projection = JSON.parse(localStorage.getItem('fabushi.desktop.messenger-projection.v1') || 'null');
+      return Boolean(projection?.activePeerKey?.startsWith('selfhosted:') && projection?.selfConversations?.some((item: { title?: string }) => item.title === '首屏性能验收'));
+    }), { timeout: 5_000 }).toBe(true);
+
+    await app.close();
+
+    const launchStartedAtMs = Date.now();
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    const workspace = page.getByTestId('messenger-workspace');
+    const projectedPeer = page.locator('[data-testid^="peer-selfhosted:channel:"]').filter({ hasText: '首屏性能验收' }).first();
+
+    await expect(workspace).toBeVisible({ timeout: 5_000 });
+    await expect(workspace).toHaveAttribute('data-testid-ready-projection', 'true');
+    await expect(projectedPeer).toBeVisible({ timeout: 5_000 });
+
+    const rendererToConversationListMs = await page.evaluate(() => performance.now());
+    const launchToConversationListMs = Date.now() - launchStartedAtMs;
+    await projectedPeer.click();
+    await expect(page.getByTestId('messenger-input')).toBeVisible({ timeout: 2_000 });
+    const rendererToComposerInteractiveMs = await page.evaluate(() => performance.now());
+
+    const evidence = {
+      targetMs: 1_000,
+      metric: 'renderer-navigation-to-cached-conversation-list-interactive',
+      rendererToConversationListMs: Math.round(rendererToConversationListMs * 100) / 100,
+      rendererToComposerInteractiveMs: Math.round(rendererToComposerInteractiveMs * 100) / 100,
+      launchToConversationListMs,
+      packaged: Boolean(packagedExecutable),
+      platform: process.platform,
+      passed: rendererToConversationListMs < 1_000,
+    };
+    const evidenceJson = `${JSON.stringify(evidence, null, 2)}\n`;
+    console.log(`[startup-performance] ${JSON.stringify(evidence)}`);
+    await writeFile(testInfo.outputPath('startup-performance.json'), evidenceJson);
+    await testInfo.attach('startup-performance', { body: Buffer.from(evidenceJson), contentType: 'application/json' });
+
+    expect(
+      rendererToConversationListMs,
+      `cached conversation list must become interactive within 1000ms; measured ${rendererToConversationListMs.toFixed(2)}ms`,
+    ).toBeLessThan(1_000);
+  } finally {
+    await app.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
