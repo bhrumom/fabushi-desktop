@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
+const { EventEmitter } = require('node:events');
 const test = require('node:test');
 
 const { createNativeCapabilityHandlers } = require('./native-capability-handlers.cjs');
@@ -154,16 +155,19 @@ test('diagnostic reports redact nested secrets before persistence', async () => 
 
 test('desktop update click downloads a GitHub release and schedules replacement restart', async () => {
   const calls = [];
-  const autoUpdater = {
-    async downloadUpdate() { calls.push('download'); return ['/tmp/fabushi-update.zip']; },
-    quitAndInstall(silent, forceRunAfter) { calls.push(['install', silent, forceRunAfter]); },
+  const autoUpdater = new EventEmitter();
+  autoUpdater.downloadUpdate = async () => {
+    calls.push('download');
+    setImmediate(() => autoUpdater.emit('update-downloaded', { version: '1.0.3' }));
+    return ['/tmp/fabushi-update.zip'];
   };
+  autoUpdater.quitAndInstall = (silent, forceRunAfter) => { calls.push(['install', silent, forceRunAfter]); };
   await harness(async ({ handlers, getState }) => {
     const result = await handlers.quitAndInstallUpdate({ expectedVersion: '1.0.3' });
     assert.equal(result.installed, true);
     assert.equal(result.version, '1.0.3');
-    assert.equal(getState().updateStatus.type, 'ready');
-    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(getState().updateStatus.type, 'staging');
+    await new Promise((resolve) => setTimeout(resolve, 180));
     assert.deepEqual(calls, ['download', ['install', false, true]]);
   }, {
     isPackaged: true,

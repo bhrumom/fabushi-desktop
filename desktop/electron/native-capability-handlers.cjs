@@ -213,6 +213,27 @@ function createNativeCapabilityHandlers(deps) {
     return status;
   }
 
+  function waitForUpdateDownloaded(timeoutMs = 180_000) {
+    if (!autoUpdater?.once) return Promise.resolve(null);
+    return new Promise((resolve, reject) => {
+      let timer = null;
+      const cleanup = () => {
+        if (timer) clearTimeout(timer);
+        autoUpdater.removeListener?.('update-downloaded', onDownloaded);
+        autoUpdater.removeListener?.('error', onError);
+      };
+      const onDownloaded = (info) => { cleanup(); resolve(info ?? null); };
+      const onError = (error) => { cleanup(); reject(error instanceof Error ? error : new Error(String(error))); };
+      autoUpdater.once('update-downloaded', onDownloaded);
+      autoUpdater.once('error', onError);
+      timer = setTimeout(() => {
+        cleanup();
+        reject(new Error('Timed out waiting for the desktop update to finish downloading.'));
+      }, timeoutMs);
+      timer.unref?.();
+    });
+  }
+
   const handlers = {
     async submitFeedback(params) {
       const id = crypto.randomUUID();
@@ -371,15 +392,21 @@ function createNativeCapabilityHandlers(deps) {
         if (!autoUpdater?.downloadUpdate) {
           return { installed: false, reason: 'Desktop updater cannot download this release.' };
         }
-        await writeUpdateStatus({ type: 'downloading', version: status.version ?? expected ?? null, progress: 0 });
-        await autoUpdater.downloadUpdate();
-        status = await writeUpdateStatus({ type: 'ready', version: status.version ?? expected ?? null });
+        const version = status.version ?? expected ?? app.getVersion();
+        const downloaded = waitForUpdateDownloaded();
+        await writeUpdateStatus({ type: 'downloading', version, progress: 0 });
+        await Promise.all([autoUpdater.downloadUpdate(), downloaded]);
+        status = await currentUpdateStatus();
+        if (status.type !== 'ready') status = await writeUpdateStatus({ type: 'ready', version });
       }
       if (status.type !== 'ready') {
         return { installed: false, reason: 'No downloaded desktop update is ready.' };
       }
-      setImmediate(() => autoUpdater.quitAndInstall(false, true));
-      return { installed: true, version: status.version ?? null };
+      const version = status.version ?? expected ?? app.getVersion();
+      await writeUpdateStatus({ type: 'staging', version });
+      const installTimer = setTimeout(() => autoUpdater.quitAndInstall(false, true), 120);
+      installTimer.unref?.();
+      return { installed: true, version };
     },
 
     async setAutoUpdateWhenIdleOptIn(params) {

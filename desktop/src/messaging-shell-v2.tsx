@@ -439,7 +439,8 @@ export default function DesktopShellV2() {
         if (!state.loggedIn) retryTimer = window.setTimeout(() => void checkAuth(), 900);
       } catch {
         if (closed) return;
-        setAuthenticated(false);
+        // A transient Host/network failure must not replace a valid local-first shell
+        // with a login/restore screen. Only an explicit loggedIn=false response signs out.
         retryTimer = window.setTimeout(() => void checkAuth(), 1_800);
       }
     };
@@ -452,15 +453,53 @@ export default function DesktopShellV2() {
   }, [authTransport]);
 
   const showMessenger = projectionLookupComplete
-    && (authenticated === true || (authenticated === null && Boolean(startupProjection)));
+    && (authenticated === true || Boolean(startupProjection));
+  const showLogin = projectionLookupComplete && authenticated === false;
   return (
-    <div className={styles.desktopRoot} data-testid="desktop-shell" data-local-first={showMessenger && authenticated === null ? 'true' : undefined}>
+    <div className={styles.desktopRoot} data-testid="desktop-shell" data-local-first={showMessenger && authenticated !== true ? 'true' : undefined}>
       {showMessenger
         ? <MessengerWorkspace initialProjection={startupProjection} />
-        : projectionLookupComplete
+        : showLogin
           ? <HostClient />
-          : <div className={styles.desktopRoot} data-testid="desktop-fast-start-bootstrap" aria-hidden="true" />}
+          : <DesktopFastStartBootstrap />}
     </div>
+  );
+}
+
+function DesktopFastStartBootstrap() {
+  return (
+    <main
+      className={`${styles.messenger} ${styles.fabushiUnified}`}
+      data-testid="desktop-fast-start-bootstrap"
+      aria-busy="true"
+      aria-label="Fabushi 正在连接"
+      style={{ gridTemplateColumns: '330px minmax(420px,1fr)' }}
+    >
+      <aside className={styles.chatList}>
+        <header className={styles.listHeader}>
+          <span className={styles.sidebarBrand} title="Fabushi"><BotMark botId="fabushi:bootstrap" state="idle" size={30} paused label="Fabushi" /></span>
+          <strong>聊天</strong>
+        </header>
+        <label className={styles.searchBox}>
+          <Search size={16} />
+          <input disabled placeholder="搜索" aria-label="搜索" />
+        </label>
+        <div className={styles.peerList} aria-hidden="true" />
+        <div className={styles.sidebarFooter}>
+          <button type="button" className={styles.profileNavigationTrigger} disabled>
+            <BotMark botId="fabushi:bootstrap:self" state="idle" size={38} paused label="我的头像" />
+            <span><strong>我</strong><small>正在连接</small></span>
+          </button>
+        </div>
+      </aside>
+      <section className={styles.chatWorkspace}>
+        <div className={styles.chatEmpty}>
+          <BotMark botId="fabushi:bootstrap:workspace" state="idle" size={72} paused label="Fabushi" />
+          <strong>Fabushi</strong>
+          <p>界面已经就绪，正在后台连接本机服务。</p>
+        </div>
+      </section>
+    </main>
   );
 }
 
@@ -618,7 +657,9 @@ function MessengerWorkspace({ initialProjection }: { initialProjection?: Messeng
     const acceptUpdateState = (payload: unknown) => {
       if (disposed || !isDesktopUpdateState(payload)) return;
       setDesktopUpdateState(payload);
-      if (payload.type !== 'ready') setDesktopUpdateBusy(false);
+      if (payload.type === 'available' || payload.type === 'upToDate' || payload.type === 'error') {
+        setDesktopUpdateBusy(false);
+      }
     };
     const unsubscribe = subscribeNativeDesktopEvents({ 'update-status': acceptUpdateState });
     void invokeNativeDesktop<UpdateState>('getUpdateStatus').then(acceptUpdateState).catch(() => {});
@@ -1832,9 +1873,10 @@ async function saveInvoiceDialog() {
     if (!['available', 'downloading', 'staging', 'ready'].includes(state.type)) return;
     setDesktopUpdateBusy(true);
     try {
-      await invokeNativeDesktop('quitAndInstallUpdate', {
+      const result = await invokeNativeDesktop<{ installed?: boolean; reason?: string }>('quitAndInstallUpdate', {
         expectedVersion: 'version' in state ? state.version : undefined,
       });
+      if (result?.installed === false) throw new Error(result.reason || '无法开始桌面更新');
     } catch (cause) {
       setDesktopUpdateBusy(false);
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -1965,11 +2007,33 @@ async function saveInvoiceDialog() {
             data-testid="desktop-update-cloud"
             data-state={desktopUpdateState.type}
             disabled={desktopUpdateBusy}
-            title={desktopUpdateState.type === 'ready' ? '更新已下载，点击安装并重启' : '发现新版本，点击下载、替换并重启'}
+            title={desktopUpdateState.type === 'ready' ? '更新已下载，点击后立即安装并重启' : '点击一次即可下载、安装并自动重启'}
             onClick={() => void installDesktopUpdate(desktopUpdateState)}
           >
             <CloudDownload size={18} />
-            <span>{desktopUpdateState.type === 'ready' ? '安装更新' : desktopUpdateState.type === 'downloading' || desktopUpdateState.type === 'staging' ? '正在更新' : `更新 ${desktopUpdateState.version}`}</span>
+            <span>{desktopUpdateState.type === 'ready'
+              ? '重启并更新'
+              : desktopUpdateState.type === 'downloading'
+                ? `下载更新 ${Math.max(0, Math.min(100, Math.round(desktopUpdateState.progress ?? 0)))}%`
+                : desktopUpdateState.type === 'staging'
+                  ? '正在安装并重启…'
+                  : `更新 ${desktopUpdateState.version}`}</span>
+            {desktopUpdateState.type === 'downloading' || desktopUpdateState.type === 'staging' ? (
+              <span
+                className={styles.updateProgressTrack}
+                data-testid="desktop-update-progress"
+                data-indeterminate={desktopUpdateState.type === 'staging' || undefined}
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={desktopUpdateState.type === 'downloading' ? Math.max(0, Math.min(100, Math.round(desktopUpdateState.progress ?? 0))) : undefined}
+              >
+                <i
+                  className={styles.updateProgressFill}
+                  style={desktopUpdateState.type === 'downloading' ? { width: `${Math.max(0, Math.min(100, desktopUpdateState.progress ?? 0))}%` } : undefined}
+                />
+              </span>
+            ) : null}
           </button> : null}
           <button
             type="button"

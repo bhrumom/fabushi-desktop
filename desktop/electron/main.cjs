@@ -812,7 +812,7 @@ function createWindow() {
 function installAutoUpdaterEvents() {
   if (!autoUpdater?.on) return;
   autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = false;
   autoUpdater.on('checking-for-update', () => {
     const status = { type: 'checking', version: app.getVersion() };

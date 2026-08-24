@@ -81,7 +81,8 @@
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "artifactName": "fabushi-${version}-setup.${ext}"
     },
     "linux": {
       "category": "Utility",
@@ -90,7 +91,8 @@
       "target": [
         "AppImage",
         "deb"
-      ]
+      ],
+      "artifactName": "fabushi-${version}-${arch}.${ext}"
     },
     "deb": {
       "packageName": "fabushi",

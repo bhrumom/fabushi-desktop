@@ -960,12 +960,40 @@
   font: inherit;
   font-size: 10px;
   font-weight: 680;
+  position: relative;
+  overflow: hidden;
 }
 .updateCloudButton:hover { color: #fff; background: rgba(45,146,224,.17); border-color: rgba(112,193,255,.34); }
 .updateCloudButton:disabled { cursor: progress; opacity: .72; }
 .updateCloudButton[data-state="downloading"] svg,
 .updateCloudButton[data-state="staging"] svg { animation: updateCloudPulse 1.25s ease-in-out infinite; }
 @keyframes updateCloudPulse { 50% { transform: translateY(1px) scale(.92); opacity: .55; } }
+
+.updateProgressTrack {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(191,229,255,.16);
+}
+.updateProgressFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: currentColor;
+  transition: width .18s linear;
+}
+.updateProgressTrack[data-indeterminate="true"] .updateProgressFill {
+  width: 34%;
+  animation: updateProgressIndeterminate 1s ease-in-out infinite;
+}
+@keyframes updateProgressIndeterminate {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(360%); }
+}
 
 .chatList[data-collapsed="true"] .createMenuWrap,
 .chatList[data-collapsed="true"] .searchScope { display: none; }
