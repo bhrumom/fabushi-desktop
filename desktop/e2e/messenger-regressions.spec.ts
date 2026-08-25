@@ -91,6 +91,12 @@ test('Electron transport keeps Mini Apps out of chat conversations and routes di
       async openSystemSettings() {},
       async windowFocused() { return true; },
     },
+    // ElectronMahayanaHostTransport is renderer-only and installs a command
+    // observer on the browser Window EventTarget. This direct Node regression
+    // substitutes a minimal window object, so model that EventTarget contract
+    // instead of accidentally testing an impossible partial browser Window.
+    addEventListener() {},
+    removeEventListener() {},
   };
   const globalWithWindow = globalThis as unknown as { window?: typeof fakeWindow };
   const previousWindow = globalWithWindow.window;

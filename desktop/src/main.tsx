@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import DesktopShellV2 from './messaging-shell-v2';
 import MahayanaAgentWorkbench from './mahayana-agent-workbench';
 import { installMahayanaAgentTranscriptSemantics } from './mahayana-agent-transcript-semantics';
+import { installSelfHostedMahayanaInvocationBridge } from './selfhosted-mahayana-invocation-bridge';
 import './messenger-layout-regressions.css';
 import './grok-agent-ui-parity.css';
 import './mahayana-agent-transcript-semantics.css';
@@ -20,3 +21,4 @@ createRoot(root).render(
 );
 
 installMahayanaAgentTranscriptSemantics();
+installSelfHostedMahayanaInvocationBridge();
