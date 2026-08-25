@@ -50,23 +50,28 @@ function normalizeProjectedTranscript(): void {
 }
 
 export function installMahayanaAgentTranscriptSemantics(): () => void {
-  let scheduled = false;
-  const schedule = () => {
-    if (scheduled) return;
-    scheduled = true;
-    window.requestAnimationFrame(() => {
-      scheduled = false;
+  let normalizing = false;
+  const normalize = () => {
+    if (normalizing) return;
+    normalizing = true;
+    try {
+      // MutationObserver callbacks run in the same microtask checkpoint as the
+      // React commit. Normalize immediately rather than waiting for the next
+      // animation frame; accessibility/search consumers and Playwright can
+      // inspect the DOM before that later frame.
       normalizeProjectedTranscript();
-    });
+    } finally {
+      normalizing = false;
+    }
   };
 
-  const observer = new MutationObserver(schedule);
+  const observer = new MutationObserver(normalize);
   observer.observe(document.body, {
     childList: true,
     characterData: true,
     subtree: true,
   });
-  schedule();
+  normalize();
 
   return () => observer.disconnect();
 }
