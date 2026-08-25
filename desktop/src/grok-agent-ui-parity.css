@@ -1,0 +1,128 @@
+/* Fabushi-owned Grok-style agent workspace. No upstream renderer assets are embedded. */
+[data-testid='messenger-workspace'] {
+  --agent-surface: rgba(15, 16, 21, 0.96);
+  --agent-surface-raised: rgba(24, 25, 31, 0.9);
+  --agent-stroke: rgba(255, 255, 255, 0.075);
+  --agent-text-muted: rgba(255, 255, 255, 0.46);
+}
+
+[data-testid='messenger-workspace'] [class*='chatWorkspace'] {
+  background:
+    radial-gradient(900px 560px at 58% -16%, rgba(117, 143, 197, 0.075), transparent 62%),
+    linear-gradient(180deg, rgba(13, 14, 18, 0.995), rgba(10, 11, 14, 0.995));
+}
+
+[data-testid='messenger-workspace'] [class*='chatHeader'] {
+  min-height: 68px;
+  border-bottom-color: var(--agent-stroke);
+  background: color-mix(in srgb, var(--agent-surface) 88%, transparent);
+  backdrop-filter: blur(24px) saturate(130%);
+}
+
+[data-testid='messenger-workspace'] [class*='chatIdentity'] {
+  gap: 11px;
+}
+
+[data-testid='conversation-status'][data-mahayana-state] {
+  color: rgba(190, 213, 255, 0.7) !important;
+}
+
+[data-testid='conversation-status'][data-mahayana-state='alerting'],
+[data-testid='conversation-status'][data-mahayana-state='error'] {
+  color: rgba(255, 194, 169, 0.86) !important;
+}
+
+[data-testid='conversation-status'][data-mahayana-state='result'] {
+  color: rgba(169, 237, 198, 0.76) !important;
+}
+
+[data-testid='messenger-workspace'] [class*='messageArea'] {
+  padding: 24px clamp(14px, 3.2vw, 48px) 30px;
+  scroll-padding-bottom: 220px;
+}
+
+[data-testid='messenger-workspace'] [class*='dayDivider'] {
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(18px);
+}
+
+[data-testid='messenger-workspace'] [class*='messagePeer'],
+[data-testid='messenger-workspace'] [class*='messageMine'] {
+  max-width: min(760px, 86%);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(18px);
+}
+
+[data-testid='messenger-workspace'] [class*='messagePeer'] {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.045), transparent 56%),
+    rgba(23, 24, 30, 0.78);
+}
+
+[data-testid='messenger-workspace'] [class*='messageMine'] {
+  background:
+    linear-gradient(145deg, rgba(172, 201, 255, 0.11), transparent 58%),
+    rgba(37, 43, 55, 0.82);
+}
+
+[data-testid='messenger-workspace'] [class*='messagePeer'] p,
+[data-testid='messenger-workspace'] [class*='messageMine'] p {
+  font-size: 13.5px;
+  line-height: 1.62;
+  white-space: pre-wrap;
+}
+
+[data-testid='messenger-workspace'] [class*='composer'] {
+  width: min(860px, calc(100% - 30px));
+  margin: 0 auto 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.045), transparent 48%),
+    rgba(24, 25, 31, 0.92);
+  box-shadow:
+    0 22px 58px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(28px) saturate(135%);
+}
+
+[data-testid='messenger-input'] {
+  min-height: 28px;
+  max-height: 160px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+}
+
+[data-testid='messenger-send'] {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.26);
+}
+
+#mahayana-agent-header-avatar,
+#mahayana-agent-peer-avatar,
+#mahayana-agent-info-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+#mahayana-agent-info-avatar {
+  margin: 0 auto;
+}
+
+#mahayana-agent-workbench-portal {
+  width: 100%;
+  display: block;
+}
+
+@media (max-width: 760px) {
+  [data-testid='messenger-workspace'] [class*='messageArea'] {
+    padding-inline: 10px;
+  }
+
+  [data-testid='messenger-workspace'] [class*='composer'] {
+    width: calc(100% - 18px);
+    margin-bottom: 9px;
+  }
+}

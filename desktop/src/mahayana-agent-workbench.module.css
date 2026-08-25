@@ -1,0 +1,493 @@
+.portalRoot {
+  display: contents;
+}
+
+.portalAvatar {
+  flex: 0 0 auto;
+}
+
+.workbench {
+  width: min(820px, calc(100% - 36px));
+  margin: 10px auto 18px;
+  display: grid;
+  gap: 10px;
+  position: relative;
+  z-index: 2;
+}
+
+.workbench[data-empty='true'] {
+  display: none;
+}
+
+.runCard {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #ffffff 10%, transparent);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, #ffffff 5%, transparent), transparent 42%),
+    color-mix(in srgb, #101116 94%, transparent);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(28px) saturate(130%);
+  color: rgba(255, 255, 255, 0.92);
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.runCard:hover,
+.runCard[open] {
+  border-color: color-mix(in srgb, #ffffff 18%, transparent);
+  box-shadow:
+    0 22px 66px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.runSummary {
+  min-height: 62px;
+  padding: 10px 13px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto 18px;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.runSummary::-webkit-details-marker {
+  display: none;
+}
+
+.runAvatar {
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.32));
+}
+
+.runIdentity {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.runIdentity strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  letter-spacing: -0.01em;
+}
+
+.runIdentity small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 11.5px;
+}
+
+.runStatus {
+  min-width: 58px;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.68);
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.runStatus[data-status='running'],
+.runStatus[data-status='queued'] {
+  border-color: color-mix(in srgb, #9cc7ff 34%, transparent);
+  color: #cfe3ff;
+}
+
+.runStatus[data-status='waiting-for-approval'] {
+  border-color: color-mix(in srgb, #ffc76b 42%, transparent);
+  color: #ffe0a8;
+}
+
+.runStatus[data-status='completed'] {
+  border-color: color-mix(in srgb, #80e2ae 34%, transparent);
+  color: #baf5d2;
+}
+
+.runStatus[data-status='failed'] {
+  border-color: color-mix(in srgb, #ff7f8d 36%, transparent);
+  color: #ffbbc2;
+}
+
+.chevron {
+  color: rgba(255, 255, 255, 0.34);
+  transition: transform 180ms ease;
+}
+
+.runCard[open] .chevron {
+  transform: rotate(180deg);
+}
+
+.runBody {
+  padding: 0 14px 13px;
+  display: grid;
+  gap: 11px;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.runMeta {
+  padding-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.runMeta span {
+  min-height: 24px;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 10.5px;
+}
+
+.prompt,
+.agentOutput {
+  padding: 10px 11px;
+  display: grid;
+  gap: 5px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.prompt span,
+.agentOutput > strong {
+  color: rgba(255, 255, 255, 0.44);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.prompt p,
+.agentOutput p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.timeline {
+  display: grid;
+  padding: 3px 0;
+}
+
+.step {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 23px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+  position: relative;
+}
+
+.stepRail {
+  min-height: 44px;
+  display: grid;
+  justify-items: center;
+  color: rgba(255, 255, 255, 0.48);
+  position: relative;
+}
+
+.stepRail::after {
+  width: 1px;
+  height: calc(100% - 19px);
+  content: '';
+  position: absolute;
+  top: 19px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.step:last-child .stepRail::after {
+  display: none;
+}
+
+.step[data-status='completed'] .stepRail {
+  color: #89deb0;
+}
+
+.step[data-status='failed'] .stepRail {
+  color: #ff8f9a;
+}
+
+.stepCopy {
+  min-width: 0;
+  padding-bottom: 10px;
+  display: grid;
+  gap: 3px;
+}
+
+.stepCopy strong {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.stepCopy small {
+  overflow-wrap: anywhere;
+  color: rgba(255, 255, 255, 0.44);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.step time {
+  padding-top: 1px;
+  color: rgba(255, 255, 255, 0.26);
+  font-size: 9px;
+}
+
+.progress {
+  width: min(240px, 100%);
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.progress i {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: currentColor;
+  transition: width 180ms ease;
+}
+
+.approval {
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 9px;
+  border: 1px solid color-mix(in srgb, #ffc76b 26%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, #6f4e14 15%, transparent);
+  color: #ffe1ac;
+}
+
+.approval > div {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.approval strong {
+  font-size: 12px;
+}
+
+.approval p,
+.approval small {
+  margin: 0;
+  color: rgba(255, 232, 190, 0.68);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.approval code {
+  padding: 6px 8px;
+  overflow-wrap: anywhere;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 238, 207, 0.82);
+  font-size: 10px;
+}
+
+.approvalActions,
+.runActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.approvalActions button,
+.runActions button,
+.clearHistory {
+  min-height: 28px;
+  padding: 5px 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.76);
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.approvalActions button:hover,
+.runActions button:hover,
+.clearHistory:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.observations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.observations > span {
+  min-height: 28px;
+  padding: 5px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+}
+
+.observations b {
+  font-weight: 600;
+}
+
+.observations small {
+  color: rgba(255, 255, 255, 0.34);
+}
+
+.artifact {
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.artifact > div {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.artifact strong {
+  font-size: 11.5px;
+}
+
+.artifact pre,
+.toolResult pre {
+  max-height: 240px;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.56);
+  font: 10px/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+.toolResult {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.toolResult summary {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.68);
+  cursor: pointer;
+}
+
+.toolResult summary strong {
+  font-size: 10.5px;
+}
+
+.toolResult summary span {
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 10px;
+}
+
+.toolResult pre {
+  border-radius: 0 0 10px 10px;
+}
+
+.runError,
+.bridgeError {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, #ff7f8d 24%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, #762733 14%, transparent);
+  color: #ffc0c6;
+  font-size: 10.5px;
+}
+
+.runFooter {
+  padding-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 9.5px;
+}
+
+.clearHistory {
+  width: max-content;
+  margin-left: auto;
+  opacity: 0.62;
+}
+
+.spin {
+  animation: mahayana-agent-spin 900ms linear infinite;
+}
+
+@keyframes mahayana-agent-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 760px) {
+  .workbench {
+    width: calc(100% - 20px);
+    margin-bottom: 12px;
+  }
+
+  .runSummary {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+  }
+
+  .chevron {
+    display: none;
+  }
+
+  .runMeta {
+    gap: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .runCard,
+  .chevron,
+  .progress i,
+  .spin {
+    animation: none !important;
+    transition: none !important;
+  }
+}
