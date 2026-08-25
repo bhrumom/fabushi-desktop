@@ -295,7 +295,10 @@
 
 @media (max-width: 1280px) {
   .messenger { grid-template-columns: 66px 300px minmax(390px,1fr); }
-  .infoPanel { display:none; }
+  /* Narrow layouts use the JS-controlled overlay drawer. Keep the legacy docked
+     panel hidden during resize state convergence, but never hide an explicit overlay. */
+  .infoPanel:not([data-overlay="true"]) { display:none; }
+  .infoPanel[data-overlay="true"] { display:flex; }
 }
 
 @media (max-width: 900px) {
