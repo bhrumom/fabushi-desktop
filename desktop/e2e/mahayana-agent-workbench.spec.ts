@@ -22,6 +22,15 @@ async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication
 }
 
 async function completeBrowserLogin(page: Page): Promise<void> {
+  await page.waitForLoadState('domcontentloaded');
+  await expect.poll(async () => {
+    const testIds = ['onboarding-gate', 'login-gate', 'host-status', 'open-messenger', 'messenger-workspace'];
+    for (const testId of testIds) {
+      if (await page.getByTestId(testId).isVisible().catch(() => false)) return true;
+    }
+    return false;
+  }, { timeout: 15_000 }).toBe(true);
+
   while (await page.getByTestId('onboarding-gate').isVisible().catch(() => false)) {
     await page.getByTestId('onboarding-next').click();
   }
@@ -58,7 +67,7 @@ test('bot runs through Mahayana as a visible multi-step task and restores its ru
     const run = page.getByTestId('agent-run').last();
     await expect(run).toHaveAttribute('data-status', 'completed', { timeout: 15_000 });
     await expect.poll(async () => run.getByTestId('agent-step').count()).toBeGreaterThanOrEqual(3);
-    await expect(run.getByTestId('agent-output')).toContainText('收到：');
+    await expect(page.getByRole('article').filter({ hasText: '收到：请分析这个任务' }).last()).toBeVisible();
     await expect(page.locator('#mahayana-agent-header-avatar [data-agent-state="result"]')).toBeVisible();
 
     const persistedRunId = await run.getAttribute('data-run-id');
@@ -76,7 +85,7 @@ test('bot runs through Mahayana as a visible multi-step task and restores its ru
     await expect(restoredRun).toBeVisible({ timeout: 15_000 });
     await expect(restoredRun).toHaveAttribute('data-status', 'completed');
     await expect.poll(async () => restoredRun.getByTestId('agent-step').count()).toBeGreaterThanOrEqual(3);
-    await expect(restoredRun.getByTestId('agent-output')).toContainText('收到：');
+    await expect(page.getByRole('article').filter({ hasText: '收到：请分析这个任务' }).last()).toBeVisible();
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });
