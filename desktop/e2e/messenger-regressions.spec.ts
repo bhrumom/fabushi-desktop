@@ -91,10 +91,6 @@ test('Electron transport keeps Mini Apps out of chat conversations and routes di
       async openSystemSettings() {},
       async windowFocused() { return true; },
     },
-    // ElectronMahayanaHostTransport is renderer-only and installs a command
-    // observer on the browser Window EventTarget. This direct Node regression
-    // substitutes a minimal window object, so model that EventTarget contract
-    // instead of accidentally testing an impossible partial browser Window.
     addEventListener() {},
     removeEventListener() {},
   };
@@ -194,7 +190,9 @@ test('switching peers keeps dynamic avatars visible and narrow layouts can open 
 
     const first = peers.nth(0);
     const second = peers.nth(1);
-    const visibleMark = '[data-engine="fabushi-motion-v2"]:visible';
+    // BotMark intentionally exposes the engine marker on both its semantic wrapper and inner SVG.
+    // Count only the semantic outer mark carrying data-bot-id, so one avatar equals one identity.
+    const visibleMark = '[data-engine="fabushi-motion-v2"][data-bot-id]:visible';
 
     await first.click();
     await expect(first.locator(visibleMark)).toHaveCount(1);
