@@ -22,3 +22,15 @@
 [data-testid="messenger-workspace"] textarea[data-testid="messenger-input"] {
   min-width: 0;
 }
+
+/*
+ * The CSS module intentionally removes the docked info column at <=1280px.
+ * When React marks that same panel as an overlay, keep it rendered as flex:
+ * absolute positioning removes it from the grid while the header toggle still
+ * gives narrow layouts access to the profile/info surface.
+ */
+@media (max-width: 1280px) {
+  [data-testid="messenger-info-panel"][data-overlay="true"] {
+    display: flex;
+  }
+}
