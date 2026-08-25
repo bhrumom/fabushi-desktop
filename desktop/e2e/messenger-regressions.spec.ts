@@ -235,6 +235,8 @@ test('switching peers keeps dynamic avatars visible and narrow layouts can open 
     const toggle = page.getByTestId('conversation-info-toggle');
     const infoPanel = page.getByTestId('messenger-info-panel');
     await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveAttribute('data-active', 'false');
+    await expect(infoPanel).toHaveCount(0);
 
     // The panel DOM can disappear for a render while the responsive grid switches from
     // docked to overlay. Drive the action from React's explicit toggle state instead of
