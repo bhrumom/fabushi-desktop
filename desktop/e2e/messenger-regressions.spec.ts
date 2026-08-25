@@ -225,6 +225,7 @@ test('switching peers keeps dynamic avatars visible and narrow layouts can open 
     await expect(headerMark).toHaveAttribute('data-bot-id', firstBotId);
 
     await second.click();
+    await expect(second).toHaveClass(/peerActive/);
     await expect(secondMark).toHaveAttribute('data-bot-id', secondBotId);
     await expect(firstMark).toHaveAttribute('data-bot-id', firstBotId);
     await expect(headerMark).toHaveCount(1);
@@ -247,6 +248,7 @@ test('switching peers keeps dynamic avatars visible and narrow layouts can open 
     await expect(infoMark).toHaveAttribute('data-bot-id', secondBotId);
 
     await first.click();
+    await expect(first).toHaveClass(/peerActive/);
     await expect(headerMark).toHaveCount(1);
     await expect(headerMark).toHaveAttribute('data-bot-id', firstBotId);
     await expect(infoMark).toHaveCount(1);

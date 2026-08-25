@@ -1229,8 +1229,29 @@ export default function MahayanaAgentWorkbench() {
       );
     };
 
-    const observer = new MutationObserver(refresh);
-    observer.observe(document.body, { childList: true, subtree: true });
+    const observer = new MutationObserver((records) => {
+      // Messenger peer switching reuses the same row nodes and changes only the
+      // CSS-module `peerActive` class. Observe that attribute explicitly so the
+      // Header/info portal identity follows the selected peer in the same React
+      // commit instead of waiting for the 500 ms recovery poll. Ignore unrelated
+      // class mutations to avoid turning this into a global render observer.
+      const relevant = records.some((record) =>
+        record.type === 'childList' ||
+        (record.type === 'attributes' &&
+          record.attributeName === 'class' &&
+          record.target instanceof HTMLButtonElement &&
+          record.target.matches('button[data-testid^="peer-"]')),
+      );
+      if (relevant) refresh();
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    // Recovery-only fallback for browser/plugin DOM mutations that do not touch
+    // the peer selection class. Normal peer switches must be observer-driven.
     const interval = window.setInterval(refresh, 500);
     refresh();
     return () => {
