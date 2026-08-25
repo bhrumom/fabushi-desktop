@@ -166,6 +166,8 @@ type PortalTargets = {
   headerAvatar: HTMLElement | null;
   peerAvatar: HTMLElement | null;
   infoAvatar: HTMLElement | null;
+  activeBotId: string;
+  activeLabel: string;
 };
 
 const EMPTY_TARGETS: PortalTargets = {
@@ -173,6 +175,8 @@ const EMPTY_TARGETS: PortalTargets = {
   headerAvatar: null,
   peerAvatar: null,
   infoAvatar: null,
+  activeBotId: '',
+  activeLabel: '',
 };
 
 function nowFromTimestamp(timestamp?: string): number {
@@ -851,9 +855,10 @@ function activePeerContext(): { peerKey: string; kind: string; actorId: string }
   const button = activePeerButton();
   const testId = button?.getAttribute('data-testid');
   if (!button || !testId) return null;
-  const status = document.querySelector<HTMLElement>('[data-testid="conversation-status"]');
-  const identity = status?.parentElement?.parentElement;
-  const mark = identity?.querySelector<HTMLElement>('[data-bot-id^="peer:"]');
+  // The selected peer row is the canonical identity source. Never read the
+  // Workbench-owned header portal here: after a peer switch that portal can
+  // still contain the previous BotMark until React commits the next render.
+  const mark = directChildBotMark(button);
   const botId = mark?.dataset.botId;
   if (!botId) return null;
   const parts = botId.split(':');
@@ -1189,6 +1194,8 @@ export default function MahayanaAgentWorkbench() {
       const peerOriginal = activeButton ? directChildBotMark(activeButton) : null;
       const peerAvatar = ensurePortalRoot('mahayana-agent-peer-avatar', activeButton, peerOriginal);
       hideOriginal(peerOriginal);
+      const activeBotId = peerOriginal?.dataset.botId || identityOriginal?.dataset.botId || '';
+      const activeLabel = peerOriginal?.getAttribute('aria-label') || identityOriginal?.getAttribute('aria-label') || '';
 
       const profileCard = workspace?.querySelector<HTMLElement>('aside [class*="profileCard"]') || null;
       const infoOriginal = profileCard ? directChildBotMark(profileCard) : null;
@@ -1214,9 +1221,11 @@ export default function MahayanaAgentWorkbench() {
         current.timeline === timeline &&
         current.headerAvatar === headerAvatar &&
         current.peerAvatar === peerAvatar &&
-        current.infoAvatar === infoAvatar
+        current.infoAvatar === infoAvatar &&
+        current.activeBotId === activeBotId &&
+        current.activeLabel === activeLabel
           ? current
-          : { timeline, headerAvatar, peerAvatar, infoAvatar },
+          : { timeline, headerAvatar, peerAvatar, infoAvatar, activeBotId, activeLabel },
       );
     };
 
@@ -1283,14 +1292,18 @@ export default function MahayanaAgentWorkbench() {
 
   const activeRun = visibleRuns.length ? visibleRuns[visibleRuns.length - 1] : undefined;
   const avatarState = activeRun?.visualState || 'idle';
-  const avatarBotId = activeRun?.agentId || activePeerContext()?.actorId || 'mahayana-assistant';
-  const portalIdentity = (target: HTMLElement | null, fallback: string) => ({
-    botId: target?.dataset.sourceBotId || fallback,
-    label: target?.dataset.sourceLabel || avatarBotId,
-  });
-  const headerIdentity = portalIdentity(targets.headerAvatar, `peer:bot:${avatarBotId}`);
-  const peerIdentity = portalIdentity(targets.peerAvatar, `peer:bot:${avatarBotId}`);
-  const infoIdentity = portalIdentity(targets.infoAvatar, `peer:bot:${avatarBotId}`);
+  const fallbackAgentId = activeRun?.agentId || 'mahayana-assistant';
+  // Identity belongs to the selected Messenger peer, while animation state
+  // belongs to the selected conversation's Mahayana run. Keeping those two
+  // concerns separate prevents a stale portal BotMark from becoming the next
+  // peer's identity source.
+  const activeIdentity = {
+    botId: targets.activeBotId || `peer:bot:${fallbackAgentId}`,
+    label: targets.activeLabel || fallbackAgentId,
+  };
+  const headerIdentity = activeIdentity;
+  const peerIdentity = activeIdentity;
+  const infoIdentity = activeIdentity;
 
   useEffect(() => {
     const status = document.querySelector<HTMLElement>('[data-testid="conversation-status"]');

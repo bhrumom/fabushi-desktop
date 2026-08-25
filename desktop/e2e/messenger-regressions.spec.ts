@@ -193,16 +193,17 @@ test('switching peers keeps dynamic avatars visible and narrow layouts can open 
     // BotMark intentionally exposes the engine marker on both its semantic wrapper and inner SVG.
     // Count only the semantic outer mark carrying data-bot-id, so one avatar equals one identity.
     const visibleMark = '[data-engine="fabushi-motion-v2"][data-bot-id]:visible';
+    const headerIdentity = page.getByTestId('conversation-status').locator('xpath=../..');
+    const headerMark = headerIdentity.locator(visibleMark);
 
     await first.click();
     await expect(first.locator(visibleMark)).toHaveCount(1);
+    await expect(headerMark).toHaveCount(1);
+    expect(await headerMark.getAttribute('data-bot-id')).toBe(await first.locator(visibleMark).getAttribute('data-bot-id'));
 
     await second.click();
     await expect(second.locator(visibleMark)).toHaveCount(1);
     await expect(first.locator(visibleMark)).toHaveCount(1);
-
-    const headerIdentity = page.getByTestId('conversation-status').locator('xpath=../..');
-    const headerMark = headerIdentity.locator(visibleMark);
     await expect(headerMark).toHaveCount(1);
     expect(await headerMark.getAttribute('data-bot-id')).toBe(await second.locator(visibleMark).getAttribute('data-bot-id'));
 
@@ -218,6 +219,15 @@ test('switching peers keeps dynamic avatars visible and narrow layouts can open 
     await toggle.click();
     await expect(infoPanel).toBeVisible();
     await expect(infoPanel).toHaveAttribute('data-overlay', 'true');
+    const infoMark = infoPanel.locator(visibleMark);
+    await expect(infoMark).toHaveCount(1);
+    expect(await infoMark.getAttribute('data-bot-id')).toBe(await second.locator(visibleMark).getAttribute('data-bot-id'));
+
+    await first.click();
+    await expect(headerMark).toHaveCount(1);
+    expect(await headerMark.getAttribute('data-bot-id')).toBe(await first.locator(visibleMark).getAttribute('data-bot-id'));
+    await expect(infoMark).toHaveCount(1);
+    expect(await infoMark.getAttribute('data-bot-id')).toBe(await first.locator(visibleMark).getAttribute('data-bot-id'));
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });
