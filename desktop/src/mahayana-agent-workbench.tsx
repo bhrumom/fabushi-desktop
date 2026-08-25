@@ -1094,7 +1094,9 @@ function RunCard({
 
 function ensurePortalRoot(id: string, parent: HTMLElement | null, before?: Element | null): HTMLElement | null {
   const existing = document.getElementById(id);
+  const previousParent = existing?.parentElement instanceof HTMLElement ? existing.parentElement : null;
   if (!parent) {
+    if (previousParent) delete previousParent.dataset.mahayanaAvatarPortal;
     existing?.remove();
     return null;
   }
@@ -1105,10 +1107,12 @@ function ensurePortalRoot(id: string, parent: HTMLElement | null, before?: Eleme
     root.dataset.sourceBotId = before.dataset.botId || '';
     root.dataset.sourceLabel = before.getAttribute('aria-label') || '';
   }
+  if (previousParent && previousParent !== parent) delete previousParent.dataset.mahayanaAvatarPortal;
   if (root.parentElement !== parent) {
     if (before) parent.insertBefore(root, before);
     else parent.appendChild(root);
   }
+  parent.dataset.mahayanaAvatarPortal = 'true';
   return root;
 }
 

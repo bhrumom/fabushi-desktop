@@ -2,6 +2,14 @@
   display: contents;
 }
 
+:global([data-mahayana-avatar-portal="true"]) > :global([data-engine="fabushi-motion-v2"]) {
+  display: none !important;
+}
+
+:global([data-mahayana-avatar-portal="true"]) > .portalRoot :global([data-engine="fabushi-motion-v2"]) {
+  display: inline-flex !important;
+}
+
 .portalAvatar {
   flex: 0 0 auto;
 }
