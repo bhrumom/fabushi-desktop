@@ -1015,6 +1015,125 @@ function createNativeCapabilityHandlers(deps) {
     reportHeapMetrics(params) { return report('heap-metrics', params); },
     noteConversationForDiagnostics(params) { return report('conversation-diagnostics', params); },
 
+    async getDeveloperCommerceProfile() {
+      return platformRequest('GET', '/v1/developer/commerce/profile');
+    },
+
+    async upsertDeveloperCommerceProfile(params) {
+      const displayName = cleanString(params.displayName, 80);
+      if (!displayName) throw new Error('Developer display name is required.');
+      return platformRequest('POST', '/v1/developer/commerce/profile', { body: { displayName } });
+    },
+
+    async listDeveloperCommerceMiniApps() {
+      return platformRequest('GET', '/v1/developer/commerce/miniapps');
+    },
+
+    async registerDeveloperCommerceMiniApp(params) {
+      const miniAppId = cleanString(params.miniAppId, 128);
+      const displayName = cleanString(params.displayName, 30);
+      if (!miniAppId || !/^[A-Za-z0-9._:-]+$/.test(miniAppId) || !displayName) {
+        throw new Error('Valid Mini App ID and display name are required.');
+      }
+      return platformRequest('POST', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}`, { body: { displayName } });
+    },
+
+    async listDeveloperCommerceProducts(params) {
+      const miniAppId = cleanString(params.miniAppId, 128);
+      if (!miniAppId || !/^[A-Za-z0-9._:-]+$/.test(miniAppId)) throw new Error('Valid Mini App ID is required.');
+      return platformRequest('GET', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}/products`);
+    },
+
+    async createDeveloperCommerceProduct(params) {
+      const miniAppId = cleanString(params.miniAppId, 128);
+      const sku = cleanString(params.sku, 128);
+      const displayName = cleanString(params.displayName, 30);
+      const description = cleanString(params.description, 45);
+      const productKind = cleanString(params.productKind, 40);
+      const entitlementCapability = cleanString(params.entitlementCapability, 128);
+      const currency = cleanString(params.currency, 3).toUpperCase();
+      const taxCode = cleanString(params.taxCode, 64) || undefined;
+      const amount = Number(params.amount);
+      const allowedKinds = new Set(['digital_consumable','digital_durable','subscription','physical','service']);
+      const allowedRails = new Set(['apple_advanced_commerce','google_play','web_provider','merchant_provider','credits']);
+      const rails = Array.isArray(params.rails) ? [...new Set(params.rails.map((value) => cleanString(value, 40)).filter((value) => allowedRails.has(value)))].slice(0, 5) : [];
+      if (!miniAppId || !sku || !displayName || !entitlementCapability || !allowedKinds.has(productKind) || !/^[A-Z]{3}$/.test(currency) || !Number.isSafeInteger(amount) || amount <= 0) {
+        throw new Error('Invalid Developer Commerce product payload.');
+      }
+      const body = { sku, displayName, description, productKind, entitlementCapability, currency, amount, rails };
+      if (taxCode) body.taxCode = taxCode;
+      if (productKind === 'subscription') body.subscriptionPeriodSeconds = 2592000;
+      return platformRequest('POST', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}/products`, { body });
+    },
+
+    async updateDeveloperCommerceProduct(params) {
+      const miniAppId = cleanString(params.miniAppId, 128);
+      const sku = cleanString(params.sku, 128);
+      const displayName = cleanString(params.displayName, 30);
+      const description = cleanString(params.description, 45);
+      const productKind = cleanString(params.productKind, 40);
+      const entitlementCapability = cleanString(params.entitlementCapability, 128);
+      const currency = cleanString(params.currency, 3).toUpperCase();
+      const taxCode = cleanString(params.taxCode, 64) || undefined;
+      const amount = Number(params.amount);
+      const allowedKinds = new Set(['digital_consumable','digital_durable','subscription','physical','service']);
+      const allowedRails = new Set(['apple_advanced_commerce','google_play','web_provider','merchant_provider','credits']);
+      const rails = Array.isArray(params.rails) ? [...new Set(params.rails.map((value) => cleanString(value, 40)).filter((value) => allowedRails.has(value)))].slice(0, 5) : [];
+      if (!miniAppId || !sku || !displayName || !entitlementCapability || !allowedKinds.has(productKind) || !/^[A-Z]{3}$/.test(currency) || !Number.isSafeInteger(amount) || amount <= 0) {
+        throw new Error('Invalid Developer Commerce product payload.');
+      }
+      const body = { sku, displayName, description, productKind, entitlementCapability, currency, amount, rails };
+      if (taxCode) body.taxCode = taxCode;
+      if (productKind === 'subscription') body.subscriptionPeriodSeconds = 2592000;
+      const productId = cleanString(params.productId, 128);
+      if (!productId) throw new Error('Product ID is required.');
+      return platformRequest('POST', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}/products/${encodeURIComponent(productId)}`, { body });
+    },
+
+    async syncDeveloperCommerceGoogleProduct(params) {
+      const miniAppId = cleanString(params.miniAppId, 128);
+      const productId = cleanString(params.productId, 128);
+      if (!miniAppId || !productId) throw new Error('Mini App ID and product ID are required.');
+      return platformRequest('POST', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}/products/${encodeURIComponent(productId)}/google/sync`, { body: {} });
+    },
+
+    async getDeveloperPayoutOverview() {
+      return platformRequest('GET', '/v1/developer/commerce/payout');
+    },
+
+    async upsertDeveloperPayoutProfile(params) {
+      const countryCode = cleanString(params.countryCode, 2).toUpperCase();
+      const legalEntityType = cleanString(params.legalEntityType, 32);
+      const preferredCurrency = cleanString(params.preferredCurrency, 3).toUpperCase();
+      const payoutSchedule = cleanString(params.payoutSchedule, 16);
+      const entityKinds = new Set(['individual','individual_business','company','nonprofit']);
+      const schedules = new Set(['manual','daily','weekly','monthly']);
+      if (!/^[A-Z]{2}$/.test(countryCode) || !entityKinds.has(legalEntityType) || !/^[A-Z]{3}$/.test(preferredCurrency) || !schedules.has(payoutSchedule)) {
+        throw new Error('Invalid developer payout profile.');
+      }
+      return platformRequest('POST', '/v1/developer/commerce/payout/profile', { body: { countryCode, legalEntityType, preferredCurrency, payoutSchedule } });
+    },
+
+    async requestDeveloperPayout(params) {
+      const payoutAccountId = cleanString(params.payoutAccountId, 160);
+      const currency = cleanString(params.currency, 3).toUpperCase();
+      const idempotencyKey = cleanString(params.idempotencyKey, 160);
+      const amount = Number(params.amount);
+      if (!payoutAccountId || !/^[A-Za-z0-9._:-]+$/.test(payoutAccountId) || !/^[A-Z]{3}$/.test(currency) || !idempotencyKey || !/^[A-Za-z0-9._:-]+$/.test(idempotencyKey) || !Number.isSafeInteger(amount) || amount <= 0) {
+        throw new Error('Invalid developer payout request.');
+      }
+      return platformRequest('POST', '/v1/developer/commerce/payout/request', { body: { payoutAccountId, currency, amount, idempotencyKey } });
+    },
+
+    async createDeveloperPayoutOnboarding(params) {
+      const provider = cleanString(params.provider, 48);
+      const purpose = cleanString(params.purpose, 48);
+      const providers = new Set(['stripe_connect','adyen_platform','paypal_multiparty','paypal_payouts','wechat_platform','alipay_platform','lianlian_account_plus','huifu_dougong']);
+      const purposes = new Set(['original_order_split','external_proceeds_payout','marketplace_payout']);
+      if (!providers.has(provider) || !purposes.has(purpose)) throw new Error('Invalid payout onboarding route.');
+      return platformRequest('POST', '/v1/developer/commerce/payout/onboarding', { body: { provider, purpose } });
+    },
+
     async getSharingState(params) {
       const result = await platformRequest('GET', '/api/collaboration/state');
       const state = result?.state ?? { scope: 'fabushi-platform', rooms: [], joinRequests: [], typing: [], fetchedAtMs: Date.now() };
