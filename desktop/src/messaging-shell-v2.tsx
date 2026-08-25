@@ -1373,7 +1373,8 @@ function MessengerWorkspace({ initialProjection }: { initialProjection?: Messeng
     return !query || `${peer.title} ${peer.subtitle}`.toLowerCase().includes(query);
   });
   const sectionIsPeerList = ['chats', 'contacts', 'bots', 'groups', 'channels', 'saved', 'archive'].includes(section);
-  const infoPanelVisible = Boolean(infoOpen && wideInfoLayout && activePeer && sectionIsPeerList);
+  const infoPanelVisible = Boolean(infoOpen && activePeer && sectionIsPeerList);
+  const infoPanelDocked = Boolean(infoPanelVisible && wideInfoLayout);
   const currentActor = selfActors.find((actor) => actor.id === selfHosted.actorId);
   const renderedPeers = visiblePeers.slice(0, peerRenderCount);
   const matchingMessages = messages;
@@ -2044,7 +2045,7 @@ async function saveInvoiceDialog() {
       data-sidebar-collapsed={sidebarWidth <= 112 || undefined}
       data-reduce-motion={desktopPreferences.reducedMotion || undefined}
       data-testid-ready-projection={startupProjection ? 'true' : undefined}
-      style={{ gridTemplateColumns: infoPanelVisible ? `${sidebarWidth}px minmax(420px,1fr) 286px` : `${sidebarWidth}px minmax(420px,1fr)` }}
+      style={{ gridTemplateColumns: infoPanelDocked ? `${sidebarWidth}px minmax(420px,1fr) 286px` : `${sidebarWidth}px minmax(420px,1fr)` }}
       onClick={() => { setMessageMenu(null); setProfileMenuOpen(false); setCreateMenuOpen(false); }}
     >
       <aside className={styles.chatList} data-testid="messenger-sidebar" data-collapsed={sidebarWidth <= 112 || undefined} onClick={(event) => event.stopPropagation()}>
@@ -2211,7 +2212,7 @@ async function saveInvoiceDialog() {
                 }}><Search size={18} /></button>
                 <button type="button" title={activePeer.pinned ? '取消置顶' : '置顶'} onClick={() => void togglePinConversation(activePeer)}><Pin size={18} /></button>
                 <button type="button" title={mutedPeerKeys.has(activePeer.key) ? '开启通知' : '静音'} onClick={() => void toggleMuteConversation(activePeer)}><BellOff size={18} /></button>
-                <button type="button" title="资料" data-active={infoOpen} onClick={() => setInfoOpen((value) => !value)}><MoreVertical size={18} /></button>
+                <button type="button" title="资料" data-testid="conversation-info-toggle" data-active={infoOpen} onClick={() => setInfoOpen((value) => !value)}><MoreVertical size={18} /></button>
               </div>
             </header>
             {error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
@@ -2269,7 +2270,7 @@ async function saveInvoiceDialog() {
       </section>
 
       {infoPanelVisible && activePeer ? (
-        <aside className={styles.infoPanel}>
+        <aside className={styles.infoPanel} data-testid="messenger-info-panel" data-overlay={!wideInfoLayout || undefined}>
           <header><strong>资料</strong><button type="button" onClick={() => setInfoOpen(false)}><X size={17} /></button></header>
           <div className={styles.profileCard}>
             <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, pendingSend, hostReady) : 'idle'} size={92} className={styles.agentProfileMark} label={activePeer.title} />

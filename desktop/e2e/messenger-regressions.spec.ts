@@ -179,3 +179,49 @@ test('Messenger composer remains inside the desktop viewport for chat peers', as
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
+
+test('switching peers keeps dynamic avatars visible and narrow layouts can open the info panel', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-avatar-info-regression-'));
+  const app = await launchDesktopApp(appDataDir);
+
+  try {
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+
+    const peers = page.locator('[data-testid^="peer-"]');
+    await expect(peers.first()).toBeVisible();
+    expect(await peers.count()).toBeGreaterThanOrEqual(2);
+
+    const first = peers.nth(0);
+    const second = peers.nth(1);
+    const visibleMark = '[data-engine="fabushi-motion-v2"]:visible';
+
+    await first.click();
+    await expect(first.locator(visibleMark)).toHaveCount(1);
+
+    await second.click();
+    await expect(second.locator(visibleMark)).toHaveCount(1);
+    await expect(first.locator(visibleMark)).toHaveCount(1);
+
+    const headerIdentity = page.getByTestId('conversation-status').locator('xpath=../..');
+    const headerMark = headerIdentity.locator(visibleMark);
+    await expect(headerMark).toHaveCount(1);
+    expect(await headerMark.getAttribute('data-bot-id')).toBe(await second.locator(visibleMark).getAttribute('data-bot-id'));
+
+    await page.setViewportSize({ width: 1100, height: 800 });
+    const toggle = page.getByTestId('conversation-info-toggle');
+    const infoPanel = page.getByTestId('messenger-info-panel');
+    await expect(toggle).toBeVisible();
+
+    if (await infoPanel.isVisible().catch(() => false)) {
+      await toggle.click();
+      await expect(infoPanel).toBeHidden();
+    }
+    await toggle.click();
+    await expect(infoPanel).toBeVisible();
+    await expect(infoPanel).toHaveAttribute('data-overlay', 'true');
+  } finally {
+    await app.close();
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});

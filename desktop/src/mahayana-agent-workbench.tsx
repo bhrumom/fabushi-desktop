@@ -1101,6 +1101,10 @@ function ensurePortalRoot(id: string, parent: HTMLElement | null, before?: Eleme
   const root = existing || document.createElement('div');
   root.id = id;
   root.className = styles.portalRoot;
+  if (before instanceof HTMLElement) {
+    root.dataset.sourceBotId = before.dataset.botId || '';
+    root.dataset.sourceLabel = before.getAttribute('aria-label') || '';
+  }
   if (root.parentElement !== parent) {
     if (before) parent.insertBefore(root, before);
     else parent.appendChild(root);
@@ -1155,6 +1159,13 @@ export default function MahayanaAgentWorkbench() {
       element.style.display = 'none';
       element.dataset.mahayanaAvatarReplaced = 'true';
     };
+    const restoreOriginal = (element: HTMLElement) => {
+      const display = hiddenMarksRef.current.get(element);
+      if (display === undefined) return;
+      element.style.display = display;
+      delete element.dataset.mahayanaAvatarReplaced;
+      hiddenMarksRef.current.delete(element);
+    };
 
     const refresh = () => {
       if (disposed) return;
@@ -1179,6 +1190,13 @@ export default function MahayanaAgentWorkbench() {
       const infoOriginal = profileCard ? directChildBotMark(profileCard) : null;
       const infoAvatar = ensurePortalRoot('mahayana-agent-info-avatar', profileCard, infoOriginal);
       hideOriginal(infoOriginal);
+
+      const currentlyReplaced = new Set<HTMLElement>(
+        [identityOriginal, peerOriginal, infoOriginal].filter((element): element is HTMLElement => Boolean(element)),
+      );
+      for (const element of [...hiddenMarksRef.current.keys()]) {
+        if (!element.isConnected || !currentlyReplaced.has(element)) restoreOriginal(element);
+      }
 
       const peerTestId = activeButton?.getAttribute('data-testid');
       if (peerTestId) {
@@ -1259,11 +1277,16 @@ export default function MahayanaAgentWorkbench() {
     return bounded(exact, 6);
   }, [snapshot.activeConversationKey, snapshot.runs]);
 
-  const activeRun = visibleRuns.length
-    ? visibleRuns[visibleRuns.length - 1]
-    : [...snapshot.runs].reverse().find((run) => activeStatuses(run.status));
+  const activeRun = visibleRuns.length ? visibleRuns[visibleRuns.length - 1] : undefined;
   const avatarState = activeRun?.visualState || 'idle';
-  const avatarBotId = activeRun?.agentId || 'mahayana-assistant';
+  const avatarBotId = activeRun?.agentId || activePeerContext()?.actorId || 'mahayana-assistant';
+  const portalIdentity = (target: HTMLElement | null, fallback: string) => ({
+    botId: target?.dataset.sourceBotId || fallback,
+    label: target?.dataset.sourceLabel || avatarBotId,
+  });
+  const headerIdentity = portalIdentity(targets.headerAvatar, `peer:bot:${avatarBotId}`);
+  const peerIdentity = portalIdentity(targets.peerAvatar, `peer:bot:${avatarBotId}`);
+  const infoIdentity = portalIdentity(targets.infoAvatar, `peer:bot:${avatarBotId}`);
 
   useEffect(() => {
     const status = document.querySelector<HTMLElement>('[data-testid="conversation-status"]');
@@ -1335,15 +1358,15 @@ export default function MahayanaAgentWorkbench() {
     <>
       {targets.timeline && visibleRuns.length ? createPortal(panel, targets.timeline) : null}
       {targets.headerAvatar ? createPortal(
-        <BotMark botId={`header:${avatarBotId}`} state={avatarState} size={40} className={styles.portalAvatar} label={avatarBotId} />,
+        <BotMark botId={headerIdentity.botId} state={avatarState} size={40} className={styles.portalAvatar} label={headerIdentity.label} />,
         targets.headerAvatar,
       ) : null}
       {targets.peerAvatar ? createPortal(
-        <BotMark botId={`peer-active:${avatarBotId}`} state={avatarState} size={48} className={styles.portalAvatar} label={avatarBotId} />,
+        <BotMark botId={peerIdentity.botId} state={avatarState} size={48} className={styles.portalAvatar} label={peerIdentity.label} />,
         targets.peerAvatar,
       ) : null}
       {targets.infoAvatar ? createPortal(
-        <BotMark botId={`info:${avatarBotId}`} state={avatarState} size={92} className={styles.portalAvatar} label={avatarBotId} />,
+        <BotMark botId={infoIdentity.botId} state={avatarState} size={92} className={styles.portalAvatar} label={infoIdentity.label} />,
         targets.infoAvatar,
       ) : null}
     </>
