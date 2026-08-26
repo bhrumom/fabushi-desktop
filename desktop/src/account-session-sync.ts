@@ -5,19 +5,19 @@ import {
 } from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
 
 const REAUTH_POLL_MS = 350;
+const MESSENGER_WORKSPACE_SELECTOR = '[data-testid="messenger-workspace"]';
 
 let installed = false;
 
 /**
  * Keep the top-level DesktopShell auth gate synchronized with browser login
- * completions that happen inside HostClient after an explicit logout or a
- * terminal/revoked session.
+ * completions that happen after an explicit logout or terminal/revoked session.
  *
- * DesktopShell deliberately stops polling while a valid session is active.
- * When account-scoped state is reset it emits MAHAYANA_ACCOUNT_SESSION_RESET_EVENT;
- * from that point we poll only until the Rust Host reports a new authenticated
- * session, then reload once so every account-scoped transport/cache is rebuilt
- * from the new identity.
+ * The same account-reset event is also emitted during the normal first-login
+ * bootstrap when no Messenger workspace has existed yet. That path is already
+ * handled by DesktopShell's own auth probe and must never trigger a renderer
+ * reload. We therefore arm this synchronizer only when the reset is observed
+ * while a real Messenger workspace is mounted.
  */
 export function installDesktopAccountSessionSync(): () => void {
   if (installed || typeof window === 'undefined' || !isElectronMahayanaHostAvailable()) {
@@ -52,7 +52,12 @@ export function installDesktopAccountSessionSync(): () => void {
       if (state.loggedIn) {
         waitingForLogin = false;
         clearTimer();
-        window.location.reload();
+        // If DesktopShell has already restored the workspace itself, there is
+        // nothing to rebuild. Only the post-logout HostClient path needs one
+        // reload to re-enter the authenticated top-level shell.
+        if (!document.querySelector(MESSENGER_WORKSPACE_SELECTOR)) {
+          window.location.reload();
+        }
         return;
       }
     } catch {
@@ -63,6 +68,14 @@ export function installDesktopAccountSessionSync(): () => void {
   };
 
   const onAccountSessionReset = () => {
+    // Initial unauthenticated bootstrap emits the same cache-reset event. Do not
+    // arm in that state; otherwise the first successful login races DesktopShell
+    // and causes an unnecessary reload that detaches active controls.
+    if (!document.querySelector(MESSENGER_WORKSPACE_SELECTOR)) {
+      waitingForLogin = false;
+      clearTimer();
+      return;
+    }
     waitingForLogin = true;
     clearTimer();
     schedule(0);
