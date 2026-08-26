@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { installDesktopAccountSessionSync } from './account-session-sync';
 import DesktopShellV2 from './messaging-shell-v2';
 import MahayanaAgentWorkbench from './mahayana-agent-workbench';
 import { installMahayanaAgentTranscriptSemantics } from './mahayana-agent-transcript-semantics';
@@ -12,6 +13,8 @@ const root = document.querySelector<HTMLDivElement>('#root');
 if (!root) {
   throw new Error('Fabushi desktop root element is missing');
 }
+
+installDesktopAccountSessionSync();
 
 createRoot(root).render(
   <StrictMode>
