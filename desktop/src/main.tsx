@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { installDesktopAccountSessionSync } from './account-session-sync';
+import { installBotIdentityAliases } from './agent-identity-aliases';
+import { installDurableAgentState, restoreDurableAgentState } from './durable-agent-state';
 import DesktopShellV2 from './messaging-shell-v2';
 import MahayanaAgentWorkbench from './mahayana-agent-workbench';
 import { installMahayanaAgentTranscriptSemantics } from './mahayana-agent-transcript-semantics';
@@ -14,14 +16,26 @@ if (!root) {
   throw new Error('Fabushi desktop root element is missing');
 }
 
-installDesktopAccountSessionSync();
+async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
+  installDesktopAccountSessionSync();
+  // Restore native persisted projections before transport/workbench reducers
+  // read their first-frame local cache. This makes localStorage a projection;
+  // canonical cloud/Rust authority is verified separately by GBF-601/602.
+  await restoreDurableAgentState();
+  installBotIdentityAliases();
+  installDurableAgentState();
 
-createRoot(root).render(
-  <StrictMode>
-    <DesktopShellV2 />
-    <MahayanaAgentWorkbench />
-  </StrictMode>,
-);
+  createRoot(rootElement).render(
+    <StrictMode>
+      <DesktopShellV2 />
+      <MahayanaAgentWorkbench />
+    </StrictMode>,
+  );
 
-installMahayanaAgentTranscriptSemantics();
-installSelfHostedMahayanaInvocationBridge();
+  installMahayanaAgentTranscriptSemantics();
+  installSelfHostedMahayanaInvocationBridge();
+}
+
+void bootstrapDesktop(root).catch((error: unknown) => {
+  console.error('Fabushi desktop bootstrap failed', error);
+});
