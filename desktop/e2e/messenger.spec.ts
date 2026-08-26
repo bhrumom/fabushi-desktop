@@ -275,10 +275,20 @@ test('account settings logs out and clears account-scoped fast-start caches', as
     await completeBrowserLogin(page);
     await openMessenger(page);
 
+    const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+    await expect(assistant).toBeVisible();
+    await assistant.click();
+    await page.getByTestId('messenger-input').fill('退出登录缓存清理验收');
+    await page.getByTestId('messenger-send').click();
+    await expect(page.getByText('收到：退出登录缓存清理验收')).toBeVisible();
+    await expect.poll(async () => page.evaluate(() => {
+      const journal = JSON.parse(localStorage.getItem('fabushi.desktop.mahayana-conversation-journal.v1') || 'null');
+      return Object.keys(journal?.conversations ?? {}).length;
+    })).toBeGreaterThan(0);
+
     await page.evaluate(() => {
       localStorage.setItem('fabushi.desktop.messenger-projection.v1', JSON.stringify({ version: 1, selfActors: [], selfConversations: [], selfMessages: {}, savedAtMs: Date.now() }));
       localStorage.setItem('fabushi.desktop.messenger-drafts.v2', JSON.stringify({ sample: 'private draft' }));
-      localStorage.setItem('fabushi.desktop.mahayana-conversation-journal.v1', JSON.stringify({ version: 1, conversations: { sample: [{ id: 'm1', role: 'user', text: 'private', createdAtMs: Date.now() }] } }));
     });
 
     await page.getByTestId('profile-navigation-trigger').click();

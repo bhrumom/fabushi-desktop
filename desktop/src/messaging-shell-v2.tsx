@@ -50,7 +50,7 @@ import type {
   SandboxRuntime,
   UpdateState,
 } from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
-import { ElectronMahayanaHostTransport, isElectronMahayanaHostAvailable } from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
+import { ElectronMahayanaHostTransport, isElectronMahayanaHostAvailable, MAHAYANA_ACCOUNT_SESSION_RESET_EVENT } from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
 import { MockMahayanaHostTransport } from '../../frontend/apps/web/src/lib/mahayana-host/mock-transport';
 import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
 import type { InstalledPluginPointer, MahayanaHostTransport, MarketplacePluginSummary } from '../../frontend/apps/web/src/lib/mahayana-host/transport';
@@ -297,6 +297,9 @@ function persistMessengerProjection(projection: MessengerProjection): void {
 
 async function clearAccountScopedDesktopCaches(): Promise<void> {
   if (typeof window !== 'undefined') {
+    // Tell every live Mahayana renderer transport to discard its in-memory
+    // account journal before React unmount cleanup can flush it back to disk.
+    window.dispatchEvent(new Event(MAHAYANA_ACCOUNT_SESSION_RESET_EVENT));
     try {
       window.localStorage.removeItem(messengerProjectionKey);
       window.localStorage.removeItem(messengerDraftsKey);
