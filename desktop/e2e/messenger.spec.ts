@@ -266,6 +266,46 @@ test('Router settings modal binds providers, usage, sandbox, preferences and fas
   }
 });
 
+test('account settings logs out and clears account-scoped fast-start caches', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-logout-e2e-'));
+  const app = await launchDesktopApp(appDataDir);
+
+  try {
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMessenger(page);
+
+    await page.evaluate(() => {
+      localStorage.setItem('fabushi.desktop.messenger-projection.v1', JSON.stringify({ version: 1, selfActors: [], selfConversations: [], selfMessages: {}, savedAtMs: Date.now() }));
+      localStorage.setItem('fabushi.desktop.messenger-drafts.v2', JSON.stringify({ sample: 'private draft' }));
+      localStorage.setItem('fabushi.desktop.mahayana-conversation-journal.v1', JSON.stringify({ version: 1, conversations: { sample: [{ id: 'm1', role: 'user', text: 'private', createdAtMs: Date.now() }] } }));
+    });
+
+    await page.getByTestId('profile-navigation-trigger').click();
+    await page.getByTitle('设置', { exact: true }).click();
+    await page.getByTestId('settings-category-account').click();
+    const logout = page.getByTestId('settings-logout');
+    await expect(logout).toBeVisible();
+    await expect(logout).toHaveText('退出登录');
+    await logout.click();
+
+    await expect(page.getByTestId('login-gate')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('messenger-workspace')).toHaveCount(0);
+    const accountCaches = await page.evaluate(() => [
+      localStorage.getItem('fabushi.desktop.messenger-projection.v1'),
+      localStorage.getItem('fabushi.desktop.messenger-drafts.v2'),
+      localStorage.getItem('fabushi.desktop.mahayana-conversation-journal.v1'),
+    ]);
+    expect(accountCaches).toEqual([null, null, null]);
+
+    await page.getByTestId('browser-login-start').click();
+    await expect(page.getByTestId('messenger-workspace')).toBeVisible({ timeout: 15_000 });
+  } finally {
+    await app.close();
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
 test('returning-user local-first conversation list is interactive within the one-second target', async ({}, testInfo) => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-startup-perf-e2e-'));
   let app = await launchDesktopApp(appDataDir);

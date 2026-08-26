@@ -1283,6 +1283,11 @@
   color: #fff;
   cursor: pointer;
 }
+.settingsActionRow button[data-danger="true"] {
+  background: rgba(239, 108, 125, .14);
+  color: #ff9aa8;
+  border: 1px solid rgba(239, 108, 125, .28);
+}
 .settingsChoiceRow {
   width: 100%;
   min-height: 70px;

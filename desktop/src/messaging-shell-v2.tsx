@@ -37,7 +37,7 @@ import {
   WalletCards,
   X,
 } from 'lucide-react';
-import React, { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import HostClient from '../../frontend/apps/web/src/app/host/host-client';
 import { BotMark, type BotMarkState } from '../../frontend/apps/web/src/app/host/bot-mark';
 import type {
@@ -80,6 +80,7 @@ import {
   type IncomingFabushiCall,
   type WebRtcCallStatus,
 } from './webrtc-call-controller';
+import { isTerminalAuthSessionFailure } from './auth-session';
 
 type MessengerSection =
   | 'chats'
@@ -201,6 +202,7 @@ const messengerSettingsKey = 'fabushi.desktop.messenger-settings.v2';
 const messengerDraftsKey = 'fabushi.desktop.messenger-drafts.v2';
 const messengerSidebarWidthKey = 'fabushi.desktop.sidebar-width.v3';
 const messengerProjectionKey = 'fabushi.desktop.messenger-projection.v1';
+const messengerConversationJournalKey = 'fabushi.desktop.mahayana-conversation-journal.v1';
 const messengerPreferencesKey = 'fabushi.desktop.telegram-settings.v1';
 const initialPeerRenderCount = 120;
 const initialMessageRenderCount = 240;
@@ -291,6 +293,23 @@ function persistMessengerProjection(projection: MessengerProjection): void {
   }).catch(() => {
     // Native persistence is a durability mirror only; canonical Rust SQLite remains authoritative.
   });
+}
+
+async function clearAccountScopedDesktopCaches(): Promise<void> {
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.removeItem(messengerProjectionKey);
+      window.localStorage.removeItem(messengerDraftsKey);
+      window.localStorage.removeItem(messengerConversationJournalKey);
+    } catch {
+      // Native persistence cleanup below remains authoritative for fast-start.
+    }
+  }
+  try {
+    await invokeNativeDesktop<boolean>('removeClientPersistence', { key: messengerProjectionKey });
+  } catch {
+    // Older/unavailable native edges must not block signing out locally.
+  }
 }
 
 function createTransport(): MahayanaHostTransport {
@@ -452,6 +471,19 @@ export default function DesktopShellV2() {
   const [projectionLookupComplete, setProjectionLookupComplete] = useState(Boolean(localProjection));
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
 
+  const resetToLogin = useCallback(async (revokeSession = true) => {
+    try {
+      if (revokeSession) await authTransport.logout();
+    } catch {
+      // Product logout is best effort remotely; local account state is cleared below.
+    } finally {
+      await clearAccountScopedDesktopCaches();
+      setStartupProjection(null);
+      setProjectionLookupComplete(true);
+      setAuthenticated(false);
+    }
+  }, [authTransport]);
+
   useEffect(() => {
     if (localProjection) return;
     let closed = false;
@@ -470,10 +502,19 @@ export default function DesktopShellV2() {
       try {
         const state = await authTransport.authStatus();
         if (closed) return;
+        if (!state.loggedIn) {
+          await clearAccountScopedDesktopCaches();
+          if (closed) return;
+          setStartupProjection(null);
+        }
         setAuthenticated(state.loggedIn);
         if (!state.loggedIn) retryTimer = window.setTimeout(() => void checkAuth(), 900);
-      } catch {
+      } catch (cause) {
         if (closed) return;
+        if (isTerminalAuthSessionFailure(cause)) {
+          await resetToLogin(true);
+          return;
+        }
         // A transient Host/network failure must not replace a valid local-first shell
         // with a login/restore screen. Only an explicit loggedIn=false response signs out.
         retryTimer = window.setTimeout(() => void checkAuth(), 1_800);
@@ -485,15 +526,16 @@ export default function DesktopShellV2() {
       if (retryTimer) window.clearTimeout(retryTimer);
       void authTransport.close();
     };
-  }, [authTransport]);
+  }, [authTransport, resetToLogin]);
 
   const showMessenger = projectionLookupComplete
+    && authenticated !== false
     && (authenticated === true || Boolean(startupProjection));
   const showLogin = projectionLookupComplete && authenticated === false;
   return (
     <div className={styles.desktopRoot} data-testid="desktop-shell" data-local-first={showMessenger && authenticated !== true ? 'true' : undefined}>
       {showMessenger
-        ? <MessengerWorkspace initialProjection={startupProjection} />
+        ? <MessengerWorkspace initialProjection={startupProjection} onLogout={() => resetToLogin(true)} />
         : showLogin
           ? <HostClient />
           : <DesktopFastStartBootstrap />}
@@ -538,7 +580,7 @@ function DesktopFastStartBootstrap() {
   );
 }
 
-function MessengerWorkspace({ initialProjection }: { initialProjection?: MessengerProjection | null }) {
+function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection?: MessengerProjection | null; onLogout: () => Promise<void> }) {
   const transport = useMemo(() => createTransport(), []);
   const startupProjection = useMemo(() => initialProjection ?? readMessengerProjection(), [initialProjection]);
   const selfHosted = useMemo(() => new SelfHostedMessagingClientV2(transport, { actorId: startupProjection?.actorId }), [transport, startupProjection]);
@@ -621,6 +663,7 @@ function MessengerWorkspace({ initialProjection }: { initialProjection?: Messeng
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const sessionResetInFlightRef = useRef(false);
 
   useEffect(() => {
     activePeerKeyRef.current = activePeerKey;
@@ -636,6 +679,14 @@ function MessengerWorkspace({ initialProjection }: { initialProjection?: Messeng
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  useEffect(() => {
+    if (!error || !isTerminalAuthSessionFailure(error) || sessionResetInFlightRef.current) return;
+    sessionResetInFlightRef.current = true;
+    void onLogout()
+      .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))
+      .finally(() => { sessionResetInFlightRef.current = false; });
+  }, [error, onLogout]);
 
   useEffect(() => {
     try {
@@ -1925,12 +1976,20 @@ async function saveInvoiceDialog() {
   async function refreshMiniApps(query = miniAppQuery) {
     setMiniAppLoading(true);
     try {
-      const [catalog, installed] = await Promise.all([
+      const [catalogResult, installedResult] = await Promise.allSettled([
         transport.marketplaceBrowse(query),
         transport.pluginListInstalled(),
       ]);
-      setMarketplaceApps(catalog.plugins);
-      setInstalledMiniApps(Object.fromEntries(installed.plugins.map((plugin) => [plugin.pluginId, plugin])));
+      if (catalogResult.status === 'fulfilled') {
+        setMarketplaceApps(catalogResult.value.plugins);
+      } else {
+        setError(catalogResult.reason instanceof Error ? catalogResult.reason.message : String(catalogResult.reason));
+      }
+      if (installedResult.status === 'fulfilled') {
+        setInstalledMiniApps(Object.fromEntries(installedResult.value.plugins.map((plugin) => [plugin.pluginId, plugin])));
+      } else {
+        setError(installedResult.reason instanceof Error ? installedResult.reason.message : String(installedResult.reason));
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -2271,7 +2330,7 @@ async function saveInvoiceDialog() {
             </form>
           </>
         ) : (
-          <FeatureWorkspace section={section} onOpenMiniApp={openMiniApp} onInstallMiniApp={installMiniApp} onUninstallMiniApp={uninstallMiniApp} miniApps={marketplaceApps} installedMiniApps={installedMiniApps} miniAppQuery={miniAppQuery} onMiniAppQuery={setMiniAppQuery} miniAppLoading={miniAppLoading} miniAppBusy={miniAppBusy} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} settings={{ category: settingsCategory, onCategory: setSettingsCategory, preferences: desktopPreferences, onPreference: updateDesktopPreference, actor: currentActor, actorId: selfHosted.actorId, hostSettings, onHostSetting: updateHostSetting, onConfigureProviderSecret: configureProviderSecret, onRemoveProviderSecret: removeProviderSecret, routerStatus, usageSummary, onInstallUpdate: installDesktopUpdate }} />
+          <FeatureWorkspace section={section} onOpenMiniApp={openMiniApp} onInstallMiniApp={installMiniApp} onUninstallMiniApp={uninstallMiniApp} miniApps={marketplaceApps} installedMiniApps={installedMiniApps} miniAppQuery={miniAppQuery} onMiniAppQuery={setMiniAppQuery} miniAppLoading={miniAppLoading} miniAppBusy={miniAppBusy} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} settings={{ category: settingsCategory, onCategory: setSettingsCategory, preferences: desktopPreferences, onPreference: updateDesktopPreference, actor: currentActor, actorId: selfHosted.actorId, hostSettings, onHostSetting: updateHostSetting, onConfigureProviderSecret: configureProviderSecret, onRemoveProviderSecret: removeProviderSecret, routerStatus, usageSummary, onInstallUpdate: installDesktopUpdate, onLogout }} />
         )}
       </section>
 
@@ -2312,7 +2371,7 @@ async function saveInvoiceDialog() {
           <div className={styles.settingsModalContent}>
             <button type="button" className={styles.settingsModalClose} data-testid="settings-close" aria-label="关闭设置" onClick={closeSettings}><X size={19} /></button>
             {error ? <div className={styles.settingsModalError} role="alert"><span>{error}</span><button type="button" aria-label="关闭错误" onClick={() => setError(null)}><X size={14} /></button></div> : null}
-            <SettingsWorkspace category={settingsCategory} onCategory={setSettingsCategory} preferences={desktopPreferences} onPreference={updateDesktopPreference} actor={currentActor} actorId={selfHosted.actorId} hostSettings={hostSettings} onHostSetting={updateHostSetting} onConfigureProviderSecret={configureProviderSecret} onRemoveProviderSecret={removeProviderSecret} routerStatus={routerStatus} usageSummary={usageSummary} onInstallUpdate={installDesktopUpdate} />
+            <SettingsWorkspace category={settingsCategory} onCategory={setSettingsCategory} preferences={desktopPreferences} onPreference={updateDesktopPreference} actor={currentActor} actorId={selfHosted.actorId} hostSettings={hostSettings} onHostSetting={updateHostSetting} onConfigureProviderSecret={configureProviderSecret} onRemoveProviderSecret={removeProviderSecret} routerStatus={routerStatus} usageSummary={usageSummary} onInstallUpdate={installDesktopUpdate} onLogout={onLogout} />
           </div>
         </section>
       </div> : null}
@@ -2764,6 +2823,7 @@ type SettingsWorkspaceProps = SettingsNavigationProps & {
   routerStatus: InferenceRouterStatus | null;
   usageSummary: UsageSummary | null;
   onInstallUpdate: (state: UpdateState) => Promise<void>;
+  onLogout: () => Promise<void>;
 };
 
 const settingsNavigationItems: ReadonlyArray<{ id: SettingsCategory; label: string; subtitle: string; glyph: string }> = [
@@ -2804,7 +2864,7 @@ function SettingsChoiceRow({ title, description, status, selected, disabled, tes
   </button>;
 }
 
-function SettingsWorkspace({ category, preferences, onPreference, actor, actorId, hostSettings, onHostSetting, onConfigureProviderSecret, onRemoveProviderSecret, routerStatus, usageSummary, onInstallUpdate }: SettingsWorkspaceProps) {
+function SettingsWorkspace({ category, preferences, onPreference, actor, actorId, hostSettings, onHostSetting, onConfigureProviderSecret, onRemoveProviderSecret, routerStatus, usageSummary, onInstallUpdate, onLogout }: SettingsWorkspaceProps) {
   const [openRouterKey, setOpenRouterKey] = useState('');
   const [openRouterSaving, setOpenRouterSaving] = useState(false);
   const [claudeKey, setClaudeKey] = useState('');
@@ -2818,6 +2878,7 @@ function SettingsWorkspace({ category, preferences, onPreference, actor, actorId
   const [settingsUpdateStatus, setSettingsUpdateStatus] = useState<(UpdateState & { track?: 'stable' | 'beta' | 'alpha' }) | null>(null);
   const [updateTrack, setUpdateTrack] = useState<'stable' | 'beta' | 'alpha'>('stable');
   const [settingsActionError, setSettingsActionError] = useState<string | null>(null);
+  const [logoutBusy, setLogoutBusy] = useState(false);
   const meta = settingsNavigationItems.find((item) => item.id === category)!;
   const profileName = actor?.displayName || '当前用户';
   const selectedProviderUsage = usageSummary?.byProvider?.find((item) => item.provider === hostSettings.inferenceProvider);
@@ -2872,6 +2933,7 @@ function SettingsWorkspace({ category, preferences, onPreference, actor, actorId
       <SettingsToggleRow testId="settings-toggle-info-panel" title="显示资料侧栏" description="宽屏聊天时显示右侧资料栏。" checked={preferences.showInfoPanel} onChange={(value) => onPreference('showInfoPanel', value)} />
       <SettingsToggleRow testId="settings-toggle-enter-send" title="Enter 发送消息" description="关闭后使用 Command/Ctrl + Enter 发送。" checked={preferences.enterToSend} onChange={(value) => onPreference('enterToSend', value)} />
       <SettingsToggleRow testId="settings-toggle-reduced-motion" title="减少动态效果" description="关闭大部分界面过渡动画。" checked={preferences.reducedMotion} onChange={(value) => onPreference('reducedMotion', value)} />
+      <div className={styles.settingsActionRow}><div><strong>退出登录</strong><small>撤销当前 Fabushi 会话并清除本机账户快速启动缓存；设备通用偏好设置保留。</small></div><button data-testid="settings-logout" data-danger="true" type="button" disabled={logoutBusy} onClick={() => { if (logoutBusy) return; setLogoutBusy(true); void onLogout().catch((cause: unknown) => setSettingsActionError(cause instanceof Error ? cause.message : String(cause))).finally(() => setLogoutBusy(false)); }}>{logoutBusy ? '退出中…' : '退出登录'}</button></div>
     </section> : null}
     {category === 'router' ? <>
       <section className={styles.settingsGroup} data-testid="router-provider-settings">

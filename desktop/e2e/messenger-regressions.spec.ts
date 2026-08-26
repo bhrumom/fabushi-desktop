@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { ElectronMahayanaHostTransport } from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
 import type { RuntimeEvent } from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import { isTerminalAuthSessionFailure } from '../src/auth-session';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
@@ -61,6 +62,13 @@ async function expectComposerInsideViewport(page: Page): Promise<void> {
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
 }
+
+test('terminal auth classifier distinguishes revoked sessions from transient failures', () => {
+  expect(isTerminalAuthSessionFailure('Mahayana product API returned HTTP 401: refresh_token_reused: 登录会话已撤销，请重新登录')).toBe(true);
+  expect(isTerminalAuthSessionFailure(new Error('session_revoked'))).toBe(true);
+  expect(isTerminalAuthSessionFailure('Mahayana product API transport failed: timeout')).toBe(false);
+  expect(isTerminalAuthSessionFailure('HTTP 503 upstream unavailable')).toBe(false);
+});
 
 test('Electron transport keeps Mini Apps out of chat conversations and routes direct opens to miniapp.open', async () => {
   let runtimeListener: ((event: RuntimeEvent) => void) | null = null;
