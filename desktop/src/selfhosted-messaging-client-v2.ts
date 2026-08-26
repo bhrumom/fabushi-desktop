@@ -401,6 +401,8 @@ export class SelfHostedMessagingClientV2 {
   private identityResolved = false;
   private identityPromise: Promise<void> | null = null;
   private lastIdentityFailureAtMs = 0;
+  private currentActorDisplayName = '当前用户';
+  private currentActorUsername: string | undefined;
 
   constructor(transport: MahayanaHostTransport, options: { actorId?: string; deviceId?: string; sessionId?: string } = {}) {
     this.transport = transport;
@@ -455,12 +457,16 @@ export class SelfHostedMessagingClientV2 {
     await this.execute({ type: 'upsertProfile', actor });
   }
 
-  async ensureCurrentActor(displayName = '当前用户'): Promise<void> {
+  async ensureCurrentActor(displayName?: string, username?: string): Promise<void> {
+    const normalizedDisplayName = displayName?.trim();
+    if (normalizedDisplayName) this.currentActorDisplayName = normalizedDisplayName;
+    if (username !== undefined) this.currentActorUsername = username.trim() || undefined;
     await this.ensureNativeIdentity();
     await this.ensureActor({
       id: this.actorId,
       kind: 'human',
-      displayName,
+      displayName: this.currentActorDisplayName,
+      ...(this.currentActorUsername ? { username: this.currentActorUsername } : {}),
       capabilities: ['messages', 'groups', 'channels', 'calls', 'payments', 'miniApps'],
       presence: { status: 'online', lastSeenAtMs: Date.now() },
       verified: false,

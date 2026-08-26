@@ -928,7 +928,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         void execute({ type: 'settings.get', requestId: nextRequestId('settings-get') });
         refreshLegacy();
         try {
-          await selfHosted.ensureCurrentActor();
+          const account = await transport.authStatus().catch(() => null);
+          const cachedActor = startupProjection?.selfActors.find((actor) => actor.id === selfHosted.actorId);
+          const username = account?.user?.username?.trim() || cachedActor?.username;
+          const displayName = account?.user?.nickname?.trim()
+            || username
+            || account?.user?.email?.trim()
+            || cachedActor?.displayName
+            || '当前用户';
+          await selfHosted.ensureCurrentActor(displayName, username);
           await selfHosted.sync(initialSyncLimit, messagingCursorRef.current);
           void webRtcRef.current?.connect().catch(() => {});
         } catch (cause) {
@@ -941,7 +949,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       unsubscribe();
       void transport.close();
     };
-  }, [transport, selfHosted]);
+  }, [transport, selfHosted, startupProjection]);
 
   useEffect(() => {
     if (!hostReady || section !== 'settings' || !['router', 'usage'].includes(settingsCategory)) return;
