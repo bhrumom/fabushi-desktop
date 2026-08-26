@@ -106,6 +106,55 @@ test('Mini App bot lifecycle uses authenticated marketplace platform routes', as
   assert.ok(calls.every(([method]) => method === 'platform.request'));
 });
 
+test('account sync native capabilities reconcile remote Mini Apps and expose Bot history/cloud routes', async () => {
+  const calls = [];
+  const installed = new Map();
+  const host = {
+    async request(method, params = {}) {
+      calls.push([method, params]);
+      if (method === 'platform.request') {
+        if (params.path === '/v1/marketplace/added') {
+          return { ok: true, data: { accountSynchronized: true, cursor: 'as1:2', apps: [{ id: 'global-dharma', version: '1.0.0' }] } };
+        }
+        return { ok: true, data: { method: params.method, path: params.path, query: params.query ?? null, body: params.body ?? null } };
+      }
+      if (method === 'feature.marketplace.browse') {
+        return { plugins: [{ pluginId: 'global-dharma', displayName: 'Global Dharma', latestVersion: '1.0.0' }] };
+      }
+      if (method === 'feature.plugin.active') return installed.get(params.pluginId) ?? null;
+      if (method === 'feature.marketplace.release') return { pluginId: params.pluginId, version: params.version, releaseManifest: { pluginId: params.pluginId, version: params.version } };
+      if (method === 'feature.plugin.install') {
+        const pointer = { pluginId: params.release.pluginId, version: params.release.version, installedPath: '/tmp/test' };
+        installed.set(pointer.pluginId, pointer);
+        return pointer;
+      }
+      if (method === 'feature.plugin.uninstall') {
+        installed.delete(params.pluginId);
+        return { pluginId: params.pluginId, removed: true };
+      }
+      throw new Error(`unexpected Host method ${method}`);
+    },
+  };
+  await harness(async ({ handlers, getState }) => {
+    const sync = await handlers.getAccountSync({ cursor: 'as1:1', limit: 20 });
+    assert.equal(sync.path, '/v1/account/sync');
+    assert.equal(sync.query.cursor, 'as1:1');
+    const reconciliation = await handlers.reconcileAccountMiniApps({});
+    assert.deepEqual(reconciliation.desired, ['global-dharma']);
+    assert.equal(reconciliation.installed[0].pluginId, 'global-dharma');
+    assert.deepEqual(getState().accountManagedMiniApps, ['global-dharma']);
+    const history = await handlers.getMiniAppBotMessages({ pluginId: 'global-dharma', after: '2026-01-01', limit: 50 });
+    assert.equal(history.path, '/api/miniapps/global-dharma/messages');
+    const appended = await handlers.appendMiniAppBotMessages({ pluginId: 'global-dharma', messages: [{ messageId: 'm1', role: 'user', text: 'hello' }] });
+    assert.equal(appended.path, '/api/miniapps/global-dharma/messages');
+    const cloud = await handlers.setMiniAppCloudStorage({ pluginId: 'global-dharma', values: { mode: 'local' } });
+    assert.equal(cloud.path, '/v1/miniapps/global-dharma/cloud-storage');
+    const bots = await handlers.getAccountBots({});
+    assert.equal(bots.path, '/v1/account/bots');
+  }, { host });
+  assert.ok(calls.some(([method]) => method === 'feature.plugin.install'));
+});
+
 test('local tool permission cannot exceed the administrator ceiling', async () => {
   const previous = process.env.FABUSHI_LOCAL_TOOL_PERMISSION_CEILING;
   process.env.FABUSHI_LOCAL_TOOL_PERMISSION_CEILING = 'ask';

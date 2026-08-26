@@ -1548,6 +1548,127 @@ function createNativeCapabilityHandlers(deps) {
       });
     },
 
+    async getAccountSync(params) {
+      const cursor = cleanString(params.cursor, 160);
+      const limit = Math.max(1, Math.min(1000, Number(params.limit) || 200));
+      return platformRequest('GET', '/v1/account/sync', {
+        query: { ...(cursor ? { cursor } : {}), limit },
+      });
+    },
+
+    getAccountMiniApps() {
+      return platformRequest('GET', '/v1/marketplace/added');
+    },
+
+    getAccountBots() {
+      return platformRequest('GET', '/v1/account/bots');
+    },
+
+    async addBotToAccount(params) {
+      const botId = cleanString(params.botId ?? params.id, 160);
+      if (!botId) throw new Error('Bot id is required.');
+      const bot = params.bot && typeof params.bot === 'object' ? params.bot : params;
+      return platformRequest('POST', `/v1/account/bots/${encodeURIComponent(botId)}/add`, { body: { bot } });
+    },
+
+    async removeBotFromAccount(params) {
+      const botId = cleanString(params.botId ?? params.id, 160);
+      if (!botId) throw new Error('Bot id is required.');
+      return platformRequest('DELETE', `/v1/account/bots/${encodeURIComponent(botId)}/add`);
+    },
+
+    async getMiniAppBotMessages(params) {
+      const pluginId = cleanString(params.pluginId ?? params.id, 200);
+      if (!pluginId) throw new Error('Mini App id is required.');
+      const after = cleanString(params.after, 160);
+      const limit = Math.max(1, Math.min(1000, Number(params.limit) || 500));
+      return platformRequest('GET', `/api/miniapps/${encodeURIComponent(pluginId)}/messages`, {
+        query: { ...(after ? { after } : {}), limit },
+      });
+    },
+
+    async appendMiniAppBotMessages(params) {
+      const pluginId = cleanString(params.pluginId ?? params.id, 200);
+      if (!pluginId) throw new Error('Mini App id is required.');
+      const messages = Array.isArray(params.messages) ? params.messages : [];
+      if (!messages.length || messages.length > 100) throw new Error('Mini App Bot messages must contain 1-100 entries.');
+      return platformRequest('POST', `/api/miniapps/${encodeURIComponent(pluginId)}/messages`, { body: { messages } });
+    },
+
+    async getMiniAppCloudStorage(params) {
+      const pluginId = cleanString(params.pluginId ?? params.id, 200);
+      if (!pluginId) throw new Error('Mini App id is required.');
+      const key = cleanString(params.key, 128);
+      return platformRequest('GET', `/v1/miniapps/${encodeURIComponent(pluginId)}/cloud-storage`, {
+        query: key ? { key } : undefined,
+      });
+    },
+
+    async setMiniAppCloudStorage(params) {
+      const pluginId = cleanString(params.pluginId ?? params.id, 200);
+      if (!pluginId) throw new Error('Mini App id is required.');
+      const values = params.values && typeof params.values === 'object' && !Array.isArray(params.values) ? params.values : {};
+      return platformRequest('PUT', `/v1/miniapps/${encodeURIComponent(pluginId)}/cloud-storage`, { body: { values } });
+    },
+
+    async deleteMiniAppCloudStorage(params) {
+      const pluginId = cleanString(params.pluginId ?? params.id, 200);
+      const key = cleanString(params.key, 128);
+      if (!pluginId || !key) throw new Error('Mini App id and CloudStorage key are required.');
+      return platformRequest('DELETE', `/v1/miniapps/${encodeURIComponent(pluginId)}/cloud-storage`, { query: { key } });
+    },
+
+    async reconcileAccountMiniApps() {
+      const account = await this.getAccountMiniApps();
+      const apps = Array.isArray(account?.apps) ? account.apps : [];
+      const desired = new Map(apps.map((entry) => [cleanString(entry?.id ?? entry?.pluginId, 200), entry]).filter(([id]) => id));
+      const installed = new Map((await installedPluginPointers()).map((entry) => [entry.pluginId, entry]));
+      const state = await readNativeState();
+      const previousManaged = new Set(Array.isArray(state.accountManagedMiniApps) ? state.accountManagedMiniApps.map((id) => cleanString(id, 200)).filter(Boolean) : []);
+      const installedNow = [];
+      const removedNow = [];
+      const failures = [];
+
+      for (const [pluginId, entry] of desired) {
+        if (installed.has(pluginId)) continue;
+        const version = cleanString(entry?.version ?? entry?.latestVersion, 100);
+        if (!version) {
+          failures.push({ pluginId, reason: 'account Mini App has no version' });
+          continue;
+        }
+        try {
+          const release = await host.request('feature.marketplace.release', { pluginId, version });
+          const pointer = await host.request('feature.plugin.install', { release, platform: 'desktop' });
+          installedNow.push({ pluginId, version, pointer });
+        } catch (error) {
+          failures.push({ pluginId, reason: error instanceof Error ? error.message : String(error) });
+        }
+      }
+
+      for (const pluginId of previousManaged) {
+        if (desired.has(pluginId) || !installed.has(pluginId)) continue;
+        try {
+          await host.request('feature.plugin.uninstall', { pluginId });
+          removedNow.push(pluginId);
+        } catch (error) {
+          failures.push({ pluginId, reason: error instanceof Error ? error.message : String(error) });
+        }
+      }
+
+      await mutateNativeState((current) => ({
+        ...current,
+        accountManagedMiniApps: [...desired.keys()].sort(),
+      }));
+      return {
+        accountSynchronized: account?.accountSynchronized === true,
+        cursor: account?.cursor ?? null,
+        desired: [...desired.keys()],
+        installed: installedNow,
+        removed: removedNow,
+        failures,
+      };
+    },
+
     getEffectivePlugins() {
       return installedPluginPointers();
     },

@@ -86,6 +86,17 @@ import {
   miniAppBotResponseText,
   type MiniAppBotCommand,
 } from './miniapp-bot-projection';
+import {
+  appendMiniAppBotMessages,
+  readAccountBots,
+  readAccountSync,
+  readMiniAppBotMessages,
+  readMiniAppCloudStorage,
+  reconcileAccountMiniApps,
+  writeMiniAppCloudStorage,
+  deleteMiniAppCloudStorage,
+  type AccountBotMembership,
+} from './account-sync-client';
 
 type MessengerSection =
   | 'chats'
@@ -210,6 +221,7 @@ const messengerSettingsKey = 'fabushi.desktop.messenger-settings.v2';
 const messengerDraftsKey = 'fabushi.desktop.messenger-drafts.v2';
 const messengerSidebarWidthKey = 'fabushi.desktop.sidebar-width.v3';
 const messengerProjectionKey = 'fabushi.desktop.messenger-projection.v1';
+const accountSyncCursorKey = 'fabushi.desktop.account-sync-cursor.v1';
 const messengerConversationJournalKey = 'fabushi.desktop.mahayana-conversation-journal.v1';
 const messengerPreferencesKey = 'fabushi.desktop.telegram-settings.v1';
 const initialPeerRenderCount = 120;
@@ -303,6 +315,34 @@ function persistMessengerProjection(projection: MessengerProjection): void {
   });
 }
 
+function readAccountSyncCursor(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const value = window.localStorage.getItem(accountSyncCursorKey)?.trim();
+    return value || null;
+  } catch {
+    return null;
+  }
+}
+
+function persistAccountSyncCursor(cursor: string | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (cursor) window.localStorage.setItem(accountSyncCursorKey, cursor);
+    else window.localStorage.removeItem(accountSyncCursorKey);
+  } catch {
+    // Native persistence remains a best-effort durability mirror.
+  }
+  if (cursor) {
+    void invokeNativeDesktop<boolean>('writeClientPersistence', {
+      key: accountSyncCursorKey,
+      value: { cursor, updatedAtMs: Date.now() },
+    }).catch(() => {});
+  } else {
+    void invokeNativeDesktop<boolean>('removeClientPersistence', { key: accountSyncCursorKey }).catch(() => {});
+  }
+}
+
 async function clearAccountScopedDesktopCaches(): Promise<void> {
   if (typeof window !== 'undefined') {
     // Tell every live Mahayana renderer transport to discard its in-memory
@@ -317,10 +357,14 @@ async function clearAccountScopedDesktopCaches(): Promise<void> {
     }
   }
   try {
-    await invokeNativeDesktop<boolean>('removeClientPersistence', { key: messengerProjectionKey });
+    await Promise.all([
+      invokeNativeDesktop<boolean>('removeClientPersistence', { key: messengerProjectionKey }),
+      invokeNativeDesktop<boolean>('removeClientPersistence', { key: accountSyncCursorKey }),
+    ]);
   } catch {
     // Older/unavailable native edges must not block signing out locally.
   }
+  try { window.localStorage.removeItem(accountSyncCursorKey); } catch {}
 }
 
 function createTransport(): MahayanaHostTransport {
@@ -654,6 +698,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [incomingCall, setIncomingCall] = useState<IncomingFabushiCall | null>(null);
   const [miniApp, setMiniApp] = useState<{ id: string; title: string; html: string } | null>(null);
   const miniAppBotThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
+  const [accountBots, setAccountBots] = useState<AccountBotMembership[]>([]);
   const [marketplaceApps, setMarketplaceApps] = useState<MarketplacePluginSummary[]>([]);
   const [miniAppIdentityCatalog, setMiniAppIdentityCatalog] = useState<MarketplacePluginSummary[]>([]);
   const [installedMiniApps, setInstalledMiniApps] = useState<Record<string, InstalledPluginPointer>>({});
@@ -666,7 +711,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [archivedPeerKeys, setArchivedPeerKeys] = useState<Set<string>>(() => new Set());
   const activePeerKeyRef = useRef<string | null>(null);
   const messagingCursorRef = useRef<string | null>(startupProjection?.cursor ?? null);
+  const accountSyncCursorRef = useRef<string | null>(readAccountSyncCursor());
   const syncInFlightRef = useRef(false);
+  const accountSyncInFlightRef = useRef(false);
   const typingStopTimerRef = useRef<number | null>(null);
   const peersRef = useRef<PeerItem[]>([]);
   const webRtcRef = useRef<FabushiWebRtcController | null>(null);
@@ -948,6 +995,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
             || '当前用户';
           await selfHosted.ensureCurrentActor(displayName, username);
           await selfHosted.sync(initialSyncLimit, messagingCursorRef.current);
+          await synchronizeAccountState();
           void webRtcRef.current?.connect().catch(() => {});
         } catch (cause) {
           setError(cause instanceof Error ? cause.message : String(cause));
@@ -1030,6 +1078,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         return next;
       });
+      void synchronizeAccountState();
       if (syncInFlightRef.current) return;
       syncInFlightRef.current = true;
       void selfHosted.sync(backgroundSyncLimit, messagingCursorRef.current)
@@ -1409,6 +1458,32 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         miniAppMenuButtonText: miniAppByBotId.get(bot.id)?.menuButtonText,
       }));
     const existingBotIds = new Set(botPeers.map((peer) => peer.actorId ?? peer.id));
+    const accountBotPeers = accountBots
+      .filter((entry) => entry?.bot?.id && !existingBotIds.has(entry.bot.id))
+      .map((entry): PeerItem => {
+        const miniAppSource = entry.sources.find((source) => source.source === 'miniapp');
+        const projection = miniAppSource
+          ? miniAppBotProjections.find((candidate) => candidate.miniAppId === miniAppSource.sourceId)
+          : miniAppByBotId.get(entry.bot.id);
+        return {
+          key: `account:bot:${entry.bot.id}`,
+          id: entry.bot.id,
+          source: 'legacy',
+          kind: 'bot',
+          title: entry.bot.displayName ?? entry.bot.username ?? entry.bot.id,
+          subtitle: entry.bot.username ? `@${entry.bot.username}` : entry.bot.description ?? 'Bot',
+          actorId: entry.bot.id,
+          conversationId: entry.bot.conversationId,
+          unread: 0,
+          pinned: pinnedPeerKeys.has(`account:bot:${entry.bot.id}`),
+          archived: archivedPeerKeys.has(`account:bot:${entry.bot.id}`),
+          updatedAtMs: entry.updatedAtMs ?? 0,
+          miniAppId: miniAppSource?.sourceId,
+          miniAppCommands: projection?.commands,
+          miniAppMenuButtonText: projection?.menuButtonText ?? (miniAppSource ? '打开小程序' : undefined),
+        };
+      });
+    for (const peer of accountBotPeers) existingBotIds.add(peer.actorId ?? peer.id);
     const miniAppBotPeers = miniAppBotProjections
       .filter((projection) => !existingBotIds.has(projection.id))
       .map((projection): PeerItem => ({
@@ -1458,11 +1533,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       updatedAtMs: conversation.updatedAtMs,
       avatar: conversation.avatarUrl,
     }));
-    return [...legacyConversations, ...botPeers, ...miniAppBotPeers, ...legacyGroups, ...nativePeers].sort((left, right) => {
+    return [...legacyConversations, ...botPeers, ...accountBotPeers, ...miniAppBotPeers, ...legacyGroups, ...nativePeers].sort((left, right) => {
       if (left.pinned !== right.pinned) return left.pinned ? -1 : 1;
       return right.updatedAtMs - left.updatedAtMs;
     });
-  }, [conversations, bots, groups, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps]);
+  }, [conversations, bots, accountBots, groups, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps]);
 
   peersRef.current = peers;
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
@@ -1522,6 +1597,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setConversationSearchOpen(false);
     if (peer.miniAppId) {
       setMessages(miniAppBotThreadsRef.current[peer.miniAppId] ?? []);
+      void loadMiniAppBotThread(peer.miniAppId).catch(() => {});
       return;
     }
     if (peer.source === 'selfhosted' && peer.conversationId) {
@@ -1569,6 +1645,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         const pendingThread = [...(miniAppBotThreadsRef.current[activePeer.miniAppId] ?? []), userMessage];
         miniAppBotThreadsRef.current = { ...miniAppBotThreadsRef.current, [activePeer.miniAppId]: pendingThread };
         setMessages(pendingThread);
+        await appendMiniAppBotMessages(activePeer.miniAppId, [{
+          messageId: userMessage.id,
+          role: 'user',
+          text: userMessage.text,
+          createdAt: new Date(userMessage.createdAtMs).toISOString(),
+        }]);
         const routed = await invokeNativeDesktop<Record<string, unknown>>('routeMiniAppInput', {
           pluginId: activePeer.miniAppId,
           input: text,
@@ -1583,6 +1665,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         const completedThread = [...pendingThread, responseMessage];
         miniAppBotThreadsRef.current = { ...miniAppBotThreadsRef.current, [activePeer.miniAppId]: completedThread };
         setMessages(completedThread);
+        await appendMiniAppBotMessages(activePeer.miniAppId, [{
+          messageId: responseMessage.id,
+          role: 'assistant',
+          text: responseMessage.text,
+          createdAt: new Date(responseMessage.createdAtMs).toISOString(),
+        }]);
       } else if (activePeer.source === 'selfhosted' && activePeer.conversationId) {
         await selfHosted.sendText(activePeer.conversationId, text, {
           replyToMessageId: replyTo?.id,
@@ -2049,9 +2137,73 @@ async function saveInvoiceDialog() {
     toggleLocalSet(setMutedPeerKeys, peer.key);
   }
 
-  async function refreshMiniApps(query = miniAppQuery) {
+  async function loadMiniAppBotThread(miniAppId: string): Promise<DisplayMessage[]> {
+    const page = await readMiniAppBotMessages(miniAppId, '', 500);
+    const thread = (page.messages ?? []).map((message): DisplayMessage => ({
+      id: message.messageId,
+      role: message.role === 'user' ? 'me' : 'peer',
+      text: message.text,
+      createdAtMs: Number.isFinite(Date.parse(message.createdAt)) ? Date.parse(message.createdAt) : Date.now(),
+      source: 'legacy',
+    }));
+    miniAppBotThreadsRef.current = { ...miniAppBotThreadsRef.current, [miniAppId]: thread };
+    const active = peersRef.current.find((peer) => peer.key === activePeerKeyRef.current);
+    if (active?.miniAppId === miniAppId) setMessages(thread);
+    return thread;
+  }
+
+  async function synchronizeAccountState(): Promise<void> {
+    if (accountSyncInFlightRef.current) return;
+    accountSyncInFlightRef.current = true;
+    try {
+      let cursor = accountSyncCursorRef.current;
+      let reconcileApps = false;
+      let refreshBots = false;
+      const changedMiniAppThreads = new Set<string>();
+      for (let pageIndex = 0; pageIndex < 16; pageIndex += 1) {
+        const envelope = await readAccountSync(cursor, 200);
+        cursor = envelope.cursor;
+        if (envelope.mode === 'snapshot') {
+          reconcileApps = true;
+          refreshBots = true;
+        }
+        for (const event of envelope.events ?? []) {
+          if (event.type.startsWith('miniapp.') && !event.type.startsWith('miniapp.bot.message') && !event.type.startsWith('miniapp.content.')) {
+            reconcileApps = true;
+          }
+          if (event.type === 'bot.added' || event.type === 'bot.updated' || event.type === 'bot.removed') refreshBots = true;
+          if (event.type === 'miniapp.bot.message') {
+            const miniAppId = typeof event.payload?.miniAppId === 'string' ? event.payload.miniAppId : '';
+            if (miniAppId) changedMiniAppThreads.add(miniAppId);
+          }
+        }
+        if (!envelope.hasMore) break;
+      }
+      accountSyncCursorRef.current = cursor;
+      persistAccountSyncCursor(cursor);
+      if (reconcileApps) {
+        await reconcileAccountMiniApps();
+        await refreshMiniApps(miniAppQuery, false);
+      }
+      if (refreshBots || accountBots.length === 0) {
+        setAccountBots(await readAccountBots());
+      }
+      const active = peersRef.current.find((peer) => peer.key === activePeerKeyRef.current);
+      if (active?.miniAppId && changedMiniAppThreads.has(active.miniAppId)) {
+        await loadMiniAppBotThread(active.miniAppId);
+      }
+    } catch {
+      // Offline/account bootstrap failures must not block the local Messenger.
+      // The next periodic tick will retry from the last durable cursor.
+    } finally {
+      accountSyncInFlightRef.current = false;
+    }
+  }
+
+  async function refreshMiniApps(query = miniAppQuery, reconcileAccount = true) {
     setMiniAppLoading(true);
     try {
+      if (reconcileAccount) await reconcileAccountMiniApps().catch(() => undefined);
       const catalogPromise = transport.marketplaceBrowse(query);
       const identityCatalogPromise = query.trim() ? transport.marketplaceBrowse('') : catalogPromise;
       const [catalogResult, identityCatalogResult, installedResult] = await Promise.allSettled([
@@ -2136,7 +2288,9 @@ async function saveInvoiceDialog() {
     setMiniAppBusyState(id, true);
     try {
       const installed = installedMiniApps[id] ?? await transport.pluginActive(id);
-      if (!installed) throw new Error('请先从在线 Mini App 市场安装此应用');
+      if (!installed) await reconcileAccountMiniApps().catch(() => undefined);
+      const reconciledInstalled = installed ?? await transport.pluginActive(id);
+      if (!reconciledInstalled) throw new Error('请先从在线 Mini App 市场安装此应用');
       const document = await transport.pluginUiDocument(id);
       const title = miniAppIdentityCatalog.find((app) => app.pluginId === id)?.displayName ?? marketplaceApps.find((app) => app.pluginId === id)?.displayName ?? id;
       setMiniApp({ id, title, html: document.html });
@@ -2801,8 +2955,50 @@ function CallDialog({
   </section></div>;
 }
 
+function miniAppCloudBridgeDocument(html: string): string {
+  const bootstrap = `<script>(function(){
+    const protocol='fabushi.miniapp.storage.v1';
+    let sequence=0; const pending=new Map();
+    function request(action,payload){return new Promise((resolve,reject)=>{const requestId='storage-'+Date.now()+'-'+(++sequence);pending.set(requestId,{resolve,reject});window.parent.postMessage({protocol,requestId,action,...(payload||{})},'*');});}
+    window.addEventListener('message',(event)=>{const data=event.data||{};if(data.protocol!==protocol||!data.requestId||!pending.has(data.requestId))return;const task=pending.get(data.requestId);pending.delete(data.requestId);if(data.ok)task.resolve(data.data);else task.reject(new Error(data.error||'CloudStorage request failed'));});
+    const api={
+      getItem:async(key,callback)=>{const data=await request('get',{key});const value=data&&data.item?String(data.item.value??''):'';if(typeof callback==='function')callback(null,value);return value;},
+      setItem:async(key,value,callback)=>{await request('set',{values:{[key]:String(value)}});if(typeof callback==='function')callback(null,true);return true;},
+      getItems:async(keys,callback)=>{const data=await request('list');const wanted=new Set(Array.isArray(keys)?keys:[]);const values=Object.fromEntries((data.items||[]).filter(item=>wanted.size===0||wanted.has(item.key)).map(item=>[item.key,item.value]));if(typeof callback==='function')callback(null,values);return values;},
+      setItems:async(values,callback)=>{await request('set',{values:values||{}});if(typeof callback==='function')callback(null,true);return true;},
+      removeItem:async(key,callback)=>{await request('delete',{key});if(typeof callback==='function')callback(null,true);return true;},
+      getKeys:async(callback)=>{const data=await request('list');const keys=(data.items||[]).map(item=>item.key);if(typeof callback==='function')callback(null,keys);return keys;}
+    };
+    window.FabushiMiniApp=Object.assign({},window.FabushiMiniApp||{},{CloudStorage:api});
+  })();</script>`;
+  return html.includes('</head>') ? html.replace('</head>', `${bootstrap}</head>`) : `${bootstrap}${html}`;
+}
+
 function MiniAppDialog({ app, onClose }: { app: { id: string; title: string; html: string }; onClose: () => void }) {
-  return <div className={styles.backdrop} onMouseDown={onClose}><section className={styles.miniAppDialog} onMouseDown={(event) => event.stopPropagation()}><header><div><strong>{app.title}</strong><small>Mini App · 已安装线上包 · 受控宿主容器</small></div><button type="button" onClick={onClose}><X size={17} /></button></header><iframe title={app.id} sandbox="allow-scripts allow-forms" srcDoc={app.html} /></section></div>;
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== frameRef.current?.contentWindow) return;
+      const data = event.data as { protocol?: string; requestId?: string; action?: string; key?: string; values?: Record<string, string> } | null;
+      if (!data || data.protocol !== 'fabushi.miniapp.storage.v1' || !data.requestId) return;
+      const respond = (ok: boolean, payload: unknown) => frameRef.current?.contentWindow?.postMessage({
+        protocol: 'fabushi.miniapp.storage.v1', requestId: data.requestId, ok,
+        ...(ok ? { data: payload } : { error: payload instanceof Error ? payload.message : String(payload) }),
+      }, '*');
+      void (async () => {
+        try {
+          if (data.action === 'get') respond(true, await readMiniAppCloudStorage(app.id, data.key));
+          else if (data.action === 'list') respond(true, await readMiniAppCloudStorage(app.id));
+          else if (data.action === 'set') respond(true, await writeMiniAppCloudStorage(app.id, data.values ?? {}));
+          else if (data.action === 'delete' && data.key) respond(true, await deleteMiniAppCloudStorage(app.id, data.key));
+          else throw new Error('Unsupported Mini App CloudStorage operation');
+        } catch (cause) { respond(false, cause); }
+      })();
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [app.id]);
+  return <div className={styles.backdrop} onMouseDown={onClose}><section className={styles.miniAppDialog} onMouseDown={(event) => event.stopPropagation()}><header><div><strong>{app.title}</strong><small>Mini App · 已安装线上包 · 账号云同步</small></div><button type="button" onClick={onClose}><X size={17} /></button></header><iframe ref={frameRef} title={app.id} sandbox="allow-scripts allow-forms" srcDoc={miniAppCloudBridgeDocument(app.html)} /></section></div>;
 }
 
 type PaymentUiState = {
