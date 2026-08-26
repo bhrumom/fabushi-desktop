@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
+const syncProbeKey = 'm2_sync_packaged_probe';
 
 async function launchDesktopApp(appDataDir: string) {
   return electron.launch({
@@ -37,11 +38,41 @@ async function navigate(page: Page, title: string): Promise<void> {
   await page.getByTitle(title, { exact: true }).click();
 }
 
-test('installed Mini App projects its Bot into Contacts and Bots and keeps Bot chat as the launch center', async () => {
+async function waitForGlobalDharmaBot(page: Page) {
+  await navigate(page, 'Bots');
+  const botPeer = page.getByTestId('peer-miniapp:bot:global-dharma');
+  await expect(botPeer).toBeVisible({ timeout: 15_000 });
+  return botPeer;
+}
+
+async function writeCloudProbe(page: Page, value: string): Promise<void> {
+  const frame = page.frameLocator('iframe[title="global-dharma"]');
+  const stored = await frame.locator('body').evaluate(async (_body, probe) => {
+    const api = (window as any).FabushiMiniApp?.CloudStorage;
+    if (!api) throw new Error('FabushiMiniApp.CloudStorage is unavailable');
+    await api.setItem('m2_sync_packaged_probe', probe);
+    return api.getItem('m2_sync_packaged_probe');
+  }, value);
+  expect(stored).toBe(value);
+}
+
+async function readCloudProbe(page: Page): Promise<string | null> {
+  const frame = page.frameLocator('iframe[title="global-dharma"]');
+  return frame.locator('body').evaluate(async () => {
+    const api = (window as any).FabushiMiniApp?.CloudStorage;
+    if (!api) throw new Error('FabushiMiniApp.CloudStorage is unavailable');
+    return api.getItem('m2_sync_packaged_probe');
+  });
+}
+
+test('installed Mini App projects its Bot into Contacts/Bots and recovers Bot history plus CloudStorage', async ({}, testInfo) => {
+  test.setTimeout(90_000);
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-miniapp-bot-e2e-'));
-  const app = await launchDesktopApp(appDataDir);
+  const probeValue = `packaged-sync-${Date.now()}`;
+  const firstApp = await launchDesktopApp(appDataDir);
+  let restartedApp: Awaited<ReturnType<typeof launchDesktopApp>> | null = null;
   try {
-    const page = await app.firstWindow();
+    const page = await firstApp.firstWindow();
     await completeBrowserLogin(page);
 
     await page.getByTestId('global-search-trigger').click();
@@ -54,12 +85,11 @@ test('installed Mini App projects its Bot into Contacts and Bots and keeps Bot c
     await expect(appResult.getByRole('button', { name: '打开' })).toBeVisible();
 
     await navigate(page, '联系人');
-    const botPeer = page.getByTestId('peer-miniapp:bot:global-dharma');
-    await expect(botPeer).toBeVisible();
-    await expect(botPeer).toContainText('全球法布施');
+    const contactBot = page.getByTestId('peer-miniapp:bot:global-dharma');
+    await expect(contactBot).toBeVisible();
+    await expect(contactBot).toContainText('全球法布施');
 
-    await navigate(page, 'Bots');
-    await expect(botPeer).toBeVisible();
+    const botPeer = await waitForGlobalDharmaBot(page);
     await botPeer.click();
     await expect(page.getByTestId('miniapp-bot-open')).toBeVisible();
 
@@ -68,19 +98,39 @@ test('installed Mini App projects its Bot into Contacts and Bots and keeps Bot c
     await expect(page.getByTestId('miniapp-bot-commands')).toBeVisible();
     await expect(page.getByTestId('miniapp-bot-commands')).toContainText('/status');
 
-    await input.fill('/global-dharma:status {"detail":true}');
+    const commandText = '/global-dharma:status {"detail":true}';
+    const naturalText = 'please show status now';
+    await input.fill(commandText);
     await page.getByTestId('messenger-send').click();
     await expect(page.getByText('command', { exact: true })).toBeVisible();
 
-    await input.fill('please show status now');
+    await input.fill(naturalText);
     await page.getByTestId('messenger-send').click();
     await expect(page.getByText('natural-language', { exact: true })).toBeVisible();
 
     await page.getByTestId('miniapp-bot-open').click();
     await expect(page.getByText('Mini App · 已安装线上包 · 受控宿主容器')).toBeVisible();
     await expect(page.locator('iframe[title="global-dharma"]')).toBeVisible();
+    await writeCloudProbe(page, probeValue);
+    await page.screenshot({ path: testInfo.outputPath('miniapp-sync-before-restart.png'), fullPage: true });
+
+    await firstApp.close();
+    restartedApp = await launchDesktopApp(appDataDir);
+    const restartedPage = await restartedApp.firstWindow();
+    await completeBrowserLogin(restartedPage);
+
+    const recoveredBot = await waitForGlobalDharmaBot(restartedPage);
+    await recoveredBot.click();
+    await expect(restartedPage.getByText(commandText, { exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(restartedPage.getByText(naturalText, { exact: true })).toBeVisible();
+
+    await restartedPage.getByTestId('miniapp-bot-open').click();
+    await expect(restartedPage.locator('iframe[title="global-dharma"]')).toBeVisible();
+    await expect.poll(() => readCloudProbe(restartedPage), { timeout: 15_000 }).toBe(probeValue);
+    await restartedPage.screenshot({ path: testInfo.outputPath('miniapp-sync-after-restart.png'), fullPage: true });
   } finally {
-    await app.close();
+    await restartedApp?.close().catch(() => {});
+    await firstApp.close().catch(() => {});
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
