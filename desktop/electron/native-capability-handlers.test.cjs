@@ -84,6 +84,28 @@ test('marketplace native capabilities use canonical Feature Host method names', 
   assert.equal(calls.some(([method]) => /^(marketplace|plugin)\./.test(method)), false);
 });
 
+test('Mini App bot lifecycle uses authenticated marketplace platform routes', async () => {
+  const calls = [];
+  const host = {
+    async request(method, params = {}) {
+      calls.push([method, params]);
+      if (method !== 'platform.request') throw new Error(`unexpected Host method ${method}`);
+      return { ok: true, data: { method: params.method, path: params.path, body: params.body ?? null } };
+    },
+  };
+  await harness(async ({ handlers }) => {
+    const added = await handlers.addMiniAppToAccount({ pluginId: 'global-dharma' });
+    assert.equal(added.path, '/v1/marketplace/plugins/global-dharma/add');
+    const routed = await handlers.routeMiniAppInput({ pluginId: 'global-dharma', input: '/global-dharma:open' });
+    assert.equal(routed.path, '/v1/marketplace/plugins/global-dharma/route');
+    assert.equal(routed.body.input, '/global-dharma:open');
+    const removed = await handlers.removeMiniAppFromAccount({ pluginId: 'global-dharma' });
+    assert.equal(removed.path, '/v1/marketplace/plugins/global-dharma/add');
+  }, { host });
+  assert.deepEqual(calls.map(([, params]) => params.method), ['POST', 'POST', 'DELETE']);
+  assert.ok(calls.every(([method]) => method === 'platform.request'));
+});
+
 test('local tool permission cannot exceed the administrator ceiling', async () => {
   const previous = process.env.FABUSHI_LOCAL_TOOL_PERMISSION_CEILING;
   process.env.FABUSHI_LOCAL_TOOL_PERMISSION_CEILING = 'ask';

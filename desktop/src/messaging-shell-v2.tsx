@@ -81,6 +81,11 @@ import {
   type WebRtcCallStatus,
 } from './webrtc-call-controller';
 import { isTerminalAuthSessionFailure } from './auth-session';
+import {
+  installedMiniAppBotProjections,
+  miniAppBotResponseText,
+  type MiniAppBotCommand,
+} from './miniapp-bot-projection';
 
 type MessengerSection =
   | 'chats'
@@ -113,6 +118,9 @@ type PeerItem = {
   archived: boolean;
   updatedAtMs: number;
   avatar?: string;
+  miniAppId?: string;
+  miniAppCommands?: MiniAppBotCommand[];
+  miniAppMenuButtonText?: string;
 };
 
 type DisplayMessage = {
@@ -402,7 +410,7 @@ function sectionTitle(section: MessengerSection): string {
 
 function matchesSection(peer: PeerItem, section: MessengerSection): boolean {
   if (section === 'chats') return !peer.archived;
-  if (section === 'contacts') return peer.source === 'legacy' && peer.kind === 'conversation' && peer.id.startsWith('mahayana:contact:');
+  if (section === 'contacts') return Boolean(peer.miniAppId) || (peer.source === 'legacy' && peer.kind === 'conversation' && peer.id.startsWith('mahayana:contact:'));
   if (section === 'bots') return peer.kind === 'bot';
   if (section === 'groups') return peer.kind === 'group';
   if (section === 'channels') return peer.kind === 'channel';
@@ -645,7 +653,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [localCall, setLocalCall] = useState<LocalCall | null>(null);
   const [incomingCall, setIncomingCall] = useState<IncomingFabushiCall | null>(null);
   const [miniApp, setMiniApp] = useState<{ id: string; title: string; html: string } | null>(null);
+  const miniAppBotThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
   const [marketplaceApps, setMarketplaceApps] = useState<MarketplacePluginSummary[]>([]);
+  const [miniAppIdentityCatalog, setMiniAppIdentityCatalog] = useState<MarketplacePluginSummary[]>([]);
   const [installedMiniApps, setInstalledMiniApps] = useState<Record<string, InstalledPluginPointer>>({});
   const [miniAppQuery, setMiniAppQuery] = useState('');
   const [miniAppLoading, setMiniAppLoading] = useState(false);
@@ -1334,7 +1344,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         break;
       case 'miniapp.opened':
         if (event.html) {
-          const title = marketplaceApps.find((app) => app.pluginId === event.miniAppId)?.displayName ?? event.miniAppId;
+          const title = miniAppIdentityCatalog.find((app) => app.pluginId === event.miniAppId)?.displayName ?? marketplaceApps.find((app) => app.pluginId === event.miniAppId)?.displayName ?? event.miniAppId;
           setMiniApp({ id: event.miniAppId, title, html: event.html });
         }
         break;
@@ -1375,6 +1385,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       archived: archivedPeerKeys.has(`legacy:conversation:${conversation.id}`),
       updatedAtMs: conversation.updatedAtMs,
     }));
+    const miniAppBotProjections = installedMiniAppBotProjections(miniAppIdentityCatalog, installedMiniApps);
+    const miniAppByBotId = new Map(miniAppBotProjections.map((projection) => [projection.id, projection]));
     const conversationIds = new Set(conversations.map((conversation) => conversation.id));
     const botPeers = bots
       .filter((bot) => !bot.conversationId || !conversationIds.has(bot.conversationId))
@@ -1392,6 +1404,29 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         archived: archivedPeerKeys.has(`legacy:bot:${bot.id}`),
         updatedAtMs: 0,
         avatar: bot.avatar,
+        miniAppId: miniAppByBotId.get(bot.id)?.miniAppId,
+        miniAppCommands: miniAppByBotId.get(bot.id)?.commands,
+        miniAppMenuButtonText: miniAppByBotId.get(bot.id)?.menuButtonText,
+      }));
+    const existingBotIds = new Set(botPeers.map((peer) => peer.actorId ?? peer.id));
+    const miniAppBotPeers = miniAppBotProjections
+      .filter((projection) => !existingBotIds.has(projection.id))
+      .map((projection): PeerItem => ({
+        key: `miniapp:bot:${projection.miniAppId}`,
+        id: projection.id,
+        source: 'legacy',
+        actorId: projection.id,
+        conversationId: projection.conversationId,
+        kind: 'bot',
+        title: projection.displayName,
+        subtitle: projection.username ? `@${projection.username} · ${projection.description}` : projection.description,
+        unread: 0,
+        pinned: pinnedPeerKeys.has(`miniapp:bot:${projection.miniAppId}`),
+        archived: archivedPeerKeys.has(`miniapp:bot:${projection.miniAppId}`),
+        updatedAtMs: 0,
+        miniAppId: projection.miniAppId,
+        miniAppCommands: projection.commands,
+        miniAppMenuButtonText: projection.menuButtonText,
       }));
     const legacyGroups = groups.map((group): PeerItem => ({
       key: `legacy:group:${group.id}`,
@@ -1423,11 +1458,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       updatedAtMs: conversation.updatedAtMs,
       avatar: conversation.avatarUrl,
     }));
-    return [...legacyConversations, ...botPeers, ...legacyGroups, ...nativePeers].sort((left, right) => {
+    return [...legacyConversations, ...botPeers, ...miniAppBotPeers, ...legacyGroups, ...nativePeers].sort((left, right) => {
       if (left.pinned !== right.pinned) return left.pinned ? -1 : 1;
       return right.updatedAtMs - left.updatedAtMs;
     });
-  }, [conversations, bots, groups, selfConversations, pinnedPeerKeys, archivedPeerKeys]);
+  }, [conversations, bots, groups, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps]);
 
   peersRef.current = peers;
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
@@ -1485,6 +1520,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setReplyTo(null);
     setError(null);
     setConversationSearchOpen(false);
+    if (peer.miniAppId) {
+      setMessages(miniAppBotThreadsRef.current[peer.miniAppId] ?? []);
+      return;
+    }
     if (peer.source === 'selfhosted' && peer.conversationId) {
       showSelfConversation(peer.conversationId);
       const list = selfMessages[peer.conversationId] ?? [];
@@ -1518,7 +1557,33 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setPendingSend(true);
     updateComposer('');
     try {
-      if (activePeer.source === 'selfhosted' && activePeer.conversationId) {
+      if (activePeer.miniAppId) {
+        const createdAtMs = Date.now();
+        const userMessage: DisplayMessage = {
+          id: nextRequestId('miniapp-bot-user'),
+          source: 'legacy',
+          role: 'me',
+          text,
+          createdAtMs,
+        };
+        const pendingThread = [...(miniAppBotThreadsRef.current[activePeer.miniAppId] ?? []), userMessage];
+        miniAppBotThreadsRef.current = { ...miniAppBotThreadsRef.current, [activePeer.miniAppId]: pendingThread };
+        setMessages(pendingThread);
+        const routed = await invokeNativeDesktop<Record<string, unknown>>('routeMiniAppInput', {
+          pluginId: activePeer.miniAppId,
+          input: text,
+        });
+        const responseMessage: DisplayMessage = {
+          id: nextRequestId('miniapp-bot-response'),
+          source: 'legacy',
+          role: 'peer',
+          text: miniAppBotResponseText(routed),
+          createdAtMs: Date.now(),
+        };
+        const completedThread = [...pendingThread, responseMessage];
+        miniAppBotThreadsRef.current = { ...miniAppBotThreadsRef.current, [activePeer.miniAppId]: completedThread };
+        setMessages(completedThread);
+      } else if (activePeer.source === 'selfhosted' && activePeer.conversationId) {
         await selfHosted.sendText(activePeer.conversationId, text, {
           replyToMessageId: replyTo?.id,
           scheduledAtMs,
@@ -1987,14 +2052,22 @@ async function saveInvoiceDialog() {
   async function refreshMiniApps(query = miniAppQuery) {
     setMiniAppLoading(true);
     try {
-      const [catalogResult, installedResult] = await Promise.allSettled([
-        transport.marketplaceBrowse(query),
+      const catalogPromise = transport.marketplaceBrowse(query);
+      const identityCatalogPromise = query.trim() ? transport.marketplaceBrowse('') : catalogPromise;
+      const [catalogResult, identityCatalogResult, installedResult] = await Promise.allSettled([
+        catalogPromise,
+        identityCatalogPromise,
         transport.pluginListInstalled(),
       ]);
       if (catalogResult.status === 'fulfilled') {
         setMarketplaceApps(catalogResult.value.plugins);
       } else {
         setError(catalogResult.reason instanceof Error ? catalogResult.reason.message : String(catalogResult.reason));
+      }
+      if (identityCatalogResult.status === 'fulfilled') {
+        setMiniAppIdentityCatalog(identityCatalogResult.value.plugins);
+      } else {
+        setError(identityCatalogResult.reason instanceof Error ? identityCatalogResult.reason.message : String(identityCatalogResult.reason));
       }
       if (installedResult.status === 'fulfilled') {
         setInstalledMiniApps(Object.fromEntries(installedResult.value.plugins.map((plugin) => [plugin.pluginId, plugin])));
@@ -2028,6 +2101,12 @@ async function saveInvoiceDialog() {
         throw new Error('Mini App release is missing a verified external release manifest');
       }
       await transport.pluginInstall(release.releaseManifest, 'desktop');
+      try {
+        await invokeNativeDesktop('addMiniAppToAccount', { pluginId: app.pluginId });
+      } catch (cause) {
+        await transport.pluginUninstall(app.pluginId).catch(() => undefined);
+        throw cause;
+      }
       await refreshMiniApps(miniAppQuery);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -2041,6 +2120,8 @@ async function saveInvoiceDialog() {
     setMiniAppBusyState(id, true);
     try {
       await transport.pluginUninstall(id);
+      await invokeNativeDesktop('removeMiniAppFromAccount', { pluginId: id });
+      delete miniAppBotThreadsRef.current[id];
       if (miniApp?.id === id) setMiniApp(null);
       await refreshMiniApps(miniAppQuery);
     } catch (cause) {
@@ -2057,7 +2138,7 @@ async function saveInvoiceDialog() {
       const installed = installedMiniApps[id] ?? await transport.pluginActive(id);
       if (!installed) throw new Error('请先从在线 Mini App 市场安装此应用');
       const document = await transport.pluginUiDocument(id);
-      const title = marketplaceApps.find((app) => app.pluginId === id)?.displayName ?? id;
+      const title = miniAppIdentityCatalog.find((app) => app.pluginId === id)?.displayName ?? marketplaceApps.find((app) => app.pluginId === id)?.displayName ?? id;
       setMiniApp({ id, title, html: document.html });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -2157,7 +2238,7 @@ async function saveInvoiceDialog() {
             const actor = selfActors.find((item) => item.id === story.ownerId);
             const name = actor?.displayName ?? (story.ownerId === selfHosted.actorId ? '我' : story.ownerId);
             return <button type="button" className={extra.storyItem} key={story.id} onClick={() => void openStory(story)} title={name}>
-              <span className={extra.storyRing}><BotMark botId={`story:${story.ownerId}`} state="idle" size={40} label={name} /></span><small>{name}</small>
+              <span className={extra.storyRing}><BotMark botId={`story:${story.ownerId}`} state="idle" size={40} animated={false} label={name} /></span><small>{name}</small>
             </button>;
           })}
         </div> : null}
@@ -2275,6 +2356,7 @@ async function saveInvoiceDialog() {
                 <div><strong>{activePeer.title}</strong><small data-testid="conversation-status">{activeTypingActors.length ? '正在输入…' : `${activePeer.subtitle}${hostReady ? ' · 在线' : ' · 正在连接'}`}</small></div>
               </div>
               <div className={styles.headerActions}>
+                {activePeer.miniAppId ? <button type="button" data-testid="miniapp-bot-open" title={activePeer.miniAppMenuButtonText ?? '打开小程序'} onClick={() => void openMiniApp(activePeer.miniAppId!)}><AppWindow size={18} /></button> : null}
                 <button type="button" title="语音通话" onClick={() => void startCall('voice')}><PhoneCall size={18} /></button>
                 <button type="button" title="视频通话" onClick={() => void startCall('video')}><Video size={18} /></button>
                 {activePeer.source === 'selfhosted' ? <button type="button" title="发送账单" onClick={() => void createInvoiceForActivePeer()}><WalletCards size={18} /></button> : null}
@@ -2318,6 +2400,7 @@ async function saveInvoiceDialog() {
             </div>
             {replyTo ? <div className={extra.composerBanner}><Reply size={15} /><div><strong>回复</strong><span>{replyTo.text}</span></div><button type="button" onClick={() => setReplyTo(null)}><X size={14} /></button></div> : null}
             {scheduledAtMs ? <div className={extra.composerBanner}><span>⏱</span><div><strong>定时发送</strong><span>{new Date(scheduledAtMs).toLocaleString()}</span></div><button type="button" onClick={() => setScheduledAtMs(undefined)}><X size={14} /></button></div> : null}
+            {activePeer.miniAppId && composer.trimStart().startsWith('/') && activePeer.miniAppCommands?.length ? <div className={extra.composerBanner} data-testid="miniapp-bot-commands"><AppWindow size={15} /><div><strong>小程序命令</strong><span>{activePeer.miniAppCommands.map((command) => `/${command.name}`).join(' · ')}</span></div>{activePeer.miniAppCommands.slice(0, 4).map((command) => <button key={command.name} type="button" title={command.description} onClick={() => updateComposer(command.usage)}>{`/${command.name}`}</button>)}</div> : null}
             <form className={styles.composer} onSubmit={(event) => void sendMessage(event)}>
               <div className={extra.attachmentAnchor}>
                 <button type="button" title="附件" onClick={() => setAttachmentMenuOpen((value) => !value)}><Paperclip size={20} /></button>
@@ -2451,15 +2534,15 @@ function GlobalSearchWorkspace(props: GlobalSearchWorkspaceProps) {
       {categories.map((item) => <button key={item.id} type="button" data-testid={`global-search-tab-${item.id}`} data-active={props.category === item.id} onClick={() => props.onCategory(item.id)}>{props.scopePeer && item.id === 'posts' ? '消息' : item.label}</button>)}
     </nav>
     <div className={styles.globalSearchResults}>
-      {!props.scopePeer && props.category === 'chats' ? peerResults.filter((peer) => peer.kind !== 'channel').map((peer) => <button key={peer.key} type="button" className={styles.searchResultRow} onClick={() => props.onOpenPeer(peer)}><BotMark botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`} state="idle" size={46} label={peer.title} /><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><time>{formatTime(peer.updatedAtMs)}</time></button>) : null}
-      {!props.scopePeer && props.category === 'channels' ? peerResults.filter((peer) => peer.kind === 'channel').map((peer) => <button key={peer.key} type="button" className={styles.searchResultRow} onClick={() => props.onOpenPeer(peer)}><BotMark botId={`peer:channel:${peer.id}`} state="idle" size={46} label={peer.title} /><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><time>{formatTime(peer.updatedAtMs)}</time></button>) : null}
+      {!props.scopePeer && props.category === 'chats' ? peerResults.filter((peer) => peer.kind !== 'channel').map((peer) => <button key={peer.key} type="button" className={styles.searchResultRow} onClick={() => props.onOpenPeer(peer)}><BotMark botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`} state="idle" size={46} animated={false} label={peer.title} /><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><time>{formatTime(peer.updatedAtMs)}</time></button>) : null}
+      {!props.scopePeer && props.category === 'channels' ? peerResults.filter((peer) => peer.kind === 'channel').map((peer) => <button key={peer.key} type="button" className={styles.searchResultRow} onClick={() => props.onOpenPeer(peer)}><BotMark botId={`peer:channel:${peer.id}`} state="idle" size={46} animated={false} label={peer.title} /><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><time>{formatTime(peer.updatedAtMs)}</time></button>) : null}
       {!props.scopePeer && props.category === 'apps' ? <div className={styles.searchAppResults}>{props.miniAppLoading ? <div className={styles.marketplaceStatus}>正在搜索在线应用市场…</div> : appResults.map((app) => {
         const installed = props.installedMiniApps[app.pluginId];
         const busy = props.miniAppBusy.has(app.pluginId);
         const update = Boolean(installed && installed.version !== app.latestVersion);
-        return <article key={app.pluginId} className={styles.searchAppCard} data-testid={`global-search-app-${app.pluginId}`}><BotMark botId={`miniapp:${app.pluginId}`} state={installed ? 'idle' : 'sleeping'} size={52} label={app.displayName} /><div><strong>{app.displayName}</strong><small>{app.description}</small><em>{installed ? `已安装 ${installed.version}` : `在线 · ${app.latestVersion}`}</em></div><aside>{installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}{!installed || update ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中' : update ? '更新' : '安装'}</button> : null}{installed ? <button type="button" disabled={busy} onClick={() => void props.onUninstallMiniApp(app.pluginId)}>卸载</button> : null}</aside></article>;
+        return <article key={app.pluginId} className={styles.searchAppCard} data-testid={`global-search-app-${app.pluginId}`}><BotMark botId={`miniapp:${app.pluginId}`} state={installed ? 'idle' : 'sleeping'} size={52} animated={false} label={app.displayName} /><div><strong>{app.displayName}</strong><small>{app.description}</small><em>{installed ? `已安装 ${installed.version}` : `在线 · ${app.latestVersion}`}</em></div><aside>{installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}{!installed || update ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中' : update ? '更新' : '安装'}</button> : null}{installed ? <button type="button" disabled={busy} onClick={() => void props.onUninstallMiniApp(app.pluginId)}>卸载</button> : null}</aside></article>;
       })}</div> : null}
-      {['posts', 'images', 'videos', 'downloads', 'links', 'files'].includes(props.category) ? mediaResults.map((message) => <article key={message.id} className={styles.searchMessageResult}><BotMark botId={`search-message:${message.id}`} state="idle" size={38} label="消息" /><div><p>{message.text || (message.mediaType === 'photo' ? '图片' : message.mediaType === 'video' ? '视频' : '文件')}</p><small>{new Date(message.createdAtMs).toLocaleString()}</small></div></article>) : null}
+      {['posts', 'images', 'videos', 'downloads', 'links', 'files'].includes(props.category) ? mediaResults.map((message) => <article key={message.id} className={styles.searchMessageResult}><BotMark botId={`search-message:${message.id}`} state="idle" size={38} animated={false} label="消息" /><div><p>{message.text || (message.mediaType === 'photo' ? '图片' : message.mediaType === 'video' ? '视频' : '文件')}</p><small>{new Date(message.createdAtMs).toLocaleString()}</small></div></article>) : null}
       {unsupportedMediaCategory ? <SearchEmptyState label="当前会话尚无可搜索的音频索引" /> : null}
       {!props.scopePeer && props.category === 'chats' && !peerResults.filter((peer) => peer.kind !== 'channel').length ? <SearchEmptyState label={normalized ? '没有匹配的聊天' : '最近搜索结果将显示在此处'} /> : null}
       {!props.scopePeer && props.category === 'channels' && !peerResults.filter((peer) => peer.kind === 'channel').length ? <SearchEmptyState label={normalized ? '没有匹配的频道' : '最近搜索结果将显示在此处'} /> : null}

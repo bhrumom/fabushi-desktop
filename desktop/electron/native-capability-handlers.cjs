@@ -1524,6 +1524,30 @@ function createNativeCapabilityHandlers(deps) {
       };
     },
 
+    async addMiniAppToAccount(params) {
+      const pluginId = cleanString(params.pluginId ?? params.id, 200);
+      if (!pluginId) throw new Error('Mini App id is required.');
+      return platformRequest('POST', `/v1/marketplace/plugins/${encodeURIComponent(pluginId)}/add`, {
+        body: { platform: 'desktop' },
+      });
+    },
+
+    async removeMiniAppFromAccount(params) {
+      const pluginId = cleanString(params.pluginId ?? params.id, 200);
+      if (!pluginId) throw new Error('Mini App id is required.');
+      return platformRequest('DELETE', `/v1/marketplace/plugins/${encodeURIComponent(pluginId)}/add`);
+    },
+
+    async routeMiniAppInput(params) {
+      const pluginId = cleanString(params.pluginId ?? params.id, 200);
+      const input = cleanString(params.input ?? params.message, 10_000);
+      if (!pluginId) throw new Error('Mini App id is required.');
+      if (!input) throw new Error('Mini App Bot input is required.');
+      return platformRequest('POST', `/v1/marketplace/plugins/${encodeURIComponent(pluginId)}/route`, {
+        body: { input },
+      });
+    },
+
     getEffectivePlugins() {
       return installedPluginPointers();
     },
