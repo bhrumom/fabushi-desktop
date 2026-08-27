@@ -38,7 +38,7 @@ function commandProjection(miniAppId: string, value: unknown): MiniAppBotCommand
   return {
     name,
     description: stringValue(command?.description),
-    usage: stringValue(command?.usage) ?? `/${miniAppId}:${name}`,
+    usage: stringValue(command?.usage) ?? stringValue(command?.slash) ?? `/${miniAppId}:${name}`,
   };
 }
 
@@ -49,21 +49,27 @@ function commandProjection(miniAppId: string, value: unknown): MiniAppBotCommand
  * Telegram's product model is the reference: the Mini App belongs to a Bot,
  * and the Bot remains the chat/identity/launch center. Fabushi derives this
  * projection from installed state instead of persisting a duplicate contact DB.
+ *
+ * Marketplace browse returns Bot/command metadata at the top level. Older Host
+ * adapters also exposed equivalent metadata under source/releaseManifest, so
+ * keep those as compatibility fallbacks without discarding the canonical shape.
  */
 export function miniAppBotProjection(app: MarketplacePluginSummary): MiniAppBotProjection | null {
   const source = recordValue(app.source);
   const release = recordValue(app.releaseManifest);
-  const bot = recordValue(source?.bot) ?? recordValue(release?.bot);
+  const bot = recordValue(app.bot) ?? recordValue(source?.bot) ?? recordValue(release?.bot);
   if (!bot) return null;
 
   const id = stringValue(bot.id);
   if (!id) return null;
 
-  const rawCommands = Array.isArray(source?.commands)
-    ? source.commands
-    : Array.isArray(release?.commands)
-      ? release.commands
-      : [];
+  const rawCommands = Array.isArray(app.commands)
+    ? app.commands
+    : Array.isArray(source?.commands)
+      ? source.commands
+      : Array.isArray(release?.commands)
+        ? release.commands
+        : [];
   const commands = rawCommands
     .map((entry) => commandProjection(app.pluginId, entry))
     .filter((entry): entry is MiniAppBotCommand => Boolean(entry));
