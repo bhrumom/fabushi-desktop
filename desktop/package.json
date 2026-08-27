@@ -7,7 +7,7 @@
   "desktopName": "com.ombhrum.fabushi",
   "private": true,
   "type": "module",
-  "main": "electron/main.cjs",
+  "main": "electron/bootstrap.cjs",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 1420",
     "prebuild:renderer": "node scripts/prepare-desktop-window-branding.mjs",
@@ -16,6 +16,7 @@
     "build:host:ci": "cargo build --profile ci -p mahayana-app-host-desktop --bin mahayana-app-host --manifest-path ../third_party/mahayana/mahayana-rs/Cargo.toml && node scripts/stage-host.mjs ci",
     "build": "npm run build:host && npm run build:renderer",
     "package": "npm run build:host && npm run build:renderer && electron-builder",
+    "test:credential-gateway": "node --test electron/credential-gateway.test.cjs",
     "test:e2e": "playwright test",
     "start": "electron ."
   },

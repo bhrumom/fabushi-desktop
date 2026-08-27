@@ -148,7 +148,6 @@ const methods = {
   isAgentNetworkEnabled: { args: 'object' },
   getLinkMetadata: { args: 'object' },
   listSecrets: { args: 'none' },
-  revealSecret: { args: 'object' },
   upsertSecrets: { args: 'object' },
   removeSecrets: { args: 'object' },
   readClientPersistence: { args: 'object' },

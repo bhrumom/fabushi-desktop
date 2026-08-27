@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { installDesktopAccountSessionSync } from './account-session-sync';
 import { installBotIdentityAliases } from './agent-identity-aliases';
+import CredentialVault from './credential-vault';
 import { installDurableAgentState, restoreDurableAgentState } from './durable-agent-state';
 import DesktopShellV2 from './messaging-shell-v2';
 import { installMahayanaAgentInlineCompatibility } from './mahayana-agent-inline-compat';
@@ -13,6 +14,7 @@ import { installSelfHostedMahayanaInvocationBridge } from './selfhosted-mahayana
 import './messenger-layout-regressions.css';
 import './grok-agent-ui-parity.css';
 import './mahayana-agent-transcript-semantics.css';
+import './credential-vault.css';
 
 const root = document.querySelector<HTMLDivElement>('#root');
 if (!root) {
@@ -34,6 +36,7 @@ async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
       <DesktopShellV2 />
       <MahayanaAgentWorkbench />
       <MahayanaAgentInlineReport />
+      <CredentialVault />
     </StrictMode>,
   );
 

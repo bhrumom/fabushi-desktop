@@ -6,6 +6,8 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 
+require('./credential-gateway.test.cjs');
+
 const {
   BRIDGE_INVOKE_FAILED,
   BRIDGE_MISSING_HANDLER,
@@ -91,6 +93,10 @@ test('native desktop edge exposes the complete account synchronization surface',
   for (const method of requiredMethods) {
     assert.ok(NATIVE_EDGE.methods[method], `native edge is missing account sync method ${method}`);
   }
+});
+
+test('native desktop edge never exposes a plaintext credential reveal method', () => {
+  assert.equal(NATIVE_EDGE.methods.revealSecret, undefined);
 });
 
 test('deterministic test account platform survives host restart for Mini App, Bot, history and CloudStorage', () => {
