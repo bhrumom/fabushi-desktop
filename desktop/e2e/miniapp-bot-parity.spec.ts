@@ -47,10 +47,15 @@ async function navigate(page: Page, title: string): Promise<void> {
   await page.getByTitle(title, { exact: true }).click();
 }
 
+function globalDharmaBotPeer(page: Page) {
+  return page.getByRole('button', { name: /@global_dharma_bot\b/ }).first();
+}
+
 async function waitForGlobalDharmaBot(page: Page) {
   await navigate(page, 'Bots');
-  const botPeer = page.getByTestId('peer-miniapp:bot:global-dharma');
+  const botPeer = globalDharmaBotPeer(page);
   await expect(botPeer).toBeVisible({ timeout: 15_000 });
+  await expect(botPeer).toContainText('全球法布施');
   return botPeer;
 }
 
@@ -94,8 +99,8 @@ test('installed Mini App projects its Bot into Contacts/Bots and recovers Bot hi
     await expect(appResult.getByRole('button', { name: '打开' })).toBeVisible();
 
     await navigate(page, '联系人');
-    const contactBot = page.getByTestId('peer-miniapp:bot:global-dharma');
-    await expect(contactBot).toBeVisible();
+    const contactBot = globalDharmaBotPeer(page);
+    await expect(contactBot).toBeVisible({ timeout: 15_000 });
     await expect(contactBot).toContainText('全球法布施');
 
     const botPeer = await waitForGlobalDharmaBot(page);
