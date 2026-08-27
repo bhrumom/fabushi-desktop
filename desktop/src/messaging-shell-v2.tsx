@@ -41,6 +41,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, type FormEven
 import HostClient from '../../frontend/apps/web/src/app/host/host-client';
 import { BotMark, type BotMarkState } from '../../frontend/apps/web/src/app/host/bot-mark';
 import type {
+  AuthState,
   BotSummary,
   ConversationSummary,
   GroupSummary,
@@ -554,6 +555,10 @@ export default function DesktopShellV2() {
     }
   }, [authTransport]);
 
+  const handleHostAuthStateChange = useCallback((state: AuthState) => {
+    if (state.loggedIn) setAuthenticated(true);
+  }, []);
+
   useEffect(() => {
     if (localProjection) return;
     let closed = false;
@@ -607,7 +612,7 @@ export default function DesktopShellV2() {
       {showMessenger
         ? <MessengerWorkspace initialProjection={startupProjection} onLogout={() => resetToLogin(true)} />
         : showLogin
-          ? <HostClient />
+          ? <HostClient onAuthStateChange={handleHostAuthStateChange} />
           : <DesktopFastStartBootstrap />}
     </div>
   );
