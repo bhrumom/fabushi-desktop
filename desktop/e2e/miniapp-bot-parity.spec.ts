@@ -79,6 +79,15 @@ async function readCloudProbe(page: Page): Promise<string | null> {
   });
 }
 
+async function readWebMcpTools(page: Page): Promise<string[]> {
+  const frame = page.frameLocator('iframe[title="global-dharma"]');
+  return frame.locator('body').evaluate(() => {
+    const registry = (window as any).__fabushiWebMcp;
+    if (!registry?.list) throw new Error('Fabushi WebMCP registry is unavailable');
+    return registry.list().map((tool: { name?: unknown }) => String(tool.name ?? '')).filter(Boolean);
+  });
+}
+
 test('installed Mini App projects its Bot into Contacts/Bots and recovers Bot history plus CloudStorage', async ({}, testInfo) => {
   test.setTimeout(90_000);
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-miniapp-bot-e2e-'));
@@ -125,8 +134,11 @@ test('installed Mini App projects its Bot into Contacts/Bots and recovers Bot hi
     await page.getByTestId('miniapp-bot-open').click();
     await expect(page.getByText('Mini App · 已安装线上包 · 账号云同步')).toBeVisible();
     await expect(page.locator('iframe[title="global-dharma"]')).toBeVisible();
+    await expect.poll(() => readWebMcpTools(page), { timeout: 15_000 }).toEqual(
+      expect.arrayContaining(['status', 'start', 'stop', 'send']),
+    );
     await writeCloudProbe(page, probeValue);
-    await page.screenshot({ path: testInfo.outputPath('miniapp-sync-before-restart.png'), fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath('miniapp-webmcp-sync-before-restart.png'), fullPage: true });
 
     await firstApp.close();
     restartedApp = await launchDesktopApp(appDataDir);
@@ -140,8 +152,9 @@ test('installed Mini App projects its Bot into Contacts/Bots and recovers Bot hi
 
     await restartedPage.getByTestId('miniapp-bot-open').click();
     await expect(restartedPage.locator('iframe[title="global-dharma"]')).toBeVisible();
+    await expect.poll(() => readWebMcpTools(restartedPage), { timeout: 15_000 }).toContain('status');
     await expect.poll(() => readCloudProbe(restartedPage), { timeout: 15_000 }).toBe(probeValue);
-    await restartedPage.screenshot({ path: testInfo.outputPath('miniapp-sync-after-restart.png'), fullPage: true });
+    await restartedPage.screenshot({ path: testInfo.outputPath('miniapp-webmcp-sync-after-restart.png'), fullPage: true });
   } finally {
     await restartedApp?.close().catch(() => {});
     await firstApp.close().catch(() => {});
