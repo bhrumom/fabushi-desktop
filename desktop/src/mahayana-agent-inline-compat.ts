@@ -7,10 +7,7 @@ const INLINE_TEST_ID_ALIASES: Record<string, string> = {
   'agent-inline-step': 'agent-step',
 };
 
-function quarantineLegacyWorkbench(): void {
-  const portal = document.getElementById(LEGACY_WORKBENCH_PORTAL_ID);
-  if (!portal) return;
-
+function quarantineLegacyWorkbench(portal: HTMLElement): void {
   // The legacy Workbench remains mounted because it owns avatar state and the
   // self-hosted Bot submit bridge. Its transcript projection is superseded by
   // the inline report, so keep it out of both layout and test/accessibility
@@ -24,18 +21,11 @@ function quarantineLegacyWorkbench(): void {
   });
 }
 
-function exposeInlineReportContracts(): void {
-  const portal = document.getElementById(INLINE_REPORT_PORTAL_ID);
-  if (!portal) return;
-
+function exposeInlineReportContracts(portal: HTMLElement): void {
   // Keep the long-lived acceptance contract while the visual implementation
   // moves from a separate card to an inline Codex/Grok-style transcript.
   if (portal.style.display !== 'block') portal.style.display = 'block';
   if (portal.style.width !== '100%') portal.style.width = '100%';
-  // MutationObserver below watches data-testid changes. Never write an
-  // identical value here: setAttribute() still queues an attribute mutation in
-  // Chromium, which would otherwise keep this observer in a microtask loop and
-  // starve the Messenger login/workspace transition.
   if (portal.getAttribute('data-testid') !== 'agent-workbench') {
     portal.setAttribute('data-testid', 'agent-workbench');
   }
@@ -53,37 +43,75 @@ function exposeInlineReportContracts(): void {
   });
 }
 
-function normalizeAgentPresentationContracts(): void {
-  quarantineLegacyWorkbench();
-  exposeInlineReportContracts();
-}
-
 export function installMahayanaAgentInlineCompatibility(): () => void {
-  if (typeof window === 'undefined') return () => {};
+  if (typeof window === 'undefined' || typeof document === 'undefined') return () => {};
 
-  let normalizing = false;
-  const normalize = () => {
-    if (normalizing) return;
-    normalizing = true;
-    try {
-      normalizeAgentPresentationContracts();
-    } finally {
-      normalizing = false;
-    }
+  let legacyPortal: HTMLElement | null = null;
+  let inlinePortal: HTMLElement | null = null;
+  let legacyObserver: MutationObserver | null = null;
+  let inlineObserver: MutationObserver | null = null;
+
+  const bindLegacyPortal = () => {
+    const next = document.getElementById(LEGACY_WORKBENCH_PORTAL_ID);
+    if (next === legacyPortal) return;
+    legacyObserver?.disconnect();
+    legacyObserver = null;
+    legacyPortal = next;
+    if (!legacyPortal) return;
+
+    quarantineLegacyWorkbench(legacyPortal);
+    legacyObserver = new MutationObserver(() => {
+      if (legacyPortal?.isConnected) quarantineLegacyWorkbench(legacyPortal);
+    });
+    legacyObserver.observe(legacyPortal, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-testid'],
+    });
   };
 
-  const observer = new MutationObserver((records) => {
-    if (records.some((record) => record.type === 'childList' || record.attributeName === 'data-testid')) {
-      normalize();
-    }
-  });
-  observer.observe(document.body, {
+  const bindInlinePortal = () => {
+    const next = document.getElementById(INLINE_REPORT_PORTAL_ID);
+    if (next === inlinePortal) return;
+    inlineObserver?.disconnect();
+    inlineObserver = null;
+    inlinePortal = next;
+    if (!inlinePortal) return;
+
+    exposeInlineReportContracts(inlinePortal);
+    inlineObserver = new MutationObserver(() => {
+      if (inlinePortal?.isConnected) exposeInlineReportContracts(inlinePortal);
+    });
+    inlineObserver.observe(inlinePortal, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-testid'],
+    });
+  };
+
+  const bindPortals = () => {
+    bindLegacyPortal();
+    bindInlinePortal();
+  };
+
+  // Portal nodes are created by the React projections after the Messenger has
+  // committed. Keep one deliberately cheap discovery observer on the document:
+  // it watches only node insertion/removal and never scans or rewrites ordinary
+  // Messenger test IDs. All compatibility mutations are handled by observers
+  // scoped to the two Mahayana portals. This prevents chat/message churn from
+  // monopolising Chromium's mutation microtask checkpoint.
+  const discoveryObserver = new MutationObserver(bindPortals);
+  discoveryObserver.observe(document.body, {
     childList: true,
     subtree: true,
-    attributes: true,
-    attributeFilter: ['data-testid'],
   });
-  normalize();
+  bindPortals();
 
-  return () => observer.disconnect();
+  return () => {
+    discoveryObserver.disconnect();
+    legacyObserver?.disconnect();
+    inlineObserver?.disconnect();
+  };
 }

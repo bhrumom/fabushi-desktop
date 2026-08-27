@@ -1,3 +1,4 @@
+const REPORT_PORTAL_ID = 'mahayana-agent-inline-report-portal';
 const RUN_SELECTOR = '[data-testid="agent-run"]';
 const OUTPUT_SELECTOR = '[data-testid="agent-output"]';
 
@@ -33,7 +34,9 @@ function normalizeProjectedParagraph(paragraph: ProjectedParagraph): void {
   if (paragraph.dataset.agentRenderedText !== text) {
     paragraph.dataset.agentRenderedText = text;
   }
-  paragraph.setAttribute('aria-label', `Agent 运行${context}：${text}`);
+  if (paragraph.getAttribute('aria-label') !== `Agent 运行${context}：${text}`) {
+    paragraph.setAttribute('aria-label', `Agent 运行${context}：${text}`);
+  }
 
   // The canonical selectable transcript remains the ordinary Messenger
   // message. The Workbench is a visual projection of the same content. Keep
@@ -43,35 +46,60 @@ function normalizeProjectedParagraph(paragraph: ProjectedParagraph): void {
   if (currentText) paragraph.replaceChildren();
 }
 
-function normalizeProjectedTranscript(): void {
-  document.querySelectorAll<HTMLParagraphElement>(`${RUN_SELECTOR} p`).forEach((paragraph) => {
+function normalizeProjectedTranscript(portal: HTMLElement): void {
+  portal.querySelectorAll<HTMLParagraphElement>(`${RUN_SELECTOR} p`).forEach((paragraph) => {
     normalizeProjectedParagraph(paragraph as ProjectedParagraph);
   });
 }
 
 export function installMahayanaAgentTranscriptSemantics(): () => void {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return () => {};
+
+  let portal: HTMLElement | null = null;
+  let portalObserver: MutationObserver | null = null;
   let normalizing = false;
+
   const normalize = () => {
-    if (normalizing) return;
+    if (normalizing || !portal?.isConnected) return;
     normalizing = true;
     try {
-      // MutationObserver callbacks run in the same microtask checkpoint as the
-      // React commit. Normalize immediately rather than waiting for the next
-      // animation frame; accessibility/search consumers and Playwright can
-      // inspect the DOM before that later frame.
-      normalizeProjectedTranscript();
+      normalizeProjectedTranscript(portal);
     } finally {
       normalizing = false;
     }
   };
 
-  const observer = new MutationObserver(normalize);
-  observer.observe(document.body, {
+  const bindPortal = () => {
+    const next = document.getElementById(REPORT_PORTAL_ID);
+    if (next === portal) return;
+    portalObserver?.disconnect();
+    portalObserver = null;
+    portal = next;
+    if (!portal) return;
+
+    normalize();
+    portalObserver = new MutationObserver(normalize);
+    portalObserver.observe(portal, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+  };
+
+  // The report portal is inserted beside the matching assistant message after
+  // React commits the Messenger. Discover only portal creation/removal at the
+  // document level; all transcript normalization stays inside that portal so
+  // unrelated messages, search results and navigation updates do not trigger a
+  // full agent transcript scan.
+  const discoveryObserver = new MutationObserver(bindPortal);
+  discoveryObserver.observe(document.body, {
     childList: true,
-    characterData: true,
     subtree: true,
   });
-  normalize();
+  bindPortal();
 
-  return () => observer.disconnect();
+  return () => {
+    discoveryObserver.disconnect();
+    portalObserver?.disconnect();
+  };
 }
