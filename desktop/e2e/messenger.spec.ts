@@ -514,7 +514,7 @@ test('online Mini App installs and opens from global Application search', async 
     const open = appResult.getByRole('button', { name: '打开' });
     await expect(open).toBeVisible();
     await open.click();
-    await expect(page.getByText('Mini App · 已安装线上包 · 受控宿主容器')).toBeVisible();
+    await expect(page.getByText('Mini App · 已安装线上包 · 账号云同步')).toBeVisible();
     await expect(page.locator('iframe[title="global-dharma"]')).toBeVisible();
   } finally {
     await app.close();

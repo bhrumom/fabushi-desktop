@@ -21,6 +21,15 @@ async function launchDesktopApp(appDataDir: string) {
 }
 
 async function completeBrowserLogin(page: Page): Promise<void> {
+  await page.waitForLoadState('domcontentloaded');
+  await expect.poll(async () => {
+    const testIds = ['onboarding-gate', 'login-gate', 'host-status', 'open-messenger', 'messenger-workspace'];
+    for (const testId of testIds) {
+      if (await page.getByTestId(testId).isVisible().catch(() => false)) return true;
+    }
+    return false;
+  }, { timeout: 15_000 }).toBe(true);
+
   while (await page.getByTestId('onboarding-gate').isVisible().catch(() => false)) {
     await page.getByTestId('onboarding-next').click();
   }
@@ -109,7 +118,7 @@ test('installed Mini App projects its Bot into Contacts/Bots and recovers Bot hi
     await expect(page.getByText('natural-language', { exact: true })).toBeVisible();
 
     await page.getByTestId('miniapp-bot-open').click();
-    await expect(page.getByText('Mini App · 已安装线上包 · 受控宿主容器')).toBeVisible();
+    await expect(page.getByText('Mini App · 已安装线上包 · 账号云同步')).toBeVisible();
     await expect(page.locator('iframe[title="global-dharma"]')).toBeVisible();
     await writeCloudProbe(page, probeValue);
     await page.screenshot({ path: testInfo.outputPath('miniapp-sync-before-restart.png'), fullPage: true });
