@@ -1,4 +1,5 @@
 import { invokeNativeDesktop } from '../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
+import type { MarketplacePluginSummary } from '../../frontend/apps/web/src/lib/mahayana-host/transport';
 
 export type AccountSyncEvent = {
   sequence: number;
@@ -43,7 +44,11 @@ export type AccountMiniAppList = {
     id: string;
     version: string;
     title?: string;
+    description?: string;
     bot?: Record<string, unknown>;
+    commands?: unknown[];
+    surfaces?: unknown[];
+    distribution?: Record<string, unknown>;
   }>;
   accountSynchronized?: boolean;
   cursor?: string | null;
@@ -76,6 +81,24 @@ export async function readAccountBots(): Promise<AccountBotMembership[]> {
 
 export async function readAccountMiniApps(): Promise<AccountMiniAppList> {
   return invokeNativeDesktop<AccountMiniAppList>('getAccountMiniApps', {});
+}
+
+export function accountMiniAppsAsMarketplaceSummaries(account: AccountMiniAppList): MarketplacePluginSummary[] {
+  return (Array.isArray(account?.apps) ? account.apps : []).flatMap((app) => {
+    const pluginId = typeof app?.id === 'string' ? app.id.trim() : '';
+    if (!pluginId) return [];
+    const distribution = app.distribution && typeof app.distribution === 'object' ? app.distribution : {};
+    return [{
+      pluginId,
+      displayName: typeof app.title === 'string' && app.title.trim() ? app.title.trim() : pluginId,
+      description: typeof app.description === 'string' ? app.description : '',
+      latestVersion: typeof app.version === 'string' && app.version.trim() ? app.version.trim() : '0',
+      bot: app.bot,
+      commands: Array.isArray(app.commands) ? app.commands : [],
+      surfaces: Array.isArray(app.surfaces) ? app.surfaces : [],
+      installMode: typeof distribution.installMode === 'string' ? distribution.installMode : undefined,
+    } satisfies MarketplacePluginSummary];
+  });
 }
 
 export async function reconcileAccountMiniApps(): Promise<Record<string, unknown>> {

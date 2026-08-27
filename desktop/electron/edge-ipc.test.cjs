@@ -112,6 +112,7 @@ test('deterministic test account platform survives host restart for Mini App, Bo
     const restarted = createTestPlatformAccount({ app, fs, now: () => ++now });
     const apps = restarted.request({ method: 'GET', path: '/v1/marketplace/added' });
     assert.deepEqual(apps.data.apps.map((item) => item.id), ['global-dharma']);
+    assert.ok(apps.data.apps[0].commands.some((command) => command.name === 'status'));
     const bots = restarted.request({ method: 'GET', path: '/v1/account/bots' });
     assert.equal(bots.data.bots[0].bot.id, 'global-dharma-bot');
     const history = restarted.request({ method: 'GET', path: '/api/miniapps/global-dharma/messages', query: { limit: 100 } });

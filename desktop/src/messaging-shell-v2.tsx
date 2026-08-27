@@ -87,8 +87,10 @@ import {
   type MiniAppBotCommand,
 } from './miniapp-bot-projection';
 import {
+  accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
   readAccountBots,
+  readAccountMiniApps,
   readAccountSync,
   readMiniAppBotMessages,
   readMiniAppCloudStorage,
@@ -2206,9 +2208,11 @@ async function saveInvoiceDialog() {
       if (reconcileAccount) await reconcileAccountMiniApps().catch(() => undefined);
       const catalogPromise = transport.marketplaceBrowse(query);
       const identityCatalogPromise = query.trim() ? transport.marketplaceBrowse('') : catalogPromise;
-      const [catalogResult, identityCatalogResult, installedResult] = await Promise.allSettled([
+      const accountCatalogPromise = readAccountMiniApps();
+      const [catalogResult, identityCatalogResult, accountCatalogResult, installedResult] = await Promise.allSettled([
         catalogPromise,
         identityCatalogPromise,
+        accountCatalogPromise,
         transport.pluginListInstalled(),
       ]);
       if (catalogResult.status === 'fulfilled') {
@@ -2216,10 +2220,29 @@ async function saveInvoiceDialog() {
       } else {
         setError(catalogResult.reason instanceof Error ? catalogResult.reason.message : String(catalogResult.reason));
       }
-      if (identityCatalogResult.status === 'fulfilled') {
-        setMiniAppIdentityCatalog(identityCatalogResult.value.plugins);
-      } else {
+      const discoveredIdentityCatalog = identityCatalogResult.status === 'fulfilled'
+        ? identityCatalogResult.value.plugins
+        : [];
+      const accountIdentityCatalog = accountCatalogResult.status === 'fulfilled'
+        ? accountMiniAppsAsMarketplaceSummaries(accountCatalogResult.value)
+        : [];
+      if (discoveredIdentityCatalog.length || accountIdentityCatalog.length) {
+        const merged = new Map(discoveredIdentityCatalog.map((app) => [app.pluginId, app]));
+        for (const accountApp of accountIdentityCatalog) {
+          const discovered = merged.get(accountApp.pluginId);
+          merged.set(accountApp.pluginId, {
+            ...discovered,
+            ...accountApp,
+            bot: accountApp.bot ?? discovered?.bot,
+            commands: accountApp.commands?.length ? accountApp.commands : discovered?.commands,
+            surfaces: accountApp.surfaces?.length ? accountApp.surfaces : discovered?.surfaces,
+          });
+        }
+        setMiniAppIdentityCatalog([...merged.values()]);
+      } else if (identityCatalogResult.status === 'rejected') {
         setError(identityCatalogResult.reason instanceof Error ? identityCatalogResult.reason.message : String(identityCatalogResult.reason));
+      } else if (accountCatalogResult.status === 'rejected') {
+        setError(accountCatalogResult.reason instanceof Error ? accountCatalogResult.reason.message : String(accountCatalogResult.reason));
       }
       if (installedResult.status === 'fulfilled') {
         setInstalledMiniApps(Object.fromEntries(installedResult.value.plugins.map((plugin) => [plugin.pluginId, plugin])));

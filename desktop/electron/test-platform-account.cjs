@@ -154,7 +154,17 @@ class TestPlatformAccount {
   }
 
   installedMiniApps(state) {
-    return Object.values(state.miniApps).sort((left, right) => left.id.localeCompare(right.id));
+    return Object.values(state.miniApps)
+      .map((installed) => {
+        const definition = appDefinition(installed.id);
+        return {
+          ...definition,
+          ...installed,
+          bot: installed.bot ?? definition.bot,
+          commands: definition.commands,
+        };
+      })
+      .sort((left, right) => left.id.localeCompare(right.id));
   }
 
   botMemberships(state) {
