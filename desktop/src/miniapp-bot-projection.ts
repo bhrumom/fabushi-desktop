@@ -9,6 +9,37 @@ export type MiniAppBotCommand = {
   usage: string;
 };
 
+export type MiniAppBotCallRoute = {
+  digits: string;
+  label?: string;
+  action: 'command' | 'state' | 'back' | 'end';
+  command?: string;
+  arguments?: Record<string, unknown>;
+  nextState?: string;
+};
+
+export type MiniAppBotCallState = {
+  id: string;
+  prompt: string;
+  routes: MiniAppBotCallRoute[];
+};
+
+export type MiniAppBotCallProgram = {
+  protocol: string;
+  kind: 'voice' | 'video';
+  type: 'service-call' | 'miniapp-surface';
+  title: string;
+  aiMode: 'optional' | 'disabled';
+  surfaceId?: string;
+  startState?: string;
+  states: MiniAppBotCallState[];
+};
+
+export type MiniAppBotCallPrograms = {
+  voice?: MiniAppBotCallProgram;
+  video?: MiniAppBotCallProgram;
+};
+
 export type MiniAppBotProjection = {
   miniAppId: string;
   id: string;
@@ -19,6 +50,7 @@ export type MiniAppBotProjection = {
   naturalLanguage: boolean;
   menuButtonText: string;
   commands: MiniAppBotCommand[];
+  calls: MiniAppBotCallPrograms;
 };
 
 function recordValue(value: unknown): Record<string, unknown> | null {
@@ -39,6 +71,57 @@ function commandProjection(miniAppId: string, value: unknown): MiniAppBotCommand
     name,
     description: stringValue(command?.description),
     usage: stringValue(command?.usage) ?? stringValue(command?.slash) ?? `/${miniAppId}:${name}`,
+  };
+}
+
+function callRouteProjection(value: unknown): MiniAppBotCallRoute | null {
+  const route = recordValue(value);
+  const digits = stringValue(route?.digits);
+  const action = stringValue(route?.action);
+  if (!digits || !action || !['command', 'state', 'back', 'end'].includes(action)) return null;
+  return {
+    digits,
+    label: stringValue(route?.label),
+    action: action as MiniAppBotCallRoute['action'],
+    command: stringValue(route?.command),
+    arguments: recordValue(route?.arguments) ?? undefined,
+    nextState: stringValue(route?.nextState),
+  };
+}
+
+function callStateProjection(value: unknown): MiniAppBotCallState | null {
+  const state = recordValue(value);
+  const id = stringValue(state?.id);
+  const prompt = stringValue(state?.prompt);
+  if (!id || !prompt) return null;
+  return {
+    id,
+    prompt,
+    routes: (Array.isArray(state?.routes) ? state.routes : [])
+      .map(callRouteProjection)
+      .filter((entry): entry is MiniAppBotCallRoute => Boolean(entry)),
+  };
+}
+
+function callProgramProjection(value: unknown, kind: 'voice' | 'video'): MiniAppBotCallProgram | null {
+  const program = recordValue(value);
+  const type = stringValue(program?.type);
+  if (!type || !['service-call', 'miniapp-surface'].includes(type)) return null;
+  const programKind = stringValue(program?.kind) ?? kind;
+  if (programKind !== kind) return null;
+  const aiMode = stringValue(program?.aiMode) ?? 'optional';
+  if (!['optional', 'disabled'].includes(aiMode)) return null;
+  return {
+    protocol: stringValue(program?.protocol) ?? 'fabushi.miniapp.call-program.v1',
+    kind,
+    type: type as MiniAppBotCallProgram['type'],
+    title: stringValue(program?.title) ?? (kind === 'video' ? '视频服务' : '语音服务'),
+    aiMode: aiMode as MiniAppBotCallProgram['aiMode'],
+    surfaceId: stringValue(program?.surfaceId),
+    startState: stringValue(program?.startState),
+    states: (Array.isArray(program?.states) ? program.states : [])
+      .map(callStateProjection)
+      .filter((entry): entry is MiniAppBotCallState => Boolean(entry)),
   };
 }
 
@@ -74,6 +157,12 @@ export function miniAppBotProjection(app: MarketplacePluginSummary): MiniAppBotP
     .map((entry) => commandProjection(app.pluginId, entry))
     .filter((entry): entry is MiniAppBotCommand => Boolean(entry));
   const menuButton = recordValue(bot.menuButton);
+  const rawCalls = recordValue(bot.calls);
+  const calls: MiniAppBotCallPrograms = {};
+  const voice = callProgramProjection(rawCalls?.voice, 'voice');
+  const video = callProgramProjection(rawCalls?.video, 'video');
+  if (voice) calls.voice = voice;
+  if (video) calls.video = video;
 
   return {
     miniAppId: app.pluginId,
@@ -85,6 +174,7 @@ export function miniAppBotProjection(app: MarketplacePluginSummary): MiniAppBotP
     naturalLanguage: bot.naturalLanguage !== false,
     menuButtonText: stringValue(menuButton?.text) ?? '打开小程序',
     commands,
+    calls,
   };
 }
 

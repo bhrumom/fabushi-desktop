@@ -84,8 +84,11 @@ import { isTerminalAuthSessionFailure } from './auth-session';
 import {
   installedMiniAppBotProjections,
   miniAppBotResponseText,
+  type MiniAppBotCallProgram,
+  type MiniAppBotCallPrograms,
   type MiniAppBotCommand,
 } from './miniapp-bot-projection';
+import { MiniAppCallDialog } from './miniapp-call-dialog';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -134,6 +137,7 @@ type PeerItem = {
   miniAppId?: string;
   miniAppCommands?: MiniAppBotCommand[];
   miniAppMenuButtonText?: string;
+  miniAppCalls?: MiniAppBotCallPrograms;
 };
 
 type DisplayMessage = {
@@ -162,6 +166,15 @@ type LocalCall = {
   muted: boolean;
   videoEnabled: boolean;
   error?: string;
+};
+
+type MiniAppCallSession = {
+  callId: string;
+  miniAppId: string;
+  title: string;
+  kind: 'voice' | 'video';
+  program: MiniAppBotCallProgram;
+  html?: string;
 };
 
 type MessageMenu = { message: DisplayMessage; x: number; y: number } | null;
@@ -699,6 +712,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [localCall, setLocalCall] = useState<LocalCall | null>(null);
   const [incomingCall, setIncomingCall] = useState<IncomingFabushiCall | null>(null);
   const [miniApp, setMiniApp] = useState<{ id: string; title: string; html: string } | null>(null);
+  const [miniAppCall, setMiniAppCall] = useState<MiniAppCallSession | null>(null);
   const miniAppBotThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
   const [accountBots, setAccountBots] = useState<AccountBotMembership[]>([]);
   const [marketplaceApps, setMarketplaceApps] = useState<MarketplacePluginSummary[]>([]);
@@ -1458,6 +1472,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         miniAppId: miniAppByBotId.get(bot.id)?.miniAppId,
         miniAppCommands: miniAppByBotId.get(bot.id)?.commands,
         miniAppMenuButtonText: miniAppByBotId.get(bot.id)?.menuButtonText,
+        miniAppCalls: miniAppByBotId.get(bot.id)?.calls,
       }));
     const existingBotIds = new Set(botPeers.map((peer) => peer.actorId ?? peer.id));
     const accountBotPeers = accountBots
@@ -1483,6 +1498,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           miniAppId: miniAppSource?.sourceId,
           miniAppCommands: projection?.commands,
           miniAppMenuButtonText: projection?.menuButtonText ?? (miniAppSource ? '打开小程序' : undefined),
+          miniAppCalls: projection?.calls,
         };
       });
     for (const peer of accountBotPeers) existingBotIds.add(peer.actorId ?? peer.id);
@@ -1504,6 +1520,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         miniAppId: projection.miniAppId,
         miniAppCommands: projection.commands,
         miniAppMenuButtonText: projection.menuButtonText,
+        miniAppCalls: projection.calls,
       }));
     const legacyGroups = groups.map((group): PeerItem => ({
       key: `legacy:group:${group.id}`,
@@ -2008,8 +2025,125 @@ async function saveInvoiceDialog() {
     }
   }
 
+  async function appendMiniAppCallExchange(miniAppId: string, input: string, visibleText = input): Promise<void> {
+    const createdAtMs = Date.now();
+    const userMessage: DisplayMessage = {
+      id: nextRequestId('miniapp-call-user'),
+      source: 'legacy',
+      role: 'me',
+      text: visibleText,
+      createdAtMs,
+    };
+    const pendingThread = [...(miniAppBotThreadsRef.current[miniAppId] ?? []), userMessage];
+    miniAppBotThreadsRef.current = { ...miniAppBotThreadsRef.current, [miniAppId]: pendingThread };
+    const active = peersRef.current.find((peer) => peer.key === activePeerKeyRef.current);
+    if (active?.miniAppId === miniAppId) setMessages(pendingThread);
+    await appendMiniAppBotMessages(miniAppId, [{
+      messageId: userMessage.id,
+      role: 'user',
+      text: userMessage.text,
+      createdAt: new Date(userMessage.createdAtMs).toISOString(),
+      payload: { source: 'miniapp-call' },
+    }]);
+    const routed = await invokeNativeDesktop<Record<string, unknown>>('routeMiniAppInput', {
+      pluginId: miniAppId,
+      input,
+    });
+    const responseMessage: DisplayMessage = {
+      id: nextRequestId('miniapp-call-response'),
+      source: 'legacy',
+      role: 'peer',
+      text: miniAppBotResponseText(routed),
+      createdAtMs: Date.now(),
+    };
+    const completedThread = [...pendingThread, responseMessage];
+    miniAppBotThreadsRef.current = { ...miniAppBotThreadsRef.current, [miniAppId]: completedThread };
+    if (active?.miniAppId === miniAppId) setMessages(completedThread);
+    await appendMiniAppBotMessages(miniAppId, [{
+      messageId: responseMessage.id,
+      role: 'assistant',
+      text: responseMessage.text,
+      createdAt: new Date(responseMessage.createdAtMs).toISOString(),
+      payload: { source: 'miniapp-call' },
+    }]);
+  }
+
+  async function runMiniAppCallCommand(session: MiniAppCallSession, command: string, args?: Record<string, unknown>): Promise<void> {
+    const suffix = args && Object.keys(args).length ? ' ' + JSON.stringify(args) : '';
+    const input = '/' + session.miniAppId + ':' + command + suffix;
+    await appendMiniAppCallExchange(session.miniAppId, input, '通话服务 · /' + command);
+  }
+
+  async function saveMiniAppCallRecording(session: MiniAppCallSession, blob: Blob, mimeType: string): Promise<void> {
+    const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    const fileName = 'teleprompter-' + new Date().toISOString().replaceAll(':', '-') + '.' + extension;
+    const file = new File([blob], fileName, { type: mimeType || 'video/webm' });
+    setAttachmentProgress('正在保存 ' + fileName + '…');
+    try {
+      const media = await selfHosted.uploadBlob(file, (uploaded, total) => {
+        setAttachmentProgress('正在保存 ' + fileName + ' · ' + Math.round((uploaded / Math.max(total, 1)) * 100) + '%');
+      });
+      const message: DisplayMessage = {
+        id: nextRequestId('miniapp-call-video'),
+        source: 'legacy',
+        role: 'me',
+        text: '口播录制视频',
+        createdAtMs: Date.now(),
+        media,
+        mediaType: 'video',
+      };
+      const thread = [...(miniAppBotThreadsRef.current[session.miniAppId] ?? []), message];
+      miniAppBotThreadsRef.current = { ...miniAppBotThreadsRef.current, [session.miniAppId]: thread };
+      const active = peersRef.current.find((peer) => peer.key === activePeerKeyRef.current);
+      if (active?.miniAppId === session.miniAppId) setMessages(thread);
+      await appendMiniAppBotMessages(session.miniAppId, [{
+        messageId: message.id,
+        role: 'user',
+        text: message.text,
+        createdAt: new Date(message.createdAtMs).toISOString(),
+        payload: {
+          source: 'miniapp-call-recording',
+          miniAppId: session.miniAppId,
+          callId: session.callId,
+          mediaType: 'video',
+          media,
+        },
+      }]);
+    } finally {
+      setAttachmentProgress(null);
+    }
+  }
+
   async function startCall(kind: 'voice' | 'video') {
     if (!activePeer) return;
+    if (activePeer.miniAppId) {
+      const program = activePeer.miniAppCalls?.[kind];
+      if (!program) {
+        setError('这个 Mini App 没有声明' + (kind === 'video' ? '视频' : '语音') + '通话程序。');
+        return;
+      }
+      setError(null);
+      try {
+        let html: string | undefined;
+        if (program.type === 'miniapp-surface') {
+          const installed = installedMiniApps[activePeer.miniAppId] ?? await transport.pluginActive(activePeer.miniAppId);
+          if (!installed) throw new Error('请先安装这个 Mini App，再使用它自定义的通话界面。');
+          const document = await transport.pluginUiDocument(activePeer.miniAppId);
+          html = document.html;
+        }
+        setMiniAppCall({
+          callId: 'miniapp-call:' + crypto.randomUUID(),
+          miniAppId: activePeer.miniAppId,
+          title: activePeer.title,
+          kind,
+          program,
+          html,
+        });
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : String(cause));
+      }
+      return;
+    }
     if (activePeer.source !== 'selfhosted' || !activePeer.conversationId || !activePeer.actorId) {
       setError('远端通话只对已迁移到 Fabushi 自建协议的一对一联系人开放。');
       return;
@@ -2141,13 +2275,25 @@ async function saveInvoiceDialog() {
 
   async function loadMiniAppBotThread(miniAppId: string): Promise<DisplayMessage[]> {
     const page = await readMiniAppBotMessages(miniAppId, '', 500);
-    const thread = (page.messages ?? []).map((message): DisplayMessage => ({
-      id: message.messageId,
-      role: message.role === 'user' ? 'me' : 'peer',
-      text: message.text,
-      createdAtMs: Number.isFinite(Date.parse(message.createdAt)) ? Date.parse(message.createdAt) : Date.now(),
-      source: 'legacy',
-    }));
+    const thread = (page.messages ?? []).map((message): DisplayMessage => {
+      const mediaTypeValue = message.payload?.mediaType;
+      const mediaType = mediaTypeValue === 'photo' || mediaTypeValue === 'video' || mediaTypeValue === 'document'
+        ? mediaTypeValue
+        : undefined;
+      const mediaValue = message.payload?.media;
+      const media = mediaValue && typeof mediaValue === 'object' && !Array.isArray(mediaValue)
+        ? mediaValue as unknown as MessagingMediaRef
+        : undefined;
+      return {
+        id: message.messageId,
+        role: message.role === 'user' ? 'me' : 'peer',
+        text: message.text,
+        createdAtMs: Number.isFinite(Date.parse(message.createdAt)) ? Date.parse(message.createdAt) : Date.now(),
+        source: 'legacy',
+        media,
+        mediaType,
+      };
+    });
     miniAppBotThreadsRef.current = { ...miniAppBotThreadsRef.current, [miniAppId]: thread };
     const active = peersRef.current.find((peer) => peer.key === activePeerKeyRef.current);
     if (active?.miniAppId === miniAppId) setMessages(thread);
@@ -2632,6 +2778,20 @@ async function saveInvoiceDialog() {
       {communityDialogPeer ? <CommunityAdminDialog peer={communityDialogPeer} community={selfCommunities.find((item) => item.conversationId === communityDialogPeer.conversationId) ?? defaultCommunityState(communityDialogPeer.conversationId!, selfHosted.actorId)} actors={selfActors} actorId={selfHosted.actorId} onClose={() => setCommunityDialogPeer(null)} onSave={(community) => void saveCommunity(community)} onSetMember={(conversationId, member) => void selfHosted.setCommunityMember(conversationId, member).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))} onCreateInvite={(community) => { const invite = { id: `invite:${crypto.randomUUID()}`, conversationId: community.conversationId, creatorId: selfHosted.actorId, token: crypto.randomUUID().replaceAll('-', ''), name: '邀请链接', createdAtMs: Date.now(), expiresAtMs: undefined, memberLimit: undefined, joinRequest: community.joinRequestRequired, revoked: false, joinedCount: 0 }; void selfHosted.createInviteLink(invite).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause))); }} onRevokeInvite={(conversationId, inviteId) => void selfHosted.revokeInviteLink(conversationId, inviteId).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))} onJoinDecision={(conversationId, requesterId, approved) => void selfHosted.respondCommunityJoin(conversationId, requesterId, approved).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))} onUpsertTopic={(topic) => void selfHosted.upsertForumTopic(topic).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))} onDeleteTopic={(conversationId, topicId) => void selfHosted.deleteForumTopic(conversationId, topicId).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))} /> : null}
       {activeStory ? <StoryViewer story={activeStory} owner={selfActors.find((actor) => actor.id === activeStory.ownerId)} own={activeStory.ownerId === selfHosted.actorId} onClose={() => setActiveStory(null)} onReact={(reaction) => void reactToActiveStory(reaction)} onDelete={() => void selfHosted.deleteStory(activeStory.id).then(() => setActiveStory(null)).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))} /> : null}
       {localCall ? <CallDialog call={localCall} localVideoRef={localVideoRef} remoteVideoRef={remoteVideoRef} remoteAudioRef={remoteAudioRef} canAccept={Boolean(incomingCall)} onAccept={() => void acceptIncomingCall()} onDecline={() => void declineIncomingCall()} onMute={() => void toggleCallMute()} onVideo={() => void toggleCallVideo()} onShare={() => void shareCallScreen()} onEnd={() => void endCall()} /> : null}
+      {miniAppCall ? <MiniAppCallDialog
+        callId={miniAppCall.callId}
+        miniAppId={miniAppCall.miniAppId}
+        title={miniAppCall.title}
+        kind={miniAppCall.kind}
+        program={miniAppCall.program}
+        html={miniAppCall.html}
+        onCommand={(command, args) => runMiniAppCallCommand(miniAppCall, command, args)}
+        onNaturalLanguage={miniAppCall.program.aiMode === 'optional'
+          ? (input) => appendMiniAppCallExchange(miniAppCall.miniAppId, input, '通话语音/自然语言 · ' + input)
+          : undefined}
+        onSaveRecording={(blob, mimeType) => saveMiniAppCallRecording(miniAppCall, blob, mimeType)}
+        onClose={() => setMiniAppCall(null)}
+      /> : null}
       {miniApp ? <MiniAppDialog app={miniApp} onClose={() => setMiniApp(null)} /> : null}
       {section === 'settings' ? <div className={styles.settingsModalBackdrop} data-testid="settings-modal-backdrop" onMouseDown={closeSettings}>
         <section className={styles.settingsModal} role="dialog" aria-modal="true" aria-label="设置" onMouseDown={(event) => event.stopPropagation()}>
