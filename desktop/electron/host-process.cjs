@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const readline = require('node:readline');
+const { createTestPlatformAccount } = require('./test-platform-account.cjs');
 
 const PRODUCTION_PRODUCT_API_BASE_URL = 'https://api.ombhrum.com';
 const DEVELOPMENT_PRODUCT_API_BASE_URL = 'https://mahayana-platform.bhrumom.workers.dev';
@@ -54,6 +55,9 @@ class MahayanaHostProcess {
     this.now = options.now ?? Date.now;
     this.fs = options.fs ?? fs;
     this.providerEnvironment = options.providerEnvironment ?? (() => ({}));
+    this.testPlatformAccount = this.env.FABUSHI_FEATURE_HOST_MODE === 'test'
+      ? createTestPlatformAccount({ app: this.app, fs: this.fs, now: this.now })
+      : null;
 
     this.child = null;
     this.currentGeneration = 0;
@@ -224,6 +228,10 @@ class MahayanaHostProcess {
   }
 
   request(method, params = {}, timeoutMs = 120000) {
+    if (method === 'platform.request' && this.testPlatformAccount) {
+      const result = this.testPlatformAccount.request(params);
+      if (result) return Promise.resolve(result);
+    }
     let child;
     try {
       child = this.start();

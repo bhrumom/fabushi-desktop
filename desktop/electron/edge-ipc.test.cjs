@@ -1,6 +1,9 @@
 "use strict";
 
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const test = require('node:test');
 
 const {
@@ -14,6 +17,8 @@ const {
   pushChannel,
   serveMainEdge,
 } = require('./edge-ipc.cjs');
+const { NATIVE_EDGE } = require('./native-edge.cjs');
+const { createTestPlatformAccount } = require('./test-platform-account.cjs');
 
 function fakeIpcMain() {
   const handlers = new Map();
@@ -64,6 +69,61 @@ test('edge exposes only declared methods and normalizes no-arg invocations', asy
   assert.equal(client.unknown, undefined);
   assert.deepEqual(await client.ping(), { keys: [] });
   assert.deepEqual(await client.echo({ value: 7 }), { value: 7 });
+});
+
+test('native desktop edge exposes the complete account synchronization surface', () => {
+  const requiredMethods = [
+    'getAccountSync',
+    'getAccountMiniApps',
+    'getAccountBots',
+    'addBotToAccount',
+    'removeBotFromAccount',
+    'addMiniAppToAccount',
+    'removeMiniAppFromAccount',
+    'routeMiniAppInput',
+    'getMiniAppBotMessages',
+    'appendMiniAppBotMessages',
+    'getMiniAppCloudStorage',
+    'setMiniAppCloudStorage',
+    'deleteMiniAppCloudStorage',
+    'reconcileAccountMiniApps',
+  ];
+  for (const method of requiredMethods) {
+    assert.ok(NATIVE_EDGE.methods[method], `native edge is missing account sync method ${method}`);
+  }
+});
+
+test('deterministic test account platform survives host restart for Mini App, Bot, history and CloudStorage', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fabushi-test-platform-account-'));
+  const app = { getPath(name) { assert.equal(name, 'userData'); return root; } };
+  try {
+    let now = 1_000;
+    const first = createTestPlatformAccount({ app, fs, now: () => ++now });
+    const added = first.request({ method: 'POST', path: '/v1/marketplace/plugins/global-dharma/add', body: { platform: 'desktop' } });
+    assert.equal(added.ok, true);
+    assert.equal(added.data.bot.id, 'global-dharma-bot');
+    first.request({
+      method: 'POST',
+      path: '/api/miniapps/global-dharma/messages',
+      body: { messages: [{ messageId: 'm1', role: 'user', text: 'persist me', createdAt: '2026-08-27T00:00:00.000Z' }] },
+    });
+    first.request({ method: 'PUT', path: '/v1/miniapps/global-dharma/cloud-storage', body: { values: { probe: 'survives' } } });
+
+    const restarted = createTestPlatformAccount({ app, fs, now: () => ++now });
+    const apps = restarted.request({ method: 'GET', path: '/v1/marketplace/added' });
+    assert.deepEqual(apps.data.apps.map((item) => item.id), ['global-dharma']);
+    const bots = restarted.request({ method: 'GET', path: '/v1/account/bots' });
+    assert.equal(bots.data.bots[0].bot.id, 'global-dharma-bot');
+    const history = restarted.request({ method: 'GET', path: '/api/miniapps/global-dharma/messages', query: { limit: 100 } });
+    assert.equal(history.data.messages[0].text, 'persist me');
+    const cloud = restarted.request({ method: 'GET', path: '/v1/miniapps/global-dharma/cloud-storage', query: { key: 'probe' } });
+    assert.equal(cloud.data.value, 'survives');
+    const sync = restarted.request({ method: 'GET', path: '/v1/account/sync' });
+    assert.equal(sync.data.mode, 'snapshot');
+    assert.equal(sync.data.snapshot.miniApps[0].id, 'global-dharma');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('main edge fails closed for untrusted senders and missing handlers', async () => {
