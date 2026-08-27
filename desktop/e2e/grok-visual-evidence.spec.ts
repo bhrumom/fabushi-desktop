@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type Page } from '@playwright/test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,8 +8,16 @@ const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
 
 async function launchDesktopApp(appDataDir: string) {
+  const videoDir = path.join(
+    appRoot,
+    'test-results',
+    'visual-evidence-video',
+    `${process.platform}-${process.pid}-${Date.now()}`,
+  );
+  await mkdir(videoDir, { recursive: true });
   return electron.launch({
     ...(packagedExecutable ? { executablePath: packagedExecutable, args: [] } : { args: [appRoot] }),
+    recordVideo: { dir: videoDir },
     env: {
       ...process.env,
       FABUSHI_APP_DATA: appDataDir,
@@ -44,8 +52,14 @@ async function attachScreenshot(page: Page, name: string): Promise<void> {
   // separately by grok-motion-parity.spec.ts; screenshots freeze CSS animations so
   // Xvfb/Chromium never captures an arbitrary transition frame or waits forever on
   // continuously animated BotMark aura layers.
+  const screenshotPath = test.info().outputPath(`${name}.png`);
+  await page.screenshot({
+    path: screenshotPath,
+    animations: 'disabled',
+    fullPage: false,
+  });
   await test.info().attach(name, {
-    body: await page.screenshot({ animations: 'disabled', fullPage: false }),
+    path: screenshotPath,
     contentType: 'image/png',
   });
 }
