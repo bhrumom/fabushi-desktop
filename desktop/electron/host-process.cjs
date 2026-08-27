@@ -5,7 +5,6 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const readline = require('node:readline');
-const { createTestAuthSession } = require('./test-auth-session.cjs');
 const { createTestPlatformAccount } = require('./test-platform-account.cjs');
 
 const PRODUCTION_PRODUCT_API_BASE_URL = 'https://api.ombhrum.com';
@@ -56,9 +55,6 @@ class MahayanaHostProcess {
     this.now = options.now ?? Date.now;
     this.fs = options.fs ?? fs;
     this.providerEnvironment = options.providerEnvironment ?? (() => ({}));
-    this.testAuthSession = this.env.FABUSHI_FEATURE_HOST_MODE === 'test'
-      ? createTestAuthSession({ app: this.app, fs: this.fs, now: this.now })
-      : null;
     this.testPlatformAccount = this.env.FABUSHI_FEATURE_HOST_MODE === 'test'
       ? createTestPlatformAccount({ app: this.app, fs: this.fs, now: this.now })
       : null;
@@ -232,10 +228,6 @@ class MahayanaHostProcess {
   }
 
   request(method, params = {}, timeoutMs = 120000) {
-    if (this.testAuthSession) {
-      const result = this.testAuthSession.request(method, params);
-      if (result !== null) return Promise.resolve(result);
-    }
     if (method === 'platform.request' && this.testPlatformAccount) {
       const result = this.testPlatformAccount.request(params);
       if (result) return Promise.resolve(result);

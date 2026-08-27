@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type Page } from '@playwright/test';
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { access, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,16 +8,8 @@ const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
 
 async function launchDesktopApp(appDataDir: string) {
-  const videoDir = path.join(
-    appRoot,
-    'test-results',
-    'visual-evidence-video',
-    `${process.platform}-${process.pid}-${Date.now()}`,
-  );
-  await mkdir(videoDir, { recursive: true });
   return electron.launch({
     ...(packagedExecutable ? { executablePath: packagedExecutable, args: [] } : { args: [appRoot] }),
-    recordVideo: { dir: videoDir },
     env: {
       ...process.env,
       FABUSHI_APP_DATA: appDataDir,
@@ -28,7 +20,10 @@ async function launchDesktopApp(appDataDir: string) {
 }
 
 async function completeBrowserLogin(page: Page): Promise<void> {
-  await page.waitForLoadState('domcontentloaded');
+  // Electron's app:// renderer can already be interactive before Playwright observes a
+  // browser-style DOMContentLoaded transition. Product readiness is therefore defined
+  // by the actual visible gates, not by a navigation event that packaged Electron does
+  // not need to emit again.
   await expect.poll(async () => {
     for (const testId of ['onboarding-gate', 'login-gate', 'messenger-workspace']) {
       if (await page.getByTestId(testId).isVisible().catch(() => false)) return true;
@@ -50,8 +45,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
 async function attachScreenshot(page: Page, name: string): Promise<void> {
   // Visual evidence is intentionally deterministic. Motion behavior is verified
   // separately by grok-motion-parity.spec.ts; screenshots freeze CSS animations so
-  // Xvfb/Chromium never captures an arbitrary transition frame or waits forever on
-  // continuously animated BotMark aura layers.
+  // Xvfb/Chromium never captures an arbitrary transition frame.
   const screenshotPath = test.info().outputPath(`${name}.png`);
   await page.screenshot({
     path: screenshotPath,
@@ -67,10 +61,16 @@ async function attachScreenshot(page: Page, name: string): Promise<void> {
 test('capture Grok parity packaged visual evidence', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-grok-visual-'));
   const app = await launchDesktopApp(appDataDir);
+  let page: Page | null = null;
+  let videoPath: string | null = null;
+  let screencastStarted = false;
 
   try {
-    const page = await app.firstWindow();
+    page = await app.firstWindow();
     await page.setViewportSize({ width: 1440, height: 900 });
+    videoPath = test.info().outputPath('grok-parity-user-journey.webm');
+    await page.screencast.start({ path: videoPath, size: { width: 1280, height: 800 } });
+    screencastStarted = true;
     await completeBrowserLogin(page);
 
     await expect(page.locator('body')).toHaveAttribute('data-fabushi-surface', 'grok-parity-v1');
@@ -100,6 +100,21 @@ test('capture Grok parity packaged visual evidence', async () => {
     await expect(page.getByText('收到：Grok parity visual evidence')).toBeVisible();
     await attachScreenshot(page, 'grok-parity-conversation-1440x900');
   } finally {
+    if (page && screencastStarted) {
+      await page.screencast.stop().catch(() => {});
+      if (videoPath) {
+        try {
+          await access(videoPath);
+          await test.info().attach('grok-parity-user-journey-video', {
+            path: videoPath,
+            contentType: 'video/webm',
+          });
+        } catch {
+          // The missing artifact will be visible in the uploaded diagnostics and is a
+          // test-evidence failure to investigate, not a reason to hide product failures.
+        }
+      }
+    }
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });
   }
