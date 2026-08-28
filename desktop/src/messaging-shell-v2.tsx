@@ -103,6 +103,11 @@ import {
   deleteMiniAppCloudStorage,
   type AccountBotMembership,
 } from './account-sync-client';
+import {
+  SidebarContactGroupManager,
+  projectSidebarContactGroups,
+  useSidebarContactGroups,
+} from './sidebar-contact-groups';
 
 type MessengerSection =
   | 'chats'
@@ -730,6 +735,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [mutedPeerKeys, setMutedPeerKeys] = useState<Set<string>>(() => new Set());
   const [pinnedPeerKeys, setPinnedPeerKeys] = useState<Set<string>>(() => new Set());
   const [archivedPeerKeys, setArchivedPeerKeys] = useState<Set<string>>(() => new Set());
+  const contactGroups = useSidebarContactGroups();
   const activePeerKeyRef = useRef<string | null>(null);
   const messagingCursorRef = useRef<string | null>(startupProjection?.cursor ?? null);
   const accountSyncCursorRef = useRef<string | null>(readAccountSyncCursor());
@@ -1579,8 +1585,28 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const infoPanelDocked = Boolean(infoPanelVisible && wideInfoLayout);
   const currentActor = selfActors.find((actor) => actor.id === selfHosted.actorId);
   const renderedPeers = visiblePeers.slice(0, peerRenderCount);
+  const renderedContactGroups = ['chats', 'contacts'].includes(section) && contactGroups.groups.length
+    ? projectSidebarContactGroups(renderedPeers, contactGroups.groups, Boolean(search.trim()))
+    : [];
   const matchingMessages = messages;
   const renderedMessages = matchingMessages.slice(Math.max(0, matchingMessages.length - messageRenderCount));
+
+  function renderPeerRow(peer: PeerItem) {
+    return <button data-testid={`peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
+      <BotMark
+        botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`}
+        state={isAgentPeer(peer) ? botMarkStateForPeer(peer, selfBotExecutions, peer.key === activePeerKey && pendingSend, hostReady) : peer.unread ? 'notifying' : 'idle'}
+        size={48}
+        className={styles.agentAvatarMark}
+        label={peer.title}
+      />
+      <span className={styles.peerCopy}>
+        <span><strong>{peer.title}</strong><time>{formatTime(peer.updatedAtMs)}</time></span>
+        <small>{desktopPreferences.messagePreview ? peer.subtitle : peer.unread ? '有新消息' : '消息预览已关闭'}</small>
+      </span>
+      <span className={styles.peerMeta}>{peer.pinned ? <Pin size={12} /> : null}{mutedPeerKeys.has(peer.key) ? <BellOff size={12} /> : null}{peer.unread ? <b>{peer.unread}</b> : null}</span>
+    </button>;
+  }
 
   useEffect(() => {
     setPeerRenderCount(initialPeerRenderCount);
@@ -2542,6 +2568,7 @@ async function saveInvoiceDialog() {
             {createMenuOpen ? <div className={styles.createMenu} onClick={(event) => event.stopPropagation()}>
               <button type="button" onClick={() => { setCreateMenuOpen(false); setNewDialog({ type: 'group', name: '', selectedBotIds: new Set() }); }}><Users size={16} /><span>新建群组</span></button>
               <button type="button" onClick={() => { setCreateMenuOpen(false); setNewDialog({ type: 'channel', name: '', description: '' }); }}><Radio size={16} /><span>新建频道</span></button>
+              {['chats', 'contacts'].includes(section) ? <button type="button" data-testid="open-contact-groups" onClick={() => { setCreateMenuOpen(false); contactGroups.openManager(); }}><Folder size={16} /><span>联系人分组</span></button> : null}
             </div> : null}
           </div>
         </header>
@@ -2589,22 +2616,21 @@ async function saveInvoiceDialog() {
           />
         ) : sectionIsPeerList ? (
           <div className={styles.peerList}>
-            {renderedPeers.map((peer) => (
-              <button data-testid={`peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
-                <BotMark
-                  botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`}
-                  state={isAgentPeer(peer) ? botMarkStateForPeer(peer, selfBotExecutions, peer.key === activePeerKey && pendingSend, hostReady) : peer.unread ? 'notifying' : 'idle'}
-                  size={48}
-                  className={styles.agentAvatarMark}
-                  label={peer.title}
-                />
-                <span className={styles.peerCopy}>
-                  <span><strong>{peer.title}</strong><time>{formatTime(peer.updatedAtMs)}</time></span>
-                  <small>{desktopPreferences.messagePreview ? peer.subtitle : peer.unread ? '有新消息' : '消息预览已关闭'}</small>
-                </span>
-                <span className={styles.peerMeta}>{peer.pinned ? <Pin size={12} /> : null}{mutedPeerKeys.has(peer.key) ? <BellOff size={12} /> : null}{peer.unread ? <b>{peer.unread}</b> : null}</span>
-              </button>
-            ))}
+            {renderedContactGroups.length ? renderedContactGroups.map((group) => (
+              <section className="fabushi-contact-group" data-testid={`contact-group-${group.id}`} key={group.id}>
+                <button
+                  type="button"
+                  className="fabushi-contact-group__header"
+                  data-collapsed={group.isCollapsed}
+                  data-synthetic={group.isSynthetic}
+                  aria-expanded={!group.isCollapsed}
+                  onClick={() => { if (!group.isSynthetic) contactGroups.toggleCollapsed(group.id); }}
+                >
+                  <span>›</span><strong>{group.name}</strong><em>{group.peers.length}</em>
+                </button>
+                {!group.isCollapsed ? group.peers.map(renderPeerRow) : null}
+              </section>
+            )) : renderedPeers.map(renderPeerRow)}
             {visiblePeers.length > renderedPeers.length ? <button type="button" data-testid="peer-list-load-more" onClick={() => setPeerRenderCount((count) => count + initialPeerRenderCount)}>显示更多会话</button> : null}
             {!visiblePeers.length ? <EmptyList section={section} /> : null}
           </div>
@@ -2775,6 +2801,15 @@ async function saveInvoiceDialog() {
         </aside>
       ) : null}
 
+      {contactGroups.managerOpen ? <SidebarContactGroupManager
+        peers={peers.filter((peer) => !peer.archived && (peer.kind === 'conversation' || peer.kind === 'bot')).map((peer) => ({ key: peer.key, title: peer.title, subtitle: peer.subtitle, pinned: peer.pinned }))}
+        groups={contactGroups.groups}
+        onCreate={contactGroups.create}
+        onUpdate={contactGroups.update}
+        onRemove={contactGroups.remove}
+        onMove={contactGroups.move}
+        onClose={contactGroups.closeManager}
+      /> : null}
       {messageMenu ? <MessageContextMenu menu={messageMenu} onAction={(action) => void handleMessageAction(action)} /> : null}
       {forwardDialog ? <ForwardMessageDialog message={forwardDialog.message} peers={peers.filter((peer) => peer.source === 'selfhosted' && Boolean(peer.conversationId) && peer.conversationId !== forwardDialog.sourceConversationId)} onClose={() => setForwardDialog(null)} onSelect={(peer) => void forwardToPeer(peer)} /> : null}
       {editDialog ? <EditMessageDialog value={editDialog.text} onChange={(text) => setEditDialog((current) => current ? { ...current, text } : current)} onClose={() => setEditDialog(null)} onSave={() => void saveEditedMessage()} /> : null}

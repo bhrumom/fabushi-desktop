@@ -15,6 +15,7 @@ import './messenger-layout-regressions.css';
 import './grok-agent-ui-parity.css';
 import './mahayana-agent-transcript-semantics.css';
 import './credential-vault.css';
+import './sidebar-contact-groups.css';
 
 const root = document.querySelector<HTMLDivElement>('#root');
 if (!root) {
