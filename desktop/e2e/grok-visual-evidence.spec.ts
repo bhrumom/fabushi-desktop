@@ -20,26 +20,46 @@ async function launchDesktopApp(appDataDir: string) {
 }
 
 async function completeBrowserLogin(page: Page): Promise<void> {
-  // Electron's app:// renderer can already be interactive before Playwright observes a
-  // browser-style DOMContentLoaded transition. Product readiness is therefore defined
-  // by the actual visible gates, not by a navigation event that packaged Electron does
-  // not need to emit again.
-  await expect.poll(async () => {
-    for (const testId of ['onboarding-gate', 'login-gate', 'messenger-workspace']) {
-      if (await page.getByTestId(testId).isVisible().catch(() => false)) return true;
-    }
-    return false;
-  }, { timeout: 15_000 }).toBe(true);
-
-  while (await page.getByTestId('onboarding-gate').isVisible().catch(() => false)) {
-    await page.getByTestId('onboarding-next').click();
-  }
+  const onboardingGate = page.getByTestId('onboarding-gate');
   const loginGate = page.getByTestId('login-gate');
-  if (await loginGate.isVisible().catch(() => false)) {
-    await page.getByTestId('browser-login-start').click();
-    await expect(loginGate).toBeHidden();
+  const workspace = page.getByTestId('messenger-workspace');
+  type LoginPhase = 'onboarding' | 'login' | 'ready' | 'waiting';
+
+  // Read the auth surface in one renderer evaluation. During the HostClient ->
+  // Messenger transition individual locator probes can straddle a destroyed
+  // execution context and wait on navigation even though auth already finished.
+  const readPhase = async (): Promise<LoginPhase> => {
+    try {
+      return await page.evaluate(() => {
+        if (document.querySelector('[data-testid="onboarding-gate"]')) return 'onboarding';
+        if (document.querySelector('[data-testid="login-gate"]')) return 'login';
+        const messenger = document.querySelector('[data-testid="messenger-workspace"]');
+        if (messenger?.getAttribute('data-initial-host-hydrated') === 'true') return 'ready';
+        return 'waiting';
+      }) as LoginPhase;
+    } catch {
+      return 'waiting';
+    }
+  };
+
+  for (let phase = 0; phase < 12; phase += 1) {
+    await expect.poll(readPhase, { timeout: 15_000 }).not.toBe('waiting');
+    const currentPhase = await readPhase();
+
+    if (currentPhase === 'onboarding') {
+      await page.getByTestId('onboarding-next').click();
+      continue;
+    }
+    if (currentPhase === 'login') {
+      await page.getByTestId('browser-login-start').click();
+      await expect(loginGate).toBeHidden();
+      continue;
+    }
+    if (currentPhase === 'ready') break;
   }
-  await expect(page.getByTestId('messenger-workspace')).toBeVisible({ timeout: 15_000 });
+
+  await expect(workspace).toHaveAttribute('data-initial-host-hydrated', 'true', { timeout: 15_000 });
+  await expect(workspace).toBeVisible();
 }
 
 async function attachScreenshot(page: Page, name: string): Promise<void> {

@@ -220,11 +220,36 @@
 .profileCard > strong { margin-top:5px; font-size:17px; }
 .profileCard > small { color:#7b8994; }
 .profileCard > div { width:100%; display:grid; grid-template-columns:repeat(3,1fr); gap:5px; margin-top:13px; }
+.profileCard > .profileQuickActions[data-columns="4"] { grid-template-columns:repeat(4,1fr); }
 .profileCard > div button { border:0; background:#f4f7f9; border-radius:10px; padding:8px 3px; display:grid; justify-items:center; gap:4px; color:#268fcf; cursor:pointer; }
+.profileCard > div button[data-active="true"] { color:#fff; background:#268fcf; }
 .profileCard > div span { font-size:10px; }
 .profileActions { display:grid; padding:6px 0; border-bottom:1px solid #edf0f2; }
 .profileActions button { min-height:40px; padding:0 14px; border:0; background:transparent; display:flex; align-items:center; gap:10px; color:#364653; cursor:pointer; }
 .profileActions button:hover { background:#f4f7f9; }
+.computerProfile { display:grid; gap:10px; padding:13px 14px; border-bottom:1px solid #edf0f2; background:#f8fafb; }
+.computerProfile > header { display:flex; align-items:center; gap:9px; }
+.computerProfile > header > span:nth-child(2) { min-width:0; display:grid; flex:1; gap:2px; }
+.computerProfile > header strong { font-size:13px; }
+.computerProfile > header small { color:#7b8994; font-size:10px; }
+.computerProfile > header > i { width:9px; height:9px; border-radius:50%; background:#aeb8bf; box-shadow:0 0 0 3px rgba(174,184,191,.18); }
+.computerProfile > header > i[data-live="online"] { background:#29ad67; box-shadow:0 0 0 3px rgba(41,173,103,.16); }
+.computerProfile > header > i[data-live="active"] { background:#268fcf; box-shadow:0 0 0 3px rgba(38,143,207,.18); }
+.computerProfileIcon { width:34px; height:34px; display:grid; place-items:center; flex:none; border-radius:10px; color:#268fcf; background:#e7f3fb; }
+.computerProfileStatus { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
+.computerProfileStatus > span { min-width:0; display:grid; gap:3px; padding:7px; border-radius:8px; background:#fff; }
+.computerProfileStatus small { color:#84919a; font-size:9px; }
+.computerProfileStatus strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; }
+.computerProfile > p { margin:0; color:#6f7e89; font-size:10px; line-height:1.5; }
+.computerPairingCode { display:flex; align-items:center; gap:8px; padding:8px 9px; border:1px solid #dfe9ef; border-radius:9px; background:#fff; }
+.computerPairingCode > span { min-width:0; display:grid; flex:1; gap:2px; }
+.computerPairingCode small { color:#7e8c96; font-size:9px; }
+.computerPairingCode strong { color:#268fcf; font-size:15px; letter-spacing:.12em; }
+.computerPairingCode button, .computerProfileButtons button, .computerDangerButton { border:0; border-radius:8px; padding:7px 9px; color:#268fcf; background:#e8f4fb; cursor:pointer; font:inherit; font-size:10px; }
+.computerProfileButtons { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.computerProfileButtons button[data-enabled="true"] { color:#a44e43; background:#fff0ee; }
+.computerDangerButton { width:100%; color:#a44e43; background:#fff0ee; }
+.computerProfileError { padding:7px 8px; border-radius:7px; color:#9d571c; background:#fff4e8; font-size:9px; line-height:1.4; word-break:break-word; }
 .infoTabs { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid #edf0f2; }
 .infoTabs button { height:40px; border:0; background:transparent; color:#788894; cursor:pointer; border-bottom:2px solid transparent; }
 .infoTabs button[data-active="true"] { color:#258ed0; border-bottom-color:#258ed0; }
@@ -509,6 +534,35 @@
 .fabushiUnified .profileActions button:hover {
   background: rgba(139, 92, 246, .09);
 }
+
+.fabushiUnified .profileCard > div button[data-active="true"] {
+  color: #fff;
+  background: rgba(139, 92, 246, .82);
+}
+
+.fabushiUnified .computerProfile {
+  border-color: var(--fabushi-line);
+  background: rgba(17, 16, 25, .66);
+}
+
+.fabushiUnified .computerProfileIcon {
+  color: #c5b5ff;
+  background: rgba(139, 92, 246, .16);
+}
+
+.fabushiUnified .computerProfileStatus > span,
+.fabushiUnified .computerPairingCode {
+  border-color: var(--fabushi-line);
+  background: rgba(255,255,255,.045);
+}
+
+.fabushiUnified .computerProfile > header strong,
+.fabushiUnified .computerProfileStatus strong { color:#ece9f2; }
+.fabushiUnified .computerPairingCode strong { color:#c5b5ff; }
+.fabushiUnified .computerProfile > p,
+.fabushiUnified .computerProfile > header small,
+.fabushiUnified .computerProfileStatus small,
+.fabushiUnified .computerPairingCode small { color:#918e9f; }
 
 .fabushiUnified .infoTabs button {
   color: #908d9e;

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, net, nativeTheme, Notification, protocol, safeStorage, shell, session } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, nativeTheme, Notification, protocol, safeStorage, shell, session, Tray } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const fs = require('node:fs/promises');
 const fsSync = require('node:fs');
@@ -82,6 +82,10 @@ const DESKTOP_UPDATE_FOREGROUND_INTERVAL_MS = 5 * 60_000;
 let lastAutomaticDesktopUpdateCheckAt = 0;
 let automaticDesktopUpdateCheckTimer = null;
 let automaticDesktopUpdateCheckPromise = null;
+let mainWindow = null;
+let backgroundTray = null;
+let quitting = false;
+const backgroundPersistenceEnabled = process.env.FABUSHI_E2E !== '1';
 
 function normalizeMessagingAccessParams(params) {
   const deviceId = String(params?.deviceId || 'desktop:electron').trim();
@@ -161,11 +165,18 @@ const DEEP_LINK_DEDUPE_MS = 5_000;
 
 function focusMainWindow() {
   if (!app.isReady()) return;
-  const win = BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
-  if (!win) return;
+  let win = mainWindow && !mainWindow.isDestroyed()
+    ? mainWindow
+    : BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
+  if (!win) win = createWindow();
   if (win.isMinimized()) win.restore();
   win.show();
   win.focus();
+}
+
+function requestApplicationQuit() {
+  quitting = true;
+  app.quit();
 }
 
 function parseFabushiDeepLink(candidate) {
@@ -267,11 +278,12 @@ if (!primaryInstance) app.quit();
 
 if (primaryInstance) {
   app.on('second-instance', (_event, argv) => {
-    if (!argv.some((value) => typeof value === 'string' && value.toLowerCase().startsWith(DEEP_LINK_PROTOCOL))) focusMainWindow();
+    focusMainWindow();
     deepLinkRouter.handleArgv(argv, 'second-instance');
   });
   app.on('open-url', (event, url) => {
     event.preventDefault();
+    focusMainWindow();
     deepLinkRouter.handle(url, 'open-url');
   });
   deepLinkRouter.handleArgv(process.argv, 'initial-argv');
@@ -855,6 +867,7 @@ function installIpcHandlers() {
 }
 
 function createWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) return mainWindow;
   const win = new BrowserWindow({
     title: '全球法布施',
     width: 1180,
@@ -869,8 +882,12 @@ function createWindow() {
       sandbox: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
+      // Remote presence, WebRTC signaling, and semantic computer-use polling
+      // must continue when the user closes (hides) the desktop window.
+      backgroundThrottling: false,
     },
   });
+  mainWindow = win;
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     try { void shell.openExternal(safeHttpsUrl(url)); } catch {}
@@ -883,6 +900,16 @@ function createWindow() {
   for (const eventName of ['focus', 'blur', 'minimize', 'restore', 'maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen']) {
     win.on(eventName, publishWindowState);
   }
+  win.on('close', (event) => {
+    if (quitting || !backgroundPersistenceEnabled) return;
+    event.preventDefault();
+    win.hide();
+    publishWindowState();
+  });
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null;
+    deepLinkRouter.markNotReady();
+  });
   win.webContents.on('zoom-changed', () => {
     broadcastNativeEvent('zoom-factor-changed', { factor: win.webContents.getZoomFactor() });
   });
@@ -900,6 +927,47 @@ function createWindow() {
     void win.loadURL(process.env.VITE_DEV_SERVER_URL);
   } else {
     void win.loadURL('app://bundle/index.html');
+  }
+  return win;
+}
+
+function installBackgroundTray() {
+  if (!backgroundPersistenceEnabled || backgroundTray) return;
+  const iconPath = path.resolve(__dirname, '..', 'resources', 'icon.png');
+  let image = nativeImage.createFromPath(iconPath);
+  if (image.isEmpty()) {
+    // Packaged builds may not carry the builder source icon inside app.asar.
+    // Keep a dependency-free embedded fallback so tray persistence works on
+    // every target even when only dist/** and electron/** are packaged.
+    const fallbackSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="9" fill="#8b5cf6"/><path d="M9 11h14v9H9zm4 11h6v2h-6z" fill="white"/></svg>';
+    image = nativeImage.createFromDataURL(`data:image/svg+xml;base64,${Buffer.from(fallbackSvg).toString('base64')}`);
+  }
+  if (process.platform === 'darwin' && !image.isEmpty()) {
+    image = image.resize({ width: 18, height: 18 });
+    image.setTemplateImage(true);
+  }
+  if (image.isEmpty()) {
+    console.warn('[desktop] background tray icon could not be created; continuing without a tray');
+    return;
+  }
+  try {
+    const tray = new Tray(image);
+    tray.setToolTip('Fabushi · 电脑连接在后台运行');
+    tray.setContextMenu(Menu.buildFromTemplate([
+      { label: '显示 Fabushi', click: focusMainWindow },
+      { label: '电脑连接在后台运行', enabled: false },
+      { type: 'separator' },
+      { label: '退出 Fabushi', click: requestApplicationQuit },
+    ]));
+    tray.on('click', focusMainWindow);
+    tray.on('double-click', focusMainWindow);
+    backgroundTray = tray;
+  } catch (cause) {
+    // Some minimal Linux desktop sessions do not provide a status notifier or
+    // system tray. Presence must remain available rather than crashing the Host;
+    // relaunching the single-instance app still restores the hidden window.
+    backgroundTray = null;
+    console.warn('[desktop] background tray is unavailable; continuing in background mode', cause);
   }
 }
 
@@ -995,6 +1063,10 @@ function installApplicationMenu() {
         { type: 'separator' },
         { label: '发送反馈', click: () => send('open-feedback') },
         { label: '关于', click: () => send('open-about') },
+        ...(process.platform === 'darwin' ? [] : [
+          { type: 'separator' },
+          { label: '退出 Fabushi', accelerator: 'CmdOrCtrl+Q', click: requestApplicationQuit },
+        ]),
       ],
     },
     {
@@ -1127,17 +1199,25 @@ app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   installIpcHandlers();
   host.start();
+  installBackgroundTray();
   createWindow();
   startHostEventPump();
   installAutomaticDesktopUpdateChecks();
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    focusMainWindow();
     void checkForDesktopUpdateAutomatically();
   });
 });
 
-app.on('window-all-closed', () => { deepLinkRouter.markNotReady(); if (process.platform !== 'darwin') app.quit(); });
+app.on('window-all-closed', () => {
+  deepLinkRouter.markNotReady();
+  // Production keeps the Host and account-bound computer presence alive after
+  // the window is hidden. Automated user journeys opt into a deterministic
+  // shutdown seam so Playwright can close each isolated application cleanly.
+  if (!backgroundPersistenceEnabled) app.quit();
+});
 app.on('before-quit', () => {
+  quitting = true;
   if (automaticDesktopUpdateCheckTimer) clearInterval(automaticDesktopUpdateCheckTimer);
   automaticDesktopUpdateCheckTimer = null;
   hostEventPumpStopped = true;
@@ -1148,5 +1228,7 @@ app.on('before-quit', () => {
   messagingSignalingClient?.disconnect('app_quit');
   messagingSignalingClient = null;
   messagingAccessCache.clear();
+  backgroundTray?.destroy();
+  backgroundTray = null;
   host.close();
 });

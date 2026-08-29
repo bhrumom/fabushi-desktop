@@ -1,6 +1,6 @@
 {
   "name": "@fabushi/desktop",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Fabushi Electron desktop client",
   "homepage": "https://fabushi.ombhrum.com/",
   "author": "bhrumom",
@@ -58,6 +58,13 @@
       {
         "from": "resources/asr",
         "to": "asr",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/computer-control",
+        "to": "computer-control",
         "filter": [
           "**/*"
         ]

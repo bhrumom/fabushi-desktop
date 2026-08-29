@@ -12,16 +12,150 @@ const DEVELOPMENT_PRODUCT_API_BASE_URL = 'https://mahayana-platform.bhrumom.work
 const INFERENCE_PROVIDERS = new Set(['fabushi', 'codex', 'claude-code', 'openrouter']);
 const SANDBOX_RUNTIMES = new Set(['host', 'local-docker']);
 const DEFAULT_DOCKER_IMAGE = 'mcr.microsoft.com/devcontainers/base:ubuntu24.04@sha256:c5cc2b45afe06a1df3aba17e58ba0dc4a02b999493198dab37dd0ccd4e2b0705';
+const PACKAGED_COMPUTER_RUNTIME_ID = /^v1-[a-f0-9]{20}$/;
+
+function safeExistsSync(fsImpl, candidate) {
+  const implementation = typeof fsImpl?.existsSync === 'function' ? fsImpl : fs;
+  try { return implementation.existsSync(candidate); } catch { return false; }
+}
+
+function safeIsFileSync(fsImpl, candidate) {
+  const implementation = typeof fsImpl?.statSync === 'function' ? fsImpl : fs;
+  try { return implementation.statSync(candidate).isFile(); } catch { return false; }
+}
+
+function completeComputerRuntime(root, fsImpl = fs, expectedRuntimeId = path.basename(root)) {
+  if (!PACKAGED_COMPUTER_RUNTIME_ID.test(expectedRuntimeId) || path.basename(root) !== expectedRuntimeId) return null;
+  const implementation = typeof fsImpl?.readFileSync === 'function' ? fsImpl : fs;
+  let manifest;
+  try {
+    manifest = JSON.parse(implementation.readFileSync(path.join(root, 'runtime-manifest.json'), 'utf8'));
+  } catch {
+    return null;
+  }
+  if (manifest?.layoutVersion !== 1
+    || manifest?.runtimeId !== expectedRuntimeId
+    || !/^[a-f0-9]{64}$/.test(String(manifest?.sourceHash || ''))
+    || expectedRuntimeId !== `v1-${manifest.sourceHash.slice(0, 20)}`) return null;
+
+  const mcpEntry = path.join(root, 'bin', 'fabushi-computer-mcp.js');
+  const required = [
+    mcpEntry,
+    path.join(root, 'lib', 'fabushi-computer-policy.js'),
+    path.join(root, 'node_modules', '@modelcontextprotocol', 'sdk', 'package.json'),
+    path.join(root, 'node_modules', 'ws', 'package.json'),
+    path.join(root, 'node_modules', 'zod', 'package.json'),
+  ];
+  return required.every((candidate) => safeIsFileSync(fsImpl, candidate)) ? { root, mcpEntry } : null;
+}
+
+function developmentComputerRuntime(root, fsImpl = fs) {
+  const mcpEntry = path.join(root, 'bin', 'fabushi-computer-mcp.js');
+  const required = [
+    mcpEntry,
+    path.join(root, 'lib', 'fabushi-computer-policy.js'),
+    path.join(root, 'node_modules', '@modelcontextprotocol', 'sdk', 'package.json'),
+    path.join(root, 'node_modules', 'ws', 'package.json'),
+    path.join(root, 'node_modules', 'zod', 'package.json'),
+  ];
+  return required.every((candidate) => safeIsFileSync(fsImpl, candidate)) ? { root, mcpEntry } : null;
+}
+
+function firstCompleteComputerRuntime(runtimeBase, fsImpl = fs) {
+  const implementation = typeof fsImpl?.readFileSync === 'function' ? fsImpl : fs;
+  const pointerPath = path.join(path.dirname(runtimeBase), 'active-runtime.json');
+  try {
+    const pointer = JSON.parse(implementation.readFileSync(pointerPath, 'utf8'));
+    const runtimeId = String(pointer?.runtimeId || '');
+    if (!PACKAGED_COMPUTER_RUNTIME_ID.test(runtimeId)) return null;
+    // A present pointer is authoritative. Do not silently select another
+    // directory when it is malformed, stale, or incomplete.
+    return completeComputerRuntime(path.join(runtimeBase, runtimeId), fsImpl, runtimeId);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') return null;
+    // Older packages did not carry an active pointer; validate fallback roots.
+  }
+
+  let entries;
+  try {
+    const directoryImplementation = typeof fsImpl?.readdirSync === 'function' ? fsImpl : fs;
+    entries = directoryImplementation.readdirSync(runtimeBase, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+  for (const entry of entries
+    .filter((item) => item.isDirectory() && PACKAGED_COMPUTER_RUNTIME_ID.test(item.name))
+    .sort((left, right) => right.name.localeCompare(left.name))) {
+    const runtime = completeComputerRuntime(path.join(runtimeBase, entry.name), fsImpl, entry.name);
+    if (runtime) return runtime;
+  }
+  return null;
+}
+
+function embeddedComputerControlEnvironment({ app: appImpl = app, env = process.env, platform = process.platform, resourcesPath = process.resourcesPath, fs: fsImpl = fs, execPath = process.execPath } = {}) {
+  const explicitEntry = String(env.FABUSHI_COMPUTER_MCP_ENTRY || '').trim();
+  const explicitCommand = String(env.FABUSHI_COMPUTER_MCP_COMMAND || '').trim();
+  let runtime;
+  let bundleHome;
+  if (appImpl.isPackaged) {
+    // A production package always uses its signed resources. Environment
+    // overrides remain development-only and cannot replace the bundled MCP.
+    bundleHome = path.join(resourcesPath, 'computer-control');
+    runtime = firstCompleteComputerRuntime(path.join(bundleHome, 'runtime'), fsImpl);
+  } else if (explicitEntry) {
+    const entry = path.resolve(explicitEntry);
+    runtime = safeIsFileSync(fsImpl, entry) ? { root: path.dirname(path.dirname(entry)), mcpEntry: entry } : null;
+    bundleHome = String(env.FABUSHI_COMPUTER_BUNDLE_HOME || '').trim() || null;
+  } else {
+    const root = path.resolve(__dirname, '..', '..', 'chatgpt-vps-control');
+    runtime = developmentComputerRuntime(root, fsImpl);
+    bundleHome = root;
+  }
+  if (!runtime) return {};
+
+  const computerHome = path.join(appImpl.getPath('userData'), 'computer-control');
+  const policyFile = path.join(appImpl.getPath('userData'), 'feature-host', 'runtime', 'settings.json');
+  const developmentCommand = explicitCommand || execPath;
+  const result = {
+    MAHAYANA_COMPUTER_MCP_COMMAND: appImpl.isPackaged ? execPath : developmentCommand,
+    MAHAYANA_COMPUTER_MCP_ENTRY: runtime.mcpEntry,
+    MAHAYANA_COMPUTER_MCP_CWD: runtime.root,
+    MAHAYANA_COMPUTER_MCP_HOME: computerHome,
+    MAHAYANA_COMPUTER_MCP_POLICY_FILE: policyFile,
+    // The signed Electron executable is the private Node runtime in production.
+    MAHAYANA_COMPUTER_MCP_ELECTRON_NODE: appImpl.isPackaged
+      ? '1'
+      : String(env.FABUSHI_COMPUTER_MCP_ELECTRON_NODE || (explicitCommand ? '0' : '1')),
+  };
+  const explicitHelper = String(env.FABUSHI_COMPUTER_NATIVE_HELPER || '').trim();
+  if (!appImpl.isPackaged && explicitHelper && safeIsFileSync(fsImpl, explicitHelper)) {
+    result.MAHAYANA_COMPUTER_MCP_NATIVE_HELPER = path.resolve(explicitHelper);
+  } else if (bundleHome && platform === 'darwin') {
+    const appDir = path.join(bundleHome, 'Applications', 'Fabushi Computer Control.app');
+    const helper = path.join(appDir, 'Contents', 'MacOS', 'FabushiComputerControl');
+    if (safeIsFileSync(fsImpl, helper)) {
+      result.MAHAYANA_COMPUTER_MCP_MAC_APP_DIR = appDir;
+      result.MAHAYANA_COMPUTER_MCP_NATIVE_HELPER = helper;
+    }
+  } else if (bundleHome && platform === 'win32') {
+    const helper = path.join(bundleHome, 'native', 'computer-helper.ps1');
+    if (safeIsFileSync(fsImpl, helper)) result.MAHAYANA_COMPUTER_MCP_NATIVE_HELPER = helper;
+  }
+  return result;
+}
 
 function productApiBaseUrl(appImpl = app, env = process.env) {
   const configured = env.MAHAYANA_API_BASE_URL?.trim();
-  if (configured) {
+  if (!appImpl.isPackaged && configured) {
     const parsed = new URL(configured);
     if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.search || parsed.hash) {
       throw new Error('MAHAYANA_API_BASE_URL must be a clean HTTPS origin/base URL');
     }
     return parsed.toString().replace(/\/$/, '');
   }
+  // Signed production packages always use Fabushi's official account/control
+  // plane. An inherited shell environment must not redirect credentials or
+  // remote-computer traffic to another HTTPS service.
   return appImpl.isPackaged ? PRODUCTION_PRODUCT_API_BASE_URL : DEVELOPMENT_PRODUCT_API_BASE_URL;
 }
 
@@ -31,7 +165,7 @@ function persistedInferenceProvider(appImpl = app, fsImpl = fs) {
 
 function persistedRouterSettings(appImpl = app, fsImpl = fs) {
   try {
-    const settingsPath = path.join(appImpl.getPath('userData'), 'feature-host', 'settings.json');
+    const settingsPath = path.join(appImpl.getPath('userData'), 'feature-host', 'runtime', 'settings.json');
     const parsed = JSON.parse(fsImpl.readFileSync(settingsPath, 'utf8'));
     const provider = String(parsed?.inferenceProvider ?? 'fabushi');
     const sandboxRuntime = String(parsed?.sandboxRuntime ?? 'host');
@@ -132,6 +266,13 @@ class MahayanaHostProcess {
     const generation = this.currentGeneration + 1;
     const { inferenceProvider, sandboxRuntime } = persistedRouterSettings(this.app, this.fs);
     const providerEnvironment = this.providerEnvironment(inferenceProvider) ?? {};
+    const computerEnvironment = embeddedComputerControlEnvironment({
+      app: this.app,
+      env: this.env,
+      platform: this.platform,
+      resourcesPath: this.resourcesPath,
+      fs: this.fs,
+    });
     this.activeInferenceProvider = inferenceProvider;
     this.activeSandboxRuntime = sandboxRuntime;
     this.currentGeneration = generation;
@@ -160,6 +301,7 @@ class MahayanaHostProcess {
             ? (this.env.CODEX_HOME || path.join(os.homedir(), '.codex'))
             : '',
           ...providerEnvironment,
+          ...computerEnvironment,
         },
         windowsHide: true,
       });
@@ -312,4 +454,5 @@ module.exports = {
   productApiBaseUrl,
   persistedInferenceProvider,
   persistedRouterSettings,
+  embeddedComputerControlEnvironment,
 };

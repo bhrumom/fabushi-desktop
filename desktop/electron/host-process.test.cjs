@@ -2,7 +2,10 @@
 
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
+const fs = require('node:fs');
 const Module = require('node:module');
+const os = require('node:os');
+const path = require('node:path');
 const { PassThrough } = require('node:stream');
 const test = require('node:test');
 
@@ -20,6 +23,7 @@ Module._load = function load(request, parent, isMain) {
 };
 const {
   DEVELOPMENT_PRODUCT_API_BASE_URL,
+  embeddedComputerControlEnvironment,
   MahayanaHostProcess,
   PRODUCTION_PRODUCT_API_BASE_URL,
   persistedInferenceProvider,
@@ -27,6 +31,122 @@ const {
   productApiBaseUrl,
 } = require('./host-process.cjs');
 Module._load = originalLoad;
+
+test('embedded Computer Use runtime is injected as a private stdio MCP server', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fabushi-computer-runtime-'));
+  try {
+    const entry = path.join(root, 'bin', 'fabushi-computer-mcp.js');
+    fs.mkdirSync(path.dirname(entry), { recursive: true });
+    fs.writeFileSync(entry, '#!/usr/bin/env node\n');
+    const environment = embeddedComputerControlEnvironment({
+      app: { isPackaged: false, getPath: () => path.join(root, 'user-data') },
+      env: { FABUSHI_COMPUTER_MCP_ENTRY: entry },
+      platform: 'linux',
+      resourcesPath: path.join(root, 'resources'),
+      fs,
+      execPath: '/opt/fabushi/fabushi',
+    });
+    assert.equal(environment.MAHAYANA_COMPUTER_MCP_ENTRY, entry);
+    assert.equal(environment.MAHAYANA_COMPUTER_MCP_COMMAND, '/opt/fabushi/fabushi');
+    assert.equal(environment.MAHAYANA_COMPUTER_MCP_ELECTRON_NODE, '1');
+    assert.equal(environment.MAHAYANA_COMPUTER_MCP_HOME, path.join(root, 'user-data', 'computer-control'));
+    assert.equal(environment.MAHAYANA_COMPUTER_MCP_POLICY_FILE, path.join(root, 'user-data', 'feature-host', 'runtime', 'settings.json'));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+
+function writePackagedComputerRuntime(resourcesPath, sourceHash = 'a'.repeat(64)) {
+  const runtimeId = `v1-${sourceHash.slice(0, 20)}`;
+  const bundleHome = path.join(resourcesPath, 'computer-control');
+  const runtimeRoot = path.join(bundleHome, 'runtime', runtimeId);
+  for (const relative of [
+    'bin/fabushi-computer-mcp.js',
+    'lib/fabushi-computer-policy.js',
+    'node_modules/@modelcontextprotocol/sdk/package.json',
+    'node_modules/ws/package.json',
+    'node_modules/zod/package.json',
+  ]) {
+    const target = path.join(runtimeRoot, relative);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, relative.endsWith('.json') ? '{}\n' : '#!/usr/bin/env node\n');
+  }
+  fs.writeFileSync(path.join(runtimeRoot, 'runtime-manifest.json'), `${JSON.stringify({
+    layoutVersion: 1,
+    runtimeId,
+    sourceHash,
+  })}\n`);
+  fs.mkdirSync(bundleHome, { recursive: true });
+  fs.writeFileSync(path.join(bundleHome, 'active-runtime.json'), `${JSON.stringify({ runtimeId })}\n`);
+  return { bundleHome, runtimeId, runtimeRoot };
+}
+
+test('packaged Computer Use selects only the exact active content-addressed runtime', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fabushi-packaged-computer-runtime-'));
+  try {
+    const resourcesPath = path.join(root, 'resources');
+    const runtime = writePackagedComputerRuntime(resourcesPath);
+    const externalEntry = path.join(root, 'external', 'bin', 'untrusted-mcp.js');
+    const externalHelper = path.join(root, 'external', 'untrusted-helper');
+    fs.mkdirSync(path.dirname(externalEntry), { recursive: true });
+    fs.writeFileSync(externalEntry, '#!/usr/bin/env node\n');
+    fs.writeFileSync(externalHelper, '#!/bin/sh\n');
+    const environment = embeddedComputerControlEnvironment({
+      app: { isPackaged: true, getPath: () => path.join(root, 'user-data') },
+      env: {
+        FABUSHI_COMPUTER_MCP_ENTRY: externalEntry,
+        FABUSHI_COMPUTER_MCP_COMMAND: '/tmp/untrusted-node',
+        FABUSHI_COMPUTER_MCP_ELECTRON_NODE: '0',
+        FABUSHI_COMPUTER_NATIVE_HELPER: externalHelper,
+      },
+      platform: 'linux',
+      resourcesPath,
+      fs,
+      execPath: '/opt/fabushi/fabushi',
+    });
+    assert.equal(environment.MAHAYANA_COMPUTER_MCP_ENTRY, path.join(runtime.runtimeRoot, 'bin', 'fabushi-computer-mcp.js'));
+    assert.equal(environment.MAHAYANA_COMPUTER_MCP_CWD, runtime.runtimeRoot);
+    assert.equal(environment.MAHAYANA_COMPUTER_MCP_COMMAND, '/opt/fabushi/fabushi');
+    assert.equal(environment.MAHAYANA_COMPUTER_MCP_ELECTRON_NODE, '1');
+    assert.equal(environment.MAHAYANA_COMPUTER_MCP_NATIVE_HELPER, undefined);
+
+    fs.writeFileSync(path.join(runtime.bundleHome, 'active-runtime.json'), '{"runtimeId":"' + 'b'.repeat(64) + '"}\n');
+    assert.deepEqual(embeddedComputerControlEnvironment({
+      app: { isPackaged: true, getPath: () => path.join(root, 'user-data') },
+      env: {},
+      platform: 'linux',
+      resourcesPath,
+      fs,
+      execPath: '/opt/fabushi/fabushi',
+    }), {});
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('packaged Computer Use fails closed when the active manifest does not match its directory', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fabushi-packaged-computer-manifest-'));
+  try {
+    const resourcesPath = path.join(root, 'resources');
+    const runtime = writePackagedComputerRuntime(resourcesPath);
+    fs.writeFileSync(path.join(runtime.runtimeRoot, 'runtime-manifest.json'), `${JSON.stringify({
+      layoutVersion: 1,
+      runtimeId: 'v1-' + 'b'.repeat(20),
+      sourceHash: 'b'.repeat(64),
+    })}\n`);
+    assert.deepEqual(embeddedComputerControlEnvironment({
+      app: { isPackaged: true, getPath: () => path.join(root, 'user-data') },
+      env: {},
+      platform: 'linux',
+      resourcesPath,
+      fs,
+      execPath: '/opt/fabushi/fabushi',
+    }), {});
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
 
 class FakeChild extends EventEmitter {
   constructor(pid) {
@@ -111,17 +231,30 @@ function harness(options = {}) {
   return { host, children };
 }
 
-test('product API base URL is environment-aware and rejects unsafe overrides', () => {
+test('product API overrides are development-only and reject unsafe development origins', () => {
   assert.equal(productApiBaseUrl({ isPackaged: false }, {}), DEVELOPMENT_PRODUCT_API_BASE_URL);
   assert.equal(productApiBaseUrl({ isPackaged: true }, {}), PRODUCTION_PRODUCT_API_BASE_URL);
-  assert.equal(productApiBaseUrl({ isPackaged: true }, { MAHAYANA_API_BASE_URL: 'https://api.example.test/' }), 'https://api.example.test');
-  assert.throws(() => productApiBaseUrl({ isPackaged: true }, { MAHAYANA_API_BASE_URL: 'http://api.example.test' }), /clean HTTPS/);
-  assert.throws(() => productApiBaseUrl({ isPackaged: true }, { MAHAYANA_API_BASE_URL: 'https://u:p@api.example.test' }), /clean HTTPS/);
-  assert.throws(() => productApiBaseUrl({ isPackaged: true }, { MAHAYANA_API_BASE_URL: 'https://api.example.test?x=1' }), /clean HTTPS/);
+  assert.equal(
+    productApiBaseUrl({ isPackaged: true }, { MAHAYANA_API_BASE_URL: 'https://api.example.test/' }),
+    PRODUCTION_PRODUCT_API_BASE_URL,
+  );
+  assert.equal(
+    productApiBaseUrl({ isPackaged: true }, { MAHAYANA_API_BASE_URL: 'http://api.example.test' }),
+    PRODUCTION_PRODUCT_API_BASE_URL,
+  );
+  assert.equal(productApiBaseUrl({ isPackaged: false }, { MAHAYANA_API_BASE_URL: 'https://api.example.test/' }), 'https://api.example.test');
+  assert.throws(() => productApiBaseUrl({ isPackaged: false }, { MAHAYANA_API_BASE_URL: 'http://api.example.test' }), /clean HTTPS/);
+  assert.throws(() => productApiBaseUrl({ isPackaged: false }, { MAHAYANA_API_BASE_URL: 'https://u:p@api.example.test' }), /clean HTTPS/);
+  assert.throws(() => productApiBaseUrl({ isPackaged: false }, { MAHAYANA_API_BASE_URL: 'https://api.example.test?x=1' }), /clean HTTPS/);
 });
 
 test('persisted provider selection defaults safely and starts Codex through the existing Host boundary', () => {
-  assert.equal(persistedInferenceProvider(defaultApp, { readFileSync: () => '{"inferenceProvider":"codex"}' }), 'codex');
+  let settingsPath;
+  assert.equal(persistedInferenceProvider(defaultApp, { readFileSync: (candidate) => {
+    settingsPath = candidate;
+    return '{"inferenceProvider":"codex"}';
+  } }), 'codex');
+  assert.equal(settingsPath, '/tmp/fabushi-host-test/feature-host/runtime/settings.json');
   assert.equal(persistedInferenceProvider(defaultApp, { readFileSync: () => '{"inferenceProvider":"unknown"}' }), 'fabushi');
   assert.equal(persistedInferenceProvider(defaultApp, { readFileSync: () => { throw new Error('missing'); } }), 'fabushi');
   assert.deepEqual(

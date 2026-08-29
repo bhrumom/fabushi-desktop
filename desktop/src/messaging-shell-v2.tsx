@@ -16,6 +16,7 @@ import {
   MapPin,
   MessageCircle,
   Mic,
+  Monitor,
   MoreVertical,
   Paperclip,
   Phone,
@@ -55,6 +56,10 @@ import { ElectronMahayanaHostTransport, isElectronMahayanaHostAvailable, MAHAYAN
 import { MockMahayanaHostTransport } from '../../frontend/apps/web/src/lib/mahayana-host/mock-transport';
 import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
 import type { InstalledPluginPointer, MahayanaHostTransport, MarketplacePluginSummary } from '../../frontend/apps/web/src/lib/mahayana-host/transport';
+import {
+  RemoteComputerDesktopController,
+  type RemoteComputerDesktopState,
+} from '../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
 import {
   SelfHostedMessagingClientV2,
   asMessagingHostEvent,
@@ -411,6 +416,19 @@ function isAgentPeer(peer: PeerItem): boolean {
   return peer.kind === 'bot' || /(agent|assistant|mahayana|codex|grok|大乘|智能体)/u.test(identity);
 }
 
+function localComputerLabel(): string {
+  if (typeof navigator === 'undefined') return 'Fabushi 桌面端';
+  const identity = `${navigator.platform || ''} ${navigator.userAgent || ''}`.toLowerCase();
+  const platform = identity.includes('win')
+    ? 'Windows'
+    : identity.includes('mac')
+      ? 'Mac'
+      : identity.includes('linux')
+        ? 'Linux'
+        : '桌面端';
+  return `Fabushi · ${platform}`;
+}
+
 function botMarkStateForPeer(
   peer: PeerItem,
   executions: MessagingBotExecution[],
@@ -546,14 +564,19 @@ export default function DesktopShellV2() {
   const [startupProjection, setStartupProjection] = useState<MessengerProjection | null>(localProjection);
   const [projectionLookupComplete, setProjectionLookupComplete] = useState(Boolean(localProjection));
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+  const authTransitionEpoch = useRef(0);
 
   const resetToLogin = useCallback(async (revokeSession = true) => {
+    // Invalidate any authStatus request that started before this explicit transition.
+    const transitionEpoch = ++authTransitionEpoch.current;
     try {
       if (revokeSession) await authTransport.logout();
     } catch {
       // Product logout is best effort remotely; local account state is cleared below.
     } finally {
       await clearAccountScopedDesktopCaches();
+      // A newer login may complete while logout/cache cleanup is in flight.
+      if (transitionEpoch !== authTransitionEpoch.current) return;
       setStartupProjection(null);
       setProjectionLookupComplete(true);
       setAuthenticated(false);
@@ -561,7 +584,15 @@ export default function DesktopShellV2() {
   }, [authTransport]);
 
   const handleHostAuthStateChange = useCallback((state: AuthState) => {
-    if (state.loggedIn) setAuthenticated(true);
+    if (state.loggedIn) {
+      // Invalidate a signed-out authStatus snapshot that may still be clearing
+      // account caches before it gets a chance to overwrite this fresh login.
+      authTransitionEpoch.current += 1;
+      // A fresh login must not remain behind the durable projection lookup.
+      // The projection is optional startup data and can hydrate in the background.
+      setProjectionLookupComplete(true);
+      setAuthenticated(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -579,12 +610,15 @@ export default function DesktopShellV2() {
     let closed = false;
     let retryTimer: number | undefined;
     const checkAuth = async () => {
+      const requestEpoch = authTransitionEpoch.current;
       try {
         const state = await authTransport.authStatus();
-        if (closed) return;
+        if (closed || requestEpoch !== authTransitionEpoch.current) return;
         if (!state.loggedIn) {
           await clearAccountScopedDesktopCaches();
-          if (closed) return;
+          // Browser login can finish while the signed-out cache cleanup awaits.
+          // Never let that older false snapshot replace the authenticated shell.
+          if (closed || requestEpoch !== authTransitionEpoch.current) return;
           setStartupProjection(null);
         }
         setAuthenticated(state.loggedIn);
@@ -665,6 +699,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const startupProjection = useMemo(() => initialProjection ?? readMessengerProjection(), [initialProjection]);
   const selfHosted = useMemo(() => new SelfHostedMessagingClientV2(transport, { actorId: startupProjection?.actorId }), [transport, startupProjection]);
   const [hostReady, setHostReady] = useState(false);
+  const [remoteAccountScope, setRemoteAccountScope] = useState<string | null>(null);
+  const [initialLegacyHydrationMask, setInitialLegacyHydrationMask] = useState(0);
+  const initialLegacyHydrationMaskRef = useRef(0);
+  const initialLegacyHydrated = initialLegacyHydrationMask === 0b111;
   const [section, setSection] = useState<MessengerSection>('chats');
   const [conversations, setConversations] = useState<ConversationSummary[]>(startupProjection?.legacyConversations ?? []);
   const [bots, setBots] = useState<BotSummary[]>(startupProjection?.legacyBots ?? []);
@@ -710,6 +748,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [narrowInfoOpen, setNarrowInfoOpen] = useState(false);
   const [wideInfoLayout, setWideInfoLayout] = useState(() => typeof window === 'undefined' ? true : window.innerWidth > 1280);
   const [infoTab, setInfoTab] = useState<InfoTab>('media');
+  const [computerProfileOpen, setComputerProfileOpen] = useState(false);
+  const [remoteComputerState, setRemoteComputerState] = useState<RemoteComputerDesktopState | null>(null);
   const [pendingSend, setPendingSend] = useState(false);
   const [typingByConversation, setTypingByConversation] = useState<Record<string, Record<string, number>>>({});
   const [newDialog, setNewDialog] = useState<NewDialog>(null);
@@ -744,6 +784,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const typingStopTimerRef = useRef<number | null>(null);
   const peersRef = useRef<PeerItem[]>([]);
   const webRtcRef = useRef<FabushiWebRtcController | null>(null);
+  const remoteComputerControllerRef = useRef<RemoteComputerDesktopController | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
@@ -751,6 +792,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const sessionResetInFlightRef = useRef(false);
+  const remoteControlEnabledRef = useRef(hostSettings.remoteControlEnabled);
+  remoteControlEnabledRef.current = hostSettings.remoteControlEnabled;
 
   useEffect(() => {
     activePeerKeyRef.current = activePeerKey;
@@ -1020,6 +1063,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
             || account?.user?.email?.trim()
             || cachedActor?.displayName
             || '当前用户';
+          const identityScope = account?.user?.id ?? username ?? account?.user?.email?.trim() ?? startupProjection?.actorId;
+          if (identityScope === undefined || identityScope === null || String(identityScope).trim() === '') {
+            throw new Error('当前账号缺少电脑注册身份，无法启动后台在线状态');
+          }
+          setRemoteAccountScope(String(identityScope));
           await selfHosted.ensureCurrentActor(displayName, username);
           await selfHosted.sync(initialSyncLimit, messagingCursorRef.current);
           await synchronizeAccountState();
@@ -1032,9 +1080,69 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     return () => {
       closed = true;
       unsubscribe();
-      void transport.close();
+      const remoteComputer = remoteComputerControllerRef.current;
+      if (remoteComputer) void remoteComputer.stop().finally(() => transport.close());
+      else void transport.close();
     };
   }, [transport, selfHosted, startupProjection]);
+
+  useEffect(() => {
+    if (!hostReady || initialLegacyHydrated) return;
+    let attempts = 0;
+    const retryMissing = () => {
+      if (initialLegacyHydrationMaskRef.current === 0b111 || attempts >= 8) return;
+      attempts += 1;
+      refreshLegacy(initialLegacyHydrationMaskRef.current);
+    };
+    const timer = window.setInterval(retryMissing, 650);
+    retryMissing();
+    return () => window.clearInterval(timer);
+  }, [hostReady, initialLegacyHydrated]);
+
+  useEffect(() => {
+    // Remote presence shares the Host request path with Messenger bootstrap.
+    // Keep background registration off that path until all core legacy lists
+    // have produced their first authoritative projection.
+    if (!hostReady || !remoteAccountScope) return;
+    if (!initialLegacyHydrated) return;
+    let disposed = false;
+    const controller = new RemoteComputerDesktopController({
+      transport,
+      label: localComputerLabel(),
+      identityScope: remoteAccountScope,
+      // Presence begins automatically after login. The controller receives the
+      // persisted opt-in before any remote session polling is allowed.
+      controlEnabled: remoteControlEnabledRef.current,
+      resolveAgentId: (requestedAgentId) => requestedAgentId === 'mahayana-assistant'
+        || peersRef.current.some((peer) => isAgentPeer(peer) && (peer.actorId ?? peer.id) === requestedAgentId)
+        ? requestedAgentId
+        : null,
+      onState: (state) => {
+        if (!disposed) setRemoteComputerState(state);
+      },
+    });
+    remoteComputerControllerRef.current = controller;
+    setRemoteComputerState(controller.snapshot());
+    void controller.start();
+    return () => {
+      disposed = true;
+      if (remoteComputerControllerRef.current === controller) remoteComputerControllerRef.current = null;
+      void controller.stop();
+    };
+  }, [hostReady, initialLegacyHydrated, remoteAccountScope, transport]);
+
+  useEffect(() => {
+    if (!hostReady) return;
+    const controller = remoteComputerControllerRef.current;
+    if (!controller) return;
+    void controller.setControlEnabled(hostSettings.remoteControlEnabled).catch((cause: unknown) => {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    });
+  }, [hostReady, hostSettings.remoteControlEnabled]);
+
+  useEffect(() => {
+    setComputerProfileOpen(false);
+  }, [activePeerKey]);
 
   useEffect(() => {
     if (!hostReady || section !== 'settings' || !['router', 'usage'].includes(settingsCategory)) return;
@@ -1125,12 +1233,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
   }
 
-  function refreshLegacy() {
-    void Promise.all([
-      execute({ type: 'conversation.list', requestId: nextRequestId('conversation-list') }),
-      execute({ type: 'bot.list', requestId: nextRequestId('bot-list') }),
-      execute({ type: 'group.list', requestId: nextRequestId('group-list') }),
-    ]).catch(() => {});
+  function refreshLegacy(mask = 0) {
+    const requests: Array<Promise<unknown>> = [];
+    if ((mask & 0b001) === 0) requests.push(execute({ type: 'conversation.list', requestId: nextRequestId('conversation-list') }));
+    if ((mask & 0b010) === 0) requests.push(execute({ type: 'bot.list', requestId: nextRequestId('bot-list') }));
+    if ((mask & 0b100) === 0) requests.push(execute({ type: 'group.list', requestId: nextRequestId('group-list') }));
+    void Promise.all(requests).catch(() => {});
   }
 
   function displaySelfMessage(message: MessagingMessage): DisplayMessage {
@@ -1349,6 +1457,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setHostReady(true);
         break;
       case 'conversation.listed':
+        initialLegacyHydrationMaskRef.current |= 0b001;
+        setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
         setConversations(event.conversations);
         if (!activePeerKeyRef.current && event.conversations[0]) {
           const conversation = event.conversations[0];
@@ -1368,6 +1478,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       case 'bot.listed':
+        initialLegacyHydrationMaskRef.current |= 0b010;
+        setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
         setBots(event.bots);
         break;
       case 'bot.changed':
@@ -1376,6 +1488,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           : upsertById(current, event.bot));
         break;
       case 'group.listed':
+        initialLegacyHydrationMaskRef.current |= 0b100;
+        setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
         setGroups(event.groups);
         break;
       case 'group.changed':
@@ -1584,6 +1698,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const infoPanelVisible = Boolean(layoutInfoOpen && activePeer && sectionIsPeerList);
   const infoPanelDocked = Boolean(infoPanelVisible && wideInfoLayout);
   const currentActor = selfActors.find((actor) => actor.id === selfHosted.actorId);
+  const localComputerOnline = Boolean(remoteComputerState?.running && remoteComputerState.registration);
+  const localComputerStatus = remoteComputerState?.channelOpen
+    ? '正在远程控制'
+    : localComputerOnline
+      ? hostSettings.remoteControlEnabled ? '在线，等待连接' : '在线，仅可发现'
+      : remoteComputerState?.running ? '正在注册' : '离线';
   const renderedPeers = visiblePeers.slice(0, peerRenderCount);
   const renderedContactGroups = ['chats', 'contacts'].includes(section) && contactGroups.groups.length
     ? projectSidebarContactGroups(renderedPeers, contactGroups.groups, Boolean(search.trim()))
@@ -2553,6 +2673,7 @@ async function saveInvoiceDialog() {
     <main
       className={`${styles.messenger} ${styles.fabushiUnified}`}
       data-testid="messenger-workspace"
+      data-initial-host-hydrated={initialLegacyHydrated ? 'true' : undefined}
       data-sidebar-collapsed={sidebarWidth <= 112 || undefined}
       data-reduce-motion={desktopPreferences.reducedMotion || undefined}
       data-testid-ready-projection={startupProjection ? 'true' : undefined}
@@ -2788,7 +2909,14 @@ async function saveInvoiceDialog() {
           <div className={styles.profileCard}>
             <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, pendingSend, hostReady) : 'idle'} size={92} className={styles.agentProfileMark} label={activePeer.title} />
             <strong>{activePeer.title}</strong><small>{activePeer.subtitle}</small>
-            <div><button type="button" onClick={() => void startCall('voice')}><PhoneCall size={18} /><span>通话</span></button><button type="button" onClick={() => void startCall('video')}><Video size={18} /><span>视频</span></button><button type="button" onClick={() => { setConversationSearchOpen(true); setGlobalSearchOpen(true); setGlobalSearchCategory('posts'); setSearch(''); window.setTimeout(() => searchInputRef.current?.focus(), 0); }}><Search size={18} /><span>搜索</span></button></div>
+            <div className={styles.profileQuickActions} data-columns={isAgentPeer(activePeer) ? '4' : '3'}><button type="button" onClick={() => void startCall('voice')}><PhoneCall size={18} /><span>通话</span></button><button type="button" onClick={() => void startCall('video')}><Video size={18} /><span>视频</span></button><button type="button" onClick={() => { setConversationSearchOpen(true); setGlobalSearchOpen(true); setGlobalSearchCategory('posts'); setSearch(''); window.setTimeout(() => searchInputRef.current?.focus(), 0); }}><Search size={18} /><span>搜索</span></button>{isAgentPeer(activePeer) ? <button type="button" data-testid="bot-computer-toggle" data-active={computerProfileOpen} onClick={() => {
+              setComputerProfileOpen((value) => !value);
+              void invokeNativeDesktop('reportOpenComputer', {
+                source: 'bot-profile',
+                agentId: activePeer.actorId ?? activePeer.id,
+                connected: remoteComputerState?.channelOpen === true,
+              }).catch(() => {});
+            }}><Monitor size={18} /><span>电脑</span></button> : null}</div>
           </div>
           <div className={styles.profileActions}>
             <button type="button" onClick={() => void toggleMuteConversation(activePeer)}><BellOff size={17} /><span>{mutedPeerKeys.has(activePeer.key) ? '开启通知' : '静音通知'}</span></button>
@@ -2796,6 +2924,29 @@ async function saveInvoiceDialog() {
             <button type="button" onClick={() => { void toggleArchiveConversation(activePeer); setSection('archive'); }}><Archive size={17} /><span>{activePeer.archived ? '移出归档' : '归档会话'}</span></button>
             {activePeer.source === 'selfhosted' && ['group', 'channel'].includes(activePeer.kind) ? <button type="button" onClick={() => void openCommunityAdmin(activePeer)}><Settings size={17} /><span>管理群组/频道</span></button> : null}
           </div>
+          {isAgentPeer(activePeer) && computerProfileOpen ? <section className={styles.computerProfile} data-testid="bot-computer-panel">
+            <header>
+              <span className={styles.computerProfileIcon}><Monitor size={18} /></span>
+              <span><strong>这台电脑</strong><small>{localComputerLabel()}</small></span>
+              <i data-live={remoteComputerState?.channelOpen ? 'active' : localComputerOnline ? 'online' : 'offline'} />
+            </header>
+            <div className={styles.computerProfileStatus}>
+              <span><small>设备状态</small><strong>{localComputerStatus}</strong></span>
+              <span><small>已授权客户端</small><strong>{remoteComputerState?.clients.length ?? 0}</strong></span>
+              <span><small>AI 操控</small><strong>{hostSettings.aiComputerControlEnabled ? '已允许' : '已关闭'}</strong></span>
+            </div>
+            <p>Fabushi 登录后会在后台保持设备在线；远控关闭时只能被同账号发现，不能读取画面或发送输入。</p>
+            {hostSettings.remoteControlEnabled && remoteComputerState?.registration?.pairingCode ? <div className={styles.computerPairingCode}>
+              <span><small>配对码</small><strong>{remoteComputerState.registration.pairingCode}</strong></span>
+              <button type="button" onClick={() => void remoteComputerControllerRef.current?.refreshPairingCode().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))}>刷新</button>
+            </div> : null}
+            {remoteComputerState?.activeSessionId ? <button type="button" className={styles.computerDangerButton} onClick={() => void remoteComputerControllerRef.current?.disconnectActive()}>断开当前远控</button> : null}
+            <div className={styles.computerProfileButtons}>
+              <button type="button" data-enabled={hostSettings.remoteControlEnabled} onClick={() => updateHostSetting('remoteControlEnabled', !hostSettings.remoteControlEnabled)}>{hostSettings.remoteControlEnabled ? '关闭远程控制' : '开启远程控制'}</button>
+              <button type="button" onClick={() => void invokeNativeDesktop('openExternal', { url: `https://fabushi.ombhrum.com/remote-computer?agentId=${encodeURIComponent(activePeer.actorId ?? activePeer.id)}` }).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))}>打开控制页面</button>
+            </div>
+            {remoteComputerState?.error ? <small className={styles.computerProfileError}>{remoteComputerState.error}</small> : null}
+          </section> : null}
           <nav className={styles.infoTabs}><button type="button" data-active={infoTab === 'media'} onClick={() => setInfoTab('media')}>媒体</button><button type="button" data-active={infoTab === 'files'} onClick={() => setInfoTab('files')}>文件</button><button type="button" data-active={infoTab === 'links'} onClick={() => setInfoTab('links')}>链接</button></nav>
           <div className={styles.infoContent}>{infoTab === 'media' ? <><Image size={30} /><strong>共享媒体</strong><p>图片、视频和动画按消息索引展示。</p></> : null}{infoTab === 'files' ? <><FileText size={30} /><strong>共享文件</strong><p>文档、音频和附件由 Rust 媒体层管理。</p></> : null}{infoTab === 'links' ? <><Link2 size={30} /><strong>共享链接</strong><p>富文本 URL 建立可搜索索引。</p></> : null}</div>
         </aside>
