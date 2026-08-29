@@ -803,7 +803,10 @@ function startHostEventPump() {
       try {
         const event = await host.request('feature.receive', { timeoutMs: 500 });
         if (event) broadcastMahayanaEvent(event);
-        else await sleep(10);
+        // Yield after every receive, including a non-empty event. The Rust Host
+        // processes requests serially; immediately enqueueing the next long-poll
+        // from this Promise continuation can starve renderer IPC such as auth.
+        await sleep(10);
       } catch (error) {
         if (hostEventPumpStopped) break;
         console.error('[mahayana-edge] runtime event pump failed', error);

@@ -25,6 +25,10 @@ test('Grok parity motion layer exposes distinct state choreography', async () =>
 
   try {
     const page = await app.firstWindow();
+    await expect.poll(async () => page.evaluate(() =>
+      Array.from(document.styleSheets).some((candidate) =>
+        String(candidate.href ?? '').includes('grok-motion-parity.css'))),
+    { timeout: 10_000 }).toBe(true);
     const contract = await page.evaluate(() => {
       const sheet = Array.from(document.styleSheets).find((candidate) =>
         String(candidate.href ?? '').includes('grok-motion-parity.css'));
