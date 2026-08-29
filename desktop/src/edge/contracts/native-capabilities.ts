@@ -4,6 +4,7 @@ import { defineEdge } from '../ipc';
 // normalized here so Mahayana can remain provider-agnostic.
 export const NATIVE_DESKTOP_METHODS = {
   openExternal: { args: 'object' },
+  respondAppAgentSurfaceRequest: { args: 'object' },
   submitFeedback: { args: 'object' },
   getDesktopEnvironment: { args: 'none' },
   getMessagingIdentity: { args: 'object' },
@@ -189,6 +190,7 @@ export const NATIVE_DESKTOP_METHODS = {
 } as const;
 
 export const NATIVE_DESKTOP_EVENTS = [
+  'app-agent-surface-request',
   'mcp-auth-completed',
   'focus-agent',
   'cloud-agent-open',

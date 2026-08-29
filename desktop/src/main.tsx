@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { installDesktopAccountSessionSync } from './account-session-sync';
+import { installDesktopAppAgentSurface } from './app-agent-surface';
 import { installBotIdentityAliases } from './agent-identity-aliases';
 import CredentialVault from './credential-vault';
 import { installDurableAgentState, restoreDurableAgentState } from './durable-agent-state';
@@ -31,6 +32,7 @@ async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
   installBotIdentityAliases();
   installDurableAgentState();
   installDesktopMiniAppWebMcpHost();
+  installDesktopAppAgentSurface();
 
   createRoot(rootElement).render(
     <StrictMode>

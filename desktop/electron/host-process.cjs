@@ -115,6 +115,7 @@ function embeddedComputerControlEnvironment({ app: appImpl = app, env = process.
 
   const computerHome = path.join(appImpl.getPath('userData'), 'computer-control');
   const policyFile = path.join(appImpl.getPath('userData'), 'feature-host', 'runtime', 'settings.json');
+  const appAgentDiscoveryFile = path.join(appImpl.getPath('userData'), 'agent-surface', 'bridge.json');
   const developmentCommand = explicitCommand || execPath;
   const result = {
     MAHAYANA_COMPUTER_MCP_COMMAND: appImpl.isPackaged ? execPath : developmentCommand,
@@ -122,6 +123,7 @@ function embeddedComputerControlEnvironment({ app: appImpl = app, env = process.
     MAHAYANA_COMPUTER_MCP_CWD: runtime.root,
     MAHAYANA_COMPUTER_MCP_HOME: computerHome,
     MAHAYANA_COMPUTER_MCP_POLICY_FILE: policyFile,
+    MAHAYANA_COMPUTER_MCP_APP_AGENT_DISCOVERY_FILE: appAgentDiscoveryFile,
     // The signed Electron executable is the private Node runtime in production.
     MAHAYANA_COMPUTER_MCP_ELECTRON_NODE: appImpl.isPackaged
       ? '1'

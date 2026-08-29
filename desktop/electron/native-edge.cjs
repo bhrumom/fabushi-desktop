@@ -4,6 +4,7 @@ const { defineEdge } = require('./edge-ipc.cjs');
 
 const methods = {
   openExternal: { args: 'object' },
+  respondAppAgentSurfaceRequest: { args: 'object' },
   submitFeedback: { args: 'object' },
   getDesktopEnvironment: { args: 'none' },
   getMessagingIdentity: { args: 'object' },
@@ -189,6 +190,7 @@ const methods = {
 };
 
 const NATIVE_EDGE = defineEdge('native-desktop', methods, [
+  'app-agent-surface-request',
   'mcp-auth-completed',
   'focus-agent',
   'cloud-agent-open',

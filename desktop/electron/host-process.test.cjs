@@ -51,6 +51,7 @@ test('embedded Computer Use runtime is injected as a private stdio MCP server', 
     assert.equal(environment.MAHAYANA_COMPUTER_MCP_ELECTRON_NODE, '1');
     assert.equal(environment.MAHAYANA_COMPUTER_MCP_HOME, path.join(root, 'user-data', 'computer-control'));
     assert.equal(environment.MAHAYANA_COMPUTER_MCP_POLICY_FILE, path.join(root, 'user-data', 'feature-host', 'runtime', 'settings.json'));
+    assert.equal(environment.MAHAYANA_COMPUTER_MCP_APP_AGENT_DISCOVERY_FILE, path.join(root, 'user-data', 'agent-surface', 'bridge.json'));
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

@@ -11,6 +11,7 @@ const { MAHAYANA_EDGE } = require('./mahayana-edge.cjs');
 const { NATIVE_EDGE } = require('./native-edge.cjs');
 const { createNativeCapabilityHandlers } = require('./native-capability-handlers.cjs');
 const { MessagingSignalingClient } = require('./messaging-signaling-client.cjs');
+const { createAppAgentSurfaceServer } = require('./app-agent-surface-server.cjs');
 
 const appDataOverride = process.env.FABUSHI_APP_DATA?.trim();
 if (appDataOverride) app.setPath('userData', path.resolve(appDataOverride));
@@ -71,6 +72,9 @@ function providerEnvironment(inferenceProvider) {
 const host = new MahayanaHostProcess({ providerEnvironment });
 let mahayanaEdgeServer = null;
 let nativeEdgeServer = null;
+let appAgentSurfaceServer = null;
+let appAgentSurfaceShutdownPending = false;
+let appAgentSurfaceShutdownComplete = false;
 let hostEventPumpStopped = false;
 let hostEventPump = null;
 const messagingAccessCache = new Map();
@@ -86,6 +90,56 @@ let mainWindow = null;
 let backgroundTray = null;
 let quitting = false;
 const backgroundPersistenceEnabled = process.env.FABUSHI_E2E !== '1';
+
+function appAgentControlPolicyDecision() {
+  const configured = String(process.env.FABUSHI_COMPUTER_POLICY_FILE || '').trim();
+  const policyFile = configured
+    ? path.resolve(configured)
+    : path.join(app.getPath('userData'), 'feature-host', 'runtime', 'settings.json');
+  let settings;
+  try { settings = JSON.parse(fsSync.readFileSync(policyFile, 'utf8')); }
+  catch { return { allowed: false, reason: 'Fabushi computer-control policy is unavailable.' }; }
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+    return { allowed: false, reason: 'Fabushi computer-control policy is invalid.' };
+  }
+  if (settings.localExecution !== true || settings.aiComputerControlEnabled !== true) {
+    return { allowed: false, reason: 'Fabushi AI computer control is disabled.' };
+  }
+  if (!['ask', 'always'].includes(settings.localToolPermission)) {
+    return { allowed: false, reason: 'Fabushi local tool permission denies control.' };
+  }
+  return { allowed: true };
+}
+
+function appAgentSurfaceDiscoveryPath() {
+  const configured = String(process.env.FABUSHI_APP_AGENT_DISCOVERY_FILE || '').trim();
+  return configured
+    ? path.resolve(configured)
+    : path.join(app.getPath('userData'), 'agent-surface', 'bridge.json');
+}
+
+async function startAppAgentSurfaceServer() {
+  if (appAgentSurfaceServer) return appAgentSurfaceServer;
+  const bridge = createAppAgentSurfaceServer({
+    discoveryPath: appAgentSurfaceDiscoveryPath(),
+    authorize: () => appAgentControlPolicyDecision(),
+    onRequest(request) {
+      const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
+      if (!win || win.webContents.isDestroyed() || !nativeEdgeServer) {
+        throw new Error('app_surface_renderer_unavailable');
+      }
+      nativeEdgeServer.emit(win.webContents, 'app-agent-surface-request', request);
+    },
+  });
+  await bridge.start();
+  appAgentSurfaceServer = bridge;
+  console.info(JSON.stringify({
+    type: 'fabushi.app-agent-surface.ready',
+    origin: bridge.origin,
+    discoveryPath: bridge.discoveryPath,
+  }));
+  return bridge;
+}
 
 function normalizeMessagingAccessParams(params) {
   const deviceId = String(params?.deviceId || 'desktop:electron').trim();
@@ -527,6 +581,15 @@ function logEdgeInvocation(record) {
 
 function installNativeEdge() {
   const handlers = {
+    respondAppAgentSurfaceRequest(params, event) {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (!mainWindow || mainWindow.isDestroyed() || win !== mainWindow) {
+        throw new Error('Only the primary trusted Fabushi renderer may answer App Agent Surface requests.');
+      }
+      if (!appAgentSurfaceServer) throw new Error('App Agent Surface is unavailable.');
+      if (!appAgentSurfaceServer.respond(params)) throw new Error('App Agent Surface request is missing or already settled.');
+      return true;
+    },
     async openExternal(params) {
       await shell.openExternal(safeHttpsUrl(params.url));
       return true;
@@ -1194,13 +1257,16 @@ function installAppProtocol() {
 
 applyStartupNativePreferences();
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   installAppProtocol();
   installApplicationMenu();
   installAutoUpdaterEvents();
   if (primaryInstance && app.isPackaged) app.setAsDefaultProtocolClient('fabushi');
   session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   installIpcHandlers();
+  await startAppAgentSurfaceServer().catch((error) => {
+    console.error('[app-agent-surface] failed to start', error);
+  });
   host.start();
   installBackgroundTray();
   createWindow();
@@ -1219,7 +1285,7 @@ app.on('window-all-closed', () => {
   // shutdown seam so Playwright can close each isolated application cleanly.
   if (!backgroundPersistenceEnabled) app.quit();
 });
-app.on('before-quit', () => {
+app.on('before-quit', (event) => {
   quitting = true;
   if (automaticDesktopUpdateCheckTimer) clearInterval(automaticDesktopUpdateCheckTimer);
   automaticDesktopUpdateCheckTimer = null;
@@ -1231,6 +1297,23 @@ app.on('before-quit', () => {
   messagingSignalingClient?.disconnect('app_quit');
   messagingSignalingClient = null;
   messagingAccessCache.clear();
+  const closingAppAgentSurface = appAgentSurfaceServer;
+  appAgentSurfaceServer = null;
+  if (closingAppAgentSurface && !appAgentSurfaceShutdownComplete) {
+    event.preventDefault();
+    if (!appAgentSurfaceShutdownPending) {
+      appAgentSurfaceShutdownPending = true;
+      void closingAppAgentSurface.close()
+        .catch((error) => {
+          console.error('[app-agent-surface] shutdown failed', error);
+        })
+        .finally(() => {
+          appAgentSurfaceShutdownPending = false;
+          appAgentSurfaceShutdownComplete = true;
+          app.quit();
+        });
+    }
+  }
   backgroundTray?.destroy();
   backgroundTray = null;
   host.close();

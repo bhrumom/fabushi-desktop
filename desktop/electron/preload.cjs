@@ -10,6 +10,7 @@ const NATIVE_EDGE = 'native-desktop';
 const MAHAYANA_RUNTIME_EVENT = 'runtime-event';
 const EDGE_CONTRACT_VERSION = 1;
 const NATIVE_EVENTS = new Set([
+  'app-agent-surface-request',
   'mcp-auth-completed',
   'focus-agent',
   'cloud-agent-open',
