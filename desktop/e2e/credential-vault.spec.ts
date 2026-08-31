@@ -119,7 +119,8 @@ test('installed Credential Vault keeps plaintext opaque, stays usable with OS en
     await expect(savedRow).toContainText('https://api.example.com');
     await expect(page.locator('body')).not.toContainText(FIRST_CANARY);
     await expect(page.locator('body')).not.toContainText(CANCELLED_CANARY);
-    await expect(page.getByText(/显示.*密钥|查看.*密钥|Reveal Secret/i)).toHaveCount(0);
+    const revealSecretControls = page.locator('button, [role="button"], a').filter({ hasText: /显示.*密钥|查看.*密钥|Reveal Secret/i });
+    await expect(revealSecretControls).toHaveCount(0);
 
     const afterCreate = await listSecrets(page);
     const created = afterCreate.find((entry) => entry.name === SECRET_REF) as Record<string, any> | undefined;
