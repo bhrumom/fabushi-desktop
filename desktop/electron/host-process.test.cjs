@@ -38,6 +38,7 @@ test('embedded Computer Use runtime is injected as a private stdio MCP server', 
     const entry = path.join(root, 'bin', 'fabushi-computer-mcp.js');
     fs.mkdirSync(path.dirname(entry), { recursive: true });
     fs.writeFileSync(entry, '#!/usr/bin/env node\n');
+    fs.writeFileSync(path.join(root, 'bin', 'fabushi-device-agent.js'), '#!/usr/bin/env node\n');
     const environment = embeddedComputerControlEnvironment({
       app: { isPackaged: false, getPath: () => path.join(root, 'user-data') },
       env: { FABUSHI_COMPUTER_MCP_ENTRY: entry },
@@ -64,6 +65,7 @@ function writePackagedComputerRuntime(resourcesPath, sourceHash = 'a'.repeat(64)
   const runtimeRoot = path.join(bundleHome, 'runtime', runtimeId);
   for (const relative of [
     'bin/fabushi-computer-mcp.js',
+    'bin/fabushi-device-agent.js',
     'lib/fabushi-computer-policy.js',
     'node_modules/@modelcontextprotocol/sdk/package.json',
     'node_modules/ws/package.json',

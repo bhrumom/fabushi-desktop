@@ -12,6 +12,7 @@ const { NATIVE_EDGE } = require('./native-edge.cjs');
 const { createNativeCapabilityHandlers } = require('./native-capability-handlers.cjs');
 const { MessagingSignalingClient } = require('./messaging-signaling-client.cjs');
 const { createAppAgentSurfaceServer } = require('./app-agent-surface-server.cjs');
+const { RemoteDeviceAgentSupervisor } = require('./remote-device-agent-supervisor.cjs');
 
 const appDataOverride = process.env.FABUSHI_APP_DATA?.trim();
 if (appDataOverride) app.setPath('userData', path.resolve(appDataOverride));
@@ -73,6 +74,7 @@ const host = new MahayanaHostProcess({ providerEnvironment });
 let mahayanaEdgeServer = null;
 let nativeEdgeServer = null;
 let appAgentSurfaceServer = null;
+let remoteDeviceAgentSupervisor = null;
 let appAgentSurfaceShutdownPending = false;
 let appAgentSurfaceShutdownComplete = false;
 let hostEventPumpStopped = false;
@@ -1268,6 +1270,8 @@ app.whenReady().then(async () => {
     console.error('[app-agent-surface] failed to start', error);
   });
   host.start();
+  remoteDeviceAgentSupervisor = new RemoteDeviceAgentSupervisor({ host, app });
+  remoteDeviceAgentSupervisor.start();
   installBackgroundTray();
   createWindow();
   startHostEventPump();
@@ -1297,6 +1301,8 @@ app.on('before-quit', (event) => {
   messagingSignalingClient?.disconnect('app_quit');
   messagingSignalingClient = null;
   messagingAccessCache.clear();
+  remoteDeviceAgentSupervisor?.close();
+  remoteDeviceAgentSupervisor = null;
   const closingAppAgentSurface = appAgentSurfaceServer;
   appAgentSurfaceServer = null;
   if (closingAppAgentSurface && !appAgentSurfaceShutdownComplete) {

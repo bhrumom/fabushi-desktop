@@ -41,6 +41,7 @@ function completeComputerRuntime(root, fsImpl = fs, expectedRuntimeId = path.bas
   const mcpEntry = path.join(root, 'bin', 'fabushi-computer-mcp.js');
   const required = [
     mcpEntry,
+    path.join(root, 'bin', 'fabushi-device-agent.js'),
     path.join(root, 'lib', 'fabushi-computer-policy.js'),
     path.join(root, 'node_modules', '@modelcontextprotocol', 'sdk', 'package.json'),
     path.join(root, 'node_modules', 'ws', 'package.json'),
@@ -53,6 +54,7 @@ function developmentComputerRuntime(root, fsImpl = fs) {
   const mcpEntry = path.join(root, 'bin', 'fabushi-computer-mcp.js');
   const required = [
     mcpEntry,
+    path.join(root, 'bin', 'fabushi-device-agent.js'),
     path.join(root, 'lib', 'fabushi-computer-policy.js'),
     path.join(root, 'node_modules', '@modelcontextprotocol', 'sdk', 'package.json'),
     path.join(root, 'node_modules', 'ws', 'package.json'),
