@@ -197,7 +197,7 @@ export default function CredentialVault() {
           <form className="credential-vault-form" onSubmit={(event) => void save(event)}>
             <header><div><strong>{editing ? '轮换 / 绑定凭据' : '新增凭据'}</strong><small>保存后无法再次查看明文</small></div>{editing ? <button type="button" onClick={clearDraft}><Plus size={14} /> 新建</button> : null}</header>
             <label><span>SecretRef</span><input data-testid="credential-secret-ref" value={name} onChange={(event) => setName(event.target.value)} disabled={Boolean(editing)} placeholder="connector/github/default" required /></label>
-            <label><span>显示名称</span><input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="GitHub Production" maxLength={160} /></label>
+            <label><span>凭据名称</span><input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="GitHub Production" maxLength={160} /></label>
             <label><span>{editing ? '新密钥（轮换）' : '密钥'}</span><input data-testid="credential-secret-value" type="password" value={value} onChange={(event) => setValue(event.target.value)} autoComplete="new-password" required /><small>输入值只在本次提交时短暂存在于界面；保存后不会出现在列表、日志、模型上下文或读取接口。</small></label>
             <label><span>允许的 HTTPS Origin</span><textarea value={origins} onChange={(event) => setOrigins(event.target.value)} rows={3} placeholder={'https://api.github.com\nhttps://uploads.github.com'} required /><small>精确匹配 scheme + host + port；路径和重定向不能扩大授权范围。</small></label>
             <label><span>注入方式</span><select value={mode} onChange={(event) => setMode(event.target.value as InjectionMode)}><option value="bearer">Authorization: Bearer</option><option value="header">自定义 Header</option><option value="basic">HTTP Basic</option></select></label>
