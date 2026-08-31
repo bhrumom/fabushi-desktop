@@ -193,13 +193,11 @@ export function miniAppBotResponseText(value: unknown): string {
   const command = recordValue(response?.command);
   const slash = stringValue(command?.slash);
   const description = stringValue(command?.description);
-  if (slash) return description ? `${slash}\n${description}` : slash;
-
   const route = stringValue(response?.route);
   const reason = stringValue(response?.reason);
-  if (route || reason) return [route, reason].filter(Boolean).join('\n');
-
   const kind = stringValue(response?.kind);
+  if (slash) return [kind, route, slash, description, reason].filter(Boolean).join('\n');
+  if (route || reason) return [kind, route, reason].filter(Boolean).join('\n');
   if (kind) return kind;
   return 'Mini App Bot 已接收请求。';
 }

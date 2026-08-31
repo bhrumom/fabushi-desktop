@@ -35,7 +35,7 @@ test('Grok parity motion layer exposes distinct state choreography', async () =>
       const cssText = sheet ? Array.from(sheet.cssRules).map((rule) => rule.cssText).join('\n') : '';
 
       const wrapper = document.createElement('span');
-      wrapper.dataset.engine = 'fabushi-motion-v2';
+      wrapper.dataset.engine = 'fabushi-motion-v3';
       wrapper.dataset.agentState = 'thinking';
       const aura = document.createElement('span');
       aura.className = '_botMarkAura_contract_';

@@ -8,13 +8,13 @@
  */
 
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state]
+[data-engine="fabushi-motion-v3"][data-agent-state]
 > [class*="_botMarkAura_"],
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state]
+[data-engine="fabushi-motion-v3"][data-agent-state]
 > [class*="_botMarkAuraSecondary_"],
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state]
+[data-engine="fabushi-motion-v3"][data-agent-state]
 > [class*="_botMarkParticles_"] {
   pointer-events: none !important;
   will-change: transform, opacity, filter;
@@ -23,49 +23,49 @@ body[data-fabushi-surface="grok-parity-v1"]
 
 /* Thinking: slower inward/outward focus, with a smaller secondary beat. */
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="thinking"]
+[data-engine="fabushi-motion-v3"][data-agent-state="thinking"]
 > [class*="_botMarkAura_"] {
   animation: gbfGrokThinkingAura 3.2s cubic-bezier(.42, 0, .28, 1) infinite !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="thinking"]
+[data-engine="fabushi-motion-v3"][data-agent-state="thinking"]
 > [class*="_botMarkAuraSecondary_"] {
   animation: gbfGrokThinkingAuraSecondary 2.35s ease-in-out -.65s infinite !important;
 }
 
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="thinking"]
+[data-engine="fabushi-motion-v3"][data-agent-state="thinking"]
 > [class*="_botMarkParticles_"] i {
   animation: gbfGrokThoughtParticle 2.7s ease-in-out infinite !important;
 }
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="thinking"]
+[data-engine="fabushi-motion-v3"][data-agent-state="thinking"]
 > [class*="_botMarkParticles_"] i:nth-child(2) { animation-delay: -.9s !important; }
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="thinking"]
+[data-engine="fabushi-motion-v3"][data-agent-state="thinking"]
 > [class*="_botMarkParticles_"] i:nth-child(3) { animation-delay: -1.8s !important; }
 
 /* Search: a faster radar-like perimeter sweep. */
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="searching"]
+[data-engine="fabushi-motion-v3"][data-agent-state="searching"]
 > [class*="_botMarkAura_"] {
   animation: gbfGrokSearchAura 1.9s linear infinite !important;
 }
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="searching"]
+[data-engine="fabushi-motion-v3"][data-agent-state="searching"]
 > [class*="_botMarkAuraSecondary_"] {
   animation: gbfGrokSearchScan 1.25s ease-in-out infinite alternate !important;
 }
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="searching"]
+[data-engine="fabushi-motion-v3"][data-agent-state="searching"]
 > [class*="_botMarkParticles_"] {
   animation: gbfGrokSearchParticles 1.55s linear infinite !important;
 }
 
 /* Active work/tool use: a four-beat microcycle — focus, act, settle, re-check. */
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"]:is(
+[data-engine="fabushi-motion-v3"]:is(
   [data-agent-state="working"],
   [data-agent-state="tool-running"],
   [data-agent-state="writing"],
@@ -79,7 +79,7 @@ body[data-fabushi-surface="grok-parity-v1"]
 }
 
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"]:is(
+[data-engine="fabushi-motion-v3"]:is(
   [data-agent-state="working"],
   [data-agent-state="tool-running"],
   [data-agent-state="writing"],
@@ -93,7 +93,7 @@ body[data-fabushi-surface="grok-parity-v1"]
 }
 
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"]:is(
+[data-engine="fabushi-motion-v3"]:is(
   [data-agent-state="working"],
   [data-agent-state="tool-running"],
   [data-agent-state="writing"],
@@ -106,54 +106,54 @@ body[data-fabushi-surface="grok-parity-v1"]
   animation: gbfGrokWorkParticle 1.8s cubic-bezier(.3, .7, .25, 1) infinite !important;
 }
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"]:is([data-agent-state="working"],[data-agent-state="tool-running"],[data-agent-state="writing"],[data-agent-state="sending"],[data-agent-state="receiving"],[data-agent-state="uploading"],[data-agent-state="dragging"])
+[data-engine="fabushi-motion-v3"]:is([data-agent-state="working"],[data-agent-state="tool-running"],[data-agent-state="writing"],[data-agent-state="sending"],[data-agent-state="receiving"],[data-agent-state="uploading"],[data-agent-state="dragging"])
 > [class*="_botMarkParticles_"] i:nth-child(2) { animation-delay: -.6s !important; }
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"]:is([data-agent-state="working"],[data-agent-state="tool-running"],[data-agent-state="writing"],[data-agent-state="sending"],[data-agent-state="receiving"],[data-agent-state="uploading"],[data-agent-state="dragging"])
+[data-engine="fabushi-motion-v3"]:is([data-agent-state="working"],[data-agent-state="tool-running"],[data-agent-state="writing"],[data-agent-state="sending"],[data-agent-state="receiving"],[data-agent-state="uploading"],[data-agent-state="dragging"])
 > [class*="_botMarkParticles_"] i:nth-child(3) { animation-delay: -1.2s !important; }
 
 /* Speech: tighter, more frequent energy that reads like voice cadence. */
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="speaking"]
+[data-engine="fabushi-motion-v3"][data-agent-state="speaking"]
 > [class*="_botMarkAura_"] {
   animation: gbfGrokSpeakingAura 1.15s ease-in-out infinite !important;
 }
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="speaking"]
+[data-engine="fabushi-motion-v3"][data-agent-state="speaking"]
 > [class*="_botMarkAuraSecondary_"] {
   animation: gbfGrokSpeakingAuraSecondary .72s ease-in-out -.22s infinite alternate !important;
 }
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="speaking"]
+[data-engine="fabushi-motion-v3"][data-agent-state="speaking"]
 > [class*="_botMarkParticles_"] {
   animation: gbfGrokSpeakingParticles 1.05s ease-in-out infinite !important;
 }
 
 /* Result: one calm confirmation bloom rather than continuous high energy. */
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="result"]
+[data-engine="fabushi-motion-v3"][data-agent-state="result"]
 > [class*="_botMarkAura_"] {
   animation: gbfGrokResultAura 2.8s cubic-bezier(.2, .75, .25, 1) infinite !important;
 }
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="result"]
+[data-engine="fabushi-motion-v3"][data-agent-state="result"]
 > [class*="_botMarkAuraSecondary_"] {
   animation: gbfGrokResultAuraSecondary 2.8s ease-out -.18s infinite !important;
 }
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"][data-agent-state="result"]
+[data-engine="fabushi-motion-v3"][data-agent-state="result"]
 > [class*="_botMarkParticles_"] i {
   animation: gbfGrokResultParticle 2.8s ease-out infinite !important;
 }
 
 /* Error/approval alert: deliberate two-beat signal, not constant frantic jitter. */
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"]:is([data-agent-state="error"],[data-agent-state="alerting"])
+[data-engine="fabushi-motion-v3"]:is([data-agent-state="error"],[data-agent-state="alerting"])
 > [class*="_botMarkAura_"] {
   animation: gbfGrokAlertAura 1.45s cubic-bezier(.55, 0, .35, 1) infinite !important;
 }
 body[data-fabushi-surface="grok-parity-v1"]
-[data-engine="fabushi-motion-v2"]:is([data-agent-state="error"],[data-agent-state="alerting"])
+[data-engine="fabushi-motion-v3"]:is([data-agent-state="error"],[data-agent-state="alerting"])
 > [class*="_botMarkAuraSecondary_"] {
   animation: gbfGrokAlertAuraSecondary 1.45s ease-in-out -.18s infinite !important;
 }
@@ -248,16 +248,16 @@ body[data-fabushi-surface="grok-parity-v1"]
 
 @media (prefers-reduced-motion: reduce) {
   body[data-fabushi-surface="grok-parity-v1"]
-  [data-engine="fabushi-motion-v2"][data-agent-state]
+  [data-engine="fabushi-motion-v3"][data-agent-state]
   > [class*="_botMarkAura_"],
   body[data-fabushi-surface="grok-parity-v1"]
-  [data-engine="fabushi-motion-v2"][data-agent-state]
+  [data-engine="fabushi-motion-v3"][data-agent-state]
   > [class*="_botMarkAuraSecondary_"],
   body[data-fabushi-surface="grok-parity-v1"]
-  [data-engine="fabushi-motion-v2"][data-agent-state]
+  [data-engine="fabushi-motion-v3"][data-agent-state]
   > [class*="_botMarkParticles_"],
   body[data-fabushi-surface="grok-parity-v1"]
-  [data-engine="fabushi-motion-v2"][data-agent-state]
+  [data-engine="fabushi-motion-v3"][data-agent-state]
   > [class*="_botMarkParticles_"] i {
     animation: none !important;
     transition: none !important;

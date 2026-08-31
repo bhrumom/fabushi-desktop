@@ -97,7 +97,7 @@ function readSnapshot(): AgentWorkbenchSnapshot {
 
 function directBotMark(parent: HTMLElement): HTMLElement | null {
   return Array.from(parent.children).find((child) =>
-    child instanceof HTMLElement && child.dataset.engine === 'fabushi-motion-v2',
+    child instanceof HTMLElement && child.dataset.engine === 'fabushi-motion-v3',
   ) as HTMLElement | null;
 }
 
@@ -250,7 +250,7 @@ function ensurePortal(messageArea: HTMLElement | null, before: HTMLElement | nul
   }
   const root = existing || document.createElement('div');
   root.id = REPORT_PORTAL_ID;
-  root.className = styles.portalRoot;
+  if (root.className !== styles.portalRoot) root.className = styles.portalRoot;
   if (root.parentElement !== messageArea || (before && root.nextElementSibling !== before)) {
     messageArea.insertBefore(root, before);
   }
@@ -516,7 +516,15 @@ export default function MahayanaAgentInlineReport() {
     };
 
     const observer = new MutationObserver((records) => {
-      if (records.some((record) => record.type === 'childList' || record.attributeName === 'class')) refresh();
+      const relevant = records.some((record) => {
+        if (record.type === 'attributes') {
+          return record.attributeName === 'class' && (record.target as HTMLElement).id !== REPORT_PORTAL_ID;
+        }
+        if (record.type !== 'childList') return false;
+        const changed = [...record.addedNodes, ...record.removedNodes];
+        return changed.some((node) => !(node instanceof HTMLElement) || node.id !== REPORT_PORTAL_ID);
+      });
+      if (relevant) refresh();
     });
     observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     const interval = window.setInterval(refresh, 750);

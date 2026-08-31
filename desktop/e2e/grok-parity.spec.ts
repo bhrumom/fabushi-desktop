@@ -91,7 +91,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
     await test.step('canonical Messenger remains the only product shell', async () => {
       await expect(page.getByTestId('messenger-workspace')).toHaveCount(1);
       await expect(page.locator('.desktop-mode-switch')).toHaveCount(0);
-      await expect(page.getByTestId('profile-navigation-trigger').locator('[data-engine="fabushi-motion-v2"]').first()).toBeVisible();
+      await expect(page.getByTestId('profile-navigation-trigger').locator('[data-engine="fabushi-motion-v3"]').first()).toBeVisible();
     });
 
     await test.step('conversation and composer expose dark low-contrast material', async () => {

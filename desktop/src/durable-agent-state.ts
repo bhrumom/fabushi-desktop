@@ -17,6 +17,8 @@ export const DURABLE_AGENT_STATE_KEYS = [
 
 type DurableAgentStateKey = typeof DURABLE_AGENT_STATE_KEYS[number];
 
+const DURABLE_AGENT_RESTORE_TIMEOUT_MS = 600;
+
 function parseLocalValue(value: string): unknown {
   try {
     return JSON.parse(value) as unknown;
@@ -27,7 +29,12 @@ function parseLocalValue(value: string): unknown {
 
 async function readNativeValue(key: DurableAgentStateKey): Promise<unknown> {
   try {
-    return await invokeNativeDesktop<unknown>('readClientPersistence', { key });
+    return await Promise.race([
+      invokeNativeDesktop<unknown>('readClientPersistence', { key }),
+      new Promise<null>((resolve) =>
+        window.setTimeout(() => resolve(null), DURABLE_AGENT_RESTORE_TIMEOUT_MS),
+      ),
+    ]);
   } catch {
     return null;
   }

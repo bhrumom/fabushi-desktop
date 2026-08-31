@@ -117,7 +117,7 @@ test('capture Grok parity packaged visual evidence', async () => {
     await expect(page.getByTestId('messenger-input')).toBeVisible();
     await page.getByTestId('messenger-input').fill('Grok parity visual evidence');
     await page.getByTestId('messenger-send').click();
-    await expect(page.getByText('收到：Grok parity visual evidence')).toBeVisible();
+    await expect(page.getByTestId('message-list').locator(':scope > article').getByText('收到：Grok parity visual evidence')).toBeVisible();
     await attachScreenshot(page, 'grok-parity-conversation-1440x900');
   } finally {
     if (page && screencastStarted) {

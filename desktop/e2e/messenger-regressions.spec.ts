@@ -238,7 +238,7 @@ test('switching peers keeps dynamic avatars visible and narrow layouts can open 
 
     // BotMark intentionally exposes the engine marker on both its semantic wrapper and inner SVG.
     // Count only the semantic outer mark carrying data-bot-id, so one avatar equals one identity.
-    const visibleMark = '[data-engine="fabushi-motion-v2"][data-bot-id]:visible';
+    const visibleMark = '[data-engine="fabushi-motion-v3"][data-bot-id]:visible';
     const firstMark = first.locator(visibleMark);
     const secondMark = second.locator(visibleMark);
     await expect(firstMark).toHaveCount(1);

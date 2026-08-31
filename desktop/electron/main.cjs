@@ -2,6 +2,7 @@ const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, nativeTheme
 const { autoUpdater } = require('electron-updater');
 const fs = require('node:fs/promises');
 const fsSync = require('node:fs');
+const crypto = require('node:crypto');
 const path = require('node:path');
 const { pathToFileURL, URL } = require('node:url');
 const { Readable } = require('node:stream');
@@ -26,7 +27,51 @@ protocol.registerSchemesAsPrivileged([
     scheme: 'fabushi-blob',
     privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
   },
+  {
+    scheme: 'fabushi-miniapp',
+    privileges: { standard: true, secure: true },
+  },
 ]);
+
+const miniAppDocuments = new Map();
+const MINIAPP_DOCUMENT_TTL_MS = 10 * 60 * 1000;
+const MINIAPP_DOCUMENT_MAX_BYTES = 5 * 1024 * 1024;
+
+function pruneMiniAppDocuments(now = Date.now()) {
+  for (const [token, entry] of miniAppDocuments) {
+    if (!entry || entry.expiresAtMs <= now) miniAppDocuments.delete(token);
+  }
+  while (miniAppDocuments.size > 64) miniAppDocuments.delete(miniAppDocuments.keys().next().value);
+}
+
+function registerMiniAppDocument(pluginId, html) {
+  const normalizedPluginId = String(pluginId ?? '').trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]{1,63}$/.test(normalizedPluginId)) throw new Error('Invalid Mini App plugin id.');
+  if (typeof html !== 'string' || !html.trim()) throw new Error('Mini App HTML is required.');
+  if (Buffer.byteLength(html, 'utf8') > MINIAPP_DOCUMENT_MAX_BYTES) throw new Error('Mini App HTML exceeds the desktop document limit.');
+  pruneMiniAppDocuments();
+  const token = crypto.randomUUID();
+  miniAppDocuments.set(token, { pluginId: normalizedPluginId, html, expiresAtMs: Date.now() + MINIAPP_DOCUMENT_TTL_MS });
+  return `fabushi-miniapp://document/${token}`;
+}
+
+function handleMiniAppDocumentRequest(request) {
+  const requested = new URL(request.url);
+  if (requested.hostname !== 'document') return new Response('Not found', { status: 404 });
+  pruneMiniAppDocuments();
+  const token = decodeURIComponent(requested.pathname.replace(/^\/+/, ''));
+  const entry = miniAppDocuments.get(token);
+  if (!entry) return new Response('Not found', { status: 404 });
+  return new Response(entry.html, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'",
+      'X-Content-Type-Options': 'nosniff',
+    },
+  });
+}
 
 function encryptedProviderSecret(name) {
   if (!safeStorage?.isEncryptionAvailable?.()) {
@@ -913,6 +958,11 @@ function installIpcHandlers() {
     return BrowserWindow.fromWebContents(event.sender)?.isFocused() ?? false;
   });
 
+  ipcMain.handle('fabushi:register-miniapp-document', async (event, payload) => {
+    assertTrustedSender(event);
+    return registerMiniAppDocument(payload?.pluginId, payload?.html);
+  });
+
   ipcMain.handle('fabushi:open-system-settings', async (event, payload) => {
     assertTrustedSender(event);
     const pane = String(payload?.pane || '');
@@ -1255,6 +1305,7 @@ function installAppProtocol() {
     return net.fetch(pathToFileURL(resolved).toString());
   });
   protocol.handle('fabushi-blob', handleMessagingBlobRequest);
+  protocol.handle('fabushi-miniapp', handleMiniAppDocumentRequest);
 }
 
 applyStartupNativePreferences();

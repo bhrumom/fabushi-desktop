@@ -95,6 +95,7 @@ import {
   type MiniAppBotCommand,
 } from './miniapp-bot-projection';
 import { MiniAppCallDialog } from './miniapp-call-dialog';
+import { prepareDesktopMiniAppWebMcpDocument } from './miniapp-webmcp-host';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -761,7 +762,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [attachmentProgress, setAttachmentProgress] = useState<string | null>(null);
   const [localCall, setLocalCall] = useState<LocalCall | null>(null);
   const [incomingCall, setIncomingCall] = useState<IncomingFabushiCall | null>(null);
-  const [miniApp, setMiniApp] = useState<{ id: string; title: string; html: string } | null>(null);
+  const [miniApp, setMiniApp] = useState<{ id: string; title: string; url: string } | null>(null);
   const [miniAppCall, setMiniAppCall] = useState<MiniAppCallSession | null>(null);
   const miniAppBotThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
   const [accountBots, setAccountBots] = useState<AccountBotMembership[]>([]);
@@ -1535,7 +1536,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       case 'miniapp.opened':
         if (event.html) {
           const title = miniAppIdentityCatalog.find((app) => app.pluginId === event.miniAppId)?.displayName ?? marketplaceApps.find((app) => app.pluginId === event.miniAppId)?.displayName ?? event.miniAppId;
-          setMiniApp({ id: event.miniAppId, title, html: event.html });
+          void showMiniAppDocument(event.miniAppId, title, event.html).catch((cause) => {
+            setError(cause instanceof Error ? cause.message : String(cause));
+          });
         }
         break;
       case 'operation.failed':
@@ -1862,8 +1865,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       setScheduledAtMs(undefined);
     } catch (cause) {
       updateComposer(text);
-      setPendingSend(false);
       setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setPendingSend(false);
     }
   }
 
@@ -2280,7 +2284,7 @@ async function saveInvoiceDialog() {
           const installed = installedMiniApps[activePeer.miniAppId] ?? await transport.pluginActive(activePeer.miniAppId);
           if (!installed) throw new Error('请先安装这个 Mini App，再使用它自定义的通话界面。');
           const document = await transport.pluginUiDocument(activePeer.miniAppId);
-          html = document.html;
+          html = prepareDesktopMiniAppWebMcpDocument(activePeer.miniAppId, document.html);
         }
         setMiniAppCall({
           callId: 'miniapp-call:' + crypto.randomUUID(),
@@ -2603,6 +2607,12 @@ async function saveInvoiceDialog() {
     }
   }
 
+  async function showMiniAppDocument(id: string, title: string, html: string) {
+    const preparedHtml = miniAppCloudBridgeDocument(prepareDesktopMiniAppWebMcpDocument(id, html));
+    const url = await window.fabushi.registerMiniAppDocument(id, preparedHtml);
+    setMiniApp({ id, title, url });
+  }
+
   async function openMiniApp(id: string) {
     setError(null);
     setMiniAppBusyState(id, true);
@@ -2613,7 +2623,7 @@ async function saveInvoiceDialog() {
       if (!reconciledInstalled) throw new Error('请先从在线 Mini App 市场安装此应用');
       const document = await transport.pluginUiDocument(id);
       const title = miniAppIdentityCatalog.find((app) => app.pluginId === id)?.displayName ?? marketplaceApps.find((app) => app.pluginId === id)?.displayName ?? id;
-      setMiniApp({ id, title, html: document.html });
+      await showMiniAppDocument(id, title, document.html);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -2849,7 +2859,7 @@ async function saveInvoiceDialog() {
               </div>
             </header>
             {error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
-            <div className={styles.messageArea}>
+            <div className={styles.messageArea} data-testid="message-list">
               <div className={styles.dayDivider}>今天</div>
               {matchingMessages.length > renderedMessages.length ? <button type="button" data-testid="message-list-load-earlier" onClick={() => setMessageRenderCount((count) => count + initialMessageRenderCount)}>加载更早消息</button> : null}
               {renderedMessages.map((message) => (
@@ -3348,7 +3358,7 @@ function miniAppCloudBridgeDocument(html: string): string {
   return html.includes('</head>') ? html.replace('</head>', `${bootstrap}</head>`) : `${bootstrap}${html}`;
 }
 
-function MiniAppDialog({ app, onClose }: { app: { id: string; title: string; html: string }; onClose: () => void }) {
+function MiniAppDialog({ app, onClose }: { app: { id: string; title: string; url: string }; onClose: () => void }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -3372,7 +3382,7 @@ function MiniAppDialog({ app, onClose }: { app: { id: string; title: string; htm
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
   }, [app.id]);
-  return <div className={styles.backdrop} onMouseDown={onClose}><section className={styles.miniAppDialog} onMouseDown={(event) => event.stopPropagation()}><header><div><strong>{app.title}</strong><small>Mini App · 已安装线上包 · 账号云同步</small></div><button type="button" onClick={onClose}><X size={17} /></button></header><iframe ref={frameRef} title={app.id} sandbox="allow-scripts allow-forms" srcDoc={miniAppCloudBridgeDocument(app.html)} /></section></div>;
+  return <div className={styles.backdrop} onMouseDown={onClose}><section className={styles.miniAppDialog} onMouseDown={(event) => event.stopPropagation()}><header><div><strong>{app.title}</strong><small>Mini App · 已安装线上包 · 账号云同步</small></div><button type="button" onClick={onClose}><X size={17} /></button></header><iframe ref={frameRef} title={app.id} sandbox="allow-scripts allow-forms" src={app.url} /></section></div>;
 }
 
 type PaymentUiState = {

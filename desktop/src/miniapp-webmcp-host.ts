@@ -250,6 +250,15 @@ function injectWebMcp(html: string, pluginId: string, nonce: string): string {
   return html.includes('</head>') ? html.replace('</head>', `${bootstrap}</head>`) : `${bootstrap}${html}`;
 }
 
+export function prepareDesktopMiniAppWebMcpDocument(pluginId: string, html: string): string {
+  const normalizedPluginId = safePluginId(pluginId);
+  if (!normalizedPluginId) throw new Error(`Invalid MiniApp plugin id ${pluginId}`);
+  if (html.includes(protocol)) return html;
+  const nonce = crypto.randomUUID();
+  validBridgeNonces.set(nonce, normalizedPluginId);
+  return injectWebMcp(html, normalizedPluginId, nonce);
+}
+
 export function installDesktopMiniAppWebMcpHost(): void {
   const globalObject = window as Window & { [installMarker]?: boolean };
   if (globalObject[installMarker]) return;
@@ -261,9 +270,7 @@ export function installDesktopMiniAppWebMcpHost(): void {
   const originalPluginUiDocument = prototype.pluginUiDocument;
   prototype.pluginUiDocument = async function pluginUiDocumentWithWebMcp(pluginId: string) {
     const document = await originalPluginUiDocument.call(this, pluginId);
-    const nonce = crypto.randomUUID();
-    validBridgeNonces.set(nonce, pluginId);
-    return { ...document, html: injectWebMcp(document.html, pluginId, nonce) };
+    return { ...document, html: prepareDesktopMiniAppWebMcpDocument(pluginId, document.html) };
   };
 
   window.addEventListener('message', (event) => {

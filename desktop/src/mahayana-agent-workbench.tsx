@@ -1107,7 +1107,7 @@ function ensurePortalRoot(id: string, parent: HTMLElement | null, before?: Eleme
   }
   const root = existing || document.createElement('div');
   root.id = id;
-  root.className = styles.portalRoot;
+  if (root.className !== styles.portalRoot) root.className = styles.portalRoot;
   if (before instanceof HTMLElement) {
     root.dataset.sourceBotId = before.dataset.botId || '';
     root.dataset.sourceLabel = before.getAttribute('aria-label') || '';
@@ -1123,7 +1123,7 @@ function ensurePortalRoot(id: string, parent: HTMLElement | null, before?: Eleme
 
 function directChildBotMark(parent: HTMLElement): HTMLElement | null {
   return Array.from(parent.children).find((child) =>
-    child instanceof HTMLElement && child.dataset.engine === 'fabushi-motion-v2',
+    child instanceof HTMLElement && child.dataset.engine === 'fabushi-motion-v3',
   ) as HTMLElement | null;
 }
 

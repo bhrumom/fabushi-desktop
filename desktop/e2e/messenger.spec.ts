@@ -131,7 +131,7 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
     await openMessenger(page);
 
     const profileNavigation = page.getByTestId('profile-navigation-trigger');
-    const profileMark = profileNavigation.locator('[data-engine="fabushi-motion-v2"]').first();
+    const profileMark = profileNavigation.locator('[data-engine="fabushi-motion-v3"]').first();
     await expect(profileMark).toBeVisible();
     await expect(profileMark).toHaveAttribute('data-motion-tier', 'ambient');
     await profileNavigation.click();
@@ -178,13 +178,13 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
 
     const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
     await expect(assistant).toBeVisible();
-    await expect(assistant.locator('[data-engine="fabushi-motion-v2"]').first()).toBeVisible();
+    await expect(assistant.locator('[data-engine="fabushi-motion-v3"]').first()).toBeVisible();
     await assistant.click();
     await expect(page.getByTestId('messenger-input')).toBeVisible();
 
     await page.getByTestId('messenger-input').fill('统一消息链路验收');
     await page.getByTestId('messenger-send').click();
-    await expect(page.getByText('收到：统一消息链路验收')).toBeVisible();
+    await expect(page.getByTestId('message-list').locator(':scope > article').getByText('收到：统一消息链路验收', { exact: true })).toBeVisible();
 
     await page.getByTitle('置顶').click();
     await page.getByTitle('静音').click();
@@ -302,7 +302,7 @@ test('account settings logs out and clears account-scoped fast-start caches', as
     await assistant.click();
     await page.getByTestId('messenger-input').fill('退出登录缓存清理验收');
     await page.getByTestId('messenger-send').click();
-    await expect(page.getByText('收到：退出登录缓存清理验收')).toBeVisible();
+    await expect(page.getByTestId('message-list').locator(':scope > article').getByText('收到：退出登录缓存清理验收', { exact: true })).toBeVisible();
     await expect.poll(async () => page.evaluate(() => {
       const journal = JSON.parse(localStorage.getItem('fabushi.desktop.mahayana-conversation-journal.v1') || 'null');
       return Object.keys(journal?.conversations ?? {}).length;
@@ -568,7 +568,7 @@ test('desktop Messenger persists per-peer drafts and performs real in-conversati
     const marker = `会话搜索唯一标记-${Date.now()}`;
     await page.getByTestId('messenger-input').fill(marker);
     await page.getByTestId('messenger-send').click();
-    await expect(page.getByText(marker, { exact: true })).toBeVisible();
+    await expect(page.getByTestId('message-list').locator(':scope > article').getByText(marker, { exact: true })).toBeVisible();
 
     await page.getByTitle('搜索当前会话').click();
     await expect(page.getByTestId('conversation-search-scope')).toContainText('此聊天');

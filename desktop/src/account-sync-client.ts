@@ -129,7 +129,25 @@ export async function appendMiniAppBotMessages(
 }
 
 export async function readMiniAppCloudStorage(miniAppId: string, key?: string): Promise<Record<string, unknown>> {
-  return invokeNativeDesktop<Record<string, unknown>>('getMiniAppCloudStorage', { pluginId: miniAppId, key });
+  const response = await invokeNativeDesktop<Record<string, unknown>>('getMiniAppCloudStorage', { pluginId: miniAppId, key });
+  if (!key || response.item) return response;
+
+  // Native test accounts and the production account service historically used
+  // different keyed-read envelopes. Normalize every supported wire shape into
+  // the single `item` contract consumed by the Mini App CloudStorage bridge.
+  if (Object.prototype.hasOwnProperty.call(response, 'value')) {
+    return { ...response, item: { key, value: response.value } };
+  }
+  const values = response.values;
+  if (values && typeof values === 'object' && !Array.isArray(values) && Object.prototype.hasOwnProperty.call(values, key)) {
+    return { ...response, item: { key, value: (values as Record<string, unknown>)[key] } };
+  }
+  const items = Array.isArray(response.items) ? response.items : [];
+  const item = items.find((candidate) => {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return false;
+    return (candidate as { key?: unknown }).key === key;
+  });
+  return { ...response, item: item ?? null };
 }
 
 export async function writeMiniAppCloudStorage(miniAppId: string, values: Record<string, string>): Promise<Record<string, unknown>> {

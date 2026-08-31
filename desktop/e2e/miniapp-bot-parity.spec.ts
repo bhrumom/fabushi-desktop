@@ -105,7 +105,7 @@ async function readWebMcpTools(page: Page): Promise<string[]> {
   const frame = page.frameLocator('iframe[title="global-dharma"]');
   return frame.locator('body').evaluate(() => {
     const registry = (window as any).__fabushiWebMcp;
-    if (!registry?.list) throw new Error('Fabushi WebMCP registry is unavailable');
+    if (!registry?.list) return [];
     return registry.list().map((tool: { name?: unknown }) => String(tool.name ?? '')).filter(Boolean);
   });
 }
@@ -147,11 +147,11 @@ test('installed Mini App projects its Bot into Contacts/Bots and recovers Bot hi
     const naturalText = 'please show status now';
     await input.fill(commandText);
     await page.getByTestId('messenger-send').click();
-    await expect(page.getByText('command', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('message-list').locator(':scope > article').last()).toContainText('command');
 
     await input.fill(naturalText);
     await page.getByTestId('messenger-send').click();
-    await expect(page.getByText('natural-language', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('message-list').locator(':scope > article').last()).toContainText('natural-language');
 
     await page.getByTestId('miniapp-bot-open').click();
     await expect(page.getByText('Mini App · 已安装线上包 · 账号云同步')).toBeVisible();

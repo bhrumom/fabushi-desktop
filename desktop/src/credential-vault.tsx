@@ -142,7 +142,11 @@ export default function CredentialVault() {
         binding: { label: label.trim() || undefined, allowedOrigins, injection },
       });
       setValue('');
-      setEntries(Array.isArray(result) ? result : []);
+      if (Array.isArray(result)) setEntries(result);
+      // Re-read the trusted metadata after persistence. This keeps the UI
+      // authoritative even when a native wrapper returns no payload or an
+      // older transport returns a non-list acknowledgement.
+      await refresh();
       clearDraft();
     } catch (cause) {
       setValue('');

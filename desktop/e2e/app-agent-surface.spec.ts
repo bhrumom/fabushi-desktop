@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type Page } from '@playwright/test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -59,6 +59,22 @@ async function completeBrowserLogin(page: Page): Promise<void> {
 
 test('packaged Fabushi publishes a generation-safe semantic App MCP over the private loopback bridge', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-app-agent-e2e-'));
+  const policyDir = path.join(appDataDir, 'feature-host', 'runtime');
+  await mkdir(policyDir, { recursive: true });
+  await writeFile(path.join(policyDir, 'settings.json'), JSON.stringify({
+    notifications: true,
+    autoUpdateWhenIdle: true,
+    localExecution: true,
+    routeEgressLocally: false,
+    securityKeys: false,
+    webauthnProxyEnabled: false,
+    localToolPermission: 'ask',
+    remoteControlEnabled: false,
+    aiComputerControlEnabled: true,
+    autoReviewRules: [],
+    inferenceProvider: 'fabushi',
+    sandboxRuntime: 'host',
+  }));
   const app = await launchDesktopApp(appDataDir);
   try {
     const page = await app.firstWindow();
