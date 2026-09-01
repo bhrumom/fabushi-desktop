@@ -158,6 +158,11 @@ type DisplayMessage = {
   role: 'me' | 'peer';
   text: string;
   createdAtMs: number;
+  kind?: 'message' | 'action' | 'thinking';
+  operationId?: string;
+  actionTitle?: string;
+  actionDetail?: string;
+  actionStatus?: 'running' | 'completed' | 'failed';
   pinned?: boolean;
   reactions?: string[];
   invoiceId?: string;
@@ -752,6 +757,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [computerProfileOpen, setComputerProfileOpen] = useState(false);
   const [remoteComputerState, setRemoteComputerState] = useState<RemoteComputerDesktopState | null>(null);
   const [pendingSend, setPendingSend] = useState(false);
+  const [agentOperationId, setAgentOperationId] = useState<string | null>(null);
   const [typingByConversation, setTypingByConversation] = useState<Record<string, Record<string, number>>>({});
   const [newDialog, setNewDialog] = useState<NewDialog>(null);
   const [messageMenu, setMessageMenu] = useState<MessageMenu>(null);
@@ -793,6 +799,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const sessionResetInFlightRef = useRef(false);
+  const agentOperationIdRef = useRef<string | null>(null);
+  const agentRequestPendingRef = useRef(false);
   const remoteControlEnabledRef = useRef(hostSettings.remoteControlEnabled);
   remoteControlEnabledRef.current = hostSettings.remoteControlEnabled;
 
@@ -1263,6 +1271,67 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     };
   }
 
+  function claimAgentOperation(operationId?: string): boolean {
+    if (!operationId) return false;
+    if (agentOperationIdRef.current === operationId) return true;
+    if (!agentRequestPendingRef.current) return false;
+    agentRequestPendingRef.current = false;
+    agentOperationIdRef.current = operationId;
+    setAgentOperationId(operationId);
+    return true;
+  }
+
+  function clearAgentOperation(operationId: string) {
+    if (agentOperationIdRef.current !== operationId) return;
+    agentOperationIdRef.current = null;
+    setAgentOperationId(null);
+    agentRequestPendingRef.current = false;
+    setMessages((current) => current.filter((message) => !(message.kind === 'thinking' && message.operationId === operationId)));
+  }
+
+  function appendAgentThinking(operationId: string, label: string) {
+    setMessages((current) => [
+      ...current.filter((message) => !(message.kind === 'thinking' && message.operationId === operationId)),
+      {
+        id: `${operationId}:thinking`,
+        source: 'legacy',
+        role: 'peer',
+        text: '',
+        createdAtMs: Date.now(),
+        kind: 'thinking',
+        operationId,
+        actionTitle: label || '正在思考',
+        actionStatus: 'running',
+      },
+    ]);
+  }
+
+  function upsertAgentAction(input: {
+    id: string;
+    operationId: string;
+    title: string;
+    detail?: string;
+    status: 'running' | 'completed' | 'failed';
+  }) {
+    setMessages((current) => {
+      const next: DisplayMessage = {
+        id: input.id,
+        source: 'legacy',
+        role: 'peer',
+        text: '',
+        createdAtMs: Date.now(),
+        kind: 'action',
+        operationId: input.operationId,
+        actionTitle: input.title,
+        actionDetail: input.detail,
+        actionStatus: input.status,
+      };
+      const index = current.findIndex((message) => message.kind === 'action' && message.id === input.id);
+      if (index < 0) return [...current, next];
+      return current.map((message, messageIndex) => messageIndex === index ? { ...message, ...next } : message);
+    });
+  }
+
   function showSelfConversation(conversationId: string) {
     setMessages((selfMessages[conversationId] ?? []).filter((message) => !message.deleted).map(displaySelfMessage));
   }
@@ -1512,9 +1581,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setHostSettings(event.settings);
         break;
       case 'chat.message':
-        setPendingSend(false);
+        if (event.role === 'assistant' && claimAgentOperation(event.operationId)) {
+          setMessages((current) => current.filter((message) => !(message.kind === 'thinking' && message.operationId === event.operationId)));
+        }
         setMessages((current) => {
           const id = event.operationId || nextRequestId('message');
+          const existingIndex = event.role === 'assistant' && event.operationId
+            ? current.findIndex((message) => message.kind !== 'action' && message.kind !== 'thinking' && message.operationId === event.operationId)
+            : -1;
+          if (existingIndex >= 0) {
+            return current.map((message, messageIndex) => messageIndex === existingIndex ? { ...message, kind: 'message', text: event.text } : message);
+          }
           if (current.some((message) => message.id === id && message.text === event.text)) return current;
           return [...current, {
             id,
@@ -1522,16 +1599,55 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
             role: event.role === 'user' ? 'me' : 'peer',
             text: event.text,
             createdAtMs: Date.now(),
+            kind: 'message',
+            operationId: event.operationId,
           }];
         });
         break;
       case 'chat.delta':
-        setPendingSend(false);
+        claimAgentOperation(event.operationId);
+        setMessages((current) => current.filter((message) => !(message.kind === 'thinking' && message.operationId === event.operationId)));
         setMessages((current) => {
-          const index = current.findIndex((message) => message.id === event.operationId);
-          if (index < 0) return [...current, { id: event.operationId, source: 'legacy', role: 'peer', text: event.delta, createdAtMs: Date.now() }];
-          return current.map((message, messageIndex) => messageIndex === index ? { ...message, text: `${message.text}${event.delta}` } : message);
+          const index = current.findIndex((message) => message.kind !== 'action' && message.kind !== 'thinking' && message.operationId === event.operationId);
+          if (index < 0) return [...current, { id: event.operationId, source: 'legacy', role: 'peer', text: event.delta, createdAtMs: Date.now(), kind: 'message', operationId: event.operationId }];
+          return current.map((message, messageIndex) => messageIndex === index ? { ...message, text: `${message.text}${event.delta}`, kind: 'message' } : message);
         });
+        break;
+      case 'operation.started':
+        if (claimAgentOperation(event.operationId)) {
+          setPendingSend(true);
+          appendAgentThinking(event.operationId, event.label || '正在思考');
+        }
+        break;
+      case 'model.routed':
+        if (claimAgentOperation(event.operationId)) {
+          upsertAgentAction({
+            id: `${event.operationId}:model`,
+            operationId: event.operationId,
+            title: event.model === 'auto' ? '选择模型' : `模型：${event.model}`,
+            detail: `${event.provider} · ${event.mode}`,
+            status: 'completed',
+          });
+        }
+        break;
+      case 'agent.step':
+        if (claimAgentOperation(event.operationId)) {
+          upsertAgentAction({
+            id: `${event.operationId}:${event.stepId}`,
+            operationId: event.operationId!,
+            title: event.title,
+            detail: event.detail,
+            status: event.status,
+          });
+        }
+        break;
+      case 'operation.interrupted':
+        clearAgentOperation(event.operationId);
+        setPendingSend(false);
+        break;
+      case 'operation.completed':
+        clearAgentOperation(event.operationId);
+        setPendingSend(false);
         break;
       case 'miniapp.opened':
         if (event.html) {
@@ -1542,6 +1658,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       case 'operation.failed':
+        clearAgentOperation(event.operationId);
         setPendingSend(false);
         setError(event.message);
         break;
@@ -1805,6 +1922,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (!text || !activePeer || pendingSend) return;
     setPendingSend(true);
     updateComposer('');
+    const agentRequest = activePeer.source === 'legacy' && activePeer.kind !== 'group' && isAgentPeer(activePeer);
+    agentRequestPendingRef.current = agentRequest;
     try {
       if (activePeer.miniAppId) {
         const createdAtMs = Date.now();
@@ -1853,13 +1972,16 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       } else if (activePeer.kind === 'group' && activePeer.groupId) {
         await execute({ type: 'group.send', requestId: nextRequestId('group-send'), id: activePeer.groupId, text });
       } else {
-        await execute({
+        const accepted = await execute({
           type: 'chat.send',
           requestId: nextRequestId('chat-send'),
           text,
           conversationId: activePeer.conversationId,
           agentId: activePeer.actorId,
         });
+        if (agentRequest && accepted?.operationId && claimAgentOperation(accepted.operationId)) {
+          appendAgentThinking(accepted.operationId, '正在思考');
+        }
       }
       setReplyTo(null);
       setScheduledAtMs(undefined);
@@ -1867,7 +1989,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       updateComposer(text);
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
-      setPendingSend(false);
+      agentRequestPendingRef.current = false;
+      if (!agentRequest || !agentOperationIdRef.current) setPendingSend(false);
     }
   }
 
@@ -2859,14 +2982,26 @@ async function saveInvoiceDialog() {
               </div>
             </header>
             {error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
-            <div className={styles.messageArea} data-testid="message-list">
+            <div className={styles.messageArea} data-testid="message-list" data-agent-operation-id={agentOperationId ?? undefined}>
               <div className={styles.dayDivider}>今天</div>
               {matchingMessages.length > renderedMessages.length ? <button type="button" data-testid="message-list-load-earlier" onClick={() => setMessageRenderCount((count) => count + initialMessageRenderCount)}>加载更早消息</button> : null}
-              {renderedMessages.map((message) => (
+              {renderedMessages.map((message) => message.kind === 'thinking' ? (
+                <article key={`${message.source}:${message.id}`} className={styles.agentThinkingRow} data-testid="agent-thinking" data-operation-id={message.operationId}>
+                  <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state="thinking" size={30} className={styles.agentStreamAvatar} label={activePeer.title} />
+                  <div><strong>{message.actionTitle ?? '正在思考'}</strong><span>大乘助手正在处理这条消息…</span></div>
+                </article>
+              ) : message.kind === 'action' ? (
+                <article key={`${message.source}:${message.id}`} className={styles.agentActionRow} data-testid="agent-step" data-operation-id={message.operationId} data-status={message.actionStatus}>
+                  <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={message.actionStatus === 'running' ? 'working' : message.actionStatus === 'failed' ? 'error' : 'result'} size={25} className={styles.agentStreamAvatar} label={activePeer.title} />
+                  <div><strong>{message.actionTitle}</strong>{message.actionDetail ? <span>{message.actionDetail}</span> : null}</div>
+                  <small>{message.actionStatus === 'running' ? '进行中' : message.actionStatus === 'failed' ? '失败' : '完成'}</small>
+                </article>
+              ) : (
                 <article
                   key={`${message.source}:${message.id}`}
                   className={message.role === 'me' ? styles.messageMine : styles.messagePeer}
                   onContextMenu={(event) => {
+                    if (message.kind === 'action' || message.kind === 'thinking') return;
                     event.preventDefault();
                     event.stopPropagation();
                     setMessageMenu({ message, x: event.clientX, y: event.clientY });

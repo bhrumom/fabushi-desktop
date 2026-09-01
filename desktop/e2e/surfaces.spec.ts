@@ -198,7 +198,7 @@ test('installed desktop exposes unified Messenger, native menu routing, browser 
       }
       await page.getByTestId('profile-navigation-trigger').click();
       await expect(page.getByTestId('profile-navigation-menu')).toHaveCount(0);
-      const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+      const assistant = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
       await expect(assistant).toBeVisible();
       await expect(assistant.locator('[data-engine="fabushi-motion-v3"]').first()).toBeVisible();
       await assistant.click();

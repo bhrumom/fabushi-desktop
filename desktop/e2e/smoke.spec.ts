@@ -134,7 +134,7 @@ async function runJourneyStep(page: Page, step: MahayanaHostJourneyStep): Promis
       return;
     }
     case 'sendChat': {
-      const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+      const assistant = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
       await expect(assistant).toBeVisible();
       await assistant.click();
       const input = page.getByTestId('messenger-input');

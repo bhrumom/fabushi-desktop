@@ -111,7 +111,7 @@ test('capture Grok parity packaged visual evidence', async () => {
     await page.getByTestId('profile-navigation-trigger').click();
     await page.getByTitle('聊天', { exact: true }).click();
 
-    const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+    const assistant = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
     await expect(assistant).toBeVisible();
     await assistant.click();
     await expect(page.getByTestId('messenger-input')).toBeVisible();

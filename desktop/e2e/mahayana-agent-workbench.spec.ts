@@ -65,7 +65,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
 }
 
 async function openMahayanaConversation(page: Page): Promise<void> {
-  const peer = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+  const peer = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
   await expect(peer).toBeVisible({ timeout: 15_000 });
   await peer.click();
   await expect(page.getByTestId('messenger-input')).toBeVisible();

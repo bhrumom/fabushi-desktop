@@ -176,7 +176,7 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
     }
     await page.getByRole('button', { name: '关闭搜索' }).click();
 
-    const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+    const assistant = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
     await expect(assistant).toBeVisible();
     await expect(assistant.locator('[data-engine="fabushi-motion-v3"]').first()).toBeVisible();
     await assistant.click();
@@ -209,11 +209,11 @@ test('Router settings modal binds providers, usage, sandbox, preferences and fas
     await completeBrowserLogin(page);
     await openMessenger(page);
 
-    const cachedLegacyPeer = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+    const cachedLegacyPeer = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
     await expect(cachedLegacyPeer).toBeVisible();
     await expect.poll(async () => page.evaluate(() => {
       const projection = JSON.parse(localStorage.getItem('fabushi.desktop.messenger-projection.v1') || 'null');
-      return Boolean(projection?.legacyConversations?.some((item: { id?: string }) => item.id === 'codex:agent:assistant'));
+      return Boolean(projection?.legacyConversations?.some((item: { id?: string }) => item.id === 'mahayana-ai:agent:assistant'));
     }), { timeout: 5_000 }).toBe(true);
 
     await page.getByTestId('profile-navigation-trigger').click();
@@ -281,7 +281,7 @@ test('Router settings modal binds providers, usage, sandbox, preferences and fas
     await expect(page.getByTestId('messenger-workspace')).toBeVisible({ timeout: 5_000 });
     await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-testid-ready-projection', 'true');
     await expect(page.getByText('本地优先投影验收').first()).toBeVisible();
-    await expect(page.getByTestId('peer-legacy:conversation:codex:agent:assistant')).toBeVisible();
+    await expect(page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant')).toBeVisible();
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });
@@ -297,7 +297,7 @@ test('account settings logs out and clears account-scoped fast-start caches', as
     await completeBrowserLogin(page);
     await openMessenger(page);
 
-    const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+    const assistant = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
     await expect(assistant).toBeVisible();
     await assistant.click();
     await page.getByTestId('messenger-input').fill('退出登录缓存清理验收');
@@ -553,7 +553,7 @@ test('desktop Messenger persists per-peer drafts and performs real in-conversati
     await completeBrowserLogin(page);
     await openMessenger(page);
 
-    const assistant = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+    const assistant = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
     await assistant.click();
     const input = page.getByTestId('messenger-input');
     const draft = '每个会话独立保存的草稿';
@@ -562,7 +562,7 @@ test('desktop Messenger persists per-peer drafts and performs real in-conversati
     await page.reload();
     await completeBrowserLogin(page);
     await openMessenger(page);
-    await page.getByTestId('peer-legacy:conversation:codex:agent:assistant').click();
+    await page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant').click();
     await expect(page.getByTestId('messenger-input')).toHaveValue(draft);
 
     const marker = `会话搜索唯一标记-${Date.now()}`;

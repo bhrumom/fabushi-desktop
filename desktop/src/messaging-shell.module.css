@@ -1530,3 +1530,41 @@
   .settingsSecretRow { grid-template-columns: 1fr auto; }
   .settingsSecretRow > div { grid-column: 1 / -1; }
 }
+
+.agentThinkingRow,
+.agentActionRow {
+  width: min(86%, 620px);
+  margin: 7px auto 7px 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 13px;
+  background: rgb(255 255 255 / 3%);
+  color: var(--muted);
+}
+
+.agentThinkingRow {
+  grid-template-columns: auto minmax(0, 1fr);
+  border-color: rgb(152 126 255 / 24%);
+  background: linear-gradient(100deg, rgb(139 92 246 / 12%), rgb(255 255 255 / 3%));
+}
+
+.agentStreamAvatar { flex: 0 0 auto; }
+.agentThinkingRow > div,
+.agentActionRow > div { min-width: 0; display: grid; gap: 2px; }
+.agentThinkingRow strong,
+.agentActionRow strong { color: var(--text); font-size: 12px; font-weight: 650; }
+.agentThinkingRow span,
+.agentActionRow span { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.agentActionRow > small { color: var(--faint); font-size: 10px; white-space: nowrap; }
+.agentActionRow[data-status="running"] { border-color: rgb(139 92 246 / 20%); }
+.agentActionRow[data-status="failed"] { border-color: rgb(232 126 141 / 30%); }
+
+.shell[data-theme="light"] .agentThinkingRow,
+.shell[data-theme="light"] .agentActionRow {
+  border-color: rgb(25 24 32 / 12%);
+  background: rgb(25 24 32 / 4%);
+}

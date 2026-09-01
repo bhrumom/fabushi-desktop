@@ -95,7 +95,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
     });
 
     await test.step('conversation and composer expose dark low-contrast material', async () => {
-      const peer = page.getByTestId('peer-legacy:conversation:codex:agent:assistant');
+      const peer = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
       await expect(peer).toBeVisible();
       await peer.click();
       const input = page.getByTestId('messenger-input');
@@ -104,7 +104,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       const material = await page.evaluate(() => {
         const inputElement = document.querySelector('[data-testid="messenger-input"]');
         const composer = inputElement?.parentElement;
-        const peerElement = document.querySelector('[data-testid="peer-legacy:conversation:codex:agent:assistant"]');
+        const peerElement = document.querySelector('[data-testid="peer-legacy:conversation:mahayana-ai:agent:assistant"]');
         if (!composer || !peerElement) return null;
         const composerStyle = getComputedStyle(composer);
         const peerStyle = getComputedStyle(peerElement);
