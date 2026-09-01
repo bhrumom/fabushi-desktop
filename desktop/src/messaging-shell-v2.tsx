@@ -1281,12 +1281,18 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     return true;
   }
 
-  function clearAgentOperation(operationId: string) {
+  function clearAgentOperation(operationId: string, terminalStatus: 'completed' | 'failed' = 'completed') {
     if (agentOperationIdRef.current !== operationId) return;
     agentOperationIdRef.current = null;
     setAgentOperationId(null);
     agentRequestPendingRef.current = false;
-    setMessages((current) => current.filter((message) => !(message.kind === 'thinking' && message.operationId === operationId)));
+    setMessages((current) => current
+      .filter((message) => !(message.kind === 'thinking' && message.operationId === operationId))
+      .map((message) => message.kind === 'action' &&
+        message.operationId === operationId &&
+        message.actionStatus === 'running'
+        ? { ...message, actionStatus: terminalStatus }
+        : message));
   }
 
   function appendAgentThinking(operationId: string, label: string) {
@@ -1642,7 +1648,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       case 'operation.interrupted':
-        clearAgentOperation(event.operationId);
+        clearAgentOperation(event.operationId, 'failed');
         setPendingSend(false);
         break;
       case 'operation.completed':
@@ -1658,7 +1664,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       case 'operation.failed':
-        clearAgentOperation(event.operationId);
+        clearAgentOperation(event.operationId, 'failed');
         setPendingSend(false);
         setError(event.message);
         break;
