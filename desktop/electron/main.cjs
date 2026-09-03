@@ -1098,7 +1098,12 @@ function installBackgroundTray() {
 function installAutoUpdaterEvents() {
   if (!autoUpdater?.on) return;
   autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = true;
+  // macOS's Squirrel updater must fetch the staged ZIP after the renderer has
+  // requested installation. If this remains true, downloadUpdate() starts the
+  // native fetch before quitAndInstall() is called and the explicit renderer
+  // shutdown can race that install handshake. Keep the manual flow in control
+  // on macOS; other platforms retain their normal quit-install behavior.
+  autoUpdater.autoInstallOnAppQuit = process.platform !== 'darwin';
   autoUpdater.allowPrerelease = false;
   autoUpdater.on('checking-for-update', () => {
     const status = { type: 'checking', version: app.getVersion() };

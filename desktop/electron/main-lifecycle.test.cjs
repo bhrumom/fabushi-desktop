@@ -21,6 +21,11 @@ test('desktop updater quit is not blocked by App Agent Surface cleanup', () => {
   assert.match(nativeCapabilitySource, /autoUpdater\.quitAndInstall\(false, true\);[\s\S]*?app\.quit\(\);/);
 });
 
+test('macOS updater lets Squirrel finish before quitting the application', () => {
+  assert.match(source, /autoUpdater\.autoInstallOnAppQuit = process\.platform !== 'darwin';/);
+  assert.match(nativeCapabilitySource, /autoUpdater\.quitAndInstall\(false, true\);\s*if \(process\.platform !== 'darwin'\) app\.quit\(\);/);
+});
+
 test('runtime event pump yields between long-polls so renderer IPC cannot starve', () => {
   const pump = source.slice(source.indexOf('function startHostEventPump()'), source.indexOf('function installIpcHandlers()'));
   assert.match(pump, /if \(event\) broadcastMahayanaEvent\(event\);\s*\/\/ Yield after every receive[\s\S]*?await sleep\(10\);/);

@@ -472,14 +472,14 @@ function createNativeCapabilityHandlers(deps) {
       }
       const installTimer = setTimeout(() => {
         try {
-          // electron-updater normally invokes app.quit() as part of
-          // quitAndInstall(), but the macOS updater can return from an IPC
-          // callback without starting that quit path. The explicit quit keeps
-          // the install handshake deterministic; the main process has already
-          // marked this as an update shutdown so optional cleanup cannot cancel
-          // it.
+          // electron-updater's macOS adapter asks Squirrel.Mac to fetch the
+          // staged ZIP here and Squirrel.Mac quits only after that fetch is
+          // complete. Do not call app.quit() on macOS: an eager quit can close
+          // the app before Squirrel has replaced the bundle. The main process
+          // already marks this as an update shutdown so optional cleanup cannot
+          // cancel the handshake. Other platforms keep the explicit fallback.
           autoUpdater.quitAndInstall(false, true);
-          app.quit();
+          if (process.platform !== 'darwin') app.quit();
         } catch (error) {
           if (typeof setDesktopUpdateInstallInProgress === 'function') {
             setDesktopUpdateInstallInProgress(false);
