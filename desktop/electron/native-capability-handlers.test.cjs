@@ -26,6 +26,7 @@ async function harness(run, options = {}) {
       throw new Error(`unexpected app path ${name}`);
     },
     getVersion: () => 'test',
+    quit: () => options.onAppQuit?.(),
   };
   for (const name of ['userData', 'downloads', 'temp']) await fs.mkdir(app.getPath(name), { recursive: true });
   const handlers = createNativeCapabilityHandlers({
@@ -357,6 +358,7 @@ test('desktop update click uses live status even while persisted state is stale'
 test('desktop update click downloads a GitHub release and schedules replacement restart', async () => {
   const calls = [];
   let installationInProgress = false;
+  let appQuitCount = 0;
   const autoUpdater = new EventEmitter();
   autoUpdater.downloadUpdate = async () => {
     calls.push('download');
@@ -380,6 +382,8 @@ test('desktop update click downloads a GitHub release and schedules replacement 
       updateStatus: { type: 'available', version: '1.0.3' },
     },
     setDesktopUpdateInstallInProgress: (value) => { installationInProgress = value; },
+    onAppQuit: () => { appQuitCount += 1; },
   });
   assert.equal(installationInProgress, true);
+  assert.equal(appQuitCount, 1);
 });

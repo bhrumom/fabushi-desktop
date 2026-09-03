@@ -4,6 +4,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const source = fs.readFileSync(path.join(__dirname, 'main.cjs'), 'utf8');
+const nativeCapabilitySource = fs.readFileSync(path.join(__dirname, 'native-capability-handlers.cjs'), 'utf8');
 
 test('desktop background presence remains production-only while E2E can shut down', () => {
   assert.match(source, /const backgroundPersistenceEnabled = process\.env\.FABUSHI_E2E !== '1';/);
@@ -17,6 +18,7 @@ test('desktop updater quit is not blocked by App Agent Surface cleanup', () => {
   assert.match(source, /setDesktopUpdateInstallInProgress/);
   assert.match(source, /if \(desktopUpdateInstallationInProgress\) \{[\s\S]*?closingAppAgentSurface\.close\(\)/);
   assert.match(source, /event\.preventDefault\(\);[\s\S]*?closingAppAgentSurface\.close\(\)/);
+  assert.match(nativeCapabilitySource, /autoUpdater\.quitAndInstall\(false, true\);[\s\S]*?app\.quit\(\);/);
 });
 
 test('runtime event pump yields between long-polls so renderer IPC cannot starve', () => {

@@ -472,10 +472,14 @@ function createNativeCapabilityHandlers(deps) {
       }
       const installTimer = setTimeout(() => {
         try {
-          // electron-updater invokes app.quit() as part of quitAndInstall(). The
-          // main process marks this as an update shutdown before the call so its
-          // normal background-service cleanup cannot cancel the installer quit.
+          // electron-updater normally invokes app.quit() as part of
+          // quitAndInstall(), but the macOS updater can return from an IPC
+          // callback without starting that quit path. The explicit quit keeps
+          // the install handshake deterministic; the main process has already
+          // marked this as an update shutdown so optional cleanup cannot cancel
+          // it.
           autoUpdater.quitAndInstall(false, true);
+          app.quit();
         } catch (error) {
           if (typeof setDesktopUpdateInstallInProgress === 'function') {
             setDesktopUpdateInstallInProgress(false);
