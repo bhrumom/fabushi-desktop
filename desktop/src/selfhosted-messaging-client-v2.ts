@@ -411,6 +411,14 @@ export class SelfHostedMessagingClientV2 {
     this.sessionId = options.sessionId ?? `messenger:${Date.now().toString(36)}`;
   }
 
+  resetIdentity(): void {
+    this.identityResolved = false;
+    this.identityPromise = null;
+    this.lastIdentityFailureAtMs = 0;
+    this.actorId = 'human:desktop:current';
+    this.sessionId = `messenger:${Date.now().toString(36)}`;
+  }
+
   private async ensureNativeIdentity(): Promise<void> {
     if (this.identityResolved || typeof window === 'undefined' || typeof window.fabushiNative?.invoke !== 'function') return;
     if (Date.now() - this.lastIdentityFailureAtMs < 5_000) return;
@@ -427,8 +435,9 @@ export class SelfHostedMessagingClientV2 {
         this.deviceId = deviceId;
         this.sessionId = sessionId;
         this.identityResolved = true;
-      }).catch(() => {
+      }).catch((cause) => {
         this.lastIdentityFailureAtMs = Date.now();
+        throw cause instanceof Error ? cause : new Error(String(cause));
       }).finally(() => {
         this.identityPromise = null;
       });

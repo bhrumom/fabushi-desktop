@@ -160,6 +160,7 @@ type DisplayMessage = {
   createdAtMs: number;
   kind?: 'message' | 'action' | 'thinking';
   operationId?: string;
+  streaming?: boolean;
   actionTitle?: string;
   actionDetail?: string;
   actionStatus?: 'running' | 'completed' | 'failed';
@@ -1591,22 +1592,26 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           setMessages((current) => current.filter((message) => !(message.kind === 'thinking' && message.operationId === event.operationId)));
         }
         setMessages((current) => {
-          const id = event.operationId || nextRequestId('message');
           const existingIndex = event.role === 'assistant' && event.operationId
-            ? current.findIndex((message) => message.kind !== 'action' && message.kind !== 'thinking' && message.operationId === event.operationId)
+            ? current.findIndex((message) => message.kind === 'message' && message.operationId === event.operationId && message.streaming)
             : -1;
           if (existingIndex >= 0) {
-            return current.map((message, messageIndex) => messageIndex === existingIndex ? { ...message, kind: 'message', text: event.text } : message);
+            return current.map((message, messageIndex) => messageIndex === existingIndex
+              ? { ...message, kind: 'message', text: event.text, streaming: false }
+              : message);
           }
-          if (current.some((message) => message.id === id && message.text === event.text)) return current;
+          if (event.role === 'user' && current.some((message) =>
+            message.role === 'me' && message.text === event.text &&
+            (!event.operationId || message.operationId === event.operationId))) return current;
           return [...current, {
-            id,
+            id: nextRequestId('message'),
             source: 'legacy',
             role: event.role === 'user' ? 'me' : 'peer',
             text: event.text,
             createdAtMs: Date.now(),
             kind: 'message',
             operationId: event.operationId,
+            streaming: false,
           }];
         });
         break;
@@ -1614,9 +1619,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         claimAgentOperation(event.operationId);
         setMessages((current) => current.filter((message) => !(message.kind === 'thinking' && message.operationId === event.operationId)));
         setMessages((current) => {
-          const index = current.findIndex((message) => message.kind !== 'action' && message.kind !== 'thinking' && message.operationId === event.operationId);
-          if (index < 0) return [...current, { id: event.operationId, source: 'legacy', role: 'peer', text: event.delta, createdAtMs: Date.now(), kind: 'message', operationId: event.operationId }];
-          return current.map((message, messageIndex) => messageIndex === index ? { ...message, text: `${message.text}${event.delta}`, kind: 'message' } : message);
+          const index = current.findIndex((message) => message.kind === 'message' && message.operationId === event.operationId && message.streaming);
+          if (index < 0) return [...current, { id: `${event.operationId}:stream`, source: 'legacy', role: 'peer', text: event.delta, createdAtMs: Date.now(), kind: 'message', operationId: event.operationId, streaming: true }];
+          return current.map((message, messageIndex) => messageIndex === index ? { ...message, text: `${message.text}${event.delta}`, kind: 'message', streaming: true } : message);
         });
         break;
       case 'operation.started':
