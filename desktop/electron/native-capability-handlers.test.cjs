@@ -43,6 +43,7 @@ async function harness(run, options = {}) {
     setDesktopUpdateStatus: options.setDesktopUpdateStatus,
     windowForEvent: () => ({}),
     broadcastNativeEvent: () => {},
+    setDesktopUpdateInstallInProgress: options.setDesktopUpdateInstallInProgress,
   });
   try {
     await run({ root, app, handlers, getState: () => state });
@@ -355,6 +356,7 @@ test('desktop update click uses live status even while persisted state is stale'
 
 test('desktop update click downloads a GitHub release and schedules replacement restart', async () => {
   const calls = [];
+  let installationInProgress = false;
   const autoUpdater = new EventEmitter();
   autoUpdater.downloadUpdate = async () => {
     calls.push('download');
@@ -377,5 +379,7 @@ test('desktop update click downloads a GitHub release and schedules replacement 
       clientPersistence: {},
       updateStatus: { type: 'available', version: '1.0.3' },
     },
+    setDesktopUpdateInstallInProgress: (value) => { installationInProgress = value; },
   });
+  assert.equal(installationInProgress, true);
 });

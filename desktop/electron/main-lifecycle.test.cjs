@@ -12,6 +12,13 @@ test('desktop background presence remains production-only while E2E can shut dow
   assert.match(source, /if \(!backgroundPersistenceEnabled\) app\.quit\(\);/);
 });
 
+test('desktop updater quit is not blocked by App Agent Surface cleanup', () => {
+  assert.match(source, /let desktopUpdateInstallationInProgress = false;/);
+  assert.match(source, /setDesktopUpdateInstallInProgress/);
+  assert.match(source, /if \(desktopUpdateInstallationInProgress\) \{[\s\S]*?closingAppAgentSurface\.close\(\)/);
+  assert.match(source, /event\.preventDefault\(\);[\s\S]*?closingAppAgentSurface\.close\(\)/);
+});
+
 test('runtime event pump yields between long-polls so renderer IPC cannot starve', () => {
   const pump = source.slice(source.indexOf('function startHostEventPump()'), source.indexOf('function installIpcHandlers()'));
   assert.match(pump, /if \(event\) broadcastMahayanaEvent\(event\);\s*\/\/ Yield after every receive[\s\S]*?await sleep\(10\);/);

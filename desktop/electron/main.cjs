@@ -136,7 +136,12 @@ let automaticDesktopUpdateCheckPromise = null;
 let mainWindow = null;
 let backgroundTray = null;
 let quitting = false;
+let desktopUpdateInstallationInProgress = false;
 const backgroundPersistenceEnabled = process.env.FABUSHI_E2E !== '1';
+
+function setDesktopUpdateInstallInProgress(value) {
+  desktopUpdateInstallationInProgress = value === true;
+}
 
 function appAgentControlPolicyDecision() {
   const configured = String(process.env.FABUSHI_COMPUTER_POLICY_FILE || '').trim();
@@ -807,6 +812,7 @@ function installNativeEdge() {
     windowForEvent,
     broadcastNativeEvent,
     markDeepLinksReady: () => deepLinkRouter.markReady(),
+    setDesktopUpdateInstallInProgress,
   }));
 
   nativeEdgeServer = serveMainEdge(ipcMain, NATIVE_EDGE, handlers, {
@@ -1357,18 +1363,29 @@ app.on('before-quit', (event) => {
   const closingAppAgentSurface = appAgentSurfaceServer;
   appAgentSurfaceServer = null;
   if (closingAppAgentSurface && !appAgentSurfaceShutdownComplete) {
-    event.preventDefault();
-    if (!appAgentSurfaceShutdownPending) {
-      appAgentSurfaceShutdownPending = true;
-      void closingAppAgentSurface.close()
-        .catch((error) => {
-          console.error('[app-agent-surface] shutdown failed', error);
-        })
-        .finally(() => {
-          appAgentSurfaceShutdownPending = false;
-          appAgentSurfaceShutdownComplete = true;
-          app.quit();
-        });
+    if (desktopUpdateInstallationInProgress) {
+      // The updater has already staged a replacement and must be allowed to
+      // finish the quit/install handshake. Cleanup is best-effort here: waiting
+      // for a loopback control request would prevent electron-updater from
+      // replacing the app bundle at all.
+      appAgentSurfaceShutdownComplete = true;
+      void closingAppAgentSurface.close().catch((error) => {
+        console.error('[app-agent-surface] shutdown during update failed', error);
+      });
+    } else {
+      event.preventDefault();
+      if (!appAgentSurfaceShutdownPending) {
+        appAgentSurfaceShutdownPending = true;
+        void closingAppAgentSurface.close()
+          .catch((error) => {
+            console.error('[app-agent-surface] shutdown failed', error);
+          })
+          .finally(() => {
+            appAgentSurfaceShutdownPending = false;
+            appAgentSurfaceShutdownComplete = true;
+            app.quit();
+          });
+      }
     }
   }
   backgroundTray?.destroy();

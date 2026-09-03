@@ -226,7 +226,13 @@ function createAppAgentSurfaceServer(options = {}) {
     },
     async close() {
       rejectAll('app_surface_unavailable');
-      if (listening) await new Promise((resolve) => httpServer.close(resolve));
+      if (listening) {
+        // Shutdown must not wait forever for an external keep-alive socket. In
+        // particular, an Electron updater quit is a time-sensitive replacement
+        // handshake and cannot be blocked by this optional loopback bridge.
+        httpServer.closeAllConnections?.();
+        await new Promise((resolve) => httpServer.close(resolve));
+      }
       listening = false;
       await removeOwnedDiscoveryFile(discoveryPath, token);
     },

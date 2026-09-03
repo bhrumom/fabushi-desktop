@@ -108,6 +108,7 @@ function createNativeCapabilityHandlers(deps) {
     windowForEvent,
     broadcastNativeEvent,
     clearAccountBoundMessagingState,
+    setDesktopUpdateInstallInProgress,
   } = deps;
 
   const telemetryPath = () => path.join(app.getPath('userData'), 'diagnostics', 'native-events.ndjson');
@@ -466,7 +467,25 @@ function createNativeCapabilityHandlers(deps) {
       }
       const version = status.version ?? expected ?? app.getVersion();
       await writeUpdateStatus({ type: 'staging', version });
-      const installTimer = setTimeout(() => autoUpdater.quitAndInstall(false, true), 120);
+      if (typeof setDesktopUpdateInstallInProgress === 'function') {
+        setDesktopUpdateInstallInProgress(true);
+      }
+      const installTimer = setTimeout(() => {
+        try {
+          // electron-updater invokes app.quit() as part of quitAndInstall(). The
+          // main process marks this as an update shutdown before the call so its
+          // normal background-service cleanup cannot cancel the installer quit.
+          autoUpdater.quitAndInstall(false, true);
+        } catch (error) {
+          if (typeof setDesktopUpdateInstallInProgress === 'function') {
+            setDesktopUpdateInstallInProgress(false);
+          }
+          void writeUpdateStatus({
+            type: 'error',
+            message: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }, 120);
       installTimer.unref?.();
       return { installed: true, version };
     },
