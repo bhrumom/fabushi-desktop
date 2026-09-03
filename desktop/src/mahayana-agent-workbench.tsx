@@ -952,6 +952,7 @@ function transcriptCardTitle(card: TranscriptCard): string {
     case 'pdf': return card.name;
     case 'spreadsheet': return card.name;
   }
+  return '';
 }
 
 function StepIcon({ status }: { status: AgentStepProjection['status'] }) {
