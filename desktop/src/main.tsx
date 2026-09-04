@@ -5,6 +5,7 @@ import { installDesktopAppAgentSurface } from './app-agent-surface';
 import { installBotIdentityAliases } from './agent-identity-aliases';
 import CredentialVault from './credential-vault';
 import { installDurableAgentState, restoreDurableAgentState } from './durable-agent-state';
+import { GrokChatParityRuntime, prepareGrokChatParityRuntime } from './grok-chat-parity-runtime';
 import DesktopShellV2 from './messaging-shell-v2';
 import { installMahayanaAgentInlineCompatibility } from './mahayana-agent-inline-compat';
 import MahayanaAgentInlineReport from './mahayana-agent-inline-report';
@@ -29,6 +30,7 @@ async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
   // read their first-frame local cache. This makes localStorage a projection;
   // canonical cloud/Rust authority is verified separately by GBF-601/602.
   await restoreDurableAgentState();
+  prepareGrokChatParityRuntime();
   installBotIdentityAliases();
   installDurableAgentState();
   installDesktopMiniAppWebMcpHost();
@@ -37,6 +39,7 @@ async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
   createRoot(rootElement).render(
     <StrictMode>
       <DesktopShellV2 />
+      <GrokChatParityRuntime />
       <MahayanaAgentWorkbench />
       <MahayanaAgentInlineReport />
       <CredentialVault />

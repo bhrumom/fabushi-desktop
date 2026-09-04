@@ -184,7 +184,9 @@ test('desktop Messenger unifies Telegram-class navigation with Fabushi agent ide
 
     await page.getByTestId('messenger-input').fill('统一消息链路验收');
     await page.getByTestId('messenger-send').click();
+    await expect(page.getByTestId('message-list').locator(':scope > article').getByText('统一消息链路验收', { exact: true })).toBeVisible({ timeout: 1_500 });
     await expect(page.getByTestId('message-list').locator(':scope > article').getByText('收到：统一消息链路验收', { exact: true })).toBeVisible();
+    await expect(page.locator('[data-testid="agent-step"]:visible')).toHaveCount(0);
 
     await page.getByTitle('置顶').click();
     await page.getByTitle('静音').click();
@@ -491,12 +493,23 @@ test('desktop Messenger creates a real Bot collaboration group and sends into it
     await completeBrowserLogin(page);
     await openMessenger(page);
 
+    await expect(page.getByText('Research Bot', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Incident Bot', { exact: true })).toHaveCount(0);
+
+    await page.getByRole('button', { name: '新建', exact: true }).click();
+    await expect(page.getByTestId('create-bot')).toBeVisible();
+    await page.getByTestId('create-bot').click();
+    await page.getByTestId('new-bot-name').fill('协作验收 Bot');
+    await page.getByTestId('new-bot-description').fill('由用户创建，用于群组协作验收。');
+    await page.getByTestId('create-bot-submit').click();
+    await expect(page.locator('[data-testid^="peer-legacy:bot:"]').filter({ hasText: '协作验收 Bot' }).first()).toBeVisible({ timeout: 10_000 });
+
     await page.getByRole('button', { name: '新建', exact: true }).click();
     await page.getByRole('button', { name: '新建群组' }).click();
     await expect(page.getByText('现有 AI 群组 Host 会执行 Bot 多轮协作')).toBeVisible();
     await page.getByPlaceholder('群组名称').fill('人机协作验收群');
 
-    const researchBot = page.getByTestId('group-bot-research-bot');
+    const researchBot = page.locator('[data-testid^="group-bot-"]').filter({ hasText: '协作验收 Bot' }).first();
     await expect(researchBot).toBeVisible();
     await researchBot.click();
     await expect(researchBot).toHaveAttribute('data-selected', 'true');
