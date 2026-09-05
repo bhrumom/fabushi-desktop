@@ -21,6 +21,20 @@ function remoteDeviceGatewayUrl(app, env = process.env) {
   return url.toString();
 }
 
+function directComputerRuntimeEnvironment(environment = {}) {
+  const mappings = [
+    ['MAHAYANA_COMPUTER_MCP_HOME', 'CHATGPT_COMPUTER_HOME'],
+    ['MAHAYANA_COMPUTER_MCP_NATIVE_HELPER', 'CHATGPT_COMPUTER_NATIVE_HELPER'],
+    ['MAHAYANA_COMPUTER_MCP_MAC_APP_DIR', 'CHATGPT_COMPUTER_MAC_APP_DIR'],
+  ];
+  const result = {};
+  for (const [source, destination] of mappings) {
+    const value = String(environment[source] || '').trim();
+    if (value) result[destination] = value;
+  }
+  return result;
+}
+
 function remoteDeviceRuntime(options = {}) {
   const environment = embeddedComputerControlEnvironment(options);
   const mcpEntry = String(environment.MAHAYANA_COMPUTER_MCP_ENTRY || '');
@@ -33,7 +47,12 @@ function remoteDeviceRuntime(options = {}) {
   } catch {
     return null;
   }
-  return { root, mcpEntry, agentEntry };
+  return {
+    root,
+    mcpEntry,
+    agentEntry,
+    childEnvironment: directComputerRuntimeEnvironment(environment),
+  };
 }
 
 function validAgentSession(value) {
@@ -137,6 +156,7 @@ class RemoteDeviceAgentSupervisor {
         windowsHide: true,
         env: {
           ...this.env,
+          ...runtime.childEnvironment,
           ELECTRON_RUN_AS_NODE: '1',
           RUNNER_TRACKING_ID: '',
           DEVICE_GATEWAY_URL: gatewayUrl,
