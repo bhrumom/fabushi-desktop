@@ -357,22 +357,47 @@ test('returning-user local-first conversation list is interactive within the one
     const seededPeer = page.locator('[data-testid^="peer-selfhosted:channel:"]').filter({ hasText: '首屏性能验收' }).first();
     await expect(seededPeer).toBeVisible();
     await seededPeer.click();
-    await expect.poll(async () => page.evaluate(() => {
+
+    const identity = await getMessagingIdentity(page);
+    const seededConversationId = await page.evaluate(() => {
       const projection = JSON.parse(localStorage.getItem('fabushi.desktop.messenger-projection.v1') || 'null');
-      return Boolean(projection?.activePeerKey?.startsWith('selfhosted:') && projection?.selfConversations?.some((item: { title?: string }) => item.title === '首屏性能验收'));
-    }), { timeout: 5_000 }).toBe(true);
-    await expect.poll(async () => page.evaluate(async () => {
+      const activePeerKey = typeof projection?.activePeerKey === 'string' ? projection.activePeerKey : '';
+      return activePeerKey.startsWith('selfhosted:') ? activePeerKey.slice('selfhosted:'.length) : '';
+    });
+    expect(seededConversationId).not.toBe('');
+    const historySeedCount = 32;
+    for (let index = 0; index < historySeedCount; index += 1) {
+      await executeMessagingCommand(page, identity.actorId, {
+        type: 'sendMessage',
+        conversationId: seededConversationId,
+        clientMessageId: `desktop:e2e-startup-history:${index}`,
+        content: { type: 'text', data: { text: { text: `startup-history-${String(index).padStart(2, '0')}`, entities: [] } } },
+        replyToMessageId: null,
+        threadRootMessageId: null,
+        scheduledAtMs: null,
+        silent: false,
+        protectedContent: false,
+      }, `startup-history-${index}`);
+    }
+
+    await expect.poll(async () => page.evaluate((conversationId) => {
+      const projection = JSON.parse(localStorage.getItem('fabushi.desktop.messenger-projection.v1') || 'null');
+      return projection?.selfMessages?.[conversationId]?.length ?? 0;
+    }, seededConversationId), { timeout: 10_000 }).toBeGreaterThanOrEqual(historySeedCount);
+    await expect.poll(async () => page.evaluate(async ({ conversationId, minimumMessages }) => {
       const bridge = (window as unknown as {
         fabushiNative?: { invoke<T>(method: string, params?: Record<string, unknown>): Promise<T> };
       }).fabushiNative;
       if (!bridge) return false;
-      const projection = await bridge.invoke<{ activePeerKey?: string; selfConversations?: Array<{ title?: string }> } | null>(
-        'readClientPersistence',
-        { key: 'fabushi.desktop.messenger-projection.v1' },
-      );
-      return Boolean(projection?.activePeerKey?.startsWith('selfhosted:')
-        && projection?.selfConversations?.some((item) => item.title === '首屏性能验收'));
-    }), { timeout: 5_000 }).toBe(true);
+      const projection = await bridge.invoke<{
+        activePeerKey?: string;
+        selfConversations?: Array<{ title?: string }>;
+        selfMessages?: Record<string, unknown[]>;
+      } | null>('readClientPersistence', { key: 'fabushi.desktop.messenger-projection.v1' });
+      return Boolean(projection?.activePeerKey === `selfhosted:${conversationId}`
+        && projection?.selfConversations?.some((item) => item.title === '首屏性能验收')
+        && (projection?.selfMessages?.[conversationId]?.length ?? 0) >= minimumMessages);
+    }, { conversationId: seededConversationId, minimumMessages: historySeedCount }), { timeout: 10_000 }).toBe(true);
 
     await app.close();
 
@@ -394,6 +419,7 @@ test('returning-user local-first conversation list is interactive within the one
     const launchToConversationListMs = Date.now() - launchStartedAtMs;
     await projectedPeer.click();
     await expect(page.getByTestId('messenger-input')).toBeVisible({ timeout: 2_000 });
+    await expect(page.getByTestId('message-list').getByText('startup-history-31', { exact: true })).toBeVisible({ timeout: 5_000 });
     const rendererToComposerInteractiveMs = await page.evaluate(() => performance.now());
 
     // The async account-status poll must not replace the locally restored Messenger
@@ -403,6 +429,22 @@ test('returning-user local-first conversation list is interactive within the one
     await expect(page.getByTestId('login-gate')).toHaveCount(0);
     await expect(workspace).toBeVisible();
     await expect(projectedPeer).toBeVisible();
+
+    const requiredPhases = ['P0', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9'];
+    await expect.poll(async () => page.evaluate(() => {
+      const trace = (window as unknown as {
+        __fabushiStartupCriticalPath?: { entries?: Array<{ phase?: string }> };
+      }).__fabushiStartupCriticalPath;
+      return [...new Set((trace?.entries ?? []).map((entry) => entry.phase).filter(Boolean))];
+    }), { timeout: 10_000 }).toEqual(expect.arrayContaining(requiredPhases));
+
+    const startupCriticalPath = await page.evaluate(() => {
+      const trace = (window as unknown as {
+        __fabushiStartupCriticalPath?: Record<string, unknown>;
+      }).__fabushiStartupCriticalPath;
+      return trace ? JSON.parse(JSON.stringify(trace)) as Record<string, unknown> : null;
+    });
+    expect(startupCriticalPath).not.toBeNull();
 
     const evidence = {
       targetMs: 1_000,
@@ -418,6 +460,23 @@ test('returning-user local-first conversation list is interactive within the one
     console.log(`[startup-performance] ${JSON.stringify(evidence)}`);
     await writeFile(testInfo.outputPath('startup-performance.json'), evidenceJson);
     await testInfo.attach('startup-performance', { body: Buffer.from(evidenceJson), contentType: 'application/json' });
+
+    const criticalPathEvidence = {
+      taskId: 'M3-DESKTOP-003',
+      exactHead: process.env.GITHUB_SHA?.trim() || null,
+      diagnosticOnly: true,
+      rootCauseClaim: null,
+      historySeedCount,
+      initialSyncLimitBoundary: 20,
+      packaged: Boolean(packagedExecutable),
+      platform: process.platform,
+      trace: startupCriticalPath,
+    };
+    const criticalPathJson = `${JSON.stringify(criticalPathEvidence, null, 2)}\n`;
+    console.log(`[startup-critical-path] ${JSON.stringify(criticalPathEvidence)}`);
+    await writeFile(testInfo.outputPath('startup-critical-path.json'), criticalPathJson);
+    await testInfo.attach('startup-critical-path', { body: Buffer.from(criticalPathJson), contentType: 'application/json' });
+    await testInfo.attach('startup-critical-path-screen', { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
 
     expect(
       rendererToConversationListMs,

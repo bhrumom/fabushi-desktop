@@ -1,6 +1,238 @@
 import type { RuntimeCommand, RuntimeEvent } from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { MahayanaHostTransport } from '../../frontend/apps/web/src/lib/mahayana-host/transport';
 
+export type StartupCriticalPathPhase = 'P0' | 'P1' | 'P2' | 'P3' | 'P4' | 'P5' | 'P6' | 'P7' | 'P8' | 'P9';
+
+export type StartupCriticalPathEntry = {
+  phase: StartupCriticalPathPhase;
+  label: string;
+  atMs: number;
+  sinceNavigationMs: number;
+  durationMs?: number;
+  sourceFile: string;
+  sourceFunction: string;
+  details: Record<string, unknown>;
+};
+
+export type StartupCriticalPathTrace = {
+  schemaVersion: 1;
+  taskId: 'M3-DESKTOP-003';
+  timeOriginEpochMs: number;
+  navigationStartMs: number;
+  entries: StartupCriticalPathEntry[];
+  longTasks: Array<{ startTimeMs: number; durationMs: number; name: string }>;
+  longTaskObservation: { supported: boolean; reason?: string };
+  phaseSources: Record<StartupCriticalPathPhase, string[]>;
+};
+
+type StartupCriticalPathWindow = Window & {
+  __fabushiStartupCriticalPath?: StartupCriticalPathTrace;
+  __fabushiStartupCriticalPathLongTaskObserver?: PerformanceObserver;
+};
+
+const startupCriticalPathFile = 'desktop/src/selfhosted-messaging-client-v2.ts';
+const startupCriticalPathPhaseSources: Record<StartupCriticalPathPhase, string[]> = {
+  P0: ['initializeStartupCriticalPathDiagnostics'],
+  P1: ['initializeStartupCriticalPathDiagnostics'],
+  P2: ['initializeStartupCriticalPathDiagnostics'],
+  P3: ['instrumentStartupTransport.authStatus'],
+  P4: ['instrumentStartupTransport.initialize'],
+  P5: ['SelfHostedMessagingClientV2.sync', 'asMessagingHostEvent'],
+  P6: ['asMessagingHostEvent'],
+  P7: ['messagingText'],
+  P8: ['instrumentStartupTransport.subscribe', 'asMessagingHostEvent'],
+  P9: ['SelfHostedMessagingClientV2.sync'],
+};
+const startupCriticalPathWindow = typeof window === 'undefined' ? null : window as StartupCriticalPathWindow;
+let initialSyncRequestStartedAtMs: number | null = null;
+let firstVisibleMessageScheduled = false;
+
+function startupNow(): number {
+  return typeof performance === 'undefined' ? 0 : performance.now();
+}
+
+function startupSerializedByteLength(value: unknown): number | null {
+  try {
+    const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+    if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(serialized).byteLength;
+    return serialized.length;
+  } catch {
+    return null;
+  }
+}
+
+function ensureStartupCriticalPathTrace(): StartupCriticalPathTrace | null {
+  if (!startupCriticalPathWindow || typeof performance === 'undefined') return null;
+  if (!startupCriticalPathWindow.__fabushiStartupCriticalPath) {
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    startupCriticalPathWindow.__fabushiStartupCriticalPath = {
+      schemaVersion: 1,
+      taskId: 'M3-DESKTOP-003',
+      timeOriginEpochMs: performance.timeOrigin,
+      navigationStartMs: navigation?.startTime ?? 0,
+      entries: [],
+      longTasks: [],
+      longTaskObservation: { supported: typeof PerformanceObserver !== 'undefined' },
+      phaseSources: startupCriticalPathPhaseSources,
+    };
+  }
+  return startupCriticalPathWindow.__fabushiStartupCriticalPath;
+}
+
+function recordStartupCriticalPath(
+  phase: StartupCriticalPathPhase,
+  label: string,
+  details: Record<string, unknown> = {},
+  durationMs?: number,
+  sourceFunction = startupCriticalPathPhaseSources[phase][0],
+): void {
+  const trace = ensureStartupCriticalPathTrace();
+  if (!trace) return;
+  const atMs = startupNow();
+  trace.entries.push({
+    phase,
+    label,
+    atMs,
+    sinceNavigationMs: Math.max(0, atMs - trace.navigationStartMs),
+    ...(durationMs === undefined ? {} : { durationMs }),
+    sourceFile: startupCriticalPathFile,
+    sourceFunction,
+    details,
+  });
+}
+
+function recordStartupCriticalPathOnce(
+  phase: StartupCriticalPathPhase,
+  label: string,
+  details: Record<string, unknown> = {},
+  durationMs?: number,
+  sourceFunction?: string,
+): void {
+  const trace = ensureStartupCriticalPathTrace();
+  if (!trace || trace.entries.some((entry) => entry.phase === phase && entry.label === label)) return;
+  recordStartupCriticalPath(phase, label, details, durationMs, sourceFunction);
+}
+
+function initializeStartupCriticalPathDiagnostics(): void {
+  const trace = ensureStartupCriticalPathTrace();
+  if (!trace || !startupCriticalPathWindow) return;
+  recordStartupCriticalPathOnce('P0', 'renderer-navigation-observed', {
+    documentReadyState: document.readyState,
+    navigationStartMs: trace.navigationStartMs,
+    timeOriginEpochMs: trace.timeOriginEpochMs,
+  });
+
+  const projectionStartedAtMs = startupNow();
+  try {
+    const rawProjection = window.localStorage.getItem('fabushi.desktop.messenger-projection.v1');
+    recordStartupCriticalPathOnce('P1', 'projection-cache-observed', {
+      source: 'localStorage',
+      cacheHit: rawProjection !== null,
+      bytes: rawProjection === null ? 0 : startupSerializedByteLength(rawProjection),
+    }, startupNow() - projectionStartedAtMs);
+  } catch (cause) {
+    recordStartupCriticalPathOnce('P1', 'projection-cache-observed', {
+      source: 'localStorage',
+      cacheHit: false,
+      error: cause instanceof Error ? cause.name : 'unknown',
+    }, startupNow() - projectionStartedAtMs);
+  }
+
+  if (typeof PerformanceObserver === 'undefined') {
+    trace.longTaskObservation = { supported: false, reason: 'PerformanceObserver unavailable' };
+  } else if (!startupCriticalPathWindow.__fabushiStartupCriticalPathLongTaskObserver) {
+    try {
+      const observer = new PerformanceObserver((list) => {
+        const current = ensureStartupCriticalPathTrace();
+        if (!current) return;
+        for (const entry of list.getEntries()) {
+          current.longTasks.push({ startTimeMs: entry.startTime, durationMs: entry.duration, name: entry.name });
+        }
+      });
+      observer.observe({ type: 'longtask', buffered: true } as PerformanceObserverInit);
+      startupCriticalPathWindow.__fabushiStartupCriticalPathLongTaskObserver = observer;
+      trace.longTaskObservation = { supported: true };
+    } catch (cause) {
+      trace.longTaskObservation = {
+        supported: false,
+        reason: cause instanceof Error ? cause.message : String(cause),
+      };
+    }
+  }
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const firstPaint = performance.getEntriesByName('first-paint')[0];
+      const firstContentfulPaint = performance.getEntriesByName('first-contentful-paint')[0];
+      recordStartupCriticalPathOnce('P2', 'renderer-first-frame-interactive', {
+        documentReadyState: document.readyState,
+        firstPaintMs: firstPaint?.startTime ?? null,
+        firstContentfulPaintMs: firstContentfulPaint?.startTime ?? null,
+      });
+    });
+  });
+}
+
+function instrumentStartupTransport(transport: MahayanaHostTransport): void {
+  if (!startupCriticalPathWindow) return;
+  const instrumented = transport as MahayanaHostTransport & { __fabushiStartupCriticalPathInstrumentedV1?: boolean };
+  if (instrumented.__fabushiStartupCriticalPathInstrumentedV1) return;
+  instrumented.__fabushiStartupCriticalPathInstrumentedV1 = true;
+
+  const initialize = transport.initialize.bind(transport);
+  instrumented.initialize = async (config) => {
+    const startedAtMs = startupNow();
+    try {
+      const result = await initialize(config);
+      recordStartupCriticalPathOnce('P4', 'host-initialize-resolved', { outcome: 'resolved' }, startupNow() - startedAtMs, 'instrumentStartupTransport.initialize');
+      return result;
+    } catch (cause) {
+      recordStartupCriticalPathOnce('P4', 'host-initialize-rejected', {
+        outcome: 'rejected',
+        error: cause instanceof Error ? cause.name : 'unknown',
+      }, startupNow() - startedAtMs, 'instrumentStartupTransport.initialize');
+      throw cause;
+    }
+  };
+
+  const authStatus = transport.authStatus.bind(transport);
+  instrumented.authStatus = async () => {
+    const startedAtMs = startupNow();
+    try {
+      const state = await authStatus();
+      recordStartupCriticalPathOnce('P3', 'auth-restore-observed', {
+        loggedIn: state.loggedIn,
+        outcome: 'resolved',
+      }, startupNow() - startedAtMs, 'instrumentStartupTransport.authStatus');
+      return state;
+    } catch (cause) {
+      recordStartupCriticalPathOnce('P3', 'auth-restore-observed', {
+        outcome: 'rejected',
+        error: cause instanceof Error ? cause.name : 'unknown',
+      }, startupNow() - startedAtMs, 'instrumentStartupTransport.authStatus');
+      throw cause;
+    }
+  };
+
+  const subscribe = transport.subscribe.bind(transport);
+  instrumented.subscribe = (listener) => {
+    const installedAtMs = startupNow();
+    let firstEvent = true;
+    return subscribe((event) => {
+      if (firstEvent) {
+        firstEvent = false;
+        recordStartupCriticalPathOnce('P8', 'event-stream-first-event', {
+          eventType: event.type,
+          subscriptionToFirstEventMs: startupNow() - installedAtMs,
+        }, undefined, 'instrumentStartupTransport.subscribe');
+      }
+      listener(event);
+    });
+  };
+}
+
+initializeStartupCriticalPathDiagnostics();
+
 export const FABUSHI_MESSAGING_PROTOCOL_VERSION = 2 as const;
 
 export type ActorKind = 'human' | 'assistant' | 'bot' | 'service';
@@ -342,10 +574,64 @@ export type MessagingContent =
 
 export function asMessagingHostEvent(event: RuntimeEvent): MessagingHostEvent | null {
   const candidate = event as unknown as MessagingHostEvent;
-  return candidate.type === 'messaging.event' ? candidate : null;
+  if (candidate.type !== 'messaging.event') return null;
+  if (candidate.envelope.event.type === 'syncBatch') {
+    const payload = candidate.envelope.event as unknown as {
+      actors?: unknown[];
+      conversations?: unknown[];
+      messages?: unknown[];
+      invoices?: unknown[];
+      orders?: unknown[];
+      stories?: unknown[];
+      communities?: unknown[];
+      bots?: unknown[];
+      botExecutions?: unknown[];
+    };
+    const counts = {
+      actors: payload.actors?.length ?? 0,
+      conversations: payload.conversations?.length ?? 0,
+      messages: payload.messages?.length ?? 0,
+      invoices: payload.invoices?.length ?? 0,
+      orders: payload.orders?.length ?? 0,
+      stories: payload.stories?.length ?? 0,
+      communities: payload.communities?.length ?? 0,
+      bots: payload.bots?.length ?? 0,
+      botExecutions: payload.botExecutions?.length ?? 0,
+    };
+    const batchDurationMs = initialSyncRequestStartedAtMs === null ? undefined : startupNow() - initialSyncRequestStartedAtMs;
+    recordStartupCriticalPathOnce('P5', 'initial-snapshot-batch', {
+      counts,
+      bytes: startupSerializedByteLength(candidate.envelope),
+      cursorPresent: Boolean(candidate.envelope.cursor),
+    }, batchDurationMs, 'asMessagingHostEvent');
+    recordStartupCriticalPathOnce('P6', 'conversation-metadata-complete', {
+      actorCount: counts.actors,
+      conversationCount: counts.conversations,
+      cursorPresent: Boolean(candidate.envelope.cursor),
+    }, undefined, 'asMessagingHostEvent');
+    recordStartupCriticalPathOnce('P8', 'event-stream-backlog-observed', {
+      eventType: candidate.envelope.event.type,
+      counts,
+      bytes: startupSerializedByteLength(candidate.envelope),
+      cursorPresent: Boolean(candidate.envelope.cursor),
+    }, undefined, 'asMessagingHostEvent');
+  }
+  return candidate;
 }
 
 export function messagingText(message: MessagingMessage): string {
+  if (!firstVisibleMessageScheduled && typeof window !== 'undefined') {
+    firstVisibleMessageScheduled = true;
+    const details = {
+      messageId: message.id,
+      conversationId: message.conversationId,
+      contentType: message.content.type,
+      bytes: startupSerializedByteLength({ id: message.id, conversationId: message.conversationId, content: message.content }),
+    };
+    window.requestAnimationFrame(() => {
+      recordStartupCriticalPathOnce('P7', 'first-visible-message', details, undefined, 'messagingText');
+    });
+  }
   if (message.deleted) return '消息已删除';
   if (message.content.type === 'text') {
     const data = message.content.data as { text?: { text?: string } } | undefined;
@@ -403,8 +689,10 @@ export class SelfHostedMessagingClientV2 {
   private lastIdentityFailureAtMs = 0;
   private currentActorDisplayName = '当前用户';
   private currentActorUsername: string | undefined;
+  private syncCallCount = 0;
 
   constructor(transport: MahayanaHostTransport, options: { actorId?: string; deviceId?: string; sessionId?: string } = {}) {
+    instrumentStartupTransport(transport);
     this.transport = transport;
     this.actorId = options.actorId ?? 'human:desktop:current';
     this.deviceId = options.deviceId ?? 'desktop:electron';
@@ -483,7 +771,41 @@ export class SelfHostedMessagingClientV2 {
   }
 
   async sync(limit = 1000, cursor: string | null = null): Promise<void> {
-    await this.execute({ type: 'sync', cursor, limit });
+    const callNumber = ++this.syncCallCount;
+    const startedAtMs = startupNow();
+    const phase: StartupCriticalPathPhase | null = callNumber === 1 ? 'P5' : callNumber === 2 ? 'P9' : null;
+    const label = callNumber === 1 ? 'initial-snapshot-request' : 'background-reconcile-request';
+    if (callNumber === 1) initialSyncRequestStartedAtMs = startedAtMs;
+    if (phase) {
+      recordStartupCriticalPathOnce(phase, label, {
+        callNumber,
+        limit,
+        cursorPresent: Boolean(cursor),
+        bytes: startupSerializedByteLength({ type: 'sync', cursor, limit }),
+      }, undefined, 'SelfHostedMessagingClientV2.sync');
+    }
+    try {
+      await this.execute({ type: 'sync', cursor, limit });
+      if (phase) {
+        recordStartupCriticalPathOnce(phase, `${label}-complete`, {
+          callNumber,
+          limit,
+          cursorPresent: Boolean(cursor),
+          outcome: 'resolved',
+        }, startupNow() - startedAtMs, 'SelfHostedMessagingClientV2.sync');
+      }
+    } catch (cause) {
+      if (phase) {
+        recordStartupCriticalPathOnce(phase, `${label}-complete`, {
+          callNumber,
+          limit,
+          cursorPresent: Boolean(cursor),
+          outcome: 'rejected',
+          error: cause instanceof Error ? cause.name : 'unknown',
+        }, startupNow() - startedAtMs, 'SelfHostedMessagingClientV2.sync');
+      }
+      throw cause;
+    }
   }
 
   startTyping(conversationId: string, action = 'typing'): Promise<void> {
