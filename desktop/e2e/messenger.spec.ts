@@ -359,6 +359,12 @@ test('returning-user local-first conversation list is interactive within the one
     await expect(seededPeer).toBeVisible();
     await seededPeer.click();
 
+    await expect.poll(async () => page.evaluate(() => {
+      const projection = JSON.parse(localStorage.getItem('fabushi.desktop.messenger-projection.v1') || 'null');
+      const activePeerKey = typeof projection?.activePeerKey === 'string' ? projection.activePeerKey : '';
+      return activePeerKey.startsWith('selfhosted:') ? activePeerKey : '';
+    }), { timeout: 5_000 }).toMatch(/^selfhosted:/u);
+
     const identity = await getMessagingIdentity(page);
     const seededConversationId = await page.evaluate(() => {
       const projection = JSON.parse(localStorage.getItem('fabushi.desktop.messenger-projection.v1') || 'null');
