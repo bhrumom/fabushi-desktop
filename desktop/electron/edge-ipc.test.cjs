@@ -83,6 +83,10 @@ test('native desktop edge exposes the complete account synchronization surface',
     'addMiniAppToAccount',
     'removeMiniAppFromAccount',
     'routeMiniAppInput',
+    'getMiniAppSessionProjection',
+    'getMiniAppEntitlement',
+    'purchaseMiniAppLifetime',
+    'restoreMiniAppPurchases',
     'getMiniAppBotMessages',
     'appendMiniAppBotMessages',
     'getMiniAppCloudStorage',
@@ -131,6 +135,38 @@ test('deterministic test account platform survives host restart for Mini App, Bo
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('deterministic Global Dharma Pay test provider is idempotent and durable', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fabushi-test-platform-pay-'));
+  const app = { getPath(name) { assert.equal(name, 'userData'); return root; } };
+  try {
+    let now = 2_000;
+    const platform = createTestPlatformAccount({ app, fs, now: () => ++now });
+    const before = platform.request({ method: 'GET', path: '/v1/plugins/global-dharma/entitlements/local.prayer-wheel.start' });
+    assert.equal(before.data.access.allowed, false);
+    const lifetime = before.data.purchaseOptions.find((option) => option.sku === 'local-prayer-wheel.lifetime');
+    assert.equal(lifetime.amount, 108000);
+    assert.equal(lifetime.currency, 'CNY');
+    assert.deepEqual(lifetime.activeRails, ['web_provider']);
+    const request = { method: 'POST', path: '/v1/miniapps/global-dharma/pay/intents', body: { sku: 'local-prayer-wheel.lifetime', rail: 'web_provider', idempotencyKey: 'journey-pay-1' } };
+    const firstIntent = platform.request(request);
+    const replayIntent = platform.request(request);
+    assert.equal(firstIntent.data.paymentId, replayIntent.data.paymentId);
+    assert.equal(firstIntent.data.amount, 108000);
+    const checkoutPath = `/v1/pay/intents/${firstIntent.data.paymentId}/checkout`;
+    const firstCheckout = platform.request({ method: 'POST', path: checkoutPath });
+    const replayCheckout = platform.request({ method: 'POST', path: checkoutPath });
+    assert.equal(firstCheckout.data.callback.duplicate, false);
+    assert.equal(replayCheckout.data.callback.duplicate, true);
+    const after = platform.request({ method: 'GET', path: '/v1/plugins/global-dharma/entitlements/local.prayer-wheel.start' });
+    assert.equal(after.data.access.allowed, true);
+    assert.equal(after.data.entitlement.expiresAt, null);
+    const restarted = createTestPlatformAccount({ app, fs, now: () => ++now });
+    const restored = restarted.request({ method: 'POST', path: '/v1/purchases/restore', body: { pluginId: 'global-dharma' } });
+    assert.equal(restored.data.restored, true);
+    assert.equal(restored.data.purchases[0].amount, 108000);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
 test('main edge fails closed for untrusted senders and missing handlers', async () => {

@@ -190,6 +190,15 @@ export function installedMiniAppBotProjections(
 
 export function miniAppBotResponseText(value: unknown): string {
   const response = recordValue(value);
+  const content = Array.isArray(response?.content) ? response.content : [];
+  const contentText = content
+    .map((entry) => recordValue(entry))
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+    .filter((entry) => entry.type === 'text' && typeof entry.text === 'string')
+    .map((entry) => String(entry.text).trim())
+    .filter(Boolean)
+    .join('\n');
+  if (contentText) return contentText;
   const command = recordValue(response?.command);
   const slash = stringValue(command?.slash);
   const description = stringValue(command?.description);

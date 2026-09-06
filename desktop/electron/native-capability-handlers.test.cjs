@@ -36,7 +36,7 @@ async function harness(run, options = {}) {
     net: options.net ?? { fetch: async () => { throw new Error('unexpected fetch'); } },
     nativeTheme: {},
     safeStorage,
-    shell: {},
+    shell: options.shell ?? {},
     host: options.host ?? { request: async () => ({ ok: true, data: null }) },
     readNativeState: async () => state,
     mutateNativeState: async (mutator) => { state = await mutator(state); return state; },
@@ -106,6 +106,103 @@ test('Mini App bot lifecycle uses authenticated marketplace platform routes', as
   }, { host });
   assert.deepEqual(calls.map(([, params]) => params.method), ['POST', 'POST', 'DELETE']);
   assert.ok(calls.every(([method]) => method === 'platform.request'));
+});
+
+test('Mini App runtime facade scopes renderer calls to installed Tool Contract and canonical entitlement', async () => {
+  const calls = [];
+  let entitled = false;
+  const host = {
+    async request(method, params = {}) {
+      calls.push([method, params]);
+      if (method === 'platform.request' && params.method === 'GET' && params.path === '/v1/marketplace/added') {
+        return { ok: true, data: { apps: [{
+          id: 'global-dharma',
+          commands: [
+            { name: 'status', tool: 'status' },
+            { name: 'start', tool: 'start' },
+          ],
+        }] } };
+      }
+      if (method === 'platform.request' && params.method === 'GET' && params.path.includes('/entitlements/')) {
+        return { ok: true, data: { access: { protected: true, allowed: entitled } } };
+      }
+      if (method === 'runtime.call') {
+        return { content: [{ type: 'text', text: `${params.name} completed` }], structuredContent: { tool: params.name } };
+      }
+      throw new Error(`unexpected Host method ${method}`);
+    },
+  };
+  await harness(async ({ handlers }) => {
+    const status = await handlers.callMiniAppRuntimeTool({ pluginId: 'global-dharma', name: 'status', arguments: {} });
+    assert.equal(status.structuredContent.tool, 'status');
+    await assert.rejects(
+      handlers.callMiniAppRuntimeTool({ pluginId: 'global-dharma', name: 'deploy_latest', arguments: {} }),
+      /outside global-dharma's installed Tool Contract/,
+    );
+    await assert.rejects(
+      handlers.callMiniAppRuntimeTool({ pluginId: 'global-dharma', name: 'start', arguments: {} }),
+      /requires an active local\.prayer-wheel\.start entitlement/,
+    );
+    entitled = true;
+    const started = await handlers.callMiniAppRuntimeTool({ pluginId: 'global-dharma', name: 'start', arguments: {} });
+    assert.equal(started.structuredContent.tool, 'start');
+    await assert.rejects(
+      handlers.callMiniAppRuntimeTool({ pluginId: 'not-installed', name: 'status', arguments: {} }),
+      /not installed for this account/,
+    );
+  }, { host });
+  assert.deepEqual(
+    calls.filter(([method]) => method === 'runtime.call').map(([, params]) => [params.pluginId, params.name]),
+    [['global-dharma', 'status'], ['global-dharma', 'start']],
+  );
+  const mahayanaEdge = await fs.readFile(path.join(__dirname, 'mahayana-edge.cjs'), 'utf8');
+  assert.doesNotMatch(mahayanaEdge, /['"]runtime\.call['"]/);
+  const miniAppHost = await fs.readFile(path.join(__dirname, '../src/miniapp-webmcp-host.ts'), 'utf8');
+  assert.match(miniAppHost, /const lifetimePurchaseKeys = new Map/);
+  assert.doesNotMatch(miniAppHost, /sessionStorage\.(?:getItem|setItem)\('fabushi-global-dharma-lifetime-key'/);
+});
+
+test('Global Dharma desktop facade projects session and enforces canonical CNY 1080 lifetime purchase', async () => {
+  const calls = [];
+  let entitled = false;
+  const host = {
+    async request(method, params = {}) {
+      calls.push([method, params]);
+      if (method === 'feature.auth.status') return { loggedIn: true, provider: 'test', user: { id: 'ci-user', username: 'fabushi_mcp_ci_test', nickname: 'CI' } };
+      if (method !== 'platform.request') throw new Error(`unexpected Host method ${method}`);
+      if (params.method === 'GET' && params.path.includes('/entitlements/')) return { ok: true, data: {
+        entitlement: entitled ? { status: 'active', capability: 'local.prayer-wheel.start', expiresAt: null } : null,
+        access: { protected: true, allowed: entitled, reason: entitled ? 'active_durable_entitlement' : 'not_entitled' },
+        purchaseOptions: [{ productId: 'prod.global-dharma.local-prayer-wheel.lifetime', sku: 'local-prayer-wheel.lifetime', displayName: '本地转经轮永久版', productKind: 'digital_durable', currency: 'CNY', amount: 108000, activeRails: ['web_provider'] }],
+      } };
+      if (params.method === 'POST' && params.path === '/v1/miniapps/global-dharma/pay/intents') {
+        assert.deepEqual(params.body, { sku: 'local-prayer-wheel.lifetime', rail: 'web_provider', idempotencyKey: 'desktop-journey-1' });
+        return { ok: true, data: { paymentId: 'pay-1', amount: 108000, currency: 'CNY' } };
+      }
+      if (params.method === 'POST' && params.path === '/v1/pay/intents/pay-1/checkout') {
+        entitled = true;
+        return { ok: true, data: { payment: { paymentId: 'pay-1', status: 'succeeded' }, checkoutAction: { kind: 'test' } } };
+      }
+      if (params.method === 'POST' && params.path === '/v1/purchases/restore') return { ok: true, data: { restored: true, purchases: [{ amount: 108000, currency: 'CNY' }] } };
+      throw new Error(`unexpected platform request ${params.method} ${params.path}`);
+    },
+  };
+  await harness(async ({ handlers }) => {
+    const session = await handlers.getMiniAppSessionProjection({ pluginId: 'global-dharma' });
+    assert.equal(session.loggedIn, true);
+    assert.equal(session.account.username, 'fabushi_mcp_ci_test');
+    assert.equal(session.tokenExposed, false);
+    assert.equal(JSON.stringify(session).includes('accessToken'), false);
+    const purchase = await handlers.purchaseMiniAppLifetime({ pluginId: 'global-dharma', capability: 'local.prayer-wheel.start', idempotencyKey: 'desktop-journey-1' });
+    assert.equal(purchase.status, 'entitled');
+    assert.equal(purchase.product.amount, 108000);
+    assert.equal(purchase.entitlement.access.allowed, true);
+    const restore = await handlers.restoreMiniAppPurchases({ pluginId: 'global-dharma', capability: 'local.prayer-wheel.start' });
+    assert.equal(restore.entitlement.access.allowed, true);
+  }, { host });
+  assert.ok(calls.some(([, params]) => params.path === '/v1/miniapps/global-dharma/pay/intents'));
+  assert.ok(calls.some(([, params]) => params.path === '/v1/pay/intents/pay-1/checkout'));
+  assert.ok(calls.some(([, params]) => params.path === '/v1/purchases/restore'));
 });
 
 test('account sync native capabilities reconcile remote Mini Apps and expose Bot history/cloud routes', async () => {

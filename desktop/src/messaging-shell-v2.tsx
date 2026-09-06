@@ -95,7 +95,7 @@ import {
   type MiniAppBotCommand,
 } from './miniapp-bot-projection';
 import { MiniAppCallDialog } from './miniapp-call-dialog';
-import { prepareDesktopMiniAppWebMcpDocument } from './miniapp-webmcp-host';
+import { executeDesktopMiniAppBotInput, prepareDesktopMiniAppWebMcpDocument } from './miniapp-webmcp-host';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -256,6 +256,7 @@ const messengerSidebarWidthKey = 'fabushi.desktop.sidebar-width.v3';
 const messengerProjectionKey = 'fabushi.desktop.messenger-projection.v1';
 const accountSyncCursorKey = 'fabushi.desktop.account-sync-cursor.v1';
 const messengerConversationJournalKey = 'fabushi.desktop.mahayana-conversation-journal.v1';
+const miniAppExecutionPersistencePrefix = 'fabushi.desktop.miniapp-execution.v1:';
 const messengerPreferencesKey = 'fabushi.desktop.telegram-settings.v1';
 const initialPeerRenderCount = 120;
 const initialMessageRenderCount = 240;
@@ -385,14 +386,19 @@ async function clearAccountScopedDesktopCaches(): Promise<void> {
       window.localStorage.removeItem(messengerProjectionKey);
       window.localStorage.removeItem(messengerDraftsKey);
       window.localStorage.removeItem(messengerConversationJournalKey);
+      for (const key of Object.keys(window.localStorage)) {
+        if (key.startsWith(miniAppExecutionPersistencePrefix)) window.localStorage.removeItem(key);
+      }
     } catch {
       // Native persistence cleanup below remains authoritative for fast-start.
     }
   }
   try {
+    const executionKeys = await invokeNativeDesktop<string[]>('listClientPersistenceKeys', { prefix: miniAppExecutionPersistencePrefix }).catch(() => []);
     await Promise.all([
       invokeNativeDesktop<boolean>('removeClientPersistence', { key: messengerProjectionKey }),
       invokeNativeDesktop<boolean>('removeClientPersistence', { key: accountSyncCursorKey }),
+      ...executionKeys.map((key) => invokeNativeDesktop<boolean>('removeClientPersistence', { key })),
     ]);
   } catch {
     // Older/unavailable native edges must not block signing out locally.
@@ -1739,7 +1745,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           ? miniAppBotProjections.find((candidate) => candidate.miniAppId === miniAppSource.sourceId)
           : miniAppByBotId.get(entry.bot.id);
         return {
-          key: `account:bot:${entry.bot.id}`,
+          // A Mini App-backed account Bot must keep the same peer identity before and
+          // after the asynchronous account-membership projection arrives. Otherwise
+          // activePeerKey points at the retired synthetic peer and the composer vanishes.
+          key: miniAppSource ? `miniapp:bot:${miniAppSource.sourceId}` : `account:bot:${entry.bot.id}`,
           id: entry.bot.id,
           source: 'legacy',
           kind: 'bot',
@@ -1748,8 +1757,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           actorId: entry.bot.id,
           conversationId: entry.bot.conversationId,
           unread: 0,
-          pinned: pinnedPeerKeys.has(`account:bot:${entry.bot.id}`),
-          archived: archivedPeerKeys.has(`account:bot:${entry.bot.id}`),
+          pinned: pinnedPeerKeys.has(miniAppSource ? `miniapp:bot:${miniAppSource.sourceId}` : `account:bot:${entry.bot.id}`),
+          archived: archivedPeerKeys.has(miniAppSource ? `miniapp:bot:${miniAppSource.sourceId}` : `account:bot:${entry.bot.id}`),
           updatedAtMs: entry.updatedAtMs ?? 0,
           miniAppId: miniAppSource?.sourceId,
           miniAppCommands: projection?.commands,
@@ -1958,11 +1967,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           pluginId: activePeer.miniAppId,
           input: text,
         });
+        const executed = await executeDesktopMiniAppBotInput(activePeer.miniAppId, routed, text);
         const responseMessage: DisplayMessage = {
           id: nextRequestId('miniapp-bot-response'),
           source: 'legacy',
           role: 'peer',
-          text: miniAppBotResponseText(routed),
+          text: miniAppBotResponseText(executed),
           createdAtMs: Date.now(),
         };
         const completedThread = [...pendingThread, responseMessage];
@@ -2338,11 +2348,12 @@ async function saveInvoiceDialog() {
       pluginId: miniAppId,
       input,
     });
+    const executed = await executeDesktopMiniAppBotInput(miniAppId, routed, input);
     const responseMessage: DisplayMessage = {
       id: nextRequestId('miniapp-call-response'),
       source: 'legacy',
       role: 'peer',
-      text: miniAppBotResponseText(routed),
+      text: miniAppBotResponseText(executed),
       createdAtMs: Date.now(),
     };
     const completedThread = [...pendingThread, responseMessage];
@@ -3531,7 +3542,7 @@ function MiniAppDialog({ app, onClose }: { app: { id: string; title: string; url
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
   }, [app.id]);
-  return <div className={styles.backdrop} onMouseDown={onClose}><section className={styles.miniAppDialog} onMouseDown={(event) => event.stopPropagation()}><header><div><strong>{app.title}</strong><small>Mini App · 已安装线上包 · 账号云同步</small></div><button type="button" onClick={onClose}><X size={17} /></button></header><iframe ref={frameRef} title={app.id} sandbox="allow-scripts allow-forms" src={app.url} /></section></div>;
+  return <div className={styles.backdrop} onMouseDown={onClose}><section className={styles.miniAppDialog} onMouseDown={(event) => event.stopPropagation()}><header><div><strong>{app.title}</strong><small>Mini App · 已安装线上包 · 账号云同步</small></div><button type="button" data-testid="miniapp-close" aria-label="关闭小程序" onClick={onClose}><X size={17} /></button></header><iframe ref={frameRef} title={app.id} sandbox="allow-scripts allow-forms" src={app.url} /></section></div>;
 }
 
 type PaymentUiState = {

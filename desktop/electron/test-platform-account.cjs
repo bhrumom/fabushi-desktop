@@ -20,12 +20,12 @@ const MINI_APPS = {
       menuButton: { text: '打开小程序' },
     },
     commands: [
-      { name: 'status', description: '查看当前运行状态' },
-      { name: 'start', description: '启动本地模式' },
-      { name: 'stop', description: '停止本地模式' },
-      { name: 'send', description: '确认后执行全球发送' },
-      { name: 'logs', description: '查看最近运行日志' },
-      { name: 'deploy_latest', description: '部署最新版本' },
+      { name: 'status', tool: 'status', description: '查看当前运行状态', naturalLanguageHints: ['现在运行到哪里', '查看状态', 'show status'] },
+      { name: 'start', tool: 'start', description: '启动本地模式', approval: 'required', naturalLanguageHints: ['开始运行', '启动转经轮', 'prayer wheel'] },
+      { name: 'stop', tool: 'stop', description: '停止本地模式', approval: 'required', naturalLanguageHints: ['停止运行'] },
+      { name: 'send', tool: 'send', description: '确认后执行全球发送', approval: 'required', naturalLanguageHints: ['发送法布施内容'] },
+      { name: 'logs', tool: 'logs', description: '查看最近运行日志', naturalLanguageHints: ['日志'] },
+      { name: 'deploy_latest', tool: 'deploy_latest', description: '部署最新版本', approval: 'destructive' },
     ],
   },
   'faliu-flashcards': {
@@ -64,6 +64,10 @@ function emptyState() {
     messages: {},
     cloud: {},
     contentState: {},
+    payments: {},
+    paymentIdempotency: {},
+    paymentEvents: {},
+    entitlements: {},
     events: [],
   };
 }
@@ -246,7 +250,19 @@ class TestPlatformAccount {
         const command = app.commands.find((candidate) => candidate.name === slash[1].toLowerCase()) ?? { name: slash[1].toLowerCase(), description: 'Mini App command' };
         return response({ kind: 'command', miniAppId: id, bot: app.bot, command: { ...command, slash: `/${id}:${command.name}` }, arguments: {} });
       }
-      return response({ kind: 'natural-language', miniAppId: id, bot: app.bot, input, suggestedCommand: null, requiresMahayanaPlanning: true });
+      const normalized = input.toLowerCase();
+      const ranked = app.commands
+        .map((command) => ({
+          command,
+          score: [command.name, command.description, ...(command.naturalLanguageHints ?? [])]
+            .reduce((score, phrase) => score + (normalized.includes(String(phrase).toLowerCase()) ? 1 : 0), 0),
+        }))
+        .sort((left, right) => right.score - left.score);
+      return response({
+        kind: 'natural-language', miniAppId: id, bot: app.bot, input,
+        suggestedCommand: ranked[0]?.score > 0 ? ranked[0].command : null,
+        requiresMahayanaPlanning: ranked[0]?.score <= 0,
+      });
     }
 
     if (method === 'GET' && requestPath === '/v1/account/bots') {
@@ -363,6 +379,76 @@ class TestPlatformAccount {
         this.save(state);
         return response({ miniAppId: id, key, removed, values: clone(state.cloud[id]), cursor: cursor(state.sequence) });
       }
+    }
+
+    match = requestPath.match(/^\/v1\/plugins\/([^/]+)\/entitlements\/([^/]+)$/);
+    if (match && method === 'GET') {
+      const id = safeId(decodeURIComponent(match[1]));
+      const capability = decodeURIComponent(match[2]);
+      const entitlement = state.entitlements[`${id}:${capability}`] ?? null;
+      const purchaseOptions = id === 'global-dharma' && capability === 'local.prayer-wheel.start'
+        ? [
+            { productId: 'prod.global-dharma.local-prayer-wheel.monthly', sku: 'local-prayer-wheel.monthly', displayName: '本地转经轮月付', productKind: 'subscription', subscriptionPeriodSeconds: 2592000, currency: 'CNY', amount: 3000, activeRails: ['web_provider'] },
+            { productId: 'prod.global-dharma.local-prayer-wheel.lifetime', sku: 'local-prayer-wheel.lifetime', displayName: '本地转经轮永久版', productKind: 'digital_durable', subscriptionPeriodSeconds: null, currency: 'CNY', amount: 108000, activeRails: ['web_provider'] },
+          ] : [];
+      return response({
+        entitlement,
+        access: { protected: purchaseOptions.length > 0, allowed: Boolean(entitlement?.status === 'active') || purchaseOptions.length === 0, reason: entitlement?.status === 'active' ? 'active_durable_entitlement' : purchaseOptions.length ? 'not_entitled' : 'unprotected_capability', effectiveExpiresAt: entitlement?.expiresAt ?? null },
+        purchaseOptions,
+      });
+    }
+
+    match = requestPath.match(/^\/v1\/miniapps\/([^/]+)\/pay\/intents$/);
+    if (match && method === 'POST') {
+      const id = safeId(decodeURIComponent(match[1]));
+      const sku = String(body.sku ?? '').trim();
+      const rail = String(body.rail ?? '').trim();
+      const idempotencyKey = String(body.idempotencyKey ?? '').trim();
+      if (id !== 'global-dharma' || !['local-prayer-wheel.monthly', 'local-prayer-wheel.lifetime'].includes(sku)) return response({ code: 'product_not_found' }, 404);
+      if (rail !== 'web_provider') return response({ code: 'rail_not_allowed' }, 409);
+      if (!idempotencyKey) return response({ code: 'idempotency_required' }, 400);
+      const existingId = state.paymentIdempotency[idempotencyKey];
+      if (existingId && state.payments[existingId]) return response(clone(state.payments[existingId]));
+      const lifetime = sku.endsWith('.lifetime');
+      const paymentId = `test-pay-${Object.keys(state.payments).length + 1}`;
+      const payment = { schema: 'mahayana.miniapp.payment.v1', paymentId, idempotencyKey, miniAppId: id, sku, productKind: lifetime ? 'digital_durable' : 'subscription', rail: 'webProvider', amount: lifetime ? 108000 : 3000, currency: 'CNY', status: 'requiresAction', providerReference: `fabushi-ci:${paymentId}`, refundedAmount: 0, createdAt: Math.floor(this.now() / 1000), updatedAt: Math.floor(this.now() / 1000) };
+      state.payments[paymentId] = payment;
+      state.paymentIdempotency[idempotencyKey] = paymentId;
+      this.event(state, 'payment.intent.created', paymentId, { paymentId, miniAppId: id, sku });
+      this.save(state);
+      return response(clone(payment), 201);
+    }
+
+    match = requestPath.match(/^\/v1\/pay\/intents\/([^/]+)$/);
+    if (match && method === 'GET') {
+      const payment = state.payments[decodeURIComponent(match[1])];
+      return payment ? response(clone(payment)) : response({ code: 'payment_not_found' }, 404);
+    }
+
+    match = requestPath.match(/^\/v1\/pay\/intents\/([^/]+)\/checkout$/);
+    if (match && method === 'POST') {
+      const paymentId = decodeURIComponent(match[1]);
+      const payment = state.payments[paymentId];
+      if (!payment) return response({ code: 'payment_not_found' }, 404);
+      const eventId = `test-webhook:${paymentId}:succeeded`;
+      const duplicate = Boolean(state.paymentEvents[eventId]);
+      if (!duplicate) {
+        state.paymentEvents[eventId] = { eventId, paymentId, state: 'processed', occurredAtMs: this.now() };
+        payment.status = 'succeeded';
+        payment.updatedAt = Math.floor(this.now() / 1000);
+        const capability = 'local.prayer-wheel.start';
+        const entitlementId = `test-entitlement:${paymentId}`;
+        state.entitlements[`global-dharma:${capability}`] = { entitlementId, userId: 'fabushi-ci-test-user', pluginId: 'global-dharma', capability, status: 'active', expiresAt: payment.sku.endsWith('.monthly') ? Math.floor(this.now() / 1000) + 2592000 : null, orderId: `test-order:${paymentId}`, paymentId };
+        this.event(state, 'payment.webhook.processed', eventId, { eventId, paymentId, duplicate: false });
+        this.event(state, 'entitlement.granted', entitlementId, { capability });
+        this.save(state);
+      }
+      return response({ payment: clone(payment), checkoutAction: { kind: 'test', provider: 'fabushi-ci', completed: true }, callback: { eventId, duplicate } });
+    }
+
+    if (method === 'POST' && requestPath === '/v1/purchases/restore') {
+      const purchases = Object.values(state.payments).filter((payment) => payment.status === 'succeeded').map((payment) => ({ orderId: `test-order:${payment.paymentId}`, pluginId: payment.miniAppId, sku: payment.sku, currency: payment.currency, amount: payment.amount, status: 'fulfilled', createdAt: payment.createdAt }));
+      return response({ purchases, nextCursor: null, restored: true });
     }
 
     return null;
