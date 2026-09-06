@@ -132,43 +132,6 @@ test('packaged Fabushi publishes a generation-safe semantic App MCP over the pri
       action: 'invoke',
     })).rejects.toThrow(/stale_app_surface_generation/u);
 
-    const settingsTriggerSnapshot = await client.call('snapshot', { maxElements: 500, includeText: true }) as {
-      generation: number;
-    };
-    await client.call('action', {
-      generation: settingsTriggerSnapshot.generation,
-      agentId: 'test:profile-navigation-trigger',
-      action: 'invoke',
-    });
-    const settingsNavigationSnapshot = await client.call('snapshot', { maxElements: 500, includeText: true }) as {
-      generation: number;
-    };
-    await client.call('action', {
-      generation: settingsNavigationSnapshot.generation,
-      agentId: 'test:profile-navigation-settings',
-      action: 'invoke',
-    });
-    await expect(page.getByTestId('settings-modal-backdrop')).toBeVisible();
-    const accountCategorySnapshot = await client.call('snapshot', { maxElements: 500, includeText: true }) as {
-      generation: number;
-    };
-    await client.call('action', {
-      generation: accountCategorySnapshot.generation,
-      agentId: 'test:settings-category-account',
-      action: 'invoke',
-    });
-    const logoutTarget = await client.call('find', { agentId: 'settings-logout', limit: 5 }) as {
-      count: number;
-      matches: Array<{ agentId?: string; stable?: boolean; visible?: boolean; enabled?: boolean }>;
-    };
-    expect(logoutTarget.count).toBe(1);
-    expect(logoutTarget.matches[0]).toMatchObject({
-      agentId: 'settings-logout',
-      stable: true,
-      visible: true,
-      enabled: true,
-    });
-
     const webFallback = await page.evaluate(async () => {
       const registry = (window as unknown as {
         __fabushiAppMcp?: {

@@ -319,6 +319,7 @@ test('account settings logs out and clears account-scoped fast-start caches', as
     await page.getByTitle('设置', { exact: true }).click();
     await page.getByTestId('settings-category-account').click();
     const logout = page.getByTestId('settings-logout');
+    await expect(logout).toHaveAttribute('data-agent-id', 'settings-logout');
     await expect(logout).toBeVisible();
     await expect(logout).toHaveText('退出登录');
     await logout.click();
