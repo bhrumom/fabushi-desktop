@@ -132,6 +132,38 @@ test('packaged Fabushi publishes a generation-safe semantic App MCP over the pri
       action: 'invoke',
     })).rejects.toThrow(/stale_app_surface_generation/u);
 
+    await page.getByTestId('messenger-input').fill('semantic message action probe');
+    await page.getByTestId('messenger-send').click();
+    const semanticMessage = page.locator('[data-agent-id^="message-actions:"][data-agent-invoke="contextmenu"]').last();
+    await expect(semanticMessage).toBeVisible();
+
+    const messageSnapshot = await client.call('snapshot', { maxElements: 500, includeText: true }) as {
+      generation: number;
+      elements: Array<{ agentId?: string }>;
+    };
+    const messageTarget = [...messageSnapshot.elements].reverse().find((element) => element.agentId?.startsWith('message-actions:'));
+    expect(messageTarget?.agentId).toBeTruthy();
+    await client.call('action', {
+      generation: messageSnapshot.generation,
+      agentId: messageTarget!.agentId,
+      action: 'invoke',
+    });
+    await expect(page.getByTestId('message-context-menu')).toBeVisible();
+
+    const menuSnapshot = await client.call('snapshot', { maxElements: 500, includeText: true }) as {
+      generation: number;
+      elements: Array<{ agentId?: string }>;
+    };
+    for (const actionName of ['reply', 'copy', 'react', 'edit', 'pin', 'forward', 'delete']) {
+      expect(menuSnapshot.elements.some((element) => element.agentId === `test:message-action-${actionName}`)).toBe(true);
+    }
+    await client.call('action', {
+      generation: menuSnapshot.generation,
+      agentId: 'test:message-action-reply',
+      action: 'invoke',
+    });
+    await expect(page.getByTestId('reply-message-banner')).toBeVisible();
+
     const webFallback = await page.evaluate(async () => {
       const registry = (window as unknown as {
         __fabushiAppMcp?: {
