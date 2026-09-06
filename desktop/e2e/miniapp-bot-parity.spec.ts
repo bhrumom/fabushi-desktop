@@ -106,8 +106,17 @@ test('Global Dharma packaged journey keeps Bot WebMCP, UI revision, account and 
     await expect(appResult).toBeVisible();
     await shot(page, testInfo, '02-marketplace-search-global-dharma.png');
     const install = appResult.getByRole('button', { name: '安装' });
-    if (await install.isVisible().catch(() => false)) await install.click();
-    await expect(appResult.getByRole('button', { name: '打开' })).toBeVisible();
+    const open = appResult.getByRole('button', { name: '打开' });
+    await expect.poll(async () => {
+      if (await open.isVisible().catch(() => false)) return 'open';
+      if (await install.isVisible().catch(() => false)) return 'install';
+      return 'loading';
+    }, { timeout: 15_000 }).not.toBe('loading');
+    if (await install.isVisible().catch(() => false)) {
+      await expect(install).toBeEnabled();
+      await install.click();
+    }
+    await expect(open).toBeVisible({ timeout: 15_000 });
     await shot(page, testInfo, '03-marketplace-installed.png');
 
     await navigate(page, '联系人');
