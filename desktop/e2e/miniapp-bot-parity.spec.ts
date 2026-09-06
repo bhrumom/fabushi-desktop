@@ -85,6 +85,10 @@ test('Global Dharma packaged journey keeps Bot WebMCP, UI revision, account and 
   let videoPath: string | null = null;
   let screencastStarted = false;
   let screencastAttached = false;
+  let restartVideoPage: Page | null = null;
+  let restartVideoPath: string | null = null;
+  let restartScreencastStarted = false;
+  let restartScreencastAttached = false;
   try {
     const page = await firstApp.firstWindow();
     videoPage = page;
@@ -191,6 +195,10 @@ test('Global Dharma packaged journey keeps Bot WebMCP, UI revision, account and 
     await firstApp.close();
     restartedApp = await launchDesktopApp(appDataDir);
     const restartedPage = await restartedApp.firstWindow();
+    restartVideoPage = restartedPage;
+    restartVideoPath = testInfo.outputPath('global-dharma-user-journey-restart-logout.webm');
+    await restartedPage.screencast.start({ path: restartVideoPath, size: { width: 1280, height: 800 } });
+    restartScreencastStarted = true;
     restartedPage.on('dialog', (dialog) => void dialog.accept());
     await completeBrowserLogin(restartedPage);
     const recovered = await waitBot(restartedPage);
@@ -225,12 +233,25 @@ test('Global Dharma packaged journey keeps Bot WebMCP, UI revision, account and 
       durableExecution: null,
     });
     await shot(restartedPage, testInfo, '12-logout-clears-miniapp-session-and-execution.png');
+    await restartedPage.screencast.stop();
+    restartScreencastStarted = false;
+    if (!restartVideoPath) throw new Error('Global Dharma restart/logout video path was not initialized.');
+    await access(restartVideoPath);
+    await testInfo.attach('global-dharma-user-journey-restart-logout-video', { path: restartVideoPath, contentType: 'video/webm' });
+    restartScreencastAttached = true;
   } finally {
     if (videoPage && screencastStarted) await videoPage.screencast.stop().catch(() => {});
+    if (restartVideoPage && restartScreencastStarted) await restartVideoPage.screencast.stop().catch(() => {});
     if (!screencastAttached && videoPath) {
       try {
         await access(videoPath);
         await testInfo.attach('global-dharma-user-journey-video-partial', { path: videoPath, contentType: 'video/webm' });
+      } catch {}
+    }
+    if (!restartScreencastAttached && restartVideoPath) {
+      try {
+        await access(restartVideoPath);
+        await testInfo.attach('global-dharma-user-journey-restart-logout-video-partial', { path: restartVideoPath, contentType: 'video/webm' });
       } catch {}
     }
     await restartedApp?.close().catch(() => {});
