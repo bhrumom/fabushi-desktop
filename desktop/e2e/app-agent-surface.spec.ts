@@ -161,8 +161,15 @@ test('packaged Fabushi publishes a generation-safe semantic App MCP over the pri
     };
     expect(messageSnapshot.truncated).toBe(true);
     expect(messageSnapshot.elements.some((element) => element.agentId === semanticMessageAgentId)).toBe(false);
+    const freshSemanticMessage = await client.call('find', { agentId: semanticMessageAgentId, limit: 1 }) as {
+      generation: number;
+      count: number;
+      matches: Array<{ agentId?: string }>;
+    };
+    expect(freshSemanticMessage.count).toBe(1);
+    expect(freshSemanticMessage.matches[0]?.agentId).toBe(semanticMessageAgentId);
     await client.call('action', {
-      generation: messageSnapshot.generation,
+      generation: freshSemanticMessage.generation,
       agentId: semanticMessageAgentId,
       action: 'invoke',
     });
