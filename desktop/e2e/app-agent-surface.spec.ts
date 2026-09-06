@@ -114,9 +114,21 @@ test('packaged Fabushi publishes a generation-safe semantic App MCP over the pri
       return assertion.passed;
     }).toBe(true);
 
+    const rebasedAction = await client.call('action', {
+      generation: snapshot.generation,
+      agentId: 'test:profile-navigation-trigger',
+      action: 'invoke',
+    }) as { status?: string; target?: { agentId?: string } };
+    expect(rebasedAction).toMatchObject({
+      status: 'completed',
+      target: { agentId: 'test:profile-navigation-trigger' },
+    });
+    await expect(page.getByTestId('profile-navigation-menu')).toBeHidden();
+
     await expect(client.call('action', {
       generation: snapshot.generation,
       agentId: 'test:profile-navigation-trigger',
+      ref: 'g0:volatile',
       action: 'invoke',
     })).rejects.toThrow(/stale_app_surface_generation/u);
 
