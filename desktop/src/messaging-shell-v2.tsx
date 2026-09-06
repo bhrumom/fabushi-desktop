@@ -3174,7 +3174,7 @@ function ProfileNavigationMenu({ section, onNavigate }: { section: MessengerSect
   ];
   return <div className={styles.profileNavigationMenu} data-testid="profile-navigation-menu" onClick={(event) => event.stopPropagation()}>
     <header><BotMark botId="fabushi:navigation" state="idle" size={34} label="Fabushi" /><div><strong>Fabushi</strong><small>统一导航</small></div></header>
-    <div>{items.map((item) => <button key={item.section} type="button" title={item.label} data-active={section === item.section} onClick={() => onNavigate(item.section)}>{item.icon}<span>{item.label}</span></button>)}</div>
+    <div>{items.map((item) => <button key={item.section} type="button" title={item.label} data-testid={"profile-navigation-" + item.section} data-active={section === item.section} onClick={() => onNavigate(item.section)}>{item.icon}<span>{item.label}</span></button>)}</div>
   </div>;
 }
 
