@@ -134,37 +134,62 @@ test('packaged Fabushi publishes a generation-safe semantic App MCP over the pri
 
     await page.getByTestId('messenger-input').fill('semantic message action probe');
     await page.getByTestId('messenger-send').click();
-    const semanticMessage = page.locator('[data-agent-id^="message-actions:"][data-agent-invoke="contextmenu"]').filter({ hasText: 'semantic message action probe' }).last();
+    const semanticMessage = page.locator('[data-agent-id^="message-actions:"][data-agent-invoke="contextmenu"][data-agent-message-role="me"]').filter({ hasText: 'semantic message action probe' }).last();
     await expect(semanticMessage).toBeVisible();
+    await expect(semanticMessage).toHaveAttribute('data-agent-message-role', 'me');
     const semanticMessageAgentId = await semanticMessage.getAttribute('data-agent-id');
     expect(semanticMessageAgentId).toBeTruthy();
 
+    await page.evaluate(() => {
+      const overflow = document.createElement('div');
+      overflow.id = 'semantic-overflow-decoys';
+      overflow.style.display = 'none';
+      for (let index = 0; index < 520; index += 1) {
+        const button = document.createElement('button');
+        button.dataset.agentId = `semantic-overflow-decoy:${index}`;
+        button.textContent = `semantic overflow decoy ${index}`;
+        overflow.appendChild(button);
+      }
+      document.body.prepend(overflow);
+    });
+    await page.waitForTimeout(50);
+
     const messageSnapshot = await client.call('snapshot', { maxElements: 500, includeText: true }) as {
       generation: number;
+      truncated: boolean;
       elements: Array<{ agentId?: string }>;
     };
-    const messageTarget = messageSnapshot.elements.find((element) => element.agentId === semanticMessageAgentId);
-    expect(messageTarget?.agentId).toBe(semanticMessageAgentId);
+    expect(messageSnapshot.truncated).toBe(true);
+    expect(messageSnapshot.elements.some((element) => element.agentId === semanticMessageAgentId)).toBe(false);
     await client.call('action', {
       generation: messageSnapshot.generation,
-      agentId: messageTarget!.agentId,
+      agentId: semanticMessageAgentId,
       action: 'invoke',
     });
     await expect(page.getByTestId('message-context-menu')).toBeVisible();
 
-    const menuSnapshot = await client.call('snapshot', { maxElements: 500, includeText: true }) as {
-      generation: number;
-      elements: Array<{ agentId?: string }>;
-    };
     for (const actionName of ['reply', 'copy', 'react', 'edit', 'pin', 'forward', 'delete']) {
-      expect(menuSnapshot.elements.some((element) => element.agentId === `test:message-action-${actionName}`)).toBe(true);
+      const found = await client.call('find', { agentId: `test:message-action-${actionName}`, limit: 2 }) as {
+        generation: number;
+        count: number;
+        matches: Array<{ agentId?: string }>;
+      };
+      await expect(page.getByTestId(`message-action-${actionName}`), `DOM menu action ${actionName} must be rendered for the authored message`).toBeVisible();
+      expect(found.count, `semantic find must resolve message action ${actionName}`).toBe(1);
+      expect(found.matches[0]?.agentId).toBe(`test:message-action-${actionName}`);
     }
+    const freshReply = await client.call('find', { agentId: 'test:message-action-reply', limit: 1 }) as {
+      generation: number;
+      count: number;
+    };
+    expect(freshReply.count).toBe(1);
     await client.call('action', {
-      generation: menuSnapshot.generation,
+      generation: freshReply.generation,
       agentId: 'test:message-action-reply',
       action: 'invoke',
     });
     await expect(page.getByTestId('reply-message-banner')).toBeVisible();
+    await page.evaluate(() => document.getElementById('semantic-overflow-decoys')?.remove());
 
     const webFallback = await page.evaluate(async () => {
       const registry = (window as unknown as {

@@ -3013,6 +3013,7 @@ async function saveInvoiceDialog() {
                   className={message.role === 'me' ? styles.messageMine : styles.messagePeer}
                   data-agent-id={`message-actions:${message.source}:${message.id}`}
                   data-agent-invoke="contextmenu"
+                  data-agent-message-role={message.role}
                   onContextMenu={(event) => {
                     if (message.kind === 'action' || message.kind === 'thinking') return;
                     event.preventDefault();
