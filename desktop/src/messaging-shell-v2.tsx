@@ -52,7 +52,7 @@ import type {
   SandboxRuntime,
   UpdateState,
 } from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
-import { ElectronMahayanaHostTransport, isElectronMahayanaHostAvailable, MAHAYANA_ACCOUNT_SESSION_RESET_EVENT } from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
+import { ElectronMahayanaHostTransport, isElectronMahayanaHostAvailable, MAHAYANA_ACCOUNT_SESSION_RESET_EVENT, readCachedConversationMessages } from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
 import { MockMahayanaHostTransport } from '../../frontend/apps/web/src/lib/mahayana-host/mock-transport';
 import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
 import type { InstalledPluginPointer, MahayanaHostTransport, MarketplacePluginSummary } from '../../frontend/apps/web/src/lib/mahayana-host/transport';
@@ -161,6 +161,7 @@ type DisplayMessage = {
   kind?: 'message' | 'action' | 'thinking';
   operationId?: string;
   streaming?: boolean;
+  optimistic?: boolean;
   actionTitle?: string;
   actionDetail?: string;
   actionStatus?: 'running' | 'completed' | 'failed';
@@ -571,6 +572,29 @@ function upsertById<T extends { id: string }>(items: T[], item: T): T[] {
   return [...items.filter((current) => current.id !== item.id), item];
 }
 
+function cachedLegacyDisplayMessages(conversationId: string): DisplayMessage[] {
+  return readCachedConversationMessages(conversationId).map((message) => ({
+    id: message.id,
+    source: 'legacy',
+    role: message.role === 'user' ? 'me' : 'peer',
+    text: message.text,
+    createdAtMs: message.createdAtMs,
+    kind: 'message',
+    streaming: message.streaming,
+  }));
+}
+
+function startupLegacyConversationId(projection: MessengerProjection | null | undefined): string | null {
+  const key = projection?.activePeerKey;
+  if (!key) return null;
+  if (key.startsWith('legacy:conversation:')) return key.slice('legacy:conversation:'.length) || null;
+  if (key.startsWith('legacy:bot:')) {
+    const botId = key.slice('legacy:bot:'.length);
+    return projection?.legacyBots?.find((bot) => bot.id === botId)?.conversationId ?? null;
+  }
+  return null;
+}
+
 export default function DesktopShellV2() {
   const authTransport = useMemo(() => createTransport(), []);
   const localProjection = useMemo(() => readMessengerProjection(), []);
@@ -710,6 +734,7 @@ function DesktopFastStartBootstrap() {
 function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection?: MessengerProjection | null; onLogout: () => Promise<void> }) {
   const transport = useMemo(() => createTransport(), []);
   const startupProjection = useMemo(() => initialProjection ?? readMessengerProjection(), [initialProjection]);
+  const startupLegacyConversation = useMemo(() => startupLegacyConversationId(startupProjection), [startupProjection]);
   const selfHosted = useMemo(() => new SelfHostedMessagingClientV2(transport, { actorId: startupProjection?.actorId }), [transport, startupProjection]);
   const [hostReady, setHostReady] = useState(false);
   const [remoteAccountScope, setRemoteAccountScope] = useState<string | null>(null);
@@ -734,7 +759,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [walletAccount, setWalletAccount] = useState<MessagingWalletAccount | null>(null);
   const [walletEntries, setWalletEntries] = useState<MessagingLedgerEntry[]>([]);
   const [activePeerKey, setActivePeerKey] = useState<string | null>(startupProjection?.activePeerKey ?? null);
-  const [messages, setMessages] = useState<DisplayMessage[]>([]);
+  const [messages, setMessages] = useState<DisplayMessage[]>(() =>
+    startupLegacyConversation ? cachedLegacyDisplayMessages(startupLegacyConversation) : [],
+  );
   const [composer, setComposer] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [replyTo, setReplyTo] = useState<DisplayMessage | null>(null);
@@ -843,10 +870,14 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [desktopPreferences]);
 
   useEffect(() => {
-    if (!startupProjection?.activePeerKey?.startsWith('selfhosted:')) return;
-    const conversationId = startupProjection.activePeerKey.slice('selfhosted:'.length);
-    const cached = (startupProjection.selfMessages[conversationId] ?? []).filter((message) => !message.deleted);
-    setMessages(cached.map(displaySelfMessage));
+    if (startupProjection?.activePeerKey?.startsWith('selfhosted:')) {
+      const conversationId = startupProjection.activePeerKey.slice('selfhosted:'.length);
+      const cached = (startupProjection.selfMessages[conversationId] ?? []).filter((message) => !message.deleted);
+      setMessages(cached.map(displaySelfMessage));
+      return;
+    }
+    const legacyConversationId = startupLegacyConversationId(startupProjection);
+    if (legacyConversationId) setMessages(cachedLegacyDisplayMessages(legacyConversationId));
   }, [startupProjection]);
 
   useEffect(() => {
@@ -1070,6 +1101,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setHostReady(true);
         void execute({ type: 'settings.get', requestId: nextRequestId('settings-get') });
         refreshLegacy();
+        if (startupLegacyConversation) {
+          void execute({
+            type: 'conversation.open',
+            requestId: nextRequestId('conversation-open-startup'),
+            conversationId: startupLegacyConversation,
+          });
+        }
         try {
           const account = await transport.authStatus().catch(() => null);
           const cachedActor = startupProjection?.selfActors.find((actor) => actor.id === selfHosted.actorId);
@@ -1546,6 +1584,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         if (!activePeerKeyRef.current && event.conversations[0]) {
           const conversation = event.conversations[0];
           setActivePeerKey(`legacy:conversation:${conversation.id}`);
+          setMessages(cachedLegacyDisplayMessages(conversation.id));
           void execute({ type: 'conversation.open', requestId: nextRequestId('conversation-open'), conversationId: conversation.id });
         }
         break;
@@ -1606,9 +1645,19 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
               ? { ...message, kind: 'message', text: event.text, streaming: false }
               : message);
           }
-          if (event.role === 'user' && current.some((message) =>
-            message.role === 'me' && message.text === event.text &&
-            (!event.operationId || message.operationId === event.operationId))) return current;
+          if (event.role === 'user') {
+            const optimisticIndex = current.findIndex((message) =>
+              message.role === 'me' && message.optimistic === true && message.text === event.text,
+            );
+            if (optimisticIndex >= 0) {
+              return current.map((message, messageIndex) => messageIndex === optimisticIndex
+                ? { ...message, optimistic: false, operationId: event.operationId ?? message.operationId }
+                : message);
+            }
+            if (current.some((message) =>
+              message.role === 'me' && message.text === event.text &&
+              (!event.operationId || message.operationId === event.operationId))) return current;
+          }
           return [...current, {
             id: nextRequestId('message'),
             source: 'legacy',
@@ -1929,7 +1978,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       return;
     }
     if (peer.conversationId) {
-      setMessages([]);
+      setMessages(cachedLegacyDisplayMessages(peer.conversationId));
       await execute({ type: 'conversation.open', requestId: nextRequestId('conversation-open'), conversationId: peer.conversationId });
       return;
     }
@@ -1993,14 +2042,36 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       } else if (activePeer.kind === 'group' && activePeer.groupId) {
         await execute({ type: 'group.send', requestId: nextRequestId('group-send'), id: activePeer.groupId, text });
       } else {
+        const requestId = nextRequestId('chat-send');
+        const optimisticId = `optimistic:${requestId}`;
+        setMessages((current) => [...current, {
+          id: optimisticId,
+          source: 'legacy',
+          role: 'me',
+          text,
+          createdAtMs: Date.now(),
+          kind: 'message',
+          operationId: requestId,
+          optimistic: true,
+        }]);
         const accepted = await execute({
           type: 'chat.send',
-          requestId: nextRequestId('chat-send'),
+          requestId,
           text,
           conversationId: activePeer.conversationId,
           agentId: activePeer.actorId,
         });
-        if (agentRequest && accepted?.operationId && claimAgentOperation(accepted.operationId)) {
+        if (!accepted) {
+          setMessages((current) => current.filter((message) => message.id !== optimisticId));
+          updateComposer(text);
+          return;
+        }
+        if (accepted.operationId) {
+          setMessages((current) => current.map((message) => message.id === optimisticId
+            ? { ...message, operationId: accepted.operationId }
+            : message));
+        }
+        if (agentRequest && accepted.operationId && claimAgentOperation(accepted.operationId)) {
           appendAgentThinking(accepted.operationId, '正在思考');
         }
       }

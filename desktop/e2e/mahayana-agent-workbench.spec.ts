@@ -138,8 +138,12 @@ test('bot runs through Mahayana as a visible multi-step task and restores its ru
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
-    await page.getByTestId('messenger-input').fill('请分析这个任务，规划步骤，调用工具并给出最终结果。');
+    const prompt = '请分析这个任务，规划步骤，调用工具并给出最终结果。';
+    await page.getByTestId('messenger-input').fill(prompt);
     await page.getByTestId('messenger-send').click();
+    // The user bubble is a local-first state transition. It must paint before
+    // the Mahayana Host finishes accepting/routing the agent turn.
+    await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 1_000 });
 
     const workbench = page.getByTestId('agent-workbench');
     await expect(workbench).toBeVisible({ timeout: 15_000 });
@@ -158,6 +162,9 @@ test('bot runs through Mahayana as a visible multi-step task and restores its ru
     app = await launchDesktopApp(appDataDir);
     page = await app.firstWindow();
     await completeBrowserLogin(page);
+    // The previously active legacy transcript is restored from the bounded
+    // local journal on first paint instead of waiting for conversation.open.
+    await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 1_000 });
     await openMahayanaConversation(page);
 
     const restoredRun = page.locator(`[data-testid="agent-run"][data-run-id="${persistedRunId}"]`);
