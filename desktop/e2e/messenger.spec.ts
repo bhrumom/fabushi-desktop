@@ -249,7 +249,15 @@ test('Router settings modal binds providers, usage, sandbox, preferences and fas
     await expect(page.getByTestId('settings-update-track')).toHaveValue('stable');
 
     await page.getByTestId('settings-category-account').click();
-    await expect(page.getByTestId('settings-theme')).toBeVisible();
+    const accountLogout = page.getByTestId('settings-logout');
+    const accountTheme = page.getByTestId('settings-theme');
+    await expect(accountLogout).toBeVisible();
+    await expect(accountTheme).toBeVisible();
+    const [logoutTop, themeTop] = await Promise.all([
+      accountLogout.evaluate((element) => element.getBoundingClientRect().top),
+      accountTheme.evaluate((element) => element.getBoundingClientRect().top),
+    ]);
+    expect(logoutTop).toBeLessThan(themeTop);
     await expect(page.getByTestId('settings-local-tool-permission')).toBeVisible();
     await expect(page.getByTestId('settings-time-zone')).toBeVisible();
     await expect(page.getByText('Enter 发送消息')).toBeVisible();
