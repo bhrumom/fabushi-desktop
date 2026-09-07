@@ -11,6 +11,7 @@ import { installMahayanaAgentInlineCompatibility } from './mahayana-agent-inline
 import MahayanaAgentInlineReport from './mahayana-agent-inline-report';
 import MahayanaAgentWorkbench from './mahayana-agent-workbench';
 import { installMahayanaAgentTranscriptSemantics } from './mahayana-agent-transcript-semantics';
+import { installDesktopMiniAppDiscoveryAliases } from './miniapp-discovery-aliases';
 import { installDesktopMiniAppWebMcpHost } from './miniapp-webmcp-host';
 import { installSelfHostedMahayanaInvocationBridge } from './selfhosted-mahayana-invocation-bridge';
 import './messenger-layout-regressions.css';
@@ -32,6 +33,7 @@ async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
   await restoreDurableAgentState();
   prepareGrokChatParityRuntime();
   installBotIdentityAliases();
+  installDesktopMiniAppDiscoveryAliases();
   installDurableAgentState();
   installDesktopMiniAppWebMcpHost();
   installDesktopAppAgentSurface();
