@@ -24,6 +24,35 @@
 }
 
 /*
+ * Mini App Bot menu actions belong beside the message input, Telegram-style.
+ * The delegated bridge is deliberately compact and non-shrinking so geometry
+ * stays stable in the packaged 1280x800 acceptance viewport.
+ */
+[data-testid="messenger-workspace"] .fabushi-miniapp-composer-open {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+[data-testid="messenger-workspace"] .fabushi-miniapp-composer-open:hover,
+[data-testid="messenger-workspace"] .fabushi-miniapp-composer-open:focus-visible {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+/*
  * The CSS module intentionally removes the docked info column at <=1280px.
  * When React marks that same panel as an overlay, keep it rendered as flex:
  * absolute positioning removes it from the grid while the header toggle still

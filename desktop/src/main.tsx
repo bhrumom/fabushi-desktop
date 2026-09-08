@@ -11,6 +11,7 @@ import { installMahayanaAgentInlineCompatibility } from './mahayana-agent-inline
 import MahayanaAgentInlineReport from './mahayana-agent-inline-report';
 import MahayanaAgentWorkbench from './mahayana-agent-workbench';
 import { installMahayanaAgentTranscriptSemantics } from './mahayana-agent-transcript-semantics';
+import { installMiniAppComposerOpenBridge } from './miniapp-composer-open-bridge';
 import { installDesktopMiniAppDiscoveryAliases } from './miniapp-discovery-aliases';
 import { installDesktopMiniAppWebMcpHost } from './miniapp-webmcp-host';
 import { installSelfHostedMahayanaInvocationBridge } from './selfhosted-mahayana-invocation-bridge';
@@ -48,6 +49,7 @@ async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
     </StrictMode>,
   );
 
+  installMiniAppComposerOpenBridge(rootElement);
   installMahayanaAgentInlineCompatibility();
   installMahayanaAgentTranscriptSemantics();
   installSelfHostedMahayanaInvocationBridge();
