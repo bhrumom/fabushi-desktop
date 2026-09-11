@@ -1147,7 +1147,7 @@ function createNativeCapabilityHandlers(deps) {
       const body = { sku, displayName, description, productKind, entitlementCapability, currency, amount, rails };
       if (taxCode) body.taxCode = taxCode;
       if (productKind === 'subscription') body.subscriptionPeriodSeconds = 2592000;
-      return platformRequest('POST', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}/products`, { body });
+      return platformRequest('POST', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}/products/batch`, { body: { products: [body] } });
     },
 
     async updateDeveloperCommerceProduct(params) {
@@ -1171,7 +1171,10 @@ function createNativeCapabilityHandlers(deps) {
       if (productKind === 'subscription') body.subscriptionPeriodSeconds = 2592000;
       const productId = cleanString(params.productId, 128);
       if (!productId) throw new Error('Product ID is required.');
-      return platformRequest('POST', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}/products/${encodeURIComponent(productId)}`, { body });
+      // Product identity is the developer SKU. Use the same batch upsert path
+      // for edits so desktop and web cannot diverge into a privileged product
+      // creation flow.
+      return platformRequest('POST', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}/products/batch`, { body: { products: [body] } });
     },
 
     async syncDeveloperCommerceGoogleProduct(params) {
@@ -1179,6 +1182,23 @@ function createNativeCapabilityHandlers(deps) {
       const productId = cleanString(params.productId, 128);
       if (!miniAppId || !productId) throw new Error('Mini App ID and product ID are required.');
       return platformRequest('POST', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}/products/${encodeURIComponent(productId)}/google/sync`, { body: {} });
+    },
+
+    async upsertDeveloperCommerceProductsBatch(params) {
+      const miniAppId = cleanString(params.miniAppId, 128);
+      const products = Array.isArray(params.products) ? params.products : [];
+      if (!miniAppId || !/^[A-Za-z0-9._:-]+$/.test(miniAppId) || products.length < 1 || products.length > 100 || products.some((product) => !product || typeof product !== 'object')) {
+        throw new Error('A valid Mini App ID and 1-100 product drafts are required.');
+      }
+      return platformRequest('POST', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}/products/batch`, { body: { products } });
+    },
+
+    async syncDeveloperCommerceGoogleProducts(params) {
+      const miniAppId = cleanString(params.miniAppId, 128);
+      const productIds = Array.isArray(params.productIds) ? params.productIds.map((value) => cleanString(value, 128)).filter(Boolean) : [];
+      if (!miniAppId || !/^[A-Za-z0-9._:-]+$/.test(miniAppId)) throw new Error('Valid Mini App ID is required.');
+      if (productIds.length > 50) throw new Error('At most 50 Google product IDs can be synchronized at once.');
+      return platformRequest('POST', `/v1/developer/commerce/miniapps/${encodeURIComponent(miniAppId)}/google/sync`, { body: { productIds } });
     },
 
     async getDeveloperPayoutOverview() {

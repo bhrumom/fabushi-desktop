@@ -185,6 +185,8 @@ export const NATIVE_DESKTOP_METHODS = {
   createDeveloperCommerceProduct: { args: 'object' },
   updateDeveloperCommerceProduct: { args: 'object' },
   syncDeveloperCommerceGoogleProduct: { args: 'object' },
+  upsertDeveloperCommerceProductsBatch: { args: 'object' },
+  syncDeveloperCommerceGoogleProducts: { args: 'object' },
   getDeveloperPayoutOverview: { args: 'none' },
   upsertDeveloperPayoutProfile: { args: 'object' },
   requestDeveloperPayout: { args: 'object' },

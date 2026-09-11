@@ -108,6 +108,49 @@ test('Mini App bot lifecycle uses authenticated marketplace platform routes', as
   assert.ok(calls.every(([method]) => method === 'platform.request'));
 });
 
+test('Developer Commerce product mutations and Google reconciliation use the developer batch surface', async () => {
+  const calls = [];
+  const host = {
+    async request(method, params = {}) {
+      calls.push([method, params]);
+      if (method !== 'platform.request') throw new Error(`unexpected Host method ${method}`);
+      return { ok: true, data: { path: params.path, body: params.body ?? null } };
+    },
+  };
+  const draft = {
+    miniAppId: 'third-party-app',
+    sku: 'pro.monthly',
+    displayName: 'Pro 月付',
+    description: '30 天权限',
+    productKind: 'subscription',
+    entitlementCapability: 'pro.access',
+    currency: 'CNY',
+    amount: 3000,
+    subscriptionPeriodSeconds: 2592000,
+    rails: ['google_play'],
+  };
+  await harness(async ({ handlers }) => {
+    const created = await handlers.createDeveloperCommerceProduct(draft);
+    assert.equal(created.path, '/v1/developer/commerce/miniapps/third-party-app/products/batch');
+    assert.equal(created.body.products.length, 1);
+    const updated = await handlers.updateDeveloperCommerceProduct({ ...draft, productId: 'prod.existing' });
+    assert.equal(updated.path, created.path);
+    const batched = await handlers.upsertDeveloperCommerceProductsBatch({ miniAppId: draft.miniAppId, products: [draft] });
+    assert.equal(batched.path, created.path);
+    const reconciled = await handlers.syncDeveloperCommerceGoogleProducts({ miniAppId: draft.miniAppId, productIds: ['prod.existing'] });
+    assert.equal(reconciled.path, '/v1/developer/commerce/miniapps/third-party-app/google/sync');
+    assert.deepEqual(reconciled.body, { productIds: ['prod.existing'] });
+    await assert.rejects(
+      handlers.syncDeveloperCommerceGoogleProducts({ miniAppId: draft.miniAppId, productIds: Array.from({ length: 51 }, (_, index) => `prod.${index}`) }),
+      /At most 50 Google product IDs/,
+    );
+  }, { host });
+  assert.equal(calls.length, 4);
+  assert.ok(calls.every(([method]) => method === 'platform.request'));
+  assert.ok(calls.slice(0, 3).every(([, params]) => params.path.endsWith('/products/batch')));
+  assert.equal(calls[3][1].path.endsWith('/google/sync'), true);
+});
+
 test('Mini App runtime facade scopes renderer calls to installed Tool Contract and canonical entitlement', async () => {
   const calls = [];
   let entitled = false;
