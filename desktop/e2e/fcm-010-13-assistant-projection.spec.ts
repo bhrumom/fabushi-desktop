@@ -8,6 +8,7 @@ import { createAppAgentSurfaceClient } from '../../chatgpt-vps-control/lib/app-a
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
 const assistantAgentId = 'test:peer-legacy:conversation:mahayana-ai:agent:assistant';
+const assistantUnreadAgentId = 'peer-unread:legacy:conversation:mahayana-ai:agent:assistant';
 
 async function launchDesktopApp(appDataDir: string) {
   return electron.launch({
@@ -74,6 +75,17 @@ async function findAssistant(client: ReturnType<typeof createAppAgentSurfaceClie
   }>;
 }
 
+async function findAssistantUnread(
+  client: ReturnType<typeof createAppAgentSurfaceClient>,
+  name: 'unread-none' | 'unread-positive',
+) {
+  return client.call('find', { agentId: assistantUnreadAgentId, name, limit: 1 }) as Promise<{
+    generation: number;
+    count: number;
+    matches: Array<{ agentId?: string; name?: string; role?: string }>;
+  }>;
+}
+
 async function closeNonEmptyGlobalSearch(page: Page): Promise<void> {
   await expect(page.getByTestId('global-search-surface')).toBeVisible();
   await expect(page.getByRole('button', { name: '清除搜索' })).toBeVisible();
@@ -93,7 +105,7 @@ async function navigateToChats(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: '新建', exact: true })).toBeVisible();
 }
 
-test('FCM-010.13.11 real App Surface journey reprojects the canonical assistant after channel creation and non-empty global search', async () => {
+test('FCM-010.13.11 real App Surface journey reprojects the canonical assistant and keeps unread semantics on the chat list', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-fcm-010-13-assistant-projection-'));
   const policyDir = path.join(appDataDir, 'feature-host', 'runtime');
   await mkdir(policyDir, { recursive: true });
@@ -147,6 +159,14 @@ test('FCM-010.13.11 real App Surface journey reprojects the canonical assistant 
     expect(afterSearch.count).toBe(1);
     expect(afterSearch.matches[0]?.agentId).toBe(assistantAgentId);
 
+    const unreadOnChatList = await findAssistantUnread(client, 'unread-none');
+    expect(unreadOnChatList.count).toBe(1);
+    expect(unreadOnChatList.matches[0]).toMatchObject({
+      agentId: assistantUnreadAgentId,
+      name: 'unread-none',
+      role: 'img',
+    });
+
     const opened = await client.call('action', {
       generation: afterSearch.generation,
       agentId: assistantAgentId,
@@ -155,6 +175,9 @@ test('FCM-010.13.11 real App Surface journey reprojects the canonical assistant 
     expect(opened).toMatchObject({ status: 'completed', target: { agentId: assistantAgentId } });
     await expect(page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant')).toBeVisible();
     await expect(page.getByTestId('messenger-input')).toBeVisible();
+
+    const unreadWhileConversationOpen = await findAssistantUnread(client, 'unread-none');
+    expect(unreadWhileConversationOpen.count).toBe(0);
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });
