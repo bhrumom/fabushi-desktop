@@ -74,17 +74,26 @@ async function findAssistant(client: ReturnType<typeof createAppAgentSurfaceClie
   }>;
 }
 
+async function closeNonEmptyGlobalSearch(page: Page): Promise<void> {
+  await expect(page.getByTestId('global-search-surface')).toBeVisible();
+  await expect(page.getByRole('button', { name: '清除搜索' })).toBeVisible();
+  await page.getByRole('button', { name: '清除搜索' }).click();
+  await expect(page.getByRole('button', { name: '关闭搜索' })).toBeVisible();
+  await page.getByRole('button', { name: '关闭搜索' }).click();
+  await expect(page.getByTestId('global-search-surface')).toBeHidden();
+}
+
 async function navigateToChats(page: Page): Promise<void> {
   const menu = page.getByTestId('profile-navigation-menu');
   if (!(await menu.isVisible())) {
     await page.getByTestId('profile-navigation-trigger').click();
   }
   await expect(menu).toBeVisible();
-  await page.getByRole('button', { name: '聊天', exact: true }).click();
+  await page.getByTestId('profile-navigation-chats').click();
   await expect(page.getByRole('button', { name: '新建', exact: true })).toBeVisible();
 }
 
-test('FCM-010.13.11 real App Surface journey reprojects the canonical assistant after returning from two channel creations', async () => {
+test('FCM-010.13.11 real App Surface journey reprojects the canonical assistant after channel creation and non-empty global search', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-fcm-010-13-assistant-projection-'));
   const policyDir = path.join(appDataDir, 'feature-host', 'runtime');
   await mkdir(policyDir, { recursive: true });
@@ -127,8 +136,19 @@ test('FCM-010.13.11 real App Surface journey reprojects the canonical assistant 
     expect(afterChannels.count).toBe(1);
     expect(afterChannels.matches[0]?.agentId).toBe(assistantAgentId);
 
+    await page.getByTestId('global-search-trigger').click();
+    await expect(page.getByTestId('global-search-surface')).toBeVisible();
+    await expect(page.getByTestId('global-search-tab-chats')).toBeVisible();
+    await page.getByTestId('global-search-input').fill('全球法布施');
+    await closeNonEmptyGlobalSearch(page);
+
+    await navigateToChats(page);
+    const afterSearch = await findAssistant(client);
+    expect(afterSearch.count).toBe(1);
+    expect(afterSearch.matches[0]?.agentId).toBe(assistantAgentId);
+
     const opened = await client.call('action', {
-      generation: afterChannels.generation,
+      generation: afterSearch.generation,
       agentId: assistantAgentId,
       action: 'invoke',
     }) as { status?: string; target?: { agentId?: string } };
