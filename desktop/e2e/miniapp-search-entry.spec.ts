@@ -90,7 +90,9 @@ test('searching 小程序 exposes and installs the official 全球法布施 Mini
 
     const install = appResult.getByRole('button', { name: '安装' });
     const open = appResult.getByRole('button', { name: '打开' });
-    if (await install.isVisible().catch(() => false)) {
+    await expect(install.or(open)).toBeVisible({ timeout: 15_000 });
+    if (!(await open.isVisible().catch(() => false))) {
+      await expect(install).toBeVisible({ timeout: 15_000 });
       await expect(install).toBeEnabled();
       await install.click();
     }
