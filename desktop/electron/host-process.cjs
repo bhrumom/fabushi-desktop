@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const readline = require('node:readline');
 const { createTestPlatformAccount } = require('./test-platform-account.cjs');
+const { createChromePlatformServer } = require('./chrome-platform-server.cjs');
 
 const PRODUCTION_PRODUCT_API_BASE_URL = 'https://api.ombhrum.com';
 const DEVELOPMENT_PRODUCT_API_BASE_URL = 'https://mahayana-platform.bhrumom.workers.dev';
@@ -196,6 +197,12 @@ class MahayanaHostProcess {
     this.testPlatformAccount = this.env.FABUSHI_FEATURE_HOST_MODE === 'test'
       ? createTestPlatformAccount({ app: this.app, fs: this.fs, now: this.now })
       : null;
+    this.chromePlatformServer = createChromePlatformServer({
+      app: this.app,
+      env: this.env,
+      platform: this.platform,
+      hostRequest: (method, params, timeoutMs) => this.request(method, params, timeoutMs),
+    });
 
     this.child = null;
     this.currentGeneration = 0;
@@ -322,6 +329,14 @@ class MahayanaHostProcess {
     this.state = 'running';
     this.startedAt = this.now();
     this.emitLifecycle('running');
+    // Packaged Fabushi always exposes the Chrome platform. Development and
+    // unit-test hosts opt in explicitly so a test process never creates a
+    // real per-user socket or native-messaging state by accident.
+    if (this.app.isPackaged || this.env.FABUSHI_ENABLE_CHROME_PLATFORM === '1') {
+      void this.chromePlatformServer.start().catch((error) => {
+        console.error('[chrome-platform] desktop bridge failed to start', error);
+      });
+    }
 
     const lines = this.readline.createInterface({ input: child.stdout });
     lines.on('line', (line) => {
@@ -398,7 +413,11 @@ class MahayanaHostProcess {
       timer.unref?.();
       this.pending.set(key, {
         generation,
-        resolve: (value) => { clearTimeout(timer); resolve(value); },
+        resolve: (value) => {
+          clearTimeout(timer);
+          if (method === 'feature.receive' && value) this.chromePlatformServer.broadcastEvent(value);
+          resolve(value);
+        },
         reject: (error) => { clearTimeout(timer); reject(error); },
       });
       const payload = JSON.stringify({ id, method, params });
@@ -446,6 +465,7 @@ class MahayanaHostProcess {
     this.rejectGeneration(generation, new Error('Mahayana host closed.'));
     this.emitLifecycle('closed');
     child?.kill();
+    void this.chromePlatformServer.close().catch((error) => console.error('[chrome-platform] desktop bridge shutdown failed', error));
     this.events.removeAllListeners();
   }
 }
