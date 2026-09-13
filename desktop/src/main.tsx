@@ -17,6 +17,7 @@ import { installDesktopMiniAppWebMcpHost } from './miniapp-webmcp-host';
 import { installSelfHostedMahayanaInvocationBridge } from './selfhosted-mahayana-invocation-bridge';
 import './messenger-layout-regressions.css';
 import './grok-agent-ui-parity.css';
+import './openbot-ui-parity.css';
 import './mahayana-agent-transcript-semantics.css';
 import './credential-vault.css';
 import './sidebar-contact-groups.css';
