@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const { normalizeDesktopUpdateStatus } = require('./update-state.cjs');
 
 const source = fs.readFileSync(path.join(__dirname, 'main.cjs'), 'utf8');
 const nativeCapabilitySource = fs.readFileSync(path.join(__dirname, 'native-capability-handlers.cjs'), 'utf8');
@@ -30,4 +31,21 @@ test('runtime event pump yields between long-polls so renderer IPC cannot starve
   const pump = source.slice(source.indexOf('function startHostEventPump()'), source.indexOf('function installIpcHandlers()'));
   assert.match(pump, /if \(event\) broadcastMahayanaEvent\(event\);\s*\/\/ Yield after every receive[\s\S]*?await sleep\(10\);/);
   assert.doesNotMatch(pump, /else await sleep\(10\);/);
+});
+
+test('desktop updater suppresses same-version actionable states before renderer broadcast', () => {
+  for (const type of ['available', 'downloading', 'ready', 'staging']) {
+    assert.deepEqual(
+      normalizeDesktopUpdateStatus({ type, version: '1.2.56' }, '1.2.56'),
+      { type: 'upToDate', version: '1.2.56' },
+    );
+  }
+  assert.deepEqual(
+    normalizeDesktopUpdateStatus({ type: 'available', version: '1.2.57' }, '1.2.56'),
+    { type: 'available', version: '1.2.57' },
+  );
+  const setter = source.slice(source.indexOf('function setDesktopUpdateStatus('), source.indexOf('function persistenceKey('));
+  assert.match(setter, /normalizePersistedDesktopUpdateStatus\(status\)/);
+  assert.match(setter, /broadcastNativeEvent\('update-status', normalizedStatus\)/);
+  assert.match(setter, /updateStatus: normalizedStatus/);
 });

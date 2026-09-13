@@ -14,6 +14,7 @@ const { createNativeCapabilityHandlers } = require('./native-capability-handlers
 const { MessagingSignalingClient } = require('./messaging-signaling-client.cjs');
 const { createAppAgentSurfaceServer } = require('./app-agent-surface-server.cjs');
 const { RemoteDeviceAgentSupervisor } = require('./remote-device-agent-supervisor.cjs');
+const { normalizeDesktopUpdateStatus } = require('./update-state.cjs');
 
 const appDataOverride = process.env.FABUSHI_APP_DATA?.trim();
 if (appDataOverride) app.setPath('userData', path.resolve(appDataOverride));
@@ -477,14 +478,7 @@ async function mutateNativeState(mutator) {
 }
 
 function normalizePersistedDesktopUpdateStatus(status) {
-  const currentVersion = app.getVersion();
-  if (!status || typeof status !== 'object') return { type: 'upToDate', version: currentVersion };
-  const version = typeof status.version === 'string' && status.version ? status.version : currentVersion;
-  if (status.type === 'upToDate') return { ...status, version: currentVersion };
-  if (version === currentVersion && ['available', 'downloading', 'ready', 'staging'].includes(status.type)) {
-    return { type: 'upToDate', version: currentVersion };
-  }
-  return { ...status, version };
+  return normalizeDesktopUpdateStatus(status, app.getVersion());
 }
 
 async function getDesktopUpdateStatus() {
@@ -495,15 +489,17 @@ async function getDesktopUpdateStatus() {
 }
 
 function setDesktopUpdateStatus(status, { broadcast = true } = {}) {
-  // The updater is a live process state machine. Set memory before broadcasting so
-  // a renderer click triggered by this exact event can never read stale disk state.
-  runtimeDesktopUpdateStatus = status;
-  if (broadcast) broadcastNativeEvent('update-status', status);
-  return mutateNativeState((state) => ({ ...state, updateStatus: status }))
+  // Normalize live updater events before memory, renderer broadcast, and persistence.
+  // A same-version update must never become an actionable UI state.
+  const normalizedStatus = normalizePersistedDesktopUpdateStatus(status);
+  runtimeDesktopUpdateStatus = normalizedStatus;
+  if (normalizedStatus.type === 'upToDate') availableDesktopUpdateVersion = null;
+  if (broadcast) broadcastNativeEvent('update-status', normalizedStatus);
+  return mutateNativeState((state) => ({ ...state, updateStatus: normalizedStatus }))
     .catch((error) => {
       console.warn('[updater] unable to persist live update status', error instanceof Error ? error.message : String(error));
     })
-    .then(() => status);
+    .then(() => normalizedStatus);
 }
 
 function persistenceKey(value) {
