@@ -23,6 +23,7 @@ const methodNames = [
   'feature.marketplace.release',
   'feature.plugin.install',
   'feature.plugin.uninstall',
+  'feature.plugin.rollback',
   'feature.plugin.active',
   'feature.plugin.listInstalled',
   'feature.plugin.uiDocument',

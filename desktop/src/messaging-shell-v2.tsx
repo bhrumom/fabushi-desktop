@@ -56,6 +56,7 @@ import { ElectronMahayanaHostTransport, isElectronMahayanaHostAvailable, MAHAYAN
 import { MockMahayanaHostTransport } from '../../frontend/apps/web/src/lib/mahayana-host/mock-transport';
 import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
 import type { InstalledPluginPointer, MahayanaHostTransport, MarketplacePluginSummary } from '../../frontend/apps/web/src/lib/mahayana-host/transport';
+import { marketplaceInstallAction, marketplaceInstallActionLabel } from '../../frontend/apps/web/src/lib/marketplace-install-contract';
 import {
   RemoteComputerDesktopController,
   type RemoteComputerDesktopState,
@@ -114,6 +115,29 @@ import {
   projectSidebarContactGroups,
   useSidebarContactGroups,
 } from './sidebar-contact-groups';
+
+function miniAppMarketplaceAction(
+  app: MarketplacePluginSummary,
+  installed: InstalledPluginPointer | undefined,
+) {
+  return marketplaceInstallAction(
+    {
+      id: app.pluginId,
+      latestVersion: app.latestVersion,
+      install: app.install,
+      releaseManifest: app.releaseManifest,
+    },
+    installed
+      ? { version: installed.version, artifactSha256: installed.artifactSha256 }
+      : undefined,
+  );
+}
+
+function miniAppReleaseLabel(app: MarketplacePluginSummary): string {
+  const source = app.install?.source as { sourceRef?: unknown } | undefined;
+  const sourceRef = typeof source?.sourceRef === 'string' ? source.sourceRef.slice(0, 9) : '';
+  return sourceRef ? `GitHub · ${sourceRef}` : 'GitHub 来源待确认';
+}
 
 type MessengerSection =
   | 'chats'
@@ -2792,6 +2816,17 @@ async function saveInvoiceDialog() {
       if (release.releaseManifest?.protocol !== 'mahayana.external-release.v1') {
         throw new Error('Mini App release is missing a verified external release manifest');
       }
+      const installContract = release.install
+        ?? (release.releaseManifest.install as Record<string, unknown> | undefined);
+      const installSource = installContract?.source as Record<string, unknown> | undefined;
+      if (installContract?.protocol !== 'fabushi.marketplace.install.v1'
+        || installContract.strategy !== 'github-immutable'
+        || installSource?.marketplaceHostsPackage === true
+        || typeof installSource?.repository !== 'string'
+        || typeof installSource?.sourceRef !== 'string'
+        || !installSource.sourceRef.trim()) {
+        throw new Error('Mini App release is not a GitHub immutable package');
+      }
       await transport.pluginInstall(release.releaseManifest, 'desktop');
       try {
         await invokeNativeDesktop('addMiniAppToAccount', { pluginId: app.pluginId });
@@ -3308,8 +3343,9 @@ function GlobalSearchWorkspace(props: GlobalSearchWorkspaceProps) {
       {!props.scopePeer && props.category === 'apps' ? <div className={styles.searchAppResults}>{props.miniAppLoading ? <div className={styles.marketplaceStatus}>正在搜索在线应用市场…</div> : appResults.map((app) => {
         const installed = props.installedMiniApps[app.pluginId];
         const busy = props.miniAppBusy.has(app.pluginId);
-        const update = Boolean(installed && installed.version !== app.latestVersion);
-        return <article key={app.pluginId} className={styles.searchAppCard} data-testid={`global-search-app-${app.pluginId}`}><BotMark botId={`miniapp:${app.pluginId}`} state={installed ? 'idle' : 'sleeping'} size={52} animated={false} label={app.displayName} /><div><strong>{app.displayName}</strong><small>{app.description}</small><em>{installed ? `已安装 ${installed.version}` : `在线 · ${app.latestVersion}`}</em></div><aside>{installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}{!installed || update ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中' : update ? '更新' : '安装'}</button> : null}{installed ? <button type="button" disabled={busy} onClick={() => void props.onUninstallMiniApp(app.pluginId)}>卸载</button> : null}</aside></article>;
+        const action = miniAppMarketplaceAction(app, installed);
+        const needsInstall = action === 'install' || action === 'update' || action === 'reinstall';
+        return <article key={app.pluginId} className={styles.searchAppCard} data-testid={`global-search-app-${app.pluginId}`}><BotMark botId={`miniapp:${app.pluginId}`} state={installed ? 'idle' : 'sleeping'} size={52} animated={false} label={app.displayName} /><div><strong>{app.displayName}</strong><small>{app.description}</small><em>{installed ? `已安装 ${installed.version}` : `在线 · ${app.latestVersion}`} · {miniAppReleaseLabel(app)}</em></div><aside>{installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}{needsInstall ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中' : marketplaceInstallActionLabel(action)}</button> : action === 'blocked' ? <button type="button" disabled>阻止降级</button> : null}{installed ? <button type="button" disabled={busy} onClick={() => void props.onUninstallMiniApp(app.pluginId)}>卸载</button> : null}</aside></article>;
       })}</div> : null}
       {['posts', 'images', 'videos', 'downloads', 'links', 'files'].includes(props.category) ? mediaResults.map((message) => <article key={message.id} className={styles.searchMessageResult}><BotMark botId={`search-message:${message.id}`} state="idle" size={38} animated={false} label="消息" /><div><p>{message.text || (message.mediaType === 'photo' ? '图片' : message.mediaType === 'video' ? '视频' : '文件')}</p><small>{new Date(message.createdAtMs).toLocaleString()}</small></div></article>) : null}
       {unsupportedMediaCategory ? <SearchEmptyState label="当前会话尚无可搜索的音频索引" /> : null}
@@ -3670,13 +3706,14 @@ function MiniAppMarketplaceList(props: MiniAppMarketplaceProps) {
     {props.miniApps.map((app) => {
       const installed = props.installedMiniApps[app.pluginId];
       const busy = props.miniAppBusy.has(app.pluginId);
-      const update = Boolean(installed && installed.version !== app.latestVersion);
+      const action = miniAppMarketplaceAction(app, installed);
+      const needsInstall = action === 'install' || action === 'update' || action === 'reinstall';
       return <div className={styles.marketplaceRow} key={app.pluginId} data-testid={`miniapp-market-${app.pluginId}`}>
         <span className={styles.appIcon}><BotMark botId={`miniapp:${app.pluginId}`} state={installed ? "idle" : "sleeping"} size={34} label={app.displayName} /></span>
-        <div className={styles.marketplaceCopy}><strong>{app.displayName}</strong><small>{app.description}</small><em>{installed ? `已安装 ${installed.version}` : `在线 · ${app.latestVersion}`}</em></div>
+        <div className={styles.marketplaceCopy}><strong>{app.displayName}</strong><small>{app.description}</small><em>{installed ? `已安装 ${installed.version}` : `在线 · ${app.latestVersion}`} · {miniAppReleaseLabel(app)}</em></div>
         <div className={styles.marketplaceActions}>
           {installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}
-          {!installed || update ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中' : update ? '更新' : '安装'}</button> : null}
+          {needsInstall ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中' : marketplaceInstallActionLabel(action)}</button> : action === 'blocked' ? <button type="button" disabled>阻止降级</button> : null}
           {installed ? <button type="button" disabled={busy} title="卸载" onClick={() => void props.onUninstallMiniApp(app.pluginId)}><Trash2 size={13} /></button> : null}
         </div>
       </div>;
@@ -3694,15 +3731,16 @@ function MiniAppMarketplaceWorkspace(props: MiniAppMarketplaceProps) {
     <div className={styles.featureGrid}>{props.miniApps.map((app) => {
       const installed = props.installedMiniApps[app.pluginId];
       const busy = props.miniAppBusy.has(app.pluginId);
-      const update = Boolean(installed && installed.version !== app.latestVersion);
+      const action = miniAppMarketplaceAction(app, installed);
+      const needsInstall = action === 'install' || action === 'update' || action === 'reinstall';
       return <article className={styles.marketplaceCard} key={app.pluginId}>
         <BotMark botId={`miniapp:${app.pluginId}`} state={installed ? "idle" : "sleeping"} size={48} label={app.displayName} />
         <strong>{app.displayName}</strong>
         <small>{app.description}</small>
-        <em>{installed ? `已安装 ${installed.version}` : `线上版本 ${app.latestVersion}`}</em>
+        <em>{installed ? `已安装 ${installed.version}` : `线上版本 ${app.latestVersion}`} · {miniAppReleaseLabel(app)}</em>
         <div>
           {installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}
-          {!installed || update ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中…' : update ? '更新' : '安装'}</button> : null}
+          {needsInstall ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中…' : marketplaceInstallActionLabel(action)}</button> : action === 'blocked' ? <button type="button" disabled>阻止降级</button> : null}
           {installed ? <button type="button" disabled={busy} onClick={() => void props.onUninstallMiniApp(app.pluginId)}>卸载</button> : null}
         </div>
       </article>;
