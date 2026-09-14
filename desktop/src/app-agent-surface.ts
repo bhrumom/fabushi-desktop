@@ -86,8 +86,42 @@ function leaseFromSnapshot(value: unknown): { generation: number; lease: StableA
   };
 }
 
+function leaseFromFind(value: unknown): { generation: number; lease: StableActionLease } | null {
+  const result = record(value);
+  const generation = integer(result.generation);
+  if (generation == null || !Array.isArray(result.matches)) return null;
+  const targets = new Map<string, string>();
+  for (const candidate of result.matches) {
+    const target = record(candidate);
+    const agentId = String(target.agentId ?? '').trim();
+    if (!agentId || target.stable !== true || targets.has(agentId)) continue;
+    targets.set(agentId, stableTargetFingerprint(target));
+  }
+  return targets.size > 0
+    ? {
+      generation,
+      lease: {
+        route: String(result.route ?? ''),
+        screen: String(result.screen ?? ''),
+        targets,
+      },
+    }
+    : null;
+}
+
 function rememberStableActionLease(leases: Map<number, StableActionLease>, snapshot: unknown): void {
   const captured = leaseFromSnapshot(snapshot);
+  if (!captured) return;
+  leases.set(captured.generation, captured.lease);
+  while (leases.size > MAX_STABLE_ACTION_LEASES) {
+    const oldest = leases.keys().next().value as number | undefined;
+    if (oldest == null) break;
+    leases.delete(oldest);
+  }
+}
+
+function rememberStableActionFindLease(leases: Map<number, StableActionLease>, result: unknown): void {
+  const captured = leaseFromFind(result);
   if (!captured) return;
   leases.set(captured.generation, captured.lease);
   while (leases.size > MAX_STABLE_ACTION_LEASES) {
@@ -111,6 +145,7 @@ async function callSurfaceWithStableTargetRebase(
   try {
     const result = await surface.call(operation, input, { signal });
     if (operation === 'snapshot') rememberStableActionLease(leases, result);
+    if (operation === 'find') rememberStableActionFindLease(leases, result);
     return result;
   } catch (initialError) {
     if (operation !== 'action' || !isStaleGeneration(initialError)) throw initialError;

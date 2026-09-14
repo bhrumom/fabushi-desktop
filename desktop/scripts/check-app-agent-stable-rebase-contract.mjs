@@ -17,7 +17,12 @@ assert.match(
 assert.match(
   bridgeSource,
   /if \(operation === 'snapshot'\) rememberStableActionLease\(leases, result\)/u,
-  'a stale action may only rebase from a previously observed snapshot lease',
+  'a stale action may only rebase from a previously observed snapshot or stable find lease',
+);
+assert.match(
+  bridgeSource,
+  /if \(operation === 'find'\) rememberStableActionFindLease\(leases, result\)/u,
+  'a stable target returned by find must also establish a generation-bound rebase lease',
 );
 assert.match(
   bridgeSource,
