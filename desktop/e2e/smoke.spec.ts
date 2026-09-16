@@ -140,7 +140,7 @@ async function runJourneyStep(page: Page, step: MahayanaHostJourneyStep): Promis
       const input = page.getByTestId('messenger-input');
       await input.fill(step.text);
       await page.getByTestId('messenger-send').click();
-      await expect(page.getByTestId('message-list').locator(':scope > article').getByText(step.expectedReply, { exact: true })).toBeVisible();
+      await expect(page.getByTestId('message-list').locator('article').getByText(step.expectedReply, { exact: true })).toBeVisible();
       return;
     }
     case 'installMiniApp':

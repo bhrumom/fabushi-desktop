@@ -131,13 +131,14 @@ test('Global Dharma packaged journey keeps Bot WebMCP, UI revision, account and 
     await expect(page.getByTestId('miniapp-bot-commands')).toContainText('/status');
     await input.fill(statusText);
     await page.getByTestId('messenger-send').click();
-    await expect(page.getByTestId('message-list').locator(':scope > article').last()).toContainText('已读取全球法布施状态');
+    await expect(page.getByTestId('message-list').locator('article').last()).toContainText('已读取全球法布施状态');
     await expect.poll(() => parentExecution(page), { timeout: 15_000 }).toMatchObject({ protocol: 'fabushi.miniapp.execution.v1', source: 'bot', phase: 'completed', tool: 'status' });
     const botState = await parentExecution(page);
     expect(botState.revision).toBeGreaterThan(0);
     await shot(page, testInfo, '05-bot-natural-language-webmcp-complete.png');
 
-    await page.getByTestId('miniapp-bot-open').click();
+    await expect(page.getByTestId('bot-miniapp-result').last()).toBeVisible();
+    await page.getByTestId('bot-miniapp-result').last().click();
     await expect(page.locator('iframe[title="global-dharma"]')).toBeVisible();
     await expect.poll(() => tools(page), { timeout: 15_000 }).toEqual(expect.arrayContaining(['status', 'start', 'stop', 'send']));
     const opened = await execution(page);
@@ -181,7 +182,7 @@ test('Global Dharma packaged journey keeps Bot WebMCP, UI revision, account and 
     await page.getByTestId('miniapp-close').click();
     await input.fill(prayerText);
     await page.getByTestId('messenger-send').click();
-    await expect(page.getByTestId('message-list').locator(':scope > article').last()).toContainText('本地转经轮已通过宿主权限校验并启动');
+    await expect(page.getByTestId('message-list').locator('article').last()).toContainText('本地转经轮已通过宿主权限校验并启动');
     await expect.poll(() => parentExecution(page), { timeout: 15_000 }).toMatchObject({ source: 'bot', phase: 'completed', tool: 'start', surface: 'local-prayer-wheel', entitlementAllowed: true });
     const prayerState = await parentExecution(page);
     expect(prayerState.revision).toBeGreaterThan(restoreState.revision);
