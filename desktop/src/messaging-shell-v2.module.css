@@ -225,3 +225,30 @@
 .communityRow > div:first-child { min-width: 0; display: grid; }
 .communityRow small { opacity: .64; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .communityRow > div:last-child { display: flex; gap: 5px; }
+
+
+/* OBF-001: generic runtime-authored structured result surface. No transcript
+   text is fabricated here; tables/source chips are deterministic projections of
+   the assistant message emitted by Mahayana. */
+.structuredMessage { display:grid; gap:10px; min-width:0; }
+.structuredMessage > p { margin:0; white-space:pre-wrap; word-break:break-word; }
+.structuredHeading { display:block; margin:0; color:inherit; font-size:16px; line-height:1.35; }
+.structuredHeading[data-level="2"] { font-size:15px; }
+.structuredHeading[data-level="3"] { font-size:14px; }
+.structuredTableWrap { width:100%; overflow-x:auto; border:1px solid rgb(255 255 255 / 8%); border-radius:12px; }
+.structuredTable { width:100%; min-width:520px; border-collapse:collapse; table-layout:fixed; }
+.structuredTable th, .structuredTable td { padding:10px 12px; border-right:1px solid rgb(255 255 255 / 8%); border-bottom:1px solid rgb(255 255 255 / 8%); text-align:left; vertical-align:middle; font-size:12px; line-height:1.35; }
+.structuredTable th:last-child, .structuredTable td:last-child { border-right:0; }
+.structuredTable tbody tr:last-child td { border-bottom:0; }
+.structuredTable th { color:var(--muted, #9d9ba8); background:rgb(255 255 255 / 3%); font-weight:600; }
+.structuredPeerChip { display:inline-flex; align-items:center; gap:6px; padding:3px 7px 3px 4px; border-radius:7px; background:rgb(255 255 255 / 5%); white-space:nowrap; }
+.sourceFiles { display:flex; flex-wrap:wrap; align-items:center; gap:7px; color:var(--muted, #9d9ba8); font-size:12px; }
+.sourceFileChip { min-height:26px; padding:3px 8px; border:1px solid rgb(255 255 255 / 9%); border-radius:7px; display:inline-flex; align-items:center; gap:5px; color:var(--text, #f4f2f8); background:rgb(255 255 255 / 4%); }
+.messagePeer, .messageMine { position:relative; overflow:visible; }
+.messageAuthorAvatar { position:absolute; left:-38px; bottom:2px; z-index:2; filter:drop-shadow(0 4px 10px rgb(0 0 0 / 20%)); }
+.messageHoverActions { position:absolute; right:8px; bottom:-30px; z-index:12; display:flex; align-items:center; gap:2px; padding:3px; border:1px solid rgb(255 255 255 / 8%); border-radius:999px; background:rgb(28 29 33 / 96%); opacity:0; transform:translateY(-2px); pointer-events:none; transition:opacity 120ms ease, transform 120ms ease; }
+.messagePeer:hover .messageHoverActions, .messagePeer:focus-within .messageHoverActions, .messageMine:hover .messageHoverActions, .messageMine:focus-within .messageHoverActions { opacity:1; transform:translateY(0); pointer-events:auto; }
+.messageHoverActions button { width:25px; height:25px; border:0; border-radius:50%; display:grid; place-items:center; color:rgb(255 255 255 / 52%); background:transparent; cursor:pointer; }
+.messageHoverActions button:hover { color:#fff; background:rgb(255 255 255 / 8%); }
+.messageHoverActions button > span { display:block; font-size:13px; line-height:1; letter-spacing:-1px; transform:translateY(-.5px); }
+@media (max-width: 760px) { .messageAuthorAvatar { display:none; } .structuredTable { min-width:440px; } }

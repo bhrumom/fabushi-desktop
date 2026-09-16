@@ -612,6 +612,108 @@ function cachedLegacyDisplayMessages(conversationId: string): DisplayMessage[] {
   }));
 }
 
+type StructuredMessageBlock =
+  | { type: 'paragraph'; text: string }
+  | { type: 'heading'; level: number; text: string }
+  | { type: 'table'; headers: string[]; rows: string[][] }
+  | { type: 'sources'; files: string[] };
+
+function markdownTableCells(line: string): string[] {
+  return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
+}
+
+function isMarkdownTableDivider(line: string): boolean {
+  const cells = markdownTableCells(line);
+  return cells.length > 1 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+}
+
+function sourceFileNames(line: string): string[] {
+  if (!/^source files?\s*:/i.test(line.trim())) return [];
+  const body = line.replace(/^source files?\s*:/i, '');
+  const names = new Set<string>();
+  for (const match of body.matchAll(/`([^`]+)`/g)) names.add(match[1].trim());
+  for (const match of body.matchAll(/\b[\w@./-]+\.(?:md|csv|txt|json|pdf|docx?|xlsx?|png|jpe?g|ts|tsx|js|jsx|rs|swift|kt)\b/gi)) names.add(match[0]);
+  return [...names].filter(Boolean);
+}
+
+export function parseStructuredMessage(text: string): StructuredMessageBlock[] {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  const blocks: StructuredMessageBlock[] = [];
+  for (let index = 0; index < lines.length;) {
+    const line = lines[index].trim();
+    if (!line) { index += 1; continue; }
+    const heading = /^(#{1,3})\s+(.+)$/.exec(line);
+    if (heading) {
+      blocks.push({ type: 'heading', level: heading[1].length, text: heading[2].trim() });
+      index += 1;
+      continue;
+    }
+    if (index + 1 < lines.length && line.includes('|') && isMarkdownTableDivider(lines[index + 1])) {
+      const headers = markdownTableCells(line);
+      const rows: string[][] = [];
+      index += 2;
+      while (index < lines.length && lines[index].trim().includes('|') && lines[index].trim()) {
+        const cells = markdownTableCells(lines[index]);
+        if (cells.length !== headers.length) break;
+        rows.push(cells);
+        index += 1;
+      }
+      blocks.push({ type: 'table', headers, rows });
+      continue;
+    }
+    const files = sourceFileNames(line);
+    if (files.length) {
+      blocks.push({ type: 'sources', files });
+      index += 1;
+      continue;
+    }
+    const paragraph: string[] = [line];
+    index += 1;
+    while (index < lines.length) {
+      const candidate = lines[index].trim();
+      if (!candidate) break;
+      if (/^(#{1,3})\s+/.test(candidate)) break;
+      if (index + 1 < lines.length && candidate.includes('|') && isMarkdownTableDivider(lines[index + 1])) break;
+      if (sourceFileNames(candidate).length) break;
+      paragraph.push(candidate);
+      index += 1;
+    }
+    blocks.push({ type: 'paragraph', text: paragraph.join(' ') });
+  }
+  return blocks;
+}
+
+function StructuredMessageBody({ text, peers }: { text: string; peers: PeerItem[] }) {
+  const blocks = parseStructuredMessage(text);
+  const rich = blocks.some((block) => block.type !== 'paragraph');
+  if (!rich) return <p>{text}</p>;
+  return <div className={extra.structuredMessage} data-testid="structured-message-body">
+    {blocks.map((block, blockIndex) => {
+      if (block.type === 'heading') {
+        return <strong key={`heading-${blockIndex}`} className={extra.structuredHeading} data-level={block.level}>{block.text}</strong>;
+      }
+      if (block.type === 'table') {
+        return <div key={`table-${blockIndex}`} className={extra.structuredTableWrap}>
+          <table className={extra.structuredTable} data-testid="assistant-result-table">
+            <thead><tr>{block.headers.map((cell, index) => <th key={`${index}:${cell}`}>{cell}</th>)}</tr></thead>
+            <tbody>{block.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => {
+              const peer = peers.find((candidate) => candidate.title.trim().toLocaleLowerCase() === cell.trim().replace(/^@/, '').toLocaleLowerCase());
+              return <td key={`${rowIndex}:${cellIndex}`}>{peer ? <span className={extra.structuredPeerChip} data-testid="assistant-owner-chip"><BotMark botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`} state="result" size={16} label={peer.title} />{cell}</span> : cell}</td>;
+            })}</tr>)}</tbody>
+          </table>
+        </div>;
+      }
+      if (block.type === 'sources') {
+        return <div key={`sources-${blockIndex}`} className={extra.sourceFiles} data-testid="assistant-source-files">
+          <span>Source files:</span>
+          {block.files.map((file) => <span key={file} className={extra.sourceFileChip}><FileText size={13} />{file}</span>)}
+        </div>;
+      }
+      return <p key={`paragraph-${blockIndex}`}>{block.text}</p>;
+    })}
+  </div>;
+}
+
 function startupLegacyConversationId(projection: MessengerProjection | null | undefined): string | null {
   const key = projection?.activePeerKey;
   if (!key) return null;
@@ -3434,8 +3536,17 @@ async function saveInvoiceDialog() {
                   {message.pinned ? <Pin size={11} /> : null}
                   {message.mediaType === 'photo' && blobMediaUrl(message.media) ? <img className={extra.messageMedia} src={blobMediaUrl(message.media)} alt={message.media?.fileName ?? '图片'} /> : null}
                   {message.mediaType === 'video' && blobMediaUrl(message.media) ? <video className={extra.messageMedia} controls playsInline autoPlay={desktopPreferences.autoPlayMedia} src={blobMediaUrl(message.media)} /> : null}
+                  {message.role === 'peer' ? <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state="result" size={28} className={extra.messageAuthorAvatar} label={activePeer.title} /> : null}
                   {message.mediaType === 'document' && blobMediaUrl(message.media) ? <a className={extra.messageFile} href={blobMediaUrl(message.media)} download={message.media?.fileName}><FileText size={17} />{message.media?.fileName ?? '文件'}</a> : null}
-                  <p>{message.text}</p>
+                  <StructuredMessageBody text={message.text} peers={peers} />
+                  <div className={extra.messageHoverActions} data-testid="message-hover-actions">
+                    <button type="button" title="回复" aria-label="回复" onClick={() => setReplyTo(message)}><span aria-hidden="true">↩</span></button>
+                    <button type="button" title="复制" aria-label="复制" onClick={() => void navigator.clipboard.writeText(message.text)}><span aria-hidden="true">⧉</span></button>
+                    <button type="button" title="更多" aria-label="更多" onClick={(event) => {
+                      const rect = event.currentTarget.getBoundingClientRect();
+                      setMessageMenu({ message, x: rect.right, y: rect.bottom + 4 });
+                    }}><span aria-hidden="true">•••</span></button>
+                  </div>
                   {message.reactions?.length ? <div className={extra.reactions}>{message.reactions.map((reaction) => <span key={reaction}>{reaction}</span>)}</div> : null}
                   <small>{formatTime(message.createdAtMs)} {message.role === 'me' ? <Check size={12} /> : null}</small>
                 </article>

@@ -154,35 +154,14 @@
   background: var(--openbot-positive) !important;
 }
 
-/* OpenBot's roster uses distinct geometric coworkers. Fabushi keeps its
-   stateful BotMark/eyes and clips only the presentation silhouette. Identity,
-   runtime state and accessibility semantics remain owned by BotMark. */
+/* Coworker silhouette is owned by BotMark's canonical identity. The parity
+   layer sizes the mark but never derives shape from roster position; this keeps
+   roster/header/transcript/restart geometry stable for the same Bot identity. */
 [data-testid='messenger-workspace'] button[data-testid^='peer-'] [data-engine='fabushi-motion-v3'] {
   width: 34px !important;
   height: 34px !important;
-  overflow: hidden;
-  border-radius: 31%;
+  overflow: visible;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-}
-
-[data-testid='messenger-workspace'] button[data-testid^='peer-']:nth-child(4n + 1) [data-engine='fabushi-motion-v3'] {
-  border-radius: 50%;
-  clip-path: circle(49% at 50% 50%);
-}
-
-[data-testid='messenger-workspace'] button[data-testid^='peer-']:nth-child(4n + 2) [data-engine='fabushi-motion-v3'] {
-  border-radius: 24%;
-  clip-path: polygon(25% 7%, 75% 7%, 98% 50%, 75% 93%, 25% 93%, 2% 50%);
-}
-
-[data-testid='messenger-workspace'] button[data-testid^='peer-']:nth-child(4n + 3) [data-engine='fabushi-motion-v3'] {
-  border-radius: 34% 48% 28% 42%;
-  clip-path: polygon(20% 4%, 82% 12%, 96% 64%, 68% 96%, 12% 85%, 4% 31%);
-}
-
-[data-testid='messenger-workspace'] button[data-testid^='peer-']:nth-child(4n) [data-engine='fabushi-motion-v3'] {
-  border-radius: 12px;
-  clip-path: polygon(15% 0%, 85% 0%, 100% 20%, 100% 80%, 84% 100%, 16% 100%, 0% 80%, 0% 20%);
 }
 
 /* Conversation canvas: remove Telegram-like wallpaper and use OpenBot's flat
@@ -270,7 +249,8 @@
    thinking -> action/tool rows -> assistant result. The underlying events and
    ordering remain Mahayana-authoritative; this layer only mirrors OpenBot's
    compact 'working in the thread' presentation. */
-[data-testid='messenger-workspace'] [class*='messageThinking'] {
+[data-testid='messenger-workspace'] [class*='messageThinking'],
+[data-testid='messenger-workspace'] [class*='agentThinkingRow'] {
   max-width: min(760px, 84%);
   min-height: 28px;
   gap: 7px;
@@ -278,7 +258,8 @@
   color: var(--openbot-muted) !important;
 }
 
-[data-testid='messenger-workspace'] [class*='thinkingAvatar'] {
+[data-testid='messenger-workspace'] [class*='thinkingAvatar'],
+[data-testid='messenger-workspace'] [class*='agentThinkingRow'] [class*='agentStreamAvatar'] {
   width: 22px;
   height: 22px;
   border: 1px solid var(--openbot-stroke-strong);
@@ -300,7 +281,8 @@
   background: rgba(255, 255, 255, 0.52) !important;
 }
 
-[data-testid='messenger-workspace'] [class*='messageAction'] {
+[data-testid='messenger-workspace'] [class*='messageAction'],
+[data-testid='messenger-workspace'] [class*='agentActionRow'] {
   align-self: center;
   width: auto;
   max-width: min(760px, 92%);
@@ -320,17 +302,22 @@
 
 [data-testid='messenger-workspace'] [class*='messageAction'] strong,
 [data-testid='messenger-workspace'] [class*='messageAction'] small,
-[data-testid='messenger-workspace'] [class*='messageAction'] em {
+[data-testid='messenger-workspace'] [class*='messageAction'] em,
+[data-testid='messenger-workspace'] [class*='agentActionRow'] strong,
+[data-testid='messenger-workspace'] [class*='agentActionRow'] span,
+[data-testid='messenger-workspace'] [class*='agentActionRow'] > small {
   color: var(--openbot-muted) !important;
   font-size: 10.5px;
 }
 
-[data-testid='messenger-workspace'] [class*='messageAction'][data-state='completed'] [class*='actionStatusIcon'] {
+[data-testid='messenger-workspace'] [class*='messageAction'][data-state='completed'] [class*='actionStatusIcon'],
+[data-testid='messenger-workspace'] [class*='agentActionRow'][data-status='completed'] {
   border-color: rgba(41, 201, 111, 0.35) !important;
   color: rgba(41, 201, 111, 0.82) !important;
 }
 
-[data-testid='messenger-workspace'] [class*='messageAction'][data-state='failed'] [class*='actionStatusIcon'] {
+[data-testid='messenger-workspace'] [class*='messageAction'][data-state='failed'] [class*='actionStatusIcon'],
+[data-testid='messenger-workspace'] [class*='agentActionRow'][data-status='failed'] {
   border-color: rgba(255, 96, 112, 0.38) !important;
   color: rgba(255, 118, 129, 0.9) !important;
 }
@@ -344,6 +331,14 @@
   color: var(--openbot-text) !important;
   box-shadow: none !important;
 }
+
+
+[data-testid='messenger-workspace'] [class*='structuredTableWrap'] { border-color: var(--openbot-stroke) !important; background:#191a1e; }
+[data-testid='messenger-workspace'] [class*='structuredTable'] th,
+[data-testid='messenger-workspace'] [class*='structuredTable'] td { border-color: var(--openbot-stroke) !important; color:var(--openbot-text) !important; }
+[data-testid='messenger-workspace'] [class*='structuredTable'] th { color:var(--openbot-muted) !important; background:#202126 !important; }
+[data-testid='messenger-workspace'] [class*='sourceFileChip'] { border-color:var(--openbot-stroke) !important; background:#202126 !important; color:var(--openbot-text) !important; }
+[data-testid='messenger-workspace'] [class*='messageHoverActions'] { border-color:var(--openbot-stroke) !important; background:#17181b !important; }
 
 /* Composer: full-width dark rounded bar, restrained plus/attachment control and
    high-contrast circular send button, matching the supplied OpenBot capture. */

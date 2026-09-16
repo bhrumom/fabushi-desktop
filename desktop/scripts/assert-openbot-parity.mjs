@@ -24,8 +24,8 @@ for (const token of [
   "[data-testid='messenger-workspace']",
   "button[data-testid^='peer-']",
   "[class*='chatWorkspace']",
-  "[class*='messageThinking']",
-  "[class*='messageAction']",
+  "[class*='agentThinkingRow']",
+  "[class*='agentActionRow']",
   "[data-testid='messenger-input']",
   "[data-testid='messenger-send']",
 ]) {
@@ -52,5 +52,13 @@ assert.match(shell, /operationId\?: string/u, 'reply work must correlate lifecyc
 assert.match(shell, /message\.kind === 'thinking'/u, 'messenger must project active thinking state');
 assert.match(shell, /message\.kind === 'action'/u, 'messenger must project tool/action work');
 assert.match(shell, /event\.role === 'assistant'/u, 'assistant completion must close temporary reply-work state');
+
+assert.doesNotMatch(css, /nth-child\([^)]*\).*fabushi-motion-v3/su, 'coworker silhouette must never depend on roster position');
+assert.match(shell, /<StructuredMessageBody text=\{message\.text\} peers=\{peers\} \/>/u, 'assistant result must pass through the runtime-authored structured renderer');
+assert.match(shell, /data-testid="assistant-result-table"/u, 'structured result must expose a real table surface');
+assert.match(shell, /data-testid="assistant-source-files"/u, 'structured result must expose source-file chips');
+assert.match(shell, /data-testid="assistant-owner-chip"/u, 'structured tables must reuse known coworker identity in owner cells');
+assert.match(shell, /data-testid="message-hover-actions"/u, 'message cards must expose hover actions');
+assert.match(shell, /className=\{extra\.messageAuthorAvatar\}/u, 'assistant transcript must reuse BotMark identity');
 
 console.log('OpenBot UI/reply parity contract: PASS');
