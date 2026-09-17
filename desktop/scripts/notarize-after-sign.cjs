@@ -147,13 +147,20 @@ function notaryCredentials(tempRoot) {
 }
 
 module.exports = async function notarizeAfterSign(context) {
-  if (process.platform !== 'darwin' || process.env.FABUSHI_MACOS_NOTARIZE !== '1') return;
+  if (process.platform !== 'darwin') return;
+  const signedRelease = process.env.FABUSHI_MACOS_SIGNED === '1';
+  const notarizeRelease = process.env.FABUSHI_MACOS_NOTARIZE === '1';
+  if (!signedRelease && !notarizeRelease) return;
 
   const appName = context.packager.appInfo.productFilename;
   const appPath = path.join(context.appOutDir, `${appName}.app`);
   if (!fs.existsSync(appPath)) throw new Error(`Signed macOS app bundle is missing: ${appPath}`);
 
+  // Test and formal packages share the exact Developer ID / code-identifier
+  // boundary so both can access the existing Fabushi Keychain ACL. The fast
+  // test lane stops here; only formal delivery pays the notarization cost.
   restoreCanonicalNestedSignatures(context, appPath);
+  if (!notarizeRelease) return;
 
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'fabushi-notary-app-'));
   const zipPath = path.join(tempRoot, 'Fabushi-notary.zip');

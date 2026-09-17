@@ -815,6 +815,14 @@
 }
 .profileNavigationMenu button:hover { color: #fff; background: rgba(255,255,255,.065); }
 .profileNavigationMenu button[data-active="true"] { color: #fff; background: rgba(139,92,246,.2); }
+.profileNavigationMenu .profileNavigationLogout {
+  width: 100%;
+  margin-top: 8px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  border-radius: 0 0 10px 10px;
+  color: #ff8f9b;
+}
+.profileNavigationMenu .profileNavigationLogout:hover { color: #ffd4d9; background: rgba(239,68,68,.12); }
 
 .sidebarResizer {
   position: absolute;

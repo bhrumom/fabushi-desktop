@@ -392,6 +392,37 @@
   font-size: 11.5px;
 }
 
+.miniAppArtifact {
+  border-color: rgba(139, 92, 246, 0.24);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(255, 255, 255, 0.025));
+}
+
+.miniAppArtifact p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.miniAppArtifact button {
+  width: fit-content;
+  min-height: 32px;
+  padding: 0 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(167, 139, 250, 0.34);
+  border-radius: 9px;
+  background: rgba(139, 92, 246, 0.18);
+  color: #f1eaff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.miniAppArtifact button:hover { background: rgba(139, 92, 246, 0.28); }
+
 .artifact pre,
 .toolResult pre {
   max-height: 240px;

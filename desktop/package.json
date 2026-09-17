@@ -63,7 +63,8 @@
         "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音消息、语音输入和离线语音识别。",
         "NSCameraUsageDescription": "全球法布施使用摄像头进行视频通话。"
       },
-      "icon": "resources/icon.png"
+      "icon": "resources/icon.png",
+      "forceCodeSigning": true
     },
     "win": { "target": ["nsis"], "artifactName": "fabushi-${version}-setup.${ext}", "icon": "resources/icon.png" },
     "linux": { "category": "Utility", "maintainer": "bhrumom", "syncDesktopName": true, "target": ["AppImage", "deb"], "artifactName": "fabushi-${version}-${arch}.${ext}" },

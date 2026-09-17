@@ -3,6 +3,11 @@ import { MAHAYANA_RUNTIME_EVENT_NAME } from '../../frontend/apps/web/src/lib/mah
 
 export type BotIdentityAlias = { alias: string; canonical: string };
 
+const PRIMARY_MAHAYANA_IDENTITY_ALIASES: readonly BotIdentityAlias[] = [
+  { alias: 'peer:conversation:mahayana-ai:agent:assistant', canonical: 'bot:mahayana-assistant' },
+  { alias: 'peer:conversation:mahayana-assistant', canonical: 'bot:mahayana-assistant' },
+];
+
 type UnknownRecord = Record<string, unknown>;
 
 function asRecord(value: unknown): UnknownRecord | null {
@@ -110,6 +115,10 @@ export function botIdentityAliasesFromRuntimeDetail(detail: unknown): BotIdentit
  */
 export function installBotIdentityAliases(): () => void {
   if (typeof window === 'undefined') return () => {};
+  // The primary Mahayana conversation has a stable built-in Bot identity even
+  // before the first Host bot.listed event arrives. Register it synchronously
+  // before React renders so list/header/empty-state and Workbench use one seed.
+  registerBotIdentityAliases(PRIMARY_MAHAYANA_IDENTITY_ALIASES);
   const onRuntimeEvent = (event: Event) => {
     const aliases = botIdentityAliasesFromRuntimeDetail((event as CustomEvent<unknown>).detail);
     if (aliases.length) registerBotIdentityAliases(aliases);

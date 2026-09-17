@@ -1,4 +1,5 @@
 import {
+  AppWindow,
   Bot,
   CheckCircle2,
   ChevronDown,
@@ -354,12 +355,21 @@ function findRunIndex(
     const exact = snapshot.runs.findIndex((run) => run.requestId === requestId);
     if (exact >= 0) return exact;
   }
+
+  // Runtime events with a concrete operationId must never attach themselves to
+  // another already-bound active run. The only safe fallback is an active run
+  // that has not received its operationId yet (for example the request-created
+  // pending projection before feature.execute returns). Without this guard,
+  // overlapping operations can cross-contaminate each other's steps/cards.
+  const canReuseActiveRun = (run: AgentRunProjection) =>
+    activeStatuses(run.status) && (!operationId || !run.operationId);
+
   for (let index = snapshot.runs.length - 1; index >= 0; index -= 1) {
     const run = snapshot.runs[index];
-    if (run.conversationKey === snapshot.activeConversationKey && activeStatuses(run.status)) return index;
+    if (run.conversationKey === snapshot.activeConversationKey && canReuseActiveRun(run)) return index;
   }
   for (let index = snapshot.runs.length - 1; index >= 0; index -= 1) {
-    if (activeStatuses(snapshot.runs[index].status)) return index;
+    if (canReuseActiveRun(snapshot.runs[index])) return index;
   }
   return -1;
 }
@@ -951,6 +961,7 @@ function transcriptCardTitle(card: TranscriptCard): string {
     case 'event': return card.event.title;
     case 'pdf': return card.name;
     case 'spreadsheet': return card.name;
+    case 'miniApp': return card.name;
   }
   return '';
 }
@@ -1059,7 +1070,22 @@ function RunCard({
           </div>
         ) : null}
 
-        {run.cards.map((item) => (
+        {run.cards.map((item) => item.card.kind === 'miniApp' ? (
+          <section className={`${styles.artifact} ${styles.miniAppArtifact}`} data-testid="agent-miniapp-artifact" key={item.id}>
+            <AppWindow size={20} />
+            <div>
+              <strong>{item.card.name}</strong>
+              <p>{item.card.description || '可直接运行的 Fabushi 小程序产物'}</p>
+              <button
+                type="button"
+                data-testid="agent-miniapp-open"
+                onClick={() => window.dispatchEvent(new CustomEvent('fabushi:open-generated-miniapp', { detail: item.card }))}
+              >
+                <AppWindow size={14} />打开小程序
+              </button>
+            </div>
+          </section>
+        ) : (
           <section className={styles.artifact} data-testid="agent-artifact" key={item.id}>
             <FileText size={18} />
             <div><strong>{transcriptCardTitle(item.card)}</strong><pre>{jsonPreview(item.card)}</pre></div>

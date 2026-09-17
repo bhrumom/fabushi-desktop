@@ -164,7 +164,7 @@ async function runJourneyStep(page: Page, step: MahayanaHostJourneyStep): Promis
         const open = appResult.getByRole('button', { name: '打开' });
         await expect(open).toBeVisible();
         await open.click();
-        await expect(page.getByText('Mini App · 已安装线上包 · 账号云同步')).toBeVisible();
+        await expect(page.getByText('Mini App · Fabushi 安全容器 · 账号云同步')).toBeVisible();
         await expect(page.locator('iframe[title="global-dharma"]')).toBeVisible();
       } else {
         await executeFeatureAndWaitForEvent(page, {

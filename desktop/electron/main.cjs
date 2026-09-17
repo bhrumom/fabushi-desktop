@@ -38,6 +38,7 @@ protocol.registerSchemesAsPrivileged([
 const miniAppDocuments = new Map();
 const MINIAPP_DOCUMENT_TTL_MS = 10 * 60 * 1000;
 const MINIAPP_DOCUMENT_MAX_BYTES = 5 * 1024 * 1024;
+const HOST_EVENT_LONG_POLL_MS = 500;
 
 function pruneMiniAppDocuments(now = Date.now()) {
   for (const [token, entry] of miniAppDocuments) {
@@ -933,12 +934,14 @@ function startHostEventPump() {
   hostEventPump = (async () => {
     while (!hostEventPumpStopped) {
       try {
-        const event = await host.request('feature.receive', { timeoutMs: 500 });
+        const event = await host.request('feature.receive', { timeoutMs: HOST_EVENT_LONG_POLL_MS });
         if (event) broadcastMahayanaEvent(event);
-        // Yield after every receive, including a non-empty event. The Rust Host
-        // processes requests serially; immediately enqueueing the next long-poll
-        // from this Promise continuation can starve renderer IPC such as auth.
-        await sleep(10);
+        // The Rust channel wakes immediately when an event arrives. Keep this
+        // timeout bounded because the app-host request channel is serial: a very
+        // long receive would save wakeups by making auth/settings IPC stall.
+        // Yield one main-loop turn before the next receive so renderer IPC can
+        // enter the serial Host request queue.
+        await new Promise((resolve) => setImmediate(resolve));
       } catch (error) {
         if (hostEventPumpStopped) break;
         console.error('[mahayana-edge] runtime event pump failed', error);
