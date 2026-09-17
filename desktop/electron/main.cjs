@@ -14,6 +14,7 @@ const { createNativeCapabilityHandlers } = require('./native-capability-handlers
 const { MessagingSignalingClient } = require('./messaging-signaling-client.cjs');
 const { createAppAgentSurfaceServer } = require('./app-agent-surface-server.cjs');
 const { RemoteDeviceAgentSupervisor } = require('./remote-device-agent-supervisor.cjs');
+const { RustDeskSidecarProcess } = require('./rustdesk-sidecar-process.cjs');
 const { normalizeDesktopUpdateStatus } = require('./update-state.cjs');
 
 const appDataOverride = process.env.FABUSHI_APP_DATA?.trim();
@@ -117,6 +118,7 @@ function providerEnvironment(inferenceProvider) {
 }
 
 const host = new MahayanaHostProcess({ providerEnvironment });
+const rustDeskSidecar = new RustDeskSidecarProcess({ app });
 let mahayanaEdgeServer = null;
 let nativeEdgeServer = null;
 let appAgentSurfaceServer = null;
@@ -137,6 +139,8 @@ let automaticDesktopUpdateCheckPromise = null;
 let mainWindow = null;
 let backgroundTray = null;
 let quitting = false;
+rustDeskSidecar.on('event', (payload) => broadcastNativeEvent('rustdesk-sidecar-event', payload));
+rustDeskSidecar.on('exit', (payload) => broadcastNativeEvent('rustdesk-sidecar-exit', payload));
 let desktopUpdateInstallationInProgress = false;
 const backgroundPersistenceEnabled = process.env.FABUSHI_E2E !== '1';
 
@@ -283,6 +287,7 @@ function focusMainWindow() {
 
 function requestApplicationQuit() {
   quitting = true;
+  rustDeskSidecar.close();
   app.quit();
 }
 
@@ -682,6 +687,21 @@ function installNativeEdge() {
         electronVersion: process.versions.electron,
         packaged: app.isPackaged,
       };
+    },
+    getRustDeskStatus() {
+      return { available: Boolean(rustDeskSidecar.executablePath()), ready: rustDeskSidecar.ready, sessions: rustDeskSidecar.sessions.size };
+    },
+    openRustDeskSession(params) {
+      return rustDeskSidecar.open(params);
+    },
+    sendRustDeskCommand(params) {
+      const sessionId = String(params?.sessionId || '');
+      const command = params?.command;
+      if (!command || typeof command !== 'object' || Array.isArray(command)) throw new Error('RustDesk command is invalid.');
+      return rustDeskSidecar.command(sessionId, command);
+    },
+    closeRustDeskSession(params) {
+      return rustDeskSidecar.closeSession(String(params?.sessionId || ''));
     },
     getWindowState(_params, event) {
       return describeWindow(windowForEvent(event));
