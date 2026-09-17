@@ -1,6 +1,8 @@
 import React, { type ReactNode } from 'react';
 import { AppWindow, ArrowDown, Check, Copy, Edit3, RotateCcw } from 'lucide-react';
 import { BotMark } from '../../frontend/apps/web/src/app/host/bot-mark';
+import { MahayanaAssistantTurnView } from './mahayana-assistant-turn-view';
+import type { AssistantTurn } from './mahayana-assistant-turn';
 import styles from './bot-conversation-view.module.css';
 
 export type BotTranscriptMessage = {
@@ -8,7 +10,7 @@ export type BotTranscriptMessage = {
   role: 'me' | 'peer';
   text: string;
   createdAtMs: number;
-  kind?: 'message' | 'action' | 'thinking';
+  kind?: 'message' | 'assistant-turn' | 'action' | 'thinking';
   operationId?: string;
   streaming?: boolean;
   optimistic?: boolean;
@@ -16,6 +18,7 @@ export type BotTranscriptMessage = {
   actionTitle?: string;
   actionDetail?: string;
   actionStatus?: 'running' | 'completed' | 'failed' | 'interrupted';
+  assistantTurn?: AssistantTurn;
   miniAppId?: string;
 };
 
@@ -278,6 +281,16 @@ export function BotConversationView({
         ) : (
           <div className={styles.transcript}>
             {messages.map((message, index) => {
+              if (message.kind === 'assistant-turn' && message.assistantTurn) {
+                return (
+                  <MahayanaAssistantTurnView
+                    key={message.id}
+                    turn={message.assistantTurn}
+                    label={title}
+                    avatar={<BotMark botId={botId} state={message.streaming ? 'writing' : 'idle'} size={28} label={title} />}
+                  />
+                );
+              }
               if (message.kind === 'action') {
                 const previous = messages[index - 1];
                 if (previous?.kind === 'action' && previous.operationId === message.operationId) return null;
