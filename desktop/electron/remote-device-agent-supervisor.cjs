@@ -55,6 +55,28 @@ function remoteDeviceRuntime(options = {}) {
   };
 }
 
+function inheritedNodeExecPath(options = {}) {
+  const app = options.app;
+  const platform = options.platform ?? process.platform;
+  const resourcesPath = options.resourcesPath ?? process.resourcesPath;
+  const execPath = options.execPath ?? process.execPath;
+  const helperExecPath = options.helperExecPath ?? process.helperExecPath;
+  const fsImpl = options.fs ?? fs;
+  if (platform !== 'darwin' || !app?.isPackaged) return execPath;
+
+  const candidates = [
+    String(helperExecPath || '').trim(),
+    path.resolve(resourcesPath, '..', 'Frameworks', 'Fabushi Helper.app', 'Contents', 'MacOS', 'Fabushi Helper'),
+  ];
+  for (const candidate of candidates) {
+    if (!candidate || candidate === execPath) continue;
+    try {
+      if (fsImpl.statSync(candidate).isFile()) return candidate;
+    } catch {}
+  }
+  return null;
+}
+
 function validAgentSession(value) {
   const accessToken = String(value?.accessToken || '').trim();
   const deviceId = String(value?.deviceId || '').trim();
@@ -92,6 +114,7 @@ class RemoteDeviceAgentSupervisor {
     this.platform = options.platform ?? process.platform;
     this.resourcesPath = options.resourcesPath ?? process.resourcesPath;
     this.execPath = options.execPath ?? process.execPath;
+    this.helperExecPath = options.helperExecPath ?? process.helperExecPath;
     this.timer = null;
     this.child = null;
     this.activeKey = '';
@@ -127,15 +150,23 @@ class RemoteDeviceAgentSupervisor {
     this.syncing = true;
     try {
       const gatewayUrl = remoteDeviceGatewayUrl(this.app, this.env);
-      const runtime = gatewayUrl ? remoteDeviceRuntime({
+      const childExecPath = gatewayUrl ? inheritedNodeExecPath({
+        app: this.app,
+        platform: this.platform,
+        resourcesPath: this.resourcesPath,
+        fs: this.fs,
+        execPath: this.execPath,
+        helperExecPath: this.helperExecPath,
+      }) : null;
+      const runtime = gatewayUrl && childExecPath ? remoteDeviceRuntime({
         app: this.app,
         env: this.env,
         platform: this.platform,
         resourcesPath: this.resourcesPath,
         fs: this.fs,
-        execPath: this.execPath,
+        execPath: childExecPath,
       }) : null;
-      if (!gatewayUrl || !runtime) {
+      if (!gatewayUrl || !childExecPath || !runtime) {
         this.stopAgent();
         return;
       }
@@ -151,7 +182,7 @@ class RemoteDeviceAgentSupervisor {
         || path.join(this.app.getPath('userData'), 'feature-host', 'runtime', 'settings.json');
       const discoveryFile = String(this.env.FABUSHI_APP_AGENT_DISCOVERY_FILE || '').trim()
         || path.join(this.app.getPath('userData'), 'agent-surface', 'bridge.json');
-      const child = this.spawn(this.execPath, [runtime.agentEntry], {
+      const child = this.spawn(childExecPath, [runtime.agentEntry], {
         stdio: ['ignore', 'pipe', 'pipe'],
         windowsHide: true,
         env: {
@@ -168,7 +199,7 @@ class RemoteDeviceAgentSupervisor {
           DEVICE_NAME: String(this.env.DEVICE_NAME || `Fabushi on ${os.hostname()}`).slice(0, 200),
           DEVICE_KIND: this.env.GITHUB_ACTIONS === 'true' ? 'github-actions' : 'fabushi-desktop',
           DEVICE_LEASE_SECONDS: String(this.env.DEVICE_LEASE_SECONDS || '14400'),
-          DEVICE_LOCAL_MCP_COMMAND: this.execPath,
+          DEVICE_LOCAL_MCP_COMMAND: childExecPath,
           DEVICE_LOCAL_MCP_ENTRY: runtime.mcpEntry,
           DEVICE_LOCAL_MCP_CWD: runtime.root,
           DEVICE_LOCAL_MCP_ELECTRON_NODE: '1',
@@ -213,6 +244,7 @@ class RemoteDeviceAgentSupervisor {
 module.exports = {
   OFFICIAL_DEVICE_GATEWAY_URL,
   RemoteDeviceAgentSupervisor,
+  inheritedNodeExecPath,
   remoteDeviceGatewayUrl,
   remoteDeviceRuntime,
   validAgentSession,

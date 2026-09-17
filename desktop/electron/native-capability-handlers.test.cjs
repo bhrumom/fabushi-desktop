@@ -63,7 +63,7 @@ test('marketplace native capabilities use canonical Feature Host method names', 
         return { plugins: [{ pluginId: 'mcp-demo', displayName: 'MCP Demo', latestVersion: '1.0.0' }] };
       }
       if (method === 'feature.marketplace.release') {
-        return { pluginId: params.pluginId, version: params.version, releaseManifest: { pluginId: params.pluginId, version: params.version } };
+        return { pluginId: params.pluginId, version: params.version, releaseManifest: { protocol: 'mahayana.external-release.v1', pluginId: params.pluginId, version: params.version, artifacts: [], permissions: [] } };
       }
       if (method === 'feature.plugin.active') return null;
       if (method === 'feature.plugin.install') return { pluginId: 'mcp-demo', version: '1.0.0' };
@@ -264,7 +264,7 @@ test('account sync native capabilities reconcile remote Mini Apps and expose Bot
         return { plugins: [{ pluginId: 'global-dharma', displayName: 'Global Dharma', latestVersion: '1.0.0' }] };
       }
       if (method === 'feature.plugin.active') return installed.get(params.pluginId) ?? null;
-      if (method === 'feature.marketplace.release') return { pluginId: params.pluginId, version: params.version, releaseManifest: { pluginId: params.pluginId, version: params.version } };
+      if (method === 'feature.marketplace.release') return { pluginId: params.pluginId, version: params.version, releaseManifest: { protocol: 'mahayana.external-release.v1', pluginId: params.pluginId, version: params.version, artifacts: [], permissions: [] } };
       if (method === 'feature.plugin.install') {
         const pointer = { pluginId: params.release.pluginId, version: params.release.version, installedPath: '/tmp/test' };
         installed.set(pointer.pluginId, pointer);

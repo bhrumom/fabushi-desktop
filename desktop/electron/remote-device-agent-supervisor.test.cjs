@@ -24,6 +24,7 @@ Module._load = function load(request, parent, isMain) {
 const {
   OFFICIAL_DEVICE_GATEWAY_URL,
   RemoteDeviceAgentSupervisor,
+  inheritedNodeExecPath,
   remoteDeviceGatewayUrl,
   remoteDeviceRuntime,
   validAgentSession,
@@ -39,6 +40,32 @@ test('packaged apps always use the official account-scoped device gateway', () =
     () => remoteDeviceGatewayUrl({ isPackaged: false }, { FABUSHI_REMOTE_DEVICE_GATEWAY_URL: 'https://example.test/agent' }),
     /clean wss/u,
   );
+});
+
+
+test('packaged macOS remote agents use the sandbox-inheriting Electron Helper instead of respawning the app executable', () => {
+  const resourcesPath = '/Applications/fabushi.app/Contents/Resources';
+  const helper = '/Applications/fabushi.app/Contents/Frameworks/Fabushi Helper.app/Contents/MacOS/Fabushi Helper';
+  const seen = [];
+  const selected = inheritedNodeExecPath({
+    app: { isPackaged: true },
+    platform: 'darwin',
+    resourcesPath,
+    execPath: '/Applications/fabushi.app/Contents/MacOS/fabushi',
+    fs: { statSync(candidate) { seen.push(candidate); return { isFile: () => candidate === helper }; } },
+  });
+  assert.equal(selected, helper);
+  assert.ok(!seen.includes('/Applications/fabushi.app/Contents/MacOS/fabushi'));
+});
+
+test('packaged macOS remote agents fail closed when an inherited Electron Helper is unavailable', () => {
+  assert.equal(inheritedNodeExecPath({
+    app: { isPackaged: true },
+    platform: 'darwin',
+    resourcesPath: '/Applications/fabushi.app/Contents/Resources',
+    execPath: '/Applications/fabushi.app/Contents/MacOS/fabushi',
+    fs: { statSync() { throw new Error('missing'); } },
+  }), null);
 });
 
 test('logout stops the app-owned device and removes its access credential', async () => {

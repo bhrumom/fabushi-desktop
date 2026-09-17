@@ -233,6 +233,12 @@ function peerMessageArticles(messageArea: HTMLElement): HTMLElement[] {
 
 function matchingAssistantArticle(messageArea: HTMLElement, run: AgentRunProjection | undefined): HTMLElement | null {
   if (!run) return null;
+  if (run.operationId) {
+    const byOperation = peerMessageArticles(messageArea)
+      .reverse()
+      .find((article) => article.dataset.operationId === run.operationId);
+    if (byOperation) return byOperation;
+  }
   const targetText = latestAssistantText(run);
   if (!targetText) return null;
   const normalizedTarget = targetText.replace(/\s+/gu, ' ').trim();

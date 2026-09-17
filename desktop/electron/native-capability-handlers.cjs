@@ -25,6 +25,19 @@ function cleanString(value, limit = 4096) {
   return String(value ?? '').replace(/\0/g, '').trim().slice(0, limit);
 }
 
+function externalReleaseManifest(value) {
+  const release = value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+  const manifest = release?.protocol === 'mahayana.external-release.v1'
+    ? release
+    : release?.releaseManifest && typeof release.releaseManifest === 'object' && !Array.isArray(release.releaseManifest)
+      ? release.releaseManifest
+      : null;
+  if (!manifest || manifest.protocol !== 'mahayana.external-release.v1') {
+    throw new Error('Marketplace release is missing mahayana.external-release.v1 metadata.');
+  }
+  return manifest;
+}
+
 function isPinnedContainerImage(value) {
   return /^[^\s@]+@sha256:[a-fA-F0-9]{64}$/.test(cleanString(value, 1000));
 }
@@ -1857,7 +1870,7 @@ function createNativeCapabilityHandlers(deps) {
         }
         try {
           const release = await host.request('feature.marketplace.release', { pluginId, version });
-          const pointer = await host.request('feature.plugin.install', { release, platform: 'desktop' });
+          const pointer = await host.request('feature.plugin.install', { release: externalReleaseManifest(release), platform: 'desktop' });
           installedNow.push({ pluginId, version, pointer });
         } catch (error) {
           failures.push({ pluginId, reason: error instanceof Error ? error.message : String(error) });
@@ -1926,7 +1939,7 @@ function createNativeCapabilityHandlers(deps) {
       const version = cleanString(params.version ?? params.entry?.version, 100);
       if (!pluginId || !version) throw new Error('Plugin ID and version are required.');
       const release = params.release ?? await host.request('feature.marketplace.release', { pluginId, version });
-      return host.request('feature.plugin.install', { release, platform: 'desktop' });
+      return host.request('feature.plugin.install', { release: externalReleaseManifest(release), platform: 'desktop' });
     },
 
     updatePluginInstall(params) {
