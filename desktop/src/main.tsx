@@ -7,10 +7,7 @@ import CredentialVault from './credential-vault';
 import { installDurableAgentState, restoreDurableAgentState } from './durable-agent-state';
 import { GrokChatParityRuntime, prepareGrokChatParityRuntime } from './grok-chat-parity-runtime';
 import DesktopShellV2 from './messaging-shell-v2';
-import { installMahayanaAgentInlineCompatibility } from './mahayana-agent-inline-compat';
-import MahayanaAgentInlineReport from './mahayana-agent-inline-report';
 import MahayanaAgentWorkbench from './mahayana-agent-workbench';
-import { installMahayanaAgentTranscriptSemantics } from './mahayana-agent-transcript-semantics';
 import { installMiniAppComposerOpenBridge } from './miniapp-composer-open-bridge';
 import { installDesktopMiniAppDiscoveryAliases } from './miniapp-discovery-aliases';
 import { installDesktopMiniAppWebMcpHost } from './miniapp-webmcp-host';
@@ -19,6 +16,7 @@ import './messenger-layout-regressions.css';
 import './grok-agent-ui-parity.css';
 import './openbot-ui-parity.css';
 import './mahayana-agent-transcript-semantics.css';
+import './mahayana-assistant-turn.css';
 import './credential-vault.css';
 import './sidebar-contact-groups.css';
 
@@ -45,14 +43,11 @@ async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
       <DesktopShellV2 />
       <GrokChatParityRuntime />
       <MahayanaAgentWorkbench />
-      <MahayanaAgentInlineReport />
       <CredentialVault />
     </StrictMode>,
   );
 
   installMiniAppComposerOpenBridge(rootElement);
-  installMahayanaAgentInlineCompatibility();
-  installMahayanaAgentTranscriptSemantics();
   installSelfHostedMahayanaInvocationBridge();
 }
 

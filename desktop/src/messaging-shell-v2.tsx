@@ -52,7 +52,14 @@ import type {
   SandboxRuntime,
   UpdateState,
 } from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
-import { ElectronMahayanaHostTransport, isElectronMahayanaHostAvailable, MAHAYANA_ACCOUNT_SESSION_RESET_EVENT, readCachedConversationMessages } from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
+import {
+  ElectronMahayanaHostTransport,
+  isElectronMahayanaHostAvailable,
+  MAHAYANA_ACCOUNT_SESSION_RESET_EVENT,
+  MAHAYANA_COMMAND_EVENT_NAME,
+  readCachedConversationMessages,
+  type MahayanaCommandBridgeDetail,
+} from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
 import { MockMahayanaHostTransport } from '../../frontend/apps/web/src/lib/mahayana-host/mock-transport';
 import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
 import type { InstalledPluginPointer, MahayanaHostTransport, MarketplacePluginSummary } from '../../frontend/apps/web/src/lib/mahayana-host/transport';
@@ -117,6 +124,13 @@ import {
   projectSidebarContactGroups,
   useSidebarContactGroups,
 } from './sidebar-contact-groups';
+import { MahayanaAssistantTurnView } from './mahayana-assistant-turn-view';
+import {
+  assistantTurnPlainText,
+  createAssistantTurn,
+  reduceAssistantTurn,
+  type AssistantTurn,
+} from './mahayana-assistant-turn';
 
 function miniAppMarketplaceAction(
   app: MarketplacePluginSummary,
@@ -206,7 +220,7 @@ type DisplayMessage = {
   role: 'me' | 'peer';
   text: string;
   createdAtMs: number;
-  kind?: 'message' | 'action' | 'thinking';
+  kind?: 'message' | 'assistant-turn' | 'action' | 'thinking';
   operationId?: string;
   streaming?: boolean;
   optimistic?: boolean;
@@ -214,6 +228,7 @@ type DisplayMessage = {
   actionTitle?: string;
   actionDetail?: string;
   actionStatus?: 'running' | 'completed' | 'failed' | 'interrupted';
+  assistantTurn?: AssistantTurn;
   miniAppId?: string;
   pinned?: boolean;
   reactions?: string[];
@@ -1255,6 +1270,34 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     const unsubscribe = transport.subscribe((event) => {
       if (!closed) handleRuntimeEvent(event);
     });
+    const onCommandBridge = (event: Event) => {
+      const detail = (event as CustomEvent<MahayanaCommandBridgeDetail>).detail;
+      if (!detail || detail.command.type !== 'chat.send') return;
+      const conversationKey = detail.context?.conversationKey;
+      if (!conversationKey || activePeerKeyRef.current !== conversationKey) return;
+
+      if (detail.phase === 'dispatch') {
+        agentRequestPendingRef.current = true;
+        setPendingSend(true);
+        return;
+      }
+      if (detail.phase === 'accepted') {
+        const operationId = detail.accepted.operationId;
+        if (!operationId || !claimAgentOperation(operationId)) return;
+        appendAssistantTurnEvent({
+          type: 'operation.started',
+          timestamp: new Date().toISOString(),
+          operationId,
+          label: '正在思考',
+          interruptible: true,
+        });
+        return;
+      }
+      agentRequestPendingRef.current = false;
+      setPendingSend(false);
+      setError(detail.error);
+    };
+    window.addEventListener(MAHAYANA_COMMAND_EVENT_NAME, onCommandBridge);
     void transport.initialize({ profileId: 'desktop-messenger-v2', mode: 'production' })
       .then(async () => {
         if (closed) return;
@@ -1294,6 +1337,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     return () => {
       closed = true;
       unsubscribe();
+      window.removeEventListener(MAHAYANA_COMMAND_EVENT_NAME, onCommandBridge);
       const remoteComputer = remoteComputerControllerRef.current;
       if (remoteComputer) void remoteComputer.stop().finally(() => transport.close());
       else void transport.close();
@@ -1578,6 +1622,33 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
   }
 
+  function appendAssistantTurnEvent(event: RuntimeEvent) {
+    const operationId = 'operationId' in event && typeof event.operationId === 'string'
+      ? event.operationId
+      : undefined;
+    if (!operationId) return;
+    updateAgentThread(operationId, (current) => {
+      const index = current.findIndex((message) =>
+        message.kind === 'assistant-turn' && message.operationId === operationId,
+      );
+      const existingTurn = index >= 0 ? current[index]?.assistantTurn : undefined;
+      const assistantTurn = reduceAssistantTurn(existingTurn ?? createAssistantTurn(operationId), event);
+      const next: DisplayMessage = {
+        id: `${operationId}:assistant-turn`,
+        source: 'legacy',
+        role: 'peer',
+        text: assistantTurnPlainText(assistantTurn),
+        createdAtMs: assistantTurn.createdAtMs,
+        kind: 'assistant-turn',
+        operationId,
+        streaming: assistantTurn.status === 'running',
+        assistantTurn,
+      };
+      if (index < 0) return [...current, next];
+      return current.map((message, messageIndex) => messageIndex === index ? { ...message, ...next, createdAtMs: message.createdAtMs } : message);
+    });
+  }
+
   function showSelfConversation(conversationId: string) {
     setMessages((selfMessages[conversationId] ?? []).filter((message) => !message.deleted).map(displaySelfMessage));
   }
@@ -1834,18 +1905,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         break;
       case 'chat.message':
         if (event.operationId && finishedAgentOperationsRef.current.has(event.operationId)) break;
-        if (event.role === 'assistant' && claimAgentOperation(event.operationId)) {
-          updateAgentThread(event.operationId, (current) => current.filter((message) => !(message.kind === 'thinking' && message.operationId === event.operationId)));
+        if (event.role === 'assistant' && event.operationId && claimAgentOperation(event.operationId)) {
+          appendAssistantTurnEvent(event);
+          break;
         }
         updateAgentThread(event.operationId, (current) => {
-          const existingIndex = event.role === 'assistant' && event.operationId
-            ? current.findIndex((message) => message.kind === 'message' && message.role === 'peer' && message.operationId === event.operationId)
-            : -1;
-          if (existingIndex >= 0) {
-            return current.map((message, messageIndex) => messageIndex === existingIndex
-              ? { ...message, kind: 'message', text: event.text, streaming: false }
-              : message);
-          }
           if (event.role === 'user') {
             const optimisticIndex = current.findIndex((message) =>
               message.role === 'me' && message.optimistic === true && message.text === event.text,
@@ -1873,8 +1937,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         break;
       case 'chat.delta':
         if (event.operationId && finishedAgentOperationsRef.current.has(event.operationId)) break;
-        claimAgentOperation(event.operationId);
-        updateAgentThread(event.operationId, (current) => current.filter((message) => !(message.kind === 'thinking' && message.operationId === event.operationId)));
+        if (claimAgentOperation(event.operationId)) {
+          appendAssistantTurnEvent(event);
+          break;
+        }
         updateAgentThread(event.operationId, (current) => {
           const index = current.findIndex((message) => message.kind === 'message' && message.operationId === event.operationId && message.streaming);
           if (index < 0) return [...current, { id: `${event.operationId}:stream`, source: 'legacy', role: 'peer', text: event.delta, createdAtMs: Date.now(), kind: 'message', operationId: event.operationId, streaming: true }];
@@ -1884,35 +1950,21 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       case 'operation.started':
         if (claimAgentOperation(event.operationId)) {
           setPendingSend(true);
-          appendAgentThinking(event.operationId, event.label || '正在思考');
+          appendAssistantTurnEvent(event);
         }
         break;
       case 'model.routed':
-        if (claimAgentOperation(event.operationId)) {
-          upsertAgentAction({
-            id: `${event.operationId}:model`,
-            operationId: event.operationId,
-            title: event.model === 'auto' ? '选择模型' : `模型：${event.model}`,
-            detail: `${event.provider} · ${event.mode}`,
-            status: 'completed',
-          });
-        }
+        if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
         break;
       case 'agent.step':
-        if (claimAgentOperation(event.operationId)) {
-          upsertAgentAction({
-            id: `${event.operationId}:${event.stepId}`,
-            operationId: event.operationId!,
-            title: event.title,
-            detail: event.detail,
-            status: event.status,
-          });
-        }
+        if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
         break;
       case 'operation.interrupted':
+        if (agentOperationIdRef.current === event.operationId) appendAssistantTurnEvent(event);
         if (clearAgentOperation(event.operationId, 'interrupted')) setPendingSend(false);
         break;
       case 'operation.completed':
+        if (agentOperationIdRef.current === event.operationId) appendAssistantTurnEvent(event);
         if (clearAgentOperation(event.operationId)) setPendingSend(false);
         break;
       case 'miniapp.opened':
@@ -1924,6 +1976,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       case 'operation.failed':
+        if (agentOperationIdRef.current === event.operationId) appendAssistantTurnEvent(event);
         if (clearAgentOperation(event.operationId, 'failed')) {
           setPendingSend(false);
           setError(event.message);
@@ -2464,7 +2517,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
             : message));
         }
         if (agentRequest && accepted.operationId && claimAgentOperation(accepted.operationId)) {
-          appendAgentThinking(accepted.operationId, '正在思考');
+          appendAssistantTurnEvent({ type: 'operation.started', timestamp: new Date().toISOString(), operationId: accepted.operationId, label: '正在思考', interruptible: true });
         }
       }
       setReplyTo(null);
@@ -3546,7 +3599,20 @@ async function saveInvoiceDialog() {
             <div className={styles.messageArea} data-testid="message-list" data-agent-operation-id={agentOperationId ?? undefined}>
               <div className={styles.dayDivider}>今天</div>
               {matchingMessages.length > renderedMessages.length ? <button type="button" data-testid="message-list-load-earlier" onClick={() => setMessageRenderCount((count) => count + initialMessageRenderCount)}>加载更早消息</button> : null}
-              {renderedMessages.map((message) => message.kind === 'thinking' ? (
+              {renderedMessages.map((message) => message.kind === 'assistant-turn' && message.assistantTurn ? (
+                <MahayanaAssistantTurnView
+                  key={`${message.source}:${message.id}`}
+                  turn={message.assistantTurn}
+                  label={activePeer.title}
+                  avatar={<BotMark
+                    botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+                    state={message.assistantTurn.status === 'running' ? 'thinking' : message.assistantTurn.status === 'failed' ? 'error' : 'result'}
+                    size={30}
+                    className={styles.agentStreamAvatar}
+                    label={activePeer.title}
+                  />}
+                />
+              ) : message.kind === 'thinking' ? (
                 <article key={`${message.source}:${message.id}`} className={styles.agentThinkingRow} data-testid="agent-thinking" data-operation-id={message.operationId}>
                   <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state="thinking" size={30} className={styles.agentStreamAvatar} label={activePeer.title} />
                   <div><strong>{message.actionTitle ?? '正在思考'}</strong><span>大乘助手正在处理这条消息…</span></div>
@@ -3569,7 +3635,7 @@ async function saveInvoiceDialog() {
                   data-agent-invoke="contextmenu"
                   data-agent-message-role={message.role}
                   onContextMenu={(event) => {
-                    if (message.kind === 'action' || message.kind === 'thinking') return;
+                    if (message.kind === 'assistant-turn' || message.kind === 'action' || message.kind === 'thinking') return;
                     event.preventDefault();
                     event.stopPropagation();
                     setMessageMenu({ message, x: event.clientX, y: event.clientY });

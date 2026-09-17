@@ -1,4 +1,4 @@
-import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test';
+import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -128,107 +128,54 @@ async function emitBotInvocationRequested(
   }, { conversationId, text });
 }
 
-test('bot runs through Mahayana as a visible multi-step task and restores its run journal', async () => {
-  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-mahayana-workbench-'));
+async function expectHermesAssistantTurn(page: Page, expectedText: string): Promise<Locator> {
+  const turn = page.getByTestId('mahayana-assistant-turn').last();
+  await expect(turn).toBeVisible({ timeout: 15_000 });
+  await expect(turn).toHaveAttribute('data-status', 'completed', { timeout: 15_000 });
+
+  // Routine success belongs in the normal transcript now. The legacy Workbench
+  // can remain mounted for migration-only exceptional states, but it must not
+  // become the visible success surface again.
+  await expect(page.getByTestId('agent-workbench')).toBeHidden();
+
+  await expect.poll(async () => turn.locator('[data-part-kind="reasoning"]').count()).toBeGreaterThanOrEqual(1);
+  await expect(turn.locator('[data-part-kind="reasoning"]').first()).toBeVisible();
+  await expect(turn).not.toContainText('chat-response');
+
+  await expect.poll(async () => turn.locator('[data-part-kind="tool"]').count()).toBeGreaterThanOrEqual(1);
+  await expect.poll(async () => turn.locator('[data-part-kind="tool"][data-status="completed"]').count()).toBeGreaterThanOrEqual(1);
+  await expect(turn.locator('[data-part-kind="text"]').last()).toContainText(expectedText);
+  return turn;
+}
+
+test('Mahayana renders one Hermes-style assistant turn instead of a completion Workbench card', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-mahayana-assistant-turn-'));
   let app: ElectronApplication | null = null;
 
   try {
     app = await launchDesktopApp(appDataDir);
-    let page = await app.firstWindow();
+    const page = await app.firstWindow();
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
     const prompt = '请分析这个任务，规划步骤，调用工具并给出最终结果。';
     await page.getByTestId('messenger-input').fill(prompt);
     await page.getByTestId('messenger-send').click();
-    // The user bubble is a local-first state transition. It must paint before
-    // the Mahayana Host finishes accepting/routing the agent turn.
+
+    // The user bubble is a local-first transition and must paint before the
+    // Mahayana Host finishes accepting/routing the agent turn.
     await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 1_000 });
 
-    const workbench = page.getByTestId('agent-workbench');
-    await expect(workbench).toBeVisible({ timeout: 15_000 });
-    const run = page.getByTestId('agent-run').last();
-    await expect(run).toHaveAttribute('data-status', 'completed', { timeout: 15_000 });
-    await expect.poll(async () => run.getByTestId('agent-step').count()).toBeGreaterThanOrEqual(3);
-    await expect(page.getByRole('article').filter({ hasText: '收到：请分析这个任务' }).last()).toBeVisible();
-    await expect(page.locator('#mahayana-agent-header-avatar [data-agent-state="result"]')).toBeVisible();
-
-    const generatedOperationId = `generated-miniapp-e2e-${Date.now()}`;
-    await page.evaluate((operationId) => {
-      window.dispatchEvent(new CustomEvent('fabushi:mahayana-runtime-event', {
-        detail: {
-          type: 'operation.started',
-          timestamp: new Date().toISOString(),
-          operationId,
-          label: 'Agent 生成小程序',
-          interruptible: false,
-        },
-      }));
-    }, generatedOperationId);
-    const miniAppRun = page.locator(`[data-testid="agent-inline-report"][data-run-id="operation:${generatedOperationId}"]`);
-    await expect(miniAppRun).toHaveAttribute('data-status', 'running');
-
-    await page.evaluate((operationId) => {
-      window.dispatchEvent(new CustomEvent('fabushi:mahayana-runtime-event', {
-        detail: {
-          type: 'transcript.card',
-          timestamp: new Date().toISOString(),
-          entryId: `generated-miniapp:${operationId}`,
-          operationId,
-          card: {
-            kind: 'miniApp',
-            miniAppId: 'generated-counter-e2e',
-            name: '生成计数器',
-            description: 'Agent 生成的小程序验收',
-            html: '<!doctype html><html><body><button id="count">+1</button></body></html>',
-          },
-        },
-      }));
-    }, generatedOperationId);
-    const miniAppArtifact = miniAppRun.getByTestId('agent-inline-miniapp-artifact');
-    await expect(miniAppArtifact).toContainText('生成计数器');
-    await miniAppArtifact.getByTestId('agent-inline-miniapp-open').click();
-    await expect(page.getByTestId('miniapp-dialog')).toBeVisible();
-    await expect(page.getByTestId('miniapp-frame')).toHaveAttribute('title', 'generated-counter-e2e');
-    await page.getByRole('button', { name: '关闭小程序' }).click();
-
-    await page.evaluate((operationId) => {
-      window.dispatchEvent(new CustomEvent('fabushi:mahayana-runtime-event', {
-        detail: {
-          type: 'operation.completed',
-          timestamp: new Date().toISOString(),
-          operationId,
-        },
-      }));
-    }, generatedOperationId);
-    await expect(miniAppRun).toHaveAttribute('data-status', 'completed');
-
-    const persistedRunId = await run.getAttribute('data-run-id');
-    expect(persistedRunId).toBeTruthy();
-
-    await app.close();
-    app = null;
-
-    app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
-    await completeBrowserLogin(page);
-    // The previously active legacy transcript is restored from the bounded
-    // local journal on first paint instead of waiting for conversation.open.
-    await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 1_000 });
-    await openMahayanaConversation(page);
-
-    const restoredRun = page.locator(`[data-testid="agent-run"][data-run-id="${persistedRunId}"]`);
-    await expect(restoredRun).toBeVisible({ timeout: 15_000 });
-    await expect(restoredRun).toHaveAttribute('data-status', 'completed');
-    await expect.poll(async () => restoredRun.getByTestId('agent-step').count()).toBeGreaterThanOrEqual(3);
-    await expect(page.getByRole('article').filter({ hasText: '收到：请分析这个任务' }).last()).toBeVisible();
+    const turn = await expectHermesAssistantTurn(page, '收到：请分析这个任务');
+    await expect(turn).toHaveCount(1);
+    await expect(page.getByTestId('agent-run')).toBeHidden();
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
 
-test('self-hosted Bot invocation is consumed by Mahayana multi-step runtime without actor impersonation and restores after restart', async () => {
+test('self-hosted Bot invocation projects into the same Hermes-style turn without actor impersonation', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-selfhosted-bot-mahayana-'));
   let app: ElectronApplication | null = null;
   const prompt = '自建 Bot 请规划步骤，调用 Mahayana 工具并完成这个任务。';
@@ -246,19 +193,16 @@ test('self-hosted Bot invocation is consumed by Mahayana multi-step runtime with
 
     // The Rust messaging service has a separate contract test proving that a
     // human message to a Bot produces this exact BotInvocationRequested event.
-    // Here we verify the Electron consumer half: event -> Mahayana -> visible run.
+    // Here we verify the Electron consumer half: invocation -> Mahayana -> one
+    // ordinary assistant turn instead of a second task-card surface.
     const invocationId = await emitBotInvocationRequested(page, conversationId, prompt);
     expect(invocationId).toContain('invocation:e2e:');
 
-    const run = page.getByTestId('agent-run').last();
-    await expect(run).toBeVisible({ timeout: 15_000 });
-    await expect(run).toHaveAttribute('data-status', 'completed', { timeout: 15_000 });
-    await expect.poll(async () => run.getByTestId('agent-step').count()).toBeGreaterThanOrEqual(3);
-    await expect(run).toContainText('Mahayana');
-    await expect(page.locator('#mahayana-agent-header-avatar [data-agent-state="result"]')).toBeVisible();
+    await expectHermesAssistantTurn(page, '收到：自建 Bot 请规划步骤');
+    await expect(page.getByTestId('agent-run')).toBeHidden();
 
-    const persistedRunId = await run.getAttribute('data-run-id');
-    expect(persistedRunId).toBeTruthy();
+    // This journal is only the idempotency/claim record for consuming the Bot
+    // invocation. It is not accepted as transcript or run-state authority.
     await expect.poll(async () => page.evaluate(() => {
       const journal = JSON.parse(localStorage.getItem('fabushi.desktop.selfhosted-mahayana-invocations.v1') || 'null');
       return Object.values(journal?.claims || {}).some((claim: unknown) =>
@@ -268,6 +212,9 @@ test('self-hosted Bot invocation is consumed by Mahayana multi-step runtime with
     await app.close();
     app = null;
 
+    // Restart coverage is intentionally limited to the canonical messaging
+    // history here. Ordered AssistantTurn replay must come from the production
+    // Rust gateway/session store and is a separate MSR-204 acceptance blocker.
     app = await launchDesktopApp(appDataDir);
     page = await app.firstWindow();
     await completeBrowserLogin(page);
@@ -275,11 +222,6 @@ test('self-hosted Bot invocation is consumed by Mahayana multi-step runtime with
     await expect(restoredPeer).toBeVisible({ timeout: 15_000 });
     await restoredPeer.click();
     await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 10_000 });
-
-    const restoredRun = page.locator(`[data-testid="agent-run"][data-run-id="${persistedRunId}"]`);
-    await expect(restoredRun).toBeVisible({ timeout: 15_000 });
-    await expect(restoredRun).toHaveAttribute('data-status', 'completed');
-    await expect.poll(async () => restoredRun.getByTestId('agent-step').count()).toBeGreaterThanOrEqual(3);
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });

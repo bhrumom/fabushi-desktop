@@ -1,0 +1,136 @@
+/*
+ * Normal Mahayana execution is now projected by the Messenger transcript.
+ * Keep the legacy Workbench mounted for its runtime bridge, identity and
+ * interactive approval/recovery controls, but do not let queued/running/
+ * completed RunCards become a second primary transcript.
+ */
+#mahayana-agent-workbench-portal [data-testid='agent-workbench']:not(:has(
+  [data-testid='agent-run'][data-status='waiting-for-approval'],
+  [data-testid='agent-run'][data-status='failed'],
+  [data-testid='agent-run'][data-status='interrupted']
+)) {
+  display: none !important;
+}
+
+#mahayana-agent-workbench-portal [data-testid='agent-run'][data-status='queued'],
+#mahayana-agent-workbench-portal [data-testid='agent-run'][data-status='running'],
+#mahayana-agent-workbench-portal [data-testid='agent-run'][data-status='completed'] {
+  display: none !important;
+}
+
+.mahayana-assistant-turn {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
+  max-width: min(820px, 92%);
+  padding: 4px 0 10px;
+  color: var(--tg-text-color, inherit);
+}
+
+.mahayana-assistant-turn__avatar {
+  align-self: start;
+  margin-top: 2px;
+}
+
+.mahayana-assistant-turn__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mahayana-assistant-turn__reasoning {
+  color: color-mix(in srgb, currentColor 62%, transparent);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.mahayana-assistant-turn__reasoning[data-streaming='true']::after,
+.mahayana-assistant-turn__text[data-streaming='true']::after {
+  content: ' ▍';
+  opacity: .55;
+  animation: mahayana-turn-caret .9s steps(1) infinite;
+}
+
+.mahayana-assistant-turn__activity {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: start;
+  padding: 2px 0;
+  color: color-mix(in srgb, currentColor 76%, transparent);
+  font-size: 12px;
+}
+
+.mahayana-assistant-turn__activity > i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  margin: 5px 0 0 3px;
+  background: currentColor;
+  opacity: .42;
+}
+
+.mahayana-assistant-turn__activity[data-status='running'] > i {
+  opacity: .9;
+  animation: mahayana-turn-pulse 1.2s ease-in-out infinite;
+}
+
+.mahayana-assistant-turn__activity[data-status='failed'] > i {
+  background: #ef4444;
+  opacity: 1;
+}
+
+.mahayana-assistant-turn__activity div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mahayana-assistant-turn__activity strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mahayana-assistant-turn__activity span,
+.mahayana-assistant-turn__activity small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mahayana-assistant-turn__activity small {
+  opacity: .62;
+}
+
+.mahayana-assistant-turn__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.58;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mahayana-assistant-turn__meta {
+  font-size: 11px;
+  opacity: .48;
+}
+
+@keyframes mahayana-turn-caret {
+  0%, 45% { opacity: .6; }
+  46%, 100% { opacity: 0; }
+}
+
+@keyframes mahayana-turn-pulse {
+  0%, 100% { transform: scale(.8); opacity: .45; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+[data-reduce-motion='true'] .mahayana-assistant-turn__reasoning::after,
+[data-reduce-motion='true'] .mahayana-assistant-turn__text::after,
+[data-reduce-motion='true'] .mahayana-assistant-turn__activity > i {
+  animation: none !important;
+}
