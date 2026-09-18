@@ -180,6 +180,29 @@ export interface RuntimeSettings {
   autoReviewBlockInstructions:string[];
   computerTarget:'local-mac';
 }
+export type DesktopUpdateTrack='stable'|'nightly'|'dogfood';
+export type DesktopUpdateState=
+  |{type:'disabled';reason:'not-packaged'|'unsupported-platform'|'disabled-by-env'}
+  |{type:'idle';lastCheck?:{at:number;result:'up-to-date'|'error';errorMessage?:string}}
+  |{type:'checking'}
+  |{type:'available';version:string}
+  |{type:'downloading';version:string;progress?:number}
+  |{type:'ready';version:string};
+export interface DesktopUpdateStatus {
+  state:DesktopUpdateState;
+  currentVersion:string;
+  currentTrack:DesktopUpdateTrack;
+  trackOverride:DesktopUpdateTrack|null;
+  buildDefaultTrack:DesktopUpdateTrack;
+  availableTracks:DesktopUpdateTrack[];
+  isTrackManagedByPolicy:boolean;
+  isBelowMinimumVersion:boolean;
+  autoUpdateWhenIdleOptIn:boolean;
+  autoUpdateWhenIdleGateEnabled:boolean;
+}
+export interface DesktopInfo {version:string;platform:string;isPackaged:boolean}
+export interface DeepLinkInfo {version:1;source:'protocol';route:'info';topic:'deep-links';url:string}
+export type FeedbackResult={ok:true}|{ok:false;code:'access-denied'|'invalid-feedback'|'not-signed-in'|'rate-limited'|'subscription-required'|'unavailable'};
 export interface AgentEvent {
   type:
     |'agents.changed'|'agent.changed'|'message.delta'|'message.changed'|'message.done'
@@ -250,5 +273,14 @@ export interface GrokAgentBridge {
   runAgentAutomationNow(input:{id:string;automationId:string}):Promise<void>;
   pickFile():Promise<AttachmentDescriptor|null>;
   readAttachment(input:{id:string}):Promise<AttachmentPreview>;
+  getDesktopInfo():Promise<DesktopInfo>;
+  getUpdateStatus():Promise<DesktopUpdateStatus>;
+  checkUpdate():Promise<DesktopUpdateStatus>;
+  setUpdateTrack(input:{track:DesktopUpdateTrack}):Promise<DesktopUpdateStatus>;
+  setAutoUpdate(input:{enabled:boolean}):Promise<DesktopUpdateStatus>;
+  quitAndInstall():Promise<void>;
+  submitFeedback(input:{message:string;conversationId?:string}):Promise<FeedbackResult>;
+  onUpdateStatus(listener:(status:DesktopUpdateStatus)=>void):()=>void;
+  onDeepLink(listener:(link:DeepLinkInfo)=>void):()=>void;
   subscribe(listener:(event:AgentEvent)=>void):()=>void;
 }
