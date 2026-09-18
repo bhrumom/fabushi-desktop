@@ -1,6 +1,7 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
 import GrokApp from './grok-app';
-const root=document.querySelector<HTMLDivElement>('#root');
-if(!root) throw new Error('Fabushi desktop root element is missing');
-createRoot(root).render(<StrictMode><GrokApp/></StrictMode>);
+import { acquireProductionRendererRuntime, mountProductionRenderer, requireProductionRendererMount } from './production/bootstrap';
+import { RootErrorBoundary } from './production/root-error-boundary';
+
+acquireProductionRendererRuntime(window);
+const mount=requireProductionRendererMount(document.querySelector<HTMLDivElement>('#root'));
+mountProductionRenderer(mount,<RootErrorBoundary><GrokApp/></RootErrorBoundary>);
