@@ -115,3 +115,43 @@ test('remote HTTP MCP performs initialize and tools/list over a real local HTTP 
   const listed=await runtime.listMcpServers();
   assert.equal(listed[0].customInstructions,'Use only for fixture echoes.');
 });
+
+
+test('parent Agent tool call creates and completes a real delegated subagent',async t=>{
+  const previous={url:process.env.FABUSHI_AGENT_API_URL,key:process.env.FABUSHI_AGENT_API_KEY,model:process.env.FABUSHI_AGENT_MODEL};
+  t.after(()=>{if(previous.url===undefined)delete process.env.FABUSHI_AGENT_API_URL;else process.env.FABUSHI_AGENT_API_URL=previous.url;if(previous.key===undefined)delete process.env.FABUSHI_AGENT_API_KEY;else process.env.FABUSHI_AGENT_API_KEY=previous.key;if(previous.model===undefined)delete process.env.FABUSHI_AGENT_MODEL;else process.env.FABUSHI_AGENT_MODEL=previous.model});
+  const inference=http.createServer((req,res)=>{
+    let raw='';req.setEncoding('utf8');req.on('data',chunk=>{raw+=chunk});req.on('end',()=>{
+      const body=JSON.parse(raw||'{}'),messages=Array.isArray(body.messages)?body.messages:[],system=String(messages[0]?.content||'');
+      res.setHeader('content-type','application/json');
+      if(system.includes('You are Research')){
+        res.end(JSON.stringify({choices:[{message:{role:'assistant',content:'child complete'}}]}));return;
+      }
+      const hasSubagentResult=messages.some(message=>message.role==='tool'&&String(message.content||'').includes('"agentId"'));
+      if(hasSubagentResult){
+        res.end(JSON.stringify({choices:[{message:{role:'assistant',content:'parent received delegated result'}}]}));return;
+      }
+      res.end(JSON.stringify({choices:[{message:{role:'assistant',content:null,tool_calls:[{id:'call-subagent',type:'function',function:{name:'create_subagent',arguments:JSON.stringify({name:'Research',prompt:'Do delegated work.',background:false})}}]}}]}));
+    });
+  });
+  await new Promise(resolve=>inference.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>inference.close(resolve)));
+  const address=inference.address();assert.equal(typeof address,'object');
+  process.env.FABUSHI_AGENT_API_URL='http://127.0.0.1:'+address.port+'/v1/chat/completions';process.env.FABUSHI_AGENT_API_KEY='fixture';process.env.FABUSHI_AGENT_MODEL='fixture-model';
+
+  const f=await fixture();t.after(()=>fs.rm(f.root,{recursive:true,force:true}));
+  const runtime=createCoordinatorRuntime(f),parent=(await runtime.listAgents())[0];
+  const sent=await runtime.sendMessage({agentId:parent.id,text:'Delegate this task.'});
+  const deadline=Date.now()+5000;let parentMessage=null;
+  while(Date.now()<deadline){
+    const thread=await runtime.getThread({agentId:parent.id});parentMessage=thread.messages.find(message=>message.id===sent.messageId);
+    if(parentMessage&&parentMessage.status!=='streaming')break;
+    await new Promise(resolve=>setTimeout(resolve,20));
+  }
+  assert.equal(parentMessage?.status,'done');assert.equal(parentMessage?.text,'parent received delegated result');
+  const agents=await runtime.listAgents(),child=agents.find(agent=>agent.parentAgentId===parent.id&&agent.purpose==='subagent');
+  assert.ok(child);assert.equal(child.name,'Research');assert.equal(child.status,'idle');
+  const childThread=await runtime.getThread({agentId:child.id});
+  assert.equal(childThread.messages.some(message=>message.role==='assistant'&&message.text==='child complete'),true);
+  const parentThread=await runtime.getThread({agentId:parent.id});
+  assert.equal(parentThread.messages.some(message=>message.role==='tool'&&message.toolName==='create_subagent'&&message.status==='done'),true);
+});
