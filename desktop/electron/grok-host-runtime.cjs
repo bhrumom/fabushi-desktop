@@ -9,7 +9,7 @@ const {requiresAutoReview,canonicalAutoReviewTarget,fingerprintAutoReviewTarget,
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
+function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
   function systemPrompt(agent,enabled,workflowContext){
     const parts=[
       `You are ${agent.name}, a Fabushi desktop agent following the Grok Bot host/coordinator execution model.`,
@@ -261,7 +261,9 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
             const execution=await runWithRequestContext(requestContext,()=>resource.execute(name,args,{signal,onStarted:()=>{},onOutput}));
             await streamUpdates;
             resultText=execution?.text||streamed||'(completed)';
-            await updateTool(agent.id,entry,{status:'done',text:resultText,...(execution?.display?{display:execution.display}:{})});
+            const materialized=await spillToolOutput(resultText,{agentId:agent.id,toolCallId:entry.toolCallId,toolName:name});
+            resultText=materialized?.text||resultText;
+            await updateTool(agent.id,entry,{status:'done',text:resultText,...(materialized?.outputLocation?{outputLocation:materialized.outputLocation}:{}),...(execution?.display?{display:execution.display}:{})});
           }
         }catch(error){
           if(isAbort(error,signal)){
