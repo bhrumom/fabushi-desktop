@@ -83,7 +83,7 @@ test('Computer display identity is stable for the same visible target and change
 });
 
 
-test('streamed final assistant reply follows tool rows in transcript order',async()=>{
+test('private inference deltas stay hidden while the host preserves a final-text fallback',async()=>{
   let round=0;
   const deltas=[];
   const runtime=createHostRuntime({
@@ -98,8 +98,8 @@ test('streamed final assistant reply follows tool rows in transcript order',asyn
     inferenceRequest:async(_messages,_tools,_signal,onDelta)=>{
       round++;
       if(round===1)return{message:{content:null,tool_calls:[{id:'tool-1',type:'function',function:{name:'read_file',arguments:'{"path":"package.json"}'}}]}};
-      onDelta('final ','final ');
-      onDelta('answer','final answer');
+      onDelta('private ','private ');
+      onDelta('scratchpad','private scratchpad');
       return{message:{content:'final answer'}};
     }
   });
@@ -110,10 +110,7 @@ test('streamed final assistant reply follows tool rows in transcript order',asyn
     signal:new AbortController().signal,assistantEntry:assistant
   });
   assert.equal(text,'final answer');
-  assert.deepEqual(deltas,['final ','answer']);
-  const toolIndex=transcript.findIndex(row=>row.role==='tool');
-  const assistantIndex=transcript.indexOf(assistant);
-  assert.ok(toolIndex>=0);
-  assert.ok(assistantIndex>toolIndex);
-  assert.equal(assistant.text,'final answer');
+  assert.deepEqual(deltas,[]);
+  assert.ok(transcript.some(row=>row.role==='tool'));
+  assert.equal(transcript.includes(assistant),false);
 });
