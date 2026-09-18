@@ -34,7 +34,7 @@ function initialState(){
   const now=Date.now(),id=crypto.randomUUID();
   return{
     version:6,
-    agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false}],
+    agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false,pinned:false}],
     messages:{[id]:[]},
     plugins:defaultCapabilities(),
     settings:{localToolPermission:'ask',autoReviewMode:'enforce',autoReviewAllowInstructions:[],autoReviewBlockInstructions:[],featureFlagOverrides:{}},
@@ -48,7 +48,7 @@ function normalizeState(parsed){
   if(!parsed||typeof parsed!=='object')return initialState();
   const base=initialState();
   if(Array.isArray(parsed.agents)&&parsed.agents.length){
-    base.agents=parsed.agents.map(a=>({...a,hidden:a.hidden===true,description:String(a.description||'').slice(0,2000),title:a.title==null?undefined:String(a.title).slice(0,240),notifyOnUpdatesEnabled:a.notifyOnUpdatesEnabled===true,status:['idle','thinking','running','waiting','error'].includes(a.status)?a.status:'idle'}));
+    base.agents=parsed.agents.map(a=>({...a,hidden:a.hidden===true,pinned:a.pinned===true,unread:a.unread===true,description:String(a.description||'').slice(0,2000),title:a.title==null?undefined:String(a.title).slice(0,240),notifyOnUpdatesEnabled:a.notifyOnUpdatesEnabled===true,status:['idle','thinking','running','waiting','error'].includes(a.status)?a.status:'idle'}));
     base.messages={};
     for(const agent of base.agents)base.messages[agent.id]=Array.isArray(parsed.messages?.[agent.id])?parsed.messages[agent.id].map(row=>({...row,...(typeof row?.replyToId==='string'&&row.replyToId?{replyToId:row.replyToId}:{}),reactions:normalizedReactions(row?.reactions)})):[];
   }
@@ -120,9 +120,9 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     }
   }
   async function findAgent(id){const s=await load();return s.agents.find(a=>a.id===id)||null}
-  async function listAgents(){const s=await load();return[...s.agents].sort((a,b)=>b.updatedAt-a.updatedAt)}
+  async function listAgents(){const s=await load();return[...s.agents].sort((a,b)=>(Number(b.pinned)-Number(a.pinned))||(b.updatedAt-a.updatedAt))}
   async function createAgent({name,parentAgentId=null,purpose='user',description=''}){
-    const s=await load(),now=Date.now(),agent={id:crypto.randomUUID(),name:clean(name),description:String(description||'').slice(0,2000),title:undefined,notifyOnUpdatesEnabled:false,purpose:String(purpose||'user').slice(0,40),parentAgentId:parentAgentId||null,hidden:false,status:'idle',createdAt:now,updatedAt:now,unread:false};
+    const s=await load(),now=Date.now(),agent={id:crypto.randomUUID(),name:clean(name),description:String(description||'').slice(0,2000),title:undefined,notifyOnUpdatesEnabled:false,purpose:String(purpose||'user').slice(0,40),parentAgentId:parentAgentId||null,hidden:false,pinned:false,status:'idle',createdAt:now,updatedAt:now,unread:false};
     s.agents.unshift(agent);s.messages[agent.id]=[];s.automations[agent.id]=[];await save();emit('agents.changed');return agent;
   }
   async function renameAgent({agentId,name}){
@@ -139,6 +139,19 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function setAgentNotifyOnUpdates({id,isEnabled}){
     const agent=await findAgent(id);if(!agent)throw Error('Agent not found');
     agent.notifyOnUpdatesEnabled=isEnabled===true;agent.updatedAt=Date.now();await save();emit('agent.changed',{agentId:id});return agent;
+  }
+  async function setAgentPinned({agentId,pinned}){
+    const agent=await findAgent(agentId);if(!agent)throw Error('Agent not found');
+    agent.pinned=pinned===true;agent.updatedAt=Date.now();await save();emit('agents.changed',{agentId,pinned:agent.pinned});return agent;
+  }
+  async function setAgentUnread({agentId,unread}){
+    const agent=await findAgent(agentId);if(!agent)throw Error('Agent not found');
+    agent.unread=unread===true;agent.updatedAt=Date.now();await save();emit('agents.changed',{agentId,unread:agent.unread});return agent;
+  }
+  async function duplicateAgent({agentId}){
+    const source=await findAgent(agentId);if(!source)throw Error('Agent not found');
+    const duplicate=await createAgent({name:source.name+' copy',parentAgentId:source.parentAgentId||null,purpose:source.purpose||'user',description:source.description||''});
+    duplicate.title=source.title;duplicate.notifyOnUpdatesEnabled=source.notifyOnUpdatesEnabled===true;await save();emit('agents.changed',{agentId:duplicate.id,duplicatedFrom:agentId});return duplicate;
   }
   async function setAgentHidden({agentId,hidden}){
     const agent=await findAgent(agentId);if(!agent)throw Error('Agent not found');
@@ -754,7 +767,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
 
   return{
-    listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,respondToWidget,dismissWidget,submitSecret,reactToMessage,searchMessages,searchMedia,searchLinks,sendMessage,stopAgent,
+    listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentPinned,setAgentUnread,duplicateAgent,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,respondToWidget,dismissWidget,submitSecret,reactToMessage,searchMessages,searchMedia,searchLinks,sendMessage,stopAgent,
     listPlugins,setPluginInstalled,setPluginEnabled,getAccountStatus,loginAccount,cancelAccountLogin,logoutAccount,updateAccountName,getAccountAvatar,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getExperimentsSnapshot,refreshExperiments,applyFeatureFlagOverride,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
   };
 }
