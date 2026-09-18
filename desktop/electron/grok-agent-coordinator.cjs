@@ -10,6 +10,7 @@ const {createMcpOAuthManager,normalizeAccountKey}=require('./grok-mcp-oauth.cjs'
 const {createWorkflowManager}=require('./grok-workflow-manager.cjs');
 const {normalizeSchedule,isValidSchedule,computeNextRunAt,describeSchedule}=require('./grok-automation-schedule.cjs');
 const {createLocalBrowserRuntime}=require('./grok-local-browser.cjs');
+const {createPluginMarketplace}=require('./grok-plugin-marketplace.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
@@ -23,13 +24,14 @@ function defaultCapabilities(){return Object.fromEntries(capabilityCatalog.map(p
 function initialState(){
   const now=Date.now(),id=crypto.randomUUID();
   return{
-    version:5,
+    version:6,
     agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false}],
     messages:{[id]:[]},
     plugins:defaultCapabilities(),
     settings:{localToolPermission:'ask',autoReviewMode:'enforce'},
     pendingApprovals:{},
     mcpServers:[],
+    marketplaceInstalls:{},
     automations:{[id]:[]}
   };
 }
@@ -51,6 +53,7 @@ function normalizeState(parsed){
   if(['off','shadow','enforce'].includes(autoReviewMode))base.settings.autoReviewMode=autoReviewMode;
   base.pendingApprovals={};
   base.mcpServers=Array.isArray(parsed.mcpServers)?parsed.mcpServers.flatMap(server=>{try{return[normalizeServer(server)]}catch{return[]}}):[];
+  base.marketplaceInstalls=parsed.marketplaceInstalls&&typeof parsed.marketplaceInstalls==='object'&&!Array.isArray(parsed.marketplaceInstalls)?parsed.marketplaceInstalls:{};
   base.automations={};
   for(const agent of base.agents){
     const rows=Array.isArray(parsed.automations?.[agent.id])?parsed.automations[agent.id]:[];
@@ -176,6 +179,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null}){
     getAuthorizationHeader:(server,signal)=>oauth.authorizationHeader(server,signal)
   });
   const workflowManager=createWorkflowManager({app});
+  const marketplace=createPluginMarketplace();
   const localBrowser=createLocalBrowserRuntime({BrowserWindow});
   const host=createHostRuntime({
     shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,requestApproval,onToolState,onAgentStatus,
@@ -439,6 +443,54 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null}){
     const s=await load();if(!catalogIds.has(pluginId))throw Error('Plugin not found');
     s.plugins[pluginId]={installed:true,enabled:enabled===true};await save();emit('plugins.changed');return listPlugins();
   }
+  async function listMarketplacePlugins(){
+    const [catalog,s]=await Promise.all([marketplace.list(),load()]);
+    return{...catalog,plugins:(catalog.plugins||[]).map(plugin=>({...plugin,installed:Boolean(s.marketplaceInstalls?.[plugin.id]),install:s.marketplaceInstalls?.[plugin.id]||null}))};
+  }
+  async function installMarketplacePlugin({entryId,values={}}){
+    const catalog=await marketplace.list();
+    if(!catalog.available)throw Error(catalog.reason||'Plugin marketplace provider is unavailable.');
+    const plugin=(catalog.plugins||[]).find(row=>row.id===String(entryId||''));if(!plugin)throw Error('Marketplace plugin not found.');
+    const missing=(plugin.fields||[]).filter(field=>field.isRequired&&!String(values?.[field.key]??field.defaultValue??'').trim());
+    if(missing.length)throw Error(plugin.displayName+' requires '+missing.map(field=>field.label).join(', ')+'.');
+    const s=await load();s.marketplaceInstalls??={};
+    if(s.marketplaceInstalls[plugin.id])throw Error('Marketplace plugin is already installed.');
+    const payload=await marketplace.install(plugin.id,values);
+    const preparedServers=payload.servers.map(raw=>normalizeServer({...raw,id:raw.id||crypto.randomUUID()}));
+    const existing=new Set(s.mcpServers.map(server=>server.id));
+    for(const server of preparedServers)if(existing.has(server.id))throw Error('Marketplace returned duplicate MCP server id: '+server.id);
+    const savedSkills=[];
+    try{
+      for(const skill of payload.skills){
+        savedSkills.push(await workflowManager.saveWorkflow({
+          name:skill.name,description:skill.description,body:skill.body,isEnabledForAgent:skill.isEnabledForAgent,disableModelInvocation:skill.disableModelInvocation,trigger:null
+        }));
+      }
+      s.mcpServers.push(...preparedServers);
+      s.marketplaceInstalls[plugin.id]={
+        pluginId:plugin.id,displayName:plugin.displayName,providerUrl:marketplace.providerUrl,
+        serverIds:preparedServers.map(server=>server.id),skillIds:savedSkills.map(skill=>skill.id),installedAt:Date.now()
+      };
+      await save();emit('plugins.changed',{marketplacePluginId:plugin.id});emit('workflows.changed',{marketplacePluginId:plugin.id});
+      return await listMarketplacePlugins();
+    }catch(error){
+      for(const skill of savedSkills)await workflowManager.deleteWorkflow({id:skill.id}).catch(()=>{});
+      throw error;
+    }
+  }
+  async function uninstallMarketplacePlugin({entryId}){
+    const s=await load(),record=s.marketplaceInstalls?.[String(entryId||'')];if(!record)throw Error('Marketplace plugin is not installed.');
+    for(const serverId of record.serverIds||[]){
+      const server=s.mcpServers.find(row=>row.id===serverId);
+      if(server?.transport==='http')await oauth.disconnect(serverId,server.accountKey||'default').catch(()=>{});
+      mcp.disposeServer(serverId);
+    }
+    s.mcpServers=s.mcpServers.filter(server=>!(record.serverIds||[]).includes(server.id));
+    for(const skillId of record.skillIds||[])await workflowManager.deleteWorkflow({id:skillId}).catch(()=>{});
+    delete s.marketplaceInstalls[String(entryId||'')];await save();
+    emit('plugins.changed',{marketplacePluginId:String(entryId||'')});emit('workflows.changed',{marketplacePluginId:String(entryId||'')});
+    return await listMarketplacePlugins();
+  }
   async function listWorkflows(){return await workflowManager.list()}
   async function saveWorkflow(input){const record=await workflowManager.saveWorkflow(input);emit('workflows.changed',{workflowId:record.id});return record}
   async function deleteWorkflow(input){const result=await workflowManager.deleteWorkflow(input);emit('workflows.changed',{workflowId:input.id});return result}
@@ -460,7 +512,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null}){
 
   return{
     listAgents,createAgent,renameAgent,deleteAgent,getThread,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,listMcpServerTools,setMcpToolEnabled,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,resolveApproval
+    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,resolveApproval
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
