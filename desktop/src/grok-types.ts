@@ -64,6 +64,20 @@ export interface McpToolDescriptor {
   inputSchema:Record<string,unknown>;
   isDisabled:boolean;
 }
+export interface WorkflowDescriptor {
+  id:string;
+  name:string;
+  description:string;
+  body:string;
+  trigger:{schedule:string;isEnabled:boolean}|null;
+  source:'workflow';
+  sourceRef:string|null;
+  isEnabledForAgent:boolean;
+  disableModelInvocation:boolean;
+  createdAt:number;
+  updatedAt:number;
+  filePath:string;
+}
 export interface RuntimeSettings {
   localToolPermission:'always'|'ask'|'never';
   computerTarget:'local-mac';
@@ -71,7 +85,7 @@ export interface RuntimeSettings {
 export interface AgentEvent {
   type:
     |'agents.changed'|'agent.changed'|'message.delta'|'message.changed'|'message.done'
-    |'plugins.changed'|'settings.changed'
+    |'plugins.changed'|'workflows.changed'|'settings.changed'
     |'approval.requested'|'approval.resolved'|'approval.cancelled';
   agentId?:string;
   messageId?:string;
@@ -100,6 +114,10 @@ export interface GrokAgentBridge {
   setMcpServerEnabled(input:{serverId:string;enabled:boolean}):Promise<McpServerDescriptor>;
   listMcpServerTools(input:{serverId:string}):Promise<McpToolDescriptor[]>;
   setMcpToolEnabled(input:{serverId:string;toolName:string;enabled:boolean}):Promise<McpToolDescriptor[]>;
+  listWorkflows():Promise<WorkflowDescriptor[]>;
+  saveWorkflow(input:{id?:string;name:string;description?:string;body:string;trigger?:{schedule:string;isEnabled:boolean}|null;isEnabledForAgent?:boolean;disableModelInvocation?:boolean}):Promise<WorkflowDescriptor>;
+  deleteWorkflow(input:{id:string}):Promise<{ok:true}>;
+  setWorkflowEnabled(input:{id:string;enabled:boolean}):Promise<WorkflowDescriptor>;
   pickFile():Promise<{path:string;name:string}|null>;
   subscribe(listener:(event:AgentEvent)=>void):()=>void;
 }
