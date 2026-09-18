@@ -30,11 +30,11 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
       fn('stop_subagent','Abort a running delegated agent.',{agentId:{type:'string'}},['agentId'])
     ];
   }
-  async function executeSubagentTool(name,args,signal){
+  async function executeSubagentTool(name,args,signal,parentAgentId){
     if(!subagents)return null;
-    if(name==='create_subagent')return{text:JSON.stringify(await subagents.create({name:args.name,prompt:args.prompt,background:args.background===true,signal}),null,2)};
+    if(name==='create_subagent')return{text:JSON.stringify(await subagents.create({parentAgentId,name:args.name,prompt:args.prompt,background:args.background===true,signal}),null,2)};
     if(name==='check_subagent')return{text:JSON.stringify(await subagents.check({agentId:args.agentId}),null,2)};
-    if(name==='message_subagent')return{text:JSON.stringify(await subagents.message({agentId:args.agentId,prompt:args.prompt,interrupt:args.interrupt===true,signal}),null,2)};
+    if(name==='message_subagent')return{text:JSON.stringify(await subagents.message({parentAgentId,agentId:args.agentId,prompt:args.prompt,interrupt:args.interrupt===true,signal}),null,2)};
     if(name==='stop_subagent')return{text:JSON.stringify(await subagents.stop({agentId:args.agentId}),null,2)};
     return null;
   }
