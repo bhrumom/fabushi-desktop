@@ -1,5 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
+import { agentRowActions, isCopyConversationIdAction, isDeleteAgentAction, isDuplicateAgentAction, isHideFromSidebarAction, isMarkAgentUnreadAction, isTogglePinAction, markAgentUnreadValue, togglePinValue, type AgentRowAction } from './production/agent-row-actions-model';
+import { committedAgentName } from './production/agent-name-editor-model';
 import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, DeepLinkInfo, DesktopInfo, DesktopUpdateStatus, DesktopUpdateTrack, FeedbackResult, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor, WorkspaceLinkSearchResult, WorkspaceMediaSearchResult, WorkspaceMessageSearchResult } from './grok-types';
 import './grok-app.css';
 
@@ -15,9 +17,38 @@ function Status({status}:{status:AgentSummary['status']}) {
   return <span className={'status status-'+status} aria-label={status}/>;
 }
 
+function AgentRowActionsMenu({agent,onChanged,onDelete}:{agent:AgentSummary;onChanged():Promise<void>;onDelete(agent:AgentSummary):void}) {
+  const [open,setOpen]=useState(false);
+  const actions=useMemo(()=>agentRowActions({
+    isHidden:agent.hidden===true,
+    isPinned:agent.pinned===true,
+    hasUnread:agent.unread===true,
+    includePin:true,
+    includeMarkUnread:true,
+    includeDuplicate:true,
+    includeCopy:true,
+    includeDelete:true
+  }),[agent.hidden,agent.pinned,agent.unread]);
+  const apply=async(action:AgentRowAction)=>{
+    if(isTogglePinAction(action))await bridge.setAgentPinned({agentId:agent.id,pinned:togglePinValue(action)});
+    else if(isMarkAgentUnreadAction(action))await bridge.setAgentUnread({agentId:agent.id,unread:markAgentUnreadValue(action)});
+    else if(isDuplicateAgentAction(action))await bridge.duplicateAgent({agentId:agent.id});
+    else if(isCopyConversationIdAction(action)){try{await navigator.clipboard.writeText(agent.id)}catch{}}
+    else if(isHideFromSidebarAction(action))await bridge.setAgentHidden({agentId:agent.id,hidden:true});
+    else if(isDeleteAgentAction(action)){onDelete(agent);setOpen(false);return}
+    setOpen(false);await onChanged();
+  };
+  return <span className="row-actions" onMouseLeave={()=>setOpen(false)}>
+    <button className="agent-actions-trigger" aria-haspopup="menu" aria-expanded={open} aria-label="Agent actions" onClick={event=>{event.stopPropagation();setOpen(value=>!value)}}>•••</button>
+    {open?<span className="agent-actions-menu" role="menu" aria-label="Agent actions">
+      {actions.map(action=><button key={action.id} role="menuitem" className={action.id==='delete-agent'?'danger-action':''} onClick={event=>{event.stopPropagation();void apply(action)}}>{action.label}</button>)}
+    </span>:null}
+  </span>;
+}
+
 function Sidebar(p:{
   agents:AgentSummary[];selected:string|null;query:string;setQuery(v:string):void;select(id:string):void;account:AccountStatus|null;openAccount():void;
-  create():void;plugins():void;settings():void;orgChart():void;hiddenChats():void;rename(agent:AgentSummary):void;hide(agent:AgentSummary):void;remove(agent:AgentSummary):void;openPalette():void;
+  create():void;plugins():void;settings():void;orgChart():void;hiddenChats():void;rename(agent:AgentSummary):void;remove(agent:AgentSummary):void;changed():Promise<void>;openPalette():void;
 }) {
   const rows=useMemo(()=>{
     const visible=p.agents.filter(a=>!a.hidden);
@@ -29,17 +60,13 @@ function Sidebar(p:{
     <div className="brand"><span className="brand-mark">✣</span><strong>Fabushi</strong><button aria-label="New agent" onClick={p.create}>＋</button></div>
     <label className="search" onClick={p.openPalette}><span>⌕</span><input value={p.query} onChange={e=>p.setQuery(e.target.value)} placeholder="Search agents"/><kbd>⌘K</kbd></label>
     <div className="section-label">Agents</div>
-    <div className="agent-list">{rows.map(a=><div className={'agent-row sand-agent-item '+(p.selected===a.id?'selected':'')} key={a.id}>
-      <button className="agent-select" onClick={()=>p.select(a.id)}>
+    <div className="agent-list">{rows.map(a=><div className={'agent-row sand-agent-item '+(p.selected===a.id?'selected ':'')+(a.pinned?'pinned ':'')+(a.unread?'unread':'')} key={a.id}>
+      <button className="agent-select" onClick={()=>p.select(a.id)} onDoubleClick={()=>p.rename(a)}>
         <span className="avatar">{initials(a.name)}</span>
-        <span className="agent-copy"><strong>{a.name}</strong><small>{a.status==='idle'?'Ready':a.status}</small></span>
+        <span className="agent-copy"><strong>{a.name}</strong><small>{a.status==='idle'?(a.unread?'Unread':'Ready'):a.status}</small></span>
         <Status status={a.status}/>
       </button>
-      <span className="row-actions">
-        <button aria-label={'Rename '+a.name} title="Rename" onClick={()=>p.rename(a)}>✎</button>
-        <button aria-label={'Hide '+a.name} title="Hide" onClick={()=>p.hide(a)}>◌</button>
-        <button aria-label={'Delete '+a.name} title="Delete" onClick={()=>p.remove(a)}>×</button>
-      </span>
+      <AgentRowActionsMenu agent={a} onChanged={p.changed} onDelete={p.remove}/>
     </div>)}</div>
     <div className="grow"/>
     <div className="sidebar-footer">
@@ -677,7 +704,7 @@ function CreateAgent({onClose,onCreated}:{onClose():void;onCreated(a:AgentSummar
 
 function RenameAgent({agent,onClose,onSaved}:{agent:AgentSummary;onClose():void;onSaved():Promise<void>}) {
   const [name,setName]=useState(agent.name);
-  const submit=async(e:FormEvent)=>{e.preventDefault();if(!name.trim())return;await bridge.renameAgent({agentId:agent.id,name:name.trim()});await onSaved();onClose()};
+  const submit=async(e:FormEvent)=>{e.preventDefault();const committed=committedAgentName(agent.name,name);if(committed==null){onClose();return}await bridge.renameAgent({agentId:agent.id,name:committed});await onSaved();onClose()};
   return <div className="shade"><form className="create-dialog" onSubmit={submit}><h2>Rename agent</h2><p>Choose the name shown in the agent list and conversation.</p><input autoFocus value={name} onChange={e=>setName(e.target.value)}/><div><button type="button" onClick={onClose}>Cancel</button><button className="primary" disabled={!name.trim()}>Save</button></div></form></div>;
 }
 
@@ -778,7 +805,7 @@ export default function GrokApp(){
 
   return <div className="app-shell">
     <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={setSelectedId} account={account} openAccount={()=>setOverlay('account')} create={()=>setCreateOpen(true)}
-      plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} orgChart={()=>setOverlay('orgchart')} hiddenChats={()=>setOverlay('hidden')} rename={setRenameAgent} hide={agent=>{void bridge.setAgentHidden({agentId:agent.id,hidden:true}).then(loadAgents).catch(error=>setFailure(error instanceof Error?error.message:String(error)))}} remove={setDeleteAgent} openPalette={()=>setPaletteOpen(true)}/>
+      plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} orgChart={()=>setOverlay('orgchart')} hiddenChats={()=>setOverlay('hidden')} rename={setRenameAgent} remove={setDeleteAgent} changed={loadAgents} openPalette={()=>setPaletteOpen(true)}/>
     {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')} openAgentSettings={()=>setOverlay('agent-settings')}/ >:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
     {failure?<div className="toast-error">{failure}<button onClick={()=>setFailure('')}>×</button></div>:null}
     {overlay==='plugins'?<Plugins items={plugins} workflows={workflows} onClose={()=>setOverlay(null)} reload={loadPlugins} reloadWorkflows={loadWorkflows}/>:null}
