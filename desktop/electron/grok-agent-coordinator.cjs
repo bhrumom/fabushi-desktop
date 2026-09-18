@@ -31,6 +31,24 @@ const capabilityCatalog=[
 const catalogIds=new Set(capabilityCatalog.map(x=>x.id));
 const clean=(v,f='Agent')=>String(v||'').trim().replace(/[\r\n\t]/g,' ').slice(0,80)||f;
 function defaultCapabilities(){return Object.fromEntries(capabilityCatalog.map(p=>[p.id,{installed:true,enabled:true}]));}
+function configuredChannelManifests(env=process.env){
+  const raw=String(env.FABUSHI_CHANNELS_JSON||'').trim();if(!raw)return[];
+  let parsed;try{parsed=JSON.parse(raw)}catch{throw Error('FABUSHI_CHANNELS_JSON must be valid JSON.')}
+  const rows=Array.isArray(parsed)?parsed:Array.isArray(parsed?.manifests)?parsed.manifests:[];
+  return rows.flatMap(value=>{
+    if(!value||typeof value!=='object')return[];
+    const platform=String(value.platform||'').trim().toLowerCase();if(!platform||platform==='telegram')return[];
+    const displayName=String(value.displayName||platform).trim().slice(0,120);
+    const blurb=String(value.blurb||'Connect this agent to '+displayName+'.').trim().slice(0,1000);
+    const credentialLabel=String(value.credentialLabel||'token').trim().slice(0,120);
+    const availability=value.availability==='coming-soon'?'coming-soon':'available';
+    const connectGuide=String(value.connectGuide||'Follow your provider instructions to create a credential.').trim().slice(0,4000);
+    const steps=Array.isArray(value.setupGuide?.steps)?value.setupGuide.steps.flatMap(step=>!step||typeof step!=='object'||!String(step.text||'').trim()?[]:[{text:String(step.text).trim().slice(0,1000),...(step.code==null?{}:{code:String(step.code).slice(0,2000)})}]):undefined;
+    let verifyUrl=null;if(value.verifyUrl){try{const url=new URL(String(value.verifyUrl)),loopback=['127.0.0.1','localhost','::1','[::1]'].includes(url.hostname);if(url.protocol==='https:'||(url.protocol==='http:'&&loopback))verifyUrl=url.toString()}catch{}}
+    return[{platform,displayName,blurb,credentialLabel,availability,connectGuide,...(steps?{setupGuide:{steps}}:{}),verifyUrl}];
+  });
+}
+
 function initialState(){
   const now=Date.now(),id=crypto.randomUUID();
   return{
