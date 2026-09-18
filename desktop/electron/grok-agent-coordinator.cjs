@@ -12,6 +12,7 @@ const {normalizeSchedule,isValidSchedule,computeNextRunAt,describeSchedule}=requ
 const {createLocalBrowserRuntime}=require('./grok-local-browser.cjs');
 const {createPluginMarketplace}=require('./grok-plugin-marketplace.cjs');
 const {createOutputSpiller}=require('./grok-output-spill.cjs');
+const {deriveConversationOutline}=require('./grok-conversation-outline.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
@@ -122,7 +123,8 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
   async function getThread({agentId}){
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
-    return{agent,messages:s.messages[agentId]||[],pendingApprovals:Object.values(s.pendingApprovals||{}).filter(x=>x.agentId===agentId)};
+    const messages=s.messages[agentId]||[];
+    return{agent,messages,outline:deriveConversationOutline(messages),pendingApprovals:Object.values(s.pendingApprovals||{}).filter(x=>x.agentId===agentId)};
   }
   function enabledCapabilityIds(s){
     return new Set(capabilityCatalog.filter(p=>s.plugins?.[p.id]?.installed&&s.plugins?.[p.id]?.enabled).map(p=>p.id));
