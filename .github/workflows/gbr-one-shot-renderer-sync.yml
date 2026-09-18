@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rsync -a _grok/frontend/src/ desktop/src/
+          rsync -a --delete _grok/frontend/src/ desktop/src/
           cp _grok/frontend/tsconfig.json desktop/tsconfig.json
 
       - name: Align renderer dependencies with pinned reference
