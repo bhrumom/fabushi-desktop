@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
-import type { AgentMessage, AgentSummary, AgentThread, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
+import type { AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
 import './grok-app.css';
 
 const bridge=getAgentBridge();
@@ -70,34 +70,45 @@ function ToolMessage({message,onResolve}:{message:AgentMessage;onResolve(approva
   </div>;
 }
 
+function AttachmentCards({items}:{items:AttachmentDescriptor[]|undefined}) {
+  const [preview,setPreview]=useState<AttachmentPreview|null>(null),[error,setError]=useState('');
+  if(!items?.length)return null;
+  const open=async(item:AttachmentDescriptor)=>{setError('');try{setPreview(await bridge.readAttachment({id:item.id}))}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}};
+  return <><div className="attachment-cards">{items.map(item=><button key={item.id} className="attachment-card" onClick={()=>void open(item)}><span>{item.kind==='image'?'▧':item.kind==='pdf'?'▤':'▱'}</span><span><strong>{item.name}</strong><small>{item.mime} · {Math.max(1,Math.ceil(item.size/1024))} KB</small></span></button>)}</div>
+    {error?<div className="attachment-error">{error}</div>:null}
+    {preview?<div className="shade attachment-preview-shade" onMouseDown={e=>e.currentTarget===e.target&&setPreview(null)}><section className="attachment-preview" role="dialog" aria-label={preview.name}><header><strong>{preview.name}</strong><button aria-label="Close" onClick={()=>setPreview(null)}>×</button></header><div>{preview.kind==='image'?<img src={preview.dataUrl} alt={preview.name}/>:preview.kind==='pdf'||preview.kind==='text'?<iframe sandbox="" src={preview.dataUrl} title={preview.name}/>:<div className="attachment-no-preview">Preview unavailable for {preview.mime}</div>}</div></section></div>:null}
+  </>;
+}
+
 function Message({message,onResolve}:{message:AgentMessage;onResolve(approvalId:string,approved:boolean):Promise<void>}) {
   if(message.role==='tool')return <div data-entry-id={message.id}><ToolMessage message={message} onResolve={onResolve}/></div>;
   return <article className={'message '+message.role} data-entry-id={message.id}>
     <div className="message-meta"><strong>{message.role==='user'?'You':message.role==='assistant'?'Agent':'System'}</strong><time>{formatTime(message.createdAt)}</time></div>
     <div className="message-text">{message.text}</div>
+    <AttachmentCards items={message.attachments}/>
     {message.status==='streaming'?<span className="stream-caret"/>:null}
   </article>;
 }
 
-function Composer({running,onSend,onStop}:{running:boolean;onSend(text:string):Promise<void>;onStop():Promise<void>}) {
+function Composer({running,onSend,onStop}:{running:boolean;onSend(text:string,attachmentIds:string[]):Promise<void>;onStop():Promise<void>}) {
   const [text,setText]=useState('');
+  const [attachments,setAttachments]=useState<AttachmentDescriptor[]>([]);
   const [submitting,setSubmitting]=useState(false);
   const submit=async()=>{
-    const value=text.trim();if(!value||submitting||running)return;
-    setText('');setSubmitting(true);
-    try{await onSend(value)}finally{setSubmitting(false)}
+    const value=text.trim();if((!value&&!attachments.length)||submitting||running)return;
+    setSubmitting(true);
+    try{await onSend(value,attachments.map(item=>item.id));setText('');setAttachments([])}finally{setSubmitting(false)}
   };
   return <div className="composer sand-prompt-shell sand-prompt-form">
+    {attachments.length?<div className="composer-attachments">{attachments.map(item=><span key={item.id}><span>{item.name}</span><button aria-label={'Remove '+item.name} onClick={()=>setAttachments(rows=>rows.filter(row=>row.id!==item.id))}>×</button></span>)}</div>:null}
     <textarea rows={1} value={text} disabled={running} placeholder={running?'Agent is working…':'Message agent'} onChange={e=>setText(e.target.value)} onKeyDown={e=>{
       if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();void submit()}
     }}/>
     <div className="composer-bar"><div>
-      <button title="Attach file" disabled={running} onClick={async()=>{
-        const file=await bridge.pickFile();if(file)setText(v=>v+(v?'\n':'')+'@file '+file.path);
-      }}>＋</button>
+      <button title="Attach file" disabled={running} onClick={async()=>{const file=await bridge.pickFile();if(file)setAttachments(rows=>rows.some(row=>row.id===file.id)?rows:[...rows,file])}}>＋</button>
       <span className="model-chip">Auto</span>
     </div>
-    {running?<button className="stop-button" title="Stop agent" onClick={()=>void onStop()}>■</button>:<button className="send-button" disabled={submitting||!text.trim()} onClick={()=>void submit()}>{submitting?'…':'↑'}</button>}</div>
+    {running?<button className="stop-button" title="Stop agent" onClick={()=>void onStop()}>■</button>:<button className="send-button" disabled={submitting||(!text.trim()&&!attachments.length)} onClick={()=>void submit()}>{submitting?'…':'↑'}</button>}</div>
   </div>;
 }
 
@@ -182,7 +193,7 @@ function Workspace({agent,thread,refresh,openAutomations,openAgentSettings}:{age
     </div></div>
     {outlineOpen?<ConversationOutline thread={thread} onClose={()=>setOutlineOpen(false)}/>:null}
     {computerOpen?<ComputerInfoPane agent={agent} thread={thread} onClose={()=>setComputerOpen(false)}/>:null}
-    <Composer running={busy(agent.status)} onSend={async text=>{await bridge.sendMessage({agentId:agent.id,text});await refresh()}} onStop={async()=>{
+    <Composer running={busy(agent.status)} onSend={async(text,attachmentIds)=>{await bridge.sendMessage({agentId:agent.id,text,attachmentIds});await refresh()}} onStop={async()=>{
       await bridge.stopAgent({agentId:agent.id});await refresh();
     }}/>
   </main>;
