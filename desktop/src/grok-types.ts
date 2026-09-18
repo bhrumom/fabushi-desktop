@@ -24,6 +24,8 @@ export interface AgentMessage {
   approvalId?:string;
   approvalSummary?:string;
   errorCode?:string;
+  requestId?:string;
+  toolCallId?:string;
   display?:{kind:'image';dataUrl:string};
 }
 export interface PendingApproval {
