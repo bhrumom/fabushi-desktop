@@ -6,16 +6,18 @@ const {toolDefinitions,executeTool,descriptor}=require('./local-tool-executor.cj
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,getExternalTools=async()=>[],executeExternalTool=async()=>null}){
-  function systemPrompt(agent,enabled){
-    return [
+function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>''}){
+  function systemPrompt(agent,enabled,workflowContext){
+    const parts=[
       `You are ${agent.name}, a Fabushi desktop agent following the Grok Bot host/coordinator execution model.`,
       'You operate the Mac where Fabushi is installed, not a cloud computer.',
       'Use the provided tools for computer work and report only results confirmed by tool output.',
       'Inspect before mutation. Mutating tools can be blocked or require explicit user approval.',
       'When a Computer click is needed, provide a concise purpose in the tool arguments.',
       `Enabled local capabilities: ${[...enabled].join(', ')||'none'}.`
-    ].join('\n');
+    ];
+    if(workflowContext)parts.push(workflowContext);
+    return parts.join('\n');
   }
 
   async function chatRequest(messages,tools,signal){
@@ -66,8 +68,10 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
     const externalDefinitions=await getExternalTools();
     const externalNames=new Set(externalDefinitions.map(x=>x.function?.name).filter(Boolean));
     const tools=[...toolDefinitions(enabled),...externalDefinitions.map(({_mcp,...definition})=>definition)];
+    const latestUser=[...history].reverse().find(x=>x.role==='user');
+    const workflowContext=await getWorkflowContext(latestUser?.text||'');
     const messages=[
-      {role:'system',content:systemPrompt(agent,enabled)},
+      {role:'system',content:systemPrompt(agent,enabled,workflowContext)},
       ...history.filter(x=>x.role==='user'||x.role==='assistant').slice(-40).map(x=>({role:x.role,content:x.text}))
     ];
 
