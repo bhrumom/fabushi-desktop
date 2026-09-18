@@ -105,3 +105,20 @@
 
 /* recovered agent row action menu */
 .agent-actions-trigger{font-size:10px;letter-spacing:-1px}.agent-actions-menu{position:absolute;right:0;top:30px;z-index:40;display:grid;min-width:170px;padding:5px;border:1px solid var(--stroke);border-radius:9px;background:#202228;box-shadow:0 14px 34px rgba(0,0,0,.35)}.agent-actions-menu>button{width:auto;height:30px;padding:0 9px;border-radius:6px;background:transparent;text-align:left;white-space:nowrap;font-size:11px;letter-spacing:0}.agent-actions-menu>button:hover{background:#30323a}.agent-actions-menu>button.danger-action{color:#e7a1a1}.agent-row.pinned .agent-copy strong:before{content:'• ';color:#d9b978}.agent-row.unread .agent-copy strong{font-weight:750}
+
+/* Grok 0.18 agent identity and avatar editor */
+.agent-character-avatar{display:inline-grid;place-items:center;flex:0 0 auto;overflow:visible;line-height:0}
+.agent-character-avatar>img{display:block;width:100%;height:100%;object-fit:cover;border-radius:28%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.agent-character-avatar.large{margin-right:2px}.agent-character-avatar.hero{margin:0 auto 8px}
+.agent-avatar-setting{position:relative;display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--stroke);border-radius:12px;background:rgba(255,255,255,.025)}
+.agent-avatar-setting>span:nth-child(2){display:grid;gap:3px}.agent-avatar-setting small{color:var(--muted);line-height:1.35}
+.agent-avatar-editor-popover{position:absolute;z-index:80;left:0;top:76px;width:min(430px,calc(100vw - 80px));padding:12px;border:1px solid var(--stroke);border-radius:14px;background:#202228;box-shadow:0 20px 70px rgba(0,0,0,.5)}
+.sand-avatar-editor{display:grid;gap:12px;outline:none}.sand-avatar-editor button{min-height:30px}.sand-avatar-editor [role="tablist"]{display:flex;gap:6px}
+.sand-avatar-editor [role="tab"][aria-selected="true"]{background:#3a3d47}.sand-agent-character{display:grid;gap:12px;justify-items:center}
+.sand-agent-character>[aria-label="Character shape"],.sand-agent-character>[aria-label="Character color"]{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.sand-agent-character__shape{width:42px;height:42px;padding:3px}.sand-agent-character [aria-pressed="true"]{outline:2px solid rgba(255,255,255,.8);outline-offset:1px}
+.sand-avatar-editor__stage{position:relative;width:260px;height:260px;overflow:hidden;border-radius:16px;background:#15161a;touch-action:none;cursor:grab}
+.sand-avatar-editor__stage:active{cursor:grabbing}.sand-avatar-editor__stage img{position:absolute;max-width:none;max-height:none;user-select:none;pointer-events:none}
+.sand-avatar-editor__stage>span{position:absolute;inset:0;border:1px solid rgba(255,255,255,.18);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.35);pointer-events:none}
+.sand-avatar-editor__zoom{display:flex;align-items:center;gap:8px}.sand-avatar-editor__zoom input{flex:1}
+.sand-avatar-editor__dropzone{display:grid;place-items:center;gap:8px;min-height:180px;border:1px dashed rgba(255,255,255,.2);border-radius:12px;background:#18191e}
