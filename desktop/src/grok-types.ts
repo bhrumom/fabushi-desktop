@@ -280,6 +280,8 @@ export interface GrokAgentBridge {
   setAutoUpdate(input:{enabled:boolean}):Promise<DesktopUpdateStatus>;
   quitAndInstall():Promise<void>;
   submitFeedback(input:{message:string;conversationId?:string}):Promise<FeedbackResult>;
+  getOnboardingSeen():Promise<boolean>;
+  setOnboardingSeen(input:{seen:boolean}):Promise<boolean>;
   onUpdateStatus(listener:(status:DesktopUpdateStatus)=>void):()=>void;
   onDeepLink(listener:(link:DeepLinkInfo)=>void):()=>void;
   subscribe(listener:(event:AgentEvent)=>void):()=>void;
