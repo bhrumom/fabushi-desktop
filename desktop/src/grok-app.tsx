@@ -255,6 +255,8 @@ function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():v
   const [name,setName]=useState(agent.name),[title,setTitle]=useState(agent.title||''),[description,setDescription]=useState(agent.description||'');
   const [pending,setPending]=useState(false),[error,setError]=useState(''),[avatarOpen,setAvatarOpen]=useState(false);
   const avatarAdapter=useMemo(()=>createAvatarEditorProductionAdapter({bridge}),[]);
+  const avatarDisposalGuard=useMemo(()=>createStrictModeDisposalGuard(),[]);
+  const avatarDisposable=useMemo(()=>({dispose:()=>avatarAdapter.dispose()}),[avatarAdapter]);
   const [avatarSnapshot,setAvatarSnapshot]=useState(avatarAdapter.getSnapshot());
   useEffect(()=>avatarAdapter.subscribe(()=>setAvatarSnapshot(avatarAdapter.getSnapshot())),[avatarAdapter]);
   useEffect(()=>{
@@ -264,7 +266,7 @@ function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():v
     });
     setAvatarSnapshot(avatarAdapter.getSnapshot());
   },[avatarAdapter,agent.id,agent.avatarDataUrl,agent.avatarShape,agent.avatarColor]);
-  useEffect(()=>()=>avatarAdapter.dispose(),[avatarAdapter]);
+  useEffect(()=>avatarDisposalGuard.attach(avatarDisposable),[avatarDisposalGuard,avatarDisposable]);
   const save=async()=>{
     const next=name.trim();if(!next||pending)return;
     setPending(true);setError('');
@@ -805,6 +807,8 @@ function CommandPalette({agents,onClose,onSelect,onSelectEntry,onCreate,onOrgCha
 export default function GrokApp(){
   const selectionStore=useMemo(()=>createRosterSelectionStore(createRosterSelectionPersistence(createBrowserClientPersistence(window.localStorage))),[]);
   const asyncTasksProvider=useMemo(()=>createAsyncTasksProvider({getAsyncTasks:input=>bridge.getAsyncTasks(input)}),[]);
+  const runtimeDisposalGuard=useMemo(()=>createStrictModeDisposalGuard(),[]);
+  const runtimeDisposable=useMemo(()=>({dispose(){selectionStore.dispose();asyncTasksProvider.dispose()}}),[selectionStore,asyncTasksProvider]);
   const [agents,setAgents]=useState<AgentSummary[]>([]);
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [thread,setThread]=useState<AgentThread|null>(null);
@@ -843,7 +847,8 @@ export default function GrokApp(){
   const loadOnboarding=async()=>setOnboardingSeen(await bridge.getOnboardingSeen());
   const refreshAll=async()=>{try{setFailure('');await Promise.all([loadAgents(),loadPlugins(),loadWorkflows(),loadAccount(),loadOnboarding()])}catch(error){setFailure(error instanceof Error?error.message:String(error))}finally{setLoading(false)}};
 
-  useEffect(()=>{asyncTasksProvider.connect();void refreshAll();const release=bridge.onDeepLink(link=>setDeepLink(link));return()=>{release();asyncTasksProvider.dispose()}},[]);
+  useEffect(()=>{asyncTasksProvider.connect();void refreshAll();return bridge.onDeepLink(link=>setDeepLink(link))},[]);
+  useEffect(()=>runtimeDisposalGuard.attach(runtimeDisposable),[runtimeDisposalGuard,runtimeDisposable]);
   useEffect(()=>{
     let active=true;
     void selectionStore.restore(accountSlot).then(()=>{
@@ -861,7 +866,6 @@ export default function GrokApp(){
     const next=selectionStore.get().currentAgentId;
     if(next!==selectedId&&(next==null||agents.some(agent=>agent.id===next)))setSelectedId(next);
   },[agents,accountSlot]);
-  useEffect(()=>()=>selectionStore.dispose(),[]);
   useEffect(()=>{if(onboardingSeen===false&&agents.length>0)void bridge.setOnboardingSeen({seen:true}).then(()=>setOnboardingSeen(true)).catch(()=>{})},[onboardingSeen,agents.length]);
   useEffect(()=>{if(selectedId)void loadThread(selectedId).catch(error=>setFailure(error instanceof Error?error.message:String(error)));else setThread(null)},[selectedId]);
   useEffect(()=>{if(!pendingJump||pendingJump.agentId!==selectedId)return;const handle=window.setTimeout(()=>{const target=document.querySelector<HTMLElement>(`[data-entry-id="${CSS.escape(pendingJump.entryId)}"]`);if(target){target.scrollIntoView({block:'center',behavior:'smooth'});target.classList.add('message-jump');window.setTimeout(()=>target.classList.remove('message-jump'),1200);setPendingJump(null)}},80);return()=>window.clearTimeout(handle)},[pendingJump,selectedId,thread?.messages.length]);
@@ -889,7 +893,7 @@ export default function GrokApp(){
   return <div className="app-shell">
     <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={selectAgent} account={account} openAccount={()=>setOverlay('account')} create={()=>setCreateOpen(true)}
       plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} orgChart={()=>setOverlay('orgchart')} hiddenChats={()=>setOverlay('hidden')} rename={setRenameAgent} remove={setDeleteAgent} changed={loadAgents} openPalette={()=>setPaletteOpen(true)}/>
-    {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')} openAgentSettings={()=>setOverlay('agent-settings')} asyncTasksProvider={asyncTasksProvider}/ >:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
+    {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')} openAgentSettings={()=>setOverlay('agent-settings')} asyncTasksProvider={asyncTasksProvider}/>:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
     {failure&&agents.length?<RosterReconnectNotice isRetrying={loading} onRetry={()=>void refreshAll()}/>:null}
     {failure?<div className="toast-error">{failure}<button onClick={()=>setFailure('')}>×</button></div>:null}
     {overlay==='plugins'?<Plugins items={plugins} workflows={workflows} onClose={()=>setOverlay(null)} reload={loadPlugins} reloadWorkflows={loadWorkflows}/>:null}
