@@ -206,7 +206,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const stateNames=new Set([stateDefinition.function.name]);
     const tools=[...communicationDefinitions,stateDefinition,...localTools,...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
     const resources=createExecutionResources({
-      executeLocal:(name,args,options)=>executeTool(name,args,{enabled,shell,signal:options.signal,onStarted:options.onStarted,onOutput:options.onOutput}),
+      executeLocal:(name,args,options)=>executeTool(name,args,{enabled,shell,signal:options.signal,onStarted:options.onStarted,onOutput:options.onOutput,ownerAgentId:agent.id}),
       executeBrowser:(name,args,options)=>browser?.execute({agentId:agent.id,name,args,signal:options.signal}),
       executeExternal:(name,args)=>executeExternalTool(name,args),
       executeSubagent:(name,args,options)=>executeSubagentTool(name,args,options.signal,agent.id)
