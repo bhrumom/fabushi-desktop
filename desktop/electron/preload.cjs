@@ -3,7 +3,7 @@ const {contextBridge,ipcRenderer}=require('electron');
 
 const events=[
   'agents.changed','agent.changed','message.delta','message.changed','message.done',
-  'plugins.changed','settings.changed','approval.requested','approval.resolved','approval.cancelled'
+  'plugins.changed','workflows.changed','settings.changed','approval.requested','approval.resolved','approval.cancelled'
 ];
 const invoke=(method,args={})=>ipcRenderer.invoke('grok-agent:'+method,args);
 
@@ -27,6 +27,10 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   setMcpServerEnabled:x=>invoke('set-mcp-server-enabled',x),
   listMcpServerTools:x=>invoke('list-mcp-server-tools',x),
   setMcpToolEnabled:x=>invoke('set-mcp-tool-enabled',x),
+  listWorkflows:()=>invoke('list-workflows'),
+  saveWorkflow:x=>invoke('save-workflow',x),
+  deleteWorkflow:x=>invoke('delete-workflow',x),
+  setWorkflowEnabled:x=>invoke('set-workflow-enabled',x),
   pickFile:()=>ipcRenderer.invoke('grok-agent:pick-file'),
   subscribe(listener){
     if(typeof listener!=='function')return()=>{};
