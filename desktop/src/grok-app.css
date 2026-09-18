@@ -66,3 +66,10 @@
 .palette-results{max-height:480px;overflow:auto}.palette-results section{display:flex;flex-direction:column;padding:6px 0}.palette-results section>small{padding:4px 10px 5px;text-transform:uppercase;letter-spacing:.06em;opacity:.48;font-size:10px}
 .palette-results button{display:flex!important;flex-direction:column;align-items:flex-start!important;gap:2px}.palette-results button strong,.palette-results button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.palette-results button span{font-size:11px;opacity:.62}
 .palette-status{padding:10px;opacity:.6}.message-jump{outline:1px solid rgba(139,134,255,.65);outline-offset:5px;border-radius:6px;transition:outline-color .3s ease}
+
+
+/* Reference desktop surfaces: About, Feedback, Updates, Deep Links. */
+.about-title{display:flex;align-items:center;gap:14px}.about-mark{display:grid;place-items:center;width:64px;height:64px;border-radius:16px;background:rgba(255,255,255,.055);font-size:34px}.about-title h2{margin:0}.about-title p{margin:3px 0 0;opacity:.68}.about-body{display:flex;flex-direction:column;gap:8px;padding:18px 2px}.about-body p{margin:0}.about-body small{opacity:.62}
+.feedback-body{display:flex;flex-direction:column;gap:12px}.feedback-body textarea{min-height:170px;resize:vertical}.feedback-body label{display:flex;align-items:center;gap:8px;font-size:12px;opacity:.86}.feedback-status{margin:0;font-size:12px}.feedback-status.ok{opacity:.82}.feedback-status.error{color:#ff8e8e}
+.deep-link-body{display:grid;gap:12px}.deep-link-body>div{padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.025)}.deep-link-body p{margin:0 0 5px;font-size:11px;opacity:.55;text-transform:uppercase;letter-spacing:.05em}.deep-link-body code{font-size:12px;word-break:break-all}
+.update-settings{align-items:stretch}.update-controls{display:flex;flex-direction:column;gap:10px;min-width:280px}.update-controls label{display:flex;align-items:center;justify-content:space-between;gap:14px}.update-controls label:has(input[type="checkbox"]){justify-content:flex-start}.update-controls select{min-width:130px}
