@@ -47,6 +47,22 @@ export interface PluginDescriptor {
   builtin:boolean;
   provider?:string;
   removable?:boolean;
+  kind?:'local'|'mcp';
+  serverId?:string;
+}
+export interface McpServerDescriptor {
+  id:string;
+  name:string;
+  command:string;
+  args:string[];
+  enabled:boolean;
+  disabledTools:string[];
+}
+export interface McpToolDescriptor {
+  name:string;
+  description:string;
+  inputSchema:Record<string,unknown>;
+  isDisabled:boolean;
 }
 export interface RuntimeSettings {
   localToolPermission:'always'|'ask'|'never';
@@ -78,6 +94,12 @@ export interface GrokAgentBridge {
   getRuntimeSettings():Promise<RuntimeSettings>;
   setLocalToolPermission(input:{permission:RuntimeSettings['localToolPermission']}):Promise<RuntimeSettings>;
   resolveApproval(input:{approvalId:string;approved:boolean}):Promise<{ok:true}>;
+  listMcpServers():Promise<McpServerDescriptor[]>;
+  addMcpServer(input:{name:string;command:string;args?:string[]}):Promise<McpServerDescriptor>;
+  removeMcpServer(input:{serverId:string}):Promise<{ok:true}>;
+  setMcpServerEnabled(input:{serverId:string;enabled:boolean}):Promise<McpServerDescriptor>;
+  listMcpServerTools(input:{serverId:string}):Promise<McpToolDescriptor[]>;
+  setMcpToolEnabled(input:{serverId:string;toolName:string;enabled:boolean}):Promise<McpToolDescriptor[]>;
   pickFile():Promise<{path:string;name:string}|null>;
   subscribe(listener:(event:AgentEvent)=>void):()=>void;
 }
