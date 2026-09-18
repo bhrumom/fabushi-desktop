@@ -2,7 +2,7 @@ name: macOS Grok parity package
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, refactor/grok-bot-018-parity-mac]
     paths:
       - "desktop/**"
       - ".github/workflows/macos-grok-parity.yml"
@@ -29,15 +29,49 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npm run package:mac
+      - name: Smoke packaged Grok renderer and local bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="$(find release -type d -name 'Fabushi.app' -print -quit)"
+          test -n "$APP"
+          REPORT="$RUNNER_TEMP/grok-renderer-smoke.json"
+          FABUSHI_GROK_SMOKE_REPORT="$REPORT" "$APP/Contents/MacOS/Fabushi" --disable-gpu >"$RUNNER_TEMP/fabushi-grok-smoke.log" 2>&1 &
+          PID=$!
+          for _ in $(seq 1 45); do
+            if [ -s "$REPORT" ]; then break; fi
+            if ! kill -0 "$PID" 2>/dev/null; then
+              cat "$RUNNER_TEMP/fabushi-grok-smoke.log"
+              exit 1
+            fi
+            sleep 1
+          done
+          test -s "$REPORT"
+          cat "$REPORT"
+          node - "$REPORT" <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (!report.ok) throw new Error(report.error || 'renderer smoke failed');
+          if (!report.hasDesktop || !report.hasCoordinator || !report.hasMcp) throw new Error('Grok preload bridge is incomplete');
+          if (!report.accountKind) throw new Error('account bridge did not answer');
+          if (!String(report.bodyText || '').trim()) throw new Error('renderer produced no visible UI');
+          if (/desktop preload bridge is unavailable/i.test(String(report.bodyText || ''))) throw new Error('renderer displayed preload failure');
+          NODE
+          kill "$PID" 2>/dev/null || true
+          wait "$PID" 2>/dev/null || true
+          cp "$REPORT" release/grok-renderer-smoke.json
+          cp "$RUNNER_TEMP/fabushi-grok-smoke.log" release/grok-renderer-smoke.log
       - uses: actions/upload-artifact@v4
         with:
           name: fabushi-grok-parity-macos
           path: |
             desktop/release/*.dmg
             desktop/release/*.zip
+            desktop/release/grok-renderer-smoke.json
+            desktop/release/grok-renderer-smoke.log
           if-no-files-found: error
-      - name: Publish prerelease from canonical main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Publish macOS prerelease candidate
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: grok-parity-mac-${{ github.run_number }}
