@@ -259,6 +259,4 @@ function createMcpOAuthManager({getServer,tokenStore,openExternal,onChanged=()=>
   return{connect,disconnect,rename,status,authorizationHeader,discoverOAuth};
 }
 
-module.exports={
-  createMcpOAuthManager,normalizeAccountKey,oauthSecretKey,parseChallenge,discoverOAuth,createSecretStore:null
-};
+module.exports={createMcpOAuthManager,normalizeAccountKey,oauthSecretKey,parseChallenge,discoverOAuth};
