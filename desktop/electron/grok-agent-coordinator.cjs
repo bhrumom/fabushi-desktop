@@ -30,7 +30,7 @@ function initialState(){
     agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false}],
     messages:{[id]:[]},
     plugins:defaultCapabilities(),
-    settings:{localToolPermission:'ask',autoReviewMode:'enforce'},
+    settings:{localToolPermission:'ask',autoReviewMode:'enforce',autoReviewAllowInstructions:[],autoReviewBlockInstructions:[]},
     pendingApprovals:{},
     mcpServers:[],
     marketplaceInstalls:{},
@@ -53,6 +53,9 @@ function normalizeState(parsed){
   if(['always','ask','never'].includes(permission))base.settings.localToolPermission=permission;
   const autoReviewMode=parsed.settings?.autoReviewMode;
   if(['off','shadow','enforce'].includes(autoReviewMode))base.settings.autoReviewMode=autoReviewMode;
+  const normalizeInstructions=value=>Array.isArray(value)?value.map(item=>String(item||'').trim().slice(0,1000)).filter(Boolean).slice(0,50):[];
+  base.settings.autoReviewAllowInstructions=normalizeInstructions(parsed.settings?.autoReviewAllowInstructions);
+  base.settings.autoReviewBlockInstructions=normalizeInstructions(parsed.settings?.autoReviewBlockInstructions);
   base.pendingApprovals={};
   base.mcpServers=Array.isArray(parsed.mcpServers)?parsed.mcpServers.flatMap(server=>{try{return[normalizeServer(server)]}catch{return[]}}):[];
   base.marketplaceInstalls=parsed.marketplaceInstalls&&typeof parsed.marketplaceInstalls==='object'&&!Array.isArray(parsed.marketplaceInstalls)?parsed.marketplaceInstalls:{};
@@ -194,7 +197,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   const outputSpiller=createOutputSpiller({app});
   const localBrowser=createLocalBrowserRuntime({BrowserWindow});
   const host=createHostRuntime({
-    shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,requestApproval,onToolState,onAgentStatus,onAssistantDelta,
+    shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,getAutoReviewInstructions:async()=>{const settings=(await load()).settings;return{allowInstructions:[...(settings.autoReviewAllowInstructions||[])],blockInstructions:[...(settings.autoReviewBlockInstructions||[])]}},requestApproval,onToolState,onAgentStatus,onAssistantDelta,
     getExternalTools:()=>mcp.collectToolDefinitions(),
     executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args),
     getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
@@ -544,7 +547,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function setWorkflowEnabled(input){const record=await workflowManager.setWorkflowEnabled(input);emit('workflows.changed',{workflowId:record.id});return record}
 
   async function getRuntimeSettings(){
-    const s=await load();return{localToolPermission:s.settings.localToolPermission,autoReviewMode:s.settings.autoReviewMode,computerTarget:'local-mac'};
+    const s=await load();return{localToolPermission:s.settings.localToolPermission,autoReviewMode:s.settings.autoReviewMode,autoReviewAllowInstructions:[...(s.settings.autoReviewAllowInstructions||[])],autoReviewBlockInstructions:[...(s.settings.autoReviewBlockInstructions||[])],computerTarget:'local-mac'};
   }
   async function setLocalToolPermission({permission}){
     if(!['always','ask','never'].includes(permission))throw Error('Permission must be always, ask, or never.');
@@ -555,6 +558,18 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     if(!['off','shadow','enforce'].includes(mode))throw Error('Auto-review mode must be off, shadow, or enforce.');
     const s=await load();s.settings.autoReviewMode=mode;await save();emit('settings.changed',{autoReviewMode:mode});
     return getRuntimeSettings();
+  }
+  async function setAutoReviewInstructions({allowInstructions,blockInstructions}){
+    const normalize=value=>{
+      if(!Array.isArray(value))throw Error('Auto-review instructions must be arrays.');
+      const rows=value.map(item=>String(item||'').trim().slice(0,1000)).filter(Boolean);
+      if(rows.length>50)throw Error('Auto-review supports at most 50 rules per behavior.');
+      return rows;
+    };
+    const s=await load();
+    s.settings.autoReviewAllowInstructions=normalize(allowInstructions);
+    s.settings.autoReviewBlockInstructions=normalize(blockInstructions);
+    await save();emit('settings.changed',{autoReviewInstructions:true});return getRuntimeSettings();
   }
   async function dispose(){
     if(disposed)return{ok:true};
@@ -571,7 +586,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
 
   return{
     listAgents,createAgent,renameAgent,setAgentHidden,deleteAgent,getThread,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,resolveApproval,dispose
+    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
