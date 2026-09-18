@@ -256,6 +256,7 @@ export default function GrokApp(){
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [thread,setThread]=useState<AgentThread|null>(null);
   const [plugins,setPlugins]=useState<PluginDescriptor[]>([]);
+  const [workflows,setWorkflows]=useState<WorkflowDescriptor[]>([]);
   const [overlay,setOverlay]=useState<'plugins'|'settings'|null>(null);
   const [createOpen,setCreateOpen]=useState(false);
   const [renameAgent,setRenameAgent]=useState<AgentSummary|null>(null);
@@ -272,13 +273,15 @@ export default function GrokApp(){
   };
   const loadThread=async(id=selectedId)=>setThread(id?await bridge.getThread({agentId:id}):null);
   const loadPlugins=async()=>setPlugins(await bridge.listPlugins());
-  const refreshAll=async()=>{try{setFailure('');await Promise.all([loadAgents(),loadPlugins()])}catch(error){setFailure(error instanceof Error?error.message:String(error))}finally{setLoading(false)}};
+  const loadWorkflows=async()=>setWorkflows(await bridge.listWorkflows());
+  const refreshAll=async()=>{try{setFailure('');await Promise.all([loadAgents(),loadPlugins(),loadWorkflows()])}catch(error){setFailure(error instanceof Error?error.message:String(error))}finally{setLoading(false)}};
 
   useEffect(()=>{void refreshAll()},[]);
   useEffect(()=>{if(selectedId)void loadThread(selectedId).catch(error=>setFailure(error instanceof Error?error.message:String(error)));else setThread(null)},[selectedId]);
   useEffect(()=>subscribeAgentEvents(event=>{
     if(event.type==='agents.changed'||event.type==='agent.changed')void loadAgents().catch(()=>{});
     if(event.type==='plugins.changed')void loadPlugins().catch(()=>{});
+    if(event.type==='workflows.changed')void loadWorkflows().catch(()=>{});
     if(event.agentId&&event.agentId===selectedId)void loadThread(event.agentId).catch(()=>{});
   }),[selectedId]);
   useEffect(()=>{
@@ -298,7 +301,7 @@ export default function GrokApp(){
       plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} rename={setRenameAgent} remove={setDeleteAgent} openPalette={()=>setPaletteOpen(true)}/>
     {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)}/>:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
     {failure?<div className="toast-error">{failure}<button onClick={()=>setFailure('')}>×</button></div>:null}
-    {overlay==='plugins'?<Plugins items={plugins} onClose={()=>setOverlay(null)} reload={loadPlugins}/>:null}
+    {overlay==='plugins'?<Plugins items={plugins} workflows={workflows} onClose={()=>setOverlay(null)} reload={loadPlugins} reloadWorkflows={loadWorkflows}/>:null}
     {overlay==='settings'?<Settings onClose={()=>setOverlay(null)}/>:null}
     {createOpen?<CreateAgent onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>setSelectedId(agent.id))}}/>:null}
     {renameAgent?<RenameAgent agent={renameAgent} onClose={()=>setRenameAgent(null)} onSaved={loadAgents}/>:null}
