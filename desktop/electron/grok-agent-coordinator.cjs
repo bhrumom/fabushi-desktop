@@ -444,6 +444,50 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     enqueueInternalTurn({agentId,text:'[The user securely provided the requested secret: "'+request.label+'". It was written straight to secure connector credential storage; you never see the value and it is not in this conversation.]\nConfirm to the user that it is set, then continue.',replyToId:entryId});
     return{accepted:true};
   }
+  function publicChannelManifest(manifest){const {verifyUrl,...value}=manifest;return value}
+  async function verifyChannelCredential({agentId,manifest,token}){
+    if(!manifest.verifyUrl)return{status:'error',label:manifest.displayName,detail:'This connector has no verification endpoint configured.'};
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+    try{
+      const response=await fetch(manifest.verifyUrl,{method:'POST',headers:{accept:'application/json','content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify({agentId,platform:manifest.platform}),signal:controller.signal});
+      const raw=await response.text();let body={};try{body=raw?JSON.parse(raw):{}}catch{}
+      if(!response.ok)return{status:'error',label:manifest.displayName,detail:'Connector verification HTTP '+response.status};
+      if(body?.connected!==true&&body?.status!=='connected'&&body?.ok!==true)return{status:'error',label:manifest.displayName,detail:String(body?.detail||body?.message||'Connector did not confirm the credential.').slice(0,1000)};
+      return{status:'connected',label:String(body?.label||body?.accountName||manifest.displayName).slice(0,200),detail:body?.detail==null?null:String(body.detail).slice(0,1000)};
+    }catch(error){return{status:'error',label:manifest.displayName,detail:error instanceof Error?error.message:String(error)}}
+    finally{clearTimeout(timer)}
+  }
+  async function getAgentChannels({id}){
+    const agentId=String(id||'');if(!await findAgent(agentId))throw Error('Agent not found.');
+    const manifests=configuredChannelManifests(),configured=new Set(manifests.map(row=>row.platform)),state=await load();
+    return{manifests:manifests.map(publicChannelManifest),connections:(state.channels[agentId]||[]).filter(row=>configured.has(row.platform))};
+  }
+  async function connectChannel({id,platform,token}){
+    const agentId=String(id||''),key=String(platform||'').trim().toLowerCase(),secret=String(token||'').trim();
+    if(!await findAgent(agentId))throw Error('Agent not found.');if(key==='telegram')throw Error('Telegram channels are disabled for this build.');
+    const manifest=configuredChannelManifests().find(row=>row.platform===key);if(!manifest||manifest.availability!=='available')throw Error('Channel is unavailable.');
+    if(!secret)throw Error('Channel credential is required.');if(!secretStore.encryptedAvailable())throw Error('Secure credential storage is unavailable on this Mac.');
+    await secretStore.set('agent-channel:'+agentId+':'+key,{token:secret});
+    const result=await verifyChannelCredential({agentId,manifest,token:secret}),state=await load(),rows=state.channels[agentId]||(state.channels[agentId]=[]);
+    const next={platform:key,label:result.label,status:result.status,detail:result.detail??null},index=rows.findIndex(row=>row.platform===key);if(index>=0)rows[index]=next;else rows.push(next);
+    await save();emit('agent.changed',{agentId,channels:true});return await getAgentChannels({id:agentId});
+  }
+  async function refreshChannel({id,platform}){
+    const agentId=String(id||''),key=String(platform||'').trim().toLowerCase();
+    if(!await findAgent(agentId))throw Error('Agent not found.');if(key==='telegram')throw Error('Telegram channels are disabled for this build.');
+    const manifest=configuredChannelManifests().find(row=>row.platform===key);if(!manifest)throw Error('Channel is unavailable.');
+    const stored=await secretStore.get('agent-channel:'+agentId+':'+key),token=String(stored?.token||'');if(!token)throw Error('Channel credential is missing.');
+    const result=await verifyChannelCredential({agentId,manifest,token}),state=await load(),rows=state.channels[agentId]||(state.channels[agentId]=[]);
+    const next={platform:key,label:result.label,status:result.status,detail:result.detail??null},index=rows.findIndex(row=>row.platform===key);if(index>=0)rows[index]=next;else rows.push(next);
+    await save();emit('agent.changed',{agentId,channels:true});return await getAgentChannels({id:agentId});
+  }
+  async function disconnectChannel({id,platform}){
+    const agentId=String(id||''),key=String(platform||'').trim().toLowerCase();if(!await findAgent(agentId))throw Error('Agent not found.');
+    await secretStore.remove('agent-channel:'+agentId+':'+key);
+    const state=await load();state.channels[agentId]=(state.channels[agentId]||[]).filter(row=>row.platform!==key);await save();emit('agent.changed',{agentId,channels:true});
+    return await getAgentChannels({id:agentId});
+  }
+
   async function reactToMessage({agentId,entryId,emoji,userOnly=false}){
     const s=await load(),agent=s.agents.find(row=>row.id===agentId);if(!agent)throw Error('Agent not found');
     const message=(s.messages[agentId]||[]).find(row=>row.id===entryId);if(!message||(message.role!=='user'&&message.role!=='assistant')||(userOnly&&message.role!=='user'))throw Error('Message not found.');
@@ -840,7 +884,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
 
   return{
-    listAgents,createAgent,renameAgent,updateAgent,setAgentAvatarBytes,generateAgentAvatarImage,setAgentNotifyOnUpdates,setAgentPinned,setAgentUnread,duplicateAgent,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,respondToWidget,dismissWidget,submitSecret,reactToMessage,searchMessages,searchMedia,searchLinks,sendMessage,stopAgent,
+    listAgents,createAgent,renameAgent,updateAgent,setAgentAvatarBytes,generateAgentAvatarImage,setAgentNotifyOnUpdates,setAgentPinned,setAgentUnread,duplicateAgent,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,respondToWidget,dismissWidget,submitSecret,getAgentChannels,connectChannel,disconnectChannel,refreshChannel,reactToMessage,searchMessages,searchMedia,searchLinks,sendMessage,stopAgent,
     listPlugins,setPluginInstalled,setPluginEnabled,getAccountStatus,loginAccount,cancelAccountLogin,logoutAccount,updateAccountName,getAccountAvatar,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getAsyncTasks,getExperimentsSnapshot,refreshExperiments,applyFeatureFlagOverride,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
   };
 }
