@@ -1,5 +1,6 @@
 'use strict';
 const {app,BrowserWindow,dialog,ipcMain,shell,safeStorage,Notification,autoUpdater,protocol,nativeTheme}=require('electron');
+const fs=require('node:fs');
 const path=require('node:path');
 const {URL}=require('node:url');
 const {createRuntime}=require('./grok-agent-runtime.cjs');
@@ -82,7 +83,10 @@ function createWindow(){
   });
   if(process.env.VITE_DEV_SERVER_URL)void win.loadURL(process.env.VITE_DEV_SERVER_URL);
   else void win.loadFile(path.join(__dirname,'..','dist','index.html'));
-  win.webContents.on('did-finish-load',()=>{if(pendingDeepLink){const link=pendingDeepLink;pendingDeepLink=null;win.webContents.send('grok-agent:deep-link',link)}});
+  win.webContents.on('did-finish-load',()=>{if(pendingDeepLink){const link=pendingDeepLink;pendingDeepLink=null;win.webContents.send('grok-agent:deep-link',link)}
+    const smokePath=String(process.env.FABUSHI_GROK_SMOKE_REPORT||'').trim();
+    if(smokePath)setTimeout(()=>{void win.webContents.executeJavaScript(`(async()=>{try{const d=window.desktop;const account=d?.cursorAccount?.getStatus?await d.cursorAccount.getStatus():null;const windowState=d?.getWindowState?await d.getWindowState():null;return{ok:true,hasDesktop:!!d,hasCoordinator:!!window.coordinatorPort,hasMcp:!!d?.mcp,accountKind:account?.kind||null,windowState,bodyText:(document.body?.innerText||'').slice(0,4000)}}catch(error){return{ok:false,error:String(error?.message||error),bodyText:(document.body?.innerText||'').slice(0,4000)}}})()`,true).then(report=>fs.writeFileSync(smokePath,JSON.stringify(report,null,2)+'\\n',{mode:0o600})).catch(error=>fs.writeFileSync(smokePath,JSON.stringify({ok:false,error:String(error?.message||error)},null,2)+'\\n',{mode:0o600}))},1500);
+  });
   win.on('closed',()=>{if(mainWindow===win)mainWindow=null;});mainWindow=win;return win;
 }
 if(!app.requestSingleInstanceLock())app.quit();
