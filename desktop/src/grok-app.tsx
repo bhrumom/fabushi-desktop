@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
-import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor, WorkspaceLinkSearchResult, WorkspaceMediaSearchResult, WorkspaceMessageSearchResult } from './grok-types';
+import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, DeepLinkInfo, DesktopInfo, DesktopUpdateStatus, DesktopUpdateTrack, FeedbackResult, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor, WorkspaceLinkSearchResult, WorkspaceMediaSearchResult, WorkspaceMessageSearchResult } from './grok-types';
 import './grok-app.css';
 
 const bridge=getAgentBridge();
@@ -214,23 +214,68 @@ function Workspace({agent,thread,refresh,openAutomations,openAgentSettings}:{age
   </main>;
 }
 
-function AccountPanel({account,onClose,onChanged,onSettings}:{account:AccountStatus|null;onClose():void;onChanged(status:AccountStatus):void;onSettings():void}) {
+function AccountPanel({account,onClose,onChanged,onSettings,onAbout,onFeedback}:{account:AccountStatus|null;onClose():void;onChanged(status:AccountStatus):void;onSettings():void;onAbout():void;onFeedback():void}) {
   const [pending,setPending]=useState(false),[error,setError]=useState(''),[name,setName]=useState(account?.kind==='logged-in'?account.displayName||'':'');
   const run=async(action:()=>Promise<AccountStatus>)=>{setPending(true);setError('');try{onChanged(await action())}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}};
+  const secondary=<><button onClick={onSettings}>Settings</button><button onClick={onFeedback}>Feedback</button><button onClick={onAbout}>About Fabushi</button></>;
   return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay account-panel sand-account-menu" role="dialog" aria-label="Account">
     <header><div><h2>Account</h2><p>{account?.kind==='logged-in'?(account.email||'Signed in'):account?.kind==='logging-in'?'Continue sign-in in your browser':'Fabushi desktop account'}</p></div><button aria-label="Close" onClick={onClose}>×</button></header>
     <div className="account-panel-body">
       {account?.kind==='logged-in'?<>
         <label><span>Name</span><input value={name} disabled={pending} onChange={e=>setName(e.target.value)} placeholder="Enter your name"/></label>
         <button disabled={pending||!name.trim()} onClick={()=>void run(()=>bridge.updateAccountName({name:name.trim()}))}>Save name</button>
-        <hr/><button onClick={onSettings}>Settings</button><button className="danger" disabled={pending} onClick={()=>void run(()=>bridge.logoutAccount())}>Log out</button>
-      </>:account?.kind==='logging-in'?<><p className="account-wait">A browser window was opened for sign-in.</p><button disabled={pending} onClick={()=>void run(()=>bridge.cancelAccountLogin())}>Cancel sign-in</button></>:<>
+        <hr/>{secondary}<button className="danger" disabled={pending} onClick={()=>void run(()=>bridge.logoutAccount())}>Log out</button>
+      </>:account?.kind==='logging-in'?<><p className="account-wait">A browser window was opened for sign-in.</p><button disabled={pending} onClick={()=>void run(()=>bridge.cancelAccountLogin())}>Cancel sign-in</button><hr/>{secondary}</>:<>
         <p>{account?.reason||'Sign in to connect the configured Fabushi account provider.'}</p>
         <button className="primary" disabled={pending||account?.available===false} onClick={()=>void run(()=>bridge.loginAccount())}>{pending?'Opening browser…':'Sign in'}</button>
-        <button onClick={onSettings}>Settings</button>
+        {secondary}
       </>}
       {error?<div className="settings-error">{error}</div>:null}
     </div>
+  </section></div>;
+}
+
+function AboutDialog({onClose}:{onClose():void}) {
+  const [info,setInfo]=useState<DesktopInfo|null>(null);
+  const [status,setStatus]=useState<DesktopUpdateStatus|null>(null);
+  const [copied,setCopied]=useState(false);
+  useEffect(()=>{let active=true;void Promise.all([bridge.getDesktopInfo(),bridge.getUpdateStatus()]).then(([nextInfo,nextStatus])=>{if(active){setInfo(nextInfo);setStatus(nextStatus)}});const stop=bridge.onUpdateStatus(next=>setStatus(next));return()=>{active=false;stop()}},[]);
+  const copy=async()=>{if(!info||!status)return;try{await navigator.clipboard.writeText(['Version: '+info.version,'Release Track: '+status.currentTrack,'OS: '+info.platform].join('\n'));setCopied(true);window.setTimeout(()=>setCopied(false),1200)}catch{}};
+  return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay about-dialog sand-about-dialog" role="dialog" aria-modal="true" aria-label="About Fabushi">
+    <header><div className="about-title"><span className="brand-mark about-mark">✣</span><span><h2>Fabushi</h2><p>{info?'Version '+info.version:'Loading version…'}</p></span></div><button aria-label="Close" onClick={onClose}>×</button></header>
+    <div className="about-body"><p>Grok Bot 0.18 parity build for the local Fabushi computer runtime.</p><small>{status?'Release Track: '+status.currentTrack:''}</small></div>
+    <footer><button disabled={!info||!status} onClick={()=>void copy()}>{copied?'Copied':'Copy Version Info'}</button></footer>
+  </section></div>;
+}
+
+const feedbackMessage=(result:FeedbackResult|null)=>!result||result.ok?'':({
+  'access-denied':'Feedback access was denied.',
+  'invalid-feedback':'Enter feedback between 1 and 10,000 characters.',
+  'not-signed-in':'Sign in before sending feedback.',
+  'rate-limited':'Feedback is temporarily rate limited. Try again later.',
+  'subscription-required':'This feedback endpoint requires an eligible account.',
+  unavailable:'Feedback service is unavailable.'
+} as const)[result.code];
+
+function FeedbackDialog({conversationId,onClose}:{conversationId:string|null;onClose():void}) {
+  const [message,setMessage]=useState(''),[includeConversation,setIncludeConversation]=useState(false),[pending,setPending]=useState(false),[result,setResult]=useState<FeedbackResult|null>(null);
+  const canSend=message.trim().length>0&&message.length<=10000&&!pending&&result?.ok!==true;
+  const submit=async()=>{if(!canSend)return;setPending(true);try{setResult(await bridge.submitFeedback({message,...(includeConversation&&conversationId?{conversationId}:{})}))}catch{setResult({ok:false,code:'unavailable'})}finally{setPending(false)}};
+  return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&!pending&&onClose()}><section className="overlay feedback-dialog sand-feedback-dialog" role="dialog" aria-modal="true" aria-label="Feedback">
+    <header><div><h2>Feedback</h2><p>Tell us what worked, what failed, or what should be improved.</p></div><button aria-label="Close" disabled={pending} onClick={onClose}>×</button></header>
+    <div className="feedback-body"><textarea autoFocus maxLength={10000} value={message} onChange={e=>{setMessage(e.target.value);if(result)setResult(null)}} placeholder="Share feedback…"/>
+      {conversationId?<label><input type="checkbox" checked={includeConversation} onChange={e=>setIncludeConversation(e.target.checked)}/> Include current conversation identifier</label>:null}
+      {result?.ok?<p className="feedback-status ok" role="status">Feedback sent.</p>:feedbackMessage(result)?<p className="feedback-status error" role="status">{feedbackMessage(result)}</p>:null}
+    </div>
+    <footer><button disabled={pending} onClick={onClose}>{result?.ok?'Done':'Cancel'}</button><button className="primary compact" disabled={!canSend} onClick={()=>void submit()}>{pending?'Sending…':'Send'}</button></footer>
+  </section></div>;
+}
+
+function DeepLinkDialog({link,onClose}:{link:DeepLinkInfo;onClose():void}) {
+  return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay deep-link-dialog sand-deep-link-info" role="dialog" aria-modal="true" aria-label="Deep Links">
+    <header><div><h2>Deep Links</h2><p>Fabushi deep links are working</p></div><button aria-label="Close" onClick={onClose}>×</button></header>
+    <div className="deep-link-body"><div><p>Route</p><code>sand://app/v1/info?topic={link.topic}</code></div><div><p>Source</p><code>Custom protocol (sand://)</code></div></div>
+    <footer><button className="primary compact" onClick={onClose}>Done</button></footer>
   </section></div>;
 }
 
@@ -527,6 +572,21 @@ function AutoReviewRules({settings,onChange}:{settings:RuntimeSettings;onChange(
   </section>;
 }
 
+function UpdateSettings() {
+  const [status,setStatus]=useState<DesktopUpdateStatus|null>(null),[pending,setPending]=useState(false),[error,setError]=useState('');
+  useEffect(()=>{let active=true;void bridge.getUpdateStatus().then(next=>active&&setStatus(next),reason=>active&&setError(String(reason)));const stop=bridge.onUpdateStatus(next=>setStatus(next));return()=>{active=false;stop()}},[]);
+  const run=async(action:()=>Promise<DesktopUpdateStatus>)=>{setPending(true);setError('');try{setStatus(await action())}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}};
+  const state=status?.state;
+  const stateLabel=!state?'Loading…':state.type==='disabled'?'Disabled · '+state.reason:state.type==='idle'?(state.lastCheck?.result==='up-to-date'?'Up to date':state.lastCheck?.result==='error'?'Check failed':'Idle'):state.type==='checking'?'Checking…':state.type==='available'?'Version '+state.version+' available':state.type==='downloading'?'Downloading'+(state.progress==null?'':' '+Math.round(state.progress*100)+'%'):state.type==='ready'?'Version '+state.version+' ready':'';
+  return <div className="setting-stack update-settings"><div><strong>Updates</strong><p>{stateLabel}</p></div>
+    {status?<div className="update-controls"><label><span>Release track</span><select disabled={pending||status.isTrackManagedByPolicy} value={status.currentTrack} onChange={e=>void run(()=>bridge.setUpdateTrack({track:e.target.value as DesktopUpdateTrack}))}>{status.availableTracks.map(track=><option key={track} value={track}>{track}</option>)}</select></label>
+      <label><input type="checkbox" disabled={pending} checked={status.autoUpdateWhenIdleOptIn} onChange={e=>void run(()=>bridge.setAutoUpdate({enabled:e.target.checked}))}/> Automatically update when idle</label>
+      <div>{state?.type==='ready'?<button className="primary compact" disabled={pending} onClick={async()=>{setPending(true);try{await bridge.quitAndInstall()}catch(reason){setError(reason instanceof Error?reason.message:String(reason));setPending(false)}}}>Restart to update</button>:<button disabled={pending||state?.type==='disabled'} onClick={()=>void run(()=>bridge.checkUpdate())}>Check for updates</button>}</div>
+    </div>:null}
+    {error?<div className="settings-error">{error}</div>:null}
+  </div>;
+}
+
 function Settings({onClose}:{onClose():void}) {
   const [settings,setSettings]=useState<RuntimeSettings|null>(null);
   const [error,setError]=useState('');
@@ -549,6 +609,7 @@ function Settings({onClose}:{onClose():void}) {
     {settings?<div className="setting-stack"><div><strong>Auto-review Rules</strong><p>Customize which ordinary actions can run automatically and which must ask first.</p></div><AutoReviewRules settings={settings} onChange={setSettings}/></div>:null}
     <div className="setting-row"><div><strong>Agent runtime</strong><p>Renderer → preload → coordinator → host → local execution.</p></div><span>Coordinator/Host</span></div>
     <div className="setting-row"><div><strong>Inference</strong><p>OpenAI-compatible endpoint configured through Fabushi agent environment variables.</p></div><span>External model</span></div>
+    <UpdateSettings/>
     {error?<div className="settings-error">{error}</div>:null}
   </section></div>;
 }
@@ -569,7 +630,7 @@ function DeleteAgent({agent,onClose,onDeleted}:{agent:AgentSummary;onClose():voi
   return <div className="shade"><section className="create-dialog"><h2>Delete {agent.name}?</h2><p>This removes its local conversation transcript from this Fabushi profile.</p><div><button onClick={onClose}>Cancel</button><button className="danger" onClick={async()=>{await bridge.deleteAgent({agentId:agent.id});await onDeleted();onClose()}}>Delete</button></div></section></div>;
 }
 
-function CommandPalette({agents,onClose,onSelect,onSelectEntry,onCreate,onOrgChart,onHiddenChats,onPlugins,onSettings}:{agents:AgentSummary[];onClose():void;onSelect(id:string):void;onSelectEntry(agentId:string,entryId:string):void;onCreate():void;onOrgChart():void;onHiddenChats():void;onPlugins():void;onSettings():void}) {
+function CommandPalette({agents,onClose,onSelect,onSelectEntry,onCreate,onOrgChart,onHiddenChats,onPlugins,onSettings,onAbout,onFeedback}:{agents:AgentSummary[];onClose():void;onSelect(id:string):void;onSelectEntry(agentId:string,entryId:string):void;onCreate():void;onOrgChart():void;onHiddenChats():void;onPlugins():void;onSettings():void;onAbout():void;onFeedback():void}) {
   const [query,setQuery]=useState('');
   const [messages,setMessages]=useState<WorkspaceMessageSearchResult[]>([]);
   const [media,setMedia]=useState<WorkspaceMediaSearchResult[]>([]);
@@ -581,6 +642,8 @@ function CommandPalette({agents,onClose,onSelect,onSelectEntry,onCreate,onOrgCha
     {id:'hidden',label:'Open Hidden Bots',run:onHiddenChats},
     {id:'plugins',label:'Open Plugins',run:onPlugins},
     {id:'settings',label:'Open Settings',run:onSettings},
+    {id:'feedback',label:'Send Feedback',run:onFeedback},
+    {id:'about',label:'About Fabushi',run:onAbout},
     ...agents.map(agent=>({id:'agent:'+agent.id,label:'Open '+agent.name,run:()=>onSelect(agent.id)}))
   ].filter(item=>item.label.toLowerCase().includes(query.toLowerCase()));
   useEffect(()=>{
@@ -610,7 +673,8 @@ export default function GrokApp(){
   const [plugins,setPlugins]=useState<PluginDescriptor[]>([]);
   const [account,setAccount]=useState<AccountStatus|null>(null);
   const [workflows,setWorkflows]=useState<WorkflowDescriptor[]>([]);
-  const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|'orgchart'|'hidden'|'agent-settings'|'account'|null>(null);
+  const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|'orgchart'|'hidden'|'agent-settings'|'account'|'about'|'feedback'|null>(null);
+  const [deepLink,setDeepLink]=useState<DeepLinkInfo|null>(null);
   const [createOpen,setCreateOpen]=useState(false);
   const [renameAgent,setRenameAgent]=useState<AgentSummary|null>(null);
   const [deleteAgent,setDeleteAgent]=useState<AgentSummary|null>(null);
@@ -631,7 +695,7 @@ export default function GrokApp(){
   const loadWorkflows=async()=>setWorkflows(await bridge.listWorkflows());
   const refreshAll=async()=>{try{setFailure('');await Promise.all([loadAgents(),loadPlugins(),loadWorkflows(),loadAccount()])}catch(error){setFailure(error instanceof Error?error.message:String(error))}finally{setLoading(false)}};
 
-  useEffect(()=>{void refreshAll()},[]);
+  useEffect(()=>{void refreshAll();return bridge.onDeepLink(link=>setDeepLink(link))},[]);
   useEffect(()=>{if(selectedId)void loadThread(selectedId).catch(error=>setFailure(error instanceof Error?error.message:String(error)));else setThread(null)},[selectedId]);
   useEffect(()=>{if(!pendingJump||pendingJump.agentId!==selectedId)return;const handle=window.setTimeout(()=>{const target=document.querySelector<HTMLElement>(`[data-entry-id="${CSS.escape(pendingJump.entryId)}"]`);if(target){target.scrollIntoView({block:'center',behavior:'smooth'});target.classList.add('message-jump');window.setTimeout(()=>target.classList.remove('message-jump'),1200);setPendingJump(null)}},80);return()=>window.clearTimeout(handle)},[pendingJump,selectedId,thread?.messages.length]);
   useEffect(()=>subscribeAgentEvents(event=>{
@@ -664,10 +728,13 @@ export default function GrokApp(){
     {overlay==='orgchart'?<OrgChart agents={agents} onClose={()=>setOverlay(null)} onSelect={setSelectedId}/>:null}
     {overlay==='hidden'?<HiddenChats agents={agents} onClose={()=>setOverlay(null)} onOpen={id=>{setSelectedId(id);setOverlay(null)}} onChanged={loadAgents}/>:null}
     {overlay==='agent-settings'&&selected?<AgentSettings agent={selected} onClose={()=>setOverlay(null)} onChanged={loadAgents}/>:null}
-    {overlay==='account'?<AccountPanel account={account} onClose={()=>setOverlay(null)} onChanged={setAccount} onSettings={()=>setOverlay('settings')}/>:null}
+    {overlay==='account'?<AccountPanel account={account} onClose={()=>setOverlay(null)} onChanged={setAccount} onSettings={()=>setOverlay('settings')} onFeedback={()=>setOverlay('feedback')} onAbout={()=>setOverlay('about')}/>:null}
+    {overlay==='about'?<AboutDialog onClose={()=>setOverlay(null)}/>:null}
+    {overlay==='feedback'?<FeedbackDialog conversationId={selectedId} onClose={()=>setOverlay(null)}/>:null}
+    {deepLink?<DeepLinkDialog link={deepLink} onClose={()=>setDeepLink(null)}/>:null}
     {createOpen?<CreateAgent onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>setSelectedId(agent.id))}}/>:null}
     {renameAgent?<RenameAgent agent={renameAgent} onClose={()=>setRenameAgent(null)} onSaved={loadAgents}/>:null}
     {deleteAgent?<DeleteAgent agent={deleteAgent} onClose={()=>setDeleteAgent(null)} onDeleted={async()=>{await loadAgents();setThread(null)}}/>:null}
-    {paletteOpen?<CommandPalette agents={agents} onClose={()=>setPaletteOpen(false)} onSelect={setSelectedId} onSelectEntry={(agentId,entryId)=>{setSelectedId(agentId);setPendingJump({agentId,entryId})}} onCreate={()=>setCreateOpen(true)} onOrgChart={()=>setOverlay('orgchart')} onHiddenChats={()=>setOverlay('hidden')} onPlugins={()=>setOverlay('plugins')} onSettings={()=>setOverlay('settings')}/>:null}
+    {paletteOpen?<CommandPalette agents={agents} onClose={()=>setPaletteOpen(false)} onSelect={setSelectedId} onSelectEntry={(agentId,entryId)=>{setSelectedId(agentId);setPendingJump({agentId,entryId})}} onCreate={()=>setCreateOpen(true)} onOrgChart={()=>setOverlay('orgchart')} onHiddenChats={()=>setOverlay('hidden')} onPlugins={()=>setOverlay('plugins')} onSettings={()=>setOverlay('settings')} onFeedback={()=>setOverlay('feedback')} onAbout={()=>setOverlay('about')}/>:null}
   </div>;
 }
