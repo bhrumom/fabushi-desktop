@@ -203,8 +203,10 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const latestUser=[...history].reverse().find(x=>x.role==='user');
     const workflowContext=await getWorkflowContext(latestUser?.text||'');
     const messages=[{role:'system',content:systemPrompt(agent,enabled,workflowContext)}];
+    const historyById=new Map(history.map(row=>[row.id,row]));
     for(const row of history.filter(x=>x.role==='user'||x.role==='assistant').slice(-40)){
       let content=String(row.text||'');
+      if(row.replyToId){const target=historyById.get(row.replyToId);if(target&&(target.role==='user'||target.role==='assistant'))content='[Replying to '+target.role+': '+String(target.text||'').slice(0,1200)+']\n\n'+content;}
       if(row.role==='user'&&Array.isArray(row.attachments)&&row.attachments.length){
         const resolved=await resolveAttachments(row.attachments.map(item=>item.id));
         if(resolved.length){
