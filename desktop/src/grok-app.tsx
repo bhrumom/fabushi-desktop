@@ -2,6 +2,8 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
 import { agentRowActions, isCopyConversationIdAction, isDeleteAgentAction, isDuplicateAgentAction, isHideFromSidebarAction, isMarkAgentUnreadAction, isTogglePinAction, markAgentUnreadValue, togglePinValue, type AgentRowAction } from './production/agent-row-actions-model';
 import { committedAgentName } from './production/agent-name-editor-model';
+import { SandButton } from './recovered/ui/sand-kit-primitives';
+import { SandSpinner } from './recovered/ui/sand-status-primitives';
 import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, DeepLinkInfo, DesktopInfo, DesktopUpdateStatus, DesktopUpdateTrack, FeedbackResult, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor, WorkspaceLinkSearchResult, WorkspaceMediaSearchResult, WorkspaceMessageSearchResult } from './grok-types';
 import './grok-app.css';
 
@@ -799,8 +801,8 @@ export default function GrokApp(){
     window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);
   },[]);
 
-  if(loading)return <div className="root-state"><span className="spinner"/><strong>Loading agents…</strong></div>;
-  if(failure&&!agents.length)return <div className="root-state error-state sand-error-boundary--app"><strong>Fabushi could not load the agent runtime.</strong><p>{failure}</p><button className="primary" onClick={()=>void refreshAll()}>Retry</button></div>;
+  if(loading)return <div className="root-state"><SandSpinner size="md" ariaLabel="Loading agents"/><strong>Loading agents…</strong></div>;
+  if(failure&&!agents.length)return <div className="root-state error-state sand-error-boundary--app"><strong>Fabushi could not load the agent runtime.</strong><p>{failure}</p><SandButton sentiment="accent" onClick={()=>void refreshAll()}>Retry</SandButton></div>;
   if(onboardingSeen===false&&!agents.length)return <Onboarding account={account} onAccountChanged={setAccount} onComplete={async agent=>{await bridge.setOnboardingSeen({seen:true});setOnboardingSeen(true);await loadAgents();if(agent)setSelectedId(agent.id)}}/>;
 
   return <div className="app-shell">
