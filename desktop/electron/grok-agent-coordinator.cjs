@@ -19,12 +19,13 @@ function defaultCapabilities(){return Object.fromEntries(capabilityCatalog.map(p
 function initialState(){
   const now=Date.now(),id=crypto.randomUUID();
   return{
-    version:2,
+    version:3,
     agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false}],
     messages:{[id]:[]},
     plugins:defaultCapabilities(),
     settings:{localToolPermission:'ask'},
-    pendingApprovals:{}
+    pendingApprovals:{},
+    mcpServers:[]
   };
 }
 function normalizeState(parsed){
@@ -42,6 +43,7 @@ function normalizeState(parsed){
   const permission=parsed.settings?.localToolPermission;
   if(['always','ask','never'].includes(permission))base.settings.localToolPermission=permission;
   base.pendingApprovals={};
+  base.mcpServers=Array.isArray(parsed.mcpServers)?parsed.mcpServers.flatMap(server=>{try{return[normalizeServer(server)]}catch{return[]}}):[];
   return base;
 }
 function createCoordinatorRuntime({app,BrowserWindow,shell}){
