@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   getRuntimeSettings:()=>invoke('get-runtime-settings'),
   setLocalToolPermission:x=>invoke('set-local-tool-permission',x),
   setAutoReviewMode:x=>invoke('set-auto-review-mode',x),
+  setAutoReviewInstructions:x=>invoke('set-auto-review-instructions',x),
   resolveApproval:x=>invoke('resolve-approval',x),
   listMcpServers:()=>invoke('list-mcp-servers'),
   addMcpServer:x=>invoke('add-mcp-server',x),
