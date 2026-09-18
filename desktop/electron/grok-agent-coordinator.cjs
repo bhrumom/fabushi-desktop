@@ -72,7 +72,7 @@ function normalizeState(parsed){
 }
 function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null}){
   const file=path.join(app.getPath('userData'),'grok-agent-runtime.json');
-  let state=null,writing=Promise.resolve();
+  let state=null,loading=null,writing=Promise.resolve();
   const aborts=new Map();
   const approvals=new Map();
   let automationTimer=null;
@@ -80,8 +80,13 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null}){
 
   async function load(){
     if(state)return state;
-    try{state=normalizeState(JSON.parse(await fs.readFile(file,'utf8')))}catch{state=initialState()}
-    return state;
+    if(!loading){
+      loading=(async()=>{
+        try{return normalizeState(JSON.parse(await fs.readFile(file,'utf8')))}
+        catch{return initialState()}
+      })().then(value=>{state=value;return value}).finally(()=>{loading=null});
+    }
+    return await loading;
   }
   async function save(){
     const text=JSON.stringify(await load(),null,2)+'\n';
