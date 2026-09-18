@@ -9,17 +9,19 @@ const http=require('node:http');
 const {createCoordinatorRuntime}=require('../electron/grok-agent-coordinator.cjs');
 const {createWorkflowManager}=require('../electron/grok-workflow-manager.cjs');
 
-async function fixture(){
+async function fixture(t){
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'fabushi-grok-runtime-'));
   const app={getPath(name){if(name!=='userData')throw Error('unexpected app path: '+name);return root}};
   const BrowserWindow={getAllWindows(){return[]}};
   const shell={openExternal:async()=>{}};
-  return{root,app,BrowserWindow,shell};
+  const runtimes=[];
+  if(t)t.after(async()=>{for(const runtime of runtimes.reverse())await runtime.dispose();await fs.rm(root,{recursive:true,force:true})});
+  return{root,app,BrowserWindow,shell,createRuntime(extra={}){const runtime=createCoordinatorRuntime({app,BrowserWindow,shell,...extra});runtimes.push(runtime);return runtime}};
 }
 
 test('coordinator persists MCP server records and exposes only executable catalog entries',async t=>{
-  const f=await fixture();t.after(()=>fs.rm(f.root,{recursive:true,force:true}));
-  const first=createCoordinatorRuntime(f);
+  const f=await fixture(t);
+  const first=f.createRuntime();
   const added=await first.addMcpServer({name:'Local test',command:'/usr/bin/printf',args:['ready']});
   assert.equal(added.name,'Local test');
   const listed=await first.listMcpServers();
@@ -30,14 +32,14 @@ test('coordinator persists MCP server records and exposes only executable catalo
   assert.equal(plugins.some(item=>item.name==='GitHub'||item.name==='Memory'),false);
   assert.equal(plugins.some(item=>item.id==='mcp:'+added.id),true);
 
-  const second=createCoordinatorRuntime(f);
+  const second=f.createRuntime();
   const reloaded=await second.listMcpServers();
   assert.equal(reloaded.length,1);
   assert.equal(reloaded[0].id,added.id);
 });
 
 test('workflow manager stores real SKILL.md and reloads trigger metadata',async t=>{
-  const f=await fixture();t.after(()=>fs.rm(f.root,{recursive:true,force:true}));
+  const f=await fixture(t);
   const manager=createWorkflowManager({app:f.app});
   const saved=await manager.saveWorkflow({
     name:'Morning review',
@@ -61,17 +63,17 @@ test('workflow manager stores real SKILL.md and reloads trigger metadata',async 
 });
 
 test('local mutation permission setting persists through coordinator restart',async t=>{
-  const f=await fixture();t.after(()=>fs.rm(f.root,{recursive:true,force:true}));
-  const first=createCoordinatorRuntime(f);
+  const f=await fixture(t);
+  const first=f.createRuntime();
   await first.setLocalToolPermission({permission:'never'});
-  const second=createCoordinatorRuntime(f);
+  const second=f.createRuntime();
   assert.equal((await second.getRuntimeSettings()).localToolPermission,'never');
 });
 
 
 test('per-agent routine runNow executes through host and records embedded run history',async t=>{
-  const f=await fixture();t.after(()=>fs.rm(f.root,{recursive:true,force:true}));
-  const runtime=createCoordinatorRuntime(f);
+  const f=await fixture(t);
+  const runtime=f.createRuntime();
   const agent=(await runtime.listAgents())[0];
   const created=await runtime.createAgentAutomation({
     id:agent.id,
@@ -105,8 +107,8 @@ test('remote HTTP MCP performs initialize and tools/list over a real local HTTP 
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   t.after(()=>new Promise(resolve=>server.close(resolve)));
   const address=server.address();assert.equal(typeof address,'object');
-  const f=await fixture();t.after(()=>fs.rm(f.root,{recursive:true,force:true}));
-  const runtime=createCoordinatorRuntime(f);
+  const f=await fixture(t);
+  const runtime=f.createRuntime();
   const added=await runtime.addMcpServer({name:'Remote fixture',transport:'http',url:'http://127.0.0.1:'+address.port+'/mcp',customInstructions:'Use only for fixture echoes.'});
   assert.equal(added.transport,'http');
   const tools=await runtime.listMcpServerTools({serverId:added.id});
@@ -138,8 +140,8 @@ test('parent Agent tool call creates and completes a real delegated subagent',as
   const address=inference.address();assert.equal(typeof address,'object');
   process.env.FABUSHI_AGENT_API_URL='http://127.0.0.1:'+address.port+'/v1/chat/completions';process.env.FABUSHI_AGENT_API_KEY='fixture';process.env.FABUSHI_AGENT_MODEL='fixture-model';
 
-  const f=await fixture();t.after(()=>fs.rm(f.root,{recursive:true,force:true}));
-  const runtime=createCoordinatorRuntime(f),parent=(await runtime.listAgents())[0];
+  const f=await fixture(t);
+  const runtime=f.createRuntime(),parent=(await runtime.listAgents())[0];
   const sent=await runtime.sendMessage({agentId:parent.id,text:'Delegate this task.'});
   const deadline=Date.now()+5000;let parentMessage=null;
   while(Date.now()<deadline){
