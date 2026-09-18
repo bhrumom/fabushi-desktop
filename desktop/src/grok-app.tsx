@@ -229,7 +229,7 @@ function OrgChart({agents,onClose,onSelect}:{agents:AgentSummary[];onClose():voi
   const ids=new Set(agents.map(agent=>agent.id));
   const roots=agents.filter(agent=>!agent.parentAgentId||!ids.has(agent.parentAgentId));
   const renderNode=(agent:AgentSummary,depth:number):React.ReactNode=><div className="org-node" key={agent.id} style={{marginLeft:depth*18}}>
-    <button onClick={()=>{onSelect(agent.id);onClose()}}><span className="avatar">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small>{agent.purpose==='subagent'?'Delegated agent':'Agent'} · {agent.status}</small></span></button>
+    <button onClick={()=>{onSelect(agent.id);onClose()}}><AgentAvatar agent={agent}/><span><strong>{agent.name}</strong><small>{agent.isGroup===true?'Group':agent.purpose==='subagent'?'Delegated agent':'Agent'} · {agent.status}</small></span></button>
     {agents.filter(child=>child.parentAgentId===agent.id).map(child=>renderNode(child,depth+1))}
   </div>;
   return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay org-chart" role="dialog" aria-label="Agent org chart">
@@ -283,7 +283,7 @@ function AgentSettings({agent,agents,onClose,onChanged,onOpenAgent}:{agent:Agent
   useEffect(()=>{
     avatarAdapter.setScope({
       accountKey:'local',
-      agent:{id:agent.id,isGroup:false,avatarDataUrl:agent.avatarDataUrl,avatarShape:agent.avatarShape,avatarColor:agent.avatarColor}
+      agent:{id:agent.id,isGroup:agent.isGroup===true,avatarDataUrl:agent.avatarDataUrl,avatarShape:agent.avatarShape,avatarColor:agent.avatarColor}
     });
     setAvatarSnapshot(avatarAdapter.getSnapshot());
   },[avatarAdapter,agent.id,agent.avatarDataUrl,agent.avatarShape,agent.avatarColor]);
@@ -431,7 +431,7 @@ function HiddenChats({agents,onClose,onOpen,onChanged}:{agents:AgentSummary[];on
   return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay hidden-chats sand-hidden-chats-dialog" role="dialog" aria-modal="true" aria-label="Hidden Bots">
     <header><div><h2>Hidden Bots</h2><p>Hidden Bots stay active and keep their history, they just don't show in the sidebar.</p></div><button aria-label="Close" onClick={onClose}>×</button></header>
     <div className="hidden-chats-list">{hidden.length?hidden.map(agent=><div className="hidden-chat-row sand-hidden-chats__row" key={agent.id}>
-      <button className="hidden-chat-open sand-hidden-chats__open" onClick={()=>onOpen(agent.id)}><span className="avatar">{initials(agent.name)}</span><span>{agent.name}</span></button>
+      <button className="hidden-chat-open sand-hidden-chats__open" onClick={()=>onOpen(agent.id)}><AgentAvatar agent={agent}/><span>{agent.name}</span></button>
       <button className="hidden-chat-unhide sand-hidden-chats__unhide" onClick={async()=>{await bridge.setAgentHidden({agentId:agent.id,hidden:false});await onChanged()}}>Unhide</button>
     </div>):<div className="hidden-chats-empty sand-hidden-chats__empty"><span>◉</span><span>No hidden bots</span></div>}</div>
   </section></div>;
@@ -783,10 +783,18 @@ function Onboarding({account,onAccountChanged,onComplete}:{account:AccountStatus
   </section></div>;
 }
 
-function CreateAgent({onClose,onCreated}:{onClose():void;onCreated(a:AgentSummary):void}) {
-  const [name,setName]=useState('');
-  const submit=async(e:FormEvent)=>{e.preventDefault();if(name.trim())onCreated(await bridge.createAgent({name:name.trim()}))};
-  return <div className="shade"><form className="create-dialog" onSubmit={submit}><h2>New agent</h2><p>Create a focused agent that can use local tools on this Mac.</p><input autoFocus value={name} onChange={e=>setName(e.target.value)} placeholder="Agent name"/><div><button type="button" onClick={onClose}>Cancel</button><button className="primary" disabled={!name.trim()}>Create</button></div></form></div>;
+function CreateAgent({agents,onClose,onCreated}:{agents:AgentSummary[];onClose():void;onCreated(a:AgentSummary):void}) {
+  const [name,setName]=useState(''),[isGroup,setIsGroup]=useState(false),[memberIds,setMemberIds]=useState<string[]>([]);
+  const candidates=agents.filter(agent=>agent.isGroup!==true);
+  const toggleMember=(id:string)=>setMemberIds(current=>current.includes(id)?current.filter(value=>value!==id):current.length>=6?current:[...current,id]);
+  const valid=name.trim().length>0&&(!isGroup||memberIds.length>0);
+  const submit=async(e:FormEvent)=>{e.preventDefault();if(!valid)return;onCreated(await bridge.createAgent({name:name.trim(),isGroup,memberAgentIds:isGroup?memberIds:[]}))};
+  return <div className="shade"><form className="create-dialog" onSubmit={submit}><h2>{isGroup?'New group':'New agent'}</h2><p>{isGroup?'Create a Grok-style local group with up to six existing Bots.':'Create a focused agent that can use local tools on this Mac.'}</p>
+    <input autoFocus value={name} onChange={e=>setName(e.target.value)} placeholder={isGroup?'Group name':'Agent name'}/>
+    <label className="create-group-toggle"><input type="checkbox" checked={isGroup} onChange={e=>{setIsGroup(e.target.checked);if(!e.target.checked)setMemberIds([])}}/><span>Create as group</span></label>
+    {isGroup?<div className="create-group-members"><small>Members · {memberIds.length}/6</small>{candidates.length?candidates.map(agent=><label key={agent.id}><input type="checkbox" checked={memberIds.includes(agent.id)} disabled={!memberIds.includes(agent.id)&&memberIds.length>=6} onChange={()=>toggleMember(agent.id)}/><AgentAvatar agent={agent} size={24}/><span>{agent.name}</span></label>):<p>Create a Bot first, then add it to this group.</p>}</div>:null}
+    <div><button type="button" onClick={onClose}>Cancel</button><button className="primary" disabled={!valid}>Create</button></div>
+  </form></div>;
 }
 
 function RenameAgent({agent,onClose,onSaved}:{agent:AgentSummary;onClose():void;onSaved():Promise<void>}) {
@@ -937,7 +945,7 @@ export default function GrokApp(){
     {overlay==='about'?<AboutDialog onClose={()=>setOverlay(null)}/>:null}
     {overlay==='feedback'?<FeedbackDialog conversationId={selectedId} onClose={()=>setOverlay(null)}/>:null}
     {deepLink?<DeepLinkDialog link={deepLink} onClose={()=>setDeepLink(null)}/>:null}
-    {createOpen?<CreateAgent onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>selectAgent(agent.id))}}/>:null}
+    {createOpen?<CreateAgent agents={agents} onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>selectAgent(agent.id))}}/>:null}
     {renameAgent?<RenameAgent agent={renameAgent} onClose={()=>setRenameAgent(null)} onSaved={loadAgents}/>:null}
     {deleteAgent?<DeleteAgent agent={deleteAgent} onClose={()=>setDeleteAgent(null)} onDeleted={async()=>{await loadAgents();setThread(null)}}/>:null}
     {paletteOpen?<CommandPalette agents={agents} onClose={()=>setPaletteOpen(false)} onSelect={selectAgent} onSelectEntry={(agentId,entryId)=>{selectAgent(agentId);setPendingJump({agentId,entryId})}} onCreate={()=>setCreateOpen(true)} onOrgChart={()=>setOverlay('orgchart')} onHiddenChats={()=>setOverlay('hidden')} onPlugins={()=>setOverlay('plugins')} onSettings={()=>setOverlay('settings')} onFeedback={()=>setOverlay('feedback')} onAbout={()=>setOverlay('about')}/>:null}
