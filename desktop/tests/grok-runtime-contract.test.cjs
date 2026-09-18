@@ -66,3 +66,23 @@ test('local mutation permission setting persists through coordinator restart',as
   const second=createCoordinatorRuntime(f);
   assert.equal((await second.getRuntimeSettings()).localToolPermission,'never');
 });
+
+
+test('per-agent routine runNow executes through host and records embedded run history',async t=>{
+  const f=await fixture();t.after(()=>fs.rm(f.root,{recursive:true,force:true}));
+  const runtime=createCoordinatorRuntime(f);
+  const agent=(await runtime.listAgents())[0];
+  const created=await runtime.createAgentAutomation({
+    id:agent.id,
+    spec:{name:'Contract routine',prompt:'Report that the routine executed.',trigger:{type:'cron',schedule:'@daily'},isEnabled:false}
+  });
+  assert.equal(created.length,1);
+  const routine=created[0];
+  assert.equal(routine.trigger.schedule,'@daily');
+  await runtime.runAgentAutomationNow({id:agent.id,automationId:routine.id});
+  const rows=await runtime.getAgentAutomations({id:agent.id});
+  assert.equal(rows[0].runs.length,1);
+  assert.equal(rows[0].runs[0].status,'ok');
+  assert.equal(rows[0].runs[0].event,'manual');
+  assert.match(rows[0].runs[0].detail,/Agent host is ready on this Mac/);
+});
