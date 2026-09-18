@@ -211,8 +211,15 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   const marketplace=pluginMarketplace||createPluginMarketplace();
   const outputSpiller=createOutputSpiller({app});
   const localBrowser=createLocalBrowserRuntime({BrowserWindow});
+  async function appendVisibleAssistantMessage({agentId,content,replyToId=null}){
+    const s=await load(),agent=s.agents.find(row=>row.id===agentId);if(!agent)throw Error('Agent not found');
+    const transcript=s.messages[agentId]||(s.messages[agentId]=[]),replyTarget=replyToId?resolveReplyTarget(transcript,replyToId):null;if(replyToId&&!replyTarget)throw Error('Reply target not found.');
+    const entry={id:crypto.randomUUID(),role:'assistant',text:String(content||'').trim(),createdAt:Date.now(),status:'done',...(replyTarget?{replyToId:replyTarget.id}:{})};if(!entry.text)throw Error('Visible message content is required.');
+    transcript.push(entry);agent.updatedAt=Date.now();await save();emit('message.done',{agentId,messageId:entry.id,text:entry.text,status:'done'});return entry.id;
+  }
+  async function reactFromAgent({agentId,messageAddress,emoji}){return reactToMessage({agentId,entryId:messageAddress,emoji,userOnly:true})}
   const host=createHostRuntime({
-    shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,getAutoReviewInstructions:async()=>{const settings=(await load()).settings;return{allowInstructions:[...(settings.autoReviewAllowInstructions||[])],blockInstructions:[...(settings.autoReviewBlockInstructions||[])]}},resolveAttachments:async ids=>attachmentGateway?attachmentGateway.resolve(ids):[],requestApproval,onToolState,onAgentStatus,onAssistantDelta,
+    shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,getAutoReviewInstructions:async()=>{const settings=(await load()).settings;return{allowInstructions:[...(settings.autoReviewAllowInstructions||[])],blockInstructions:[...(settings.autoReviewBlockInstructions||[])]}},resolveAttachments:async ids=>attachmentGateway?attachmentGateway.resolve(ids):[],requestApproval,onToolState,onAgentStatus,onAssistantDelta,sendVisibleMessage:appendVisibleAssistantMessage,reactToConversationMessage:reactFromAgent,
     getExternalTools:()=>mcp.collectToolDefinitions(),
     executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args),
     getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
@@ -251,9 +258,9 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
 
   async function registerAttachment({path}){if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');return attachmentGateway.register(path)}
   async function readAttachment({id}){if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');return attachmentGateway.read(id)}
-  async function reactToMessage({agentId,entryId,emoji}){
+  async function reactToMessage({agentId,entryId,emoji,userOnly=false}){
     const s=await load(),agent=s.agents.find(row=>row.id===agentId);if(!agent)throw Error('Agent not found');
-    const message=(s.messages[agentId]||[]).find(row=>row.id===entryId);if(!message||(message.role!=='user'&&message.role!=='assistant'))throw Error('Message not found.');
+    const message=(s.messages[agentId]||[]).find(row=>row.id===entryId);if(!message||(message.role!=='user'&&message.role!=='assistant')||(userOnly&&message.role!=='user'))throw Error('Message not found.');
     const reactions=toggleSelfReaction(message,emoji);await save();emit('message.changed',{agentId,messageId:entryId,reactions});return{reactions:[...reactions]};
   }
   async function searchMessages({query='',limit=50}={}){const s=await load();return searchWorkspaceIndex({agents:s.agents,messages:s.messages,query,limit}).messages}
@@ -280,8 +287,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
         const finalText=await host.runTurn({
           agent,history:[...transcript],transcript,enabled:enabledCapabilityIds(s),signal:controller.signal,assistantEntry:assistant
         });
-        if(!transcript.includes(assistant))transcript.push(assistant);
-        assistant.text=finalText;assistant.status='done';assistant.updatedAt=Date.now();await onAgentStatus(agentId,'idle');
+        if(finalText!=null){if(!transcript.includes(assistant))transcript.push(assistant);assistant.text=finalText;assistant.status='done';assistant.updatedAt=Date.now();}else assistant.status='done';await onAgentStatus(agentId,'idle');
       }catch(error){
         const cancelled=controller.signal.aborted||error?.name==='AbortError';
         if(!transcript.includes(assistant))transcript.push(assistant);
@@ -289,7 +295,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
         assistant.status=cancelled?'cancelled':'error';assistant.updatedAt=Date.now();
         await onAgentStatus(agentId,cancelled?'idle':'error');
       }finally{
-        agent.updatedAt=Date.now();await save();emit('message.done',{agentId,messageId:assistant.id,text:assistant.text,status:assistant.status});
+        agent.updatedAt=Date.now();await save();if(transcript.includes(assistant))emit('message.done',{agentId,messageId:assistant.id,text:assistant.text,status:assistant.status});
         if(agent.notifyOnUpdatesEnabled)void Promise.resolve(notify({title:agent.name,body:assistant.status==='done'?'Finished':assistant.text.slice(0,180)})).catch(()=>{});
         aborts.delete(agentId);cancelApprovals(agentId,'Turn finished.');
       }
