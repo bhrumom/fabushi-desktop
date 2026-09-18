@@ -17,6 +17,9 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   deleteAgent:x=>invoke('delete-agent',x),
   getThread:x=>invoke('get-thread',x),
   sendMessage:x=>invoke('send-message',x),
+  respondToWidget:x=>invoke('respond-to-widget',x),
+  dismissWidget:x=>invoke('dismiss-widget',x),
+  submitSecret:x=>invoke('submit-secret',x),
   reactToMessage:x=>invoke('react-to-message',x),
   searchMessages:x=>invoke('search-messages',x),
   searchMedia:x=>invoke('search-media',x),
@@ -74,6 +77,7 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   submitFeedback:x=>invoke('submit-feedback',x),
   getOnboardingSeen:()=>invoke('get-onboarding-seen'),
   setOnboardingSeen:x=>invoke('set-onboarding-seen',x),
+  openExternal:x=>invoke('open-external',x),
   onUpdateStatus(listener){if(typeof listener!=='function')return()=>{};const fn=(_e,status)=>listener(status);ipcRenderer.on('grok-agent:update-status',fn);return()=>ipcRenderer.off('grok-agent:update-status',fn)},
   onDeepLink(listener){if(typeof listener!=='function')return()=>{};const fn=(_e,link)=>listener(link);ipcRenderer.on('grok-agent:deep-link',fn);return()=>ipcRenderer.off('grok-agent:deep-link',fn)},
   subscribe(listener){
