@@ -60,7 +60,8 @@ function initialState(){
     pendingApprovals:{},
     mcpServers:[],
     marketplaceInstalls:{},
-    automations:{[id]:[]}
+    automations:{[id]:[]},
+    channels:{[id]:[]}
   };
 }
 function normalizeState(parsed){
@@ -86,8 +87,15 @@ function normalizeState(parsed){
   base.pendingApprovals={};
   base.mcpServers=Array.isArray(parsed.mcpServers)?parsed.mcpServers.flatMap(server=>{try{return[normalizeServer(server)]}catch{return[]}}):[];
   base.marketplaceInstalls=parsed.marketplaceInstalls&&typeof parsed.marketplaceInstalls==='object'&&!Array.isArray(parsed.marketplaceInstalls)?parsed.marketplaceInstalls:{};
+  base.channels={};
   base.automations={};
   for(const agent of base.agents){
+    const channelRows=Array.isArray(parsed.channels?.[agent.id])?parsed.channels[agent.id]:[];
+    base.channels[agent.id]=channelRows.flatMap(row=>{
+      if(!row||typeof row!=='object')return[];
+      const platform=String(row.platform||'').trim().toLowerCase();if(!platform||platform==='telegram')return[];
+      return[{platform,label:String(row.label||platform).trim().slice(0,200),status:String(row.status||'error').slice(0,80),detail:row.detail==null?null:String(row.detail).slice(0,1000)}];
+    });
     const rows=Array.isArray(parsed.automations?.[agent.id])?parsed.automations[agent.id]:[];
     base.automations[agent.id]=rows.flatMap(value=>{
       try{
@@ -142,7 +150,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function listAgents(){const s=await load();return[...s.agents].sort((a,b)=>(Number(b.pinned)-Number(a.pinned))||(b.updatedAt-a.updatedAt))}
   async function createAgent({name,parentAgentId=null,purpose='user',description=''}){
     const s=await load(),now=Date.now(),agent={id:crypto.randomUUID(),name:clean(name),description:String(description||'').slice(0,2000),title:undefined,notifyOnUpdatesEnabled:false,purpose:String(purpose||'user').slice(0,40),parentAgentId:parentAgentId||null,hidden:false,pinned:false,status:'idle',createdAt:now,updatedAt:now,unread:false,avatarDataUrl:null,avatarShape:null,avatarColor:null};
-    s.agents.unshift(agent);s.messages[agent.id]=[];s.automations[agent.id]=[];await save();emit('agents.changed');return agent;
+    s.agents.unshift(agent);s.messages[agent.id]=[];s.automations[agent.id]=[];s.channels[agent.id]=[];await save();emit('agents.changed');return agent;
   }
   async function renameAgent({agentId,name}){
     const agent=await findAgent(agentId);if(!agent)throw Error('Agent not found');
@@ -208,7 +216,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
   async function deleteAgent({agentId}){
     const s=await load();aborts.get(agentId)?.abort();cancelApprovals(agentId,'Agent deleted.');
-    s.agents=s.agents.filter(a=>a.id!==agentId);delete s.messages[agentId];delete s.automations[agentId];localBrowser.disposeAgent(agentId);await runners.get(agentId)?.dispose?.();runners.delete(agentId);await save();emit('agents.changed');return{ok:true};
+    s.agents=s.agents.filter(a=>a.id!==agentId);delete s.messages[agentId];delete s.automations[agentId];delete s.channels[agentId];localBrowser.disposeAgent(agentId);await runners.get(agentId)?.dispose?.();runners.delete(agentId);await save();emit('agents.changed');return{ok:true};
   }
   async function getThread({agentId}){
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
