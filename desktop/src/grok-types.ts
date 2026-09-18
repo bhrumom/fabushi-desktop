@@ -184,6 +184,12 @@ export interface RoutineAutomationDescriptor {
   lastRunAt:number|null;
   nextRunAt:number|null;
 }
+export interface AgentChannelManifest {
+  platform:string;displayName:string;blurb:string;credentialLabel:string;availability:'available'|'coming-soon';connectGuide:string;
+  setupGuide?:{steps:{text:string;code?:string}[]};
+}
+export interface AgentChannelConnection {platform:string;label:string;status:string;detail?:string|null}
+export interface AgentChannelsView {manifests:AgentChannelManifest[];connections:AgentChannelConnection[]}
 export interface AsyncTaskSummary {
   kind:'subagent'|'shell'|'cloud-agent';
   id:string;
@@ -277,6 +283,10 @@ export interface GrokAgentBridge {
   logoutAccount():Promise<AccountStatus>;
   updateAccountName(input:{name:string}):Promise<AccountStatus>;
   getAccountAvatar():Promise<string|null>;
+  getAgentChannels(input:{id:string}):Promise<AgentChannelsView>;
+  connectChannel(input:{id:string;platform:string;token:string}):Promise<AgentChannelsView>;
+  disconnectChannel(input:{id:string;platform:string}):Promise<AgentChannelsView>;
+  refreshChannel(input:{id:string;platform:string}):Promise<AgentChannelsView>;
   getAsyncTasks(input:{id:string}):Promise<AsyncTaskSummary[]>;
   getRuntimeSettings():Promise<RuntimeSettings>;
   getExperimentsSnapshot():Promise<ExperimentsSnapshot>;
