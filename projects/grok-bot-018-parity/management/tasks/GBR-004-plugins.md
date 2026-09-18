@@ -1,32 +1,50 @@
-# GBR-004 — Grok-style plugins
+# GBR-004 — Grok-style plugins / MCP / OAuth / private skills / workflows
 
-Status: in-progress — placeholder catalog removed; local + stdio MCP execution implemented
+Status: in-progress — real execution stack exists; exact reference provider/marketplace breadth remains open
 
-## Actual result
-The production Plugins surface no longer exposes GitHub or Memory as catalog-only placeholders. Every currently visible item has an executable backend:
-- Files → local Files executor
-- Terminal → foreground/background shell executor
-- Browser → HTTPS open executor
-- Computer → macOS screenshot/input executor
-- configured MCP servers → spawned stdio MCP provider
+## Objective
+Recover the reference plugin architecture so every visible installable/provider item has a real execution path. Static catalog rows, fake installed/enabled booleans, and placeholder GitHub/Memory items are forbidden.
 
-The MCP provider performs a real JSON-RPC initialize handshake, `tools/list`, and `tools/call`. Server lifecycle supports add/remove/enable/disable and the UI supports loading server tools and enabling/disabling individual tools. Enabled MCP tools are dynamically added to the agent host tool set.
+## Current executable stack
+- Local providers: Files, Terminal, Browser and Computer map to real host execution.
+- MCP stdio: initialize, tools/list, tools/call, process lifecycle.
+- MCP Streamable HTTP: remote request path, server config, discovery/call routing.
+- MCP configuration: add/remove/enable server, custom instructions, tool enable/disable.
+- MCP OAuth: metadata discovery, dynamic client registration where supported, PKCE, loopback callback, access/refresh token lifecycle.
+- MCP accounts: multiple account keys, secure token storage and active account selection.
+- Plugins UI: server/tool/auth/account state is backed by coordinator calls.
+- Marketplace: optional HTTP provider seam; search results are not hard-coded.
+- Marketplace install: a catalog row is considered installable only if install metadata materializes a real MCP server and/or a real private skill.
+- Private skills: file-backed `SKILL.md` records, enable/disable and model prompt injection.
+- Workflows: CRUD, enable-for-agent, trigger matching/prompt injection.
+- Secure secret requests: user values enter safeStorage directly and are never included in the model transcript.
+- Fake GitHub/Memory catalog rows remain removed.
 
-## Evidence
-- MCP provider: `04eb69e0c24398bc6bb5a375753a0d43f5a43d86`
-- host MCP routing: `bc3205e7eee056861f5c6d75a68c5649e68511c5`
-- coordinator MCP state/call chain: `e771ff995da61fad619c86b6c7833d1ac900ecef`
-- MCP UI: `9dd622db060dacf6c36f0658dc71098e5ecdd8ab`
-- exact source check: Run `35333859439` PASS
+## Reference-backed external dependency
+The pinned reference uses a DashboardService/provider for its production Marketplace catalog. The catalog service contents are not self-contained at commit `107877b4e2134fd167d239411386f09e42eadd6d`. Fabushi therefore exposes a real provider seam (`FABUSHI_PLUGIN_MARKETPLACE_URL`) rather than inventing catalog entries. Missing external catalog deployment evidence must be reported as an external dependency, not simulated as success.
 
-## Remaining reference parity
-- account/session provider
-- OAuth including login/cancel/logout/status/token lifecycle
-- HTTP/remote MCP and OAuth loopback where reference requires it
-- provider/account-scoped plugin sync and popularity/marketplace metadata
-- private skills provider and execution semantics
-- workflows and their execution chain
-- reference plugin auth/GitHub flow
-- exact settings/custom-instructions/disabled-tool synchronization with host/coordinator
+## Acceptance status
+1. Visible built-in capability has executable backend — **PASS**.
+2. stdio MCP tools list/call lifecycle — **PASS**.
+3. HTTP MCP route — **PASS**.
+4. Server/tool configuration and host synchronization — **PASS for implemented settings**.
+5. OAuth PKCE/refresh/multi-account secret path — **PASS for implemented providers**.
+6. Private skills/workflows execute in Agent prompt/tool flow — **PASS for current local provider model**.
+7. Marketplace result can install only a real backend — **PASS for provider contract**.
+8. Exact reference Marketplace/provider metadata/popularity/auth-specific UI — **PARTIAL / external production service dependency**.
+9. Exact MCP management/meta-tool and listener-card breadth — **PARTIAL**.
+10. Event-listener connector automations — **PARTIAL**.
 
-A visible provider/item must not be added until its execution path exists.
+## Objective evidence
+- real marketplace/MCP/private-skill/workflow implementation lives in:
+  - `desktop/electron/grok-plugin-marketplace.cjs`
+  - `desktop/electron/grok-mcp-manager.cjs`
+  - `desktop/electron/grok-mcp-oauth.cjs`
+  - `desktop/electron/grok-workflow-manager.cjs`
+  - `desktop/electron/grok-secret-store.cjs`
+  - coordinator/host wiring in `grok-agent-coordinator.cjs` and `grok-host-runtime.cjs`
+- exact module-by-module state is recorded in `../parity-inventory.generated.json`.
+- last confirmed source check before the newest commits: Run `35345930555` SUCCESS.
+
+## Remaining blockers
+Exact reference provider/account scoped synchronization, production Marketplace service evidence, listener/event trigger cards, remaining MCP management/meta-tool behaviors, private-skill/workflow UI visual depth, and claim-for-claim plugin IPC parity remain open under A8.
