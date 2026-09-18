@@ -58,6 +58,8 @@ export interface PluginDescriptor {
   removable?:boolean;
   kind?:'local'|'mcp';
   serverId?:string;
+  transport?:'stdio'|'http';
+  accountKey?:string;
 }
 export interface McpServerDescriptor {
   id:string;
