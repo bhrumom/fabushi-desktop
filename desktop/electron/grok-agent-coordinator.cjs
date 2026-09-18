@@ -21,11 +21,11 @@ function defaultCapabilities(){return Object.fromEntries(capabilityCatalog.map(p
 function initialState(){
   const now=Date.now(),id=crypto.randomUUID();
   return{
-    version:4,
+    version:5,
     agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false}],
     messages:{[id]:[]},
     plugins:defaultCapabilities(),
-    settings:{localToolPermission:'ask'},
+    settings:{localToolPermission:'ask',autoReviewMode:'enforce'},
     pendingApprovals:{},
     mcpServers:[],
     automations:{[id]:[]}
@@ -45,6 +45,8 @@ function normalizeState(parsed){
   }
   const permission=parsed.settings?.localToolPermission;
   if(['always','ask','never'].includes(permission))base.settings.localToolPermission=permission;
+  const autoReviewMode=parsed.settings?.autoReviewMode;
+  if(['off','shadow','enforce'].includes(autoReviewMode))base.settings.autoReviewMode=autoReviewMode;
   base.pendingApprovals={};
   base.mcpServers=Array.isArray(parsed.mcpServers)?parsed.mcpServers.flatMap(server=>{try{return[normalizeServer(server)]}catch{return[]}}):[];
   base.automations={};
@@ -158,7 +160,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
   const workflowManager=createWorkflowManager({app});
   const localBrowser=createLocalBrowserRuntime({BrowserWindow});
   const host=createHostRuntime({
-    shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,
+    shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,requestApproval,onToolState,onAgentStatus,
     getExternalTools:()=>mcp.collectToolDefinitions(),
     executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args),
     getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
@@ -382,17 +384,22 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
   async function setWorkflowEnabled(input){const record=await workflowManager.setWorkflowEnabled(input);emit('workflows.changed',{workflowId:record.id});return record}
 
   async function getRuntimeSettings(){
-    const s=await load();return{localToolPermission:s.settings.localToolPermission,computerTarget:'local-mac'};
+    const s=await load();return{localToolPermission:s.settings.localToolPermission,autoReviewMode:s.settings.autoReviewMode,computerTarget:'local-mac'};
   }
   async function setLocalToolPermission({permission}){
     if(!['always','ask','never'].includes(permission))throw Error('Permission must be always, ask, or never.');
     const s=await load();s.settings.localToolPermission=permission;await save();emit('settings.changed',{localToolPermission:permission});
     return getRuntimeSettings();
   }
+  async function setAutoReviewMode({mode}){
+    if(!['off','shadow','enforce'].includes(mode))throw Error('Auto-review mode must be off, shadow, or enforce.');
+    const s=await load();s.settings.autoReviewMode=mode;await save();emit('settings.changed',{autoReviewMode:mode});
+    return getRuntimeSettings();
+  }
 
   return{
     listAgents,createAgent,renameAgent,deleteAgent,getThread,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,removeMcpServer,setMcpServerEnabled,listMcpServerTools,setMcpToolEnabled,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,resolveApproval
+    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,removeMcpServer,setMcpServerEnabled,listMcpServerTools,setMcpToolEnabled,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,resolveApproval
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
