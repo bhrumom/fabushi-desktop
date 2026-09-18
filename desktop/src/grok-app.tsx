@@ -266,6 +266,12 @@ function Settings({onClose}:{onClose():void}) {
         void bridge.setLocalToolPermission({permission}).then(setSettings,reason=>setError(String(reason)));
       }}><option value="ask">Ask every time</option><option value="always">Always allow</option><option value="never">Never allow</option></select>:<span>Loading…</span>}
     </div>
+    <div className="setting-row"><div><strong>Auto-review</strong><p>Classifier review for Browser and Computer mutations. Enforce blocks or asks before execution; shadow records decisions without changing execution.</p></div>
+      {settings?<select value={settings.autoReviewMode} onChange={e=>{
+        const mode=e.target.value as RuntimeSettings['autoReviewMode'];
+        void bridge.setAutoReviewMode({mode}).then(setSettings,reason=>setError(String(reason)));
+      }}><option value="enforce">Enforce</option><option value="shadow">Shadow</option><option value="off">Off</option></select>:<span>Loading…</span>}
+    </div>
     <div className="setting-row"><div><strong>Agent runtime</strong><p>Renderer → preload → coordinator → host → local execution.</p></div><span>Coordinator/Host</span></div>
     <div className="setting-row"><div><strong>Inference</strong><p>OpenAI-compatible endpoint configured through Fabushi agent environment variables.</p></div><span>External model</span></div>
     {error?<div className="settings-error">{error}</div>:null}
