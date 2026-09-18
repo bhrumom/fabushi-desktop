@@ -37,6 +37,7 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   logoutAccount:()=>invoke('logout-account'),
   updateAccountName:x=>invoke('update-account-name',x),
   getAccountAvatar:()=>invoke('get-account-avatar'),
+  getAsyncTasks:x=>invoke('get-async-tasks',x),
   getRuntimeSettings:()=>invoke('get-runtime-settings'),
   getExperimentsSnapshot:()=>invoke('get-experiments-snapshot'),
   refreshExperiments:()=>invoke('refresh-experiments'),
