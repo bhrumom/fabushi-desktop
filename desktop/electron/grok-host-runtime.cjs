@@ -63,7 +63,9 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
   }
 
   async function runTurn({agent,history,transcript,enabled,signal}){
-    const externalDefinitions=await getExternalTools();\n    const externalNames=new Set(externalDefinitions.map(x=>x.function?.name).filter(Boolean));\n    const tools=[...toolDefinitions(enabled),...externalDefinitions.map(({_mcp,...definition})=>definition)];
+    const externalDefinitions=await getExternalTools();
+    const externalNames=new Set(externalDefinitions.map(x=>x.function?.name).filter(Boolean));
+    const tools=[...toolDefinitions(enabled),...externalDefinitions.map(({_mcp,...definition})=>definition)];
     const messages=[
       {role:'system',content:systemPrompt(agent,enabled)},
       ...history.filter(x=>x.role==='user'||x.role==='assistant').slice(-40).map(x=>({role:x.role,content:x.text}))
