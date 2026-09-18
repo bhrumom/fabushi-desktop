@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
-import type { AgentMessage, AgentSummary, AgentThread, McpAccountStatus, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
+import type { AgentMessage, AgentSummary, AgentThread, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
 import './grok-app.css';
 
 const bridge=getAgentBridge();
@@ -129,6 +129,8 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
   const [expanded,setExpanded]=useState<string|null>(null);
   const [tools,setTools]=useState<Record<string,McpToolDescriptor[]>>({});
   const [accounts,setAccounts]=useState<Record<string,McpAccountStatus>>({});
+  const [serverConfigs,setServerConfigs]=useState<Record<string,McpServerDescriptor>>({});
+  const [serverEditor,setServerEditor]=useState<null|{serverId:string;name:string;transport:'stdio'|'http';command:string;argsText:string;url:string;accountKey:string;oauthClientId:string;oauthScopes:string;customInstructions:string}>(null);
   const [authPending,setAuthPending]=useState<string|null>(null);
   const [skillEditor,setSkillEditor]=useState<WorkflowDescriptor|{id?:string;name:string;description:string;body:string;isEnabledForAgent:boolean}|null>(null);
   const [error,setError]=useState('');
@@ -138,7 +140,14 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
     try{const status=await bridge.getMcpAccountStatus({serverId,accountKey:key});setAccounts(current=>({...current,[serverId]:status}))}
     catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
   };
+  const loadServerConfigs=async()=>{
+    try{
+      const servers=await bridge.listMcpServers();
+      setServerConfigs(Object.fromEntries(servers.map(server=>[server.id,server])));
+    }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
+  };
   useEffect(()=>{
+    void loadServerConfigs();
     for(const item of items)if(item.kind==='mcp'&&item.transport==='http'&&item.serverId)void loadAccount(item.serverId,item.accountKey||'default');
   },[items]);
   const loadTools=async(serverId:string)=>{
@@ -157,6 +166,27 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
         ...(customInstructions.trim()?{customInstructions:customInstructions.trim()}:{})
       });
       setName('');setTransport('stdio');setCommand('');setArgsText('[]');setUrl('');setAccountKey('default');setOauthClientId('');setOauthScopes('');setCustomInstructions('');setAddOpen(false);await reload();
+    }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
+  };
+  const editServer=(serverId:string)=>{
+    const server=serverConfigs[serverId];if(!server){void loadServerConfigs();setError('Server configuration is still loading.');return}
+    setServerEditor({
+      serverId,name:server.name,transport:server.transport,command:server.command,argsText:JSON.stringify(server.args||[]),
+      url:server.url,accountKey:server.accountKey||'default',oauthClientId:server.oauthClientId||'',oauthScopes:(server.oauthScopes||[]).join(' '),
+      customInstructions:server.customInstructions||''
+    });
+  };
+  const saveServer=async(e:FormEvent)=>{
+    e.preventDefault();if(!serverEditor)return;setError('');
+    try{
+      const args=JSON.parse(serverEditor.argsText||'[]');
+      if(!Array.isArray(args)||args.some(value=>typeof value!=='string'))throw new Error('Args must be a JSON string array.');
+      await bridge.updateMcpServer({
+        serverId:serverEditor.serverId,name:serverEditor.name.trim(),transport:serverEditor.transport,
+        ...(serverEditor.transport==='stdio'?{command:serverEditor.command.trim(),args}:{url:serverEditor.url.trim(),accountKey:serverEditor.accountKey.trim()||'default',oauthClientId:serverEditor.oauthClientId.trim(),oauthScopes:serverEditor.oauthScopes.split(/[\\s,]+/).filter(Boolean)}),
+        customInstructions:serverEditor.customInstructions.trim()
+      });
+      setServerEditor(null);setExpanded(null);await Promise.all([reload(),loadServerConfigs()]);
     }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
   };
   const newSkill=()=>setSkillEditor({name:'',description:'',body:'',isEnabledForAgent:true});
@@ -184,6 +214,13 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
       {transport==='stdio'?<><input value={command} onChange={e=>setCommand(e.target.value)} placeholder="Command, e.g. npx" required/><input value={argsText} onChange={e=>setArgsText(e.target.value)} placeholder={'["-y","@vendor/server"]'} required/></>:<><input className="mcp-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://server.example/mcp" required/><input value={accountKey} onChange={e=>setAccountKey(e.target.value)} placeholder="Account key (default)"/><input value={oauthClientId} onChange={e=>setOauthClientId(e.target.value)} placeholder="OAuth client ID (optional; dynamic registration is preferred)"/><input value={oauthScopes} onChange={e=>setOauthScopes(e.target.value)} placeholder="OAuth scopes (optional, comma/space separated)"/></>}
       <textarea value={customInstructions} onChange={e=>setCustomInstructions(e.target.value)} placeholder="Optional server instructions passed to the Agent with each routed tool"/>
       <div><button type="button" onClick={()=>setAddOpen(false)}>Cancel</button><button className="primary compact">Add server</button></div>
+    </form>:null}
+    {tab==='plugins'&&serverEditor?<form className="mcp-add" onSubmit={e=>void saveServer(e)}>
+      <input value={serverEditor.name} onChange={e=>setServerEditor({...serverEditor,name:e.target.value})} placeholder="Server name" required/>
+      <select value={serverEditor.transport} onChange={e=>setServerEditor({...serverEditor,transport:e.target.value as 'stdio'|'http'})}><option value="stdio">Local stdio</option><option value="http">Remote HTTP</option></select>
+      {serverEditor.transport==='stdio'?<><input value={serverEditor.command} onChange={e=>setServerEditor({...serverEditor,command:e.target.value})} placeholder="Command" required/><input value={serverEditor.argsText} onChange={e=>setServerEditor({...serverEditor,argsText:e.target.value})} placeholder={'["-y","@vendor/server"]'} required/></>:<><input value={serverEditor.url} onChange={e=>setServerEditor({...serverEditor,url:e.target.value})} placeholder="https://server.example/mcp" required/><input value={serverEditor.accountKey} onChange={e=>setServerEditor({...serverEditor,accountKey:e.target.value})} placeholder="Account key"/><input value={serverEditor.oauthClientId} onChange={e=>setServerEditor({...serverEditor,oauthClientId:e.target.value})} placeholder="OAuth client ID (optional)"/><input value={serverEditor.oauthScopes} onChange={e=>setServerEditor({...serverEditor,oauthScopes:e.target.value})} placeholder="OAuth scopes"/></>}
+      <textarea value={serverEditor.customInstructions} onChange={e=>setServerEditor({...serverEditor,customInstructions:e.target.value})} placeholder="Agent instructions for this server"/>
+      <div><button type="button" onClick={()=>setServerEditor(null)}>Cancel</button><button className="primary compact">Save server</button></div>
     </form>:null}
     {tab==='skills'&&skillEditor?<form className="skill-editor" onSubmit={e=>void saveSkill(e)}>
       <input value={skillEditor.name} onChange={e=>setSkillEditor({...skillEditor,name:e.target.value})} placeholder="Skill name" required/>
@@ -218,7 +255,8 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
           }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
           finally{setAuthPending(null)}
         }}>{authPending===x.serverId?'…':accounts[x.serverId]?.connected?'Disconnect':'Connect'}</button>:null}
-        {x.kind==='mcp'&&x.serverId?<button onClick={async()=>{setExpanded(currentId=>currentId===x.serverId?null:x.serverId!);if(expanded!==x.serverId)await loadTools(x.serverId!)}}>Configure</button>:null}
+        {x.kind==='mcp'&&x.serverId?<button onClick={()=>editServer(x.serverId!)}>Edit</button>:null}
+        {x.kind==='mcp'&&x.serverId?<button onClick={async()=>{setExpanded(currentId=>currentId===x.serverId?null:x.serverId!);if(expanded!==x.serverId)await loadTools(x.serverId!)}}>Tools</button>:null}
         <button className={x.enabled?'primary compact':''} onClick={async()=>{await bridge.setPluginEnabled({pluginId:x.id,enabled:!x.enabled});await reload()}}>{x.enabled?'Enabled':'Enable'}</button>
         {x.removable?<button onClick={async()=>{await bridge.setPluginInstalled({pluginId:x.id,installed:false});if(x.serverId)setExpanded(null);await reload()}}>Remove</button>:null}
       </div>
