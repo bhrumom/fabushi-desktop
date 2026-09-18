@@ -3,7 +3,8 @@
 const fs=require('node:fs/promises');
 const path=require('node:path');
 const crypto=require('node:crypto');
-const {createHostRuntime}=require('./grok-host-runtime.cjs');\nconst {createMcpManager,normalizeServer}=require('./grok-mcp-manager.cjs');
+const {createHostRuntime}=require('./grok-host-runtime.cjs');
+const {createMcpManager,normalizeServer}=require('./grok-mcp-manager.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
