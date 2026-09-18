@@ -8,11 +8,13 @@ const {requiresAutoReview,canonicalAutoReviewTarget,fingerprintAutoReviewTarget,
 const {runWithTransientRetry}=require('./grok-transient-retry.cjs');
 const {definitions:communicationDefinitions,executeCommunicationTool}=require('./grok-communication-tools.cjs');
 const {definition:stateDefinition,executeStateTool}=require('./grok-state-tool.cjs');
+const {normalizeTurnUsage,mergeTurnUsage}=require('./grok-turn-usage.cjs');
+const {toolAuditAction,classifyBotBlockPage}=require('./grok-action-audit.cjs');
 
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},sendVisibleMessage=async()=>null,reactToConversationMessage=async()=>null,updateState=async()=>({ok:false,reason:'State backend unavailable.'}),getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',getMemoryContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
+function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},sendVisibleMessage=async()=>null,reactToConversationMessage=async()=>null,updateState=async()=>({ok:false,reason:'State backend unavailable.'}),getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',getMemoryContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),auditAction=()=>{},onTurnUsage=async()=>{},onTurnObservation=async()=>{},subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
   function systemPrompt(agent,enabled,workflowContext,memoryContext){
     const parts=[
       `You are ${agent.name}, a Fabushi desktop agent following the Grok Bot host/coordinator execution model.`,
@@ -57,7 +59,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const response=await fetch(endpoint,{
       method:'POST',
       headers:{'content-type':'application/json',authorization:'Bearer '+key},
-      body:JSON.stringify({model,messages,tools:tools.length?tools:undefined,tool_choice:tools.length?'auto':undefined,stream:streaming}),
+      body:JSON.stringify({model,messages,tools:tools.length?tools:undefined,tool_choice:tools.length?'auto':undefined,stream:streaming,...(streaming?{stream_options:{include_usage:true}}:{})}),
       signal
     });
     if(!response.ok){const error=Error('Inference HTTP '+response.status);if([408,425,429,500,502,503,504].includes(response.status))error.retryable=true;const retryAfter=response.headers.get('retry-after');if(retryAfter)error.metadata=new Map([['retry-after',retryAfter]]);throw error;}
@@ -66,11 +68,12 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
       const body=await response.json();
       const message=body?.choices?.[0]?.message;
       if(!message||typeof message!=='object')throw Error('Inference returned no assistant message');
-      return{message};
+      return{message,usage:normalizeTurnUsage(body?.usage)};
     }
     const reader=response.body.getReader(),decoder=new TextDecoder();
-    let buffer='',content='',toolCalls=[];
+    let buffer='',content='',toolCalls=[],usage;
     const applyPayload=payload=>{
+      const nextUsage=normalizeTurnUsage(payload?.usage);if(nextUsage)usage=mergeTurnUsage(usage,nextUsage);
       const delta=payload?.choices?.[0]?.delta;
       if(!delta||typeof delta!=='object')return;
       if(typeof delta.content==='string'&&delta.content){
@@ -105,7 +108,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     toolCalls=toolCalls.filter(Boolean);
     const message={content:content||null,...(toolCalls.length?{tool_calls:toolCalls}:{})};
     if(!message.content&&!toolCalls.length)throw Error('Inference stream returned neither text nor tool calls');
-    return{message};
+    return{message,usage};
   }
 
   async function updateTool(agentId,entry,patch){
@@ -190,7 +193,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     return true;
   }
 
-  async function runTurnInContext({agent,history,transcript,enabled,signal,assistantEntry=null}){
+  async function runTurnInContext({agent,history,transcript,enabled,signal,assistantEntry=null,observation}){
     const externalDefinitions=await getExternalTools();
     const externalNames=new Set(externalDefinitions.map(x=>x.function?.name).filter(Boolean));
     const subagentTools=subagentDefinitions();
@@ -229,7 +232,8 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     for(let round=0;round<12;round++){
       if(signal?.aborted)throw abortError();
       let streamOutputProduced=false;
-      const result=await runWithTransientRetry(()=> (inferenceRequest||chatRequest)(messages,tools,signal,()=>{streamOutputProduced=true}),{signal,maxAttempts:3,baseDelayMs:750,maxDelayMs:6000,canRetry:()=>!streamOutputProduced});
+      const result=await runWithTransientRetry(()=> (inferenceRequest||chatRequest)(messages,tools,signal,()=>{streamOutputProduced=true}),{signal,maxAttempts:3,baseDelayMs:750,maxDelayMs:6000,canRetry:()=>!streamOutputProduced,onRetry:event=>{observation.retryCount+=1;void onTurnObservation({kind:'turn-retry',agentId:agent.id,turnId:observation.turnId,attempt:event.attempt,delayMs:event.delayMs,serverPaced:event.serverPaced})}});
+      observation.usage=mergeTurnUsage(observation.usage,normalizeTurnUsage(result.usage));
       if(result.offline){
         return 'Agent host is ready on this Mac. Configure FABUSHI_AGENT_API_URL, FABUSHI_AGENT_API_KEY, and optionally FABUSHI_AGENT_MODEL to connect a tool-calling model.';
       }
@@ -254,6 +258,8 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
         };
         transcript.push(entry);
         await onToolState({agentId:agent.id,entry});
+        const actionStartedAt=Date.now();observation.toolCallCount+=1;observation.lastTool=name;
+        void onTurnObservation({kind:'tool-started',agentId:agent.id,turnId:observation.turnId,toolCallId:String(call?.id||''),toolName:name,at:actionStartedAt});
 
         let resultText='';
         try{
@@ -284,6 +290,8 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
             const materialized=await spillToolOutput(resultText,{agentId:agent.id,toolCallId:entry.toolCallId,toolName:name});
             resultText=materialized?.text||resultText;
             await updateTool(agent.id,entry,{status:'done',text:resultText,...(materialized?.outputLocation?{outputLocation:materialized.outputLocation}:{}),...(execution?.display?{display:execution.display}:{})});
+            const action=toolAuditAction(name,args,'ok',Date.now()-actionStartedAt);auditAction({agentId:agent.id,turnId:observation.turnId,toolCallId:String(call?.id||''),occurredAtMs:actionStartedAt,action});
+            if(action.kind==='browserNavigation'){const block=classifyBotBlockPage({url:action.url,title:''});if(block)void onTurnObservation({kind:'bot-block',agentId:agent.id,turnId:observation.turnId,...block})}
           }
         }catch(error){
           if(isAbort(error,signal)){
@@ -292,7 +300,9 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
           }
           resultText='ERROR: '+(error instanceof Error?error.message:String(error));
           await updateTool(agent.id,entry,{status:'error',text:resultText,errorCode:'tool-error'});
+          auditAction({agentId:agent.id,turnId:observation.turnId,toolCallId:String(call?.id||''),occurredAtMs:actionStartedAt,action:toolAuditAction(name,args,'error',Date.now()-actionStartedAt)});
         }
+        void onTurnObservation({kind:'tool-completed',agentId:agent.id,turnId:observation.turnId,toolCallId:String(call?.id||''),toolName:name,status:entry.status,at:Date.now()});
         messages.push({role:'tool',tool_call_id:call.id,content:resultText});
       }
       if(visibleMessageCount===0&&callsSinceVisibleMessage>1)messages.push({role:'user',content:'<system_reminder>You have started doing work with tools without acknowledging the user. Send a brief, specific acknowledgement now with the SendMessage tool, then continue.</system_reminder>'});
@@ -303,7 +313,15 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
 
   async function runTurn(input){
     const context=rootRequestContext({agentId:input.agent?.id,conversationId:input.agent?.id,signal:input.signal});
-    return runWithRequestContext(context,()=>runTurnInContext(input));
+    const observation={turnId:crypto.randomUUID(),startedAt:Date.now(),toolCallCount:0,retryCount:0,lastTool:null,usage:undefined};
+    await onTurnObservation({kind:'turn-started',agentId:input.agent?.id,turnId:observation.turnId,at:observation.startedAt});
+    let outcome='done';
+    try{return await runWithRequestContext(context,()=>runTurnInContext({...input,observation}))}
+    catch(error){outcome=isAbort(error,input.signal)?'cancelled':'error';throw error}
+    finally{
+      const endedAt=Date.now(),payload={agentId:input.agent?.id,turnId:observation.turnId,startedAt:observation.startedAt,endedAt,durationMs:Math.max(0,endedAt-observation.startedAt),toolCallCount:observation.toolCallCount,retryCount:observation.retryCount,lastTool:observation.lastTool,outcome,...(observation.usage?{usage:observation.usage}:{})};
+      await Promise.resolve(onTurnUsage(payload)).catch(()=>{});await Promise.resolve(onTurnObservation({kind:'turn-ended',...payload})).catch(()=>{});
+    }
   }
 
   return{runTurn};
