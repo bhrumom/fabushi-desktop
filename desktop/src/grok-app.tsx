@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
-import type { AgentMessage, AgentSummary, AgentThread, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
+import type { AgentMessage, AgentSummary, AgentThread, McpAccountStatus, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
 import './grok-app.css';
 
 const bridge=getAgentBridge();
@@ -122,13 +122,25 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
   const [command,setCommand]=useState('');
   const [argsText,setArgsText]=useState('[]');
   const [url,setUrl]=useState('');
+  const [accountKey,setAccountKey]=useState('default');
+  const [oauthClientId,setOauthClientId]=useState('');
+  const [oauthScopes,setOauthScopes]=useState('');
   const [customInstructions,setCustomInstructions]=useState('');
   const [expanded,setExpanded]=useState<string|null>(null);
   const [tools,setTools]=useState<Record<string,McpToolDescriptor[]>>({});
+  const [accounts,setAccounts]=useState<Record<string,McpAccountStatus>>({});
+  const [authPending,setAuthPending]=useState<string|null>(null);
   const [skillEditor,setSkillEditor]=useState<WorkflowDescriptor|{id?:string;name:string;description:string;body:string;isEnabledForAgent:boolean}|null>(null);
   const [error,setError]=useState('');
   const rows=items.filter(x=>(x.name+' '+x.description+' '+x.category).toLowerCase().includes(query.toLowerCase()));
   const skillRows=workflows.filter(x=>(x.name+' '+x.description).toLowerCase().includes(query.toLowerCase()));
+  const loadAccount=async(serverId:string,key='default')=>{
+    try{const status=await bridge.getMcpAccountStatus({serverId,accountKey:key});setAccounts(current=>({...current,[serverId]:status}))}
+    catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
+  };
+  useEffect(()=>{
+    for(const item of items)if(item.kind==='mcp'&&item.transport==='http'&&item.serverId)void loadAccount(item.serverId,item.accountKey||'default');
+  },[items]);
   const loadTools=async(serverId:string)=>{
     setError('');
     try{setTools(current=>({...current,[serverId]:[]}));const next=await bridge.listMcpServerTools({serverId});setTools(current=>({...current,[serverId]:next}))}
@@ -141,10 +153,10 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
       if(!Array.isArray(parsed)||parsed.some(value=>typeof value!=='string'))throw new Error('Args must be a JSON string array.');
       await bridge.addMcpServer({
         name:name.trim(),transport,
-        ...(transport==='stdio'?{command:command.trim(),args:parsed}:{url:url.trim()}),
+        ...(transport==='stdio'?{command:command.trim(),args:parsed}:{url:url.trim(),accountKey:accountKey.trim()||'default',...(oauthClientId.trim()?{oauthClientId:oauthClientId.trim()}:{}),...(oauthScopes.trim()?{oauthScopes:oauthScopes.split(/[\\s,]+/).filter(Boolean)}:{})}),
         ...(customInstructions.trim()?{customInstructions:customInstructions.trim()}:{})
       });
-      setName('');setTransport('stdio');setCommand('');setArgsText('[]');setUrl('');setCustomInstructions('');setAddOpen(false);await reload();
+      setName('');setTransport('stdio');setCommand('');setArgsText('[]');setUrl('');setAccountKey('default');setOauthClientId('');setOauthScopes('');setCustomInstructions('');setAddOpen(false);await reload();
     }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
   };
   const newSkill=()=>setSkillEditor({name:'',description:'',body:'',isEnabledForAgent:true});
@@ -169,7 +181,7 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
     {tab==='plugins'&&addOpen?<form className="mcp-add" onSubmit={e=>void addServer(e)}>
       <input value={name} onChange={e=>setName(e.target.value)} placeholder="Server name" required/>
       <select value={transport} onChange={e=>setTransport(e.target.value as 'stdio'|'http')}><option value="stdio">Local stdio</option><option value="http">Remote HTTP</option></select>
-      {transport==='stdio'?<><input value={command} onChange={e=>setCommand(e.target.value)} placeholder="Command, e.g. npx" required/><input value={argsText} onChange={e=>setArgsText(e.target.value)} placeholder={'["-y","@vendor/server"]'} required/></>:<input className="mcp-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://server.example/mcp" required/>}
+      {transport==='stdio'?<><input value={command} onChange={e=>setCommand(e.target.value)} placeholder="Command, e.g. npx" required/><input value={argsText} onChange={e=>setArgsText(e.target.value)} placeholder={'["-y","@vendor/server"]'} required/></>:<><input className="mcp-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://server.example/mcp" required/><input value={accountKey} onChange={e=>setAccountKey(e.target.value)} placeholder="Account key (default)"/><input value={oauthClientId} onChange={e=>setOauthClientId(e.target.value)} placeholder="OAuth client ID (optional; dynamic registration is preferred)"/><input value={oauthScopes} onChange={e=>setOauthScopes(e.target.value)} placeholder="OAuth scopes (optional, comma/space separated)"/></>}
       <textarea value={customInstructions} onChange={e=>setCustomInstructions(e.target.value)} placeholder="Optional server instructions passed to the Agent with each routed tool"/>
       <div><button type="button" onClick={()=>setAddOpen(false)}>Cancel</button><button className="primary compact">Add server</button></div>
     </form>:null}
@@ -185,7 +197,7 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
     {error?<div className="plugin-error">{error}</div>:null}
     {tab==='plugins'?<div className="plugin-rows">{rows.length?rows.map(x=><article className="plugin-card" key={x.id}>
       <span className="plugin-logo">{x.name[0]}</span>
-      <div className="plugin-copy"><strong>{x.name}</strong><p>{x.description}</p><small>{x.category} · {x.provider||'provider'}</small>
+      <div className="plugin-copy"><strong>{x.name}</strong><p>{x.description}</p><small>{x.category} · {x.provider||'provider'}{x.transport==='http'&&x.serverId?` · ${accounts[x.serverId]?.connected?'connected':'not connected'} · ${x.accountKey||'default'}`:''}</small>
         {x.kind==='mcp'&&x.serverId&&expanded===x.serverId?<div className="mcp-tools">
           {(tools[x.serverId]||[]).length?(tools[x.serverId]||[]).map(tool=><label key={tool.name}><span><strong>{tool.name}</strong><small>{tool.description||'MCP tool'}</small></span><input type="checkbox" checked={!tool.isDisabled} onChange={async e=>{
             const next=await bridge.setMcpToolEnabled({serverId:x.serverId!,toolName:tool.name,enabled:e.target.checked});
@@ -194,6 +206,18 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
         </div>:null}
       </div>
       <div className="plugin-actions">
+        {x.kind==='mcp'&&x.transport==='http'&&x.serverId?<button disabled={authPending===x.serverId} onClick={async()=>{
+          setAuthPending(x.serverId!);setError('');
+          try{
+            const current=accounts[x.serverId!];
+            const next=current?.connected
+              ?await bridge.disconnectMcpAccount({serverId:x.serverId!,accountKey:x.accountKey||'default'})
+              :await bridge.connectMcpAccount({serverId:x.serverId!,accountKey:x.accountKey||'default'});
+            setAccounts(value=>({...value,[x.serverId!]:next}));
+            if(next.connected){setExpanded(x.serverId!);await loadTools(x.serverId!)}else setTools(value=>({...value,[x.serverId!]:[]}));
+          }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
+          finally{setAuthPending(null)}
+        }}>{authPending===x.serverId?'…':accounts[x.serverId]?.connected?'Disconnect':'Connect'}</button>:null}
         {x.kind==='mcp'&&x.serverId?<button onClick={async()=>{setExpanded(currentId=>currentId===x.serverId?null:x.serverId!);if(expanded!==x.serverId)await loadTools(x.serverId!)}}>Configure</button>:null}
         <button className={x.enabled?'primary compact':''} onClick={async()=>{await bridge.setPluginEnabled({pluginId:x.id,enabled:!x.enabled});await reload()}}>{x.enabled?'Enabled':'Enable'}</button>
         {x.removable?<button onClick={async()=>{await bridge.setPluginInstalled({pluginId:x.id,installed:false});if(x.serverId)setExpanded(null);await reload()}}>Remove</button>:null}
