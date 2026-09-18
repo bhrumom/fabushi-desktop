@@ -129,6 +129,8 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
   const [expanded,setExpanded]=useState<string|null>(null);
   const [tools,setTools]=useState<Record<string,McpToolDescriptor[]>>({});
   const [accounts,setAccounts]=useState<Record<string,McpAccountStatus>>({});
+  const [accountSlots,setAccountSlots]=useState<Record<string,McpAccountStatus[]>>({});
+  const [accountDraft,setAccountDraft]=useState<Record<string,string>>({});
   const [serverConfigs,setServerConfigs]=useState<Record<string,McpServerDescriptor>>({});
   const [serverEditor,setServerEditor]=useState<null|{serverId:string;name:string;transport:'stdio'|'http';command:string;argsText:string;url:string;accountKey:string;oauthClientId:string;oauthScopes:string;customInstructions:string}>(null);
   const [authPending,setAuthPending]=useState<string|null>(null);
@@ -141,8 +143,12 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
   const skillRows=workflows.filter(x=>(x.name+' '+x.description).toLowerCase().includes(query.toLowerCase()));
   const marketRows=(marketplace?.plugins||[]).filter(x=>(x.displayName+' '+x.description+' '+x.category).toLowerCase().includes(query.toLowerCase()));
   const loadAccount=async(serverId:string,key='default')=>{
-    try{const status=await bridge.getMcpAccountStatus({serverId,accountKey:key});setAccounts(current=>({...current,[serverId]:status}))}
-    catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
+    try{
+      const slots=await bridge.listMcpAccounts({serverId});
+      const active=slots.find(slot=>slot.active)||slots.find(slot=>slot.accountKey===key)||await bridge.getMcpAccountStatus({serverId,accountKey:key});
+      setAccountSlots(current=>({...current,[serverId]:slots}));
+      setAccounts(current=>({...current,[serverId]:active}));
+    }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
   };
   const loadServerConfigs=async()=>{
     try{
@@ -245,6 +251,15 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
     {tab==='plugins'?<div className="plugin-rows">{rows.length?rows.map(x=><article className="plugin-card" key={x.id}>
       <span className="plugin-logo">{x.name[0]}</span>
       <div className="plugin-copy"><strong>{x.name}</strong><p>{x.description}</p><small>{x.category} · {x.provider||'provider'}{x.transport==='http'&&x.serverId?` · ${accounts[x.serverId]?.connected?'connected':'not connected'} · ${x.accountKey||'default'}`:''}</small>
+        {x.kind==='mcp'&&x.transport==='http'&&x.serverId?<div className="mcp-account-slots">
+          {(accountSlots[x.serverId]||[]).map(slot=><div className={'account-slot '+(slot.active?'active':'')} key={slot.accountKey}>
+            <button className="account-key" disabled={slot.active} onClick={async()=>{await bridge.setMcpActiveAccount({serverId:x.serverId!,accountKey:slot.accountKey});await Promise.all([loadAccount(x.serverId!,slot.accountKey),reload()])}}>{slot.accountKey}{slot.active?' · active':''}</button>
+            <span>{slot.connected?'Connected':'Disconnected'}</span>
+            <button onClick={async()=>{setAuthPending(x.serverId!);try{slot.connected?await bridge.disconnectMcpAccount({serverId:x.serverId!,accountKey:slot.accountKey}):await bridge.connectMcpAccount({serverId:x.serverId!,accountKey:slot.accountKey});await Promise.all([loadAccount(x.serverId!,slot.accountKey),reload()])}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setAuthPending(null)}}}>{slot.connected?'Disconnect':'Connect'}</button>
+            {(accountSlots[x.serverId]||[]).length>1?<button onClick={async()=>{await bridge.removeMcpAccount({serverId:x.serverId!,accountKey:slot.accountKey});await Promise.all([loadAccount(x.serverId!),reload()])}}>Remove</button>:null}
+          </div>)}
+          <div className="account-slot add"><input value={accountDraft[x.serverId]||''} onChange={e=>setAccountDraft(current=>({...current,[x.serverId!]:e.target.value}))} placeholder="New account key"/><button disabled={!String(accountDraft[x.serverId]||'').trim()||authPending===x.serverId} onClick={async()=>{const key=String(accountDraft[x.serverId]||'').trim();if(!key)return;setAuthPending(x.serverId!);try{await bridge.connectMcpAccount({serverId:x.serverId!,accountKey:key});setAccountDraft(current=>({...current,[x.serverId!]:''}));await Promise.all([loadAccount(x.serverId!,key),reload()])}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setAuthPending(null)}}}>Connect account</button></div>
+        </div>:null}
         {x.kind==='mcp'&&x.serverId&&expanded===x.serverId?<div className="mcp-tools">
           {(tools[x.serverId]||[]).length?(tools[x.serverId]||[]).map(tool=><label key={tool.name}><span><strong>{tool.name}</strong><small>{tool.description||'MCP tool'}</small></span><input type="checkbox" checked={!tool.isDisabled} onChange={async e=>{
             const next=await bridge.setMcpToolEnabled({serverId:x.serverId!,toolName:tool.name,enabled:e.target.checked});
