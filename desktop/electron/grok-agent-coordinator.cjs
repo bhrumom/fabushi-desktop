@@ -5,6 +5,7 @@ const path=require('node:path');
 const crypto=require('node:crypto');
 const {createHostRuntime}=require('./grok-host-runtime.cjs');
 const {createMcpManager,normalizeServer}=require('./grok-mcp-manager.cjs');
+const {createAccountSession}=require('./grok-account-session.cjs');
 const {createSecretStore}=require('./grok-secret-store.cjs');
 const {createMcpOAuthManager,normalizeAccountKey}=require('./grok-mcp-oauth.cjs');
 const {createWorkflowManager}=require('./grok-workflow-manager.cjs');
@@ -193,6 +194,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
 
   const secretStore=createSecretStore({app,safeStorage});
+  const accountSession=createAccountSession({secretStore,openExternal:url=>shell.openExternal(url),onChanged:status=>emit('account.changed',{status})});
   let mcp=null;
   const oauth=createMcpOAuthManager({
     getServer:async serverId=>(await load()).mcpServers.find(server=>server.id===serverId)||null,
@@ -388,6 +390,13 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     }
   }
   void armAutomationTimer();
+
+  async function getAccountStatus(){return accountSession.status()}
+  async function loginAccount(){return accountSession.login()}
+  async function cancelAccountLogin(){return accountSession.cancelLogin()}
+  async function logoutAccount(){return accountSession.logout()}
+  async function updateAccountName({name}){return accountSession.updateName(name)}
+  async function getAccountAvatar(){return accountSession.getAvatar()}
 
   async function listMcpServers(){
     const s=await load();
@@ -596,14 +605,14 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     for(const approval of [...approvals.values()])approval.finish(false);
     if(automationSweep)await Promise.resolve(automationSweep).catch(()=>{});
     await Promise.allSettled([...activeTurns]);
-    mcp.dispose();localBrowser.dispose();await attachmentGateway?.dispose?.();
+    await accountSession.cancelLogin().catch(()=>{});mcp.dispose();localBrowser.dispose();await attachmentGateway?.dispose?.();
     await writing.catch(()=>{});
     return{ok:true};
   }
 
   return{
     listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
+    listPlugins,setPluginInstalled,setPluginEnabled,getAccountStatus,loginAccount,cancelAccountLogin,logoutAccount,updateAccountName,getAccountAvatar,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
