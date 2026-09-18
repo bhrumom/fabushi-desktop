@@ -89,3 +89,11 @@
 .onboarding-tools{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:650px}.onboarding-tools button{border-radius:999px;padding:8px 13px}.onboarding-tools button.selected{background:rgba(139,134,255,.18);border-color:rgba(139,134,255,.5)}
 .onboarding-create{width:min(520px,80vw);display:grid;gap:12px;text-align:left}.onboarding-create label{display:grid;gap:6px}.onboarding-create label>span{font-size:12px;opacity:.7}.onboarding-create textarea{min-height:120px;resize:vertical}
 @keyframes onboarding-ready{0%{transform:scale(.84);opacity:.2}65%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+
+
+/* Interactive SendMessage cards recovered from the reference transcript. */
+.widget-card,.secret-card{display:flex;flex-direction:column;gap:10px;margin:4px 0;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(255,255,255,.035)}
+.widget-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.widget-card p{margin:0}.widget-card small{opacity:.64}.widget-card>header button{border:0;background:transparent;color:inherit;font-size:18px}
+.widget-options{display:grid;gap:6px}.widget-options>button{display:flex;align-items:flex-start;gap:9px;text-align:left;padding:9px;border-radius:8px;background:rgba(255,255,255,.025)}.widget-options kbd{display:grid;place-items:center;min-width:22px;height:22px;border:1px solid rgba(255,255,255,.13);border-radius:5px;font-size:10px}.widget-options span{display:grid;gap:2px}
+.widget-custom{display:flex;gap:7px}.widget-custom textarea{min-height:34px;flex:1;resize:none}.widget-card.resolved .widget-selected{display:flex;justify-content:space-between;padding:9px;border-radius:8px;background:rgba(139,134,255,.12)}.widget-card.dismissed{flex-direction:row;justify-content:space-between;opacity:.58}
+.secret-card>div{display:grid;gap:3px}.secret-card input{width:100%}.secret-card>button{align-self:flex-start}.secret-note{opacity:.55}.secret-card.saved{flex-direction:row;align-items:center;justify-content:space-between}.secret-card.saved>span{font-size:12px;opacity:.75}.card-error{margin:0;color:#ff8e8e;font-size:12px}
