@@ -2594,9 +2594,12 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-clock-skew-guard.cjs",
+        "desktop/tests/grok-runner-small-contracts.test.cjs"
+      ],
+      "state": "PASS",
+      "note": "reference clock-skew ceilings, duration sanitization and buckets are mirrored directly and covered by runtime contract tests"
     },
     {
       "referenceModule": "source/host/runner/computer-use.ts",
@@ -2728,9 +2731,14 @@
         "tests/recovery-host-runner-background-watch-lifecycle.test.mjs",
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-agent-runner.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/tests/grok-agent-runner.test.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "per-agent runner now owns run generation, active run lifecycle, external cancellation, interrupt/quiesce and host dispatch; reference background-watch/state-structure/turn-shell depth remains open"
     },
     {
       "referenceModule": "source/host/runner/sand-auto-review-classifier-run.ts",
@@ -3564,9 +3572,12 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-video-container.cjs",
+        "desktop/tests/grok-runner-small-contracts.test.cjs"
+      ],
+      "state": "PASS",
+      "note": "reference video-container signature detection is mirrored directly and covered by runtime contract tests"
     }
   ],
   "electronBindings": [
@@ -3627,9 +3638,14 @@
       "referenceBinding": "adapters.mediaProtocol",
       "referenceModule": "../../source/electron-main/production-binding-providers.ts",
       "classification": "generated-source",
-      "target": [],
-      "state": "FAIL",
-      "note": "reference media protocol/viewer binding is not yet recovered"
+      "target": [
+        "desktop/electron/grok-media-protocol.cjs",
+        "desktop/electron/grok-attachment-gateway.cjs",
+        "desktop/electron/main.cjs",
+        "desktop/tests/grok-media-protocol.test.cjs"
+      ],
+      "state": "PASS",
+      "note": "sand-media privileged scheme is registered in production, attachment chunks stream with Range support, video MIME mapping is present, and integration tests cover the production gateway"
     },
     {
       "referenceBinding": "adapters.accountOAuth",
@@ -3646,9 +3662,16 @@
       "referenceBinding": "adapters.experiments",
       "referenceModule": "../../source/electron-main/adapters/production-experiments-binding.ts",
       "classification": "generated-source",
-      "target": [],
-      "state": "FAIL",
-      "note": "reference experiments binding not yet mapped"
+      "target": [
+        "desktop/electron/grok-experiments.cjs",
+        "desktop/electron/grok-account-session.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/main.cjs",
+        "desktop/electron/preload.cjs",
+        "desktop/tests/grok-experiments.test.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "authenticated experiment-provider seam, cached snapshots, dynamic configs, environment gates, persisted development overrides and refresh lifecycle are wired; exact reference Statsig/bootstrap and coordinator feature-override semantics remain external/open"
     },
     {
       "referenceBinding": "adapters.mcpOAuth",
@@ -3739,7 +3762,7 @@
     }
   ],
   "acceptanceRule": "A8 closes only when every recoverable row is PASS, PRODUCT_DIFFERENCE with a verified local-Mac equivalent, or EXTERNAL_DEPENDENCY with reference-backed unrecoverable-service evidence. PARTIAL/FAIL always keep A8 open.",
-  "targetAuditHead": "6240ac4380ff6146fbb4df3144817182a1b32c79",
+  "targetAuditHead": "910f65e42b0dd096e9c969eba03666f46ae764c9",
   "stateSemantics": {
     "PASS": "Executable target behavior is present with source/test evidence for the mapped reference behavior.",
     "PARTIAL": "Executable behavior exists but reference breadth/state depth or visual/interaction equivalence is not closed; keeps A8 open.",
