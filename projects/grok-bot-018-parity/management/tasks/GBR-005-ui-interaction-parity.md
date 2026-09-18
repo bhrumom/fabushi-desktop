@@ -1,38 +1,61 @@
-# GBR-005 — Remaining reference UI / interaction parity
+# GBR-005 — Reference UI / interaction parity
 
-Status: in-progress
+Status: in-progress — major recovered surfaces are executable; A8 remains open
 
 ## Objective
-Use the pinned reference as the sole visual/interaction contract for the macOS production renderer and close every recoverable UI/state/interaction row in `../parity-inventory.md` and `../parity-inventory.generated.json`.
+Use the pinned reference as the sole production visual/interaction contract. Every recoverable renderer module/state/interaction must map to a target implementation and evidence in `../parity-inventory.generated.json`.
 
-## Inventory coverage
-The generated inventory now records every reference module in the audited closures:
+## Audited reference closure
 - 275 reachable clean renderer modules
-- 70 audited runner modules
+- 70 audited runner capsules
 - 16 Electron production bindings
+- 102 valid/reachable UI anchors
+- 163 evidenced renderer IPC claims
 
-The reference's own renderer report separately documents 703 JSX-runtime candidates that are unlinked to reviewed first-party evidence; they are not silently treated as recoverable product modules.
+The reference report separately records 703 JSX-runtime candidates without reviewed first-party linkage; those are not silently counted as recoverable product modules.
 
-## Implemented this round
-- functional Cmd/Ctrl-K command palette and Cmd/Ctrl-N new-agent shortcut
-- functional agent rename/delete dialogs
-- Stop control for thinking/running/waiting agent turns
-- waiting-approval tool card with Allow once / Deny
-- queued/waiting/running/done/error/cancelled tool visual states
-- screenshot result rendering
-- backed local-tool permission Settings
-- loading, fatal runtime failure, retry and toast failure states
-- Plugins UI shows only executable local capabilities plus configured MCP servers
-- MCP add/remove/enable/configure and per-tool toggles
+## Recovered executable surfaces
+- Grok-only production shell; contacts/Telegram/payment/MiniApp/Mahayana remain absent.
+- agent list, create, rename, delete, hidden agents and org chart.
+- conversation transcript, tool lifecycle, approvals, Stop, screenshots and attachment cards.
+- reply references with source jump, reactions and quick reaction counts.
+- conversation outline and Find.
+- Command Palette with commands/agents/messages/files/links search.
+- composer attachments, reply target and stop/send states.
+- SendMessage interactive widget card with options/custom reply/dismiss.
+- secure secret-request card; secret value never enters transcript/model context.
+- About, Feedback, Deep Link dialogs.
+- account sign-in/status/logout/name.
+- Plugins/MCP/OAuth/accounts/private skills/workflows surfaces.
+- routines/automation editor/run history.
+- Settings for local-tool permission, auto-review instructions and real updater status/release track.
+- first-run onboarding: meet → local Computer demo → jobs → tools → create → hand-off.
+- Computer side pane plus expanded local Computer shell.
+- loading/fatal/retry/error states.
+- native notifications.
 
-Fabushi-only contacts, Telegram, payment, MiniApp, Mahayana Workbench and other non-reference production surfaces remain out of the production renderer.
+## Current objective evidence
+- reply/reaction/search source check: Run `35345060040` SUCCESS.
+- reference SendMessage stream semantics fix: Run `35345930555` SUCCESS.
+- newer renderer/runtime commits are awaiting a new exact-head source check; queued/running is not treated as PASS.
+- `../parity-inventory.generated.json` now has per-module target/state/notes and no longer repeats stale early-round FAIL claims for implemented surfaces.
 
-## Evidence
-- interaction/UI commit: `399182167e154653893d348bfc9eceec023b02de`
-- lifecycle styles: `3b76d93e22f8a6a1ee2925df8973aa5ff5a59c91`
-- MCP UI commit: `9dd622db060dacf6c36f0658dc71098e5ecdd8ab`
-- generated inventory: `d705e9bf71b52c9d4d95a01e042de17de9122b58`
-- source check: Run `35333859439` PASS
+## Major open renderer families
+- exact sidebar row/section/preview visual and interaction depth.
+- exact composer rich-text/suggestions/reference/model/voice behaviors.
+- specialist attachment/media/PDF/spreadsheet viewers and media protocol.
+- Computer teach/recording and remaining shell states.
+- access/roster/privacy/reconnect/shared-room/channel surfaces.
+- exact window chrome/status/workspace-indicator/notification behaviors.
+- remaining agent-info/channel/shared-room/async-task surfaces.
+- exact onboarding/access readiness and subscription/access policy.
+- full update-required/minimum-version policy.
+- event-listener routine surfaces.
+- exact Settings/Plugins/provider visual composition.
+- claim-for-claim closure of the 163 renderer IPC claims.
 
-## Remaining blockers
-A8 remains open. Major missing renderer families include account/session, automations/routines, dedicated Computer shell/overlay/teach-recording, rich conversation workspace features, attachment/media/pdf/spreadsheet viewers, reactions/message actions, onboarding/access/roster/reconnect, agent-info surfaces, hidden chats, deep links, feedback/about, org chart, update states, complete window chrome/notifications, and exact plugin/settings surfaces.
+## Product-difference rule
+Cloud Box/VNC/cursor-agent infrastructure is not copied. Its user-visible Computer behavior must map to the installed Mac. No other Fabushi-specific feature may be introduced into the parity production UI.
+
+## Exit rule
+GBR-005 closes only when every recoverable renderer row is PASS, or has an evidence-backed PRODUCT_DIFFERENCE/EXTERNAL_DEPENDENCY classification. Any PARTIAL/FAIL keeps A8 open and blocks final packaging, merge and prerelease.
