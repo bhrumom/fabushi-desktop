@@ -9,7 +9,7 @@ const {requiresAutoReview,canonicalAutoReviewTarget,fingerprintAutoReviewTarget,
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',requestApproval,onToolState,onAgentStatus,getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
+function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
   function systemPrompt(agent,enabled,workflowContext){
     const parts=[
       `You are ${agent.name}, a Fabushi desktop agent following the Grok Bot host/coordinator execution model.`,
@@ -42,21 +42,63 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     return null;
   }
 
-  async function chatRequest(messages,tools,signal){
+  async function chatRequest(messages,tools,signal,onDelta=()=>{}){
     const endpoint=String(process.env.FABUSHI_AGENT_API_URL||'').trim();
     const key=String(process.env.FABUSHI_AGENT_API_KEY||'').trim();
     const model=String(process.env.FABUSHI_AGENT_MODEL||'gpt-5.6').trim();
     if(!endpoint||!key)return{offline:true};
+    const streaming=String(process.env.FABUSHI_AGENT_STREAM||'true').toLowerCase()!=='false';
     const response=await fetch(endpoint,{
       method:'POST',
       headers:{'content-type':'application/json',authorization:'Bearer '+key},
-      body:JSON.stringify({model,messages,tools:tools.length?tools:undefined,tool_choice:tools.length?'auto':undefined,stream:false}),
+      body:JSON.stringify({model,messages,tools:tools.length?tools:undefined,tool_choice:tools.length?'auto':undefined,stream:streaming}),
       signal
     });
     if(!response.ok)throw Error('Inference HTTP '+response.status);
-    const body=await response.json();
-    const message=body?.choices?.[0]?.message;
-    if(!message||typeof message!=='object')throw Error('Inference returned no assistant message');
+    const contentType=String(response.headers.get('content-type')||'');
+    if(!streaming||!response.body||!contentType.includes('text/event-stream')){
+      const body=await response.json();
+      const message=body?.choices?.[0]?.message;
+      if(!message||typeof message!=='object')throw Error('Inference returned no assistant message');
+      return{message};
+    }
+    const reader=response.body.getReader(),decoder=new TextDecoder();
+    let buffer='',content='',toolCalls=[];
+    const applyPayload=payload=>{
+      const delta=payload?.choices?.[0]?.delta;
+      if(!delta||typeof delta!=='object')return;
+      if(typeof delta.content==='string'&&delta.content){
+        content+=delta.content;onDelta(delta.content,content);
+      }
+      for(const part of Array.isArray(delta.tool_calls)?delta.tool_calls:[]){
+        const index=Number.isInteger(part?.index)?part.index:0;
+        const row=toolCalls[index]||(toolCalls[index]={id:'',type:'function',function:{name:'',arguments:''}});
+        if(typeof part.id==='string')row.id=part.id;
+        if(typeof part.type==='string')row.type=part.type;
+        if(typeof part.function?.name==='string')row.function.name+=part.function.name;
+        if(typeof part.function?.arguments==='string')row.function.arguments+=part.function.arguments;
+      }
+    };
+    const consume=block=>{
+      for(const line of block.split(/\r?\n/)){
+        if(!line.startsWith('data:'))continue;
+        const raw=line.slice(5).trim();if(!raw||raw==='[DONE]')continue;
+        try{applyPayload(JSON.parse(raw))}catch{}
+      }
+    };
+    for(;;){
+      const {done,value}=await reader.read();
+      if(done)break;
+      buffer+=decoder.decode(value,{stream:true});
+      for(;;){
+        const match=/\r?\n\r?\n/.exec(buffer);if(!match)break;
+        const block=buffer.slice(0,match.index);buffer=buffer.slice(match.index+match[0].length);consume(block);
+      }
+    }
+    buffer+=decoder.decode();if(buffer.trim())consume(buffer);
+    toolCalls=toolCalls.filter(Boolean);
+    const message={content:content||null,...(toolCalls.length?{tool_calls:toolCalls}:{})};
+    if(!message.content&&!toolCalls.length)throw Error('Inference stream returned neither text nor tool calls');
     return{message};
   }
 
@@ -141,7 +183,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     return true;
   }
 
-  async function runTurnInContext({agent,history,transcript,enabled,signal}){
+  async function runTurnInContext({agent,history,transcript,enabled,signal,assistantEntry=null}){
     const externalDefinitions=await getExternalTools();
     const externalNames=new Set(externalDefinitions.map(x=>x.function?.name).filter(Boolean));
     const subagentTools=subagentDefinitions();
@@ -166,7 +208,12 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
 
     for(let round=0;round<12;round++){
       if(signal?.aborted)throw abortError();
-      const result=await (inferenceRequest||chatRequest)(messages,tools,signal);
+      const result=await (inferenceRequest||chatRequest)(messages,tools,signal,(delta,fullText)=>{
+        if(!assistantEntry)return;
+        if(!transcript.includes(assistantEntry))transcript.push(assistantEntry);
+        assistantEntry.text=fullText;assistantEntry.status='streaming';assistantEntry.updatedAt=Date.now();
+        void onAssistantDelta({agentId:agent.id,entry:assistantEntry,delta});
+      });
       if(result.offline){
         return 'Agent host is ready on this Mac. Configure FABUSHI_AGENT_API_URL, FABUSHI_AGENT_API_KEY, and optionally FABUSHI_AGENT_MODEL to connect a tool-calling model.';
       }
