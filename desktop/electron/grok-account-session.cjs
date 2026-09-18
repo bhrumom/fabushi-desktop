@@ -86,10 +86,16 @@ function createAccountSession({env=process.env,secretStore,openExternal,fetchImp
         if(info.ok)profile=normalizeProfile({...decodeJwtPayload(token.id_token),...(await info.json())});
       }
       await secretStore.set(SESSION_KEY,{accessToken,refreshToken:token.refresh_token?String(token.refresh_token):null,tokenType:String(token.token_type||'Bearer'),expiresAt:Number.isFinite(Number(token.expires_in))?Date.now()+Number(token.expires_in)*1000:null,profile});
-      return await status();
     }finally{controller.abort();await loopback.close();active=null;onChanged(await status())}
+    return status();
   }
-  async function cancelLogin(){if(active){active.loopback.cancel();active.controller.abort()}return status()}
+  async function cancelLogin(){
+    if(active){
+      const current=active;active=null;current.loopback.cancel();current.controller.abort();
+      const next=await status();onChanged(next);return next;
+    }
+    return status();
+  }
   async function logout(){if(active)await cancelLogin();await secretStore.remove(SESSION_KEY);const next=await status();onChanged(next);return next}
   async function updateName(name){const saved=await record();if(!saved?.accessToken)throw Error('Sign in first.');saved.profile={...(saved.profile||{}),displayName:String(name||'').trim().slice(0,300)||null};await secretStore.set(SESSION_KEY,saved);const next=await status();onChanged(next);return next}
   async function getAvatar(){
