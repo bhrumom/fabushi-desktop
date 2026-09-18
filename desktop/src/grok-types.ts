@@ -8,6 +8,9 @@ export interface AgentSummary {
   createdAt:number;
   updatedAt:number;
   unread:boolean;
+  description?:string;
+  purpose?:string;
+  parentAgentId?:string|null;
 }
 export interface AgentMessage {
   id:string;
