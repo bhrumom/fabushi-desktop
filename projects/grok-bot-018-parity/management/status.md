@@ -30,3 +30,13 @@
 - Added functional command palette/shortcuts, agent rename/delete dialogs, backed permission Settings, approval cards, stop control, loading/error states and MCP configuration UI.
 - Added non-packaging `Grok parity source check`. Initial generated-newline failure was fixed; Run 35333859439 then passed CJS syntax, dependency install and TypeScript/Vite build on exact source head 5e447597d4081e8df8dc5d3b5abea59175f7c232.
 - A8 remains NOT COMPLETE. No merge, exact-head macOS packaging, canonical-main reread or prerelease was performed.
+
+## 2026-09-18 — Round 4
+- Audited code head: `910f65e42b0dd096e9c969eba03666f46ae764c9`.
+- Recovered and production-wired the reference media path: `sand-media://` privileged scheme registration, attachment chunk reads, HTTP Range semantics, video MIME mapping and package inclusion.
+- Recovered exact clock-skew and video-container runner contracts and added contract tests.
+- Added an authenticated experiments provider seam with cached snapshots, environment gates, dynamic configs, persisted development overrides, account token refresh and renderer IPC. Exact reference Statsig/bootstrap semantics remain PARTIAL rather than being fabricated.
+- Added a per-agent runner owner with run generation, active-run lifecycle, interrupt/quiesce, external cancellation and actual coordinator-to-host dispatch.
+- Run `35360378372` passed CommonJS syntax, all runtime contract tests, dependency installation and TypeScript/Vite build on the audited code head.
+- Refreshed the generated parity ledger: runner = PASS 10 / PARTIAL 58 / FAIL 0 / PRODUCT_DIFFERENCE 2; Electron bindings = PASS 9 / PARTIAL 7 / FAIL 0. Renderer remains PASS 17 / PARTIAL 196 / FAIL 61 / PRODUCT_DIFFERENCE 1.
+- A8 remains NOT COMPLETE. No final macOS packaging, merge or prerelease was performed.
