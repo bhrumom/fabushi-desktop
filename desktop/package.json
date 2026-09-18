@@ -50,6 +50,7 @@
       "electron/grok-mcp-manager.cjs",
       "electron/grok-mcp-oauth.cjs",
       "electron/grok-plugin-marketplace.cjs",
+      "electron/grok-output-spill.cjs",
       "electron/grok-secret-store.cjs",
       "electron/grok-workflow-manager.cjs",
       "electron/grok-automation-schedule.cjs",
