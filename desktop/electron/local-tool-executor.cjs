@@ -164,7 +164,7 @@ function toolDefinitions(enabled){
   return tools;
 }
 
-async function executeTool(name,args,{enabled,shell,signal,onStarted,onOutput}={}){
+async function executeTool(name,args,{enabled,shell,signal,onStarted,onOutput,ownerAgentId=null}={}){
   const needed={
     list_directory:'filesystem',read_file:'filesystem',write_file:'filesystem',create_directory:'filesystem',move_path:'filesystem',
     run_terminal:'shell',start_background_terminal:'shell',get_background_terminal:'shell',write_background_terminal:'shell',stop_background_terminal:'shell',
@@ -204,7 +204,7 @@ async function executeTool(name,args,{enabled,shell,signal,onStarted,onOutput}={
     const command=String(args.command||'').trim();if(!command)throw Error('Command is required.');
     const cwd=args.cwd?resolvePath(args.cwd):process.env.HOME;const id=crypto.randomUUID();
     const child=spawn('/bin/zsh',['-lc',command],{cwd,env:process.env,stdio:['pipe','pipe','pipe']});
-    const record={id,command,cwd,pid:child.pid,status:'running',stdout:'',stderr:'',exitCode:null,startedAt:Date.now(),endedAt:null,child};
+    const record={id,command,cwd,pid:child.pid,status:'running',stdout:'',stderr:'',exitCode:null,startedAt:Date.now(),endedAt:null,ownerAgentId:ownerAgentId==null?null:String(ownerAgentId),child};
     const append=(key,value)=>{record[key]=clamp(record[key]+String(value));};
     child.stdout.on('data',x=>append('stdout',x));child.stderr.on('data',x=>append('stderr',x));
     child.on('error',error=>{record.status='error';append('stderr','\n'+error.message);record.endedAt=Date.now();});
@@ -280,4 +280,15 @@ async function executeTool(name,args,{enabled,shell,signal,onStarted,onOutput}={
   throw Error('Unknown tool: '+name);
 }
 
-module.exports={toolDefinitions,executeTool,descriptor,computerStateIdentity};
+function listBackgroundProcesses({ownerAgentId=null,runningOnly=false}={}){
+  const owner=ownerAgentId==null?null:String(ownerAgentId);
+  return [...backgroundProcesses.values()]
+    .filter(record=>(owner==null||record.ownerAgentId===owner)&&(!runningOnly||record.status==='running'))
+    .map(record=>({
+      id:record.id,command:record.command,cwd:record.cwd,pid:record.pid,status:record.status,
+      startedAt:record.startedAt,endedAt:record.endedAt,ownerAgentId:record.ownerAgentId
+    }))
+    .sort((a,b)=>a.startedAt-b.startedAt);
+}
+
+module.exports={toolDefinitions,executeTool,descriptor,computerStateIdentity,listBackgroundProcesses};
