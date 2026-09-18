@@ -47,6 +47,7 @@
       "electron/grok-exec-resources.cjs",
       "electron/grok-request-context.cjs",
       "electron/grok-auto-review.cjs",
+      "electron/grok-attachment-gateway.cjs",
       "electron/grok-mcp-manager.cjs",
       "electron/grok-mcp-oauth.cjs",
       "electron/grok-plugin-marketplace.cjs",
