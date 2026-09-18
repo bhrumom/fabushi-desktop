@@ -5,6 +5,7 @@ const {toolDefinitions,executeTool,descriptor}=require('./local-tool-executor.cj
 const {createExecutionResources,LOCAL_TOOL_EXECUTOR,BROWSER_TOOL_EXECUTOR,EXTERNAL_TOOL_EXECUTOR,SUBAGENT_TOOL_EXECUTOR}=require('./grok-exec-resources.cjs');
 const {rootRequestContext,childRequestContext,runWithRequestContext}=require('./grok-request-context.cjs');
 const {requiresAutoReview,canonicalAutoReviewTarget,fingerprintAutoReviewTarget,normalizeAutoReviewMode,normalizeClassifierDecision}=require('./grok-auto-review.cjs');
+const {runWithTransientRetry}=require('./grok-transient-retry.cjs');
 
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
@@ -54,7 +55,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
       body:JSON.stringify({model,messages,tools:tools.length?tools:undefined,tool_choice:tools.length?'auto':undefined,stream:streaming}),
       signal
     });
-    if(!response.ok)throw Error('Inference HTTP '+response.status);
+    if(!response.ok){const error=Error('Inference HTTP '+response.status);if([408,425,429,500,502,503,504].includes(response.status))error.retryable=true;const retryAfter=response.headers.get('retry-after');if(retryAfter)error.metadata=new Map([['retry-after',retryAfter]]);throw error;}
     const contentType=String(response.headers.get('content-type')||'');
     if(!streaming||!response.body||!contentType.includes('text/event-stream')){
       const body=await response.json();
@@ -218,12 +219,14 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
 
     for(let round=0;round<12;round++){
       if(signal?.aborted)throw abortError();
-      const result=await (inferenceRequest||chatRequest)(messages,tools,signal,(delta,fullText)=>{
+      let streamOutputProduced=false;
+      const result=await runWithTransientRetry(()=> (inferenceRequest||chatRequest)(messages,tools,signal,(delta,fullText)=>{
+        streamOutputProduced=true;
         if(!assistantEntry)return;
         if(!transcript.includes(assistantEntry))transcript.push(assistantEntry);
         assistantEntry.text=fullText;assistantEntry.status='streaming';assistantEntry.updatedAt=Date.now();
         void onAssistantDelta({agentId:agent.id,entry:assistantEntry,delta});
-      });
+      }),{signal,maxAttempts:3,baseDelayMs:750,maxDelayMs:6000,canRetry:()=>!streamOutputProduced});
       if(result.offline){
         return 'Agent host is ready on this Mac. Configure FABUSHI_AGENT_API_URL, FABUSHI_AGENT_API_KEY, and optionally FABUSHI_AGENT_MODEL to connect a tool-calling model.';
       }
