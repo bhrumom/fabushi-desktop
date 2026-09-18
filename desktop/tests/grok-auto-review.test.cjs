@@ -72,3 +72,16 @@ test('enforce-mode classifier allow runs without a manual approval when local po
   assert.equal(approvals,0);
   assert.equal(transcript.find(row=>row.role==='tool').reviewDecision,'allow');
 });
+
+
+test('auto-review runtime fetches persisted custom rules before classification',async()=>{
+  let fetched=0;
+  const transcript=[{id:'u1',role:'user',text:'navigate',createdAt:1,status:'done'}];
+  const runtime=baseRuntime({
+    getAutoReviewInstructions:async()=>{fetched++;return{allowInstructions:['Open documentation'],blockInstructions:['Ask before account settings']}},
+    autoReviewClassifier:async()=>({kind:'allow',reason:'Allowed by fixture.'})
+  });
+  const text=await runtime.runTurn({agent:{id:'chief',name:'Chief'},history:transcript,transcript,enabled:new Set(['browser']),signal:new AbortController().signal});
+  assert.equal(text,'finished');
+  assert.equal(fetched,1);
+});
