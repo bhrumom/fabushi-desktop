@@ -1,79 +1,74 @@
 # Grok Bot 0.18 parity inventory
 
-Reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`
+Reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`  
 Target: `bhrumom/fabushi-desktop@refactor/grok-bot-018-parity-mac`
 
-This inventory is the acceptance source for A8. A row is PASS only when the target has an executable implementation and objective evidence. A visible UI catalog item without an executable backend is a FAIL, not partial parity.
+The row-by-row acceptance source is `parity-inventory.generated.json`. It contains every audited reachable reference renderer module, every audited runner capsule, and all 16 Electron production bindings, with target files, state and closure notes. This human file summarizes the current execution state; it must not be used to hide an open generated row.
 
-Reference evidence anchors:
-- `manifests/reconstruction/renderer-closure.json`: 308 clean renderer modules, 275 reachable, 11 shipped routes, 20 clean feature families, 102 valid/reachable UI anchors, 163 evidenced IPC claims.
-- `manifests/reconstruction/electron-main-production-bindings-manifest.json`: secure storage, settings, attachment gateway, main RPC, updater, media protocol, account OAuth, experiments, MCP OAuth, telemetry, notifications, coordinator, IPC, startup, URL policy and failure reporting production bindings.
-- `manifests/reconstruction/runner-parity-audit.json`: 70 runner capsules audited, 76 clean runner modules, 340 source import edges, 66 directly behavior-tested modules.
-- Reference caveat: 703 JSX-runtime candidates are explicitly unlinked to reviewed first-party evidence by the reference's own renderer-closure report. They are not counted as recoverable product modules unless later evidence classifies them.
+## State semantics
 
-| Area | Reference module/evidence | Target implementation | State | Objective evidence / next closure |
-|---|---|---|---|---|
-| Production shell | `frontend/src/production/ProductionRenderer.tsx`, bootstrap, production CSS | `desktop/src/grok-app.tsx`, `main.tsx` | PARTIAL | Single Grok-style shell exists; not yet component/route parity |
-| Agent list/sidebar | sidebar model, sidebar.tsx, preview/status/layout/sections | monolithic Sidebar in `grok-app.tsx` | PARTIAL | basic selection/search only; missing row actions, section state, preview semantics |
-| Agent rename/delete | AgentNameEditor, AgentDeleteConfirmation, AgentRowActions | backend methods exist; no production UI flow | FAIL | add reference-aligned row actions/editor/confirmation |
-| Command palette/shortcuts | CommandPalette + command providers + global-keyboard-shortcuts | visual `⌘K` hint only | FAIL | no keyboard handler / palette / command providers |
-| Conversation workspace | workspace/* incl chat header, transcript, pagination, reply, outline | basic Workspace/Message | PARTIAL | missing reply/thread/pagination/outline/find/rich content |
-| Composer | workspace/composer, rich-text-editor, suggestions, references, voice | textarea + inert @/Auto controls | FAIL | implement functional references/suggestions/model/attachments/stop states |
-| Attachments/media | attachment gateway; transcript-card attachment; media/pdf/spreadsheet viewers | pick-file inserts local path text | FAIL | no attachment object lifecycle/viewers/gateway |
-| Tool transcript | conversation tool-results + transcript-card tool views | generic tool row | PARTIAL | add queued/approval/running/done/error/cancelled lifecycle and structured result |
-| Reactions/message actions | transcript-card reactions/actions | none | FAIL | no backend or UI |
-| Notices/permission cards | permission-request, notice, auto-review approval | none | FAIL | approval card + IPC + lifecycle required |
-| Agent lifecycle | host runner/state + coordinator | `grok-agent-runtime.cjs` thinking/running/idle/error | PARTIAL | no coordinator/host split, waiting approval semantics incomplete |
-| Coordinator | `source/node-agent-coordinator`, Electron coordinator binding | none as independent owner | FAIL | introduce coordinator boundary with request/event protocol |
-| Host runtime | `source/host`, runner composition/extensions | one local runtime module | FAIL | separate host/turn/tool/extension ownership |
-| Exec resource model | agent-exec resource-provider/remote/controlled/stream resources | direct function calls | FAIL | resource registry/controlled execution semantics absent |
-| Local files | agent tool execution | list/read | PARTIAL | mutation/search/metadata/error/cancel policy not matched |
-| Foreground shell | shell exec/stream | `run_terminal` one-shot execFile | PARTIAL | no stream/cancel/process lifecycle transcript |
-| Background shell | `agent-exec/background-shell.ts` | none | FAIL | spawn/write/status/kill required |
-| Request context | `agent-exec/request-context.ts` | none | FAIL | execution context propagation absent |
-| Subagents | `agent-exec/subagent.ts`, subagent runtime/registry | none | FAIL | create/resume/follow-up/interrupt/background result absent |
-| Computer | computer overlay/shell/VNC/teach-recording; computer-use subagent | no Computer execution surface | FAIL | local Mac screenshot/input execution and state required |
-| Browser | browser-use subagent + browser auto-review | only open external HTTPS URL | FAIL | no inspect/snapshot/action/state/recheck model |
-| Local tool permission | permissions/local-tool store/view | prompt text only | FAIL | always/ask/never + ceiling + approvals/clear required |
-| Auto review | computer/browser auto-review + classifier/approval | none | FAIL | mutating action review/approval/recheck/cancel required |
-| Cancellation | runner/exec abort semantics | top-level AbortController | PARTIAL | child tool processes not reliably cancelled; approval/tool states missing |
-| Error semantics | runner + error boundary/transcript errors | assistant error string | PARTIAL | structured execution/tool/UI failure states missing |
-| MCP exec | `source/packages/agent-exec/mcp.ts`, routed MCP bridge | none | FAIL | no server discovery/tools/list/tools/call |
-| MCP desktop lifecycle | Electron MCP OAuth adapter/runtime/manager | none | FAIL | no manager, host refresh/sync, desktop IPC |
-| OAuth/accounts | account OAuth adapter/session UI | none | FAIL | login/cancel/logout/status/token/account lifecycle absent |
-| Plugin browser | plugins overlay browser/view/model | basic static catalog | FAIL | catalog is not reference provider model |
-| Plugin server tools | plugins/server-tools loading/toggle/retry | none | FAIL | no server tool list/disable state |
-| Plugin auth | plugins github-auth + production-adapter | none | FAIL | no auth controller/account scoped sync |
-| Private skills | host/agent skills surfaces | none | FAIL | no real skill provider/execute chain |
-| Workflows | reference workflow/agent capabilities | none | FAIL | no executable workflow provider |
-| Marketplace metadata | plugin overlay/provider metadata | hard-coded 5 rows | FAIL | no provider-backed metadata; placeholder GitHub/Memory forbidden |
-| Automations | automations/routines schedule/run history/trigger schema | none | FAIL | no schedule editor/runtime/run history |
-| Settings | settings overlay panels/computer/auto-review/updates | static 3-row overlay | FAIL | no backed settings controls or panels |
-| Account/settings notices | account session + settings notice controller | none | FAIL | missing |
-| Computer settings | settings computer view | static Local label | FAIL | no runtime state/configuration |
-| Updates | update required/status/settings updater | workflow only | FAIL | app-side update state/UI absent |
-| Onboarding | signed-in onboarding/computer readiness/suggestions | none | FAIL | missing |
-| Access/reconnect/roster | access cover, roster readiness/privacy/reconnect/status | none | FAIL | missing |
-| Agent info | avatar/settings/async tasks/channels/shared room/group members | none | FAIL | recoverable reference UI not mapped yet |
-| Hidden chats | hidden-chats overlay | none | FAIL | missing |
-| Deep links | deep-links overlay/model | none | FAIL | missing |
-| Feedback/About | feedback and about overlays | none | FAIL | missing |
-| Org chart | org-chart workspace | none | FAIL | missing |
-| Window chrome | alerts/notification host/status badge/workspace indicator | Electron window only | FAIL | missing reference states |
-| Secure storage | Electron production secureStorage binding | none | FAIL | secrets currently env-only |
-| Settings persistence | Electron settings binding | JSON agent state only | PARTIAL | no typed settings service |
-| Attachment gateway | Electron attachmentGateway binding | file picker only | FAIL | missing |
-| Main RPC | Electron mainRpc binding | ad-hoc IPC handlers | PARTIAL | not reference request/event contract |
-| Account OAuth binding | Electron accountOAuth binding | none | FAIL | missing |
-| MCP OAuth binding | Electron mcpOAuth binding | none | FAIL | missing |
-| Notifications | Electron notifications binding | none | FAIL | missing |
-| Telemetry/failure reports | telemetry/reportFailure binding | none | FAIL | missing (may be product-policy configurable but needs explicit parity decision) |
-| URL policy | parseAllowedExternalUrl | HTTPS-only browser open | PARTIAL | narrower ad-hoc policy |
-| Startup/lifecycle | startup binding + root resilience | single-instance/window | PARTIAL | no service readiness/reconnect state |
-| Renderer IPC claims | 163 evidenced claims | <20 ad-hoc methods/events | FAIL | enumerate and close by feature; no broad PASS allowed |
-| Fabushi-only contacts/Telegram/payment/MiniApp/Mahayana | absent from Grok production UI | not mounted by `main.tsx` | PASS | source review + prior package evidence |
-| Local-computer product difference | reference Box/Computer semantics | local Mac stated | PARTIAL | architecture intent PASS; real Computer execution still open |
+- **PASS** — executable target behavior exists and has source/test evidence for the mapped reference behavior.
+- **PARTIAL** — executable behavior exists, but the reference breadth/state depth/visual interaction is not closed. A8 remains open.
+- **FAIL** — recoverable reference behavior has no sufficient target implementation. A8 remains open.
+- **PRODUCT_DIFFERENCE** — only for the user-authorized product difference: reference cloud Box/VNC/cursor-agent infrastructure is replaced by the Mac where Fabushi is installed. User-visible semantics still require a local equivalent.
+- **EXTERNAL_DEPENDENCY** — reference behavior depends on an external service/catalog/policy not contained in the pinned repository. The target must still expose a real provider seam; this is not permission to fabricate a catalog or a success state.
+
+Current generated counts after the latest inventory refresh:
+
+| Closure | PASS | PARTIAL | FAIL | PRODUCT_DIFFERENCE |
+|---|---:|---:|---:|---:|
+| renderer modules (275) | 17 | 196 | 61 | 1 |
+| runner capsules (70) | 8 | 57 | 3 | 2 |
+| Electron bindings (16) | 8 | 6 | 2 | 0 |
+
+A8 is therefore **NOT COMPLETE**.
+
+## Reference evidence anchors
+
+- `manifests/reconstruction/renderer-closure.json`: 308 clean renderer modules, 275 reachable, 102 valid/reachable UI anchors, 163 evidenced IPC claims.
+- `manifests/reconstruction/runner-parity-audit.json`: 70 runner capsules audited; 66 directly behavior-tested.
+- `manifests/reconstruction/electron-main-production-bindings-manifest.json`: 16 production bindings.
+- The reference report itself records 703 JSX-runtime candidates that are not linked to reviewed first-party evidence. Those are not silently promoted to recoverable product modules.
+
+## Current source-level mapping
+
+| Area | Reference | Target | Current state / evidence |
+|---|---|---|---|
+| production shell | production renderer/bootstrap | `desktop/src/grok-app.tsx`, `main.tsx` | production entry is Grok-style only; legacy contacts/Telegram/payment/MiniApp/Mahayana are not mounted |
+| coordinator / host / exec | node coordinator + host runner + agent-exec | `grok-agent-coordinator.cjs` → `grok-host-runtime.cjs` → execution resources/local executor | independent runtime ownership; not a CLI wrapper |
+| local Computer | Computer shell/use + auto review | `local-tool-executor.cjs`, `MacComputerHelper.swift`, Computer renderer shell | screenshot/click/move/drag/scroll/type/key/wait, screenshot stateId recheck, permission/approval and expandable local screen |
+| browser | browser tools + review | `grok-local-browser.cjs` | snapshot/stateId/navigate/click/type/key/scroll/screenshot; exact reference subagent/audit breadth remains |
+| approvals / cancellation | permission request + runner abort | coordinator/host + renderer tool cards | always/ask/never, allow/deny/cancel, Stop, queued/waiting/running/streaming/done/error/cancelled |
+| SendMessage / reactions | send-message schema/tool, reaction tool | `grok-communication-tools.cjs`, coordinator, renderer | text/attachment/widget/secret-request; secure secret path; reply/reaction state; cloud cursor-agent intentionally excluded |
+| conversation | workspace/reply/outline/find | app + message interactions + outline | quoted reply context, reactions, outline, in-chat find, cross-workspace message/file/link palette search |
+| attachments | attachment gateway + transcript attachments | `grok-attachment-gateway.cjs` + renderer | registered local attachments/previews plus HTTPS handoff; specialist PDF/media/spreadsheet parity remains |
+| transient stream / observations | stream attempt, retry, turn usage/observation | retry, turn usage, host observation, action audit | bounded retry-before-output, retry-after/backoff, token usage, turn/tool/retry audit; resumable stream/TTFT/await-stall breadth remains |
+| memory / state | sand-memory + update_state | memory store + state tool | durable user/agent/project memory, write/forget, routines, workflows, profile/settings mutation; remaining state variants open |
+| MCP | MCP exec/manager/OAuth | MCP manager/OAuth + coordinator/host/UI | stdio + Streamable HTTP, tools/list/call, server/tool enable, OAuth discovery/dynamic registration/PKCE/refresh, multi-account secrets |
+| Plugins / private skills | provider/browser/server tools/private skills | plugin marketplace/provider seam + MCP + workflow manager | visible installable items require real MCP/private-skill materialization; no fake GitHub/Memory rows |
+| account | account OAuth/session | `grok-account-session.cjs` + UI | real PKCE login/cancel/logout/status/name; reference access/subscription policy remains external/open |
+| workflows | private SKILL/workflow surfaces | `grok-workflow-manager.cjs` | file-backed SKILL.md, CRUD, enable/disable and prompt injection |
+| routines | automation schedule/history | coordinator + schedule parser + UI | cron CRUD/enable/pause/run-now/history; listener/event-trigger breadth remains |
+| About / Feedback / deep links | recovered overlays | desktop services + main/preload + app | real version/update track; real configured feedback HTTP provider; `sand://app/v1/info?topic=deep-links` |
+| updater | update service/status/settings | desktop services + Electron autoUpdater | real feed/check/status/download/install/track; minimum-version/policy semantics remain |
+| onboarding | signed-in onboarding/computer readiness | app + desktop preferences | meet → local Computer demo → jobs → tools → create → hand-off; exact access/readiness semantics remain |
+| action audit | action audit/site visit/bot block | `grok-action-audit.cjs` + host | scrubbed tool audit, query-free navigation host tracking and block signatures; exact MCP transport/CDP probe remains |
+| secure storage | secureStorage binding | `grok-secret-store.cjs` | Electron safeStorage-backed secrets; secret-request rejects insecure storage |
+| notifications | notification binding | main + coordinator | native Electron Notification path exists |
+| cloud Box/VNC/cursor-agent | cloud-only reference infrastructure | installed-Mac Computer | explicit PRODUCT_DIFFERENCE; no cloud provisioning is reintroduced |
+
+## Known A8 blockers
+
+The generated module inventory remains authoritative. The largest open families are: exact sidebar/workspace/composer visual and state breadth; specialist attachment/media/PDF/spreadsheet viewers; Computer teach/recording and remaining shell states; access/roster/reconnect/shared-room/channel surfaces; exact window chrome/notification states; experiments/media-protocol bindings; event-listener routines; exact auto-review/tool escalation and request-box-help semantics; resumable stream/checkpoint/TTFT/await-stall observation; remaining `update_state` variants; reference-specific MCP management/meta-tool breadth; and exact claim-for-claim renderer IPC closure.
+
+External reference services are not fabricated. In particular, the reference Marketplace production catalog is supplied by an external DashboardService rather than by self-contained catalog data at the pinned commit. The target keeps a real provider seam and refuses to show installable entries that have no executable backend.
+
+## CI evidence
+
+- Historical package mechanism: Run `35323112810` succeeded; artifact `10538065159`, digest `sha256:884a992b9cfa2cf16891ddee05939a5daa52bc2343f8ac92e6fa0c30d9d4adae`. This is not final release evidence.
+- Last confirmed source check before the latest parity commits: Run `35345930555` SUCCESS.
+- Current exact-head source check is tracked separately in `acceptance.md`; a queued/running workflow is not recorded as PASS.
 
 ## A8 rule
 
-A8 remains NOT COMPLETE while any recoverable required row is FAIL/PARTIAL. Rows may be marked N/A only with a reference-backed reason showing that the reference itself does not classify the item as recoverable product behavior. The 703 unlinked JSX-runtime candidates are the only currently documented reference-level caveat and do not waive any of the evidenced modules/routes/IPC claims above.
+Do not run final macOS packaging, merge PR #1, or publish a prerelease while any recoverable row is PARTIAL/FAIL. Packaging happens only after the generated inventory and source audit make A8 genuinely PASS.
