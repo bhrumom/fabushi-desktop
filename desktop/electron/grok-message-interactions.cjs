@@ -69,7 +69,7 @@ function searchWorkspaceIndex({agents=[],messages={},query='',limit=50}={}){
   const ordered=[];
   for(const [agentId,rows] of Object.entries(messages&&typeof messages==='object'?messages:{})){
     for(const entry of Array.isArray(rows)?rows:[]){
-      if(!entry||typeof entry!=='object')continue;
+      if(!entry||typeof entry!=='object'||entry.internal===true)continue;
       ordered.push({agentId,entry});
     }
   }
