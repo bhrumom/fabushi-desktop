@@ -23,7 +23,7 @@ function trusted(event){
 function assertTrusted(event){if(!trusted(event))throw Error('Rejected IPC sender');}
 function registerIpc(){
   const methods={
-    'list-agents':'listAgents','create-agent':'createAgent','rename-agent':'renameAgent','update-agent':'updateAgent','set-agent-notify':'setAgentNotifyOnUpdates','set-agent-pinned':'setAgentPinned','set-agent-unread':'setAgentUnread','duplicate-agent':'duplicateAgent','set-agent-hidden':'setAgentHidden','delete-agent':'deleteAgent',
+    'list-agents':'listAgents','create-agent':'createAgent','rename-agent':'renameAgent','update-agent':'updateAgent','set-agent-avatar-bytes':'setAgentAvatarBytes','generate-agent-avatar-image':'generateAgentAvatarImage','set-agent-notify':'setAgentNotifyOnUpdates','set-agent-pinned':'setAgentPinned','set-agent-unread':'setAgentUnread','duplicate-agent':'duplicateAgent','set-agent-hidden':'setAgentHidden','delete-agent':'deleteAgent',
     'get-thread':'getThread','send-message':'sendMessage','respond-to-widget':'respondToWidget','dismiss-widget':'dismissWidget','submit-secret':'submitSecret','react-to-message':'reactToMessage','search-messages':'searchMessages','search-media':'searchMedia','search-links':'searchLinks','stop-agent':'stopAgent',
     'list-plugins':'listPlugins','set-plugin-installed':'setPluginInstalled','set-plugin-enabled':'setPluginEnabled',
     'get-account-status':'getAccountStatus','login-account':'loginAccount','cancel-account-login':'cancelAccountLogin','logout-account':'logoutAccount','update-account-name':'updateAccountName','get-account-avatar':'getAccountAvatar',
@@ -42,6 +42,16 @@ function registerIpc(){
       assertTrusted(event);return runtime[method](args&&typeof args==='object'?args:{});
     });
   }
+  ipcMain.handle('grok-agent:pick-avatar-file',async event=>{
+    assertTrusted(event);
+    const result=await dialog.showOpenDialog(mainWindow,{properties:['openFile'],filters:[{name:'Images',extensions:['png','jpg','jpeg','webp','gif','bmp','tif','tiff']}]});
+    if(result.canceled||!result.filePaths[0])return null;
+    const record=await runtime.registerAttachment({path:result.filePaths[0]});
+    if(record.kind!=='image')throw Error('Choose an image file.');
+    const preview=await runtime.readAttachment({id:record.id});
+    if(!preview?.dataUrl)throw Error('That image could not be loaded.');
+    return{dataUrl:preview.dataUrl,fileName:record.name};
+  });
   ipcMain.handle('grok-agent:pick-file',async event=>{
     assertTrusted(event);
     const result=await dialog.showOpenDialog(mainWindow,{properties:['openFile']});
