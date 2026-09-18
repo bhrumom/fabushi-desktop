@@ -122,3 +122,9 @@
 .sand-avatar-editor__stage>span{position:absolute;inset:0;border:1px solid rgba(255,255,255,.18);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.35);pointer-events:none}
 .sand-avatar-editor__zoom{display:flex;align-items:center;gap:8px}.sand-avatar-editor__zoom input{flex:1}
 .sand-avatar-editor__dropzone{display:grid;place-items:center;gap:8px;min-height:180px;border:1px dashed rgba(255,255,255,.2);border-radius:12px;background:#18191e}
+
+.create-group-toggle{display:flex!important;align-items:center;gap:8px}.create-group-toggle input{width:auto}
+.create-group-members{display:grid;gap:6px;max-height:220px;overflow:auto;padding:8px;border:1px solid var(--stroke);border-radius:9px;background:rgba(255,255,255,.02)}
+.create-group-members>label{display:grid;grid-template-columns:auto 24px 1fr;gap:8px;align-items:center;padding:5px 6px;border-radius:7px}.create-group-members>label:hover{background:rgba(255,255,255,.04)}
+.create-group-members input{width:auto}.agent-settings-tabs{display:flex;gap:4px;padding:0 16px 10px}.agent-settings-tabs>button[aria-selected="true"]{background:#363943}
+.group-members-settings{min-height:160px}
