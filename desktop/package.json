@@ -11,7 +11,8 @@
     "dev": "vite --host 127.0.0.1 --port 1420",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && vite build",
-    "package:mac": "npm run build && electron-builder --mac dmg zip --publish never",
+    "build:computer-helper": "mkdir -p native/bin && swiftc native/MacComputerHelper.swift -O -o native/bin/fabushi-computer-helper",
+    "package:mac": "npm run build && npm run build:computer-helper && electron-builder --mac dmg zip --publish never",
     "start": "electron ."
   },
   "dependencies": {
@@ -64,6 +65,9 @@
       "electron/grok-local-browser.cjs",
       "electron/local-tool-executor.cjs",
       "package.json"
+    ],
+    "extraResources": [
+      {"from":"native/bin/fabushi-computer-helper","to":"bin/fabushi-computer-helper"}
     ],
     "mac": {
       "category": "public.app-category.productivity",
