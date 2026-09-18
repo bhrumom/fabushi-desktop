@@ -22,7 +22,8 @@ function registerIpc(){
     'list-plugins':'listPlugins','set-plugin-installed':'setPluginInstalled','set-plugin-enabled':'setPluginEnabled',
     'get-runtime-settings':'getRuntimeSettings','set-local-tool-permission':'setLocalToolPermission','resolve-approval':'resolveApproval',
     'list-mcp-servers':'listMcpServers','add-mcp-server':'addMcpServer','remove-mcp-server':'removeMcpServer',
-    'set-mcp-server-enabled':'setMcpServerEnabled','list-mcp-server-tools':'listMcpServerTools','set-mcp-tool-enabled':'setMcpToolEnabled'
+    'set-mcp-server-enabled':'setMcpServerEnabled','list-mcp-server-tools':'listMcpServerTools','set-mcp-tool-enabled':'setMcpToolEnabled',
+    'list-workflows':'listWorkflows','save-workflow':'saveWorkflow','delete-workflow':'deleteWorkflow','set-workflow-enabled':'setWorkflowEnabled'
   };
   for(const[name,method]of Object.entries(methods)){
     ipcMain.handle('grok-agent:'+name,async(event,args={})=>{
