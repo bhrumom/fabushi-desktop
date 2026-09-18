@@ -6,7 +6,7 @@ const {toolDefinitions,executeTool,descriptor}=require('./local-tool-executor.cj
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus}){
+function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,getExternalTools=async()=>[],executeExternalTool=async()=>null}){
   function systemPrompt(agent,enabled){
     return [
       `You are ${agent.name}, a Fabushi desktop agent following the Grok Bot host/coordinator execution model.`,
@@ -63,7 +63,7 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
   }
 
   async function runTurn({agent,history,transcript,enabled,signal}){
-    const tools=toolDefinitions(enabled);
+    const externalDefinitions=await getExternalTools();\n    const externalNames=new Set(externalDefinitions.map(x=>x.function?.name).filter(Boolean));\n    const tools=[...toolDefinitions(enabled),...externalDefinitions.map(({_mcp,...definition})=>definition)];
     const messages=[
       {role:'system',content:systemPrompt(agent,enabled)},
       ...history.filter(x=>x.role==='user'||x.role==='assistant').slice(-40).map(x=>({role:x.role,content:x.text}))
@@ -98,7 +98,7 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
 
         let resultText='';
         try{
-          const allowed=await authorize(agent.id,entry,name,args,signal);
+          const allowed=externalNames.has(name)?true:await authorize(agent.id,entry,name,args,signal);
           if(!allowed){
             resultText='ERROR: '+entry.text;
           }else{
