@@ -49,6 +49,8 @@ export interface AgentMessage {
   outputLocation?:{filePath:string;sizeBytes:number;lineCount:number;truncated:boolean;originalSizeBytes:number;toolCallId:string};
   display?:{kind:'image';dataUrl:string};
   attachments?:AttachmentDescriptor[];
+  replyToId?:string;
+  reactions?:{emoji:string;by:string}[];
 }
 export type ConversationOutlineItem =
   | {kind:'user';id:string;text:string}
@@ -68,6 +70,9 @@ export interface PendingApproval {
   args:Record<string,unknown>;
   createdAt:number;
 }
+export interface WorkspaceMessageSearchResult { agentId:string;agentName:string;entryId:string;role:'user'|'assistant';text:string;timestampMs:number; }
+export interface WorkspaceMediaSearchResult { agentId:string;agentName:string;entryId:string;attachmentId:string;fileName:string;ext:string;mime:string|null;kind:'image'|'video'|'audio'|'pdf'|'markdown'|'table'|'json'|'text'|'document'|'archive'|'file';timestampMs:number;width:number|null;height:number|null; }
+export interface WorkspaceLinkSearchResult { agentId:string;agentName:string;entryId:string;url:string;timestampMs:number; }
 export interface AgentThread {
   agent:AgentSummary;
   messages:AgentMessage[];
@@ -196,7 +201,11 @@ export interface GrokAgentBridge {
   setAgentHidden(input:{agentId:string;hidden:boolean}):Promise<AgentSummary>;
   deleteAgent(input:{agentId:string}):Promise<{ok:true}>;
   getThread(input:{agentId:string}):Promise<AgentThread>;
-  sendMessage(input:{agentId:string;text:string;attachmentIds?:string[]}):Promise<{messageId:string}>;
+  sendMessage(input:{agentId:string;text:string;attachmentIds?:string[];replyToId?:string|null}):Promise<{messageId:string}>;
+  reactToMessage(input:{agentId:string;entryId:string;emoji:string}):Promise<{reactions:{emoji:string;by:string}[]}>;
+  searchMessages(input:{query:string;limit?:number}):Promise<WorkspaceMessageSearchResult[]>;
+  searchMedia(input:{query:string;limit?:number}):Promise<WorkspaceMediaSearchResult[]>;
+  searchLinks(input:{query:string;limit?:number}):Promise<WorkspaceLinkSearchResult[]>;
   stopAgent(input:{agentId:string}):Promise<{ok:true}>;
   listPlugins():Promise<PluginDescriptor[]>;
   setPluginInstalled(input:{pluginId:string;installed:boolean}):Promise<PluginDescriptor[]>;
