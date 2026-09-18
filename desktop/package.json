@@ -66,6 +66,7 @@
       "electron/grok-workflow-manager.cjs",
       "electron/grok-automation-schedule.cjs",
       "electron/grok-local-browser.cjs",
+      "electron/grok-experiments.cjs",
       "electron/grok-media-protocol.cjs",
       "electron/grok-clock-skew-guard.cjs",
       "electron/grok-video-container.cjs",
