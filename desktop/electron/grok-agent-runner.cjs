@@ -3,8 +3,14 @@
 const crypto=require('node:crypto');
 const {SandAgentRunner}=require('./grok-reference-sand-runner.cjs');
 
-function abortError(reason='Operation cancelled.'){
-  const error=Error(String(reason||'Operation cancelled.'));error.name='AbortError';return error;
+function abortError(reason='cancelled'){
+  const error=Error(String(reason||'cancelled'));error.name='AbortError';return error;
+}
+function externalAbortReason(signal){
+  const reason=signal?.reason;
+  if(typeof reason==='string'&&reason.trim())return reason.trim();
+  if(reason&&typeof reason==='object'&&reason.name!=='AbortError'&&typeof reason.message==='string'&&reason.message.trim())return reason.message.trim();
+  return 'cancelled';
 }
 function promptFromInput(input){
   const history=Array.isArray(input?.history)?input.history:[];
@@ -29,26 +35,26 @@ function createAgentRunner({agentId,runTurn,onLifecycle=()=>{},onStateChanged=()
     if(active)throw Error('Agent already running.');
     if(quiescing)return{quiescedForUpgrade:true,value:null,engine:'grok-sand-agent-runner'};
     const requestId=String(input.requestId||crypto.randomUUID());
-    if(input.signal?.aborted)throw abortError(input.signal.reason?.reason||input.signal.reason?.message||'Operation cancelled.');
+    if(input.signal?.aborted)throw abortError(externalAbortReason(input.signal));
     const current={requestId,generation,startedAt:Date.now(),dispatched:false,interrupted:false,referenceRunner:null};
     const referenceRunner=new SandAgentRunner({
       getAgentId:()=>String(agentId||''),
       maxSteps:1,
       runStep:async(_step,context)=>{
-        if(input.signal?.aborted)throw abortError(input.signal.reason?.reason||input.signal.reason?.message||'Operation cancelled.');
+        if(input.signal?.aborted)throw abortError(externalAbortReason(input.signal));
         current.dispatched=true;emitState();
         const value=await runTurn({...input,signal:context.signal,requestId:context.requestId,generation});
-        if(input.signal?.aborted)throw abortError(input.signal.reason?.reason||input.signal.reason?.message||'Operation cancelled.');
+        if(input.signal?.aborted)throw abortError(externalAbortReason(input.signal));
         return{done:true,value};
       }
     });
     current.referenceRunner=referenceRunner;active=current;emitState();
-    const onExternalAbort=()=>{current.interrupted=true;referenceRunner.interrupt(String(input.signal?.reason?.reason||input.signal?.reason?.message||'Operation cancelled.'));emitState()};
+    const onExternalAbort=()=>{current.interrupted=true;referenceRunner.interrupt(externalAbortReason(input.signal));emitState()};
     input.signal?.addEventListener?.('abort',onExternalAbort,{once:true});
     try{
       try{onLifecycle({type:'started',agentId,requestId,generation,startedAt:current.startedAt,engine:'grok-sand-agent-runner'})}catch{}
       const value=await referenceRunner.run(promptFromInput(input),{inferenceRequestId:requestId,requestSource:'user'});
-      if(input.signal?.aborted)throw abortError(input.signal.reason?.reason||input.signal.reason?.message||'Operation cancelled.');
+      if(input.signal?.aborted)throw abortError(externalAbortReason(input.signal));
       return{quiescedForUpgrade:false,value,requestId,generation,engine:'grok-sand-agent-runner'};
     }finally{
       input.signal?.removeEventListener?.('abort',onExternalAbort);
