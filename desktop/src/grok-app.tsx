@@ -71,8 +71,8 @@ function ToolMessage({message,onResolve}:{message:AgentMessage;onResolve(approva
 }
 
 function Message({message,onResolve}:{message:AgentMessage;onResolve(approvalId:string,approved:boolean):Promise<void>}) {
-  if(message.role==='tool')return <ToolMessage message={message} onResolve={onResolve}/>;
-  return <article className={'message '+message.role}>
+  if(message.role==='tool')return <div data-entry-id={message.id}><ToolMessage message={message} onResolve={onResolve}/></div>;
+  return <article className={'message '+message.role} data-entry-id={message.id}>
     <div className="message-meta"><strong>{message.role==='user'?'You':message.role==='assistant'?'Agent':'System'}</strong><time>{formatTime(message.createdAt)}</time></div>
     <div className="message-text">{message.text}</div>
     {message.status==='streaming'?<span className="stream-caret"/>:null}
@@ -140,13 +140,41 @@ function ComputerInfoPane({agent,thread,onClose}:{agent:AgentSummary;thread:Agen
   </aside>;
 }
 
-function Workspace({agent,thread,refresh,openAutomations}:{agent:AgentSummary;thread:AgentThread|null;refresh():Promise<void>;openAutomations():void}) {
+function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():void;onChanged():Promise<void>}) {
+  const [name,setName]=useState(agent.name),[title,setTitle]=useState(agent.title||''),[description,setDescription]=useState(agent.description||'');
+  const [pending,setPending]=useState(false),[error,setError]=useState('');
+  const save=async()=>{const next=name.trim();if(!next||pending)return;setPending(true);setError('');try{await bridge.updateAgent({id:agent.id,profile:{name:next,title:title.trim(),description:description.trim()}});await onChanged();onClose()}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}};
+  return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay agent-settings-overlay" role="dialog" aria-label="Agent settings">
+    <header><div><h2>Agent settings</h2><p>Profile and notifications for this agent</p></div><button aria-label="Close" onClick={onClose}>×</button></header>
+    <div className="sand-agent-settings">
+      <label><span>Name</span><input aria-label="Agent name" value={name} disabled={pending} onChange={e=>setName(e.target.value)} placeholder="Bob"/></label>
+      <label><span>Title</span><input aria-label="Agent title" value={title} disabled={pending} onChange={e=>setTitle(e.target.value)} placeholder="Describe what your agent does"/></label>
+      <label><span>Description</span><textarea aria-label="Agent description" value={description} disabled={pending} onChange={e=>setDescription(e.target.value)} placeholder="What this agent is for"/></label>
+      <div className="agent-setting-switch"><span><strong>Notifications</strong><small>Get notified when this agent finishes or needs input</small></span><button role="switch" aria-checked={agent.notifyOnUpdatesEnabled===true} disabled={pending} onClick={async()=>{setPending(true);setError('');try{await bridge.setAgentNotifyOnUpdates({id:agent.id,isEnabled:!agent.notifyOnUpdatesEnabled});await onChanged()}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}}}>{agent.notifyOnUpdatesEnabled?'On':'Off'}</button></div>
+      {error?<div className="settings-error">{error}</div>:null}
+      <footer><button onClick={onClose}>Cancel</button><button className="primary" disabled={pending||!name.trim()} onClick={()=>void save()}>{pending?'Saving…':'Save'}</button></footer>
+    </div>
+  </section></div>;
+}
+
+function FindInChat({thread,onClose}:{thread:AgentThread|null;onClose():void}) {
+  const [query,setQuery]=useState(''),[index,setIndex]=useState(0);
+  const matches=useMemo(()=>{const q=query.trim().toLowerCase();if(!q)return[];return (thread?.messages||[]).flatMap(message=>{const text=(message.text||'').toLowerCase();const rows:{id:string;occurrence:number}[]=[];let at=text.indexOf(q),occurrence=0;while(at>=0){rows.push({id:message.id,occurrence});occurrence++;at=text.indexOf(q,at+q.length)}return rows})},[thread?.messages,query]);
+  useEffect(()=>{setIndex(0)},[query]);
+  const step=(delta:number)=>{if(!matches.length)return;const next=(index+delta+matches.length)%matches.length;setIndex(next);const id=matches[next]?.id;id&&document.querySelector<HTMLElement>(`[data-entry-id="${CSS.escape(id)}"]`)?.scrollIntoView({block:'center',behavior:'smooth'})};
+  return <div className="sand-chat-find"><div className="sand-chat-find-bar"><span>⌕</span><input autoFocus aria-label="Find in chat" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find in chat" onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();onClose()}else if(e.key==='Enter'){e.preventDefault();step(e.shiftKey?-1:1)}}}/>{query.trim()?<span role="status">{matches.length?Math.min(index+1,matches.length):0}/{matches.length}</span>:null}<button aria-label="Previous match" disabled={!matches.length} onClick={()=>step(-1)}>↑</button><button aria-label="Next match" disabled={!matches.length} onClick={()=>step(1)}>↓</button><button aria-label="Close find" onClick={onClose}>×</button></div></div>;
+}
+
+function Workspace({agent,thread,refresh,openAutomations,openAgentSettings}:{agent:AgentSummary;thread:AgentThread|null;refresh():Promise<void>;openAutomations():void;openAgentSettings():void}) {
   const scroller=useRef<HTMLDivElement|null>(null);
   const [outlineOpen,setOutlineOpen]=useState(false);
   const [computerOpen,setComputerOpen]=useState(false);
+  const [findOpen,setFindOpen]=useState(false);
   useEffect(()=>{scroller.current?.scrollTo({top:scroller.current.scrollHeight})},[thread?.messages.length]);
+  useEffect(()=>{const onKey=(event:KeyboardEvent)=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='f'){event.preventDefault();setFindOpen(true)}else if(event.key==='Escape'&&findOpen)setFindOpen(false)};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[findOpen]);
   return <main className="workspace">
-    <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><nav className="header-actions"><button className="header-action sand-chat-header__computer" data-computer-active={busy(agent.status)||undefined} onClick={()=>setComputerOpen(value=>!value)}>Computer</button><button className="header-action" onClick={()=>setOutlineOpen(value=>!value)}>Outline</button><button className="header-action" onClick={openAutomations}>Routines</button></nav></header>
+    <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><nav className="header-actions"><button className="header-action sand-chat-header__computer" data-computer-active={busy(agent.status)||undefined} onClick={()=>setComputerOpen(value=>!value)}>Computer</button><button className="header-action" onClick={()=>setFindOpen(true)}>Find</button><button className="header-action" onClick={()=>setOutlineOpen(value=>!value)}>Outline</button><button className="header-action" onClick={openAgentSettings}>Agent</button><button className="header-action" onClick={openAutomations}>Routines</button></nav></header>
+    {findOpen?<FindInChat thread={thread} onClose={()=>setFindOpen(false)}/>:null}
     <div className="transcript sand-virtual-transcript" ref={scroller}><div className="transcript-column">
       {thread?.messages.length?thread.messages.map(message=><Message key={message.id} message={message} onResolve={async(approvalId,approved)=>{
         await bridge.resolveApproval({approvalId,approved});await refresh();
@@ -517,7 +545,7 @@ export default function GrokApp(){
   const [thread,setThread]=useState<AgentThread|null>(null);
   const [plugins,setPlugins]=useState<PluginDescriptor[]>([]);
   const [workflows,setWorkflows]=useState<WorkflowDescriptor[]>([]);
-  const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|'orgchart'|'hidden'|null>(null);
+  const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|'orgchart'|'hidden'|'agent-settings'|null>(null);
   const [createOpen,setCreateOpen]=useState(false);
   const [renameAgent,setRenameAgent]=useState<AgentSummary|null>(null);
   const [deleteAgent,setDeleteAgent]=useState<AgentSummary|null>(null);
@@ -559,13 +587,14 @@ export default function GrokApp(){
   return <div className="app-shell">
     <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={setSelectedId} create={()=>setCreateOpen(true)}
       plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} orgChart={()=>setOverlay('orgchart')} hiddenChats={()=>setOverlay('hidden')} rename={setRenameAgent} hide={agent=>{void bridge.setAgentHidden({agentId:agent.id,hidden:true}).then(loadAgents).catch(error=>setFailure(error instanceof Error?error.message:String(error)))}} remove={setDeleteAgent} openPalette={()=>setPaletteOpen(true)}/>
-    {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')}/>:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
+    {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')} openAgentSettings={()=>setOverlay('agent-settings')}/ >:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
     {failure?<div className="toast-error">{failure}<button onClick={()=>setFailure('')}>×</button></div>:null}
     {overlay==='plugins'?<Plugins items={plugins} workflows={workflows} onClose={()=>setOverlay(null)} reload={loadPlugins} reloadWorkflows={loadWorkflows}/>:null}
     {overlay==='settings'?<Settings onClose={()=>setOverlay(null)}/>:null}
     {overlay==='automations'&&selected?<Automations agent={selected} onClose={()=>setOverlay(null)}/>:null}
     {overlay==='orgchart'?<OrgChart agents={agents} onClose={()=>setOverlay(null)} onSelect={setSelectedId}/>:null}
     {overlay==='hidden'?<HiddenChats agents={agents} onClose={()=>setOverlay(null)} onOpen={id=>{setSelectedId(id);setOverlay(null)}} onChanged={loadAgents}/>:null}
+    {overlay==='agent-settings'&&selected?<AgentSettings agent={selected} onClose={()=>setOverlay(null)} onChanged={loadAgents}/>:null}
     {createOpen?<CreateAgent onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>setSelectedId(agent.id))}}/>:null}
     {renameAgent?<RenameAgent agent={renameAgent} onClose={()=>setRenameAgent(null)} onSaved={loadAgents}/>:null}
     {deleteAgent?<DeleteAgent agent={deleteAgent} onClose={()=>setDeleteAgent(null)} onDeleted={async()=>{await loadAgents();setThread(null)}}/>:null}
