@@ -3,7 +3,7 @@
 const fs=require('node:fs/promises');
 const path=require('node:path');
 const crypto=require('node:crypto');
-const {createHostRuntime}=require('./grok-host-runtime.cjs');
+const {createHostRuntime}=require('./grok-host-runtime.cjs');\nconst {createMcpManager,normalizeServer}=require('./grok-mcp-manager.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
@@ -128,7 +128,12 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
     pending.finish(approved===true);return{ok:true};
   }
 
-  const host=createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus});
+  const mcp=createMcpManager({getServers:async()=>[...((await load()).mcpServers||[])]});
+  const host=createHostRuntime({
+    shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,
+    getExternalTools:()=>mcp.collectToolDefinitions(),
+    executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args)
+  });
 
   async function sendMessage({agentId,text}){
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
@@ -167,16 +172,53 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
     return{ok:true};
   }
 
+  async function listMcpServers(){
+    const s=await load();
+    return (s.mcpServers||[]).map(server=>({id:server.id,name:server.name,command:server.command,args:[...(server.args||[])],enabled:server.enabled!==false,disabledTools:[...(server.disabledTools||[])]}));
+  }
+  async function addMcpServer(input){
+    const s=await load(),server=normalizeServer(input);
+    if((s.mcpServers||[]).some(x=>x.id===server.id))throw Error('MCP server id already exists.');
+    s.mcpServers.push(server);await save();emit('plugins.changed');return server;
+  }
+  async function removeMcpServer({serverId}){
+    const s=await load(),before=s.mcpServers.length;
+    s.mcpServers=s.mcpServers.filter(x=>x.id!==serverId);
+    if(s.mcpServers.length===before)throw Error('MCP server not found.');
+    mcp.disposeServer(serverId);await save();emit('plugins.changed');return{ok:true};
+  }
+  async function setMcpServerEnabled({serverId,enabled}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    server.enabled=enabled===true;if(!server.enabled)mcp.disposeServer(serverId);await save();emit('plugins.changed');return server;
+  }
+  async function listMcpServerTools({serverId}){return await mcp.listServerTools(serverId)}
+  async function setMcpToolEnabled({serverId,toolName,enabled}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    const disabled=new Set(server.disabledTools||[]);if(enabled)disabled.delete(toolName);else disabled.add(toolName);
+    server.disabledTools=[...disabled];await save();emit('plugins.changed');return await mcp.listServerTools(serverId);
+  }
   async function listPlugins(){
     const s=await load();
-    return capabilityCatalog.map(p=>({...p,installed:true,enabled:s.plugins?.[p.id]?.enabled!==false,removable:false}));
+    const local=capabilityCatalog.map(p=>({...p,installed:true,enabled:s.plugins?.[p.id]?.enabled!==false,removable:false,kind:'local'}));
+    const servers=(s.mcpServers||[]).map(server=>({
+      id:'mcp:'+server.id,name:server.name,description:'MCP server: '+server.command,category:'MCP',builtin:false,
+      provider:'stdio-mcp',installed:true,enabled:server.enabled!==false,removable:true,kind:'mcp',serverId:server.id
+    }));
+    return[...local,...servers];
   }
   async function setPluginInstalled({pluginId,installed}){
+    if(String(pluginId).startsWith('mcp:')){
+      if(installed!==false)throw Error('MCP servers are installed through Add MCP Server.');
+      return removeMcpServer({serverId:String(pluginId).slice(4)}).then(()=>listPlugins());
+    }
     if(!catalogIds.has(pluginId))throw Error('Plugin not found');
     if(installed===false)throw Error('Built-in local capabilities cannot be removed; disable them instead.');
     return listPlugins();
   }
   async function setPluginEnabled({pluginId,enabled}){
+    if(String(pluginId).startsWith('mcp:')){
+      await setMcpServerEnabled({serverId:String(pluginId).slice(4),enabled});return listPlugins();
+    }
     const s=await load();if(!catalogIds.has(pluginId))throw Error('Plugin not found');
     s.plugins[pluginId]={installed:true,enabled:enabled===true};await save();emit('plugins.changed');return listPlugins();
   }
@@ -191,7 +233,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
 
   return{
     listAgents,createAgent,renameAgent,deleteAgent,getThread,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,getRuntimeSettings,setLocalToolPermission,resolveApproval
+    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,removeMcpServer,setMcpServerEnabled,listMcpServerTools,setMcpToolEnabled,getRuntimeSettings,setLocalToolPermission,resolveApproval
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
