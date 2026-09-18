@@ -1,5 +1,5 @@
 'use strict';
-const {app,BrowserWindow,dialog,ipcMain,shell,safeStorage}=require('electron');
+const {app,BrowserWindow,dialog,ipcMain,shell,safeStorage,Notification}=require('electron');
 const path=require('node:path');
 const {URL}=require('node:url');
 const {createRuntime}=require('./grok-agent-runtime.cjs');
@@ -56,7 +56,7 @@ function createWindow(){
 if(!app.requestSingleInstanceLock())app.quit();
 else{
   app.on('second-instance',()=>{if(!mainWindow)createWindow();if(mainWindow.isMinimized())mainWindow.restore();mainWindow.show();mainWindow.focus();});
-  app.whenReady().then(()=>{const attachmentGateway=createAttachmentGateway({app});runtime=createRuntime({app,BrowserWindow,shell,safeStorage,attachmentGateway});registerIpc();createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
+  app.whenReady().then(()=>{const attachmentGateway=createAttachmentGateway({app});runtime=createRuntime({app,BrowserWindow,shell,safeStorage,attachmentGateway,notify:({title,body})=>{if(Notification.isSupported())new Notification({title:String(title||'Fabushi'),body:String(body||'')}).show()}});registerIpc();createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
   app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});
   app.on('before-quit',event=>{if(!runtime||quitAfterDispose)return;event.preventDefault();quitAfterDispose=true;void Promise.resolve(runtime.dispose?.()).finally(()=>app.quit());});
 }
