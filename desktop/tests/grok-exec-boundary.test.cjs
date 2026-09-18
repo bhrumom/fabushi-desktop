@@ -81,3 +81,39 @@ test('Computer display identity is stable for the same visible target and change
   assert.equal(first,same);
   assert.notEqual(first,changed);
 });
+
+
+test('streamed final assistant reply follows tool rows in transcript order',async()=>{
+  let round=0;
+  const deltas=[];
+  const runtime=createHostRuntime({
+    shell:{openExternal:async()=>{}},
+    getLocalToolPermission:async()=> 'always',
+    getAutoReviewMode:async()=> 'off',
+    requestApproval:async()=>true,
+    onToolState:async()=>{},
+    onAgentStatus:async()=>{},
+    onAssistantDelta:async event=>{deltas.push(event.delta)},
+    getWorkflowContext:async()=> '',
+    inferenceRequest:async(_messages,_tools,_signal,onDelta)=>{
+      round++;
+      if(round===1)return{message:{content:null,tool_calls:[{id:'tool-1',type:'function',function:{name:'read_file',arguments:'{"path":"package.json"}'}}]}};
+      onDelta('final ','final ');
+      onDelta('answer','final answer');
+      return{message:{content:'final answer'}};
+    }
+  });
+  const transcript=[{id:'u1',role:'user',text:'inspect then answer',createdAt:1,status:'done'}];
+  const assistant={id:'a1',role:'assistant',text:'',createdAt:2,status:'streaming'};
+  const text=await runtime.runTurn({
+    agent:{id:'chief',name:'Chief'},history:[...transcript],transcript,enabled:new Set(['filesystem']),
+    signal:new AbortController().signal,assistantEntry:assistant
+  });
+  assert.equal(text,'final answer');
+  assert.deepEqual(deltas,['final ','answer']);
+  const toolIndex=transcript.findIndex(row=>row.role==='tool');
+  const assistantIndex=transcript.indexOf(assistant);
+  assert.ok(toolIndex>=0);
+  assert.ok(assistantIndex>toolIndex);
+  assert.equal(assistant.text,'final answer');
+});
