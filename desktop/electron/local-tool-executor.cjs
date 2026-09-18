@@ -9,6 +9,39 @@ const {execFile,spawn}=require('node:child_process');
 const MAX_TEXT=50000;
 const backgroundProcesses=new Map();
 
+function computerStateIdentity(state){
+  const canonical=JSON.stringify({
+    application:String(state?.application||''),
+    windowTitle:String(state?.windowTitle||'')
+  });
+  return crypto.createHash('sha256').update(canonical).digest('hex');
+}
+async function currentComputerState(signal){
+  if(process.platform!=='darwin')throw Error('Computer state is currently implemented for macOS only.');
+  const script=[
+    'tell application "System Events"',
+    'set frontProcess to first process whose frontmost is true',
+    'set appName to name of frontProcess as text',
+    'set windowName to ""',
+    'try',
+    'set windowName to name of front window of frontProcess as text',
+    'end try',
+    'return appName & linefeed & windowName',
+    'end tell'
+  ].join('\n');
+  const result=await runExec('/usr/bin/osascript',['-e',script],{signal});
+  const rows=String(result.stdout||'').replace(/\r/g,'').split('\n');
+  const state={application:rows[0]||'',windowTitle:rows.slice(1).join('\n').trim()};
+  return{...state,stateId:computerStateIdentity(state)};
+}
+async function ensureComputerState(expectedStateId,signal){
+  const expected=String(expectedStateId||'').trim();
+  if(!expected)throw Error('A stateId from computer_screenshot is required for this Computer action.');
+  const current=await currentComputerState(signal);
+  if(current.stateId!==expected)throw Error('The visible Mac target changed after review; take a fresh computer_screenshot and retry the action.');
+  return current;
+}
+
 function clamp(text){
   const value=String(text??'');
   return value.length>MAX_TEXT?value.slice(0,MAX_TEXT)+'\n[truncated]':value;
@@ -52,7 +85,7 @@ function descriptor(name,args={}){
     browser_snapshot:{mutation:false,summary:'Inspect local browser page'},
     browser_screenshot:{mutation:false,summary:'Capture local browser page'},
     browser_scroll:{mutation:false,summary:'Scroll local browser page'},
-    computer_screenshot:{mutation:false,summary:'Capture the current Mac screen'},
+    computer_screenshot:{mutation:false,summary:'Capture the current Mac screen and state identity'},
     computer_click:{mutation:true,summary:`Click at (${args.x}, ${args.y}) on this Mac`},
     computer_type:{mutation:true,summary:`Type text on this Mac: ${String(args.text||'').slice(0,120)}`},
     computer_key:{mutation:true,summary:`Press ${args.key||''} on this Mac`}
@@ -79,10 +112,10 @@ function toolDefinitions(enabled){
   }
   if(enabled.has('browser'))tools.push(fn('open_url','Open an HTTPS URL in the default browser on the installed Mac.',{url:{type:'string'}},['url']));
   if(enabled.has('computer')){
-    tools.push(fn('computer_screenshot','Capture the current screen of the installed Mac.',{}));
-    tools.push(fn('computer_click','Click a screen coordinate on the installed Mac. Requires macOS Accessibility permission.',{x:{type:'integer'},y:{type:'integer'},purpose:{type:'string'}},['x','y','purpose']));
-    tools.push(fn('computer_type','Type text into the focused application on the installed Mac. Requires macOS Accessibility permission.',{text:{type:'string'}},['text']));
-    tools.push(fn('computer_key','Press a supported key in the focused application on the installed Mac. Requires macOS Accessibility permission.',{key:{type:'string'}},['key']));
+    tools.push(fn('computer_screenshot','Capture the current screen of the installed Mac and return a stateId for reviewed follow-up actions.',{}));
+    tools.push(fn('computer_click','Click a screen coordinate on the installed Mac after rechecking the stateId captured by computer_screenshot. Requires macOS Accessibility permission.',{x:{type:'integer'},y:{type:'integer'},stateId:{type:'string'},purpose:{type:'string'}},['x','y','stateId','purpose']));
+    tools.push(fn('computer_type','Type text into the focused application on the installed Mac after rechecking the current state.',{text:{type:'string'},stateId:{type:'string'},purpose:{type:'string'}},['text','stateId']));
+    tools.push(fn('computer_key','Press a supported key in the focused application on the installed Mac after rechecking the current state.',{key:{type:'string'},stateId:{type:'string'},purpose:{type:'string'}},['key','stateId']));
   }
   return tools;
 }
@@ -153,27 +186,33 @@ async function executeTool(name,args,{enabled,shell,signal,onStarted}={}){
   }
   if(name==='computer_screenshot'){
     if(process.platform!=='darwin')throw Error('Computer screenshot is currently implemented for macOS only.');
+    const state=await currentComputerState(signal);
     const target=path.join(os.tmpdir(),`fabushi-screen-${crypto.randomUUID()}.png`);
     try{
       await runExec('/usr/sbin/screencapture',['-x',target],{signal});
-      const data=await fs.readFile(target);return{text:`Captured screen (${data.length} bytes).`,display:{kind:'image',dataUrl:'data:image/png;base64,'+data.toString('base64')}};
+      const data=await fs.readFile(target);
+      return{text:JSON.stringify({...state,bytes:data.length},null,2),display:{kind:'image',dataUrl:'data:image/png;base64,'+data.toString('base64')}};
     }finally{await fs.unlink(target).catch(()=>{});}
   }
   if(name==='computer_click'){
     if(process.platform!=='darwin')throw Error('Computer click is currently implemented for macOS only.');
+    await ensureComputerState(args.stateId,signal);
+    const purpose=String(args.purpose||'').trim();if(!purpose)throw Error('Computer click requires a concise purpose.');if(purpose.length>500)throw Error('Computer click purpose is too long.');
     const x=Number(args.x),y=Number(args.y);if(!Number.isInteger(x)||!Number.isInteger(y))throw Error('Integer x/y coordinates are required.');
     await runExec('/usr/bin/osascript',['-e',`tell application "System Events" to click at {${x}, ${y}}`],{signal});
     return{text:`Clicked (${x}, ${y}).`};
   }
   if(name==='computer_type'){
     if(process.platform!=='darwin')throw Error('Computer type is currently implemented for macOS only.');
-    const text=String(args.text??'');if(text.length>8000)throw Error('Text is too long.');
+    await ensureComputerState(args.stateId,signal);
+    const text=String(args.text??'');if(text.length>2000)throw Error('Text is too long.');
     await runExec('/usr/bin/osascript',['-e','on run argv','-e','tell application "System Events" to keystroke item 1 of argv','-e','end run',text],{signal});
     return{text:`Typed ${text.length} characters.`};
   }
   if(name==='computer_key'){
     if(process.platform!=='darwin')throw Error('Computer key is currently implemented for macOS only.');
-    const key=String(args.key||'').toLowerCase();
+    await ensureComputerState(args.stateId,signal);
+    const key=String(args.key||'').toLowerCase();if(key.length>256)throw Error('Computer key is too long.');
     const codes={enter:36,return:36,tab:48,escape:53,esc:53,space:49,delete:51,backspace:51,left:123,right:124,down:125,up:126};
     const code=codes[key];if(code==null)throw Error('Unsupported key. Supported: enter, tab, escape, space, delete, arrows.');
     await runExec('/usr/bin/osascript',['-e',`tell application "System Events" to key code ${code}`],{signal});
@@ -182,4 +221,4 @@ async function executeTool(name,args,{enabled,shell,signal,onStarted}={}){
   throw Error('Unknown tool: '+name);
 }
 
-module.exports={toolDefinitions,executeTool,descriptor};
+module.exports={toolDefinitions,executeTool,descriptor,computerStateIdentity};
