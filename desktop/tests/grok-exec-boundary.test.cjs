@@ -3,6 +3,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {createHostRuntime}=require('../electron/grok-host-runtime.cjs');
+const {computerStateIdentity}=require('../electron/local-tool-executor.cjs');
 const {createResource,ResourceRegistry}=require('../electron/grok-exec-resources.cjs');
 const {rootRequestContext,childRequestContext,currentRequestContext,runWithRequestContext}=require('../electron/grok-request-context.cjs');
 
@@ -70,4 +71,13 @@ test('host routes browser, MCP, and subagent tools through distinct executor res
   assert.equal(tools.length,3);
   assert.deepEqual(tools.map(row=>row.status),['done','done','done']);
   assert.equal(tools.every(row=>typeof row.requestId==='string'&&row.requestId.length>0),true);
+});
+
+
+test('Computer display identity is stable for the same visible target and changes with window identity',()=>{
+  const first=computerStateIdentity({application:'Safari',windowTitle:'Docs'});
+  const same=computerStateIdentity({application:'Safari',windowTitle:'Docs'});
+  const changed=computerStateIdentity({application:'Safari',windowTitle:'Checkout'});
+  assert.equal(first,same);
+  assert.notEqual(first,changed);
 });
