@@ -33,22 +33,31 @@ jobs:
           cd _grok
           npm install --no-audit --no-fund
           npm run source:typecheck
-      - name: Replace target source tree with pinned reference source
+      - name: Vendor exact reference source and restore renderer support surface
         shell: bash
         run: |
           set -euo pipefail
-          rsync -a --delete _grok/source/ source/
-          test "$(find source -type f | wc -l | tr -d ' ')" -gt 1500
-      - name: Commit exact reference source tree
+          mkdir -p reference/grok-bot-0.18/source
+          rsync -a --delete _grok/source/ reference/grok-bot-0.18/source/
+          test "$(find reference/grok-bot-0.18/source -type f | wc -l | tr -d ' ')" -gt 1500
+          git checkout 779d256fa7dbc405ac6367a7c89feeff48365f26 -- source
+          node <<'NODE'
+          const fs=require('node:fs');
+          const p='desktop/scripts/build-reference-agent.mjs';
+          let s=fs.readFileSync(p,'utf8');
+          s=s.replace('path.join(repo, "source", "host", "runner", "sand-agent-runner.ts")','path.join(repo, "reference", "grok-bot-0.18", "source", "host", "runner", "sand-agent-runner.ts")');
+          fs.writeFileSync(p,s);
+          NODE
+      - name: Commit vendored reference source layout
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- source; then
-            echo "Reference source already exact"
-            exit 0
-          fi
           git config user.name "Fabushi Work"
           git config user.email "noreply@fabushi.local"
-          git add -A source
-          git commit -m "refactor(gbr): sync pinned Grok 0.18 source tree"
+          git add -A source reference/grok-bot-0.18/source desktop/scripts/build-reference-agent.mjs
+          if git diff --cached --quiet; then
+            echo "Vendored source already exact"
+            exit 0
+          fi
+          git commit -m "refactor(gbr): vendor exact Grok source for local runner"
           git push origin HEAD:refactor/grok-bot-018-parity-mac
