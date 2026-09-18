@@ -90,6 +90,19 @@ export interface McpToolDescriptor {
   inputSchema:Record<string,unknown>;
   isDisabled:boolean;
 }
+export interface MarketplaceVariableField {
+  key:string;label:string;placeholder:string;isRequired:boolean;isSecret:boolean;defaultValue?:string;hint?:string;
+}
+export interface MarketplacePluginDescriptor {
+  id:string;name:string;displayName:string;description:string;category:string;homepage:string|null;iconUrl:string|null;
+  connectors:{name:string;description:string}[];skills:{name:string;description:string}[];fields:MarketplaceVariableField[];
+  publisher:{name:string;displayName:string;isUserOwned:boolean}|null;
+  marketplace:{name:string;displayName:string;ownership:'team'|'user'}|null;
+  installed:boolean;install?:{serverIds:string[];skillIds:string[];installedAt:number}|null;
+}
+export interface MarketplaceCatalogDescriptor {
+  available:boolean;reason:string|null;includesPrivateMarketplaces:boolean;plugins:MarketplacePluginDescriptor[];
+}
 export interface WorkflowDescriptor {
   id:string;
   name:string;
@@ -166,6 +179,9 @@ export interface GrokAgentBridge {
   renameMcpAccount(input:{serverId:string;accountKey:string;newAccountKey:string}):Promise<McpAccountStatus>;
   listMcpServerTools(input:{serverId:string}):Promise<McpToolDescriptor[]>;
   setMcpToolEnabled(input:{serverId:string;toolName:string;enabled:boolean}):Promise<McpToolDescriptor[]>;
+  listMarketplacePlugins():Promise<MarketplaceCatalogDescriptor>;
+  installMarketplacePlugin(input:{entryId:string;values?:Record<string,string>}):Promise<MarketplaceCatalogDescriptor>;
+  uninstallMarketplacePlugin(input:{entryId:string}):Promise<MarketplaceCatalogDescriptor>;
   listWorkflows():Promise<WorkflowDescriptor[]>;
   saveWorkflow(input:{id?:string;name:string;description?:string;body:string;trigger?:{schedule:string;isEnabled:boolean}|null;isEnabledForAgent?:boolean;disableModelInvocation?:boolean}):Promise<WorkflowDescriptor>;
   deleteWorkflow(input:{id:string}):Promise<{ok:true}>;
