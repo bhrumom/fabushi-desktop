@@ -30,6 +30,7 @@ export interface AgentMessage {
   reviewFingerprint?:string;
   reviewDecision?:'allow'|'block';
   reviewReason?:string;
+  outputLocation?:{filePath:string;sizeBytes:number;lineCount:number;truncated:boolean;originalSizeBytes:number;toolCallId:string};
   display?:{kind:'image';dataUrl:string};
 }
 export interface PendingApproval {
