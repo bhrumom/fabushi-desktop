@@ -12,6 +12,8 @@ import { AsyncTasksPanel } from './recovered/features/agent-info/async-tasks/vie
 import { OnboardingCharacter, resolvePersonaColor, resolvePersonaShape, type OnboardingCharacterState } from './recovered/features/onboarding/signed-in/character';
 import { createAvatarEditorProductionAdapter } from './recovered/features/agent-info/avatar-editor/production-adapter';
 import { AvatarEditorView } from './recovered/features/agent-info/avatar-editor/view';
+import { createAgentInfoChannelsController } from './recovered/features/agent-info/channels/model';
+import { AgentInfoChannelsPanel } from './recovered/features/agent-info/channels/view';
 import { createStrictModeDisposalGuard } from './production/strict-mode-disposal';
 import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, DeepLinkInfo, DesktopInfo, DesktopUpdateStatus, DesktopUpdateTrack, FeedbackResult, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor, WorkspaceLinkSearchResult, WorkspaceMediaSearchResult, WorkspaceMessageSearchResult } from './grok-types';
 import './grok-app.css';
@@ -253,10 +255,18 @@ function ComputerInfoPane({agent,thread,onClose}:{agent:AgentSummary;thread:Agen
 
 function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():void;onChanged():Promise<void>}) {
   const [name,setName]=useState(agent.name),[title,setTitle]=useState(agent.title||''),[description,setDescription]=useState(agent.description||'');
-  const [pending,setPending]=useState(false),[error,setError]=useState(''),[avatarOpen,setAvatarOpen]=useState(false);
+  const [pending,setPending]=useState(false),[error,setError]=useState(''),[avatarOpen,setAvatarOpen]=useState(false),[settingsTab,setSettingsTab]=useState<'profile'|'channels'>('profile');
   const avatarAdapter=useMemo(()=>createAvatarEditorProductionAdapter({bridge}),[]);
+  const channelsController=useMemo(()=>createAgentInfoChannelsController({
+    getAgentChannels:args=>bridge.getAgentChannels(args),
+    connectChannel:args=>bridge.connectChannel(args),
+    disconnectChannel:args=>bridge.disconnectChannel(args),
+    refreshChannel:args=>bridge.refreshChannel(args)
+  },agent.id),[agent.id]);
   const avatarDisposalGuard=useMemo(()=>createStrictModeDisposalGuard(),[]);
+  const channelsDisposalGuard=useMemo(()=>createStrictModeDisposalGuard(),[]);
   const avatarDisposable=useMemo(()=>({dispose:()=>avatarAdapter.dispose()}),[avatarAdapter]);
+  const channelsDisposable=useMemo(()=>({dispose:()=>channelsController.dispose()}),[channelsController]);
   const [avatarSnapshot,setAvatarSnapshot]=useState(avatarAdapter.getSnapshot());
   useEffect(()=>avatarAdapter.subscribe(()=>setAvatarSnapshot(avatarAdapter.getSnapshot())),[avatarAdapter]);
   useEffect(()=>{
@@ -267,6 +277,7 @@ function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():v
     setAvatarSnapshot(avatarAdapter.getSnapshot());
   },[avatarAdapter,agent.id,agent.avatarDataUrl,agent.avatarShape,agent.avatarColor]);
   useEffect(()=>avatarDisposalGuard.attach(avatarDisposable),[avatarDisposalGuard,avatarDisposable]);
+  useEffect(()=>channelsDisposalGuard.attach(channelsDisposable),[channelsDisposalGuard,channelsDisposable]);
   const save=async()=>{
     const next=name.trim();if(!next||pending)return;
     setPending(true);setError('');
@@ -276,8 +287,12 @@ function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():v
   };
   const closeAvatar=()=>{setAvatarOpen(false);void onChanged()};
   return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay agent-settings-overlay" role="dialog" aria-label="Agent settings">
-    <header><div><h2>Agent settings</h2><p>Profile and notifications for this agent</p></div><button aria-label="Close" onClick={onClose}>×</button></header>
-    <div className="sand-agent-settings">
+    <header><div><h2>Agent settings</h2><p>Profile, channels, and notifications for this agent</p></div><button aria-label="Close" onClick={onClose}>×</button></header>
+    <div className="agent-settings-tabs" role="tablist" aria-label="Agent settings sections">
+      <button role="tab" aria-selected={settingsTab==='profile'} onClick={()=>setSettingsTab('profile')}>Profile</button>
+      <button role="tab" aria-selected={settingsTab==='channels'} onClick={()=>setSettingsTab('channels')}>Channels</button>
+    </div>
+    {settingsTab==='channels'?<div className="sand-agent-settings channels-settings"><AgentInfoChannelsPanel agentId={agent.id} labelledBy="agent-settings-channels" controller={channelsController}/></div>:<div className="sand-agent-settings">
       <div className="agent-avatar-setting">
         <AgentAvatar agent={agent} size={64}/>
         <span><strong>Avatar</strong><small>Use the Grok Bot character, upload an image, or generate one when a provider is configured.</small></span>
@@ -290,7 +305,7 @@ function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():v
       <div className="agent-setting-switch"><span><strong>Notifications</strong><small>Get notified when this agent finishes or needs input</small></span><button role="switch" aria-checked={agent.notifyOnUpdatesEnabled===true} disabled={pending} onClick={async()=>{setPending(true);setError('');try{await bridge.setAgentNotifyOnUpdates({id:agent.id,isEnabled:!agent.notifyOnUpdatesEnabled});await onChanged()}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}}}>{agent.notifyOnUpdatesEnabled?'On':'Off'}</button></div>
       {error?<div className="settings-error">{error}</div>:null}
       <footer><button onClick={onClose}>Cancel</button><button className="primary" disabled={pending||!name.trim()} onClick={()=>void save()}>{pending?'Saving…':'Save'}</button></footer>
-    </div>
+    </div>}
   </section></div>;
 }
 
