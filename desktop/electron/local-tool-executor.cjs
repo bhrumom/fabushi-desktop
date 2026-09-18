@@ -65,6 +65,35 @@ function runExec(file,args,options={}){
     }
   });
 }
+function runStreamingShell(command,{cwd,signal,onOutput,timeoutMs=120000}={}){
+  return new Promise((resolve,reject)=>{
+    const child=spawn('/bin/zsh',['-lc',command],{cwd,env:process.env,stdio:['ignore','pipe','pipe']});
+    let stdout='',stderr='',settled=false;
+    const append=(stream,chunk)=>{
+      const text=String(chunk??'');
+      if(stream==='stdout')stdout=clamp(stdout+text);else stderr=clamp(stderr+text);
+      onOutput?.({stream,text});
+    };
+    const cleanup=()=>{clearTimeout(timer);signal?.removeEventListener('abort',abort)};
+    const finishError=(message,name='Error')=>{
+      const error=Error(message);error.name=name;error.stdout=stdout;error.stderr=stderr;reject(error);
+    };
+    const abort=()=>{if(settled)return;try{child.kill('SIGTERM')}catch{}};
+    const timer=setTimeout(()=>{if(settled)return;try{child.kill('SIGTERM')}catch{}},timeoutMs);
+    child.stdout.on('data',chunk=>append('stdout',chunk));
+    child.stderr.on('data',chunk=>append('stderr',chunk));
+    child.on('error',error=>{if(settled)return;settled=true;cleanup();reject(error)});
+    child.on('exit',(code,signalName)=>{
+      if(settled)return;settled=true;cleanup();
+      if(signal?.aborted){finishError('Tool execution cancelled.','AbortError');return}
+      if(signalName){finishError('Terminal process stopped by '+signalName+'.\n'+clamp(stdout+(stderr?'\n[stderr]\n'+stderr:'')));return}
+      if(code!==0){finishError('Terminal command exited with code '+code+'.\n'+clamp(stdout+(stderr?'\n[stderr]\n'+stderr:'')));return}
+      resolve({stdout,stderr});
+    });
+    if(signal){if(signal.aborted)abort();else signal.addEventListener('abort',abort,{once:true})}
+  });
+}
+
 function descriptor(name,args={}){
   const table={
     list_directory:{mutation:false,summary:`List directory ${args.path||''}`},
@@ -120,7 +149,7 @@ function toolDefinitions(enabled){
   return tools;
 }
 
-async function executeTool(name,args,{enabled,shell,signal,onStarted}={}){
+async function executeTool(name,args,{enabled,shell,signal,onStarted,onOutput}={}){
   const needed={
     list_directory:'filesystem',read_file:'filesystem',write_file:'filesystem',create_directory:'filesystem',move_path:'filesystem',
     run_terminal:'shell',start_background_terminal:'shell',get_background_terminal:'shell',write_background_terminal:'shell',stop_background_terminal:'shell',
@@ -153,7 +182,7 @@ async function executeTool(name,args,{enabled,shell,signal,onStarted}={}){
   if(name==='run_terminal'){
     const command=String(args.command||'').trim();if(!command)throw Error('Command is required.');if(command.length>12000)throw Error('Command is too long.');
     const cwd=args.cwd?resolvePath(args.cwd):process.env.HOME;
-    const result=await runExec('/bin/zsh',['-lc',command],{cwd,env:process.env,timeout:120000,signal});
+    const result=await runStreamingShell(command,{cwd,signal,onOutput,timeoutMs:120000});
     return{text:clamp((result.stdout||'')+(result.stderr?'\n[stderr]\n'+result.stderr:''))||'(completed with no output)'};
   }
   if(name==='start_background_terminal'){
