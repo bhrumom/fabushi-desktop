@@ -296,7 +296,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
 
   async function listMcpServers(){
     const s=await load();
-    return (s.mcpServers||[]).map(server=>({id:server.id,name:server.name,command:server.command,args:[...(server.args||[])],enabled:server.enabled!==false,disabledTools:[...(server.disabledTools||[])]}));
+    return (s.mcpServers||[]).map(server=>({id:server.id,name:server.name,transport:server.transport||'stdio',command:server.command||'',args:[...(server.args||[])],url:server.url||'',enabled:server.enabled!==false,disabledTools:[...(server.disabledTools||[])],customInstructions:server.customInstructions||'',accountKey:server.accountKey||'default'}));
   }
   async function addMcpServer(input){
     const s=await load(),server=normalizeServer(input);
@@ -323,7 +323,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
     const s=await load();
     const local=capabilityCatalog.map(p=>({...p,installed:true,enabled:s.plugins?.[p.id]?.enabled!==false,removable:false,kind:'local'}));
     const servers=(s.mcpServers||[]).map(server=>({
-      id:'mcp:'+server.id,name:server.name,description:'MCP server: '+server.command,category:'MCP',builtin:false,
+      id:'mcp:'+server.id,name:server.name,description:server.transport==='http'?'Remote MCP: '+server.url:'MCP server: '+server.command,category:'MCP',builtin:false,
       provider:'stdio-mcp',installed:true,enabled:server.enabled!==false,removable:true,kind:'mcp',serverId:server.id
     }));
     return[...local,...servers];
