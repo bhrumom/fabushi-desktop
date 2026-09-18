@@ -2,11 +2,13 @@
 
 const crypto=require('node:crypto');
 const {toolDefinitions,executeTool,descriptor}=require('./local-tool-executor.cjs');
+const {createExecutionResources,LOCAL_TOOL_EXECUTOR,BROWSER_TOOL_EXECUTOR,EXTERNAL_TOOL_EXECUTOR,SUBAGENT_TOOL_EXECUTOR}=require('./grok-exec-resources.cjs');
+const {rootRequestContext,childRequestContext,runWithRequestContext}=require('./grok-request-context.cjs');
 
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',subagents=null,browser=null}){
+function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',subagents=null,browser=null,inferenceRequest=null}){
   function systemPrompt(agent,enabled,workflowContext){
     const parts=[
       `You are ${agent.name}, a Fabushi desktop agent following the Grok Bot host/coordinator execution model.`,
@@ -83,14 +85,22 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
     return true;
   }
 
-  async function runTurn({agent,history,transcript,enabled,signal}){
+  async function runTurnInContext({agent,history,transcript,enabled,signal}){
     const externalDefinitions=await getExternalTools();
     const externalNames=new Set(externalDefinitions.map(x=>x.function?.name).filter(Boolean));
     const subagentTools=subagentDefinitions();
     const subagentNames=new Set(subagentTools.map(x=>x.function.name));
     const browserTools=browser?.definitions(enabled)||[];
     const browserNames=new Set(browserTools.map(x=>x.function.name));
-    const tools=[...toolDefinitions(enabled),...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
+    const localTools=toolDefinitions(enabled);
+    const localNames=new Set(localTools.map(x=>x.function.name));
+    const tools=[...localTools,...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
+    const resources=createExecutionResources({
+      executeLocal:(name,args,options)=>executeTool(name,args,{enabled,shell,signal:options.signal,onStarted:options.onStarted}),
+      executeBrowser:(name,args,options)=>browser?.execute({agentId:agent.id,name,args,signal:options.signal}),
+      executeExternal:(name,args)=>executeExternalTool(name,args),
+      executeSubagent:(name,args,options)=>executeSubagentTool(name,args,options.signal,agent.id)
+    });
     const latestUser=[...history].reverse().find(x=>x.role==='user');
     const workflowContext=await getWorkflowContext(latestUser?.text||'');
     const messages=[
@@ -100,7 +110,7 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
 
     for(let round=0;round<12;round++){
       if(signal?.aborted)throw abortError();
-      const result=await chatRequest(messages,tools,signal);
+      const result=await (inferenceRequest||chatRequest)(messages,tools,signal);
       if(result.offline){
         return 'Agent host is ready on this Mac. Configure FABUSHI_AGENT_API_URL, FABUSHI_AGENT_API_KEY, and optionally FABUSHI_AGENT_MODEL to connect a tool-calling model.';
       }
@@ -118,9 +128,10 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
         const name=String(call?.function?.name||'tool');
         let args={};
         try{args=JSON.parse(call?.function?.arguments||'{}')}catch{}
+        const requestContext=childRequestContext({toolCallId:String(call?.id||''),signal});
         const entry={
           id:crypto.randomUUID(),role:'tool',toolName:name,text:'Queued',createdAt:Date.now(),updatedAt:Date.now(),
-          status:'queued',arguments:args
+          status:'queued',arguments:args,requestId:requestContext.requestId,toolCallId:requestContext.toolCallId
         };
         transcript.push(entry);
         await onToolState({agentId:agent.id,entry});
@@ -132,13 +143,13 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
             resultText='ERROR: '+entry.text;
           }else{
             await updateTool(agent.id,entry,{status:'running',text:'Running…'});
-            const execution=externalNames.has(name)
-              ?await executeExternalTool(name,args)
-              :browserNames.has(name)
-                ?await browser.execute({agentId:agent.id,name,args,signal})
-                :subagentNames.has(name)
-                  ?await executeSubagentTool(name,args,signal,agent.id)
-                  :await executeTool(name,args,{enabled,shell,signal,onStarted:()=>{}});
+            let resource;
+            if(externalNames.has(name))resource=resources.get(EXTERNAL_TOOL_EXECUTOR);
+            else if(browserNames.has(name))resource=resources.get(BROWSER_TOOL_EXECUTOR);
+            else if(subagentNames.has(name))resource=resources.get(SUBAGENT_TOOL_EXECUTOR);
+            else if(localNames.has(name))resource=resources.get(LOCAL_TOOL_EXECUTOR);
+            else throw Error('No executor resource registered for tool: '+name);
+            const execution=await runWithRequestContext(requestContext,()=>resource.execute(name,args,{signal,onStarted:()=>{}}));
             resultText=execution?.text||'(completed)';
             await updateTool(agent.id,entry,{status:'done',text:resultText,...(execution?.display?{display:execution.display}:{})});
           }
@@ -154,6 +165,11 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
       }
     }
     throw Error('Agent exceeded the tool-call round limit');
+  }
+
+  async function runTurn(input){
+    const context=rootRequestContext({agentId:input.agent?.id,conversationId:input.agent?.id,signal:input.signal});
+    return runWithRequestContext(context,()=>runTurnInContext(input));
   }
 
   return{runTurn};
