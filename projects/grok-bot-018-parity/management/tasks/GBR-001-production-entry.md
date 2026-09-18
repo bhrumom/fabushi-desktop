@@ -1,18 +1,13 @@
 # GBR-001 — Production parity entry
 
-Status: in-progress
+Status: implementation-complete / CI-pending
 
-## Deliverable
+## Actual result
+Production now mounts a single Grok-style agent application. Messenger V2, contacts/groups, MiniApps, Telegram/payment, Mahayana workbench, credential vault, OpenBot overlays, and their compatibility bridges are no longer imported or mounted by `desktop/src/main.tsx`.
 
-Replace the current layered Fabushi desktop entry (Messenger + parity patch + Mahayana workbench + credential vault + MiniApp bridges) with a single reference-aligned production shell. Keep legacy modules unreachable in production during migration.
-
-## Acceptance
-
-- main.tsx mounts one parity application root.
-- no contacts/groups/Telegram/payment/MiniApp/Mahayana workbench/credential-vault surface is mounted by the production entry.
-- production source declares Grok reference commit and intentional local-computer adaptation.
-- build remains packageable on macOS.
+The standalone desktop no longer depends on missing monorepo `../frontend` or `../third_party/mahayana` roots.
 
 ## Evidence
-
-Pending implementation commit and CI.
+- Implementation commit: 1bce9f070ce789c082e47c1edb07462588d0dbc3
+- Source review: pass
+- macOS GitHub Actions package: pending
