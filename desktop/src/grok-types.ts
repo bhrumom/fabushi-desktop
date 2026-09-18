@@ -1,4 +1,8 @@
 export type AgentStatus = 'idle' | 'thinking' | 'running' | 'waiting' | 'error';
+export type AccountStatus =
+  | {kind:'logged-out';available:boolean;reason?:string|null}
+  | {kind:'logging-in';available:boolean}
+  | {kind:'logged-in';available:true;authId:string|null;email:string|null;displayName:string|null;avatarUrl:string|null};
 export type ToolMessageStatus = 'queued' | 'waiting-approval' | 'running' | 'streaming' | 'done' | 'error' | 'cancelled';
 
 export interface AgentSummary {
@@ -174,7 +178,7 @@ export interface RuntimeSettings {
 export interface AgentEvent {
   type:
     |'agents.changed'|'agent.changed'|'message.delta'|'message.changed'|'message.done'
-    |'plugins.changed'|'workflows.changed'|'automations.changed'|'settings.changed'
+    |'plugins.changed'|'workflows.changed'|'automations.changed'|'settings.changed'|'account.changed'
     |'approval.requested'|'approval.resolved'|'approval.cancelled';
   agentId?:string;
   messageId?:string;
@@ -197,6 +201,12 @@ export interface GrokAgentBridge {
   listPlugins():Promise<PluginDescriptor[]>;
   setPluginInstalled(input:{pluginId:string;installed:boolean}):Promise<PluginDescriptor[]>;
   setPluginEnabled(input:{pluginId:string;enabled:boolean}):Promise<PluginDescriptor[]>;
+  getAccountStatus():Promise<AccountStatus>;
+  loginAccount():Promise<AccountStatus>;
+  cancelAccountLogin():Promise<AccountStatus>;
+  logoutAccount():Promise<AccountStatus>;
+  updateAccountName(input:{name:string}):Promise<AccountStatus>;
+  getAccountAvatar():Promise<string|null>;
   getRuntimeSettings():Promise<RuntimeSettings>;
   setLocalToolPermission(input:{permission:RuntimeSettings['localToolPermission']}):Promise<RuntimeSettings>;
   setAutoReviewMode(input:{mode:RuntimeSettings['autoReviewMode']}):Promise<RuntimeSettings>;
