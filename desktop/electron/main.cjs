@@ -1,14 +1,16 @@
 'use strict';
-const {app,BrowserWindow,dialog,ipcMain,shell,safeStorage,Notification,autoUpdater,protocol}=require('electron');
+const {app,BrowserWindow,dialog,ipcMain,shell,safeStorage,Notification,autoUpdater,protocol,nativeTheme}=require('electron');
 const path=require('node:path');
 const {URL}=require('node:url');
 const {createRuntime}=require('./grok-agent-runtime.cjs');
 const {createAttachmentGateway}=require('./grok-attachment-gateway.cjs');
 const {registerSandMediaScheme,registerSandMediaProtocol}=require('./grok-media-protocol.cjs');
 const {createDesktopServices,parseDeepLink}=require('./grok-desktop-services.cjs');
+const {createReferenceCoordinator}=require('./grok-reference-coordinator.cjs');
+const {createReferenceDesktop}=require('./grok-reference-desktop.cjs');
 
 registerSandMediaScheme(protocol);
-let mainWindow=null,runtime=null,desktopServices=null,quitAfterDispose=false,pendingDeepLink=null;
+let mainWindow=null,runtime=null,desktopServices=null,referenceCoordinator=null,referenceDesktop=null,quitAfterDispose=false,pendingDeepLink=null;
 function emitDeepLink(link){if(!link)return;if(mainWindow&&!mainWindow.isDestroyed()&&!mainWindow.webContents.isLoading())mainWindow.webContents.send('grok-agent:deep-link',link);else pendingDeepLink=link;}
 function captureDeepLink(value){const link=parseDeepLink(value);if(!link)return false;emitDeepLink(link);return true;}
 function trusted(event){
@@ -68,6 +70,8 @@ function registerIpc(){
   ipcMain.handle('grok-agent:get-onboarding-seen',async event=>{assertTrusted(event);return desktopServices.getOnboardingSeen()});
   ipcMain.handle('grok-agent:set-onboarding-seen',async(event,args={})=>{assertTrusted(event);return desktopServices.setOnboardingSeen(args.seen===true)});
   ipcMain.handle('grok-agent:open-external',async(event,args={})=>{assertTrusted(event);const value=String(args.url||'').trim();let url;try{url=new URL(value)}catch{throw Error('External URL is invalid.')}if(url.protocol!=='https:')throw Error('Only HTTPS external URLs are allowed.');await shell.openExternal(url.toString());return{ok:true}});
+  ipcMain.handle('grok-reference:coordinator',async(event,payload={})=>{assertTrusted(event);if(!referenceCoordinator)throw Error('Grok coordinator bridge is unavailable.');return referenceCoordinator.call(String(payload.method||''),payload.args&&typeof payload.args==='object'?payload.args:{});});
+  ipcMain.handle('grok-reference:desktop',async(event,payload={})=>{assertTrusted(event);if(!referenceDesktop)throw Error('Grok desktop bridge is unavailable.');return referenceDesktop.call(String(payload.method||''),payload.args&&typeof payload.args==='object'?payload.args:{});});
 }
 function createWindow(){
   const win=new BrowserWindow({
@@ -85,7 +89,7 @@ if(!app.requestSingleInstanceLock())app.quit();
 else{
   app.on('open-url',(event,url)=>{event.preventDefault();captureDeepLink(url)});
   app.on('second-instance',(_event,argv)=>{for(const value of argv||[])if(captureDeepLink(value))break;if(!mainWindow)createWindow();if(mainWindow.isMinimized())mainWindow.restore();mainWindow.show();mainWindow.focus();});
-  app.whenReady().then(()=>{try{app.setAsDefaultProtocolClient('sand');app.setAsDefaultProtocolClient('fabushi')}catch{}const attachmentGateway=createAttachmentGateway({app});registerSandMediaProtocol(protocol,attachmentGateway);runtime=createRuntime({app,BrowserWindow,shell,safeStorage,attachmentGateway,notify:({title,body})=>{if(Notification.isSupported())new Notification({title:String(title||'Fabushi'),body:String(body||'')}).show()}});desktopServices=createDesktopServices({app,autoUpdater,onUpdateStatus:status=>{if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('grok-agent:update-status',status)}});registerIpc();createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
+  app.whenReady().then(()=>{try{app.setAsDefaultProtocolClient('sand');app.setAsDefaultProtocolClient('fabushi')}catch{}const attachmentGateway=createAttachmentGateway({app});registerSandMediaProtocol(protocol,attachmentGateway);runtime=createRuntime({app,BrowserWindow,shell,safeStorage,attachmentGateway,notify:({title,body})=>{if(Notification.isSupported())new Notification({title:String(title||'Fabushi'),body:String(body||'')}).show()}});desktopServices=createDesktopServices({app,autoUpdater,onUpdateStatus:status=>{if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('grok-agent:update-status',status)}});referenceCoordinator=createReferenceCoordinator(runtime);referenceDesktop=createReferenceDesktop({app,BrowserWindow,shell,dialog,safeStorage,nativeTheme,getWindow:()=>mainWindow});registerIpc();createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
   app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});
   app.on('before-quit',event=>{if(!runtime||quitAfterDispose)return;event.preventDefault();quitAfterDispose=true;desktopServices?.dispose?.();void Promise.resolve(runtime.dispose?.()).finally(()=>app.quit());});
 }
