@@ -132,6 +132,9 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function onToolState({agentId,entry}){
     await save();emit('message.changed',{agentId,messageId:entry.id,status:entry.status});
   }
+  async function onAssistantDelta({agentId,entry,delta}){
+    emit('message.delta',{agentId,messageId:entry.id,text:delta,status:entry.status});
+  }
   async function getLocalToolPermission(){return(await load()).settings.localToolPermission}
   async function requestApproval({agentId,messageId,toolName,summary,args,signal}){
     if(signal?.aborted)return false;
@@ -182,7 +185,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   const marketplace=pluginMarketplace||createPluginMarketplace();
   const localBrowser=createLocalBrowserRuntime({BrowserWindow});
   const host=createHostRuntime({
-    shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,requestApproval,onToolState,onAgentStatus,
+    shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,requestApproval,onToolState,onAgentStatus,onAssistantDelta,
     getExternalTools:()=>mcp.collectToolDefinitions(),
     executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args),
     getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
@@ -225,21 +228,23 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     const now=Date.now(),user={id:crypto.randomUUID(),role:'user',text:body,createdAt:now,status:'done'};
     const assistant={id:crypto.randomUUID(),role:'assistant',text:'',createdAt:now+1,status:'streaming'};
     const transcript=s.messages[agentId]||(s.messages[agentId]=[]);
-    transcript.push(user,assistant);agent.status='thinking';agent.updatedAt=now;await save();
+    transcript.push(user);agent.status='thinking';agent.updatedAt=now;await save();
     emit('message.changed',{agentId,messageId:user.id,status:'done'});emit('agent.changed',{agentId,status:'thinking'});
     const controller=new AbortController();aborts.set(agentId,controller);
 
     void(async()=>{
       try{
         await onAgentStatus(agentId,'running');
-        assistant.text=await host.runTurn({
-          agent,history:transcript.slice(0,-1),transcript,enabled:enabledCapabilityIds(s),signal:controller.signal
+        const finalText=await host.runTurn({
+          agent,history:[...transcript],transcript,enabled:enabledCapabilityIds(s),signal:controller.signal,assistantEntry:assistant
         });
-        assistant.status='done';await onAgentStatus(agentId,'idle');
+        if(!transcript.includes(assistant))transcript.push(assistant);
+        assistant.text=finalText;assistant.status='done';assistant.updatedAt=Date.now();await onAgentStatus(agentId,'idle');
       }catch(error){
         const cancelled=controller.signal.aborted||error?.name==='AbortError';
+        if(!transcript.includes(assistant))transcript.push(assistant);
         assistant.text=cancelled?'Stopped.':'Agent error: '+(error instanceof Error?error.message:String(error));
-        assistant.status=cancelled?'cancelled':'error';
+        assistant.status=cancelled?'cancelled':'error';assistant.updatedAt=Date.now();
         await onAgentStatus(agentId,cancelled?'idle':'error');
       }finally{
         agent.updatedAt=Date.now();await save();emit('message.done',{agentId,messageId:assistant.id,text:assistant.text,status:assistant.status});
