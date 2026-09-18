@@ -66,11 +66,17 @@
       "electron/grok-workflow-manager.cjs",
       "electron/grok-automation-schedule.cjs",
       "electron/grok-local-browser.cjs",
+      "electron/grok-media-protocol.cjs",
+      "electron/grok-clock-skew-guard.cjs",
+      "electron/grok-video-container.cjs",
       "electron/local-tool-executor.cjs",
       "package.json"
     ],
     "extraResources": [
-      {"from":"native/bin/fabushi-computer-helper","to":"bin/fabushi-computer-helper"}
+      {
+        "from": "native/bin/fabushi-computer-helper",
+        "to": "bin/fabushi-computer-helper"
+      }
     ],
     "mac": {
       "category": "public.app-category.productivity",
