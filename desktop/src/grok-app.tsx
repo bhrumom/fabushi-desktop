@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
-import type { AgentMessage, AgentSummary, AgentThread, PluginDescriptor, RuntimeSettings } from './grok-types';
+import type { AgentMessage, AgentSummary, AgentThread, McpToolDescriptor, PluginDescriptor, RuntimeSettings } from './grok-types';
 import './grok-app.css';
 
 const bridge=getAgentBridge();
@@ -115,17 +115,54 @@ function Workspace({agent,thread,refresh}:{agent:AgentSummary;thread:AgentThread
 
 function Plugins({items,onClose,reload}:{items:PluginDescriptor[];onClose():void;reload():Promise<void>}) {
   const [query,setQuery]=useState('');
+  const [addOpen,setAddOpen]=useState(false);
+  const [name,setName]=useState('');
+  const [command,setCommand]=useState('');
+  const [argsText,setArgsText]=useState('[]');
+  const [expanded,setExpanded]=useState<string|null>(null);
+  const [tools,setTools]=useState<Record<string,McpToolDescriptor[]>>({});
+  const [error,setError]=useState('');
   const rows=items.filter(x=>(x.name+' '+x.description+' '+x.category).toLowerCase().includes(query.toLowerCase()));
+  const loadTools=async(serverId:string)=>{
+    setError('');
+    try{setTools(current=>({...current,[serverId]:[]}));const next=await bridge.listMcpServerTools({serverId});setTools(current=>({...current,[serverId]:next}))}
+    catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
+  };
+  const addServer=async(e:FormEvent)=>{
+    e.preventDefault();setError('');
+    try{
+      const parsed=JSON.parse(argsText||'[]');
+      if(!Array.isArray(parsed)||parsed.some(value=>typeof value!=='string'))throw new Error('Args must be a JSON string array.');
+      await bridge.addMcpServer({name:name.trim(),command:command.trim(),args:parsed});
+      setName('');setCommand('');setArgsText('[]');setAddOpen(false);await reload();
+    }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
+  };
   return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay plugins" role="dialog" aria-label="Plugins">
-    <header><div><h2>Plugins</h2><p>Only capabilities with an executable backend are shown.</p></div><button onClick={onClose}>×</button></header>
+    <header><div><h2>Plugins</h2><p>Executable local capabilities and MCP servers.</p></div><div className="overlay-head-actions"><button className="add-server" onClick={()=>setAddOpen(value=>!value)}>＋ MCP</button><button onClick={onClose}>×</button></div></header>
+    {addOpen?<form className="mcp-add" onSubmit={e=>void addServer(e)}>
+      <input value={name} onChange={e=>setName(e.target.value)} placeholder="Server name" required/>
+      <input value={command} onChange={e=>setCommand(e.target.value)} placeholder="Command, e.g. npx" required/>
+      <input value={argsText} onChange={e=>setArgsText(e.target.value)} placeholder={'["-y","@vendor/server"]'} required/>
+      <div><button type="button" onClick={()=>setAddOpen(false)}>Cancel</button><button className="primary compact">Add server</button></div>
+    </form>:null}
     <label className="plugin-search">⌕<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search plugins"/></label>
     <nav className="tabs"><span className="active">Installed</span></nav>
-    <div className="plugin-rows">{rows.length?rows.map(x=><article key={x.id}>
+    {error?<div className="plugin-error">{error}</div>:null}
+    <div className="plugin-rows">{rows.length?rows.map(x=><article className="plugin-card" key={x.id}>
       <span className="plugin-logo">{x.name[0]}</span>
-      <div className="plugin-copy"><strong>{x.name}</strong><p>{x.description}</p><small>{x.category} · {x.provider||'provider'}</small></div>
-      <div className="plugin-actions"><button className={x.enabled?'primary compact':''} onClick={async()=>{
-        await bridge.setPluginEnabled({pluginId:x.id,enabled:!x.enabled});await reload();
-      }}>{x.enabled?'Enabled':'Enable'}</button></div>
+      <div className="plugin-copy"><strong>{x.name}</strong><p>{x.description}</p><small>{x.category} · {x.provider||'provider'}</small>
+        {x.kind==='mcp'&&x.serverId&&expanded===x.serverId?<div className="mcp-tools">
+          {(tools[x.serverId]||[]).length?(tools[x.serverId]||[]).map(tool=><label key={tool.name}><span><strong>{tool.name}</strong><small>{tool.description||'MCP tool'}</small></span><input type="checkbox" checked={!tool.isDisabled} onChange={async e=>{
+            const next=await bridge.setMcpToolEnabled({serverId:x.serverId!,toolName:tool.name,enabled:e.target.checked});
+            setTools(current=>({...current,[x.serverId!]:next}));
+          }}/></label>):<span className="tool-loading">No tools loaded. If the server is starting, retry Configure.</span>}
+        </div>:null}
+      </div>
+      <div className="plugin-actions">
+        {x.kind==='mcp'&&x.serverId?<button onClick={async()=>{setExpanded(currentId=>currentId===x.serverId?null:x.serverId!);if(expanded!==x.serverId)await loadTools(x.serverId!)}}>Configure</button>:null}
+        <button className={x.enabled?'primary compact':''} onClick={async()=>{await bridge.setPluginEnabled({pluginId:x.id,enabled:!x.enabled});await reload()}}>{x.enabled?'Enabled':'Enable'}</button>
+        {x.removable?<button onClick={async()=>{await bridge.setPluginInstalled({pluginId:x.id,installed:false});if(x.serverId)setExpanded(null);await reload()}}>Remove</button>:null}
+      </div>
     </article>):<div className="overlay-empty">No executable capability matches this search.</div>}</div>
   </section></div>;
 }
