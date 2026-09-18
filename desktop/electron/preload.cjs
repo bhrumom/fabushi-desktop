@@ -3,7 +3,7 @@ const {contextBridge,ipcRenderer}=require('electron');
 
 const events=[
   'agents.changed','agent.changed','message.delta','message.changed','message.done',
-  'plugins.changed','workflows.changed','automations.changed','settings.changed','approval.requested','approval.resolved','approval.cancelled'
+  'plugins.changed','workflows.changed','automations.changed','settings.changed','account.changed','approval.requested','approval.resolved','approval.cancelled'
 ];
 const invoke=(method,args={})=>ipcRenderer.invoke('grok-agent:'+method,args);
 
@@ -21,6 +21,12 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   listPlugins:()=>invoke('list-plugins'),
   setPluginInstalled:x=>invoke('set-plugin-installed',x),
   setPluginEnabled:x=>invoke('set-plugin-enabled',x),
+  getAccountStatus:()=>invoke('get-account-status'),
+  loginAccount:()=>invoke('login-account'),
+  cancelAccountLogin:()=>invoke('cancel-account-login'),
+  logoutAccount:()=>invoke('logout-account'),
+  updateAccountName:x=>invoke('update-account-name',x),
+  getAccountAvatar:()=>invoke('get-account-avatar'),
   getRuntimeSettings:()=>invoke('get-runtime-settings'),
   setLocalToolPermission:x=>invoke('set-local-tool-permission',x),
   setAutoReviewMode:x=>invoke('set-auto-review-mode',x),
