@@ -180,6 +180,18 @@ export interface RoutineAutomationDescriptor {
   lastRunAt:number|null;
   nextRunAt:number|null;
 }
+export interface ExperimentsSnapshot {
+  isInitialized:boolean;
+  featureGates:Record<string,boolean>;
+  experiments:Record<string,Record<string,unknown>>;
+  dynamicConfigs:Record<string,Record<string,unknown>>;
+  featureFlags?:{items:{name:string;value:boolean;override:boolean|null}[];isLive:boolean};
+}
+export type FeatureFlagOverrideCommand =
+  | {kind:'set';name:string;value:boolean}
+  | {kind:'clear';name:string}
+  | {kind:'clear-all'};
+
 export interface RuntimeSettings {
   localToolPermission:'always'|'ask'|'never';
   autoReviewMode:'off'|'shadow'|'enforce';
@@ -213,7 +225,7 @@ export type FeedbackResult={ok:true}|{ok:false;code:'access-denied'|'invalid-fee
 export interface AgentEvent {
   type:
     |'agents.changed'|'agent.changed'|'message.delta'|'message.changed'|'message.done'
-    |'plugins.changed'|'workflows.changed'|'automations.changed'|'settings.changed'|'account.changed'
+    |'plugins.changed'|'workflows.changed'|'automations.changed'|'settings.changed'|'account.changed'|'experiments.changed'
     |'approval.requested'|'approval.resolved'|'approval.cancelled';
   agentId?:string;
   messageId?:string;
@@ -250,6 +262,9 @@ export interface GrokAgentBridge {
   updateAccountName(input:{name:string}):Promise<AccountStatus>;
   getAccountAvatar():Promise<string|null>;
   getRuntimeSettings():Promise<RuntimeSettings>;
+  getExperimentsSnapshot():Promise<ExperimentsSnapshot>;
+  refreshExperiments():Promise<ExperimentsSnapshot>;
+  applyFeatureFlagOverride(input:FeatureFlagOverrideCommand|{command:FeatureFlagOverrideCommand}):Promise<ExperimentsSnapshot>;
   setLocalToolPermission(input:{permission:RuntimeSettings['localToolPermission']}):Promise<RuntimeSettings>;
   setAutoReviewMode(input:{mode:RuntimeSettings['autoReviewMode']}):Promise<RuntimeSettings>;
   setAutoReviewInstructions(input:{allowInstructions:string[];blockInstructions:string[]}):Promise<RuntimeSettings>;
