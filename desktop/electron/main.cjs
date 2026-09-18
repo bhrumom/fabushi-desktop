@@ -1,11 +1,14 @@
 'use strict';
-const {app,BrowserWindow,dialog,ipcMain,shell,safeStorage,Notification}=require('electron');
+const {app,BrowserWindow,dialog,ipcMain,shell,safeStorage,Notification,autoUpdater}=require('electron');
 const path=require('node:path');
 const {URL}=require('node:url');
 const {createRuntime}=require('./grok-agent-runtime.cjs');
 const {createAttachmentGateway}=require('./grok-attachment-gateway.cjs');
+const {createDesktopServices,parseDeepLink}=require('./grok-desktop-services.cjs');
 
-let mainWindow=null,runtime=null,quitAfterDispose=false;
+let mainWindow=null,runtime=null,desktopServices=null,quitAfterDispose=false,pendingDeepLink=null;
+function emitDeepLink(link){if(!link)return;if(mainWindow&&!mainWindow.isDestroyed()&&!mainWindow.webContents.isLoading())mainWindow.webContents.send('grok-agent:deep-link',link);else pendingDeepLink=link;}
+function captureDeepLink(value){const link=parseDeepLink(value);if(!link)return false;emitDeepLink(link);return true;}
 function trusted(event){
   const raw=event.senderFrame?.url||event.sender.getURL();
   try{
@@ -42,6 +45,13 @@ function registerIpc(){
     if(result.canceled||!result.filePaths[0])return null;
     return runtime.registerAttachment({path:result.filePaths[0]});
   });
+  ipcMain.handle('grok-agent:get-desktop-info',async event=>{assertTrusted(event);return desktopServices.getInfo()});
+  ipcMain.handle('grok-agent:get-update-status',async event=>{assertTrusted(event);return desktopServices.update.status()});
+  ipcMain.handle('grok-agent:check-update',async event=>{assertTrusted(event);return desktopServices.update.check()});
+  ipcMain.handle('grok-agent:set-update-track',async(event,args={})=>{assertTrusted(event);return desktopServices.update.setTrack(args.track)});
+  ipcMain.handle('grok-agent:set-auto-update',async(event,args={})=>{assertTrusted(event);return desktopServices.update.setAutoUpdateWhenIdleOptIn(args.enabled===true)});
+  ipcMain.handle('grok-agent:quit-and-install',async event=>{assertTrusted(event);return desktopServices.update.quitAndInstall()});
+  ipcMain.handle('grok-agent:submit-feedback',async(event,args={})=>{assertTrusted(event);return desktopServices.submitFeedback(args)});
 }
 function createWindow(){
   const win=new BrowserWindow({
@@ -52,12 +62,14 @@ function createWindow(){
   });
   if(process.env.VITE_DEV_SERVER_URL)void win.loadURL(process.env.VITE_DEV_SERVER_URL);
   else void win.loadFile(path.join(__dirname,'..','dist','index.html'));
+  win.webContents.on('did-finish-load',()=>{if(pendingDeepLink){const link=pendingDeepLink;pendingDeepLink=null;win.webContents.send('grok-agent:deep-link',link)}});
   win.on('closed',()=>{if(mainWindow===win)mainWindow=null;});mainWindow=win;return win;
 }
 if(!app.requestSingleInstanceLock())app.quit();
 else{
-  app.on('second-instance',()=>{if(!mainWindow)createWindow();if(mainWindow.isMinimized())mainWindow.restore();mainWindow.show();mainWindow.focus();});
-  app.whenReady().then(()=>{const attachmentGateway=createAttachmentGateway({app});runtime=createRuntime({app,BrowserWindow,shell,safeStorage,attachmentGateway,notify:({title,body})=>{if(Notification.isSupported())new Notification({title:String(title||'Fabushi'),body:String(body||'')}).show()}});registerIpc();createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
+  app.on('open-url',(event,url)=>{event.preventDefault();captureDeepLink(url)});
+  app.on('second-instance',(_event,argv)=>{for(const value of argv||[])if(captureDeepLink(value))break;if(!mainWindow)createWindow();if(mainWindow.isMinimized())mainWindow.restore();mainWindow.show();mainWindow.focus();});
+  app.whenReady().then(()=>{try{app.setAsDefaultProtocolClient('sand');app.setAsDefaultProtocolClient('fabushi')}catch{}const attachmentGateway=createAttachmentGateway({app});runtime=createRuntime({app,BrowserWindow,shell,safeStorage,attachmentGateway,notify:({title,body})=>{if(Notification.isSupported())new Notification({title:String(title||'Fabushi'),body:String(body||'')}).show()}});desktopServices=createDesktopServices({app,autoUpdater,onUpdateStatus:status=>{if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('grok-agent:update-status',status)}});registerIpc();createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
   app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});
-  app.on('before-quit',event=>{if(!runtime||quitAfterDispose)return;event.preventDefault();quitAfterDispose=true;void Promise.resolve(runtime.dispose?.()).finally(()=>app.quit());});
+  app.on('before-quit',event=>{if(!runtime||quitAfterDispose)return;event.preventDefault();quitAfterDispose=true;desktopServices?.dispose?.();void Promise.resolve(runtime.dispose?.()).finally(()=>app.quit());});
 }
