@@ -152,7 +152,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const localNames=new Set(localTools.map(x=>x.function.name));
     const tools=[...localTools,...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
     const resources=createExecutionResources({
-      executeLocal:(name,args,options)=>executeTool(name,args,{enabled,shell,signal:options.signal,onStarted:options.onStarted}),
+      executeLocal:(name,args,options)=>executeTool(name,args,{enabled,shell,signal:options.signal,onStarted:options.onStarted,onOutput:options.onOutput}),
       executeBrowser:(name,args,options)=>browser?.execute({agentId:agent.id,name,args,signal:options.signal}),
       executeExternal:(name,args)=>executeExternalTool(name,args),
       executeSubagent:(name,args,options)=>executeSubagentTool(name,args,options.signal,agent.id)
@@ -205,8 +205,15 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
             else if(subagentNames.has(name))resource=resources.get(SUBAGENT_TOOL_EXECUTOR);
             else if(localNames.has(name))resource=resources.get(LOCAL_TOOL_EXECUTOR);
             else throw Error('No executor resource registered for tool: '+name);
-            const execution=await runWithRequestContext(requestContext,()=>resource.execute(name,args,{signal,onStarted:()=>{}}));
-            resultText=execution?.text||'(completed)';
+            let streamed='',streamUpdates=Promise.resolve();
+            const onOutput=event=>{
+              const prefix=event?.stream==='stderr'?'[stderr] ':'';
+              streamed=(streamed+prefix+String(event?.text||'')).slice(-50000);
+              streamUpdates=streamUpdates.then(()=>updateTool(agent.id,entry,{status:'streaming',text:streamed||'Running…'}));
+            };
+            const execution=await runWithRequestContext(requestContext,()=>resource.execute(name,args,{signal,onStarted:()=>{},onOutput}));
+            await streamUpdates;
+            resultText=execution?.text||streamed||'(completed)';
             await updateTool(agent.id,entry,{status:'done',text:resultText,...(execution?.display?{display:execution.display}:{})});
           }
         }catch(error){
