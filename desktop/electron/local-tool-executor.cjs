@@ -41,6 +41,13 @@ async function ensureComputerState(expectedStateId,signal){
   if(current.stateId!==expected)throw Error('The visible Mac target changed after review; take a fresh computer_screenshot and retry the action.');
   return current;
 }
+async function computerHelperPath(){
+  const candidates=[process.resourcesPath?path.join(process.resourcesPath,'bin','fabushi-computer-helper'):null,path.join(__dirname,'..','native','bin','fabushi-computer-helper')].filter(Boolean);
+  for(const candidate of candidates){try{await fs.access(candidate);return candidate}catch{}}
+  throw Error('Fabushi Computer helper is unavailable. Use the macOS packaged build so native mouse/scroll actions are installed.');
+}
+async function runComputerHelper(args,signal){const helper=await computerHelperPath();return runExec(helper,args.map(String),{signal})}
+function cancellableDelay(ms,signal){return new Promise((resolve,reject)=>{if(signal?.aborted){const error=Error('Tool execution cancelled.');error.name='AbortError';reject(error);return}const timer=setTimeout(done,ms);function done(){signal?.removeEventListener('abort',abort);resolve()}function abort(){clearTimeout(timer);signal?.removeEventListener('abort',abort);const error=Error('Tool execution cancelled.');error.name='AbortError';reject(error)}signal?.addEventListener('abort',abort,{once:true})})}
 
 function clamp(text){
   const value=String(text??'');
@@ -116,6 +123,10 @@ function descriptor(name,args={}){
     browser_scroll:{mutation:false,summary:'Scroll local browser page'},
     computer_screenshot:{mutation:false,summary:'Capture the current Mac screen and state identity'},
     computer_click:{mutation:true,summary:`Click at (${args.x}, ${args.y}) on this Mac`},
+    computer_mouse_move:{mutation:true,summary:`Move the pointer to (${args.x}, ${args.y}) on this Mac`},
+    computer_drag:{mutation:true,summary:`Drag from (${args.fromX}, ${args.fromY}) to (${args.toX}, ${args.toY}) on this Mac`},
+    computer_scroll:{mutation:true,summary:`Scroll (${args.deltaX||0}, ${args.deltaY||0}) on this Mac`},
+    computer_wait:{mutation:false,summary:`Wait ${args.ms||1000} ms for the Mac UI to settle`},
     computer_type:{mutation:true,summary:`Type text on this Mac: ${String(args.text||'').slice(0,120)}`},
     computer_key:{mutation:true,summary:`Press ${args.key||''} on this Mac`}
   };
@@ -143,6 +154,10 @@ function toolDefinitions(enabled){
   if(enabled.has('computer')){
     tools.push(fn('computer_screenshot','Capture the current screen of the installed Mac and return a stateId for reviewed follow-up actions.',{}));
     tools.push(fn('computer_click','Click a screen coordinate on the installed Mac after rechecking the stateId captured by computer_screenshot. Requires macOS Accessibility permission.',{x:{type:'integer'},y:{type:'integer'},stateId:{type:'string'},purpose:{type:'string'}},['x','y','stateId','purpose']));
+    tools.push(fn('computer_mouse_move','Move the pointer on the installed Mac after rechecking the reviewed state.',{x:{type:'integer'},y:{type:'integer'},stateId:{type:'string'},purpose:{type:'string'}},['x','y','stateId','purpose']));
+    tools.push(fn('computer_drag','Drag the pointer between coordinates on the installed Mac after rechecking the reviewed state.',{fromX:{type:'integer'},fromY:{type:'integer'},toX:{type:'integer'},toY:{type:'integer'},durationMs:{type:'integer'},stateId:{type:'string'},purpose:{type:'string'}},['fromX','fromY','toX','toY','stateId','purpose']));
+    tools.push(fn('computer_scroll','Scroll the installed Mac after rechecking the reviewed state.',{deltaX:{type:'integer'},deltaY:{type:'integer'},stateId:{type:'string'},purpose:{type:'string'}},['deltaY','stateId','purpose']));
+    tools.push(fn('computer_wait','Wait briefly for the local Mac UI to settle before taking a fresh screenshot.',{ms:{type:'integer'}},[]));
     tools.push(fn('computer_type','Type text into the focused application on the installed Mac after rechecking the current state.',{text:{type:'string'},stateId:{type:'string'},purpose:{type:'string'}},['text','stateId']));
     tools.push(fn('computer_key','Press a supported key in the focused application on the installed Mac after rechecking the current state.',{key:{type:'string'},stateId:{type:'string'},purpose:{type:'string'}},['key','stateId']));
   }
@@ -153,7 +168,7 @@ async function executeTool(name,args,{enabled,shell,signal,onStarted,onOutput}={
   const needed={
     list_directory:'filesystem',read_file:'filesystem',write_file:'filesystem',create_directory:'filesystem',move_path:'filesystem',
     run_terminal:'shell',start_background_terminal:'shell',get_background_terminal:'shell',write_background_terminal:'shell',stop_background_terminal:'shell',
-    open_url:'browser',computer_screenshot:'computer',computer_click:'computer',computer_type:'computer',computer_key:'computer'
+    open_url:'browser',computer_screenshot:'computer',computer_click:'computer',computer_mouse_move:'computer',computer_drag:'computer',computer_scroll:'computer',computer_wait:'computer',computer_type:'computer',computer_key:'computer'
   }[name];
   if(needed&&!enabled.has(needed))throw Error(`${needed} capability is disabled.`);
   if(signal?.aborted)throw Object.assign(Error('Tool execution cancelled.'),{name:'AbortError'});
@@ -231,6 +246,21 @@ async function executeTool(name,args,{enabled,shell,signal,onStarted,onOutput}={
     await runExec('/usr/bin/osascript',['-e',`tell application "System Events" to click at {${x}, ${y}}`],{signal});
     return{text:`Clicked (${x}, ${y}).`};
   }
+  if(name==='computer_mouse_move'){
+    if(process.platform!=='darwin')throw Error('Computer mouse move is currently implemented for macOS only.');await ensureComputerState(args.stateId,signal);
+    const x=Number(args.x),y=Number(args.y);if(!Number.isInteger(x)||!Number.isInteger(y))throw Error('Integer x/y coordinates are required.');if(!String(args.purpose||'').trim())throw Error('Computer mouse move requires a concise purpose.');
+    await runComputerHelper(['move',x,y],signal);return{text:`Moved pointer to (${x}, ${y}).`};
+  }
+  if(name==='computer_drag'){
+    if(process.platform!=='darwin')throw Error('Computer drag is currently implemented for macOS only.');await ensureComputerState(args.stateId,signal);
+    const values=['fromX','fromY','toX','toY'].map(key=>Number(args[key]));if(values.some(value=>!Number.isInteger(value)))throw Error('Integer drag coordinates are required.');if(!String(args.purpose||'').trim())throw Error('Computer drag requires a concise purpose.');
+    const duration=Math.max(40,Math.min(5000,Number(args.durationMs)||300));await runComputerHelper(['drag',...values,duration],signal);return{text:`Dragged (${values[0]}, ${values[1]}) to (${values[2]}, ${values[3]}).`};
+  }
+  if(name==='computer_scroll'){
+    if(process.platform!=='darwin')throw Error('Computer scroll is currently implemented for macOS only.');await ensureComputerState(args.stateId,signal);if(!String(args.purpose||'').trim())throw Error('Computer scroll requires a concise purpose.');
+    const dx=Number(args.deltaX)||0,dy=Number(args.deltaY);if(!Number.isInteger(dx)||!Number.isInteger(dy))throw Error('Integer scroll deltas are required.');await runComputerHelper(['scroll',dx,dy],signal);return{text:`Scrolled (${dx}, ${dy}).`};
+  }
+  if(name==='computer_wait'){const ms=Math.max(0,Math.min(30000,Number(args.ms)||1000));await cancellableDelay(ms,signal);return{text:`Waited ${ms} ms.`};}
   if(name==='computer_type'){
     if(process.platform!=='darwin')throw Error('Computer type is currently implemented for macOS only.');
     await ensureComputerState(args.stateId,signal);
