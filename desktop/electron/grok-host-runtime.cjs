@@ -211,6 +211,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const historyById=new Map(history.map(row=>[row.id,row]));
     for(const row of history.filter(x=>x.role==='user'||x.role==='assistant').slice(-40)){
       let content=String(row.text||'');
+      if(row.role==='user')content+=(content?'\n':'')+'[message_address:'+row.id+']';
       if(row.replyToId){const target=historyById.get(row.replyToId);if(target&&(target.role==='user'||target.role==='assistant'))content='[Replying to '+target.role+': '+String(target.text||'').slice(0,1200)+']\n\n'+content;}
       if(row.role==='user'&&Array.isArray(row.attachments)&&row.attachments.length){
         const resolved=await resolveAttachments(row.attachments.map(item=>item.id));
