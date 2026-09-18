@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
-import type { AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
+import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
 import './grok-app.css';
 
 const bridge=getAgentBridge();
@@ -13,7 +13,7 @@ function Status({status}:{status:AgentSummary['status']}) {
 }
 
 function Sidebar(p:{
-  agents:AgentSummary[];selected:string|null;query:string;setQuery(v:string):void;select(id:string):void;
+  agents:AgentSummary[];selected:string|null;query:string;setQuery(v:string):void;select(id:string):void;account:AccountStatus|null;openAccount():void;
   create():void;plugins():void;settings():void;orgChart():void;hiddenChats():void;rename(agent:AgentSummary):void;hide(agent:AgentSummary):void;remove(agent:AgentSummary):void;openPalette():void;
 }) {
   const rows=useMemo(()=>{
@@ -44,7 +44,7 @@ function Sidebar(p:{
       <button onClick={p.hiddenChats}>◉ <span>Hidden Bots</span></button>
       <button onClick={p.plugins}>◫ <span>Plugins</span></button>
       <button onClick={p.settings}>⚙ <span>Settings</span></button>
-      <div className="account"><span className="avatar light">F</span><span><strong>Fabushi</strong><small>Local computer</small></span></div>
+      <button className="account sand-agents-sidebar__account" onClick={p.openAccount}><span className="avatar light">{p.account?.kind==='logged-in'?(p.account.displayName||p.account.email||'F').slice(0,1).toUpperCase():'F'}</span><span><strong>{p.account?.kind==='logged-in'?(p.account.displayName||'Fabushi'):'Fabushi'}</strong><small>{p.account?.kind==='logged-in'?(p.account.email||'Signed in'):p.account?.kind==='logging-in'?'Signing in…':p.account?.available?'Sign in':'Local computer'}</small></span></button>
     </div>
   </aside>;
 }
@@ -197,6 +197,26 @@ function Workspace({agent,thread,refresh,openAutomations,openAgentSettings}:{age
       await bridge.stopAgent({agentId:agent.id});await refresh();
     }}/>
   </main>;
+}
+
+function AccountPanel({account,onClose,onChanged,onSettings}:{account:AccountStatus|null;onClose():void;onChanged(status:AccountStatus):void;onSettings():void}) {
+  const [pending,setPending]=useState(false),[error,setError]=useState(''),[name,setName]=useState(account?.kind==='logged-in'?account.displayName||'':'');
+  const run=async(action:()=>Promise<AccountStatus>)=>{setPending(true);setError('');try{onChanged(await action())}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}};
+  return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay account-panel sand-account-menu" role="dialog" aria-label="Account">
+    <header><div><h2>Account</h2><p>{account?.kind==='logged-in'?(account.email||'Signed in'):account?.kind==='logging-in'?'Continue sign-in in your browser':'Fabushi desktop account'}</p></div><button aria-label="Close" onClick={onClose}>×</button></header>
+    <div className="account-panel-body">
+      {account?.kind==='logged-in'?<>
+        <label><span>Name</span><input value={name} disabled={pending} onChange={e=>setName(e.target.value)} placeholder="Enter your name"/></label>
+        <button disabled={pending||!name.trim()} onClick={()=>void run(()=>bridge.updateAccountName({name:name.trim()}))}>Save name</button>
+        <hr/><button onClick={onSettings}>Settings</button><button className="danger" disabled={pending} onClick={()=>void run(()=>bridge.logoutAccount())}>Log out</button>
+      </>:account?.kind==='logging-in'?<><p className="account-wait">A browser window was opened for sign-in.</p><button disabled={pending} onClick={()=>void run(()=>bridge.cancelAccountLogin())}>Cancel sign-in</button></>:<>
+        <p>{account?.reason||'Sign in to connect the configured Fabushi account provider.'}</p>
+        <button className="primary" disabled={pending||account?.available===false} onClick={()=>void run(()=>bridge.loginAccount())}>{pending?'Opening browser…':'Sign in'}</button>
+        <button onClick={onSettings}>Settings</button>
+      </>}
+      {error?<div className="settings-error">{error}</div>:null}
+    </div>
+  </section></div>;
 }
 
 function HiddenChats({agents,onClose,onOpen,onChanged}:{agents:AgentSummary[];onClose():void;onOpen(id:string):void;onChanged():Promise<void>}) {
@@ -555,8 +575,9 @@ export default function GrokApp(){
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [thread,setThread]=useState<AgentThread|null>(null);
   const [plugins,setPlugins]=useState<PluginDescriptor[]>([]);
+  const [account,setAccount]=useState<AccountStatus|null>(null);
   const [workflows,setWorkflows]=useState<WorkflowDescriptor[]>([]);
-  const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|'orgchart'|'hidden'|'agent-settings'|null>(null);
+  const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|'orgchart'|'hidden'|'agent-settings'|'account'|null>(null);
   const [createOpen,setCreateOpen]=useState(false);
   const [renameAgent,setRenameAgent]=useState<AgentSummary|null>(null);
   const [deleteAgent,setDeleteAgent]=useState<AgentSummary|null>(null);
@@ -572,8 +593,9 @@ export default function GrokApp(){
   };
   const loadThread=async(id=selectedId)=>setThread(id?await bridge.getThread({agentId:id}):null);
   const loadPlugins=async()=>setPlugins(await bridge.listPlugins());
+  const loadAccount=async()=>setAccount(await bridge.getAccountStatus());
   const loadWorkflows=async()=>setWorkflows(await bridge.listWorkflows());
-  const refreshAll=async()=>{try{setFailure('');await Promise.all([loadAgents(),loadPlugins(),loadWorkflows()])}catch(error){setFailure(error instanceof Error?error.message:String(error))}finally{setLoading(false)}};
+  const refreshAll=async()=>{try{setFailure('');await Promise.all([loadAgents(),loadPlugins(),loadWorkflows(),loadAccount()])}catch(error){setFailure(error instanceof Error?error.message:String(error))}finally{setLoading(false)}};
 
   useEffect(()=>{void refreshAll()},[]);
   useEffect(()=>{if(selectedId)void loadThread(selectedId).catch(error=>setFailure(error instanceof Error?error.message:String(error)));else setThread(null)},[selectedId]);
@@ -581,6 +603,7 @@ export default function GrokApp(){
     if(event.type==='agents.changed'||event.type==='agent.changed')void loadAgents().catch(()=>{});
     if(event.type==='plugins.changed')void loadPlugins().catch(()=>{});
     if(event.type==='workflows.changed')void loadWorkflows().catch(()=>{});
+    if(event.type==='account.changed')void loadAccount().catch(()=>{});
     if(event.agentId&&event.agentId===selectedId)void loadThread(event.agentId).catch(()=>{});
   }),[selectedId]);
   useEffect(()=>{
@@ -596,7 +619,7 @@ export default function GrokApp(){
   if(failure&&!agents.length)return <div className="root-state error-state sand-error-boundary--app"><strong>Fabushi could not load the agent runtime.</strong><p>{failure}</p><button className="primary" onClick={()=>void refreshAll()}>Retry</button></div>;
 
   return <div className="app-shell">
-    <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={setSelectedId} create={()=>setCreateOpen(true)}
+    <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={setSelectedId} account={account} openAccount={()=>setOverlay('account')} create={()=>setCreateOpen(true)}
       plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} orgChart={()=>setOverlay('orgchart')} hiddenChats={()=>setOverlay('hidden')} rename={setRenameAgent} hide={agent=>{void bridge.setAgentHidden({agentId:agent.id,hidden:true}).then(loadAgents).catch(error=>setFailure(error instanceof Error?error.message:String(error)))}} remove={setDeleteAgent} openPalette={()=>setPaletteOpen(true)}/>
     {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')} openAgentSettings={()=>setOverlay('agent-settings')}/ >:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
     {failure?<div className="toast-error">{failure}<button onClick={()=>setFailure('')}>×</button></div>:null}
@@ -606,6 +629,7 @@ export default function GrokApp(){
     {overlay==='orgchart'?<OrgChart agents={agents} onClose={()=>setOverlay(null)} onSelect={setSelectedId}/>:null}
     {overlay==='hidden'?<HiddenChats agents={agents} onClose={()=>setOverlay(null)} onOpen={id=>{setSelectedId(id);setOverlay(null)}} onChanged={loadAgents}/>:null}
     {overlay==='agent-settings'&&selected?<AgentSettings agent={selected} onClose={()=>setOverlay(null)} onChanged={loadAgents}/>:null}
+    {overlay==='account'?<AccountPanel account={account} onClose={()=>setOverlay(null)} onChanged={setAccount} onSettings={()=>setOverlay('settings')}/>:null}
     {createOpen?<CreateAgent onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>setSelectedId(agent.id))}}/>:null}
     {renameAgent?<RenameAgent agent={renameAgent} onClose={()=>setRenameAgent(null)} onSaved={loadAgents}/>:null}
     {deleteAgent?<DeleteAgent agent={deleteAgent} onClose={()=>setDeleteAgent(null)} onDeleted={async()=>{await loadAgents();setThread(null)}}/>:null}
