@@ -258,7 +258,7 @@ export interface AgentEvent {
 }
 export interface GrokAgentBridge {
   listAgents():Promise<AgentSummary[]>;
-  createAgent(input:{name:string}):Promise<AgentSummary>;
+  createAgent(input:{name:string;parentAgentId?:string|null;purpose?:string;description?:string;isGroup?:boolean;memberAgentIds?:string[]}):Promise<AgentSummary>;
   renameAgent(input:{agentId:string;name:string}):Promise<AgentSummary>;
   updateAgent(input:{id:string;profile?:{name:string;title?:string;description:string};avatarShape?:string;avatarColor?:string}):Promise<AgentSummary>;
   setAgentNotifyOnUpdates(input:{id:string;isEnabled:boolean}):Promise<AgentSummary>;
