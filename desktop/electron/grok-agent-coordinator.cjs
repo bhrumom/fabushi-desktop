@@ -78,8 +78,9 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   let state=null,loading=null,writing=Promise.resolve();
   const aborts=new Map();
   const approvals=new Map();
-  let automationTimer=null;
-  let automationTickRunning=false;
+  let automationTimer=null,automationSweep=null;
+  let automationTickRunning=false,disposed=false;
+  const activeTurns=new Set();
 
   async function load(){
     if(state)return state;
@@ -222,6 +223,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   });
 
   async function sendMessage({agentId,text}){
+    if(disposed)throw Error('Agent runtime is shutting down.');
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
     const body=String(text||'').trim();if(!body)throw Error('Message required');
     if(['thinking','running','waiting'].includes(agent.status))throw Error('Agent already running');
@@ -232,7 +234,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     emit('message.changed',{agentId,messageId:user.id,status:'done'});emit('agent.changed',{agentId,status:'thinking'});
     const controller=new AbortController();aborts.set(agentId,controller);
 
-    void(async()=>{
+    const turnPromise=(async()=>{
       try{
         await onAgentStatus(agentId,'running');
         const finalText=await host.runTurn({
@@ -251,6 +253,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
         aborts.delete(agentId);cancelApprovals(agentId,'Turn finished.');
       }
     })();
+    activeTurns.add(turnPromise);void turnPromise.finally(()=>activeTurns.delete(turnPromise));
     return{messageId:assistant.id};
   }
   async function stopAgent({agentId}){
@@ -335,9 +338,10 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
         }
       }
       for(const [agentId,automationId] of due)await executeAutomation(agentId,automationId,'schedule');
-    }finally{automationTickRunning=false;void armAutomationTimer()}
+    }finally{automationTickRunning=false;if(!disposed)void armAutomationTimer()}
   }
   async function armAutomationTimer(){
+    if(disposed)return;
     if(automationTimer){clearTimeout(automationTimer);automationTimer=null}
     const s=await load(),now=Date.now();let nearest=null,changed=false;
     for(const agent of s.agents){
@@ -350,7 +354,8 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     if(changed)await save();
     if(nearest!=null){
       const delay=Math.max(25,Math.min(2147483647,nearest-now));
-      automationTimer=setTimeout(()=>{automationTimer=null;void processDueAutomations()},delay);
+      automationTimer=setTimeout(()=>{automationTimer=null;if(disposed)return;automationSweep=processDueAutomations().finally(()=>{automationSweep=null})},delay);
+      automationTimer.unref?.();
     }
   }
   void armAutomationTimer();
@@ -542,10 +547,22 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     const s=await load();s.settings.autoReviewMode=mode;await save();emit('settings.changed',{autoReviewMode:mode});
     return getRuntimeSettings();
   }
+  async function dispose(){
+    if(disposed)return{ok:true};
+    disposed=true;
+    if(automationTimer){clearTimeout(automationTimer);automationTimer=null}
+    for(const controller of aborts.values())controller.abort();
+    for(const approval of [...approvals.values()])approval.finish(false);
+    if(automationSweep)await Promise.resolve(automationSweep).catch(()=>{});
+    await Promise.allSettled([...activeTurns]);
+    mcp.dispose();localBrowser.dispose();
+    await writing.catch(()=>{});
+    return{ok:true};
+  }
 
   return{
     listAgents,createAgent,renameAgent,deleteAgent,getThread,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,resolveApproval
+    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,resolveApproval,dispose
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
