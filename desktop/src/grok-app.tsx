@@ -127,18 +127,33 @@ function OrgChart({agents,onClose,onSelect}:{agents:AgentSummary[];onClose():voi
   </section></div>;
 }
 
+function ComputerInfoPane({agent,thread,onClose}:{agent:AgentSummary;thread:AgentThread|null;onClose():void}) {
+  const latest=[...(thread?.messages||[])].reverse().find(message=>message.role==='tool'&&message.display?.kind==='image');
+  const active=(thread?.messages||[]).some(message=>message.role==='tool'&&['queued','waiting-approval','running','streaming'].includes(message.status||'done')&&String(message.toolName||'').startsWith('computer_'));
+  return <aside className="computer-info-pane sand-info-pane" aria-label="Conversation details">
+    <header><div><strong>Computer</strong><small>{active?'In use':'Local Mac'}</small></div><button aria-label="Close details" onClick={onClose}>×</button></header>
+    <div className="sand-computer-monitor-strip"><span className={active?'computer-live':'computer-idle'}/><span>{agent.name}'s screen</span></div>
+    <div className="sand-computer-preview">
+      {latest?.display?.kind==='image'?<img src={latest.display.dataUrl} alt="Latest local computer screenshot"/>:<div className="computer-preview-empty"><span>▣</span><strong>Screen preview unavailable</strong><p>A real preview appears here after this agent captures the local Mac screen.</p></div>}
+    </div>
+    <div className="sand-computer-banner"><strong>Installed computer</strong><p>Computer tools operate this Mac through the coordinator → host → local-exec boundary. Mutations still pass permission and auto-review checks.</p></div>
+  </aside>;
+}
+
 function Workspace({agent,thread,refresh,openAutomations}:{agent:AgentSummary;thread:AgentThread|null;refresh():Promise<void>;openAutomations():void}) {
   const scroller=useRef<HTMLDivElement|null>(null);
   const [outlineOpen,setOutlineOpen]=useState(false);
+  const [computerOpen,setComputerOpen]=useState(false);
   useEffect(()=>{scroller.current?.scrollTo({top:scroller.current.scrollHeight})},[thread?.messages.length]);
   return <main className="workspace">
-    <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><nav className="header-actions"><button className="header-action" onClick={()=>setOutlineOpen(value=>!value)}>Outline</button><button className="header-action" onClick={openAutomations}>Routines</button></nav></header>
+    <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><nav className="header-actions"><button className="header-action sand-chat-header__computer" data-computer-active={busy(agent.status)||undefined} onClick={()=>setComputerOpen(value=>!value)}>Computer</button><button className="header-action" onClick={()=>setOutlineOpen(value=>!value)}>Outline</button><button className="header-action" onClick={openAutomations}>Routines</button></nav></header>
     <div className="transcript sand-virtual-transcript" ref={scroller}><div className="transcript-column">
       {thread?.messages.length?thread.messages.map(message=><Message key={message.id} message={message} onResolve={async(approvalId,approved)=>{
         await bridge.resolveApproval({approvalId,approved});await refresh();
       }}/>):<section className="welcome"><span className="avatar hero">{initials(agent.name)}</span><h2>{agent.name}</h2><p>This agent works directly on this Mac.</p></section>}
     </div></div>
     {outlineOpen?<ConversationOutline thread={thread} onClose={()=>setOutlineOpen(false)}/>:null}
+    {computerOpen?<ComputerInfoPane agent={agent} thread={thread} onClose={()=>setComputerOpen(false)}/>:null}
     <Composer running={busy(agent.status)} onSend={async text=>{await bridge.sendMessage({agentId:agent.id,text});await refresh()}} onStop={async()=>{
       await bridge.stopAgent({agentId:agent.id});await refresh();
     }}/>
