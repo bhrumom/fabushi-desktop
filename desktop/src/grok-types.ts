@@ -15,6 +15,15 @@ export interface AgentSummary {
   parentAgentId?:string|null;
   hidden?:boolean;
 }
+export interface AttachmentDescriptor {
+  id:string;
+  name:string;
+  mime:string;
+  size:number;
+  kind:'image'|'pdf'|'text'|'file';
+  createdAt:number;
+}
+export interface AttachmentPreview extends AttachmentDescriptor { dataUrl:string; }
 export interface AgentMessage {
   id:string;
   role:'user'|'assistant'|'system'|'tool';
@@ -35,6 +44,7 @@ export interface AgentMessage {
   reviewReason?:string;
   outputLocation?:{filePath:string;sizeBytes:number;lineCount:number;truncated:boolean;originalSizeBytes:number;toolCallId:string};
   display?:{kind:'image';dataUrl:string};
+  attachments?:AttachmentDescriptor[];
 }
 export type ConversationOutlineItem =
   | {kind:'user';id:string;text:string}
@@ -182,7 +192,7 @@ export interface GrokAgentBridge {
   setAgentHidden(input:{agentId:string;hidden:boolean}):Promise<AgentSummary>;
   deleteAgent(input:{agentId:string}):Promise<{ok:true}>;
   getThread(input:{agentId:string}):Promise<AgentThread>;
-  sendMessage(input:{agentId:string;text:string}):Promise<{messageId:string}>;
+  sendMessage(input:{agentId:string;text:string;attachmentIds?:string[]}):Promise<{messageId:string}>;
   stopAgent(input:{agentId:string}):Promise<{ok:true}>;
   listPlugins():Promise<PluginDescriptor[]>;
   setPluginInstalled(input:{pluginId:string;installed:boolean}):Promise<PluginDescriptor[]>;
@@ -219,6 +229,7 @@ export interface GrokAgentBridge {
   updateAgentAutomation(input:{id:string;automationId:string;spec:{name:string;prompt:string;trigger:{type:'cron';schedule:string};isEnabled:boolean}}):Promise<RoutineAutomationDescriptor[]>;
   deleteAgentAutomation(input:{id:string;automationId:string}):Promise<RoutineAutomationDescriptor[]>;
   runAgentAutomationNow(input:{id:string;automationId:string}):Promise<void>;
-  pickFile():Promise<{path:string;name:string}|null>;
+  pickFile():Promise<AttachmentDescriptor|null>;
+  readAttachment(input:{id:string}):Promise<AttachmentPreview>;
   subscribe(listener:(event:AgentEvent)=>void):()=>void;
 }
