@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
-import type { AgentMessage, AgentSummary, AgentThread, McpToolDescriptor, PluginDescriptor, RuntimeSettings } from './grok-types';
+import type { AgentMessage, AgentSummary, AgentThread, McpToolDescriptor, PluginDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
 import './grok-app.css';
 
 const bridge=getAgentBridge();
@@ -113,7 +113,8 @@ function Workspace({agent,thread,refresh}:{agent:AgentSummary;thread:AgentThread
   </main>;
 }
 
-function Plugins({items,onClose,reload}:{items:PluginDescriptor[];onClose():void;reload():Promise<void>}) {
+function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginDescriptor[];workflows:WorkflowDescriptor[];onClose():void;reload():Promise<void>;reloadWorkflows():Promise<void>}) {
+  const [tab,setTab]=useState<'plugins'|'skills'>('plugins');
   const [query,setQuery]=useState('');
   const [addOpen,setAddOpen]=useState(false);
   const [name,setName]=useState('');
@@ -121,8 +122,10 @@ function Plugins({items,onClose,reload}:{items:PluginDescriptor[];onClose():void
   const [argsText,setArgsText]=useState('[]');
   const [expanded,setExpanded]=useState<string|null>(null);
   const [tools,setTools]=useState<Record<string,McpToolDescriptor[]>>({});
+  const [skillEditor,setSkillEditor]=useState<WorkflowDescriptor|{id?:string;name:string;description:string;body:string;isEnabledForAgent:boolean}|null>(null);
   const [error,setError]=useState('');
   const rows=items.filter(x=>(x.name+' '+x.description+' '+x.category).toLowerCase().includes(query.toLowerCase()));
+  const skillRows=workflows.filter(x=>(x.name+' '+x.description).toLowerCase().includes(query.toLowerCase()));
   const loadTools=async(serverId:string)=>{
     setError('');
     try{setTools(current=>({...current,[serverId]:[]}));const next=await bridge.listMcpServerTools({serverId});setTools(current=>({...current,[serverId]:next}))}
@@ -137,18 +140,42 @@ function Plugins({items,onClose,reload}:{items:PluginDescriptor[];onClose():void
       setName('');setCommand('');setArgsText('[]');setAddOpen(false);await reload();
     }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
   };
+  const newSkill=()=>setSkillEditor({name:'',description:'',body:'',isEnabledForAgent:true});
+  const saveSkill=async(e:FormEvent)=>{
+    e.preventDefault();if(!skillEditor)return;setError('');
+    try{
+      await bridge.saveWorkflow({
+        ...(skillEditor.id?{id:skillEditor.id}:{}),
+        name:skillEditor.name,description:skillEditor.description,body:skillEditor.body,
+        trigger:'trigger' in skillEditor?skillEditor.trigger:null,
+        isEnabledForAgent:skillEditor.isEnabledForAgent,
+        disableModelInvocation:'disableModelInvocation' in skillEditor?skillEditor.disableModelInvocation:false
+      });
+      setSkillEditor(null);await reloadWorkflows();
+    }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
+  };
   return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay plugins" role="dialog" aria-label="Plugins">
-    <header><div><h2>Plugins</h2><p>Executable local capabilities and MCP servers.</p></div><div className="overlay-head-actions"><button className="add-server" onClick={()=>setAddOpen(value=>!value)}>＋ MCP</button><button onClick={onClose}>×</button></div></header>
-    {addOpen?<form className="mcp-add" onSubmit={e=>void addServer(e)}>
+    <header><div><h2>Plugins</h2><p>Executable local tools, MCP servers, and file-backed private skills.</p></div><div className="overlay-head-actions">
+      {tab==='plugins'?<button className="add-server" onClick={()=>setAddOpen(value=>!value)}>＋ MCP</button>:<button className="add-server" onClick={newSkill}>＋ Skill</button>}
+      <button onClick={onClose}>×</button>
+    </div></header>
+    {tab==='plugins'&&addOpen?<form className="mcp-add" onSubmit={e=>void addServer(e)}>
       <input value={name} onChange={e=>setName(e.target.value)} placeholder="Server name" required/>
       <input value={command} onChange={e=>setCommand(e.target.value)} placeholder="Command, e.g. npx" required/>
       <input value={argsText} onChange={e=>setArgsText(e.target.value)} placeholder={'["-y","@vendor/server"]'} required/>
       <div><button type="button" onClick={()=>setAddOpen(false)}>Cancel</button><button className="primary compact">Add server</button></div>
     </form>:null}
-    <label className="plugin-search">⌕<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search plugins"/></label>
-    <nav className="tabs"><span className="active">Installed</span></nav>
+    {tab==='skills'&&skillEditor?<form className="skill-editor" onSubmit={e=>void saveSkill(e)}>
+      <input value={skillEditor.name} onChange={e=>setSkillEditor({...skillEditor,name:e.target.value})} placeholder="Skill name" required/>
+      <input value={skillEditor.description} onChange={e=>setSkillEditor({...skillEditor,description:e.target.value})} placeholder="When should the agent use this skill?"/>
+      <textarea value={skillEditor.body} onChange={e=>setSkillEditor({...skillEditor,body:e.target.value})} placeholder="Skill instructions (stored in SKILL.md)" required/>
+      <label><input type="checkbox" checked={skillEditor.isEnabledForAgent} onChange={e=>setSkillEditor({...skillEditor,isEnabledForAgent:e.target.checked})}/> Available to agents</label>
+      <div><button type="button" onClick={()=>setSkillEditor(null)}>Cancel</button><button className="primary compact">Save skill</button></div>
+    </form>:null}
+    <label className="plugin-search">⌕<input value={query} onChange={e=>setQuery(e.target.value)} placeholder={tab==='plugins'?'Search plugins':'Search skills'}/></label>
+    <nav className="tabs"><button className={tab==='plugins'?'active':''} onClick={()=>setTab('plugins')}>Installed</button><button className={tab==='skills'?'active':''} onClick={()=>setTab('skills')}>Private skills</button></nav>
     {error?<div className="plugin-error">{error}</div>:null}
-    <div className="plugin-rows">{rows.length?rows.map(x=><article className="plugin-card" key={x.id}>
+    {tab==='plugins'?<div className="plugin-rows">{rows.length?rows.map(x=><article className="plugin-card" key={x.id}>
       <span className="plugin-logo">{x.name[0]}</span>
       <div className="plugin-copy"><strong>{x.name}</strong><p>{x.description}</p><small>{x.category} · {x.provider||'provider'}</small>
         {x.kind==='mcp'&&x.serverId&&expanded===x.serverId?<div className="mcp-tools">
@@ -164,6 +191,14 @@ function Plugins({items,onClose,reload}:{items:PluginDescriptor[];onClose():void
         {x.removable?<button onClick={async()=>{await bridge.setPluginInstalled({pluginId:x.id,installed:false});if(x.serverId)setExpanded(null);await reload()}}>Remove</button>:null}
       </div>
     </article>):<div className="overlay-empty">No executable capability matches this search.</div>}</div>
+    :<div className="skill-rows">{skillRows.length?skillRows.map(skill=><article key={skill.id}>
+      <div className="plugin-copy"><strong>{skill.name}</strong><p>{skill.description||'No description'}</p><small>SKILL.md · mention @{skill.name.toLowerCase().replace(/\s+/g,'')} to load instructions</small></div>
+      <div className="plugin-actions">
+        <button onClick={()=>setSkillEditor(skill)}>Edit</button>
+        <button className={skill.isEnabledForAgent?'primary compact':''} onClick={async()=>{await bridge.setWorkflowEnabled({id:skill.id,enabled:!skill.isEnabledForAgent});await reloadWorkflows()}}>{skill.isEnabledForAgent?'Enabled':'Enable'}</button>
+        <button onClick={async()=>{await bridge.deleteWorkflow({id:skill.id});await reloadWorkflows()}}>Delete</button>
+      </div>
+    </article>):<div className="overlay-empty">No private skills yet. Create one to store a real SKILL.md under the Fabushi profile.</div>}</div>}
   </section></div>;
 }
 
