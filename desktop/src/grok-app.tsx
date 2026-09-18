@@ -4,6 +4,9 @@ import { agentRowActions, isCopyConversationIdAction, isDeleteAgentAction, isDup
 import { committedAgentName } from './production/agent-name-editor-model';
 import { SandButton } from './recovered/ui/sand-kit-primitives';
 import { SandSpinner } from './recovered/ui/sand-status-primitives';
+import { RosterStatus } from './recovered/features/roster/status';
+import { RosterReconnectNotice } from './recovered/features/roster/reconnect-notice';
+import { createBrowserClientPersistence, createRosterSelectionPersistence, createRosterSelectionStore } from './recovered/features/roster/selection-state';
 import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, DeepLinkInfo, DesktopInfo, DesktopUpdateStatus, DesktopUpdateTrack, FeedbackResult, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor, WorkspaceLinkSearchResult, WorkspaceMediaSearchResult, WorkspaceMessageSearchResult } from './grok-types';
 import './grok-app.css';
 
@@ -62,14 +65,14 @@ function Sidebar(p:{
     <div className="brand"><span className="brand-mark">✣</span><strong>Fabushi</strong><button aria-label="New agent" onClick={p.create}>＋</button></div>
     <label className="search" onClick={p.openPalette}><span>⌕</span><input value={p.query} onChange={e=>p.setQuery(e.target.value)} placeholder="Search agents"/><kbd>⌘K</kbd></label>
     <div className="section-label">Agents</div>
-    <div className="agent-list">{rows.map(a=><div className={'agent-row sand-agent-item '+(p.selected===a.id?'selected ':'')+(a.pinned?'pinned ':'')+(a.unread?'unread':'')} key={a.id}>
+    <div className="agent-list">{rows.length?rows.map(a=><div className={'agent-row sand-agent-item '+(p.selected===a.id?'selected ':'')+(a.pinned?'pinned ':'')+(a.unread?'unread':'')} key={a.id}>
       <button className="agent-select" onClick={()=>p.select(a.id)} onDoubleClick={()=>p.rename(a)}>
         <span className="avatar">{initials(a.name)}</span>
         <span className="agent-copy"><strong>{a.name}</strong><small>{a.status==='idle'?(a.unread?'Unread':'Ready'):a.status}</small></span>
         <Status status={a.status}/>
       </button>
       <AgentRowActionsMenu agent={a} onChanged={p.changed} onDelete={p.remove}/>
-    </div>)}</div>
+    </div>):<RosterStatus kind={p.agents.some(a=>a.hidden)?'all-hidden':'empty'} onShowHiddenBots={p.hiddenChats}/>}</div>
     <div className="grow"/>
     <div className="sidebar-footer">
       <button onClick={p.orgChart}>⌘ <span>Org chart</span></button>
@@ -751,6 +754,7 @@ function CommandPalette({agents,onClose,onSelect,onSelectEntry,onCreate,onOrgCha
 }
 
 export default function GrokApp(){
+  const selectionStore=useMemo(()=>createRosterSelectionStore(createRosterSelectionPersistence(createBrowserClientPersistence(window.localStorage))),[]);
   const [agents,setAgents]=useState<AgentSummary[]>([]);
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [thread,setThread]=useState<AgentThread|null>(null);
@@ -769,10 +773,18 @@ export default function GrokApp(){
   const [loading,setLoading]=useState(true);
   const [failure,setFailure]=useState('');
   const selected=agents.find(a=>a.id===selectedId)||null;
+  const accountSlot=account?.kind==='logged-in'?(account.authId||account.email||'signed-in'):account?'local':null;
+  const selectAgent=(agentId:string|null)=>{
+    selectionStore.select(agentId);
+    if(agentId)selectionStore.settle(agentId);
+    setSelectedId(agentId);
+  };
 
   const loadAgents=async()=>{
     const next=await bridge.listAgents();setAgents(next);
-    setSelectedId(current=>current&&next.some(a=>a.id===current)?current:(next[0]?.id||null));
+    selectionStore.reconcile({agentIds:next.map(agent=>agent.id),isRosterComplete:true});
+    const restored=selectionStore.get().currentAgentId;
+    setSelectedId(current=>current&&next.some(a=>a.id===current)?current:restored&&next.some(a=>a.id===restored)?restored:(next[0]?.id||null));
   };
   const loadThread=async(id=selectedId)=>setThread(id?await bridge.getThread({agentId:id}):null);
   const loadPlugins=async()=>setPlugins(await bridge.listPlugins());
@@ -782,6 +794,24 @@ export default function GrokApp(){
   const refreshAll=async()=>{try{setFailure('');await Promise.all([loadAgents(),loadPlugins(),loadWorkflows(),loadAccount(),loadOnboarding()])}catch(error){setFailure(error instanceof Error?error.message:String(error))}finally{setLoading(false)}};
 
   useEffect(()=>{void refreshAll();return bridge.onDeepLink(link=>setDeepLink(link))},[]);
+  useEffect(()=>{
+    let active=true;
+    void selectionStore.restore(accountSlot).then(()=>{
+      if(!active||accountSlot==null)return;
+      selectionStore.reconcile({agentIds:agents.map(agent=>agent.id),isRosterComplete:true});
+      let restored=selectionStore.get().currentAgentId;
+      if(restored==null&&agents[0]){selectionStore.select(agents[0].id);selectionStore.settle(agents[0].id);restored=agents[0].id}
+      if(restored==null||agents.some(agent=>agent.id===restored))setSelectedId(restored);
+    }).catch(()=>{});
+    return()=>{active=false};
+  },[accountSlot]);
+  useEffect(()=>{
+    if(accountSlot==null)return;
+    selectionStore.reconcile({agentIds:agents.map(agent=>agent.id),isRosterComplete:true});
+    const next=selectionStore.get().currentAgentId;
+    if(next!==selectedId&&(next==null||agents.some(agent=>agent.id===next)))setSelectedId(next);
+  },[agents,accountSlot]);
+  useEffect(()=>()=>selectionStore.dispose(),[]);
   useEffect(()=>{if(onboardingSeen===false&&agents.length>0)void bridge.setOnboardingSeen({seen:true}).then(()=>setOnboardingSeen(true)).catch(()=>{})},[onboardingSeen,agents.length]);
   useEffect(()=>{if(selectedId)void loadThread(selectedId).catch(error=>setFailure(error instanceof Error?error.message:String(error)));else setThread(null)},[selectedId]);
   useEffect(()=>{if(!pendingJump||pendingJump.agentId!==selectedId)return;const handle=window.setTimeout(()=>{const target=document.querySelector<HTMLElement>(`[data-entry-id="${CSS.escape(pendingJump.entryId)}"]`);if(target){target.scrollIntoView({block:'center',behavior:'smooth'});target.classList.add('message-jump');window.setTimeout(()=>target.classList.remove('message-jump'),1200);setPendingJump(null)}},80);return()=>window.clearTimeout(handle)},[pendingJump,selectedId,thread?.messages.length]);
@@ -802,27 +832,28 @@ export default function GrokApp(){
   },[]);
 
   if(loading)return <div className="root-state"><SandSpinner size="md" ariaLabel="Loading agents"/><strong>Loading agents…</strong></div>;
-  if(failure&&!agents.length)return <div className="root-state error-state sand-error-boundary--app"><strong>Fabushi could not load the agent runtime.</strong><p>{failure}</p><SandButton sentiment="accent" onClick={()=>void refreshAll()}>Retry</SandButton></div>;
-  if(onboardingSeen===false&&!agents.length)return <Onboarding account={account} onAccountChanged={setAccount} onComplete={async agent=>{await bridge.setOnboardingSeen({seen:true});setOnboardingSeen(true);await loadAgents();if(agent)setSelectedId(agent.id)}}/>;
+  if(failure&&!agents.length)return <div className="root-state error-state sand-error-boundary--app"><RosterStatus kind="error" onRetry={()=>void refreshAll()}/><p>{failure}</p></div>;
+  if(onboardingSeen===false&&!agents.length)return <Onboarding account={account} onAccountChanged={setAccount} onComplete={async agent=>{await bridge.setOnboardingSeen({seen:true});setOnboardingSeen(true);await loadAgents();if(agent)selectAgent(agent.id)}}/>;
 
   return <div className="app-shell">
-    <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={setSelectedId} account={account} openAccount={()=>setOverlay('account')} create={()=>setCreateOpen(true)}
+    <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={selectAgent} account={account} openAccount={()=>setOverlay('account')} create={()=>setCreateOpen(true)}
       plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} orgChart={()=>setOverlay('orgchart')} hiddenChats={()=>setOverlay('hidden')} rename={setRenameAgent} remove={setDeleteAgent} changed={loadAgents} openPalette={()=>setPaletteOpen(true)}/>
     {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')} openAgentSettings={()=>setOverlay('agent-settings')}/ >:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
+    {failure&&agents.length?<RosterReconnectNotice isRetrying={loading} onRetry={()=>void refreshAll()}/>:null}
     {failure?<div className="toast-error">{failure}<button onClick={()=>setFailure('')}>×</button></div>:null}
     {overlay==='plugins'?<Plugins items={plugins} workflows={workflows} onClose={()=>setOverlay(null)} reload={loadPlugins} reloadWorkflows={loadWorkflows}/>:null}
     {overlay==='settings'?<Settings onClose={()=>setOverlay(null)}/>:null}
     {overlay==='automations'&&selected?<Automations agent={selected} onClose={()=>setOverlay(null)}/>:null}
-    {overlay==='orgchart'?<OrgChart agents={agents} onClose={()=>setOverlay(null)} onSelect={setSelectedId}/>:null}
-    {overlay==='hidden'?<HiddenChats agents={agents} onClose={()=>setOverlay(null)} onOpen={id=>{setSelectedId(id);setOverlay(null)}} onChanged={loadAgents}/>:null}
+    {overlay==='orgchart'?<OrgChart agents={agents} onClose={()=>setOverlay(null)} onSelect={selectAgent}/>:null}
+    {overlay==='hidden'?<HiddenChats agents={agents} onClose={()=>setOverlay(null)} onOpen={id=>{selectAgent(id);setOverlay(null)}} onChanged={loadAgents}/>:null}
     {overlay==='agent-settings'&&selected?<AgentSettings agent={selected} onClose={()=>setOverlay(null)} onChanged={loadAgents}/>:null}
     {overlay==='account'?<AccountPanel account={account} onClose={()=>setOverlay(null)} onChanged={setAccount} onSettings={()=>setOverlay('settings')} onFeedback={()=>setOverlay('feedback')} onAbout={()=>setOverlay('about')}/>:null}
     {overlay==='about'?<AboutDialog onClose={()=>setOverlay(null)}/>:null}
     {overlay==='feedback'?<FeedbackDialog conversationId={selectedId} onClose={()=>setOverlay(null)}/>:null}
     {deepLink?<DeepLinkDialog link={deepLink} onClose={()=>setDeepLink(null)}/>:null}
-    {createOpen?<CreateAgent onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>setSelectedId(agent.id))}}/>:null}
+    {createOpen?<CreateAgent onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>selectAgent(agent.id))}}/>:null}
     {renameAgent?<RenameAgent agent={renameAgent} onClose={()=>setRenameAgent(null)} onSaved={loadAgents}/>:null}
     {deleteAgent?<DeleteAgent agent={deleteAgent} onClose={()=>setDeleteAgent(null)} onDeleted={async()=>{await loadAgents();setThread(null)}}/>:null}
-    {paletteOpen?<CommandPalette agents={agents} onClose={()=>setPaletteOpen(false)} onSelect={setSelectedId} onSelectEntry={(agentId,entryId)=>{setSelectedId(agentId);setPendingJump({agentId,entryId})}} onCreate={()=>setCreateOpen(true)} onOrgChart={()=>setOverlay('orgchart')} onHiddenChats={()=>setOverlay('hidden')} onPlugins={()=>setOverlay('plugins')} onSettings={()=>setOverlay('settings')} onFeedback={()=>setOverlay('feedback')} onAbout={()=>setOverlay('about')}/>:null}
+    {paletteOpen?<CommandPalette agents={agents} onClose={()=>setPaletteOpen(false)} onSelect={selectAgent} onSelectEntry={(agentId,entryId)=>{selectAgent(agentId);setPendingJump({agentId,entryId})}} onCreate={()=>setCreateOpen(true)} onOrgChart={()=>setOverlay('orgchart')} onHiddenChats={()=>setOverlay('hidden')} onPlugins={()=>setOverlay('plugins')} onSettings={()=>setOverlay('settings')} onFeedback={()=>setOverlay('feedback')} onAbout={()=>setOverlay('about')}/>:null}
   </div>;
 }
