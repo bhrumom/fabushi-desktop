@@ -155,6 +155,8 @@ export interface RoutineAutomationDescriptor {
 export interface RuntimeSettings {
   localToolPermission:'always'|'ask'|'never';
   autoReviewMode:'off'|'shadow'|'enforce';
+  autoReviewAllowInstructions:string[];
+  autoReviewBlockInstructions:string[];
   computerTarget:'local-mac';
 }
 export interface AgentEvent {
@@ -184,6 +186,7 @@ export interface GrokAgentBridge {
   getRuntimeSettings():Promise<RuntimeSettings>;
   setLocalToolPermission(input:{permission:RuntimeSettings['localToolPermission']}):Promise<RuntimeSettings>;
   setAutoReviewMode(input:{mode:RuntimeSettings['autoReviewMode']}):Promise<RuntimeSettings>;
+  setAutoReviewInstructions(input:{allowInstructions:string[];blockInstructions:string[]}):Promise<RuntimeSettings>;
   resolveApproval(input:{approvalId:string;approved:boolean}):Promise<{ok:true}>;
   listMcpServers():Promise<McpServerDescriptor[]>;
   addMcpServer(input:{name:string;transport?:'stdio'|'http';command?:string;args?:string[];url?:string;customInstructions?:string;accountKey?:string;oauthClientId?:string;oauthAuthorizationUrl?:string;oauthTokenUrl?:string;oauthRegistrationUrl?:string;oauthScopes?:string[]}):Promise<McpServerDescriptor>;
