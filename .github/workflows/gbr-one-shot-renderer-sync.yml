@@ -64,6 +64,6 @@ jobs:
           fi
           git config user.name "Fabushi Work"
           git config user.email "noreply@fabushi.local"
-          git add desktop/src desktop/tsconfig.json desktop/package.json .github/workflows/grok-parity-source-check.yml .github/workflows/macos-grok-parity.yml
+          git add desktop/src desktop/tsconfig.json desktop/package.json
           git commit -m "refactor(gbr): replace renderer with pinned Grok 0.18 source"
           git push origin HEAD:refactor/grok-bot-018-parity-mac
