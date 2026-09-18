@@ -3,7 +3,7 @@ const {contextBridge,ipcRenderer}=require('electron');
 
 const events=[
   'agents.changed','agent.changed','message.delta','message.changed','message.done',
-  'plugins.changed','workflows.changed','automations.changed','settings.changed','account.changed','approval.requested','approval.resolved','approval.cancelled'
+  'plugins.changed','workflows.changed','automations.changed','settings.changed','account.changed','experiments.changed','approval.requested','approval.resolved','approval.cancelled'
 ];
 const invoke=(method,args={})=>ipcRenderer.invoke('grok-agent:'+method,args);
 
@@ -35,6 +35,9 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   updateAccountName:x=>invoke('update-account-name',x),
   getAccountAvatar:()=>invoke('get-account-avatar'),
   getRuntimeSettings:()=>invoke('get-runtime-settings'),
+  getExperimentsSnapshot:()=>invoke('get-experiments-snapshot'),
+  refreshExperiments:()=>invoke('refresh-experiments'),
+  applyFeatureFlagOverride:x=>invoke('apply-feature-flag-override',x),
   setLocalToolPermission:x=>invoke('set-local-tool-permission',x),
   setAutoReviewMode:x=>invoke('set-auto-review-mode',x),
   setAutoReviewInstructions:x=>invoke('set-auto-review-instructions',x),
