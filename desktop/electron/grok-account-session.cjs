@@ -89,6 +89,21 @@ function createAccountSession({env=process.env,secretStore,openExternal,fetchImp
     }finally{controller.abort();await loopback.close();active=null;onChanged(await status())}
     return status();
   }
+  async function getValidAccessToken(){
+    const saved=await record();if(!saved?.accessToken)throw Error('Sign in first.');
+    const expiresAt=Number(saved.expiresAt)||null;
+    if(expiresAt==null||expiresAt>Date.now()+30_000)return String(saved.accessToken);
+    if(!saved.refreshToken||!tokenUrl||!clientId)throw Error('Account session expired. Sign in again.');
+    const body=new URLSearchParams({grant_type:'refresh_token',client_id:clientId,refresh_token:String(saved.refreshToken)});
+    const response=await fetchImpl(tokenUrl,{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:body.toString()});
+    if(!response.ok)throw Error('Account token refresh HTTP '+response.status+': '+(await response.text()).slice(0,800));
+    const token=await response.json(),accessToken=String(token.access_token||'');if(!accessToken)throw Error('Account token refresh returned no access_token.');
+    saved.accessToken=accessToken;saved.tokenType=String(token.token_type||saved.tokenType||'Bearer');
+    if(token.refresh_token)saved.refreshToken=String(token.refresh_token);
+    saved.expiresAt=Number.isFinite(Number(token.expires_in))?Date.now()+Number(token.expires_in)*1000:null;
+    if(token.id_token)saved.profile=normalizeProfile({...saved.profile,...decodeJwtPayload(token.id_token)});
+    await secretStore.set(SESSION_KEY,saved);onChanged(await status());return accessToken;
+  }
   async function cancelLogin(){
     if(active){
       const current=active;active=null;current.loopback.cancel();current.controller.abort();
@@ -100,8 +115,8 @@ function createAccountSession({env=process.env,secretStore,openExternal,fetchImp
   async function updateName(name){const saved=await record();if(!saved?.accessToken)throw Error('Sign in first.');saved.profile={...(saved.profile||{}),displayName:String(name||'').trim().slice(0,300)||null};await secretStore.set(SESSION_KEY,saved);const next=await status();onChanged(next);return next}
   async function getAvatar(){
     const saved=await record(),url=String(saved?.profile?.avatarUrl||'');if(!url)return null;
-    try{const response=await fetchImpl(url,{headers:{authorization:saved.accessToken?'Bearer '+saved.accessToken:undefined}});if(!response.ok)return null;const bytes=Buffer.from(await response.arrayBuffer());if(bytes.length>5*1024*1024)return null;return'data:'+(response.headers.get('content-type')||'image/png')+';base64,'+bytes.toString('base64')}catch{return null}
+    try{const response=await fetchImpl(url);if(!response.ok)return null;const bytes=Buffer.from(await response.arrayBuffer());if(bytes.length>5*1024*1024)return null;return'data:'+(response.headers.get('content-type')||'image/png')+';base64,'+bytes.toString('base64')}catch{return null}
   }
-  return{configured,status,login,cancelLogin,logout,updateName,getAvatar};
+  return{configured,status,login,cancelLogin,logout,updateName,getAvatar,getValidAccessToken};
 }
 module.exports={createAccountSession,decodeJwtPayload,normalizeProfile};
