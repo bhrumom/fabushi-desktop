@@ -4,7 +4,7 @@ const path=require('node:path');
 const {URL}=require('node:url');
 const {createRuntime}=require('./grok-agent-runtime.cjs');
 
-let mainWindow=null,runtime=null;
+let mainWindow=null,runtime=null,quitAfterDispose=false;
 function trusted(event){
   const raw=event.senderFrame?.url||event.sender.getURL();
   try{
@@ -56,4 +56,5 @@ else{
   app.on('second-instance',()=>{if(!mainWindow)createWindow();if(mainWindow.isMinimized())mainWindow.restore();mainWindow.show();mainWindow.focus();});
   app.whenReady().then(()=>{runtime=createRuntime({app,BrowserWindow,shell,safeStorage});registerIpc();createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
   app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});
+  app.on('before-quit',event=>{if(!runtime||quitAfterDispose)return;event.preventDefault();quitAfterDispose=true;void Promise.resolve(runtime.dispose?.()).finally(()=>app.quit());});
 }
