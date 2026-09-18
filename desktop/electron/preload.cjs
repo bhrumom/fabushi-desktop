@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   resolveApproval:x=>invoke('resolve-approval',x),
   listMcpServers:()=>invoke('list-mcp-servers'),
   addMcpServer:x=>invoke('add-mcp-server',x),
+  updateMcpServer:x=>invoke('update-mcp-server',x),
   removeMcpServer:x=>invoke('remove-mcp-server',x),
   setMcpServerEnabled:x=>invoke('set-mcp-server-enabled',x),
   getMcpAccountStatus:x=>invoke('get-mcp-account-status',x),
