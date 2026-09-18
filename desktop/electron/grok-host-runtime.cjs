@@ -6,16 +6,19 @@ const {createExecutionResources,LOCAL_TOOL_EXECUTOR,BROWSER_TOOL_EXECUTOR,EXTERN
 const {rootRequestContext,childRequestContext,runWithRequestContext}=require('./grok-request-context.cjs');
 const {requiresAutoReview,canonicalAutoReviewTarget,fingerprintAutoReviewTarget,normalizeAutoReviewMode,normalizeClassifierDecision}=require('./grok-auto-review.cjs');
 const {runWithTransientRetry}=require('./grok-transient-retry.cjs');
+const {definitions:communicationDefinitions,executeCommunicationTool}=require('./grok-communication-tools.cjs');
 
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
+function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},sendVisibleMessage=async()=>null,reactToConversationMessage=async()=>null,getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
   function systemPrompt(agent,enabled,workflowContext){
     const parts=[
       `You are ${agent.name}, a Fabushi desktop agent following the Grok Bot host/coordinator execution model.`,
       'You operate the Mac where Fabushi is installed, not a cloud computer.',
       'Use the provided tools for computer work and report only results confirmed by tool output.',
+      'Send user-visible acknowledgements, meaningful progress updates, blockers and final results with the SendMessage tool. Do not expose private scratchpad text as a substitute for SendMessage.',
+      'ReactToMessage is only for a genuinely natural, sparing emoji reaction to a user message.',
       'Inspect before mutation. Mutating tools can be blocked or require explicit user approval.',
       'When a Computer click is needed, provide a concise purpose in the tool arguments.',
       `Enabled local capabilities: ${[...enabled].join(', ')||'none'}.`
@@ -194,7 +197,8 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const browserNames=new Set(browserTools.map(x=>x.function.name));
     const localTools=toolDefinitions(enabled);
     const localNames=new Set(localTools.map(x=>x.function.name));
-    const tools=[...localTools,...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
+    const communicationNames=new Set(communicationDefinitions.map(x=>x.function.name));
+    const tools=[...communicationDefinitions,...localTools,...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
     const resources=createExecutionResources({
       executeLocal:(name,args,options)=>executeTool(name,args,{enabled,shell,signal:options.signal,onStarted:options.onStarted,onOutput:options.onOutput}),
       executeBrowser:(name,args,options)=>browser?.execute({agentId:agent.id,name,args,signal:options.signal}),
@@ -217,16 +221,11 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
       messages.push({role:row.role,content});
     }
 
+    let visibleMessageCount=0,callsSinceVisibleMessage=0;
     for(let round=0;round<12;round++){
       if(signal?.aborted)throw abortError();
       let streamOutputProduced=false;
-      const result=await runWithTransientRetry(()=> (inferenceRequest||chatRequest)(messages,tools,signal,(delta,fullText)=>{
-        streamOutputProduced=true;
-        if(!assistantEntry)return;
-        if(!transcript.includes(assistantEntry))transcript.push(assistantEntry);
-        assistantEntry.text=fullText;assistantEntry.status='streaming';assistantEntry.updatedAt=Date.now();
-        void onAssistantDelta({agentId:agent.id,entry:assistantEntry,delta});
-      }),{signal,maxAttempts:3,baseDelayMs:750,maxDelayMs:6000,canRetry:()=>!streamOutputProduced});
+      const result=await runWithTransientRetry(()=> (inferenceRequest||chatRequest)(messages,tools,signal,()=>{streamOutputProduced=true}),{signal,maxAttempts:3,baseDelayMs:750,maxDelayMs:6000,canRetry:()=>!streamOutputProduced});
       if(result.offline){
         return 'Agent host is ready on this Mac. Configure FABUSHI_AGENT_API_URL, FABUSHI_AGENT_API_KEY, and optionally FABUSHI_AGENT_MODEL to connect a tool-calling model.';
       }
@@ -234,7 +233,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
       const calls=Array.isArray(msg.tool_calls)?msg.tool_calls:[];
       if(!calls.length){
         const content=typeof msg.content==='string'?msg.content.trim():'';
-        if(content)return content;
+        if(content)return visibleMessageCount>0?null:content;
         throw Error('Inference returned neither text nor tool calls');
       }
 
@@ -254,13 +253,16 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
 
         let resultText='';
         try{
-          const allowed=externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name)===false)?true:await authorize(agent.id,entry,name,args,signal);
+          const allowed=communicationNames.has(name)||externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name)===false)?true:await authorize(agent.id,entry,name,args,signal);
           if(!allowed){
             resultText='ERROR: '+entry.text;
           }else{
             await updateTool(agent.id,entry,{status:'running',text:'Running…'});
-            let resource;
-            if(externalNames.has(name))resource=resources.get(EXTERNAL_TOOL_EXECUTOR);
+            let resource,execution;
+            if(communicationNames.has(name)){
+              execution=await executeCommunicationTool(name,args,{sendVisibleMessage:input=>sendVisibleMessage({agentId:agent.id,...input}),reactToConversationMessage:input=>reactToConversationMessage({agentId:agent.id,...input})});
+              if(execution?.visibleMessage){visibleMessageCount+=1;callsSinceVisibleMessage=0}else callsSinceVisibleMessage+=1;
+            }else if(externalNames.has(name))resource=resources.get(EXTERNAL_TOOL_EXECUTOR);
             else if(browserNames.has(name))resource=resources.get(BROWSER_TOOL_EXECUTOR);
             else if(subagentNames.has(name))resource=resources.get(SUBAGENT_TOOL_EXECUTOR);
             else if(localNames.has(name))resource=resources.get(LOCAL_TOOL_EXECUTOR);
@@ -271,7 +273,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
               streamed=(streamed+prefix+String(event?.text||'')).slice(-50000);
               streamUpdates=streamUpdates.then(()=>updateTool(agent.id,entry,{status:'streaming',text:streamed||'Running…'}));
             };
-            const execution=await runWithRequestContext(requestContext,()=>resource.execute(name,args,{signal,onStarted:()=>{},onOutput}));
+            if(!execution){execution=await runWithRequestContext(requestContext,()=>resource.execute(name,args,{signal,onStarted:()=>{},onOutput}));callsSinceVisibleMessage+=1;}
             await streamUpdates;
             resultText=execution?.text||streamed||'(completed)';
             const materialized=await spillToolOutput(resultText,{agentId:agent.id,toolCallId:entry.toolCallId,toolName:name});
@@ -288,6 +290,8 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
         }
         messages.push({role:'tool',tool_call_id:call.id,content:resultText});
       }
+      if(visibleMessageCount===0&&callsSinceVisibleMessage>1)messages.push({role:'user',content:'<system_reminder>You have started doing work with tools without acknowledging the user. Send a brief, specific acknowledgement now with the SendMessage tool, then continue.</system_reminder>'});
+      else if(callsSinceVisibleMessage>6)messages.push({role:'user',content:'<system_reminder>You have made several tool calls since the last visible update. Send a concise progress update with SendMessage before continuing.</system_reminder>'});
     }
     throw Error('Agent exceeded the tool-call round limit');
   }
