@@ -20,7 +20,7 @@ function registerIpc(){
     'list-agents':'listAgents','create-agent':'createAgent','rename-agent':'renameAgent','delete-agent':'deleteAgent',
     'get-thread':'getThread','send-message':'sendMessage','stop-agent':'stopAgent',
     'list-plugins':'listPlugins','set-plugin-installed':'setPluginInstalled','set-plugin-enabled':'setPluginEnabled',
-    'get-runtime-settings':'getRuntimeSettings','set-local-tool-permission':'setLocalToolPermission','resolve-approval':'resolveApproval',
+    'get-runtime-settings':'getRuntimeSettings','set-local-tool-permission':'setLocalToolPermission','set-auto-review-mode':'setAutoReviewMode','resolve-approval':'resolveApproval',
     'list-mcp-servers':'listMcpServers','add-mcp-server':'addMcpServer','remove-mcp-server':'removeMcpServer',
     'set-mcp-server-enabled':'setMcpServerEnabled','list-mcp-server-tools':'listMcpServerTools','set-mcp-tool-enabled':'setMcpToolEnabled',
     'list-workflows':'listWorkflows','save-workflow':'saveWorkflow','delete-workflow':'deleteWorkflow','set-workflow-enabled':'setWorkflowEnabled',
