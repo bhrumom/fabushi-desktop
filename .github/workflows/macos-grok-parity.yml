@@ -35,8 +35,10 @@ jobs:
           set -euo pipefail
           APP="$(find release -type d -name 'Fabushi.app' -print -quit)"
           test -n "$APP"
+          BIN="$(find "$APP/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$BIN"
           REPORT="$RUNNER_TEMP/grok-renderer-smoke.json"
-          FABUSHI_GROK_SMOKE_REPORT="$REPORT" "$APP/Contents/MacOS/Fabushi" --disable-gpu >"$RUNNER_TEMP/fabushi-grok-smoke.log" 2>&1 &
+          FABUSHI_GROK_SMOKE_REPORT="$REPORT" "$BIN" --disable-gpu >"$RUNNER_TEMP/fabushi-grok-smoke.log" 2>&1 &
           PID=$!
           for _ in $(seq 1 45); do
             if [ -s "$REPORT" ]; then break; fi
