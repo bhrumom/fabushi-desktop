@@ -19,3 +19,10 @@
 - Added command palette/shortcuts, agent rename/delete, Stop, approval cards, backed Settings and loading/error states.
 - Added non-packaging parity source CI; Run 35333859439 passed CJS syntax and TypeScript/Vite build after fixing the first detected syntax issue.
 - Corrected A5/GBR-001/GBR-006 package evidence to Run 35323112810 and artifact digest sha256:884a992b9cfa2cf16891ddee05939a5daa52bc2343f8ac92e6fa0c30d9d4adae.
+
+- Added production `sand-media://` streaming with registered attachment Range reads and packaged media helpers.
+- Added recovered clock-skew/video-container runner contracts and tests.
+- Added authenticated experiments provider/cache/override lifecycle and account token refresh; kept external Statsig parity explicitly partial.
+- Added per-agent runner owner and routed coordinator turns through it.
+- Run 35360378372 passed on audited code head 910f65e42b0dd096e9c969eba03666f46ae764c9.
+- Refreshed machine parity counts without claiming A8 completion.
