@@ -9,6 +9,8 @@ export interface AgentSummary {
   updatedAt:number;
   unread:boolean;
   description?:string;
+  title?:string;
+  notifyOnUpdatesEnabled?:boolean;
   purpose?:string;
   parentAgentId?:string|null;
   hidden?:boolean;
@@ -175,6 +177,8 @@ export interface GrokAgentBridge {
   listAgents():Promise<AgentSummary[]>;
   createAgent(input:{name:string}):Promise<AgentSummary>;
   renameAgent(input:{agentId:string;name:string}):Promise<AgentSummary>;
+  updateAgent(input:{id:string;profile:{name:string;title?:string;description:string}}):Promise<AgentSummary>;
+  setAgentNotifyOnUpdates(input:{id:string;isEnabled:boolean}):Promise<AgentSummary>;
   setAgentHidden(input:{agentId:string;hidden:boolean}):Promise<AgentSummary>;
   deleteAgent(input:{agentId:string}):Promise<{ok:true}>;
   getThread(input:{agentId:string}):Promise<AgentThread>;
