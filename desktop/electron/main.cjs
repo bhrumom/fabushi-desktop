@@ -22,7 +22,7 @@ function assertTrusted(event){if(!trusted(event))throw Error('Rejected IPC sende
 function registerIpc(){
   const methods={
     'list-agents':'listAgents','create-agent':'createAgent','rename-agent':'renameAgent','update-agent':'updateAgent','set-agent-notify':'setAgentNotifyOnUpdates','set-agent-hidden':'setAgentHidden','delete-agent':'deleteAgent',
-    'get-thread':'getThread','send-message':'sendMessage','react-to-message':'reactToMessage','search-messages':'searchMessages','search-media':'searchMedia','search-links':'searchLinks','stop-agent':'stopAgent',
+    'get-thread':'getThread','send-message':'sendMessage','respond-to-widget':'respondToWidget','dismiss-widget':'dismissWidget','submit-secret':'submitSecret','react-to-message':'reactToMessage','search-messages':'searchMessages','search-media':'searchMedia','search-links':'searchLinks','stop-agent':'stopAgent',
     'list-plugins':'listPlugins','set-plugin-installed':'setPluginInstalled','set-plugin-enabled':'setPluginEnabled',
     'get-account-status':'getAccountStatus','login-account':'loginAccount','cancel-account-login':'cancelAccountLogin','logout-account':'logoutAccount','update-account-name':'updateAccountName','get-account-avatar':'getAccountAvatar',
     'get-runtime-settings':'getRuntimeSettings','set-local-tool-permission':'setLocalToolPermission','set-auto-review-mode':'setAutoReviewMode','set-auto-review-instructions':'setAutoReviewInstructions','resolve-approval':'resolveApproval',
@@ -54,6 +54,7 @@ function registerIpc(){
   ipcMain.handle('grok-agent:submit-feedback',async(event,args={})=>{assertTrusted(event);return desktopServices.submitFeedback(args)});
   ipcMain.handle('grok-agent:get-onboarding-seen',async event=>{assertTrusted(event);return desktopServices.getOnboardingSeen()});
   ipcMain.handle('grok-agent:set-onboarding-seen',async(event,args={})=>{assertTrusted(event);return desktopServices.setOnboardingSeen(args.seen===true)});
+  ipcMain.handle('grok-agent:open-external',async(event,args={})=>{assertTrusted(event);const value=String(args.url||'').trim();let url;try{url=new URL(value)}catch{throw Error('External URL is invalid.')}if(url.protocol!=='https:')throw Error('Only HTTPS external URLs are allowed.');await shell.openExternal(url.toString());return{ok:true}});
 }
 function createWindow(){
   const win=new BrowserWindow({
