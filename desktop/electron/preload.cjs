@@ -72,6 +72,8 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   setAutoUpdate:x=>invoke('set-auto-update',x),
   quitAndInstall:()=>invoke('quit-and-install'),
   submitFeedback:x=>invoke('submit-feedback',x),
+  getOnboardingSeen:()=>invoke('get-onboarding-seen'),
+  setOnboardingSeen:x=>invoke('set-onboarding-seen',x),
   onUpdateStatus(listener){if(typeof listener!=='function')return()=>{};const fn=(_e,status)=>listener(status);ipcRenderer.on('grok-agent:update-status',fn);return()=>ipcRenderer.off('grok-agent:update-status',fn)},
   onDeepLink(listener){if(typeof listener!=='function')return()=>{};const fn=(_e,link)=>listener(link);ipcRenderer.on('grok-agent:deep-link',fn);return()=>ipcRenderer.off('grok-agent:deep-link',fn)},
   subscribe(listener){
