@@ -173,3 +173,14 @@ test('hidden agents remain persisted and executable while disappearing from side
   await second.setAgentHidden({agentId:agent.id,hidden:false});
   assert.equal((await second.getThread({agentId:agent.id})).agent.hidden,false);
 });
+
+
+test('auto-review custom rules persist through coordinator restart',async t=>{
+  const f=await fixture(t);
+  const first=f.createRuntime();
+  await first.setAutoReviewInstructions({allowInstructions:['Open documentation'],blockInstructions:['Ask before deleting data']});
+  const second=f.createRuntime();
+  const settings=await second.getRuntimeSettings();
+  assert.deepEqual(settings.autoReviewAllowInstructions,['Open documentation']);
+  assert.deepEqual(settings.autoReviewBlockInstructions,['Ask before deleting data']);
+});
