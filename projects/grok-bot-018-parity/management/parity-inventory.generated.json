@@ -159,8 +159,8 @@
         "desktop/src/grok-app.tsx",
         "desktop/electron/grok-agent-coordinator.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "state": "PASS",
+      "note": "functional production rename/delete/row action flows backed by coordinator state"
     },
     {
       "referenceModule": "frontend/src/production/AgentNameEditor.tsx",
@@ -168,8 +168,8 @@
         "desktop/src/grok-app.tsx",
         "desktop/electron/grok-agent-coordinator.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "state": "PASS",
+      "note": "functional production rename/delete/row action flows backed by coordinator state"
     },
     {
       "referenceModule": "frontend/src/production/AgentRowActions.tsx",
@@ -177,8 +177,8 @@
         "desktop/src/grok-app.tsx",
         "desktop/electron/grok-agent-coordinator.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "state": "PASS",
+      "note": "functional production rename/delete/row action flows backed by coordinator state"
     },
     {
       "referenceModule": "frontend/src/production/CommandPalette.tsx",
@@ -218,58 +218,65 @@
     {
       "referenceModule": "frontend/src/production/command-palette-link-provider.ts",
       "target": [
-        "desktop/src/grok-app.tsx"
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
       ],
       "state": "PARTIAL",
-      "note": "functional Cmd/Ctrl-K palette exists; reference provider/command breadth not closed"
+      "note": "Cmd/Ctrl-K palette searches commands, agents, messages, files and links; exact reference provider breadth remains"
     },
     {
       "referenceModule": "frontend/src/production/command-palette-message-provider.ts",
       "target": [
-        "desktop/src/grok-app.tsx"
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
       ],
       "state": "PARTIAL",
-      "note": "functional Cmd/Ctrl-K palette exists; reference provider/command breadth not closed"
+      "note": "Cmd/Ctrl-K palette searches commands, agents, messages, files and links; exact reference provider breadth remains"
     },
     {
       "referenceModule": "frontend/src/production/command-palette-model.ts",
       "target": [
-        "desktop/src/grok-app.tsx"
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
       ],
       "state": "PARTIAL",
-      "note": "functional Cmd/Ctrl-K palette exists; reference provider/command breadth not closed"
+      "note": "Cmd/Ctrl-K palette searches commands, agents, messages, files and links; exact reference provider breadth remains"
     },
     {
       "referenceModule": "frontend/src/production/command-palette-provider.ts",
       "target": [
-        "desktop/src/grok-app.tsx"
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
       ],
       "state": "PARTIAL",
-      "note": "functional Cmd/Ctrl-K palette exists; reference provider/command breadth not closed"
+      "note": "Cmd/Ctrl-K palette searches commands, agents, messages, files and links; exact reference provider breadth remains"
     },
     {
       "referenceModule": "frontend/src/production/command-palette-root-commands.ts",
       "target": [
-        "desktop/src/grok-app.tsx"
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
       ],
       "state": "PARTIAL",
-      "note": "functional Cmd/Ctrl-K palette exists; reference provider/command breadth not closed"
+      "note": "Cmd/Ctrl-K palette searches commands, agents, messages, files and links; exact reference provider breadth remains"
     },
     {
       "referenceModule": "frontend/src/production/command-palette-search-provider.ts",
       "target": [
-        "desktop/src/grok-app.tsx"
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
       ],
       "state": "PARTIAL",
-      "note": "functional Cmd/Ctrl-K palette exists; reference provider/command breadth not closed"
+      "note": "Cmd/Ctrl-K palette searches commands, agents, messages, files and links; exact reference provider breadth remains"
     },
     {
       "referenceModule": "frontend/src/production/command-palette-update-command.ts",
       "target": [
-        "desktop/src/grok-app.tsx"
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
       ],
       "state": "PARTIAL",
-      "note": "functional Cmd/Ctrl-K palette exists; reference provider/command breadth not closed"
+      "note": "Cmd/Ctrl-K palette searches commands, agents, messages, files and links; exact reference provider breadth remains"
     },
     {
       "referenceModule": "frontend/src/production/coordinator-client.ts",
@@ -357,81 +364,113 @@
     },
     {
       "referenceModule": "frontend/src/recovered/features/about/overlay/view.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/electron/grok-desktop-services.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PASS",
+      "note": "About dialog reads real app version/release track and supports copy-version info"
     },
     {
       "referenceModule": "frontend/src/recovered/features/access/cover/composition.ts",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/access/cover/computer-rebuild-box-store.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/electron/local-tool-executor.cjs",
+        "desktop/native/MacComputerHelper.swift",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/access/cover/computer-rebuild-migration-store.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/electron/local-tool-executor.cjs",
+        "desktop/native/MacComputerHelper.swift",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/access/cover/computer-rebuild-model.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/electron/local-tool-executor.cjs",
+        "desktop/native/MacComputerHelper.swift",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/access/cover/computer-rebuild-transport-store.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/electron/local-tool-executor.cjs",
+        "desktop/native/MacComputerHelper.swift",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/access/cover/first-box-gate.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/electron/local-tool-executor.cjs",
+        "desktop/native/MacComputerHelper.swift",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/access/cover/model.ts",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/access/cover/roster-snapshot-store.ts",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/access/cover/view.tsx",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/account/session/menu.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "account/OAuth/session surface not implemented"
+      "target": [
+        "desktop/electron/grok-account-session.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "real account OAuth PKCE login/cancel/logout/status/name lifecycle exists; reference access/subscription policy breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/account/session/sign-in-status.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "account/OAuth/session surface not implemented"
+      "target": [
+        "desktop/electron/grok-account-session.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "real account OAuth PKCE login/cancel/logout/status/name lifecycle exists; reference access/subscription policy breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/account/session/sign-out.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "account/OAuth/session surface not implemented"
+      "target": [
+        "desktop/electron/grok-account-session.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "real account OAuth PKCE login/cancel/logout/status/name lifecycle exists; reference access/subscription policy breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/agent-info/async-tasks/clock.ts",
@@ -479,19 +518,19 @@
       "referenceModule": "frontend/src/recovered/features/agent-info/channels/model.ts",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/agent-info/channels/view.css",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/agent-info/channels/view.tsx",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/agent-info/group-members/bridge.ts",
@@ -554,231 +593,270 @@
       "referenceModule": "frontend/src/recovered/features/agent-info/shared-room/bridge.ts",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/agent-info/shared-room/controller.ts",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/agent-info/shared-room/model.ts",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/agent-info/shared-room/trigger.tsx",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/agent-info/shared-room/view.tsx",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/automations/routines/controller.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "no automation/routine runtime or UI"
+      "target": [
+        "desktop/electron/grok-automation-schedule.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "cron routines support CRUD, enable/pause, run-now and history; event-listener trigger breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/automations/routines/run-history-clock.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "no automation/routine runtime or UI"
+      "target": [
+        "desktop/electron/grok-automation-schedule.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "cron routines support CRUD, enable/pause, run-now and history; event-listener trigger breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/automations/routines/run-history-provider.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "no automation/routine runtime or UI"
+      "target": [
+        "desktop/electron/grok-automation-schedule.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "cron routines support CRUD, enable/pause, run-now and history; event-listener trigger breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/automations/routines/run-history.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "no automation/routine runtime or UI"
+      "target": [
+        "desktop/electron/grok-automation-schedule.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "cron routines support CRUD, enable/pause, run-now and history; event-listener trigger breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/automations/routines/schedule-editor.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "no automation/routine runtime or UI"
+      "target": [
+        "desktop/electron/grok-automation-schedule.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "cron routines support CRUD, enable/pause, run-now and history; event-listener trigger breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/automations/routines/schedule.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "no automation/routine runtime or UI"
+      "target": [
+        "desktop/electron/grok-automation-schedule.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "cron routines support CRUD, enable/pause, run-now and history; event-listener trigger breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/automations/routines/trigger-draft-controller.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "no automation/routine runtime or UI"
+      "target": [
+        "desktop/electron/grok-automation-schedule.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "cron routines support CRUD, enable/pause, run-now and history; event-listener trigger breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/automations/routines/trigger-schema.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "no automation/routine runtime or UI"
+      "target": [
+        "desktop/electron/grok-automation-schedule.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "cron routines support CRUD, enable/pause, run-now and history; event-listener trigger breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/automations/routines/view.css",
-      "target": [],
-      "state": "FAIL",
-      "note": "no automation/routine runtime or UI"
+      "target": [
+        "desktop/electron/grok-automation-schedule.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "cron routines support CRUD, enable/pause, run-now and history; event-listener trigger breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/automations/routines/view.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "no automation/routine runtime or UI"
+      "target": [
+        "desktop/electron/grok-automation-schedule.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "cron routines support CRUD, enable/pause, run-now and history; event-listener trigger breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/overlay/entrypoint.ts",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/overlay/view.tsx",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/rebuild/banner.tsx",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/shell/controller.ts",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/shell/model.ts",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/shell/status-store.ts",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/shell/view.css",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/shell/view.tsx",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/shell/vnc-webview.tsx",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
         "desktop/src/grok-app.tsx"
       ],
-      "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "state": "PRODUCT_DIFFERENCE",
+      "note": "reference cloud Box/VNC lifecycle is intentionally replaced by the installed-Mac Computer with screenshot stateId/action recheck"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/teach-recording/composition.ts",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/teach-recording/primitives.tsx",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/teach-recording/store.ts",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/teach-recording/view.tsx",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/computer/update/confirmation.ts",
       "target": [
         "desktop/electron/local-tool-executor.cjs",
-        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/native/MacComputerHelper.swift",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local screenshot/input tools exist; dedicated shell/overlay/VNC/teach/rebuild parity remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/notice/view.tsx",
@@ -801,11 +879,12 @@
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/timeline-event-automation.tsx",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-automation-schedule.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "cron routines support CRUD, enable/pause, run-now and history; event-listener trigger breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/timeline-event-registry.ts",
@@ -837,11 +916,11 @@
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/attachment-data.ts",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-attachment-gateway.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "real attachment gateway, local previews and remote HTTPS attachment handoff exist; specialized media/pdf/spreadsheet viewers remain incomplete"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/auto-review-actions.ts",
@@ -928,10 +1007,11 @@
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-actions.ts",
       "target": [
         "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-message-interactions.cjs",
         "desktop/electron/grok-agent-coordinator.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "state": "PASS",
+      "note": "quick reactions persist and toggle with self identity; contract tests cover state"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-feed.ts",
@@ -990,11 +1070,12 @@
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/secret-request-actions.ts",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-communication-tools.cjs",
+        "desktop/electron/grok-secret-store.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "secure secret request card stores value through safeStorage and never exposes the value to transcript/model; exact connector credential-file semantics remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/send-message-text.ts",
@@ -1044,11 +1125,11 @@
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/views/attachment.tsx",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-attachment-gateway.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "real attachment gateway, local previews and remote HTTPS attachment handoff exist; specialized media/pdf/spreadsheet viewers remain incomplete"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/views/auto-review-approval.tsx",
@@ -1134,11 +1215,12 @@
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/views/secret-request.tsx",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-communication-tools.cjs",
+        "desktop/electron/grok-secret-store.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "secure secret request card stores value through safeStorage and never exposes the value to transcript/model; exact connector credential-file semantics remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx",
@@ -1170,20 +1252,22 @@
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/views/widget.tsx",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-communication-tools.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "interactive widget options/custom response/dismiss state and follow-up turns exist; exact widget family breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-communication-tools.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "interactive widget options/custom response/dismiss state and follow-up turns exist; exact widget family breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/message-card-seam.ts",
@@ -1243,19 +1327,19 @@
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/conversation-outline-provider.ts",
       "target": [
         "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-conversation-outline.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "state": "PASS",
+      "note": "conversation outline has executable backend derivation and UI"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/conversation-outline-view.tsx",
       "target": [
         "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-conversation-outline.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "state": "PASS",
+      "note": "conversation outline has executable backend derivation and UI"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/cursor-icon.tsx",
@@ -1350,11 +1434,11 @@
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-attachment-gateway.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "real attachment gateway, local previews and remote HTTPS attachment handoff exist; specialized media/pdf/spreadsheet viewers remain incomplete"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/mermaid.tsx",
@@ -1386,29 +1470,31 @@
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/pdf-viewer.css",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-attachment-gateway.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "real attachment gateway, local previews and remote HTTPS attachment handoff exist; specialized media/pdf/spreadsheet viewers remain incomplete"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/pdf-viewer.tsx",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-attachment-gateway.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "real attachment gateway, local previews and remote HTTPS attachment handoff exist; specialized media/pdf/spreadsheet viewers remain incomplete"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/referenced-message-preview.tsx",
       "target": [
         "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-message-interactions.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-host-runtime.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "state": "PASS",
+      "note": "reply targets persist, render quoted context, jump to source, and enter model history"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/reply-preview.tsx",
@@ -1423,10 +1509,12 @@
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
       "target": [
         "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-message-interactions.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-host-runtime.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "state": "PASS",
+      "note": "reply targets persist, render quoted context, jump to source, and enter model history"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
@@ -1557,29 +1645,29 @@
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-model.ts",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-attachment-gateway.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "real attachment gateway, local previews and remote HTTPS attachment handoff exist; specialized media/pdf/spreadsheet viewers remain incomplete"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-attachment-gateway.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "real attachment gateway, local previews and remote HTTPS attachment handoff exist; specialized media/pdf/spreadsheet viewers remain incomplete"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer.tsx",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-attachment-gateway.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "core conversation/agent actions/tool transcript implemented; rich workspace/reference surface breadth remains"
+      "note": "real attachment gateway, local previews and remote HTTPS attachment handoff exist; specialized media/pdf/spreadsheet viewers remain incomplete"
     },
     {
       "referenceModule": "frontend/src/recovered/features/conversation/workspace/submission.ts",
@@ -1646,15 +1734,25 @@
     },
     {
       "referenceModule": "frontend/src/recovered/features/deep-links/overlay/model.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/electron/grok-desktop-services.cjs",
+        "desktop/electron/main.cjs",
+        "desktop/electron/preload.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PASS",
+      "note": "sand://app/v1/info?topic=deep-links protocol route is parsed, delivered and rendered"
     },
     {
       "referenceModule": "frontend/src/recovered/features/deep-links/overlay/view.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/electron/grok-desktop-services.cjs",
+        "desktop/electron/main.cjs",
+        "desktop/electron/preload.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PASS",
+      "note": "sand://app/v1/info?topic=deep-links protocol route is parsed, delivered and rendered"
     },
     {
       "referenceModule": "frontend/src/recovered/features/error-boundary/view.tsx",
@@ -1664,129 +1762,192 @@
     },
     {
       "referenceModule": "frontend/src/recovered/features/feedback/overlay/view.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/electron/grok-desktop-services.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PASS",
+      "note": "Feedback dialog calls a real configured HTTPS provider and never fakes success when unavailable"
     },
     {
       "referenceModule": "frontend/src/recovered/features/hidden-chats/overlay/model.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PASS",
+      "note": "hidden-agent state is persisted and exposed through a dedicated overlay"
     },
     {
       "referenceModule": "frontend/src/recovered/features/hidden-chats/overlay/mutation-controller.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PASS",
+      "note": "hidden-agent state is persisted and exposed through a dedicated overlay"
     },
     {
       "referenceModule": "frontend/src/recovered/features/hidden-chats/overlay/view.css",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PASS",
+      "note": "hidden-agent state is persisted and exposed through a dedicated overlay"
     },
     {
       "referenceModule": "frontend/src/recovered/features/hidden-chats/overlay/view.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PASS",
+      "note": "hidden-agent state is persisted and exposed through a dedicated overlay"
     },
     {
       "referenceModule": "frontend/src/recovered/features/onboarding/signed-in/character.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-desktop-services.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "first-run meet/computer/jobs/tools/create/hand-off flow exists; visual/state exactness and reference access policy remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/onboarding/signed-in/computer-readiness.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-desktop-services.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "first-run meet/computer/jobs/tools/create/hand-off flow exists; visual/state exactness and reference access policy remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/onboarding/signed-in/model.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-desktop-services.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "first-run meet/computer/jobs/tools/create/hand-off flow exists; visual/state exactness and reference access policy remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/onboarding/signed-in/scene.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-desktop-services.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "first-run meet/computer/jobs/tools/create/hand-off flow exists; visual/state exactness and reference access policy remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/onboarding/signed-in/suggestions.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-desktop-services.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "first-run meet/computer/jobs/tools/create/hand-off flow exists; visual/state exactness and reference access policy remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/onboarding/signed-in/tool-assets.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-desktop-services.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "first-run meet/computer/jobs/tools/create/hand-off flow exists; visual/state exactness and reference access policy remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/onboarding/signed-in/view.css",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-desktop-services.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "first-run meet/computer/jobs/tools/create/hand-off flow exists; visual/state exactness and reference access policy remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/onboarding/signed-in/view.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-desktop-services.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "first-run meet/computer/jobs/tools/create/hand-off flow exists; visual/state exactness and reference access policy remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/org-chart/workspace/entrypoint.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "org-chart surface exists; exact reference layout/interactions remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/org-chart/workspace/graph.css",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "org-chart surface exists; exact reference layout/interactions remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/org-chart/workspace/graph.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "org-chart surface exists; exact reference layout/interactions remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/org-chart/workspace/inspector.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "org-chart surface exists; exact reference layout/interactions remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/org-chart/workspace/layout.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "org-chart surface exists; exact reference layout/interactions remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/org-chart/workspace/model.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "org-chart surface exists; exact reference layout/interactions remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/org-chart/workspace/network-trigger.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "org-chart surface exists; exact reference layout/interactions remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/org-chart/workspace/view.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "org-chart surface exists; exact reference layout/interactions remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/permissions/local-tool/store.ts",
@@ -1818,138 +1979,151 @@
     {
       "referenceModule": "frontend/src/recovered/features/plugins/overlay/browser.css",
       "target": [
+        "desktop/electron/grok-plugin-marketplace.cjs",
         "desktop/electron/grok-mcp-manager.cjs",
-        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-mcp-oauth.cjs",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "real local capability and stdio MCP provider exists; OAuth/account/marketplace/reference adapter breadth remains"
+      "note": "real provider/MCP/OAuth/account/private-skill flows exist; exact marketplace/provider metadata breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/plugins/overlay/browser.tsx",
       "target": [
+        "desktop/electron/grok-plugin-marketplace.cjs",
         "desktop/electron/grok-mcp-manager.cjs",
-        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-mcp-oauth.cjs",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "real local capability and stdio MCP provider exists; OAuth/account/marketplace/reference adapter breadth remains"
+      "note": "real provider/MCP/OAuth/account/private-skill flows exist; exact marketplace/provider metadata breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
       "target": [
+        "desktop/electron/grok-plugin-marketplace.cjs",
         "desktop/electron/grok-mcp-manager.cjs",
-        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-mcp-oauth.cjs",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "real local capability and stdio MCP provider exists; OAuth/account/marketplace/reference adapter breadth remains"
+      "note": "real provider/MCP/OAuth/account/private-skill flows exist; exact marketplace/provider metadata breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/plugins/overlay/desktop.ts",
       "target": [
+        "desktop/electron/grok-plugin-marketplace.cjs",
         "desktop/electron/grok-mcp-manager.cjs",
-        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-mcp-oauth.cjs",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "real local capability and stdio MCP provider exists; OAuth/account/marketplace/reference adapter breadth remains"
+      "note": "real provider/MCP/OAuth/account/private-skill flows exist; exact marketplace/provider metadata breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/plugins/overlay/github-auth-banner.tsx",
       "target": [
+        "desktop/electron/grok-plugin-marketplace.cjs",
         "desktop/electron/grok-mcp-manager.cjs",
-        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-mcp-oauth.cjs",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "real local capability and stdio MCP provider exists; OAuth/account/marketplace/reference adapter breadth remains"
+      "note": "real provider/MCP/OAuth/account/private-skill flows exist; exact marketplace/provider metadata breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/plugins/overlay/github-auth.ts",
       "target": [
+        "desktop/electron/grok-plugin-marketplace.cjs",
         "desktop/electron/grok-mcp-manager.cjs",
-        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-mcp-oauth.cjs",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "real local capability and stdio MCP provider exists; OAuth/account/marketplace/reference adapter breadth remains"
+      "note": "real provider/MCP/OAuth/account/private-skill flows exist; exact marketplace/provider metadata breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/plugins/overlay/model.ts",
       "target": [
+        "desktop/electron/grok-plugin-marketplace.cjs",
         "desktop/electron/grok-mcp-manager.cjs",
-        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-mcp-oauth.cjs",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "real local capability and stdio MCP provider exists; OAuth/account/marketplace/reference adapter breadth remains"
+      "note": "real provider/MCP/OAuth/account/private-skill flows exist; exact marketplace/provider metadata breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/plugins/overlay/production-adapter.ts",
       "target": [
+        "desktop/electron/grok-plugin-marketplace.cjs",
         "desktop/electron/grok-mcp-manager.cjs",
-        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-mcp-oauth.cjs",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "real local capability and stdio MCP provider exists; OAuth/account/marketplace/reference adapter breadth remains"
+      "note": "real provider/MCP/OAuth/account/private-skill flows exist; exact marketplace/provider metadata breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/plugins/overlay/server-tools.ts",
       "target": [
+        "desktop/electron/grok-plugin-marketplace.cjs",
         "desktop/electron/grok-mcp-manager.cjs",
-        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-mcp-oauth.cjs",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "real local capability and stdio MCP provider exists; OAuth/account/marketplace/reference adapter breadth remains"
+      "note": "real provider/MCP/OAuth/account/private-skill flows exist; exact marketplace/provider metadata breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/plugins/overlay/view.tsx",
       "target": [
+        "desktop/electron/grok-plugin-marketplace.cjs",
         "desktop/electron/grok-mcp-manager.cjs",
-        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-mcp-oauth.cjs",
         "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "real local capability and stdio MCP provider exists; OAuth/account/marketplace/reference adapter breadth remains"
+      "note": "real provider/MCP/OAuth/account/private-skill flows exist; exact marketplace/provider metadata breadth remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/root-resilience/connection-state.ts",
-      "target": [],
-      "state": "FAIL",
-      "note": "unmapped recoverable renderer module"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/main.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "loading/fatal/retry and desktop service states exist; exact reconnect/service-readiness machine remains"
     },
     {
       "referenceModule": "frontend/src/recovered/features/roster/access-readiness.ts",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/roster/privacy-blocked.tsx",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/roster/reconnect-notice.tsx",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/roster/selection-state.ts",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/roster/status.tsx",
       "target": [],
       "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "note": "recoverable/non-cloud reference access/roster/channel behavior is not yet fully mapped or implemented"
     },
     {
       "referenceModule": "frontend/src/recovered/features/runtime-theme-token-installer.ts",
@@ -1971,29 +2145,32 @@
     {
       "referenceModule": "frontend/src/recovered/features/settings/overlay/computer-view-internals.tsx",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/local-tool-executor.cjs",
+        "desktop/native/MacComputerHelper.swift",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local computer permission setting is backed; reference settings panels/update/auto-review breadth remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/settings/overlay/computer-view.tsx",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/local-tool-executor.cjs",
+        "desktop/native/MacComputerHelper.swift",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local computer permission setting is backed; reference settings panels/update/auto-review breadth remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/settings/overlay/computer.ts",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/local-tool-executor.cjs",
+        "desktop/native/MacComputerHelper.swift",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local computer permission setting is backed; reference settings panels/update/auto-review breadth remains"
+      "note": "local Mac screenshot/click/move/drag/scroll/type/key/wait plus expandable Computer shell exist; teach/recording and exact shell states remain"
     },
     {
       "referenceModule": "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
@@ -2043,20 +2220,22 @@
     {
       "referenceModule": "frontend/src/recovered/features/settings/overlay/updates-controller.ts",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-desktop-services.cjs",
+        "desktop/electron/main.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local computer permission setting is backed; reference settings panels/update/auto-review breadth remains"
+      "note": "real Electron autoUpdater state/check/install/track UI exists; minimum-version/policy gates are not yet equivalent"
     },
     {
       "referenceModule": "frontend/src/recovered/features/settings/overlay/updates.ts",
       "target": [
-        "desktop/src/grok-app.tsx",
-        "desktop/electron/grok-agent-coordinator.cjs"
+        "desktop/electron/grok-desktop-services.cjs",
+        "desktop/electron/main.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "local computer permission setting is backed; reference settings panels/update/auto-review breadth remains"
+      "note": "real Electron autoUpdater state/check/install/track UI exists; minimum-version/policy gates are not yet equivalent"
     },
     {
       "referenceModule": "frontend/src/recovered/features/settings/overlay/view.css",
@@ -2078,15 +2257,23 @@
     },
     {
       "referenceModule": "frontend/src/recovered/features/update/required/view.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/electron/grok-desktop-services.cjs",
+        "desktop/electron/main.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "real Electron autoUpdater state/check/install/track UI exists; minimum-version/policy gates are not yet equivalent"
     },
     {
       "referenceModule": "frontend/src/recovered/features/update/status/pill.tsx",
-      "target": [],
-      "state": "FAIL",
-      "note": "recoverable reference surface not implemented"
+      "target": [
+        "desktop/electron/grok-desktop-services.cjs",
+        "desktop/electron/main.cjs",
+        "desktop/src/grok-app.tsx"
+      ],
+      "state": "PARTIAL",
+      "note": "real Electron autoUpdater state/check/install/track UI exists; minimum-version/policy gates are not yet equivalent"
     },
     {
       "referenceModule": "frontend/src/recovered/features/window-chrome/app-alert/controller.ts",
@@ -2379,9 +2566,11 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-action-audit.cjs"
+      ],
+      "state": "PASS",
+      "note": "reference-style bot-block signatures/classification implemented with regression coverage"
     },
     {
       "referenceModule": "source/host/runner/box-reference-docs.ts",
@@ -2392,9 +2581,11 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/local-tool-executor.cjs"
+      ],
+      "state": "PRODUCT_DIFFERENCE",
+      "note": "cloud Box resource layer is intentionally replaced by direct installed-Mac resources"
     },
     {
       "referenceModule": "source/host/runner/clock-skew-guard.ts",
@@ -2414,9 +2605,12 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/local-tool-executor.cjs",
+        "desktop/native/MacComputerHelper.swift"
+      ],
+      "state": "PARTIAL",
+      "note": "local-Mac Computer action model covers screenshot/click/move/drag/scroll/type/key/wait with stateId recheck; reference subagent wrapper remains"
     },
     {
       "referenceModule": "source/host/runner/conversation-outline.ts",
@@ -2425,9 +2619,11 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-conversation-outline.cjs"
+      ],
+      "state": "PASS",
+      "note": "outline derivation is executable and rendered"
     },
     {
       "referenceModule": "source/host/runner/conversation-state.ts",
@@ -2455,9 +2651,11 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-output-spill.cjs"
+      ],
+      "state": "PASS",
+      "note": "large tool output is bounded and materialized outside transcript"
     },
     {
       "referenceModule": "source/host/runner/prompt-collector-glue.ts",
@@ -2468,9 +2666,11 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "host system prompt composes local-computer policy, memory and workflow context; exact prompt fragments/markers remain"
     },
     {
       "referenceModule": "source/host/runner/remote-box-resources.ts",
@@ -2479,9 +2679,11 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/local-tool-executor.cjs"
+      ],
+      "state": "PRODUCT_DIFFERENCE",
+      "note": "cloud Box resource layer is intentionally replaced by direct installed-Mac resources"
     },
     {
       "referenceModule": "source/host/runner/sand-action-audit.ts",
@@ -2490,9 +2692,12 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-action-audit.cjs",
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "tool/browser/computer audit + turn summaries exist; exact MCP transport audit/CDP navigation probe remains"
     },
     {
       "referenceModule": "source/host/runner/sand-agent-profile-prompt.ts",
@@ -2503,9 +2708,11 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "host system prompt composes local-computer policy, memory and workflow context; exact prompt fragments/markers remain"
     },
     {
       "referenceModule": "source/host/runner/sand-agent-runner.ts",
@@ -2661,9 +2868,12 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-memory-store.cjs",
+        "desktop/electron/grok-state-tool.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "durable user/agent/project scopes plus write/forget exist; exact reference prompt/memory tier behavior remains"
     },
     {
       "referenceModule": "source/host/runner/sand-prompt-markers.ts",
@@ -2672,9 +2882,11 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "host system prompt composes local-computer policy, memory and workflow context; exact prompt fragments/markers remain"
     },
     {
       "referenceModule": "source/host/runner/sand-shell-auto-review-enrichment.ts",
@@ -2721,9 +2933,12 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/electron/grok-communication-tools.cjs"
+      ],
+      "state": "PASS",
+      "note": "tool-call silence reminder injects required SendMessage progress updates"
     },
     {
       "referenceModule": "source/host/runner/shell-terminal-watch.ts",
@@ -2750,9 +2965,12 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-action-audit.cjs",
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PASS",
+      "note": "browser navigation audit strips queries/fragments and records normalized visited hosts"
     },
     {
       "referenceModule": "source/host/runner/start-of-turn-ack-reminder-middleware.ts",
@@ -2763,9 +2981,11 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "progress reminder exists after tool work begins; exact immediate start-of-turn acknowledgement rule remains"
     },
     {
       "referenceModule": "source/host/runner/stream-attempt.ts",
@@ -2778,9 +2998,12 @@
         "tests/recovery-host-outer-stream-lifecycle.test.mjs",
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-transient-retry.cjs",
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "bounded pre-output retries exist; reference resumable stream/checkpoint behavior remains"
     },
     {
       "referenceModule": "source/host/runner/subagent-runtime.ts",
@@ -2804,9 +3027,11 @@
         "tests/recovery-host-runner.test.mjs",
         "tests/recovery-host-system-prompt-assembly.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "host system prompt composes local-computer policy, memory and workflow context; exact prompt fragments/markers remain"
     },
     {
       "referenceModule": "source/host/runner/system-prompt.ts",
@@ -2815,9 +3040,11 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "host system prompt composes local-computer policy, memory and workflow context; exact prompt fragments/markers remain"
     },
     {
       "referenceModule": "source/host/runner/tool-call-identity.ts",
@@ -2995,11 +3222,11 @@
         "tests/recovery-host-runner.test.mjs"
       ],
       "target": [
-        "desktop/electron/grok-host-runtime.cjs",
-        "desktop/electron/local-tool-executor.cjs"
+        "desktop/electron/local-tool-executor.cjs",
+        "desktop/native/MacComputerHelper.swift"
       ],
       "state": "PARTIAL",
-      "note": "tool host exists; resource/request-context/subagent behavior incomplete"
+      "note": "local-Mac Computer action model covers screenshot/click/move/drag/scroll/type/key/wait with stateId recheck; reference subagent wrapper remains"
     },
     {
       "referenceModule": "source/host/runner/tools/sand-file-transfer-tools.ts",
@@ -3055,11 +3282,11 @@
         "tests/recovery-runner-high-findings.test.mjs"
       ],
       "target": [
-        "desktop/electron/grok-host-runtime.cjs",
-        "desktop/electron/local-tool-executor.cjs"
+        "desktop/electron/grok-communication-tools.cjs",
+        "desktop/electron/grok-message-interactions.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "tool host exists; resource/request-context/subagent behavior incomplete"
+      "state": "PASS",
+      "note": "ReactToMessage uses stable user message addresses and toggled persisted reactions"
     },
     {
       "referenceModule": "source/host/runner/tools/sand-secret-request.ts",
@@ -3069,11 +3296,12 @@
         "tests/recovery-host-runner.test.mjs"
       ],
       "target": [
-        "desktop/electron/grok-host-runtime.cjs",
-        "desktop/electron/local-tool-executor.cjs"
+        "desktop/electron/grok-communication-tools.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "tool host exists; resource/request-context/subagent behavior incomplete"
+      "note": "text/attachment/widget/secret-request are executable; cursor-agent remains an explicit cloud product difference"
     },
     {
       "referenceModule": "source/host/runner/tools/sand-spotlight-tools.ts",
@@ -3098,11 +3326,12 @@
         "tests/recovery-host-runner.test.mjs"
       ],
       "target": [
-        "desktop/electron/grok-host-runtime.cjs",
-        "desktop/electron/local-tool-executor.cjs"
+        "desktop/electron/grok-state-tool.cjs",
+        "desktop/electron/grok-memory-store.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs"
       ],
       "state": "PARTIAL",
-      "note": "tool host exists; resource/request-context/subagent behavior incomplete"
+      "note": "update_state writes memory/routines/workflows/profile/settings; exact project/avatar/channel variants remain"
     },
     {
       "referenceModule": "source/host/runner/tools/sand-subagent-management-tools.ts",
@@ -3128,11 +3357,12 @@
         "tests/recovery-host-runner.test.mjs"
       ],
       "target": [
-        "desktop/electron/grok-host-runtime.cjs",
-        "desktop/electron/local-tool-executor.cjs"
+        "desktop/electron/grok-communication-tools.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "tool host exists; resource/request-context/subagent behavior incomplete"
+      "note": "text/attachment/widget/secret-request are executable; cursor-agent remains an explicit cloud product difference"
     },
     {
       "referenceModule": "source/host/runner/tools/send-message-schema.ts",
@@ -3144,11 +3374,12 @@
         "tests/recovery-host-runner.test.mjs"
       ],
       "target": [
-        "desktop/electron/grok-host-runtime.cjs",
-        "desktop/electron/local-tool-executor.cjs"
+        "desktop/electron/grok-communication-tools.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "tool host exists; resource/request-context/subagent behavior incomplete"
+      "note": "text/attachment/widget/secret-request are executable; cursor-agent remains an explicit cloud product difference"
     },
     {
       "referenceModule": "source/host/runner/tools/send-message-tool.ts",
@@ -3161,11 +3392,12 @@
         "tests/recovery-host-runner.test.mjs"
       ],
       "target": [
-        "desktop/electron/grok-host-runtime.cjs",
-        "desktop/electron/local-tool-executor.cjs"
+        "desktop/electron/grok-communication-tools.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "tool host exists; resource/request-context/subagent behavior incomplete"
+      "note": "text/attachment/widget/secret-request are executable; cursor-agent remains an explicit cloud product difference"
     },
     {
       "referenceModule": "source/host/runner/tools/tool-input-error.ts",
@@ -3209,9 +3441,12 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-transient-retry.cjs",
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PASS",
+      "note": "bounded transient classification/retry-after/backoff implemented with tests"
     },
     {
       "referenceModule": "source/host/runner/turn-agent-composition.ts",
@@ -3252,9 +3487,12 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-host-runtime.cjs",
+        "desktop/electron/grok-action-audit.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "turn/tool/retry/outcome observation is persisted; reference TTFT/await/stall/async-task breadth remains"
     },
     {
       "referenceModule": "source/host/runner/turn-run-shell.ts",
@@ -3312,9 +3550,12 @@
       "referenceBehaviorTests": [
         "tests/recovery-host-runner.test.mjs"
       ],
-      "target": [],
-      "state": "FAIL",
-      "note": "reference runner module not yet implemented"
+      "target": [
+        "desktop/electron/grok-turn-usage.cjs",
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PASS",
+      "note": "provider usage is normalized/merged across tool-call rounds and persisted in turn audit"
     },
     {
       "referenceModule": "source/host/runner/video-container.ts",
@@ -3333,25 +3574,32 @@
       "referenceBinding": "adapters.secureStorage",
       "referenceModule": "../../source/electron-main/production-binding-providers.ts",
       "classification": "generated-source",
-      "target": [],
-      "state": "FAIL",
-      "note": "production binding absent"
+      "target": [
+        "desktop/electron/grok-secret-store.cjs"
+      ],
+      "state": "PASS",
+      "note": "safeStorage-backed encrypted secret records; insecure fallback is rejected for secret-request submission"
     },
     {
       "referenceBinding": "adapters.settings",
       "referenceModule": "../../source/electron-main/production-binding-providers.ts",
       "classification": "generated-source",
-      "target": [],
-      "state": "FAIL",
-      "note": "production binding absent"
+      "target": [
+        "desktop/electron/grok-agent-coordinator.cjs",
+        "desktop/electron/grok-desktop-services.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "typed runtime/update/onboarding preferences persist; exact reference settings service surface remains"
     },
     {
       "referenceBinding": "adapters.attachmentGateway",
       "referenceModule": "../../source/electron-main/adapters/attachment-gateway.ts",
       "classification": "generated-source",
-      "target": [],
-      "state": "FAIL",
-      "note": "production binding absent"
+      "target": [
+        "desktop/electron/grok-attachment-gateway.cjs"
+      ],
+      "state": "PASS",
+      "note": "registered local attachments are resolved/read through an Electron-owned gateway"
     },
     {
       "referenceBinding": "adapters.mainRpc",
@@ -3362,15 +3610,18 @@
         "desktop/electron/preload.cjs"
       ],
       "state": "PARTIAL",
-      "note": "target owner exists but exact production-binding contract not closed"
+      "note": "context-isolated request/event IPC exists; exact mainRpc contract breadth remains"
     },
     {
       "referenceBinding": "adapters.updaterInstaller",
       "referenceModule": "../../source/electron-main/production-binding-providers.ts",
       "classification": "generated-source",
-      "target": [],
-      "state": "FAIL",
-      "note": "production binding absent"
+      "target": [
+        "desktop/electron/grok-desktop-services.cjs",
+        "desktop/electron/main.cjs"
+      ],
+      "state": "PASS",
+      "note": "Electron autoUpdater feed/check/status/download/install flow is wired to renderer settings"
     },
     {
       "referenceBinding": "adapters.mediaProtocol",
@@ -3378,15 +3629,18 @@
       "classification": "generated-source",
       "target": [],
       "state": "FAIL",
-      "note": "production binding absent"
+      "note": "reference media protocol/viewer binding is not yet recovered"
     },
     {
       "referenceBinding": "adapters.accountOAuth",
       "referenceModule": "../../source/electron-main/adapters/account-oauth.ts",
       "classification": "generated-source",
-      "target": [],
-      "state": "FAIL",
-      "note": "production binding absent"
+      "target": [
+        "desktop/electron/grok-account-session.cjs",
+        "desktop/electron/main.cjs"
+      ],
+      "state": "PASS",
+      "note": "PKCE login/cancel/logout/status/token session lifecycle implemented"
     },
     {
       "referenceBinding": "adapters.experiments",
@@ -3394,33 +3648,40 @@
       "classification": "generated-source",
       "target": [],
       "state": "FAIL",
-      "note": "production binding absent"
+      "note": "reference experiments binding not yet mapped"
     },
     {
       "referenceBinding": "adapters.mcpOAuth",
       "referenceModule": "../../source/electron-main/adapters/mcp-oauth.ts",
       "classification": "generated-source",
       "target": [
+        "desktop/electron/grok-mcp-oauth.cjs",
         "desktop/electron/grok-mcp-manager.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "target owner exists but exact production-binding contract not closed"
+      "state": "PASS",
+      "note": "OAuth discovery/dynamic registration/PKCE/token-refresh/multi-account MCP auth implemented"
     },
     {
       "referenceBinding": "adapters.telemetry",
       "referenceModule": "../../source/electron-main/adapters/telemetry.ts",
       "classification": "generated-source",
-      "target": [],
-      "state": "FAIL",
-      "note": "production binding absent"
+      "target": [
+        "desktop/electron/grok-action-audit.cjs",
+        "desktop/electron/grok-host-runtime.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "local action/turn audit exists; exact telemetry exporter and attributes remain"
     },
     {
       "referenceBinding": "adapters.notifications",
       "referenceModule": "../../source/electron-main/production-binding-providers.ts",
       "classification": "generated-source",
-      "target": [],
-      "state": "FAIL",
-      "note": "production binding absent"
+      "target": [
+        "desktop/electron/main.cjs",
+        "desktop/electron/grok-agent-coordinator.cjs"
+      ],
+      "state": "PASS",
+      "note": "Electron Notification is bound to coordinator notification requests"
     },
     {
       "referenceBinding": "adapters.coordinator",
@@ -3429,8 +3690,8 @@
       "target": [
         "desktop/electron/grok-agent-coordinator.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "target owner exists but exact production-binding contract not closed"
+      "state": "PASS",
+      "note": "independent coordinator owns agents, turns, approvals, plugins, routines and persistence"
     },
     {
       "referenceBinding": "adapters.ipc",
@@ -3441,36 +3702,49 @@
         "desktop/electron/preload.cjs"
       ],
       "state": "PARTIAL",
-      "note": "target owner exists but exact production-binding contract not closed"
+      "note": "context-isolated IPC request/event bridge is broad but not yet claim-for-claim parity"
     },
     {
       "referenceBinding": "startup",
       "referenceModule": "../../source/electron-main/production-binding-providers.ts",
       "classification": "generated-source",
       "target": [
-        "desktop/electron/main.cjs"
+        "desktop/electron/main.cjs",
+        "desktop/src/grok-app.tsx"
       ],
       "state": "PARTIAL",
-      "note": "target owner exists but exact production-binding contract not closed"
+      "note": "single instance, protocols, service startup, loading/error UI exist; exact readiness/reconnect state remains"
     },
     {
       "referenceBinding": "parseAllowedExternalUrl",
       "referenceModule": "../../source/shared/external-url-policy.ts",
       "classification": "generated-source",
       "target": [
-        "desktop/electron/local-tool-executor.cjs"
+        "desktop/electron/main.cjs",
+        "desktop/electron/grok-local-browser.cjs"
       ],
-      "state": "PARTIAL",
-      "note": "target owner exists but exact production-binding contract not closed"
+      "state": "PASS",
+      "note": "external navigation validates protocols and credentials; explicit openExternal is HTTPS-only"
     },
     {
       "referenceBinding": "reportFailure",
       "referenceModule": "../../source/electron-main/desktop-edge-failures.ts",
       "classification": "generated-source",
-      "target": [],
-      "state": "FAIL",
-      "note": "production binding absent"
+      "target": [
+        "desktop/src/grok-app.tsx",
+        "desktop/electron/grok-action-audit.cjs"
+      ],
+      "state": "PARTIAL",
+      "note": "fatal/UI and runtime errors are surfaced/audited; external reference failure-report transport remains"
     }
   ],
-  "acceptanceRule": "PASS requires executable target behavior plus objective evidence; PARTIAL/FAIL keeps A8 open. Reference-unlinked JSX candidates are not silently promoted into recoverable product modules."
+  "acceptanceRule": "A8 closes only when every recoverable row is PASS, PRODUCT_DIFFERENCE with a verified local-Mac equivalent, or EXTERNAL_DEPENDENCY with reference-backed unrecoverable-service evidence. PARTIAL/FAIL always keep A8 open.",
+  "targetAuditHead": "6240ac4380ff6146fbb4df3144817182a1b32c79",
+  "stateSemantics": {
+    "PASS": "Executable target behavior is present with source/test evidence for the mapped reference behavior.",
+    "PARTIAL": "Executable behavior exists but reference breadth/state depth or visual/interaction equivalence is not closed; keeps A8 open.",
+    "FAIL": "Recoverable reference behavior has no sufficient executable target implementation; keeps A8 open.",
+    "PRODUCT_DIFFERENCE": "Reference behavior is specifically cloud-Computer/Box/cursor-agent infrastructure replaced by the user-required installed-Mac model; requires an explicit local equivalent where user-visible semantics remain.",
+    "EXTERNAL_DEPENDENCY": "Reference depends on an external service/catalog/policy not contained in the pinned repository; target adapter/provider seam exists, but deployment evidence is external."
+  }
 }
