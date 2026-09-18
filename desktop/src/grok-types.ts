@@ -19,6 +19,9 @@ export interface AgentSummary {
   purpose?:string;
   parentAgentId?:string|null;
   hidden?:boolean;
+  avatarDataUrl?:string|null;
+  avatarShape?:string|null;
+  avatarColor?:string|null;
 }
 export interface AttachmentDescriptor {
   id:string;
@@ -311,6 +314,9 @@ export interface GrokAgentBridge {
   deleteAgentAutomation(input:{id:string;automationId:string}):Promise<RoutineAutomationDescriptor[]>;
   runAgentAutomationNow(input:{id:string;automationId:string}):Promise<void>;
   pickFile():Promise<AttachmentDescriptor|null>;
+  pickAvatarFile():Promise<{dataUrl:string;fileName:string}|null>;
+  generateAgentAvatarImage(description:string):Promise<string>;
+  setAgentAvatarBytes(input:{id:string;pngBase64:string|null}):Promise<AgentSummary>;
   readAttachment(input:{id:string}):Promise<AttachmentPreview>;
   getDesktopInfo():Promise<DesktopInfo>;
   getUpdateStatus():Promise<DesktopUpdateStatus>;
