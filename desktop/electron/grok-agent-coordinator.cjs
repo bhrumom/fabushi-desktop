@@ -5,6 +5,7 @@ const path=require('node:path');
 const crypto=require('node:crypto');
 const {createHostRuntime}=require('./grok-host-runtime.cjs');
 const {createMcpManager,normalizeServer}=require('./grok-mcp-manager.cjs');
+const {createWorkflowManager}=require('./grok-workflow-manager.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
@@ -130,10 +131,12 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
   }
 
   const mcp=createMcpManager({getServers:async()=>[...((await load()).mcpServers||[])]});
+  const workflowManager=createWorkflowManager({app});
   const host=createHostRuntime({
     shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,
     getExternalTools:()=>mcp.collectToolDefinitions(),
-    executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args)
+    executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args),
+    getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt)
   });
 
   async function sendMessage({agentId,text}){
@@ -223,6 +226,11 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
     const s=await load();if(!catalogIds.has(pluginId))throw Error('Plugin not found');
     s.plugins[pluginId]={installed:true,enabled:enabled===true};await save();emit('plugins.changed');return listPlugins();
   }
+  async function listWorkflows(){return await workflowManager.list()}
+  async function saveWorkflow(input){const record=await workflowManager.saveWorkflow(input);emit('workflows.changed',{workflowId:record.id});return record}
+  async function deleteWorkflow(input){const result=await workflowManager.deleteWorkflow(input);emit('workflows.changed',{workflowId:input.id});return result}
+  async function setWorkflowEnabled(input){const record=await workflowManager.setWorkflowEnabled(input);emit('workflows.changed',{workflowId:record.id});return record}
+
   async function getRuntimeSettings(){
     const s=await load();return{localToolPermission:s.settings.localToolPermission,computerTarget:'local-mac'};
   }
@@ -234,7 +242,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
 
   return{
     listAgents,createAgent,renameAgent,deleteAgent,getThread,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,removeMcpServer,setMcpServerEnabled,listMcpServerTools,setMcpToolEnabled,getRuntimeSettings,setLocalToolPermission,resolveApproval
+    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,removeMcpServer,setMcpServerEnabled,listMcpServerTools,setMcpToolEnabled,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getRuntimeSettings,setLocalToolPermission,resolveApproval
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
