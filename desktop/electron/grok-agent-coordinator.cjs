@@ -78,7 +78,7 @@ function normalizeState(parsed){
   }
   return base;
 }
-function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,pluginMarketplace=null}){
+function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,pluginMarketplace=null,attachmentGateway=null}){
   const file=path.join(app.getPath('userData'),'grok-agent-runtime.json');
   let state=null,loading=null,writing=Promise.resolve();
   const aborts=new Map();
@@ -208,7 +208,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   const outputSpiller=createOutputSpiller({app});
   const localBrowser=createLocalBrowserRuntime({BrowserWindow});
   const host=createHostRuntime({
-    shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,getAutoReviewInstructions:async()=>{const settings=(await load()).settings;return{allowInstructions:[...(settings.autoReviewAllowInstructions||[])],blockInstructions:[...(settings.autoReviewBlockInstructions||[])]}},requestApproval,onToolState,onAgentStatus,onAssistantDelta,
+    shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,getAutoReviewInstructions:async()=>{const settings=(await load()).settings;return{allowInstructions:[...(settings.autoReviewAllowInstructions||[])],blockInstructions:[...(settings.autoReviewBlockInstructions||[])]}},resolveAttachments:async ids=>attachmentGateway?attachmentGateway.resolve(ids):[],requestApproval,onToolState,onAgentStatus,onAssistantDelta,
     getExternalTools:()=>mcp.collectToolDefinitions(),
     executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args),
     getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
@@ -245,12 +245,16 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     }
   });
 
-  async function sendMessage({agentId,text}){
+  async function registerAttachment({path}){if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');return attachmentGateway.register(path)}
+  async function readAttachment({id}){if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');return attachmentGateway.read(id)}
+  async function sendMessage({agentId,text,attachmentIds=[]}){
     if(disposed)throw Error('Agent runtime is shutting down.');
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
-    const body=String(text||'').trim();if(!body)throw Error('Message required');
+    const body=String(text||'').trim();
+    const attachments=attachmentGateway?await attachmentGateway.resolve(Array.isArray(attachmentIds)?attachmentIds:[]):[];
+    if(!body&&!attachments.length)throw Error('Message or attachment required');
     if(['thinking','running','waiting'].includes(agent.status))throw Error('Agent already running');
-    const now=Date.now(),user={id:crypto.randomUUID(),role:'user',text:body,createdAt:now,status:'done'};
+    const now=Date.now(),user={id:crypto.randomUUID(),role:'user',text:body,createdAt:now,status:'done',attachments:attachments.map(row=>({id:row.id,name:row.name,mime:row.mime,size:row.size,kind:row.kind,createdAt:row.createdAt}))};
     const assistant={id:crypto.randomUUID(),role:'assistant',text:'',createdAt:now+1,status:'streaming'};
     const transcript=s.messages[agentId]||(s.messages[agentId]=[]);
     transcript.push(user);agent.status='thinking';agent.updatedAt=now;await save();
@@ -590,13 +594,13 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     for(const approval of [...approvals.values()])approval.finish(false);
     if(automationSweep)await Promise.resolve(automationSweep).catch(()=>{});
     await Promise.allSettled([...activeTurns]);
-    mcp.dispose();localBrowser.dispose();
+    mcp.dispose();localBrowser.dispose();await attachmentGateway?.dispose?.();
     await writing.catch(()=>{});
     return{ok:true};
   }
 
   return{
-    listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentHidden,deleteAgent,getThread,sendMessage,stopAgent,
+    listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,sendMessage,stopAgent,
     listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
   };
 }
