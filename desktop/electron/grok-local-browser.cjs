@@ -140,6 +140,10 @@ function createLocalBrowserRuntime({BrowserWindow}){
       const current=sessions.get(agentId);
       if(current&&!current.win.isDestroyed())current.win.destroy();
       sessions.delete(agentId);
+    },
+    dispose(){
+      for(const current of sessions.values())if(current&&!current.win.isDestroyed())current.win.destroy();
+      sessions.clear();
     }
   };
 }
