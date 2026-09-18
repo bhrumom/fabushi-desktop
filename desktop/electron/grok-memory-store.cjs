@@ -10,8 +10,8 @@ function createMemoryStore({app}){
   async function fileFor({agentId,scope='agent',project=null}){
     if(!SCOPES.has(scope))throw Error('Memory scope must be agent, user, or project.');
     if(scope==='user')return path.join(root,'user.json');
-    if(scope==='project'){const slug=cleanSlug(project);if(!slug)throw Error('Project memory requires a project slug.');return path.join(root,'projects',slug,cleanSlug(agentId)||'agent'+'.json')}
-    return path.join(root,'agents',cleanSlug(agentId)||'agent'+'.json');
+    if(scope==='project'){const slug=cleanSlug(project);if(!slug)throw Error('Project memory requires a project slug.');return path.join(root,'projects',slug,(cleanSlug(agentId)||'agent')+'.json')}
+    return path.join(root,'agents',(cleanSlug(agentId)||'agent')+'.json');
   }
   async function readFile(file){try{const parsed=JSON.parse(await fs.readFile(file,'utf8'));return Array.isArray(parsed)?parsed:[]}catch{return[]}}
   async function writeFile(file,rows){await fs.mkdir(path.dirname(file),{recursive:true,mode:0o700});const tmp=file+'.tmp';await fs.writeFile(tmp,JSON.stringify(rows,null,2)+'\n',{mode:0o600});await fs.rename(tmp,file)}
