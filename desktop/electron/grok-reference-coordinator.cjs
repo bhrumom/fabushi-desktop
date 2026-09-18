@@ -1,0 +1,195 @@
+'use strict';
+
+function asObject(value){return value&&typeof value==='object'&&!Array.isArray(value)?value:{}}
+function agentRow(agent){
+  if(!agent||typeof agent!=='object')return agent;
+  const running=['thinking','running','waiting'].includes(agent.status);
+  return {
+    ...agent,
+    isPinned:agent.pinned===true,
+    isHiddenFromSidebar:agent.hidden===true,
+    hiddenFromSidebar:agent.hidden===true,
+    hasUnread:agent.unread===true,
+    isRunning:running,
+    currentActivity:running?String(agent.status||'running'):null,
+    awaitingUserResponse:agent.status==='waiting'?{reason:'waiting'}:null
+  };
+}
+function transcriptEntry(row,index){
+  if(!row||typeof row!=='object')return null;
+  const id=String(row.id||('entry-'+index));
+  const timestampMs=Number(row.timestampMs||row.createdAt||row.updatedAt)||Date.now();
+  if(row.role==='tool'){
+    return {kind:'tool-call',id,name:String(row.toolName||row.name||'Tool'),summary:String(row.text||row.summary||''),status:row.status==='error'?'failed':row.status==='cancelled'?'aborted':row.status==='done'?'done':'running',timestampMs};
+  }
+  return {
+    ...row,id,timestampMs,
+    role:row.role==='assistant'?'assistant':'user',
+    text:String(row.text||''),
+    ...(row.status==='streaming'?{isStreaming:true}:{}),
+    ...(typeof row.replyToId==='string'?{replyToId:row.replyToId}:{}),
+    ...(typeof row.clientNonce==='string'?{clientNonce:row.clientNonce}:{})
+  };
+}
+function pageFromThread(thread,limit=200,beforeSeq){
+  const all=(thread?.messages||[]).map(transcriptEntry).filter(Boolean);
+  const end=Number.isFinite(Number(beforeSeq))?Math.max(0,Math.min(all.length,Number(beforeSeq))):all.length;
+  const start=Math.max(0,end-Math.max(1,Math.min(500,Number(limit)||200)));
+  return {entries:all.slice(start,end),nextBeforeSeq:start>0?start:undefined};
+}
+function workflowSpec(spec={}){
+  const value=asObject(spec);
+  return {
+    ...(value.id?{id:String(value.id)}:{}),
+    name:String(value.name||value.title||'Skill'),
+    description:String(value.description||''),
+    body:String(value.body||value.instructions||value.content||'# Skill\n'),
+    isEnabledForAgent:value.isEnabled!==false&&value.isEnabledForAgent!==false,
+    disableModelInvocation:value.disableModelInvocation===true,
+    ...(value.trigger?{trigger:value.trigger}:{})
+  };
+}
+function createReferenceCoordinator(runtime){
+  const teach=new Map();
+  async function agents(){return (await runtime.listAgents()).map(agentRow)}
+  async function call(method,args={}){
+    const input=asObject(args);
+    switch(method){
+      case'listAgents':return agents();
+      case'countAgents':return (await runtime.listAgents()).length;
+      case'searchAgents':{
+        const q=String(input.query||input.search||'').trim().toLowerCase();
+        const rows=await agents();
+        return q?rows.filter(a=>String(a.name||'').toLowerCase().includes(q)||String(a.description||'').toLowerCase().includes(q)):rows;
+      }
+      case'createAgent':return agentRow(await runtime.createAgent(input));
+      case'createGroup':return agentRow(await runtime.createAgent({...input,isGroup:true,memberAgentIds:input.memberAgentIds||input.memberIds||[]}));
+      case'setGroupMembers':return agentRow(await runtime.setGroupMembers({id:input.id,memberAgentIds:input.memberAgentIds||input.memberIds||[]}));
+      case'updateAgent':return agentRow(await runtime.updateAgent(input));
+      case'deleteAgents':for(const id of Array.isArray(input.ids)?input.ids:[])await runtime.deleteAgent({agentId:id});return{ok:true};
+      case'duplicateAgent':return agentRow(await runtime.duplicateAgent({agentId:input.id||input.agentId}));
+      case'setAgentUnread':await runtime.setAgentUnread({agentId:input.id||input.agentId,unread:input.isUnread===true||input.unread===true});return;
+      case'setAgentHiddenFromSidebar':await runtime.setAgentHidden({agentId:input.id||input.agentId,hidden:input.isHidden===true||input.hidden===true||input.isHiddenFromSidebar===true});return;
+      case'setAgentNotificationsEnabled':
+      case'setAgentNotifyOnUpdates':await runtime.setAgentNotifyOnUpdates({id:input.id||input.agentId,isEnabled:input.isEnabled===true||input.enabled===true});return;
+      case'setAgentAvatarBytes':return agentRow(await runtime.setAgentAvatarBytes(input));
+      case'getAgentAvatar':{
+        const row=(await runtime.listAgents()).find(a=>a.id===(input.id||input.agentId));
+        return row?{id:row.id,dataUrl:row.avatarDataUrl||null,avatarShape:row.avatarShape||null,avatarColor:row.avatarColor||null}:null;
+      }
+      case'getAgentThread':
+      case'getAgentTranscriptWindow':
+      case'getAgentTranscriptTail':
+      case'openAgentTail':{
+        const id=input.id||input.agentId;
+        const thread=await runtime.getThread({agentId:id});
+        const page=pageFromThread(thread,input.limit,input.beforeSeq);
+        return method==='getAgentThread'?{agent:agentRow(thread.agent),...page,threadCounts:{}}:page;
+      }
+      case'sendPrompt':{
+        const attachmentIds=[];
+        const paths=Array.isArray(input.attachmentPaths)?input.attachmentPaths:[];
+        for(const filePath of paths){try{const rec=await runtime.registerAttachment({path:filePath});attachmentIds.push(rec.id)}catch{}}
+        const result=await runtime.sendMessage({agentId:input.agentId||input.id,text:String(input.prompt??input.text??''),attachmentIds,replyToId:input.replyToId||input.replyTo||null});
+        return{accepted:true,messageId:result.messageId,clientNonce:input.clientNonce||null};
+      }
+      case'promptAcceptanceStatus':return{status:'accepted'};
+      case'respondToWidget':return runtime.respondToWidget(input);
+      case'dismissWidget':return runtime.dismissWidget(input);
+      case'submitSecret':return runtime.submitSecret(input);
+      case'reactToMessage':return runtime.reactToMessage({agentId:input.agentId||input.id,entryId:input.entryId||input.messageId,emoji:input.emoji,userOnly:input.userOnly===true});
+      case'resolveAutoReviewApproval':
+      case'resolveLocalToolPermission':return runtime.resolveApproval({approvalId:input.approvalId||input.requestId,approved:input.approved===true||input.status==='always'||input.status==='allow-once'||input.permission==='always'});
+      case'getAgentChannels':return runtime.getAgentChannels(input);
+      case'connectChannel':return runtime.connectChannel(input);
+      case'disconnectChannel':return runtime.disconnectChannel(input);
+      case'refreshChannel':return runtime.refreshChannel(input);
+      case'getAsyncTasks':return runtime.getAsyncTasks(input);
+      case'getSubagents':{
+        const rows=await agents(),id=input.id||input.agentId;
+        return rows.filter(a=>a.parentAgentId===id);
+      }
+      case'getConversationOutline':{
+        const thread=await runtime.getThread({agentId:input.id||input.agentId});
+        return Array.isArray(thread.outline)?thread.outline:[];
+      }
+      case'searchMedia':return runtime.searchMedia(input);
+      case'isGlobalSearchEnabled':return true;
+      case'isAgentNetworkEnabled':return true;
+      case'isEgressTunnelAvailable':return false;
+      case'getAgentWorkflows':return runtime.listWorkflows();
+      case'createAgentWorkflow':{
+        const record=await runtime.saveWorkflow(workflowSpec(input.spec||input));
+        return await runtime.listWorkflows();
+      }
+      case'updateAgentWorkflow':{
+        await runtime.saveWorkflow({...workflowSpec(input.spec||input),id:input.workflowId||input.id});
+        return await runtime.listWorkflows();
+      }
+      case'setAgentWorkflowEnabled':{
+        await runtime.setWorkflowEnabled({id:input.workflowId,enabled:input.isEnabled===true});
+        return await runtime.listWorkflows();
+      }
+      case'deleteAgentWorkflow':{
+        await runtime.deleteWorkflow({id:input.workflowId});
+        return await runtime.listWorkflows();
+      }
+      case'runAgentWorkflowNow':{
+        const list=await runtime.listWorkflows(),wf=list.find(x=>x.id===input.workflowId);
+        if(!wf)throw Error('Workflow not found.');
+        await runtime.sendMessage({agentId:input.id||input.agentId,text:'@'+wf.name});
+        return;
+      }
+      case'importAgentWorkflowText':{
+        const spec=workflowSpec({name:input.name||'Imported skill',body:input.text||input.body||'',description:input.description||''});
+        const record=await runtime.saveWorkflow(spec);return{imported:[record],failed:[]};
+      }
+      case'importAgentWorkflowUrl':return{imported:[],failed:[{url:input.url,reason:'URL import is not configured in this local build.'}]};
+      case'portAgentLocalSkills':return{imported:[],failed:[]};
+      case'skillsCatalog':return runtime.listWorkflows();
+      case'syncPluginSkills':return runtime.listWorkflows();
+      case'getPluginSyncStatus':return{status:'ready',isSyncing:false,lastError:null};
+      case'getSkillPublishTargets':return{targets:[]};
+      case'publishSkill':
+      case'resyncPublishedSkill':
+      case'unpublishSkill':return{status:'local-only',workflowId:input.workflowId||null};
+      case'listAllAutomations':{
+        const rows=await runtime.listAgents(),out=[];
+        for(const a of rows)for(const item of await runtime.getAgentAutomations({id:a.id}))out.push({...item,agentId:a.id,agentName:a.name});
+        return out;
+      }
+      case'getAgentAutomations':return runtime.getAgentAutomations(input);
+      case'createAgentAutomation':return runtime.createAgentAutomation(input);
+      case'setAgentAutomationEnabled':return runtime.setAgentAutomationEnabled(input);
+      case'updateAgentAutomation':return runtime.updateAgentAutomation(input);
+      case'deleteAgentAutomation':return runtime.deleteAgentAutomation(input);
+      case'runAgentAutomationNow':return runtime.runAgentAutomationNow(input);
+      case'getListenerIntegrations':return{integrations:[]};
+      case'getListenerConnectUrl':return{url:null};
+      case'getTeachRecordingStatus':return teach.get(input.id||input.agentId)||{status:'idle',agentId:input.id||input.agentId||null};
+      case'startTeachRecording':{
+        const value={status:'recording',agentId:input.id||input.agentId||null,startedAtMs:Date.now()};teach.set(value.agentId,value);return value;
+      }
+      case'stopTeachRecording':{
+        const id=input.id||input.agentId||null,value={status:'idle',agentId:id,stoppedAtMs:Date.now()};teach.set(id,value);return value;
+      }
+      case'getForeverBoxStatus':
+      case'ensureForeverBox':return{state:'running',kind:'local-computer',computerTarget:'local-mac',vncUrl:null};
+      case'handBackForeverBox':return;
+      case'getTrays':return[];
+      case'dismissTray':
+      case'clearTrays':return;
+      case'getBoxSecretsStatus':return{keys:[],isPersistent:true};
+      case'getSharingState':return{enabled:false,rooms:[]};
+      case'getCloudAgentInfo':return null;
+      case'requestDiskSaverAudit':return{status:'not-needed',computerTarget:'local-mac'};
+      case'broadcastToAgents':{
+        const ids=Array.isArray(input.ids)?input.ids:(await runtime.listAgents()).filter(a=>!a.isGroup).map(a=>a.id);
+        const results=[];for(const id of ids)results.push(await runtime.sendMessage({agentId:id,text:String(input.prompt||input.text||'')}));return{results};
+      }
+      default:throw Object.assign(Error('Unsupported Grok coordinator method: '+method),{code:'method-unavailable'});
+    }
+  }
+  return{call,agentRow,transcriptEntry};
+}
+module.exports={createReferenceCoordinator,agentRow,transcriptEntry};
