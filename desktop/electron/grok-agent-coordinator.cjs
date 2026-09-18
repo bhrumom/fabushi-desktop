@@ -11,6 +11,7 @@ const {createWorkflowManager}=require('./grok-workflow-manager.cjs');
 const {normalizeSchedule,isValidSchedule,computeNextRunAt,describeSchedule}=require('./grok-automation-schedule.cjs');
 const {createLocalBrowserRuntime}=require('./grok-local-browser.cjs');
 const {createPluginMarketplace}=require('./grok-plugin-marketplace.cjs');
+const {createOutputSpiller}=require('./grok-output-spill.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
@@ -184,12 +185,14 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   });
   const workflowManager=createWorkflowManager({app});
   const marketplace=pluginMarketplace||createPluginMarketplace();
+  const outputSpiller=createOutputSpiller({app});
   const localBrowser=createLocalBrowserRuntime({BrowserWindow});
   const host=createHostRuntime({
     shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,requestApproval,onToolState,onAgentStatus,onAssistantDelta,
     getExternalTools:()=>mcp.collectToolDefinitions(),
     executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args),
     getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
+    spillToolOutput:(text,meta)=>outputSpiller.spillText(text,meta),
     browser:localBrowser,
     subagents:{
       async create({parentAgentId,name,prompt,background,signal}){
