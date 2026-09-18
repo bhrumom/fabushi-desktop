@@ -45,6 +45,6 @@ jobs:
           set -euo pipefail
           ln -s "$PWD/node_modules" ../node_modules
           trap 'rm -f ../node_modules' EXIT
-          npx tsc --project ../source/tsconfig.json
+          npx tsc --project ../reference/grok-bot-0.18/source/tsconfig.json
       - name: Typecheck and renderer build
         run: npm run build

@@ -35,8 +35,10 @@ function createAgentRunner({agentId,runTurn,onLifecycle=()=>{},onStateChanged=()
       getAgentId:()=>String(agentId||''),
       maxSteps:1,
       runStep:async(_step,context)=>{
+        if(input.signal?.aborted)throw abortError(input.signal.reason?.reason||input.signal.reason?.message||'Operation cancelled.');
         current.dispatched=true;emitState();
         const value=await runTurn({...input,signal:context.signal,requestId:context.requestId,generation});
+        if(input.signal?.aborted)throw abortError(input.signal.reason?.reason||input.signal.reason?.message||'Operation cancelled.');
         return{done:true,value};
       }
     });
@@ -46,6 +48,7 @@ function createAgentRunner({agentId,runTurn,onLifecycle=()=>{},onStateChanged=()
     try{
       try{onLifecycle({type:'started',agentId,requestId,generation,startedAt:current.startedAt,engine:'grok-sand-agent-runner'})}catch{}
       const value=await referenceRunner.run(promptFromInput(input),{inferenceRequestId:requestId,requestSource:'user'});
+      if(input.signal?.aborted)throw abortError(input.signal.reason?.reason||input.signal.reason?.message||'Operation cancelled.');
       return{quiescedForUpgrade:false,value,requestId,generation,engine:'grok-sand-agent-runner'};
     }finally{
       input.signal?.removeEventListener?.('abort',onExternalAbort);
