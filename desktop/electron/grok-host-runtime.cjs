@@ -6,7 +6,7 @@ const {toolDefinitions,executeTool,descriptor}=require('./local-tool-executor.cj
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',subagents=null}){
+function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',subagents=null,browser=null}){
   function systemPrompt(agent,enabled,workflowContext){
     const parts=[
       `You are ${agent.name}, a Fabushi desktop agent following the Grok Bot host/coordinator execution model.`,
@@ -88,7 +88,9 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
     const externalNames=new Set(externalDefinitions.map(x=>x.function?.name).filter(Boolean));
     const subagentTools=subagentDefinitions();
     const subagentNames=new Set(subagentTools.map(x=>x.function.name));
-    const tools=[...toolDefinitions(enabled),...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
+    const browserTools=browser?.definitions(enabled)||[];
+    const browserNames=new Set(browserTools.map(x=>x.function.name));
+    const tools=[...toolDefinitions(enabled),...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
     const latestUser=[...history].reverse().find(x=>x.role==='user');
     const workflowContext=await getWorkflowContext(latestUser?.text||'');
     const messages=[
@@ -125,7 +127,7 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
 
         let resultText='';
         try{
-          const allowed=externalNames.has(name)||subagentNames.has(name)?true:await authorize(agent.id,entry,name,args,signal);
+          const allowed=externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name)===false)?true:await authorize(agent.id,entry,name,args,signal);
           if(!allowed){
             resultText='ERROR: '+entry.text;
           }else{
