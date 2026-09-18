@@ -30,7 +30,9 @@ class HttpMcpClient{
 function normalizeServer(input){
   const name=String(input?.name||'').trim().slice(0,80);if(!name)throw Error('MCP server name is required.');
   const transport=input?.transport==='http'||String(input?.url||'').trim()?'http':'stdio';
-  const common={id:String(input?.id||crypto.randomUUID()),name,transport,enabled:input?.enabled!==false,disabledTools:Array.isArray(input?.disabledTools)?input.disabledTools.map(String):[],customInstructions:String(input?.customInstructions||'').trim().slice(0,12000),accountKey:String(input?.accountKey||'default').trim().slice(0,80)||'default'};
+  const accountKey=String(input?.accountKey||'default').trim().slice(0,80)||'default';
+  const accountKeys=[...new Set([accountKey,...(Array.isArray(input?.accountKeys)?input.accountKeys.map(value=>String(value).trim().slice(0,80)).filter(Boolean):[])])];
+  const common={id:String(input?.id||crypto.randomUUID()),name,transport,enabled:input?.enabled!==false,disabledTools:Array.isArray(input?.disabledTools)?input.disabledTools.map(String):[],customInstructions:String(input?.customInstructions||'').trim().slice(0,12000),accountKey,accountKeys};
   if(transport==='http'){
     const parseOptionalUrl=(value,label)=>{const raw=String(value||'').trim();if(!raw)return'';let parsed;try{parsed=new URL(raw)}catch{throw Error(label+' is invalid.')}if(parsed.protocol!=='https:'&&parsed.protocol!=='http:')throw Error(label+' must use HTTP(S).');if(parsed.username||parsed.password)throw Error('Do not put credentials in '+label+'.');return parsed.toString()};
     const url=parseOptionalUrl(input?.url,'MCP server URL');if(!url)throw Error('MCP server URL is required.');
