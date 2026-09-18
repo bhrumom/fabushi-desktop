@@ -20,7 +20,7 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   setPluginEnabled:x=>invoke('set-plugin-enabled',x),
   getRuntimeSettings:()=>invoke('get-runtime-settings'),
   setLocalToolPermission:x=>invoke('set-local-tool-permission',x),
-  resolveApproval:x=>invoke('resolve-approval',x),
+  resolveApproval:x=>invoke('resolve-approval',x),\n  listMcpServers:()=>invoke('list-mcp-servers'),\n  addMcpServer:x=>invoke('add-mcp-server',x),\n  removeMcpServer:x=>invoke('remove-mcp-server',x),\n  setMcpServerEnabled:x=>invoke('set-mcp-server-enabled',x),\n  listMcpServerTools:x=>invoke('list-mcp-server-tools',x),\n  setMcpToolEnabled:x=>invoke('set-mcp-tool-enabled',x),
   pickFile:()=>ipcRenderer.invoke('grok-agent:pick-file'),
   subscribe(listener){
     if(typeof listener!=='function')return()=>{};
