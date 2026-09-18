@@ -7,12 +7,13 @@ const {rootRequestContext,childRequestContext,runWithRequestContext}=require('./
 const {requiresAutoReview,canonicalAutoReviewTarget,fingerprintAutoReviewTarget,normalizeAutoReviewMode,normalizeClassifierDecision}=require('./grok-auto-review.cjs');
 const {runWithTransientRetry}=require('./grok-transient-retry.cjs');
 const {definitions:communicationDefinitions,executeCommunicationTool}=require('./grok-communication-tools.cjs');
+const {definition:stateDefinition,executeStateTool}=require('./grok-state-tool.cjs');
 
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},sendVisibleMessage=async()=>null,reactToConversationMessage=async()=>null,getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
-  function systemPrompt(agent,enabled,workflowContext){
+function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},sendVisibleMessage=async()=>null,reactToConversationMessage=async()=>null,updateState=async()=>({ok:false,reason:'State backend unavailable.'}),getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',getMemoryContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
+  function systemPrompt(agent,enabled,workflowContext,memoryContext){
     const parts=[
       `You are ${agent.name}, a Fabushi desktop agent following the Grok Bot host/coordinator execution model.`,
       'You operate the Mac where Fabushi is installed, not a cloud computer.',
@@ -23,6 +24,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
       'When a Computer click is needed, provide a concise purpose in the tool arguments.',
       `Enabled local capabilities: ${[...enabled].join(', ')||'none'}.`
     ];
+    if(memoryContext)parts.push(memoryContext);
     if(workflowContext)parts.push(workflowContext);
     return parts.join('\n');
   }
@@ -198,7 +200,8 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const localTools=toolDefinitions(enabled);
     const localNames=new Set(localTools.map(x=>x.function.name));
     const communicationNames=new Set(communicationDefinitions.map(x=>x.function.name));
-    const tools=[...communicationDefinitions,...localTools,...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
+    const stateNames=new Set([stateDefinition.function.name]);
+    const tools=[...communicationDefinitions,stateDefinition,...localTools,...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
     const resources=createExecutionResources({
       executeLocal:(name,args,options)=>executeTool(name,args,{enabled,shell,signal:options.signal,onStarted:options.onStarted,onOutput:options.onOutput}),
       executeBrowser:(name,args,options)=>browser?.execute({agentId:agent.id,name,args,signal:options.signal}),
@@ -206,8 +209,8 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
       executeSubagent:(name,args,options)=>executeSubagentTool(name,args,options.signal,agent.id)
     });
     const latestUser=[...history].reverse().find(x=>x.role==='user');
-    const workflowContext=await getWorkflowContext(latestUser?.text||'');
-    const messages=[{role:'system',content:systemPrompt(agent,enabled,workflowContext)}];
+    const [workflowContext,memoryContext]=await Promise.all([getWorkflowContext(latestUser?.text||''),getMemoryContext(agent.id)]);
+    const messages=[{role:'system',content:systemPrompt(agent,enabled,workflowContext,memoryContext)}];
     const historyById=new Map(history.map(row=>[row.id,row]));
     for(const row of history.filter(x=>x.role==='user'||x.role==='assistant').slice(-40)){
       let content=String(row.text||'');
@@ -254,7 +257,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
 
         let resultText='';
         try{
-          const allowed=communicationNames.has(name)||externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name)===false)?true:await authorize(agent.id,entry,name,args,signal);
+          const allowed=communicationNames.has(name)||stateNames.has(name)||externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name)===false)?true:await authorize(agent.id,entry,name,args,signal);
           if(!allowed){
             resultText='ERROR: '+entry.text;
           }else{
@@ -263,7 +266,8 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
             if(communicationNames.has(name)){
               execution=await executeCommunicationTool(name,args,{sendVisibleMessage:input=>sendVisibleMessage({agentId:agent.id,...input}),reactToConversationMessage:input=>reactToConversationMessage({agentId:agent.id,...input})});
               if(execution?.visibleMessage){visibleMessageCount+=1;callsSinceVisibleMessage=0}else callsSinceVisibleMessage+=1;
-            }else if(externalNames.has(name))resource=resources.get(EXTERNAL_TOOL_EXECUTOR);
+            }else if(stateNames.has(name)){execution=await executeStateTool(args,{updateState:input=>updateState({agentId:agent.id,...input})});callsSinceVisibleMessage+=1;}
+            else if(externalNames.has(name))resource=resources.get(EXTERNAL_TOOL_EXECUTOR);
             else if(browserNames.has(name))resource=resources.get(BROWSER_TOOL_EXECUTOR);
             else if(subagentNames.has(name))resource=resources.get(SUBAGENT_TOOL_EXECUTOR);
             else if(localNames.has(name))resource=resources.get(LOCAL_TOOL_EXECUTOR);
