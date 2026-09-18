@@ -118,8 +118,11 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
   const [query,setQuery]=useState('');
   const [addOpen,setAddOpen]=useState(false);
   const [name,setName]=useState('');
+  const [transport,setTransport]=useState<'stdio'|'http'>('stdio');
   const [command,setCommand]=useState('');
   const [argsText,setArgsText]=useState('[]');
+  const [url,setUrl]=useState('');
+  const [customInstructions,setCustomInstructions]=useState('');
   const [expanded,setExpanded]=useState<string|null>(null);
   const [tools,setTools]=useState<Record<string,McpToolDescriptor[]>>({});
   const [skillEditor,setSkillEditor]=useState<WorkflowDescriptor|{id?:string;name:string;description:string;body:string;isEnabledForAgent:boolean}|null>(null);
@@ -136,8 +139,12 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
     try{
       const parsed=JSON.parse(argsText||'[]');
       if(!Array.isArray(parsed)||parsed.some(value=>typeof value!=='string'))throw new Error('Args must be a JSON string array.');
-      await bridge.addMcpServer({name:name.trim(),command:command.trim(),args:parsed});
-      setName('');setCommand('');setArgsText('[]');setAddOpen(false);await reload();
+      await bridge.addMcpServer({
+        name:name.trim(),transport,
+        ...(transport==='stdio'?{command:command.trim(),args:parsed}:{url:url.trim()}),
+        ...(customInstructions.trim()?{customInstructions:customInstructions.trim()}:{})
+      });
+      setName('');setTransport('stdio');setCommand('');setArgsText('[]');setUrl('');setCustomInstructions('');setAddOpen(false);await reload();
     }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
   };
   const newSkill=()=>setSkillEditor({name:'',description:'',body:'',isEnabledForAgent:true});
@@ -161,8 +168,9 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
     </div></header>
     {tab==='plugins'&&addOpen?<form className="mcp-add" onSubmit={e=>void addServer(e)}>
       <input value={name} onChange={e=>setName(e.target.value)} placeholder="Server name" required/>
-      <input value={command} onChange={e=>setCommand(e.target.value)} placeholder="Command, e.g. npx" required/>
-      <input value={argsText} onChange={e=>setArgsText(e.target.value)} placeholder={'["-y","@vendor/server"]'} required/>
+      <select value={transport} onChange={e=>setTransport(e.target.value as 'stdio'|'http')}><option value="stdio">Local stdio</option><option value="http">Remote HTTP</option></select>
+      {transport==='stdio'?<><input value={command} onChange={e=>setCommand(e.target.value)} placeholder="Command, e.g. npx" required/><input value={argsText} onChange={e=>setArgsText(e.target.value)} placeholder={'["-y","@vendor/server"]'} required/></>:<input className="mcp-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://server.example/mcp" required/>}
+      <textarea value={customInstructions} onChange={e=>setCustomInstructions(e.target.value)} placeholder="Optional server instructions passed to the Agent with each routed tool"/>
       <div><button type="button" onClick={()=>setAddOpen(false)}>Cancel</button><button className="primary compact">Add server</button></div>
     </form>:null}
     {tab==='skills'&&skillEditor?<form className="skill-editor" onSubmit={e=>void saveSkill(e)}>
