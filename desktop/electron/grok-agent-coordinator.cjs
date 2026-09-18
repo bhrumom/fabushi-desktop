@@ -5,6 +5,7 @@ const path=require('node:path');
 const crypto=require('node:crypto');
 const {fileURLToPath}=require('node:url');
 const {createHostRuntime}=require('./grok-host-runtime.cjs');
+const {listBackgroundProcesses}=require('./local-tool-executor.cjs');
 const {createAgentRunner}=require('./grok-agent-runner.cjs');
 const {createMcpManager,normalizeServer}=require('./grok-mcp-manager.cjs');
 const {createAccountSession}=require('./grok-account-session.cjs');
@@ -727,6 +728,22 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function refreshExperiments(){await experiments.start();return await experiments.refreshNow()}
   async function applyFeatureFlagOverride(input={}){await experiments.start();return await experiments.applyFeatureFlagOverrideCommand(input.command??input)}
 
+  async function getAsyncTasks({id}){
+    const parentId=String(id||'').trim();if(!parentId)throw Error('Agent id is required.');
+    const current=await load();if(!current.agents.some(agent=>agent.id===parentId))throw Error('Agent not found.');
+    const tasks=[];
+    for(const child of current.agents){
+      if(child.parentAgentId!==parentId||!['thinking','running','waiting'].includes(child.status))continue;
+      const active=runners.get(child.id)?.snapshot?.().active;
+      tasks.push({kind:'subagent',id:child.id,label:child.name||'Subagent',status:'running',startedAtMs:Number(active?.startedAt)||Number(child.updatedAt)||Date.now(),detail:child.status,subagentType:child.purpose||'subagent'});
+    }
+    for(const process of listBackgroundProcesses({ownerAgentId:parentId,runningOnly:true})){
+      tasks.push({kind:'shell',id:process.id,label:String(process.command||'Background shell').slice(0,120),status:'running',startedAtMs:Number(process.startedAt)||Date.now(),detail:process.cwd||undefined});
+    }
+    tasks.sort((a,b)=>a.startedAtMs-b.startedAtMs);
+    return tasks;
+  }
+
   async function getRuntimeSettings(){
     const s=await load();return{localToolPermission:s.settings.localToolPermission,autoReviewMode:s.settings.autoReviewMode,autoReviewAllowInstructions:[...(s.settings.autoReviewAllowInstructions||[])],autoReviewBlockInstructions:[...(s.settings.autoReviewBlockInstructions||[])],computerTarget:'local-mac'};
   }
@@ -768,7 +785,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
 
   return{
     listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentPinned,setAgentUnread,duplicateAgent,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,respondToWidget,dismissWidget,submitSecret,reactToMessage,searchMessages,searchMedia,searchLinks,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,getAccountStatus,loginAccount,cancelAccountLogin,logoutAccount,updateAccountName,getAccountAvatar,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getExperimentsSnapshot,refreshExperiments,applyFeatureFlagOverride,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
+    listPlugins,setPluginInstalled,setPluginEnabled,getAccountStatus,loginAccount,cancelAccountLogin,logoutAccount,updateAccountName,getAccountAvatar,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getAsyncTasks,getExperimentsSnapshot,refreshExperiments,applyFeatureFlagOverride,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
