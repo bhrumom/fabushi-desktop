@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
-import type { AgentMessage, AgentSummary, AgentThread, McpToolDescriptor, PluginDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
+import type { AgentMessage, AgentSummary, AgentThread, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
 import './grok-app.css';
 
 const bridge=getAgentBridge();
@@ -97,11 +97,11 @@ function Composer({running,onSend,onStop}:{running:boolean;onSend(text:string):P
   </div>;
 }
 
-function Workspace({agent,thread,refresh}:{agent:AgentSummary;thread:AgentThread|null;refresh():Promise<void>}) {
+function Workspace({agent,thread,refresh,openAutomations}:{agent:AgentSummary;thread:AgentThread|null;refresh():Promise<void>;openAutomations():void}) {
   const scroller=useRef<HTMLDivElement|null>(null);
   useEffect(()=>{scroller.current?.scrollTo({top:scroller.current.scrollHeight})},[thread?.messages.length]);
   return <main className="workspace">
-    <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div></header>
+    <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><button className="header-action" onClick={openAutomations}>Routines</button></header>
     <div className="transcript" ref={scroller}><div className="transcript-column">
       {thread?.messages.length?thread.messages.map(message=><Message key={message.id} message={message} onResolve={async(approvalId,approved)=>{
         await bridge.resolveApproval({approvalId,approved});await refresh();
@@ -202,6 +202,49 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
   </section></div>;
 }
 
+function Automations({agent,onClose}:{agent:AgentSummary;onClose():void}) {
+  const [rows,setRows]=useState<RoutineAutomationDescriptor[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState('');
+  const [pending,setPending]=useState<string|null>(null);
+  const [editor,setEditor]=useState<null|{id?:string;name:string;prompt:string;schedule:string;isEnabled:boolean}>(null);
+  const load=async()=>{setLoading(true);setError('');try{setRows(await bridge.getAgentAutomations({id:agent.id}))}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setLoading(false)}};
+  useEffect(()=>{void load();return subscribeAgentEvents(event=>{if(event.type==='automations.changed'&&event.agentId===agent.id)void load()})},[agent.id]);
+  const save=async(e:FormEvent)=>{
+    e.preventDefault();if(!editor)return;setPending(editor.id||'create');setError('');
+    const spec={name:editor.name.trim(),prompt:editor.prompt.trim(),trigger:{type:'cron' as const,schedule:editor.schedule.trim()},isEnabled:editor.isEnabled};
+    try{
+      if(editor.id)await bridge.updateAgentAutomation({id:agent.id,automationId:editor.id,spec});
+      else await bridge.createAgentAutomation({id:agent.id,spec});
+      setEditor(null);await load();
+    }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(null)}
+  };
+  const fmt=(value:number|null)=>value?new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(new Date(value)):'—';
+  return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay routines" role="dialog" aria-label="Routines">
+    <header><div><h2>Routines</h2><p>Automations owned by {agent.name}. Runs execute through the same Agent host and local-tool permission model.</p></div><div className="overlay-head-actions"><button className="add-server" onClick={()=>setEditor({name:'',prompt:'',schedule:'0 9 * * 1-5',isEnabled:true})}>＋ Routine</button><button onClick={onClose}>×</button></div></header>
+    {editor?<form className="routine-editor" onSubmit={e=>void save(e)}>
+      <input value={editor.name} onChange={e=>setEditor({...editor,name:e.target.value})} placeholder="Routine name" required/>
+      <input value={editor.schedule} onChange={e=>setEditor({...editor,schedule:e.target.value})} placeholder="0 9 * * 1-5 or @every 2h" required/>
+      <textarea value={editor.prompt} onChange={e=>setEditor({...editor,prompt:e.target.value})} placeholder="What should this agent do?" required/>
+      <label><input type="checkbox" checked={editor.isEnabled} onChange={e=>setEditor({...editor,isEnabled:e.target.checked})}/> Enabled</label>
+      <small>Supports the reference schedule forms: 5-field cron, @hourly/@daily/etc, @every Ns/m/h/d, and CRON_TZ/TZ prefixes.</small>
+      <div><button type="button" onClick={()=>setEditor(null)}>Cancel</button><button className="primary compact" disabled={pending!==null}>Save</button></div>
+    </form>:null}
+    {error?<div className="plugin-error">{error}</div>:null}
+    <div className="routine-list">{loading&&!rows.length?<div className="overlay-empty">Loading routines…</div>:rows.length?rows.map(row=><article key={row.id}>
+      <div className="routine-main"><div className="routine-title"><strong>{row.name}</strong><span>{row.isEnabled?'Enabled':'Paused'}</span></div><p>{row.prompt}</p><small>{row.triggerDescription} · next {fmt(row.nextRunAt)} · last {fmt(row.lastRunAt)}</small>
+        {row.runs.length?<div className="run-history">{row.runs.slice(0,5).map(run=><div key={run.id}><span className={'run-status '+run.status}>{run.status}</span><time>{fmt(run.startedAt)}</time><span>{run.event||'run'}</span>{run.detail?<em>{run.detail}</em>:null}</div>)}</div>:null}
+      </div>
+      <div className="plugin-actions">
+        <button onClick={()=>setEditor({id:row.id,name:row.name,prompt:row.prompt,schedule:row.trigger.schedule,isEnabled:row.isEnabled})}>Edit</button>
+        <button onClick={async()=>{setPending(row.id);try{await bridge.setAgentAutomationEnabled({id:agent.id,automationId:row.id,isEnabled:!row.isEnabled});await load()}finally{setPending(null)}}}>{row.isEnabled?'Pause':'Enable'}</button>
+        <button className="primary compact" disabled={pending!==null||busy(agent.status)} onClick={async()=>{setPending(row.id);try{await bridge.runAgentAutomationNow({id:agent.id,automationId:row.id});await load()}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(null)}}}>Run now</button>
+        <button onClick={async()=>{setPending(row.id);try{await bridge.deleteAgentAutomation({id:agent.id,automationId:row.id});await load()}finally{setPending(null)}}}>Delete</button>
+      </div>
+    </article>):<div className="overlay-empty">No routines yet. Create one to schedule real work for this agent.</div>}</div>
+  </section></div>;
+}
+
 function Settings({onClose}:{onClose():void}) {
   const [settings,setSettings]=useState<RuntimeSettings|null>(null);
   const [error,setError]=useState('');
@@ -257,7 +300,7 @@ export default function GrokApp(){
   const [thread,setThread]=useState<AgentThread|null>(null);
   const [plugins,setPlugins]=useState<PluginDescriptor[]>([]);
   const [workflows,setWorkflows]=useState<WorkflowDescriptor[]>([]);
-  const [overlay,setOverlay]=useState<'plugins'|'settings'|null>(null);
+  const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|null>(null);
   const [createOpen,setCreateOpen]=useState(false);
   const [renameAgent,setRenameAgent]=useState<AgentSummary|null>(null);
   const [deleteAgent,setDeleteAgent]=useState<AgentSummary|null>(null);
@@ -299,10 +342,11 @@ export default function GrokApp(){
   return <div className="app-shell">
     <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={setSelectedId} create={()=>setCreateOpen(true)}
       plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} rename={setRenameAgent} remove={setDeleteAgent} openPalette={()=>setPaletteOpen(true)}/>
-    {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)}/>:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
+    {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')}/>:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
     {failure?<div className="toast-error">{failure}<button onClick={()=>setFailure('')}>×</button></div>:null}
     {overlay==='plugins'?<Plugins items={plugins} workflows={workflows} onClose={()=>setOverlay(null)} reload={loadPlugins} reloadWorkflows={loadWorkflows}/>:null}
     {overlay==='settings'?<Settings onClose={()=>setOverlay(null)}/>:null}
+    {overlay==='automations'&&selected?<Automations agent={selected} onClose={()=>setOverlay(null)}/>:null}
     {createOpen?<CreateAgent onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>setSelectedId(agent.id))}}/>:null}
     {renameAgent?<RenameAgent agent={renameAgent} onClose={()=>setRenameAgent(null)} onSaved={loadAgents}/>:null}
     {deleteAgent?<DeleteAgent agent={deleteAgent} onClose={()=>setDeleteAgent(null)} onDeleted={async()=>{await loadAgents();setThread(null)}}/>:null}
