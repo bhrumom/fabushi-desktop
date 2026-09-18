@@ -9,6 +9,10 @@ import { RosterReconnectNotice } from './recovered/features/roster/reconnect-not
 import { createBrowserClientPersistence, createRosterSelectionPersistence, createRosterSelectionStore } from './recovered/features/roster/selection-state';
 import { createAsyncTasksProvider, type AsyncTasksProvider } from './recovered/features/agent-info/async-tasks/provider';
 import { AsyncTasksPanel } from './recovered/features/agent-info/async-tasks/view';
+import { OnboardingCharacter, resolvePersonaColor, resolvePersonaShape, type OnboardingCharacterState } from './recovered/features/onboarding/signed-in/character';
+import { createAvatarEditorProductionAdapter } from './recovered/features/agent-info/avatar-editor/production-adapter';
+import { AvatarEditorView } from './recovered/features/agent-info/avatar-editor/view';
+import { createStrictModeDisposalGuard } from './production/strict-mode-disposal';
 import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, DeepLinkInfo, DesktopInfo, DesktopUpdateStatus, DesktopUpdateTrack, FeedbackResult, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor, WorkspaceLinkSearchResult, WorkspaceMediaSearchResult, WorkspaceMessageSearchResult } from './grok-types';
 import './grok-app.css';
 
@@ -19,6 +23,23 @@ const busy=(status:AgentSummary['status'])=>status==='thinking'||status==='runni
 const QUICK_REACTIONS=['👍','👎','❤️','😂','🎉','😮'] as const;
 const messageLabel=(message:AgentMessage|null|undefined)=>message?.role==='user'?'You':message?.role==='assistant'?'Agent':'Message';
 const messagePreview=(message:AgentMessage|null|undefined)=>{const text=String(message?.text||'').replace(/\s+/g,' ').trim();return text?text.slice(0,96)+(text.length>96?'…':''):message?.attachments?.[0]?.name||'(unavailable)'};
+
+function agentCharacterState(status:AgentSummary['status']):OnboardingCharacterState {
+  if(status==='thinking')return 'thinking';
+  if(status==='running')return 'working';
+  if(status==='waiting')return 'listening';
+  if(status==='error')return 'alerting';
+  return 'idle';
+}
+
+function AgentAvatar({agent,size=32,className=''}:{agent:AgentSummary;size?:number;className?:string}) {
+  if(agent.avatarDataUrl)return <span className={'agent-character-avatar '+className} style={{width:size,height:size}}><img src={agent.avatarDataUrl} alt=""/></span>;
+  const color=resolvePersonaColor(agent.id,agent.avatarColor);
+  const shape=resolvePersonaShape(agent.id,agent.avatarShape);
+  return <span className={'agent-character-avatar '+className} style={{width:size,height:size}}>
+    <OnboardingCharacter color={color} shape={shape} sizePx={size} state={agentCharacterState(agent.status)} paused={agent.status==='idle'} sourceId={agent.id}/>
+  </span>;
+}
 
 function Status({status}:{status:AgentSummary['status']}) {
   return <span className={'status status-'+status} aria-label={status}/>;
@@ -69,7 +90,7 @@ function Sidebar(p:{
     <div className="section-label">Agents</div>
     <div className="agent-list">{rows.length?rows.map(a=><div className={'agent-row sand-agent-item '+(p.selected===a.id?'selected ':'')+(a.pinned?'pinned ':'')+(a.unread?'unread':'')} key={a.id}>
       <button className="agent-select" onClick={()=>p.select(a.id)} onDoubleClick={()=>p.rename(a)}>
-        <span className="avatar">{initials(a.name)}</span>
+        <AgentAvatar agent={a}/>
         <span className="agent-copy"><strong>{a.name}</strong><small>{a.status==='idle'?(a.unread?'Unread':'Ready'):a.status}</small></span>
         <Status status={a.status}/>
       </button>
@@ -232,11 +253,35 @@ function ComputerInfoPane({agent,thread,onClose}:{agent:AgentSummary;thread:Agen
 
 function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():void;onChanged():Promise<void>}) {
   const [name,setName]=useState(agent.name),[title,setTitle]=useState(agent.title||''),[description,setDescription]=useState(agent.description||'');
-  const [pending,setPending]=useState(false),[error,setError]=useState('');
-  const save=async()=>{const next=name.trim();if(!next||pending)return;setPending(true);setError('');try{await bridge.updateAgent({id:agent.id,profile:{name:next,title:title.trim(),description:description.trim()}});await onChanged();onClose()}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}};
+  const [pending,setPending]=useState(false),[error,setError]=useState(''),[avatarOpen,setAvatarOpen]=useState(false);
+  const avatarAdapter=useMemo(()=>createAvatarEditorProductionAdapter({bridge}),[]);
+  const [avatarSnapshot,setAvatarSnapshot]=useState(avatarAdapter.getSnapshot());
+  useEffect(()=>avatarAdapter.subscribe(()=>setAvatarSnapshot(avatarAdapter.getSnapshot())),[avatarAdapter]);
+  useEffect(()=>{
+    avatarAdapter.setScope({
+      accountKey:'local',
+      agent:{id:agent.id,isGroup:false,avatarDataUrl:agent.avatarDataUrl,avatarShape:agent.avatarShape,avatarColor:agent.avatarColor}
+    });
+    setAvatarSnapshot(avatarAdapter.getSnapshot());
+  },[avatarAdapter,agent.id,agent.avatarDataUrl,agent.avatarShape,agent.avatarColor]);
+  useEffect(()=>()=>avatarAdapter.dispose(),[avatarAdapter]);
+  const save=async()=>{
+    const next=name.trim();if(!next||pending)return;
+    setPending(true);setError('');
+    try{await bridge.updateAgent({id:agent.id,profile:{name:next,title:title.trim(),description:description.trim()}});await onChanged();onClose()}
+    catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
+    finally{setPending(false)}
+  };
+  const closeAvatar=()=>{setAvatarOpen(false);void onChanged()};
   return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay agent-settings-overlay" role="dialog" aria-label="Agent settings">
     <header><div><h2>Agent settings</h2><p>Profile and notifications for this agent</p></div><button aria-label="Close" onClick={onClose}>×</button></header>
     <div className="sand-agent-settings">
+      <div className="agent-avatar-setting">
+        <AgentAvatar agent={agent} size={64}/>
+        <span><strong>Avatar</strong><small>Use the Grok Bot character, upload an image, or generate one when a provider is configured.</small></span>
+        <button disabled={avatarSnapshot.status!=='ready'} onClick={()=>setAvatarOpen(true)}>Edit avatar</button>
+        {avatarOpen&&avatarSnapshot.controller?<div className="agent-avatar-editor-popover"><AvatarEditorView controller={avatarSnapshot.controller} onClose={closeAvatar}/></div>:null}
+      </div>
       <label><span>Name</span><input aria-label="Agent name" value={name} disabled={pending} onChange={e=>setName(e.target.value)} placeholder="Bob"/></label>
       <label><span>Title</span><input aria-label="Agent title" value={title} disabled={pending} onChange={e=>setTitle(e.target.value)} placeholder="Describe what your agent does"/></label>
       <label><span>Description</span><textarea aria-label="Agent description" value={description} disabled={pending} onChange={e=>setDescription(e.target.value)} placeholder="What this agent is for"/></label>
@@ -267,12 +312,12 @@ function Workspace({agent,thread,refresh,openAutomations,openAgentSettings,async
   useEffect(()=>{if(replyToId&&!replyTarget)setReplyToId(null)},[replyToId,replyTarget]);
   useEffect(()=>{const onKey=(event:KeyboardEvent)=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='f'){event.preventDefault();setFindOpen(true)}else if(event.key==='Escape'&&findOpen)setFindOpen(false)};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[findOpen]);
   return <main className="workspace">
-    <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><nav className="header-actions"><button className="header-action" onClick={()=>{setTasksOpen(value=>!value);asyncTasksProvider.refresh(agent.id)}}>Tasks</button><button className="header-action sand-chat-header__computer" data-computer-active={busy(agent.status)||undefined} onClick={()=>setComputerOpen(value=>!value)}>Computer</button><button className="header-action" onClick={()=>setFindOpen(true)}>Find</button><button className="header-action" onClick={()=>setOutlineOpen(value=>!value)}>Outline</button><button className="header-action" onClick={openAgentSettings}>Agent</button><button className="header-action" onClick={openAutomations}>Routines</button></nav></header>
+    <header className="chat-header"><div className="identity"><AgentAvatar agent={agent} size={38} className="large"/><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><nav className="header-actions"><button className="header-action" onClick={()=>{setTasksOpen(value=>!value);asyncTasksProvider.refresh(agent.id)}}>Tasks</button><button className="header-action sand-chat-header__computer" data-computer-active={busy(agent.status)||undefined} onClick={()=>setComputerOpen(value=>!value)}>Computer</button><button className="header-action" onClick={()=>setFindOpen(true)}>Find</button><button className="header-action" onClick={()=>setOutlineOpen(value=>!value)}>Outline</button><button className="header-action" onClick={openAgentSettings}>Agent</button><button className="header-action" onClick={openAutomations}>Routines</button></nav></header>
     {findOpen?<FindInChat thread={thread} onClose={()=>setFindOpen(false)}/>:null}
     <div className="transcript sand-virtual-transcript" ref={scroller}><div className="transcript-column">
       {thread?.messages.length?thread.messages.map(message=><Message key={message.id} agentId={agent.id} message={message} messages={thread.messages} onChanged={refresh} onReply={target=>setReplyToId(target.id)} onReact={async(entryId,emoji)=>{await bridge.reactToMessage({agentId:agent.id,entryId,emoji});await refresh()}} onResolve={async(approvalId,approved)=>{
         await bridge.resolveApproval({approvalId,approved});await refresh();
-      }}/>):<section className="welcome"><span className="avatar hero">{initials(agent.name)}</span><h2>{agent.name}</h2><p>This agent works directly on this Mac.</p></section>}
+      }}/>):<section className="welcome"><AgentAvatar agent={agent} size={96} className="hero"/><h2>{agent.name}</h2><p>This agent works directly on this Mac.</p></section>}
     </div></div>
     {outlineOpen?<ConversationOutline thread={thread} onClose={()=>setOutlineOpen(false)}/>:null}
     {computerOpen?<ComputerInfoPane agent={agent} thread={thread} onClose={()=>setComputerOpen(false)}/>:null}
