@@ -13,7 +13,8 @@
     "build": "tsc --noEmit && vite build",
     "build:computer-helper": "mkdir -p native/bin && swiftc native/MacComputerHelper.swift -O -o native/bin/fabushi-computer-helper",
     "package:mac": "npm run build && npm run build:computer-helper && electron-builder --mac dmg zip --publish never",
-    "start": "electron ."
+    "start": "electron .",
+    "postinstall": "node scripts/apply-third-party-patches.mjs"
   },
   "dependencies": {
     "react": "19.2.1",
@@ -180,5 +181,10 @@
       "artifactName": "fabushi-grok-parity-${version}-macos-${arch}.${ext}"
     },
     "copyright": "Copyright © 2026 Fabushi."
+  },
+  "overrides": {
+    "node-addon-api": "8.5.0",
+    "@tiptap/extension-bubble-menu": "3.14.0",
+    "@tiptap/extension-floating-menu": "3.14.0"
   }
 }
