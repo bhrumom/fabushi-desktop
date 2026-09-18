@@ -26,6 +26,10 @@ export interface AgentMessage {
   errorCode?:string;
   requestId?:string;
   toolCallId?:string;
+  reviewMode?:'off'|'shadow'|'enforce';
+  reviewFingerprint?:string;
+  reviewDecision?:'allow'|'block';
+  reviewReason?:string;
   display?:{kind:'image';dataUrl:string};
 }
 export interface PendingApproval {
@@ -108,6 +112,7 @@ export interface RoutineAutomationDescriptor {
 }
 export interface RuntimeSettings {
   localToolPermission:'always'|'ask'|'never';
+  autoReviewMode:'off'|'shadow'|'enforce';
   computerTarget:'local-mac';
 }
 export interface AgentEvent {
@@ -135,6 +140,7 @@ export interface GrokAgentBridge {
   setPluginEnabled(input:{pluginId:string;enabled:boolean}):Promise<PluginDescriptor[]>;
   getRuntimeSettings():Promise<RuntimeSettings>;
   setLocalToolPermission(input:{permission:RuntimeSettings['localToolPermission']}):Promise<RuntimeSettings>;
+  setAutoReviewMode(input:{mode:RuntimeSettings['autoReviewMode']}):Promise<RuntimeSettings>;
   resolveApproval(input:{approvalId:string;approved:boolean}):Promise<{ok:true}>;
   listMcpServers():Promise<McpServerDescriptor[]>;
   addMcpServer(input:{name:string;transport?:'stdio'|'http';command?:string;args?:string[];url?:string;customInstructions?:string;accountKey?:string}):Promise<McpServerDescriptor>;
