@@ -78,7 +78,7 @@ function normalizeState(parsed){
   }
   return base;
 }
-function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,pluginMarketplace=null,attachmentGateway=null}){
+function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,pluginMarketplace=null,attachmentGateway=null,notify=async()=>{}}){
   const file=path.join(app.getPath('userData'),'grok-agent-runtime.json');
   let state=null,loading=null,writing=Promise.resolve();
   const aborts=new Map();
@@ -165,6 +165,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     if(message){message.approvalId=approvalId;message.approvalSummary=summary}
     s.pendingApprovals[approvalId]={id:approvalId,agentId,messageId,toolName,summary,args,createdAt:Date.now()};
     await save();emit('approval.requested',{approvalId,agentId,messageId,toolName,summary});
+    const notificationAgent=s.agents.find(row=>row.id===agentId);if(notificationAgent?.notifyOnUpdatesEnabled)void Promise.resolve(notify({title:notificationAgent.name,body:'Needs input: '+String(summary||toolName||'Approval required').slice(0,180)})).catch(()=>{});
     return await new Promise(resolve=>{
       let settled=false;
       const finish=value=>{
@@ -277,6 +278,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
         await onAgentStatus(agentId,cancelled?'idle':'error');
       }finally{
         agent.updatedAt=Date.now();await save();emit('message.done',{agentId,messageId:assistant.id,text:assistant.text,status:assistant.status});
+        if(agent.notifyOnUpdatesEnabled)void Promise.resolve(notify({title:agent.name,body:assistant.status==='done'?'Finished':assistant.text.slice(0,180)})).catch(()=>{});
         aborts.delete(agentId);cancelApprovals(agentId,'Turn finished.');
       }
     })();
