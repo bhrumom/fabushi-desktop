@@ -26,6 +26,8 @@ export interface AttachmentDescriptor {
   size:number;
   kind:'image'|'pdf'|'text'|'file';
   createdAt:number;
+  remoteUrl?:string;
+  alt?:string;
 }
 export interface AttachmentPreview extends AttachmentDescriptor { dataUrl:string; }
 export interface AgentMessage {
@@ -51,6 +53,11 @@ export interface AgentMessage {
   attachments?:AttachmentDescriptor[];
   replyToId?:string;
   reactions?:{emoji:string;by:string}[];
+  widget?:{prompt:string;helpText?:string;options:{label:string;value?:string;description?:string;style?:string}[];allowCustom?:boolean;dismissOnMoveOn?:boolean};
+  respondedValue?:string|null;
+  widgetDismissed?:boolean;
+  secretRequest?:{label:string;description?:string;connector:string;field:string};
+  secretProvided?:boolean;
 }
 export type ConversationOutlineItem =
   | {kind:'user';id:string;text:string}
@@ -225,6 +232,9 @@ export interface GrokAgentBridge {
   deleteAgent(input:{agentId:string}):Promise<{ok:true}>;
   getThread(input:{agentId:string}):Promise<AgentThread>;
   sendMessage(input:{agentId:string;text:string;attachmentIds?:string[];replyToId?:string|null}):Promise<{messageId:string}>;
+  respondToWidget(input:{agentId:string;entryId:string;value:string}):Promise<{accepted:boolean}>;
+  dismissWidget(input:{agentId:string;entryId:string}):Promise<{accepted:boolean}>;
+  submitSecret(input:{agentId:string;entryId:string;value:string}):Promise<{accepted:boolean;reason?:string}>;
   reactToMessage(input:{agentId:string;entryId:string;emoji:string}):Promise<{reactions:{emoji:string;by:string}[]}>;
   searchMessages(input:{query:string;limit?:number}):Promise<WorkspaceMessageSearchResult[]>;
   searchMedia(input:{query:string;limit?:number}):Promise<WorkspaceMediaSearchResult[]>;
@@ -282,6 +292,7 @@ export interface GrokAgentBridge {
   submitFeedback(input:{message:string;conversationId?:string}):Promise<FeedbackResult>;
   getOnboardingSeen():Promise<boolean>;
   setOnboardingSeen(input:{seen:boolean}):Promise<boolean>;
+  openExternal(input:{url:string}):Promise<{ok:true}>;
   onUpdateStatus(listener:(status:DesktopUpdateStatus)=>void):()=>void;
   onDeepLink(listener:(link:DeepLinkInfo)=>void):()=>void;
   subscribe(listener:(event:AgentEvent)=>void):()=>void;
