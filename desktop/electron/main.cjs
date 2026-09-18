@@ -23,7 +23,9 @@ function registerIpc(){
     'get-runtime-settings':'getRuntimeSettings','set-local-tool-permission':'setLocalToolPermission','resolve-approval':'resolveApproval',
     'list-mcp-servers':'listMcpServers','add-mcp-server':'addMcpServer','remove-mcp-server':'removeMcpServer',
     'set-mcp-server-enabled':'setMcpServerEnabled','list-mcp-server-tools':'listMcpServerTools','set-mcp-tool-enabled':'setMcpToolEnabled',
-    'list-workflows':'listWorkflows','save-workflow':'saveWorkflow','delete-workflow':'deleteWorkflow','set-workflow-enabled':'setWorkflowEnabled'
+    'list-workflows':'listWorkflows','save-workflow':'saveWorkflow','delete-workflow':'deleteWorkflow','set-workflow-enabled':'setWorkflowEnabled',
+    'get-agent-automations':'getAgentAutomations','create-agent-automation':'createAgentAutomation','set-agent-automation-enabled':'setAgentAutomationEnabled',
+    'update-agent-automation':'updateAgentAutomation','delete-agent-automation':'deleteAgentAutomation','run-agent-automation-now':'runAgentAutomationNow'
   };
   for(const[name,method]of Object.entries(methods)){
     ipcMain.handle('grok-agent:'+name,async(event,args={})=>{
