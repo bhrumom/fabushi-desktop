@@ -93,8 +93,8 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
   }
   async function findAgent(id){const s=await load();return s.agents.find(a=>a.id===id)||null}
   async function listAgents(){const s=await load();return[...s.agents].sort((a,b)=>b.updatedAt-a.updatedAt)}
-  async function createAgent({name}){
-    const s=await load(),now=Date.now(),agent={id:crypto.randomUUID(),name:clean(name),status:'idle',createdAt:now,updatedAt:now,unread:false};
+  async function createAgent({name,parentAgentId=null,purpose='user',description=''}){
+    const s=await load(),now=Date.now(),agent={id:crypto.randomUUID(),name:clean(name),description:String(description||'').slice(0,500),purpose:String(purpose||'user').slice(0,40),parentAgentId:parentAgentId||null,status:'idle',createdAt:now,updatedAt:now,unread:false};
     s.agents.unshift(agent);s.messages[agent.id]=[];s.automations[agent.id]=[];await save();emit('agents.changed');return agent;
   }
   async function renameAgent({agentId,name}){
@@ -159,7 +159,36 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
     shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,
     getExternalTools:()=>mcp.collectToolDefinitions(),
     executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args),
-    getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt)
+    getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
+    subagents:{
+      async create({parentAgentId,name,prompt,background,signal}){
+        const agent=await createAgent({name,parentAgentId,purpose:'subagent',description:'Delegated agent'});
+        const run=await sendMessage({agentId:agent.id,text:String(prompt||'')});
+        if(background)return{agentId:agent.id,status:'background'};
+        const stop=()=>{void stopAgent({agentId:agent.id})};
+        if(signal?.aborted)stop();else signal?.addEventListener('abort',stop,{once:true});
+        try{
+          const message=await waitForMessage(agent.id,run.messageId);
+          return{agentId:agent.id,status:message.status==='done'?'success':'error',finalMessage:message.text||'',toolCallCount:(state?.messages?.[agent.id]||[]).filter(row=>row.role==='tool').length};
+        }finally{signal?.removeEventListener('abort',stop)}
+      },
+      async check({agentId}){
+        const thread=await getThread({agentId});
+        return{agentId,status:thread.agent.status,parentAgentId:thread.agent.parentAgentId||null,recentMessages:thread.messages.slice(-8).map(row=>({role:row.role,text:row.text,status:row.status,toolName:row.toolName||null}))};
+      },
+      async message({parentAgentId,agentId,prompt,interrupt,signal}){
+        const agent=await findAgent(agentId);if(!agent)throw Error('Sub-agent not found.');
+        if(agent.parentAgentId!==parentAgentId)throw Error('Sub-agent does not belong to this parent agent.');
+        if(['thinking','running','waiting'].includes(agent.status)){
+          if(!interrupt)throw Error('Sub-agent is currently running. You may send the follow-up message when it has completed. If you intended to interrupt this agent, you may retry with interrupt set to true.');
+          await stopAgent({agentId});
+        }
+        const run=await sendMessage({agentId,text:String(prompt||'')});
+        const stop=()=>{void stopAgent({agentId})};if(signal?.aborted)stop();else signal?.addEventListener('abort',stop,{once:true});
+        try{const message=await waitForMessage(agentId,run.messageId);return{agentId,status:message.status==='done'?'success':'error',finalMessage:message.text||''}}finally{signal?.removeEventListener('abort',stop)}
+      },
+      async stop({agentId}){await stopAgent({agentId});return{agentId,status:'aborted'}}
+    }
   });
 
   async function sendMessage({agentId,text}){
