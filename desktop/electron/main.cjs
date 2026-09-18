@@ -23,7 +23,7 @@ function trusted(event){
 function assertTrusted(event){if(!trusted(event))throw Error('Rejected IPC sender');}
 function registerIpc(){
   const methods={
-    'list-agents':'listAgents','create-agent':'createAgent','rename-agent':'renameAgent','update-agent':'updateAgent','set-agent-notify':'setAgentNotifyOnUpdates','set-agent-hidden':'setAgentHidden','delete-agent':'deleteAgent',
+    'list-agents':'listAgents','create-agent':'createAgent','rename-agent':'renameAgent','update-agent':'updateAgent','set-agent-notify':'setAgentNotifyOnUpdates','set-agent-pinned':'setAgentPinned','set-agent-unread':'setAgentUnread','duplicate-agent':'duplicateAgent','set-agent-hidden':'setAgentHidden','delete-agent':'deleteAgent',
     'get-thread':'getThread','send-message':'sendMessage','respond-to-widget':'respondToWidget','dismiss-widget':'dismissWidget','submit-secret':'submitSecret','react-to-message':'reactToMessage','search-messages':'searchMessages','search-media':'searchMedia','search-links':'searchLinks','stop-agent':'stopAgent',
     'list-plugins':'listPlugins','set-plugin-installed':'setPluginInstalled','set-plugin-enabled':'setPluginEnabled',
     'get-account-status':'getAccountStatus','login-account':'loginAccount','cancel-account-login':'cancelAccountLogin','logout-account':'logoutAccount','update-account-name':'updateAccountName','get-account-avatar':'getAccountAvatar',
