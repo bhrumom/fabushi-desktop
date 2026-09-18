@@ -47,6 +47,7 @@
       "electron/grok-mcp-manager.cjs",
       "electron/grok-workflow-manager.cjs",
       "electron/grok-automation-schedule.cjs",
+      "electron/grok-local-browser.cjs",
       "electron/local-tool-executor.cjs",
       "package.json"
     ],
