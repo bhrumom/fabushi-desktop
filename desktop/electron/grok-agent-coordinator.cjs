@@ -73,7 +73,7 @@ function normalizeState(parsed){
   }
   return base;
 }
-function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null}){
+function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,pluginMarketplace=null}){
   const file=path.join(app.getPath('userData'),'grok-agent-runtime.json');
   let state=null,loading=null,writing=Promise.resolve();
   const aborts=new Map();
@@ -179,7 +179,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null}){
     getAuthorizationHeader:(server,signal)=>oauth.authorizationHeader(server,signal)
   });
   const workflowManager=createWorkflowManager({app});
-  const marketplace=createPluginMarketplace();
+  const marketplace=pluginMarketplace||createPluginMarketplace();
   const localBrowser=createLocalBrowserRuntime({BrowserWindow});
   const host=createHostRuntime({
     shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,requestApproval,onToolState,onAgentStatus,
