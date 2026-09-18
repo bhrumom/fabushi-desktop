@@ -19,8 +19,8 @@ function createDesktopServices({app,autoUpdater,env=process.env,platform=process
   const listeners=[];
   async function loadPrefs(){
     if(prefs)return prefs;
-    try{const parsed=JSON.parse(await fs.readFile(stateFile,'utf8'));prefs={trackOverride:TRACKS.includes(parsed.trackOverride)?parsed.trackOverride:null,autoUpdateWhenIdleOptIn:parsed.autoUpdateWhenIdleOptIn===true};}
-    catch{prefs={trackOverride:null,autoUpdateWhenIdleOptIn:false}}
+    try{const parsed=JSON.parse(await fs.readFile(stateFile,'utf8'));prefs={trackOverride:TRACKS.includes(parsed.trackOverride)?parsed.trackOverride:null,autoUpdateWhenIdleOptIn:parsed.autoUpdateWhenIdleOptIn===true,onboardingSeen:parsed.onboardingSeen===true};}
+    catch{prefs={trackOverride:null,autoUpdateWhenIdleOptIn:false,onboardingSeen:false}}
     return prefs;
   }
   async function savePrefs(){
@@ -102,8 +102,10 @@ function createDesktopServices({app,autoUpdater,env=process.env,platform=process
       return{ok:false,code:'unavailable'};
     }catch{return{ok:false,code:'unavailable'}}finally{clearTimeout(timer)}
   }
+  async function getOnboardingSeen(){return(await loadPrefs()).onboardingSeen===true}
+  async function setOnboardingSeen(seen){const preferences=await loadPrefs();preferences.onboardingSeen=seen===true;await savePrefs();return preferences.onboardingSeen}
   function dispose(){for(const[name,handler]of listeners)autoUpdater?.off?.(name,handler);listeners.length=0}
-  return{getInfo:()=>({version:String(app.getVersion()),platform,isPackaged:app.isPackaged===true}),update:{status,check,setTrack,setAutoUpdateWhenIdleOptIn,quitAndInstall},submitFeedback,dispose};
+  return{getInfo:()=>({version:String(app.getVersion()),platform,isPackaged:app.isPackaged===true}),getOnboardingSeen,setOnboardingSeen,update:{status,check,setTrack,setAutoUpdateWhenIdleOptIn,quitAndInstall},submitFeedback,dispose};
 }
 function parseDeepLink(value){
   let url;try{url=new URL(String(value||''))}catch{return null}
