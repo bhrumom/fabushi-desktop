@@ -35,7 +35,7 @@ function initialState(){
   const now=Date.now(),id=crypto.randomUUID();
   return{
     version:6,
-    agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false,pinned:false}],
+    agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false,pinned:false,avatarDataUrl:null,avatarShape:null,avatarColor:null}],
     messages:{[id]:[]},
     plugins:defaultCapabilities(),
     settings:{localToolPermission:'ask',autoReviewMode:'enforce',autoReviewAllowInstructions:[],autoReviewBlockInstructions:[],featureFlagOverrides:{}},
@@ -49,7 +49,7 @@ function normalizeState(parsed){
   if(!parsed||typeof parsed!=='object')return initialState();
   const base=initialState();
   if(Array.isArray(parsed.agents)&&parsed.agents.length){
-    base.agents=parsed.agents.map(a=>({...a,hidden:a.hidden===true,pinned:a.pinned===true,unread:a.unread===true,description:String(a.description||'').slice(0,2000),title:a.title==null?undefined:String(a.title).slice(0,240),notifyOnUpdatesEnabled:a.notifyOnUpdatesEnabled===true,status:['idle','thinking','running','waiting','error'].includes(a.status)?a.status:'idle'}));
+    base.agents=parsed.agents.map(a=>({...a,hidden:a.hidden===true,pinned:a.pinned===true,unread:a.unread===true,avatarDataUrl:typeof a.avatarDataUrl==='string'&&a.avatarDataUrl.startsWith('data:image/')?a.avatarDataUrl:null,avatarShape:typeof a.avatarShape==='string'&&a.avatarShape?a.avatarShape:null,avatarColor:typeof a.avatarColor==='string'&&a.avatarColor?a.avatarColor:null,description:String(a.description||'').slice(0,2000),title:a.title==null?undefined:String(a.title).slice(0,240),notifyOnUpdatesEnabled:a.notifyOnUpdatesEnabled===true,status:['idle','thinking','running','waiting','error'].includes(a.status)?a.status:'idle'}));
     base.messages={};
     for(const agent of base.agents)base.messages[agent.id]=Array.isArray(parsed.messages?.[agent.id])?parsed.messages[agent.id].map(row=>({...row,...(typeof row?.replyToId==='string'&&row.replyToId?{replyToId:row.replyToId}:{}),reactions:normalizedReactions(row?.reactions)})):[];
   }
@@ -123,19 +123,49 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function findAgent(id){const s=await load();return s.agents.find(a=>a.id===id)||null}
   async function listAgents(){const s=await load();return[...s.agents].sort((a,b)=>(Number(b.pinned)-Number(a.pinned))||(b.updatedAt-a.updatedAt))}
   async function createAgent({name,parentAgentId=null,purpose='user',description=''}){
-    const s=await load(),now=Date.now(),agent={id:crypto.randomUUID(),name:clean(name),description:String(description||'').slice(0,2000),title:undefined,notifyOnUpdatesEnabled:false,purpose:String(purpose||'user').slice(0,40),parentAgentId:parentAgentId||null,hidden:false,pinned:false,status:'idle',createdAt:now,updatedAt:now,unread:false};
+    const s=await load(),now=Date.now(),agent={id:crypto.randomUUID(),name:clean(name),description:String(description||'').slice(0,2000),title:undefined,notifyOnUpdatesEnabled:false,purpose:String(purpose||'user').slice(0,40),parentAgentId:parentAgentId||null,hidden:false,pinned:false,status:'idle',createdAt:now,updatedAt:now,unread:false,avatarDataUrl:null,avatarShape:null,avatarColor:null};
     s.agents.unshift(agent);s.messages[agent.id]=[];s.automations[agent.id]=[];await save();emit('agents.changed');return agent;
   }
   async function renameAgent({agentId,name}){
     const agent=await findAgent(agentId);if(!agent)throw Error('Agent not found');
     agent.name=clean(name,agent.name);agent.updatedAt=Date.now();await save();emit('agent.changed',{agentId});return agent;
   }
-  async function updateAgent({id,profile}){
+  async function updateAgent({id,profile,avatarShape,avatarColor}){
     const agent=await findAgent(id);if(!agent)throw Error('Agent not found');
-    const nextName=clean(profile?.name,agent.name);if(!nextName)throw Error('Agent name is required.');
-    agent.name=nextName;agent.description=String(profile?.description??agent.description??'').trim().slice(0,2000);
-    const title=String(profile?.title??'').trim().slice(0,240);agent.title=title||undefined;
+    if(profile&&typeof profile==='object'){
+      const nextName=clean(profile.name,agent.name);if(!nextName)throw Error('Agent name is required.');
+      agent.name=nextName;agent.description=String(profile.description??agent.description??'').trim().slice(0,2000);
+      const title=String(profile.title??'').trim().slice(0,240);agent.title=title||undefined;
+    }
+    if(avatarShape!==undefined)agent.avatarShape=String(avatarShape||'').trim().slice(0,40)||null;
+    if(avatarColor!==undefined)agent.avatarColor=String(avatarColor||'').trim().slice(0,40)||null;
     agent.updatedAt=Date.now();await save();emit('agent.changed',{agentId:id});return agent;
+  }
+  async function setAgentAvatarBytes({id,pngBase64}){
+    const agent=await findAgent(id);if(!agent)throw Error('Agent not found');
+    if(pngBase64==null||pngBase64==='')agent.avatarDataUrl=null;
+    else{
+      const value=String(pngBase64).replace(/\s+/g,'');
+      if(!/^[A-Za-z0-9+/]+={0,2}$/.test(value))throw Error('Avatar PNG is not valid base64.');
+      const bytes=Buffer.from(value,'base64');if(bytes.length===0||bytes.length>5*1024*1024)throw Error('Avatar PNG is too large.');
+      const signature=bytes.subarray(0,8).toString('hex');if(signature!=='89504e470d0a1a0a')throw Error('Avatar bytes must be PNG.');
+      agent.avatarDataUrl='data:image/png;base64,'+value;
+    }
+    agent.updatedAt=Date.now();await save();emit('agent.changed',{agentId:id,avatar:true});return agent;
+  }
+  async function generateAgentAvatarImage({description}){
+    const prompt=String(description||'').trim();if(!prompt)throw Error('Avatar description is required.');
+    const raw=String(process.env.FABUSHI_AVATAR_GENERATE_URL||'').trim();
+    if(!raw)throw Error('Avatar generation is not configured. Upload an image or use a Bot character.');
+    const url=new URL(raw),loopback=['127.0.0.1','localhost','::1','[::1]'].includes(url.hostname);
+    if(url.protocol!=='https:'&&!(url.protocol==='http:'&&loopback))throw Error('Avatar generation endpoint must use HTTPS.');
+    const token=await accountSession.getValidAccessToken().catch(()=>null);
+    const headers={'content-type':'application/json',accept:'application/json'};if(token)headers.authorization='Bearer '+token;
+    const response=await fetch(url,{method:'POST',headers,body:JSON.stringify({prompt})});
+    if(!response.ok)throw Error('Avatar generation HTTP '+response.status);
+    const body=await response.json(),dataUrl=typeof body?.dataUrl==='string'?body.dataUrl:typeof body?.pngBase64==='string'?'data:image/png;base64,'+body.pngBase64:'';
+    if(!dataUrl.startsWith('data:image/'))throw Error('Avatar generation returned no image.');
+    return dataUrl;
   }
   async function setAgentNotifyOnUpdates({id,isEnabled}){
     const agent=await findAgent(id);if(!agent)throw Error('Agent not found');
@@ -152,7 +182,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function duplicateAgent({agentId}){
     const source=await findAgent(agentId);if(!source)throw Error('Agent not found');
     const duplicate=await createAgent({name:source.name+' copy',parentAgentId:source.parentAgentId||null,purpose:source.purpose||'user',description:source.description||''});
-    duplicate.title=source.title;duplicate.notifyOnUpdatesEnabled=source.notifyOnUpdatesEnabled===true;await save();emit('agents.changed',{agentId:duplicate.id,duplicatedFrom:agentId});return duplicate;
+    duplicate.title=source.title;duplicate.notifyOnUpdatesEnabled=source.notifyOnUpdatesEnabled===true;duplicate.avatarDataUrl=source.avatarDataUrl||null;duplicate.avatarShape=source.avatarShape||null;duplicate.avatarColor=source.avatarColor||null;await save();emit('agents.changed',{agentId:duplicate.id,duplicatedFrom:agentId});return duplicate;
   }
   async function setAgentHidden({agentId,hidden}){
     const agent=await findAgent(agentId);if(!agent)throw Error('Agent not found');
@@ -784,7 +814,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
 
   return{
-    listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentPinned,setAgentUnread,duplicateAgent,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,respondToWidget,dismissWidget,submitSecret,reactToMessage,searchMessages,searchMedia,searchLinks,sendMessage,stopAgent,
+    listAgents,createAgent,renameAgent,updateAgent,setAgentAvatarBytes,generateAgentAvatarImage,setAgentNotifyOnUpdates,setAgentPinned,setAgentUnread,duplicateAgent,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,respondToWidget,dismissWidget,submitSecret,reactToMessage,searchMessages,searchMedia,searchLinks,sendMessage,stopAgent,
     listPlugins,setPluginInstalled,setPluginEnabled,getAccountStatus,loginAccount,cancelAccountLogin,logoutAccount,updateAccountName,getAccountAvatar,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getAsyncTasks,getExperimentsSnapshot,refreshExperiments,applyFeatureFlagOverride,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
   };
 }
