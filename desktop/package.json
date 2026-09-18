@@ -46,6 +46,7 @@
       "electron/grok-host-runtime.cjs",
       "electron/grok-exec-resources.cjs",
       "electron/grok-request-context.cjs",
+      "electron/grok-auto-review.cjs",
       "electron/grok-mcp-manager.cjs",
       "electron/grok-workflow-manager.cjs",
       "electron/grok-automation-schedule.cjs",
