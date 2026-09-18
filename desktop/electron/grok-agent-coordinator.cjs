@@ -6,6 +6,7 @@ const crypto=require('node:crypto');
 const {createHostRuntime}=require('./grok-host-runtime.cjs');
 const {createMcpManager,normalizeServer}=require('./grok-mcp-manager.cjs');
 const {createWorkflowManager}=require('./grok-workflow-manager.cjs');
+const {normalizeSchedule,isValidSchedule,computeNextRunAt,describeSchedule}=require('./grok-automation-schedule.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
@@ -19,13 +20,14 @@ function defaultCapabilities(){return Object.fromEntries(capabilityCatalog.map(p
 function initialState(){
   const now=Date.now(),id=crypto.randomUUID();
   return{
-    version:3,
+    version:4,
     agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false}],
     messages:{[id]:[]},
     plugins:defaultCapabilities(),
     settings:{localToolPermission:'ask'},
     pendingApprovals:{},
-    mcpServers:[]
+    mcpServers:[],
+    automations:{[id]:[]}
   };
 }
 function normalizeState(parsed){
@@ -44,6 +46,23 @@ function normalizeState(parsed){
   if(['always','ask','never'].includes(permission))base.settings.localToolPermission=permission;
   base.pendingApprovals={};
   base.mcpServers=Array.isArray(parsed.mcpServers)?parsed.mcpServers.flatMap(server=>{try{return[normalizeServer(server)]}catch{return[]}}):[];
+  base.automations={};
+  for(const agent of base.agents){
+    const rows=Array.isArray(parsed.automations?.[agent.id])?parsed.automations[agent.id]:[];
+    base.automations[agent.id]=rows.flatMap(value=>{
+      try{
+        const schedule=normalizeSchedule(value?.trigger?.schedule||'');
+        if(!value||typeof value!=='object'||!String(value.id||'')||!String(value.name||'')||!String(value.prompt||'')||!isValidSchedule(schedule))return[];
+        const createdAt=Number(value.createdAt)||Date.now(),lastRunAt=Number.isFinite(Number(value.lastRunAt))?Number(value.lastRunAt):null;
+        return[{
+          id:String(value.id),name:clean(value.name,'Routine'),prompt:String(value.prompt).slice(0,100000),
+          trigger:{type:'cron',schedule},triggerDescription:describeSchedule(schedule),isEnabled:value.isEnabled!==false,
+          runs:Array.isArray(value.runs)?value.runs.slice(0,100).filter(run=>run&&['running','ok','error'].includes(run.status)&&Number.isFinite(run.startedAt)):[],
+          createdAt,lastRunAt,nextRunAt:Number.isFinite(Number(value.nextRunAt))?Number(value.nextRunAt):computeNextRunAt(schedule,lastRunAt??createdAt)
+        }];
+      }catch{return[]}
+    });
+  }
   return base;
 }
 function createCoordinatorRuntime({app,BrowserWindow,shell}){
@@ -51,6 +70,8 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
   let state=null,writing=Promise.resolve();
   const aborts=new Map();
   const approvals=new Map();
+  let automationTimer=null;
+  let automationTickRunning=false;
 
   async function load(){
     if(state)return state;
@@ -74,7 +95,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
   async function listAgents(){const s=await load();return[...s.agents].sort((a,b)=>b.updatedAt-a.updatedAt)}
   async function createAgent({name}){
     const s=await load(),now=Date.now(),agent={id:crypto.randomUUID(),name:clean(name),status:'idle',createdAt:now,updatedAt:now,unread:false};
-    s.agents.unshift(agent);s.messages[agent.id]=[];await save();emit('agents.changed');return agent;
+    s.agents.unshift(agent);s.messages[agent.id]=[];s.automations[agent.id]=[];await save();emit('agents.changed');return agent;
   }
   async function renameAgent({agentId,name}){
     const agent=await findAgent(agentId);if(!agent)throw Error('Agent not found');
@@ -82,7 +103,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
   }
   async function deleteAgent({agentId}){
     const s=await load();aborts.get(agentId)?.abort();cancelApprovals(agentId,'Agent deleted.');
-    s.agents=s.agents.filter(a=>a.id!==agentId);delete s.messages[agentId];await save();emit('agents.changed');return{ok:true};
+    s.agents=s.agents.filter(a=>a.id!==agentId);delete s.messages[agentId];delete s.automations[agentId];await save();emit('agents.changed');return{ok:true};
   }
   async function getThread({agentId}){
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
@@ -178,6 +199,101 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
     return{ok:true};
   }
 
+  function automationRows(s,agentId){return s.automations[agentId]||(s.automations[agentId]=[])}
+  function automationSpec(input){
+    const name=clean(input?.name,'Routine'),prompt=String(input?.prompt||'').trim().slice(0,100000);
+    const schedule=normalizeSchedule(input?.trigger?.schedule||'');
+    if(!prompt)throw Error('Automation prompt is required.');
+    if(!isValidSchedule(schedule))throw Error('Automation schedule is invalid.');
+    return{name,prompt,trigger:{type:'cron',schedule},triggerDescription:describeSchedule(schedule),isEnabled:input?.isEnabled!==false};
+  }
+  function automationNext(record,after=Date.now()){return record.isEnabled?computeNextRunAt(record.trigger.schedule,after):null}
+  async function getAgentAutomations({id}){
+    const s=await load();if(!s.agents.some(agent=>agent.id===id))throw Error('Agent not found');
+    return automationRows(s,id).map(row=>({...row,runs:[...(row.runs||[])]}));
+  }
+  async function createAgentAutomation({id,spec}){
+    const s=await load();if(!s.agents.some(agent=>agent.id===id))throw Error('Agent not found');
+    const now=Date.now(),normalized=automationSpec(spec);
+    const record={id:crypto.randomUUID(),...normalized,runs:[],createdAt:now,lastRunAt:null,nextRunAt:normalized.isEnabled?computeNextRunAt(normalized.trigger.schedule,now):null};
+    automationRows(s,id).unshift(record);await save();emit('automations.changed',{agentId:id,automations:await getAgentAutomations({id})});void armAutomationTimer();return getAgentAutomations({id});
+  }
+  async function setAgentAutomationEnabled({id,automationId,isEnabled}){
+    const s=await load(),record=automationRows(s,id).find(row=>row.id===automationId);if(!record)throw Error('Automation not found');
+    record.isEnabled=isEnabled===true;record.nextRunAt=record.isEnabled?automationNext(record,Date.now()):null;
+    await save();emit('automations.changed',{agentId:id,automations:await getAgentAutomations({id})});void armAutomationTimer();return getAgentAutomations({id});
+  }
+  async function updateAgentAutomation({id,automationId,spec}){
+    const s=await load(),record=automationRows(s,id).find(row=>row.id===automationId);if(!record)throw Error('Automation not found');
+    const normalized=automationSpec(spec);Object.assign(record,normalized);record.nextRunAt=normalized.isEnabled?computeNextRunAt(normalized.trigger.schedule,Date.now()):null;
+    await save();emit('automations.changed',{agentId:id,automations:await getAgentAutomations({id})});void armAutomationTimer();return getAgentAutomations({id});
+  }
+  async function deleteAgentAutomation({id,automationId}){
+    const s=await load(),rows=automationRows(s,id),before=rows.length;s.automations[id]=rows.filter(row=>row.id!==automationId);
+    if(s.automations[id].length===before)throw Error('Automation not found');
+    await save();emit('automations.changed',{agentId:id,automations:await getAgentAutomations({id})});void armAutomationTimer();return getAgentAutomations({id});
+  }
+  async function waitForMessage(agentId,messageId,timeoutMs=600000){
+    const deadline=Date.now()+timeoutMs;
+    while(Date.now()<deadline){
+      const s=await load(),message=(s.messages[agentId]||[]).find(row=>row.id===messageId);
+      if(message&&['done','error','cancelled'].includes(message.status))return message;
+      await new Promise(resolve=>setTimeout(resolve,200));
+    }
+    throw Error('Automation run timed out.');
+  }
+  async function executeAutomation(agentId,automationId,event='manual'){
+    const s=await load(),record=automationRows(s,agentId).find(row=>row.id===automationId);if(!record)throw Error('Automation not found');
+    const run={id:crypto.randomUUID(),status:'running',startedAt:Date.now(),detail:null,event};
+    record.runs=[run,...(record.runs||[])].slice(0,100);record.lastRunAt=run.startedAt;record.nextRunAt=null;
+    await save();emit('automations.changed',{agentId,automations:await getAgentAutomations({id:agentId})});
+    try{
+      const result=await sendMessage({agentId,text:record.prompt});
+      const message=await waitForMessage(agentId,result.messageId);
+      run.status=message.status==='done'?'ok':'error';run.detail=String(message.text||'').slice(0,4000);
+    }catch(error){
+      run.status='error';run.detail=error instanceof Error?error.message:String(error);
+    }finally{
+      const current=await load(),fresh=automationRows(current,agentId).find(row=>row.id===automationId);
+      if(fresh){
+        const persisted=(fresh.runs||[]).find(item=>item.id===run.id);if(persisted)Object.assign(persisted,run);
+        fresh.lastRunAt=run.startedAt;fresh.nextRunAt=fresh.isEnabled?computeNextRunAt(fresh.trigger.schedule,run.startedAt):null;
+        await save();emit('automations.changed',{agentId,automations:await getAgentAutomations({id:agentId})});
+      }
+      void armAutomationTimer();
+    }
+  }
+  async function runAgentAutomationNow({id,automationId}){await executeAutomation(id,automationId,'manual')}
+  async function processDueAutomations(){
+    if(automationTickRunning)return;automationTickRunning=true;
+    try{
+      const s=await load(),now=Date.now(),due=[];
+      for(const agent of s.agents){
+        for(const record of automationRows(s,agent.id)){
+          if(record.isEnabled&&Number.isFinite(record.nextRunAt)&&record.nextRunAt<=now)due.push([agent.id,record.id]);
+        }
+      }
+      for(const [agentId,automationId] of due)await executeAutomation(agentId,automationId,'schedule');
+    }finally{automationTickRunning=false;void armAutomationTimer()}
+  }
+  async function armAutomationTimer(){
+    if(automationTimer){clearTimeout(automationTimer);automationTimer=null}
+    const s=await load(),now=Date.now();let nearest=null,changed=false;
+    for(const agent of s.agents){
+      for(const record of automationRows(s,agent.id)){
+        if(!record.isEnabled){record.nextRunAt=null;continue}
+        if(!Number.isFinite(record.nextRunAt)){record.nextRunAt=computeNextRunAt(record.trigger.schedule,record.lastRunAt??record.createdAt??now);changed=true}
+        if(Number.isFinite(record.nextRunAt)&&(nearest==null||record.nextRunAt<nearest))nearest=record.nextRunAt;
+      }
+    }
+    if(changed)await save();
+    if(nearest!=null){
+      const delay=Math.max(25,Math.min(2147483647,nearest-now));
+      automationTimer=setTimeout(()=>{automationTimer=null;void processDueAutomations()},delay);
+    }
+  }
+  void armAutomationTimer();
+
   async function listMcpServers(){
     const s=await load();
     return (s.mcpServers||[]).map(server=>({id:server.id,name:server.name,command:server.command,args:[...(server.args||[])],enabled:server.enabled!==false,disabledTools:[...(server.disabledTools||[])]}));
@@ -244,7 +360,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
 
   return{
     listAgents,createAgent,renameAgent,deleteAgent,getThread,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,removeMcpServer,setMcpServerEnabled,listMcpServerTools,setMcpToolEnabled,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getRuntimeSettings,setLocalToolPermission,resolveApproval
+    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,removeMcpServer,setMcpServerEnabled,listMcpServerTools,setMcpToolEnabled,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,resolveApproval
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
