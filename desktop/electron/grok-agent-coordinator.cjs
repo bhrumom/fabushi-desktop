@@ -360,6 +360,18 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null}){
     if((s.mcpServers||[]).some(x=>x.id===server.id))throw Error('MCP server id already exists.');
     s.mcpServers.push(server);await save();emit('plugins.changed');return server;
   }
+  async function updateMcpServer({serverId,...patch}){
+    const s=await load(),index=s.mcpServers.findIndex(x=>x.id===serverId);if(index<0)throw Error('MCP server not found.');
+    const previous=s.mcpServers[index],next=normalizeServer({...previous,...patch,id:previous.id});
+    const oldAccount=previous.accountKey||'default',newAccount=next.accountKey||'default';
+    const authIdentityChanged=previous.transport==='http'&&(next.transport!=='http'||previous.url!==next.url||previous.oauthClientId!==next.oauthClientId||previous.oauthAuthorizationUrl!==next.oauthAuthorizationUrl||previous.oauthTokenUrl!==next.oauthTokenUrl);
+    if(previous.transport==='http'&&next.transport==='http'&&oldAccount!==newAccount&&!authIdentityChanged){
+      await oauth.rename(previous.id,oldAccount,newAccount).catch(()=>{});
+    }else if(previous.transport==='http'&&authIdentityChanged){
+      await oauth.disconnect(previous.id,oldAccount).catch(()=>{});
+    }
+    s.mcpServers[index]=next;mcp.disposeServer(previous.id);await save();emit('plugins.changed',{serverId:previous.id});return next;
+  }
   async function removeMcpServer({serverId}){
     const s=await load(),server=s.mcpServers.find(x=>x.id===serverId),before=s.mcpServers.length;
     if(!server)throw Error('MCP server not found.');
@@ -448,7 +460,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null}){
 
   return{
     listAgents,createAgent,renameAgent,deleteAgent,getThread,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,listMcpServerTools,setMcpToolEnabled,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,resolveApproval
+    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,listMcpServerTools,setMcpToolEnabled,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,resolveApproval
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
