@@ -15,6 +15,7 @@ const {createPluginMarketplace}=require('./grok-plugin-marketplace.cjs');
 const {createOutputSpiller}=require('./grok-output-spill.cjs');
 const {deriveConversationOutline}=require('./grok-conversation-outline.cjs');
 const {normalizedReactions,toggleSelfReaction,resolveReplyTarget,searchWorkspaceIndex}=require('./grok-message-interactions.cjs');
+const {createMemoryStore}=require('./grok-memory-store.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
@@ -208,6 +209,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     getAuthorizationHeader:(server,signal)=>oauth.authorizationHeader(server,signal)
   });
   const workflowManager=createWorkflowManager({app});
+  const memoryStore=createMemoryStore({app});
   const marketplace=pluginMarketplace||createPluginMarketplace();
   const outputSpiller=createOutputSpiller({app});
   const localBrowser=createLocalBrowserRuntime({BrowserWindow});
@@ -218,8 +220,29 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     transcript.push(entry);agent.updatedAt=Date.now();await save();emit('message.done',{agentId,messageId:entry.id,text:entry.text,status:'done'});return entry.id;
   }
   async function reactFromAgent({agentId,messageAddress,emoji}){return reactToMessage({agentId,entryId:messageAddress,emoji,userOnly:true})}
+  async function applyAgentStateUpdate(input){
+    const {agentId,target,action}=input,agent=await findAgent(agentId);if(!agent)throw Error('Agent not found');
+    if(target==='memory')return action==='write'?memoryStore.write({agentId,content:input.fact,tier:input.tier||'log',scope:input.scope||'agent',project:input.project||null}):memoryStore.forget({agentId,content:input.fact,scope:input.scope||'agent',project:input.project||null});
+    if(target==='routine'){
+      if(action==='create'){const rows=await createAgentAutomation({id:agentId,spec:{name:input.name,prompt:input.prompt,trigger:{type:'cron',schedule:input.schedule},isEnabled:input.enabled!==false}});return{ok:true,detail:'Routine created: '+rows[0]?.name};}
+      if(action==='update'){const rows=await updateAgentAutomation({id:agentId,automationId:String(input.id||''),spec:{name:input.name,prompt:input.prompt,trigger:{type:'cron',schedule:input.schedule},isEnabled:input.enabled!==false}});return{ok:true,detail:'Routine updated: '+(rows.find(row=>row.id===input.id)?.name||input.id)};}
+      if(action==='pause'||action==='resume'){await setAgentAutomationEnabled({id:agentId,automationId:String(input.id||''),isEnabled:action==='resume'});return{ok:true,detail:action==='resume'?'Routine resumed.':'Routine paused.'};}
+      if(action==='delete'){await deleteAgentAutomation({id:agentId,automationId:String(input.id||'')});return{ok:true,detail:'Routine deleted.'};}
+    }
+    if(target==='workflow'){
+      if(action==='write'){const record=await saveWorkflow({id:input.id,name:input.name,description:input.description||'',body:input.body,isEnabledForAgent:true});return{ok:true,detail:'Workflow saved: '+record.name+' ('+record.id+')'};}
+      if(action==='delete'){await deleteWorkflow({id:String(input.id||'')});return{ok:true,detail:'Workflow deleted.'};}
+    }
+    if(target==='profile'&&action==='set'){await updateAgent({id:agentId,profile:{name:input.name??agent.name,title:agent.title,description:input.description??agent.description??''}});return{ok:true,detail:'Agent profile updated.'};}
+    if(target==='settings'&&action==='set'){
+      if(input.hidden_from_sidebar!=null)await setAgentHidden({agentId,hidden:input.hidden_from_sidebar===true});
+      if(input.notify_on_updates!=null)await setAgentNotifyOnUpdates({id:agentId,isEnabled:input.notify_on_updates===true});
+      return{ok:true,detail:'Agent settings updated.'};
+    }
+    return{ok:false,reason:'Unsupported state update.'};
+  }
   const host=createHostRuntime({
-    shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,getAutoReviewInstructions:async()=>{const settings=(await load()).settings;return{allowInstructions:[...(settings.autoReviewAllowInstructions||[])],blockInstructions:[...(settings.autoReviewBlockInstructions||[])]}},resolveAttachments:async ids=>attachmentGateway?attachmentGateway.resolve(ids):[],requestApproval,onToolState,onAgentStatus,onAssistantDelta,sendVisibleMessage:appendVisibleAssistantMessage,reactToConversationMessage:reactFromAgent,
+    shell,getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,getAutoReviewInstructions:async()=>{const settings=(await load()).settings;return{allowInstructions:[...(settings.autoReviewAllowInstructions||[])],blockInstructions:[...(settings.autoReviewBlockInstructions||[])]}},resolveAttachments:async ids=>attachmentGateway?attachmentGateway.resolve(ids):[],requestApproval,onToolState,onAgentStatus,onAssistantDelta,sendVisibleMessage:appendVisibleAssistantMessage,reactToConversationMessage:reactFromAgent,updateState:applyAgentStateUpdate,getMemoryContext:agentId=>memoryStore.context(agentId),
     getExternalTools:()=>mcp.collectToolDefinitions(),
     executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args),
     getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
