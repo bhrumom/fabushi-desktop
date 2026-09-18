@@ -1,12 +1,15 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
-import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
+import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor, WorkspaceLinkSearchResult, WorkspaceMediaSearchResult, WorkspaceMessageSearchResult } from './grok-types';
 import './grok-app.css';
 
 const bridge=getAgentBridge();
 const initials=(name:string)=>name.trim().split(/\s+/).slice(0,2).map(x=>x[0]?.toUpperCase()||'').join('')||'A';
 const formatTime=(v:number)=>new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit'}).format(new Date(v));
 const busy=(status:AgentSummary['status'])=>status==='thinking'||status==='running'||status==='waiting';
+const QUICK_REACTIONS=['👍','👎','❤️','😂','🎉','😮'] as const;
+const messageLabel=(message:AgentMessage|null|undefined)=>message?.role==='user'?'You':message?.role==='assistant'?'Agent':'Message';
+const messagePreview=(message:AgentMessage|null|undefined)=>{const text=String(message?.text||'').replace(/\s+/g,' ').trim();return text?text.slice(0,96)+(text.length>96?'…':''):message?.attachments?.[0]?.name||'(unavailable)'};
 
 function Status({status}:{status:AgentSummary['status']}) {
   return <span className={'status status-'+status} aria-label={status}/>;
@@ -80,29 +83,38 @@ function AttachmentCards({items}:{items:AttachmentDescriptor[]|undefined}) {
   </>;
 }
 
-function Message({message,onResolve}:{message:AgentMessage;onResolve(approvalId:string,approved:boolean):Promise<void>}) {
+function Message({message,messages,onResolve,onReply,onReact}:{message:AgentMessage;messages:AgentMessage[];onResolve(approvalId:string,approved:boolean):Promise<void>;onReply(message:AgentMessage):void;onReact(entryId:string,emoji:string):Promise<void>}) {
   if(message.role==='tool')return <div data-entry-id={message.id}><ToolMessage message={message} onResolve={onResolve}/></div>;
+  const referenced=message.replyToId?messages.find(row=>row.id===message.replyToId):null;
+  const counts=new Map<string,number>();for(const reaction of message.reactions||[])counts.set(reaction.emoji,(counts.get(reaction.emoji)||0)+1);
   return <article className={'message '+message.role} data-entry-id={message.id}>
     <div className="message-meta"><strong>{message.role==='user'?'You':message.role==='assistant'?'Agent':'System'}</strong><time>{formatTime(message.createdAt)}</time></div>
+    {message.replyToId?<button className="message-reference" onClick={()=>document.querySelector<HTMLElement>(`[data-entry-id="${CSS.escape(message.replyToId!)}"]`)?.scrollIntoView({block:'center',behavior:'smooth'})}><strong>{messageLabel(referenced)}</strong><span>{messagePreview(referenced)}</span></button>:null}
     <div className="message-text">{message.text}</div>
     <AttachmentCards items={message.attachments}/>
     {message.status==='streaming'?<span className="stream-caret"/>:null}
+    {(message.role==='user'||message.role==='assistant')&&message.status!=='streaming'?<div className="message-actions">
+      <button onClick={()=>onReply(message)}>Reply</button>
+      {QUICK_REACTIONS.map(emoji=><button key={emoji} className={(message.reactions||[]).some(row=>row.emoji===emoji&&row.by==='me')?'active':''} aria-label={'React '+emoji} onClick={()=>void onReact(message.id,emoji)}>{emoji}{counts.get(emoji)?<small>{counts.get(emoji)}</small>:null}</button>)}
+    </div>:null}
   </article>;
 }
 
-function Composer({running,onSend,onStop}:{running:boolean;onSend(text:string,attachmentIds:string[]):Promise<void>;onStop():Promise<void>}) {
+function Composer({running,replyTarget,onClearReply,onSend,onStop}:{running:boolean;replyTarget:AgentMessage|null;onClearReply():void;onSend(text:string,attachmentIds:string[],replyToId:string|null):Promise<void>;onStop():Promise<void>}) {
   const [text,setText]=useState('');
   const [attachments,setAttachments]=useState<AttachmentDescriptor[]>([]);
   const [submitting,setSubmitting]=useState(false);
   const submit=async()=>{
     const value=text.trim();if((!value&&!attachments.length)||submitting||running)return;
     setSubmitting(true);
-    try{await onSend(value,attachments.map(item=>item.id));setText('');setAttachments([])}finally{setSubmitting(false)}
+    try{await onSend(value,attachments.map(item=>item.id),replyTarget?.id||null);setText('');setAttachments([]);onClearReply()}finally{setSubmitting(false)}
   };
   return <div className="composer sand-prompt-shell sand-prompt-form">
+    {replyTarget?<div className="composer-reply"><span><strong>Replying to {messageLabel(replyTarget)}</strong><small>{messagePreview(replyTarget)}</small></span><button aria-label="Cancel reply" onClick={onClearReply}>×</button></div>:null}
     {attachments.length?<div className="composer-attachments">{attachments.map(item=><span key={item.id}><span>{item.name}</span><button aria-label={'Remove '+item.name} onClick={()=>setAttachments(rows=>rows.filter(row=>row.id!==item.id))}>×</button></span>)}</div>:null}
     <textarea rows={1} value={text} disabled={running} placeholder={running?'Agent is working…':'Message agent'} onChange={e=>setText(e.target.value)} onKeyDown={e=>{
       if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();void submit()}
+      if(e.key==='Escape'&&replyTarget){e.preventDefault();onClearReply()}
     }}/>
     <div className="composer-bar"><div>
       <button title="Attach file" disabled={running} onClick={async()=>{const file=await bridge.pickFile();if(file)setAttachments(rows=>rows.some(row=>row.id===file.id)?rows:[...rows,file])}}>＋</button>
@@ -181,19 +193,22 @@ function Workspace({agent,thread,refresh,openAutomations,openAgentSettings}:{age
   const [outlineOpen,setOutlineOpen]=useState(false);
   const [computerOpen,setComputerOpen]=useState(false);
   const [findOpen,setFindOpen]=useState(false);
+  const [replyToId,setReplyToId]=useState<string|null>(null);
+  const replyTarget=(thread?.messages||[]).find(message=>message.id===replyToId&&(message.role==='user'||message.role==='assistant'))||null;
   useEffect(()=>{scroller.current?.scrollTo({top:scroller.current.scrollHeight})},[thread?.messages.length]);
+  useEffect(()=>{if(replyToId&&!replyTarget)setReplyToId(null)},[replyToId,replyTarget]);
   useEffect(()=>{const onKey=(event:KeyboardEvent)=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='f'){event.preventDefault();setFindOpen(true)}else if(event.key==='Escape'&&findOpen)setFindOpen(false)};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[findOpen]);
   return <main className="workspace">
     <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><nav className="header-actions"><button className="header-action sand-chat-header__computer" data-computer-active={busy(agent.status)||undefined} onClick={()=>setComputerOpen(value=>!value)}>Computer</button><button className="header-action" onClick={()=>setFindOpen(true)}>Find</button><button className="header-action" onClick={()=>setOutlineOpen(value=>!value)}>Outline</button><button className="header-action" onClick={openAgentSettings}>Agent</button><button className="header-action" onClick={openAutomations}>Routines</button></nav></header>
     {findOpen?<FindInChat thread={thread} onClose={()=>setFindOpen(false)}/>:null}
     <div className="transcript sand-virtual-transcript" ref={scroller}><div className="transcript-column">
-      {thread?.messages.length?thread.messages.map(message=><Message key={message.id} message={message} onResolve={async(approvalId,approved)=>{
+      {thread?.messages.length?thread.messages.map(message=><Message key={message.id} message={message} messages={thread.messages} onReply={target=>setReplyToId(target.id)} onReact={async(entryId,emoji)=>{await bridge.reactToMessage({agentId:agent.id,entryId,emoji});await refresh()}} onResolve={async(approvalId,approved)=>{
         await bridge.resolveApproval({approvalId,approved});await refresh();
       }}/>):<section className="welcome"><span className="avatar hero">{initials(agent.name)}</span><h2>{agent.name}</h2><p>This agent works directly on this Mac.</p></section>}
     </div></div>
     {outlineOpen?<ConversationOutline thread={thread} onClose={()=>setOutlineOpen(false)}/>:null}
     {computerOpen?<ComputerInfoPane agent={agent} thread={thread} onClose={()=>setComputerOpen(false)}/>:null}
-    <Composer running={busy(agent.status)} onSend={async(text,attachmentIds)=>{await bridge.sendMessage({agentId:agent.id,text,attachmentIds});await refresh()}} onStop={async()=>{
+    <Composer running={busy(agent.status)} replyTarget={replyTarget} onClearReply={()=>setReplyToId(null)} onSend={async(text,attachmentIds,replyToId)=>{await bridge.sendMessage({agentId:agent.id,text,attachmentIds,replyToId});await refresh()}} onStop={async()=>{
       await bridge.stopAgent({agentId:agent.id});await refresh();
     }}/>
   </main>;
@@ -554,8 +569,12 @@ function DeleteAgent({agent,onClose,onDeleted}:{agent:AgentSummary;onClose():voi
   return <div className="shade"><section className="create-dialog"><h2>Delete {agent.name}?</h2><p>This removes its local conversation transcript from this Fabushi profile.</p><div><button onClick={onClose}>Cancel</button><button className="danger" onClick={async()=>{await bridge.deleteAgent({agentId:agent.id});await onDeleted();onClose()}}>Delete</button></div></section></div>;
 }
 
-function CommandPalette({agents,onClose,onSelect,onCreate,onOrgChart,onHiddenChats,onPlugins,onSettings}:{agents:AgentSummary[];onClose():void;onSelect(id:string):void;onCreate():void;onOrgChart():void;onHiddenChats():void;onPlugins():void;onSettings():void}) {
+function CommandPalette({agents,onClose,onSelect,onSelectEntry,onCreate,onOrgChart,onHiddenChats,onPlugins,onSettings}:{agents:AgentSummary[];onClose():void;onSelect(id:string):void;onSelectEntry(agentId:string,entryId:string):void;onCreate():void;onOrgChart():void;onHiddenChats():void;onPlugins():void;onSettings():void}) {
   const [query,setQuery]=useState('');
+  const [messages,setMessages]=useState<WorkspaceMessageSearchResult[]>([]);
+  const [media,setMedia]=useState<WorkspaceMediaSearchResult[]>([]);
+  const [links,setLinks]=useState<WorkspaceLinkSearchResult[]>([]);
+  const [searching,setSearching]=useState(false);
   const actions=[
     {id:'new',label:'New agent',run:onCreate},
     {id:'orgchart',label:'Open Org chart',run:onOrgChart},
@@ -564,9 +583,23 @@ function CommandPalette({agents,onClose,onSelect,onCreate,onOrgChart,onHiddenCha
     {id:'settings',label:'Open Settings',run:onSettings},
     ...agents.map(agent=>({id:'agent:'+agent.id,label:'Open '+agent.name,run:()=>onSelect(agent.id)}))
   ].filter(item=>item.label.toLowerCase().includes(query.toLowerCase()));
+  useEffect(()=>{
+    const value=query.trim();let active=true;
+    if(!value){setMessages([]);setMedia([]);setLinks([]);setSearching(false);return()=>{active=false}}
+    setSearching(true);
+    const timer=window.setTimeout(()=>{void Promise.all([bridge.searchMessages({query:value,limit:20}),bridge.searchMedia({query:value,limit:20}),bridge.searchLinks({query:value,limit:20})]).then(([nextMessages,nextMedia,nextLinks])=>{if(active){setMessages(nextMessages);setMedia(nextMedia);setLinks(nextLinks)}}).finally(()=>{if(active)setSearching(false)})},100);
+    return()=>{active=false;window.clearTimeout(timer)};
+  },[query]);
+  const hasResults=actions.length||messages.length||media.length||links.length;
   return <div className="shade palette-shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="command-palette sand-command-palette" role="dialog" aria-label="Command palette">
-    <input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search commands and agents" onKeyDown={e=>{if(e.key==='Escape')onClose()}}/>
-    <div>{actions.length?actions.map(item=><button key={item.id} onClick={()=>{item.run();onClose()}}>{item.label}</button>):<p>No commands found.</p>}</div>
+    <input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search agents, messages, files and links" onKeyDown={e=>{if(e.key==='Escape')onClose()}}/>
+    <div className="palette-results">
+      {actions.length?<section><small>Commands</small>{actions.map(item=><button key={item.id} onClick={()=>{item.run();onClose()}}>{item.label}</button>)}</section>:null}
+      {messages.length?<section><small>Messages</small>{messages.map(item=><button key={item.agentId+':'+item.entryId} onClick={()=>{onSelectEntry(item.agentId,item.entryId);onClose()}}><strong>{item.agentName}</strong><span>{item.text||'(empty)'}</span></button>)}</section>:null}
+      {media.length?<section><small>Files</small>{media.map(item=><button key={item.agentId+':'+item.entryId+':'+item.attachmentId} onClick={()=>{onSelectEntry(item.agentId,item.entryId);onClose()}}><strong>{item.fileName}</strong><span>{item.agentName} · {item.kind}</span></button>)}</section>:null}
+      {links.length?<section><small>Links</small>{links.map(item=><button key={item.url} onClick={()=>{onSelectEntry(item.agentId,item.entryId);onClose()}}><strong>{item.url}</strong><span>{item.agentName}</span></button>)}</section>:null}
+      {searching?<p className="palette-status">Searching…</p>:!hasResults?<p>No results found.</p>:null}
+    </div>
   </section></div>;
 }
 
@@ -582,6 +615,7 @@ export default function GrokApp(){
   const [renameAgent,setRenameAgent]=useState<AgentSummary|null>(null);
   const [deleteAgent,setDeleteAgent]=useState<AgentSummary|null>(null);
   const [paletteOpen,setPaletteOpen]=useState(false);
+  const [pendingJump,setPendingJump]=useState<{agentId:string;entryId:string}|null>(null);
   const [query,setQuery]=useState('');
   const [loading,setLoading]=useState(true);
   const [failure,setFailure]=useState('');
@@ -599,6 +633,7 @@ export default function GrokApp(){
 
   useEffect(()=>{void refreshAll()},[]);
   useEffect(()=>{if(selectedId)void loadThread(selectedId).catch(error=>setFailure(error instanceof Error?error.message:String(error)));else setThread(null)},[selectedId]);
+  useEffect(()=>{if(!pendingJump||pendingJump.agentId!==selectedId)return;const handle=window.setTimeout(()=>{const target=document.querySelector<HTMLElement>(`[data-entry-id="${CSS.escape(pendingJump.entryId)}"]`);if(target){target.scrollIntoView({block:'center',behavior:'smooth'});target.classList.add('message-jump');window.setTimeout(()=>target.classList.remove('message-jump'),1200);setPendingJump(null)}},80);return()=>window.clearTimeout(handle)},[pendingJump,selectedId,thread?.messages.length]);
   useEffect(()=>subscribeAgentEvents(event=>{
     if(event.type==='agents.changed'||event.type==='agent.changed')void loadAgents().catch(()=>{});
     if(event.type==='plugins.changed')void loadPlugins().catch(()=>{});
@@ -633,6 +668,6 @@ export default function GrokApp(){
     {createOpen?<CreateAgent onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>setSelectedId(agent.id))}}/>:null}
     {renameAgent?<RenameAgent agent={renameAgent} onClose={()=>setRenameAgent(null)} onSaved={loadAgents}/>:null}
     {deleteAgent?<DeleteAgent agent={deleteAgent} onClose={()=>setDeleteAgent(null)} onDeleted={async()=>{await loadAgents();setThread(null)}}/>:null}
-    {paletteOpen?<CommandPalette agents={agents} onClose={()=>setPaletteOpen(false)} onSelect={setSelectedId} onCreate={()=>setCreateOpen(true)} onOrgChart={()=>setOverlay('orgchart')} onHiddenChats={()=>setOverlay('hidden')} onPlugins={()=>setOverlay('plugins')} onSettings={()=>setOverlay('settings')}/>:null}
+    {paletteOpen?<CommandPalette agents={agents} onClose={()=>setPaletteOpen(false)} onSelect={setSelectedId} onSelectEntry={(agentId,entryId)=>{setSelectedId(agentId);setPendingJump({agentId,entryId})}} onCreate={()=>setCreateOpen(true)} onOrgChart={()=>setOverlay('orgchart')} onHiddenChats={()=>setOverlay('hidden')} onPlugins={()=>setOverlay('plugins')} onSettings={()=>setOverlay('settings')}/>:null}
   </div>;
 }
