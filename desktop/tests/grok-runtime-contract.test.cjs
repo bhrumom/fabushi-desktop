@@ -5,6 +5,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs/promises');
 const os=require('node:os');
 const path=require('node:path');
+const http=require('node:http');
 const {createCoordinatorRuntime}=require('../electron/grok-agent-coordinator.cjs');
 const {createWorkflowManager}=require('../electron/grok-workflow-manager.cjs');
 
@@ -85,4 +86,32 @@ test('per-agent routine runNow executes through host and records embedded run hi
   assert.equal(rows[0].runs[0].status,'ok');
   assert.equal(rows[0].runs[0].event,'manual');
   assert.match(rows[0].runs[0].detail,/Agent host is ready on this Mac/);
+});
+
+
+test('remote HTTP MCP performs initialize and tools/list over a real local HTTP endpoint',async t=>{
+  const requests=[];
+  const server=http.createServer((req,res)=>{
+    let raw='';req.setEncoding('utf8');req.on('data',chunk=>{raw+=chunk});req.on('end',()=>{
+      const message=JSON.parse(raw||'{}');requests.push(message.method);
+      if(message.method==='notifications/initialized'){res.statusCode=202;res.end();return}
+      res.setHeader('content-type','application/json');
+      if(message.method==='initialize'){res.end(JSON.stringify({jsonrpc:'2.0',id:message.id,result:{protocolVersion:'2025-06-18',capabilities:{},serverInfo:{name:'fixture',version:'1'}}}));return}
+      if(message.method==='tools/list'){res.end(JSON.stringify({jsonrpc:'2.0',id:message.id,result:{tools:[{name:'echo',description:'Echo input',inputSchema:{type:'object',properties:{text:{type:'string'}}}}]}}));return}
+      if(message.method==='tools/call'){res.end(JSON.stringify({jsonrpc:'2.0',id:message.id,result:{content:[{type:'text',text:String(message.params?.arguments?.text||'')}]}}));return}
+      res.statusCode=400;res.end('{}');
+    });
+  });
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  t.after(()=>new Promise(resolve=>server.close(resolve)));
+  const address=server.address();assert.equal(typeof address,'object');
+  const f=await fixture();t.after(()=>fs.rm(f.root,{recursive:true,force:true}));
+  const runtime=createCoordinatorRuntime(f);
+  const added=await runtime.addMcpServer({name:'Remote fixture',transport:'http',url:'http://127.0.0.1:'+address.port+'/mcp',customInstructions:'Use only for fixture echoes.'});
+  assert.equal(added.transport,'http');
+  const tools=await runtime.listMcpServerTools({serverId:added.id});
+  assert.equal(tools.length,1);assert.equal(tools[0].name,'echo');
+  assert.deepEqual(requests.slice(0,3),['initialize','notifications/initialized','tools/list']);
+  const listed=await runtime.listMcpServers();
+  assert.equal(listed[0].customInstructions,'Use only for fixture echoes.');
 });
