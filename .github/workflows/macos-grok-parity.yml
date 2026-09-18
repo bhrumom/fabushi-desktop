@@ -1,16 +1,15 @@
 name: macOS Grok parity package
 on:
-  pull_request:
-    paths:
-      - "desktop/**"
-      - ".github/workflows/macos-grok-parity.yml"
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - "desktop/**"
       - ".github/workflows/macos-grok-parity.yml"
+
 permissions:
   contents: write
+
 jobs:
   macos-package:
     runs-on: macos-15
@@ -37,8 +36,8 @@ jobs:
             desktop/release/*.dmg
             desktop/release/*.zip
           if-no-files-found: error
-      - name: Publish prerelease from main
-        if: github.event_name == 'push'
+      - name: Publish prerelease from canonical main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: grok-parity-mac-${{ github.run_number }}
