@@ -9,7 +9,7 @@ const {requiresAutoReview,canonicalAutoReviewTarget,fingerprintAutoReviewTarget,
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
+function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
   function systemPrompt(agent,enabled,workflowContext){
     const parts=[
       `You are ${agent.name}, a Fabushi desktop agent following the Grok Bot host/coordinator execution model.`,
@@ -202,10 +202,17 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     });
     const latestUser=[...history].reverse().find(x=>x.role==='user');
     const workflowContext=await getWorkflowContext(latestUser?.text||'');
-    const messages=[
-      {role:'system',content:systemPrompt(agent,enabled,workflowContext)},
-      ...history.filter(x=>x.role==='user'||x.role==='assistant').slice(-40).map(x=>({role:x.role,content:x.text}))
-    ];
+    const messages=[{role:'system',content:systemPrompt(agent,enabled,workflowContext)}];
+    for(const row of history.filter(x=>x.role==='user'||x.role==='assistant').slice(-40)){
+      let content=String(row.text||'');
+      if(row.role==='user'&&Array.isArray(row.attachments)&&row.attachments.length){
+        const resolved=await resolveAttachments(row.attachments.map(item=>item.id));
+        if(resolved.length){
+          content+=(content?'\n\n':'')+'Attached local files (use Files tools to inspect them):\n'+resolved.map(item=>'- '+item.name+' ['+item.mime+'] at '+item.path).join('\n');
+        }
+      }
+      messages.push({role:row.role,content});
+    }
 
     for(let round=0;round<12;round++){
       if(signal?.aborted)throw abortError();
