@@ -76,24 +76,50 @@ function ToolMessage({message,onResolve}:{message:AgentMessage;onResolve(approva
 function AttachmentCards({items}:{items:AttachmentDescriptor[]|undefined}) {
   const [preview,setPreview]=useState<AttachmentPreview|null>(null),[error,setError]=useState('');
   if(!items?.length)return null;
-  const open=async(item:AttachmentDescriptor)=>{setError('');try{setPreview(await bridge.readAttachment({id:item.id}))}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}};
+  const open=async(item:AttachmentDescriptor)=>{setError('');try{if(item.remoteUrl){await bridge.openExternal({url:item.remoteUrl});return}setPreview(await bridge.readAttachment({id:item.id}))}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}};
   return <><div className="attachment-cards">{items.map(item=><button key={item.id} className="attachment-card" onClick={()=>void open(item)}><span>{item.kind==='image'?'▧':item.kind==='pdf'?'▤':'▱'}</span><span><strong>{item.name}</strong><small>{item.mime} · {Math.max(1,Math.ceil(item.size/1024))} KB</small></span></button>)}</div>
     {error?<div className="attachment-error">{error}</div>:null}
     {preview?<div className="shade attachment-preview-shade" onMouseDown={e=>e.currentTarget===e.target&&setPreview(null)}><section className="attachment-preview" role="dialog" aria-label={preview.name}><header><strong>{preview.name}</strong><button aria-label="Close" onClick={()=>setPreview(null)}>×</button></header><div>{preview.kind==='image'?<img src={preview.dataUrl} alt={preview.name}/>:preview.kind==='pdf'||preview.kind==='text'?<iframe sandbox="" src={preview.dataUrl} title={preview.name}/>:<div className="attachment-no-preview">Preview unavailable for {preview.mime}</div>}</div></section></div>:null}
   </>;
 }
 
-function Message({message,messages,onResolve,onReply,onReact}:{message:AgentMessage;messages:AgentMessage[];onResolve(approvalId:string,approved:boolean):Promise<void>;onReply(message:AgentMessage):void;onReact(entryId:string,emoji:string):Promise<void>}) {
+function WidgetCard({agentId,message,onChanged}:{agentId:string;message:AgentMessage;onChanged():Promise<void>}) {
+  const widget=message.widget!;
+  const [custom,setCustom]=useState(''),[pending,setPending]=useState(false),[error,setError]=useState('');
+  if(message.respondedValue!=null){
+    const label=widget.options.find(option=>(option.value??option.label)===message.respondedValue)?.label??message.respondedValue;
+    return <section className="widget-card resolved"><p>{widget.prompt}</p><div className="widget-selected"><span>{label}</span><span>✓</span></div></section>;
+  }
+  if(message.widgetDismissed)return <section className="widget-card dismissed"><p>{widget.prompt}</p><span>Dismissed</span></section>;
+  const respond=async(value:string)=>{const answer=value.trim();if(!answer||pending)return;setPending(true);setError('');try{const result=await bridge.respondToWidget({agentId,entryId:message.id,value:answer});if(!result.accepted)throw Error('This question is no longer available.');setCustom('');await onChanged()}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}};
+  const dismiss=async()=>{if(pending)return;setPending(true);setError('');try{const result=await bridge.dismissWidget({agentId,entryId:message.id});if(!result.accepted)throw Error('This question is no longer available.');await onChanged()}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}};
+  return <section className="widget-card" aria-label={widget.prompt}><header><div><p>{widget.prompt}</p>{widget.helpText?<small>{widget.helpText}</small>:null}</div><button aria-label="Dismiss question" disabled={pending} onClick={()=>void dismiss()}>×</button></header>
+    <div className="widget-options">{widget.options.map((option,index)=><button key={(option.value??option.label)+':'+index} disabled={pending} onClick={()=>void respond(option.value??option.label)}><kbd>{String.fromCharCode(65+index)}</kbd><span><strong>{option.label}</strong>{option.description?<small>{option.description}</small>:null}</span></button>)}</div>
+    {widget.allowCustom?<div className="widget-custom"><textarea rows={1} disabled={pending} value={custom} onChange={e=>setCustom(e.target.value)} placeholder="Type your own answer" onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();void respond(custom)}}}/>{custom.trim()?<button disabled={pending} onClick={()=>void respond(custom)}>Submit</button>:null}</div>:null}
+    {error?<p className="card-error">{error}</p>:null}
+  </section>;
+}
+
+function SecretRequestCard({agentId,message,onChanged}:{agentId:string;message:AgentMessage;onChanged():Promise<void>}) {
+  const request=message.secretRequest!;
+  const [value,setValue]=useState(''),[pending,setPending]=useState(false),[error,setError]=useState('');
+  if(message.secretProvided)return <section className="secret-card saved"><div><strong>{request.label}</strong><small>Saved securely and kept private.</small></div><span>✓ Saved</span></section>;
+  const submit=async()=>{const secret=value.trim();if(!secret||pending)return;setPending(true);setError('');setValue('');try{const result=await bridge.submitSecret({agentId,entryId:message.id,value:secret});if(!result.accepted)throw Error(result.reason==='secure-storage-unavailable'?'Secure storage is unavailable on this Mac.':'This secret request is no longer available.');await onChanged()}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}};
+  const placeholder=/^(?:a|an|the|your|my)\s/i.test(request.label)?'Paste '+request.label:'Paste your '+request.label;
+  return <section className="secret-card"><div><strong>{request.label}</strong>{request.description?<small>{request.description}</small>:null}</div><input type="password" autoComplete="off" spellCheck={false} disabled={pending} value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholder} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();void submit()}}}/><button disabled={pending||!value.trim()} onClick={()=>void submit()}>{pending?'Saving…':'Save securely'}</button><small className="secret-note">Stored in encrypted desktop storage and never shown to the agent.</small>{error?<p className="card-error">{error}</p>:null}</section>;
+}
+
+function Message({agentId,message,messages,onChanged,onResolve,onReply,onReact}:{agentId:string;message:AgentMessage;messages:AgentMessage[];onChanged():Promise<void>;onResolve(approvalId:string,approved:boolean):Promise<void>;onReply(message:AgentMessage):void;onReact(entryId:string,emoji:string):Promise<void>}) {
   if(message.role==='tool')return <div data-entry-id={message.id}><ToolMessage message={message} onResolve={onResolve}/></div>;
   const referenced=message.replyToId?messages.find(row=>row.id===message.replyToId):null;
   const counts=new Map<string,number>();for(const reaction of message.reactions||[])counts.set(reaction.emoji,(counts.get(reaction.emoji)||0)+1);
   return <article className={'message '+message.role} data-entry-id={message.id}>
     <div className="message-meta"><strong>{message.role==='user'?'You':message.role==='assistant'?'Agent':'System'}</strong><time>{formatTime(message.createdAt)}</time></div>
     {message.replyToId?<button className="message-reference" onClick={()=>document.querySelector<HTMLElement>(`[data-entry-id="${CSS.escape(message.replyToId!)}"]`)?.scrollIntoView({block:'center',behavior:'smooth'})}><strong>{messageLabel(referenced)}</strong><span>{messagePreview(referenced)}</span></button>:null}
-    <div className="message-text">{message.text}</div>
+    {message.widget?<WidgetCard agentId={agentId} message={message} onChanged={onChanged}/>:message.secretRequest?<SecretRequestCard agentId={agentId} message={message} onChanged={onChanged}/>:message.text?<div className="message-text">{message.text}</div>:null}
     <AttachmentCards items={message.attachments}/>
     {message.status==='streaming'?<span className="stream-caret"/>:null}
-    {(message.role==='user'||message.role==='assistant')&&message.status!=='streaming'?<div className="message-actions">
+    {(message.role==='user'||message.role==='assistant')&&message.status!=='streaming'&&!message.widget&&!message.secretRequest?<div className="message-actions">
       <button onClick={()=>onReply(message)}>Reply</button>
       {QUICK_REACTIONS.map(emoji=><button key={emoji} className={(message.reactions||[]).some(row=>row.emoji===emoji&&row.by==='me')?'active':''} aria-label={'React '+emoji} onClick={()=>void onReact(message.id,emoji)}>{emoji}{counts.get(emoji)?<small>{counts.get(emoji)}</small>:null}</button>)}
     </div>:null}
@@ -202,7 +228,7 @@ function Workspace({agent,thread,refresh,openAutomations,openAgentSettings}:{age
     <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><nav className="header-actions"><button className="header-action sand-chat-header__computer" data-computer-active={busy(agent.status)||undefined} onClick={()=>setComputerOpen(value=>!value)}>Computer</button><button className="header-action" onClick={()=>setFindOpen(true)}>Find</button><button className="header-action" onClick={()=>setOutlineOpen(value=>!value)}>Outline</button><button className="header-action" onClick={openAgentSettings}>Agent</button><button className="header-action" onClick={openAutomations}>Routines</button></nav></header>
     {findOpen?<FindInChat thread={thread} onClose={()=>setFindOpen(false)}/>:null}
     <div className="transcript sand-virtual-transcript" ref={scroller}><div className="transcript-column">
-      {thread?.messages.length?thread.messages.map(message=><Message key={message.id} message={message} messages={thread.messages} onReply={target=>setReplyToId(target.id)} onReact={async(entryId,emoji)=>{await bridge.reactToMessage({agentId:agent.id,entryId,emoji});await refresh()}} onResolve={async(approvalId,approved)=>{
+      {thread?.messages.length?thread.messages.map(message=><Message key={message.id} agentId={agent.id} message={message} messages={thread.messages} onChanged={refresh} onReply={target=>setReplyToId(target.id)} onReact={async(entryId,emoji)=>{await bridge.reactToMessage({agentId:agent.id,entryId,emoji});await refresh()}} onResolve={async(approvalId,approved)=>{
         await bridge.resolveApproval({approvalId,approved});await refresh();
       }}/>):<section className="welcome"><span className="avatar hero">{initials(agent.name)}</span><h2>{agent.name}</h2><p>This agent works directly on this Mac.</p></section>}
     </div></div>
