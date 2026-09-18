@@ -6,7 +6,7 @@ import {
   parseCoordinatorAgentThreadResponse,
   parseCoordinatorTranscriptWindowResponse,
   type CoordinatorMethod
-} from "../../shared/rpc/coordinator";
+} from "../../../../source/shared/rpc/coordinator";
 import {
   COORDINATOR_CANCELLED,
   COORDINATOR_PROTOCOL_VERSION,
@@ -14,7 +14,7 @@ import {
   parseCoordinatorFrame,
   type CoordinatorFailure,
   type CoordinatorFrame
-} from "../../shared/rpc/coordinator-port";
+} from "../../../../source/shared/rpc/coordinator-port";
 
 import { isSourceRecord, SourceFailure, type SourceFailureDetail } from "./source-boundary";
 

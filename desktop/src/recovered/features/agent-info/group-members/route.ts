@@ -1,5 +1,4 @@
-export interface RendererAgent { id:string; isGroup?:boolean; remoteRoom?:unknown; [key:string]:unknown }
-function isLocalGroupAgent(agent:RendererAgent):boolean{return agent.isGroup===true&&!agent.remoteRoom}
+import { isLocalGroupAgent, type RendererAgent } from "../../../../production/model";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2298141 (cct local-group gate)
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=2915342 (Windows cct local-group gate)

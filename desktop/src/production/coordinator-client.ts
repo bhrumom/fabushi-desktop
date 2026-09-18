@@ -5,7 +5,7 @@ import {
   type CoordinatorAgentThreadResponse,
   type CoordinatorTranscriptWindowRequest,
   type CoordinatorTranscriptWindowResponse
-} from "../shared/rpc/coordinator";
+} from "../../../source/shared/rpc/coordinator";
 
 export const COORDINATOR_PROTOCOL_VERSION = 1;
 export const COORDINATOR_TRANSPORT_STATE_FAMILY = "coordinator-transport-state";

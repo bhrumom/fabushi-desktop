@@ -1,9 +1,9 @@
-import type { ComponentType } from 'react';
+import type { ComponentType } from "react";
 
 export type EntrypointAvailability =
-  | { kind: 'available' }
-  | { kind: 'retained'; reason: string }
-  | { kind: 'unavailable'; reason: string };
+  | { kind: "available" }
+  | { kind: "retained"; reason: string }
+  | { kind: "unavailable"; reason: string };
 
 export interface EntrypointContext {
   gates: ReadonlySet<string>;
@@ -21,4 +21,4 @@ export function defineEntrypoint<Params>(
   return Object.freeze(definition);
 }
 
-export const alwaysAvailable = (): EntrypointAvailability => ({ kind: 'available' });
+export const alwaysAvailable = (): EntrypointAvailability => ({ kind: "available" });

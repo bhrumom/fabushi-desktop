@@ -1,5 +1,12 @@
-// Adapted from the pinned Grok Bot 0.18 roster selection owner.
-// The state machine is preserved; only clientPersistence is mapped to browser Storage.
+import type { AgentDesktopBridge } from "../../contracts/desktop-bridge";
+
+// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=777400 (selection.last-agent client slice)
+// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=817849 (selection initial state and load-pending bit)
+// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=817907 (selection transition and open request decision)
+// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=818166 (settle matching selected agent)
+// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=818256 (host/session settle guard)
+// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=818386 (roster-complete fallback ordering)
+// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=819190 (selection owner, restore, persistence, and reset)
 
 export const ROSTER_SELECTION_SLICE = {
   slice: "selection.last-agent",
@@ -12,6 +19,7 @@ export interface RosterSelectionState {
   readonly currentAgentId: string | null;
   readonly isLoadPending: boolean;
 }
+
 export interface RosterSelectionPersistence {
   read(accountSlot: string): Promise<
     | { kind: "absent" }
@@ -21,6 +29,7 @@ export interface RosterSelectionPersistence {
   write(accountSlot: string, value: RosterSelectionState): Promise<void>;
   clear(accountSlot: string): Promise<void>;
 }
+
 export interface RosterSelectionStore {
   get(): RosterSelectionState;
   subscribe(listener: () => void): () => void;
@@ -31,26 +40,26 @@ export interface RosterSelectionStore {
   reset(): void;
   dispose(): void;
 }
-interface ClientPersistence {
-  read(key:string):Promise<string|null>;
-  write(key:string,value:string):Promise<void>;
-  remove(key:string):Promise<void>;
-}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+
 function encodeAccountSlot(accountSlot: string): string {
   return encodeURIComponent(accountSlot).replaceAll(".", "%2E");
 }
+
 export function rosterSelectionPersistenceKey(accountSlot: string): string {
   if (accountSlot.length === 0) throw new Error("accountSlot must not be empty");
   return `sand.client.slice.account.${encodeAccountSlot(accountSlot)}.${ROSTER_SELECTION_SLICE.slice}`;
 }
+
 function parseSelectionState(value: unknown): RosterSelectionState | null {
   if (!isRecord(value)) return null;
   const agentId = value.agentId;
   return typeof agentId === "string" && agentId.length > 0 ? { currentAgentId: agentId, isLoadPending: false } : null;
 }
+
 function parseEnvelope(value: string | null):
   | { kind: "absent" }
   | { kind: "corrupt" }
@@ -64,14 +73,8 @@ function parseEnvelope(value: string | null):
     return { kind: "corrupt" };
   }
 }
-export function createBrowserClientPersistence(storage: Pick<Storage,"getItem"|"setItem"|"removeItem">):ClientPersistence {
-  return {
-    read: async key=>storage.getItem(key),
-    write: async(key,value)=>{storage.setItem(key,value)},
-    remove: async key=>{storage.removeItem(key)}
-  };
-}
-export function createRosterSelectionPersistence(clientPersistence: ClientPersistence): RosterSelectionPersistence {
+
+export function createRosterSelectionPersistence(clientPersistence: AgentDesktopBridge["clientPersistence"]): RosterSelectionPersistence {
   return {
     async read(accountSlot) {
       return parseEnvelope(await clientPersistence.read(rosterSelectionPersistenceKey(accountSlot)));
@@ -85,6 +88,7 @@ export function createRosterSelectionPersistence(clientPersistence: ClientPersis
     clear: (accountSlot) => clientPersistence.remove(rosterSelectionPersistenceKey(accountSlot))
   };
 }
+
 export function createRosterSelectionStore(persistence: RosterSelectionPersistence): RosterSelectionStore {
   let state: RosterSelectionState = { currentAgentId: null, isLoadPending: false };
   let completeRosterAgentIds: readonly string[] | null = null;
@@ -93,7 +97,10 @@ export function createRosterSelectionStore(persistence: RosterSelectionPersisten
   let disposed = false;
   let writes = Promise.resolve();
   const listeners = new Set<() => void>();
-  const emit = (): void => { for (const listener of listeners) listener(); };
+
+  const emit = (): void => {
+    for (const listener of listeners) listener();
+  };
   const replaceState = (next: RosterSelectionState): void => {
     if (state.currentAgentId === next.currentAgentId && state.isLoadPending === next.isLoadPending) return;
     state = { currentAgentId: next.currentAgentId, isLoadPending: next.isLoadPending };
@@ -106,9 +113,13 @@ export function createRosterSelectionStore(persistence: RosterSelectionPersisten
   };
   const isCurrent = (expectedGeneration: number, expectedSlot: string): boolean =>
     !disposed && generation === expectedGeneration && accountSlot === expectedSlot;
+
   return {
     get: () => state,
-    subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
     select(agentId) {
       if (disposed) return false;
       const next = agentId == null || agentId.length === 0 ? null : agentId;
@@ -160,12 +171,18 @@ export function createRosterSelectionStore(persistence: RosterSelectionPersisten
       replaceState(restored);
     },
     reset() {
-      generation += 1; accountSlot = null; completeRosterAgentIds = null;
+      generation += 1;
+      accountSlot = null;
+      completeRosterAgentIds = null;
       replaceState({ currentAgentId: null, isLoadPending: false });
     },
     dispose() {
       if (disposed) return;
-      disposed = true; generation += 1; accountSlot = null; completeRosterAgentIds = null; listeners.clear();
+      disposed = true;
+      generation += 1;
+      accountSlot = null;
+      completeRosterAgentIds = null;
+      listeners.clear();
     }
   };
 }
