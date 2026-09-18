@@ -1,0 +1,30 @@
+name: Grok parity source check
+on:
+  pull_request:
+    paths:
+      - "desktop/**"
+      - ".github/workflows/grok-parity-source-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  source-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check Electron CommonJS syntax
+        run: |
+          for file in electron/*.cjs; do
+            node --check "$file"
+          done
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Typecheck and renderer build
+        run: npm run build
