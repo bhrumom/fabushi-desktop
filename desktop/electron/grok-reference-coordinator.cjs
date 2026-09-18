@@ -84,7 +84,8 @@ function createReferenceCoordinator(runtime){
         const id=input.id||input.agentId;
         const thread=await runtime.getThread({agentId:id});
         const page=pageFromThread(thread,input.limit,input.beforeSeq);
-        return method==='getAgentThread'?{agent:agentRow(thread.agent),...page,threadCounts:{}}:page;
+        if(method==='getAgentTranscriptWindow')return{...page,threadCounts:{}};
+        return method==='getAgentThread'?{agent:agentRow(thread.agent),...page}:page;
       }
       case'sendPrompt':{
         const attachmentIds=[];
@@ -174,7 +175,7 @@ function createReferenceCoordinator(runtime){
         const id=input.id||input.agentId||null,value={status:'idle',agentId:id,stoppedAtMs:Date.now()};teach.set(id,value);return value;
       }
       case'getForeverBoxStatus':
-      case'ensureForeverBox':return{state:'running',kind:'local-computer',computerTarget:'local-mac',vncUrl:null};
+      case'ensureForeverBox':return{agentId:String(input.id||input.agentId||'local-mac'),state:'running',kind:'local-computer',computerTarget:'local-mac',vncUrl:null};
       case'handBackForeverBox':return;
       case'getTrays':return[];
       case'dismissTray':
