@@ -6,7 +6,7 @@ const {toolDefinitions,executeTool,descriptor}=require('./local-tool-executor.cj
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>''}){
+function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',subagents=null}){
   function systemPrompt(agent,enabled,workflowContext){
     const parts=[
       `You are ${agent.name}, a Fabushi desktop agent following the Grok Bot host/coordinator execution model.`,
@@ -18,6 +18,25 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
     ];
     if(workflowContext)parts.push(workflowContext);
     return parts.join('\n');
+  }
+
+  function subagentDefinitions(){
+    if(!subagents)return[];
+    const fn=(name,description,properties,required=[])=>({type:'function',function:{name,description,parameters:{type:'object',properties,required,additionalProperties:false}}});
+    return[
+      fn('create_subagent','Create a delegated agent. It can run in the background or wait for a completed result.',{name:{type:'string'},prompt:{type:'string'},background:{type:'boolean'}},['name','prompt']),
+      fn('check_subagent','Inspect a delegated agent status and recent transcript.',{agentId:{type:'string'}},['agentId']),
+      fn('message_subagent','Send follow-up work to a delegated agent. Set interrupt=true to stop its current run before sending.',{agentId:{type:'string'},prompt:{type:'string'},interrupt:{type:'boolean'}},['agentId','prompt']),
+      fn('stop_subagent','Abort a running delegated agent.',{agentId:{type:'string'}},['agentId'])
+    ];
+  }
+  async function executeSubagentTool(name,args,signal){
+    if(!subagents)return null;
+    if(name==='create_subagent')return{text:JSON.stringify(await subagents.create({name:args.name,prompt:args.prompt,background:args.background===true,signal}),null,2)};
+    if(name==='check_subagent')return{text:JSON.stringify(await subagents.check({agentId:args.agentId}),null,2)};
+    if(name==='message_subagent')return{text:JSON.stringify(await subagents.message({agentId:args.agentId,prompt:args.prompt,interrupt:args.interrupt===true,signal}),null,2)};
+    if(name==='stop_subagent')return{text:JSON.stringify(await subagents.stop({agentId:args.agentId}),null,2)};
+    return null;
   }
 
   async function chatRequest(messages,tools,signal){
@@ -67,7 +86,9 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
   async function runTurn({agent,history,transcript,enabled,signal}){
     const externalDefinitions=await getExternalTools();
     const externalNames=new Set(externalDefinitions.map(x=>x.function?.name).filter(Boolean));
-    const tools=[...toolDefinitions(enabled),...externalDefinitions.map(({_mcp,...definition})=>definition)];
+    const subagentTools=subagentDefinitions();
+    const subagentNames=new Set(subagentTools.map(x=>x.function.name));
+    const tools=[...toolDefinitions(enabled),...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
     const latestUser=[...history].reverse().find(x=>x.role==='user');
     const workflowContext=await getWorkflowContext(latestUser?.text||'');
     const messages=[
@@ -104,7 +125,7 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
 
         let resultText='';
         try{
-          const allowed=externalNames.has(name)?true:await authorize(agent.id,entry,name,args,signal);
+          const allowed=externalNames.has(name)||subagentNames.has(name)?true:await authorize(agent.id,entry,name,args,signal);
           if(!allowed){
             resultText='ERROR: '+entry.text;
           }else{
