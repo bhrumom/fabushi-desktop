@@ -54,6 +54,7 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   deleteAgentAutomation:x=>invoke('delete-agent-automation',x),
   runAgentAutomationNow:x=>invoke('run-agent-automation-now',x),
   pickFile:()=>ipcRenderer.invoke('grok-agent:pick-file'),
+  readAttachment:x=>invoke('read-attachment',x),
   subscribe(listener){
     if(typeof listener!=='function')return()=>{};
     const handlers=events.map(name=>{
