@@ -147,6 +147,8 @@
       "electron/grok-turn-usage.cjs",
       "electron/grok-action-audit.cjs",
       "electron/grok-desktop-services.cjs",
+      "electron/grok-reference-desktop.cjs",
+      "electron/grok-reference-coordinator.cjs",
       "electron/grok-attachment-gateway.cjs",
       "electron/grok-mcp-manager.cjs",
       "electron/grok-mcp-oauth.cjs",
