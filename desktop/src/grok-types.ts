@@ -78,6 +78,25 @@ export interface WorkflowDescriptor {
   updatedAt:number;
   filePath:string;
 }
+export interface RoutineRunDescriptor {
+  id:string;
+  status:'running'|'ok'|'error';
+  startedAt:number;
+  detail?:string|null;
+  event?:string|null;
+}
+export interface RoutineAutomationDescriptor {
+  id:string;
+  name:string;
+  prompt:string;
+  trigger:{type:'cron';schedule:string};
+  triggerDescription:string;
+  isEnabled:boolean;
+  runs:RoutineRunDescriptor[];
+  createdAt:number;
+  lastRunAt:number|null;
+  nextRunAt:number|null;
+}
 export interface RuntimeSettings {
   localToolPermission:'always'|'ask'|'never';
   computerTarget:'local-mac';
@@ -85,7 +104,7 @@ export interface RuntimeSettings {
 export interface AgentEvent {
   type:
     |'agents.changed'|'agent.changed'|'message.delta'|'message.changed'|'message.done'
-    |'plugins.changed'|'workflows.changed'|'settings.changed'
+    |'plugins.changed'|'workflows.changed'|'automations.changed'|'settings.changed'
     |'approval.requested'|'approval.resolved'|'approval.cancelled';
   agentId?:string;
   messageId?:string;
@@ -118,6 +137,12 @@ export interface GrokAgentBridge {
   saveWorkflow(input:{id?:string;name:string;description?:string;body:string;trigger?:{schedule:string;isEnabled:boolean}|null;isEnabledForAgent?:boolean;disableModelInvocation?:boolean}):Promise<WorkflowDescriptor>;
   deleteWorkflow(input:{id:string}):Promise<{ok:true}>;
   setWorkflowEnabled(input:{id:string;enabled:boolean}):Promise<WorkflowDescriptor>;
+  getAgentAutomations(input:{id:string}):Promise<RoutineAutomationDescriptor[]>;
+  createAgentAutomation(input:{id:string;spec:{name:string;prompt:string;trigger:{type:'cron';schedule:string};isEnabled:boolean}}):Promise<RoutineAutomationDescriptor[]>;
+  setAgentAutomationEnabled(input:{id:string;automationId:string;isEnabled:boolean}):Promise<RoutineAutomationDescriptor[]>;
+  updateAgentAutomation(input:{id:string;automationId:string;spec:{name:string;prompt:string;trigger:{type:'cron';schedule:string};isEnabled:boolean}}):Promise<RoutineAutomationDescriptor[]>;
+  deleteAgentAutomation(input:{id:string;automationId:string}):Promise<RoutineAutomationDescriptor[]>;
+  runAgentAutomationNow(input:{id:string;automationId:string}):Promise<void>;
   pickFile():Promise<{path:string;name:string}|null>;
   subscribe(listener:(event:AgentEvent)=>void):()=>void;
 }
