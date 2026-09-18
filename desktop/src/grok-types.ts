@@ -181,6 +181,15 @@ export interface RoutineAutomationDescriptor {
   lastRunAt:number|null;
   nextRunAt:number|null;
 }
+export interface AsyncTaskSummary {
+  kind:'subagent'|'shell'|'cloud-agent';
+  id:string;
+  label:string;
+  status:'running';
+  startedAtMs:number;
+  detail?:string;
+  subagentType?:string;
+}
 export interface ExperimentsSnapshot {
   isInitialized:boolean;
   featureGates:Record<string,boolean>;
@@ -265,6 +274,7 @@ export interface GrokAgentBridge {
   logoutAccount():Promise<AccountStatus>;
   updateAccountName(input:{name:string}):Promise<AccountStatus>;
   getAccountAvatar():Promise<string|null>;
+  getAsyncTasks(input:{id:string}):Promise<AsyncTaskSummary[]>;
   getRuntimeSettings():Promise<RuntimeSettings>;
   getExperimentsSnapshot():Promise<ExperimentsSnapshot>;
   refreshExperiments():Promise<ExperimentsSnapshot>;
