@@ -3,6 +3,7 @@ const {app,BrowserWindow,dialog,ipcMain,shell,safeStorage}=require('electron');
 const path=require('node:path');
 const {URL}=require('node:url');
 const {createRuntime}=require('./grok-agent-runtime.cjs');
+const {createAttachmentGateway}=require('./grok-attachment-gateway.cjs');
 
 let mainWindow=null,runtime=null,quitAfterDispose=false;
 function trusted(event){
@@ -26,6 +27,7 @@ function registerIpc(){
     'list-marketplace-plugins':'listMarketplacePlugins','install-marketplace-plugin':'installMarketplacePlugin','uninstall-marketplace-plugin':'uninstallMarketplacePlugin',
     'list-workflows':'listWorkflows','save-workflow':'saveWorkflow','delete-workflow':'deleteWorkflow','set-workflow-enabled':'setWorkflowEnabled',
     'get-agent-automations':'getAgentAutomations','create-agent-automation':'createAgentAutomation','set-agent-automation-enabled':'setAgentAutomationEnabled',
+    'read-attachment':'readAttachment',
     'update-agent-automation':'updateAgentAutomation','delete-agent-automation':'deleteAgentAutomation','run-agent-automation-now':'runAgentAutomationNow'
   };
   for(const[name,method]of Object.entries(methods)){
@@ -37,7 +39,7 @@ function registerIpc(){
     assertTrusted(event);
     const result=await dialog.showOpenDialog(mainWindow,{properties:['openFile']});
     if(result.canceled||!result.filePaths[0])return null;
-    return{path:result.filePaths[0],name:path.basename(result.filePaths[0])};
+    return runtime.registerAttachment({path:result.filePaths[0]});
   });
 }
 function createWindow(){
@@ -54,7 +56,7 @@ function createWindow(){
 if(!app.requestSingleInstanceLock())app.quit();
 else{
   app.on('second-instance',()=>{if(!mainWindow)createWindow();if(mainWindow.isMinimized())mainWindow.restore();mainWindow.show();mainWindow.focus();});
-  app.whenReady().then(()=>{runtime=createRuntime({app,BrowserWindow,shell,safeStorage});registerIpc();createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
+  app.whenReady().then(()=>{const attachmentGateway=createAttachmentGateway({app});runtime=createRuntime({app,BrowserWindow,shell,safeStorage,attachmentGateway});registerIpc();createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
   app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});
   app.on('before-quit',event=>{if(!runtime||quitAfterDispose)return;event.preventDefault();quitAfterDispose=true;void Promise.resolve(runtime.dispose?.()).finally(()=>app.quit());});
 }
