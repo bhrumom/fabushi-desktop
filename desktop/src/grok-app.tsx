@@ -423,6 +423,36 @@ function Automations({agent,onClose}:{agent:AgentSummary;onClose():void}) {
   </section></div>;
 }
 
+function AutoReviewRules({settings,onChange}:{settings:RuntimeSettings;onChange(next:RuntimeSettings):void}) {
+  const [draft,setDraft]=useState('');
+  const [behavior,setBehavior]=useState<'allow'|'ask'>('allow');
+  const [pending,setPending]=useState(false);
+  const rows=[
+    ...settings.autoReviewAllowInstructions.map((text,index)=>({behavior:'allow' as const,index,text})),
+    ...settings.autoReviewBlockInstructions.map((text,index)=>({behavior:'ask' as const,index,text}))
+  ];
+  const commit=async(allowInstructions:string[],blockInstructions:string[])=>{
+    setPending(true);
+    try{onChange(await bridge.setAutoReviewInstructions({allowInstructions,blockInstructions}))}finally{setPending(false)}
+  };
+  const add=async()=>{
+    const value=draft.trim();if(!value||pending)return;
+    const allow=[...settings.autoReviewAllowInstructions],block=[...settings.autoReviewBlockInstructions];
+    (behavior==='allow'?allow:block).push(value.slice(0,1000));
+    await commit(allow,block);setDraft('');setBehavior('allow');
+  };
+  const remove=async(row:{behavior:'allow'|'ask';index:number})=>{
+    const allow=[...settings.autoReviewAllowInstructions],block=[...settings.autoReviewBlockInstructions];
+    if(row.behavior==='allow')allow.splice(row.index,1);else block.splice(row.index,1);
+    await commit(allow,block);
+  };
+  return <section className="sand-auto-review">
+    <div className="auto-review-rule-entry"><input value={draft} disabled={pending} maxLength={1000} onChange={e=>setDraft(e.target.value)} placeholder="e.g. reply to emails for me" onKeyDown={e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))void add()}}/><select value={behavior} disabled={pending} onChange={e=>setBehavior(e.target.value as 'allow'|'ask')}><option value="allow">Allow automatically</option><option value="ask">Ask first</option></select><button disabled={pending||!draft.trim()} onClick={()=>void add()}>Add Rule</button></div>
+    {rows.length?<div className="auto-review-rules" role="table" aria-label="Auto-review rules">{rows.map((row,i)=><div className="auto-review-rule" role="row" key={row.behavior+':'+row.index+':'+row.text}><span role="cell" title={row.text}>{row.text}</span><span role="cell">{row.behavior==='allow'?'Allow automatically':'Ask first'}</span><button aria-label={'Delete rule '+(i+1)} disabled={pending} onClick={()=>void remove(row)}>Delete</button></div>)}</div>:null}
+    <small>Ask first takes priority if rules conflict. Built-in safety checks always apply.</small>
+  </section>;
+}
+
 function Settings({onClose}:{onClose():void}) {
   const [settings,setSettings]=useState<RuntimeSettings|null>(null);
   const [error,setError]=useState('');
@@ -442,6 +472,7 @@ function Settings({onClose}:{onClose():void}) {
         void bridge.setAutoReviewMode({mode}).then(setSettings,reason=>setError(String(reason)));
       }}><option value="enforce">Enforce</option><option value="shadow">Shadow</option><option value="off">Off</option></select>:<span>Loading…</span>}
     </div>
+    {settings?<div className="setting-stack"><div><strong>Auto-review Rules</strong><p>Customize which ordinary actions can run automatically and which must ask first.</p></div><AutoReviewRules settings={settings} onChange={setSettings}/></div>:null}
     <div className="setting-row"><div><strong>Agent runtime</strong><p>Renderer → preload → coordinator → host → local execution.</p></div><span>Coordinator/Host</span></div>
     <div className="setting-row"><div><strong>Inference</strong><p>OpenAI-compatible endpoint configured through Fabushi agent environment variables.</p></div><span>External model</span></div>
     {error?<div className="settings-error">{error}</div>:null}
