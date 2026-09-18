@@ -64,7 +64,7 @@ test('marketplace provider lists metadata and returns executable install payload
 });
 
 test('coordinator marketplace install materializes real MCP server and private SKILL.md then uninstalls both',async t=>{
-  const f=await fixture();t.after(()=>fs.rm(f.root,{recursive:true,force:true}));
+  const f=await fixture();
   const provider={
     providerUrl:'https://marketplace.example/',
     async list(){return{available:true,reason:null,includesPrivateMarketplaces:false,plugins:[{
@@ -77,6 +77,7 @@ test('coordinator marketplace install materializes real MCP server and private S
     }}
   };
   const runtime=createCoordinatorRuntime({...f,pluginMarketplace:provider});
+  t.after(async()=>{await runtime.dispose();await fs.rm(f.root,{recursive:true,force:true})});
   let catalog=await runtime.installMarketplacePlugin({entryId:'fixture',values:{}});
   assert.equal(catalog.plugins[0].installed,true);
   const installed=await runtime.listPlugins();
