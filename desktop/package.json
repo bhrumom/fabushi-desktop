@@ -42,6 +42,7 @@
       "electron/main.cjs",
       "electron/preload.cjs",
       "electron/grok-agent-runtime.cjs",
+      "electron/local-tool-executor.cjs",
       "package.json"
     ],
     "mac": {
