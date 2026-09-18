@@ -14,6 +14,11 @@ import { createAvatarEditorProductionAdapter } from './recovered/features/agent-
 import { AvatarEditorView } from './recovered/features/agent-info/avatar-editor/view';
 import { createAgentInfoChannelsController } from './recovered/features/agent-info/channels/model';
 import { AgentInfoChannelsPanel } from './recovered/features/agent-info/channels/view';
+import { createGroupMembersProvider, type GroupMemberAgent } from './recovered/features/agent-info/group-members/model';
+import { createLocalGroupRosterSource } from './recovered/features/agent-info/group-members/production-adapter';
+import { GroupMembersPane } from './recovered/features/agent-info/group-members/view';
+import { createAppAlertController } from './recovered/features/window-chrome/app-alert/controller';
+import { AppAlertHost } from './recovered/features/window-chrome/app-alert/view';
 import { createStrictModeDisposalGuard } from './production/strict-mode-disposal';
 import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, DeepLinkInfo, DesktopInfo, DesktopUpdateStatus, DesktopUpdateTrack, FeedbackResult, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor, WorkspaceLinkSearchResult, WorkspaceMediaSearchResult, WorkspaceMessageSearchResult } from './grok-types';
 import './grok-app.css';
@@ -253,9 +258,9 @@ function ComputerInfoPane({agent,thread,onClose}:{agent:AgentSummary;thread:Agen
   </div>:null}</>;
 }
 
-function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():void;onChanged():Promise<void>}) {
+function AgentSettings({agent,agents,onClose,onChanged,onOpenAgent}:{agent:AgentSummary;agents:AgentSummary[];onClose():void;onChanged():Promise<void>;onOpenAgent(id:string):void}) {
   const [name,setName]=useState(agent.name),[title,setTitle]=useState(agent.title||''),[description,setDescription]=useState(agent.description||'');
-  const [pending,setPending]=useState(false),[error,setError]=useState(''),[avatarOpen,setAvatarOpen]=useState(false),[settingsTab,setSettingsTab]=useState<'profile'|'channels'>('profile');
+  const [pending,setPending]=useState(false),[error,setError]=useState(''),[avatarOpen,setAvatarOpen]=useState(false),[settingsTab,setSettingsTab]=useState<'profile'|'channels'|'members'>('profile');
   const avatarAdapter=useMemo(()=>createAvatarEditorProductionAdapter({bridge}),[]);
   const channelsController=useMemo(()=>createAgentInfoChannelsController({
     getAgentChannels:args=>bridge.getAgentChannels(args),
@@ -263,10 +268,16 @@ function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():v
     disconnectChannel:args=>bridge.disconnectChannel(args),
     refreshChannel:args=>bridge.refreshChannel(args)
   },agent.id),[agent.id]);
+  const groupAlert=useMemo(()=>createAppAlertController(),[]);
+  const groupRosterSource=useMemo(()=>createLocalGroupRosterSource(bridge,agents,0),[]);
+  const groupProvider=useMemo(()=>createGroupMembersProvider(groupRosterSource,groupAlert),[groupRosterSource,groupAlert]);
+  const groupAgent:GroupMemberAgent={id:agent.id,name:agent.name,isGroup:agent.isGroup===true,memberIds:[...(agent.memberIds||[])],isSharedRoom:agent.isSharedRoom===true};
   const avatarDisposalGuard=useMemo(()=>createStrictModeDisposalGuard(),[]);
   const channelsDisposalGuard=useMemo(()=>createStrictModeDisposalGuard(),[]);
+  const groupDisposalGuard=useMemo(()=>createStrictModeDisposalGuard(),[]);
   const avatarDisposable=useMemo(()=>({dispose:()=>avatarAdapter.dispose()}),[avatarAdapter]);
   const channelsDisposable=useMemo(()=>({dispose:()=>channelsController.dispose()}),[channelsController]);
+  const groupDisposable=useMemo(()=>({dispose(){groupProvider.dispose();groupRosterSource.dispose();groupAlert.dispose()}}),[groupProvider,groupRosterSource,groupAlert]);
   const [avatarSnapshot,setAvatarSnapshot]=useState(avatarAdapter.getSnapshot());
   useEffect(()=>avatarAdapter.subscribe(()=>setAvatarSnapshot(avatarAdapter.getSnapshot())),[avatarAdapter]);
   useEffect(()=>{
@@ -278,6 +289,8 @@ function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():v
   },[avatarAdapter,agent.id,agent.avatarDataUrl,agent.avatarShape,agent.avatarColor]);
   useEffect(()=>avatarDisposalGuard.attach(avatarDisposable),[avatarDisposalGuard,avatarDisposable]);
   useEffect(()=>channelsDisposalGuard.attach(channelsDisposable),[channelsDisposalGuard,channelsDisposable]);
+  useEffect(()=>groupDisposalGuard.attach(groupDisposable),[groupDisposalGuard,groupDisposable]);
+  useEffect(()=>{groupRosterSource.setAgents(agents)},[groupRosterSource,agents]);
   const save=async()=>{
     const next=name.trim();if(!next||pending)return;
     setPending(true);setError('');
@@ -291,8 +304,11 @@ function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():v
     <div className="agent-settings-tabs" role="tablist" aria-label="Agent settings sections">
       <button role="tab" aria-selected={settingsTab==='profile'} onClick={()=>setSettingsTab('profile')}>Profile</button>
       <button role="tab" aria-selected={settingsTab==='channels'} onClick={()=>setSettingsTab('channels')}>Channels</button>
+      {agent.isGroup===true?<button role="tab" aria-selected={settingsTab==='members'} onClick={()=>setSettingsTab('members')}>Members</button>:null}
     </div>
-    {settingsTab==='channels'?<div className="sand-agent-settings channels-settings"><AgentInfoChannelsPanel agentId={agent.id} labelledBy="agent-settings-channels" controller={channelsController}/></div>:<div className="sand-agent-settings">
+    {settingsTab==='channels'?<div className="sand-agent-settings channels-settings"><AgentInfoChannelsPanel agentId={agent.id} labelledBy="agent-settings-channels" controller={channelsController}/></div>
+      :settingsTab==='members'&&agent.isGroup===true?<div className="sand-agent-settings group-members-settings"><GroupMembersPane provider={groupProvider} alert={groupAlert} agent={groupAgent} accountGeneration={0} onOpenAgentChat={id=>{onOpenAgent(id);onClose()}}/><AppAlertHost controller={groupAlert}/></div>
+      :<div className="sand-agent-settings">
       <div className="agent-avatar-setting">
         <AgentAvatar agent={agent} size={64}/>
         <span><strong>Avatar</strong><small>Use the Grok Bot character, upload an image, or generate one when a provider is configured.</small></span>
@@ -916,7 +932,7 @@ export default function GrokApp(){
     {overlay==='automations'&&selected?<Automations agent={selected} onClose={()=>setOverlay(null)}/>:null}
     {overlay==='orgchart'?<OrgChart agents={agents} onClose={()=>setOverlay(null)} onSelect={selectAgent}/>:null}
     {overlay==='hidden'?<HiddenChats agents={agents} onClose={()=>setOverlay(null)} onOpen={id=>{selectAgent(id);setOverlay(null)}} onChanged={loadAgents}/>:null}
-    {overlay==='agent-settings'&&selected?<AgentSettings agent={selected} onClose={()=>setOverlay(null)} onChanged={loadAgents}/>:null}
+    {overlay==='agent-settings'&&selected?<AgentSettings agent={selected} agents={agents} onClose={()=>setOverlay(null)} onChanged={loadAgents} onOpenAgent={selectAgent}/>:null}
     {overlay==='account'?<AccountPanel account={account} onClose={()=>setOverlay(null)} onChanged={setAccount} onSettings={()=>setOverlay('settings')} onFeedback={()=>setOverlay('feedback')} onAbout={()=>setOverlay('about')}/>:null}
     {overlay==='about'?<AboutDialog onClose={()=>setOverlay(null)}/>:null}
     {overlay==='feedback'?<FeedbackDialog conversationId={selectedId} onClose={()=>setOverlay(null)}/>:null}
