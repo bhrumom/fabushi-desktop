@@ -20,7 +20,7 @@ function registerIpc(){
     'list-agents':'listAgents','create-agent':'createAgent','rename-agent':'renameAgent','set-agent-hidden':'setAgentHidden','delete-agent':'deleteAgent',
     'get-thread':'getThread','send-message':'sendMessage','stop-agent':'stopAgent',
     'list-plugins':'listPlugins','set-plugin-installed':'setPluginInstalled','set-plugin-enabled':'setPluginEnabled',
-    'get-runtime-settings':'getRuntimeSettings','set-local-tool-permission':'setLocalToolPermission','set-auto-review-mode':'setAutoReviewMode','resolve-approval':'resolveApproval',
+    'get-runtime-settings':'getRuntimeSettings','set-local-tool-permission':'setLocalToolPermission','set-auto-review-mode':'setAutoReviewMode','set-auto-review-instructions':'setAutoReviewInstructions','resolve-approval':'resolveApproval',
     'list-mcp-servers':'listMcpServers','add-mcp-server':'addMcpServer','update-mcp-server':'updateMcpServer','remove-mcp-server':'removeMcpServer',
     'set-mcp-server-enabled':'setMcpServerEnabled','get-mcp-account-status':'getMcpAccountStatus','list-mcp-accounts':'listMcpAccounts','connect-mcp-account':'connectMcpAccount','disconnect-mcp-account':'disconnectMcpAccount','rename-mcp-account':'renameMcpAccount','remove-mcp-account':'removeMcpAccount','set-mcp-active-account':'setMcpActiveAccount','list-mcp-server-tools':'listMcpServerTools','set-mcp-tool-enabled':'setMcpToolEnabled',
     'list-marketplace-plugins':'listMarketplacePlugins','install-marketplace-plugin':'installMarketplacePlugin','uninstall-marketplace-plugin':'uninstallMarketplacePlugin',
