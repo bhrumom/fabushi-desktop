@@ -7,6 +7,7 @@ const {createHostRuntime}=require('./grok-host-runtime.cjs');
 const {createMcpManager,normalizeServer}=require('./grok-mcp-manager.cjs');
 const {createWorkflowManager}=require('./grok-workflow-manager.cjs');
 const {normalizeSchedule,isValidSchedule,computeNextRunAt,describeSchedule}=require('./grok-automation-schedule.cjs');
+const {createLocalBrowserRuntime}=require('./grok-local-browser.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
@@ -103,7 +104,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
   }
   async function deleteAgent({agentId}){
     const s=await load();aborts.get(agentId)?.abort();cancelApprovals(agentId,'Agent deleted.');
-    s.agents=s.agents.filter(a=>a.id!==agentId);delete s.messages[agentId];delete s.automations[agentId];await save();emit('agents.changed');return{ok:true};
+    s.agents=s.agents.filter(a=>a.id!==agentId);delete s.messages[agentId];delete s.automations[agentId];localBrowser.disposeAgent(agentId);await save();emit('agents.changed');return{ok:true};
   }
   async function getThread({agentId}){
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
@@ -155,11 +156,13 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
 
   const mcp=createMcpManager({getServers:async()=>[...((await load()).mcpServers||[])]});
   const workflowManager=createWorkflowManager({app});
+  const localBrowser=createLocalBrowserRuntime({BrowserWindow});
   const host=createHostRuntime({
     shell,getLocalToolPermission,requestApproval,onToolState,onAgentStatus,
     getExternalTools:()=>mcp.collectToolDefinitions(),
     executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args),
     getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
+    browser:localBrowser,
     subagents:{
       async create({parentAgentId,name,prompt,background,signal}){
         const agent=await createAgent({name,parentAgentId,purpose:'subagent',description:'Delegated agent'});
