@@ -177,16 +177,23 @@ function OrgChart({agents,onClose,onSelect}:{agents:AgentSummary[];onClose():voi
 }
 
 function ComputerInfoPane({agent,thread,onClose}:{agent:AgentSummary;thread:AgentThread|null;onClose():void}) {
+  const [expanded,setExpanded]=useState(false);
   const latest=[...(thread?.messages||[])].reverse().find(message=>message.role==='tool'&&message.display?.kind==='image');
-  const active=(thread?.messages||[]).some(message=>message.role==='tool'&&['queued','waiting-approval','running','streaming'].includes(message.status||'done')&&String(message.toolName||'').startsWith('computer_'));
-  return <aside className="computer-info-pane sand-info-pane" aria-label="Conversation details">
-    <header><div><strong>Computer</strong><small>{active?'In use':'Local Mac'}</small></div><button aria-label="Close details" onClick={onClose}>×</button></header>
+  const computerRows=(thread?.messages||[]).filter(message=>message.role==='tool'&&String(message.toolName||'').startsWith('computer_'));
+  const active=computerRows.some(message=>['queued','waiting-approval','running','streaming'].includes(message.status||'done'));
+  const latestAction=[...computerRows].reverse().find(message=>message.toolName!=='computer_screenshot');
+  const stage=latest?.display?.kind==='image'?<img src={latest.display.dataUrl} alt="Latest local computer screenshot"/>:<div className="computer-preview-empty"><span>▣</span><strong>Screen preview unavailable</strong><p>A real preview appears here after this agent captures the local Mac screen.</p></div>;
+  return <><aside className="computer-info-pane sand-info-pane" aria-label="Conversation details">
+    <header><div><strong>Computer</strong><small>{active?'In use':'Local Mac'}</small></div><div className="computer-pane-actions"><button aria-label="Expand computer" title="Expand" onClick={()=>setExpanded(true)}>⛶</button><button aria-label="Close details" onClick={onClose}>×</button></div></header>
     <div className="sand-computer-monitor-strip"><span className={active?'computer-live':'computer-idle'}/><span>{agent.name}'s screen</span></div>
-    <div className="sand-computer-preview">
-      {latest?.display?.kind==='image'?<img src={latest.display.dataUrl} alt="Latest local computer screenshot"/>:<div className="computer-preview-empty"><span>▣</span><strong>Screen preview unavailable</strong><p>A real preview appears here after this agent captures the local Mac screen.</p></div>}
-    </div>
-    <div className="sand-computer-banner"><strong>Installed computer</strong><p>Computer tools operate this Mac through the coordinator → host → local-exec boundary. Mutations still pass permission and auto-review checks.</p></div>
-  </aside>;
+    <button className="sand-computer-preview computer-preview-button" aria-label="Expand local computer preview" onClick={()=>setExpanded(true)}>{stage}</button>
+    <div className="sand-computer-banner"><strong>Installed computer</strong><p>Computer tools operate this Mac through the coordinator → host → local-exec boundary. Mutations still pass permission and auto-review checks.</p>{latestAction?<small>Latest action · {latestAction.toolName?.replace('computer_','').replaceAll('_',' ')} · {latestAction.status}</small>:null}</div>
+  </aside>
+  {expanded?<div className="computer-cover sand-computer-cover" role="dialog" aria-modal="true" aria-label="Local computer" onKeyDown={event=>{if(event.key==='Escape')setExpanded(false)}} tabIndex={-1}>
+    <header><div><span className={active?'computer-live':'computer-idle'}/><span><strong>{agent.name}'s Computer</strong><small>{active?'In use on this Mac':'Installed Mac · ready'}</small></span></div><button aria-label="Contract computer" onClick={()=>setExpanded(false)}>⤢</button></header>
+    <div className="computer-cover-stage">{stage}</div>
+    <footer><span>Local Mac</span><span>{latestAction?String(latestAction.toolName||'').replace('computer_','').replaceAll('_',' ')+' · '+latestAction.status:'Waiting for a computer action'}</span></footer>
+  </div>:null}</>;
 }
 
 function AgentSettings({agent,onClose,onChanged}:{agent:AgentSummary;onClose():void;onChanged():Promise<void>}) {
