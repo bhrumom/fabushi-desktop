@@ -38,18 +38,39 @@ jobs:
           BIN="$(find "$APP/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
           test -n "$BIN"
           REPORT="$RUNNER_TEMP/grok-renderer-smoke.json"
-          FABUSHI_GROK_SMOKE_REPORT="$REPORT" "$BIN" --disable-gpu >"$RUNNER_TEMP/fabushi-grok-smoke.log" 2>&1 &
+          LOG="$RUNNER_TEMP/fabushi-grok-smoke.log"
+          echo "APP=$APP"
+          echo "BIN=$BIN"
+          file "$BIN" || true
+          find "$APP/Contents/MacOS" -maxdepth 1 -type f -print | sort || true
+          echo "::group::Packaged runtime files"
+          find "$APP/Contents/Resources" -maxdepth 3 -type f -print | sort | head -400 || true
+          echo "::endgroup::"
+          ASAR="$APP/Contents/Resources/app.asar"
+          if [ -f "$ASAR" ]; then
+            ASAR_CLI="$(find node_modules/@electron/asar -type f \( -name 'asar.js' -o -name 'cli.js' \) -print -quit || true)"
+            if [ -n "$ASAR_CLI" ]; then
+              echo "::group::Relevant app.asar entries"
+              node "$ASAR_CLI" list "$ASAR" | grep -E 'grok-reference|grok-agent|grok-desktop|main\.cjs|preload\.cjs' || true
+              echo "::endgroup::"
+            fi
+          fi
+          ELECTRON_ENABLE_LOGGING=1 ELECTRON_ENABLE_STACK_DUMPING=1 FABUSHI_GROK_SMOKE_REPORT="$REPORT" "$BIN" --disable-gpu >"$LOG" 2>&1 &
           PID=$!
           for _ in $(seq 1 45); do
             if [ -s "$REPORT" ]; then break; fi
-            if ! kill -0 "$PID" 2>/dev/null; then
-              cat "$RUNNER_TEMP/fabushi-grok-smoke.log"
-              exit 1
-            fi
+            if ! kill -0 "$PID" 2>/dev/null; then break; fi
             sleep 1
           done
+          echo "::group::Packaged application log"
+          cat "$LOG" || true
+          echo "::endgroup::"
+          if [ -s "$REPORT" ]; then
+            cat "$REPORT"
+          else
+            echo "Packaged renderer did not produce a smoke report."
+          fi
           test -s "$REPORT"
-          cat "$REPORT"
           node - "$REPORT" <<'NODE'
           const fs = require('node:fs');
           const report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
