@@ -81,12 +81,21 @@ function createWindow(){
     trafficLightPosition:process.platform==='darwin'?{x:13,y:13}:undefined,
     webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:false}
   });
-  if(process.env.VITE_DEV_SERVER_URL)void win.loadURL(process.env.VITE_DEV_SERVER_URL);
-  else void win.loadFile(path.join(__dirname,'..','dist','index.html'));
-  win.webContents.on('did-finish-load',()=>{if(pendingDeepLink){const link=pendingDeepLink;pendingDeepLink=null;win.webContents.send('grok-agent:deep-link',link)}
-    const smokePath=String(process.env.FABUSHI_GROK_SMOKE_REPORT||'').trim();
-    if(smokePath)setTimeout(()=>{void win.webContents.executeJavaScript(`(async()=>{try{const d=window.desktop;const account=d?.cursorAccount?.getStatus?await d.cursorAccount.getStatus():null;const windowState=d?.getWindowState?await d.getWindowState():null;return{ok:true,hasDesktop:!!d,hasCoordinator:!!window.coordinatorPort,hasMcp:!!d?.mcp,accountKind:account?.kind||null,windowState,bodyText:(document.body?.innerText||'').slice(0,4000)}}catch(error){return{ok:false,error:String(error?.message||error),bodyText:(document.body?.innerText||'').slice(0,4000)}}})()`,true).then(report=>fs.writeFileSync(smokePath,JSON.stringify(report,null,2)+'\\n',{mode:0o600})).catch(error=>fs.writeFileSync(smokePath,JSON.stringify({ok:false,error:String(error?.message||error)},null,2)+'\\n',{mode:0o600}))},1500);
-  });
+  const smokePath=String(process.env.FABUSHI_GROK_SMOKE_REPORT||'').trim();
+  let smokeScheduled=false;
+  const writeSmokeFailure=(stage,error)=>{if(!smokePath)return;try{fs.writeFileSync(smokePath,JSON.stringify({ok:false,stage,error:String(error?.message||error||'unknown renderer load failure')},null,2)+'\\n',{mode:0o600})}catch{}};
+  const scheduleSmoke=stage=>{
+    if(!smokePath||smokeScheduled)return;
+    smokeScheduled=true;
+    setTimeout(()=>{void win.webContents.executeJavaScript(`(async()=>{try{const d=window.desktop;const account=d?.cursorAccount?.getStatus?await d.cursorAccount.getStatus():null;const windowState=d?.getWindowState?await d.getWindowState():null;return{ok:true,stage:${JSON.stringify(stage)},hasDesktop:!!d,hasCoordinator:!!window.coordinatorPort,hasMcp:!!d?.mcp,accountKind:account?.kind||null,windowState,readyState:document.readyState,location:String(location.href),bodyText:(document.body?.innerText||'').slice(0,4000)}}catch(error){return{ok:false,stage:${JSON.stringify(stage)},error:String(error?.message||error),readyState:document.readyState,location:String(location.href),bodyText:(document.body?.innerText||'').slice(0,4000)}}})()`,true).then(report=>fs.writeFileSync(smokePath,JSON.stringify(report,null,2)+'\\n',{mode:0o600})).catch(error=>writeSmokeFailure(stage,error))},1200);
+  };
+  win.webContents.on('did-fail-load',(_event,errorCode,errorDescription,validatedURL,isMainFrame)=>{if(isMainFrame!==false){console.error('renderer did-fail-load',errorCode,errorDescription,validatedURL);writeSmokeFailure('did-fail-load',errorDescription||errorCode)}});
+  win.webContents.on('render-process-gone',(_event,details)=>{console.error('renderer process gone',details);writeSmokeFailure('render-process-gone',details?.reason||details)});
+  win.webContents.once('dom-ready',()=>scheduleSmoke('dom-ready'));
+  win.webContents.once('did-stop-loading',()=>scheduleSmoke('did-stop-loading'));
+  win.webContents.on('did-finish-load',()=>{if(pendingDeepLink){const link=pendingDeepLink;pendingDeepLink=null;win.webContents.send('grok-agent:deep-link',link)}scheduleSmoke('did-finish-load')});
+  if(process.env.VITE_DEV_SERVER_URL)void win.loadURL(process.env.VITE_DEV_SERVER_URL).catch(error=>writeSmokeFailure('load-url',error));
+  else void win.loadFile(path.join(__dirname,'..','dist','index.html')).catch(error=>writeSmokeFailure('load-file',error));
   win.on('closed',()=>{if(mainWindow===win)mainWindow=null;});mainWindow=win;return win;
 }
 if(!app.requestSingleInstanceLock())app.quit();
