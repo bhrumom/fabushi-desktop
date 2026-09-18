@@ -5,7 +5,7 @@ const crypto=require('node:crypto');
 const MUTATING_SURFACE_TOOLS=new Set([
   'open_url',
   'browser_navigate','browser_click','browser_type','browser_key',
-  'computer_click','computer_type','computer_key'
+  'computer_click','computer_mouse_move','computer_drag','computer_scroll','computer_type','computer_key'
 ]);
 
 function autoReviewSurface(name){
