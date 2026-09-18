@@ -14,11 +14,12 @@ function Status({status}:{status:AgentSummary['status']}) {
 
 function Sidebar(p:{
   agents:AgentSummary[];selected:string|null;query:string;setQuery(v:string):void;select(id:string):void;
-  create():void;plugins():void;settings():void;orgChart():void;rename(agent:AgentSummary):void;remove(agent:AgentSummary):void;openPalette():void;
+  create():void;plugins():void;settings():void;orgChart():void;hiddenChats():void;rename(agent:AgentSummary):void;hide(agent:AgentSummary):void;remove(agent:AgentSummary):void;openPalette():void;
 }) {
   const rows=useMemo(()=>{
+    const visible=p.agents.filter(a=>!a.hidden);
     const q=p.query.trim().toLowerCase();
-    return q?p.agents.filter(a=>a.name.toLowerCase().includes(q)):p.agents;
+    return q?visible.filter(a=>a.name.toLowerCase().includes(q)):visible;
   },[p.agents,p.query]);
   return <aside className="sidebar sand-agents-sidebar">
     <div className="drag-region"/>
@@ -33,12 +34,14 @@ function Sidebar(p:{
       </button>
       <span className="row-actions">
         <button aria-label={'Rename '+a.name} title="Rename" onClick={()=>p.rename(a)}>✎</button>
+        <button aria-label={'Hide '+a.name} title="Hide" onClick={()=>p.hide(a)}>◌</button>
         <button aria-label={'Delete '+a.name} title="Delete" onClick={()=>p.remove(a)}>×</button>
       </span>
     </div>)}</div>
     <div className="grow"/>
     <div className="sidebar-footer">
       <button onClick={p.orgChart}>⌘ <span>Org chart</span></button>
+      <button onClick={p.hiddenChats}>◉ <span>Hidden Bots</span></button>
       <button onClick={p.plugins}>◫ <span>Plugins</span></button>
       <button onClick={p.settings}>⚙ <span>Settings</span></button>
       <div className="account"><span className="avatar light">F</span><span><strong>Fabushi</strong><small>Local computer</small></span></div>
@@ -140,6 +143,17 @@ function Workspace({agent,thread,refresh,openAutomations}:{agent:AgentSummary;th
       await bridge.stopAgent({agentId:agent.id});await refresh();
     }}/>
   </main>;
+}
+
+function HiddenChats({agents,onClose,onOpen,onChanged}:{agents:AgentSummary[];onClose():void;onOpen(id:string):void;onChanged():Promise<void>}) {
+  const hidden=agents.filter(agent=>agent.hidden);
+  return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay hidden-chats sand-hidden-chats-dialog" role="dialog" aria-modal="true" aria-label="Hidden Bots">
+    <header><div><h2>Hidden Bots</h2><p>Hidden Bots stay active and keep their history, they just don't show in the sidebar.</p></div><button aria-label="Close" onClick={onClose}>×</button></header>
+    <div className="hidden-chats-list">{hidden.length?hidden.map(agent=><div className="hidden-chat-row sand-hidden-chats__row" key={agent.id}>
+      <button className="hidden-chat-open sand-hidden-chats__open" onClick={()=>onOpen(agent.id)}><span className="avatar">{initials(agent.name)}</span><span>{agent.name}</span></button>
+      <button className="hidden-chat-unhide sand-hidden-chats__unhide" onClick={async()=>{await bridge.setAgentHidden({agentId:agent.id,hidden:false});await onChanged()}}>Unhide</button>
+    </div>):<div className="hidden-chats-empty sand-hidden-chats__empty"><span>◉</span><span>No hidden bots</span></div>}</div>
+  </section></div>;
 }
 
 function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginDescriptor[];workflows:WorkflowDescriptor[];onClose():void;reload():Promise<void>;reloadWorkflows():Promise<void>}) {
@@ -435,11 +449,12 @@ function DeleteAgent({agent,onClose,onDeleted}:{agent:AgentSummary;onClose():voi
   return <div className="shade"><section className="create-dialog"><h2>Delete {agent.name}?</h2><p>This removes its local conversation transcript from this Fabushi profile.</p><div><button onClick={onClose}>Cancel</button><button className="danger" onClick={async()=>{await bridge.deleteAgent({agentId:agent.id});await onDeleted();onClose()}}>Delete</button></div></section></div>;
 }
 
-function CommandPalette({agents,onClose,onSelect,onCreate,onOrgChart,onPlugins,onSettings}:{agents:AgentSummary[];onClose():void;onSelect(id:string):void;onCreate():void;onOrgChart():void;onPlugins():void;onSettings():void}) {
+function CommandPalette({agents,onClose,onSelect,onCreate,onOrgChart,onHiddenChats,onPlugins,onSettings}:{agents:AgentSummary[];onClose():void;onSelect(id:string):void;onCreate():void;onOrgChart():void;onHiddenChats():void;onPlugins():void;onSettings():void}) {
   const [query,setQuery]=useState('');
   const actions=[
     {id:'new',label:'New agent',run:onCreate},
     {id:'orgchart',label:'Open Org chart',run:onOrgChart},
+    {id:'hidden',label:'Open Hidden Bots',run:onHiddenChats},
     {id:'plugins',label:'Open Plugins',run:onPlugins},
     {id:'settings',label:'Open Settings',run:onSettings},
     ...agents.map(agent=>({id:'agent:'+agent.id,label:'Open '+agent.name,run:()=>onSelect(agent.id)}))
@@ -456,7 +471,7 @@ export default function GrokApp(){
   const [thread,setThread]=useState<AgentThread|null>(null);
   const [plugins,setPlugins]=useState<PluginDescriptor[]>([]);
   const [workflows,setWorkflows]=useState<WorkflowDescriptor[]>([]);
-  const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|'orgchart'|null>(null);
+  const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|'orgchart'|'hidden'|null>(null);
   const [createOpen,setCreateOpen]=useState(false);
   const [renameAgent,setRenameAgent]=useState<AgentSummary|null>(null);
   const [deleteAgent,setDeleteAgent]=useState<AgentSummary|null>(null);
@@ -497,16 +512,17 @@ export default function GrokApp(){
 
   return <div className="app-shell">
     <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={setSelectedId} create={()=>setCreateOpen(true)}
-      plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} orgChart={()=>setOverlay('orgchart')} rename={setRenameAgent} remove={setDeleteAgent} openPalette={()=>setPaletteOpen(true)}/>
+      plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} orgChart={()=>setOverlay('orgchart')} hiddenChats={()=>setOverlay('hidden')} rename={setRenameAgent} hide={agent=>{void bridge.setAgentHidden({agentId:agent.id,hidden:true}).then(loadAgents).catch(error=>setFailure(error instanceof Error?error.message:String(error)))}} remove={setDeleteAgent} openPalette={()=>setPaletteOpen(true)}/>
     {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')}/>:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
     {failure?<div className="toast-error">{failure}<button onClick={()=>setFailure('')}>×</button></div>:null}
     {overlay==='plugins'?<Plugins items={plugins} workflows={workflows} onClose={()=>setOverlay(null)} reload={loadPlugins} reloadWorkflows={loadWorkflows}/>:null}
     {overlay==='settings'?<Settings onClose={()=>setOverlay(null)}/>:null}
     {overlay==='automations'&&selected?<Automations agent={selected} onClose={()=>setOverlay(null)}/>:null}
     {overlay==='orgchart'?<OrgChart agents={agents} onClose={()=>setOverlay(null)} onSelect={setSelectedId}/>:null}
+    {overlay==='hidden'?<HiddenChats agents={agents} onClose={()=>setOverlay(null)} onOpen={id=>{setSelectedId(id);setOverlay(null)}} onChanged={loadAgents}/>:null}
     {createOpen?<CreateAgent onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>setSelectedId(agent.id))}}/>:null}
     {renameAgent?<RenameAgent agent={renameAgent} onClose={()=>setRenameAgent(null)} onSaved={loadAgents}/>:null}
     {deleteAgent?<DeleteAgent agent={deleteAgent} onClose={()=>setDeleteAgent(null)} onDeleted={async()=>{await loadAgents();setThread(null)}}/>:null}
-    {paletteOpen?<CommandPalette agents={agents} onClose={()=>setPaletteOpen(false)} onSelect={setSelectedId} onCreate={()=>setCreateOpen(true)} onOrgChart={()=>setOverlay('orgchart')} onPlugins={()=>setOverlay('plugins')} onSettings={()=>setOverlay('settings')}/>:null}
+    {paletteOpen?<CommandPalette agents={agents} onClose={()=>setPaletteOpen(false)} onSelect={setSelectedId} onCreate={()=>setCreateOpen(true)} onOrgChart={()=>setOverlay('orgchart')} onHiddenChats={()=>setOverlay('hidden')} onPlugins={()=>setOverlay('plugins')} onSettings={()=>setOverlay('settings')}/>:null}
   </div>;
 }

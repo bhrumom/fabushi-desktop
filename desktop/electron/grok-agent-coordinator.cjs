@@ -41,7 +41,7 @@ function normalizeState(parsed){
   if(!parsed||typeof parsed!=='object')return initialState();
   const base=initialState();
   if(Array.isArray(parsed.agents)&&parsed.agents.length){
-    base.agents=parsed.agents.map(a=>({...a,status:['idle','thinking','running','waiting','error'].includes(a.status)?a.status:'idle'}));
+    base.agents=parsed.agents.map(a=>({...a,hidden:a.hidden===true,status:['idle','thinking','running','waiting','error'].includes(a.status)?a.status:'idle'}));
     base.messages={};
     for(const agent of base.agents)base.messages[agent.id]=Array.isArray(parsed.messages?.[agent.id])?parsed.messages[agent.id]:[];
   }
@@ -110,12 +110,16 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function findAgent(id){const s=await load();return s.agents.find(a=>a.id===id)||null}
   async function listAgents(){const s=await load();return[...s.agents].sort((a,b)=>b.updatedAt-a.updatedAt)}
   async function createAgent({name,parentAgentId=null,purpose='user',description=''}){
-    const s=await load(),now=Date.now(),agent={id:crypto.randomUUID(),name:clean(name),description:String(description||'').slice(0,500),purpose:String(purpose||'user').slice(0,40),parentAgentId:parentAgentId||null,status:'idle',createdAt:now,updatedAt:now,unread:false};
+    const s=await load(),now=Date.now(),agent={id:crypto.randomUUID(),name:clean(name),description:String(description||'').slice(0,500),purpose:String(purpose||'user').slice(0,40),parentAgentId:parentAgentId||null,hidden:false,status:'idle',createdAt:now,updatedAt:now,unread:false};
     s.agents.unshift(agent);s.messages[agent.id]=[];s.automations[agent.id]=[];await save();emit('agents.changed');return agent;
   }
   async function renameAgent({agentId,name}){
     const agent=await findAgent(agentId);if(!agent)throw Error('Agent not found');
     agent.name=clean(name,agent.name);agent.updatedAt=Date.now();await save();emit('agent.changed',{agentId});return agent;
+  }
+  async function setAgentHidden({agentId,hidden}){
+    const agent=await findAgent(agentId);if(!agent)throw Error('Agent not found');
+    agent.hidden=hidden===true;agent.updatedAt=Date.now();await save();emit('agents.changed',{agentId,hidden:agent.hidden});return agent;
   }
   async function deleteAgent({agentId}){
     const s=await load();aborts.get(agentId)?.abort();cancelApprovals(agentId,'Agent deleted.');
@@ -566,7 +570,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
 
   return{
-    listAgents,createAgent,renameAgent,deleteAgent,getThread,sendMessage,stopAgent,
+    listAgents,createAgent,renameAgent,setAgentHidden,deleteAgent,getThread,sendMessage,stopAgent,
     listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,resolveApproval,dispose
   };
 }

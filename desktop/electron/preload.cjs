@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('grokAgent',Object.freeze({
   listAgents:()=>invoke('list-agents'),
   createAgent:x=>invoke('create-agent',x),
   renameAgent:x=>invoke('rename-agent',x),
+  setAgentHidden:x=>invoke('set-agent-hidden',x),
   deleteAgent:x=>invoke('delete-agent',x),
   getThread:x=>invoke('get-thread',x),
   sendMessage:x=>invoke('send-message',x),

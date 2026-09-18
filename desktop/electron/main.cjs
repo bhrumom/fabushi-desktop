@@ -17,7 +17,7 @@ function trusted(event){
 function assertTrusted(event){if(!trusted(event))throw Error('Rejected IPC sender');}
 function registerIpc(){
   const methods={
-    'list-agents':'listAgents','create-agent':'createAgent','rename-agent':'renameAgent','delete-agent':'deleteAgent',
+    'list-agents':'listAgents','create-agent':'createAgent','rename-agent':'renameAgent','set-agent-hidden':'setAgentHidden','delete-agent':'deleteAgent',
     'get-thread':'getThread','send-message':'sendMessage','stop-agent':'stopAgent',
     'list-plugins':'listPlugins','set-plugin-installed':'setPluginInstalled','set-plugin-enabled':'setPluginEnabled',
     'get-runtime-settings':'getRuntimeSettings','set-local-tool-permission':'setLocalToolPermission','set-auto-review-mode':'setAutoReviewMode','resolve-approval':'resolveApproval',

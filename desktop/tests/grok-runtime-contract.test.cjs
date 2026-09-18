@@ -157,3 +157,19 @@ test('parent Agent tool call creates and completes a real delegated subagent',as
   const parentThread=await runtime.getThread({agentId:parent.id});
   assert.equal(parentThread.messages.some(message=>message.role==='tool'&&message.toolName==='create_subagent'&&message.status==='done'),true);
 });
+
+
+test('hidden agents remain persisted and executable while disappearing from sidebar state',async t=>{
+  const f=await fixture(t);
+  const runtime=f.createRuntime();
+  const agent=(await runtime.listAgents())[0];
+  const hidden=await runtime.setAgentHidden({agentId:agent.id,hidden:true});
+  assert.equal(hidden.hidden,true);
+  const thread=await runtime.getThread({agentId:agent.id});
+  assert.equal(thread.agent.hidden,true);
+  const second=f.createRuntime();
+  const persisted=(await second.listAgents()).find(row=>row.id===agent.id);
+  assert.equal(persisted.hidden,true);
+  await second.setAgentHidden({agentId:agent.id,hidden:false});
+  assert.equal((await second.getThread({agentId:agent.id})).agent.hidden,false);
+});
