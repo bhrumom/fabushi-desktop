@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import Darwin
 
 func intArg(_ index: Int, _ label: String) -> Int {
     guard CommandLine.arguments.count > index, let value = Int(CommandLine.arguments[index]) else {
