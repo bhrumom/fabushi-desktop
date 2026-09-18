@@ -53,10 +53,14 @@ export interface PluginDescriptor {
 export interface McpServerDescriptor {
   id:string;
   name:string;
+  transport:'stdio'|'http';
   command:string;
   args:string[];
+  url:string;
   enabled:boolean;
   disabledTools:string[];
+  customInstructions:string;
+  accountKey:string;
 }
 export interface McpToolDescriptor {
   name:string;
@@ -128,7 +132,7 @@ export interface GrokAgentBridge {
   setLocalToolPermission(input:{permission:RuntimeSettings['localToolPermission']}):Promise<RuntimeSettings>;
   resolveApproval(input:{approvalId:string;approved:boolean}):Promise<{ok:true}>;
   listMcpServers():Promise<McpServerDescriptor[]>;
-  addMcpServer(input:{name:string;command:string;args?:string[]}):Promise<McpServerDescriptor>;
+  addMcpServer(input:{name:string;transport?:'stdio'|'http';command?:string;args?:string[];url?:string;customInstructions?:string;accountKey?:string}):Promise<McpServerDescriptor>;
   removeMcpServer(input:{serverId:string}):Promise<{ok:true}>;
   setMcpServerEnabled(input:{serverId:string;enabled:boolean}):Promise<McpServerDescriptor>;
   listMcpServerTools(input:{serverId:string}):Promise<McpToolDescriptor[]>;
