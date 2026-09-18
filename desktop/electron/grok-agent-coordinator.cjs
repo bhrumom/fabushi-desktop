@@ -5,6 +5,8 @@ const path=require('node:path');
 const crypto=require('node:crypto');
 const {createHostRuntime}=require('./grok-host-runtime.cjs');
 const {createMcpManager,normalizeServer}=require('./grok-mcp-manager.cjs');
+const {createSecretStore}=require('./grok-secret-store.cjs');
+const {createMcpOAuthManager,normalizeAccountKey}=require('./grok-mcp-oauth.cjs');
 const {createWorkflowManager}=require('./grok-workflow-manager.cjs');
 const {normalizeSchedule,isValidSchedule,computeNextRunAt,describeSchedule}=require('./grok-automation-schedule.cjs');
 const {createLocalBrowserRuntime}=require('./grok-local-browser.cjs');
@@ -68,7 +70,7 @@ function normalizeState(parsed){
   }
   return base;
 }
-function createCoordinatorRuntime({app,BrowserWindow,shell}){
+function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null}){
   const file=path.join(app.getPath('userData'),'grok-agent-runtime.json');
   let state=null,writing=Promise.resolve();
   const aborts=new Map();
@@ -156,7 +158,18 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
     pending.finish(approved===true);return{ok:true};
   }
 
-  const mcp=createMcpManager({getServers:async()=>[...((await load()).mcpServers||[])]});
+  const secretStore=createSecretStore({app,safeStorage});
+  let mcp=null;
+  const oauth=createMcpOAuthManager({
+    getServer:async serverId=>(await load()).mcpServers.find(server=>server.id===serverId)||null,
+    tokenStore:secretStore,
+    openExternal:url=>shell.openExternal(url),
+    onChanged:serverId=>{mcp?.disposeServer(serverId);emit('plugins.changed',{serverId})}
+  });
+  mcp=createMcpManager({
+    getServers:async()=>[...((await load()).mcpServers||[])],
+    getAuthorizationHeader:(server,signal)=>oauth.authorizationHeader(server,signal)
+  });
   const workflowManager=createWorkflowManager({app});
   const localBrowser=createLocalBrowserRuntime({BrowserWindow});
   const host=createHostRuntime({
@@ -330,7 +343,12 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
 
   async function listMcpServers(){
     const s=await load();
-    return (s.mcpServers||[]).map(server=>({id:server.id,name:server.name,transport:server.transport||'stdio',command:server.command||'',args:[...(server.args||[])],url:server.url||'',enabled:server.enabled!==false,disabledTools:[...(server.disabledTools||[])],customInstructions:server.customInstructions||'',accountKey:server.accountKey||'default'}));
+    return (s.mcpServers||[]).map(server=>({
+      id:server.id,name:server.name,transport:server.transport||'stdio',command:server.command||'',args:[...(server.args||[])],url:server.url||'',
+      enabled:server.enabled!==false,disabledTools:[...(server.disabledTools||[])],customInstructions:server.customInstructions||'',accountKey:server.accountKey||'default',
+      oauthClientId:server.oauthClientId||'',oauthAuthorizationUrl:server.oauthAuthorizationUrl||'',oauthTokenUrl:server.oauthTokenUrl||'',
+      oauthRegistrationUrl:server.oauthRegistrationUrl||'',oauthScopes:[...(server.oauthScopes||[])]
+    }));
   }
   async function addMcpServer(input){
     const s=await load(),server=normalizeServer(input);
@@ -338,7 +356,9 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
     s.mcpServers.push(server);await save();emit('plugins.changed');return server;
   }
   async function removeMcpServer({serverId}){
-    const s=await load(),before=s.mcpServers.length;
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId),before=s.mcpServers.length;
+    if(!server)throw Error('MCP server not found.');
+    if(server.transport==='http')await oauth.disconnect(serverId,server.accountKey||'default').catch(()=>{});
     s.mcpServers=s.mcpServers.filter(x=>x.id!==serverId);
     if(s.mcpServers.length===before)throw Error('MCP server not found.');
     mcp.disposeServer(serverId);await save();emit('plugins.changed');return{ok:true};
@@ -346,6 +366,30 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
   async function setMcpServerEnabled({serverId,enabled}){
     const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
     server.enabled=enabled===true;if(!server.enabled)mcp.disposeServer(serverId);await save();emit('plugins.changed');return server;
+  }
+  async function getMcpAccountStatus({serverId,accountKey}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    if(server.transport!=='http')return{serverId,accountKey:'default',connected:false,expiresAt:null,scope:'',supported:false};
+    const key=normalizeAccountKey(accountKey||server.accountKey||'default');
+    return{...(await oauth.status(serverId,key)),supported:true};
+  }
+  async function connectMcpAccount({serverId,accountKey}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    if(server.transport!=='http')throw Error('Only HTTP MCP servers support OAuth accounts.');
+    const key=normalizeAccountKey(accountKey||server.accountKey||'default');
+    server.accountKey=key;await save();
+    const status=await oauth.connect(serverId,key);mcp.disposeServer(serverId);emit('plugins.changed',{serverId});return{...status,supported:true};
+  }
+  async function disconnectMcpAccount({serverId,accountKey}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    const key=normalizeAccountKey(accountKey||server.accountKey||'default');
+    const status=await oauth.disconnect(serverId,key);mcp.disposeServer(serverId);emit('plugins.changed',{serverId});return{...status,supported:server.transport==='http'};
+  }
+  async function renameMcpAccount({serverId,accountKey,newAccountKey}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    if(server.transport!=='http')throw Error('Only HTTP MCP servers support OAuth accounts.');
+    const from=normalizeAccountKey(accountKey||server.accountKey||'default'),to=normalizeAccountKey(newAccountKey);
+    const status=await oauth.rename(serverId,from,to);if(server.accountKey===from)server.accountKey=to;await save();mcp.disposeServer(serverId);emit('plugins.changed',{serverId});return{...status,supported:true};
   }
   async function listMcpServerTools({serverId}){return await mcp.listServerTools(serverId)}
   async function setMcpToolEnabled({serverId,toolName,enabled}){
@@ -358,7 +402,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
     const local=capabilityCatalog.map(p=>({...p,installed:true,enabled:s.plugins?.[p.id]?.enabled!==false,removable:false,kind:'local'}));
     const servers=(s.mcpServers||[]).map(server=>({
       id:'mcp:'+server.id,name:server.name,description:server.transport==='http'?'Remote MCP: '+server.url:'MCP server: '+server.command,category:'MCP',builtin:false,
-      provider:'stdio-mcp',installed:true,enabled:server.enabled!==false,removable:true,kind:'mcp',serverId:server.id
+      provider:server.transport==='http'?'http-mcp':'stdio-mcp',installed:true,enabled:server.enabled!==false,removable:true,kind:'mcp',serverId:server.id,accountKey:server.accountKey||'default',transport:server.transport||'stdio'
     }));
     return[...local,...servers];
   }
@@ -399,7 +443,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell}){
 
   return{
     listAgents,createAgent,renameAgent,deleteAgent,getThread,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,removeMcpServer,setMcpServerEnabled,listMcpServerTools,setMcpToolEnabled,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,resolveApproval
+    listPlugins,setPluginInstalled,setPluginEnabled,listMcpServers,addMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,listMcpServerTools,setMcpToolEnabled,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,resolveApproval
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
