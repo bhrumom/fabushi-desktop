@@ -50,6 +50,7 @@
       "electron/grok-auto-review.cjs",
       "electron/grok-transient-retry.cjs",
       "electron/grok-message-interactions.cjs",
+      "electron/grok-communication-tools.cjs",
       "electron/grok-attachment-gateway.cjs",
       "electron/grok-mcp-manager.cjs",
       "electron/grok-mcp-oauth.cjs",
