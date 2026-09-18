@@ -14,6 +14,7 @@ const {createLocalBrowserRuntime}=require('./grok-local-browser.cjs');
 const {createPluginMarketplace}=require('./grok-plugin-marketplace.cjs');
 const {createOutputSpiller}=require('./grok-output-spill.cjs');
 const {deriveConversationOutline}=require('./grok-conversation-outline.cjs');
+const {normalizedReactions,toggleSelfReaction,resolveReplyTarget,searchWorkspaceIndex}=require('./grok-message-interactions.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
@@ -44,7 +45,7 @@ function normalizeState(parsed){
   if(Array.isArray(parsed.agents)&&parsed.agents.length){
     base.agents=parsed.agents.map(a=>({...a,hidden:a.hidden===true,description:String(a.description||'').slice(0,2000),title:a.title==null?undefined:String(a.title).slice(0,240),notifyOnUpdatesEnabled:a.notifyOnUpdatesEnabled===true,status:['idle','thinking','running','waiting','error'].includes(a.status)?a.status:'idle'}));
     base.messages={};
-    for(const agent of base.agents)base.messages[agent.id]=Array.isArray(parsed.messages?.[agent.id])?parsed.messages[agent.id]:[];
+    for(const agent of base.agents)base.messages[agent.id]=Array.isArray(parsed.messages?.[agent.id])?parsed.messages[agent.id].map(row=>({...row,...(typeof row?.replyToId==='string'&&row.replyToId?{replyToId:row.replyToId}:{}),reactions:normalizedReactions(row?.reactions)})):[];
   }
   for(const id of catalogIds){
     const previous=parsed.plugins?.[id];
@@ -250,14 +251,23 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
 
   async function registerAttachment({path}){if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');return attachmentGateway.register(path)}
   async function readAttachment({id}){if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');return attachmentGateway.read(id)}
-  async function sendMessage({agentId,text,attachmentIds=[]}){
+  async function reactToMessage({agentId,entryId,emoji}){
+    const s=await load(),agent=s.agents.find(row=>row.id===agentId);if(!agent)throw Error('Agent not found');
+    const message=(s.messages[agentId]||[]).find(row=>row.id===entryId);if(!message||(message.role!=='user'&&message.role!=='assistant'))throw Error('Message not found.');
+    const reactions=toggleSelfReaction(message,emoji);await save();emit('message.changed',{agentId,messageId:entryId,reactions});return{reactions:[...reactions]};
+  }
+  async function searchMessages({query='',limit=50}={}){const s=await load();return searchWorkspaceIndex({agents:s.agents,messages:s.messages,query,limit}).messages}
+  async function searchMedia({query='',limit=50}={}){const s=await load();return searchWorkspaceIndex({agents:s.agents,messages:s.messages,query,limit}).media}
+  async function searchLinks({query='',limit=50}={}){const s=await load();return searchWorkspaceIndex({agents:s.agents,messages:s.messages,query,limit}).links}
+  async function sendMessage({agentId,text,attachmentIds=[],replyToId=null}){
     if(disposed)throw Error('Agent runtime is shutting down.');
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
     const body=String(text||'').trim();
     const attachments=attachmentGateway?await attachmentGateway.resolve(Array.isArray(attachmentIds)?attachmentIds:[]):[];
     if(!body&&!attachments.length)throw Error('Message or attachment required');
     if(['thinking','running','waiting'].includes(agent.status))throw Error('Agent already running');
-    const now=Date.now(),user={id:crypto.randomUUID(),role:'user',text:body,createdAt:now,status:'done',attachments:attachments.map(row=>({id:row.id,name:row.name,mime:row.mime,size:row.size,kind:row.kind,createdAt:row.createdAt}))};
+    const replyTarget=replyToId?resolveReplyTarget(s.messages[agentId]||[],replyToId):null;if(replyToId&&!replyTarget)throw Error('Reply target not found.');
+    const now=Date.now(),user={id:crypto.randomUUID(),role:'user',text:body,createdAt:now,status:'done',attachments:attachments.map(row=>({id:row.id,name:row.name,mime:row.mime,size:row.size,kind:row.kind,createdAt:row.createdAt})),...(replyTarget?{replyToId:replyTarget.id}:{})};
     const assistant={id:crypto.randomUUID(),role:'assistant',text:'',createdAt:now+1,status:'streaming'};
     const transcript=s.messages[agentId]||(s.messages[agentId]=[]);
     transcript.push(user);agent.status='thinking';agent.updatedAt=now;await save();
@@ -611,7 +621,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
 
   return{
-    listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,sendMessage,stopAgent,
+    listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,reactToMessage,searchMessages,searchMedia,searchLinks,sendMessage,stopAgent,
     listPlugins,setPluginInstalled,setPluginEnabled,getAccountStatus,loginAccount,cancelAccountLogin,logoutAccount,updateAccountName,getAccountAvatar,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
   };
 }
