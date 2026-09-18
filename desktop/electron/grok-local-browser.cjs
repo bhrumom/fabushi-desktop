@@ -26,7 +26,7 @@ function createLocalBrowserRuntime({BrowserWindow}){
       try{void win.loadURL(requireWebUrl(url))}catch{}
       return{action:'deny'};
     });
-    current={win,generation:crypto.randomUUID(),stateId:null,url:null,title:null};
+    current={win,generation:crypto.randomUUID(),refPrefix:'fabushi-'+crypto.randomUUID().slice(0,8)+'-',stateId:null,url:null,title:null};
     sessions.set(agentId,current);
     win.on('closed',()=>{if(sessions.get(agentId)===current)sessions.delete(agentId)});
     return current;
@@ -34,7 +34,7 @@ function createLocalBrowserRuntime({BrowserWindow}){
 
   async function snapshot(agentId){
     const current=session(agentId),win=current.win;
-    const script="(()=>{const clean=v=>String(v??'').replace(/\\\\s+/g,' ').trim();const nodes=[...document.querySelectorAll('a,button,input,textarea,select,[role=\"button\"],[role=\"link\"],[tabindex]')].slice(0,"+MAX_ELEMENTS+");const prefix='fabushi-'+Math.random().toString(36).slice(2,9)+'-';const elements=nodes.map((el,index)=>{const ref=prefix+index;el.setAttribute('data-fabushi-ref',ref);const input=el instanceof HTMLInputElement;const type=input?String(el.type||'text').toLowerCase():'';return{ref,tag:el.tagName.toLowerCase(),role:el.getAttribute('role')||'',type,text:clean(el.innerText||el.textContent||'').slice(0,240),ariaLabel:clean(el.getAttribute('aria-label')||'').slice(0,160),placeholder:clean(el.getAttribute('placeholder')||'').slice(0,160),href:el instanceof HTMLAnchorElement?el.href:'',value:input&&type!=='password'?String(el.value||'').slice(0,240):el instanceof HTMLTextAreaElement?String(el.value||'').slice(0,240):'',disabled:Boolean(el.disabled)}});return{url:location.href,title:document.title,body:clean(document.body?.innerText||'').slice(0,"+MAX_TEXT+"),elements}})()";
+    const script="(()=>{const clean=v=>String(v??'').replace(/\\\\s+/g,' ').trim();const nodes=[...document.querySelectorAll('a,button,input,textarea,select,[role=\"button\"],[role=\"link\"],[tabindex]')].slice(0,"+MAX_ELEMENTS+");const prefix="+JSON.stringify(current.refPrefix)+";const elements=nodes.map((el,index)=>{const ref=prefix+index;el.setAttribute('data-fabushi-ref',ref);const input=el instanceof HTMLInputElement;const type=input?String(el.type||'text').toLowerCase():'';return{ref,tag:el.tagName.toLowerCase(),role:el.getAttribute('role')||'',type,text:clean(el.innerText||el.textContent||'').slice(0,240),ariaLabel:clean(el.getAttribute('aria-label')||'').slice(0,160),placeholder:clean(el.getAttribute('placeholder')||'').slice(0,160),href:el instanceof HTMLAnchorElement?el.href:'',value:input&&type!=='password'?String(el.value||'').slice(0,240):el instanceof HTMLTextAreaElement?String(el.value||'').slice(0,240):'',disabled:Boolean(el.disabled)}});return{url:location.href,title:document.title,body:clean(document.body?.innerText||'').slice(0,"+MAX_TEXT+"),elements}})()";
     const page=await win.webContents.executeJavaScript(script,true);
     const canonical=JSON.stringify({
       url:page.url,title:page.title,
