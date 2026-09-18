@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { getAgentBridge, subscribeAgentEvents } from './grok-agent-client';
-import type { AgentMessage, AgentSummary, AgentThread, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
+import type { AgentMessage, AgentSummary, AgentThread, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor } from './grok-types';
 import './grok-app.css';
 
 const bridge=getAgentBridge();
@@ -114,7 +114,7 @@ function Workspace({agent,thread,refresh,openAutomations}:{agent:AgentSummary;th
 }
 
 function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginDescriptor[];workflows:WorkflowDescriptor[];onClose():void;reload():Promise<void>;reloadWorkflows():Promise<void>}) {
-  const [tab,setTab]=useState<'plugins'|'skills'>('plugins');
+  const [tab,setTab]=useState<'plugins'|'marketplace'|'skills'>('plugins');
   const [query,setQuery]=useState('');
   const [addOpen,setAddOpen]=useState(false);
   const [name,setName]=useState('');
@@ -132,10 +132,14 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
   const [serverConfigs,setServerConfigs]=useState<Record<string,McpServerDescriptor>>({});
   const [serverEditor,setServerEditor]=useState<null|{serverId:string;name:string;transport:'stdio'|'http';command:string;argsText:string;url:string;accountKey:string;oauthClientId:string;oauthScopes:string;customInstructions:string}>(null);
   const [authPending,setAuthPending]=useState<string|null>(null);
+  const [marketplace,setMarketplace]=useState<MarketplaceCatalogDescriptor|null>(null);
+  const [marketPending,setMarketPending]=useState<string|null>(null);
+  const [marketValues,setMarketValues]=useState<Record<string,Record<string,string>>>({});
   const [skillEditor,setSkillEditor]=useState<WorkflowDescriptor|{id?:string;name:string;description:string;body:string;isEnabledForAgent:boolean}|null>(null);
   const [error,setError]=useState('');
   const rows=items.filter(x=>(x.name+' '+x.description+' '+x.category).toLowerCase().includes(query.toLowerCase()));
   const skillRows=workflows.filter(x=>(x.name+' '+x.description).toLowerCase().includes(query.toLowerCase()));
+  const marketRows=(marketplace?.plugins||[]).filter(x=>(x.displayName+' '+x.description+' '+x.category).toLowerCase().includes(query.toLowerCase()));
   const loadAccount=async(serverId:string,key='default')=>{
     try{const status=await bridge.getMcpAccountStatus({serverId,accountKey:key});setAccounts(current=>({...current,[serverId]:status}))}
     catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
@@ -150,6 +154,12 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
     void loadServerConfigs();
     for(const item of items)if(item.kind==='mcp'&&item.transport==='http'&&item.serverId)void loadAccount(item.serverId,item.accountKey||'default');
   },[items]);
+  const loadMarketplace=async()=>{
+    setError('');
+    try{setMarketplace(await bridge.listMarketplacePlugins())}
+    catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
+  };
+  useEffect(()=>{if(tab==='marketplace')void loadMarketplace()},[tab]);
   const loadTools=async(serverId:string)=>{
     setError('');
     try{setTools(current=>({...current,[serverId]:[]}));const next=await bridge.listMcpServerTools({serverId});setTools(current=>({...current,[serverId]:next}))}
@@ -205,7 +215,7 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
   };
   return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay plugins" role="dialog" aria-label="Plugins">
     <header><div><h2>Plugins</h2><p>Executable local tools, MCP servers, and file-backed private skills.</p></div><div className="overlay-head-actions">
-      {tab==='plugins'?<button className="add-server" onClick={()=>setAddOpen(value=>!value)}>＋ MCP</button>:<button className="add-server" onClick={newSkill}>＋ Skill</button>}
+      {tab==='plugins'?<button className="add-server" onClick={()=>setAddOpen(value=>!value)}>＋ MCP</button>:tab==='skills'?<button className="add-server" onClick={newSkill}>＋ Skill</button>:null}
       <button onClick={onClose}>×</button>
     </div></header>
     {tab==='plugins'&&addOpen?<form className="mcp-add" onSubmit={e=>void addServer(e)}>
@@ -229,8 +239,8 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
       <label><input type="checkbox" checked={skillEditor.isEnabledForAgent} onChange={e=>setSkillEditor({...skillEditor,isEnabledForAgent:e.target.checked})}/> Available to agents</label>
       <div><button type="button" onClick={()=>setSkillEditor(null)}>Cancel</button><button className="primary compact">Save skill</button></div>
     </form>:null}
-    <label className="plugin-search">⌕<input value={query} onChange={e=>setQuery(e.target.value)} placeholder={tab==='plugins'?'Search plugins':'Search skills'}/></label>
-    <nav className="tabs"><button className={tab==='plugins'?'active':''} onClick={()=>setTab('plugins')}>Installed</button><button className={tab==='skills'?'active':''} onClick={()=>setTab('skills')}>Private skills</button></nav>
+    <label className="plugin-search">⌕<input value={query} onChange={e=>setQuery(e.target.value)} placeholder={tab==='plugins'?'Search installed plugins':tab==='marketplace'?'Search marketplace':'Search skills'}/></label>
+    <nav className="tabs"><button className={tab==='plugins'?'active':''} onClick={()=>setTab('plugins')}>Installed</button><button className={tab==='marketplace'?'active':''} onClick={()=>setTab('marketplace')}>Marketplace</button><button className={tab==='skills'?'active':''} onClick={()=>setTab('skills')}>Private skills</button></nav>
     {error?<div className="plugin-error">{error}</div>:null}
     {tab==='plugins'?<div className="plugin-rows">{rows.length?rows.map(x=><article className="plugin-card" key={x.id}>
       <span className="plugin-logo">{x.name[0]}</span>
@@ -261,6 +271,31 @@ function Plugins({items,workflows,onClose,reload,reloadWorkflows}:{items:PluginD
         {x.removable?<button onClick={async()=>{await bridge.setPluginInstalled({pluginId:x.id,installed:false});if(x.serverId)setExpanded(null);await reload()}}>Remove</button>:null}
       </div>
     </article>):<div className="overlay-empty">No executable capability matches this search.</div>}</div>
+    :tab==='marketplace'?<div className="plugin-rows">
+      {!marketplace?<div className="overlay-empty">Loading marketplace…</div>
+      :!marketplace.available?<div className="overlay-empty">{marketplace.reason||'Marketplace provider is unavailable.'}</div>
+      :marketRows.length?marketRows.map(plugin=><article className="plugin-card marketplace-card" key={plugin.id}>
+        <span className="plugin-logo">{plugin.displayName[0]||'P'}</span>
+        <div className="plugin-copy"><strong>{plugin.displayName}</strong><p>{plugin.description}</p><small>{plugin.category}{plugin.publisher?.displayName?' · '+plugin.publisher.displayName:''}</small>
+          {plugin.connectors.length?<div className="market-meta"><span>MCP</span>{plugin.connectors.map(row=><em key={row.name}>{row.name}</em>)}</div>:null}
+          {plugin.skills.length?<div className="market-meta"><span>Skills</span>{plugin.skills.map(row=><em key={row.name}>{row.name}</em>)}</div>:null}
+          {!plugin.installed&&plugin.fields.length?<div className="market-fields">{plugin.fields.map(field=><label key={field.key}><span>{field.label}{field.isRequired?' *':''}</span><input type={field.isSecret?'password':'text'} value={marketValues[plugin.id]?.[field.key]??field.defaultValue??''} placeholder={field.placeholder} onChange={e=>setMarketValues(current=>({...current,[plugin.id]:{...(current[plugin.id]||{}),[field.key]:e.target.value}}))}/>{field.hint?<small>{field.hint}</small>:null}</label>)}</div>:null}
+        </div>
+        <div className="plugin-actions">
+          {plugin.homepage?<button onClick={()=>void window.open(plugin.homepage!,'_blank','noopener,noreferrer')}>Homepage</button>:null}
+          <button className={plugin.installed?'':'primary compact'} disabled={marketPending===plugin.id} onClick={async()=>{
+            setMarketPending(plugin.id);setError('');
+            try{
+              const next=plugin.installed
+                ?await bridge.uninstallMarketplacePlugin({entryId:plugin.id})
+                :await bridge.installMarketplacePlugin({entryId:plugin.id,values:marketValues[plugin.id]||{}});
+              setMarketplace(next);await Promise.all([reload(),reloadWorkflows(),loadServerConfigs()]);
+            }catch(reason){setError(reason instanceof Error?reason.message:String(reason))}
+            finally{setMarketPending(null)}
+          }}>{marketPending===plugin.id?'…':plugin.installed?'Uninstall':'Install'}</button>
+        </div>
+      </article>):<div className="overlay-empty">No marketplace plugin matches this search.</div>}
+    </div>
     :<div className="skill-rows">{skillRows.length?skillRows.map(skill=><article key={skill.id}>
       <div className="plugin-copy"><strong>{skill.name}</strong><p>{skill.description||'No description'}</p><small>SKILL.md · mention @{skill.name.toLowerCase().replace(/\s+/g,'')} to load instructions</small></div>
       <div className="plugin-actions">
