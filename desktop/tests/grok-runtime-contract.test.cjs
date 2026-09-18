@@ -184,3 +184,16 @@ test('auto-review custom rules persist through coordinator restart',async t=>{
   assert.deepEqual(settings.autoReviewAllowInstructions,['Open documentation']);
   assert.deepEqual(settings.autoReviewBlockInstructions,['Ask before deleting data']);
 });
+
+
+test('agent settings profile and notification preference persist',async t=>{
+  const f=await fixture(t);
+  const runtime=f.createRuntime();
+  const agent=(await runtime.listAgents())[0];
+  const updated=await runtime.updateAgent({id:agent.id,profile:{name:'Chief Editor',title:'Lead agent',description:'Coordinates local work.'}});
+  assert.equal(updated.name,'Chief Editor');assert.equal(updated.title,'Lead agent');assert.equal(updated.description,'Coordinates local work.');
+  await runtime.setAgentNotifyOnUpdates({id:agent.id,isEnabled:true});
+  const second=f.createRuntime();
+  const persisted=(await second.listAgents()).find(row=>row.id===agent.id);
+  assert.equal(persisted.notifyOnUpdatesEnabled,true);assert.equal(persisted.title,'Lead agent');
+});
