@@ -4,8 +4,8 @@ const {createAgentRunner}=require('../electron/grok-agent-runner.cjs');
 
 test('runner owns lifecycle generation and turn result',async()=>{
  const events=[];const runner=createAgentRunner({agentId:'a1',runTurn:async input=>'done:'+input.generation,onLifecycle:event=>events.push(event)});
- const result=await runner.run({});assert.equal(result.value,'done:0');assert.equal(result.generation,0);
- assert.equal(events[0].type,'started');assert.equal(events[1].type,'ended');assert.equal(runner.snapshot().active,null);
+ const result=await runner.run({});assert.equal(result.value,'done:0');assert.equal(result.generation,0);assert.equal(result.engine,'grok-sand-agent-runner');
+ assert.equal(events[0].type,'started');assert.equal(events[1].type,'ended');assert.equal(runner.snapshot().active,null);assert.equal(runner.snapshot().engine,'grok-sand-agent-runner');
  assert.equal(runner.bumpGeneration(),1);assert.equal(runner.snapshot().generation,1);await runner.dispose();
 });
 test('runner interrupt aborts the active turn and quiesce blocks dispatch',async()=>{

@@ -10,11 +10,12 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 1420",
     "typecheck": "tsc --noEmit",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run build:reference-agent && tsc --noEmit && vite build",
     "build:computer-helper": "mkdir -p native/bin && swiftc native/MacComputerHelper.swift -O -o native/bin/fabushi-computer-helper",
     "package:mac": "npm run build && npm run build:computer-helper && electron-builder --mac dmg zip --publish never",
     "start": "electron .",
-    "postinstall": "node scripts/apply-third-party-patches.mjs"
+    "postinstall": "node scripts/apply-third-party-patches.mjs",
+    "build:reference-agent": "node scripts/build-reference-agent.mjs"
   },
   "dependencies": {
     "react": "19.2.1",
@@ -163,7 +164,8 @@
       "electron/grok-clock-skew-guard.cjs",
       "electron/grok-video-container.cjs",
       "electron/local-tool-executor.cjs",
-      "package.json"
+      "package.json",
+      "electron/grok-reference-sand-runner.cjs"
     ],
     "extraResources": [
       {

@@ -28,6 +28,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "26"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build pinned reference Agent runner
+        run: npm run build:reference-agent
       - name: Check Electron CommonJS syntax
         run: |
           for file in electron/*.cjs; do
@@ -35,7 +39,12 @@ jobs:
           done
       - name: Runtime contract tests
         run: node --test tests/*.test.cjs
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
+      - name: Typecheck exact pinned reference source
+        shell: bash
+        run: |
+          set -euo pipefail
+          ln -s "$PWD/node_modules" ../node_modules
+          trap 'rm -f ../node_modules' EXIT
+          npx tsc --project ../source/tsconfig.json
       - name: Typecheck and renderer build
         run: npm run build
