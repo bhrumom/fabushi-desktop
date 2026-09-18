@@ -33,6 +33,15 @@ export interface AgentMessage {
   outputLocation?:{filePath:string;sizeBytes:number;lineCount:number;truncated:boolean;originalSizeBytes:number;toolCallId:string};
   display?:{kind:'image';dataUrl:string};
 }
+export type ConversationOutlineItem =
+  | {kind:'user';id:string;text:string}
+  | {kind:'assistant-text';id:string;text:string}
+  | {kind:'tool-call';id:string;name:string;status:'pending'|'done'|'failed';summary?:string;outputLocation?:{filePath:string;sizeBytes:number;lineCount:number;truncated:boolean;originalSizeBytes:number;toolCallId:string}};
+export interface ConversationOutlineTurn {
+  rawUserText:string;
+  userMessageId:string;
+  items:ConversationOutlineItem[];
+}
 export interface PendingApproval {
   id:string;
   agentId:string;
@@ -45,6 +54,7 @@ export interface PendingApproval {
 export interface AgentThread {
   agent:AgentSummary;
   messages:AgentMessage[];
+  outline?:ConversationOutlineTurn[];
   pendingApprovals?:PendingApproval[];
 }
 export interface PluginDescriptor {

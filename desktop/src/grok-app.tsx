@@ -14,18 +14,18 @@ function Status({status}:{status:AgentSummary['status']}) {
 
 function Sidebar(p:{
   agents:AgentSummary[];selected:string|null;query:string;setQuery(v:string):void;select(id:string):void;
-  create():void;plugins():void;settings():void;rename(agent:AgentSummary):void;remove(agent:AgentSummary):void;openPalette():void;
+  create():void;plugins():void;settings():void;orgChart():void;rename(agent:AgentSummary):void;remove(agent:AgentSummary):void;openPalette():void;
 }) {
   const rows=useMemo(()=>{
     const q=p.query.trim().toLowerCase();
     return q?p.agents.filter(a=>a.name.toLowerCase().includes(q)):p.agents;
   },[p.agents,p.query]);
-  return <aside className="sidebar">
+  return <aside className="sidebar sand-agents-sidebar">
     <div className="drag-region"/>
     <div className="brand"><span className="brand-mark">✣</span><strong>Fabushi</strong><button aria-label="New agent" onClick={p.create}>＋</button></div>
     <label className="search" onClick={p.openPalette}><span>⌕</span><input value={p.query} onChange={e=>p.setQuery(e.target.value)} placeholder="Search agents"/><kbd>⌘K</kbd></label>
     <div className="section-label">Agents</div>
-    <div className="agent-list">{rows.map(a=><div className={'agent-row '+(p.selected===a.id?'selected':'')} key={a.id}>
+    <div className="agent-list">{rows.map(a=><div className={'agent-row sand-agent-item '+(p.selected===a.id?'selected':'')} key={a.id}>
       <button className="agent-select" onClick={()=>p.select(a.id)}>
         <span className="avatar">{initials(a.name)}</span>
         <span className="agent-copy"><strong>{a.name}</strong><small>{a.status==='idle'?'Ready':a.status}</small></span>
@@ -38,6 +38,7 @@ function Sidebar(p:{
     </div>)}</div>
     <div className="grow"/>
     <div className="sidebar-footer">
+      <button onClick={p.orgChart}>⌘ <span>Org chart</span></button>
       <button onClick={p.plugins}>◫ <span>Plugins</span></button>
       <button onClick={p.settings}>⚙ <span>Settings</span></button>
       <div className="account"><span className="avatar light">F</span><span><strong>Fabushi</strong><small>Local computer</small></span></div>
@@ -83,7 +84,7 @@ function Composer({running,onSend,onStop}:{running:boolean;onSend(text:string):P
     setText('');setSubmitting(true);
     try{await onSend(value)}finally{setSubmitting(false)}
   };
-  return <div className="composer">
+  return <div className="composer sand-prompt-shell sand-prompt-form">
     <textarea rows={1} value={text} disabled={running} placeholder={running?'Agent is working…':'Message agent'} onChange={e=>setText(e.target.value)} onKeyDown={e=>{
       if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();void submit()}
     }}/>
@@ -97,16 +98,44 @@ function Composer({running,onSend,onStop}:{running:boolean;onSend(text:string):P
   </div>;
 }
 
+function ConversationOutline({thread,onClose}:{thread:AgentThread|null;onClose():void}) {
+  const turns=thread?.outline||[];
+  return <aside className="conversation-outline" aria-label="Conversation outline">
+    <header><strong>Outline</strong><button onClick={onClose} aria-label="Close outline">×</button></header>
+    <div className="conversation-outline-list">{turns.length?turns.map((turn,index)=><section key={turn.userMessageId||String(index)}>
+      <div className="outline-user">{turn.rawUserText||'Turn '+(index+1)}</div>
+      {turn.items.filter(item=>item.kind!=='user').map(item=><div className={'outline-item outline-'+item.kind} key={item.id}>
+        {item.kind==='assistant-text'?<><span>Reply</span><p>{item.text}</p></>:<><span>{item.name} · {item.status}</span><p>{item.summary||item.outputLocation?.filePath||'Tool activity'}</p></>}
+      </div>)}
+    </section>):<div className="overlay-empty">No conversation activity yet.</div>}</div>
+  </aside>;
+}
+
+function OrgChart({agents,onClose,onSelect}:{agents:AgentSummary[];onClose():void;onSelect(id:string):void}) {
+  const ids=new Set(agents.map(agent=>agent.id));
+  const roots=agents.filter(agent=>!agent.parentAgentId||!ids.has(agent.parentAgentId));
+  const renderNode=(agent:AgentSummary,depth:number):React.ReactNode=><div className="org-node" key={agent.id} style={{marginLeft:depth*18}}>
+    <button onClick={()=>{onSelect(agent.id);onClose()}}><span className="avatar">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small>{agent.purpose==='subagent'?'Delegated agent':'Agent'} · {agent.status}</small></span></button>
+    {agents.filter(child=>child.parentAgentId===agent.id).map(child=>renderNode(child,depth+1))}
+  </div>;
+  return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay org-chart" role="dialog" aria-label="Agent org chart">
+    <header><div><h2>Org chart</h2><p>Real parent and delegated-agent relationships for this workspace</p></div><button onClick={onClose}>×</button></header>
+    <div className="org-chart-list">{roots.length?roots.map(root=>renderNode(root,0)):<div className="overlay-empty">No agents yet.</div>}</div>
+  </section></div>;
+}
+
 function Workspace({agent,thread,refresh,openAutomations}:{agent:AgentSummary;thread:AgentThread|null;refresh():Promise<void>;openAutomations():void}) {
   const scroller=useRef<HTMLDivElement|null>(null);
+  const [outlineOpen,setOutlineOpen]=useState(false);
   useEffect(()=>{scroller.current?.scrollTo({top:scroller.current.scrollHeight})},[thread?.messages.length]);
   return <main className="workspace">
-    <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><button className="header-action" onClick={openAutomations}>Routines</button></header>
-    <div className="transcript" ref={scroller}><div className="transcript-column">
+    <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><nav className="header-actions"><button className="header-action" onClick={()=>setOutlineOpen(value=>!value)}>Outline</button><button className="header-action" onClick={openAutomations}>Routines</button></nav></header>
+    <div className="transcript sand-virtual-transcript" ref={scroller}><div className="transcript-column">
       {thread?.messages.length?thread.messages.map(message=><Message key={message.id} message={message} onResolve={async(approvalId,approved)=>{
         await bridge.resolveApproval({approvalId,approved});await refresh();
       }}/>):<section className="welcome"><span className="avatar hero">{initials(agent.name)}</span><h2>{agent.name}</h2><p>This agent works directly on this Mac.</p></section>}
     </div></div>
+    {outlineOpen?<ConversationOutline thread={thread} onClose={()=>setOutlineOpen(false)}/>:null}
     <Composer running={busy(agent.status)} onSend={async text=>{await bridge.sendMessage({agentId:agent.id,text});await refresh()}} onStop={async()=>{
       await bridge.stopAgent({agentId:agent.id});await refresh();
     }}/>
@@ -369,9 +398,9 @@ function Settings({onClose}:{onClose():void}) {
   const [settings,setSettings]=useState<RuntimeSettings|null>(null);
   const [error,setError]=useState('');
   useEffect(()=>{void bridge.getRuntimeSettings().then(setSettings,e=>setError(String(e)))},[]);
-  return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay settings" role="dialog" aria-label="Settings">
+  return <div className="shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="overlay settings sand-settings-dialog" role="dialog" aria-label="Settings">
     <header><div><h2>Settings</h2><p>Agent execution and local-computer permissions</p></div><button onClick={onClose}>×</button></header>
-    <div className="setting-row"><div><strong>Computer</strong><p>Agents operate on the Mac where Fabushi is installed.</p></div><span className="local-pill">Local Mac</span></div>
+    <div className="setting-row sand-settings-general"><div><strong>Computer</strong><p>Agents operate on the Mac where Fabushi is installed.</p></div><span className="local-pill">Local Mac</span></div>
     <div className="setting-row"><div><strong>Local tool permission</strong><p>Mutating Files, Terminal, Browser and Computer actions pass through this policy.</p></div>
       {settings?<select value={settings.localToolPermission} onChange={e=>{
         const permission=e.target.value as RuntimeSettings['localToolPermission'];
@@ -406,15 +435,16 @@ function DeleteAgent({agent,onClose,onDeleted}:{agent:AgentSummary;onClose():voi
   return <div className="shade"><section className="create-dialog"><h2>Delete {agent.name}?</h2><p>This removes its local conversation transcript from this Fabushi profile.</p><div><button onClick={onClose}>Cancel</button><button className="danger" onClick={async()=>{await bridge.deleteAgent({agentId:agent.id});await onDeleted();onClose()}}>Delete</button></div></section></div>;
 }
 
-function CommandPalette({agents,onClose,onSelect,onCreate,onPlugins,onSettings}:{agents:AgentSummary[];onClose():void;onSelect(id:string):void;onCreate():void;onPlugins():void;onSettings():void}) {
+function CommandPalette({agents,onClose,onSelect,onCreate,onOrgChart,onPlugins,onSettings}:{agents:AgentSummary[];onClose():void;onSelect(id:string):void;onCreate():void;onOrgChart():void;onPlugins():void;onSettings():void}) {
   const [query,setQuery]=useState('');
   const actions=[
     {id:'new',label:'New agent',run:onCreate},
+    {id:'orgchart',label:'Open Org chart',run:onOrgChart},
     {id:'plugins',label:'Open Plugins',run:onPlugins},
     {id:'settings',label:'Open Settings',run:onSettings},
     ...agents.map(agent=>({id:'agent:'+agent.id,label:'Open '+agent.name,run:()=>onSelect(agent.id)}))
   ].filter(item=>item.label.toLowerCase().includes(query.toLowerCase()));
-  return <div className="shade palette-shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="command-palette" role="dialog" aria-label="Command palette">
+  return <div className="shade palette-shade" onMouseDown={e=>e.currentTarget===e.target&&onClose()}><section className="command-palette sand-command-palette" role="dialog" aria-label="Command palette">
     <input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search commands and agents" onKeyDown={e=>{if(e.key==='Escape')onClose()}}/>
     <div>{actions.length?actions.map(item=><button key={item.id} onClick={()=>{item.run();onClose()}}>{item.label}</button>):<p>No commands found.</p>}</div>
   </section></div>;
@@ -426,7 +456,7 @@ export default function GrokApp(){
   const [thread,setThread]=useState<AgentThread|null>(null);
   const [plugins,setPlugins]=useState<PluginDescriptor[]>([]);
   const [workflows,setWorkflows]=useState<WorkflowDescriptor[]>([]);
-  const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|null>(null);
+  const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|'orgchart'|null>(null);
   const [createOpen,setCreateOpen]=useState(false);
   const [renameAgent,setRenameAgent]=useState<AgentSummary|null>(null);
   const [deleteAgent,setDeleteAgent]=useState<AgentSummary|null>(null);
@@ -463,19 +493,20 @@ export default function GrokApp(){
   },[]);
 
   if(loading)return <div className="root-state"><span className="spinner"/><strong>Loading agents…</strong></div>;
-  if(failure&&!agents.length)return <div className="root-state error-state"><strong>Fabushi could not load the agent runtime.</strong><p>{failure}</p><button className="primary" onClick={()=>void refreshAll()}>Retry</button></div>;
+  if(failure&&!agents.length)return <div className="root-state error-state sand-error-boundary--app"><strong>Fabushi could not load the agent runtime.</strong><p>{failure}</p><button className="primary" onClick={()=>void refreshAll()}>Retry</button></div>;
 
   return <div className="app-shell">
     <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={setSelectedId} create={()=>setCreateOpen(true)}
-      plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} rename={setRenameAgent} remove={setDeleteAgent} openPalette={()=>setPaletteOpen(true)}/>
+      plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} orgChart={()=>setOverlay('orgchart')} rename={setRenameAgent} remove={setDeleteAgent} openPalette={()=>setPaletteOpen(true)}/>
     {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')}/>:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
     {failure?<div className="toast-error">{failure}<button onClick={()=>setFailure('')}>×</button></div>:null}
     {overlay==='plugins'?<Plugins items={plugins} workflows={workflows} onClose={()=>setOverlay(null)} reload={loadPlugins} reloadWorkflows={loadWorkflows}/>:null}
     {overlay==='settings'?<Settings onClose={()=>setOverlay(null)}/>:null}
     {overlay==='automations'&&selected?<Automations agent={selected} onClose={()=>setOverlay(null)}/>:null}
+    {overlay==='orgchart'?<OrgChart agents={agents} onClose={()=>setOverlay(null)} onSelect={setSelectedId}/>:null}
     {createOpen?<CreateAgent onClose={()=>setCreateOpen(false)} onCreated={agent=>{setCreateOpen(false);void loadAgents().then(()=>setSelectedId(agent.id))}}/>:null}
     {renameAgent?<RenameAgent agent={renameAgent} onClose={()=>setRenameAgent(null)} onSaved={loadAgents}/>:null}
     {deleteAgent?<DeleteAgent agent={deleteAgent} onClose={()=>setDeleteAgent(null)} onDeleted={async()=>{await loadAgents();setThread(null)}}/>:null}
-    {paletteOpen?<CommandPalette agents={agents} onClose={()=>setPaletteOpen(false)} onSelect={setSelectedId} onCreate={()=>setCreateOpen(true)} onPlugins={()=>setOverlay('plugins')} onSettings={()=>setOverlay('settings')}/>:null}
+    {paletteOpen?<CommandPalette agents={agents} onClose={()=>setPaletteOpen(false)} onSelect={setSelectedId} onCreate={()=>setCreateOpen(true)} onOrgChart={()=>setOverlay('orgchart')} onPlugins={()=>setOverlay('plugins')} onSettings={()=>setOverlay('settings')}/>:null}
   </div>;
 }
