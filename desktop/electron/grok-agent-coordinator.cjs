@@ -5,6 +5,7 @@ const path=require('node:path');
 const crypto=require('node:crypto');
 const {fileURLToPath}=require('node:url');
 const {createHostRuntime}=require('./grok-host-runtime.cjs');
+const {createAgentRunner}=require('./grok-agent-runner.cjs');
 const {createMcpManager,normalizeServer}=require('./grok-mcp-manager.cjs');
 const {createAccountSession}=require('./grok-account-session.cjs');
 const {createSecretStore}=require('./grok-secret-store.cjs');
@@ -93,6 +94,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   let automationTimer=null,automationSweep=null;
   let automationTickRunning=false,disposed=false;
   const activeTurns=new Set();
+  const runners=new Map();
 
   async function load(){
     if(state)return state;
@@ -144,7 +146,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
   async function deleteAgent({agentId}){
     const s=await load();aborts.get(agentId)?.abort();cancelApprovals(agentId,'Agent deleted.');
-    s.agents=s.agents.filter(a=>a.id!==agentId);delete s.messages[agentId];delete s.automations[agentId];localBrowser.disposeAgent(agentId);await save();emit('agents.changed');return{ok:true};
+    s.agents=s.agents.filter(a=>a.id!==agentId);delete s.messages[agentId];delete s.automations[agentId];localBrowser.disposeAgent(agentId);await runners.get(agentId)?.dispose?.();runners.delete(agentId);await save();emit('agents.changed');return{ok:true};
   }
   async function getThread({agentId}){
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
@@ -321,6 +323,17 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     }
   });
 
+  function runnerFor(agentId){
+    let runner=runners.get(agentId);
+    if(runner)return runner;
+    runner=createAgentRunner({
+      agentId,
+      runTurn:input=>host.runTurn(input),
+      onLifecycle:event=>{void Promise.resolve(actionAuditor.record({agentId:event.agentId,turnId:event.requestId,occurredAtMs:event.endedAt||event.startedAt||Date.now(),action:{kind:'runnerLifecycle',type:event.type,generation:event.generation,durationMs:event.durationMs??null,interrupted:event.interrupted===true}})).catch(()=>{})},
+      onStateChanged:value=>emit('agent.changed',{agentId,runner:value})
+    });
+    runners.set(agentId,runner);return runner;
+  }
   async function registerAttachment({path}){if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');return attachmentGateway.register(path)}
   async function readAttachment({id}){if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');return attachmentGateway.read(id)}
   async function enqueueInternalTurn({agentId,text,replyToId=null}){
@@ -390,9 +403,10 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     const turnPromise=(async()=>{
       try{
         await onAgentStatus(agentId,'running');
-        const finalText=await host.runTurn({
+        const runnerResult=await runnerFor(agentId).run({
           agent,history:[...transcript],transcript,enabled:enabledCapabilityIds(s),signal:controller.signal,assistantEntry:assistant
         });
+        const finalText=runnerResult.value;
         if(finalText!=null){if(!transcript.includes(assistant))transcript.push(assistant);assistant.text=finalText;assistant.status='done';assistant.updatedAt=Date.now();}
         else{const visible=transcript.slice(turnStartIndex+1).filter(row=>row.role==='assistant'&&row.internal!==true&&row.id!==assistant.id);const lastVisible=visible.at(-1);assistant.text=String(lastVisible?.text||'');assistant.status='done';assistant.internal=true;assistant.updatedAt=Date.now();if(!transcript.includes(assistant))transcript.push(assistant)}
         await onAgentStatus(agentId,'idle');
@@ -412,7 +426,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     return{messageId:assistant.id};
   }
   async function stopAgent({agentId}){
-    aborts.get(agentId)?.abort();cancelApprovals(agentId,'Stopped by user.');
+    runnerFor(agentId).interrupt('Stopped by user.');aborts.get(agentId)?.abort();cancelApprovals(agentId,'Stopped by user.');
     const agent=await findAgent(agentId);
     if(agent){agent.status='idle';agent.updatedAt=Date.now();await save();emit('agent.changed',{agentId,status:'idle'})}
     return{ok:true};
@@ -729,6 +743,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     if(disposed)return{ok:true};
     disposed=true;
     if(automationTimer){clearTimeout(automationTimer);automationTimer=null}
+    for(const runner of runners.values())await runner.dispose().catch(()=>{});runners.clear();
     for(const controller of aborts.values())controller.abort();
     for(const approval of [...approvals.values()])approval.finish(false);
     if(automationSweep)await Promise.resolve(automationSweep).catch(()=>{});
