@@ -42,6 +42,7 @@
       "electron/main.cjs",
       "electron/preload.cjs",
       "electron/grok-agent-runtime.cjs",
+      "electron/grok-account-session.cjs",
       "electron/grok-agent-coordinator.cjs",
       "electron/grok-host-runtime.cjs",
       "electron/grok-exec-resources.cjs",
