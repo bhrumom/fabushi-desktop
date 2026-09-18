@@ -18,6 +18,7 @@ const {deriveConversationOutline}=require('./grok-conversation-outline.cjs');
 const {normalizedReactions,toggleSelfReaction,resolveReplyTarget,searchWorkspaceIndex}=require('./grok-message-interactions.cjs');
 const {createMemoryStore}=require('./grok-memory-store.cjs');
 const {createActionAuditor}=require('./grok-action-audit.cjs');
+const {createExperimentsRuntime}=require('./grok-experiments.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
@@ -35,7 +36,7 @@ function initialState(){
     agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false}],
     messages:{[id]:[]},
     plugins:defaultCapabilities(),
-    settings:{localToolPermission:'ask',autoReviewMode:'enforce',autoReviewAllowInstructions:[],autoReviewBlockInstructions:[]},
+    settings:{localToolPermission:'ask',autoReviewMode:'enforce',autoReviewAllowInstructions:[],autoReviewBlockInstructions:[],featureFlagOverrides:{}},
     pendingApprovals:{},
     mcpServers:[],
     marketplaceInstalls:{},
@@ -61,6 +62,7 @@ function normalizeState(parsed){
   const normalizeInstructions=value=>Array.isArray(value)?value.map(item=>String(item||'').trim().slice(0,1000)).filter(Boolean).slice(0,50):[];
   base.settings.autoReviewAllowInstructions=normalizeInstructions(parsed.settings?.autoReviewAllowInstructions);
   base.settings.autoReviewBlockInstructions=normalizeInstructions(parsed.settings?.autoReviewBlockInstructions);
+  base.settings.featureFlagOverrides=parsed.settings?.featureFlagOverrides&&typeof parsed.settings.featureFlagOverrides==='object'&&!Array.isArray(parsed.settings.featureFlagOverrides)?Object.fromEntries(Object.entries(parsed.settings.featureFlagOverrides).filter(([,value])=>typeof value==='boolean')):{};
   base.pendingApprovals={};
   base.mcpServers=Array.isArray(parsed.mcpServers)?parsed.mcpServers.flatMap(server=>{try{return[normalizeServer(server)]}catch{return[]}}):[];
   base.marketplaceInstalls=parsed.marketplaceInstalls&&typeof parsed.marketplaceInstalls==='object'&&!Array.isArray(parsed.marketplaceInstalls)?parsed.marketplaceInstalls:{};
@@ -199,6 +201,14 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
 
   const secretStore=createSecretStore({app,safeStorage});
   const accountSession=createAccountSession({secretStore,openExternal:url=>shell.openExternal(url),onChanged:status=>emit('account.changed',{status})});
+  const experiments=createExperimentsRuntime({
+    app,
+    getAccessToken:()=>accountSession.getValidAccessToken(),
+    readOverrides:async()=>({...((await load()).settings.featureFlagOverrides||{})}),
+    writeOverrides:async overrides=>{const current=await load();current.settings.featureFlagOverrides={...overrides};await save();emit('settings.changed',{featureFlagOverrides:true})},
+    onChanged:snapshot=>emit('experiments.changed',{snapshot})
+  });
+  void experiments.start().catch(()=>{});
   let mcp=null;
   const oauth=createMcpOAuthManager({
     getServer:async serverId=>(await load()).mcpServers.find(server=>server.id===serverId)||null,
@@ -686,6 +696,10 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function deleteWorkflow(input){const result=await workflowManager.deleteWorkflow(input);emit('workflows.changed',{workflowId:input.id});return result}
   async function setWorkflowEnabled(input){const record=await workflowManager.setWorkflowEnabled(input);emit('workflows.changed',{workflowId:record.id});return record}
 
+  async function getExperimentsSnapshot(){await experiments.start();return experiments.getSnapshot()}
+  async function refreshExperiments(){await experiments.start();return await experiments.refreshNow()}
+  async function applyFeatureFlagOverride(input={}){await experiments.start();return await experiments.applyFeatureFlagOverrideCommand(input.command??input)}
+
   async function getRuntimeSettings(){
     const s=await load();return{localToolPermission:s.settings.localToolPermission,autoReviewMode:s.settings.autoReviewMode,autoReviewAllowInstructions:[...(s.settings.autoReviewAllowInstructions||[])],autoReviewBlockInstructions:[...(s.settings.autoReviewBlockInstructions||[])],computerTarget:'local-mac'};
   }
@@ -719,14 +733,14 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     for(const approval of [...approvals.values()])approval.finish(false);
     if(automationSweep)await Promise.resolve(automationSweep).catch(()=>{});
     await Promise.allSettled([...activeTurns]);
-    await accountSession.cancelLogin().catch(()=>{});mcp.dispose();localBrowser.dispose();await attachmentGateway?.dispose?.();
+    await experiments.dispose().catch(()=>{});await accountSession.cancelLogin().catch(()=>{});mcp.dispose();localBrowser.dispose();await attachmentGateway?.dispose?.();
     await actionAuditor.flush();await writing.catch(()=>{});
     return{ok:true};
   }
 
   return{
     listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,respondToWidget,dismissWidget,submitSecret,reactToMessage,searchMessages,searchMedia,searchLinks,sendMessage,stopAgent,
-    listPlugins,setPluginInstalled,setPluginEnabled,getAccountStatus,loginAccount,cancelAccountLogin,logoutAccount,updateAccountName,getAccountAvatar,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
+    listPlugins,setPluginInstalled,setPluginEnabled,getAccountStatus,loginAccount,cancelAccountLogin,logoutAccount,updateAccountName,getAccountAvatar,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getExperimentsSnapshot,refreshExperiments,applyFeatureFlagOverride,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
   };
 }
 module.exports={createCoordinatorRuntime,capabilityCatalog};
