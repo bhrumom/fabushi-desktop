@@ -614,6 +614,28 @@ function Settings({onClose}:{onClose():void}) {
   </section></div>;
 }
 
+const ONBOARDING_STEPS=['meet','computer-demo','jobs','tools','create','hand-off'] as const;
+type OnboardingStep=typeof ONBOARDING_STEPS[number];
+const ONBOARDING_TOOLS=['Workspace','Slack','Notion','Salesforce','Microsoft 365','LinkedIn','Zoom','GitHub','Jira','Figma','Stripe','Shopify'] as const;
+function Onboarding({account,onAccountChanged,onComplete}:{account:AccountStatus|null;onAccountChanged(status:AccountStatus):void;onComplete(agent:AgentSummary|null):Promise<void>}) {
+  const [index,setIndex]=useState(0),[name,setName]=useState(''),[description,setDescription]=useState(''),[tools,setTools]=useState<string[]>([]),[pending,setPending]=useState(false),[error,setError]=useState('');
+  const step=ONBOARDING_STEPS[index]||'meet';
+  const needsSignIn=account?.kind!=='logged-in'&&account?.available===true;
+  if(needsSignIn)return <div className="onboarding sand-onboarding"><section className="onboarding-step sign-in"><span className="onboarding-symbol">✣</span><h1>Grok Bot</h1><p>Your team of always-on agents that finish the work.</p><button className="primary" disabled={pending||account?.kind==='logging-in'} onClick={async()=>{setPending(true);setError('');try{onAccountChanged(await bridge.loginAccount())}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}}}>{account?.kind==='logging-in'?'Continue sign-in in your browser':'Sign in'}</button>{error?<p className="settings-error">{error}</p>:null}</section></div>;
+  const next=()=>setIndex(value=>Math.min(ONBOARDING_STEPS.length-1,value+1));
+  const back=()=>setIndex(value=>Math.max(0,value-1));
+  const toggle=(tool:string)=>setTools(rows=>rows.includes(tool)?rows.filter(value=>value!==tool):[...rows,tool]);
+  const create=async()=>{if(!name.trim()||pending)return;setPending(true);setError('');try{const agent=await bridge.createAgent({name:name.trim()});const suffix=tools.length?' The user works with '+tools.join(', ')+' every day — start with those tools when suggesting connectors or taking on work.':'';await bridge.updateAgent({id:agent.id,profile:{name:agent.name,description:(description.trim()+suffix).trim()}});setIndex(ONBOARDING_STEPS.indexOf('hand-off'));window.setTimeout(()=>{void onComplete(agent)},700)}catch(reason){setError(reason instanceof Error?reason.message:String(reason))}finally{setPending(false)}};
+  return <div className="onboarding sand-onboarding"><section className={'onboarding-step step-'+step}>
+    {step==='meet'?<><span className="onboarding-symbol">✣</span><h1>Welcome to Grok Bot</h1><p>Hand off any task to your team of agents.</p><div className="onboarding-actions"><button className="primary" onClick={next}>Next</button></div></>:null}
+    {step==='computer-demo'?<><h1>Your agents work on a computer</h1><p>In Fabushi, the reference cloud Computer is replaced only by the Mac where this app is installed.</p><div className="computer-demo"><div className="computer-demo-screen"><span>Finder</span><span>Browser</span><span>Terminal</span><span>Files</span><i>↖</i></div></div><div className="onboarding-actions"><button onClick={back}>Back</button><button className="primary" onClick={next}>Next</button></div></>:null}
+    {step==='jobs'?<><h1>Give each agent a job</h1><div className="onboarding-jobs"><span>Invoice Chaser</span><span>Weekly Standup</span><span>Sales Forecast</span></div><p>Agents can keep working through real tools, approvals, routines, plugins and the local Computer.</p><div className="onboarding-actions"><button onClick={back}>Back</button><button className="primary" onClick={next}>Next</button></div></>:null}
+    {step==='tools'?<><h1>What do you use every day?</h1><p>Pick tools that matter to your first agent. This does not fake-install a connector; it only guides the agent until real plugins are connected.</p><div className="onboarding-tools">{ONBOARDING_TOOLS.map(tool=><button key={tool} className={tools.includes(tool)?'selected':''} onClick={()=>toggle(tool)}>{tool}</button>)}</div><div className="onboarding-actions"><button onClick={back}>Back</button><button className="primary" onClick={next}>Next</button></div></>:null}
+    {step==='create'?<><h1>Create your first agent</h1><div className="onboarding-create"><label><span>Name</span><input autoFocus value={name} onChange={e=>setName(e.target.value)} placeholder="Agent name"/></label><label><span>What should it own?</span><textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Describe the work this agent should handle."/></label></div>{error?<p className="settings-error">{error}</p>:null}<div className="onboarding-actions"><button disabled={pending} onClick={back}>Back</button><button className="primary" disabled={pending||!name.trim()} onClick={()=>void create()}>{pending?'Creating…':'Get started'}</button></div></>:null}
+    {step==='hand-off'?<><span className="onboarding-symbol ready">✣</span><h1>Getting your team ready…</h1><p>Your first agent is connected to this Mac.</p></>:null}
+  </section></div>;
+}
+
 function CreateAgent({onClose,onCreated}:{onClose():void;onCreated(a:AgentSummary):void}) {
   const [name,setName]=useState('');
   const submit=async(e:FormEvent)=>{e.preventDefault();if(name.trim())onCreated(await bridge.createAgent({name:name.trim()}))};
@@ -675,6 +697,7 @@ export default function GrokApp(){
   const [workflows,setWorkflows]=useState<WorkflowDescriptor[]>([]);
   const [overlay,setOverlay]=useState<'plugins'|'settings'|'automations'|'orgchart'|'hidden'|'agent-settings'|'account'|'about'|'feedback'|null>(null);
   const [deepLink,setDeepLink]=useState<DeepLinkInfo|null>(null);
+  const [onboardingSeen,setOnboardingSeen]=useState<boolean|null>(null);
   const [createOpen,setCreateOpen]=useState(false);
   const [renameAgent,setRenameAgent]=useState<AgentSummary|null>(null);
   const [deleteAgent,setDeleteAgent]=useState<AgentSummary|null>(null);
@@ -693,9 +716,11 @@ export default function GrokApp(){
   const loadPlugins=async()=>setPlugins(await bridge.listPlugins());
   const loadAccount=async()=>setAccount(await bridge.getAccountStatus());
   const loadWorkflows=async()=>setWorkflows(await bridge.listWorkflows());
-  const refreshAll=async()=>{try{setFailure('');await Promise.all([loadAgents(),loadPlugins(),loadWorkflows(),loadAccount()])}catch(error){setFailure(error instanceof Error?error.message:String(error))}finally{setLoading(false)}};
+  const loadOnboarding=async()=>setOnboardingSeen(await bridge.getOnboardingSeen());
+  const refreshAll=async()=>{try{setFailure('');await Promise.all([loadAgents(),loadPlugins(),loadWorkflows(),loadAccount(),loadOnboarding()])}catch(error){setFailure(error instanceof Error?error.message:String(error))}finally{setLoading(false)}};
 
   useEffect(()=>{void refreshAll();return bridge.onDeepLink(link=>setDeepLink(link))},[]);
+  useEffect(()=>{if(onboardingSeen===false&&agents.length>0)void bridge.setOnboardingSeen({seen:true}).then(()=>setOnboardingSeen(true)).catch(()=>{})},[onboardingSeen,agents.length]);
   useEffect(()=>{if(selectedId)void loadThread(selectedId).catch(error=>setFailure(error instanceof Error?error.message:String(error)));else setThread(null)},[selectedId]);
   useEffect(()=>{if(!pendingJump||pendingJump.agentId!==selectedId)return;const handle=window.setTimeout(()=>{const target=document.querySelector<HTMLElement>(`[data-entry-id="${CSS.escape(pendingJump.entryId)}"]`);if(target){target.scrollIntoView({block:'center',behavior:'smooth'});target.classList.add('message-jump');window.setTimeout(()=>target.classList.remove('message-jump'),1200);setPendingJump(null)}},80);return()=>window.clearTimeout(handle)},[pendingJump,selectedId,thread?.messages.length]);
   useEffect(()=>subscribeAgentEvents(event=>{
@@ -716,6 +741,7 @@ export default function GrokApp(){
 
   if(loading)return <div className="root-state"><span className="spinner"/><strong>Loading agents…</strong></div>;
   if(failure&&!agents.length)return <div className="root-state error-state sand-error-boundary--app"><strong>Fabushi could not load the agent runtime.</strong><p>{failure}</p><button className="primary" onClick={()=>void refreshAll()}>Retry</button></div>;
+  if(onboardingSeen===false&&!agents.length)return <Onboarding account={account} onAccountChanged={setAccount} onComplete={async agent=>{await bridge.setOnboardingSeen({seen:true});setOnboardingSeen(true);await loadAgents();if(agent)setSelectedId(agent.id)}}/>;
 
   return <div className="app-shell">
     <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={setSelectedId} account={account} openAccount={()=>setOverlay('account')} create={()=>setCreateOpen(true)}
