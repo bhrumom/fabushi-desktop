@@ -1,0 +1,54 @@
+name: GBR pinned reference source sync
+on:
+  push:
+    branches: [refactor/grok-bot-018-parity-mac]
+    paths:
+      - ".github/workflows/gbr-reference-source-sync.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync-reference-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+      - name: Checkout pinned Grok Bot reference
+        uses: actions/checkout@v4
+        with:
+          repository: bhrum/grok-bot-0.18-reconstructed
+          ref: 107877b4e2134fd167d239411386f09e42eadd6d
+          path: _grok
+          persist-credentials: false
+      - name: Verify and typecheck pinned reference source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C _grok rev-parse HEAD)" = "107877b4e2134fd167d239411386f09e42eadd6d"
+          cd _grok
+          npm install --no-audit --no-fund
+          npm run source:typecheck
+      - name: Replace target source tree with pinned reference source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -a --delete _grok/source/ source/
+          test "$(find source -type f | wc -l | tr -d ' ')" -gt 1500
+      - name: Commit exact reference source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- source; then
+            echo "Reference source already exact"
+            exit 0
+          fi
+          git config user.name "Fabushi Work"
+          git config user.email "noreply@fabushi.local"
+          git add -A source
+          git commit -m "refactor(gbr): sync pinned Grok 0.18 source tree"
+          git push origin HEAD:refactor/grok-bot-018-parity-mac
