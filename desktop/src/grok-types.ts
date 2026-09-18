@@ -70,6 +70,7 @@ export interface McpServerDescriptor {
   disabledTools:string[];
   customInstructions:string;
   accountKey:string;
+  accountKeys:string[];
   oauthClientId:string;
   oauthAuthorizationUrl:string;
   oauthTokenUrl:string;
@@ -83,6 +84,7 @@ export interface McpAccountStatus {
   expiresAt:number|null;
   scope:string;
   supported:boolean;
+  active?:boolean;
 }
 export interface McpToolDescriptor {
   name:string;
@@ -174,9 +176,12 @@ export interface GrokAgentBridge {
   removeMcpServer(input:{serverId:string}):Promise<{ok:true}>;
   setMcpServerEnabled(input:{serverId:string;enabled:boolean}):Promise<McpServerDescriptor>;
   getMcpAccountStatus(input:{serverId:string;accountKey?:string}):Promise<McpAccountStatus>;
+  listMcpAccounts(input:{serverId:string}):Promise<McpAccountStatus[]>;
   connectMcpAccount(input:{serverId:string;accountKey?:string}):Promise<McpAccountStatus>;
   disconnectMcpAccount(input:{serverId:string;accountKey?:string}):Promise<McpAccountStatus>;
   renameMcpAccount(input:{serverId:string;accountKey:string;newAccountKey:string}):Promise<McpAccountStatus>;
+  removeMcpAccount(input:{serverId:string;accountKey:string}):Promise<McpAccountStatus[]>;
+  setMcpActiveAccount(input:{serverId:string;accountKey:string}):Promise<McpAccountStatus[]>;
   listMcpServerTools(input:{serverId:string}):Promise<McpToolDescriptor[]>;
   setMcpToolEnabled(input:{serverId:string;toolName:string;enabled:boolean}):Promise<McpToolDescriptor[]>;
   listMarketplacePlugins():Promise<MarketplaceCatalogDescriptor>;
