@@ -132,10 +132,13 @@ function createHostRuntime({shell,getLocalToolPermission,requestApproval,onToolS
             resultText='ERROR: '+entry.text;
           }else{
             await updateTool(agent.id,entry,{status:'running',text:'Running…'});
-            const execution=await executeTool(name,args,{
-              enabled,shell,signal,
-              onStarted:()=>{}
-            });
+            const execution=externalNames.has(name)
+              ?await executeExternalTool(name,args)
+              :browserNames.has(name)
+                ?await browser.execute({agentId:agent.id,name,args,signal})
+                :subagentNames.has(name)
+                  ?await executeSubagentTool(name,args,signal,agent.id)
+                  :await executeTool(name,args,{enabled,shell,signal,onStarted:()=>{}});
             resultText=execution?.text||'(completed)';
             await updateTool(agent.id,entry,{status:'done',text:resultText,...(execution?.display?{display:execution.display}:{})});
           }
