@@ -13,6 +13,9 @@ export interface AgentSummary {
   updatedAt:number;
   unread:boolean;
   pinned?:boolean;
+  isGroup?:boolean;
+  memberIds?:string[];
+  isSharedRoom?:boolean;
   description?:string;
   title?:string;
   notifyOnUpdatesEnabled?:boolean;
@@ -262,6 +265,7 @@ export interface GrokAgentBridge {
   setAgentPinned(input:{agentId:string;pinned:boolean}):Promise<AgentSummary>;
   setAgentUnread(input:{agentId:string;unread:boolean}):Promise<AgentSummary>;
   duplicateAgent(input:{agentId:string}):Promise<AgentSummary>;
+  setGroupMembers(input:{id:string;memberAgentIds:string[]}):Promise<AgentSummary>;
   setAgentHidden(input:{agentId:string;hidden:boolean}):Promise<AgentSummary>;
   deleteAgent(input:{agentId:string}):Promise<{ok:true}>;
   getThread(input:{agentId:string}):Promise<AgentThread>;
