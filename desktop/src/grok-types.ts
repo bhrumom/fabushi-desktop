@@ -70,6 +70,19 @@ export interface McpServerDescriptor {
   disabledTools:string[];
   customInstructions:string;
   accountKey:string;
+  oauthClientId:string;
+  oauthAuthorizationUrl:string;
+  oauthTokenUrl:string;
+  oauthRegistrationUrl:string;
+  oauthScopes:string[];
+}
+export interface McpAccountStatus {
+  serverId:string;
+  accountKey:string;
+  connected:boolean;
+  expiresAt:number|null;
+  scope:string;
+  supported:boolean;
 }
 export interface McpToolDescriptor {
   name:string;
@@ -143,9 +156,13 @@ export interface GrokAgentBridge {
   setAutoReviewMode(input:{mode:RuntimeSettings['autoReviewMode']}):Promise<RuntimeSettings>;
   resolveApproval(input:{approvalId:string;approved:boolean}):Promise<{ok:true}>;
   listMcpServers():Promise<McpServerDescriptor[]>;
-  addMcpServer(input:{name:string;transport?:'stdio'|'http';command?:string;args?:string[];url?:string;customInstructions?:string;accountKey?:string}):Promise<McpServerDescriptor>;
+  addMcpServer(input:{name:string;transport?:'stdio'|'http';command?:string;args?:string[];url?:string;customInstructions?:string;accountKey?:string;oauthClientId?:string;oauthAuthorizationUrl?:string;oauthTokenUrl?:string;oauthRegistrationUrl?:string;oauthScopes?:string[]}):Promise<McpServerDescriptor>;
   removeMcpServer(input:{serverId:string}):Promise<{ok:true}>;
   setMcpServerEnabled(input:{serverId:string;enabled:boolean}):Promise<McpServerDescriptor>;
+  getMcpAccountStatus(input:{serverId:string;accountKey?:string}):Promise<McpAccountStatus>;
+  connectMcpAccount(input:{serverId:string;accountKey?:string}):Promise<McpAccountStatus>;
+  disconnectMcpAccount(input:{serverId:string;accountKey?:string}):Promise<McpAccountStatus>;
+  renameMcpAccount(input:{serverId:string;accountKey:string;newAccountKey:string}):Promise<McpAccountStatus>;
   listMcpServerTools(input:{serverId:string}):Promise<McpToolDescriptor[]>;
   setMcpToolEnabled(input:{serverId:string;toolName:string;enabled:boolean}):Promise<McpToolDescriptor[]>;
   listWorkflows():Promise<WorkflowDescriptor[]>;
