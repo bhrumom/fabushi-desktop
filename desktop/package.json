@@ -45,6 +45,7 @@
       "electron/grok-agent-coordinator.cjs",
       "electron/grok-host-runtime.cjs",
       "electron/grok-mcp-manager.cjs",
+      "electron/grok-workflow-manager.cjs",
       "electron/local-tool-executor.cjs",
       "package.json"
     ],
