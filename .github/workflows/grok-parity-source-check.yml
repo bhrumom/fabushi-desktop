@@ -1,5 +1,10 @@
 name: Grok parity source check
 on:
+  push:
+    branches: [refactor/grok-bot-018-parity-mac]
+    paths:
+      - "desktop/**"
+      - ".github/workflows/grok-parity-source-check.yml"
   pull_request:
     paths:
       - "desktop/**"
