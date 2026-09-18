@@ -3,6 +3,7 @@
 const fs=require('node:fs/promises');
 const path=require('node:path');
 const crypto=require('node:crypto');
+const {fileURLToPath}=require('node:url');
 const {createHostRuntime}=require('./grok-host-runtime.cjs');
 const {createMcpManager,normalizeServer}=require('./grok-mcp-manager.cjs');
 const {createAccountSession}=require('./grok-account-session.cjs');
@@ -144,7 +145,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
   async function getThread({agentId}){
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
-    const messages=s.messages[agentId]||[];
+    const messages=(s.messages[agentId]||[]).filter(row=>row.internal!==true);
     return{agent,messages,outline:deriveConversationOutline(messages),pendingApprovals:Object.values(s.pendingApprovals||{}).filter(x=>x.agentId===agentId)};
   }
   function enabledCapabilityIds(s){
@@ -213,11 +214,40 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   const marketplace=pluginMarketplace||createPluginMarketplace();
   const outputSpiller=createOutputSpiller({app});
   const localBrowser=createLocalBrowserRuntime({BrowserWindow});
-  async function appendVisibleAssistantMessage({agentId,content,replyToId=null}){
+  function remoteAttachmentDescriptor(rawUrl,alt='',forcedKind=null){
+    const url=new URL(String(rawUrl||'')),decoded=decodeURIComponent(url.pathname||''),name=path.basename(decoded)||'Attachment';
+    const ext=path.extname(name).toLowerCase(),imageExts=new Set(['.png','.jpg','.jpeg','.gif','.webp','.avif','.svg']);
+    const kind=forcedKind|| (imageExts.has(ext)?'image':ext==='.pdf'?'pdf':['.txt','.md','.json','.csv','.tsv','.xml','.html','.js','.ts','.tsx','.py','.rs','.swift','.kt'].includes(ext)?'text':'file');
+    return{id:'remote:'+crypto.randomUUID(),name,mime:kind==='image'?'image/*':kind==='pdf'?'application/pdf':'application/octet-stream',size:0,kind,createdAt:Date.now(),remoteUrl:url.toString(),alt:String(alt||'').trim().slice(0,500)};
+  }
+  async function attachmentFromUrl(rawUrl,alt='',forcedKind=null){
+    const url=new URL(String(rawUrl||''));
+    if(url.protocol==='file:'){
+      if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');
+      return await attachmentGateway.register(fileURLToPath(url));
+    }
+    if(url.protocol==='https:')return remoteAttachmentDescriptor(url.toString(),alt,forcedKind);
+    throw Error('Attachment URL must use file:// or https://.');
+  }
+  async function appendVisibleAssistantMessage({agentId,type='text',content='',url=null,alt='',images=[],widget=null,secret=null,replyToId=null}){
     const s=await load(),agent=s.agents.find(row=>row.id===agentId);if(!agent)throw Error('Agent not found');
     const transcript=s.messages[agentId]||(s.messages[agentId]=[]),replyTarget=replyToId?resolveReplyTarget(transcript,replyToId):null;if(replyToId&&!replyTarget)throw Error('Reply target not found.');
-    const entry={id:crypto.randomUUID(),role:'assistant',text:String(content||'').trim(),createdAt:Date.now(),status:'done',...(replyTarget?{replyToId:replyTarget.id}:{})};if(!entry.text)throw Error('Visible message content is required.');
-    transcript.push(entry);agent.updatedAt=Date.now();await save();emit('message.done',{agentId,messageId:entry.id,text:entry.text,status:'done'});return entry.id;
+    const now=Date.now(),base={id:crypto.randomUUID(),role:'assistant',createdAt:now,status:'done',...(replyTarget?{replyToId:replyTarget.id}:{})};
+    let entry;
+    if(type==='text'){
+      const text=String(content||'').trim();if(!text)throw Error('Visible message content is required.');
+      const attachments=[];for(const image of Array.isArray(images)?images:[])attachments.push(await attachmentFromUrl(image.url,image.alt,'image'));
+      entry={...base,text,...(attachments.length?{attachments}:{})};
+    }else if(type==='attachment'){
+      const attachment=await attachmentFromUrl(url,alt);entry={...base,text:String(alt||'').trim(),attachments:[attachment]};
+    }else if(type==='widget'){
+      if(!widget||typeof widget!=='object')throw Error('Widget payload is required.');
+      entry={...base,text:String(widget.prompt||'').trim(),widget:{...widget,options:(widget.options||[]).map(option=>({...option}))},respondedValue:null,widgetDismissed:false};
+    }else if(type==='secret-request'){
+      if(!secret||typeof secret!=='object')throw Error('Secret request payload is required.');
+      entry={...base,text:'Requested a secret from the user securely: '+String(secret.label||''),secretRequest:{label:String(secret.label||''),description:String(secret.description||''),connector:String(secret.connector||''),field:String(secret.field||'')},secretProvided:false};
+    }else throw Error('Unsupported visible message type: '+type);
+    transcript.push(entry);agent.updatedAt=now;await save();emit('message.done',{agentId,messageId:entry.id,text:entry.text,status:'done'});return entry.id;
   }
   async function reactFromAgent({agentId,messageAddress,emoji}){return reactToMessage({agentId,entryId:messageAddress,emoji,userOnly:true})}
   async function applyAgentStateUpdate(input){
@@ -281,6 +311,44 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
 
   async function registerAttachment({path}){if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');return attachmentGateway.register(path)}
   async function readAttachment({id}){if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');return attachmentGateway.read(id)}
+  async function enqueueInternalTurn({agentId,text,replyToId=null}){
+    const task=(async()=>{
+      const deadline=Date.now()+60000;
+      while(Date.now()<deadline){
+        if(disposed)return;
+        const agent=await findAgent(agentId);if(!agent)return;
+        if(!['thinking','running','waiting'].includes(agent.status)){await sendMessage({agentId,text,replyToId,internal:true});return}
+        await new Promise(resolve=>setTimeout(resolve,100));
+      }
+      throw Error('Agent did not become idle for the interaction follow-up.');
+    })();
+    activeTurns.add(task);void task.catch(()=>{}).finally(()=>activeTurns.delete(task));
+  }
+  async function respondToWidget({agentId,entryId,value}){
+    const s=await load(),entry=(s.messages[agentId]||[]).find(row=>row.id===entryId&&row.widget);if(!entry||entry.widgetDismissed||entry.respondedValue!=null)return{accepted:false};
+    const answer=String(value||'').trim();if(!answer)return{accepted:false};
+    const allowed=(entry.widget.options||[]).some(option=>String(option.value??option.label)===answer);
+    if(!allowed&&entry.widget.allowCustom!==true)return{accepted:false};
+    entry.respondedValue=answer;await save();emit('message.changed',{agentId,messageId:entryId,respondedValue:answer});
+    enqueueInternalTurn({agentId,text:'[The user answered your interactive question "'+String(entry.widget.prompt||'')+'" with: '+answer+']',replyToId:entryId});
+    return{accepted:true};
+  }
+  async function dismissWidget({agentId,entryId}){
+    const s=await load(),entry=(s.messages[agentId]||[]).find(row=>row.id===entryId&&row.widget);if(!entry||entry.widgetDismissed||entry.respondedValue!=null)return{accepted:false};
+    entry.widgetDismissed=true;await save();emit('message.changed',{agentId,messageId:entryId,widgetDismissed:true});
+    enqueueInternalTurn({agentId,text:'[The user dismissed your interactive question "'+String(entry.widget.prompt||'')+'" without answering. Treat this as a decline and continue without re-asking.]',replyToId:entryId});
+    return{accepted:true};
+  }
+  async function submitSecret({agentId,entryId,value}){
+    const secret=String(value||'').trim();if(!secret)return{accepted:false,reason:'empty'};
+    if(!secretStore.encryptedAvailable())return{accepted:false,reason:'secure-storage-unavailable'};
+    const s=await load(),entry=(s.messages[agentId]||[]).find(row=>row.id===entryId&&row.secretRequest);if(!entry||entry.secretProvided===true)return{accepted:false,reason:'stale'};
+    const request=entry.secretRequest,key='connector-secret:'+agentId+':'+request.connector,existing=await secretStore.get(key);
+    await secretStore.set(key,{...(existing&&typeof existing==='object'?existing:{}),[request.field]:secret});
+    entry.secretProvided=true;await save();emit('message.changed',{agentId,messageId:entryId,secretProvided:true});
+    enqueueInternalTurn({agentId,text:'[The user securely provided the requested secret: "'+request.label+'". It was written straight to secure connector credential storage; you never see the value and it is not in this conversation.]\nConfirm to the user that it is set, then continue.',replyToId:entryId});
+    return{accepted:true};
+  }
   async function reactToMessage({agentId,entryId,emoji,userOnly=false}){
     const s=await load(),agent=s.agents.find(row=>row.id===agentId);if(!agent)throw Error('Agent not found');
     const message=(s.messages[agentId]||[]).find(row=>row.id===entryId);if(!message||(message.role!=='user'&&message.role!=='assistant')||(userOnly&&message.role!=='user'))throw Error('Message not found.');
@@ -289,19 +357,22 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function searchMessages({query='',limit=50}={}){const s=await load();return searchWorkspaceIndex({agents:s.agents,messages:s.messages,query,limit}).messages}
   async function searchMedia({query='',limit=50}={}){const s=await load();return searchWorkspaceIndex({agents:s.agents,messages:s.messages,query,limit}).media}
   async function searchLinks({query='',limit=50}={}){const s=await load();return searchWorkspaceIndex({agents:s.agents,messages:s.messages,query,limit}).links}
-  async function sendMessage({agentId,text,attachmentIds=[],replyToId=null}){
+  async function sendMessage({agentId,text,attachmentIds=[],replyToId=null,internal=false}){
     if(disposed)throw Error('Agent runtime is shutting down.');
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
     const body=String(text||'').trim();
     const attachments=attachmentGateway?await attachmentGateway.resolve(Array.isArray(attachmentIds)?attachmentIds:[]):[];
     if(!body&&!attachments.length)throw Error('Message or attachment required');
     if(['thinking','running','waiting'].includes(agent.status))throw Error('Agent already running');
-    const replyTarget=replyToId?resolveReplyTarget(s.messages[agentId]||[],replyToId):null;if(replyToId&&!replyTarget)throw Error('Reply target not found.');
-    const now=Date.now(),user={id:crypto.randomUUID(),role:'user',text:body,createdAt:now,status:'done',attachments:attachments.map(row=>({id:row.id,name:row.name,mime:row.mime,size:row.size,kind:row.kind,createdAt:row.createdAt})),...(replyTarget?{replyToId:replyTarget.id}:{})};
-    const assistant={id:crypto.randomUUID(),role:'assistant',text:'',createdAt:now+1,status:'streaming'};
     const transcript=s.messages[agentId]||(s.messages[agentId]=[]);
+    if(!internal){
+      for(const row of transcript){if(row.widget&&row.respondedValue==null&&row.widgetDismissed!==true&&row.widget.dismissOnMoveOn===true)row.widgetDismissed=true}
+    }
+    const replyTarget=replyToId?resolveReplyTarget(transcript,replyToId):null;if(replyToId&&!replyTarget)throw Error('Reply target not found.');
+    const now=Date.now(),turnStartIndex=transcript.length,user={id:crypto.randomUUID(),role:'user',text:body,createdAt:now,status:'done',attachments:attachments.map(row=>({id:row.id,name:row.name,mime:row.mime,size:row.size,kind:row.kind,createdAt:row.createdAt})),...(replyTarget?{replyToId:replyTarget.id}:{}),...(internal?{internal:true}:{})};
+    const assistant={id:crypto.randomUUID(),role:'assistant',text:'',createdAt:now+1,status:'streaming'};
     transcript.push(user);agent.status='thinking';agent.updatedAt=now;await save();
-    emit('message.changed',{agentId,messageId:user.id,status:'done'});emit('agent.changed',{agentId,status:'thinking'});
+    if(!internal)emit('message.changed',{agentId,messageId:user.id,status:'done'});emit('agent.changed',{agentId,status:'thinking'});
     const controller=new AbortController();aborts.set(agentId,controller);
 
     const turnPromise=(async()=>{
@@ -310,7 +381,9 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
         const finalText=await host.runTurn({
           agent,history:[...transcript],transcript,enabled:enabledCapabilityIds(s),signal:controller.signal,assistantEntry:assistant
         });
-        if(finalText!=null){if(!transcript.includes(assistant))transcript.push(assistant);assistant.text=finalText;assistant.status='done';assistant.updatedAt=Date.now();}else assistant.status='done';await onAgentStatus(agentId,'idle');
+        if(finalText!=null){if(!transcript.includes(assistant))transcript.push(assistant);assistant.text=finalText;assistant.status='done';assistant.updatedAt=Date.now();}
+        else{const visible=transcript.slice(turnStartIndex+1).filter(row=>row.role==='assistant'&&row.internal!==true&&row.id!==assistant.id);const lastVisible=visible.at(-1);assistant.text=String(lastVisible?.text||'');assistant.status='done';assistant.internal=true;assistant.updatedAt=Date.now();if(!transcript.includes(assistant))transcript.push(assistant)}
+        await onAgentStatus(agentId,'idle');
       }catch(error){
         const cancelled=controller.signal.aborted||error?.name==='AbortError';
         if(!transcript.includes(assistant))transcript.push(assistant);
@@ -318,7 +391,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
         assistant.status=cancelled?'cancelled':'error';assistant.updatedAt=Date.now();
         await onAgentStatus(agentId,cancelled?'idle':'error');
       }finally{
-        agent.updatedAt=Date.now();await save();if(transcript.includes(assistant))emit('message.done',{agentId,messageId:assistant.id,text:assistant.text,status:assistant.status});
+        agent.updatedAt=Date.now();await save();if(transcript.includes(assistant)&&assistant.internal!==true)emit('message.done',{agentId,messageId:assistant.id,text:assistant.text,status:assistant.status});
         if(agent.notifyOnUpdatesEnabled)void Promise.resolve(notify({title:agent.name,body:assistant.status==='done'?'Finished':assistant.text.slice(0,180)})).catch(()=>{});
         aborts.delete(agentId);cancelApprovals(agentId,'Turn finished.');
       }
@@ -650,7 +723,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
 
   return{
-    listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,reactToMessage,searchMessages,searchMedia,searchLinks,sendMessage,stopAgent,
+    listAgents,createAgent,renameAgent,updateAgent,setAgentNotifyOnUpdates,setAgentHidden,deleteAgent,getThread,registerAttachment,readAttachment,respondToWidget,dismissWidget,submitSecret,reactToMessage,searchMessages,searchMedia,searchLinks,sendMessage,stopAgent,
     listPlugins,setPluginInstalled,setPluginEnabled,getAccountStatus,loginAccount,cancelAccountLogin,logoutAccount,updateAccountName,getAccountAvatar,listMcpServers,addMcpServer,updateMcpServer,removeMcpServer,setMcpServerEnabled,getMcpAccountStatus,listMcpAccounts,connectMcpAccount,disconnectMcpAccount,renameMcpAccount,removeMcpAccount,setMcpActiveAccount,listMcpServerTools,setMcpToolEnabled,listMarketplacePlugins,installMarketplacePlugin,uninstallMarketplacePlugin,listWorkflows,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getAgentAutomations,createAgentAutomation,setAgentAutomationEnabled,updateAgentAutomation,deleteAgentAutomation,runAgentAutomationNow,getRuntimeSettings,setLocalToolPermission,setAutoReviewMode,setAutoReviewInstructions,resolveApproval,dispose
   };
 }
