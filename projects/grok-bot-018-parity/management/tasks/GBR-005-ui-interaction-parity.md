@@ -37,13 +37,13 @@ The reference report separately records 703 JSX-runtime candidates without revie
 ## Current objective evidence
 - reply/reaction/search source check: Run `35345060040` SUCCESS.
 - reference SendMessage stream semantics fix: Run `35345930555` SUCCESS.
-- newer renderer/runtime commits are awaiting a new exact-head source check; queued/running is not treated as PASS.
+- audited code head `910f65e42b0dd096e9c969eba03666f46ae764c9` passed Run `35360378372`, including all runtime contract tests and TypeScript/Vite build.
 - `../parity-inventory.generated.json` now has per-module target/state/notes and no longer repeats stale early-round FAIL claims for implemented surfaces.
 
 ## Major open renderer families
 - exact sidebar row/section/preview visual and interaction depth.
 - exact composer rich-text/suggestions/reference/model/voice behaviors.
-- specialist attachment/media/PDF/spreadsheet viewers and media protocol.
+- specialist PDF/spreadsheet viewers and remaining rich media presentation; production media protocol itself is now wired.
 - Computer teach/recording and remaining shell states.
 - access/roster/privacy/reconnect/shared-room/channel surfaces.
 - exact window chrome/status/workspace-indicator/notification behaviors.
