@@ -7,6 +7,8 @@ import { SandSpinner } from './recovered/ui/sand-status-primitives';
 import { RosterStatus } from './recovered/features/roster/status';
 import { RosterReconnectNotice } from './recovered/features/roster/reconnect-notice';
 import { createBrowserClientPersistence, createRosterSelectionPersistence, createRosterSelectionStore } from './recovered/features/roster/selection-state';
+import { createAsyncTasksProvider, type AsyncTasksProvider } from './recovered/features/agent-info/async-tasks/provider';
+import { AsyncTasksPanel } from './recovered/features/agent-info/async-tasks/view';
 import type { AccountStatus, AgentMessage, AgentSummary, AgentThread, AttachmentDescriptor, AttachmentPreview, DeepLinkInfo, DesktopInfo, DesktopUpdateStatus, DesktopUpdateTrack, FeedbackResult, MarketplaceCatalogDescriptor, McpAccountStatus, McpServerDescriptor, McpToolDescriptor, PluginDescriptor, RoutineAutomationDescriptor, RuntimeSettings, WorkflowDescriptor, WorkspaceLinkSearchResult, WorkspaceMediaSearchResult, WorkspaceMessageSearchResult } from './grok-types';
 import './grok-app.css';
 
@@ -253,10 +255,11 @@ function FindInChat({thread,onClose}:{thread:AgentThread|null;onClose():void}) {
   return <div className="sand-chat-find"><div className="sand-chat-find-bar"><span>⌕</span><input autoFocus aria-label="Find in chat" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find in chat" onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();onClose()}else if(e.key==='Enter'){e.preventDefault();step(e.shiftKey?-1:1)}}}/>{query.trim()?<span role="status">{matches.length?Math.min(index+1,matches.length):0}/{matches.length}</span>:null}<button aria-label="Previous match" disabled={!matches.length} onClick={()=>step(-1)}>↑</button><button aria-label="Next match" disabled={!matches.length} onClick={()=>step(1)}>↓</button><button aria-label="Close find" onClick={onClose}>×</button></div></div>;
 }
 
-function Workspace({agent,thread,refresh,openAutomations,openAgentSettings}:{agent:AgentSummary;thread:AgentThread|null;refresh():Promise<void>;openAutomations():void;openAgentSettings():void}) {
+function Workspace({agent,thread,refresh,openAutomations,openAgentSettings,asyncTasksProvider}:{agent:AgentSummary;thread:AgentThread|null;refresh():Promise<void>;openAutomations():void;openAgentSettings():void;asyncTasksProvider:AsyncTasksProvider}) {
   const scroller=useRef<HTMLDivElement|null>(null);
   const [outlineOpen,setOutlineOpen]=useState(false);
   const [computerOpen,setComputerOpen]=useState(false);
+  const [tasksOpen,setTasksOpen]=useState(false);
   const [findOpen,setFindOpen]=useState(false);
   const [replyToId,setReplyToId]=useState<string|null>(null);
   const replyTarget=(thread?.messages||[]).find(message=>message.id===replyToId&&(message.role==='user'||message.role==='assistant'))||null;
@@ -264,7 +267,7 @@ function Workspace({agent,thread,refresh,openAutomations,openAgentSettings}:{age
   useEffect(()=>{if(replyToId&&!replyTarget)setReplyToId(null)},[replyToId,replyTarget]);
   useEffect(()=>{const onKey=(event:KeyboardEvent)=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='f'){event.preventDefault();setFindOpen(true)}else if(event.key==='Escape'&&findOpen)setFindOpen(false)};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[findOpen]);
   return <main className="workspace">
-    <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><nav className="header-actions"><button className="header-action sand-chat-header__computer" data-computer-active={busy(agent.status)||undefined} onClick={()=>setComputerOpen(value=>!value)}>Computer</button><button className="header-action" onClick={()=>setFindOpen(true)}>Find</button><button className="header-action" onClick={()=>setOutlineOpen(value=>!value)}>Outline</button><button className="header-action" onClick={openAgentSettings}>Agent</button><button className="header-action" onClick={openAutomations}>Routines</button></nav></header>
+    <header className="chat-header"><div className="identity"><span className="avatar large">{initials(agent.name)}</span><span><strong>{agent.name}</strong><small><Status status={agent.status}/> {agent.status==='idle'?'Ready':agent.status}</small></span></div><nav className="header-actions"><button className="header-action" onClick={()=>{setTasksOpen(value=>!value);asyncTasksProvider.refresh(agent.id)}}>Tasks</button><button className="header-action sand-chat-header__computer" data-computer-active={busy(agent.status)||undefined} onClick={()=>setComputerOpen(value=>!value)}>Computer</button><button className="header-action" onClick={()=>setFindOpen(true)}>Find</button><button className="header-action" onClick={()=>setOutlineOpen(value=>!value)}>Outline</button><button className="header-action" onClick={openAgentSettings}>Agent</button><button className="header-action" onClick={openAutomations}>Routines</button></nav></header>
     {findOpen?<FindInChat thread={thread} onClose={()=>setFindOpen(false)}/>:null}
     <div className="transcript sand-virtual-transcript" ref={scroller}><div className="transcript-column">
       {thread?.messages.length?thread.messages.map(message=><Message key={message.id} agentId={agent.id} message={message} messages={thread.messages} onChanged={refresh} onReply={target=>setReplyToId(target.id)} onReact={async(entryId,emoji)=>{await bridge.reactToMessage({agentId:agent.id,entryId,emoji});await refresh()}} onResolve={async(approvalId,approved)=>{
@@ -273,6 +276,7 @@ function Workspace({agent,thread,refresh,openAutomations,openAgentSettings}:{age
     </div></div>
     {outlineOpen?<ConversationOutline thread={thread} onClose={()=>setOutlineOpen(false)}/>:null}
     {computerOpen?<ComputerInfoPane agent={agent} thread={thread} onClose={()=>setComputerOpen(false)}/>:null}
+    {tasksOpen?<AsyncTasksPanel agentId={agent.id} agentName={agent.name} provider={asyncTasksProvider} onClose={()=>setTasksOpen(false)}/>:null}
     <Composer running={busy(agent.status)} replyTarget={replyTarget} onClearReply={()=>setReplyToId(null)} onSend={async(text,attachmentIds,replyToId)=>{await bridge.sendMessage({agentId:agent.id,text,attachmentIds,replyToId});await refresh()}} onStop={async()=>{
       await bridge.stopAgent({agentId:agent.id});await refresh();
     }}/>
@@ -755,6 +759,7 @@ function CommandPalette({agents,onClose,onSelect,onSelectEntry,onCreate,onOrgCha
 
 export default function GrokApp(){
   const selectionStore=useMemo(()=>createRosterSelectionStore(createRosterSelectionPersistence(createBrowserClientPersistence(window.localStorage))),[]);
+  const asyncTasksProvider=useMemo(()=>createAsyncTasksProvider({getAsyncTasks:input=>bridge.getAsyncTasks(input)}),[]);
   const [agents,setAgents]=useState<AgentSummary[]>([]);
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [thread,setThread]=useState<AgentThread|null>(null);
@@ -793,7 +798,7 @@ export default function GrokApp(){
   const loadOnboarding=async()=>setOnboardingSeen(await bridge.getOnboardingSeen());
   const refreshAll=async()=>{try{setFailure('');await Promise.all([loadAgents(),loadPlugins(),loadWorkflows(),loadAccount(),loadOnboarding()])}catch(error){setFailure(error instanceof Error?error.message:String(error))}finally{setLoading(false)}};
 
-  useEffect(()=>{void refreshAll();return bridge.onDeepLink(link=>setDeepLink(link))},[]);
+  useEffect(()=>{asyncTasksProvider.connect();void refreshAll();const release=bridge.onDeepLink(link=>setDeepLink(link));return()=>{release();asyncTasksProvider.dispose()}},[]);
   useEffect(()=>{
     let active=true;
     void selectionStore.restore(accountSlot).then(()=>{
@@ -817,6 +822,7 @@ export default function GrokApp(){
   useEffect(()=>{if(!pendingJump||pendingJump.agentId!==selectedId)return;const handle=window.setTimeout(()=>{const target=document.querySelector<HTMLElement>(`[data-entry-id="${CSS.escape(pendingJump.entryId)}"]`);if(target){target.scrollIntoView({block:'center',behavior:'smooth'});target.classList.add('message-jump');window.setTimeout(()=>target.classList.remove('message-jump'),1200);setPendingJump(null)}},80);return()=>window.clearTimeout(handle)},[pendingJump,selectedId,thread?.messages.length]);
   useEffect(()=>subscribeAgentEvents(event=>{
     if(event.type==='agents.changed'||event.type==='agent.changed')void loadAgents().catch(()=>{});
+    if(selectedId&&(event.type==='agent.changed'||event.type==='message.changed'))asyncTasksProvider.refresh(selectedId);
     if(event.type==='plugins.changed')void loadPlugins().catch(()=>{});
     if(event.type==='workflows.changed')void loadWorkflows().catch(()=>{});
     if(event.type==='account.changed')void loadAccount().catch(()=>{});
@@ -838,7 +844,7 @@ export default function GrokApp(){
   return <div className="app-shell">
     <Sidebar agents={agents} selected={selectedId} query={query} setQuery={setQuery} select={selectAgent} account={account} openAccount={()=>setOverlay('account')} create={()=>setCreateOpen(true)}
       plugins={()=>setOverlay('plugins')} settings={()=>setOverlay('settings')} orgChart={()=>setOverlay('orgchart')} hiddenChats={()=>setOverlay('hidden')} rename={setRenameAgent} remove={setDeleteAgent} changed={loadAgents} openPalette={()=>setPaletteOpen(true)}/>
-    {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')} openAgentSettings={()=>setOverlay('agent-settings')}/ >:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
+    {selected?<Workspace agent={selected} thread={thread} refresh={()=>loadThread(selected.id)} openAutomations={()=>setOverlay('automations')} openAgentSettings={()=>setOverlay('agent-settings')} asyncTasksProvider={asyncTasksProvider}/ >:<main className="empty"><span>✣</span><h1>What should your agent do?</h1><p>Create an agent for a project, task, research thread, or workflow.</p><button className="primary" onClick={()=>setCreateOpen(true)}>New agent</button></main>}
     {failure&&agents.length?<RosterReconnectNotice isRetrying={loading} onRetry={()=>void refreshAll()}/>:null}
     {failure?<div className="toast-error">{failure}<button onClick={()=>setFailure('')}>×</button></div>:null}
     {overlay==='plugins'?<Plugins items={plugins} workflows={workflows} onClose={()=>setOverlay(null)} reload={loadPlugins} reloadWorkflows={loadWorkflows}/>:null}
