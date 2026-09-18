@@ -52,6 +52,8 @@ function registerIpc(){
   ipcMain.handle('grok-agent:set-auto-update',async(event,args={})=>{assertTrusted(event);return desktopServices.update.setAutoUpdateWhenIdleOptIn(args.enabled===true)});
   ipcMain.handle('grok-agent:quit-and-install',async event=>{assertTrusted(event);return desktopServices.update.quitAndInstall()});
   ipcMain.handle('grok-agent:submit-feedback',async(event,args={})=>{assertTrusted(event);return desktopServices.submitFeedback(args)});
+  ipcMain.handle('grok-agent:get-onboarding-seen',async event=>{assertTrusted(event);return desktopServices.getOnboardingSeen()});
+  ipcMain.handle('grok-agent:set-onboarding-seen',async(event,args={})=>{assertTrusted(event);return desktopServices.setOnboardingSeen(args.seen===true)});
 }
 function createWindow(){
   const win=new BrowserWindow({
