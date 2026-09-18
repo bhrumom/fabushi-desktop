@@ -157,6 +157,7 @@ export interface GrokAgentBridge {
   resolveApproval(input:{approvalId:string;approved:boolean}):Promise<{ok:true}>;
   listMcpServers():Promise<McpServerDescriptor[]>;
   addMcpServer(input:{name:string;transport?:'stdio'|'http';command?:string;args?:string[];url?:string;customInstructions?:string;accountKey?:string;oauthClientId?:string;oauthAuthorizationUrl?:string;oauthTokenUrl?:string;oauthRegistrationUrl?:string;oauthScopes?:string[]}):Promise<McpServerDescriptor>;
+  updateMcpServer(input:{serverId:string;name?:string;transport?:'stdio'|'http';command?:string;args?:string[];url?:string;customInstructions?:string;accountKey?:string;oauthClientId?:string;oauthAuthorizationUrl?:string;oauthTokenUrl?:string;oauthRegistrationUrl?:string;oauthScopes?:string[]}):Promise<McpServerDescriptor>;
   removeMcpServer(input:{serverId:string}):Promise<{ok:true}>;
   setMcpServerEnabled(input:{serverId:string;enabled:boolean}):Promise<McpServerDescriptor>;
   getMcpAccountStatus(input:{serverId:string;accountKey?:string}):Promise<McpAccountStatus>;
