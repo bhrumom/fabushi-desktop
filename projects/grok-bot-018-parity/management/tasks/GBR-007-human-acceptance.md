@@ -12,6 +12,7 @@ Validate the released Grok-parity macOS candidate as an installed product. This 
 - reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`
 - release: `grok-parity-mac-101`
 - version: `2.0.0-alpha.3`
+- immutable release branch: `release/grok-parity-alpha3-final`
 - artifact digest: `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`
 - automated source gate: Run `35419150457` — 105/105 PASS
 - automated macOS package/release: Run `35419150459` — SUCCESS

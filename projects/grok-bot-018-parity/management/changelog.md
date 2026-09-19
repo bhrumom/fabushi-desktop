@@ -45,3 +45,9 @@
 - Final alpha.3 macOS delivery Run `35418603624` SUCCESS; artifact `10576404427` digest `sha256:7899c1e47537c4793de59118d9328085038505069e438b255c62b0c0421768b2`.
 - Published `grok-parity-mac-97` with `2.0.0-alpha.3` arm64 DMG/ZIP and verified the release tag resolves exactly to the product SHA.
 - The bounded GitHub-hosted renderer probe still produced no UI report and recorded `manualValidationRequired:true`; human installed-product acceptance remains GBR-007 and PR #1 stays open.
+
+- Final immutable alpha.3 candidate moved to `1f27c239aa8931b3266b9b83c84ff234332785d9` with dedicated release branch `release/grok-parity-alpha3-final`.
+- Exact source gates: push Run `35419150457` and PR Run `35419154451` SUCCESS with **105/105 PASS, 0 fail** plus pinned source typecheck and production renderer build.
+- Final Mac delivery Run `35419150459` SUCCESS; artifact `10577580224` digest `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`.
+- Published prerelease `grok-parity-mac-101`; tag verified exact to `1f27c239aa8931b3266b9b83c84ff234332785d9`; arm64 DMG/ZIP release assets published.
+- Bounded GitHub-hosted renderer probe remains diagnostic-only and recorded `manualValidationRequired:true`; human installed-product acceptance remains GBR-007 and PR #1 remains open.

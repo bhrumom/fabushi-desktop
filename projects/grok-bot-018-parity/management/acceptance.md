@@ -38,4 +38,5 @@ The only intentional runtime product difference is Computer location: Fabushi Ag
 - Artifact: `10577580224`, 393011773 bytes, digest `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`.
 - Release: `grok-parity-mac-101`; tag resolves exactly to the package SHA.
 - Assets: `fabushi-grok-parity-2.0.0-alpha.3-macos-arm64.dmg` (196950473 bytes; `sha256:695ffe13980e185ac8f4852635147d5ddf45eefebac6903294dbb4962960371f`) and `fabushi-grok-parity-2.0.0-alpha.3-macos-arm64.zip` (197394273 bytes; `sha256:8db709695da85299c10e1155df2f798dd4d9325422f2f0c927101b199fb2052a`).
+- Release assets additionally expose SHA-256 digests: DMG `sha256:695ffe13980e185ac8f4852635147d5ddf45eefebac6903294dbb4962960371f`; ZIP `sha256:8db709695da85299c10e1155df2f798dd4d9325422f2f0c927101b199fb2052a`.
 - Human UX/function testing is intentionally not claimed; it is GBR-007.

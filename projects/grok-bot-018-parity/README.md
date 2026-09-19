@@ -10,8 +10,8 @@ Refactor Fabushi Desktop around the pinned Grok Bot 0.18 reconstruction, reprodu
 
 Reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`  
 Target baseline: `bhrumom/fabushi-desktop@12d4aadb4a93a1413ece44aba987162e90b31229`  
-Shipped Mac candidate code SHA: `528ddc8e31c320ca472191cf29a860c2086dabc2`  
-Release: `grok-parity-mac-97` / `2.0.0-alpha.3`
+Shipped Mac candidate code SHA: `1f27c239aa8931b3266b9b83c84ff234332785d9`  
+Release: `grok-parity-mac-101` / `2.0.0-alpha.3`
 
 ## Implemented result
 
@@ -28,9 +28,9 @@ Release: `grok-parity-mac-97` / `2.0.0-alpha.3`
 Automated source/runtime/package/release scope is complete. Final human installation and interaction testing remains external by the original requirement.
 
 Final automated evidence:
-- source gate Run `35418603612`: 105/105 runtime tests PASS plus exact pinned source/typecheck/production build;
-- macOS Run `35418603624`: build/package, artifact upload, release and exact tag-SHA checks PASS; the non-blocking headless renderer probe produced no UI report and recorded `manualValidationRequired:true`, so no automated packaged-UI PASS is claimed;
-- Release `grok-parity-mac-97` resolves exactly to `528ddc8e31c320ca472191cf29a860c2086dabc2`;
-- Actions artifact `10576404427`, digest `sha256:7899c1e47537c4793de59118d9328085038505069e438b255c62b0c0421768b2`.
+- source gate Run `35419150457`: 105/105 runtime tests PASS plus exact pinned source/typecheck/production build;
+- macOS Run `35419150459`: build/package, artifact upload, release and exact tag-SHA checks PASS; the non-blocking headless renderer probe produced no UI report and recorded `manualValidationRequired:true`, so no automated packaged-UI PASS is claimed;
+- Release `grok-parity-mac-101` resolves exactly to `1f27c239aa8931b3266b9b83c84ff234332785d9`;
+- Actions artifact `10577580224`, digest `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`.
 
-PR #1 remains open for GBR-007 human acceptance and defect closure.
+Release anchor `release/grok-parity-alpha3-final` is immutable at the shipped product SHA. PR #1 remains open for GBR-007 human acceptance and defect closure.

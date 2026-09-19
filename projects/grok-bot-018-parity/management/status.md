@@ -108,3 +108,16 @@
 - Immutable release branch `release/grok-parity-alpha3-final` and published tag `grok-parity-mac-101` both resolved exactly to the build SHA before/after release publication.
 - The GitHub-hosted headless renderer probe again recorded `manualValidationRequired:true`; no packaged UI/function PASS is claimed.
 - This supersedes `grok-parity-mac-97` as the canonical GBR-007 human-test candidate. Later `projects/**` record-only commits do not alter the shipped package SHA and do not trigger another Mac package.
+
+
+## 2026-09-19 — Round 9 — immutable alpha.3 human-test candidate
+- Final immutable product candidate SHA: `1f27c239aa8931b3266b9b83c84ff234332785d9`.
+- Immutable release branch `release/grok-parity-alpha3-final` resolves exactly to that SHA and is separated from subsequent work-branch documentation changes.
+- Push source gate Run `35419150457` completed SUCCESS: exact pinned renderer/source diff PASS, reference runtime bundles PASS, CommonJS syntax PASS, **105/105 runtime contracts PASS**, pinned reference `source:typecheck` PASS and TypeScript/Vite production build PASS.
+- PR source gate Run `35419154451` completed SUCCESS on the same product SHA.
+- macOS package/release Run `35419150459` completed SUCCESS on the same SHA: dependency install, production build, unsigned arm64 DMG/ZIP packaging, bounded diagnostic smoke, artifact upload, immutable release-branch SHA check, prerelease publication and published tag exact-SHA verification all completed.
+- The GitHub-hosted renderer probe did not emit a UI smoke report and recorded `manualValidationRequired:true`; therefore no automated packaged-UI PASS is claimed.
+- Artifact `10577580224` (`fabushi-grok-parity-macos`) is 393011773 bytes with digest `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`.
+- Prerelease `grok-parity-mac-101` publishes `fabushi-grok-parity-2.0.0-alpha.3-macos-arm64.dmg` (196950473 bytes, `sha256:695ffe13980e185ac8f4852635147d5ddf45eefebac6903294dbb4962960371f`) and `fabushi-grok-parity-2.0.0-alpha.3-macos-arm64.zip` (197394273 bytes, `sha256:8db709695da85299c10e1155df2f798dd4d9325422f2f0c927101b199fb2052a`).
+- Tag `grok-parity-mac-101` resolves exactly to `1f27c239aa8931b3266b9b83c84ff234332785d9`.
+- Automated implementation/delivery scope is complete. GBR-007 remains the only product acceptance stage and is intentionally owned by human testing per the original requirement; PR #1 stays open until that evidence is recorded.
