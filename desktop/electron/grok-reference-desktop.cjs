@@ -40,6 +40,13 @@ function createReferenceDesktop({app,BrowserWindow,shell,dialog,safeStorage,nati
   const stageRoot=path.join(app.getPath('userData'),'grok-reference-staged');
   const committedRoot=path.join(app.getPath('userData'),'grok-reference-attachments');
   const secrets=createSecretStore({app,safeStorage});
+  const telemetryFile=path.join(app.getPath('userData'),'grok-reference-telemetry.ndjson');
+  async function appendTelemetry(name,payload){
+    await fs.mkdir(path.dirname(telemetryFile),{recursive:true,mode:0o700});
+    try{const stat=await fs.stat(telemetryFile);if(stat.size>5*1024*1024)await fs.rename(telemetryFile,telemetryFile+'.1').catch(()=>{})}catch{}
+    const row={at:new Date().toISOString(),name:String(name||'event'),payload:payload&&typeof payload==='object'?payload:{value:payload??null}};
+    await fs.appendFile(telemetryFile,JSON.stringify(row)+'\n',{mode:0o600});
+  }
   let prefs=null;
   async function loadPrefs(){
     if(prefs)return prefs;
@@ -159,6 +166,7 @@ function createReferenceDesktop({app,BrowserWindow,shell,dialog,safeStorage,nati
           return'data:'+type+';base64,'+bytes.toString('base64');
         }catch{return null}
       }
+      case'telemetry-report':{await appendTelemetry(args.name,args.payload);return{ok:true,localOnly:true}}
       case'transcribe-audio':{
         const started=Date.now(),endpoint=transcriptionEndpoint();
         if(!endpoint)throw Error('Audio transcription is not configured. Set FABUSHI_TRANSCRIBE_URL or use an OpenAI-compatible FABUSHI_AGENT_API_URL ending in /chat/completions.');
