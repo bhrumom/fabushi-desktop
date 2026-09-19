@@ -17,7 +17,7 @@ Recover the reference Computer/tool/host execution model while adapting the Comp
 - Teach recording is a real local Mac recording service; save attaches the recording to the Agent and invokes the Learn from demonstration workflow through the reference Agent runtime.
 
 ## Verification
-Run `35419150457` on released package SHA `1f27c239aa8931b3266b9b83c84ff234332785d9` passed exact pinned source parity, reference runtime bundle build, 105/105 runtime tests, pinned reference source typecheck and TypeScript/Vite production build.
+Run `35425432746` on released package SHA `98ac56f037cb1b0eaa66781087da986334754908` passed exact pinned source parity, reference runtime bundle build, 109/109 runtime tests, pinned reference source typecheck and TypeScript/Vite production build.
 
 Runtime tests include reference-Agent model/tool continuation, Browser/MCP/Subagent routing, local mutation approval/cancellation, Computer actions, local Browser actions, Teach recording and coordinator/desktop bridge closure.
 
@@ -27,3 +27,10 @@ Runtime tests include reference-Agent model/tool continuation, Browser/MCP/Subag
 - Installed-Mac Computer execution: automated runtime PASS / PRODUCT_DIFFERENCE.
 - Permission/approval/cancellation/transcript lifecycle: PASS.
 - Packaged end-user Computer/permission behavior: GBR-007 human acceptance pending.
+
+## Current immutable delivery evidence
+- Human-test product/package SHA: `98ac56f037cb1b0eaa66781087da986334754908`.
+- Push source gate Run `35425432746` and PR source gate Run `35425434873`: SUCCESS, **109/109 PASS, 0 fail**.
+- macOS package/release Run `35425432753`: SUCCESS.
+- Release `grok-parity-mac-126` / `2.0.0-alpha.4`; tag and `release/grok-parity-alpha4-final` resolve exactly to the product SHA.
+- Packaged renderer UI remains manual acceptance under GBR-007; the hosted probe recorded `manualValidationRequired:true`.
