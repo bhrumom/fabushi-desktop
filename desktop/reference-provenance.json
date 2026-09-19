@@ -17,5 +17,8 @@
   "desktopBridge": "official renderer claims classified and covered by runtime tests",
   "coordinatorBridge": "official renderer RPC closure + subscription families + exact TrayManager path",
   "sharing": "exact reference cross-user sharing adapter bundled; external-account differences explicit",
-  "telemetry": "reference telemetry retained locally without cloud export"
+  "telemetry": "reference telemetry retained locally without cloud export",
+  "oneShotIntegratorsRemoved": true,
+  "releaseCandidateVersion": "2.0.0-alpha.2",
+  "finalValidationPolicy": "branch head, source gate, macOS package and prerelease tag must resolve to one exact SHA"
 }
