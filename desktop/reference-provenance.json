@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 11,
+  "schemaVersion": 12,
   "referenceRepository": "bhrum/grok-bot-0.18-reconstructed",
   "referenceCommit": "107877b4e2134fd167d239411386f09e42eadd6d",
   "rendererSource": "exact-pinned-copy",
@@ -37,16 +37,16 @@
   },
   "trayRuntime": "pinned Grok TrayManager with async coordinator failures surfaced to local UI",
   "externalEvidence": "pinned reconstruction Host activation requires immutable carrier src/app/dist/host/host-main.cjs, which is not stored in the Git repository",
-  "releasePolicy": "macOS prerelease creation verifies the remote release branch still equals GITHUB_SHA immediately before release creation, then softprops/action-gh-release creates the lightweight tag from that frozen branch ref; a final remote tag lookup requires tag SHA == GITHUB_SHA. Direct refs-API tag creation is not used because the workflow token cannot create that ref in this repository.",
+  "releasePolicy": "Before the final Mac run is allowed to publish, ChatGPT creates the immutable GitHub branch release/grok-parity-alpha3-final at the exact candidate commit. The workflow requires that branch SHA == GITHUB_SHA, softprops/action-gh-release creates the lightweight tag from that immutable branch, and a final lookup requires tag SHA == GITHUB_SHA. Later projects/** closeout commits cannot move the release branch or invalidate the shipped product SHA.",
   "teachRecording": "real local Mac screen recording service; save attaches recording to the Agent and invokes the Learn from demonstration private skill/workflow through the reference Agent runtime",
   "teachComputerTarget": "installed-local-machine",
-  "finalCandidateNote": "Final release workflow is fail-closed for branch movement and tag mismatch; source gate and macOS package are expected on the same non-empty desktop commit.",
+  "finalCandidateNote": "The immutable release branch, source gate, macOS package, release tag and assets must identify one exact candidate SHA; post-release project-record commits may advance the work branch without changing the release branch.",
   "projectCloseoutPolicy": "post-release evidence synchronization is allowed only as a docs-only project-record commit; release code SHA remains the canonical shipped candidate",
   "dependencyLock": "desktop/package-lock.json is synchronized to desktop/package.json for 2.0.0-alpha.3",
   "dependencyInstallMode": "npm ci in source-check and macOS package gates",
   "dependencyLockBlob": "828e857f9b3fc4ec1dae850f34c86c39fce7a495",
   "finalCandidateVersion": "2.0.0-alpha.3",
-  "finalGateTrigger": "frozen-branch-exact-tag-v2",
+  "finalGateTrigger": "immutable-release-branch-v1",
   "packagedSmokePolicy": "headless renderer smoke is diagnostic-only; background Electron is always bounded and force-terminated on step exit; manual installed-product acceptance remains authoritative",
   "packagedSmokeCleanup": "EXIT/INT/TERM trap with bounded SIGTERM then SIGKILL"
 }

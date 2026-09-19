@@ -130,20 +130,22 @@ jobs:
             desktop/release/grok-renderer-smoke.json
             desktop/release/grok-renderer-smoke.log
           if-no-files-found: error
-      - name: Verify release branch is still exact build SHA
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac')
+      - name: Verify immutable release branch is exact build SHA
+        if: github.event_name == 'push' && github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac'
         shell: bash
         run: |
           set -euo pipefail
-          REMOTE_SHA="$(git ls-remote origin "refs/heads/${{ github.ref_name }}" | awk '{print $1}')"
+          RELEASE_BRANCH="release/grok-parity-alpha3-final"
+          REMOTE_SHA="$(git ls-remote origin "refs/heads/$RELEASE_BRANCH" | awk '{print $1}')"
+          test -n "$REMOTE_SHA"
           test "$REMOTE_SHA" = "${GITHUB_SHA}"
       - name: Publish macOS prerelease candidate
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac')
+        if: github.event_name == 'push' && github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: grok-parity-mac-${{ github.run_number }}
           name: Fabushi Grok parity macOS #${{ github.run_number }}
-          target_commitish: ${{ github.ref_name }}
+          target_commitish: release/grok-parity-alpha3-final
           prerelease: true
           generate_release_notes: false
           files: |
@@ -151,7 +153,7 @@ jobs:
             desktop/release/*.zip
 
       - name: Verify published tag resolves to exact build SHA
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac')
+        if: github.event_name == 'push' && github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac'
         shell: bash
         run: |
           set -euo pipefail
