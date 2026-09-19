@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "referenceRepository": "bhrum/grok-bot-0.18-reconstructed",
   "referenceCommit": "107877b4e2134fd167d239411386f09e42eadd6d",
   "rendererSource": "exact-pinned-copy",
@@ -20,7 +20,7 @@
   "telemetry": "reference telemetry retained locally without cloud export",
   "oneShotIntegratorsRemoved": true,
   "releaseCandidateVersion": "2.0.0-alpha.2",
-  "finalValidationPolicy": "branch head, source gate, macOS package and prerelease tag must resolve to one exact SHA",
+  "finalValidationPolicy": "the final product/CI commit, source gate, macOS package and prerelease tag must resolve to one exact SHA; after that release is verified, a docs-only closeout commit may advance the branch only under projects/grok-bot-018-parity/** without changing desktop/**, .github/**, or pinned reference source",
   "agentInference": "Fabushi signed-in account access token is the production bearer credential when FABUSHI_ACCOUNT_INFERENCE_URL is configured; API-key env is fallback only",
   "desktopBridgeClaims": {
     "total": 95,
@@ -40,5 +40,6 @@
   "releasePolicy": "macOS prerelease creation uses the branch ref only after verifying the remote branch still equals github.sha; the workflow then verifies the published lightweight tag resolves exactly to github.sha. Runner-side tag pushes are intentionally avoided because the GitHub App lacks workflows permission.",
   "teachRecording": "real local Mac screen recording service; save attaches recording to the Agent and invokes the Learn from demonstration private skill/workflow through the reference Agent runtime",
   "teachComputerTarget": "installed-local-machine",
-  "finalCandidateNote": "Final release workflow is fail-closed for branch movement and tag mismatch; source gate and macOS package are expected on the same non-empty desktop commit."
+  "finalCandidateNote": "Final release workflow is fail-closed for branch movement and tag mismatch; source gate and macOS package are expected on the same non-empty desktop commit.",
+  "projectCloseoutPolicy": "post-release evidence synchronization is allowed only as a docs-only project-record commit; release code SHA remains the canonical shipped candidate"
 }
