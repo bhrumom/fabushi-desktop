@@ -97,3 +97,14 @@
 - Tag `grok-parity-mac-97` resolves exactly to `528ddc8e31c320ca472191cf29a860c2086dabc2`.
 - The GitHub-hosted headless renderer probe still produced no UI report and recorded `manualValidationRequired:true`; therefore packaged UI/function PASS is intentionally not claimed.
 - This supersedes `grok-parity-mac-92` as the canonical GBR-007 human-test candidate. PR #1 remains open and unmerged for the human acceptance round required by the original request.
+
+
+## 2026-09-19 — Round 9 — immutable alpha.3 final release
+- Final human-test package SHA: `1f27c239aa8931b3266b9b83c84ff234332785d9`.
+- Source gate Run `35419150457` completed SUCCESS on that SHA with exact pinned renderer/source diff PASS, reference runtime bundle build PASS, CommonJS syntax PASS, **105/105 runtime contracts PASS**, pinned reference `source:typecheck` PASS, and TypeScript/Vite production build PASS.
+- macOS package/release Run `35419150459` completed SUCCESS on the same SHA.
+- Artifact `10577580224` (`fabushi-grok-parity-macos`) is 393011773 bytes with digest `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`.
+- Prerelease `grok-parity-mac-101` publishes `fabushi-grok-parity-2.0.0-alpha.3-macos-arm64.dmg` (196950473 bytes; `sha256:695ffe13980e185ac8f4852635147d5ddf45eefebac6903294dbb4962960371f`) and `.zip` (197394273 bytes; `sha256:8db709695da85299c10e1155df2f798dd4d9325422f2f0c927101b199fb2052a`).
+- Immutable release branch `release/grok-parity-alpha3-final` and published tag `grok-parity-mac-101` both resolved exactly to the build SHA before/after release publication.
+- The GitHub-hosted headless renderer probe again recorded `manualValidationRequired:true`; no packaged UI/function PASS is claimed.
+- This supersedes `grok-parity-mac-97` as the canonical GBR-007 human-test candidate. Later `projects/**` record-only commits do not alter the shipped package SHA and do not trigger another Mac package.
