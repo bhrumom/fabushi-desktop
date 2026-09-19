@@ -79,6 +79,45 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     return null;
   }
 
+  function mcpMetaDefinitions(){
+    const fn=(name,description,properties,required=[])=>({type:'function',function:{name,description,parameters:{type:'object',properties,required,additionalProperties:false}}});
+    return[
+      fn('GetMcpTools','Discover installed MCP servers and tools. Search first, inspect a tool schema, then invoke it with CallMcpTool.',{server:{type:'string'},toolName:{type:'string'},pattern:{type:'string'}}),
+      fn('CallMcpTool','Call one discovered MCP tool by server identifier and tool name with arbitrary JSON arguments.',{server:{type:'string'},toolName:{type:'string'},arguments:{type:'object'},description:{type:'string'}},['server','toolName'])
+    ];
+  }
+  function mcpToolRows(definitions){
+    return definitions.flatMap(definition=>{
+      const meta=definition?._mcp||{},server=String(meta.serverId||meta.serverIdentifier||'').trim(),toolName=String(meta.toolName||'').trim();
+      if(!server||!toolName)return[];
+      return[{server,toolName,routedName:String(definition.function?.name||''),description:String(definition.function?.description||''),inputSchema:definition.function?.parameters||{type:'object',properties:{}}}];
+    });
+  }
+  async function executeMcpMetaTool(name,args,definitions){
+    const rows=mcpToolRows(definitions);
+    if(name==='GetMcpTools'){
+      const server=String(args.server||'').trim(),toolName=String(args.toolName||'').trim(),pattern=String(args.pattern||'').trim().toLowerCase();
+      if(toolName&&!server)throw Error('toolName requires server.');
+      let selected=rows;
+      if(server)selected=selected.filter(row=>row.server===server);
+      if(toolName)selected=selected.filter(row=>row.toolName===toolName);
+      if(pattern)selected=selected.filter(row=>(row.server+' '+row.toolName+' '+row.description).toLowerCase().includes(pattern));
+      if(server&&!rows.some(row=>row.server===server))throw Error('MCP server not found: '+server);
+      if(toolName&&!selected.length)throw Error('MCP tool not found: '+server+'/'+toolName);
+      if(toolName)return{text:JSON.stringify({server,tool:{name:selected[0].toolName,description:selected[0].description,inputSchema:selected[0].inputSchema}},null,2)};
+      if(server)return{text:JSON.stringify({server,tools:selected.map(row=>({name:row.toolName,description:row.description,inputSchema:row.inputSchema}))},null,2)};
+      const grouped={};for(const row of selected)(grouped[row.server]??=[]).push({name:row.toolName,description:row.description});
+      return{text:JSON.stringify({servers:Object.entries(grouped).map(([id,tools])=>({id,tools}))},null,2)};
+    }
+    if(name==='CallMcpTool'){
+      const server=String(args.server||'').trim(),toolName=String(args.toolName||'').trim(),row=rows.find(item=>item.server===server&&item.toolName===toolName);
+      if(!row)throw Error('MCP tool not found. Use GetMcpTools before CallMcpTool.');
+      const result=await executeExternalTool(row.routedName,args.arguments&&typeof args.arguments==='object'?args.arguments:{});
+      return result&&typeof result==='object'&&('text'in result||'display'in result)?result:{text:typeof result==='string'?result:JSON.stringify(result??null,null,2)};
+    }
+    return null;
+  }
+
   async function chatRequest(messages,tools,signal,onDelta=()=>{}){
     const endpoint=String(process.env.FABUSHI_ACCOUNT_INFERENCE_URL||process.env.FABUSHI_AGENT_API_URL||'').trim();
     let key=String(process.env.FABUSHI_AGENT_API_KEY||'').trim();
@@ -225,7 +264,8 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
 
   async function runTurnInContext({agent,history,transcript,enabled,signal,assistantEntry=null,observation}){
     const externalDefinitions=await getExternalTools();
-    const externalNames=new Set(externalDefinitions.map(x=>x.function?.name).filter(Boolean));
+    const mcpMetaTools=mcpMetaDefinitions();
+    const mcpMetaNames=new Set(mcpMetaTools.map(x=>x.function.name));
     const subagentTools=subagentDefinitions();
     const subagentNames=new Set(subagentTools.map(x=>x.function.name));
     const agentManagementTools=agentManagementDefinitions();
@@ -236,7 +276,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const localNames=new Set(localTools.map(x=>x.function.name));
     const communicationNames=new Set(communicationDefinitions.map(x=>x.function.name));
     const stateNames=new Set([stateDefinition.function.name]);
-    const tools=[...communicationDefinitions,stateDefinition,...agentManagementTools,...localTools,...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
+    const tools=[...communicationDefinitions,stateDefinition,...agentManagementTools,...localTools,...browserTools,...subagentTools,...mcpMetaTools];
     const resources=createExecutionResources({
       executeLocal:(name,args,options)=>executeTool(name,args,{enabled,shell,signal:options.signal,onStarted:options.onStarted,onOutput:options.onOutput,ownerAgentId:agent.id}),
       executeBrowser:(name,args,options)=>browser?.execute({agentId:agent.id,name,args,signal:options.signal}),
@@ -286,7 +326,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
         void onTurnObservation({kind:'tool-started',agentId:agent.id,turnId:observation.turnId,toolCallId:String(toolCallId||''),toolName:name,args:{...(args||{})},at:actionStartedAt});
         let resultText='',execution;
         try{
-          const allowed=communicationNames.has(name)||stateNames.has(name)||agentManagementNames.has(name)||externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name,args)===false)
+          const allowed=communicationNames.has(name)||stateNames.has(name)||agentManagementNames.has(name)||mcpMetaNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name,args)===false)
             ?true:await authorize(agent.id,entry,name,args,toolSignal);
           if(!allowed){resultText='ERROR: '+entry.text}
           else{
@@ -297,7 +337,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
               if(execution?.visibleMessage)visibleMessageCount+=1;
             }else if(stateNames.has(name))execution=await executeStateTool(args,{updateState:input=>updateState({agentId:agent.id,...input})});
             else if(agentManagementNames.has(name))execution=await executeAgentManagementTool(name,args,agent.id);
-            else if(externalNames.has(name))resource=resources.get(EXTERNAL_TOOL_EXECUTOR);
+            else if(mcpMetaNames.has(name))execution=await executeMcpMetaTool(name,args,externalDefinitions);
             else if(browserNames.has(name))resource=resources.get(BROWSER_TOOL_EXECUTOR);
             else if(subagentNames.has(name))resource=resources.get(SUBAGENT_TOOL_EXECUTOR);
             else if(localNames.has(name))resource=resources.get(LOCAL_TOOL_EXECUTOR);
