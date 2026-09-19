@@ -51,6 +51,7 @@ jobs:
         working-directory: _grok
         run: |
           set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
           node scripts/host-production-activation.mjs | tee "$RUNNER_TEMP/grok-host-production-activation.txt"
       - name: Build pinned reference Agent runner
         run: npm run build:reference-agent
