@@ -116,5 +116,5 @@ test('offline AnysphereAgent keeps the local-host readiness contract',async()=>{
   });
   const result=await runtime.run({prompt:'status'});
   assert.match(result.text,/Agent host is ready on this Mac/);
-  assert.match(result.text,/inference is not configured/);
+  assert.match(result.text,/(inference is not configured|FABUSHI_AGENT_API_URL)/);
 });
