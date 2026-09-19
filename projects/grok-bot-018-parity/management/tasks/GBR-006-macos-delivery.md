@@ -26,7 +26,7 @@ Run `35417698507` completed SUCCESS on `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd
 - install dependencies — success
 - typecheck and build — success
 - unsigned macOS DMG/ZIP package — success
-- packaged renderer/local bridge smoke — success
+- packaged renderer/local bridge headless smoke — **manual validation required**: the GitHub-hosted Mac produced no renderer smoke report within the bounded probe, so the non-blocking step wrote `manualValidationRequired:true` and exited 1; this is not counted as product acceptance
 - artifact upload — success
 - exact release-branch SHA verification — success
 - prerelease publication — success

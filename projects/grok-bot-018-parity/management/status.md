@@ -73,7 +73,7 @@
 - Final shipped code SHA is `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`.
 - Exact pinned source gate Run `35417698506` completed SUCCESS with 103/103 tests PASS, 0 fail, reference source typecheck PASS and renderer production build PASS.
 - PR source gate Run `35417701558` also completed SUCCESS on the same SHA.
-- macOS delivery Run `35417698507` completed SUCCESS on the same SHA, including package, packaged-app smoke, artifact upload, branch-SHA verification, prerelease creation and published-tag SHA verification.
+- macOS delivery Run `35417698507` completed SUCCESS on the same SHA for package, artifact upload, branch-SHA verification, prerelease creation and published-tag SHA verification. Its deliberately non-blocking headless renderer probe produced no smoke report and recorded `manualValidationRequired:true`; no automated UI-product PASS is claimed.
 - Artifact `10576418103` is `393022970` bytes with digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
 - Prerelease `grok-parity-mac-92` published DMG and ZIP for version `2.0.0-alpha.2`; the lightweight tag resolves exactly to `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`.
 - Automated implementation/delivery scope is complete. PR #1 remains open and unmerged because the original requirement delegates final product testing to humans.
