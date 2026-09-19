@@ -36,9 +36,9 @@ function baseRuntime(overrides={}){
 }
 
 test('auto-review canonical target is bounded and fingerprinted deterministically',()=>{
-  const target=canonicalAutoReviewTarget('computer_click',{x:10,y:20,stateId:'state',purpose:'Open settings'});
+  const target=canonicalAutoReviewTarget('Computer',{action:'click',x:10,y:20,description:'Open settings'});
   assert.equal(target.surface,'computer');
-  assert.equal(target.displayStateIdentity,'state');
+  assert.equal(target.declaredPurpose,'Open settings');
   assert.equal(fingerprintAutoReviewTarget(target),fingerprintAutoReviewTarget(target));
   assert.equal(normalizeAutoReviewMode('bogus'),'enforce');
 });
