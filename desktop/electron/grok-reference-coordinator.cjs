@@ -64,6 +64,7 @@ function workflowSpec(spec={}){
     body:String(value.body||value.instructions||value.content||'# Skill\n'),
     isEnabledForAgent:value.isEnabled!==false&&value.isEnabledForAgent!==false,
     disableModelInvocation:value.disableModelInvocation===true,
+    ...(value.sourceRef?{sourceRef:String(value.sourceRef)}:{}),
     ...(value.trigger?{trigger:value.trigger}:{})
   };
 }
@@ -169,17 +170,21 @@ function createReferenceCoordinator(runtime){
         const spec=workflowSpec({name:input.name||'Imported skill',body:input.text||input.body||'',description:input.description||''});
         const record=await runtime.saveWorkflow(spec);return{imported:[record],failed:[]};
       }
-      case'importAgentWorkflowUrl':return{imported:[],failed:[{url:input.url,reason:'URL import is not configured in this local build.'}]};
-      case'portAgentLocalSkills':return{imported:[],failed:[]};
+      case'importAgentWorkflowUrl':{
+        const raw=String(input.url||'').trim();let url;try{url=new URL(raw)}catch{return{imported:[],failed:[{url:raw,reason:'Invalid skill URL.'}]}}
+        const loopback=['localhost','127.0.0.1','::1','[::1]'].includes(url.hostname);if(url.protocol!=='https:'&&!(url.protocol==='http:'&&loopback))return{imported:[],failed:[{url:raw,reason:'Skill URL must use HTTPS.'}]};
+        try{const response=await fetch(url,{headers:{accept:'text/markdown, text/plain;q=0.9, */*;q=0.1'},signal:AbortSignal.timeout(12000)});if(!response.ok)throw Error('HTTP '+response.status);const body=await response.text();if(!body.trim())throw Error('Skill URL returned an empty body.');if(body.length>200000)throw Error('Skill document exceeds 200 KB.');const base=url.pathname.split('/').filter(Boolean).at(-1)||'Imported skill',name=String(input.name||base.replace(/\.(md|txt)$/i,'').replace(/[-_]+/g,' ')).trim()||'Imported skill';const record=await runtime.saveWorkflow(workflowSpec({name,description:input.description||'Imported from '+url.hostname,body,sourceRef:url.toString()}));return{imported:[record],failed:[]}}catch(error){return{imported:[],failed:[{url:url.toString(),reason:error instanceof Error?error.message:String(error)}]}}
+      }
+      case'portAgentLocalSkills':{const imported=await runtime.listWorkflows();return{imported,failed:[]}};
       case'skillsCatalog':return runtime.listWorkflows();
       case'syncPluginSkills':return runtime.listWorkflows();
       case'getPluginSyncStatus':return{status:'ready',isSyncing:false,lastError:null};
       case'listRoutedMcpTools':return runtime.listRoutedMcpTools();
       case'executeRoutedMcpTool':return runtime.executeRoutedMcpTool({name:input.name||input.toolName,args:input.args||input.arguments||{}});
-      case'getSkillPublishTargets':return{targets:[]};
-      case'publishSkill':
-      case'resyncPublishedSkill':
-      case'unpublishSkill':return{status:'local-only',workflowId:input.workflowId||null};
+      case'getSkillPublishTargets':return runtime.getSkillPublishTargets();
+      case'publishSkill':return runtime.publishSkill({workflowId:input.workflowId,teamId:input.teamId});
+      case'resyncPublishedSkill':return runtime.resyncPublishedSkill({workflowId:input.workflowId});
+      case'unpublishSkill':return runtime.unpublishSkill({workflowId:input.workflowId});
       case'listAllAutomations':{
         const rows=await runtime.listAgents(),out=[];
         for(const a of rows)for(const item of await runtime.getAgentAutomations({id:a.id}))out.push({...item,agentId:a.id,agentName:a.name});
@@ -191,8 +196,8 @@ function createReferenceCoordinator(runtime){
       case'updateAgentAutomation':return runtime.updateAgentAutomation(input);
       case'deleteAgentAutomation':return runtime.deleteAgentAutomation(input);
       case'runAgentAutomationNow':return runtime.runAgentAutomationNow(input);
-      case'getListenerIntegrations':return{integrations:[]};
-      case'getListenerConnectUrl':return{url:null};
+      case'getListenerIntegrations':return runtime.getListenerIntegrations();
+      case'getListenerConnectUrl':return runtime.getListenerConnectUrl(input);
       case'getTeachRecordingStatus':return teach.get(input.id||input.agentId)||{status:'idle',agentId:input.id||input.agentId||null};
       case'startTeachRecording':{
         const value={status:'recording',agentId:input.id||input.agentId||null,startedAtMs:Date.now()};teach.set(value.agentId,value);return value;
