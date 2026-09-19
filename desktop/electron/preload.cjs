@@ -157,7 +157,7 @@ const writeJson=(key,value)=>refDesktop('persistence-write',{key,value:JSON.stri
 const mcpState=async()=>({servers:(await invoke('list-mcp-servers')).map(server=>({...server,isEnabled:server.enabled!==false,accounts:server.accountKeys||[server.accountKey||'default']}))});
 const catalog=async()=>{
   const result=await invoke('list-marketplace-plugins');
-  return (result?.plugins||[]).map(p=>({id:p.id,name:p.name||p.displayName,displayName:p.displayName||p.name,description:p.description||'',category:p.category||'Plugins',homepage:p.homepage,iconUrl:p.iconUrl,connectors:p.connectors||[],skills:p.skills||[],fields:p.fields||[],marketplace:{name:'fabushi',displayName:'Fabushi Marketplace',ownership:'user'},publisher:p.publisher||{name:p.provider||'Fabushi',displayName:p.provider||'Fabushi',isUserOwned:false}}));
+  return (result?.plugins||[]).map(p=>({id:p.id,name:p.name||p.displayName,displayName:p.displayName||p.name,description:p.description||'',category:p.category||'Plugins',homepage:p.homepage,iconUrl:p.iconUrl,...(Number.isFinite(Number(p.teamPopularity??p.popularity))?{popularity:Number(p.teamPopularity??p.popularity)}:{}),connectors:p.connectors||[],skills:p.skills||[],fields:p.fields||[],marketplace:{name:'fabushi',displayName:'Fabushi Marketplace',ownership:'user'},publisher:p.publisher||{name:p.provider||'Fabushi',displayName:p.provider||'Fabushi',isUserOwned:false}}));
 };
 const mcp=Object.freeze({
   list:mcpState,
