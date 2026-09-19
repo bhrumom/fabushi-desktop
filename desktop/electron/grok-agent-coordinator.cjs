@@ -356,6 +356,33 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     if(url.protocol==='https:')return remoteAttachmentDescriptor(url.toString(),alt,forcedKind);
     throw Error('Attachment URL must use file:// or https://.');
   }
+  async function resolveAgentMessageImages(images){
+    if(!images.length)return[];
+    if(!attachmentGateway)throw Error('Attachment gateway is unavailable.');
+    const ids=[],notes=[],dir=path.join(app.getPath('userData'),'agent-message-images');await fs.mkdir(dir,{recursive:true});
+    for(const image of images){
+      const raw=String(image?.url||'').trim(),alt=String(image?.alt||'').trim().slice(0,200);let url;
+      try{url=new URL(raw)}catch{throw Error('SendToAgent image URL must be file:// or https://.')}
+      let record;
+      if(url.protocol==='file:'){
+        record=await attachmentGateway.register(fileURLToPath(url));
+      }else if(url.protocol==='https:'){
+        const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
+        try{
+          const response=await fetch(url,{signal:controller.signal,redirect:'follow'});if(!response.ok)throw Error('Image download HTTP '+response.status);
+          const mime=String(response.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
+          if(!mime.startsWith('image/'))throw Error('SendToAgent https attachment is not an image.');
+          const bytes=Buffer.from(await response.arrayBuffer());if(bytes.length===0||bytes.length>20*1024*1024)throw Error('SendToAgent image must be between 1 byte and 20 MB.');
+          const ext={ 'image/png':'.png','image/jpeg':'.jpg','image/gif':'.gif','image/webp':'.webp' }[mime]||'.img';
+          const target=path.join(dir,crypto.randomUUID()+ext);await fs.writeFile(target,bytes,{mode:0o600});record=await attachmentGateway.register(target);
+        }finally{clearTimeout(timer)}
+      }else throw Error('SendToAgent image URL must be file:// or https://.');
+      if(record.kind!=='image')throw Error('SendToAgent attachments must be images.');
+      ids.push(record.id);notes.push('- '+raw+(alt?' — '+alt:''));
+    }
+    return{ids,notes};
+  }
+
   async function appendVisibleAssistantMessage({agentId,type='text',content='',url=null,alt='',images=[],widget=null,secret=null,replyToId=null,channel=null}){
     const s=await load(),agent=s.agents.find(row=>row.id===agentId);if(!agent)throw Error('Agent not found');
     if(channel){if(type!=='text'&&type!=='attachment')throw Error('Only text and attachment messages can target a channel.');return deliverChannelMessage({agentId,channel,type,content,url,alt,images,replyToId})}
@@ -501,10 +528,18 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     agentManagement:{
       async send({sourceAgentId,targetId,message,images=[],priority=false}){
         const source=await findAgent(sourceAgentId),target=await findAgent(String(targetId||''));if(!source||!target)throw Error('Target agent not found.');
-        if(images.length)throw Error('SendToAgent image forwarding is not implemented yet; send the message without images or attach the file in the target chat.');
-        if(priority===true&&['thinking','running','waiting'].includes(target.status))await stopAgent({agentId:target.id});
-        const text='[Agent message from '+source.name+' ('+source.id+')]\n'+String(message||'').trim();
-        await sendMessage({agentId:target.id,text,internal:true});
+        if(source.id===target.id)throw Error("You can't message yourself with SendToAgent.");
+        if(target.isGroup&&images.length)throw Error('Group SendToAgent messages are text-only; send images to one agent directly.');
+        const resolved=target.isGroup?{ids:[],notes:[]}:await resolveAgentMessageImages(images);
+        if(priority===true&&!target.isGroup&&['thinking','running','waiting'].includes(target.status))await stopAgent({agentId:target.id});
+        const cue='[Agent message from '+source.name+' ('+source.id+')]\n'+String(message||'').trim()+(resolved.notes.length?'\n\nAttached image(s):\n'+resolved.notes.join('\n'):'');
+        if(target.isGroup){
+          const members=(target.memberIds||[]).filter(id=>id!==source.id),state=await load(),room=state.messages[target.id]||(state.messages[target.id]=[]);
+          room.push({id:crypto.randomUUID(),role:'assistant',text:String(message||'').trim(),createdAt:Date.now(),status:'done',internal:false,authorAgentId:source.id,authorName:source.name});target.updatedAt=Date.now();await save();emit('message.changed',{agentId:target.id,groupAgentMessage:true});
+          for(const memberId of members){const member=await findAgent(memberId);if(member&&!['thinking','running','waiting'].includes(member.status))void sendMessage({agentId:memberId,text:'[Agent group message in '+target.name+' ('+target.id+') from '+source.name+' ('+source.id+')]\n'+String(message||'').trim(),internal:true,publishSharedReply:true}).catch(()=>{})}
+          return 'Message posted to group '+target.name+' ('+target.id+').';
+        }
+        await sendMessage({agentId:target.id,text:cue,attachmentIds:resolved.ids,internal:true});
         return 'Message sent to '+target.name+' ('+target.id+').';
       },
       async create({name,description}){
