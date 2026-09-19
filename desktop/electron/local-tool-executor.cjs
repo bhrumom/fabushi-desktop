@@ -217,6 +217,20 @@ function toolDefinitions(enabled){
   return tools;
 }
 
+async function readPdfText(target){
+  const data=new Uint8Array(await fs.readFile(target));
+  const pdfjs=await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const task=pdfjs.getDocument({data,disableWorker:true,useWorkerFetch:false,isEvalSupported:false});
+  const doc=await task.promise,pages=[];
+  try{
+    for(let pageNo=1;pageNo<=doc.numPages;pageNo++){
+      const page=await doc.getPage(pageNo),content=await page.getTextContent(),text=content.items.map(item=>typeof item?.str==='string'?item.str:'').filter(Boolean).join(' ').trim();
+      pages.push('--- Page '+pageNo+' ---\n'+text);
+    }
+  }finally{await doc.destroy().catch(()=>{});}
+  return pages.join('\n\n');
+}
+
 async function executeTool(name,args,{enabled,shell,signal,onStarted,onOutput,ownerAgentId=null}={}){
   const needed={
     Read:'filesystem',list_directory:'filesystem',read_file:'filesystem',write_file:'filesystem',create_directory:'filesystem',move_path:'filesystem',
@@ -231,6 +245,14 @@ async function executeTool(name,args,{enabled,shell,signal,onStarted,onOutput,ow
     const target=resolvePath(args.path),stat=await fs.stat(target);if(!stat.isFile())throw Error('Path is not a file.');
     const ext=path.extname(target).toLowerCase(),imageMimes={'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif','.webp':'image/webp'};
     if(imageMimes[ext]){if(stat.size>20_000_000)throw Error('Image is larger than 20 MB.');const data=await fs.readFile(target);return{text:`Read image file: ${target}`,display:{kind:'image',dataUrl:`data:${imageMimes[ext]};base64,${data.toString('base64')}`}}}
+    if(ext==='.pdf'){
+      if(stat.size>50_000_000)throw Error('PDF is larger than 50 MB.');
+      const raw=await readPdfText(target),lines=raw.split('\n');let start=Number(args.offset);
+      if(Number.isInteger(start)&&start<0)start=Math.max(1,lines.length+start+1);if(!Number.isInteger(start)||start<1)start=1;
+      const limit=Number.isInteger(Number(args.limit))&&Number(args.limit)>0?Number(args.limit):lines.length;
+      const slice=lines.slice(start-1,start-1+limit),text=args.include_line_numbers===true?slice.map((line,index)=>(start+index)+'|'+line).join('\n'):slice.join('\n');
+      return{text:clamp(text)};
+    }
     if(stat.size>2_000_000)throw Error('File is larger than 2 MB; use offset and limit to read a range.');
     const raw=await fs.readFile(target,'utf8'),lines=raw.split('\n');let start=Number(args.offset);
     if(Number.isInteger(start)&&start<0)start=Math.max(1,lines.length+start+1);if(!Number.isInteger(start)||start<1)start=1;
