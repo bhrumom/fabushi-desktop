@@ -168,7 +168,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
       if(requested.length<1||requested.length>6)throw Error('Groups must contain between 1 and 6 agents.');
       for(const id of requested){const member=s.agents.find(row=>row.id===id);if(!member||member.isGroup)throw Error('Group members must be existing non-group agents.')}
     }
-    const agent={id:crypto.randomUUID(),name:clean(name),description:String(description||'').slice(0,2000),title:undefined,notifyOnUpdatesEnabled:false,purpose:group?'group':String(purpose||'user').slice(0,40),parentAgentId:parentAgentId||null,hidden:false,pinned:false,isGroup:group,memberIds:group?requested:[],isSharedRoom:false,status:'idle',createdAt:now,updatedAt:now,unread:false,avatarDataUrl:null,avatarShape:null,avatarColor:null};
+    const agent={id:crypto.randomUUID(),name:clean(name),description:String(description||'').slice(0,2000),title:undefined,notifyOnUpdatesEnabled:false,purpose:group?'group':String(purpose||'user').slice(0,40),parentAgentId:parentAgentId||null,hidden:false,pinned:false,isGroup:group,memberIds:group?requested:[],projectSlugs:[],isSharedRoom:false,status:'idle',createdAt:now,updatedAt:now,unread:false,avatarDataUrl:null,avatarShape:null,avatarColor:null};
     s.agents.unshift(agent);s.messages[agent.id]=[];s.automations[agent.id]=[];s.channels[agent.id]=[];await save();emit('agents.changed');return agent;
   }
   async function renameAgent({agentId,name}){
@@ -331,7 +331,8 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   });
   mcp=createMcpManager({
     getServers:async()=>[...((await load()).mcpServers||[])],
-    getAuthorizationHeader:(server,signal)=>oauth.authorizationHeader(server,signal)
+    getAuthorizationHeader:(server,signal)=>oauth.authorizationHeader(server,signal),
+    getExtraHeaders:async server=>(await secretStore.get('mcp-headers:'+server.id))||{}
   });
   const workflowManager=createWorkflowManager({app});
   const memoryStore=createMemoryStore({app});
@@ -914,8 +915,10 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     }));
   }
   async function addMcpServer(input){
-    const s=await load(),server=normalizeServer(input);
+    const rawHeaders=input?.headers&&typeof input.headers==='object'&&!Array.isArray(input.headers)?Object.fromEntries(Object.entries(input.headers).map(([key,value])=>[String(key),String(value)])):{};
+    const {headers:_headers,...serverInput}=input||{},s=await load(),server=normalizeServer(serverInput);
     if((s.mcpServers||[]).some(x=>x.id===server.id))throw Error('MCP server id already exists.');
+    if(Object.keys(rawHeaders).length){if(!secretStore.encryptedAvailable())throw Error('Secure storage is required for MCP headers.');await secretStore.set('mcp-headers:'+server.id,rawHeaders)}
     s.mcpServers.push(server);await save();emit('plugins.changed');return server;
   }
   async function updateMcpServer({serverId,...patch}){
@@ -934,6 +937,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     const s=await load(),server=s.mcpServers.find(x=>x.id===serverId),before=s.mcpServers.length;
     if(!server)throw Error('MCP server not found.');
     if(server.transport==='http')await oauth.disconnect(serverId,server.accountKey||'default').catch(()=>{});
+    await secretStore.remove('mcp-headers:'+serverId).catch(()=>{});
     s.mcpServers=s.mcpServers.filter(x=>x.id!==serverId);
     if(s.mcpServers.length===before)throw Error('MCP server not found.');
     mcp.disposeServer(serverId);await save();emit('plugins.changed');return{ok:true};
