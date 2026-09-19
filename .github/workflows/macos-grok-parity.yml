@@ -100,13 +100,21 @@ jobs:
             desktop/release/grok-renderer-smoke.json
             desktop/release/grok-renderer-smoke.log
           if-no-files-found: error
+      - name: Tag exact macOS build SHA
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac')
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="grok-parity-mac-${{ github.run_number }}"
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          git tag "$TAG" "${{ github.sha }}"
+          git push origin "refs/tags/$TAG"
       - name: Publish macOS prerelease candidate
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: grok-parity-mac-${{ github.run_number }}
           name: Fabushi Grok parity macOS #${{ github.run_number }}
-          target_commitish: ${{ github.ref_name }}
           prerelease: true
           generate_release_notes: false
           files: |
