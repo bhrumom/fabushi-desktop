@@ -36,8 +36,9 @@ test('local browser exposes pinned-reference action breadth on the installed mac
   const runtime=createLocalBrowserRuntime({BrowserWindow:FakeWindow});
   const names=runtime.definitions(new Set(['browser'])).map(x=>x.function.name).sort();
   assert.deepEqual(names,[
-    'browser_cdp','browser_click','browser_drag','browser_get_bounding_box','browser_highlight','browser_hover','browser_key',
-    'browser_mouse_click_xy','browser_navigate','browser_screenshot','browser_scroll','browser_select','browser_snapshot','browser_tabs','browser_type'
+    'browser_cdp','browser_click','browser_drag','browser_fill','browser_get_bounding_box','browser_highlight',
+    'browser_mouse_click_xy','browser_navigate','browser_press_key','browser_scroll','browser_select_option','browser_snapshot',
+    'browser_tabs','browser_take_screenshot','browser_type'
   ]);
   runtime.dispose();
 });
@@ -52,9 +53,9 @@ test('local browser tabs are real per-agent windows and CDP stays scoped to the 
   assert.equal(listed.tabs.length,2);assert.equal(listed.activeTabIndex,1);
   snap=JSON.parse((await runtime.execute({agentId:'a1',name:'browser_snapshot',args:{}})).text);
   const active=FakeWindow.all.at(-1);
-  const result=JSON.parse((await runtime.execute({agentId:'a1',name:'browser_cdp',args:{method:'Runtime.evaluate',params:{expression:'1+1'},stateId:snap.stateId,purpose:'inspect page'}})).text);
+  const result=JSON.parse((await runtime.execute({agentId:'a1',name:'browser_cdp',args:{method:'Runtime.evaluate',params:{expression:'1+1'}}})).text);
   assert.equal(result.ok,true);assert.equal(active.webContents.debugger.calls[0].method,'Runtime.evaluate');
-  await runtime.execute({agentId:'a1',name:'browser_tabs',args:{action:'close',tabIndex:1,stateId:snap.stateId,purpose:'close test tab'}});
+  await runtime.execute({agentId:'a1',name:'browser_tabs',args:{action:'close',index:1}});
   listed=JSON.parse((await runtime.execute({agentId:'a1',name:'browser_tabs',args:{action:'list'}})).text);
   assert.equal(listed.tabs.length,1);
   runtime.dispose();
