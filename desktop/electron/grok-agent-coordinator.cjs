@@ -54,7 +54,7 @@ function initialState(){
   const now=Date.now(),id=crypto.randomUUID();
   return{
     version:6,
-    agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false,pinned:false,isGroup:false,memberIds:[],avatarDataUrl:null,avatarShape:null,avatarColor:null}],
+    agents:[{id,name:'Chief',status:'idle',createdAt:now,updatedAt:now,unread:false,pinned:false,isGroup:false,memberIds:[],projectSlugs:[],avatarDataUrl:null,avatarShape:null,avatarColor:null}],
     messages:{[id]:[]},
     plugins:defaultCapabilities(),
     settings:{localToolPermission:'ask',autoReviewMode:'enforce',autoReviewAllowInstructions:[],autoReviewBlockInstructions:[],featureFlagOverrides:{}},
@@ -70,7 +70,7 @@ function normalizeState(parsed){
   if(!parsed||typeof parsed!=='object')return initialState();
   const base=initialState();
   if(Array.isArray(parsed.agents)&&parsed.agents.length){
-    base.agents=parsed.agents.map(a=>({...a,hidden:a.hidden===true,pinned:a.pinned===true,unread:a.unread===true,isGroup:a.isGroup===true,memberIds:Array.isArray(a.memberIds)?[...new Set(a.memberIds.map(id=>String(id||'')).filter(Boolean))].slice(0,6):[],isSharedRoom:a.isSharedRoom===true,avatarDataUrl:typeof a.avatarDataUrl==='string'&&a.avatarDataUrl.startsWith('data:image/')?a.avatarDataUrl:null,avatarShape:typeof a.avatarShape==='string'&&a.avatarShape?a.avatarShape:null,avatarColor:typeof a.avatarColor==='string'&&a.avatarColor?a.avatarColor:null,description:String(a.description||'').slice(0,2000),title:a.title==null?undefined:String(a.title).slice(0,240),notifyOnUpdatesEnabled:a.notifyOnUpdatesEnabled===true,status:['idle','thinking','running','waiting','error'].includes(a.status)?a.status:'idle'}));
+    base.agents=parsed.agents.map(a=>({...a,hidden:a.hidden===true,pinned:a.pinned===true,unread:a.unread===true,isGroup:a.isGroup===true,memberIds:Array.isArray(a.memberIds)?[...new Set(a.memberIds.map(id=>String(id||'')).filter(Boolean))].slice(0,6):[],projectSlugs:Array.isArray(a.projectSlugs)?[...new Set(a.projectSlugs.map(value=>String(value||'').trim()).filter(Boolean))].slice(0,50):[],isSharedRoom:a.isSharedRoom===true,avatarDataUrl:typeof a.avatarDataUrl==='string'&&a.avatarDataUrl.startsWith('data:image/')?a.avatarDataUrl:null,avatarShape:typeof a.avatarShape==='string'&&a.avatarShape?a.avatarShape:null,avatarColor:typeof a.avatarColor==='string'&&a.avatarColor?a.avatarColor:null,description:String(a.description||'').slice(0,2000),title:a.title==null?undefined:String(a.title).slice(0,240),notifyOnUpdatesEnabled:a.notifyOnUpdatesEnabled===true,status:['idle','thinking','running','waiting','error'].includes(a.status)?a.status:'idle'}));
     base.messages={};
     for(const agent of base.agents)base.messages[agent.id]=Array.isArray(parsed.messages?.[agent.id])?parsed.messages[agent.id].map(row=>({...row,...(typeof row?.replyToId==='string'&&row.replyToId?{replyToId:row.replyToId}:{}),reactions:normalizedReactions(row?.reactions)})):[];
   }
