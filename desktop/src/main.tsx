@@ -1,56 +1,38 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { installDesktopAccountSessionSync } from './account-session-sync';
-import { installDesktopAppAgentSurface } from './app-agent-surface';
-import { installBotIdentityAliases } from './agent-identity-aliases';
-import CredentialVault from './credential-vault';
-import { installDurableAgentState, restoreDurableAgentState } from './durable-agent-state';
-import { GrokChatParityRuntime, prepareGrokChatParityRuntime } from './grok-chat-parity-runtime';
-import DesktopShellV2 from './messaging-shell-v2';
-import MahayanaAgentWorkbench from './mahayana-agent-workbench';
-import { installMiniAppComposerOpenBridge } from './miniapp-composer-open-bridge';
-import { installDesktopMiniAppDiscoveryAliases } from './miniapp-discovery-aliases';
-import { installDesktopMiniAppWebMcpHost } from './miniapp-webmcp-host';
-import { installSelfHostedMahayanaInvocationBridge } from './selfhosted-mahayana-invocation-bridge';
-import './messenger-layout-regressions.css';
-import './grok-agent-ui-parity.css';
-import './openbot-ui-parity.css';
-import './mahayana-agent-transcript-semantics.css';
-import './mahayana-assistant-turn.css';
-import './credential-vault.css';
-import './sidebar-contact-groups.css';
+import { ProductionRenderer } from "./production/ProductionRenderer";
+import { acquireProductionRendererRuntime, mountProductionRenderer, requireProductionRendererMount } from "./production/bootstrap";
+import { PRODUCTION_RENDERER_GAPS } from "./production/evidence";
+import { RootShellErrorBoundary } from "./recovered/features/window-chrome/root-shell-state";
 
-const root = document.querySelector<HTMLDivElement>('#root');
-if (!root) {
-  throw new Error('Fabushi desktop root element is missing');
+const mount = requireProductionRendererMount(document.getElementById("root"));
+const runtime = acquireProductionRendererRuntime(window);
+mountProductionRenderer(mount, <RootShellErrorBoundary><ProductionRenderer {...runtime} /></RootShellErrorBoundary>);
+
+const reportHealth = async () => {
+  const health = {
+    ready: mount.childElementCount > 0,
+    title: document.title,
+    url: location.href,
+    preload: typeof window.desktop === "object" && typeof window.coordinatorPort === "object",
+    sourceComposed: true,
+    upstreamEntry: false,
+    cleanEntrypoint: "frontend/src/main.tsx",
+    recoveredEntrypoints: 5,
+    viteClient: import.meta.hot != null,
+    surfaces: ["shell", "account", "sign-in", "conversation", "transcript", "composer", "sidebar", "agents", "settings", "plugins", "updates", "deep-links", "desktop-bridge"],
+    evidenceGaps: Object.keys(PRODUCTION_RENDERER_GAPS)
+  };
+  try {
+    await fetch("/__reconstructed_health", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(health)
+    });
+  } catch {
+    // The health endpoint is available only in the reconstruction development host.
+  }
+};
+window.requestAnimationFrame(() => void reportHealth());
+
+if (import.meta.hot) {
+  import.meta.hot.accept();
 }
-
-async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
-  installDesktopAccountSessionSync();
-  // Restore native persisted projections before transport/workbench reducers
-  // read their first-frame local cache. This makes localStorage a projection;
-  // canonical cloud/Rust authority is verified separately by GBF-601/602.
-  await restoreDurableAgentState();
-  prepareGrokChatParityRuntime();
-  installBotIdentityAliases();
-  installDesktopMiniAppDiscoveryAliases();
-  installDurableAgentState();
-  installDesktopMiniAppWebMcpHost();
-  installDesktopAppAgentSurface();
-
-  createRoot(rootElement).render(
-    <StrictMode>
-      <DesktopShellV2 />
-      <GrokChatParityRuntime />
-      <MahayanaAgentWorkbench />
-      <CredentialVault />
-    </StrictMode>,
-  );
-
-  installMiniAppComposerOpenBridge(rootElement);
-  installSelfHostedMahayanaInvocationBridge();
-}
-
-void bootstrapDesktop(root).catch((error: unknown) => {
-  console.error('Fabushi desktop bootstrap failed', error);
-});

@@ -1,0 +1,63 @@
+name: GBR pinned reference source sync
+on:
+  push:
+    branches: [refactor/grok-bot-018-parity-mac]
+    paths:
+      - ".github/workflows/gbr-reference-source-sync.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync-reference-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+      - name: Checkout pinned Grok Bot reference
+        uses: actions/checkout@v4
+        with:
+          repository: bhrum/grok-bot-0.18-reconstructed
+          ref: 107877b4e2134fd167d239411386f09e42eadd6d
+          path: _grok
+          persist-credentials: false
+      - name: Verify and typecheck pinned reference source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C _grok rev-parse HEAD)" = "107877b4e2134fd167d239411386f09e42eadd6d"
+          cd _grok
+          npm install --no-audit --no-fund
+          npm run source:typecheck
+      - name: Vendor exact reference source and restore renderer support surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reference/grok-bot-0.18/source
+          rsync -a --delete _grok/source/ reference/grok-bot-0.18/source/
+          test "$(find reference/grok-bot-0.18/source -type f | wc -l | tr -d ' ')" -gt 1500
+          git checkout 779d256fa7dbc405ac6367a7c89feeff48365f26 -- source
+          node <<'NODE'
+          const fs=require('node:fs');
+          const p='desktop/scripts/build-reference-agent.mjs';
+          let s=fs.readFileSync(p,'utf8');
+          s=s.replace('path.join(repo, "source", "host", "runner", "sand-agent-runner.ts")','path.join(repo, "reference", "grok-bot-0.18", "source", "host", "runner", "sand-agent-runner.ts")');
+          fs.writeFileSync(p,s);
+          NODE
+      - name: Commit vendored reference source layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Fabushi Work"
+          git config user.email "noreply@fabushi.local"
+          git add -A source reference/grok-bot-0.18/source desktop/scripts/build-reference-agent.mjs
+          if git diff --cached --quiet; then
+            echo "Vendored source already exact"
+            exit 0
+          fi
+          git commit -m "refactor(gbr): vendor exact Grok source for local runner"
+          git push origin HEAD:refactor/grok-bot-018-parity-mac

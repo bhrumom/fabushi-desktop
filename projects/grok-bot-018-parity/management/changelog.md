@@ -1,0 +1,62 @@
+# Changelog
+
+## 2026-09-18
+- Created project GBR and recorded reference/target SHAs.
+- Accepted ADR-001: TypeScript agent architecture with installed-computer adaptation.
+- Replaced layered legacy desktop production entry with one Grok-style agent shell.
+- Added context-isolated local agent runtime and persistent transcripts.
+- Added plugin browse/search/install/enable baseline.
+- Removed build dependency on missing monorepo frontend/Mahayana roots.
+- Added macOS GitHub Actions package/prerelease workflow.
+- Added `management/parity-inventory.md` and reference-derived `management/parity-inventory.generated.json`.
+- Added GBR-003 and GBR-005 task records.
+- Gated macOS packaging so PR implementation commits no longer auto-package before A8.
+- Refactored runtime ownership to coordinator → host → local execution.
+- Added persisted local-tool permission and one-shot approval/deny/cancel UI/runtime lifecycle.
+- Added cancellable foreground shell, background shell process control, and local macOS screenshot/click/type/key tools.
+- Removed unimplemented GitHub/Memory plugin placeholders.
+- Added executable stdio MCP server provider and server/tool configuration UI.
+- Added command palette/shortcuts, agent rename/delete, Stop, approval cards, backed Settings and loading/error states.
+- Added non-packaging parity source CI; Run 35333859439 passed CJS syntax and TypeScript/Vite build after fixing the first detected syntax issue.
+- Corrected A5/GBR-001/GBR-006 package evidence to Run 35323112810 and artifact digest sha256:884a992b9cfa2cf16891ddee05939a5daa52bc2343f8ac92e6fa0c30d9d4adae.
+
+- Added production `sand-media://` streaming with registered attachment Range reads and packaged media helpers.
+- Added recovered clock-skew/video-container runner contracts and tests.
+- Added authenticated experiments provider/cache/override lifecycle and account token refresh; kept external Statsig parity explicitly partial.
+- Added per-agent runner owner and routed coordinator turns through it.
+- Run 35360378372 passed on audited code head 910f65e42b0dd096e9c969eba03666f46ae764c9.
+- Refreshed machine parity counts without claiming A8 completion.
+
+
+## 2026-09-19
+- Cut production Agent orchestration over to the pinned reference SandAgentRunner + AnysphereAgent; removed the hand-written legacy model/tool loop from production.
+- Enforced byte-exact pinned renderer/source parity and official renderer coordinator/desktop bridge closure.
+- Closed local Mac Computer/Browser action breadth, default executable Marketplace/private-skill/MCP paths, exact TrayManager, Sand cross-user sharing relay and real local Teach screen recording.
+- Raised final runtime contract coverage to 103/103 PASS on shipped SHA `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`.
+- Final automated Mac delivery: source Run `35417698506` SUCCESS; macOS Run `35417698507` SUCCESS; artifact `10576418103` digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
+- Published prerelease `grok-parity-mac-92` with `2.0.0-alpha.2` arm64 DMG/ZIP; release tag verified to exact shipped SHA.
+- Transitioned to GBR-007 external human installation/interaction acceptance; PR #1 intentionally remains open and unmerged.
+
+- Corrected the final headless packaged-smoke wording: Run `35417698507` published successfully, but the runner did not emit the UI probe report and recorded `manualValidationRequired:true`; packaged UI acceptance remains GBR-007 human work.
+- Synchronized GBR-003/004/005 to current automated runtime/source evidence and created GBR-007 as the durable manual acceptance task.
+- Superseded the alpha.2 human-test candidate with reproducible `2.0.0-alpha.3` at immutable product SHA `528ddc8e31c320ca472191cf29a860c2086dabc2`.
+- Committed and bound the desktop dependency lock for reproducible `npm ci` source/package verification.
+- Final alpha.3 source gates: push Run `35418603612` and PR Run `35418606285` SUCCESS; runtime coverage is **105/105 PASS, 0 fail**.
+- Final alpha.3 macOS delivery Run `35418603624` SUCCESS; artifact `10576404427` digest `sha256:7899c1e47537c4793de59118d9328085038505069e438b255c62b0c0421768b2`.
+- Published `grok-parity-mac-97` with `2.0.0-alpha.3` arm64 DMG/ZIP and verified the release tag resolves exactly to the product SHA.
+- The bounded GitHub-hosted renderer probe still produced no UI report and recorded `manualValidationRequired:true`; human installed-product acceptance remains GBR-007 and PR #1 stays open.
+
+- Final immutable alpha.3 candidate moved to `1f27c239aa8931b3266b9b83c84ff234332785d9` with dedicated release branch `release/grok-parity-alpha3-final`.
+- Exact source gates: push Run `35419150457` and PR Run `35419154451` SUCCESS with **105/105 PASS, 0 fail** plus pinned source typecheck and production renderer build.
+- Final Mac delivery Run `35419150459` SUCCESS; artifact `10577580224` digest `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`.
+- Published prerelease `grok-parity-mac-101`; tag verified exact to `1f27c239aa8931b3266b9b83c84ff234332785d9`; arm64 DMG/ZIP release assets published.
+- Bounded GitHub-hosted renderer probe remains diagnostic-only and recorded `manualValidationRequired:true`; human installed-product acceptance remains GBR-007 and PR #1 remains open.
+
+- Closed the immutable final alpha.3 release at package SHA `1f27c239aa8931b3266b9b83c84ff234332785d9`: push source Run `35419150457` and PR source Run `35419154451` SUCCESS with 105/105 runtime tests.
+- macOS Run `35419150459` SUCCESS; artifact `10577580224` digest `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`.
+- Published `grok-parity-mac-101`; immutable release branch and release tag both resolve exactly to `1f27c239aa8931b3266b9b83c84ff234332785d9`.
+- Final alpha.3 DMG/ZIP release-asset digests recorded; installed-product acceptance remains GBR-007 human work.
+
+- Reconciled live alpha.4 evidence against GitHub Actions and corrected stale plugin/PR records: product SHA `98ac56f037cb1b0eaa66781087da986334754908`, source Run `35425432746` (109/109), macOS Run `35425432753`, artifact `10579089056`, prerelease `grok-parity-mac-126`.
+- Confirmed all work-branch commits after the alpha.4 product SHA are project-record-only; no released product code changed.
+- Kept packaged renderer validation explicitly human-owned because the hosted diagnostic recorded `manualValidationRequired:true`.

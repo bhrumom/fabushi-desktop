@@ -1,0 +1,82 @@
+name: Grok parity source check
+on:
+  push:
+    branches: [refactor/grok-bot-018-parity-mac]
+    paths:
+      - "desktop/**"
+      - ".github/workflows/grok-parity-source-check.yml"
+      - ".github/workflows/macos-grok-parity.yml"
+      - "reference/grok-bot-0.18/manifests/reconstruction/renderer-closure.json"
+  pull_request:
+    paths:
+      - "desktop/**"
+      - ".github/workflows/grok-parity-source-check.yml"
+      - ".github/workflows/macos-grok-parity.yml"
+      - "reference/grok-bot-0.18/manifests/reconstruction/renderer-closure.json"
+
+concurrency:
+  group: grok-parity-source-check-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  source-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+      - name: Checkout pinned Grok Bot 0.18 reference
+        uses: actions/checkout@v4
+        with:
+          repository: bhrum/grok-bot-0.18-reconstructed
+          ref: 107877b4e2134fd167d239411386f09e42eadd6d
+          path: _grok
+          persist-credentials: false
+      - name: Verify exact pinned source parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C ../_grok rev-parse HEAD)" = "107877b4e2134fd167d239411386f09e42eadd6d"
+          diff -qr ../_grok/frontend/src src
+          diff -qr ../_grok/source ../reference/grok-bot-0.18/source
+          cmp ../_grok/package.json ../reference/grok-bot-0.18/package.json
+          cmp ../_grok/package-lock.json ../reference/grok-bot-0.18/package-lock.json
+          cmp ../_grok/manifests/reconstruction/renderer-closure.json ../reference/grok-bot-0.18/manifests/reconstruction/renderer-closure.json
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Audit pinned reference production Host activation
+        shell: bash
+        working-directory: _grok
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          if [ ! -f src/app/dist/host/host-main.cjs ]; then
+            echo '{"status":"external-dependency","missing":"src/app/dist/host/host-main.cjs","reason":"immutable carrier artifact is not stored in the pinned Git repository"}' | tee "$RUNNER_TEMP/grok-host-production-activation.txt"
+            exit 0
+          fi
+          node scripts/host-production-activation.mjs | tee "$RUNNER_TEMP/grok-host-production-activation.txt"
+      - name: Build pinned reference Agent runner
+        run: npm run build:reference-agent
+      - name: Check Electron CommonJS syntax
+        run: |
+          for file in electron/*.cjs; do
+            node --check "$file"
+          done
+      - name: Runtime contract tests
+        run: node --test tests/*.test.cjs
+      - name: Typecheck exact pinned reference source
+        shell: bash
+        working-directory: reference/grok-bot-0.18
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run source:typecheck
+      - name: Typecheck and renderer build
+        run: npm run build

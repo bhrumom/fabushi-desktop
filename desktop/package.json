@@ -1,43 +1,123 @@
 {
   "name": "@fabushi/desktop",
-  "version": "1.2.72",
-  "description": "Fabushi Electron desktop client",
-  "homepage": "https://fabushi.ombhrum.com/",
+  "version": "2.0.0-alpha.4",
+  "description": "Fabushi desktop - Grok Bot 0.18 source-parity refactor with local Mac Computer",
+  "homepage": "https://github.com/bhrumom/fabushi-desktop",
   "author": "bhrumom",
-  "desktopName": "com.ombhrum.fabushi",
   "private": true,
   "type": "module",
   "main": "electron/bootstrap.cjs",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 1420",
-    "prebuild:renderer": "node scripts/prepare-desktop-window-branding.mjs",
     "typecheck": "tsc --noEmit",
-    "build:renderer": "tsc --noEmit && vite build",
-    "build:host": "cargo build --release -p mahayana-app-host-desktop --bin mahayana-app-host --manifest-path ../third_party/mahayana/mahayana-rs/Cargo.toml && node scripts/stage-host.mjs",
-    "build:host:ci": "cargo build --profile ci -p mahayana-app-host-desktop --bin mahayana-app-host --manifest-path ../third_party/mahayana/mahayana-rs/Cargo.toml && node scripts/stage-host.mjs ci",
-    "build": "npm run build:host && npm run build:renderer",
-    "package": "npm run build:host && npm run build:renderer && electron-builder",
-    "test:credential-gateway": "node --test electron/credential-gateway.test.cjs",
-    "test:e2e": "playwright test",
-    "test:openbot-parity": "node scripts/assert-openbot-parity.mjs",
-    "start": "electron ."
+    "build": "npm run build:reference-agent && tsc --noEmit && vite build",
+    "build:computer-helper": "mkdir -p native/bin && swiftc native/MacComputerHelper.swift -O -o native/bin/fabushi-computer-helper",
+    "package:mac": "npm run build && npm run build:computer-helper && electron-builder --mac dmg zip --publish never",
+    "start": "electron .",
+    "postinstall": "node scripts/apply-third-party-patches.mjs",
+    "build:reference-agent": "node scripts/build-reference-agent.mjs"
   },
   "dependencies": {
-    "electron-updater": "^6.8.9",
-    "lucide-react": "^1.14.0",
-    "react": "19.1.1",
-    "react-dom": "19.1.1"
+    "react": "19.2.1",
+    "react-dom": "19.2.1",
+    "@ai-sdk/openai": "^1.3.24",
+    "@anthropic-ai/claude-agent-sdk": "^0.1.76",
+    "@bufbuild/protobuf": "1.10.1",
+    "@connectrpc/connect": "1.6.1",
+    "@connectrpc/connect-node": "1.6.1",
+    "@jimp/core": "1.6.0",
+    "@jimp/js-bmp": "1.6.0",
+    "@jimp/js-gif": "1.6.0",
+    "@jimp/js-jpeg": "1.6.0",
+    "@jimp/js-png": "1.6.0",
+    "@jimp/js-tiff": "1.6.0",
+    "@jimp/plugin-resize": "1.6.0",
+    "@opentelemetry/api": "1.9.0",
+    "@opentelemetry/context-async-hooks": "2.6.1",
+    "@opentelemetry/core": "2.2.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "0.208.0",
+    "@opentelemetry/resources": "2.2.0",
+    "@opentelemetry/sdk-metrics": "2.2.0",
+    "@opentelemetry/sdk-trace-base": "2.6.1",
+    "@opentelemetry/sdk-trace-node": "2.6.1",
+    "@opentelemetry/semantic-conventions": "1.36.0",
+    "@statsig/js-client": "^3.31.0",
+    "@streamparser/json": "0.0.21",
+    "@tiptap/core": "3.14.0",
+    "@tiptap/extension-blockquote": "3.14.0",
+    "@tiptap/extension-bold": "3.14.0",
+    "@tiptap/extension-bullet-list": "3.14.0",
+    "@tiptap/extension-code": "3.14.0",
+    "@tiptap/extension-code-block": "3.14.0",
+    "@tiptap/extension-document": "3.14.0",
+    "@tiptap/extension-dropcursor": "3.14.0",
+    "@tiptap/extension-gapcursor": "3.14.0",
+    "@tiptap/extension-hard-break": "3.14.0",
+    "@tiptap/extension-heading": "3.14.0",
+    "@tiptap/extension-horizontal-rule": "3.14.0",
+    "@tiptap/extension-italic": "3.14.0",
+    "@tiptap/extension-link": "3.14.0",
+    "@tiptap/extension-list": "3.14.0",
+    "@tiptap/extension-list-item": "3.14.0",
+    "@tiptap/extension-list-keymap": "3.14.0",
+    "@tiptap/extension-mention": "3.14.0",
+    "@tiptap/extension-ordered-list": "3.14.0",
+    "@tiptap/extension-paragraph": "3.14.0",
+    "@tiptap/extension-placeholder": "3.14.0",
+    "@tiptap/extension-strike": "3.14.0",
+    "@tiptap/extension-text": "3.14.0",
+    "@tiptap/extension-underline": "3.14.0",
+    "@tiptap/extensions": "3.14.0",
+    "@tiptap/html": "3.14.0",
+    "@tiptap/pm": "3.14.0",
+    "@tiptap/react": "3.14.0",
+    "@tiptap/starter-kit": "3.14.0",
+    "@tiptap/suggestion": "3.14.0",
+    "ai": "4.3.17",
+    "diff": "8.0.3",
+    "emojibase": "17.0.0",
+    "emojibase-data": "17.0.0",
+    "gray-matter": "4.0.3",
+    "iconv-lite": "0.7.0",
+    "ignore": "7.0.5",
+    "image-type": "4.1.0",
+    "js-yaml": "3.15.1",
+    "jschardet": "3.1.4",
+    "jsonc-parser": "3.3.1",
+    "katex": "0.16.45",
+    "mime-types": "3.0.1",
+    "minimatch": "10.2.6",
+    "pdfjs-dist": "5.4.296",
+    "piscina": "4.9.0",
+    "re2js": "1.2.2",
+    "rxjs": "8.0.0-alpha.14",
+    "tar": "7.5.21",
+    "tree-sitter": "0.21.1",
+    "tree-sitter-bash": "0.21.0",
+    "undici": "5.29.0",
+    "web-tree-sitter": "0.21.0",
+    "ws": "8.20.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "3.24.5"
   },
   "devDependencies": {
-    "@playwright/test": "1.62.1",
-    "@types/node": "^24.0.0",
-    "@types/react": "19.1.10",
-    "@types/react-dom": "19.1.7",
-    "@vitejs/plugin-react": "4.3.4",
-    "electron": "43.4.0",
+    "@types/node": "26.2.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "6.0.5",
+    "electron": "42.1.0",
     "electron-builder": "26.15.3",
-    "typescript": "5.9.2",
-    "vite": "6.4.3"
+    "typescript": "7.0.2",
+    "vite": "8.2.1",
+    "@electron/asar": "4.2.1",
+    "@types/js-yaml": "3.12.10",
+    "acorn": "8.18.0",
+    "acorn-walk": "8.3.5",
+    "esbuild": "0.28.2",
+    "node-addon-api": "8.5.0",
+    "node-gyp": "12.1.0",
+    "node-gyp-build": "4.8.4",
+    "sirv": "3.0.2"
   },
   "build": {
     "appId": "com.ombhrum.fabushi",
@@ -49,101 +129,77 @@
     },
     "files": [
       "dist/**",
-      "electron/**",
-      "package.json"
+      "electron/bootstrap.cjs",
+      "electron/main.cjs",
+      "electron/preload.cjs",
+      "electron/grok-agent-runtime.cjs",
+      "electron/grok-agent-runner.cjs",
+      "electron/grok-account-session.cjs",
+      "electron/grok-agent-coordinator.cjs",
+      "electron/grok-host-runtime.cjs",
+      "electron/grok-exec-resources.cjs",
+      "electron/grok-request-context.cjs",
+      "electron/grok-auto-review.cjs",
+      "electron/grok-transient-retry.cjs",
+      "electron/grok-message-interactions.cjs",
+      "electron/grok-communication-tools.cjs",
+      "electron/grok-state-tool.cjs",
+      "electron/grok-memory-store.cjs",
+      "electron/grok-turn-usage.cjs",
+      "electron/grok-action-audit.cjs",
+      "electron/grok-desktop-services.cjs",
+      "electron/grok-reference-desktop.cjs",
+      "electron/grok-reference-coordinator.cjs",
+      "electron/grok-local-teach-recording.cjs",
+      "electron/grok-attachment-gateway.cjs",
+      "electron/grok-mcp-manager.cjs",
+      "electron/grok-mcp-oauth.cjs",
+      "electron/grok-plugin-marketplace.cjs",
+      "electron/grok-output-spill.cjs",
+      "electron/grok-secret-store.cjs",
+      "electron/grok-workflow-manager.cjs",
+      "electron/grok-automation-schedule.cjs",
+      "electron/grok-local-browser.cjs",
+      "electron/grok-experiments.cjs",
+      "electron/grok-media-protocol.cjs",
+      "electron/grok-clock-skew-guard.cjs",
+      "electron/grok-video-container.cjs",
+      "electron/local-tool-executor.cjs",
+      "package.json",
+      "electron/grok-reference-sand-runner.cjs",
+      "electron/grok-reference-anysphere-runtime.cjs",
+      "electron/grok-reference-xuser-sharing.cjs",
+      "electron/grok-reference-trays.cjs"
     ],
     "extraResources": [
       {
-        "from": "resources/bin",
-        "to": "bin"
+        "from": "native/bin/fabushi-computer-helper",
+        "to": "bin/fabushi-computer-helper"
       },
       {
-        "from": "resources/asr",
-        "to": "asr",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "resources/computer-control",
-        "to": "computer-control",
-        "filter": [
-          "**/*"
-        ]
+        "from": "reference-provenance.json",
+        "to": "reference-provenance.json"
       }
     ],
     "mac": {
-      "category": "public.app-category.lifestyle",
+      "category": "public.app-category.productivity",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "target": [
         "dmg",
         "zip"
       ],
-      "artifactName": "fabushi-${version}-macos-${arch}.${ext}",
+      "artifactName": "fabushi-grok-parity-${version}-macos-${arch}.${ext}",
       "entitlements": "resources/mac/entitlements.plist",
       "entitlementsInherit": "resources/mac/entitlements.plist",
-      "extendInfo": {
-        "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音消息、语音输入和离线语音识别。",
-        "NSCameraUsageDescription": "全球法布施使用摄像头进行视频通话。"
-      },
-      "icon": "resources/icon.png",
       "forceCodeSigning": true
     },
-    "win": {
-      "target": [
-        "nsis"
-      ],
-      "artifactName": "fabushi-${version}-setup.${ext}",
-      "icon": "resources/icon.png"
-    },
-    "linux": {
-      "category": "Utility",
-      "maintainer": "bhrumom",
-      "syncDesktopName": true,
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "artifactName": "fabushi-${version}-${arch}.${ext}"
-    },
-    "deb": {
-      "packageName": "fabushi",
-      "artifactName": "fabushi-${version}-${arch}.${ext}"
-    },
-    "protocols": [
-      {
-        "name": "Fabushi",
-        "schemes": [
-          "fabushi"
-        ]
-      }
-    ],
-    "mas": {
-      "target": [
-        "mas"
-      ],
-      "category": "public.app-category.lifestyle",
-      "hardenedRuntime": false,
-      "gatekeeperAssess": false,
-      "entitlements": "resources/mas/entitlements.mas.plist",
-      "entitlementsInherit": "resources/mas/entitlements.mas.inherit.plist",
-      "provisioningProfile": "resources/mas/Fabushi_AppStore.provisionprofile",
-      "extendInfo": {
-        "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音输入和离线语音识别。"
-      },
-      "forceCodeSigning": true,
-      "icon": "resources/icon.png"
-    },
-    "afterSign": "scripts/notarize-after-sign.cjs",
-    "copyright": "Copyright © 2026 Fabushi. All rights reserved.",
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "bhrumom",
-        "repo": "fabushi",
-        "releaseType": "release"
-      }
-    ]
+    "copyright": "Copyright © 2026 Fabushi.",
+    "afterSign": "scripts/notarize-after-sign.cjs"
+  },
+  "overrides": {
+    "node-addon-api": "8.5.0",
+    "@tiptap/extension-bubble-menu": "3.14.0",
+    "@tiptap/extension-floating-menu": "3.14.0"
   }
 }
