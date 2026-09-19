@@ -1,5 +1,8 @@
 'use strict';
 
+const fs=require('node:fs/promises');
+const os=require('node:os');
+
 function asObject(value){return value&&typeof value==='object'&&!Array.isArray(value)?value:{}}
 function agentRow(agent){
   if(!agent||typeof agent!=='object')return agent;
@@ -36,6 +39,21 @@ function pageFromThread(thread,limit=200,beforeSeq){
   const end=Number.isFinite(Number(beforeSeq))?Math.max(0,Math.min(all.length,Number(beforeSeq))):all.length;
   const start=Math.max(0,end-Math.max(1,Math.min(500,Number(limit)||200)));
   return {entries:all.slice(start,end),nextBeforeSeq:start>0?start:undefined};
+}
+async function localComputerStatus(id){
+  const agentId=String(id||'local-mac');
+  let diskPressure=null;
+  try{
+    const stats=await fs.statfs(os.homedir()),blockSize=Number(stats.bsize)||0;
+    const totalBytes=(Number(stats.blocks)||0)*blockSize;
+    const freeBlocks=Number(stats.bavail??stats.bfree)||0,freeBytes=freeBlocks*blockSize;
+    const usedRatio=totalBytes>0?Math.max(0,Math.min(1,1-freeBytes/totalBytes)):0;
+    diskPressure={
+      source:'local-mac',usedRatio,totalBytes,freeBytes,
+      level:usedRatio>=0.95?'critical':usedRatio>=0.90?'high':usedRatio>=0.80?'elevated':'normal'
+    };
+  }catch{}
+  return{agentId,state:'running',kind:'local-computer',computerTarget:'local-mac',vncUrl:null,diskPressure};
 }
 function workflowSpec(spec={}){
   const value=asObject(spec);
@@ -183,7 +201,7 @@ function createReferenceCoordinator(runtime){
         const id=input.id||input.agentId||null,value={status:'idle',agentId:id,stoppedAtMs:Date.now()};teach.set(id,value);return value;
       }
       case'getForeverBoxStatus':
-      case'ensureForeverBox':return{agentId:String(input.id||input.agentId||'local-mac'),state:'running',kind:'local-computer',computerTarget:'local-mac',vncUrl:null};
+      case'ensureForeverBox':return await localComputerStatus(input.id||input.agentId);
       case'handBackForeverBox':return;
       case'getTrays':return[];
       case'dismissTray':
