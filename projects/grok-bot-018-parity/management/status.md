@@ -109,3 +109,18 @@
 - Prerelease `grok-parity-mac-101`: DMG 196950473 bytes (`sha256:695ffe13980e185ac8f4852635147d5ddf45eefebac6903294dbb4962960371f`); ZIP 197394273 bytes (`sha256:8db709695da85299c10e1155df2f798dd4d9325422f2f0c927101b199fb2052a`).
 - Published tag `grok-parity-mac-101` resolves exactly to `1f27c239aa8931b3266b9b83c84ff234332785d9`.
 - Automated implementation/delivery is complete. GBR-007 is intentionally external/human per the original request; PR #1 stays open until installed-product acceptance is recorded.
+
+
+## 2026-09-19 — Round 10 — alpha.4 final human-test candidate reconciliation
+- Reconciled the current branch against the latest product/package candidate instead of the superseded alpha.3 record.
+- Current immutable product/package SHA: `98ac56f037cb1b0eaa66781087da986334754908`.
+- Both `release/grok-parity-alpha3-final` (legacy workflow gate name) and `release/grok-parity-alpha4-final` resolve exactly to that SHA.
+- Push source gate Run `35425432746` completed SUCCESS on that SHA. Runtime contracts report **109 tests / 109 pass / 0 fail**; exact pinned source parity, reference runner build, CommonJS syntax, pinned source typecheck and renderer production build all passed.
+- PR source gate Run `35425434873` completed SUCCESS on the same SHA.
+- macOS package/release Run `35425432753` completed SUCCESS for build, unsigned arm64 DMG/ZIP packaging, artifact upload, release-branch SHA gate, prerelease publication and published-tag SHA verification.
+- Artifact `10579089056` is 393058647 bytes with digest `sha256:6c91562e2d8ede5641c6c4bb9010a1cd3ebad1c0d0744a5cb8cc48b9bd1850d1`.
+- Prerelease `grok-parity-mac-126` publishes version `2.0.0-alpha.4`: DMG 196976857 bytes (`sha256:3516c7de4f8052e0fc219f08a3c2234a4648569d63c1277dcc7164a45dfe7320`) and ZIP 197404010 bytes (`sha256:c70bd2a13c2fabf2cab3a74b959ecead488a2e4df76656fd18ef7b4d52e3a57c`).
+- The hosted packaged renderer probe still produced no UI report and recorded `manualValidationRequired:true`; no automated packaged-UI PASS is claimed.
+- Comparing the alpha.4 product SHA to the work-branch head shows only project-record changes. No product/CI/reference source changes occur after the alpha.4 candidate.
+- PR #1 metadata was refreshed to point human testing at alpha.4 / release 126 instead of the superseded alpha.3 candidate.
+- GBR-007 remains the only outstanding acceptance stage and is intentionally external/human per the original requirement.
