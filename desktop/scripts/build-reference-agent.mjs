@@ -41,3 +41,20 @@ await build({
   banner: { js: "'use strict';" },
 });
 console.log("Built pinned AnysphereAgent local runtime adapter");
+
+
+await build({
+  entryPoints: [path.join(repo, "reference", "grok-bot-0.18", "source", "host", "extensions", "trays", "trays-service.ts")],
+  outfile: path.join(desktop, "electron", "grok-reference-trays.cjs"),
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node26",
+  packages: "external",
+  sourcemap: false,
+  minify: false,
+  treeShaking: true,
+  logLevel: "info",
+  banner: { js: "'use strict';" },
+});
+console.log("Built pinned Grok TrayManager bundle");
