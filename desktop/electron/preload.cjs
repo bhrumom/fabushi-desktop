@@ -3,7 +3,7 @@ const {contextBridge,ipcRenderer,webFrame}=require('electron');
 
 const events=[
   'agents.changed','agent.changed','message.delta','message.changed','message.done',
-  'plugins.changed','workflows.changed','automations.changed','settings.changed','account.changed','experiments.changed','sharing','approval.requested','approval.resolved','approval.cancelled'
+  'plugins.changed','workflows.changed','automations.changed','settings.changed','account.changed','experiments.changed','sharing','computer-action','approval.requested','approval.resolved','approval.cancelled'
 ];
 const invoke=(method,args={})=>ipcRenderer.invoke('grok-agent:'+method,args);
 const refCoordinator=(method,args={})=>ipcRenderer.invoke('grok-reference:coordinator',{method,args});
@@ -56,6 +56,33 @@ const grokAgent=Object.freeze({
 });
 
 let activePort=null;
+let trayStore=[];
+function publishTrayEvent(value){void emitFamily('tray',value)}
+function pushCoordinatorTray(error,requestId,method){
+  const detail=String(error?.message||error||'Coordinator request failed').slice(0,1200);
+  const title=method==='sendPrompt'?'Agent request failed':'Action failed';
+  const existing=trayStore.find(row=>row.title===title&&row.detail===detail);
+  if(existing){existing.count=(existing.count||1)+1;publishTrayEvent({type:'pushed',tray:{...existing}});return}
+  const tray={kind:'error',id:'local-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8),title,detail,requestId:String(requestId||''),errorKind:String(error?.code||'local_runtime_error')};
+  trayStore=[...trayStore.slice(-19),tray];publishTrayEvent({type:'pushed',tray});
+}
+async function coordinatorCallWithLocalState(method,args,requestId){
+  if(method==='getTrays')return trayStore.map(row=>({...row}));
+  if(method==='dismissTray'){
+    const id=String(args?.id||'');trayStore=trayStore.filter(row=>row.id!==id);publishTrayEvent({type:'dismissed',id});return;
+  }
+  if(method==='clearTrays'){trayStore=[];publishTrayEvent({type:'cleared'});return}
+  const value=await refCoordinator(method,args);
+  if((method==='getForeverBoxStatus'||method==='ensureForeverBox')&&value&&typeof value==='object'){
+    void emitFamily('forever-box',value);
+    if(value.diskPressure!=null)void emitFamily('box-disk-pressure',value.diskPressure);
+  }
+  if(method==='handBackForeverBox'){
+    const id=args?.id||args?.agentId;
+    if(id)void refCoordinator('getForeverBoxStatus',{id}).then(status=>{if(status){void emitFamily('forever-box',status);if(status.diskPressure!=null)void emitFamily('box-disk-pressure',status.diskPressure)}}).catch(()=>{});
+  }
+  return value;
+}
 function makeCoordinatorPort(){
   let closed=false;const messageListeners=new Set(),closeListeners=new Set();
   const emit=data=>{if(!closed)for(const fn of [...messageListeners])queueMicrotask(()=>fn({data}))};
@@ -67,9 +94,9 @@ function makeCoordinatorPort(){
       if(frame.kind==='lifecycle'&&frame.phase==='shutdown'){close();return}
       if(frame.kind==='cancel')return;
       if(frame.kind==='request'&&typeof frame.requestId==='string'&&typeof frame.method==='string'){
-        refCoordinator(frame.method,frame.args).then(
+        coordinatorCallWithLocalState(frame.method,frame.args,frame.requestId).then(
           value=>emit({kind:'reply',requestId:frame.requestId,outcome:{status:'ok',value}}),
-          error=>emit({kind:'reply',requestId:frame.requestId,outcome:{status:'failed',failure:{code:String(error?.code||'failed'),message:String(error?.message||error||'Coordinator request failed'),transportKind:'local-mac'}}})
+          error=>{pushCoordinatorTray(error,frame.requestId,frame.method);emit({kind:'reply',requestId:frame.requestId,outcome:{status:'failed',failure:{code:String(error?.code||'failed'),message:String(error?.message||error||'Coordinator request failed'),transportKind:'local-mac'}}})}
         );
       }
     },
@@ -96,13 +123,32 @@ for(const name of events){
       void refCoordinator('listAgents').then(async rows=>{
         await emitFamily('agents',rows);
         if(name==='agent.changed'&&payload?.agentId){const row=rows.find(x=>x&&x.id===payload.agentId);if(row)await emitFamily('agent-upserted',row)}
+        for(const parent of rows){
+          const subagents=rows.filter(row=>row?.parentAgentId===parent.id);
+          await emitFamily('subagents',{parentAgentId:parent.id,subagents});
+          const tasks=await refCoordinator('getAsyncTasks',{id:parent.id}).catch(()=>[]);
+          await emitFamily('async-tasks',{parentAgentId:parent.id,tasks:Array.isArray(tasks)?tasks:[]});
+        }
+        const statusIds=new Set(rows.map(row=>row?.id).filter(Boolean));
+        for(const id of statusIds){
+          const status=await refCoordinator('getForeverBoxStatus',{id}).catch(()=>null);
+          if(status){await emitFamily('forever-box',status);if(status.diskPressure!=null)await emitFamily('box-disk-pressure',status.diskPressure)}
+        }
       }).catch(()=>{});
     }
     if(name==='automations.changed')void emitFamily('automations',payload||{});
     if(name==='plugins.changed')void emitFamily('plugins',payload||{});
     if(name==='settings.changed')void emitFamily('host-settings',payload||{});
     if(name==='sharing')void emitFamily('sharing',payload||{});
-    if(name==='message.changed'||name==='message.done'||name==='message.delta')void emitFamily('async-tasks',payload||{});
+    if(name==='computer-action')void emitFamily('computer-action',payload||{});
+    if(name==='message.changed'||name==='message.done'||name==='message.delta'){
+      void refCoordinator('listAgents').then(async rows=>{
+        for(const parent of rows){
+          const tasks=await refCoordinator('getAsyncTasks',{id:parent.id}).catch(()=>[]);
+          await emitFamily('async-tasks',{parentAgentId:parent.id,tasks:Array.isArray(tasks)?tasks:[]});
+        }
+      }).catch(()=>{});
+    }
   });
 }
 
