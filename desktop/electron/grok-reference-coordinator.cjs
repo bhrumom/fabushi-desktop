@@ -200,7 +200,13 @@ function createReferenceCoordinator(runtime){
       case'deleteAgentAutomation':return runtime.deleteAgentAutomation(input);
       case'runAgentAutomationNow':return runtime.runAgentAutomationNow(input);
       case'getListenerIntegrations':return runtime.getListenerIntegrations();
-      case'getListenerConnectUrl':return await runtime.getListenerConnectUrl(input);
+      case'getListenerConnectUrl':{
+        try{return await runtime.getListenerConnectUrl(input)}
+        catch(error){
+          trays.pushError({title:'Coordinator request failed',detail:error instanceof Error?error.message:String(error),errorKind:'coordinator',rawDetail:'getListenerConnectUrl',dedupeKey:'coordinator:getListenerConnectUrl'});
+          throw error;
+        }
+      }
       case'getTeachRecordingStatus':return teach.get(input.id||input.agentId)||{status:'idle',agentId:input.id||input.agentId||null};
       case'startTeachRecording':{
         const value={status:'recording',agentId:input.id||input.agentId||null,startedAtMs:Date.now()};teach.set(value.agentId,value);return value;
