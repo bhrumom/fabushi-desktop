@@ -5,8 +5,9 @@ on:
     branches: [main, refactor/grok-bot-018-parity-mac]
     paths:
       - "desktop/**"
-      - ".github/workflows/macos-grok-parity.yml"
-      - ".github/workflows/grok-parity-source-check.yml"
+      - "!desktop/tests/**"
+      - "reference/**"
+      - "source/**"
 
 concurrency:
   group: macos-grok-parity-${{ github.ref }}
