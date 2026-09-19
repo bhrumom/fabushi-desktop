@@ -46,26 +46,28 @@ Current acceptance is fail-closed on these live sources instead:
 
 ## Latest hard source evidence
 
-GitHub Actions Run `35417698506` at final frozen product SHA `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd` completed successfully:
+GitHub Actions push Run `35425432746` at immutable product/package SHA `98ac56f037cb1b0eaa66781087da986334754908` completed successfully:
 
 - exact pinned source parity gate: PASS
 - Host carrier external-dependency classification: PASS
 - pinned SandAgentRunner / AnysphereAgent / TrayManager / Sand sharing bundles: PASS
 - CommonJS syntax: PASS
-- runtime contracts: **103 / 103 PASS, 0 fail**
+- runtime contracts: **109 / 109 PASS, 0 fail**
 - pinned reference source typecheck: PASS
 - TypeScript/Vite production build: PASS
+- PR source gate Run `35425434873`: SUCCESS on the same product SHA
 
-Final macOS package Run `35417698507` on the same SHA completed successfully:
-- unsigned DMG/ZIP package: PASS
+Final macOS package/release Run `35425432753` on the same SHA completed successfully:
+- unsigned arm64 DMG/ZIP package: PASS
 - packaged renderer/local bridge headless probe: no UI report; non-blocking diagnostic only (`manualValidationRequired:true`)
 - artifact upload: PASS
-- release branch exact-SHA check: PASS
+- release-branch SHA gate: PASS
 - prerelease publish: PASS
 - published tag exact-SHA check: PASS
-- artifact `10576418103`, digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`
-- release/tag `grok-parity-mac-92` → `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`
-- assets: `fabushi-grok-parity-2.0.0-alpha.2-macos-arm64.dmg` and `.zip`
+- artifact `10579089056`, 393058647 bytes, digest `sha256:6c91562e2d8ede5641c6c4bb9010a1cd3ebad1c0d0744a5cb8cc48b9bd1850d1`
+- release/tag `grok-parity-mac-126` → `98ac56f037cb1b0eaa66781087da986334754908`
+- DMG `fabushi-grok-parity-2.0.0-alpha.4-macos-arm64.dmg`, 196976857 bytes, `sha256:3516c7de4f8052e0fc219f08a3c2234a4648569d63c1277dcc7164a45dfe7320`
+- ZIP `fabushi-grok-parity-2.0.0-alpha.4-macos-arm64.zip`, 197404010 bytes, `sha256:c70bd2a13c2fabf2cab3a74b959ecead488a2e4df76656fd18ef7b4d52e3a57c`
 
 ## Historical generated snapshot
 
