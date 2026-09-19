@@ -105,3 +105,14 @@ test('plugin logo bridge accepts bounded image responses and rejects non-images'
   assert.equal(await desktop.call('plugin-logo',{url:'https://example.com/plugin.txt'}),null);
   assert.equal(await desktop.call('plugin-logo',{url:'file:///tmp/plugin.png'}),null);
 });
+
+
+test('reference telemetry stays local and produces an auditable NDJSON record',async t=>{
+  const desktop=await fixture(t);
+  const result=await desktop.call('telemetry-report',{name:'reportOnboardingStep',payload:{step:'done'}});
+  assert.deepEqual(result,{ok:true,localOnly:true});
+  const file=path.join(desktop.__testRoot,'grok-reference-telemetry.ndjson');
+  const rows=(await fs.readFile(file,'utf8')).trim().split('\n').map(JSON.parse);
+  assert.equal(rows.at(-1).name,'reportOnboardingStep');
+  assert.deepEqual(rows.at(-1).payload,{step:'done'});
+});
