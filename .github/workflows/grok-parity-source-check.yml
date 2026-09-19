@@ -5,10 +5,12 @@ on:
     paths:
       - "desktop/**"
       - ".github/workflows/grok-parity-source-check.yml"
+      - "reference/grok-bot-0.18/manifests/reconstruction/renderer-closure.json"
   pull_request:
     paths:
       - "desktop/**"
-      - ".github/workflows/grok-parity-source-check.yml"
+      - ".github/workflows/grok-parity-source-check.yml""
+      - "reference/grok-bot-0.18/manifests/reconstruction/renderer-closure.json"
 
 concurrency:
   group: grok-parity-source-check-${{ github.event.pull_request.head.sha || github.sha }}
@@ -44,6 +46,7 @@ jobs:
           diff -qr ../_grok/source ../reference/grok-bot-0.18/source
           cmp ../_grok/package.json ../reference/grok-bot-0.18/package.json
           cmp ../_grok/package-lock.json ../reference/grok-bot-0.18/package-lock.json
+          cmp ../_grok/manifests/reconstruction/renderer-closure.json ../reference/grok-bot-0.18/manifests/reconstruction/renderer-closure.json
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Audit pinned reference production Host activation
