@@ -179,14 +179,14 @@ const account=Object.freeze({
   getStatus:()=>invoke('get-account-status'),login:()=>invoke('login-account'),cancelLogin:()=>invoke('cancel-account-login'),logout:()=>invoke('logout-account'),
   updateName:name=>invoke('update-account-name',{name}),getAvatar:()=>invoke('get-account-avatar'),getWeeklyUsage:async()=>null,getUsageSummary:async()=>null,
   getPrReviewPreferences:async()=>null,getPrivacyModeEnabled:async()=>false,getSandAccess:async()=>({state:'granted',reason:'none'}),getSandAccessFresh:async()=>({state:'granted',reason:'none'}),
-  invokeDashboardAction:async()=>({ok:true}),cancelTrial:async()=>({ok:false,reason:'not-applicable'}),
+  invokeDashboardAction:async()=>({ok:false,message:'Dashboard actions are unavailable in local Fabushi account mode.'}),cancelTrial:async()=>({ok:false,reason:'not-applicable'}),
   onStatusChanged:listener=>{if(typeof listener!=='function')return noopUnsubscribe;const fn=()=>void invoke('get-account-status').then(listener).catch(()=>{});ipcRenderer.on('grok-agent:event:account.changed',fn);return()=>ipcRenderer.off('grok-agent:event:account.changed',fn)}
 });
 const experiments=Object.freeze({
   initialSnapshot:{},getSnapshot:()=>invoke('get-experiments-snapshot'),applyFeatureFlagOverride:command=>invoke('apply-feature-flag-override',{command}),refresh:()=>invoke('refresh-experiments'),
   startRpcTraceWindow:async()=>false,onChanged:listener=>{if(typeof listener!=='function')return noopUnsubscribe;const fn=()=>void invoke('get-experiments-snapshot').then(listener).catch(()=>{});ipcRenderer.on('grok-agent:event:experiments.changed',fn);return()=>ipcRenderer.off('grok-agent:event:experiments.changed',fn)}
 });
-const telemetry=Object.freeze(Object.fromEntries(['reportAgentLoad','reportBoxVisibility','reportSendLatency','reportHeapMetrics','reportSendAck','reportReactionAck','reportRenderTtfr','reportRenderStream','reportAgentsUnreachable','reportAccessBlocked','reportRecoveryAction','reportRebuildLifecycle','reportReconciliation','reportVncSession','reportVncLiveness','reportOpenComputer','reportUpdatePrompt','reportSigninGate','reportOnboardingStep','reportClientFailure','noteSentryConversation'].map(k=>[k,()=>{}])));
+const telemetry=Object.freeze(Object.fromEntries(['reportAgentLoad','reportBoxVisibility','reportSendLatency','reportHeapMetrics','reportSendAck','reportReactionAck','reportRenderTtfr','reportRenderStream','reportAgentsUnreachable','reportAccessBlocked','reportRecoveryAction','reportRebuildLifecycle','reportReconciliation','reportVncSession','reportVncLiveness','reportOpenComputer','reportUpdatePrompt','reportSigninGate','reportOnboardingStep','reportClientFailure','noteSentryConversation'].map(name=>[name,payload=>{void refDesktop('telemetry-report',{name,payload}).catch(()=>{})}])));
 const clientPersistence=Object.freeze({
   read:key=>refDesktop('persistence-read',{key}),write:(key,value)=>refDesktop('persistence-write',{key,value}),remove:key=>refDesktop('persistence-remove',{key}),
   listKeys:prefix=>refDesktop('persistence-list',{prefix}),migrateFromLocalStorage:entries=>refDesktop('persistence-migrate',{entries})
@@ -202,7 +202,7 @@ const agentBridge=Object.freeze({
 const desktop=Object.freeze({
   resolveAttachmentMedia:path=>refDesktop('resolve-media',{path}),readAttachmentText:path=>refDesktop('read-text',{path}),readAttachmentBytes:(path,maxBytes)=>refDesktop('read-bytes',{path,maxBytes}),
   downloadAttachment:(path,suggestedName)=>refDesktop('download',{path,suggestedName}),getLinkMetadata:url=>refDesktop('link-metadata',{url}),openExternal:url=>invoke('open-external',{url}),
-  openCloudAgent:async()=>{},stageAttachmentBytes:(filename,bytes)=>refDesktop('stage-attachment',{filename,bytes}),commitStagedAttachments:(paths,filenames)=>refDesktop('commit-staged',{paths,filenames}),
+  openCloudAgent:async()=>{throw Object.assign(Error('Cloud Agent windows are not available because Fabushi Agents run on the installed computer.'),{code:'local-computer-only'})},stageAttachmentBytes:(filename,bytes)=>refDesktop('stage-attachment',{filename,bytes}),commitStagedAttachments:(paths,filenames)=>refDesktop('commit-staged',{paths,filenames}),
   discardStagedAttachment:path=>refDesktop('discard-staged',{path}),mcp,forceGatewayReconnect:async()=>reconnectCoordinatorPort(),pickAvatarSource:async()=>{const value=await ipcRenderer.invoke('grok-agent:pick-avatar-file');return value?.dataUrl||null;},
   async pickAvatarFile(){const value=await ipcRenderer.invoke('grok-agent:pick-avatar-file');return value?.dataUrl?{dataUrl:value.dataUrl,fileName:value.fileName}:null},
   generateAgentAvatarImage:description=>invoke('generate-agent-avatar-image',{description}),
