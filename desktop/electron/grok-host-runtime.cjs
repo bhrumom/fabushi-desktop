@@ -15,7 +15,7 @@ const {createLocalAnysphereRuntime}=require('./grok-reference-anysphere-runtime.
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},sendVisibleMessage=async()=>null,reactToConversationMessage=async()=>null,updateState=async()=>({ok:false,reason:'State backend unavailable.'}),getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',getMemoryContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),auditAction=()=>{},onTurnUsage=async()=>{},onTurnObservation=async()=>{},subagents=null,browser=null,inferenceRequest=null,autoReviewClassifier=null}){
+function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},sendVisibleMessage=async()=>null,reactToConversationMessage=async()=>null,updateState=async()=>({ok:false,reason:'State backend unavailable.'}),getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',getMemoryContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),auditAction=()=>{},onTurnUsage=async()=>{},onTurnObservation=async()=>{},subagents=null,browser=null,inferenceRequest=null,getInferenceAccessToken=async()=>null,fetchImpl=globalThis.fetch,autoReviewClassifier=null}){
   const referenceRuntimes=new Map();
 
   function systemPrompt(agent,enabled,workflowContext,memoryContext){
@@ -54,12 +54,13 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
   }
 
   async function chatRequest(messages,tools,signal,onDelta=()=>{}){
-    const endpoint=String(process.env.FABUSHI_AGENT_API_URL||'').trim();
-    const key=String(process.env.FABUSHI_AGENT_API_KEY||'').trim();
+    const endpoint=String(process.env.FABUSHI_ACCOUNT_INFERENCE_URL||process.env.FABUSHI_AGENT_API_URL||'').trim();
+    let key=String(process.env.FABUSHI_AGENT_API_KEY||'').trim();
+    if(!key&&endpoint){try{key=String(await getInferenceAccessToken()||'').trim()}catch{key=''}}
     const model=String(process.env.FABUSHI_AGENT_MODEL||'gpt-5.6').trim();
     if(!endpoint||!key)return{offline:true};
     const streaming=String(process.env.FABUSHI_AGENT_STREAM||'true').toLowerCase()!=='false';
-    const response=await fetch(endpoint,{
+    const response=await fetchImpl(endpoint,{
       method:'POST',
       headers:{'content-type':'application/json',authorization:'Bearer '+key},
       body:JSON.stringify({model,messages,tools:tools.length?tools:undefined,tool_choice:tools.length?'auto':undefined,stream:streaming,...(streaming?{stream_options:{include_usage:true}}:{})}),
@@ -129,7 +130,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const model=String(process.env.FABUSHI_AUTO_REVIEW_MODEL||process.env.FABUSHI_AGENT_MODEL||'gpt-5.6').trim();
     if(!endpoint||!key)return{kind:'block',reason:'Automatic review is unavailable because no inference endpoint is configured. Please review manually.'};
     try{
-      const response=await fetch(endpoint,{
+      const response=await fetchImpl(endpoint,{
         method:'POST',
         headers:{'content-type':'application/json',authorization:'Bearer '+key},
         body:JSON.stringify({
