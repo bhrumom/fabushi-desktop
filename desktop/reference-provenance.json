@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 8,
+  "schemaVersion": 9,
   "referenceRepository": "bhrum/grok-bot-0.18-reconstructed",
   "referenceCommit": "107877b4e2134fd167d239411386f09e42eadd6d",
   "rendererSource": "exact-pinned-copy",
@@ -46,5 +46,7 @@
   "dependencyInstallMode": "npm ci in source-check and macOS package gates",
   "dependencyLockBlob": "828e857f9b3fc4ec1dae850f34c86c39fce7a495",
   "finalCandidateVersion": "2.0.0-alpha.3",
-  "finalGateTrigger": "dependency-lock-provenance"
+  "finalGateTrigger": "bounded-headless-smoke-cleanup",
+  "packagedSmokePolicy": "headless renderer smoke is diagnostic-only; background Electron is always bounded and force-terminated on step exit; manual installed-product acceptance remains authoritative",
+  "packagedSmokeCleanup": "EXIT/INT/TERM trap with bounded SIGTERM then SIGKILL"
 }
