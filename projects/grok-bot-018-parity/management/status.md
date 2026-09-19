@@ -67,3 +67,14 @@
 - Prerelease `grok-parity-mac-92` published with `fabushi-grok-parity-2.0.0-alpha.2-macos-arm64.dmg` and `.zip`.
 - Release tag `grok-parity-mac-92` resolves exactly to `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`; branch-SHA and tag-SHA fail-closed checks both passed in Run `35417698507`.
 - Automated source/runtime/package scope is complete. Per the original request, PR #1 remains open for external human installation/UX/function acceptance rather than being merged ahead of that test.
+
+
+## 2026-09-19 — Round 6 — final automated delivery
+- Final shipped code SHA is `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`.
+- Exact pinned source gate Run `35417698506` completed SUCCESS with 103/103 tests PASS, 0 fail, reference source typecheck PASS and renderer production build PASS.
+- PR source gate Run `35417701558` also completed SUCCESS on the same SHA.
+- macOS delivery Run `35417698507` completed SUCCESS on the same SHA, including package, packaged-app smoke, artifact upload, branch-SHA verification, prerelease creation and published-tag SHA verification.
+- Artifact `10576418103` is `393022970` bytes with digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
+- Prerelease `grok-parity-mac-92` published DMG and ZIP for version `2.0.0-alpha.2`; the lightweight tag resolves exactly to `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`.
+- Automated implementation/delivery scope is complete. PR #1 remains open and unmerged because the original requirement delegates final product testing to humans.
+- Next stage is GBR-007: install the released DMG and manually exercise the Grok-style UI, reference Agent behavior, local Computer/Browser actions, Marketplace/plugins, Teach recording, sharing, approvals and error/cancellation flows. Any discovered defect must be fixed on the same PR and re-released through the exact-SHA gates.

@@ -6,11 +6,11 @@
 | A2 | Agent execution is not a CLI wrapper and uses the reference Agent lifecycle/orchestration | SandAgentRunner + AnysphereAgent runtime contracts | PASS |
 | A3 | Each agent targets the installed Mac, with no cloud-computer provisioning requirement | local executor/browser/computer contracts + packaged human tool run | runtime PASS / human pending |
 | A4 | Plugins/Marketplace visible paths have executable backends without mandatory external setup | default local Marketplace install/uninstall + remote Marketplace + MCP OAuth/accounts/tool toggles + SKILL.md/workflow publication/listener contracts | runtime PASS / human UI pending |
-| A5 | macOS package builds in GitHub Actions | successful package run + DMG/ZIP artifacts | PASS — Run `35417698507` on exact SHA `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd` |
-| A6 | macOS prerelease tag is bound to the exact build SHA | GitHub Release + tag ref | PASS — `grok-parity-mac-92` → `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd` |
+| A5 | macOS package builds in GitHub Actions | successful package run + DMG/ZIP artifacts | PASS — Run 35417698507; artifact 10576418103; DMG/ZIP uploaded |
+| A6 | macOS prerelease tag is bound to the exact build SHA | GitHub Release + tag ref | PASS — grok-parity-mac-92 resolves exactly to ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd |
 | A7 | Human UX/function testing completed | external tester evidence | EXTERNAL / pending by original request |
 | A8 | Every recoverable reference UI/backend source is accounted for without fabricated parity | exact pinned directory diffs + official renderer closure + adapter/runtime contracts | SOURCE+RUNTIME PASS for automated scope; immutable carrier-only Host audit = EXTERNAL_DEPENDENCY; packaged human acceptance pending |
-| A9 | Final frozen code SHA passes runtime contracts + pinned source typecheck + renderer production build | GitHub Actions | PASS — Run `35417698506`, 103/103 tests, exact source/typecheck/build green |
+| A9 | Final frozen code SHA passes runtime contracts + pinned source typecheck + renderer production build | GitHub Actions | PASS — Run 35417698506 on ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd; 103/103 PASS, pinned source typecheck + Vite build PASS |
 
 ## Verified automated evidence for final frozen candidate
 - Pinned reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`.
@@ -29,3 +29,14 @@ The pinned reconstruction's own Host activation script requires immutable carrie
 
 ## Product-difference rule
 The only intentional runtime product difference is Computer location: Fabushi Agents operate the installed Mac. Cloud Box/VNC provisioning is not required. Reference Agent orchestration, renderer behavior and recoverable source remain pinned to `107877b4e2134fd167d239411386f09e42eadd6d`.
+
+
+## Final automated delivery evidence
+- Shipped code SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`.
+- Push source gate: Run `35417698506` SUCCESS — 103/103 runtime contracts PASS, pinned reference source typecheck PASS, Vite production build PASS.
+- PR source gate: Run `35417701558` SUCCESS on the same SHA.
+- macOS package/release: Run `35417698507` SUCCESS.
+- Artifact: `10576418103`, digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
+- Release: `grok-parity-mac-92`; tag resolves exactly to the shipped code SHA.
+- Assets: `fabushi-grok-parity-2.0.0-alpha.2-macos-arm64.dmg` and `fabushi-grok-parity-2.0.0-alpha.2-macos-arm64.zip`.
+- Human UX/function testing is intentionally not claimed; it is GBR-007.

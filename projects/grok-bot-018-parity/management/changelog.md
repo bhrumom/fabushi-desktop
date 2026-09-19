@@ -26,3 +26,13 @@
 - Added per-agent runner owner and routed coordinator turns through it.
 - Run 35360378372 passed on audited code head 910f65e42b0dd096e9c969eba03666f46ae764c9.
 - Refreshed machine parity counts without claiming A8 completion.
+
+
+## 2026-09-19
+- Cut production Agent orchestration over to the pinned reference SandAgentRunner + AnysphereAgent; removed the hand-written legacy model/tool loop from production.
+- Enforced byte-exact pinned renderer/source parity and official renderer coordinator/desktop bridge closure.
+- Closed local Mac Computer/Browser action breadth, default executable Marketplace/private-skill/MCP paths, exact TrayManager, Sand cross-user sharing relay and real local Teach screen recording.
+- Raised final runtime contract coverage to 103/103 PASS on shipped SHA `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`.
+- Final automated Mac delivery: source Run `35417698506` SUCCESS; macOS Run `35417698507` SUCCESS; artifact `10576418103` digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
+- Published prerelease `grok-parity-mac-92` with `2.0.0-alpha.2` arm64 DMG/ZIP; release tag verified to exact shipped SHA.
+- Transitioned to GBR-007 external human installation/interaction acceptance; PR #1 intentionally remains open and unmerged.
