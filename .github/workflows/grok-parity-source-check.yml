@@ -13,8 +13,8 @@ on:
       - "reference/grok-bot-0.18/manifests/reconstruction/renderer-closure.json"
 
 concurrency:
-  group: grok-parity-source-check-${{ github.event.pull_request.head.ref || github.ref_name }}
-  cancel-in-progress: true
+  group: grok-parity-source-check-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
