@@ -11,8 +11,8 @@ on:
       - ".github/workflows/grok-parity-source-check.yml"
 
 concurrency:
-  group: grok-parity-source-check-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: grok-parity-source-check-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
