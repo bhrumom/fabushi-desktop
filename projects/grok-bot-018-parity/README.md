@@ -11,7 +11,8 @@ Refactor Fabushi Desktop around the pinned Grok Bot 0.18 reconstruction, reprodu
 Reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`  
 Target baseline: `bhrumom/fabushi-desktop@12d4aadb4a93a1413ece44aba987162e90b31229`  
 Final shipped Mac product/package SHA: `98ac56f037cb1b0eaa66781087da986334754908`  
-Release branch used by the packaging gate: `release/grok-parity-alpha3-final` -> exact same product SHA at release time  
+Human-test release alias: `release/grok-parity-alpha4-final` -> exact same product SHA  
+Packaging workflow legacy gate ref: `release/grok-parity-alpha3-final` -> also resolved to the same SHA during Run `35425432753`  
 Release: `grok-parity-mac-126` / `2.0.0-alpha.4`
 
 ## Implemented result
