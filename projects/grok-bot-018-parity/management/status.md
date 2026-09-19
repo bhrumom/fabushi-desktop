@@ -124,3 +124,14 @@
 - Comparing the alpha.4 product SHA to the work-branch head shows only project-record changes. No product/CI/reference source changes occur after the alpha.4 candidate.
 - PR #1 metadata was refreshed to point human testing at alpha.4 / release 126 instead of the superseded alpha.3 candidate.
 - GBR-007 remains the only outstanding acceptance stage and is intentionally external/human per the original requirement.
+
+## 2026-09-19 — Round 11 — live evidence and PR metadata reconciliation
+- Re-read PR #1, the alpha.4 package SHA, current branch head, source gate logs, macOS packaging logs and artifact metadata instead of relying on prior status prose.
+- Verified product/package SHA `98ac56f037cb1b0eaa66781087da986334754908` is the current immutable automated candidate; `release/grok-parity-alpha4-final` and the legacy workflow gate branch `release/grok-parity-alpha3-final` both resolve to that SHA.
+- Verified source Run `35425432746` reports **109 pass / 0 fail** and builds the pinned `SandAgentRunner` plus local adapter around the pinned reference `AnysphereAgent` composition.
+- Verified macOS Run `35425432753` packages arm64 DMG/ZIP, uploads artifact `10579089056`, publishes prerelease `grok-parity-mac-126`, and verifies the published tag against the exact build SHA.
+- Confirmed the hosted packaged renderer diagnostic itself did not emit a UI report and wrote `manualValidationRequired:true`; this remains intentionally non-blocking because final installed-product testing is human-owned under GBR-007.
+- Compared alpha.4 product SHA to the work-branch head: all later changes are project-record-only, so no product/runtime/workflow/reference source change has occurred after the released candidate.
+- Corrected stale evidence in GBR-004 and corrected live PR #1 metadata, which still referenced the superseded alpha.3 / release 101 candidate despite Round 10 claiming it had already been refreshed.
+- No new automated product-code defect was found in this round. GBR-007 remains the only outstanding acceptance stage.
+
