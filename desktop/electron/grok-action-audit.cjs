@@ -37,7 +37,9 @@ function classifyBotBlockPage({url,title=''}) {
 }
 function toolAuditAction(name,args,status,durationMs){
   const action={kind:'toolCall',toolName:String(name||'tool'),status,durationMs:Math.max(0,Math.round(Number(durationMs)||0))};
-  if(String(name).startsWith('computer_'))action.computerAction=String(name).slice('computer_'.length);
+  if(String(name)==='Computer')action.computerAction=String(args?.action||'unknown');
+  else if(String(name)==='Screenshot')action.computerAction='screenshot';
+  else if(String(name).startsWith('computer_'))action.computerAction=String(name).slice('computer_'.length);
   if(String(name)==='browser_navigate'){
     const url=normalizeNavigationUrl(args?.url);if(url){action.kind='browserNavigation';action.url=url;const host=visitedSiteHost(url);if(host)action.host=host}
   }
