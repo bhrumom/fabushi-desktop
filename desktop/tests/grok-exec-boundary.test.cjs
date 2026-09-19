@@ -3,7 +3,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {createHostRuntime}=require('../electron/grok-host-runtime.cjs');
-const {computerStateIdentity}=require('../electron/local-tool-executor.cjs');
+const {computerStateIdentity,toolDefinitions}=require('../electron/local-tool-executor.cjs');
 const {createResource,ResourceRegistry}=require('../electron/grok-exec-resources.cjs');
 const {rootRequestContext,childRequestContext,currentRequestContext,runWithRequestContext}=require('../electron/grok-request-context.cjs');
 
@@ -15,6 +15,12 @@ test('resource registry resolves child override without mutating parent',()=>{
   child.register(resource,{value:'child'});
   assert.equal(child.get(resource).value,'child');
   assert.equal(parent.get(resource).value,'parent');
+});
+
+test('model-visible local tool surface uses Grok protocol names and rejects legacy aliases',()=>{
+  const names=toolDefinitions(new Set(['filesystem','shell','computer'])).map(row=>row.function.name).sort();
+  assert.deepEqual(names,['Computer','Read','Screenshot','run_terminal_cmd']);
+  for(const legacy of ['read_file','run_terminal','computer_screenshot','computer_click','computer_mouse_move','computer_drag','computer_scroll','computer_type','computer_key'])assert.equal(names.includes(legacy),false);
 });
 
 test('request context preserves parent identity across a child tool scope',async()=>{
