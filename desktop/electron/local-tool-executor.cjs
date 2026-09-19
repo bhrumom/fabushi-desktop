@@ -230,7 +230,7 @@ async function executeTool(name,args,{enabled,shell,signal,onStarted,onOutput,ow
   if(name==='Read'){
     const target=resolvePath(args.path),stat=await fs.stat(target);if(!stat.isFile())throw Error('Path is not a file.');
     const ext=path.extname(target).toLowerCase(),imageMimes={'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif','.webp':'image/webp'};
-    if(imageMimes[ext]){if(stat.size>20_000_000)throw Error('Image is larger than 20 MB.');const data=await fs.readFile(target);return{text:`Read image file: ${target}`,display:{kind:'image',dataUrl:`${imageMimes[ext]};base64,${data.toString('base64')}`.replace(';base64,',';base64,')}}}
+    if(imageMimes[ext]){if(stat.size>20_000_000)throw Error('Image is larger than 20 MB.');const data=await fs.readFile(target);return{text:`Read image file: ${target}`,display:{kind:'image',dataUrl:`data:${imageMimes[ext]};base64,${data.toString('base64')}`}}}
     if(stat.size>2_000_000)throw Error('File is larger than 2 MB; use offset and limit to read a range.');
     const raw=await fs.readFile(target,'utf8'),lines=raw.split('\n');let start=Number(args.offset);
     if(Number.isInteger(start)&&start<0)start=Math.max(1,lines.length+start+1);if(!Number.isInteger(start)||start<1)start=1;
