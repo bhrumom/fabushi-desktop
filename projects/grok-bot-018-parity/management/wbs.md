@@ -6,4 +6,4 @@
 - GBR-004 — Grok-style plugins. [RUNTIME PASS / human UI pending — default local Marketplace installs real Custom MCP Server or Private Skill; remote provider seam, MCP OAuth/accounts/tool toggles, workflow publication/listeners are executable]
 - GBR-005 — Reference UI/interaction/backend parity. [SOURCE+RUNTIME PASS / packaged human acceptance pending — 308/308 renderer blobs exact; 1,724/1,724 reference source blobs vendored exact; official renderer coordinator claims enforced; immutable carrier audit remains EXTERNAL_DEPENDENCY]
 - GBR-006 — macOS GitHub Actions package and prerelease. [PASS — Run 35417698507; release grok-parity-mac-92; exact product SHA ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd; tag verified exact; DMG/ZIP published]
-- GBR-007 — Human acceptance round and defect closure. [EXTERNAL / PENDING — intentionally handed to human testing per original request; PR #1 remains open]
+- GBR-007 — Human acceptance round and defect closure. [EXTERNAL / PENDING — intentionally handed to human testing per original request; canonical record: `management/tasks/GBR-007-human-acceptance.md`; PR #1 remains open]
