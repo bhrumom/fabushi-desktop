@@ -1,9 +1,9 @@
 # WBS
 
-- GBR-001 — Grok parity production entry / hide legacy Fabushi surfaces. [implementation complete; macOS package mechanism verified by Run 35323112810]
-- GBR-002 — Non-CLI desktop agent architecture. [coordinator → per-agent runner → host → local-exec ownership implemented; runner FAIL rows closed, deeper background-watch/state-structure/resource parity remains PARTIAL under A8]
-- GBR-003 — Local-computer tool execution adapter. [in progress: permission/approval lifecycle, cancellable foreground shell, background shell, local screenshot/click/type/key and tool-state transcript implemented; runner ownership, permission/approval, local Computer/browser and media path implemented; exact background-watch/teach/stream/resource parity remains]
-- GBR-004 — Grok-style plugins. [in progress: placeholder-only GitHub/Memory rows removed; executable local providers + stdio MCP initialize/tools-list/tools-call/server-tool toggles implemented; OAuth/accounts/private skills/workflows/full marketplace metadata remain]
-- GBR-005 — Remaining reference UI/interaction/backend feature inventory and closure. [in progress: reference-derived 275 renderer + 70 runner + 16 Electron-binding inventory persisted; command palette, rename/delete dialogs, stop, approval cards, loading/error states, backed settings and MCP configuration implemented; reference route breadth remains]
-- GBR-006 — macOS GitHub Actions package and prerelease. [package workflow/run verified by Run 35323112810; PR packaging now manual-gated; canonical-main prerelease remains gated on A8/A6]
-- GBR-007 — Human acceptance round and defect closure. [external/manual next phase]
+- GBR-001 — Grok parity production entry / hide legacy Fabushi surfaces. [PASS — production renderer is the pinned reference renderer; legacy Contacts/Telegram/payment/MiniApp/Mahayana surfaces are not mounted]
+- GBR-002 — Non-CLI desktop agent architecture. [PASS for production ownership — pinned SandAgentRunner + pinned AnysphereAgent own lifecycle/orchestration; legacy hand-written tool loop removed; no CLI wrapper]
+- GBR-003 — Local-computer tool execution adapter. [PASS for current installed-Mac product difference — Files/Terminal/Browser/Computer/MCP/Subagent execute locally with approval/cancellation/audit; cloud Box provisioning intentionally omitted]
+- GBR-004 — Grok-style plugins. [PASS for executable local/MCP marketplace path — HTTP Marketplace metadata/install/uninstall, MCP OAuth/accounts/tool toggles, private SKILL.md/workflows covered by runtime contracts; human UI acceptance pending]
+- GBR-005 — Reference UI/interaction/backend parity. [SOURCE PASS / packaged human acceptance pending — 308/308 renderer blobs exact; 1,724/1,724 reference source blobs vendored exact; reference desktop/coordinator adapters cover renderer-facing contracts; immutable carrier audit remains EXTERNAL_DEPENDENCY]
+- GBR-006 — macOS GitHub Actions package and prerelease. [PASS mechanism + exact-tag candidate — grok-parity-mac-16 tag points at exact build SHA b3b04a23245345b7d3491eb5859b7ccbbffd8562; latest continuing head must supersede it after final gate]
+- GBR-007 — Human acceptance round and defect closure. [external/manual next phase as originally requested]
