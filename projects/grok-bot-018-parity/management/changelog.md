@@ -56,3 +56,7 @@
 - macOS Run `35419150459` SUCCESS; artifact `10577580224` digest `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`.
 - Published `grok-parity-mac-101`; immutable release branch and release tag both resolve exactly to `1f27c239aa8931b3266b9b83c84ff234332785d9`.
 - Final alpha.3 DMG/ZIP release-asset digests recorded; installed-product acceptance remains GBR-007 human work.
+
+- Reconciled live alpha.4 evidence against GitHub Actions and corrected stale plugin/PR records: product SHA `98ac56f037cb1b0eaa66781087da986334754908`, source Run `35425432746` (109/109), macOS Run `35425432753`, artifact `10579089056`, prerelease `grok-parity-mac-126`.
+- Confirmed all work-branch commits after the alpha.4 product SHA are project-record-only; no released product code changed.
+- Kept packaged renderer validation explicitly human-owned because the hosted diagnostic recorded `manualValidationRequired:true`.
