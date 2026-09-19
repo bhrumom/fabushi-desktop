@@ -8,14 +8,14 @@ Validate the released Grok-parity macOS candidate as an installed product. This 
 ## Immutable candidate under test
 - repository: `bhrumom/fabushi-desktop`
 - PR: #1
-- package SHA: `1f27c239aa8931b3266b9b83c84ff234332785d9`
+- package SHA: `98ac56f037cb1b0eaa66781087da986334754908`
 - reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`
-- release: `grok-parity-mac-101`
-- version: `2.0.0-alpha.3`
-- immutable release branch: `release/grok-parity-alpha3-final`
-- artifact digest: `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`
-- automated source gate: Run `35419150457` — 105/105 PASS
-- automated macOS package/release: Run `35419150459` — SUCCESS
+- release: `grok-parity-mac-126`
+- version: `2.0.0-alpha.4`
+- human-test release alias: `release/grok-parity-alpha4-final` → exact package SHA\n- packaging workflow legacy gate ref `release/grok-parity-alpha3-final` also resolved to the same SHA during Run `35425432753`
+- artifact digest: `sha256:6c91562e2d8ede5641c6c4bb9010a1cd3ebad1c0d0744a5cb8cc48b9bd1850d1`
+- automated source gate: Run `35425432746` — 109/109 PASS
+- automated PR source gate: Run `35425434873` — SUCCESS\n- automated macOS package/release: Run `35425432753` — SUCCESS
 
 ## Human acceptance checklist
 
