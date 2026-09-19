@@ -56,7 +56,7 @@ test('host routes browser, MCP, and subagent tools through distinct executor res
       if(inferenceRound===1)return{message:{content:null,tool_calls:[
         {id:'b1',type:'function',function:{name:'browser_snapshot',arguments:'{}'}},
         {id:'m1',type:'function',function:{name:'mcp__fixture__echo',arguments:'{"text":"hello"}'}},
-        {id:'s1',type:'function',function:{name:'check_subagent',arguments:'{"agentId":"child"}'}}
+        {id:'s1',type:'function',function:{name:'CheckSubagent',arguments:'{"subagent_id":"child"}'}}
       ]}};
       return{message:{content:'all routed'}};
     }
@@ -97,7 +97,7 @@ test('private inference deltas stay hidden while the host preserves a final-text
     getWorkflowContext:async()=> '',
     inferenceRequest:async(_messages,_tools,_signal,onDelta)=>{
       round++;
-      if(round===1)return{message:{content:null,tool_calls:[{id:'tool-1',type:'function',function:{name:'read_file',arguments:'{"path":"package.json"}'}}]}};
+      if(round===1)return{message:{content:null,tool_calls:[{id:'tool-1',type:'function',function:{name:'Read',arguments:'{"path":"package.json"}'}}]}};
       onDelta('private ','private ');
       onDelta('scratchpad','private scratchpad');
       return{message:{content:'final answer'}};
