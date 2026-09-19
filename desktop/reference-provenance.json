@@ -1,17 +1,21 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "referenceRepository": "bhrum/grok-bot-0.18-reconstructed",
   "referenceCommit": "107877b4e2134fd167d239411386f09e42eadd6d",
   "rendererSource": "exact-pinned-copy",
   "rendererParity": "frontend/src is verified byte-for-byte against the pinned reference in CI",
   "referenceSource": "exact-pinned-vendored-copy",
   "referenceSourceParity": "source is verified byte-for-byte against the pinned reference in CI",
-  "agentRuntime": "pinned AnysphereAgent",
+  "agentRuntime": "pinned AnysphereAgent production default",
   "agentLifecycle": "reference ConversationStateStructure + reference Agent action/tool-stream/checkpoint/summarization lifecycle",
   "legacyAgentLoop": false,
   "hostAdapter": "Fabushi Electron host maps reference Agent tools and inference transport onto the installed Mac",
   "computerTarget": "installed-local-machine",
   "cloudComputer": false,
-  "pluginMarketplace": "Fabushi local marketplace/MCP/skill bridge exposed through the Grok renderer contracts",
-  "validation": "exact-source CI + runtime-contract CI + packaged macOS candidate; final product interaction validation is manual"
+  "pluginMarketplace": "executable by default; MCP/OAuth/private-skill install/publish/listener seams covered",
+  "validation": "byte-exact renderer/source parity + reference source typecheck + runtime-contract CI + exact-head unsigned macOS prerelease; final interaction test is manual",
+  "desktopBridge": "official renderer claims classified and covered by runtime tests",
+  "coordinatorBridge": "official renderer RPC closure + subscription families + exact TrayManager path",
+  "sharing": "exact reference cross-user sharing adapter bundled; external-account differences explicit",
+  "telemetry": "reference telemetry retained locally without cloud export"
 }
