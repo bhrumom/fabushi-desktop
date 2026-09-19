@@ -18,7 +18,7 @@ test('navigation audit drops queries and identifies bot blocks',()=>{
 test('action auditor persists scrubbed action records as ndjson',async t=>{
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'fabushi-audit-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
  const auditor=createActionAuditor({app:{getPath:()=>root}});
- auditor.record({agentId:'chief',turnId:'t1',action:{kind:'toolCall',toolName:'read_file',status:'ok',durationMs:2}});
+ auditor.record({agentId:'chief',turnId:'t1',action:{kind:'toolCall',toolName:'Read',status:'ok',durationMs:2}});
  await auditor.flush();const rows=(await fs.readFile(auditor.file,'utf8')).trim().split('\n').map(JSON.parse);
- assert.equal(rows[0].action.toolName,'read_file');assert.equal(rows[0].agentId,'chief');
+ assert.equal(rows[0].action.toolName,'Read');assert.equal(rows[0].agentId,'chief');
 });
