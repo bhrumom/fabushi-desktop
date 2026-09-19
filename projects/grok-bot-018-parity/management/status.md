@@ -85,3 +85,15 @@
 - Therefore no automated packaged-UI PASS is claimed. This corrects the earlier Round 6 wording that described the packaged smoke as successful.
 - GBR-003/004/005 task records were synchronized to the current automated PASS state, and GBR-007 was created as the explicit external human acceptance task.
 - Shipped code remains `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`; this reconciliation changes project records only.
+
+
+## 2026-09-19 — Round 8 — alpha.3 exact-head human-test candidate
+- Current immutable product candidate SHA: `528ddc8e31c320ca472191cf29a860c2086dabc2`.
+- Push source gate Run `35418603612` completed SUCCESS: exact pinned renderer/source diff PASS, reference runtime bundles PASS, CommonJS syntax PASS, **105/105 runtime contracts PASS**, pinned reference `source:typecheck` PASS, TypeScript/Vite production build PASS.
+- PR source gate Run `35418606285` also completed SUCCESS on the same product SHA.
+- macOS package/release Run `35418603624` completed SUCCESS on the same SHA: dependency install, production build, unsigned DMG/ZIP packaging, artifact upload, release-branch SHA check, prerelease creation and published tag SHA verification all PASS.
+- Artifact `10576404427` (`fabushi-grok-parity-macos`) is 393016719 bytes with digest `sha256:7899c1e47537c4793de59118d9328085038505069e438b255c62b0c0421768b2`.
+- Prerelease `grok-parity-mac-97` publishes `fabushi-grok-parity-2.0.0-alpha.3-macos-arm64.dmg` (196953272 bytes) and `fabushi-grok-parity-2.0.0-alpha.3-macos-arm64.zip` (197394188 bytes).
+- Tag `grok-parity-mac-97` resolves exactly to `528ddc8e31c320ca472191cf29a860c2086dabc2`.
+- The GitHub-hosted headless renderer probe still produced no UI report and recorded `manualValidationRequired:true`; therefore packaged UI/function PASS is intentionally not claimed.
+- This supersedes `grok-parity-mac-92` as the canonical GBR-007 human-test candidate. PR #1 remains open and unmerged for the human acceptance round required by the original request.

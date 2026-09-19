@@ -10,8 +10,8 @@ Refactor Fabushi Desktop around the pinned Grok Bot 0.18 reconstruction, reprodu
 
 Reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`  
 Target baseline: `bhrumom/fabushi-desktop@12d4aadb4a93a1413ece44aba987162e90b31229`  
-Shipped Mac candidate code SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`  
-Release: `grok-parity-mac-92` / `2.0.0-alpha.2`
+Shipped Mac candidate code SHA: `528ddc8e31c320ca472191cf29a860c2086dabc2`  
+Release: `grok-parity-mac-97` / `2.0.0-alpha.3`
 
 ## Implemented result
 
@@ -28,9 +28,9 @@ Release: `grok-parity-mac-92` / `2.0.0-alpha.2`
 Automated source/runtime/package/release scope is complete. Final human installation and interaction testing remains external by the original requirement.
 
 Final automated evidence:
-- source gate Run `35417698506`: 103/103 runtime tests PASS plus exact pinned source/typecheck/production build;
-- macOS Run `35417698507`: build/package, artifact upload, release and exact tag-SHA checks PASS; the non-blocking headless renderer probe produced no UI report and recorded `manualValidationRequired:true`, so no automated packaged-UI PASS is claimed;
-- Release `grok-parity-mac-92` resolves exactly to `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`;
-- Actions artifact `10576418103`, digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
+- source gate Run `35418603612`: 105/105 runtime tests PASS plus exact pinned source/typecheck/production build;
+- macOS Run `35418603624`: build/package, artifact upload, release and exact tag-SHA checks PASS; the non-blocking headless renderer probe produced no UI report and recorded `manualValidationRequired:true`, so no automated packaged-UI PASS is claimed;
+- Release `grok-parity-mac-97` resolves exactly to `528ddc8e31c320ca472191cf29a860c2086dabc2`;
+- Actions artifact `10576404427`, digest `sha256:7899c1e47537c4793de59118d9328085038505069e438b255c62b0c0421768b2`.
 
 PR #1 remains open for GBR-007 human acceptance and defect closure.

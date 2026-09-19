@@ -8,13 +8,13 @@ Validate the released Grok-parity macOS candidate as an installed product. This 
 ## Immutable candidate under test
 - repository: `bhrumom/fabushi-desktop`
 - PR: #1
-- product code SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`
+- product code SHA: `528ddc8e31c320ca472191cf29a860c2086dabc2`
 - reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`
-- release: `grok-parity-mac-92`
-- version: `2.0.0-alpha.2`
-- artifact digest: `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`
-- automated source gate: Run `35417698506` — 103/103 PASS
-- automated macOS package/release: Run `35417698507` — SUCCESS
+- release: `grok-parity-mac-97`
+- version: `2.0.0-alpha.3`
+- artifact digest: `sha256:7899c1e47537c4793de59118d9328085038505069e438b255c62b0c0421768b2`
+- automated source gate: Run `35418603612` — 105/105 PASS
+- automated macOS package/release: Run `35418603624` — SUCCESS
 
 ## Human acceptance checklist
 
