@@ -1,24 +1,30 @@
 # GBR-005 — Reference UI / interaction / backend parity
 
-Status: **automated source+runtime complete / human visual-interaction acceptance pending**
+Status: automated source + runtime complete / packaged human visual-interaction acceptance delegated to GBR-007
 
 ## Objective
+Use the pinned Grok Bot 0.18 reconstruction as the sole production UI/interaction contract, with only the installed-local-Mac Computer adaptation.
 
-Use the pinned reference as the production visual/interaction contract and account for every recoverable renderer/backend claim without fabricating parity.
+## Exact source state
+- Reference commit: `107877b4e2134fd167d239411386f09e42eadd6d`.
+- Renderer: 308/308 `frontend/src` blobs byte-identical to `desktop/src`; 0 missing / 0 different.
+- Reference backend source: 1,724/1,724 blobs byte-identical under `reference/grok-bot-0.18/source`; 0 missing / 0 different.
+- Production renderer is the exact pinned `ProductionRenderer`.
+- Legacy Contacts/Telegram/payment/MiniApp/Mahayana renderer surfaces are not mounted.
 
-## Final automated closure
-
-- Renderer: 308/308 pinned reference blobs byte-identical, 0 missing, 0 different.
-- Vendored reference source: 1,724/1,724 blobs byte-identical.
-- Official renderer closure has no unexplained findings.
-- Coordinator: 58/58 reference calls executable; 10/10 subscription families have local event paths.
-- Desktop bridge: 95/95 official claims classified, unknown=0.
-- Production renderer is exact pinned `ProductionRenderer`.
-- Pinned TrayManager and Sand sharing adapter are bundled; absent external backends fail closed.
-- Contacts/Telegram/payment/MiniApp/Mahayana product surfaces are not mounted.
+## Executable claim closure
+- Official coordinator calls: 58/58 executable local paths.
+- Coordinator subscription families: 10/10 event paths.
+- Desktop bridge claims: 95/95 classified with 0 unknown.
+- Pinned TrayManager and Sand sharing adapters are bundled.
+- Cross-user sharing fails closed when no backend is configured.
+- Three account/subscription dashboard claims remain external-account-service classifications rather than fabricated local behavior.
 
 ## Verification
+Run `35417698506` on released code SHA `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd` passed exact pinned directory diff, external Host-carrier classification, pinned reference runtime bundles, CommonJS syntax, 103/103 runtime tests, reference source typecheck and TypeScript/Vite production build.
 
-Final source gate Run `35417698506` at shipped SHA `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd` passed exact source gates, 103/103 runtime contracts, reference source typecheck and production renderer build.
+## External evidence boundary
+The reference Host activation script requires immutable carrier `src/app/dist/host/host-main.cjs`, absent from the pinned Git repository. It remains EXTERNAL_DEPENDENCY and is not replaced with invented evidence.
 
-Final Mac Run `35417698507` passed unsigned package and packaged-app smoke. Pixel/interaction judgment, signed-in provider behavior and macOS permission behavior remain GBR-007.
+## Acceptance
+Automated recoverable source/runtime scope: PASS. Actual packaged visual fidelity, macOS interaction behavior and signed-in end-to-end provider behavior remain GBR-007 human acceptance.

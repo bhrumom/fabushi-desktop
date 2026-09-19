@@ -58,7 +58,7 @@ GitHub Actions Run `35417698506` at final frozen product SHA `ccc4e29f75e7057eb6
 
 Final macOS package Run `35417698507` on the same SHA completed successfully:
 - unsigned DMG/ZIP package: PASS
-- packaged renderer/local bridge smoke: PASS
+- packaged renderer/local bridge headless probe: no UI report; non-blocking diagnostic only (`manualValidationRequired:true`)
 - artifact upload: PASS
 - release branch exact-SHA check: PASS
 - prerelease publish: PASS

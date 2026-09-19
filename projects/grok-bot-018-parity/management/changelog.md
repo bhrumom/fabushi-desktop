@@ -36,3 +36,6 @@
 - Final automated Mac delivery: source Run `35417698506` SUCCESS; macOS Run `35417698507` SUCCESS; artifact `10576418103` digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
 - Published prerelease `grok-parity-mac-92` with `2.0.0-alpha.2` arm64 DMG/ZIP; release tag verified to exact shipped SHA.
 - Transitioned to GBR-007 external human installation/interaction acceptance; PR #1 intentionally remains open and unmerged.
+
+- Corrected the final headless packaged-smoke wording: Run `35417698507` published successfully, but the runner did not emit the UI probe report and recorded `manualValidationRequired:true`; packaged UI acceptance remains GBR-007 human work.
+- Synchronized GBR-003/004/005 to current automated runtime/source evidence and created GBR-007 as the durable manual acceptance task.

@@ -19,7 +19,7 @@
 - Final source gate: Run `35417698506` on `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd` SUCCESS with 103/103 tests, exact pinned source diff, reference source typecheck and Vite production build.
 - Production runtime tests explicitly verify the exact AnysphereAgent path, tool-call continuation, account-backed inference, reference coordinator closure, local Computer events, approvals and desktop bridges.
 - Default Marketplace now has executable local entries for Custom MCP Server and Private Skill; remote Grok-compatible provider support remains available.
-- Final package: Run `35417698507` SUCCESS on the same SHA; packaged smoke PASS.
+- Final package: Run `35417698507` SUCCESS on the same SHA; its headless renderer probe produced no UI smoke report and recorded `manualValidationRequired:true`, so no automated packaged-UI PASS is claimed.
 - Artifact `10576418103`: `393022970` bytes; digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
 - Release `grok-parity-mac-92` published with `2.0.0-alpha.2` DMG/ZIP; tag resolves exactly to the frozen build SHA.
 - Remaining A7 is intentionally external/manual, matching the original request to hand testing to a human.

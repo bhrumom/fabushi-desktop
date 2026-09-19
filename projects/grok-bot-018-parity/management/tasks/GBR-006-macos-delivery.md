@@ -45,6 +45,9 @@ GitHub prerelease:
 - DMG: `fabushi-grok-parity-2.0.0-alpha.2-macos-arm64.dmg` — `196953101` bytes
 - ZIP: `fabushi-grok-parity-2.0.0-alpha.2-macos-arm64.zip` — `197395586` bytes
 
+## Packaged smoke evidence
+The final GitHub-hosted headless runner did not emit the renderer UI probe report. The workflow recorded `manualValidationRequired:true` and continued because the original requirement explicitly delegates product testing to humans. This is not counted as packaged UI acceptance.
+
 ## Remaining acceptance
 No automated delivery blocker remains for GBR-006.
 

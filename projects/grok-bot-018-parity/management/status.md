@@ -78,3 +78,11 @@
 - Prerelease `grok-parity-mac-92` published DMG and ZIP for version `2.0.0-alpha.2`; the lightweight tag resolves exactly to `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`.
 - Automated implementation/delivery scope is complete. PR #1 remains open and unmerged because the original requirement delegates final product testing to humans.
 - Next stage is GBR-007: install the released DMG and manually exercise the Grok-style UI, reference Agent behavior, local Computer/Browser actions, Marketplace/plugins, Teach recording, sharing, approvals and error/cancellation flows. Any discovered defect must be fixed on the same PR and re-released through the exact-SHA gates.
+
+
+## 2026-09-19 — Round 7 — evidence reconciliation
+- Reconciled final package evidence against Run `35417698507` logs.
+- The package/release job itself is SUCCESS and exact-SHA tag verification passed, but the headless renderer probe did not produce its UI report; it recorded `manualValidationRequired:true`.
+- Therefore no automated packaged-UI PASS is claimed. This corrects the earlier Round 6 wording that described the packaged smoke as successful.
+- GBR-003/004/005 task records were synchronized to the current automated PASS state, and GBR-007 was created as the explicit external human acceptance task.
+- Shipped code remains `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`; this reconciliation changes project records only.
