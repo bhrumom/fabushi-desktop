@@ -90,6 +90,17 @@ function createReferenceDesktop({app,BrowserWindow,shell,dialog,safeStorage,nati
         for(const row of Array.isArray(args.entries)?args.entries:[]){if(row&&typeof row.key==='string'&&typeof row.value==='string'&&p.clientPersistence[row.key]===undefined){p.clientPersistence[row.key]=row.value;changed=true}}
         if(changed)await savePrefs();return changed;
       }
+      case'local-tool-permission-ceiling':return null;
+      case'local-tool-approval-record':{
+        const p=await loadPrefs(),approvalId=String(args.approvalId||'').trim();if(!approvalId)return;
+        p.localToolApprovals=p.localToolApprovals&&typeof p.localToolApprovals==='object'&&!Array.isArray(p.localToolApprovals)?p.localToolApprovals:{};
+        p.localToolApprovals[approvalId]={action:args.action??null,target:args.target??null,recordedAt:Date.now()};
+        const entries=Object.entries(p.localToolApprovals).sort((a,b)=>Number(b[1]?.recordedAt||0)-Number(a[1]?.recordedAt||0)).slice(0,500);
+        p.localToolApprovals=Object.fromEntries(entries);await savePrefs();return;
+      }
+      case'local-tool-approval-clear':{
+        const p=await loadPrefs();p.localToolApprovals={};await savePrefs();return;
+      }
       case'stage-attachment':{
         const name=cleanName(args.filename),bytes=Buffer.from(args.bytes||[]);
         if(bytes.length===0)return{ok:false,reason:'empty'};
