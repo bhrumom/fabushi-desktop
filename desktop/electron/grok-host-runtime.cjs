@@ -14,7 +14,7 @@ const {createLocalAnysphereRuntime}=require('./grok-reference-anysphere-runtime.
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},sendVisibleMessage=async()=>null,reactToConversationMessage=async()=>null,updateState=async()=>({ok:false,reason:'State backend unavailable.'}),getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',getMemoryContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),auditAction=()=>{},onTurnUsage=async()=>{},onTurnObservation=async()=>{},subagents=null,agentManagement=null,browser=null,inferenceRequest=null,getInferenceAccessToken=async()=>null,fetchImpl=globalThis.fetch,autoReviewClassifier=null}){
+function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},sendVisibleMessage=async()=>null,reactToConversationMessage=async()=>null,updateState=async()=>({ok:false,reason:'State backend unavailable.'}),getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',getMemoryContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),auditAction=()=>{},onTurnUsage=async()=>{},onTurnObservation=async()=>{},subagents=null,agentManagement=null,mcpManagement=null,browser=null,inferenceRequest=null,getInferenceAccessToken=async()=>null,fetchImpl=globalThis.fetch,autoReviewClassifier=null}){
   const referenceRuntimes=new Map();
 
   function systemPrompt(agent,enabled,workflowContext,memoryContext){
@@ -76,6 +76,41 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     if(name==='SendToAgent')return{text:String(await agentManagement.send({sourceAgentId,targetId:args.target_id,message:args.message,images:args.images||[],priority:args.priority===true}))};
     if(name==='CreateAgent')return{text:JSON.stringify(await agentManagement.create({name:args.name,description:args.description||''}),null,2)};
     if(name==='UpdateAgent')return{text:JSON.stringify(await agentManagement.update({agentId:args.agent_id,name:args.name,description:args.description}),null,2)};
+    return null;
+  }
+
+  function mcpManagementDefinitions(){
+    if(!mcpManagement)return[];
+    const fn=(name,description,properties,required=[])=>({type:'function',function:{name,description,parameters:{type:'object',properties,required,additionalProperties:false}}});
+    return[
+      fn('SearchPlugins','Search the plugin marketplace by natural-language capability.',{query:{type:'string'}}),
+      fn('GetPlugin','Get complete detail for a marketplace plugin.',{plugin_id:{type:'string'}},['plugin_id']),
+      fn('InstallPlugin','Install a marketplace plugin after the user has agreed.',{plugin_id:{type:'string'},values:{type:'object',additionalProperties:{type:'string'}}},['plugin_id']),
+      fn('AddMcpServer','Add a remote HTTP(S) MCP server that is not in the plugin catalog.',{name:{type:'string'},url:{type:'string'},headers:{type:'object',additionalProperties:{type:'string'}}},['name','url']),
+      fn('UninstallMcpServer','Remove one custom MCP server by server identifier.',{server_id:{type:'string'}},['server_id']),
+      fn('UninstallPlugin','Uninstall a whole marketplace plugin by stable id.',{plugin_id:{type:'string'}},['plugin_id']),
+      fn('GetMcpServerStatus','Get runtime and account status for one installed MCP server, or all servers.',{server_id:{type:'string'}}),
+      fn('SetMcpInstructions','Set or clear saved instructions for an installed MCP server.',{server_id:{type:'string'},instructions:{type:'string'}},['server_id','instructions']),
+      fn('RestartMcpServers','Restart installed MCP server sessions.',{}),
+      fn('AuthenticateMcpServer','Start or refresh interactive authentication for an installed MCP server.',{server_id:{type:'string'},force_reauth:{type:'boolean'},account_label:{type:'string'}},['server_id']),
+      fn('RemoveMcpAccount','Remove one account from an MCP server while keeping the server.',{server_id:{type:'string'},account_label:{type:'string'}},['server_id','account_label']),
+      fn('RenameMcpAccount','Rename one MCP account label.',{server_id:{type:'string'},account_label:{type:'string'},new_account_label:{type:'string'}},['server_id','account_label','new_account_label'])
+    ];
+  }
+  async function executeMcpManagementTool(name,args){
+    if(!mcpManagement)return null;
+    if(name==='SearchPlugins')return{text:JSON.stringify(await mcpManagement.search({query:args.query||''}),null,2)};
+    if(name==='GetPlugin')return{text:JSON.stringify(await mcpManagement.get({pluginId:args.plugin_id}),null,2)};
+    if(name==='InstallPlugin')return{text:JSON.stringify(await mcpManagement.install({pluginId:args.plugin_id,values:args.values||{}}),null,2)};
+    if(name==='AddMcpServer')return{text:JSON.stringify(await mcpManagement.add({name:args.name,url:args.url,headers:args.headers||{}}),null,2)};
+    if(name==='UninstallMcpServer')return{text:JSON.stringify(await mcpManagement.uninstallServer({serverId:args.server_id}),null,2)};
+    if(name==='UninstallPlugin')return{text:JSON.stringify(await mcpManagement.uninstallPlugin({pluginId:args.plugin_id}),null,2)};
+    if(name==='GetMcpServerStatus')return{text:JSON.stringify(await mcpManagement.status({serverId:args.server_id||null}),null,2)};
+    if(name==='SetMcpInstructions')return{text:JSON.stringify(await mcpManagement.setInstructions({serverId:args.server_id,instructions:args.instructions}),null,2)};
+    if(name==='RestartMcpServers')return{text:JSON.stringify(await mcpManagement.restart(),null,2)};
+    if(name==='AuthenticateMcpServer')return{text:JSON.stringify(await mcpManagement.authenticate({serverId:args.server_id,forceReauth:args.force_reauth===true,accountLabel:args.account_label||null}),null,2)};
+    if(name==='RemoveMcpAccount')return{text:JSON.stringify(await mcpManagement.removeAccount({serverId:args.server_id,accountLabel:args.account_label}),null,2)};
+    if(name==='RenameMcpAccount')return{text:JSON.stringify(await mcpManagement.renameAccount({serverId:args.server_id,accountLabel:args.account_label,newAccountLabel:args.new_account_label}),null,2)};
     return null;
   }
 
@@ -266,6 +301,9 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const externalDefinitions=await getExternalTools();
     const mcpMetaTools=mcpMetaDefinitions();
     const mcpMetaNames=new Set(mcpMetaTools.map(x=>x.function.name));
+    const mcpManagementTools=mcpManagementDefinitions();
+    const mcpManagementNames=new Set(mcpManagementTools.map(x=>x.function.name));
+    const mcpManagementReadOnly=new Set(['SearchPlugins','GetPlugin','GetMcpServerStatus']);
     const subagentTools=subagentDefinitions();
     const subagentNames=new Set(subagentTools.map(x=>x.function.name));
     const agentManagementTools=agentManagementDefinitions();
@@ -276,7 +314,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const localNames=new Set(localTools.map(x=>x.function.name));
     const communicationNames=new Set(communicationDefinitions.map(x=>x.function.name));
     const stateNames=new Set([stateDefinition.function.name]);
-    const tools=[...communicationDefinitions,stateDefinition,...agentManagementTools,...localTools,...browserTools,...subagentTools,...mcpMetaTools];
+    const tools=[...communicationDefinitions,stateDefinition,...agentManagementTools,...localTools,...browserTools,...subagentTools,...mcpMetaTools,...mcpManagementTools];
     const resources=createExecutionResources({
       executeLocal:(name,args,options)=>executeTool(name,args,{enabled,shell,signal:options.signal,onStarted:options.onStarted,onOutput:options.onOutput,ownerAgentId:agent.id}),
       executeBrowser:(name,args,options)=>browser?.execute({agentId:agent.id,name,args,signal:options.signal}),
@@ -326,7 +364,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
         void onTurnObservation({kind:'tool-started',agentId:agent.id,turnId:observation.turnId,toolCallId:String(toolCallId||''),toolName:name,args:{...(args||{})},at:actionStartedAt});
         let resultText='',execution;
         try{
-          const allowed=communicationNames.has(name)||stateNames.has(name)||agentManagementNames.has(name)||mcpMetaNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name,args)===false)
+          const allowed=communicationNames.has(name)||stateNames.has(name)||agentManagementNames.has(name)||mcpMetaNames.has(name)||subagentNames.has(name)||(mcpManagementNames.has(name)&&mcpManagementReadOnly.has(name))||(browserNames.has(name)&&browser?.isMutation(name,args)===false)
             ?true:await authorize(agent.id,entry,name,args,toolSignal);
           if(!allowed){resultText='ERROR: '+entry.text}
           else{
@@ -338,6 +376,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
             }else if(stateNames.has(name))execution=await executeStateTool(args,{updateState:input=>updateState({agentId:agent.id,...input})});
             else if(agentManagementNames.has(name))execution=await executeAgentManagementTool(name,args,agent.id);
             else if(mcpMetaNames.has(name))execution=await executeMcpMetaTool(name,args,externalDefinitions);
+            else if(mcpManagementNames.has(name))execution=await executeMcpManagementTool(name,args);
             else if(browserNames.has(name))resource=resources.get(BROWSER_TOOL_EXECUTOR);
             else if(subagentNames.has(name))resource=resources.get(SUBAGENT_TOOL_EXECUTOR);
             else if(localNames.has(name))resource=resources.get(LOCAL_TOOL_EXECUTOR);
