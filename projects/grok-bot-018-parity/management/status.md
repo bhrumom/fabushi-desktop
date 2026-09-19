@@ -62,7 +62,6 @@
 - Final shipped candidate code SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`.
 - Exact source gate Run `35417698506` completed SUCCESS on that SHA: exact pinned renderer/source diff PASS, reference runtime bundles PASS, CommonJS syntax PASS, **103/103 runtime contracts PASS**, pinned reference source typecheck PASS, TypeScript/Vite production build PASS.
 - macOS package Run `35417698507` completed SUCCESS on the same SHA.
-- Packaged `.app` smoke completed SUCCESS, including desktop/coordinator/MCP/account/visible-renderer assertions.
 - Artifact `10576418103` (`fabushi-grok-parity-macos`) size `393022970` bytes, digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
 - Prerelease `grok-parity-mac-92` published with `fabushi-grok-parity-2.0.0-alpha.2-macos-arm64.dmg` and `.zip`.
 - Release tag `grok-parity-mac-92` resolves exactly to `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`; branch-SHA and tag-SHA fail-closed checks both passed in Run `35417698507`.
