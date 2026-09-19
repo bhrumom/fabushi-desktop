@@ -1,5 +1,7 @@
 'use strict';
 
+const {TrayManager}=require('./grok-reference-trays.cjs');
+
 const fs=require('node:fs/promises');
 const os=require('node:os');
 
@@ -69,10 +71,11 @@ function workflowSpec(spec={}){
   };
 }
 function createReferenceCoordinator(runtime){
-  const teach=new Map();
+  const teach=new Map(),trays=new TrayManager();
   async function agents(){return (await runtime.listAgents()).map(agentRow)}
   async function call(method,args={}){
     const input=asObject(args);
+    try{
     switch(method){
       case'listAgents':return agents();
       case'countAgents':return (await runtime.listAgents()).length;
@@ -208,9 +211,9 @@ function createReferenceCoordinator(runtime){
       case'getForeverBoxStatus':
       case'ensureForeverBox':return await localComputerStatus(input.id||input.agentId);
       case'handBackForeverBox':return;
-      case'getTrays':return[];
-      case'dismissTray':
-      case'clearTrays':return;
+      case'getTrays':return trays.getTrays();
+      case'dismissTray':trays.dismiss(String(input.id||input.trayId||''));return;
+      case'clearTrays':trays.clearAll();return;
       case'getBoxSecretsStatus':return{keys:[],isPersistent:true};
       case'getSharingState':return runtime.getSharingState();
       case'createRoomFromAgent':return runtime.createRoomFromAgent(input);
@@ -229,6 +232,10 @@ function createReferenceCoordinator(runtime){
         const results=[];for(const id of ids)results.push(await runtime.sendMessage({agentId:id,text:String(input.prompt||input.text||'')}));return{results};
       }
       default:throw Object.assign(Error('Unsupported Grok coordinator method: '+method),{code:'method-unavailable'});
+    }
+    }catch(error){
+      if(method!=='getTrays'&&method!=='dismissTray'&&method!=='clearTrays')trays.pushError({title:'Coordinator request failed',detail:error instanceof Error?error.message:String(error),errorKind:'coordinator',rawDetail:String(method),dedupeKey:'coordinator:'+String(method)});
+      throw error;
     }
   }
   return{call,agentRow,transcriptEntry};
