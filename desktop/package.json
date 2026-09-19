@@ -167,7 +167,8 @@
       "package.json",
       "electron/grok-reference-sand-runner.cjs",
       "electron/grok-reference-anysphere-runtime.cjs",
-      "electron/grok-reference-xuser-sharing.cjs"
+      "electron/grok-reference-xuser-sharing.cjs",
+      "electron/grok-reference-trays.cjs"
     ],
     "extraResources": [
       {
