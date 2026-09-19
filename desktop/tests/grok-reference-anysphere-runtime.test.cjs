@@ -83,3 +83,38 @@ test('offline reference Agent preserves the local-host ready fallback',async()=>
   const result=await runtime.run({prompt:'hello'});
   assert.match(result.text,/Agent host is ready on this Mac/);
 });
+
+
+test('private provider deltas never become visible AnysphereAgent output',async()=>{
+  const {createLocalAnysphereRuntime}=require('../electron/grok-reference-anysphere-runtime.cjs');
+  const runtime=createLocalAnysphereRuntime({
+    conversationId:'privacy-boundary',
+    modelId:'test-model',
+    systemPrompt:()=> 'Return only the final answer.',
+    getTools:()=>[],
+    executeTool:async()=>{throw Error('unexpected tool')},
+    transport:async(_messages,_tools,_signal,onDelta)=>{
+      onDelta?.('private ','private ');
+      onDelta?.('scratchpad','private scratchpad');
+      return{message:{content:'final answer'},usage:{inputTokens:4,outputTokens:2}};
+    }
+  });
+  const result=await runtime.run({prompt:'answer'});
+  assert.equal(result.text,'final answer');
+  assert.doesNotMatch(result.text,/private scratchpad/);
+});
+
+test('offline AnysphereAgent keeps the local-host readiness contract',async()=>{
+  const {createLocalAnysphereRuntime}=require('../electron/grok-reference-anysphere-runtime.cjs');
+  const runtime=createLocalAnysphereRuntime({
+    conversationId:'offline-boundary',
+    modelId:'test-model',
+    systemPrompt:()=> 'Local host.',
+    getTools:()=>[],
+    executeTool:async()=>{throw Error('unexpected tool')},
+    transport:async()=>({offline:true})
+  });
+  const result=await runtime.run({prompt:'status'});
+  assert.match(result.text,/Agent host is ready on this Mac/);
+  assert.match(result.text,/inference is not configured/);
+});
