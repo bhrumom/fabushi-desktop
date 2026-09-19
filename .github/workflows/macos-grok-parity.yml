@@ -8,8 +8,8 @@ on:
       - ".github/workflows/macos-grok-parity.yml"
 
 concurrency:
-  group: macos-grok-parity-${{ github.ref }}
-  cancel-in-progress: true
+  group: macos-grok-parity-${{ github.sha }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
