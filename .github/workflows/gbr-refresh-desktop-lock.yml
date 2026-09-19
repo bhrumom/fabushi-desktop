@@ -1,0 +1,55 @@
+name: GBR refresh desktop lock
+on:
+  push:
+    branches: [refactor/grok-bot-018-parity-mac]
+    paths:
+      - ".github/workflows/gbr-refresh-desktop-lock.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+      - name: Regenerate desktop lock and synchronize candidate provenance
+        shell: bash
+        working-directory: desktop
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          node <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
+          const provenancePath = 'reference-provenance.json';
+          const provenance = JSON.parse(fs.readFileSync(provenancePath,'utf8'));
+          provenance.releaseCandidateVersion = pkg.version;
+          provenance.dependencyLock = 'desktop/package-lock.json synchronized to package.json and enforced by npm ci in final gates';
+          fs.writeFileSync(provenancePath, JSON.stringify(provenance,null,2)+'\n');
+          NODE
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
+          const lock=JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+          if(lock.version!==pkg.version) throw new Error('root lock version mismatch');
+          if(lock.packages?.['']?.version!==pkg.version) throw new Error('workspace lock version mismatch');
+          NODE
+      - name: Commit regenerated lock and provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Fabushi Work"
+          git config user.email "noreply@fabushi.local"
+          git add desktop/package-lock.json desktop/reference-provenance.json
+          if git diff --cached --quiet; then
+            echo "Desktop lock and provenance already synchronized"
+            exit 0
+          fi
+          git commit -m "build(gbr): lock alpha.3 desktop dependencies"
+          git push origin HEAD:refactor/grok-bot-018-parity-mac
