@@ -102,7 +102,7 @@ jobs:
         with:
           tag_name: grok-parity-mac-${{ github.run_number }}
           name: Fabushi Grok parity macOS #${{ github.run_number }}
-          target_commitish: ${{ github.sha }}
+          target_commitish: ${{ github.ref_name }}
           prerelease: true
           generate_release_notes: false
           files: |
