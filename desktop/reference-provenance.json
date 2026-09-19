@@ -19,7 +19,7 @@
   "sharing": "exact Sand cross-user sharing relay adapter bundled; uses Fabushi account bearer token when backend is configured; no backend fails closed",
   "telemetry": "reference telemetry retained locally without cloud export",
   "oneShotIntegratorsRemoved": true,
-  "releaseCandidateVersion": "2.0.0-alpha.2",
+  "releaseCandidateVersion": "2.0.0-alpha.3",
   "finalValidationPolicy": "the final product/CI commit, source gate, macOS package and prerelease tag must resolve to one exact SHA; after that release is verified, a docs-only closeout commit may advance the branch only under projects/grok-bot-018-parity/** without changing desktop/**, .github/**, or pinned reference source",
   "agentInference": "Fabushi signed-in account access token is the production bearer credential when FABUSHI_ACCOUNT_INFERENCE_URL is configured; API-key env is fallback only",
   "desktopBridgeClaims": {
@@ -41,5 +41,6 @@
   "teachRecording": "real local Mac screen recording service; save attaches recording to the Agent and invokes the Learn from demonstration private skill/workflow through the reference Agent runtime",
   "teachComputerTarget": "installed-local-machine",
   "finalCandidateNote": "Final release workflow is fail-closed for branch movement and tag mismatch; source gate and macOS package are expected on the same non-empty desktop commit.",
-  "projectCloseoutPolicy": "post-release evidence synchronization is allowed only as a docs-only project-record commit; release code SHA remains the canonical shipped candidate"
+  "projectCloseoutPolicy": "post-release evidence synchronization is allowed only as a docs-only project-record commit; release code SHA remains the canonical shipped candidate",
+  "dependencyLock": "desktop/package-lock.json synchronized to package.json and enforced by npm ci in final gates"
 }
