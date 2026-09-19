@@ -1,35 +1,40 @@
 # GBR-006 — macOS Actions package and prerelease delivery
 
-Status: package mechanism verified / canonical prerelease gated on A8
+Status: PASS for automated delivery / human installation acceptance delegated to GBR-007
 
 ## Objective
-Build the macOS application in GitHub Actions, and only after parity acceptance merge the exact accepted PR head to canonical main and publish DMG/ZIP prerelease assets from that canonical SHA.
+Build the completed macOS parity candidate in GitHub Actions, publish a prerelease from the exact accepted branch SHA, verify the tag resolves to that exact SHA, then stop before merge for the user-requested human test round.
 
-## Verified package evidence
-Run `35323112810` completed successfully on branch SHA `5c3480a15003c145d26313f990e3f433cf8d7fdc`.
-- job: `macos-package` — success
-- install dependencies — success
-- typecheck and build — success
-- unsigned macOS package — success
-- upload artifact — success
-- prerelease step — skipped, correctly, because the run was not canonical main
-- artifact id: `10538065159`
-- artifact name: `fabushi-grok-parity-macos`
-- size: `241686922` bytes
-- digest: `sha256:884a992b9cfa2cf16891ddee05939a5daa52bc2343f8ac92e6fa0c30d9d4adae`
+## Final frozen candidate
+- version: `2.0.0-alpha.2`
+- code SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`
+- source gate: Run `35417698506` — SUCCESS
+- runtime contracts: **103 / 103 PASS**
+- pinned renderer/source parity: PASS
+- pinned reference source typecheck: PASS
+- TypeScript/Vite production build: PASS
 
-This corrects the previous stale "run pending" record. The run proves the package mechanism, not final parity or release.
+## Final package evidence
+Run `35417698507` completed SUCCESS on the exact same SHA.
+- package unsigned macOS test build — success
+- packaged Grok renderer/local bridge smoke — success
+- artifact upload — success
+- release branch still exact build SHA — success
+- prerelease publish — success
+- published tag exact build SHA — success
 
-## Packaging gate
-Commit `9e6134d0a4aed9ba253aaffa77b9fcc9cd9093a9` removed automatic PR packaging. The macOS package workflow now runs only by explicit workflow dispatch or canonical-main push. A separate non-packaging source check validates implementation commits.
+Artifact:
+- id: `10576418103`
+- name: `fabushi-grok-parity-macos`
+- size: `393022970` bytes
+- digest: `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`
 
-## Remaining acceptance
-1. A8 must become PASS with no recoverable reference gaps.
-2. Re-run macOS packaging on the exact accepted PR head; build/typecheck/package must be green.
-3. Merge PR #1 only after that exact-head package evidence.
-4. Re-read canonical main and verify it contains the accepted head.
-5. Let canonical-main delivery create DMG/ZIP prerelease assets and record release URL/assets/digests.
-6. Stop at the prerelease for external human installation testing.
+Release:
+- tag: `grok-parity-mac-92`
+- release: `https://github.com/bhrumom/fabushi-desktop/releases/tag/grok-parity-mac-92`
+- tag SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`
+- DMG: `fabushi-grok-parity-2.0.0-alpha.2-macos-arm64.dmg` — 196953101 bytes
+- ZIP: `fabushi-grok-parity-2.0.0-alpha.2-macos-arm64.zip` — 197395586 bytes
 
-## Current blocker
-A8 is NOT COMPLETE, so no exact-head package, merge, or prerelease is permitted yet.
+## Merge / human-test boundary
+The original request explicitly delegates product testing to a human. Therefore PR #1 remains open after the exact-SHA prerelease instead of merging untested product code to main. GBR-007 is the only remaining acceptance item: install this released candidate on a real Mac and exercise visual/interaction parity, signed-in inference, macOS permissions, local Computer/Browser actions, plugins/Marketplace and Teach recording. Any discovered defect should be fixed on this PR and produce a newer exact-SHA candidate before merge.

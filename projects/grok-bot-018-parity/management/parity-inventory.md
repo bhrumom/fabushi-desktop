@@ -46,17 +46,26 @@ Current acceptance is fail-closed on these live sources instead:
 
 ## Latest hard source evidence
 
-GitHub Actions Run `35417479417` at `398847034321e691a17bcf013421d131ce6a4312` completed successfully:
+GitHub Actions Run `35417698506` at final frozen product SHA `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd` completed successfully:
 
 - exact pinned source parity gate: PASS
 - Host carrier external-dependency classification: PASS
 - pinned SandAgentRunner / AnysphereAgent / TrayManager / Sand sharing bundles: PASS
 - CommonJS syntax: PASS
-- runtime contracts: **101 / 101 PASS, 0 fail**
+- runtime contracts: **103 / 103 PASS, 0 fail**
 - pinned reference source typecheck: PASS
 - TypeScript/Vite production build: PASS
 
-The subsequent branch head `2e0afae9fb60cf7e7b50463dae376dda21b4ba25` is an empty-tree metadata commit over that product tree.
+Final macOS package Run `35417698507` on the same SHA completed successfully:
+- unsigned DMG/ZIP package: PASS
+- packaged renderer/local bridge smoke: PASS
+- artifact upload: PASS
+- release branch exact-SHA check: PASS
+- prerelease publish: PASS
+- published tag exact-SHA check: PASS
+- artifact `10576418103`, digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`
+- release/tag `grok-parity-mac-92` → `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`
+- assets: `fabushi-grok-parity-2.0.0-alpha.2-macos-arm64.dmg` and `.zip`
 
 ## Historical generated snapshot
 

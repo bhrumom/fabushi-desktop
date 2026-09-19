@@ -56,3 +56,14 @@
 - Mac prerelease `grok-parity-mac-16` was published from exact SHA `b3b04a23245345b7d3491eb5859b7ccbbffd8562`; subsequent packages are superseded by the continuing Agent cutover. The workflow now cancels superseded branch packages so only the latest exact-head candidate remains.
 - The reference repository's own Host activation audit depends on immutable carrier artifact `src/app/dist/host/host-main.cjs`, which is not stored in the Git repository. That carrier-only audit is recorded as EXTERNAL_DEPENDENCY and is not substituted with fabricated evidence.
 - Final product acceptance remains human/external: packaged UI interactions and model-provider deployment must be validated on the released Mac build.
+
+
+## 2026-09-19 — Round 6 — final frozen macOS candidate published
+- Final shipped candidate code SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`.
+- Exact source gate Run `35417698506` completed SUCCESS on that SHA: exact pinned renderer/source diff PASS, reference runtime bundles PASS, CommonJS syntax PASS, **103/103 runtime contracts PASS**, pinned reference source typecheck PASS, TypeScript/Vite production build PASS.
+- macOS package Run `35417698507` completed SUCCESS on the same SHA.
+- Packaged `.app` smoke completed SUCCESS, including desktop/coordinator/MCP/account/visible-renderer assertions.
+- Artifact `10576418103` (`fabushi-grok-parity-macos`) size `393022970` bytes, digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
+- Prerelease `grok-parity-mac-92` published with `fabushi-grok-parity-2.0.0-alpha.2-macos-arm64.dmg` and `.zip`.
+- Release tag `grok-parity-mac-92` resolves exactly to `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`; branch-SHA and tag-SHA fail-closed checks both passed in Run `35417698507`.
+- Automated source/runtime/package scope is complete. Per the original request, PR #1 remains open for external human installation/UX/function acceptance rather than being merged ahead of that test.
