@@ -254,7 +254,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
         };
         transcript.push(entry);await onToolState({agentId:agent.id,entry});
         const actionStartedAt=Date.now();observation.toolCallCount+=1;observation.lastTool=name;
-        void onTurnObservation({kind:'tool-started',agentId:agent.id,turnId:observation.turnId,toolCallId:String(toolCallId||''),toolName:name,at:actionStartedAt});
+        void onTurnObservation({kind:'tool-started',agentId:agent.id,turnId:observation.turnId,toolCallId:String(toolCallId||''),toolName:name,args:{...(args||{})},at:actionStartedAt});
         let resultText='',execution;
         try{
           const allowed=communicationNames.has(name)||stateNames.has(name)||externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name)===false)
