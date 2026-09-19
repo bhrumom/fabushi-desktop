@@ -10,8 +10,26 @@ func intArg(_ index: Int, _ label: String) -> Int {
     return value
 }
 func point(_ x: Int, _ y: Int) -> CGPoint { CGPoint(x: x, y: y) }
-func postMouse(_ type: CGEventType, _ p: CGPoint, _ button: CGMouseButton = .left) {
+func stringArg(_ index: Int, _ fallback: String = "") -> String {
+    CommandLine.arguments.count > index ? CommandLine.arguments[index] : fallback
+}
+func mouseButton(_ value: String) -> CGMouseButton {
+    switch value.lowercased() {
+    case "right": return .right
+    case "middle": return .center
+    default: return .left
+    }
+}
+func mouseEventTypes(_ button: CGMouseButton) -> (CGEventType, CGEventType, CGEventType) {
+    switch button {
+    case .right: return (.rightMouseDown, .rightMouseUp, .rightMouseDragged)
+    case .center: return (.otherMouseDown, .otherMouseUp, .otherMouseDragged)
+    default: return (.leftMouseDown, .leftMouseUp, .leftMouseDragged)
+    }
+}
+func postMouse(_ type: CGEventType, _ p: CGPoint, _ button: CGMouseButton = .left, _ clickCount: Int = 1) {
     guard let event = CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: p, mouseButton: button) else { exit(3) }
+    event.setIntegerValueField(.mouseEventClickState, value: Int64(max(1, min(3, clickCount))))
     event.post(tap: .cghidEventTap)
 }
 
@@ -113,16 +131,25 @@ guard CommandLine.arguments.count >= 2 else { fputs("command required\n", stderr
 switch CommandLine.arguments[1] {
 case "move":
     let x=intArg(2,"x"), y=intArg(3,"y"); postMouse(.mouseMoved, point(x,y))
+case "click":
+    let x=intArg(2,"x"), y=intArg(3,"y"), button=mouseButton(stringArg(4,"left"))
+    let count=max(1,min(3,intArg(5,"count"))), types=mouseEventTypes(button)
+    postMouse(.mouseMoved,point(x,y),button,count)
+    for index in 1...count {
+        postMouse(types.0,point(x,y),button,index); postMouse(types.1,point(x,y),button,index)
+        if index < count { usleep(80000) }
+    }
 case "drag":
     let x1=intArg(2,"x1"), y1=intArg(3,"y1"), x2=intArg(4,"x2"), y2=intArg(5,"y2")
-    let duration=max(40,intArg(6,"durationMs")), steps=max(2,min(120,duration/16))
-    postMouse(.mouseMoved,point(x1,y1)); postMouse(.leftMouseDown,point(x1,y1))
+    let duration=max(40,intArg(6,"durationMs")), button=mouseButton(stringArg(7,"left")), types=mouseEventTypes(button)
+    let steps=max(2,min(120,duration/16))
+    postMouse(.mouseMoved,point(x1,y1),button); postMouse(types.0,point(x1,y1),button)
     for step in 1...steps {
         let t=Double(step)/Double(steps)
         let p=CGPoint(x:Double(x1)+(Double(x2-x1)*t),y:Double(y1)+(Double(y2-y1)*t))
-        postMouse(.leftMouseDragged,p); usleep(useconds_t(max(1000,duration*1000/steps)))
+        postMouse(types.2,p,button); usleep(useconds_t(max(1000,duration*1000/steps)))
     }
-    postMouse(.leftMouseUp,point(x2,y2))
+    postMouse(types.1,point(x2,y2),button)
 case "scroll":
     let dx=intArg(2,"dx"), dy=intArg(3,"dy")
     guard let event=CGEvent(scrollWheelEvent2Source:nil,units:.pixel,wheelCount:2,wheel1:Int32(dy),wheel2:Int32(dx),wheel3:0) else { exit(3) }
