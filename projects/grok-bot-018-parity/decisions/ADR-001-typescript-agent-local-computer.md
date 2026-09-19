@@ -1,17 +1,28 @@
-# ADR-001 — TypeScript agent runtime with local-computer adaptation
+# ADR-001 — Reference TypeScript Agent runtime with local-computer adaptation
 
-Status: accepted
-Date: 2026-09-18
+Status: accepted and implemented  
+Date: 2026-09-18  
+Final automated evidence: 2026-09-19
 
 ## Decision
 
-Use a TypeScript agent coordinator/host/local-exec architecture matching the reference reconstruction instead of designing the Fabushi agent as a Mahayana CLI wrapper.
+Use the pinned Grok Bot 0.18 TypeScript Agent/runtime architecture as the Fabushi production Agent core instead of a Mahayana/Codex CLI wrapper.
 
-Map reference remote Box/Computer operations to the installed computer. Preserve explicit permission boundaries for local tools.
+The production path uses pinned `SandAgentRunner` and `AnysphereAgent`. Fabushi supplies host adapters for inference credentials and tool execution. Reference remote Box/Computer operations map to the Mac where Fabushi is installed.
 
 ## Consequences
 
-- Renderer communicates with a typed coordinator/host bridge.
-- CLI compatibility may exist separately but is not the agent core.
-- Cloud-computer provisioning/status UI is excluded from the parity surface.
-- Rust may still be used for low-level native capabilities where it is an implementation detail behind the local-exec boundary.
+- Exact pinned reference renderer is the product UI contract.
+- Reference Agent owns model/action/tool/checkpoint/summarization lifecycle.
+- Fabushi host adapters own local execution, permission/approval, credentials and external-service seams.
+- CLI compatibility is not the Agent implementation and is not the renderer's primary execution path.
+- Cloud-computer provisioning is excluded; Computer/Teach operate locally.
+- Product-difference claims must be explicit and evidence-backed.
+- Human UX/function testing remains external after the GitHub Actions release candidate.
+
+## Final automated evidence
+
+Shipped code SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`  
+Source gate: Run `35417698506` — 103/103 runtime tests PASS plus exact source/typecheck/build.  
+Mac delivery: Run `35417698507` — package/smoke/artifact/release/tag checks PASS.  
+Release: `grok-parity-mac-92`.

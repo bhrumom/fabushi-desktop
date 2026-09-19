@@ -1,61 +1,24 @@
-# GBR-005 — Reference UI / interaction parity
+# GBR-005 — Reference UI / interaction / backend parity
 
-Status: in-progress — major recovered surfaces are executable; A8 remains open
+Status: **automated source+runtime complete / human visual-interaction acceptance pending**
 
 ## Objective
-Use the pinned reference as the sole production visual/interaction contract. Every recoverable renderer module/state/interaction must map to a target implementation and evidence in `../parity-inventory.generated.json`.
 
-## Audited reference closure
-- 275 reachable clean renderer modules
-- 70 audited runner capsules
-- 16 Electron production bindings
-- 102 valid/reachable UI anchors
-- 163 evidenced renderer IPC claims
+Use the pinned reference as the production visual/interaction contract and account for every recoverable renderer/backend claim without fabricating parity.
 
-The reference report separately records 703 JSX-runtime candidates without reviewed first-party linkage; those are not silently counted as recoverable product modules.
+## Final automated closure
 
-## Recovered executable surfaces
-- Grok-only production shell; contacts/Telegram/payment/MiniApp/Mahayana remain absent.
-- agent list, create, rename, delete, hidden agents and org chart.
-- conversation transcript, tool lifecycle, approvals, Stop, screenshots and attachment cards.
-- reply references with source jump, reactions and quick reaction counts.
-- conversation outline and Find.
-- Command Palette with commands/agents/messages/files/links search.
-- composer attachments, reply target and stop/send states.
-- SendMessage interactive widget card with options/custom reply/dismiss.
-- secure secret-request card; secret value never enters transcript/model context.
-- About, Feedback, Deep Link dialogs.
-- account sign-in/status/logout/name.
-- Plugins/MCP/OAuth/accounts/private skills/workflows surfaces.
-- routines/automation editor/run history.
-- Settings for local-tool permission, auto-review instructions and real updater status/release track.
-- first-run onboarding: meet → local Computer demo → jobs → tools → create → hand-off.
-- Computer side pane plus expanded local Computer shell.
-- loading/fatal/retry/error states.
-- native notifications.
+- Renderer: 308/308 pinned reference blobs byte-identical, 0 missing, 0 different.
+- Vendored reference source: 1,724/1,724 blobs byte-identical.
+- Official renderer closure has no unexplained findings.
+- Coordinator: 58/58 reference calls executable; 10/10 subscription families have local event paths.
+- Desktop bridge: 95/95 official claims classified, unknown=0.
+- Production renderer is exact pinned `ProductionRenderer`.
+- Pinned TrayManager and Sand sharing adapter are bundled; absent external backends fail closed.
+- Contacts/Telegram/payment/MiniApp/Mahayana product surfaces are not mounted.
 
-## Current objective evidence
-- reply/reaction/search source check: Run `35345060040` SUCCESS.
-- reference SendMessage stream semantics fix: Run `35345930555` SUCCESS.
-- audited code head `910f65e42b0dd096e9c969eba03666f46ae764c9` passed Run `35360378372`, including all runtime contract tests and TypeScript/Vite build.
-- `../parity-inventory.generated.json` now has per-module target/state/notes and no longer repeats stale early-round FAIL claims for implemented surfaces.
+## Verification
 
-## Major open renderer families
-- exact sidebar row/section/preview visual and interaction depth.
-- exact composer rich-text/suggestions/reference/model/voice behaviors.
-- specialist PDF/spreadsheet viewers and remaining rich media presentation; production media protocol itself is now wired.
-- Computer teach/recording and remaining shell states.
-- access/roster/privacy/reconnect/shared-room/channel surfaces.
-- exact window chrome/status/workspace-indicator/notification behaviors.
-- remaining agent-info/channel/shared-room/async-task surfaces.
-- exact onboarding/access readiness and subscription/access policy.
-- full update-required/minimum-version policy.
-- event-listener routine surfaces.
-- exact Settings/Plugins/provider visual composition.
-- claim-for-claim closure of the 163 renderer IPC claims.
+Final source gate Run `35417698506` at shipped SHA `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd` passed exact source gates, 103/103 runtime contracts, reference source typecheck and production renderer build.
 
-## Product-difference rule
-Cloud Box/VNC/cursor-agent infrastructure is not copied. Its user-visible Computer behavior must map to the installed Mac. No other Fabushi-specific feature may be introduced into the parity production UI.
-
-## Exit rule
-GBR-005 closes only when every recoverable renderer row is PASS, or has an evidence-backed PRODUCT_DIFFERENCE/EXTERNAL_DEPENDENCY classification. Any PARTIAL/FAIL keeps A8 open and blocks final packaging, merge and prerelease.
+Final Mac Run `35417698507` passed unsigned package and packaged-app smoke. Pixel/interaction judgment, signed-in provider behavior and macOS permission behavior remain GBR-007.

@@ -1,27 +1,36 @@
 # Grok Bot 0.18 parity refactor
 
-Project ID: GBR
-Owner: Fabushi desktop
+Project ID: GBR  
+Owner: Fabushi desktop  
 Source of truth: this repository project folder + GitHub branch/CI/release evidence.
 
 ## Objective
 
-Refactor Fabushi Desktop to reproduce the observable Grok Bot 0.18 reconstructed product surface and agent architecture as closely as the evidence-backed reference repository permits.
+Refactor Fabushi Desktop around the pinned Grok Bot 0.18 reconstruction, reproducing its observable UI, interactions, plugin experience and Agent architecture as closely as the evidence-backed reference permits.
 
-Product difference: Grok Bot's remote/cloud computer is replaced by the computer on which Fabushi is installed. The UI must not expose Fabushi-only Messenger/contact/Telegram/payment surfaces during this parity phase.
+Reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`  
+Target baseline: `bhrumom/fabushi-desktop@12d4aadb4a93a1413ece44aba987162e90b31229`  
+Shipped Mac candidate code SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`  
+Release: `grok-parity-mac-92` / `2.0.0-alpha.2`
 
-Reference: bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d
-Target baseline: bhrumom/fabushi-desktop@12d4aadb4a93a1413ece44aba987162e90b31229
+## Implemented result
 
-## Delivery order
-
-1. macOS source refactor and parity shell.
-2. TypeScript agent/coordinator/local-exec parity; no CLI wrapper as the agent architecture.
-3. Grok-style plugins surface and usable local plugin registry.
-4. Hide non-reference Fabushi product modules.
-5. Build/package in GitHub Actions.
-6. Publish a macOS test artifact/release for human testing.
+- Production renderer is the byte-exact pinned reference renderer.
+- Pinned `SandAgentRunner` + `AnysphereAgent` own the production Agent lifecycle/orchestration.
+- No Mahayana/Codex CLI wrapper and no legacy hand-written model/tool loop remain in the production Agent path.
+- Files, Terminal, Browser, Computer, MCP, Subagent, private-skill and workflow capabilities execute through local host adapters.
+- The intentional product difference is Computer location: Agents operate the Mac where Fabushi is installed instead of a cloud Box.
+- Contacts/Messenger-specific, Telegram, payment, MiniApp and Mahayana workbench surfaces are not mounted in this parity product.
+- Marketplace/MCP/OAuth/account/workflow/listener paths are executable; external-service paths fail closed when unavailable.
 
 ## Acceptance state
 
-In progress. Completion requires merged source plus a macOS package produced by GitHub Actions. Human UX testing remains external by request.
+Automated source/runtime/package/release scope is complete. Final human installation and interaction testing remains external by the original requirement.
+
+Final automated evidence:
+- source gate Run `35417698506`: 103/103 runtime tests PASS plus exact pinned source/typecheck/production build;
+- macOS Run `35417698507`: package, packaged-app smoke, artifact upload, release and exact tag-SHA checks PASS;
+- Release `grok-parity-mac-92` resolves exactly to `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`;
+- Actions artifact `10576418103`, digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
+
+PR #1 remains open for GBR-007 human acceptance and defect closure.
