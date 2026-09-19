@@ -77,6 +77,19 @@ jobs:
               echo "::endgroup::"
             fi
           fi
+          PID=""
+          cleanup() {
+            if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+              kill "$PID" 2>/dev/null || true
+              for _ in $(seq 1 5); do
+                kill -0 "$PID" 2>/dev/null || break
+                sleep 1
+              done
+              kill -9 "$PID" 2>/dev/null || true
+            fi
+            [ -z "$PID" ] || wait "$PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT INT TERM
           ELECTRON_ENABLE_LOGGING=1 ELECTRON_ENABLE_STACK_DUMPING=1 FABUSHI_GROK_SMOKE_REPORT="$REPORT" "$BIN" --disable-gpu >"$LOG" 2>&1 &
           PID=$!
           for _ in $(seq 1 45); do
@@ -105,8 +118,8 @@ jobs:
           if (!String(report.bodyText || '').trim()) throw new Error('renderer produced no visible UI');
           if (/desktop preload bridge is unavailable/i.test(String(report.bodyText || ''))) throw new Error('renderer displayed preload failure');
           NODE
-          kill "$PID" 2>/dev/null || true
-          wait "$PID" 2>/dev/null || true
+          cleanup
+          trap - EXIT INT TERM
       - uses: actions/upload-artifact@v4
         if: always()
         with:
