@@ -1,6 +1,7 @@
 'use strict';
 
 const {TrayManager}=require('./grok-reference-trays.cjs');
+const {createLocalTeachRecording}=require('./grok-local-teach-recording.cjs');
 
 const fs=require('node:fs/promises');
 const os=require('node:os');
@@ -70,8 +71,44 @@ function workflowSpec(spec={}){
     ...(value.trigger?{trigger:value.trigger}:{})
   };
 }
-function createReferenceCoordinator(runtime){
-  const teach=new Map(),trays=new TrayManager();
+function createReferenceCoordinator(runtime,{app}={}){
+  const trays=new TrayManager();
+  const teach=createLocalTeachRecording({
+    app,
+    onSaved:async recording=>{
+      const workflows=await runtime.listWorkflows();
+      let workflow=workflows.find(row=>String(row.name||'').toLowerCase()==='learn from demonstration');
+      if(!workflow){
+        workflow=await runtime.saveWorkflow({
+          name:'Learn from demonstration',
+          description:'Learn a repeatable task from a local Mac Teach recording.',
+          body:[
+            '# Learn from demonstration',
+            '',
+            'When an internal Teach recording message arrives, inspect the attached local screen recording and reconstruct the repeatable task.',
+            'Use the available Files, Terminal, Browser and Computer tools only when needed to verify details.',
+            'Produce or update a private skill/workflow with clear, reusable steps for performing the demonstrated task on this Mac.',
+            'Do not invent steps that are not supported by the recording or tool evidence.'
+          ].join('\n'),
+          isEnabledForAgent:true,
+          disableModelInvocation:false,
+          sourceRef:'teach-recording:local-mac'
+        });
+      }
+      const attachment=await runtime.registerAttachment({path:recording.videoPath});
+      await runtime.sendMessage({
+        agentId:recording.agentId,
+        text:[
+          'The recording is finished. Learn the task from it.',
+          'Use the Learn from demonstration skill and the attached local Mac screen recording.',
+          'Recording session: '+recording.sessionId
+        ].join('\n'),
+        attachmentIds:[attachment.id],
+        internal:true
+      });
+      return{workflowId:workflow.id,attachmentId:attachment.id};
+    }
+  });
   async function agents(){return (await runtime.listAgents()).map(agentRow)}
   async function call(method,args={}){
     const input=asObject(args);
@@ -207,12 +244,15 @@ function createReferenceCoordinator(runtime){
           throw error;
         }
       }
-      case'getTeachRecordingStatus':return teach.get(input.id||input.agentId)||{status:'idle',agentId:input.id||input.agentId||null};
+      case'getTeachRecordingStatus':return teach.status();
       case'startTeachRecording':{
-        const value={status:'recording',agentId:input.id||input.agentId||null,startedAtMs:Date.now()};teach.set(value.agentId,value);return value;
+        const id=String(input.id||input.agentId||'').trim();
+        if(!(await runtime.listAgents()).some(agent=>agent.id===id))throw Error('Agent not found.');
+        return await teach.start({agentId:id,entryPoint:input.entryPoint});
       }
       case'stopTeachRecording':{
-        const id=input.id||input.agentId||null,value={status:'idle',agentId:id,stoppedAtMs:Date.now()};teach.set(id,value);return value;
+        const id=String(input.id||input.agentId||'').trim();
+        return await teach.stop({agentId:id,save:input.save===true,reason:input.save===true?'save':'discard'});
       }
       case'getForeverBoxStatus':
       case'ensureForeverBox':return await localComputerStatus(input.id||input.agentId);
@@ -244,6 +284,6 @@ function createReferenceCoordinator(runtime){
       throw error;
     }
   }
-  return{call,agentRow,transcriptEntry};
+  return{call,agentRow,transcriptEntry,dispose:()=>teach.dispose()};
 }
 module.exports={createReferenceCoordinator,agentRow,transcriptEntry};
