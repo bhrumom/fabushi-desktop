@@ -393,9 +393,15 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
       if(event.kind==='tool-started'){
         const args=event.args&&typeof event.args==='object'?event.args:{};
         let action=null;
-        if(event.toolName==='computer_click'&&Number.isFinite(Number(args.x))&&Number.isFinite(Number(args.y)))action={agentId:event.agentId,type:'click',x:Number(args.x),y:Number(args.y)};
-        else if(event.toolName==='computer_mouse_move'&&Number.isFinite(Number(args.x))&&Number.isFinite(Number(args.y)))action={agentId:event.agentId,type:'move',x:Number(args.x),y:Number(args.y)};
-        else if(event.toolName==='computer_drag'&&Number.isFinite(Number(args.toX))&&Number.isFinite(Number(args.toY)))action={agentId:event.agentId,type:'drag',x:Number(args.toX),y:Number(args.toY)};
+        if(event.toolName==='Computer'){
+          const type=String(args.action||'');
+          if((type==='click'||type==='move')&&Number.isFinite(Number(args.x))&&Number.isFinite(Number(args.y)))action={agentId:event.agentId,type,x:Number(args.x),y:Number(args.y)};
+          else if(type==='drag'){
+            const points=Array.isArray(args.path)?args.path:[],last=points.at(-1);
+            const x=last?.x??args.x2,y=last?.y??args.y2;
+            if(Number.isFinite(Number(x))&&Number.isFinite(Number(y)))action={agentId:event.agentId,type:'drag',x:Number(x),y:Number(y)};
+          }
+        }else if(event.toolName==='computer_click'&&Number.isFinite(Number(args.x))&&Number.isFinite(Number(args.y)))action={agentId:event.agentId,type:'click',x:Number(args.x),y:Number(args.y)};
         if(action)emit('computer-action',{...action,toolCallId:event.toolCallId,at:event.at});
       }
     },
@@ -404,7 +410,30 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
     spillToolOutput:(text,meta)=>outputSpiller.spillText(text,meta),
     browser:localBrowser,
+    agentManagement:{
+      async send({sourceAgentId,targetId,message,images=[],priority=false}){
+        const source=await findAgent(sourceAgentId),target=await findAgent(String(targetId||''));if(!source||!target)throw Error('Target agent not found.');
+        if(images.length)throw Error('SendToAgent image forwarding is not implemented yet; send the message without images or attach the file in the target chat.');
+        if(priority===true&&['thinking','running','waiting'].includes(target.status))await stopAgent({agentId:target.id});
+        const text='[Agent message from '+source.name+' ('+source.id+')]\n'+String(message||'').trim();
+        await sendMessage({agentId:target.id,text,internal:true});
+        return 'Message sent to '+target.name+' ('+target.id+').';
+      },
+      async create({name,description}){
+        const created=await createAgent({name:String(name||'Agent'),description:String(description||'')});
+        return{id:created.id,name:created.name,description:created.description||''};
+      },
+      async update({agentId,name,description}){
+        const current=await findAgent(String(agentId||''));if(!current)throw Error('Agent not found.');
+        const updated=await updateAgent({id:current.id,profile:{name:name==null?current.name:String(name),title:current.title,description:description==null?(current.description||''):String(description)}});
+        return{id:updated.id,name:updated.name,description:updated.description||''};
+      }
+    },
     subagents:{
+      async list(){
+        const current=await load(),rows=current.agents.filter(row=>row.purpose==='subagent'&&['thinking','running','waiting'].includes(row.status));
+        return rows.map(agent=>({subagentId:agent.id,subagentType:'generalPurpose',title:agent.name,status:agent.status,toolCallCount:(current.messages[agent.id]||[]).filter(row=>row.role==='tool').length,recentMessages:(current.messages[agent.id]||[]).slice(-8).map(row=>({role:row.role,text:row.text,status:row.status,toolName:row.toolName||null}))}));
+      },
       async create({parentAgentId,name,prompt,background,signal}){
         const agent=await createAgent({name,parentAgentId,purpose:'subagent',description:'Delegated agent'});
         const run=await sendMessage({agentId:agent.id,text:String(prompt||'')});
