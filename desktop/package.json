@@ -183,16 +183,19 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "hardenedRuntime": false,
+      "hardenedRuntime": true,
       "gatekeeperAssess": false,
-      "identity": null,
       "target": [
         "dmg",
         "zip"
       ],
-      "artifactName": "fabushi-grok-parity-${version}-macos-${arch}.${ext}"
+      "artifactName": "fabushi-grok-parity-${version}-macos-${arch}.${ext}",
+      "entitlements": "resources/mac/entitlements.plist",
+      "entitlementsInherit": "resources/mac/entitlements.plist",
+      "forceCodeSigning": true
     },
-    "copyright": "Copyright © 2026 Fabushi."
+    "copyright": "Copyright © 2026 Fabushi.",
+    "afterSign": "scripts/notarize-after-sign.cjs"
   },
   "overrides": {
     "node-addon-api": "8.5.0",
