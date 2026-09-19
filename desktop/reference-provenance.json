@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 9,
+  "schemaVersion": 10,
   "referenceRepository": "bhrum/grok-bot-0.18-reconstructed",
   "referenceCommit": "107877b4e2134fd167d239411386f09e42eadd6d",
   "rendererSource": "exact-pinned-copy",
@@ -20,7 +20,7 @@
   "telemetry": "reference telemetry retained locally without cloud export",
   "oneShotIntegratorsRemoved": true,
   "releaseCandidateVersion": "2.0.0-alpha.3",
-  "finalValidationPolicy": "the final product/CI commit, source gate, macOS package and prerelease tag must resolve to one exact SHA; after that release is verified, a docs-only closeout commit may advance the branch only under projects/grok-bot-018-parity/** without changing desktop/**, .github/**, or pinned reference source",
+  "finalValidationPolicy": "the final product/CI commit, source gate, macOS package, exact build tag and prerelease assets must resolve to one exact SHA; after release verification, docs-only closeout commits may advance only project records without invalidating the shipped product SHA.",
   "agentInference": "Fabushi signed-in account access token is the production bearer credential when FABUSHI_ACCOUNT_INFERENCE_URL is configured; API-key env is fallback only",
   "desktopBridgeClaims": {
     "total": 95,
@@ -37,7 +37,7 @@
   },
   "trayRuntime": "pinned Grok TrayManager with async coordinator failures surfaced to local UI",
   "externalEvidence": "pinned reconstruction Host activation requires immutable carrier src/app/dist/host/host-main.cjs, which is not stored in the Git repository",
-  "releasePolicy": "macOS prerelease creation uses the branch ref only after verifying the remote branch still equals github.sha; the workflow then verifies the published lightweight tag resolves exactly to github.sha. Runner-side tag pushes are intentionally avoided because the GitHub App lacks workflows permission.",
+  "releasePolicy": "macOS prerelease workflow creates the lightweight release tag directly at GITHUB_SHA through the GitHub refs API before release creation; existing tags are accepted only when they already resolve to the same build SHA. Release publication then consumes that exact tag, and a final API check requires tag SHA == GITHUB_SHA. Later projects/** documentation commits cannot invalidate the shipped product SHA.",
   "teachRecording": "real local Mac screen recording service; save attaches recording to the Agent and invokes the Learn from demonstration private skill/workflow through the reference Agent runtime",
   "teachComputerTarget": "installed-local-machine",
   "finalCandidateNote": "Final release workflow is fail-closed for branch movement and tag mismatch; source gate and macOS package are expected on the same non-empty desktop commit.",
@@ -46,7 +46,7 @@
   "dependencyInstallMode": "npm ci in source-check and macOS package gates",
   "dependencyLockBlob": "828e857f9b3fc4ec1dae850f34c86c39fce7a495",
   "finalCandidateVersion": "2.0.0-alpha.3",
-  "finalGateTrigger": "bounded-headless-smoke-cleanup",
+  "finalGateTrigger": "exact-build-tag-api-v1",
   "packagedSmokePolicy": "headless renderer smoke is diagnostic-only; background Electron is always bounded and force-terminated on step exit; manual installed-product acceptance remains authoritative",
   "packagedSmokeCleanup": "EXIT/INT/TERM trap with bounded SIGTERM then SIGKILL"
 }

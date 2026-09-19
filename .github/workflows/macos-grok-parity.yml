@@ -130,20 +130,30 @@ jobs:
             desktop/release/grok-renderer-smoke.json
             desktop/release/grok-renderer-smoke.log
           if-no-files-found: error
-      - name: Verify release branch is still exact build SHA
+      - name: Create exact build tag
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac')
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          REMOTE_SHA="$(git ls-remote origin "refs/heads/${{ github.ref_name }}" | awk '{print $1}')"
-          test "$REMOTE_SHA" = "${{ github.sha }}"
+          TAG="grok-parity-mac-${{ github.run_number }}"
+          REF="refs/tags/$TAG"
+          EXISTING="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/$TAG" --jq '.object.sha' 2>/dev/null || true)"
+          if [ -n "$EXISTING" ]; then
+            test "$EXISTING" = "${GITHUB_SHA}"
+            echo "Exact build tag already exists at $EXISTING"
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="$REF" -f sha="${GITHUB_SHA}" >/dev/null
+          fi
+          CREATED="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/$TAG" --jq '.object.sha')"
+          test "$CREATED" = "${GITHUB_SHA}"
       - name: Publish macOS prerelease candidate
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: grok-parity-mac-${{ github.run_number }}
           name: Fabushi Grok parity macOS #${{ github.run_number }}
-          target_commitish: ${{ github.ref_name }}
           prerelease: true
           generate_release_notes: false
           files: |
@@ -153,8 +163,10 @@ jobs:
       - name: Verify published tag resolves to exact build SHA
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/refactor/grok-bot-018-parity-mac')
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           TAG="grok-parity-mac-${{ github.run_number }}"
-          TAG_SHA="$(git ls-remote origin "refs/tags/$TAG" | awk '{print $1}')"
-          test "$TAG_SHA" = "${{ github.sha }}"
+          TAG_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/$TAG" --jq '.object.sha')"
+          test "$TAG_SHA" = "${GITHUB_SHA}"
