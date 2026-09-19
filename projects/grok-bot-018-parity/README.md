@@ -10,9 +10,9 @@ Refactor Fabushi Desktop around the pinned Grok Bot 0.18 reconstruction, reprodu
 
 Reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`  
 Target baseline: `bhrumom/fabushi-desktop@12d4aadb4a93a1413ece44aba987162e90b31229`  
-Final shipped Mac package SHA: `1f27c239aa8931b3266b9b83c84ff234332785d9`  
-Immutable release branch: `release/grok-parity-alpha3-final`  
-Release: `grok-parity-mac-101` / `2.0.0-alpha.3`
+Final shipped Mac product/package SHA: `98ac56f037cb1b0eaa66781087da986334754908`  
+Release branch used by the packaging gate: `release/grok-parity-alpha3-final` -> exact same product SHA at release time  
+Release: `grok-parity-mac-126` / `2.0.0-alpha.4`
 
 ## Implemented result
 
@@ -27,12 +27,14 @@ Release: `grok-parity-mac-101` / `2.0.0-alpha.3`
 
 ## Final automated evidence
 
-- Push source gate Run `35419150457`: **105/105 runtime tests PASS**, exact pinned source parity, reference source typecheck and production build PASS.
-- PR source gate Run `35419154451`: SUCCESS on the same package SHA.
-- macOS Run `35419150459`: SUCCESS for build/package, bounded diagnostic smoke, artifact upload, immutable release-branch SHA verification, prerelease publication and final tag-SHA verification.
-- Artifact `10577580224`: `393011773` bytes; digest `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`.
-- Release `grok-parity-mac-101` tag resolves exactly to `1f27c239aa8931b3266b9b83c84ff234332785d9`.
-- DMG: `fabushi-grok-parity-2.0.0-alpha.3-macos-arm64.dmg`, `196950473` bytes, `sha256:695ffe13980e185ac8f4852635147d5ddf45eefebac6903294dbb4962960371f`.
-- ZIP: `fabushi-grok-parity-2.0.0-alpha.3-macos-arm64.zip`, `197394273` bytes, `sha256:8db709695da85299c10e1155df2f798dd4d9325422f2f0c927101b199fb2052a`.
+- Push source gate Run `35425432746`: **109 pass / 0 fail runtime contracts**, exact pinned source parity, reference source typecheck and production build PASS.
+- PR source gate Run `35425434873`: SUCCESS on the same product SHA.
+- macOS Run `35425432753`: SUCCESS for build/package, bounded diagnostic smoke, artifact upload, release-branch SHA verification, prerelease publication and final tag-SHA verification.
+- Artifact `10579089056`: `393058647` bytes; digest `sha256:6c91562e2d8ede5641c6c4bb9010a1cd3ebad1c0d0744a5cb8cc48b9bd1850d1`.
+- Release `grok-parity-mac-126` tag resolves exactly to `98ac56f037cb1b0eaa66781087da986334754908`.
+- DMG: `fabushi-grok-parity-2.0.0-alpha.4-macos-arm64.dmg`, `196976857` bytes, `sha256:3516c7de4f8052e0fc219f08a3c2234a4648569d63c1277dcc7164a45dfe7320`.
+- ZIP: `fabushi-grok-parity-2.0.0-alpha.4-macos-arm64.zip`, `197404010` bytes, `sha256:c70bd2a13c2fabf2cab3a74b959ecead488a2e4df76656fd18ef7b4d52e3a57c`.
 
-The GitHub-hosted headless renderer probe still produced no UI report and recorded `manualValidationRequired:true`; no automated packaged-UI PASS is claimed. Automated implementation and delivery are complete. PR #1 remains open for GBR-007 human installation/visual/function acceptance and defect closure.
+The GitHub-hosted packaged renderer probe still produced no UI report and recorded `manualValidationRequired:true`; no automated packaged-UI PASS is claimed. Automated implementation and delivery are complete for the current product SHA. PR #1 remains open for GBR-007 human installation/visual/function acceptance and defect closure.
+
+Record-only commits may advance the PR head after `98ac56f037cb1b0eaa66781087da986334754908`; they do not change the released product unless product/runtime paths change and a new exact-SHA package is published.
