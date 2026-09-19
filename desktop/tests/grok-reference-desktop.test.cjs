@@ -93,3 +93,15 @@ test('local-tool approval history is persisted and can be cleared',async t=>{
   raw=JSON.parse(await fs.readFile(path.join(desktop.__testRoot,'grok-reference-desktop.json'),'utf8'));
   assert.deepEqual(raw.localToolApprovals,{});
 });
+
+
+test('plugin logo bridge accepts bounded image responses and rejects non-images',async t=>{
+  const desktop=await fixture(t),originalFetch=global.fetch;
+  t.after(()=>{global.fetch=originalFetch});
+  global.fetch=async()=>new Response(new Uint8Array([137,80,78,71]),{status:200,headers:{'content-type':'image/png'}});
+  const logo=await desktop.call('plugin-logo',{url:'https://example.com/plugin.png'});
+  assert.match(logo,/^data:image\/png;base64,/);
+  global.fetch=async()=>new Response('not image',{status:200,headers:{'content-type':'text/plain'}});
+  assert.equal(await desktop.call('plugin-logo',{url:'https://example.com/plugin.txt'}),null);
+  assert.equal(await desktop.call('plugin-logo',{url:'file:///tmp/plugin.png'}),null);
+});
