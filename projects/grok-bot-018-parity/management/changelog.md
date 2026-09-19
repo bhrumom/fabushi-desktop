@@ -39,3 +39,9 @@
 
 - Corrected the final headless packaged-smoke wording: Run `35417698507` published successfully, but the runner did not emit the UI probe report and recorded `manualValidationRequired:true`; packaged UI acceptance remains GBR-007 human work.
 - Synchronized GBR-003/004/005 to current automated runtime/source evidence and created GBR-007 as the durable manual acceptance task.
+- Superseded the alpha.2 human-test candidate with reproducible `2.0.0-alpha.3` at immutable product SHA `528ddc8e31c320ca472191cf29a860c2086dabc2`.
+- Committed and bound the desktop dependency lock for reproducible `npm ci` source/package verification.
+- Final alpha.3 source gates: push Run `35418603612` and PR Run `35418606285` SUCCESS; runtime coverage is **105/105 PASS, 0 fail**.
+- Final alpha.3 macOS delivery Run `35418603624` SUCCESS; artifact `10576404427` digest `sha256:7899c1e47537c4793de59118d9328085038505069e438b255c62b0c0421768b2`.
+- Published `grok-parity-mac-97` with `2.0.0-alpha.3` arm64 DMG/ZIP and verified the release tag resolves exactly to the product SHA.
+- The bounded GitHub-hosted renderer probe still produced no UI report and recorded `manualValidationRequired:true`; human installed-product acceptance remains GBR-007 and PR #1 stays open.
