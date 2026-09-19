@@ -28,6 +28,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "26"
+      - name: Checkout pinned Grok Bot 0.18 reference
+        uses: actions/checkout@v4
+        with:
+          repository: bhrum/grok-bot-0.18-reconstructed
+          ref: 107877b4e2134fd167d239411386f09e42eadd6d
+          path: _grok
+          persist-credentials: false
+      - name: Verify exact pinned source parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C ../_grok rev-parse HEAD)" = "107877b4e2134fd167d239411386f09e42eadd6d"
+          diff -qr ../_grok/frontend/src src
+          diff -qr ../_grok/source ../reference/grok-bot-0.18/source
+          cmp ../_grok/package.json ../reference/grok-bot-0.18/package.json
+          cmp ../_grok/package-lock.json ../reference/grok-bot-0.18/package-lock.json
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Build pinned reference Agent runner

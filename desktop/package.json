@@ -171,6 +171,10 @@
       {
         "from": "native/bin/fabushi-computer-helper",
         "to": "bin/fabushi-computer-helper"
+      },
+      {
+        "from": "reference-provenance.json",
+        "to": "reference-provenance.json"
       }
     ],
     "mac": {

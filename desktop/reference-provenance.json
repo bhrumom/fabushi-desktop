@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "referenceRepository": "bhrum/grok-bot-0.18-reconstructed",
+  "referenceCommit": "107877b4e2134fd167d239411386f09e42eadd6d",
+  "rendererSource": "exact-pinned-copy",
+  "referenceSource": "exact-pinned-vendored-copy",
+  "agentLifecycle": "pinned SandAgentRunner + Fabushi local runStep adapter",
+  "computerTarget": "installed-local-machine",
+  "cloudComputer": false,
+  "validation": "manual-product-test-required"
+}
