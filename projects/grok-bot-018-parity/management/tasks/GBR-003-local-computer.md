@@ -17,7 +17,7 @@ Recover the reference Computer/tool/host execution model while adapting the Comp
 - Teach recording is a real local Mac recording service; save attaches the recording to the Agent and invokes the Learn from demonstration workflow through the reference Agent runtime.
 
 ## Verification
-Run `35417698506` on released code SHA `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd` passed exact pinned source parity, reference runtime bundle build, 103/103 runtime tests, pinned reference source typecheck and TypeScript/Vite production build.
+Run `35419150457` on released package SHA `1f27c239aa8931b3266b9b83c84ff234332785d9` passed exact pinned source parity, reference runtime bundle build, 105/105 runtime tests, pinned reference source typecheck and TypeScript/Vite production build.
 
 Runtime tests include reference-Agent model/tool continuation, Browser/MCP/Subagent routing, local mutation approval/cancellation, Computer actions, local Browser actions, Teach recording and coordinator/desktop bridge closure.
 

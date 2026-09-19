@@ -21,7 +21,7 @@ Use the pinned Grok Bot 0.18 reconstruction as the sole production UI/interactio
 - Three account/subscription dashboard claims remain external-account-service classifications rather than fabricated local behavior.
 
 ## Verification
-Run `35417698506` on released code SHA `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd` passed exact pinned directory diff, external Host-carrier classification, pinned reference runtime bundles, CommonJS syntax, 103/103 runtime tests, reference source typecheck and TypeScript/Vite production build.
+Run `35419150457` on released package SHA `1f27c239aa8931b3266b9b83c84ff234332785d9` passed exact pinned directory diff, external Host-carrier classification, pinned reference runtime bundles, CommonJS syntax, 105/105 runtime tests, reference source typecheck and TypeScript/Vite production build.
 
 ## External evidence boundary
 The reference Host activation script requires immutable carrier `src/app/dist/host/host-main.cjs`, absent from the pinned Git repository. It remains EXTERNAL_DEPENDENCY and is not replaced with invented evidence.
