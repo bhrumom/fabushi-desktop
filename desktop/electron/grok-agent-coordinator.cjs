@@ -471,6 +471,31 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
     spillToolOutput:(text,meta)=>outputSpiller.spillText(text,meta),
     browser:localBrowser,
+    mcpManagement:{
+      async search({query}){
+        const catalog=await listMarketplacePlugins(),tokens=String(query||'').toLowerCase().split(/[^a-z0-9]+/).filter(token=>token.length>=3);
+        const plugins=tokens.length?(catalog.plugins||[]).filter(plugin=>{const hay=[plugin.id,plugin.name,plugin.displayName,plugin.description,plugin.category,...(plugin.skills||[]).map(skill=>skill.name)].join(' ').toLowerCase();return tokens.every(token=>hay.includes(token))}):(catalog.plugins||[]);
+        return{available:catalog.available,reason:catalog.reason||null,plugins};
+      },
+      async get({pluginId}){const catalog=await listMarketplacePlugins(),plugin=(catalog.plugins||[]).find(row=>row.id===String(pluginId||''));if(!plugin)throw Error('Plugin not found.');return plugin},
+      async install({pluginId,values}){return installMarketplacePlugin({entryId:pluginId,values})},
+      async add({name,url,headers}){return addMcpServer({name,transport:'http',url,headers})},
+      async uninstallServer({serverId}){return removeMcpServer({serverId})},
+      async uninstallPlugin({pluginId}){return uninstallMarketplacePlugin({entryId:pluginId})},
+      async status({serverId=null}){
+        const servers=(await listMcpServers()).filter(server=>!serverId||server.id===String(serverId));
+        if(serverId&&!servers.length)throw Error('MCP server not found.');
+        return await Promise.all(servers.map(async server=>({serverId:server.id,name:server.name,transport:server.transport,enabled:server.enabled,customInstructions:server.customInstructions,accounts:await listMcpAccounts({serverId:server.id})})));
+      },
+      async setInstructions({serverId,instructions}){return updateMcpServer({serverId,customInstructions:String(instructions||'')})},
+      async restart(){const servers=await listMcpServers();for(const server of servers)mcp.disposeServer(server.id);emit('plugins.changed',{restart:true});return{ok:true,count:servers.length}},
+      async authenticate({serverId,forceReauth,accountLabel}){
+        const key=accountLabel||undefined;if(forceReauth===true)await disconnectMcpAccount({serverId,accountKey:key}).catch(()=>{});
+        return connectMcpAccount({serverId,accountKey:key});
+      },
+      async removeAccount({serverId,accountLabel}){return removeMcpAccount({serverId,accountKey:accountLabel})},
+      async renameAccount({serverId,accountLabel,newAccountLabel}){return renameMcpAccount({serverId,accountKey:accountLabel,newAccountKey:newAccountLabel})}
+    },
     agentManagement:{
       async send({sourceAgentId,targetId,message,images=[],priority=false}){
         const source=await findAgent(sourceAgentId),target=await findAgent(String(targetId||''));if(!source||!target)throw Error('Target agent not found.');
