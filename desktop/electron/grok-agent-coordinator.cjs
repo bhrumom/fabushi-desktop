@@ -366,12 +366,40 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     transcript.push(entry);agent.updatedAt=now;await save();emit('message.done',{agentId,messageId:entry.id,text:entry.text,status:'done'});return entry.id;
   }
   async function reactFromAgent({agentId,messageAddress,emoji}){return reactToMessage({agentId,entryId:messageAddress,emoji,userOnly:true})}
+  function durableTrigger(input,fallback=null){
+    if(input?.schedule!=null&&input?.trigger!=null)throw Error('Pass either schedule or trigger, never both.');
+    if(input?.schedule!=null)return{type:'cron',schedule:String(input.schedule)};
+    if(Array.isArray(input?.trigger))return{type:'group',listeners:JSON.parse(JSON.stringify(input.trigger))};
+    if(input?.trigger&&typeof input.trigger==='object')return JSON.parse(JSON.stringify(input.trigger));
+    if(fallback)return JSON.parse(JSON.stringify(fallback));
+    throw Error('Routine requires a schedule or trigger.');
+  }
+  function safeProjectSlug(value){
+    const slug=String(value||'').trim().toLowerCase();
+    if(!/^[a-z0-9][a-z0-9._-]{0,79}$/.test(slug)||slug==='.'||slug==='..')throw Error('Project slug must use letters, numbers, dot, underscore, or hyphen.');
+    return slug;
+  }
+  async function setAgentAvatarFromPath(agent,filePath){
+    const raw=String(filePath||'').trim();if(!raw)throw Error('Avatar path is required.');
+    const target=path.resolve(raw.replace(/^~(?=\/|$)/,process.env.HOME||'')),ext=path.extname(target).toLowerCase();
+    const mime={'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.gif':'image/gif','.svg':'image/svg+xml'}[ext];
+    if(!mime)throw Error('Avatar must be png, jpg, jpeg, webp, gif, or svg.');
+    const bytes=await fs.readFile(target);if(bytes.length===0||bytes.length>5*1024*1024)throw Error('Avatar file must be between 1 byte and 5 MB.');
+    agent.avatarDataUrl='data:'+mime+';base64,'+bytes.toString('base64');agent.updatedAt=Date.now();await save();emit('agent.changed',{agentId:agent.id,avatar:true});
+  }
   async function applyAgentStateUpdate(input){
     const {agentId,target,action}=input,agent=await findAgent(agentId);if(!agent)throw Error('Agent not found');
     if(target==='memory')return action==='write'?memoryStore.write({agentId,content:input.fact,tier:input.tier||'log',scope:input.scope||'agent',project:input.project||null}):memoryStore.forget({agentId,content:input.fact,scope:input.scope||'agent',project:input.project||null});
     if(target==='routine'){
-      if(action==='create'){const rows=await createAgentAutomation({id:agentId,spec:{name:input.name,prompt:input.prompt,trigger:{type:'cron',schedule:input.schedule},isEnabled:input.enabled!==false}});return{ok:true,detail:'Routine created: '+rows[0]?.name};}
-      if(action==='update'){const automationId=String(input.id||''),existing=(await getAgentAutomations({id:agentId})).find(row=>row.id===automationId);if(!existing)throw Error('Automation not found');const rows=await updateAgentAutomation({id:agentId,automationId,spec:{name:input.name??existing.name,prompt:input.prompt??existing.prompt,trigger:{type:'cron',schedule:input.schedule??existing.trigger.schedule},isEnabled:input.enabled??existing.isEnabled}});return{ok:true,detail:'Routine updated: '+(rows.find(row=>row.id===automationId)?.name||automationId)};}
+      if(action==='create'){
+        const trigger=durableTrigger(input),rows=await createAgentAutomation({id:agentId,spec:{name:input.name,prompt:input.prompt,trigger,isEnabled:input.enabled!==false}});
+        return{ok:true,detail:'Routine created: '+rows[0]?.name};
+      }
+      if(action==='update'){
+        const automationId=String(input.id||''),existing=(await getAgentAutomations({id:agentId})).find(row=>row.id===automationId);if(!existing)throw Error('Automation not found');
+        const trigger=durableTrigger(input,existing.trigger),rows=await updateAgentAutomation({id:agentId,automationId,spec:{name:input.name??existing.name,prompt:input.prompt??existing.prompt,trigger,isEnabled:input.enabled??existing.isEnabled}});
+        return{ok:true,detail:'Routine updated: '+(rows.find(row=>row.id===automationId)?.name||automationId)};
+      }
       if(action==='pause'||action==='resume'){await setAgentAutomationEnabled({id:agentId,automationId:String(input.id||''),isEnabled:action==='resume'});return{ok:true,detail:action==='resume'?'Routine resumed.':'Routine paused.'};}
       if(action==='delete'){await deleteAgentAutomation({id:agentId,automationId:String(input.id||'')});return{ok:true,detail:'Routine deleted.'};}
     }
@@ -384,6 +412,29 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
       if(input.hidden_from_sidebar!=null)await setAgentHidden({agentId,hidden:input.hidden_from_sidebar===true});
       if(input.notify_on_updates!=null)await setAgentNotifyOnUpdates({id:agentId,isEnabled:input.notify_on_updates===true});
       return{ok:true,detail:'Agent settings updated.'};
+    }
+    if(target==='channel'&&action==='disconnect'){
+      await disconnectChannel({id:agentId,platform:String(input.platform||'')});return{ok:true,detail:'Channel disconnected: '+String(input.platform||'')};
+    }
+    if(target==='project'){
+      const slug=safeProjectSlug(input.project),root=path.join(app.getPath('userData'),'projects',slug),projectFile=path.join(root,'project.md');
+      if(action==='create'){
+        const name=String(input.name||'').trim();if(!name)throw Error('Project name is required.');
+        await fs.mkdir(root,{recursive:true});
+        await fs.writeFile(projectFile,'# '+name+'\n\n'+String(input.description||'').trim()+'\n',{encoding:'utf8',flag:'wx'}).catch(error=>{if(error?.code!=='EEXIST')throw error});
+      }else if(action==='join'){await fs.access(projectFile)}
+      if(action==='create'||action==='join'){
+        agent.projectSlugs=[...new Set([...(agent.projectSlugs||[]),slug])].slice(0,50);agent.updatedAt=Date.now();await save();emit('agent.changed',{agentId,projects:true});
+        return{ok:true,detail:'Joined project: '+slug};
+      }
+      if(action==='leave'){
+        agent.projectSlugs=(agent.projectSlugs||[]).filter(value=>value!==slug);agent.updatedAt=Date.now();await save();emit('agent.changed',{agentId,projects:true});
+        return{ok:true,detail:'Left project: '+slug};
+      }
+    }
+    if(target==='avatar'){
+      if(action==='clear'){agent.avatarDataUrl=null;agent.updatedAt=Date.now();await save();emit('agent.changed',{agentId,avatar:true});return{ok:true,detail:'Avatar cleared.'};}
+      if(action==='set'){await setAgentAvatarFromPath(agent,input.path);return{ok:true,detail:'Avatar updated.'};}
     }
     return{ok:false,reason:'Unsupported state update.'};
   }
