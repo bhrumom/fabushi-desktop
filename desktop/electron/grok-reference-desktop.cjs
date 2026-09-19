@@ -148,6 +148,17 @@ function createReferenceDesktop({app,BrowserWindow,shell,dialog,safeStorage,nati
         if(url.protocol!=='https:')return{url:url.toString(),title:url.hostname};
         try{const response=await fetch(url,{headers:{accept:'text/html'},signal:AbortSignal.timeout(5000)});const html=(await response.text()).slice(0,250000);const title=/<title[^>]*>([^<]+)<\/title>/i.exec(html)?.[1]?.trim();return{url:url.toString(),title:title||url.hostname}}catch{return{url:url.toString(),title:url.hostname}}
       }
+      case'plugin-logo':{
+        const raw=String(args.url||'').trim();if(!raw)return null;
+        let url;try{url=new URL(raw)}catch{return null}
+        if(url.protocol!=='https:'&&!(url.protocol==='http:'&&['127.0.0.1','localhost','::1','[::1]'].includes(url.hostname)))return null;
+        try{
+          const response=await fetch(url,{headers:{accept:'image/*'},signal:AbortSignal.timeout(5000)});if(!response.ok)return null;
+          const type=String(response.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();if(!type.startsWith('image/'))return null;
+          const bytes=Buffer.from(await response.arrayBuffer());if(bytes.length===0||bytes.length>2*1024*1024)return null;
+          return'data:'+type+';base64,'+bytes.toString('base64');
+        }catch{return null}
+      }
       case'transcribe-audio':{
         const started=Date.now(),endpoint=transcriptionEndpoint();
         if(!endpoint)throw Error('Audio transcription is not configured. Set FABUSHI_TRANSCRIBE_URL or use an OpenAI-compatible FABUSHI_AGENT_API_URL ending in /chat/completions.');
