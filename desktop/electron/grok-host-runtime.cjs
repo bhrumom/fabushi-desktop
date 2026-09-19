@@ -5,7 +5,6 @@ const {toolDefinitions,executeTool,descriptor}=require('./local-tool-executor.cj
 const {createExecutionResources,LOCAL_TOOL_EXECUTOR,BROWSER_TOOL_EXECUTOR,EXTERNAL_TOOL_EXECUTOR,SUBAGENT_TOOL_EXECUTOR}=require('./grok-exec-resources.cjs');
 const {rootRequestContext,childRequestContext,runWithRequestContext}=require('./grok-request-context.cjs');
 const {requiresAutoReview,canonicalAutoReviewTarget,fingerprintAutoReviewTarget,normalizeAutoReviewMode,normalizeClassifierDecision}=require('./grok-auto-review.cjs');
-const {runWithTransientRetry}=require('./grok-transient-retry.cjs');
 const {definitions:communicationDefinitions,executeCommunicationTool}=require('./grok-communication-tools.cjs');
 const {definition:stateDefinition,executeStateTool}=require('./grok-state-tool.cjs');
 const {normalizeTurnUsage,mergeTurnUsage}=require('./grok-turn-usage.cjs');
@@ -217,9 +216,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     });
     const latestUser=[...history].reverse().find(x=>x.role==='user');
     const [workflowContext,memoryContext]=await Promise.all([getWorkflowContext(latestUser?.text||''),getMemoryContext(agent.id)]);
-    const useReferenceAgent=String(process.env.FABUSHI_AGENT_ENGINE||'reference').trim().toLowerCase()!=='legacy';
-    if(useReferenceAgent){
-      observation.engine='grok-anysphere-agent';
+    observation.engine='grok-anysphere-agent';
       let binding=referenceRuntimes.get(agent.id);
       if(!binding){
         const live={systemPrompt:'',tools:[],executeTool:null,onUpdate:null,agent};
@@ -310,104 +307,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
       const result=await binding.runtime.run({prompt,messageId:latestUser?.id,signal,tools});
       observation.usage=mergeTurnUsage(observation.usage,normalizeTurnUsage(result.usage));
       return visibleMessageCount>0?null:(result.text||null);
-    }
-    observation.engine='legacy-tool-loop';
-    const messages=[{role:'system',content:systemPrompt(agent,enabled,workflowContext,memoryContext)}];
-    const historyById=new Map(history.map(row=>[row.id,row]));
-    for(const row of history.filter(x=>(x.role==='user'||x.role==='assistant')&&!(x.role==='assistant'&&x.internal===true)).slice(-40)){
-      let content=String(row.text||'');
-      if(row.role==='user')content+=(content?'\n':'')+'[message_address:'+row.id+']';
-      if(row.replyToId){const target=historyById.get(row.replyToId);if(target&&(target.role==='user'||target.role==='assistant'))content='[Replying to '+target.role+': '+String(target.text||'').slice(0,1200)+']\n\n'+content;}
-      if(row.role==='user'&&Array.isArray(row.attachments)&&row.attachments.length){
-        const resolved=await resolveAttachments(row.attachments.map(item=>item.id));
-        if(resolved.length){
-          content+=(content?'\n\n':'')+'Attached local files (use Files tools to inspect them):\n'+resolved.map(item=>'- '+item.name+' ['+item.mime+'] at '+item.path).join('\n');
-        }
-      }
-      messages.push({role:row.role,content});
-    }
 
-    let visibleMessageCount=0,callsSinceVisibleMessage=0;
-    for(let round=0;round<12;round++){
-      if(signal?.aborted)throw abortError();
-      let streamOutputProduced=false;
-      const result=await runWithTransientRetry(()=> (inferenceRequest||chatRequest)(messages,tools,signal,()=>{streamOutputProduced=true}),{signal,maxAttempts:3,baseDelayMs:750,maxDelayMs:6000,canRetry:()=>!streamOutputProduced,onRetry:event=>{observation.retryCount+=1;void onTurnObservation({kind:'turn-retry',agentId:agent.id,turnId:observation.turnId,attempt:event.attempt,delayMs:event.delayMs,serverPaced:event.serverPaced})}});
-      observation.usage=mergeTurnUsage(observation.usage,normalizeTurnUsage(result.usage));
-      if(result.offline){
-        return 'Agent host is ready on this Mac. Configure FABUSHI_AGENT_API_URL, FABUSHI_AGENT_API_KEY, and optionally FABUSHI_AGENT_MODEL to connect a tool-calling model.';
-      }
-      const msg=result.message;
-      const calls=Array.isArray(msg.tool_calls)?msg.tool_calls:[];
-      if(!calls.length){
-        const content=typeof msg.content==='string'?msg.content.trim():'';
-        if(content)return visibleMessageCount>0?null:content;
-        throw Error('Inference returned neither text nor tool calls');
-      }
-
-      messages.push({role:'assistant',content:msg.content||null,tool_calls:calls});
-      for(const call of calls){
-        if(signal?.aborted)throw abortError();
-        const name=String(call?.function?.name||'tool');
-        let args={};
-        try{args=JSON.parse(call?.function?.arguments||'{}')}catch{}
-        const requestContext=childRequestContext({toolCallId:String(call?.id||''),signal});
-        const entry={
-          id:crypto.randomUUID(),role:'tool',toolName:name,text:'Queued',createdAt:Date.now(),updatedAt:Date.now(),
-          status:'queued',arguments:args,requestId:requestContext.requestId,toolCallId:requestContext.toolCallId
-        };
-        transcript.push(entry);
-        await onToolState({agentId:agent.id,entry});
-        const actionStartedAt=Date.now();observation.toolCallCount+=1;observation.lastTool=name;
-        void onTurnObservation({kind:'tool-started',agentId:agent.id,turnId:observation.turnId,toolCallId:String(call?.id||''),toolName:name,at:actionStartedAt});
-
-        let resultText='';
-        try{
-          const allowed=communicationNames.has(name)||stateNames.has(name)||externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name)===false)?true:await authorize(agent.id,entry,name,args,signal);
-          if(!allowed){
-            resultText='ERROR: '+entry.text;
-          }else{
-            await updateTool(agent.id,entry,{status:'running',text:'Running…'});
-            let resource,execution;
-            if(communicationNames.has(name)){
-              execution=await executeCommunicationTool(name,args,{sendVisibleMessage:input=>sendVisibleMessage({agentId:agent.id,...input}),reactToConversationMessage:input=>reactToConversationMessage({agentId:agent.id,...input})});
-              if(execution?.visibleMessage){visibleMessageCount+=1;callsSinceVisibleMessage=0}else callsSinceVisibleMessage+=1;
-            }else if(stateNames.has(name)){execution=await executeStateTool(args,{updateState:input=>updateState({agentId:agent.id,...input})});callsSinceVisibleMessage+=1;}
-            else if(externalNames.has(name))resource=resources.get(EXTERNAL_TOOL_EXECUTOR);
-            else if(browserNames.has(name))resource=resources.get(BROWSER_TOOL_EXECUTOR);
-            else if(subagentNames.has(name))resource=resources.get(SUBAGENT_TOOL_EXECUTOR);
-            else if(localNames.has(name))resource=resources.get(LOCAL_TOOL_EXECUTOR);
-            else throw Error('No executor resource registered for tool: '+name);
-            let streamed='',streamUpdates=Promise.resolve();
-            const onOutput=event=>{
-              const prefix=event?.stream==='stderr'?'[stderr] ':'';
-              streamed=(streamed+prefix+String(event?.text||'')).slice(-50000);
-              streamUpdates=streamUpdates.then(()=>updateTool(agent.id,entry,{status:'streaming',text:streamed||'Running…'}));
-            };
-            if(!execution){execution=await runWithRequestContext(requestContext,()=>resource.execute(name,args,{signal,onStarted:()=>{},onOutput}));callsSinceVisibleMessage+=1;}
-            await streamUpdates;
-            resultText=execution?.text||streamed||'(completed)';
-            const materialized=await spillToolOutput(resultText,{agentId:agent.id,toolCallId:entry.toolCallId,toolName:name});
-            resultText=materialized?.text||resultText;
-            await updateTool(agent.id,entry,{status:'done',text:resultText,...(materialized?.outputLocation?{outputLocation:materialized.outputLocation}:{}),...(execution?.display?{display:execution.display}:{})});
-            const action=toolAuditAction(name,args,'ok',Date.now()-actionStartedAt);auditAction({agentId:agent.id,turnId:observation.turnId,toolCallId:String(call?.id||''),occurredAtMs:actionStartedAt,action});
-            if(action.kind==='browserNavigation'){const block=classifyBotBlockPage({url:action.url,title:''});if(block)void onTurnObservation({kind:'bot-block',agentId:agent.id,turnId:observation.turnId,...block})}
-          }
-        }catch(error){
-          if(isAbort(error,signal)){
-            await updateTool(agent.id,entry,{status:'cancelled',text:'Cancelled.',errorCode:'cancelled'});
-            throw abortError();
-          }
-          resultText='ERROR: '+(error instanceof Error?error.message:String(error));
-          await updateTool(agent.id,entry,{status:'error',text:resultText,errorCode:'tool-error'});
-          auditAction({agentId:agent.id,turnId:observation.turnId,toolCallId:String(call?.id||''),occurredAtMs:actionStartedAt,action:toolAuditAction(name,args,'error',Date.now()-actionStartedAt)});
-        }
-        void onTurnObservation({kind:'tool-completed',agentId:agent.id,turnId:observation.turnId,toolCallId:String(call?.id||''),toolName:name,status:entry.status,at:Date.now()});
-        messages.push({role:'tool',tool_call_id:call.id,content:resultText});
-      }
-      if(visibleMessageCount===0&&callsSinceVisibleMessage>1)messages.push({role:'user',content:'<system_reminder>You have started doing work with tools without acknowledging the user. Send a brief, specific acknowledgement now with the SendMessage tool, then continue.</system_reminder>'});
-      else if(callsSinceVisibleMessage>6)messages.push({role:'user',content:'<system_reminder>You have made several tool calls since the last visible update. Send a concise progress update with SendMessage before continuing.</system_reminder>'});
-    }
-    throw Error('Agent exceeded the tool-call round limit');
   }
 
   async function runTurn(input){
