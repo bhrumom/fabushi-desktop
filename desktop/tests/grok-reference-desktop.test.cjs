@@ -12,7 +12,7 @@ async function fixture(t){
   t.after(()=>fs.rm(root,{recursive:true,force:true}));
   const app={getPath(name){assert.equal(name,'userData');return root}};
   const win={isFullScreen:()=>false,isMaximized:()=>false};
-  return createReferenceDesktop({
+  const desktop=createReferenceDesktop({
     app,
     BrowserWindow:{},
     shell:{},
@@ -21,6 +21,8 @@ async function fixture(t){
     nativeTheme:{themeSource:'system',shouldUseDarkColors:true},
     getWindow:()=>win
   });
+  Object.defineProperty(desktop,'__testRoot',{value:root});
+  return desktop;
 }
 
 test('reference desktop exposes local window and theme state',async t=>{
@@ -76,4 +78,18 @@ test('audio transcription fails closed when no provider is configured',async t=>
   delete process.env.FABUSHI_TRANSCRIBE_URL;
   delete process.env.FABUSHI_AGENT_API_URL;
   await assert.rejects(()=>desktop.call('transcribe-audio',{audio:new Uint8Array([1])}),/not configured/i);
+});
+
+
+test('local-tool approval history is persisted and can be cleared',async t=>{
+  const desktop=await fixture(t);
+  assert.equal(await desktop.call('local-tool-permission-ceiling'),null);
+  await desktop.call('local-tool-approval-record',{approvalId:'approval-1',action:{kind:'shell'},target:{command:'pwd'}});
+  let raw=JSON.parse(await fs.readFile(path.join(desktop.__testRoot,'grok-reference-desktop.json'),'utf8'));
+  assert.equal(raw.localToolApprovals['approval-1'].action.kind,'shell');
+  assert.equal(raw.localToolApprovals['approval-1'].target.command,'pwd');
+  assert.ok(Number.isFinite(raw.localToolApprovals['approval-1'].recordedAt));
+  await desktop.call('local-tool-approval-clear');
+  raw=JSON.parse(await fs.readFile(path.join(desktop.__testRoot,'grok-reference-desktop.json'),'utf8'));
+  assert.deepEqual(raw.localToolApprovals,{});
 });
