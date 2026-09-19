@@ -69,3 +69,44 @@ test('legacy tool loop is only selected by explicit environment override',async(
     else process.env.FABUSHI_AGENT_ENGINE=before;
   }
 });
+
+
+test('production reference Agent can authenticate inference with the signed-in Fabushi account',async()=>{
+  const beforeUrl=process.env.FABUSHI_ACCOUNT_INFERENCE_URL;
+  const beforeKey=process.env.FABUSHI_AGENT_API_KEY;
+  const beforeStream=process.env.FABUSHI_AGENT_STREAM;
+  process.env.FABUSHI_ACCOUNT_INFERENCE_URL='https://inference.example.test/v1/chat/completions';
+  process.env.FABUSHI_AGENT_STREAM='false';
+  delete process.env.FABUSHI_AGENT_API_KEY;
+  try{
+    const calls=[];
+    const host=createHostRuntime({
+      shell:null,
+      getLocalToolPermission:async()=> 'always',
+      getInferenceAccessToken:async()=> 'account-access-token',
+      fetchImpl:async(url,options)=>{
+        calls.push({url:String(url),authorization:options.headers.authorization,body:JSON.parse(options.body)});
+        return new Response(JSON.stringify({choices:[{message:{content:'account-auth-ok'}}],usage:{prompt_tokens:2,completion_tokens:1}}),{status:200,headers:{'content-type':'application/json'}});
+      },
+      requestApproval:async()=>true,
+      onToolState:async()=>{},
+      onAgentStatus:async()=>{},
+      onAssistantDelta:async()=>{}
+    });
+    const agent={id:'host-account-1',name:'Chief'};
+    const user={id:'u1',role:'user',text:'hello',createdAt:1,status:'done'};
+    const result=await host.runTurn({
+      agent,history:[user],transcript:[user],enabled:new Set(),
+      signal:new AbortController().signal,
+      assistantEntry:{id:'a1',role:'assistant',text:'',createdAt:2,status:'streaming'}
+    });
+    assert.equal(result,'account-auth-ok');
+    assert.equal(calls.length,1);
+    assert.equal(calls[0].authorization,'Bearer account-access-token');
+    assert.equal(calls[0].url,process.env.FABUSHI_ACCOUNT_INFERENCE_URL);
+  }finally{
+    if(beforeUrl===undefined)delete process.env.FABUSHI_ACCOUNT_INFERENCE_URL; else process.env.FABUSHI_ACCOUNT_INFERENCE_URL=beforeUrl;
+    if(beforeKey===undefined)delete process.env.FABUSHI_AGENT_API_KEY; else process.env.FABUSHI_AGENT_API_KEY=beforeKey;
+    if(beforeStream===undefined)delete process.env.FABUSHI_AGENT_STREAM; else process.env.FABUSHI_AGENT_STREAM=beforeStream;
+  }
+});
