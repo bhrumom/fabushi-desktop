@@ -166,7 +166,8 @@
       "electron/local-tool-executor.cjs",
       "package.json",
       "electron/grok-reference-sand-runner.cjs",
-      "electron/grok-reference-anysphere-runtime.cjs"
+      "electron/grok-reference-anysphere-runtime.cjs",
+      "electron/grok-reference-xuser-sharing.cjs"
     ],
     "extraResources": [
       {
