@@ -40,3 +40,19 @@
 - Run `35360378372` passed CommonJS syntax, all runtime contract tests, dependency installation and TypeScript/Vite build on the audited code head.
 - Refreshed the generated parity ledger: runner = PASS 10 / PARTIAL 58 / FAIL 0 / PRODUCT_DIFFERENCE 2; Electron bindings = PASS 9 / PARTIAL 7 / FAIL 0. Renderer remains PASS 17 / PARTIAL 196 / FAIL 61 / PRODUCT_DIFFERENCE 1.
 - A8 remains NOT COMPLETE. No final macOS packaging, merge or prerelease was performed.
+
+
+## 2026-09-19 — Round 5 — exact pinned source and reference Agent production cutover
+- Pinned reference remains `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`.
+- Exact renderer parity is now enforced by CI: all 308 `frontend/src` blobs map byte-for-byte to `desktop/src` (0 missing / 0 different).
+- Full reference source is vendored under `reference/grok-bot-0.18/source`: 1,724 / 1,724 source blobs are byte-identical to the pinned reference.
+- The production renderer is the reference `ProductionRenderer`; legacy Fabushi Contacts/Telegram/payment/MiniApp/Mahayana renderer source is not mounted in this Mac parity branch.
+- Reference `SandAgentRunner` is built from the pinned source and owns per-agent run/interrupt/quiesce lifecycle.
+- Reference `AnysphereAgent` is now the production agent orchestration runtime. The prior hand-written bounded tool loop was removed from production; `FABUSHI_AGENT_ENGINE=legacy` no longer re-enables it.
+- Existing local Files/Terminal/Browser/Computer/MCP/Subagent executors are injected through the reference Agent tool boundary, preserving the sole product difference: Computer targets the Mac where Fabushi is installed rather than a provisioned cloud Box.
+- Reference conversation state is persisted per agent; runtime tests cover plain turns, tool-call continuation, Browser/MCP/Subagent routing, private provider delta isolation, reference-engine selection and state persistence.
+- Fabushi OAuth account tokens are wired as the production inference bearer credential when `FABUSHI_ACCOUNT_INFERENCE_URL` is configured; API-key environment configuration remains only a provider/development fallback.
+- The source gate performs exact pinned-directory diffs, runtime contracts, pinned reference source typecheck and renderer production build. The last pre-account-cutover green gate on `97d0bba6fbf65feb59196812a331c6e0126abe1b` passed 66/66 tests; later heads add further reference-runtime/event tests and are being revalidated after a test-fixture syntax repair.
+- Mac prerelease `grok-parity-mac-16` was published from exact SHA `b3b04a23245345b7d3491eb5859b7ccbbffd8562`; subsequent packages are superseded by the continuing Agent cutover. The workflow now cancels superseded branch packages so only the latest exact-head candidate remains.
+- The reference repository's own Host activation audit depends on immutable carrier artifact `src/app/dist/host/host-main.cjs`, which is not stored in the Git repository. That carrier-only audit is recorded as EXTERNAL_DEPENDENCY and is not substituted with fabricated evidence.
+- Final product acceptance remains human/external: packaged UI interactions and model-provider deployment must be validated on the released Mac build.
