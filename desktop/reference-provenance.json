@@ -43,5 +43,8 @@
   "finalCandidateNote": "Final release workflow is fail-closed for branch movement and tag mismatch; source gate and macOS package are expected on the same non-empty desktop commit.",
   "projectCloseoutPolicy": "post-release evidence synchronization is allowed only as a docs-only project-record commit; release code SHA remains the canonical shipped candidate",
   "dependencyLock": "desktop/package-lock.json is synchronized to desktop/package.json for 2.0.0-alpha.3",
-  "dependencyInstallMode": "npm ci in source-check and macOS package gates"
+  "dependencyInstallMode": "npm ci in source-check and macOS package gates",
+  "dependencyLockBlob": "828e857f9b3fc4ec1dae850f34c86c39fce7a495",
+  "finalCandidateVersion": "2.0.0-alpha.3",
+  "finalGateTrigger": "dependency-lock-provenance"
 }
