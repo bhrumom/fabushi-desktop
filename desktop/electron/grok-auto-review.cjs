@@ -3,18 +3,25 @@
 const crypto=require('node:crypto');
 
 const MUTATING_SURFACE_TOOLS=new Set([
-  'open_url',
-  'browser_navigate','browser_click','browser_type','browser_key',
-  'computer_click','computer_mouse_move','computer_drag','computer_scroll','computer_type','computer_key'
+  'browser_navigate','browser_click','browser_mouse_click_xy','browser_type','browser_fill','browser_select_option',
+  'browser_press_key','browser_drag','browser_cdp','browser_tabs','Computer'
 ]);
 
 function autoReviewSurface(name){
   const value=String(name||'');
-  if(value==='open_url'||value.startsWith('browser_'))return'browser';
-  if(value.startsWith('computer_'))return'computer';
+  if(value.startsWith('browser_'))return'browser';
+  if(value==='Computer'||value==='Screenshot')return'computer';
   return null;
 }
-function requiresAutoReview(name){return MUTATING_SURFACE_TOOLS.has(String(name||''))}
+function requiresAutoReview(name,args={}){
+  const value=String(name||'');
+  if(value==='Computer'){
+    const actions=[args,...(Array.isArray(args?.then)?args.then:[])];
+    return actions.some(row=>['click','move','drag','type','key','scroll'].includes(String(row?.action||'')));
+  }
+  if(value==='browser_tabs')return String(args?.action||'list')!=='list';
+  return MUTATING_SURFACE_TOOLS.has(value);
+}
 function bounded(value,max){
   const text=String(value??'');
   return text.length>max?text.slice(0,max):text;
@@ -33,8 +40,7 @@ function canonicalAutoReviewTarget(name,args={}){
     surface,
     action:String(name),
     exactAction:exact,
-    declaredPurpose:bounded(args?.purpose||'',500)||undefined,
-    displayStateIdentity:bounded(args?.stateId||'',256)||undefined
+    declaredPurpose:bounded(args?.description||args?.purpose||'',500)||undefined
   };
 }
 function fingerprintAutoReviewTarget(target){
