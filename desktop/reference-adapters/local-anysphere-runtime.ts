@@ -336,16 +336,25 @@ export interface LocalAnysphereRuntimeOptions {
   readonly getTools: () => readonly LocalToolDefinition[];
   readonly executeTool: LocalToolExecutor;
   readonly onUpdate?: (update: Loose) => void;
+  readonly initialStateBase64?: string;
+  readonly onState?: (stateBase64: string) => void;
 }
 
 export function createLocalAnysphereRuntime(options: LocalAnysphereRuntimeOptions) {
   const modelId = options.modelId || String(process.env.FABUSHI_AGENT_MODEL || "gpt-5.6");
   const blobStore = new InMemoryBlobStore();
   const resourceAccessor = createResourceAccessor();
-  let state = new ConversationStateStructure();
+  let state = (() => {
+    const encoded = String(options.initialStateBase64 ?? "").trim();
+    if (!encoded) return new ConversationStateStructure();
+    try { return ConversationStateStructure.fromBinary(Buffer.from(encoded, "base64")); }
+    catch { return new ConversationStateStructure(); }
+  })();
   let activeTools: Loose[] = [];
   let accumulatedText = "";
   let lastUsage: Loose | undefined;
+  let turnCount = 0;
+  const persistState = () => options.onState?.(Buffer.from(state.toBinary()).toString("base64"));
 
   const getExecutor = (messages?: readonly Loose[]) => new FabushiPromptExecutor(options.transport, messages);
   const toolSession = createTurnToolSession({
@@ -413,14 +422,16 @@ export function createLocalAnysphereRuntime(options: LocalAnysphereRuntimeOption
           privacyMode: PrivacyMode.UNSPECIFIED,
           mcpTools: [],
         });
-        state = await stream.startStream(runCtx, undefined, checkpoint => { state = checkpoint; });
+        state = await stream.startStream(runCtx, undefined, checkpoint => { state = checkpoint; persistState(); });
+        turnCount += 1;
+        persistState();
         return { text: accumulatedText, usage: lastUsage, engine: "grok-anysphere-agent" };
       } finally {
         input.signal?.removeEventListener("abort", onAbort);
       }
     },
     snapshot() {
-      return { engine: "grok-anysphere-agent", stateBytes: state.toBinary().byteLength, toolCount: activeTools.length };
+      return { engine: "grok-anysphere-agent", stateBytes: state.toBinary().byteLength, toolCount: activeTools.length, turnCount };
     },
   };
 }
