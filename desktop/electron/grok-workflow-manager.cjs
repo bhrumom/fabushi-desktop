@@ -5,7 +5,7 @@ const path=require('node:path');
 const crypto=require('node:crypto');
 
 const MAX_NAME=80,MAX_DESCRIPTION=1536,MAX_BODY=100000,INJECT_LIMIT=8000,UI_LIMIT=100,MAX_PER_AGENT=100;
-const WORKFLOW_FILENAME='SKILL.md';
+const WORKFLOW_FILENAME='SKILL.md',PUBLICATIONS_FILENAME='.published-skills.json';
 
 const line=(value,max)=>String(value??'').replace(/[\r\n]+/g,' ').trim().slice(0,max);
 const block=(value,max)=>String(value??'').trim().slice(0,max);
@@ -65,14 +65,16 @@ function serialize(record){
   return lines.join('\n');
 }
 function createWorkflowManager({app}){
-  const root=path.join(app.getPath('userData'),'workflows');
+  const root=path.join(app.getPath('userData'),'workflows'),publicationFile=path.join(root,PUBLICATIONS_FILENAME);
   async function ensureRoot(){await fs.mkdir(root,{recursive:true,mode:0o755})}
+  async function loadPublications(){await ensureRoot();try{const value=JSON.parse(await fs.readFile(publicationFile,'utf8'));return value&&typeof value==='object'&&!Array.isArray(value)?value:{}}catch{return{}}}
+  async function savePublications(value){await ensureRoot();const tmp=publicationFile+'.tmp';await fs.writeFile(tmp,JSON.stringify(value,null,2)+'\n',{mode:0o600});await fs.rename(tmp,publicationFile)}
   async function list(){
-    await ensureRoot();const dirs=await fs.readdir(root,{withFileTypes:true});const rows=[];
+    await ensureRoot();const [dirs,publications]=await Promise.all([fs.readdir(root,{withFileTypes:true}),loadPublications()]);const rows=[];
     for(const dirent of dirs){
       if(!dirent.isDirectory())continue;
       const filePath=path.join(root,dirent.name,WORKFLOW_FILENAME);
-      try{const values=await Promise.all([fs.readFile(filePath,'utf8'),fs.stat(filePath)]);const parsed=parseFile(values[0],dirent.name,filePath,values[1]);if(parsed)rows.push(parsed)}catch{}
+      try{const values=await Promise.all([fs.readFile(filePath,'utf8'),fs.stat(filePath)]);const parsed=parseFile(values[0],dirent.name,filePath,values[1]);if(parsed){const published=publications[parsed.id];rows.push(published?{...parsed,source:'plugin',pluginId:'fabushi-local:'+parsed.id,publishedByCurrentUser:true,publishedTargetId:String(published.teamId||'fabushi-local'),publishedAt:Number(published.publishedAt)||null}:parsed)}}catch{}
     }
     return rows.sort((a,b)=>b.updatedAt-a.updatedAt).slice(0,UI_LIMIT);
   }
@@ -85,7 +87,7 @@ function createWorkflowManager({app}){
     const dir=path.join(root,dirName),filePath=path.join(dir,WORKFLOW_FILENAME);
     const trigger=input?.trigger&&String(input.trigger.schedule||'').trim()
       ?{schedule:String(input.trigger.schedule).trim().replace(/\s+/g,' '),isEnabled:input.trigger.isEnabled!==false}:null;
-    const record={id,name,description,body,trigger,source:'workflow',sourceRef:existing?.sourceRef||null,
+    const record={id,name,description,body,trigger,source:'workflow',sourceRef:input?.sourceRef==null?(existing?.sourceRef||null):line(input.sourceRef,4000)||null,
       isEnabledForAgent:input?.isEnabledForAgent!==false,disableModelInvocation:input?.disableModelInvocation===true,
       createdAt:existing?.createdAt||Date.now(),updatedAt:Date.now(),helperScripts:[],filePath};
     await ensureRoot();await fs.mkdir(dir,{recursive:true,mode:0o755});
@@ -94,12 +96,16 @@ function createWorkflowManager({app}){
   }
   async function deleteWorkflow({id}){
     const record=(await list()).find(x=>x.id===id);if(!record)throw Error('Workflow not found.');
-    await fs.rm(path.dirname(record.filePath),{recursive:true,force:true});return{ok:true};
+    await fs.rm(path.dirname(record.filePath),{recursive:true,force:true});const publications=await loadPublications();if(publications[id]){delete publications[id];await savePublications(publications)}return{ok:true};
   }
   async function setWorkflowEnabled({id,enabled}){
     const record=(await list()).find(x=>x.id===id);if(!record)throw Error('Workflow not found.');
     return saveWorkflow({...record,isEnabledForAgent:enabled===true});
   }
+  async function getPublishTargets(){return{teams:[{teamId:'fabushi-local',name:'Fabushi Local Workspace'}]}}
+  async function publishSkill({id,teamId='fabushi-local'}){if(teamId!=='fabushi-local')throw Error('Unknown skill publish target.');const record=(await list()).find(row=>row.id===String(id||''));if(!record)throw Error('Workflow not found.');const publications=await loadPublications();publications[record.id]={teamId,publishedAt:Date.now(),syncedAt:Date.now()};await savePublications(publications);return(await list()).find(row=>row.id===record.id)}
+  async function resyncPublishedSkill({id}){const record=(await list()).find(row=>row.id===String(id||''));if(!record)throw Error('Workflow not found.');const publications=await loadPublications();if(!publications[record.id])throw Error('Workflow is not published.');publications[record.id]={...publications[record.id],syncedAt:Date.now()};await savePublications(publications);return(await list()).find(row=>row.id===record.id)}
+  async function unpublishSkill({id}){const record=(await list()).find(row=>row.id===String(id||''));if(!record)throw Error('Workflow not found.');const publications=await loadPublications();delete publications[record.id];await savePublications(publications);return(await list()).find(row=>row.id===record.id)}
   async function buildAgentContext(prompt=''){
     const workflows=(await list()).filter(x=>x.isEnabledForAgent&&!x.disableModelInvocation).slice(0,MAX_PER_AGENT);
     if(!workflows.length)return'';
@@ -116,6 +122,6 @@ function createWorkflowManager({app}){
     }
     return catalog.join('\n');
   }
-  return{root,list,saveWorkflow,deleteWorkflow,setWorkflowEnabled,buildAgentContext};
+  return{root,list,saveWorkflow,deleteWorkflow,setWorkflowEnabled,getPublishTargets,publishSkill,resyncPublishedSkill,unpublishSkill,buildAgentContext};
 }
 module.exports={createWorkflowManager,WORKFLOW_FILENAME};
