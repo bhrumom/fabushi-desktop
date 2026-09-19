@@ -55,7 +55,7 @@ test('provider-private deltas never become committed Agent output',async()=>{
     conversationId:'privacy',
     modelId:'test-model',
     systemPrompt:()=> 'Keep private inference private.',
-    getTools:()=>[{type:'function',function:{name:'echo_local',description:'Echo',parameters:{type:'object',properties:{text:{type:'string'}},required:['text']}}],
+    getTools:()=>[{type:'function',function:{name:'echo_local',description:'Echo',parameters:{type:'object',properties:{text:{type:'string'}},required:['text']}}}],
     executeTool:async()=>({text:'ok'}),
     transport:async(_messages,_tools,_signal,onDelta)=>{
       round+=1;
