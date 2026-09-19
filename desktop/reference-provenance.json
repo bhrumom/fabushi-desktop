@@ -1,11 +1,17 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "referenceRepository": "bhrum/grok-bot-0.18-reconstructed",
   "referenceCommit": "107877b4e2134fd167d239411386f09e42eadd6d",
   "rendererSource": "exact-pinned-copy",
+  "rendererParity": "frontend/src is verified byte-for-byte against the pinned reference in CI",
   "referenceSource": "exact-pinned-vendored-copy",
-  "agentLifecycle": "pinned SandAgentRunner + Fabushi local runStep adapter",
+  "referenceSourceParity": "source is verified byte-for-byte against the pinned reference in CI",
+  "agentRuntime": "pinned AnysphereAgent",
+  "agentLifecycle": "reference ConversationStateStructure + reference Agent action/tool-stream/checkpoint/summarization lifecycle",
+  "legacyAgentLoop": false,
+  "hostAdapter": "Fabushi Electron host maps reference Agent tools and inference transport onto the installed Mac",
   "computerTarget": "installed-local-machine",
   "cloudComputer": false,
-  "validation": "manual-product-test-required"
+  "pluginMarketplace": "Fabushi local marketplace/MCP/skill bridge exposed through the Grok renderer contracts",
+  "validation": "exact-source CI + runtime-contract CI + packaged macOS candidate; final product interaction validation is manual"
 }
