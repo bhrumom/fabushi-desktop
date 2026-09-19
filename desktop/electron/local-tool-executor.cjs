@@ -49,6 +49,77 @@ async function computerHelperPath(){
 async function runComputerHelper(args,signal){const helper=await computerHelperPath();return runExec(helper,args.map(String),{signal})}
 function cancellableDelay(ms,signal){return new Promise((resolve,reject)=>{if(signal?.aborted){const error=Error('Tool execution cancelled.');error.name='AbortError';reject(error);return}const timer=setTimeout(done,ms);function done(){signal?.removeEventListener('abort',abort);resolve()}function abort(){clearTimeout(timer);signal?.removeEventListener('abort',abort);const error=Error('Tool execution cancelled.');error.name='AbortError';reject(error)}signal?.addEventListener('abort',abort,{once:true})})}
 
+async function captureMacScreen(signal){
+  if(process.platform!=='darwin')throw Error('Screenshot is currently implemented for macOS only.');
+  const state=await currentComputerState(signal),target=path.join(os.tmpdir(),`fabushi-screen-${crypto.randomUUID()}.png`);
+  try{
+    await runExec('/usr/sbin/screencapture',['-x',target],{signal});
+    const data=await fs.readFile(target);
+    return{state,data};
+  }finally{await fs.unlink(target).catch(()=>{});}
+}
+function finiteInt(value,label){
+  const n=Number(value);if(!Number.isInteger(n))throw Error(label+' must be an integer.');return n;
+}
+function computerSequence(args={}){
+  const first={...args};delete first.then;
+  const follow=Array.isArray(args.then)?args.then.slice(0,9):[];
+  return[first,...follow];
+}
+async function executeComputerAction(args,signal){
+  const action=String(args?.action||'').trim();
+  if(!['screenshot','click','move','drag','type','key','scroll','wait'].includes(action))throw Error('Unknown Computer action: '+action);
+  if(action==='screenshot')return'Screenshot requested.';
+  if(action==='click'){
+    const x=finiteInt(args.x,'x'),y=finiteInt(args.y,'y'),button=['left','right','middle'].includes(args.button)?args.button:'left';
+    const count=Math.max(1,Math.min(3,Number.isInteger(Number(args.count))?Number(args.count):1));
+    await runComputerHelper(['click',x,y,button,count],signal);return`Clicked (${x}, ${y}) with ${button} button x${count}.`;
+  }
+  if(action==='move'){
+    const x=finiteInt(args.x,'x'),y=finiteInt(args.y,'y');await runComputerHelper(['move',x,y],signal);return`Moved pointer to (${x}, ${y}).`;
+  }
+  if(action==='drag'){
+    const points=Array.isArray(args.path)?args.path.filter(row=>Number.isInteger(Number(row?.x))&&Number.isInteger(Number(row?.y))):[];
+    let x1,y1,x2,y2;
+    if(points.length>=2){x1=Number(points[0].x);y1=Number(points[0].y);x2=Number(points.at(-1).x);y2=Number(points.at(-1).y)}
+    else{x1=finiteInt(args.x,'x');y1=finiteInt(args.y,'y');x2=finiteInt(args.x2,'x2');y2=finiteInt(args.y2,'y2')}
+    const duration=Math.max(40,Math.min(30000,Number.isFinite(Number(args.durationMs))?Number(args.durationMs):300)),button=['left','right','middle'].includes(args.button)?args.button:'left';
+    await runComputerHelper(['drag',x1,y1,x2,y2,duration,button],signal);return`Dragged (${x1}, ${y1}) to (${x2}, ${y2}).`;
+  }
+  if(action==='type'){
+    const text=String(args.text??'');if(text.length>20000)throw Error('Computer text is too long.');
+    await runExec('/usr/bin/osascript',['-e','on run argv','-e','tell application "System Events" to keystroke item 1 of argv','-e','end run',text],{signal});
+    return`Typed ${text.length} characters.`;
+  }
+  if(action==='key'){
+    const raw=String(args.key||'').trim();if(!raw||raw.length>256)throw Error('Computer key is invalid.');
+    const lower=raw.toLowerCase(),codes={enter:36,return:36,tab:48,escape:53,esc:53,space:49,delete:51,backspace:51,left:123,arrowleft:123,right:124,arrowright:124,down:125,arrowdown:125,up:126,arrowup:126};
+    if(codes[lower]!=null)await runExec('/usr/bin/osascript',['-e',`tell application "System Events" to key code ${codes[lower]}`],{signal});
+    else if(raw.length===1)await runExec('/usr/bin/osascript',['-e','on run argv','-e','tell application "System Events" to keystroke item 1 of argv','-e','end run',raw],{signal});
+    else{
+      const parts=lower.split('+').map(x=>x.trim()).filter(Boolean),key=parts.pop(),mods=parts.map(x=>({cmd:'command down',command:'command down',shift:'shift down',alt:'option down',option:'option down',ctrl:'control down',control:'control down'}[x])).filter(Boolean);
+      if(!key||key.length!==1||mods.length!==parts.length)throw Error('Unsupported Computer key: '+raw);
+      const using=mods.length?' using {'+mods.join(', ')+'}':'';
+      await runExec('/usr/bin/osascript',['-e',`tell application "System Events" to keystroke "${key.replace(/["\\]/g,'')}"${using}`],{signal});
+    }
+    return`Pressed ${raw}.`;
+  }
+  if(action==='scroll'){
+    const amount=Number.isFinite(Number(args.amount))?Math.trunc(Number(args.amount)):3,direction=String(args.direction||'down').toLowerCase();
+    const pixels=Math.max(1,Math.abs(amount))*120;let dx=0,dy=0;
+    if(direction==='up')dy=pixels;else if(direction==='left')dx=pixels;else if(direction==='right')dx=-pixels;else dy=-pixels;
+    await runComputerHelper(['scroll',dx,dy],signal);return`Scrolled ${direction} by ${Math.abs(amount)}.`;
+  }
+  const duration=Math.max(0,Math.min(30000,Number.isFinite(Number(args.durationMs))?Number(args.durationMs):1000));
+  await cancellableDelay(duration,signal);return`Waited ${duration} ms.`;
+}
+async function executeComputer(args,signal){
+  if(process.platform!=='darwin')throw Error('Computer is currently implemented for macOS only.');
+  const rows=[];for(const action of computerSequence(args)){if(signal?.aborted)throw Object.assign(Error('Tool execution cancelled.'),{name:'AbortError'});rows.push(await executeComputerAction(action,signal))}
+  const shot=await captureMacScreen(signal);
+  return{text:rows.join('\n'),display:{kind:'image',dataUrl:'data:image/png;base64,'+shot.data.toString('base64')},computerState:{...shot.state,bytes:shot.data.length}};
+}
+
 function clamp(text){
   const value=String(text??'');
   return value.length>MAX_TEXT?value.slice(0,MAX_TEXT)+'\n[truncated]':value;
@@ -102,9 +173,13 @@ function runStreamingShell(command,{cwd,signal,onOutput,timeoutMs=120000}={}){
 }
 
 function descriptor(name,args={}){
+  if(name==='Read'||name==='read_file'||name==='list_directory'||name==='get_background_terminal'||name==='Screenshot'||name==='computer_screenshot')return{mutation:false,summary:name==='Screenshot'||name==='computer_screenshot'?'Capture the current Mac screen':`Read ${args.path||args.processId||''}`};
+  if(name==='Computer'){
+    const actions=computerSequence(args),mutating=actions.some(row=>!['screenshot','wait'].includes(String(row?.action||'')));
+    return{mutation:mutating,summary:`Computer ${actions.map(row=>String(row?.action||'')).filter(Boolean).join(' -> ')||'action'} on this Mac`};
+  }
   const table={
-    list_directory:{mutation:false,summary:`List directory ${args.path||''}`},
-    read_file:{mutation:false,summary:`Read file ${args.path||''}`},
+    run_terminal_cmd:{mutation:true,summary:`Run terminal command: ${String(args.command||'').slice(0,160)}`},
     write_file:{mutation:true,summary:`Write file ${args.path||''}`},
     create_directory:{mutation:true,summary:`Create directory ${args.path||''}`},
     move_path:{mutation:true,summary:`Move ${args.from||''} to ${args.to||''}`},
@@ -112,23 +187,7 @@ function descriptor(name,args={}){
     start_background_terminal:{mutation:true,summary:`Start background command: ${String(args.command||'').slice(0,160)}`},
     write_background_terminal:{mutation:true,summary:`Write to background process ${args.processId||''}`},
     stop_background_terminal:{mutation:true,summary:`Stop background process ${args.processId||''}`},
-    get_background_terminal:{mutation:false,summary:`Inspect background process ${args.processId||''}`},
-    open_url:{mutation:true,summary:`Open URL ${args.url||''}`},
-    browser_navigate:{mutation:true,summary:`Navigate local browser to ${args.url||''}`},
-    browser_click:{mutation:true,summary:`Click browser element ${args.ref||''}: ${args.purpose||''}`},
-    browser_type:{mutation:true,summary:`Type into browser element ${args.ref||''}`},
-    browser_key:{mutation:true,summary:`Press ${args.key||''} in local browser`},
-    browser_snapshot:{mutation:false,summary:'Inspect local browser page'},
-    browser_screenshot:{mutation:false,summary:'Capture local browser page'},
-    browser_scroll:{mutation:false,summary:'Scroll local browser page'},
-    computer_screenshot:{mutation:false,summary:'Capture the current Mac screen and state identity'},
-    computer_click:{mutation:true,summary:`Click at (${args.x}, ${args.y}) on this Mac`},
-    computer_mouse_move:{mutation:true,summary:`Move the pointer to (${args.x}, ${args.y}) on this Mac`},
-    computer_drag:{mutation:true,summary:`Drag from (${args.fromX}, ${args.fromY}) to (${args.toX}, ${args.toY}) on this Mac`},
-    computer_scroll:{mutation:true,summary:`Scroll (${args.deltaX||0}, ${args.deltaY||0}) on this Mac`},
-    computer_wait:{mutation:false,summary:`Wait ${args.ms||1000} ms for the Mac UI to settle`},
-    computer_type:{mutation:true,summary:`Type text on this Mac: ${String(args.text||'').slice(0,120)}`},
-    computer_key:{mutation:true,summary:`Press ${args.key||''} on this Mac`}
+    open_url:{mutation:true,summary:`Open URL ${args.url||''}`}
   };
   return table[name]||{mutation:true,summary:`Run tool ${name}`};
 }
@@ -136,43 +195,62 @@ function descriptor(name,args={}){
 function toolDefinitions(enabled){
   const tools=[];
   const fn=(name,description,properties,required=[])=>({type:'function',function:{name,description,parameters:{type:'object',properties,required,additionalProperties:false}}});
-  if(enabled.has('filesystem')){
-    tools.push(fn('list_directory','List files and folders on the installed Mac.',{path:{type:'string'}},['path']));
-    tools.push(fn('read_file','Read a UTF-8 text file on the installed Mac.',{path:{type:'string'}},['path']));
-    tools.push(fn('write_file','Write UTF-8 text to a file on the installed Mac.',{path:{type:'string'},content:{type:'string'}},['path','content']));
-    tools.push(fn('create_directory','Create a directory on the installed Mac.',{path:{type:'string'}},['path']));
-    tools.push(fn('move_path','Move or rename a file or directory on the installed Mac.',{from:{type:'string'},to:{type:'string'}},['from','to']));
-  }
-  if(enabled.has('shell')){
-    tools.push(fn('run_terminal','Run a foreground terminal command on the installed Mac.',{command:{type:'string'},cwd:{type:'string'}},['command']));
-    tools.push(fn('start_background_terminal','Start a background terminal command and return a process id.',{command:{type:'string'},cwd:{type:'string'}},['command']));
-    tools.push(fn('get_background_terminal','Read status and buffered output for a background terminal process.',{processId:{type:'string'}},['processId']));
-    tools.push(fn('write_background_terminal','Write text to a running background terminal process.',{processId:{type:'string'},text:{type:'string'}},['processId','text']));
-    tools.push(fn('stop_background_terminal','Stop a running background terminal process.',{processId:{type:'string'}},['processId']));
-  }
-  if(enabled.has('browser'))tools.push(fn('open_url','Open an HTTPS URL in the default browser on the installed Mac.',{url:{type:'string'}},['url']));
+  if(enabled.has('filesystem'))tools.push(fn('Read','Read a file from the installed Mac. Omit offset and limit to read the whole text file; image files are returned visually.',{
+    path:{type:'string'},offset:{type:'integer'},limit:{type:'integer'},include_line_numbers:{type:'boolean'}
+  },['path']));
+  if(enabled.has('shell'))tools.push(fn('run_terminal_cmd','Execute a shell command on the installed Mac. Long-running work can be started in the background.',{
+    command:{type:'string'},working_directory:{type:'string'},timeout:{type:'number'},description:{type:'string'},is_background:{type:'boolean'},block_until_ms:{type:'number'}
+  },['command']));
   if(enabled.has('computer')){
-    tools.push(fn('computer_screenshot','Capture the current screen of the installed Mac and return a stateId for reviewed follow-up actions.',{}));
-    tools.push(fn('computer_click','Click a screen coordinate on the installed Mac after rechecking the stateId captured by computer_screenshot. Requires macOS Accessibility permission.',{x:{type:'integer'},y:{type:'integer'},stateId:{type:'string'},purpose:{type:'string'}},['x','y','stateId','purpose']));
-    tools.push(fn('computer_mouse_move','Move the pointer on the installed Mac after rechecking the reviewed state.',{x:{type:'integer'},y:{type:'integer'},stateId:{type:'string'},purpose:{type:'string'}},['x','y','stateId','purpose']));
-    tools.push(fn('computer_drag','Drag the pointer between coordinates on the installed Mac after rechecking the reviewed state.',{fromX:{type:'integer'},fromY:{type:'integer'},toX:{type:'integer'},toY:{type:'integer'},durationMs:{type:'integer'},stateId:{type:'string'},purpose:{type:'string'}},['fromX','fromY','toX','toY','stateId','purpose']));
-    tools.push(fn('computer_scroll','Scroll the installed Mac after rechecking the reviewed state.',{deltaX:{type:'integer'},deltaY:{type:'integer'},stateId:{type:'string'},purpose:{type:'string'}},['deltaY','stateId','purpose']));
-    tools.push(fn('computer_wait','Wait briefly for the local Mac UI to settle before taking a fresh screenshot.',{ms:{type:'integer'}},[]));
-    tools.push(fn('computer_type','Type text into the focused application on the installed Mac after rechecking the current state.',{text:{type:'string'},stateId:{type:'string'},purpose:{type:'string'}},['text','stateId']));
-    tools.push(fn('computer_key','Press a supported key in the focused application on the installed Mac after rechecking the current state.',{key:{type:'string'},stateId:{type:'string'},purpose:{type:'string'}},['key','stateId']));
+    tools.push(fn('Screenshot','Capture the current screen of the installed Mac.',{}));
+    const actionProperties={
+      action:{type:'string',enum:['screenshot','click','move','drag','type','key','scroll','wait']},
+      x:{type:'integer'},y:{type:'integer'},x2:{type:'integer'},y2:{type:'integer'},
+      path:{type:'array',items:{type:'object',properties:{x:{type:'integer'},y:{type:'integer'}},required:['x','y'],additionalProperties:false}},
+      text:{type:'string'},key:{type:'string'},button:{type:'string',enum:['left','right','middle']},count:{type:'integer',minimum:1,maximum:3},
+      direction:{type:'string',enum:['up','down','left','right']},amount:{type:'integer'},durationMs:{type:'integer',minimum:0,maximum:30000}
+    };
+    tools.push(fn('Computer','Control the installed Mac using the Grok Computer action protocol. A screenshot is returned after the action sequence.',{
+      ...actionProperties,description:{type:'string'},then:{type:'array',minItems:1,maxItems:9,items:{type:'object',properties:actionProperties,required:['action'],additionalProperties:false}}
+    },['action']));
   }
   return tools;
 }
 
 async function executeTool(name,args,{enabled,shell,signal,onStarted,onOutput,ownerAgentId=null}={}){
   const needed={
-    list_directory:'filesystem',read_file:'filesystem',write_file:'filesystem',create_directory:'filesystem',move_path:'filesystem',
-    run_terminal:'shell',start_background_terminal:'shell',get_background_terminal:'shell',write_background_terminal:'shell',stop_background_terminal:'shell',
-    open_url:'browser',computer_screenshot:'computer',computer_click:'computer',computer_mouse_move:'computer',computer_drag:'computer',computer_scroll:'computer',computer_wait:'computer',computer_type:'computer',computer_key:'computer'
+    Read:'filesystem',list_directory:'filesystem',read_file:'filesystem',write_file:'filesystem',create_directory:'filesystem',move_path:'filesystem',
+    run_terminal_cmd:'shell',run_terminal:'shell',start_background_terminal:'shell',get_background_terminal:'shell',write_background_terminal:'shell',stop_background_terminal:'shell',
+    open_url:'browser',Screenshot:'computer',Computer:'computer',computer_screenshot:'computer',computer_click:'computer',computer_mouse_move:'computer',computer_drag:'computer',computer_scroll:'computer',computer_wait:'computer',computer_type:'computer',computer_key:'computer'
   }[name];
   if(needed&&!enabled.has(needed))throw Error(`${needed} capability is disabled.`);
   if(signal?.aborted)throw Object.assign(Error('Tool execution cancelled.'),{name:'AbortError'});
   onStarted?.();
+
+  if(name==='Read'){
+    const target=resolvePath(args.path),stat=await fs.stat(target);if(!stat.isFile())throw Error('Path is not a file.');
+    const ext=path.extname(target).toLowerCase(),imageMimes={'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif','.webp':'image/webp'};
+    if(imageMimes[ext]){if(stat.size>20_000_000)throw Error('Image is larger than 20 MB.');const data=await fs.readFile(target);return{text:`Read image file: ${target}`,display:{kind:'image',dataUrl:`${imageMimes[ext]};base64,${data.toString('base64')}`.replace(';base64,',';base64,')}}}
+    if(stat.size>2_000_000)throw Error('File is larger than 2 MB; use offset and limit to read a range.');
+    const raw=await fs.readFile(target,'utf8'),lines=raw.split('\n');let start=Number(args.offset);
+    if(Number.isInteger(start)&&start<0)start=Math.max(1,lines.length+start+1);if(!Number.isInteger(start)||start<1)start=1;
+    const limit=Number.isInteger(Number(args.limit))&&Number(args.limit)>0?Number(args.limit):lines.length;
+    const slice=lines.slice(start-1,start-1+limit),text=args.include_line_numbers===true?slice.map((line,index)=>(start+index)+'|'+line).join('\n'):slice.join('\n');
+    return{text:clamp(text)};
+  }
+  if(name==='run_terminal_cmd'){
+    const command=String(args.command||'').trim();if(!command)throw Error('Command is required.');if(command.length>12000)throw Error('Command is too long.');
+    const cwd=args.working_directory?resolvePath(args.working_directory):process.env.HOME;
+    const immediateBackground=args.is_background===true||Number(args.block_until_ms)===0;
+    if(immediateBackground)return executeTool('start_background_terminal',{command,cwd},{enabled,shell,signal,onStarted:()=>{},onOutput,ownerAgentId});
+    const timeoutRaw=Number(args.timeout??args.block_until_ms),timeoutMs=Number.isFinite(timeoutRaw)&&timeoutRaw>0?Math.max(1,Math.min(600000,timeoutRaw)):120000;
+    const result=await runStreamingShell(command,{cwd,signal,onOutput,timeoutMs});
+    return{text:clamp((result.stdout||'')+(result.stderr?'\n[stderr]\n'+result.stderr:''))||'(completed with no output)'};
+  }
+  if(name==='Screenshot'){
+    const shot=await captureMacScreen(signal);return{text:'Screenshot captured from the installed Mac.',display:{kind:'image',dataUrl:'data:image/png;base64,'+shot.data.toString('base64')},computerState:{...shot.state,bytes:shot.data.length}};
+  }
+  if(name==='Computer')return executeComputer(args,signal);
 
   if(name==='list_directory'){
     const target=resolvePath(args.path);const entries=await fs.readdir(target,{withFileTypes:true});
