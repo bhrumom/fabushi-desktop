@@ -377,7 +377,17 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     return{ok:false,reason:'Unsupported state update.'};
   }
   const host=createHostRuntime({
-    shell,getInferenceAccessToken:()=>accountSession.getValidAccessToken(),getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,getAutoReviewInstructions:async()=>{const settings=(await load()).settings;return{allowInstructions:[...(settings.autoReviewAllowInstructions||[])],blockInstructions:[...(settings.autoReviewBlockInstructions||[])]}},resolveAttachments:async ids=>attachmentGateway?attachmentGateway.resolve(ids):[],requestApproval,onToolState,onAgentStatus,onAssistantDelta,sendVisibleMessage:appendVisibleAssistantMessage,reactToConversationMessage:reactFromAgent,updateState:applyAgentStateUpdate,getMemoryContext:agentId=>memoryStore.context(agentId),auditAction:record=>actionAuditor.record(record),onTurnUsage:payload=>{if(payload.usage)actionAuditor.record({agentId:payload.agentId,turnId:payload.turnId,occurredAtMs:payload.endedAt,action:{kind:'turnUsage',...payload.usage}})},onTurnObservation:event=>{if(event.kind==='turn-ended')actionAuditor.record({agentId:event.agentId,turnId:event.turnId,occurredAtMs:event.endedAt,action:{kind:'turnSummary',outcome:event.outcome,durationMs:event.durationMs,toolCallCount:event.toolCallCount,retryCount:event.retryCount,lastTool:event.lastTool||null}})},
+    shell,getInferenceAccessToken:()=>accountSession.getValidAccessToken(),getLocalToolPermission,getAutoReviewMode:async()=>(await load()).settings.autoReviewMode,getAutoReviewInstructions:async()=>{const settings=(await load()).settings;return{allowInstructions:[...(settings.autoReviewAllowInstructions||[])],blockInstructions:[...(settings.autoReviewBlockInstructions||[])]}},resolveAttachments:async ids=>attachmentGateway?attachmentGateway.resolve(ids):[],requestApproval,onToolState,onAgentStatus,onAssistantDelta,sendVisibleMessage:appendVisibleAssistantMessage,reactToConversationMessage:reactFromAgent,updateState:applyAgentStateUpdate,getMemoryContext:agentId=>memoryStore.context(agentId),auditAction:record=>actionAuditor.record(record),onTurnUsage:payload=>{if(payload.usage)actionAuditor.record({agentId:payload.agentId,turnId:payload.turnId,occurredAtMs:payload.endedAt,action:{kind:'turnUsage',...payload.usage}})},onTurnObservation:event=>{
+      if(event.kind==='turn-ended')actionAuditor.record({agentId:event.agentId,turnId:event.turnId,occurredAtMs:event.endedAt,action:{kind:'turnSummary',outcome:event.outcome,durationMs:event.durationMs,toolCallCount:event.toolCallCount,retryCount:event.retryCount,lastTool:event.lastTool||null}});
+      if(event.kind==='tool-started'){
+        const args=event.args&&typeof event.args==='object'?event.args:{};
+        let action=null;
+        if(event.toolName==='computer_click'&&Number.isFinite(Number(args.x))&&Number.isFinite(Number(args.y)))action={agentId:event.agentId,type:'click',x:Number(args.x),y:Number(args.y)};
+        else if(event.toolName==='computer_mouse_move'&&Number.isFinite(Number(args.x))&&Number.isFinite(Number(args.y)))action={agentId:event.agentId,type:'move',x:Number(args.x),y:Number(args.y)};
+        else if(event.toolName==='computer_drag'&&Number.isFinite(Number(args.toX))&&Number.isFinite(Number(args.toY)))action={agentId:event.agentId,type:'drag',x:Number(args.toX),y:Number(args.toY)};
+        if(action)emit('computer-action',{...action,toolCallId:event.toolCallId,at:event.at});
+      }
+    },
     getExternalTools:()=>mcp.collectToolDefinitions(),
     executeExternalTool:(name,args)=>mcp.executeRoutedTool(name,args),
     getWorkflowContext:prompt=>workflowManager.buildAgentContext(prompt),
