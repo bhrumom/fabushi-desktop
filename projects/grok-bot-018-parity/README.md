@@ -29,7 +29,7 @@ Automated source/runtime/package/release scope is complete. Final human installa
 
 Final automated evidence:
 - source gate Run `35417698506`: 103/103 runtime tests PASS plus exact pinned source/typecheck/production build;
-- macOS Run `35417698507`: package, packaged-app smoke, artifact upload, release and exact tag-SHA checks PASS;
+- macOS Run `35417698507`: build/package, artifact upload, release and exact tag-SHA checks PASS; the non-blocking headless renderer probe produced no UI report and recorded `manualValidationRequired:true`, so no automated packaged-UI PASS is claimed;
 - Release `grok-parity-mac-92` resolves exactly to `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`;
 - Actions artifact `10576418103`, digest `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`.
 
