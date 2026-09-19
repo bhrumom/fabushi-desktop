@@ -797,6 +797,201 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     return state;
   }
 
+  async function listRoutedMcpTools(){return (await mcp.collectToolDefinitions()).map(({_mcp,...definition})=>definition)}
+  async function executeRoutedMcpTool({name,args}){const result=await mcp.executeRoutedTool(String(name||''),args&&typeof args==='object'?args:{});if(result==null)throw Error('Routed MCP tool is unavailable.');return result}
+
+  async function getAccountStatus(){return accountSession.status()}
+  async function loginAccount(){return accountSession.login()}
+  async function cancelAccountLogin(){return accountSession.cancelLogin()}
+  async function logoutAccount(){return accountSession.logout()}
+  async function updateAccountName({name}){return accountSession.updateName(name)}
+  async function getAccountAvatar(){return accountSession.getAvatar()}
+
+  async function listMcpServers(){
+    const s=await load();
+    return (s.mcpServers||[]).map(server=>({
+      id:server.id,name:server.name,transport:server.transport||'stdio',command:server.command||'',args:[...(server.args||[])],url:server.url||'',
+      enabled:server.enabled!==false,disabledTools:[...(server.disabledTools||[])],customInstructions:server.customInstructions||'',accountKey:server.accountKey||'default',accountKeys:[...(server.accountKeys||[server.accountKey||'default'])],
+      oauthClientId:server.oauthClientId||'',oauthAuthorizationUrl:server.oauthAuthorizationUrl||'',oauthTokenUrl:server.oauthTokenUrl||'',
+      oauthRegistrationUrl:server.oauthRegistrationUrl||'',oauthScopes:[...(server.oauthScopes||[])]
+    }));
+  }
+  async function addMcpServer(input){
+    const s=await load(),server=normalizeServer(input);
+    if((s.mcpServers||[]).some(x=>x.id===server.id))throw Error('MCP server id already exists.');
+    s.mcpServers.push(server);await save();emit('plugins.changed');return server;
+  }
+  async function updateMcpServer({serverId,...patch}){
+    const s=await load(),index=s.mcpServers.findIndex(x=>x.id===serverId);if(index<0)throw Error('MCP server not found.');
+    const previous=s.mcpServers[index],next=normalizeServer({...previous,...patch,id:previous.id});
+    const oldAccount=previous.accountKey||'default',newAccount=next.accountKey||'default';
+    const authIdentityChanged=previous.transport==='http'&&(next.transport!=='http'||previous.url!==next.url||previous.oauthClientId!==next.oauthClientId||previous.oauthAuthorizationUrl!==next.oauthAuthorizationUrl||previous.oauthTokenUrl!==next.oauthTokenUrl);
+    if(previous.transport==='http'&&next.transport==='http'&&oldAccount!==newAccount&&!authIdentityChanged){
+      await oauth.rename(previous.id,oldAccount,newAccount).catch(()=>{});
+    }else if(previous.transport==='http'&&authIdentityChanged){
+      await oauth.disconnect(previous.id,oldAccount).catch(()=>{});
+    }
+    s.mcpServers[index]=next;mcp.disposeServer(previous.id);await save();emit('plugins.changed',{serverId:previous.id});return next;
+  }
+  async function removeMcpServer({serverId}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId),before=s.mcpServers.length;
+    if(!server)throw Error('MCP server not found.');
+    if(server.transport==='http')await oauth.disconnect(serverId,server.accountKey||'default').catch(()=>{});
+    s.mcpServers=s.mcpServers.filter(x=>x.id!==serverId);
+    if(s.mcpServers.length===before)throw Error('MCP server not found.');
+    mcp.disposeServer(serverId);await save();emit('plugins.changed');return{ok:true};
+  }
+  async function setMcpServerEnabled({serverId,enabled}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    server.enabled=enabled===true;if(!server.enabled)mcp.disposeServer(serverId);await save();emit('plugins.changed');return server;
+  }
+  async function getMcpAccountStatus({serverId,accountKey}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    if(server.transport!=='http')return{serverId,accountKey:'default',connected:false,expiresAt:null,scope:'',supported:false};
+    const key=normalizeAccountKey(accountKey||server.accountKey||'default');
+    return{...(await oauth.status(serverId,key)),supported:true};
+  }
+  async function listMcpAccounts({serverId}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    if(server.transport!=='http')return[];
+    const keys=[...new Set(server.accountKeys||[server.accountKey||'default'])];
+    return await Promise.all(keys.map(async key=>({...await oauth.status(serverId,key),supported:true,active:key===(server.accountKey||'default')})));
+  }
+  async function connectMcpAccount({serverId,accountKey}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    if(server.transport!=='http')throw Error('Only HTTP MCP servers support OAuth accounts.');
+    const key=normalizeAccountKey(accountKey||server.accountKey||'default');
+    const status=await oauth.connect(serverId,key);
+    server.accountKeys=[...new Set([...(server.accountKeys||[]),key])];server.accountKey=key;await save();
+    mcp.disposeServer(serverId);emit('plugins.changed',{serverId});return{...status,supported:true,active:true};
+  }
+  async function disconnectMcpAccount({serverId,accountKey}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    const key=normalizeAccountKey(accountKey||server.accountKey||'default');
+    const status=await oauth.disconnect(serverId,key);mcp.disposeServer(serverId);emit('plugins.changed',{serverId});return{...status,supported:server.transport==='http',active:key===(server.accountKey||'default')};
+  }
+  async function renameMcpAccount({serverId,accountKey,newAccountKey}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    if(server.transport!=='http')throw Error('Only HTTP MCP servers support OAuth accounts.');
+    const from=normalizeAccountKey(accountKey||server.accountKey||'default'),to=normalizeAccountKey(newAccountKey);
+    const status=await oauth.rename(serverId,from,to);
+    server.accountKeys=[...new Set((server.accountKeys||[from]).map(key=>key===from?to:key))];
+    if(server.accountKey===from)server.accountKey=to;await save();mcp.disposeServer(serverId);emit('plugins.changed',{serverId});
+    return{...status,supported:true,active:server.accountKey===to};
+  }
+  async function removeMcpAccount({serverId,accountKey}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    if(server.transport!=='http')throw Error('Only HTTP MCP servers support OAuth accounts.');
+    const key=normalizeAccountKey(accountKey||server.accountKey||'default');
+    await oauth.disconnect(serverId,key);
+    const remaining=(server.accountKeys||[server.accountKey||'default']).filter(value=>value!==key);
+    server.accountKeys=remaining.length?remaining:['default'];
+    if(server.accountKey===key)server.accountKey=server.accountKeys[0];
+    await save();mcp.disposeServer(serverId);emit('plugins.changed',{serverId});return await listMcpAccounts({serverId});
+  }
+  async function setMcpActiveAccount({serverId,accountKey}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    if(server.transport!=='http')throw Error('Only HTTP MCP servers support OAuth accounts.');
+    const key=normalizeAccountKey(accountKey);
+    if(!(server.accountKeys||[]).includes(key))throw Error('MCP account slot not found.');
+    server.accountKey=key;await save();mcp.disposeServer(serverId);emit('plugins.changed',{serverId});
+    return await listMcpAccounts({serverId});
+  }
+  async function listMcpServerTools({serverId}){return await mcp.listServerTools(serverId)}
+  async function setMcpToolEnabled({serverId,toolName,enabled}){
+    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
+    const disabled=new Set(server.disabledTools||[]);if(enabled)disabled.delete(toolName);else disabled.add(toolName);
+    server.disabledTools=[...disabled];await save();emit('plugins.changed');return await mcp.listServerTools(serverId);
+  }
+  async function listPlugins(){
+    const s=await load();
+    const local=capabilityCatalog.map(p=>({...p,installed:true,enabled:s.plugins?.[p.id]?.enabled!==false,removable:false,kind:'local'}));
+    const servers=(s.mcpServers||[]).map(server=>({
+      id:'mcp:'+server.id,name:server.name,description:server.transport==='http'?'Remote MCP: '+server.url:'MCP server: '+server.command,category:'MCP',builtin:false,
+      provider:server.transport==='http'?'http-mcp':'stdio-mcp',installed:true,enabled:server.enabled!==false,removable:true,kind:'mcp',serverId:server.id,accountKey:server.accountKey||'default',transport:server.transport||'stdio'
+    }));
+    return[...local,...servers];
+  }
+  async function setPluginInstalled({pluginId,installed}){
+    if(String(pluginId).startsWith('mcp:')){
+      if(installed!==false)throw Error('MCP servers are installed through Add MCP Server.');
+      return removeMcpServer({serverId:String(pluginId).slice(4)}).then(()=>listPlugins());
+    }
+    if(!catalogIds.has(pluginId))throw Error('Plugin not found');
+    if(installed===false)throw Error('Built-in local capabilities cannot be removed; disable them instead.');
+    return listPlugins();
+  }
+  async function setPluginEnabled({pluginId,enabled}){
+    if(String(pluginId).startsWith('mcp:')){
+      await setMcpServerEnabled({serverId:String(pluginId).slice(4),enabled});return listPlugins();
+    }
+    const s=await load();if(!catalogIds.has(pluginId))throw Error('Plugin not found');
+    s.plugins[pluginId]={installed:true,enabled:enabled===true};await save();emit('plugins.changed');return listPlugins();
+  }
+  async function listMarketplacePlugins(){
+    const [catalog,s]=await Promise.all([marketplace.list(),load()]);
+    return{...catalog,plugins:(catalog.plugins||[]).map(plugin=>({...plugin,installed:Boolean(s.marketplaceInstalls?.[plugin.id]),install:s.marketplaceInstalls?.[plugin.id]||null}))};
+  }
+  async function installMarketplacePlugin({entryId,values={}}){
+    const catalog=await marketplace.list();
+    if(!catalog.available)throw Error(catalog.reason||'Plugin marketplace provider is unavailable.');
+    const plugin=(catalog.plugins||[]).find(row=>row.id===String(entryId||''));if(!plugin)throw Error('Marketplace plugin not found.');
+    const missing=(plugin.fields||[]).filter(field=>field.isRequired&&!String(values?.[field.key]??field.defaultValue??'').trim());
+    if(missing.length)throw Error(plugin.displayName+' requires '+missing.map(field=>field.label).join(', ')+'.');
+    const s=await load();s.marketplaceInstalls??={};
+    if(s.marketplaceInstalls[plugin.id])throw Error('Marketplace plugin is already installed.');
+    const payload=await marketplace.install(plugin.id,values);
+    const preparedServers=payload.servers.map(raw=>normalizeServer({...raw,id:raw.id||crypto.randomUUID()}));
+    const existing=new Set(s.mcpServers.map(server=>server.id));
+    for(const server of preparedServers)if(existing.has(server.id))throw Error('Marketplace returned duplicate MCP server id: '+server.id);
+    const savedSkills=[];
+    try{
+      for(const skill of payload.skills){
+        savedSkills.push(await workflowManager.saveWorkflow({
+          name:skill.name,description:skill.description,body:skill.body,isEnabledForAgent:skill.isEnabledForAgent,disableModelInvocation:skill.disableModelInvocation,trigger:null
+        }));
+      }
+      s.mcpServers.push(...preparedServers);
+      s.marketplaceInstalls[plugin.id]={
+        pluginId:plugin.id,displayName:plugin.displayName,providerUrl:marketplace.providerUrl,
+        serverIds:preparedServers.map(server=>server.id),skillIds:savedSkills.map(skill=>skill.id),installedAt:Date.now()
+      };
+      await save();emit('plugins.changed',{marketplacePluginId:plugin.id});emit('workflows.changed',{marketplacePluginId:plugin.id});
+      return await listMarketplacePlugins();
+    }catch(error){
+      for(const skill of savedSkills)await workflowManager.deleteWorkflow({id:skill.id}).catch(()=>{});
+      throw error;
+    }
+  }
+  async function uninstallMarketplacePlugin({entryId}){
+    const s=await load(),record=s.marketplaceInstalls?.[String(entryId||'')];if(!record)throw Error('Marketplace plugin is not installed.');
+    for(const serverId of record.serverIds||[]){
+      const server=s.mcpServers.find(row=>row.id===serverId);
+      if(server?.transport==='http')await oauth.disconnect(serverId,server.accountKey||'default').catch(()=>{});
+      mcp.disposeServer(serverId);
+    }
+    s.mcpServers=s.mcpServers.filter(server=>!(record.serverIds||[]).includes(server.id));
+    for(const skillId of record.skillIds||[])await workflowManager.deleteWorkflow({id:skillId}).catch(()=>{});
+    delete s.marketplaceInstalls[String(entryId||'')];await save();
+    emit('plugins.changed',{marketplacePluginId:String(entryId||'')});emit('workflows.changed',{marketplacePluginId:String(entryId||'')});
+    return await listMarketplacePlugins();
+  }
+  async function listWorkflows(){return await workflowManager.list()}
+  async function saveWorkflow(input){const record=await workflowManager.saveWorkflow(input);emit('workflows.changed',{workflowId:record.id});return record}
+  async function deleteWorkflow(input){const result=await workflowManager.deleteWorkflow(input);emit('workflows.changed',{workflowId:input.id});return result}
+  async function setWorkflowEnabled(input){const record=await workflowManager.setWorkflowEnabled(input);emit('workflows.changed',{workflowId:record.id});return record}
+  async function getSkillPublishTargets(){return workflowManager.getPublishTargets()}
+  async function publishSkill({workflowId,teamId}){const record=await workflowManager.publishSkill({id:workflowId,teamId});emit('workflows.changed',{workflowId,published:true});return record}
+  async function resyncPublishedSkill({workflowId}){const record=await workflowManager.resyncPublishedSkill({id:workflowId});emit('workflows.changed',{workflowId,resynced:true});return record}
+  async function unpublishSkill({workflowId}){const record=await workflowManager.unpublishSkill({id:workflowId});emit('workflows.changed',{workflowId,published:false});return record}
+  function listenerUrl(platform){const key=platform==='github'?'FABUSHI_GITHUB_LISTENER_CONNECT_URL':platform==='slack'?'FABUSHI_SLACK_LISTENER_CONNECT_URL':null;if(!key)throw Error('Unsupported listener platform.');const raw=String(process.env[key]||'').trim();if(!raw)throw Error(platform+' listener is not configured.');const url=new URL(raw),loopback=['localhost','127.0.0.1','::1','[::1]'].includes(url.hostname);if(url.protocol!=='https:'&&!(url.protocol==='http:'&&loopback))throw Error('Listener connect URL must use HTTPS.');return url.toString()}
+  async function getListenerIntegrations(){return{integrations:['github','slack'].map(platform=>({platform,isConnected:String(process.env['FABUSHI_'+platform.toUpperCase()+'_LISTENER_CONNECTED']||'').trim()==='1'}))}}
+  async function getListenerConnectUrl({platform}){return{url:listenerUrl(String(platform||'').trim().toLowerCase())}}
+
+  async function getExperimentsSnapshot(){await experiments.start();return experiments.getSnapshot()}
+  async function refreshExperiments(){await experiments.start();return await experiments.refreshNow()}
+  async function applyFeatureFlagOverride(input={}){await experiments.start();return await experiments.applyFeatureFlagOverrideCommand(input.command??input)}
+
   async function getAsyncTasks({id}){
     const parentId=String(id||'').trim();if(!parentId)throw Error('Agent id is required.');
     const current=await load();if(!current.agents.some(agent=>agent.id===parentId))throw Error('Agent not found.');
