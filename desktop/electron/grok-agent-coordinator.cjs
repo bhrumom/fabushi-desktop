@@ -45,8 +45,9 @@ function configuredChannelManifests(env=process.env){
     const availability=value.availability==='coming-soon'?'coming-soon':'available';
     const connectGuide=String(value.connectGuide||'Follow your provider instructions to create a credential.').trim().slice(0,4000);
     const steps=Array.isArray(value.setupGuide?.steps)?value.setupGuide.steps.flatMap(step=>!step||typeof step!=='object'||!String(step.text||'').trim()?[]:[{text:String(step.text).trim().slice(0,1000),...(step.code==null?{}:{code:String(step.code).slice(0,2000)})}]):undefined;
-    let verifyUrl=null;if(value.verifyUrl){try{const url=new URL(String(value.verifyUrl)),loopback=['127.0.0.1','localhost','::1','[::1]'].includes(url.hostname);if(url.protocol==='https:'||(url.protocol==='http:'&&loopback))verifyUrl=url.toString()}catch{}}
-    return[{platform,displayName,blurb,credentialLabel,availability,connectGuide,...(steps?{setupGuide:{steps}}:{}),verifyUrl}];
+    const endpoint=value=>{if(!value)return null;try{const url=new URL(String(value)),loopback=['127.0.0.1','localhost','::1','[::1]'].includes(url.hostname);return url.protocol==='https:'||(url.protocol==='http:'&&loopback)?url.toString():null}catch{return null}};
+    const verifyUrl=endpoint(value.verifyUrl),sendUrl=endpoint(value.sendUrl);
+    return[{platform,displayName,blurb,credentialLabel,availability,connectGuide,...(steps?{setupGuide:{steps}}:{}),verifyUrl,sendUrl}];
   });
 }
 
@@ -355,8 +356,9 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     if(url.protocol==='https:')return remoteAttachmentDescriptor(url.toString(),alt,forcedKind);
     throw Error('Attachment URL must use file:// or https://.');
   }
-  async function appendVisibleAssistantMessage({agentId,type='text',content='',url=null,alt='',images=[],widget=null,secret=null,replyToId=null}){
+  async function appendVisibleAssistantMessage({agentId,type='text',content='',url=null,alt='',images=[],widget=null,secret=null,replyToId=null,channel=null}){
     const s=await load(),agent=s.agents.find(row=>row.id===agentId);if(!agent)throw Error('Agent not found');
+    if(channel){if(type!=='text'&&type!=='attachment')throw Error('Only text and attachment messages can target a channel.');return deliverChannelMessage({agentId,channel,type,content,url,alt,images,replyToId})}
     const transcript=s.messages[agentId]||(s.messages[agentId]=[]),replyTarget=replyToId?resolveReplyTarget(transcript,replyToId):null;if(replyToId&&!replyTarget)throw Error('Reply target not found.');
     const now=Date.now(),base={id:crypto.randomUUID(),role:'assistant',createdAt:now,status:'done',...(replyTarget?{replyToId:replyTarget.id}:{})};
     let entry;
@@ -601,7 +603,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     enqueueInternalTurn({agentId,text:'[The user securely provided the requested secret: "'+request.label+'". It was written straight to secure connector credential storage; you never see the value and it is not in this conversation.]\nConfirm to the user that it is set, then continue.',replyToId:entryId});
     return{accepted:true};
   }
-  function publicChannelManifest(manifest){const {verifyUrl,...value}=manifest;return value}
+  function publicChannelManifest(manifest){const {verifyUrl,sendUrl,...value}=manifest;return value}
   async function verifyChannelCredential({agentId,manifest,token}){
     if(!manifest.verifyUrl)return{status:'error',label:manifest.displayName,detail:'This connector has no verification endpoint configured.'};
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
@@ -643,6 +645,33 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     await secretStore.remove('agent-channel:'+agentId+':'+key);
     const state=await load();state.channels[agentId]=(state.channels[agentId]||[]).filter(row=>row.platform!==key);await save();emit('agent.changed',{agentId,channels:true});
     return await getAgentChannels({id:agentId});
+  }
+
+  async function channelAttachment(rawUrl){
+    const url=new URL(String(rawUrl||''));
+    if(url.protocol==='https:')return{url:url.toString()};
+    if(url.protocol!=='file:')throw Error('Channel attachments must use file:// or https://.');
+    const filePath=fileURLToPath(url),bytes=await fs.readFile(filePath);if(bytes.length>20*1024*1024)throw Error('Channel attachment is larger than 20 MB.');
+    const ext=path.extname(filePath).toLowerCase(),mime={'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif','.webp':'image/webp','.pdf':'application/pdf','.txt':'text/plain','.md':'text/markdown'}[ext]||'application/octet-stream';
+    return{name:path.basename(filePath),mime,dataBase64:bytes.toString('base64')};
+  }
+  async function deliverChannelMessage({agentId,channel,type,content,url,alt,images=[],replyToId=null}){
+    const address=String(channel||'').trim(),split=address.indexOf(':');if(split<1||split===address.length-1)throw Error('Channel address must be shaped platform:chat.');
+    const platform=address.slice(0,split).toLowerCase(),chat=address.slice(split+1),manifest=configuredChannelManifests().find(row=>row.platform===platform);
+    if(!manifest||manifest.availability!=='available'||!manifest.sendUrl)throw Error('Channel '+platform+' has no configured send endpoint.');
+    const current=await getAgentChannels({id:agentId}),connection=(current.connections||[]).find(row=>row.platform===platform);
+    if(connection?.status!=='connected')throw Error('Channel '+platform+' is not connected.');
+    const stored=await secretStore.get('agent-channel:'+agentId+':'+platform),token=String(stored?.token||'');if(!token)throw Error('Channel credential is missing.');
+    const payload={agentId,platform,chat,type,...(replyToId?{replyTo:replyToId}:{})};
+    if(type==='text'){payload.content=String(content||'');if(images.length)payload.images=await Promise.all(images.map(async image=>({...await channelAttachment(image.url),...(image.alt?{alt:image.alt}:{})})))}
+    else{payload.attachment={...await channelAttachment(url),...(alt?{alt}:{})}}
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
+    try{
+      const response=await fetch(manifest.sendUrl,{method:'POST',headers:{accept:'application/json','content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify(payload),signal:controller.signal});
+      const raw=await response.text();let body={};try{body=raw?JSON.parse(raw):{}}catch{}
+      if(!response.ok||body?.ok===false)throw Error(String(body?.message||body?.detail||('Channel send HTTP '+response.status)).slice(0,1000));
+      return String(body?.messageId||body?.id||('channel:'+platform+':'+Date.now()));
+    }finally{clearTimeout(timer)}
   }
 
   async function reactToMessage({agentId,entryId,emoji,userOnly=false}){
