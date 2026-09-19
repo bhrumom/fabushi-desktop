@@ -8,11 +8,12 @@ on:
       - ".github/workflows/macos-grok-parity.yml"
 
 concurrency:
-  group: macos-grok-parity-${{ github.sha }}
-  cancel-in-progress: false
+  group: macos-grok-parity-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   macos-package:
@@ -25,6 +26,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "26"
+      - name: Cancel superseded macOS parity runs
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/actions/workflows/macos-grok-parity.yml/runs?branch=${GITHUB_REF_NAME}&per_page=100" \
+            --jq '.workflow_runs[] | select((.status == "queued" or .status == "in_progress") and (.id != ${{ github.run_id }})) | .id' \
+            | while read -r run_id; do
+                [ -n "$run_id" ] || continue
+                echo "Cancelling superseded macOS parity run $run_id"
+                gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/runs/$run_id/cancel" || true
+              done
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Typecheck and build
