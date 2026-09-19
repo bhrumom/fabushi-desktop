@@ -20,7 +20,7 @@ Production path:
 
 ## Verification
 - Exact reference renderer/source diff is enforced in CI.
-- Final push source Run `35419150457` on package SHA `1f27c239aa8931b3266b9b83c84ff234332785d9` passed 105/105 runtime tests, exact pinned source parity, reference source typecheck and production build; PR Run `35419154451` also passed on the same SHA.
+- Final push source Run `35425432746` on package SHA `98ac56f037cb1b0eaa66781087da986334754908` passed 109/109 runtime tests, exact pinned source parity, reference source typecheck and production build; PR Run `35425434873` also passed on the same SHA.
 - Tests cover:
   - production Host defaults to exact AnysphereAgent;
   - plain-text turn lifecycle;
@@ -35,3 +35,10 @@ Production path:
 - Reference Agent lifecycle/orchestration in production: PASS.
 - Installed-Mac tool target: PASS / PRODUCT_DIFFERENCE.
 - Packaged end-user behavior: delegated to GBR-007 manual acceptance.
+
+## Current immutable delivery evidence
+- Human-test product/package SHA: `98ac56f037cb1b0eaa66781087da986334754908`.
+- Push source gate Run `35425432746` and PR source gate Run `35425434873`: SUCCESS, **109/109 PASS, 0 fail**.
+- macOS package/release Run `35425432753`: SUCCESS.
+- Release `grok-parity-mac-126` / `2.0.0-alpha.4`; tag and `release/grok-parity-alpha4-final` resolve exactly to the product SHA.
+- Packaged renderer UI remains manual acceptance under GBR-007; the hosted probe recorded `manualValidationRequired:true`.
