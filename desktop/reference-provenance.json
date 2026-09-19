@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "referenceRepository": "bhrum/grok-bot-0.18-reconstructed",
   "referenceCommit": "107877b4e2134fd167d239411386f09e42eadd6d",
   "rendererSource": "exact-pinned-copy",
@@ -42,5 +42,6 @@
   "teachComputerTarget": "installed-local-machine",
   "finalCandidateNote": "Final release workflow is fail-closed for branch movement and tag mismatch; source gate and macOS package are expected on the same non-empty desktop commit.",
   "projectCloseoutPolicy": "post-release evidence synchronization is allowed only as a docs-only project-record commit; release code SHA remains the canonical shipped candidate",
-  "dependencyLock": "desktop/package-lock.json synchronized to package.json and enforced by npm ci in final gates"
+  "dependencyLock": "desktop/package-lock.json is synchronized to desktop/package.json for 2.0.0-alpha.3",
+  "dependencyInstallMode": "npm ci in source-check and macOS package gates"
 }

@@ -50,7 +50,7 @@ jobs:
           cmp ../_grok/package-lock.json ../reference/grok-bot-0.18/package-lock.json
           cmp ../_grok/manifests/reconstruction/renderer-closure.json ../reference/grok-bot-0.18/manifests/reconstruction/renderer-closure.json
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Audit pinned reference production Host activation
         shell: bash
         working-directory: _grok

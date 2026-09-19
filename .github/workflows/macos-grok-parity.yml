@@ -43,7 +43,7 @@ jobs:
                 gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/runs/$run_id/cancel" || true
               done
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Typecheck and build
         run: npm run build
       - name: Package unsigned macOS test build
