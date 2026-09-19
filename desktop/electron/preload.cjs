@@ -9,6 +9,13 @@ const invoke=(method,args={})=>ipcRenderer.invoke('grok-agent:'+method,args);
 const refCoordinator=(method,args={})=>ipcRenderer.invoke('grok-reference:coordinator',{method,args});
 const refDesktop=(method,args={})=>ipcRenderer.invoke('grok-reference:desktop',{method,args});
 const noopUnsubscribe=()=>{};
+const refListen=(name,listener)=>listen('grok-reference:'+name,listener);
+function reconnectCoordinatorPort(){
+  activePort?.close?.();activePort=null;
+  if(coordinatorClaimed&&coordinatorConsumer&&typeof coordinatorConsumer.onPort==='function'){
+    activePort=makeCoordinatorPort();coordinatorConsumer.onPort(activePort);
+  }
+}
 const listen=(channel,listener)=>{
   if(typeof listener!=='function')return noopUnsubscribe;
   const fn=(_event,value)=>listener(value);ipcRenderer.on(channel,fn);return()=>ipcRenderer.off(channel,fn);
@@ -149,19 +156,19 @@ const desktop=Object.freeze({
   resolveAttachmentMedia:path=>refDesktop('resolve-media',{path}),readAttachmentText:path=>refDesktop('read-text',{path}),readAttachmentBytes:(path,maxBytes)=>refDesktop('read-bytes',{path,maxBytes}),
   downloadAttachment:(path,suggestedName)=>refDesktop('download',{path,suggestedName}),getLinkMetadata:url=>refDesktop('link-metadata',{url}),openExternal:url=>invoke('open-external',{url}),
   openCloudAgent:async()=>{},stageAttachmentBytes:(filename,bytes)=>refDesktop('stage-attachment',{filename,bytes}),commitStagedAttachments:(paths,filenames)=>refDesktop('commit-staged',{paths,filenames}),
-  discardStagedAttachment:path=>refDesktop('discard-staged',{path}),mcp,forceGatewayReconnect:async()=>{},pickAvatarSource:async()=>null,
+  discardStagedAttachment:path=>refDesktop('discard-staged',{path}),mcp,forceGatewayReconnect:async()=>reconnectCoordinatorPort(),pickAvatarSource:async()=>{const value=await ipcRenderer.invoke('grok-agent:pick-avatar-file');return value?.dataUrl||null;},
   async pickAvatarFile(){const value=await ipcRenderer.invoke('grok-agent:pick-avatar-file');return value?.dataUrl?{dataUrl:value.dataUrl,fileName:value.fileName}:null},
   generateAgentAvatarImage:description=>invoke('generate-agent-avatar-image',{description}),
-  onFocusAgent:()=>noopUnsubscribe,onDeepLink:listener=>listen('grok-agent:deep-link',listener),deepLinksReady:async()=>{},getBoxMigrationStatus:async()=>({status:'ready',computerTarget:'local-mac'}),
-  onBoxMigration:()=>noopUnsubscribe,onDevBoxRebuild:()=>noopUnsubscribe,onOpenFeedback:()=>noopUnsubscribe,onOpenAbout:()=>noopUnsubscribe,submitFeedback:payload=>invoke('submit-feedback',payload),
-  onWidgetGallery:()=>noopUnsubscribe,onForceOnboarding:()=>noopUnsubscribe,transcribeAudio:async()=>({text:''}),cursorAccount:account,experiments,platform:process.platform,isDev:!process.env.NODE_ENV||process.env.NODE_ENV!=='production',
-  getWindowState:()=>refDesktop('get-window-state'),onWindowStateEvent:()=>noopUnsubscribe,getZoomFactor:()=>webFrame.getZoomFactor(),onZoomFactorEvent:()=>noopUnsubscribe,
+  onFocusAgent:listener=>refListen('focus-agent',listener),onDeepLink:listener=>listen('grok-agent:deep-link',listener),deepLinksReady:async()=>{},getBoxMigrationStatus:async()=>({status:'ready',computerTarget:'local-mac'}),
+  onBoxMigration:()=>noopUnsubscribe,onDevBoxRebuild:()=>noopUnsubscribe,onOpenFeedback:listener=>refListen('open-feedback',()=>listener()),onOpenAbout:listener=>refListen('open-about',()=>listener()),submitFeedback:payload=>invoke('submit-feedback',payload),
+  onWidgetGallery:()=>noopUnsubscribe,onForceOnboarding:listener=>refListen('force-onboarding',()=>listener()),transcribeAudio:(audio,mimeType,language)=>refDesktop('transcribe-audio',{audio,mimeType,language}),cursorAccount:account,experiments,platform:process.platform,isDev:!process.env.NODE_ENV||process.env.NODE_ENV!=='production',
+  getWindowState:()=>refDesktop('get-window-state'),onWindowStateEvent:listener=>refListen('window-state',listener),getZoomFactor:()=>webFrame.getZoomFactor(),onZoomFactorEvent:listener=>refListen('zoom-factor-changed',payload=>listener(Number(payload?.factor??payload))),
   windowControls:{minimize:()=>refDesktop('window-control',{action:'minimize'}),toggleMaximize:()=>refDesktop('window-control',{action:'toggle-maximize'}),close:()=>refDesktop('window-control',{action:'close'}),setTitleBarOverlayTone:isOverlayTone=>refDesktop('window-control',{action:'overlay-tone',isOverlayTone}),resizeWidth:deltaWidth=>refDesktop('window-control',{action:'resize-width',deltaWidth})},
   foreverBox:{forceRecreate:async()=>({state:'running',computerTarget:'local-mac'}),update:async id=>({id,state:'running',computerTarget:'local-mac',vncUrl:null}),onVncUserPresence:()=>noopUnsubscribe,onDevBoxPullProgress:()=>noopUnsubscribe,egressTunnel:{initial:false,initialStatus:{enabled:false},get:async()=>false,set:async()=>false,onChanged:()=>noopUnsubscribe,getStatus:async()=>({enabled:false}),onStatusChanged:()=>noopUnsubscribe},webauthnProxy:{initial:false,get:async()=>false,set:async()=>false,onChanged:()=>noopUnsubscribe}},
-  onboarding:{getSeen:()=>invoke('get-onboarding-seen'),setSeen:seen=>invoke('set-onboarding-seen',{seen}),onSkip:()=>noopUnsubscribe},telemetry,timeZone:{get:()=>refDesktop('time-zone-get'),setOverride:timeZone=>refDesktop('time-zone-set',{timeZone})},
+  onboarding:{getSeen:()=>invoke('get-onboarding-seen'),setSeen:seen=>invoke('set-onboarding-seen',{seen}),onSkip:listener=>refListen('skip-onboarding',()=>listener())},telemetry,timeZone:{get:()=>refDesktop('time-zone-get'),setOverride:timeZone=>refDesktop('time-zone-set',{timeZone})},
   autoReviewInstructions:{async get(){const s=await invoke('get-runtime-settings');return{isEnabled:s.autoReviewMode!=='off',allowInstructions:s.autoReviewAllowInstructions||[],blockInstructions:s.autoReviewBlockInstructions||[]}},async set(v){await invoke('set-auto-review-instructions',{allowInstructions:v.allowInstructions||[],blockInstructions:v.blockInstructions||[]});await invoke('set-auto-review-mode',{mode:v.isEnabled===false?'off':'enforce'});return v}},
   localToolPermission:{async get(){return(await invoke('get-runtime-settings')).localToolPermission},async set(permission){return(await invoke('set-local-tool-permission',{permission})).localToolPermission},ceiling:async()=>null,recordApproval:async()=>{},clearApprovals:async()=>{}},
-  theme:{initial:{preference:'system',resolved:'dark'},get:()=>refDesktop('theme-get'),set:preference=>refDesktop('theme-set',{preference}),onChanged:()=>noopUnsubscribe},
+  theme:{initial:{preference:'system',resolved:'dark'},get:()=>refDesktop('theme-get'),set:preference=>refDesktop('theme-set',{preference}),onChanged:listener=>refListen('theme-changed',listener)},
   secrets:{list:()=>refDesktop('secrets-list'),reveal:key=>refDesktop('secrets-reveal',{key}),upsert:entries=>refDesktop('secrets-upsert',{entries}),remove:keys=>refDesktop('secrets-remove',{keys})},
   agent:agentBridge,
   update:{getStatus:()=>invoke('get-update-status'),check:()=>invoke('check-update'),setTrack:track=>invoke('set-update-track',{track}),quitAndInstall:()=>invoke('quit-and-install'),setAutoUpdateWhenIdleOptIn:enabled=>invoke('set-auto-update',{enabled}),onStatusEvent:listener=>listen('grok-agent:update-status',listener)},
