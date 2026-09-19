@@ -133,7 +133,7 @@ test('parent Agent tool call creates and completes a real delegated subagent',as
       if(hasSubagentResult){
         res.end(JSON.stringify({choices:[{message:{role:'assistant',content:'parent received delegated result'}}]}));return;
       }
-      res.end(JSON.stringify({choices:[{message:{role:'assistant',content:null,tool_calls:[{id:'call-subagent',type:'function',function:{name:'create_subagent',arguments:JSON.stringify({name:'Research',prompt:'Do delegated work.',background:false})}}]}}]}));
+      res.end(JSON.stringify({choices:[{message:{role:'assistant',content:null,tool_calls:[{id:'call-subagent',type:'function',function:{name:'Task',arguments:JSON.stringify({description:'Research',prompt:'Do delegated work.',subagent_type:'generalPurpose',run_in_background:false})}}]}}]}));
     });
   });
   await new Promise(resolve=>inference.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>inference.close(resolve)));
@@ -155,7 +155,7 @@ test('parent Agent tool call creates and completes a real delegated subagent',as
   const childThread=await runtime.getThread({agentId:child.id});
   assert.equal(childThread.messages.some(message=>message.role==='assistant'&&message.text==='child complete'),true);
   const parentThread=await runtime.getThread({agentId:parent.id});
-  assert.equal(parentThread.messages.some(message=>message.role==='tool'&&message.toolName==='create_subagent'&&message.status==='done'),true);
+  assert.equal(parentThread.messages.some(message=>message.role==='tool'&&message.toolName==='Task'&&message.status==='done'),true);
 });
 
 
