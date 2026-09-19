@@ -46,6 +46,12 @@ jobs:
           cmp ../_grok/package-lock.json ../reference/grok-bot-0.18/package-lock.json
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Audit pinned reference production Host activation
+        shell: bash
+        working-directory: _grok
+        run: |
+          set -euo pipefail
+          node scripts/host-production-activation.mjs | tee "$RUNNER_TEMP/grok-host-production-activation.txt"
       - name: Build pinned reference Agent runner
         run: npm run build:reference-agent
       - name: Check Electron CommonJS syntax
