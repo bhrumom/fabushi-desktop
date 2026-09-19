@@ -7,10 +7,10 @@
 | A3 | Each agent targets the installed Mac, with no cloud-computer provisioning requirement | local executor/browser/computer contracts + packaged human tool run | runtime PASS / human pending |
 | A4 | Plugins/Marketplace visible paths have executable backends without mandatory external setup | default local Marketplace install/uninstall + remote Marketplace + MCP OAuth/accounts/tool toggles + SKILL.md/workflow publication/listener contracts | runtime PASS / human UI pending |
 | A5 | macOS package builds in GitHub Actions | successful package run + DMG/ZIP artifacts | PASS — Run 35417698507; artifact 10576418103; DMG/ZIP uploaded |
-| A6 | macOS prerelease tag is bound to the exact build SHA | GitHub Release + tag ref | PASS — grok-parity-mac-92 resolves exactly to ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd |
-| A7 | Human UX/function testing completed | external tester evidence | EXTERNAL / pending by original request |
+| A6 | macOS prerelease tag is bound to the exact build SHA | Release/tag/API evidence | PASS — grok-parity-mac-92 → ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd |
+| A7 | Human UX/function testing completed | external tester evidence | external / pending by original request |
 | A8 | Every recoverable reference UI/backend source is accounted for without fabricated parity | exact pinned directory diffs + official renderer closure + adapter/runtime contracts | SOURCE+RUNTIME PASS for automated scope; immutable carrier-only Host audit = EXTERNAL_DEPENDENCY; packaged human acceptance pending |
-| A9 | Final frozen code SHA passes runtime contracts + pinned source typecheck + renderer production build | GitHub Actions | PASS — Run 35417698506 on ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd; 103/103 PASS, pinned source typecheck + Vite build PASS |
+| A9 | Current product SHA passes runtime contracts + pinned source typecheck + renderer production build | GitHub Actions Run 35417698506 | PASS — 103/103 runtime tests, 0 fail |
 
 ## Verified automated evidence for final frozen candidate
 - Pinned reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`.
