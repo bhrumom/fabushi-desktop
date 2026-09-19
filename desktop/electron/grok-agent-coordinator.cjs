@@ -21,6 +21,7 @@ const {normalizedReactions,toggleSelfReaction,resolveReplyTarget,searchWorkspace
 const {createMemoryStore}=require('./grok-memory-store.cjs');
 const {createActionAuditor}=require('./grok-action-audit.cjs');
 const {createExperimentsRuntime}=require('./grok-experiments.cjs');
+const {createLocalXuserSharingRuntime}=require('./grok-reference-xuser-sharing.cjs');
 
 const capabilityCatalog=[
   {id:'filesystem',name:'Files',description:'Read and modify files on this Mac.',category:'Computer',builtin:true,provider:'local-exec'},
@@ -62,7 +63,7 @@ function initialState(){
     marketplaceInstalls:{},
     automations:{[id]:[]},
     channels:{[id]:[]},
-    sharing:{isEnabled:true,selfAuthId:'local-user',pendingJoinRequests:[],rooms:[],typingUsers:[]}
+    sharing:{isEnabled:false,selfAuthId:null,pendingJoinRequests:[],rooms:[],typingUsers:[]}
   };
 }
 function normalizeState(parsed){
@@ -88,13 +89,7 @@ function normalizeState(parsed){
   base.pendingApprovals={};
   base.mcpServers=Array.isArray(parsed.mcpServers)?parsed.mcpServers.flatMap(server=>{try{return[normalizeServer(server)]}catch{return[]}}):[];
   base.marketplaceInstalls=parsed.marketplaceInstalls&&typeof parsed.marketplaceInstalls==='object'&&!Array.isArray(parsed.marketplaceInstalls)?parsed.marketplaceInstalls:{};
-  const sharing=parsed.sharing&&typeof parsed.sharing==='object'&&!Array.isArray(parsed.sharing)?parsed.sharing:{};
-  base.sharing={
-    isEnabled:sharing.isEnabled!==false,
-    selfAuthId:String(sharing.selfAuthId||'local-user'),
-    pendingJoinRequests:Array.isArray(sharing.pendingJoinRequests)?sharing.pendingJoinRequests.filter(x=>x&&typeof x==='object'&&String(x.requestId||'')&&String(x.roomId||'')).map(x=>({...x,requestId:String(x.requestId),roomId:String(x.roomId),requesterAuthId:String(x.requesterAuthId||''),requesterName:String(x.requesterName||'Guest')})):[],
-    rooms:Array.isArray(sharing.rooms)?sharing.rooms.filter(x=>x&&typeof x==='object'&&String(x.roomId||'')).map(x=>({...x,roomId:String(x.roomId),name:String(x.name||'Shared room'),hostAuthId:String(x.hostAuthId||sharing.selfAuthId||'local-user'),members:Array.isArray(x.members)?x.members.filter(Boolean).map(m=>({...m,kind:m.kind==='human'?'human':'agent',authId:String(m.authId||sharing.selfAuthId||'local-user'),displayName:String(m.displayName||''),...(m.agentId?{agentId:String(m.agentId)}:{})})):[]})):[],
-    typingUsers:Array.isArray(sharing.typingUsers)?sharing.typingUsers.filter(x=>x&&typeof x==='object'&&String(x.roomId||'')).map(x=>({...x,roomId:String(x.roomId),authId:String(x.authId||sharing.selfAuthId||'local-user'),name:String(x.name||'You'),expiresAtMs:Number(x.expiresAtMs)||Date.now()+5000})):[]};
+  base.sharing={isEnabled:false,selfAuthId:null,pendingJoinRequests:[],rooms:[],typingUsers:[]};
   base.channels={};
   base.automations={};
   for(const agent of base.agents){
@@ -130,6 +125,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   let automationTickRunning=false,disposed=false;
   const activeTurns=new Set();
   const runners=new Map();
+  let sharingRuntime=null;
 
   async function load(){
     if(state)return state;
@@ -236,6 +232,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     agent.hidden=hidden===true;agent.updatedAt=Date.now();await save();emit('agents.changed',{agentId,hidden:agent.hidden});return agent;
   }
   async function deleteAgent({agentId}){
+    await sharingRuntime?.noteAgentDeleted(String(agentId||'')).catch(()=>{});
     const s=await load();aborts.get(agentId)?.abort();cancelApprovals(agentId,'Agent deleted.');
     s.agents=s.agents.filter(a=>a.id!==agentId);for(const row of s.agents)if(row.isGroup)row.memberIds=(row.memberIds||[]).filter(id=>id!==agentId);delete s.messages[agentId];delete s.automations[agentId];delete s.channels[agentId];localBrowser.disposeAgent(agentId);await runners.get(agentId)?.dispose?.();runners.delete(agentId);await save();emit('agents.changed');return{ok:true};
   }
@@ -294,6 +291,20 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
 
   const secretStore=createSecretStore({app,safeStorage});
   const accountSession=createAccountSession({secretStore,openExternal:url=>shell.openExternal(url),onChanged:status=>emit('account.changed',{status})});
+  sharingRuntime=createLocalXuserSharingRuntime({
+    backendUrl:process.env.FABUSHI_SHARING_BACKEND_URL||null,
+    getAccessToken:({backendUrl})=>accountSession.getValidAccessToken({backendUrl}),
+    getSelfAuthId:async()=>{const status=await accountSession.status();return status.kind==='logged-in'?status.authId:null},
+    manager:{
+      getSharedRoomIdForAgent,listRoomAgentIds,markMirrorRoomRevoked,getAgentDisplayProfile:getSharingAgentDisplayProfile,getAgentAvatar:getSharingAgentAvatar,
+      restampRoomEntry,appendSharedRoomActivityNotice,runRemoteRequestedMemberTurn,appendMirrorRoomEntry,postSharedRoomGuestMessage,ensureMirrorRoom,ensureHostedSharedRoom,findRoomAgentId,isAgentCapReached
+    },
+    emitSharing:state=>emit('sharing',state),
+    resolveAttachment:async rawUrl=>{
+      try{const url=new URL(String(rawUrl||''));if(url.protocol!=='file:')return null;const filePath=fileURLToPath(url),data=await fs.readFile(filePath),ext=path.extname(filePath).toLowerCase(),mime=ext==='.png'?'image/png':ext==='.jpg'||ext==='.jpeg'?'image/jpeg':ext==='.webp'?'image/webp':ext==='.gif'?'image/gif':null;return mime?{data:new Uint8Array(data),mimeType:mime}:null}catch{return null}
+    }
+  });
+  void sharingRuntime.start().catch(()=>{});
   const experiments=createExperimentsRuntime({
     app,
     getAccessToken:()=>accountSession.getValidAccessToken(),
@@ -527,7 +538,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function searchMessages({query='',limit=50}={}){const s=await load();return searchWorkspaceIndex({agents:s.agents,messages:s.messages,query,limit}).messages}
   async function searchMedia({query='',limit=50}={}){const s=await load();return searchWorkspaceIndex({agents:s.agents,messages:s.messages,query,limit}).media}
   async function searchLinks({query='',limit=50}={}){const s=await load();return searchWorkspaceIndex({agents:s.agents,messages:s.messages,query,limit}).links}
-  async function sendMessage({agentId,text,attachmentIds=[],replyToId=null,internal=false}){
+  async function sendMessage({agentId,text,attachmentIds=[],replyToId=null,internal=false,publishSharedReply=false}){
     if(disposed)throw Error('Agent runtime is shutting down.');
     const s=await load(),agent=s.agents.find(x=>x.id===agentId);if(!agent)throw Error('Agent not found');
     const body=String(text||'').trim();
@@ -542,6 +553,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     const now=Date.now(),turnStartIndex=transcript.length,user={id:crypto.randomUUID(),role:'user',text:body,createdAt:now,status:'done',attachments:attachments.map(row=>({id:row.id,name:row.name,mime:row.mime,size:row.size,kind:row.kind,createdAt:row.createdAt})),...(replyTarget?{replyToId:replyTarget.id}:{}),...(internal?{internal:true}:{})};
     const assistant={id:crypto.randomUUID(),role:'assistant',text:'',createdAt:now+1,status:'streaming'};
     transcript.push(user);agent.status='thinking';agent.updatedAt=now;await save();
+    if(!internal&&agent.sharedRoomId)void sharingRuntime?.publishRoomEntry(agent.sharedRoomId,{kind:'message',id:user.id,role:'user',content:user.text,clientNonce:user.clientNonce,timestampMs:user.createdAt}).catch(()=>{});
     if(!internal)emit('message.changed',{agentId,messageId:user.id,status:'done'});emit('agent.changed',{agentId,status:'thinking'});
     const controller=new AbortController();aborts.set(agentId,controller);
 
@@ -563,6 +575,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
         await onAgentStatus(agentId,cancelled?'idle':'error');
       }finally{
         agent.updatedAt=Date.now();await save();if(transcript.includes(assistant)&&assistant.internal!==true)emit('message.done',{agentId,messageId:assistant.id,text:assistant.text,status:assistant.status});
+        if(agent.sharedRoomId&&assistant.status==='done'&&assistant.text&&(!internal||publishSharedReply))void sharingRuntime?.publishRoomEntry(agent.sharedRoomId,{kind:'send-message',id:assistant.id,message:{type:'text',content:assistant.text},author:{id:agent.id,name:agent.name},streaming:false,timestampMs:assistant.updatedAt||Date.now()}).catch(()=>{});
         if(agent.notifyOnUpdatesEnabled)void Promise.resolve(notify({title:agent.name,body:assistant.status==='done'?'Finished':assistant.text.slice(0,180)})).catch(()=>{});
         aborts.delete(agentId);cancelApprovals(agentId,'Turn finished.');
       }
@@ -674,287 +687,115 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
   void armAutomationTimer();
 
-  function cloneSharingState(s){
-    return{
-      isEnabled:s.sharing.isEnabled!==false,
-      selfAuthId:String(s.sharing.selfAuthId||'local-user'),
-      pendingJoinRequests:(s.sharing.pendingJoinRequests||[]).map(x=>({...x})),
-      rooms:(s.sharing.rooms||[]).map(room=>({...room,members:(room.members||[]).map(member=>({...member}))})),
-      typingUsers:(s.sharing.typingUsers||[]).filter(row=>Number(row.expiresAtMs)>Date.now()).map(x=>({...x}))
+  const disabledSharingState=()=>({isEnabled:false,selfAuthId:null,pendingJoinRequests:[],rooms:[],typingUsers:[]});
+  async function sharingRoomAgent(roomId){
+    const current=await load();
+    return current.agents.find(row=>row.sharedRoomId===String(roomId||''))||null;
+  }
+  async function getSharedRoomIdForAgent(agentId){
+    const agent=await findAgent(agentId);
+    return agent?.sharedRoomId||agent?.remoteRoom?.roomId||null;
+  }
+  async function listRoomAgentIds(roomId){
+    const current=await load(),roomAgent=current.agents.find(row=>row.sharedRoomId===String(roomId||''));
+    if(roomAgent?.isGroup)return[...(roomAgent.memberIds||[])];
+    return current.agents.filter(row=>row.id!==roomAgent?.id&&row.sharedRoomId===String(roomId||'')&&!row.isGroup).map(row=>row.id);
+  }
+  async function markMirrorRoomRevoked(roomId){
+    const current=await load(),agent=current.agents.find(row=>row.sharedRoomId===String(roomId||''));if(!agent)return;
+    agent.remoteRoom={...(agent.remoteRoom||{}),roomId:String(roomId),isRevoked:true};agent.updatedAt=Date.now();
+    await save();emit('agents.changed',{agentId:agent.id,sharedRoom:true});
+  }
+  async function getSharingAgentDisplayProfile(agentId){
+    const agent=await findAgent(agentId);return agent?{name:agent.name,description:agent.description||''}:null;
+  }
+  async function getSharingAgentAvatar(agentId){
+    const agent=await findAgent(agentId);return agent?.avatarDataUrl?{dataUrl:agent.avatarDataUrl}:null;
+  }
+  async function restampRoomEntry({roomId,entryId,timestampMs}){
+    const current=await load(),agent=current.agents.find(row=>row.sharedRoomId===String(roomId||''));if(!agent)return;
+    const transcript=current.messages[agent.id]||[],entry=transcript.find(row=>row.id===entryId||row.id==='remote:'+entryId);if(!entry)return;
+    entry.createdAt=Number(timestampMs)||entry.createdAt;entry.updatedAt=Number(timestampMs)||entry.updatedAt;await save();emit('message.changed',{agentId:agent.id,messageId:entry.id});
+  }
+  async function appendSharedRoomActivityNotice({roomId,text}){
+    const current=await load(),agent=current.agents.find(row=>row.sharedRoomId===String(roomId||''));if(!agent)return;
+    const entry={id:'notice-'+crypto.randomUUID(),role:'assistant',text:String(text||''),createdAt:Date.now(),updatedAt:Date.now(),status:'done',sharedRoomNotice:true};
+    (current.messages[agent.id]||(current.messages[agent.id]=[])).push(entry);await save();emit('message.done',{agentId:agent.id,messageId:entry.id,text:entry.text,status:'done'});
+  }
+  async function runRemoteRequestedMemberTurn({agentId,systemPrompt,prompt}){
+    const result=await sendMessage({agentId,text:String(systemPrompt||'')+'\n\n'+String(prompt||''),internal:true,publishSharedReply:true});
+    const message=await waitForMessage(agentId,result.messageId);
+    const current=await load(),stored=(current.messages[agentId]||[]).find(row=>row.id===result.messageId);if(stored){stored.internal=true;await save()}
+    return message?.text?[String(message.text)]:[];
+  }
+  async function appendMirrorRoomEntry(args){
+    const current=await load(),agent=current.agents.find(row=>row.sharedRoomId===String(args?.roomId||''));if(!agent)return false;
+    const wire=args?.entry&&typeof args.entry==='object'?args.entry:{},id='remote:'+String(wire.entryId||crypto.randomUUID()),transcript=current.messages[agent.id]||(current.messages[agent.id]=[]);
+    if(transcript.some(row=>row.id===id||(wire.clientNonce&&row.clientNonce===wire.clientNonce)))return true;
+    const human=wire.kind==='human-message',entry={
+      id,role:human?'user':'assistant',text:String(wire.text||''),createdAt:Number(wire.timestampMs)||Date.now(),updatedAt:Number(wire.timestampMs)||Date.now(),status:'done',
+      ...(wire.clientNonce?{clientNonce:String(wire.clientNonce)}:{}),
+      ...(human?{fromUser:{name:String(wire.authorName||'Guest'),authId:String(wire.authorAuthId||''),...(wire.authorAvatarUrl?{avatarUrl:String(wire.authorAvatarUrl)}:{})}}:{fromAgent:{name:String(wire.authorName||'Agent'),ownerAuthId:String(wire.agentOwnerAuthId||''),agentId:String(wire.agentId||'')}})
     };
+    transcript.push(entry);agent.updatedAt=Date.now();await save();emit('message.done',{agentId:agent.id,messageId:entry.id,text:entry.text,status:'done'});return true;
   }
-  async function emitSharing(){
-    const s=await load();s.sharing.typingUsers=(s.sharing.typingUsers||[]).filter(row=>Number(row.expiresAtMs)>Date.now());await save();const snapshot=cloneSharingState(s);emit('sharing',snapshot);return snapshot;
+  async function postSharedRoomGuestMessage(args){
+    const current=await load(),agent=current.agents.find(row=>row.sharedRoomId===String(args?.roomId||''));if(!agent)return;
+    const transcript=current.messages[agent.id]||(current.messages[agent.id]=[]),entry={
+      id:'remote-user:'+String(args?.clientNonce||crypto.randomUUID()),role:'user',text:String(args?.text||''),createdAt:Number(args?.timestampMs)||Date.now(),status:'done',
+      ...(args?.clientNonce?{clientNonce:String(args.clientNonce)}:{}),
+      fromUser:{name:String(args?.authorName||'Guest'),authId:String(args?.authorAuthId||''),...(args?.authorAvatarUrl?{avatarUrl:String(args.authorAvatarUrl)}:{})}
+    };
+    if(!transcript.some(row=>row.id===entry.id)){transcript.push(entry);await save();emit('message.changed',{agentId:agent.id,messageId:entry.id,status:'done'})}
+    await sendMessage({agentId:agent.id,text:'[Shared room message from '+entry.fromUser.name+']\n'+entry.text,internal:true,publishSharedReply:true});
   }
-  async function getSharingState(){const s=await load();return cloneSharingState(s)}
-  async function ensureSharedRoomAgent(agentId,roomId){
-    const s=await load(),agent=s.agents.find(row=>row.id===agentId);if(!agent)throw Error('Agent not found.');
-    agent.isSharedRoom=true;agent.sharedRoomId=roomId;agent.updatedAt=Date.now();return agent;
+  async function ensureMirrorRoom(room,selfAuthId){
+    const current=await load();let agent=current.agents.find(row=>row.sharedRoomId===String(room?.roomId||''));
+    if(!agent){agent=await createAgent({name:String(room?.name||'Shared room'),purpose:'shared-room'});agent=await findAgent(agent.id)}
+    agent.isSharedRoom=true;agent.sharedRoomId=String(room.roomId);agent.remoteRoom={roomId:String(room.roomId),hostAuthId:String(room.hostAuthId||''),members:Array.isArray(room.members)?room.members.map(member=>({...member})):[],selfAuthId:String(selfAuthId||''),isRevoked:false};agent.name=clean(room.name,agent.name);agent.updatedAt=Date.now();
+    await save();emit('agents.changed',{agentId:agent.id,sharedRoom:true});return agent.id;
   }
-  async function createRoomFromAgent({agentId}){
-    const s=await load(),agent=s.agents.find(row=>row.id===String(agentId||''));if(!agent)throw Error('Agent not found.');
-    const existing=(s.sharing.rooms||[]).find(room=>(room.members||[]).some(member=>member.kind==='agent'&&member.agentId===agent.id&&member.authId===s.sharing.selfAuthId));
-    if(existing){await ensureSharedRoomAgent(agent.id,existing.roomId);await save();emit('agents.changed',{agentId:agent.id});await emitSharing();return{status:'ok',roomId:existing.roomId,agentId:agent.id}}
-    const roomId=crypto.randomUUID(),room={roomId,name:agent.name,hostAuthId:s.sharing.selfAuthId,members:[
-      {kind:'human',authId:s.sharing.selfAuthId,displayName:'You'},
-      {kind:'agent',authId:s.sharing.selfAuthId,agentId:agent.id,displayName:agent.name}
-    ]};
-    s.sharing.rooms.push(room);await ensureSharedRoomAgent(agent.id,roomId);await save();emit('agents.changed',{agentId:agent.id});await emitSharing();return{status:'ok',roomId,agentId:agent.id}
-  }
-  async function createSharedRoom({agents:requested=[],name='Shared room'}={}){
-    const s=await load(),ids=[...new Set((Array.isArray(requested)?requested:[]).map(item=>String(item?.id||item?.agentId||item||'')).filter(Boolean))];
-    const selected=ids.map(id=>s.agents.find(row=>row.id===id)).filter(Boolean).filter(row=>!row.isGroup);
-    if(selected.length===0)throw Error('createSharedRoom requires at least one local agent.');
-    const group=await createAgent({name:clean(name,'Shared room'),purpose:'group',isGroup:true,memberAgentIds:selected.map(row=>row.id)});
-    const roomId=crypto.randomUUID();group.isSharedRoom=true;group.sharedRoomId=roomId;
-    s.sharing.rooms.push({roomId,name:group.name,hostAuthId:s.sharing.selfAuthId,members:[
-      {kind:'human',authId:s.sharing.selfAuthId,displayName:'You'},
-      ...selected.map(row=>({kind:'agent',authId:s.sharing.selfAuthId,agentId:row.id,displayName:row.name}))
-    ]});
-    await save();emit('agents.changed',{agentId:group.id});await emitSharing();return{status:'ok',roomId,agentId:group.id}
-  }
-  async function createRoomInvite({roomId}){
-    const s=await load(),room=s.sharing.rooms.find(row=>row.roomId===String(roomId||''));if(!room)return{status:'error',message:'Shared room not found.'};
-    const token=crypto.randomBytes(18).toString('base64url'),expiresAtMs=Date.now()+24*60*60*1000;
-    room.inviteToken=token;room.inviteExpiresAtMs=expiresAtMs;await save();
-    return{status:'ok',shareUrl:'fabushi://shared-room/join?roomId='+encodeURIComponent(room.roomId)+'&token='+encodeURIComponent(token),expiresAtMs,roomId:room.roomId}
-  }
-  async function joinSharedRoom({link}){
-    let url;try{url=new URL(String(link||''))}catch{return{status:'error',message:'Invalid shared-room link.'}}
-    const roomId=String(url.searchParams.get('roomId')||''),token=String(url.searchParams.get('token')||'');
-    const s=await load(),room=s.sharing.rooms.find(row=>row.roomId===roomId);
-    if(!room||!token||room.inviteToken!==token||Number(room.inviteExpiresAtMs)<Date.now())return{status:'error',message:'Shared-room invite is invalid or expired.'};
-    const requestId=crypto.randomUUID();
-    s.sharing.pendingJoinRequests.push({requestId,roomId,requesterAuthId:s.sharing.selfAuthId,requesterName:'You'});
-    await save();await emitSharing();return{status:'ok',roomId,requestId}
-  }
-  async function respondToRoomJoinRequest({requestId,isApproved}){
-    const s=await load(),request=s.sharing.pendingJoinRequests.find(row=>row.requestId===String(requestId||''));if(!request)return cloneSharingState(s);
-    s.sharing.pendingJoinRequests=s.sharing.pendingJoinRequests.filter(row=>row.requestId!==request.requestId);
-    if(isApproved===true){
-      const room=s.sharing.rooms.find(row=>row.roomId===request.roomId);
-      if(room&&!room.members.some(member=>member.kind==='human'&&member.authId===request.requesterAuthId))room.members.push({kind:'human',authId:request.requesterAuthId,displayName:request.requesterName});
+  async function ensureHostedSharedRoom(args){
+    const current=await load(),roomId=String(args?.roomId||'');let group=current.agents.find(row=>row.sharedRoomId===roomId);
+    const localMemberIds=(Array.isArray(args?.localMemberIds)?args.localMemberIds:[]).filter(id=>current.agents.some(row=>row.id===id&&!row.isGroup));
+    if(!group&&!args?.isCreationAllowed)return null;
+    if(!group){
+      if(localMemberIds.length===0)return null;
+      group=await createAgent({name:String(args?.name||'Shared room'),purpose:'group',isGroup:true,memberAgentIds:localMemberIds});
+      group=await findAgent(group.id);
     }
-    await save();return await emitSharing()
+    group.isGroup=true;group.isSharedRoom=true;group.sharedRoomId=roomId;group.memberIds=localMemberIds;group.remoteMembers=Array.isArray(args?.remoteMembers)?args.remoteMembers.map(member=>({...member})):[];group.name=clean(args?.name,group.name);group.updatedAt=Date.now();
+    await save();emit('agents.changed',{agentId:group.id,sharedRoom:true});return group.id;
   }
-  async function addOwnAgentToSharedRoom({roomId,agentId,agentName}){
-    const s=await load(),room=s.sharing.rooms.find(row=>row.roomId===String(roomId||'')),agent=s.agents.find(row=>row.id===String(agentId||''));if(!room||!agent)throw Error('Shared room or agent not found.');
-    if(!room.members.some(member=>member.kind==='agent'&&member.agentId===agent.id&&member.authId===s.sharing.selfAuthId))room.members.push({kind:'agent',authId:s.sharing.selfAuthId,agentId:agent.id,displayName:String(agentName||agent.name)});
-    await save();return await emitSharing()
+  async function findRoomAgentId(roomId){return(await sharingRoomAgent(roomId))?.id||null}
+  async function isAgentCapReached(){return (await listAgents()).length>=100}
+  async function getSharingState(){return sharingRuntime?await sharingRuntime.getState():disabledSharingState()}
+  async function createRoomFromAgent({agentId}){
+    if(!sharingRuntime)return{status:'error',message:'Sharing backend is not configured.'};
+    const result=await sharingRuntime.createRoomFromAgent(String(agentId||''));
+    if(result?.status==='ok'&&result.roomId){const agent=await findAgent(agentId);if(agent){agent.isSharedRoom=true;agent.sharedRoomId=String(result.roomId);agent.updatedAt=Date.now();await save();emit('agents.changed',{agentId:agent.id,sharedRoom:true})}}
+    return result;
+  }
+  async function createSharedRoom(args={}){return sharingRuntime?sharingRuntime.createSharedRoom(args):{status:'error',message:'Sharing backend is not configured.'}}
+  async function createRoomInvite({roomId}){return sharingRuntime?sharingRuntime.createRoomInvite(String(roomId||'')):{status:'error',message:'Sharing backend is not configured.'}}
+  async function joinSharedRoom({link}){return sharingRuntime?sharingRuntime.joinRoom(String(link||'')):{status:'error',message:'Sharing backend is not configured.'}}
+  async function respondToRoomJoinRequest(args){return sharingRuntime?sharingRuntime.respondToJoinRequest(args):disabledSharingState()}
+  async function addOwnAgentToSharedRoom(args){
+    const state=sharingRuntime?await sharingRuntime.addOwnAgent(args):disabledSharingState();
+    const agent=await findAgent(args?.agentId);if(agent&&args?.roomId){agent.isSharedRoom=true;agent.sharedRoomId=String(args.roomId);agent.updatedAt=Date.now();await save();emit('agents.changed',{agentId:agent.id,sharedRoom:true})}
+    return state;
   }
   async function removeOwnAgentFromSharedRoom({roomId,agentId}){
-    const s=await load(),room=s.sharing.rooms.find(row=>row.roomId===String(roomId||''));if(!room)return cloneSharingState(s);
-    room.members=room.members.filter(member=>!(member.kind==='agent'&&member.authId===s.sharing.selfAuthId&&member.agentId===String(agentId||'')));
-    await save();return await emitSharing()
+    const state=sharingRuntime?await sharingRuntime.removeOwnAgent(String(roomId||''),String(agentId||'')):disabledSharingState();
+    const agent=await findAgent(agentId);if(agent&&agent.sharedRoomId===String(roomId||'')){agent.isSharedRoom=false;delete agent.sharedRoomId;agent.updatedAt=Date.now();await save();emit('agents.changed',{agentId:agent.id,sharedRoom:true})}
+    return state;
   }
-  async function setSharedRoomTyping({roomId,isTyping}){
-    const s=await load(),authId=s.sharing.selfAuthId;s.sharing.typingUsers=(s.sharing.typingUsers||[]).filter(row=>!(row.roomId===String(roomId||'')&&row.authId===authId));
-    if(isTyping===true)s.sharing.typingUsers.push({roomId:String(roomId||''),authId,name:'You',expiresAtMs:Date.now()+5000});
-    await save();await emitSharing()
-  }
+  async function setSharedRoomTyping({roomId,isTyping}){if(sharingRuntime)await sharingRuntime.setRoomTyping(String(roomId||''),isTyping===true)}
   async function leaveSharedRoom({roomId,targetAuthId}){
-    const s=await load(),room=s.sharing.rooms.find(row=>row.roomId===String(roomId||''));if(!room)return cloneSharingState(s);
-    if(targetAuthId){room.members=room.members.filter(member=>!(member.kind==='human'&&member.authId===String(targetAuthId)))}
-    else{
-      room.members=room.members.filter(member=>member.authId!==s.sharing.selfAuthId);
-      for(const agent of s.agents.filter(row=>row.sharedRoomId===room.roomId)){agent.isSharedRoom=false;delete agent.sharedRoomId}
-    }
-    await save();emit('agents.changed');return await emitSharing()
+    const state=sharingRuntime?await sharingRuntime.leaveSharedRoom(String(roomId||''),targetAuthId==null?undefined:String(targetAuthId)):disabledSharingState();
+    if(targetAuthId==null){const current=await load();for(const agent of current.agents.filter(row=>row.sharedRoomId===String(roomId||''))){agent.isSharedRoom=false;delete agent.sharedRoomId;agent.updatedAt=Date.now()}await save();emit('agents.changed',{sharedRoom:true})}
+    return state;
   }
-  async function listRoutedMcpTools(){return (await mcp.collectToolDefinitions()).map(({_mcp,...definition})=>definition)}
-  async function executeRoutedMcpTool({name,args}){const result=await mcp.executeRoutedTool(String(name||''),args&&typeof args==='object'?args:{});if(result==null)throw Error('Routed MCP tool is unavailable.');return result}
-
-  async function getAccountStatus(){return accountSession.status()}
-  async function loginAccount(){return accountSession.login()}
-  async function cancelAccountLogin(){return accountSession.cancelLogin()}
-  async function logoutAccount(){return accountSession.logout()}
-  async function updateAccountName({name}){return accountSession.updateName(name)}
-  async function getAccountAvatar(){return accountSession.getAvatar()}
-
-  async function listMcpServers(){
-    const s=await load();
-    return (s.mcpServers||[]).map(server=>({
-      id:server.id,name:server.name,transport:server.transport||'stdio',command:server.command||'',args:[...(server.args||[])],url:server.url||'',
-      enabled:server.enabled!==false,disabledTools:[...(server.disabledTools||[])],customInstructions:server.customInstructions||'',accountKey:server.accountKey||'default',accountKeys:[...(server.accountKeys||[server.accountKey||'default'])],
-      oauthClientId:server.oauthClientId||'',oauthAuthorizationUrl:server.oauthAuthorizationUrl||'',oauthTokenUrl:server.oauthTokenUrl||'',
-      oauthRegistrationUrl:server.oauthRegistrationUrl||'',oauthScopes:[...(server.oauthScopes||[])]
-    }));
-  }
-  async function addMcpServer(input){
-    const s=await load(),server=normalizeServer(input);
-    if((s.mcpServers||[]).some(x=>x.id===server.id))throw Error('MCP server id already exists.');
-    s.mcpServers.push(server);await save();emit('plugins.changed');return server;
-  }
-  async function updateMcpServer({serverId,...patch}){
-    const s=await load(),index=s.mcpServers.findIndex(x=>x.id===serverId);if(index<0)throw Error('MCP server not found.');
-    const previous=s.mcpServers[index],next=normalizeServer({...previous,...patch,id:previous.id});
-    const oldAccount=previous.accountKey||'default',newAccount=next.accountKey||'default';
-    const authIdentityChanged=previous.transport==='http'&&(next.transport!=='http'||previous.url!==next.url||previous.oauthClientId!==next.oauthClientId||previous.oauthAuthorizationUrl!==next.oauthAuthorizationUrl||previous.oauthTokenUrl!==next.oauthTokenUrl);
-    if(previous.transport==='http'&&next.transport==='http'&&oldAccount!==newAccount&&!authIdentityChanged){
-      await oauth.rename(previous.id,oldAccount,newAccount).catch(()=>{});
-    }else if(previous.transport==='http'&&authIdentityChanged){
-      await oauth.disconnect(previous.id,oldAccount).catch(()=>{});
-    }
-    s.mcpServers[index]=next;mcp.disposeServer(previous.id);await save();emit('plugins.changed',{serverId:previous.id});return next;
-  }
-  async function removeMcpServer({serverId}){
-    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId),before=s.mcpServers.length;
-    if(!server)throw Error('MCP server not found.');
-    if(server.transport==='http')await oauth.disconnect(serverId,server.accountKey||'default').catch(()=>{});
-    s.mcpServers=s.mcpServers.filter(x=>x.id!==serverId);
-    if(s.mcpServers.length===before)throw Error('MCP server not found.');
-    mcp.disposeServer(serverId);await save();emit('plugins.changed');return{ok:true};
-  }
-  async function setMcpServerEnabled({serverId,enabled}){
-    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
-    server.enabled=enabled===true;if(!server.enabled)mcp.disposeServer(serverId);await save();emit('plugins.changed');return server;
-  }
-  async function getMcpAccountStatus({serverId,accountKey}){
-    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
-    if(server.transport!=='http')return{serverId,accountKey:'default',connected:false,expiresAt:null,scope:'',supported:false};
-    const key=normalizeAccountKey(accountKey||server.accountKey||'default');
-    return{...(await oauth.status(serverId,key)),supported:true};
-  }
-  async function listMcpAccounts({serverId}){
-    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
-    if(server.transport!=='http')return[];
-    const keys=[...new Set(server.accountKeys||[server.accountKey||'default'])];
-    return await Promise.all(keys.map(async key=>({...await oauth.status(serverId,key),supported:true,active:key===(server.accountKey||'default')})));
-  }
-  async function connectMcpAccount({serverId,accountKey}){
-    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
-    if(server.transport!=='http')throw Error('Only HTTP MCP servers support OAuth accounts.');
-    const key=normalizeAccountKey(accountKey||server.accountKey||'default');
-    const status=await oauth.connect(serverId,key);
-    server.accountKeys=[...new Set([...(server.accountKeys||[]),key])];server.accountKey=key;await save();
-    mcp.disposeServer(serverId);emit('plugins.changed',{serverId});return{...status,supported:true,active:true};
-  }
-  async function disconnectMcpAccount({serverId,accountKey}){
-    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
-    const key=normalizeAccountKey(accountKey||server.accountKey||'default');
-    const status=await oauth.disconnect(serverId,key);mcp.disposeServer(serverId);emit('plugins.changed',{serverId});return{...status,supported:server.transport==='http',active:key===(server.accountKey||'default')};
-  }
-  async function renameMcpAccount({serverId,accountKey,newAccountKey}){
-    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
-    if(server.transport!=='http')throw Error('Only HTTP MCP servers support OAuth accounts.');
-    const from=normalizeAccountKey(accountKey||server.accountKey||'default'),to=normalizeAccountKey(newAccountKey);
-    const status=await oauth.rename(serverId,from,to);
-    server.accountKeys=[...new Set((server.accountKeys||[from]).map(key=>key===from?to:key))];
-    if(server.accountKey===from)server.accountKey=to;await save();mcp.disposeServer(serverId);emit('plugins.changed',{serverId});
-    return{...status,supported:true,active:server.accountKey===to};
-  }
-  async function removeMcpAccount({serverId,accountKey}){
-    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
-    if(server.transport!=='http')throw Error('Only HTTP MCP servers support OAuth accounts.');
-    const key=normalizeAccountKey(accountKey||server.accountKey||'default');
-    await oauth.disconnect(serverId,key);
-    const remaining=(server.accountKeys||[server.accountKey||'default']).filter(value=>value!==key);
-    server.accountKeys=remaining.length?remaining:['default'];
-    if(server.accountKey===key)server.accountKey=server.accountKeys[0];
-    await save();mcp.disposeServer(serverId);emit('plugins.changed',{serverId});return await listMcpAccounts({serverId});
-  }
-  async function setMcpActiveAccount({serverId,accountKey}){
-    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
-    if(server.transport!=='http')throw Error('Only HTTP MCP servers support OAuth accounts.');
-    const key=normalizeAccountKey(accountKey);
-    if(!(server.accountKeys||[]).includes(key))throw Error('MCP account slot not found.');
-    server.accountKey=key;await save();mcp.disposeServer(serverId);emit('plugins.changed',{serverId});
-    return await listMcpAccounts({serverId});
-  }
-  async function listMcpServerTools({serverId}){return await mcp.listServerTools(serverId)}
-  async function setMcpToolEnabled({serverId,toolName,enabled}){
-    const s=await load(),server=s.mcpServers.find(x=>x.id===serverId);if(!server)throw Error('MCP server not found.');
-    const disabled=new Set(server.disabledTools||[]);if(enabled)disabled.delete(toolName);else disabled.add(toolName);
-    server.disabledTools=[...disabled];await save();emit('plugins.changed');return await mcp.listServerTools(serverId);
-  }
-  async function listPlugins(){
-    const s=await load();
-    const local=capabilityCatalog.map(p=>({...p,installed:true,enabled:s.plugins?.[p.id]?.enabled!==false,removable:false,kind:'local'}));
-    const servers=(s.mcpServers||[]).map(server=>({
-      id:'mcp:'+server.id,name:server.name,description:server.transport==='http'?'Remote MCP: '+server.url:'MCP server: '+server.command,category:'MCP',builtin:false,
-      provider:server.transport==='http'?'http-mcp':'stdio-mcp',installed:true,enabled:server.enabled!==false,removable:true,kind:'mcp',serverId:server.id,accountKey:server.accountKey||'default',transport:server.transport||'stdio'
-    }));
-    return[...local,...servers];
-  }
-  async function setPluginInstalled({pluginId,installed}){
-    if(String(pluginId).startsWith('mcp:')){
-      if(installed!==false)throw Error('MCP servers are installed through Add MCP Server.');
-      return removeMcpServer({serverId:String(pluginId).slice(4)}).then(()=>listPlugins());
-    }
-    if(!catalogIds.has(pluginId))throw Error('Plugin not found');
-    if(installed===false)throw Error('Built-in local capabilities cannot be removed; disable them instead.');
-    return listPlugins();
-  }
-  async function setPluginEnabled({pluginId,enabled}){
-    if(String(pluginId).startsWith('mcp:')){
-      await setMcpServerEnabled({serverId:String(pluginId).slice(4),enabled});return listPlugins();
-    }
-    const s=await load();if(!catalogIds.has(pluginId))throw Error('Plugin not found');
-    s.plugins[pluginId]={installed:true,enabled:enabled===true};await save();emit('plugins.changed');return listPlugins();
-  }
-  async function listMarketplacePlugins(){
-    const [catalog,s]=await Promise.all([marketplace.list(),load()]);
-    return{...catalog,plugins:(catalog.plugins||[]).map(plugin=>({...plugin,installed:Boolean(s.marketplaceInstalls?.[plugin.id]),install:s.marketplaceInstalls?.[plugin.id]||null}))};
-  }
-  async function installMarketplacePlugin({entryId,values={}}){
-    const catalog=await marketplace.list();
-    if(!catalog.available)throw Error(catalog.reason||'Plugin marketplace provider is unavailable.');
-    const plugin=(catalog.plugins||[]).find(row=>row.id===String(entryId||''));if(!plugin)throw Error('Marketplace plugin not found.');
-    const missing=(plugin.fields||[]).filter(field=>field.isRequired&&!String(values?.[field.key]??field.defaultValue??'').trim());
-    if(missing.length)throw Error(plugin.displayName+' requires '+missing.map(field=>field.label).join(', ')+'.');
-    const s=await load();s.marketplaceInstalls??={};
-    if(s.marketplaceInstalls[plugin.id])throw Error('Marketplace plugin is already installed.');
-    const payload=await marketplace.install(plugin.id,values);
-    const preparedServers=payload.servers.map(raw=>normalizeServer({...raw,id:raw.id||crypto.randomUUID()}));
-    const existing=new Set(s.mcpServers.map(server=>server.id));
-    for(const server of preparedServers)if(existing.has(server.id))throw Error('Marketplace returned duplicate MCP server id: '+server.id);
-    const savedSkills=[];
-    try{
-      for(const skill of payload.skills){
-        savedSkills.push(await workflowManager.saveWorkflow({
-          name:skill.name,description:skill.description,body:skill.body,isEnabledForAgent:skill.isEnabledForAgent,disableModelInvocation:skill.disableModelInvocation,trigger:null
-        }));
-      }
-      s.mcpServers.push(...preparedServers);
-      s.marketplaceInstalls[plugin.id]={
-        pluginId:plugin.id,displayName:plugin.displayName,providerUrl:marketplace.providerUrl,
-        serverIds:preparedServers.map(server=>server.id),skillIds:savedSkills.map(skill=>skill.id),installedAt:Date.now()
-      };
-      await save();emit('plugins.changed',{marketplacePluginId:plugin.id});emit('workflows.changed',{marketplacePluginId:plugin.id});
-      return await listMarketplacePlugins();
-    }catch(error){
-      for(const skill of savedSkills)await workflowManager.deleteWorkflow({id:skill.id}).catch(()=>{});
-      throw error;
-    }
-  }
-  async function uninstallMarketplacePlugin({entryId}){
-    const s=await load(),record=s.marketplaceInstalls?.[String(entryId||'')];if(!record)throw Error('Marketplace plugin is not installed.');
-    for(const serverId of record.serverIds||[]){
-      const server=s.mcpServers.find(row=>row.id===serverId);
-      if(server?.transport==='http')await oauth.disconnect(serverId,server.accountKey||'default').catch(()=>{});
-      mcp.disposeServer(serverId);
-    }
-    s.mcpServers=s.mcpServers.filter(server=>!(record.serverIds||[]).includes(server.id));
-    for(const skillId of record.skillIds||[])await workflowManager.deleteWorkflow({id:skillId}).catch(()=>{});
-    delete s.marketplaceInstalls[String(entryId||'')];await save();
-    emit('plugins.changed',{marketplacePluginId:String(entryId||'')});emit('workflows.changed',{marketplacePluginId:String(entryId||'')});
-    return await listMarketplacePlugins();
-  }
-  async function listWorkflows(){return await workflowManager.list()}
-  async function saveWorkflow(input){const record=await workflowManager.saveWorkflow(input);emit('workflows.changed',{workflowId:record.id});return record}
-  async function deleteWorkflow(input){const result=await workflowManager.deleteWorkflow(input);emit('workflows.changed',{workflowId:input.id});return result}
-  async function setWorkflowEnabled(input){const record=await workflowManager.setWorkflowEnabled(input);emit('workflows.changed',{workflowId:record.id});return record}
-  async function getSkillPublishTargets(){return workflowManager.getPublishTargets()}
-  async function publishSkill({workflowId,teamId}){const record=await workflowManager.publishSkill({id:workflowId,teamId});emit('workflows.changed',{workflowId,published:true});return record}
-  async function resyncPublishedSkill({workflowId}){const record=await workflowManager.resyncPublishedSkill({id:workflowId});emit('workflows.changed',{workflowId,resynced:true});return record}
-  async function unpublishSkill({workflowId}){const record=await workflowManager.unpublishSkill({id:workflowId});emit('workflows.changed',{workflowId,published:false});return record}
-  function listenerUrl(platform){const key=platform==='github'?'FABUSHI_GITHUB_LISTENER_CONNECT_URL':platform==='slack'?'FABUSHI_SLACK_LISTENER_CONNECT_URL':null;if(!key)throw Error('Unsupported listener platform.');const raw=String(process.env[key]||'').trim();if(!raw)throw Error(platform+' listener is not configured.');const url=new URL(raw),loopback=['localhost','127.0.0.1','::1','[::1]'].includes(url.hostname);if(url.protocol!=='https:'&&!(url.protocol==='http:'&&loopback))throw Error('Listener connect URL must use HTTPS.');return url.toString()}
-  async function getListenerIntegrations(){return{integrations:['github','slack'].map(platform=>({platform,isConnected:String(process.env['FABUSHI_'+platform.toUpperCase()+'_LISTENER_CONNECTED']||'').trim()==='1'}))}}
-  async function getListenerConnectUrl({platform}){return{url:listenerUrl(String(platform||'').trim().toLowerCase())}}
-
-  async function getExperimentsSnapshot(){await experiments.start();return experiments.getSnapshot()}
-  async function refreshExperiments(){await experiments.start();return await experiments.refreshNow()}
-  async function applyFeatureFlagOverride(input={}){await experiments.start();return await experiments.applyFeatureFlagOverrideCommand(input.command??input)}
 
   async function getAsyncTasks({id}){
     const parentId=String(id||'').trim();if(!parentId)throw Error('Agent id is required.');
@@ -1006,6 +847,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
     for(const approval of [...approvals.values()])approval.finish(false);
     if(automationSweep)await Promise.resolve(automationSweep).catch(()=>{});
     await Promise.allSettled([...activeTurns]);
+    sharingRuntime?.dispose();sharingRuntime=null;
     await experiments.dispose().catch(()=>{});await accountSession.cancelLogin().catch(()=>{});mcp.dispose();localBrowser.dispose();await attachmentGateway?.dispose?.();
     await actionAuditor.flush();await writing.catch(()=>{});
     return{ok:true};
