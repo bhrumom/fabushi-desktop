@@ -3,7 +3,7 @@ const {contextBridge,ipcRenderer,webFrame}=require('electron');
 
 const events=[
   'agents.changed','agent.changed','message.delta','message.changed','message.done',
-  'plugins.changed','workflows.changed','automations.changed','settings.changed','account.changed','experiments.changed','approval.requested','approval.resolved','approval.cancelled'
+  'plugins.changed','workflows.changed','automations.changed','settings.changed','account.changed','experiments.changed','sharing','approval.requested','approval.resolved','approval.cancelled'
 ];
 const invoke=(method,args={})=>ipcRenderer.invoke('grok-agent:'+method,args);
 const refCoordinator=(method,args={})=>ipcRenderer.invoke('grok-reference:coordinator',{method,args});
@@ -101,6 +101,7 @@ for(const name of events){
     if(name==='automations.changed')void emitFamily('automations',payload||{});
     if(name==='plugins.changed')void emitFamily('plugins',payload||{});
     if(name==='settings.changed')void emitFamily('host-settings',payload||{});
+    if(name==='sharing')void emitFamily('sharing',payload||{});
     if(name==='message.changed'||name==='message.done'||name==='message.delta')void emitFamily('async-tasks',payload||{});
   });
 }

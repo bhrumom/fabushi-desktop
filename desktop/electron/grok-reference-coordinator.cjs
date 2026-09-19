@@ -68,6 +68,12 @@ function createReferenceCoordinator(runtime){
       case'updateAgent':return agentRow(await runtime.updateAgent(input));
       case'deleteAgents':for(const id of Array.isArray(input.ids)?input.ids:[])await runtime.deleteAgent({agentId:id});return{ok:true};
       case'duplicateAgent':return agentRow(await runtime.duplicateAgent({agentId:input.id||input.agentId}));
+      case'kickstartAgent':{
+        const id=input.id||input.agentId;
+        const row=(await runtime.listAgents()).find(agent=>agent.id===id);if(!row)return null;
+        if(!['thinking','running','waiting'].includes(row.status))await runtime.sendMessage({agentId:id,text:String(input.prompt||'Continue the current task.'),internal:true});
+        return agentRow((await runtime.listAgents()).find(agent=>agent.id===id)||row);
+      }
       case'setAgentUnread':await runtime.setAgentUnread({agentId:input.id||input.agentId,unread:input.isUnread===true||input.unread===true});return;
       case'setAgentHiddenFromSidebar':await runtime.setAgentHidden({agentId:input.id||input.agentId,hidden:input.isHidden===true||input.hidden===true||input.isHiddenFromSidebar===true});return;
       case'setAgentNotificationsEnabled':
@@ -150,6 +156,8 @@ function createReferenceCoordinator(runtime){
       case'skillsCatalog':return runtime.listWorkflows();
       case'syncPluginSkills':return runtime.listWorkflows();
       case'getPluginSyncStatus':return{status:'ready',isSyncing:false,lastError:null};
+      case'listRoutedMcpTools':return runtime.listRoutedMcpTools();
+      case'executeRoutedMcpTool':return runtime.executeRoutedMcpTool({name:input.name||input.toolName,args:input.args||input.arguments||{}});
       case'getSkillPublishTargets':return{targets:[]};
       case'publishSkill':
       case'resyncPublishedSkill':
@@ -181,7 +189,16 @@ function createReferenceCoordinator(runtime){
       case'dismissTray':
       case'clearTrays':return;
       case'getBoxSecretsStatus':return{keys:[],isPersistent:true};
-      case'getSharingState':return{enabled:false,rooms:[]};
+      case'getSharingState':return runtime.getSharingState();
+      case'createRoomFromAgent':return runtime.createRoomFromAgent(input);
+      case'createRoomInvite':return runtime.createRoomInvite(input);
+      case'joinSharedRoom':return runtime.joinSharedRoom(input);
+      case'respondToRoomJoinRequest':return runtime.respondToRoomJoinRequest(input);
+      case'createSharedRoom':return runtime.createSharedRoom(input);
+      case'addOwnAgentToSharedRoom':return runtime.addOwnAgentToSharedRoom(input);
+      case'removeOwnAgentFromSharedRoom':return runtime.removeOwnAgentFromSharedRoom(input);
+      case'setSharedRoomTyping':return runtime.setSharedRoomTyping(input);
+      case'leaveSharedRoom':return runtime.leaveSharedRoom(input);
       case'getCloudAgentInfo':return null;
       case'requestDiskSaverAudit':return{status:'not-needed',computerTarget:'local-mac'};
       case'broadcastToAgents':{
