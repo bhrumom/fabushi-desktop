@@ -72,6 +72,78 @@ function normalizeInstallPayload(value){
   if(!servers.length&&!skills.length)throw Error('Marketplace plugin did not return any executable MCP server or private skill.');
   return{servers,skills};
 }
+function localCatalog(){
+  return[
+    {
+      id:'fabushi.local.custom-mcp',
+      name:'custom-mcp',
+      displayName:'Custom MCP Server',
+      description:'Connect a local stdio or remote HTTP MCP server to this Mac.',
+      category:'MCP',homepage:null,iconUrl:null,
+      connectors:[{name:'MCP',description:'Real Model Context Protocol server'}],skills:[],
+      fields:[
+        {key:'name',label:'Server name',placeholder:'My MCP Server',isRequired:true,isSecret:false},
+        {key:'transport',label:'Transport',placeholder:'stdio or http',isRequired:true,isSecret:false,defaultValue:'stdio'},
+        {key:'command',label:'Command (stdio)',placeholder:'/usr/local/bin/my-mcp',isRequired:false,isSecret:false},
+        {key:'args',label:'Arguments (stdio)',placeholder:'--flag value',isRequired:false,isSecret:false},
+        {key:'url',label:'URL (HTTP)',placeholder:'https://example.com/mcp',isRequired:false,isSecret:false}
+      ],
+      publisher:{name:'fabushi',displayName:'Fabushi',isUserOwned:true},
+      marketplace:{name:'local',displayName:'Local Marketplace',ownership:'user'}
+    },
+    {
+      id:'fabushi.local.private-skill',
+      name:'private-skill',
+      displayName:'Private Skill',
+      description:'Create an installable private SKILL.md for this agent workspace.',
+      category:'Skills',homepage:null,iconUrl:null,connectors:[],
+      skills:[{name:'Private Skill',description:'Local reusable agent instructions'}],
+      fields:[
+        {key:'name',label:'Skill name',placeholder:'My Skill',isRequired:true,isSecret:false},
+        {key:'description',label:'Description',placeholder:'What this skill does',isRequired:false,isSecret:false},
+        {key:'instructions',label:'Instructions',placeholder:'Write the skill instructions here',isRequired:true,isSecret:false}
+      ],
+      publisher:{name:'fabushi',displayName:'Fabushi',isUserOwned:true},
+      marketplace:{name:'local',displayName:'Local Marketplace',ownership:'user'}
+    }
+  ];
+}
+function parseArgs(value){
+  const raw=String(value||'').trim();if(!raw)return[];
+  const out=[];let current='',quote=null,escape=false;
+  for(const ch of raw){
+    if(escape){current+=ch;escape=false;continue}
+    if(ch==='\\'){escape=true;continue}
+    if(quote){if(ch===quote)quote=null;else current+=ch;continue}
+    if(ch==='"'||ch==="'"){quote=ch;continue}
+    if(/\s/.test(ch)){if(current){out.push(current);current=''}}else current+=ch;
+  }
+  if(current)out.push(current);return out;
+}
+function localInstall(entryId,values={}){
+  if(entryId==='fabushi.local.custom-mcp'){
+    const name=cleanText(values.name,160);if(!name)throw Error('Server name is required.');
+    const transport=cleanText(values.transport||'stdio',20).toLowerCase();
+    if(transport==='http'){
+      const url=cleanText(values.url,2000);if(!url)throw Error('HTTP MCP URL is required.');
+      let parsed;try{parsed=new URL(url)}catch{throw Error('HTTP MCP URL is invalid.')}
+      if(parsed.protocol!=='https:'&&!(parsed.protocol==='http:'&&isLoopback(parsed.hostname)))throw Error('HTTP MCP URL must use HTTPS (HTTP is allowed only for loopback development).');
+      return{servers:[{name,transport:'http',url:parsed.toString()}],skills:[]};
+    }
+    if(transport!=='stdio')throw Error('Transport must be stdio or http.');
+    const command=cleanText(values.command,2000);if(!command)throw Error('stdio MCP command is required.');
+    return{servers:[{name,transport:'stdio',command,args:parseArgs(values.args)}],skills:[]};
+  }
+  if(entryId==='fabushi.local.private-skill'){
+    const name=cleanText(values.name,160);if(!name)throw Error('Skill name is required.');
+    const instructions=String(values.instructions||'').trim();if(!instructions)throw Error('Skill instructions are required.');
+    const description=cleanText(values.description,1000);
+    const body='# '+name+'\n\n'+(description?description+'\n\n':'')+instructions+'\n';
+    return{servers:[],skills:[{name,description,body,isEnabledForAgent:true,disableModelInvocation:false}]};
+  }
+  throw Error('Local marketplace plugin not found.');
+}
+
 function createPluginMarketplace({env=process.env,fetchImpl=globalThis.fetch}={}){
   const base=normalizeProviderUrl(env.FABUSHI_PLUGIN_MARKETPLACE_URL);
   const token=cleanText(env.FABUSHI_PLUGIN_MARKETPLACE_TOKEN,16000);
@@ -100,9 +172,9 @@ function createPluginMarketplace({env=process.env,fetchImpl=globalThis.fetch}={}
     providerUrl:base?.toString()||null,
     async list(){
       if(!base)return{
-        available:false,
-        reason:'The reference marketplace is backed by an authenticated external DashboardService and is not self-contained in the reconstructed repository. Configure FABUSHI_PLUGIN_MARKETPLACE_URL to use a compatible executable provider.',
-        plugins:[],
+        available:true,
+        reason:null,
+        plugins:localCatalog(),
         includesPrivateMarketplaces:false
       };
       const payload=await request('plugins');
@@ -115,6 +187,7 @@ function createPluginMarketplace({env=process.env,fetchImpl=globalThis.fetch}={}
     },
     async install(entryId,values={}){
       const id=cleanText(entryId,180);if(!id)throw Error('Marketplace plugin id is required.');
+      if(!base)return normalizeInstallPayload(localInstall(id,values));
       const safeValues={};
       for(const [key,value] of Object.entries(values||{}))safeValues[cleanText(key,120)]=String(value??'').slice(0,20000);
       return normalizeInstallPayload(await request('plugins/'+encodeURIComponent(id)+'/install',{
@@ -124,4 +197,4 @@ function createPluginMarketplace({env=process.env,fetchImpl=globalThis.fetch}={}
   };
 }
 
-module.exports={createPluginMarketplace,normalizeProviderUrl,normalizeCatalogEntry,normalizeInstallPayload};
+module.exports={createPluginMarketplace,normalizeProviderUrl,normalizeCatalogEntry,normalizeInstallPayload,localCatalog,localInstall,parseArgs};
