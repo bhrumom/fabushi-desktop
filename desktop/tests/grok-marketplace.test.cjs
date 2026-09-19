@@ -94,3 +94,44 @@ test('coordinator marketplace install materializes real MCP server and private S
   assert.equal((await runtime.listPlugins()).some(row=>row.kind==='mcp'&&row.name==='Fixture MCP'),false);
   assert.equal((await runtime.listWorkflows()).some(row=>row.name==='Fixture skill'),false);
 });
+
+
+test('default local marketplace is usable without external provider and installs executable MCP/Skill payloads',async()=>{
+  const provider=createPluginMarketplace({env:{}});
+  const listing=await provider.list();
+  assert.equal(listing.available,true);
+  assert.equal(listing.plugins.some(row=>row.id==='fabushi.local.custom-mcp'),true);
+  assert.equal(listing.plugins.some(row=>row.id==='fabushi.local.private-skill'),true);
+
+  const mcp=await provider.install('fabushi.local.custom-mcp',{
+    name:'Local Echo',transport:'stdio',command:'/usr/bin/printf',args:'hello "two words"'
+  });
+  assert.equal(mcp.servers[0].transport,'stdio');
+  assert.equal(mcp.servers[0].command,'/usr/bin/printf');
+  assert.deepEqual(mcp.servers[0].args,['hello','two words']);
+
+  const skill=await provider.install('fabushi.local.private-skill',{
+    name:'My Skill',description:'Local test',instructions:'Always answer with evidence.'
+  });
+  assert.equal(skill.skills[0].body.includes('# My Skill'),true);
+  assert.equal(skill.skills[0].body.includes('Always answer with evidence.'),true);
+});
+
+test('default local marketplace install closes the coordinator install/uninstall loop',async t=>{
+  const f=await fixture();
+  const runtime=createCoordinatorRuntime({...f,pluginMarketplace:createPluginMarketplace({env:{}})});
+  t.after(async()=>{await runtime.dispose();await fs.rm(f.root,{recursive:true,force:true})});
+  let catalog=await runtime.listMarketplacePlugins();
+  assert.equal(catalog.available,true);
+  const skillRow=catalog.plugins.find(row=>row.id==='fabushi.local.private-skill');
+  assert.ok(skillRow);
+  catalog=await runtime.installMarketplacePlugin({
+    entryId:skillRow.id,
+    values:{name:'Installed Local Skill',description:'test',instructions:'Use local evidence.'}
+  });
+  assert.equal(catalog.plugins.find(row=>row.id===skillRow.id).installed,true);
+  assert.equal((await runtime.listWorkflows()).some(row=>row.name==='Installed Local Skill'),true);
+  catalog=await runtime.uninstallMarketplacePlugin({entryId:skillRow.id});
+  assert.equal(catalog.plugins.find(row=>row.id===skillRow.id).installed,false);
+  assert.equal((await runtime.listWorkflows()).some(row=>row.name==='Installed Local Skill'),false);
+});
