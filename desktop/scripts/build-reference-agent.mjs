@@ -24,3 +24,20 @@ await build({
 });
 
 console.log(`Built pinned SandAgentRunner bundle: ${outfile}`);
+
+
+await build({
+  entryPoints: [path.join(desktop, "reference-adapters", "local-anysphere-runtime.ts")],
+  outfile: path.join(desktop, "electron", "grok-reference-anysphere-runtime.cjs"),
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node26",
+  packages: "external",
+  sourcemap: false,
+  minify: false,
+  treeShaking: true,
+  logLevel: "info",
+  banner: { js: "'use strict';" },
+});
+console.log("Built pinned AnysphereAgent local runtime adapter");

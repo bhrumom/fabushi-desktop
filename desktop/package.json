@@ -165,7 +165,8 @@
       "electron/grok-video-container.cjs",
       "electron/local-tool-executor.cjs",
       "package.json",
-      "electron/grok-reference-sand-runner.cjs"
+      "electron/grok-reference-sand-runner.cjs",
+      "electron/grok-reference-anysphere-runtime.cjs"
     ],
     "extraResources": [
       {
