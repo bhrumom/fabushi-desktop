@@ -162,7 +162,7 @@ const catalog=async()=>{
 const mcp=Object.freeze({
   list:mcpState,
   async effectivePlugins(){return (await invoke('list-plugins')).map(p=>({pluginId:p.id,name:p.name,displayName:p.name,installMode:'user',isEnabled:p.enabled!==false}))},
-  catalog,teamPopularity:async()=>({}),pluginLogo:async()=>null,
+  catalog,teamPopularity:async()=>Object.fromEntries((await catalog()).flatMap(plugin=>Number.isFinite(Number(plugin.popularity))?[[plugin.id,Number(plugin.popularity)]]:[])),pluginLogo:url=>refDesktop('plugin-logo',{url}),
   async install(request){await invoke('install-marketplace-plugin',{entryId:request.entryId,values:request.values||{}});return mcpState()},
   async updatePluginInstall(request){await invoke('uninstall-marketplace-plugin',{entryId:request.pluginId}).catch(()=>{});await invoke('install-marketplace-plugin',{entryId:request.pluginId,values:request.values||{}});return mcpState()},
   async remove(serverId){await invoke('remove-mcp-server',{serverId});return{state:await mcpState(),removed:true}},
