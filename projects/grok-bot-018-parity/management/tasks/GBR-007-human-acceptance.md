@@ -1,30 +1,89 @@
-# GBR-007 — Human packaged acceptance and defect closure
+# GBR-007 — Human macOS acceptance and defect closure
 
-Status: **external / pending**
+Status: EXTERNAL / READY FOR HUMAN TEST
 
-## Objective
+## Purpose
+Validate the released Grok-parity macOS candidate as an installed product. This task intentionally starts only after automated source/runtime/package acceptance. Automated implementation is complete; this round is owned by a human tester per the original requirement.
 
-Manually install and exercise the released Mac candidate. This task is intentionally external because the original requirement assigns product testing to humans.
-
-Candidate:
+## Immutable candidate under test
+- repository: `bhrumom/fabushi-desktop`
+- PR: #1
+- product code SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`
+- reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`
 - release: `grok-parity-mac-92`
 - version: `2.0.0-alpha.2`
-- shipped code SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`
-- release page: https://github.com/bhrumom/fabushi-desktop/releases/tag/grok-parity-mac-92
+- artifact digest: `sha256:6d3bf39199c312e695a6ab59cb7eb7cf408df6ab2ff34dee1a7076eb91406b2c`
+- automated source gate: Run `35417698506` — 103/103 PASS
+- automated macOS package/release: Run `35417698507` — SUCCESS
 
 ## Human acceptance checklist
 
-1. Install/open the DMG and confirm first launch/window chrome/renderer are visually Grok-style.
-2. Confirm Contacts/Messenger-specific, Telegram, payment, MiniApp and Mahayana workbench surfaces are not reachable.
-3. Create, rename, hide/unhide and delete Agents.
-4. Send real signed-in model prompts and verify streaming/final responses.
-5. Exercise Files, Terminal, Browser, Computer and delegated Subagent actions, including approval/Stop/error paths.
-6. Grant/deny macOS permissions and verify local Computer screenshot/input behavior.
-7. Exercise Teach recording save/discard and learning handoff.
-8. Search/install/uninstall local Marketplace MCP/private-skill entries; exercise OAuth/account/tool toggles where a real provider is available.
-9. Exercise workflows/routines, Settings, updater/about/feedback and restart persistence.
-10. Compare key screens/interactions against the pinned Grok Bot 0.18 reference and record screenshots/video for material mismatches.
+### 1. Installation and first launch
+- Install the DMG on a clean macOS user session.
+- Launch Fabushi from Applications.
+- Confirm no Contacts, Telegram, payment, MiniApp, Mahayana-workbench, or legacy Messenger surface is visible.
+- Confirm the first visible application shell matches the pinned Grok Bot 0.18 renderer structure and has no preload/desktop-bridge failure banner.
 
-## Defect rule
+### 2. Agent lifecycle
+- Create an Agent, rename it, duplicate it, hide/show it, pin/unpin it, and delete the duplicate.
+- Send a plain text prompt and confirm the response streams into the Grok-style conversation surface.
+- Start a second Agent and verify each Agent keeps independent conversation state.
+- Start a long-running turn, press Stop, and confirm cancellation returns the Agent to an idle/usable state without corrupting the transcript.
+- Quit and relaunch the app; confirm Agent roster and conversation state persist.
 
-Any material failure returns to PR #1 as a narrowly scoped fix with a new exact-head source gate and a new superseding Mac prerelease. This task is not PASS without human evidence.
+### 3. Local Computer product difference
+- Ask an Agent to inspect the installed Mac via Computer.
+- Exercise screenshot, click, typing, key press, and at least one Browser action.
+- Confirm actions target the same Mac running Fabushi and do not request or provision a cloud/VNC machine.
+- Confirm approval UI appears when the configured local-tool permission requires approval, and both Allow and Deny paths work.
+- Confirm cancellation during a local action leaves the Agent usable.
+
+### 4. Files, Terminal, Browser and background tasks
+- Read a local text file.
+- Run a foreground shell command.
+- Start a background shell command and confirm it appears as an Agent-owned async task.
+- Exercise Browser navigation/read and one mutation action.
+- Confirm transcript tool rows update through queued/running/streaming/done or error states.
+
+### 5. Plugins / Marketplace
+- Open the Grok-style plugin/Marketplace surface.
+- Install the built-in Custom MCP Server entry and verify it becomes usable.
+- Install a Private Skill and verify it appears in the Agent workflow/skill surface.
+- Enable/disable a plugin/tool, then uninstall it.
+- If an OAuth-capable MCP test service is available, verify connect/account/tool-list/disconnect without exposing tokens in renderer-visible state.
+
+### 6. Workflows, routines and Teach
+- Create or import a private workflow/skill and run it.
+- Create a routine/automation, run it manually, and inspect run history.
+- Start local Computer Teach recording, perform a short demonstration, stop/save it, and confirm the result attaches to the Agent / Learn-from-demonstration flow.
+
+### 7. Sharing / channels
+- Open the reference sharing/channel surfaces.
+- With no sharing backend configured, confirm the product fails closed rather than pretending a room is connected.
+- If the configured backend is available, exercise the supported connect/disconnect path and confirm state updates.
+
+### 8. Error and recovery behavior
+- Exercise a failed tool call and confirm the error appears in the Grok-style transcript without killing the session.
+- Exercise offline/unavailable inference behavior and confirm the application remains navigable.
+- Relaunch after an interrupted turn and confirm stored state is still readable.
+
+### 9. Visual / interaction parity spot-check
+- Compare sidebar, roster, conversation header, composer, tool rows, approval cards, Computer pane, settings, plugin surface, dialogs, avatar editor, async tasks, and window chrome against the pinned reference.
+- Record any visible structural difference that is not the approved local-Computer product difference.
+- Do not accept a Fabushi-only module or navigation item in the parity product.
+
+## Evidence to retain
+For every failure, retain:
+- exact release/tag and product SHA;
+- macOS version and machine architecture;
+- reproduction steps;
+- screenshot or screen recording;
+- relevant app log;
+- expected reference behavior;
+- actual behavior.
+
+## Defect closure rule
+Any product defect found here must be fixed on PR #1. A product-code fix invalidates the previous release candidate and requires a new exact-SHA source gate, macOS package, packaged smoke, artifact digest, prerelease tag and tag-SHA verification before human retest.
+
+## Completion rule
+GBR-007 becomes PASS only when the human tester explicitly records that all required sections pass or documents an accepted evidence-backed product difference. Until then PR #1 stays open and the automated implementation remains complete but final human acceptance remains pending.
