@@ -6,6 +6,7 @@ on:
     paths:
       - "desktop/**"
       - ".github/workflows/macos-grok-parity.yml"
+      - ".github/workflows/grok-parity-source-check.yml"
 
 concurrency:
   group: macos-grok-parity-${{ github.ref }}

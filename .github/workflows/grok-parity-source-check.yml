@@ -5,11 +5,13 @@ on:
     paths:
       - "desktop/**"
       - ".github/workflows/grok-parity-source-check.yml"
+      - ".github/workflows/macos-grok-parity.yml"
       - "reference/grok-bot-0.18/manifests/reconstruction/renderer-closure.json"
   pull_request:
     paths:
       - "desktop/**"
       - ".github/workflows/grok-parity-source-check.yml"
+      - ".github/workflows/macos-grok-parity.yml"
       - "reference/grok-bot-0.18/manifests/reconstruction/renderer-closure.json"
 
 concurrency:
