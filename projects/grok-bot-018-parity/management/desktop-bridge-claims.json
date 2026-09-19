@@ -1,0 +1,684 @@
+{
+  "schemaVersion": 1,
+  "referenceRepository": "bhrum/grok-bot-0.18-reconstructed",
+  "referenceCommit": "107877b4e2134fd167d239411386f09e42eadd6d",
+  "sourceManifest": "manifests/reconstruction/renderer-closure.json",
+  "claimCount": 95,
+  "classificationCounts": {
+    "local-implemented": 79,
+    "external-account-service": 3,
+    "local-computer-product-difference": 11,
+    "local-computer-adaptation": 2
+  },
+  "policy": {
+    "noSilentUnclassifiedClaims": true,
+    "onlyAllowedProductDifference": "Reference cloud-computer features are replaced by installed-local-computer behavior; external account subscription/dashboard services fail closed and do not fabricate data."
+  },
+  "claims": [
+    {
+      "value": "agent.getPinnedAgents",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2434,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "agent.setPinnedAgents",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 3091,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "autoReviewInstructions.get",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 442,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "autoReviewInstructions.set",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 451,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "ceiling",
+      "cleanPath": "frontend/src/recovered/features/permissions/local-tool/store.ts",
+      "line": 125,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "clearApprovals",
+      "cleanPath": "frontend/src/recovered/features/permissions/local-tool/store.ts",
+      "line": 191,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "clientPersistence.read",
+      "cleanPath": "frontend/src/recovered/features/conversation/workspace/sidebar-sections-state.ts",
+      "line": 340,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "clientPersistence.remove",
+      "cleanPath": "frontend/src/recovered/features/conversation/workspace/sidebar-sections-state.ts",
+      "line": 250,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "clientPersistence.write",
+      "cleanPath": "frontend/src/recovered/features/conversation/workspace/sidebar-sections-state.ts",
+      "line": 257,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "commitStagedAttachments",
+      "cleanPath": "frontend/src/recovered/features/conversation/workspace/desktop.ts",
+      "line": 91,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "cursorAccount.cancelLogin",
+      "cleanPath": "frontend/src/recovered/features/account/session/sign-in-status.tsx",
+      "line": 44,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "cursorAccount.cancelTrial",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 280,
+      "classification": "external-account-service",
+      "behavior": "Depends on an external subscription/dashboard service; local bridge returns explicit unavailable/null rather than fabricating success."
+    },
+    {
+      "value": "cursorAccount.getAvatar",
+      "cleanPath": "frontend/src/recovered/features/account/session/menu.tsx",
+      "line": 248,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "cursorAccount.getStatus",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2749,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "cursorAccount.getUsageSummary",
+      "cleanPath": "frontend/src/recovered/features/account/session/menu.tsx",
+      "line": 264,
+      "classification": "external-account-service",
+      "behavior": "Depends on an external subscription/dashboard service; local bridge returns explicit unavailable/null rather than fabricating success."
+    },
+    {
+      "value": "cursorAccount.invokeDashboardAction",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 265,
+      "classification": "external-account-service",
+      "behavior": "Depends on an external subscription/dashboard service; local bridge returns explicit unavailable/null rather than fabricating success."
+    },
+    {
+      "value": "cursorAccount.login",
+      "cleanPath": "frontend/src/recovered/features/account/session/menu.tsx",
+      "line": 277,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "cursorAccount.logout",
+      "cleanPath": "frontend/src/recovered/features/account/session/sign-out.tsx",
+      "line": 34,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "cursorAccount.onStatusChanged",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2756,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "cursorAccount.updateName",
+      "cleanPath": "frontend/src/recovered/features/account/session/menu.tsx",
+      "line": 91,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "deepLinksReady",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2778,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "discardStagedAttachment",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2791,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "downloadAttachment",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 803,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "experiments.onChanged",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 1572,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "foreverBox.egressTunnel.onChanged",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 304,
+      "classification": "local-computer-product-difference",
+      "behavior": "Cloud Box/VNC/Cloud Agent behavior is intentionally unavailable or mapped to the installed local Mac."
+    },
+    {
+      "value": "foreverBox.egressTunnel.onStatusChanged",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 305,
+      "classification": "local-computer-product-difference",
+      "behavior": "Cloud Box/VNC/Cloud Agent behavior is intentionally unavailable or mapped to the installed local Mac."
+    },
+    {
+      "value": "foreverBox.egressTunnel.set",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 195,
+      "classification": "local-computer-product-difference",
+      "behavior": "Cloud Box/VNC/Cloud Agent behavior is intentionally unavailable or mapped to the installed local Mac."
+    },
+    {
+      "value": "foreverBox.forceRecreate",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2008,
+      "classification": "local-computer-adaptation",
+      "behavior": "Reference ForeverBox operation is mapped to the installed Mac and returns local-mac state with no VNC URL."
+    },
+    {
+      "value": "foreverBox.onVncUserPresence",
+      "cleanPath": "frontend/src/recovered/features/computer/shell/controller.ts",
+      "line": 209,
+      "classification": "local-computer-product-difference",
+      "behavior": "Cloud Box/VNC/Cloud Agent behavior is intentionally unavailable or mapped to the installed local Mac."
+    },
+    {
+      "value": "foreverBox.update",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2007,
+      "classification": "local-computer-adaptation",
+      "behavior": "Reference ForeverBox operation is mapped to the installed Mac and returns local-mac state with no VNC URL."
+    },
+    {
+      "value": "foreverBox.webauthnProxy.get",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 164,
+      "classification": "local-computer-product-difference",
+      "behavior": "Cloud Box/VNC/Cloud Agent behavior is intentionally unavailable or mapped to the installed local Mac."
+    },
+    {
+      "value": "foreverBox.webauthnProxy.onChanged",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 300,
+      "classification": "local-computer-product-difference",
+      "behavior": "Cloud Box/VNC/Cloud Agent behavior is intentionally unavailable or mapped to the installed local Mac."
+    },
+    {
+      "value": "foreverBox.webauthnProxy.set",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 211,
+      "classification": "local-computer-product-difference",
+      "behavior": "Cloud Box/VNC/Cloud Agent behavior is intentionally unavailable or mapped to the installed local Mac."
+    },
+    {
+      "value": "get",
+      "cleanPath": "frontend/src/recovered/features/permissions/local-tool/store.ts",
+      "line": 97,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "getBoxMigrationStatus",
+      "cleanPath": "frontend/src/recovered/features/access/cover/computer-rebuild-migration-store.ts",
+      "line": 126,
+      "classification": "local-computer-product-difference",
+      "behavior": "Cloud Box/VNC/Cloud Agent behavior is intentionally unavailable or mapped to the installed local Mac."
+    },
+    {
+      "value": "getLinkMetadata",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 699,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "getSandAccessFresh",
+      "cleanPath": "frontend/src/recovered/features/access/cover/model.ts",
+      "line": 139,
+      "classification": "local-computer-product-difference",
+      "behavior": "Cloud Box/VNC/Cloud Agent behavior is intentionally unavailable or mapped to the installed local Mac."
+    },
+    {
+      "value": "getSidebarSections",
+      "cleanPath": "frontend/src/recovered/features/conversation/workspace/sidebar-sections-state.ts",
+      "line": 274,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "getWindowState",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2749,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "getZoomFactor",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2784,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "localToolPermission.ceiling",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 162,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "localToolPermission.get",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 161,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "localToolPermission.set",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 207,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.authenticate",
+      "cleanPath": "frontend/src/recovered/features/conversation/cards/transcript-card/connector-actions.ts",
+      "line": 221,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.catalog",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 831,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.effectivePlugins",
+      "cleanPath": "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+      "line": 531,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.install",
+      "cleanPath": "frontend/src/recovered/features/conversation/cards/transcript-card/connector-actions.ts",
+      "line": 211,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.list",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 830,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.listServerTools",
+      "cleanPath": "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+      "line": 552,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.onAuthCompleted",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 832,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.remove",
+      "cleanPath": "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+      "line": 562,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.removeAccount",
+      "cleanPath": "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
+      "line": 316,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.renameAccount",
+      "cleanPath": "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
+      "line": 315,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.toggleToolDisabled",
+      "cleanPath": "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+      "line": 557,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.uninstallPlugin",
+      "cleanPath": "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+      "line": 561,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "mcp.updatePluginInstall",
+      "cleanPath": "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+      "line": 547,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "onboarding.getSeen",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2109,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "onboarding.onSkip",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2773,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "onboarding.setSeen",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2132,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "onBoxMigration",
+      "cleanPath": "frontend/src/recovered/features/access/cover/computer-rebuild-migration-store.ts",
+      "line": 156,
+      "classification": "local-computer-product-difference",
+      "behavior": "Cloud Box/VNC/Cloud Agent behavior is intentionally unavailable or mapped to the installed local Mac."
+    },
+    {
+      "value": "onDeepLink",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2767,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "onFocusAgent",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2763,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "onForceOnboarding",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2772,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "onOpenAbout",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2775,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "onOpenFeedback",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2774,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "onWindowStateEvent",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2759,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "onZoomFactorEvent",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2785,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "openCloudAgent",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 679,
+      "classification": "local-computer-product-difference",
+      "behavior": "Cloud Box/VNC/Cloud Agent behavior is intentionally unavailable or mapped to the installed local Mac."
+    },
+    {
+      "value": "openExternal",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 688,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "readAttachmentBytes",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 802,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "recordApproval",
+      "cleanPath": "frontend/src/recovered/features/permissions/local-tool/store.ts",
+      "line": 188,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "resolveAttachmentMedia",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 695,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "set",
+      "cleanPath": "frontend/src/recovered/features/permissions/local-tool/store.ts",
+      "line": 171,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "setSidebarSections",
+      "cleanPath": "frontend/src/recovered/features/conversation/workspace/sidebar-sections-state.ts",
+      "line": 290,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "stageAttachmentBytes",
+      "cleanPath": "frontend/src/recovered/features/conversation/workspace/desktop.ts",
+      "line": 64,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "submitFeedback",
+      "cleanPath": "frontend/src/recovered/features/feedback/overlay/view.tsx",
+      "line": 56,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "telemetry.reportOnboardingStep",
+      "cleanPath": "frontend/src/recovered/features/onboarding/signed-in/view.tsx",
+      "line": 195,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "telemetry.reportVncLiveness",
+      "cleanPath": "frontend/src/recovered/features/computer/shell/vnc-webview.tsx",
+      "line": 189,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "telemetry.reportVncSession",
+      "cleanPath": "frontend/src/recovered/features/computer/shell/view.tsx",
+      "line": 462,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "theme.get",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 158,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "theme.onChanged",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 2758,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "theme.set",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 3336,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "timeZone.get",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 159,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "timeZone.setOverride",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 199,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "transcribeAudio",
+      "cleanPath": "frontend/src/production/ProductionRenderer.tsx",
+      "line": 1894,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "update.check",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 224,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "update.getStatus",
+      "cleanPath": "frontend/src/recovered/features/about/overlay/view.tsx",
+      "line": 47,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "update.onStatusEvent",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 302,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "update.quitAndInstall",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "line": 215,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "update.setAutoUpdateWhenIdleOptIn",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
+      "line": 247,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "update.setTrack",
+      "cleanPath": "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
+      "line": 248,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "windowControls.close",
+      "cleanPath": "frontend/src/recovered/features/window-chrome/view.tsx",
+      "line": 52,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "windowControls.minimize",
+      "cleanPath": "frontend/src/recovered/features/window-chrome/view.tsx",
+      "line": 50,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "windowControls.setTitleBarOverlayTone",
+      "cleanPath": "frontend/src/recovered/features/window-chrome/view.tsx",
+      "line": 40,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    },
+    {
+      "value": "windowControls.toggleMaximize",
+      "cleanPath": "frontend/src/recovered/features/window-chrome/view.tsx",
+      "line": 51,
+      "classification": "local-implemented",
+      "behavior": "Backed by local Electron/coordinator state or a local persisted bridge."
+    }
+  ]
+}
