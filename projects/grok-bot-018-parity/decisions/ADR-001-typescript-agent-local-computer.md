@@ -24,5 +24,5 @@ The production path uses pinned `SandAgentRunner` and `AnysphereAgent`. Fabushi 
 
 Shipped code SHA: `ccc4e29f75e7057eb6cc3562ab78584ffbd55cdd`  
 Source gate: Run `35417698506` — 103/103 runtime tests PASS plus exact source/typecheck/build.  
-Mac delivery: Run `35417698507` — package/smoke/artifact/release/tag checks PASS.  
+Mac delivery: Run `35417698507` — package/artifact/release/tag checks PASS; the GitHub-hosted headless renderer probe did not emit its UI report and recorded `manualValidationRequired:true`, so packaged UI acceptance remains human.  
 Release: `grok-parity-mac-92`.
