@@ -45,12 +45,13 @@ test('host presents Grok model-facing names across local, state, agent, and suba
     requestApproval:async()=>true,onToolState:async()=>{},onAgentStatus:async()=>{},getWorkflowContext:async()=> '',
     subagents:{async list(){return[]},async create(){return{}},async check(){return{}},async message(){return{}},async stop(){return{}}},
     agentManagement:{async send(){return'sent'},async create(){return{}},async update(){return{}}},
+    mcpManagement:{},
     inferenceRequest:async(_messages,tools)=>{exposed=tools.map(row=>row.function.name);return{message:{content:'ok'}}}
   });
   const transcript=[{id:'u1',role:'user',text:'inspect tools',createdAt:1,status:'done'}];
   const result=await runtime.runTurn({agent:{id:'chief',name:'Chief'},history:transcript,transcript,enabled:new Set(['filesystem','shell','computer']),signal:new AbortController().signal});
   assert.equal(result,'ok');
-  for(const name of ['SendMessage','ReactToMessage','update_state','SendToAgent','CreateAgent','UpdateAgent','Read','run_terminal_cmd','Screenshot','Computer','Task','CheckSubagent','MessageSubagent','StopSubagent','GetMcpTools','CallMcpTool'])assert.equal(exposed.includes(name),true,name+' should be exposed');
+  for(const name of ['SendMessage','ReactToMessage','update_state','SendToAgent','CreateAgent','UpdateAgent','Read','run_terminal_cmd','Screenshot','Computer','Task','CheckSubagent','MessageSubagent','StopSubagent','GetMcpTools','CallMcpTool','SearchPlugins','GetPlugin','InstallPlugin','AddMcpServer','UninstallMcpServer','UninstallPlugin','GetMcpServerStatus','SetMcpInstructions','RestartMcpServers','AuthenticateMcpServer','RemoveMcpAccount','RenameMcpAccount'])assert.equal(exposed.includes(name),true,name+' should be exposed');
   for(const legacy of ['read_file','run_terminal','computer_click','computer_screenshot','create_subagent','check_subagent','message_subagent','stop_subagent'])assert.equal(exposed.includes(legacy),false,legacy+' must stay hidden');
 });
 
