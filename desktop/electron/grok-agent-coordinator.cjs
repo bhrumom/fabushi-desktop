@@ -102,14 +102,23 @@ function normalizeState(parsed){
     const rows=Array.isArray(parsed.automations?.[agent.id])?parsed.automations[agent.id]:[];
     base.automations[agent.id]=rows.flatMap(value=>{
       try{
-        const schedule=normalizeSchedule(value?.trigger?.schedule||'');
-        if(!value||typeof value!=='object'||!String(value.id||'')||!String(value.name||'')||!String(value.prompt||'')||!isValidSchedule(schedule))return[];
+        if(!value||typeof value!=='object'||!String(value.id||'')||!String(value.name||'')||!String(value.prompt||''))return[];
+        let trigger,triggerDescription,nextRunAt=null;
+        if(value?.trigger?.type==='cron'||value?.trigger?.schedule!=null){
+          const schedule=normalizeSchedule(value.trigger.schedule||'');if(!isValidSchedule(schedule))return[];
+          trigger={type:'cron',schedule};triggerDescription=describeSchedule(schedule);
+          const created=Number(value.createdAt)||Date.now(),last=Number.isFinite(Number(value.lastRunAt))?Number(value.lastRunAt):null;
+          nextRunAt=Number.isFinite(Number(value.nextRunAt))?Number(value.nextRunAt):computeNextRunAt(schedule,last??created);
+        }else if(value.trigger&&typeof value.trigger==='object'){
+          trigger=JSON.parse(JSON.stringify(value.trigger));if(!String(trigger.type||'').trim())return[];
+          triggerDescription=String(value.triggerDescription||('Event listener: '+trigger.type)).slice(0,500);
+        }else return[];
         const createdAt=Number(value.createdAt)||Date.now(),lastRunAt=Number.isFinite(Number(value.lastRunAt))?Number(value.lastRunAt):null;
         return[{
           id:String(value.id),name:clean(value.name,'Routine'),prompt:String(value.prompt).slice(0,100000),
-          trigger:{type:'cron',schedule},triggerDescription:describeSchedule(schedule),isEnabled:value.isEnabled!==false,
+          trigger,triggerDescription,isEnabled:value.isEnabled!==false,
           runs:Array.isArray(value.runs)?value.runs.slice(0,100).filter(run=>run&&['running','ok','error'].includes(run.status)&&Number.isFinite(run.startedAt)):[],
-          createdAt,lastRunAt,nextRunAt:Number.isFinite(Number(value.nextRunAt))?Number(value.nextRunAt):computeNextRunAt(schedule,lastRunAt??createdAt)
+          createdAt,lastRunAt,nextRunAt
         }];
       }catch{return[]}
     });
