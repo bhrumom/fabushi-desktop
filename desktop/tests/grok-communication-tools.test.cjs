@@ -20,7 +20,7 @@ test('ReactToMessage routes the target id and emoji',async()=>{
 
 test('SendMessage recovers attachment, widget and secret-request payloads without cloud-agent placeholders',()=>{
   assert.deepEqual(definitions[0].function.parameters.properties.type.enum,['text','attachment','widget','secret-request']);
-  assert.deepEqual(normalizeSendMessage({type:'attachment',url:'https://example.test/report.pdf',alt:'Report'}),{type:'attachment',url:'https://example.test/report.pdf',alt:'Report',replyToId:null});
+  assert.deepEqual(normalizeSendMessage({type:'attachment',url:'https://example.test/report.pdf',alt:'Report'}),{type:'attachment',url:'https://example.test/report.pdf',alt:'Report',replyToId:null,channel:null});
   const widget=normalizeSendMessage({type:'widget',widget:{prompt:'Choose one',options:[{label:'A'},{label:'B',value:'b'}],allowCustom:true}});
   assert.equal(widget.widget.options[1].value,'b');assert.equal(widget.widget.allowCustom,true);
   const secret=normalizeSendMessage({type:'secret-request',secret:{label:'API token',connector:'github',field:'token'}});
@@ -32,4 +32,12 @@ test('SendMessage routes non-text variants to the visible-message transport',asy
   await executeCommunicationTool('SendMessage',{type:'widget',widget:{prompt:'Proceed?',options:[{label:'Yes',value:'yes'}]}},{sendVisibleMessage:async input=>{calls.push(input);return'w1'},reactToConversationMessage:async()=>{}});
   await executeCommunicationTool('SendMessage',{type:'secret-request',secret:{label:'Token',connector:'x',field:'token'}},{sendVisibleMessage:async input=>{calls.push(input);return's1'},reactToConversationMessage:async()=>{}});
   assert.equal(calls[0].type,'widget');assert.equal(calls[1].type,'secret-request');
+});
+
+test('SendMessage channel and widget protocol matches Grok constraints',()=>{
+  const channel=normalizeSendMessage({type:'text',content:'Ship update',channel:'slack:C123'});
+  assert.equal(channel.channel,'slack:C123');
+  assert.throws(()=>normalizeSendMessage({type:'widget',channel:'slack:C123',widget:{prompt:'Go?',options:[{label:'Yes'}]}}),/channel is only valid/);
+  assert.throws(()=>normalizeSendMessage({type:'text',content:'hello',url:'https://example.test/file'}),/url is not valid with type:text/);
+  assert.throws(()=>normalizeSendMessage({type:'widget',widget:{prompt:'Too many',options:Array.from({length:7},(_,index)=>({label:String(index)}))}}),/1 to 6 options/);
 });
