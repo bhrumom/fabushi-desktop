@@ -9,7 +9,7 @@ on:
   pull_request:
     paths:
       - "desktop/**"
-      - ".github/workflows/grok-parity-source-check.yml""
+      - ".github/workflows/grok-parity-source-check.yml"
       - "reference/grok-bot-0.18/manifests/reconstruction/renderer-closure.json"
 
 concurrency:
