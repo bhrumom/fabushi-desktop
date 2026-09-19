@@ -218,6 +218,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const [workflowContext,memoryContext]=await Promise.all([getWorkflowContext(latestUser?.text||''),getMemoryContext(agent.id)]);
     const useReferenceAgent=String(process.env.FABUSHI_AGENT_ENGINE||'reference').trim().toLowerCase()!=='legacy';
     if(useReferenceAgent){
+      observation.engine='grok-anysphere-agent';
       let binding=referenceRuntimes.get(agent.id);
       if(!binding){
         const live={systemPrompt:'',tools:[],executeTool:null,onUpdate:null,agent};
@@ -309,6 +310,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
       observation.usage=mergeTurnUsage(observation.usage,normalizeTurnUsage(result.usage));
       return visibleMessageCount>0?null:(result.text||null);
     }
+    observation.engine='legacy-tool-loop';
     const messages=[{role:'system',content:systemPrompt(agent,enabled,workflowContext,memoryContext)}];
     const historyById=new Map(history.map(row=>[row.id,row]));
     for(const row of history.filter(x=>(x.role==='user'||x.role==='assistant')&&!(x.role==='assistant'&&x.internal===true)).slice(-40)){
@@ -409,13 +411,13 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
 
   async function runTurn(input){
     const context=rootRequestContext({agentId:input.agent?.id,conversationId:input.agent?.id,signal:input.signal});
-    const observation={turnId:crypto.randomUUID(),startedAt:Date.now(),toolCallCount:0,retryCount:0,lastTool:null,usage:undefined};
+    const observation={turnId:crypto.randomUUID(),startedAt:Date.now(),toolCallCount:0,retryCount:0,lastTool:null,usage:undefined,engine:null};
     await onTurnObservation({kind:'turn-started',agentId:input.agent?.id,turnId:observation.turnId,at:observation.startedAt});
     let outcome='done';
     try{return await runWithRequestContext(context,()=>runTurnInContext({...input,observation}))}
     catch(error){outcome=isAbort(error,input.signal)?'cancelled':'error';throw error}
     finally{
-      const endedAt=Date.now(),payload={agentId:input.agent?.id,turnId:observation.turnId,startedAt:observation.startedAt,endedAt,durationMs:Math.max(0,endedAt-observation.startedAt),toolCallCount:observation.toolCallCount,retryCount:observation.retryCount,lastTool:observation.lastTool,outcome,...(observation.usage?{usage:observation.usage}:{})};
+      const endedAt=Date.now(),payload={agentId:input.agent?.id,turnId:observation.turnId,startedAt:observation.startedAt,endedAt,durationMs:Math.max(0,endedAt-observation.startedAt),toolCallCount:observation.toolCallCount,retryCount:observation.retryCount,lastTool:observation.lastTool,outcome,engine:observation.engine,...(observation.usage?{usage:observation.usage}:{})};
       await Promise.resolve(onTurnUsage(payload)).catch(()=>{});await Promise.resolve(onTurnObservation({kind:'turn-ended',...payload})).catch(()=>{});
     }
   }
