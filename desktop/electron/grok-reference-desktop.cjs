@@ -48,6 +48,7 @@ function createReferenceDesktop({app,BrowserWindow,shell,dialog,safeStorage,nati
     prefs.clientPersistence=prefs.clientPersistence&&typeof prefs.clientPersistence==='object'&&!Array.isArray(prefs.clientPersistence)?prefs.clientPersistence:{};
     prefs.timeZoneOverride=typeof prefs.timeZoneOverride==='string'?prefs.timeZoneOverride:null;
     prefs.theme=['system','light','dark'].includes(prefs.theme)?prefs.theme:'system';
+    prefs.localToolApprovals=prefs.localToolApprovals&&typeof prefs.localToolApprovals==='object'&&!Array.isArray(prefs.localToolApprovals)?prefs.localToolApprovals:{};
     return prefs;
   }
   async function savePrefs(){
@@ -165,6 +166,15 @@ function createReferenceDesktop({app,BrowserWindow,shell,dialog,safeStorage,nati
         if(!text)throw Error('Audio transcription returned no text.');
         return{text,transcriptionTimeMs:Date.now()-started};
       }
+      case'permission-ceiling':{
+        const value=String(process.env.FABUSHI_LOCAL_TOOL_PERMISSION_CEILING||'').trim().toLowerCase();
+        return['always','ask','never'].includes(value)?value:null;
+      }
+      case'permission-record-approval':{
+        const id=String(args.approvalId||'').trim();if(!id)throw Error('Approval id is required.');
+        const p=await loadPrefs();p.localToolApprovals[id]={action:args.action??null,target:args.target??null,recordedAtMs:Date.now()};await savePrefs();return;
+      }
+      case'permission-clear-approvals':{const p=await loadPrefs();p.localToolApprovals={};await savePrefs();return}
       case'time-zone-get':{const p=await loadPrefs();return{detectedTimeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||null,overrideTimeZone:p.timeZoneOverride}}
       case'time-zone-set':{const p=await loadPrefs();p.timeZoneOverride=args.timeZone==null?null:String(args.timeZone);await savePrefs();return{detectedTimeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||null,overrideTimeZone:p.timeZoneOverride}}
       case'secrets-list':{
