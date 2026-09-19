@@ -1,5 +1,5 @@
 'use strict';
-const {app,BrowserWindow,dialog,ipcMain,shell,safeStorage,Notification,autoUpdater,protocol,nativeTheme}=require('electron');
+const {app,BrowserWindow,dialog,ipcMain,shell,safeStorage,Notification,autoUpdater,protocol,nativeTheme,Menu}=require('electron');
 const fs=require('node:fs');
 const path=require('node:path');
 const {URL}=require('node:url');
@@ -12,6 +12,36 @@ const {createReferenceDesktop}=require('./grok-reference-desktop.cjs');
 
 registerSandMediaScheme(protocol);
 let mainWindow=null,runtime=null,desktopServices=null,referenceCoordinator=null,referenceDesktop=null,quitAfterDispose=false,pendingDeepLink=null;
+function sendReferenceEvent(name,payload={}){
+  if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('grok-reference:'+name,payload);
+}
+function currentWindowState(win=mainWindow){
+  return{isFullscreen:Boolean(win?.isFullScreen?.()),isMaximized:Boolean(win?.isMaximized?.())};
+}
+function installReferenceApplicationMenu(){
+  const openAbout=()=>sendReferenceEvent('open-about');
+  const openFeedback=()=>sendReferenceEvent('open-feedback');
+  const forceOnboarding=()=>sendReferenceEvent('force-onboarding');
+  const appMenu=[
+    {label:'About Fabushi',click:openAbout},
+    {type:'separator'},
+    {role:'services'},
+    {type:'separator'},
+    {role:'hide'},
+    {role:'hideOthers'},
+    {role:'unhide'},
+    {type:'separator'},
+    {role:'quit'}
+  ];
+  const template=[
+    ...(process.platform==='darwin'?[{label:app.name||'Fabushi',submenu:appMenu}]:[]),
+    {label:'Edit',submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},
+    {label:'View',submenu:[{role:'reload'},{role:'forceReload'},{type:'separator'},{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'},{type:'separator'},{role:'togglefullscreen'}]},
+    {label:'Window',submenu:[{role:'minimize'},{role:'zoom'},...(process.platform==='darwin'?[{type:'separator'},{role:'front'}]:[{role:'close'}])]},
+    {label:'Help',submenu:[{label:'Run Onboarding',click:forceOnboarding},{label:'Send Feedback…',click:openFeedback},...(process.platform==='darwin'?[]:[{label:'About Fabushi',click:openAbout}])]}
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
 function emitDeepLink(link){if(!link)return;if(mainWindow&&!mainWindow.isDestroyed()&&!mainWindow.webContents.isLoading())mainWindow.webContents.send('grok-agent:deep-link',link);else pendingDeepLink=link;}
 function captureDeepLink(value){const link=parseDeepLink(value);if(!link)return false;emitDeepLink(link);return true;}
 function trusted(event){
@@ -91,6 +121,9 @@ function createWindow(){
   };
   win.webContents.on('did-fail-load',(_event,errorCode,errorDescription,validatedURL,isMainFrame)=>{if(isMainFrame!==false){console.error('renderer did-fail-load',errorCode,errorDescription,validatedURL);writeSmokeFailure('did-fail-load',errorDescription||errorCode)}});
   win.webContents.on('render-process-gone',(_event,details)=>{console.error('renderer process gone',details);writeSmokeFailure('render-process-gone',details?.reason||details)});
+  const emitWindowState=()=>sendReferenceEvent('window-state',currentWindowState(win));
+  for(const eventName of ['maximize','unmaximize','enter-full-screen','leave-full-screen'])win.on(eventName,emitWindowState);
+  win.webContents.on('zoom-changed',()=>sendReferenceEvent('zoom-factor-changed',{factor:win.webContents.getZoomFactor()}));
   win.webContents.once('dom-ready',()=>scheduleSmoke('dom-ready'));
   win.webContents.once('did-stop-loading',()=>scheduleSmoke('did-stop-loading'));
   win.webContents.on('did-finish-load',()=>{if(pendingDeepLink){const link=pendingDeepLink;pendingDeepLink=null;win.webContents.send('grok-agent:deep-link',link)}scheduleSmoke('did-finish-load')});
@@ -102,7 +135,7 @@ if(!app.requestSingleInstanceLock())app.quit();
 else{
   app.on('open-url',(event,url)=>{event.preventDefault();captureDeepLink(url)});
   app.on('second-instance',(_event,argv)=>{for(const value of argv||[])if(captureDeepLink(value))break;if(!mainWindow)createWindow();if(mainWindow.isMinimized())mainWindow.restore();mainWindow.show();mainWindow.focus();});
-  app.whenReady().then(()=>{try{app.setAsDefaultProtocolClient('sand');app.setAsDefaultProtocolClient('fabushi')}catch{}const attachmentGateway=createAttachmentGateway({app});registerSandMediaProtocol(protocol,attachmentGateway);runtime=createRuntime({app,BrowserWindow,shell,safeStorage,attachmentGateway,notify:({title,body})=>{if(Notification.isSupported())new Notification({title:String(title||'Fabushi'),body:String(body||'')}).show()}});desktopServices=createDesktopServices({app,autoUpdater,onUpdateStatus:status=>{if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('grok-agent:update-status',status)}});referenceCoordinator=createReferenceCoordinator(runtime);referenceDesktop=createReferenceDesktop({app,BrowserWindow,shell,dialog,safeStorage,nativeTheme,getWindow:()=>mainWindow});registerIpc();createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
+  app.whenReady().then(()=>{try{app.setAsDefaultProtocolClient('sand');app.setAsDefaultProtocolClient('fabushi')}catch{}const attachmentGateway=createAttachmentGateway({app});registerSandMediaProtocol(protocol,attachmentGateway);runtime=createRuntime({app,BrowserWindow,shell,safeStorage,attachmentGateway,notify:({title,body})=>{if(Notification.isSupported())new Notification({title:String(title||'Fabushi'),body:String(body||'')}).show()}});desktopServices=createDesktopServices({app,autoUpdater,onUpdateStatus:status=>{if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('grok-agent:update-status',status)}});referenceCoordinator=createReferenceCoordinator(runtime);referenceDesktop=createReferenceDesktop({app,BrowserWindow,shell,dialog,safeStorage,nativeTheme,getWindow:()=>mainWindow});registerIpc();createWindow();installReferenceApplicationMenu();nativeTheme.on('updated',()=>sendReferenceEvent('theme-changed',{preference:nativeTheme.themeSource,resolved:nativeTheme.shouldUseDarkColors?'dark':'light'}));app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
   app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});
   app.on('before-quit',event=>{if(!runtime||quitAfterDispose)return;event.preventDefault();quitAfterDispose=true;desktopServices?.dispose?.();void Promise.resolve(runtime.dispose?.()).finally(()=>app.quit());});
 }
