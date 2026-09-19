@@ -13,6 +13,28 @@ function cleanName(value){
   const base=path.basename(String(value||'file')).replace(/[\x00-\x1f<>:"/\\|?*]+/g,'-').trim();
   return (base||'file').slice(0,180);
 }
+function transcriptionEndpoint(){
+  const explicit=String(process.env.FABUSHI_TRANSCRIBE_URL||'').trim();
+  if(explicit)return explicit;
+  const agent=String(process.env.FABUSHI_AGENT_API_URL||'').trim();
+  if(!agent)return null;
+  try{
+    const url=new URL(agent);
+    if(url.pathname.endsWith('/chat/completions'))url.pathname=url.pathname.slice(0,-'/chat/completions'.length)+'/audio/transcriptions';
+    else if(url.pathname.endsWith('/responses'))url.pathname=url.pathname.slice(0,-'/responses'.length)+'/audio/transcriptions';
+    else return null;
+    return url.toString();
+  }catch{return null}
+}
+function audioExtension(mime){
+  const value=String(mime||'').toLowerCase();
+  if(value.includes('webm'))return'webm';
+  if(value.includes('wav'))return'wav';
+  if(value.includes('mpeg'))return'mp3';
+  if(value.includes('mp4')||value.includes('m4a'))return'm4a';
+  if(value.includes('ogg'))return'ogg';
+  return'bin';
+}
 function createReferenceDesktop({app,BrowserWindow,shell,dialog,safeStorage,nativeTheme,getWindow}){
   const prefsFile=path.join(app.getPath('userData'),'grok-reference-desktop.json');
   const stageRoot=path.join(app.getPath('userData'),'grok-reference-staged');
@@ -113,6 +135,24 @@ function createReferenceDesktop({app,BrowserWindow,shell,dialog,safeStorage,nati
         const raw=String(args.url||'');let url;try{url=new URL(raw)}catch{return null}
         if(url.protocol!=='https:')return{url:url.toString(),title:url.hostname};
         try{const response=await fetch(url,{headers:{accept:'text/html'},signal:AbortSignal.timeout(5000)});const html=(await response.text()).slice(0,250000);const title=/<title[^>]*>([^<]+)<\/title>/i.exec(html)?.[1]?.trim();return{url:url.toString(),title:title||url.hostname}}catch{return{url:url.toString(),title:url.hostname}}
+      }
+      case'transcribe-audio':{
+        const started=Date.now(),endpoint=transcriptionEndpoint();
+        if(!endpoint)throw Error('Audio transcription is not configured. Set FABUSHI_TRANSCRIBE_URL or use an OpenAI-compatible FABUSHI_AGENT_API_URL ending in /chat/completions.');
+        const bytes=Buffer.from(args.audio||[]);
+        if(!bytes.length)throw Error('Audio transcription requires recorded audio.');
+        const mime=String(args.mimeType||'application/octet-stream'),form=new FormData();
+        form.append('file',new Blob([bytes],{type:mime}),'speech.'+audioExtension(mime));
+        form.append('model',String(process.env.FABUSHI_TRANSCRIBE_MODEL||'whisper-1'));
+        if(String(args.language||'').trim())form.append('language',String(args.language).trim());
+        const key=String(process.env.FABUSHI_TRANSCRIBE_API_KEY||process.env.FABUSHI_AGENT_API_KEY||'').trim();
+        const headers=key?{authorization:'Bearer '+key}:{};
+        const response=await fetch(endpoint,{method:'POST',headers,body:form,signal:AbortSignal.timeout(120000)});
+        const raw=await response.text();let payload={};try{payload=raw?JSON.parse(raw):{}}catch{}
+        if(!response.ok)throw Error('Audio transcription failed ('+response.status+'): '+String(payload?.error?.message||raw||response.statusText).slice(0,600));
+        const text=String(payload?.text||payload?.transcript||'').trim();
+        if(!text)throw Error('Audio transcription returned no text.');
+        return{text,transcriptionTimeMs:Date.now()-started};
       }
       case'time-zone-get':{const p=await loadPrefs();return{detectedTimeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||null,overrideTimeZone:p.timeZoneOverride}}
       case'time-zone-set':{const p=await loadPrefs();p.timeZoneOverride=args.timeZone==null?null:String(args.timeZone);await savePrefs();return{detectedTimeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||null,overrideTimeZone:p.timeZoneOverride}}
