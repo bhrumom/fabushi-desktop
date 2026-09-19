@@ -7,6 +7,10 @@ on:
       - "desktop/**"
       - ".github/workflows/macos-grok-parity.yml"
 
+concurrency:
+  group: macos-grok-parity-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
