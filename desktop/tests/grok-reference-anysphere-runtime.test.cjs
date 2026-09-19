@@ -46,3 +46,40 @@ test('exact AnysphereAgent adapter executes a local tool and continues model tur
   assert.equal(round,2);
   assert.match(result.text,/done/);
 });
+
+
+test('provider-private deltas never become committed Agent output',async()=>{
+  const {createLocalAnysphereRuntime}=require('../electron/grok-reference-anysphere-runtime.cjs');
+  let round=0;
+  const runtime=createLocalAnysphereRuntime({
+    conversationId:'privacy',
+    modelId:'test-model',
+    systemPrompt:()=> 'Keep private inference private.',
+    getTools:()=>[{type:'function',function:{name:'echo_local',description:'Echo',parameters:{type:'object',properties:{text:{type:'string'}},required:['text']}}],
+    executeTool:async()=>({text:'ok'}),
+    transport:async(_messages,_tools,_signal,onDelta)=>{
+      round+=1;
+      if(round===1)return{message:{content:null,tool_calls:[{id:'t1',type:'function',function:{name:'echo_local',arguments:'{"text":"ok"}'}}]}};
+      onDelta?.('private ','private ');
+      onDelta?.('scratchpad','private scratchpad');
+      return{message:{content:'final answer'}};
+    }
+  });
+  const result=await runtime.run({prompt:'work then answer'});
+  assert.equal(result.text,'final answer');
+  assert.equal(round,2);
+});
+
+test('offline reference Agent preserves the local-host ready fallback',async()=>{
+  const {createLocalAnysphereRuntime}=require('../electron/grok-reference-anysphere-runtime.cjs');
+  const runtime=createLocalAnysphereRuntime({
+    conversationId:'offline',
+    modelId:'test-model',
+    systemPrompt:()=> 'Offline test.',
+    getTools:()=>[],
+    executeTool:async()=>null,
+    transport:async()=>({offline:true})
+  });
+  const result=await runtime.run({prompt:'hello'});
+  assert.match(result.text,/Agent host is ready on this Mac/);
+});

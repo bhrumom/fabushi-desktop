@@ -150,6 +150,7 @@ class FabushiPromptExecutor extends BasePromptExecutor<Loose> {
   constructor(
     private readonly transport: LocalModelTransport,
     initialMessages?: readonly Loose[],
+    private readonly onCommittedText?: (text: string) => void,
   ) {
     super(new BasePromptBuilder<Loose>(initialMessages));
   }
@@ -167,6 +168,7 @@ class FabushiPromptExecutor extends BasePromptExecutor<Loose> {
     );
     const response = transportPromise.then(result => {
       if (result.offline) {
+        this.onCommittedText?.("Agent host is ready on this Mac. Configure FABUSHI_AGENT_API_URL, FABUSHI_AGENT_API_KEY, and optionally FABUSHI_AGENT_MODEL to connect a tool-calling model.");
         return {
           id: invocationId,
           timestamp: new Date(),
@@ -176,7 +178,10 @@ class FabushiPromptExecutor extends BasePromptExecutor<Loose> {
       }
       const message = result.message ?? {};
       const content: Loose[] = [];
-      if (typeof message.content === "string" && message.content.length > 0) content.push({ type: "text", text: message.content });
+      if (typeof message.content === "string" && message.content.length > 0) {
+        this.onCommittedText?.(message.content);
+        content.push({ type: "text", text: message.content });
+      }
       for (const call of message.tool_calls ?? []) {
         let args: unknown = {};
         try { args = JSON.parse(call.function?.arguments ?? "{}"); } catch { args = call.function?.arguments ?? "{}"; }
@@ -351,11 +356,12 @@ export function createLocalAnysphereRuntime(options: LocalAnysphereRuntimeOption
   })();
   let activeTools: Loose[] = [];
   let accumulatedText = "";
+  let committedText = "";
   let lastUsage: Loose | undefined;
   let turnCount = 0;
   const persistState = () => options.onState?.(Buffer.from(state.toBinary()).toString("base64"));
 
-  const getExecutor = (messages?: readonly Loose[]) => new FabushiPromptExecutor(options.transport, messages);
+  const getExecutor = (messages?: readonly Loose[]) => new FabushiPromptExecutor(options.transport, messages, text => { committedText = text; });
   const toolSession = createTurnToolSession({
     getExecutor: () => getExecutor(),
     isSubagentRunner: false,
@@ -395,6 +401,7 @@ export function createLocalAnysphereRuntime(options: LocalAnysphereRuntimeOption
     engine: "grok-anysphere-agent",
     async run(input: { readonly prompt: string; readonly messageId?: string; readonly signal?: AbortSignal; readonly tools?: readonly LocalToolDefinition[] }) {
       accumulatedText = "";
+      committedText = "";
       lastUsage = undefined;
       activeTools = (input.tools ?? options.getTools()).map(definition => makeTool(definition, options.executeTool));
       const action = new ConversationAction({
@@ -424,7 +431,7 @@ export function createLocalAnysphereRuntime(options: LocalAnysphereRuntimeOption
         state = await stream.startStream(runCtx, undefined, checkpoint => { state = checkpoint; persistState(); });
         turnCount += 1;
         persistState();
-        return { text: accumulatedText, usage: lastUsage, engine: "grok-anysphere-agent" };
+        return { text: committedText || accumulatedText, usage: lastUsage, engine: "grok-anysphere-agent" };
       } finally {
         input.signal?.removeEventListener("abort", onAbort);
       }
