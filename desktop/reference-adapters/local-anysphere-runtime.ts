@@ -156,14 +156,13 @@ class FabushiPromptExecutor extends BasePromptExecutor<Loose> {
 
   stream(ctx: { signal: AbortSignal }, invocationId = crypto.randomUUID(), tools: readonly Loose[] = []) {
     const queue = new AsyncEventQueue<Loose>();
-    let streamedText = "";
     const transportPromise = this.transport(
       toOpenAiMessages(this.getMessages()),
       toOpenAiTools(tools),
       ctx.signal,
-      (delta, aggregate) => {
-        streamedText = aggregate;
-        if (delta) queue.push({ type: "text-delta", textDelta: delta });
+      () => {
+        // Transport deltas are intentionally private. The reference Agent receives
+        // only the provider's committed assistant message below.
       },
     );
     const response = transportPromise.then(result => {
@@ -172,7 +171,7 @@ class FabushiPromptExecutor extends BasePromptExecutor<Loose> {
           id: invocationId,
           timestamp: new Date(),
           modelId: "fabushi-offline",
-          messages: [{ role: "assistant", content: [{ type: "text", text: "Agent inference is not configured on this Mac." }] }],
+          messages: [{ role: "assistant", content: [{ type: "text", text: "Agent host is ready on this Mac. Configure FABUSHI_AGENT_API_URL, FABUSHI_AGENT_API_KEY, and optionally FABUSHI_AGENT_MODEL to connect a tool-calling model." }] }],
         };
       }
       const message = result.message ?? {};
@@ -198,10 +197,10 @@ class FabushiPromptExecutor extends BasePromptExecutor<Loose> {
 
     void transportPromise.then(result => {
       if (result.offline) {
-        queue.push({ type: "text-delta", textDelta: "Agent inference is not configured on this Mac." });
+        queue.push({ type: "text-delta", textDelta: "Agent host is ready on this Mac. Configure FABUSHI_AGENT_API_URL, FABUSHI_AGENT_API_KEY, and optionally FABUSHI_AGENT_MODEL to connect a tool-calling model." });
       } else {
         const message = result.message ?? {};
-        if (typeof message.content === "string" && message.content.length > 0 && streamedText.length === 0) {
+        if (typeof message.content === "string" && message.content.length > 0) {
           queue.push({ type: "text-delta", textDelta: message.content });
         }
         for (const call of message.tool_calls ?? []) {

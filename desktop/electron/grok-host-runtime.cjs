@@ -241,7 +241,9 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
       binding.live.onUpdate=update=>{
         if(update?.type==='text-delta'&&typeof update.text==='string'&&assistantEntry){
           assistantEntry.text=String(assistantEntry.text||'')+update.text;
-          void Promise.resolve(onAssistantDelta({agentId:agent.id,entry:assistantEntry,delta:update.text})).catch(()=>{});
+          // Reference-Agent model deltas remain private until the committed turn
+          // result is returned. Renderer delivery continues through final fallback
+          // or explicit SendMessage tool calls, matching the existing privacy contract.
         }
         if(update?.type==='turn-ended'&&update.usage)observation.usage=mergeTurnUsage(observation.usage,normalizeTurnUsage(update.usage));
       };
