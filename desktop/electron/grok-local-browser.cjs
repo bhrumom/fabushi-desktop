@@ -87,14 +87,25 @@ function createLocalBrowserRuntime({BrowserWindow}){
     if(latest.stateId!==stateId)throw Error('The page changed after review; take a fresh browser_snapshot and retry the action.');
     return latest;
   }
-  async function navigate({agentId,url}){
-    const tab=activeTab(agentId);
+  async function navigate({agentId,url,newTab=false}){
+    const tab=newTab===true?createTab(agentId):activeTab(agentId);
     await tab.win.loadURL(requireWebUrl(url));
     return await snapshot(agentId);
   }
-  async function screenshot(agentId){
-    const tab=activeTab(agentId),image=await tab.win.webContents.capturePage();
-    return{text:'Captured browser view.',display:{kind:'image',dataUrl:'data:image/png;base64,'+image.toPNG().toString('base64')},state:await snapshot(agentId)};
+  async function captureBrowserPng(agentId,{fullPage=false}={}){
+    const contents=activeTab(agentId).win.webContents,dbg=contents.debugger;
+    let attached=false;
+    try{
+      if(!dbg.isAttached()){dbg.attach('1.3');attached=true}
+      const shot=await dbg.sendCommand('Page.captureScreenshot',{format:'png',captureBeyondViewport:fullPage===true});
+      if(shot?.data)return Buffer.from(String(shot.data),'base64');
+    }catch{}
+    finally{if(attached&&dbg.isAttached())try{dbg.detach()}catch{}}
+    const image=await contents.capturePage();return image.toPNG();
+  }
+  async function screenshot(agentId,args={}){
+    const data=await captureBrowserPng(agentId,{fullPage:args.fullPage===true});
+    return{text:'Took a screenshot',display:{kind:'image',dataUrl:'data:image/png;base64,'+data.toString('base64')},state:await snapshot(agentId)};
   }
   async function boundingBox(agentId,ref){
     const tab=activeTab(agentId),selector=JSON.stringify('[data-fabushi-ref="'+cleanRef(ref)+'"]');
@@ -111,13 +122,12 @@ function createLocalBrowserRuntime({BrowserWindow}){
       return{text:JSON.stringify(await snapshot(agentId),null,2)};
     }
     if(action==='select'){
-      const index=int(args.tabIndex,'tabIndex',{min:0,max:current.tabs.length-1});
+      const index=int(args.index??args.tabIndex,'index',{min:0,max:current.tabs.length-1});
       if(!current.tabs[index])throw Error('Browser tab does not exist.');
       current.activeIndex=index;return{text:JSON.stringify(await snapshot(agentId),null,2)};
     }
     if(action==='close'){
-      if(args.stateId)await ensureState(agentId,String(args.stateId));
-      const index=args.tabIndex==null?current.activeIndex:int(args.tabIndex,'tabIndex',{min:0,max:current.tabs.length-1});
+      const index=(args.index??args.tabIndex)==null?current.activeIndex:int(args.index??args.tabIndex,'index',{min:0,max:current.tabs.length-1});
       const tab=current.tabs[index];if(!tab)throw Error('Browser tab does not exist.');
       current.tabs.splice(index,1);if(!tab.win.isDestroyed())tab.win.destroy();
       current.activeIndex=Math.max(0,Math.min(current.activeIndex,current.tabs.length-1));
@@ -127,9 +137,11 @@ function createLocalBrowserRuntime({BrowserWindow}){
     throw Error('Unknown browser tabs action: '+action);
   }
   async function cdp(agentId,args){
-    await ensureState(agentId,String(args.stateId||''));
     const method=String(args.method||args.cdpMethod||'').trim();
     if(!method||method.length>200)throw Error('CDP method is invalid.');
+    const deniedPrefixes=['Browser.','Target.','Storage.','SystemInfo.','Security.','Input.','Tethering.','Cast.'];
+    const deniedMethods=new Set(['Network.setCookie','Network.setCookies','Network.getCookies','Network.getAllCookies','Network.deleteCookies','Network.clearBrowserCookies','Network.clearBrowserCache']);
+    if(deniedPrefixes.some(prefix=>method.startsWith(prefix))||deniedMethods.has(method))throw Error('CDP method '+JSON.stringify(method)+' is denied. Browser-wide, storage, cookie, cache, permission, target-management, and input commands are not allowed; use the dedicated browser tools instead.');
     const raw=args.params??args.cdpParams??{};
     let params=raw;
     if(typeof raw==='string'){
@@ -149,24 +161,30 @@ function createLocalBrowserRuntime({BrowserWindow}){
   async function action({agentId,name,args={}}){
     const current=state(agentId),tab=activeTab(agentId),win=tab.win;
     if(name==='browser_snapshot')return{text:JSON.stringify(await snapshot(agentId),null,2)};
-    if(name==='browser_screenshot')return await screenshot(agentId);
-    if(name==='browser_navigate')return{text:JSON.stringify(await navigate({agentId,url:args.url}),null,2)};
+    if(name==='browser_screenshot'||name==='browser_take_screenshot')return await screenshot(agentId,args);
+    if(name==='browser_navigate')return{text:JSON.stringify(await navigate({agentId,url:args.url,newTab:args.newTab===true}),null,2)};
     if(name==='browser_tabs')return await tabsAction(agentId,args);
     if(name==='browser_get_bounding_box')return await boundingBox(agentId,args.ref);
     if(name==='browser_highlight'){
       const selector=JSON.stringify('[data-fabushi-ref="'+cleanRef(args.ref)+'"]');
       const result=await win.webContents.executeJavaScript("(()=>{const el=document.querySelector("+selector+");if(!el)return false;const old=el.style.outline;el.style.outline='3px solid #ff4d00';setTimeout(()=>{el.style.outline=old},1500);return true})()",true);
       if(!result)throw Error('Browser element no longer exists; take a fresh snapshot.');
-      return{text:'Highlighted browser element.'};
+      const shot=await screenshot(agentId);return{text:'Highlighted browser element.',display:shot.display,state:shot.state};
     }
     if(name==='browser_scroll'){
-      const dx=Number(args.deltaX||0),dy=Number(args.deltaY||600);
-      await win.webContents.executeJavaScript('window.scrollBy('+String(Number.isFinite(dx)?dx:0)+','+String(Number.isFinite(dy)?dy:600)+')',true);
+      if(args.ref){
+        const selector=JSON.stringify('[data-fabushi-ref="'+cleanRef(args.ref)+'"]');
+        const ok=await win.webContents.executeJavaScript("(()=>{const el=document.querySelector("+selector+");if(!el)return false;el.scrollIntoView({block:'center',inline:'center'});return true})()",true);
+        if(!ok)throw Error('Browser element no longer exists; take a fresh snapshot.');
+      }else{
+        const amount=Number(args.amount)>0?Number(args.amount):300;
+        let dx=Number.isFinite(Number(args.deltaX))?Number(args.deltaX):0,dy=Number.isFinite(Number(args.deltaY))?Number(args.deltaY):0;
+        if(!dx&&!dy){const direction=String(args.direction||'down').toLowerCase();if(direction==='up')dy=-amount;else if(direction==='left')dx=-amount;else if(direction==='right')dx=amount;else dy=amount}
+        await win.webContents.executeJavaScript('window.scrollBy('+String(dx)+','+String(dy)+')',true);
+      }
       return{text:JSON.stringify(await snapshot(agentId),null,2)};
     }
     if(name==='browser_cdp')return await cdp(agentId,args);
-
-    await ensureState(agentId,String(args.stateId||''));
 
     if(name==='browser_click'){
       const selector=JSON.stringify('[data-fabushi-ref="'+cleanRef(args.ref)+'"]');
@@ -196,7 +214,15 @@ function createLocalBrowserRuntime({BrowserWindow}){
       if(!result?.ok)throw Error('Browser element no longer exists; take a fresh snapshot.');
       await new Promise(resolve=>setTimeout(resolve,100));return{text:JSON.stringify(await snapshot(agentId),null,2)};
     }
-    if(name==='browser_select'){
+    if(name==='browser_fill'){
+      const selector=JSON.stringify('[data-fabushi-ref="'+cleanRef(args.ref)+'"]'),value=String(args.value??'');
+      if(value.length>8000)throw Error('Browser value is too long.');
+      const payload=JSON.stringify(value);
+      const result=await win.webContents.executeJavaScript("(()=>{const el=document.querySelector("+selector+");if(!el)return false;el.focus();if('value'in el)el.value="+payload+";else el.textContent="+payload+";el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));return true})()",true);
+      if(!result)throw Error('Browser element no longer exists; take a fresh snapshot.');
+      return{text:JSON.stringify(await snapshot(agentId),null,2)};
+    }
+    if(name==='browser_select'||name==='browser_select_option'){
       const selector=JSON.stringify('[data-fabushi-ref="'+cleanRef(args.ref)+'"]'),values=Array.isArray(args.values)?args.values.map(String):[String(args.value??'')];
       if(values.join(',').length>2000)throw Error('Browser select values are too long.');
       const payload=JSON.stringify(values);
@@ -212,7 +238,7 @@ function createLocalBrowserRuntime({BrowserWindow}){
       if(!result)throw Error('Browser drag source or target no longer exists.');
       return{text:JSON.stringify(await snapshot(agentId),null,2)};
     }
-    if(name==='browser_key'){
+    if(name==='browser_key'||name==='browser_press_key'){
       const key=String(args.key||'');
       if(!key||key.length>64)throw Error('Browser key is invalid.');
       win.webContents.focus();win.webContents.sendInputEvent({type:'keyDown',keyCode:key});win.webContents.sendInputEvent({type:'keyUp',keyCode:key});
@@ -224,31 +250,31 @@ function createLocalBrowserRuntime({BrowserWindow}){
   function definitions(enabled){
     if(!enabled.has('browser'))return[];
     const fn=(name,description,properties,required=[])=>({type:'function',function:{name,description,parameters:{type:'object',properties,required,additionalProperties:false}}});
-    const state={stateId:{type:'string'},purpose:{type:'string'}};
+    const common={viewId:{type:'string'}};
     return[
-      fn('browser_snapshot','Inspect the current local browser page and return text, tabs, stable element refs and a stateId.',{}),
-      fn('browser_screenshot','Capture the current local browser page as an image.',{}),
-      fn('browser_navigate','Navigate the active local browser tab to an HTTP(S) URL.',{url:{type:'string'}},['url']),
-      fn('browser_tabs','List, create, select, or close local browser tabs.',{action:{type:'string',enum:['list','new','select','close']},url:{type:'string'},tabIndex:{type:'number'},...state},['action']),
-      fn('browser_get_bounding_box','Read the bounding box for an element ref.',{ref:{type:'string'}},['ref']),
-      fn('browser_highlight','Temporarily highlight an element ref.',{ref:{type:'string'}},['ref']),
-      fn('browser_click','Click an element ref from browser_snapshot. The stateId must still match after review.',{ref:{type:'string'},...state},['ref','stateId','purpose']),
-      fn('browser_mouse_click_xy','Click browser viewport coordinates after review.',{x:{type:'number'},y:{type:'number'},button:{type:'string'},doubleClick:{type:'boolean'},...state},['x','y','stateId','purpose']),
-      fn('browser_hover','Hover an element ref from browser_snapshot.',{ref:{type:'string'},...state},['ref','stateId']),
-      fn('browser_type','Type into an element ref from browser_snapshot.',{ref:{type:'string'},text:{type:'string'},clear:{type:'boolean'},submit:{type:'boolean'},...state},['ref','stateId','text']),
-      fn('browser_select','Select one or more values in a select element.',{ref:{type:'string'},value:{type:'string'},values:{type:'array',items:{type:'string'}},...state},['ref','stateId']),
-      fn('browser_drag','Drag one element ref to another ref or coordinates.',{sourceRef:{type:'string'},targetRef:{type:'string'},targetX:{type:'number'},targetY:{type:'number'},...state},['sourceRef','stateId','purpose']),
-      fn('browser_key','Send a key to the active local browser.',{key:{type:'string'},...state},['stateId','key']),
-      fn('browser_scroll','Scroll the current local browser page.',{deltaX:{type:'number'},deltaY:{type:'number'}}),
-      fn('browser_cdp','Run a Chrome DevTools Protocol command against the active local browser after review.',{method:{type:'string'},params:{type:'object'},...state},['method','stateId','purpose'])
+      fn('browser_navigate','Navigate the local browser to a URL. By default reuses the current tab; set newTab: true to open in a new tab.',{url:{type:'string'},newTab:{type:'boolean'},...common},['url']),
+      fn('browser_snapshot','Capture a structured snapshot of the current page with stable refs for interactive elements.',{interactive:{type:'boolean'},maxDepth:{type:'number'},selector:{type:'string'},...common}),
+      fn('browser_click','Click an element by ref from browser_snapshot.',{ref:{type:'string'},element:{type:'string'},offsetX:{type:'number'},offsetY:{type:'number'},button:{type:'string',enum:['left','right','middle']},doubleClick:{type:'boolean'},modifiers:{type:'array',items:{type:'string'}},...common},['ref']),
+      fn('browser_mouse_click_xy','Click at viewport coordinates. Prefer browser_click with refs when possible.',{x:{type:'number'},y:{type:'number'},button:{type:'string',enum:['left','right','middle']},doubleClick:{type:'boolean'},modifiers:{type:'array',items:{type:'string'}},...common},['x','y']),
+      fn('browser_type','Type text into an input, textarea, or contenteditable element by ref.',{ref:{type:'string'},text:{type:'string'},clear:{type:'boolean'},submit:{type:'boolean'},slowly:{type:'boolean'},...common},['ref','text']),
+      fn('browser_fill','Set the value of an input, textarea, or contenteditable element by ref.',{ref:{type:'string'},value:{type:'string'},...common},['ref','value']),
+      fn('browser_select_option','Select one or more options in a select element by ref.',{ref:{type:'string'},values:{type:'array',items:{type:'string'}},...common},['ref','values']),
+      fn('browser_press_key','Press a key in the browser page, for example Enter, Escape, Tab, ArrowDown, or a single character.',{key:{type:'string'},...common},['key']),
+      fn('browser_scroll','Scroll the page or scroll an element into view.',{ref:{type:'string'},direction:{type:'string',enum:['up','down','left','right']},amount:{type:'number'},deltaX:{type:'number'},deltaY:{type:'number'},...common}),
+      fn('browser_drag','Drag an element by ref to another ref or viewport coordinates.',{sourceRef:{type:'string'},targetRef:{type:'string'},targetX:{type:'number'},targetY:{type:'number'},...common},['sourceRef']),
+      fn('browser_get_bounding_box','Get the viewport bounding box for an element ref.',{ref:{type:'string'},...common},['ref']),
+      fn('browser_highlight','Highlight an element by ref in the browser page for visual grounding.',{ref:{type:'string'},durationMs:{type:'number'},...common},['ref']),
+      fn('browser_cdp','Send an allowed Chrome DevTools Protocol command to the target browser tab. Browser-wide, storage, cookie, cache, permission, target-management, and Input.* commands are denied.',{method:{type:'string'},params:{type:'object'},...common},['method']),
+      fn('browser_tabs','List, create, close, or select a browser tab.',{action:{type:'string',enum:['list','new','close','select']},url:{type:'string'},index:{type:'number'},...common},['action']),
+      fn('browser_take_screenshot','Take a screenshot of the current page. Use fullPage for the full scrollable page.',{fullPage:{type:'boolean'},...common})
     ];
   }
 
-  const readOnly=new Set(['browser_snapshot','browser_screenshot','browser_scroll','browser_get_bounding_box','browser_highlight']);
+  const readOnly=new Set(['browser_snapshot','browser_scroll','browser_get_bounding_box','browser_highlight','browser_take_screenshot']);
   return{
     definitions,
     isTool:name=>String(name).startsWith('browser_'),
-    isMutation:name=>!readOnly.has(name)&&(name!=='browser_tabs'||true),
+    isMutation:(name,args={})=>name==='browser_tabs'?String(args.action||'list')!=='list':!readOnly.has(name),
     execute:({agentId,name,args})=>action({agentId,name,args}),
     disposeAgent(agentId){
       const current=sessions.get(agentId);
