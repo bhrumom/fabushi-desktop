@@ -150,6 +150,7 @@
       "electron/grok-desktop-services.cjs",
       "electron/grok-reference-desktop.cjs",
       "electron/grok-reference-coordinator.cjs",
+      "electron/grok-local-teach-recording.cjs",
       "electron/grok-attachment-gateway.cjs",
       "electron/grok-mcp-manager.cjs",
       "electron/grok-mcp-oauth.cjs",
