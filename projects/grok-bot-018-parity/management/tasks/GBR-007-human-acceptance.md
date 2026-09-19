@@ -12,10 +12,12 @@ Validate the released Grok-parity macOS candidate as an installed product. This 
 - reference: `bhrum/grok-bot-0.18-reconstructed@107877b4e2134fd167d239411386f09e42eadd6d`
 - release: `grok-parity-mac-126`
 - version: `2.0.0-alpha.4`
-- human-test release alias: `release/grok-parity-alpha4-final` → exact package SHA\n- packaging workflow legacy gate ref `release/grok-parity-alpha3-final` also resolved to the same SHA during Run `35425432753`
+- human-test release alias: `release/grok-parity-alpha4-final` → exact package SHA
+- packaging workflow legacy gate ref `release/grok-parity-alpha3-final` also resolved to the same SHA during Run `35425432753`
 - artifact digest: `sha256:6c91562e2d8ede5641c6c4bb9010a1cd3ebad1c0d0744a5cb8cc48b9bd1850d1`
 - automated source gate: Run `35425432746` — 109/109 PASS
-- automated PR source gate: Run `35425434873` — SUCCESS\n- automated macOS package/release: Run `35425432753` — SUCCESS
+- automated PR source gate: Run `35425434873` — SUCCESS
+- automated macOS package/release: Run `35425432753` — SUCCESS
 
 ## Human acceptance checklist
 
