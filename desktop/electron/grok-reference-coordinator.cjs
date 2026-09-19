@@ -200,7 +200,7 @@ function createReferenceCoordinator(runtime){
       case'deleteAgentAutomation':return runtime.deleteAgentAutomation(input);
       case'runAgentAutomationNow':return runtime.runAgentAutomationNow(input);
       case'getListenerIntegrations':return runtime.getListenerIntegrations();
-      case'getListenerConnectUrl':return runtime.getListenerConnectUrl(input);
+      case'getListenerConnectUrl':return await runtime.getListenerConnectUrl(input);
       case'getTeachRecordingStatus':return teach.get(input.id||input.agentId)||{status:'idle',agentId:input.id||input.agentId||null};
       case'startTeachRecording':{
         const value={status:'recording',agentId:input.id||input.agentId||null,startedAtMs:Date.now()};teach.set(value.agentId,value);return value;
