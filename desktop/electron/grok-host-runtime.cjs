@@ -14,7 +14,7 @@ const {createLocalAnysphereRuntime}=require('./grok-reference-anysphere-runtime.
 function abortError(message='Operation cancelled.'){const error=Error(message);error.name='AbortError';return error;}
 function isAbort(error,signal){return signal?.aborted||error?.name==='AbortError'||error?.code==='ABORT_ERR';}
 
-function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},sendVisibleMessage=async()=>null,reactToConversationMessage=async()=>null,updateState=async()=>({ok:false,reason:'State backend unavailable.'}),getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',getMemoryContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),auditAction=()=>{},onTurnUsage=async()=>{},onTurnObservation=async()=>{},subagents=null,browser=null,inferenceRequest=null,getInferenceAccessToken=async()=>null,fetchImpl=globalThis.fetch,autoReviewClassifier=null}){
+function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async()=> 'shadow',getAutoReviewInstructions=async()=>({allowInstructions:[],blockInstructions:[]}),resolveAttachments=async()=>[],requestApproval,onToolState,onAgentStatus,onAssistantDelta=async()=>{},sendVisibleMessage=async()=>null,reactToConversationMessage=async()=>null,updateState=async()=>({ok:false,reason:'State backend unavailable.'}),getExternalTools=async()=>[],executeExternalTool=async()=>null,getWorkflowContext=async()=>'',getMemoryContext=async()=>'',spillToolOutput=async text=>({text:String(text??''),outputLocation:null,spilled:false}),auditAction=()=>{},onTurnUsage=async()=>{},onTurnObservation=async()=>{},subagents=null,agentManagement=null,browser=null,inferenceRequest=null,getInferenceAccessToken=async()=>null,fetchImpl=globalThis.fetch,autoReviewClassifier=null}){
   const referenceRuntimes=new Map();
 
   function systemPrompt(agent,enabled,workflowContext,memoryContext){
@@ -58,6 +58,24 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     }
     if(name==='MessageSubagent')return{text:JSON.stringify(await subagents.message({parentAgentId,agentId:args.subagent_id,prompt:args.message,interrupt:true,signal}),null,2)};
     if(name==='StopSubagent')return{text:JSON.stringify(await subagents.stop({agentId:args.subagent_id}),null,2)};
+    return null;
+  }
+
+  function agentManagementDefinitions(){
+    if(!agentManagement)return[];
+    const fn=(name,description,properties,required=[])=>({type:'function',function:{name,description,parameters:{type:'object',properties,required,additionalProperties:false}}});
+    const image={type:'object',properties:{url:{type:'string'},alt:{type:'string'}},required:['url'],additionalProperties:false};
+    return[
+      fn('SendToAgent','Send a fire-and-forget message to another local agent or group by id.',{target_id:{type:'string'},message:{type:'string'},images:{type:'array',items:image},priority:{type:'boolean'}},['target_id','message']),
+      fn('CreateAgent','Create a new local teammate agent.',{name:{type:'string'},description:{type:'string'}},['name']),
+      fn('UpdateAgent','Edit an existing local agent profile without deleting it.',{agent_id:{type:'string'},name:{type:'string'},description:{type:'string'}},['agent_id'])
+    ];
+  }
+  async function executeAgentManagementTool(name,args,sourceAgentId){
+    if(!agentManagement)return null;
+    if(name==='SendToAgent')return{text:String(await agentManagement.send({sourceAgentId,targetId:args.target_id,message:args.message,images:args.images||[],priority:args.priority===true}))};
+    if(name==='CreateAgent')return{text:JSON.stringify(await agentManagement.create({name:args.name,description:args.description||''}),null,2)};
+    if(name==='UpdateAgent')return{text:JSON.stringify(await agentManagement.update({agentId:args.agent_id,name:args.name,description:args.description}),null,2)};
     return null;
   }
 
@@ -210,13 +228,15 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     const externalNames=new Set(externalDefinitions.map(x=>x.function?.name).filter(Boolean));
     const subagentTools=subagentDefinitions();
     const subagentNames=new Set(subagentTools.map(x=>x.function.name));
+    const agentManagementTools=agentManagementDefinitions();
+    const agentManagementNames=new Set(agentManagementTools.map(x=>x.function.name));
     const browserTools=browser?.definitions(enabled)||[];
     const browserNames=new Set(browserTools.map(x=>x.function.name));
     const localTools=toolDefinitions(enabled);
     const localNames=new Set(localTools.map(x=>x.function.name));
     const communicationNames=new Set(communicationDefinitions.map(x=>x.function.name));
     const stateNames=new Set([stateDefinition.function.name]);
-    const tools=[...communicationDefinitions,stateDefinition,...localTools,...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
+    const tools=[...communicationDefinitions,stateDefinition,...agentManagementTools,...localTools,...browserTools,...subagentTools,...externalDefinitions.map(({_mcp,...definition})=>definition)];
     const resources=createExecutionResources({
       executeLocal:(name,args,options)=>executeTool(name,args,{enabled,shell,signal:options.signal,onStarted:options.onStarted,onOutput:options.onOutput,ownerAgentId:agent.id}),
       executeBrowser:(name,args,options)=>browser?.execute({agentId:agent.id,name,args,signal:options.signal}),
@@ -266,7 +286,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
         void onTurnObservation({kind:'tool-started',agentId:agent.id,turnId:observation.turnId,toolCallId:String(toolCallId||''),toolName:name,args:{...(args||{})},at:actionStartedAt});
         let resultText='',execution;
         try{
-          const allowed=communicationNames.has(name)||stateNames.has(name)||externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name,args)===false)
+          const allowed=communicationNames.has(name)||stateNames.has(name)||agentManagementNames.has(name)||externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name,args)===false)
             ?true:await authorize(agent.id,entry,name,args,toolSignal);
           if(!allowed){resultText='ERROR: '+entry.text}
           else{
@@ -276,6 +296,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
               execution=await executeCommunicationTool(name,args,{sendVisibleMessage:input=>sendVisibleMessage({agentId:agent.id,...input}),reactToConversationMessage:input=>reactToConversationMessage({agentId:agent.id,...input})});
               if(execution?.visibleMessage)visibleMessageCount+=1;
             }else if(stateNames.has(name))execution=await executeStateTool(args,{updateState:input=>updateState({agentId:agent.id,...input})});
+            else if(agentManagementNames.has(name))execution=await executeAgentManagementTool(name,args,agent.id);
             else if(externalNames.has(name))resource=resources.get(EXTERNAL_TOOL_EXECUTOR);
             else if(browserNames.has(name))resource=resources.get(BROWSER_TOOL_EXECUTOR);
             else if(subagentNames.has(name))resource=resources.get(SUBAGENT_TOOL_EXECUTOR);
