@@ -58,3 +58,20 @@ await build({
   banner: { js: "'use strict';" },
 });
 console.log("Built pinned Grok TrayManager bundle");
+
+
+await build({
+  entryPoints: [path.join(desktop, "reference-adapters", "local-xuser-sharing-runtime.ts")],
+  outfile: path.join(desktop, "electron", "grok-reference-xuser-sharing.cjs"),
+  bundle: true,
+  platform: "node",
+  format: "cjs",
+  target: "node26",
+  packages: "external",
+  sourcemap: false,
+  minify: false,
+  treeShaking: true,
+  logLevel: "info",
+  banner: { js: "'use strict';" },
+});
+console.log("Built pinned SandXuserSharingService local runtime adapter");
