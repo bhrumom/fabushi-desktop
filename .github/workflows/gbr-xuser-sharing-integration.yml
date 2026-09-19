@@ -1,0 +1,45 @@
+name: GBR one-shot xuser sharing integration
+
+on:
+  push:
+    branches: [refactor/grok-bot-018-parity-mac]
+    paths:
+      - ".github/workflows/gbr-xuser-sharing-integration.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+      - name: Apply integration on latest branch tip
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="refactor/grok-bot-018-parity-mac"
+          git config user.name "Fabushi Work"
+          git config user.email "noreply@fabushi.local"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin "$branch"
+            git reset --hard "origin/$branch"
+            node desktop/scripts/apply-xuser-sharing-integration.mjs
+            git add desktop/electron/grok-agent-coordinator.cjs
+            if git diff --cached --quiet; then
+              echo "xuser integration already applied"
+              exit 0
+            fi
+            git commit -m "feat(gbr): route shared rooms through exact Sand relay"
+            if git push origin "HEAD:$branch"; then
+              exit 0
+            fi
+            echo "branch advanced during push; retrying on latest tip ($attempt/5)"
+          done
+          echo "unable to publish xuser integration after retries" >&2
+          exit 1
