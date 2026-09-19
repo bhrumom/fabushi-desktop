@@ -25,7 +25,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
       'Send user-visible acknowledgements, meaningful progress updates, blockers and final results with the SendMessage tool. Do not expose private scratchpad text as a substitute for SendMessage.',
       'ReactToMessage is only for a genuinely natural, sparing emoji reaction to a user message.',
       'Inspect before mutation. Mutating tools can be blocked or require explicit user approval.',
-      'When a Computer click is needed, provide a concise purpose in the tool arguments.',
+      'When a Computer click or drag is needed, provide a concise description in the tool arguments.',
       `Enabled local capabilities: ${[...enabled].join(', ')||'none'}.`
     ];
     if(memoryContext)parts.push(memoryContext);
@@ -37,18 +37,27 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     if(!subagents)return[];
     const fn=(name,description,properties,required=[])=>({type:'function',function:{name,description,parameters:{type:'object',properties,required,additionalProperties:false}}});
     return[
-      fn('create_subagent','Create a delegated agent. It can run in the background or wait for a completed result.',{name:{type:'string'},prompt:{type:'string'},background:{type:'boolean'}},['name','prompt']),
-      fn('check_subagent','Inspect a delegated agent status and recent transcript.',{agentId:{type:'string'}},['agentId']),
-      fn('message_subagent','Send follow-up work to a delegated agent. Set interrupt=true to stop its current run before sending.',{agentId:{type:'string'},prompt:{type:'string'},interrupt:{type:'boolean'}},['agentId','prompt']),
-      fn('stop_subagent','Abort a running delegated agent.',{agentId:{type:'string'}},['agentId'])
+      fn('Task','Launch or resume a local Grok-style subagent on this installed Mac.',{
+        description:{type:'string'},prompt:{type:'string'},model:{type:'string'},resume:{type:'string'},subagent_type:{type:'string'},
+        file_attachments:{type:'array',items:{type:'string'}},interrupt:{type:'boolean'},run_in_background:{type:'boolean'}
+      },['description','prompt']),
+      fn('CheckSubagent','Check how a background subagent is doing. Omit subagent_id to list every running subagent.',{subagent_id:{type:'string'}}),
+      fn('MessageSubagent','Interrupt a running background subagent with a course-correction message while preserving its agent context.',{subagent_id:{type:'string'},message:{type:'string'}},['subagent_id','message']),
+      fn('StopSubagent','Abort a running background subagent.',{subagent_id:{type:'string'}},['subagent_id'])
     ];
   }
   async function executeSubagentTool(name,args,signal,parentAgentId){
     if(!subagents)return null;
-    if(name==='create_subagent')return{text:JSON.stringify(await subagents.create({parentAgentId,name:args.name,prompt:args.prompt,background:args.background===true,signal}),null,2)};
-    if(name==='check_subagent')return{text:JSON.stringify(await subagents.check({agentId:args.agentId}),null,2)};
-    if(name==='message_subagent')return{text:JSON.stringify(await subagents.message({parentAgentId,agentId:args.agentId,prompt:args.prompt,interrupt:args.interrupt===true,signal}),null,2)};
-    if(name==='stop_subagent')return{text:JSON.stringify(await subagents.stop({agentId:args.agentId}),null,2)};
+    if(name==='Task'){
+      if(String(args.resume||'').trim())return{text:JSON.stringify(await subagents.message({parentAgentId,agentId:String(args.resume).trim(),prompt:args.prompt,interrupt:args.interrupt===true,signal}),null,2)};
+      return{text:JSON.stringify(await subagents.create({parentAgentId,name:String(args.description||args.subagent_type||'Subagent'),prompt:args.prompt,background:args.run_in_background===true,signal}),null,2)};
+    }
+    if(name==='CheckSubagent'){
+      const id=String(args.subagent_id||'').trim();
+      return{text:JSON.stringify(id?await subagents.check({agentId:id}):await subagents.list?.()||[],null,2)};
+    }
+    if(name==='MessageSubagent')return{text:JSON.stringify(await subagents.message({parentAgentId,agentId:args.subagent_id,prompt:args.message,interrupt:true,signal}),null,2)};
+    if(name==='StopSubagent')return{text:JSON.stringify(await subagents.stop({agentId:args.subagent_id}),null,2)};
     return null;
   }
 
@@ -164,12 +173,12 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
     }
 
     let summary=meta.summary,forceManual=false;
-    if(requiresAutoReview(name)){
+    if(requiresAutoReview(name,args)){
       const mode=normalizeAutoReviewMode(await getAutoReviewMode());
       if(mode!=='off'){
         const target=canonicalAutoReviewTarget(name,args);
-        if(name==='computer_click'&&!String(args?.purpose||'').trim()){
-          await updateTool(agentId,entry,{status:'error',text:'Computer click requires a concise purpose before review.',errorCode:'missing-purpose'});
+        if(mode==='enforce'&&name==='Computer'&&['click','drag'].includes(String(args?.action||''))&&!String(args?.description||'').trim()){
+          await updateTool(agentId,entry,{status:'error',text:'Computer click and drag actions require a concise description before review.',errorCode:'missing-description'});
           return false;
         }
         const fingerprint=fingerprintAutoReviewTarget(target);
@@ -257,7 +266,7 @@ function createHostRuntime({shell,getLocalToolPermission,getAutoReviewMode=async
         void onTurnObservation({kind:'tool-started',agentId:agent.id,turnId:observation.turnId,toolCallId:String(toolCallId||''),toolName:name,args:{...(args||{})},at:actionStartedAt});
         let resultText='',execution;
         try{
-          const allowed=communicationNames.has(name)||stateNames.has(name)||externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name)===false)
+          const allowed=communicationNames.has(name)||stateNames.has(name)||externalNames.has(name)||subagentNames.has(name)||(browserNames.has(name)&&browser?.isMutation(name,args)===false)
             ?true:await authorize(agent.id,entry,name,args,toolSignal);
           if(!allowed){resultText='ERROR: '+entry.text}
           else{
