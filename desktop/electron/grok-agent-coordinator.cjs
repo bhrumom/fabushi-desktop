@@ -622,12 +622,20 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   function automationRows(s,agentId){return s.automations[agentId]||(s.automations[agentId]=[])}
   function automationSpec(input){
     const name=clean(input?.name,'Routine'),prompt=String(input?.prompt||'').trim().slice(0,100000);
-    const schedule=normalizeSchedule(input?.trigger?.schedule||'');
     if(!prompt)throw Error('Automation prompt is required.');
-    if(!isValidSchedule(schedule))throw Error('Automation schedule is invalid.');
-    return{name,prompt,trigger:{type:'cron',schedule},triggerDescription:describeSchedule(schedule),isEnabled:input?.isEnabled!==false};
+    const rawTrigger=input?.trigger&&typeof input.trigger==='object'?input.trigger:{type:'cron',schedule:''};
+    let trigger,triggerDescription;
+    if(rawTrigger.type==='cron'||rawTrigger.schedule!=null){
+      const schedule=normalizeSchedule(rawTrigger.schedule||'');if(!isValidSchedule(schedule))throw Error('Automation schedule is invalid.');
+      trigger={type:'cron',schedule};triggerDescription=describeSchedule(schedule);
+    }else{
+      trigger=JSON.parse(JSON.stringify(rawTrigger));
+      if(!String(trigger.type||'').trim())throw Error('Automation trigger type is required.');
+      triggerDescription='Event listener: '+String(trigger.type).slice(0,80);
+    }
+    return{name,prompt,trigger,triggerDescription,isEnabled:input?.isEnabled!==false};
   }
-  function automationNext(record,after=Date.now()){return record.isEnabled?computeNextRunAt(record.trigger.schedule,after):null}
+  function automationNext(record,after=Date.now()){return record.isEnabled&&record.trigger?.type==='cron'?computeNextRunAt(record.trigger.schedule,after):null}
   async function getAgentAutomations({id}){
     const s=await load();if(!s.agents.some(agent=>agent.id===id))throw Error('Agent not found');
     return automationRows(s,id).map(row=>({...row,runs:[...(row.runs||[])]}));
@@ -635,7 +643,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   async function createAgentAutomation({id,spec}){
     const s=await load();if(!s.agents.some(agent=>agent.id===id))throw Error('Agent not found');
     const now=Date.now(),normalized=automationSpec(spec);
-    const record={id:crypto.randomUUID(),...normalized,runs:[],createdAt:now,lastRunAt:null,nextRunAt:normalized.isEnabled?computeNextRunAt(normalized.trigger.schedule,now):null};
+    const record={id:crypto.randomUUID(),...normalized,runs:[],createdAt:now,lastRunAt:null,nextRunAt:automationNext(normalized,now)};
     automationRows(s,id).unshift(record);await save();emit('automations.changed',{agentId:id,automations:await getAgentAutomations({id})});void armAutomationTimer();return getAgentAutomations({id});
   }
   async function setAgentAutomationEnabled({id,automationId,isEnabled}){
@@ -645,7 +653,7 @@ function createCoordinatorRuntime({app,BrowserWindow,shell,safeStorage=null,plug
   }
   async function updateAgentAutomation({id,automationId,spec}){
     const s=await load(),record=automationRows(s,id).find(row=>row.id===automationId);if(!record)throw Error('Automation not found');
-    const normalized=automationSpec(spec);Object.assign(record,normalized);record.nextRunAt=normalized.isEnabled?computeNextRunAt(normalized.trigger.schedule,Date.now()):null;
+    const normalized=automationSpec(spec);Object.assign(record,normalized);record.nextRunAt=automationNext(record,Date.now());
     await save();emit('automations.changed',{agentId:id,automations:await getAgentAutomations({id})});void armAutomationTimer();return getAgentAutomations({id});
   }
   async function deleteAgentAutomation({id,automationId}){
