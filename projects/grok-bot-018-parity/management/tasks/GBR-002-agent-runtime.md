@@ -20,7 +20,7 @@ Production path:
 
 ## Verification
 - Exact reference renderer/source diff is enforced in CI.
-- Run `35416952328` on `ded4645501db434753de38b174412145b3fc32dc` passed 80/80 runtime tests, pinned reference source typecheck and renderer production build.
+- Final push source Run `35419150457` on package SHA `1f27c239aa8931b3266b9b83c84ff234332785d9` passed 105/105 runtime tests, exact pinned source parity, reference source typecheck and production build; PR Run `35419154451` also passed on the same SHA.
 - Tests cover:
   - production Host defaults to exact AnysphereAgent;
   - plain-text turn lifecycle;

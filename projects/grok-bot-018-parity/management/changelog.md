@@ -51,3 +51,8 @@
 - Final Mac delivery Run `35419150459` SUCCESS; artifact `10577580224` digest `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`.
 - Published prerelease `grok-parity-mac-101`; tag verified exact to `1f27c239aa8931b3266b9b83c84ff234332785d9`; arm64 DMG/ZIP release assets published.
 - Bounded GitHub-hosted renderer probe remains diagnostic-only and recorded `manualValidationRequired:true`; human installed-product acceptance remains GBR-007 and PR #1 remains open.
+
+- Closed the immutable final alpha.3 release at package SHA `1f27c239aa8931b3266b9b83c84ff234332785d9`: push source Run `35419150457` and PR source Run `35419154451` SUCCESS with 105/105 runtime tests.
+- macOS Run `35419150459` SUCCESS; artifact `10577580224` digest `sha256:1c70dad6d99bc327a27165767636e47d1c4a0131db21e3b796b07982d7ccd4e1`.
+- Published `grok-parity-mac-101`; immutable release branch and release tag both resolve exactly to `1f27c239aa8931b3266b9b83c84ff234332785d9`.
+- Final alpha.3 DMG/ZIP release-asset digests recorded; installed-product acceptance remains GBR-007 human work.

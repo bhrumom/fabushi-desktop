@@ -17,7 +17,7 @@ Recover the Grok-style plugin architecture so every visible installable/provider
 - Fake GitHub/Memory placeholder rows remain removed.
 
 ## Verification
-Released-code source gate Run `35417698506` passed 103/103 runtime tests. Coverage includes real Marketplace install/uninstall materializing MCP + private `SKILL.md`, local default Marketplace install/uninstall, MCP persistence and executable-catalog filtering, OAuth/account/tool-toggle contracts, workflow publication/listener seams, and reference coordinator/desktop bridge closure.
+Final package source gate Run `35419150457` on `1f27c239aa8931b3266b9b83c84ff234332785d9` passed 105/105 runtime tests. Coverage includes real Marketplace install/uninstall materializing MCP + private `SKILL.md`, local default Marketplace install/uninstall, MCP persistence and executable-catalog filtering, OAuth/account/tool-toggle contracts, workflow publication/listener seams, and reference coordinator/desktop bridge closure.
 
 ## External dependency
 The pinned reference's production Marketplace catalog service is not contained in the Git repository. Fabushi keeps an executable provider seam and functional local Marketplace instead of fabricating reference service contents.
