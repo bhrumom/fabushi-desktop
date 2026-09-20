@@ -1040,7 +1040,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   // and recover immediately while the authoritative directory refreshes in the
   // background; fresh accounts wait for the first Agent directory response.
   const initialAgentWorkspaceHydrated = hostReady
-    && (agentDirectoryController.ready || bots.length > 0 || Boolean(startupProjection?.legacyBots?.length));
+    && ((initialLegacyHydrationMask & 0b010) !== 0
+      || bots.length > 0
+      || Boolean(startupProjection?.legacyBots?.length));
   const [mutedPeerKeys, setMutedPeerKeys] = useState<Set<string>>(() => new Set());
   const [pinnedPeerKeys, setPinnedPeerKeys] = useState<Set<string>>(() => new Set());
   const [archivedPeerKeys, setArchivedPeerKeys] = useState<Set<string>>(() => new Set());
