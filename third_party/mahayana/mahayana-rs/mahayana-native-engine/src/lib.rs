@@ -67,6 +67,9 @@ pub struct NativeEngineConfig {
     pub approval_timeout_ms: u64,
     pub process_execution: ProcessExecution,
     pub session_state_path: Option<PathBuf>,
+    /// Root used for account/Agent-scoped session snapshots. Callers may
+    /// request only validated relative paths beneath this root.
+    pub session_state_root: Option<PathBuf>,
 }
 
 impl NativeEngineConfig {
@@ -79,6 +82,7 @@ impl NativeEngineConfig {
             approval_timeout_ms: DEFAULT_APPROVAL_TIMEOUT_MS,
             process_execution: ProcessExecution::Host,
             session_state_path: None,
+            session_state_root: None,
         }
     }
 
@@ -91,6 +95,7 @@ impl NativeEngineConfig {
             approval_timeout_ms: DEFAULT_APPROVAL_TIMEOUT_MS,
             process_execution: ProcessExecution::Host,
             session_state_path: None,
+            session_state_root: None,
         }
     }
 
@@ -1436,12 +1441,35 @@ impl EngineBackend for NativeEngine {
     }
 
     async fn open_session(&self, request: OpenSessionRequest) -> Result<SessionId, KernelError> {
-        let persisted_path = request
+        let persisted_path = if let Some(relative) = request
             .metadata
-            .get("conversationId")
+            .get("sessionStateRelativePath")
             .and_then(Value::as_str)
-            .filter(|conversation_id| *conversation_id == MAIN_ASSISTANT_CONVERSATION_ID)
-            .and(self.config.session_state_path.clone());
+        {
+            let root = self.config.session_state_root.as_deref().ok_or_else(|| {
+                KernelError::Backend(
+                    "sessionStateRelativePath requires a configured session state root".into(),
+                )
+            })?;
+            let relative = Path::new(relative);
+            if relative.is_absolute()
+                || relative.components().any(|component| {
+                    !matches!(component, Component::Normal(_) | Component::CurDir)
+                })
+            {
+                return Err(KernelError::PolicyDenied(
+                    "Agent session persistence path must stay beneath the configured root".into(),
+                ));
+            }
+            Some(root.join(relative))
+        } else {
+            request
+                .metadata
+                .get("conversationId")
+                .and_then(Value::as_str)
+                .filter(|conversation_id| *conversation_id == MAIN_ASSISTANT_CONVERSATION_ID)
+                .and(self.config.session_state_path.clone())
+        };
         if let Some(path) = persisted_path.as_ref()
             && let Ok(bytes) = std::fs::read(path)
             && let Ok(snapshot) = serde_json::from_slice::<KernelSessionSnapshot>(&bytes)
