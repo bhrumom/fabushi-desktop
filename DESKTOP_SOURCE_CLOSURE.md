@@ -5,6 +5,7 @@ The desktop TypeScript/Vite source imports a small set of shared monorepo module
 Restored files:
 
 - `chatgpt-vps-control/lib/app-agent-surface-client.js`
+- `chatgpt-vps-control/lib/app-agent-surface-client.d.ts`
 - `contracts/automation/cross-platform-journeys.json`
 - `frontend/apps/web/src/app/host/agent-workflow-panel.tsx`
 - `frontend/apps/web/src/app/host/bot-mark.tsx`
