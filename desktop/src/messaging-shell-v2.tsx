@@ -2362,7 +2362,26 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           void execute({ type: 'conversation.open', requestId: nextRequestId('conversation-open'), conversationId: conversation.id });
         }
         break;
-      case 'conversation.opened':
+      case 'conversation.opened': {
+        const ownerPeer = peersRef.current.find((peer) =>
+          peer.conversationId === event.conversationId && isAgentPeer(peer) && !peer.miniAppId,
+        );
+        if (ownerPeer) {
+          const agentId = ownerPeer.agentId ?? ownerPeer.actorId ?? ownerPeer.id;
+          void mirrorAgentCloudSnapshot(agentId, fabuAgentConversationTranscriptPath(event.conversationId), {
+            schemaVersion: 1,
+            agentId,
+            conversationId: event.conversationId,
+            entries: event.messages.map((message) => ({
+              id: message.id,
+              kind: 'message',
+              role: message.role === 'user' ? 'me' : 'peer',
+              text: message.text,
+              createdAtMs: message.createdAtMs,
+            })),
+            updatedAtMs: Date.now(),
+          });
+        }
         if (agentWorkspaceControllerRef.current.operationForPeer(activePeerKeyRef.current)) break;
         if (activePeerKeyRef.current === `legacy:conversation:${event.conversationId}`
           || peersRef.current.some((peer) => peer.key === activePeerKeyRef.current
@@ -2377,6 +2396,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           })));
         }
         break;
+      }
       case 'memory.changed':
         // Fabu persists Agent-owned memory independently of chat delivery.
         // Re-list after every mutation so removals/clears also produce a
@@ -2540,7 +2560,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         break;
       }
       case 'operation.started':
-        if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
+        if (claimAgentOperation(event.operationId)) {
+          appendAssistantTurnEvent(event);
+          const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
+            ?? agentPeerKeyRef.current[event.operationId];
+          mirrorAgentRuntimeCheckpoint(owner, 'running', event.operationId);
+        }
         break;
       case 'model.routed':
         if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
@@ -2548,20 +2573,30 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       case 'agent.step':
         if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
         break;
-      case 'operation.interrupted':
-        if (agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
-          || agentPeerKeyRef.current[event.operationId]) {
+      case 'operation.interrupted': {
+        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
+          ?? agentPeerKeyRef.current[event.operationId]
+          ?? null;
+        if (owner) {
           appendAssistantTurnEvent(event);
+          mirrorAgentRuntimeCheckpoint(owner, 'interrupted', event.operationId);
+          mirrorAgentConversationSnapshot(owner);
         }
         if (clearAgentOperation(event.operationId, 'interrupted')) agentSubmissionQueue.flush();
         break;
-      case 'operation.completed':
-        if (agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
-          || agentPeerKeyRef.current[event.operationId]) {
+      }
+      case 'operation.completed': {
+        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
+          ?? agentPeerKeyRef.current[event.operationId]
+          ?? null;
+        if (owner) {
           appendAssistantTurnEvent(event);
+          mirrorAgentRuntimeCheckpoint(owner, 'completed', event.operationId);
+          mirrorAgentConversationSnapshot(owner);
         }
         if (clearAgentOperation(event.operationId)) agentSubmissionQueue.flush();
         break;
+      }
       case 'miniapp.opened':
         if (event.html) {
           const title = miniAppIdentityCatalog.find((app) => app.pluginId === event.miniAppId)?.displayName ?? marketplaceApps.find((app) => app.pluginId === event.miniAppId)?.displayName ?? event.miniAppId;
@@ -2574,7 +2609,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
           ?? agentPeerKeyRef.current[event.operationId]
           ?? null;
-        if (owner) appendAssistantTurnEvent(event);
+        if (owner) {
+          appendAssistantTurnEvent(event);
+          mirrorAgentRuntimeCheckpoint(owner, 'failed', event.operationId, event.message);
+          mirrorAgentConversationSnapshot(owner);
+        }
         if (clearAgentOperation(event.operationId, 'failed')) {
           if (owner === activePeerKeyRef.current) setError(event.message);
           agentSubmissionQueue.flush();
