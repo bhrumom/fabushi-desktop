@@ -110,13 +110,9 @@ import BotConversationView from './bot-conversation-view';
 import type { BotTranscriptMessage } from './bot-conversation-view';
 import AgentWorkspace from './agent-workspace/agent-workspace';
 import AgentOverlays from './agent-workspace/agent-overlays';
-import { AgentWorkspaceController } from './agent-workspace/agent-workspace-controller';
 import { AgentCoordinatorClient } from './agent-workspace/coordinator-client';
-import { AgentRuntimeCoordinator } from './agent-workspace/agent-runtime-coordinator';
-import {
-  AgentTranscriptStore,
-  type AgentTranscriptSourceMessage,
-} from './agent-workspace/agent-transcript-store';
+import type { AgentTranscriptSourceMessage } from './agent-workspace/agent-transcript-store';
+import { useAgentWorkspaceRuntime } from './agent-workspace/use-agent-workspace-runtime';
 import { projectTranscriptEntries, type TranscriptEntry } from './agent-workspace/transcript-model';
 import {
   AGENT_ATTACHMENT_LIMIT,
@@ -124,10 +120,6 @@ import {
   enrichAgentAttachmentPreview,
   validateAgentAttachment,
 } from './agent-workspace/agent-attachments';
-import {
-  persistAgentWorkspaceDrafts,
-  readAgentWorkspaceDrafts,
-} from './agent-workspace/agent-draft-store';
 import type { AgentPromptReference, AgentReplyContext } from './agent-workspace/prompt-context';
 import {
   assignAgentsToSidebarSection,
@@ -168,7 +160,6 @@ import {
   fabuAgentAutomationPath,
   fabuAgentConversationTranscriptPath,
 } from './fabu-runtime/agent-store';
-import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
 import { restoreAgentStoreWorkspace } from './agent-workspace/agent-store-recovery';
 import AgentRootShell from './agent-workspace/agent-root-shell';
 import AgentSidebar, { type AgentSidebarItem as GrokAgentSidebarItem } from './agent-workspace/agent-sidebar';
@@ -1092,7 +1083,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   // Compatibility Messenger/Mini App sends retain transport pending state.
   // Agent request/operation ownership is exclusively per-peer in the workspace controller.
   const [legacySendPending, setLegacySendPending] = useState(false);
-  const [agentWorkspaceRevision, setAgentWorkspaceRevision] = useState(0);
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
   const [typingByConversation, setTypingByConversation] = useState<Record<string, Record<string, number>>>({});
   const [newDialog, setNewDialog] = useState<NewDialog>(null);
@@ -1107,7 +1097,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [miniApp, setMiniApp] = useState<{ id: string; title: string; url: string } | null>(null);
   const [miniAppCall, setMiniAppCall] = useState<MiniAppCallSession | null>(null);
   const miniAppBotThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
-  const agentTranscriptStoreRef = useRef(new AgentTranscriptStore());
   const [accountBots, setAccountBots] = useState<AccountBotMembership[]>(startupProjection?.accountBots ?? []);
   const [marketplaceApps, setMarketplaceApps] = useState<MarketplacePluginSummary[]>([]);
   const [miniAppIdentityCatalog, setMiniAppIdentityCatalog] = useState<MarketplacePluginSummary[]>(startupProjection?.miniAppIdentityCatalog ?? []);
@@ -1134,104 +1123,51 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sessionResetInFlightRef = useRef(false);
-  const agentWorkspaceControllerRef = useRef(new AgentWorkspaceController(readAgentWorkspaceDrafts()));
-  const agentRuntimeCoordinatorRef = useRef<AgentRuntimeCoordinator | null>(null);
   const messageAreaRef = useRef<HTMLDivElement | null>(null);
   const stickToLatestRef = useRef(true);
   const remoteControlEnabledRef = useRef(hostSettings.remoteControlEnabled);
   remoteControlEnabledRef.current = hostSettings.remoteControlEnabled;
-  const hostReadyRef = useRef(hostReady);
-  hostReadyRef.current = hostReady;
   const agentStoresRef = useRef(new Map<string, FabuAgentStore>());
 
-  const removeQueuedAgentPrompt = useCallback((peerKey: string, messageId: string) => {
-    agentTranscriptStoreRef.current.removeQueuedUserMessage(peerKey, messageId);
-    notifyAgentWorkspaceState();
-  }, []);
-
-  const agentSubmissionQueue = useMemo(() => createAgentSubmissionQueue({
-    isBlocked: (input) => !hostReadyRef.current
-      || agentWorkspaceControllerRef.current.isBusy(input.peerKey),
+  const {
+    controller: agentWorkspaceController,
+    transcriptStore: agentTranscriptStore,
+    coordinator: agentRuntimeCoordinator,
+    submissionQueue: agentSubmissionQueue,
+    revision: agentWorkspaceRevision,
+    notify: notifyAgentWorkspaceState,
+  } = useAgentWorkspaceRuntime({
+    hostReady,
     send: async (input) => {
       const peer = peersRef.current.find((candidate) => candidate.key === input.peerKey);
       if (!peer || !isAgentPeer(peer)) throw new Error('Agent peer is no longer available.');
-      await dispatchAgentPromptNow(peer, input.prompt, input.messageId, input.attachments, input.replyTo, input.references);
+      await dispatchAgentPromptNow(
+        peer,
+        input.prompt,
+        input.messageId,
+        input.attachments,
+        input.replyTo,
+        input.references,
+      );
     },
-    onPhase: (submission) => {
-      if (submission.phase === 'queued') {
-        agentTranscriptStoreRef.current.appendUserMessage(submission.peerKey, {
-          id: submission.messageId,
-          text: submission.prompt,
-          createdAtMs: submission.createdAtMs,
-          optimistic: true,
-          queued: true,
-          attachments: submission.attachments,
-        });
-        notifyAgentWorkspaceState();
-        return;
+    onDraftRestored: (peerKey, text) => {
+      if (activePeerKeyRef.current === peerKey) setComposer(text);
+    },
+    onError: (peerKey, message) => {
+      if (peerKey === activePeerKeyRef.current) setError(message);
+    },
+    onComputerStatus: setComputerCapabilityStatus,
+    onOperationStarted: (peerKey, operationId) => {
+      mirrorAgentRuntimeCheckpoint(peerKey, 'running', operationId);
+    },
+    onOperationTerminal: (peerKey, operationId, status, message) => {
+      mirrorAgentRuntimeCheckpoint(peerKey, status, operationId, message);
+      mirrorAgentConversationSnapshot(peerKey);
+      if (status === 'failed' && message && peerKey === activePeerKeyRef.current) {
+        setError(message);
       }
-      removeQueuedAgentPrompt(submission.peerKey, submission.messageId);
     },
-    onFailure: (submission, cause) => {
-      removeQueuedAgentPrompt(submission.peerKey, submission.messageId);
-      const controller = agentWorkspaceControllerRef.current;
-      controller.restoreDraft(submission.peerKey, {
-        text: submission.prompt,
-        attachments: submission.attachments ? [...submission.attachments] : [],
-        references: submission.references ? [...submission.references] : [],
-        replyTo: submission.replyTo,
-      });
-      notifyAgentWorkspaceState();
-      if (activePeerKeyRef.current === submission.peerKey) {
-        setComposer(controller.draftForPeer(submission.peerKey));
-      }
-      setError(cause instanceof Error ? cause.message : String(cause));
-    },
-  }), [removeQueuedAgentPrompt]);
-
-  if (!agentRuntimeCoordinatorRef.current) {
-    agentRuntimeCoordinatorRef.current = new AgentRuntimeCoordinator(
-      agentWorkspaceControllerRef.current,
-      agentTranscriptStoreRef.current,
-      {
-        onTranscriptChanged: () => notifyAgentWorkspaceState(),
-        onOperationChanged: () => notifyAgentWorkspaceState(),
-        onComputerStatus: (status) => setComputerCapabilityStatus(status),
-        onOperationStarted: (peerKey, operationId) => {
-          mirrorAgentRuntimeCheckpoint(peerKey, 'running', operationId);
-        },
-        onRequestFailed: (peerKey, _requestId, message) => {
-          if (peerKey === activePeerKeyRef.current) setError(message);
-        },
-        onOperationTerminal: (peerKey, operationId, status, message) => {
-          mirrorAgentRuntimeCheckpoint(peerKey, status, operationId, message);
-          mirrorAgentConversationSnapshot(peerKey);
-          agentSubmissionQueue.flush();
-          if (status === 'failed' && message && peerKey === activePeerKeyRef.current) {
-            setError(message);
-          }
-        },
-      },
-    );
-  }
-  const agentRuntimeCoordinator = agentRuntimeCoordinatorRef.current;
-
-  useEffect(() => () => agentSubmissionQueue.dispose(), [agentSubmissionQueue]);
-  useEffect(() => () => agentRuntimeCoordinator.dispose(), [agentRuntimeCoordinator]);
-
-  useEffect(() => {
-    const controller = agentWorkspaceControllerRef.current;
-    persistAgentWorkspaceDrafts(
-      controller.draftSnapshot(),
-      controller.attachmentSnapshot(),
-      controller.replySnapshot(),
-      controller.referenceSnapshot(),
-    );
-  }, [agentWorkspaceRevision]);
-
-  useEffect(() => {
-    if (hostReady) agentSubmissionQueue.flush();
-  }, [agentSubmissionQueue, hostReady]);
+  });
 
   useEffect(() => {
     activePeerKeyRef.current = activePeerKey;
@@ -1413,7 +1349,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       && isAgentPeer(peer)
     );
     setComposer(isWorkspaceAgent
-      ? agentWorkspaceControllerRef.current.draftForPeer(activePeerKey)
+      ? agentWorkspaceController.draftForPeer(activePeerKey)
       : drafts[activePeerKey] ?? '');
     setSearch('');
     setConversationSearchOpen(false);
@@ -1894,7 +1830,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         schemaVersion: 1,
         agentId,
         conversationId: peer.conversationId,
-        entries: agentTranscriptStoreRef.current.entries(peer.key),
+        entries: agentTranscriptStore.entries(peer.key),
         updatedAtMs: Date.now(),
       });
     }, 0);
@@ -1905,15 +1841,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
     try {
       const recovered = await restoreAgentStoreWorkspace(agentStoreFor(agentId), peer.conversationId);
-      const controller = agentWorkspaceControllerRef.current;
+      const controller = agentWorkspaceController;
       let changed = false;
 
       if (
         recovered.entries.length
         && !controller.operationForPeer(peer.key)
-        && agentTranscriptStoreRef.current.entries(peer.key).length === 0
+        && agentTranscriptStore.entries(peer.key).length === 0
       ) {
-        agentTranscriptStoreRef.current.hydrateEntries(peer.key, recovered.entries);
+        agentTranscriptStore.hydrateEntries(peer.key, recovered.entries);
         changed = true;
       }
 
@@ -1969,10 +1905,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       store.writeSettings(settings),
     ]);
     await store.checkpointRoot();
-  }
-
-  function notifyAgentWorkspaceState() {
-    setAgentWorkspaceRevision((revision) => revision + 1);
   }
 
   function showSelfConversation(conversationId: string) {
@@ -2210,16 +2142,16 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           // A different visible Agent being busy must never suppress this
           // history, and an owner that is actively streaming must never be
           // overwritten by a late conversation.opened response.
-          if (!agentWorkspaceControllerRef.current.operationForPeer(ownerPeer.key)) {
-            const currentEntries = agentTranscriptStoreRef.current.entries(ownerPeer.key);
+          if (!agentWorkspaceController.operationForPeer(ownerPeer.key)) {
+            const currentEntries = agentTranscriptStore.entries(ownerPeer.key);
             if (openedMessages.length || currentEntries.length === 0) {
-              agentTranscriptStoreRef.current.replace(ownerPeer.key, toAgentTranscriptSources(openedMessages));
+              agentTranscriptStore.replace(ownerPeer.key, toAgentTranscriptSources(openedMessages));
               notifyAgentWorkspaceState();
             }
           }
           break;
         }
-        if (agentWorkspaceControllerRef.current.operationForPeer(activePeerKeyRef.current)) break;
+        if (agentWorkspaceController.operationForPeer(activePeerKeyRef.current)) break;
         if (activePeerKeyRef.current === `legacy:conversation:${event.conversationId}`
           || peersRef.current.some((peer) => peer.key === activePeerKeyRef.current
             && peer.source === 'legacy'
@@ -2598,7 +2530,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [agentRuntimeCoordinator, peers]);
   const grokActivityByPeer = Object.fromEntries(peers.map((peer) => {
     const thread = isAgentPeer(peer) && !peer.miniAppId
-      ? agentTranscriptStoreRef.current.thread(peer.key)
+      ? agentTranscriptStore.thread(peer.key)
       : peer.key === activePeerKey
         ? messages
         : peer.miniAppId
@@ -2628,7 +2560,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       && Object.keys(typingByConversation[peer.conversationId!] ?? {}).length > 0;
     return [peer.key, {
       draftPrompt: peer.source === 'legacy' && peer.kind !== 'group' && !peer.miniAppId
-        ? agentWorkspaceControllerRef.current.draftForPeer(peer.key)
+        ? agentWorkspaceController.draftForPeer(peer.key)
         : drafts[peer.key],
       lastMessage: lastMessage?.text.trim().slice(0, 180),
       waitingReason: waitingActivity?.kind === 'activity'
@@ -2641,11 +2573,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }] as const;
   }));
   const agentOperationSnapshot = useMemo(
-    () => agentWorkspaceControllerRef.current.snapshot(),
+    () => agentWorkspaceController.snapshot(),
     [agentWorkspaceRevision],
   );
   const agentRequestSnapshot = useMemo(
-    () => agentWorkspaceControllerRef.current.requestSnapshot(),
+    () => agentWorkspaceController.requestSnapshot(),
     [agentWorkspaceRevision],
   );
   const grokBusyByPeer = Object.fromEntries(peers.flatMap((peer) => {
@@ -2697,7 +2629,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       }
     : null;
   const activeAgentReply = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
-    ? agentWorkspaceControllerRef.current.replyForPeer(activePeer.key)
+    ? agentWorkspaceController.replyForPeer(activePeer.key)
     : undefined;
   const activeGrokAgentKey = projectActiveGrokAgentKey(activePeer);
 
@@ -2753,7 +2685,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const renderedMessages = matchingMessages.slice(Math.max(0, matchingMessages.length - messageRenderCount));
   const botTranscriptMessages = renderedMessages;
   const allAgentTranscriptEntries: TranscriptEntry[] = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
-    ? agentTranscriptStoreRef.current.entries(activePeer.key)
+    ? agentTranscriptStore.entries(activePeer.key)
     : [];
   const agentTranscriptEntries: TranscriptEntry[] = allAgentTranscriptEntries.length || (activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId)
     ? allAgentTranscriptEntries.slice(Math.max(0, allAgentTranscriptEntries.length - messageRenderCount))
@@ -2854,7 +2786,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       return;
     }
     if (confirmDelete && !window.confirm(`Delete “${peer.title}”? The Agent store is retained for recovery.`)) return;
-    agentWorkspaceControllerRef.current.clearPeer(peer.key);
+    agentWorkspaceController.clearPeer(peer.key);
     notifyAgentWorkspaceState();
     await execute({
       type: 'bot.delete',
@@ -3027,7 +2959,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       && isAgentPeer(peer)
     );
     if (isWorkspaceAgent) {
-      const controller = agentWorkspaceControllerRef.current;
+      const controller = agentWorkspaceController;
       controller.setDraft(activeKey, value);
       controller.pruneReferences(activeKey, value);
       notifyAgentWorkspaceState();
@@ -3086,14 +3018,14 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function clearAgentReply(peerKey: string): void {
-    agentWorkspaceControllerRef.current.clearReply(peerKey);
+    agentWorkspaceController.clearReply(peerKey);
     notifyAgentWorkspaceState();
   }
 
   function setReplyTarget(message: DisplayMessage): void {
     const peer = activePeer;
     if (peer && isAgentPeer(peer) && !peer.miniAppId) {
-      agentWorkspaceControllerRef.current.setReply(peer.key, {
+      agentWorkspaceController.setReply(peer.key, {
         id: message.id,
         role: message.role,
         text: message.text,
@@ -3117,7 +3049,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     replyContext?: AgentReplyContext,
     references: readonly AgentPromptReference[] = [],
   ): Promise<void> {
-    const registry = agentWorkspaceControllerRef.current;
+    const registry = agentWorkspaceController;
     if (registry.isBusy(peer.key)) {
       throw new Error('This Agent is already busy.');
     }
@@ -3156,6 +3088,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     } catch (cause) {
       agentRuntimeCoordinator.cancelLocalTurn(peer.key, requestId, optimisticId);
       setError(cause instanceof Error ? cause.message : String(cause));
+      throw cause;
     }
   }
 
@@ -3182,21 +3115,25 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
   }
 
-  function regenerateBotMessage(message: BotTranscriptMessage) {
+  function regenerateBotMessage(message: BotTranscriptMessage | TranscriptEntry) {
     if (!activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId) return;
-    const index = messages.findIndex((candidate) => candidate.id === message.id);
+    const entries = agentTranscriptStore.entries(activePeer.key);
+    const index = entries.findIndex((candidate) => candidate.id === message.id);
     if (index < 0) return;
-    const prompt = [...messages.slice(0, index)].reverse().find((candidate) => candidate.role === 'me' && !candidate.queued);
+    const prompt = [...entries.slice(0, index)].reverse().find((candidate) =>
+      candidate.kind === 'message' && candidate.role === 'me' && !candidate.queued,
+    );
     if (!prompt) {
       setError('找不到这条回复对应的用户消息。');
       return;
     }
-    setMessages((current) => current.filter((candidate) => candidate.id !== message.id));
-    enqueueAgentPrompt(activePeer, prompt.text);
+    agentTranscriptStore.removeByIds(activePeer.key, [message.id]);
+    notifyAgentWorkspaceState();
+    enqueueAgentPrompt(activePeer, prompt.text, undefined, prompt.attachments ?? []);
   }
 
   async function stopAgentOperation(): Promise<void> {
-    const operationId = agentWorkspaceControllerRef.current.operationForPeer(activePeerKeyRef.current);
+    const operationId = agentWorkspaceController.operationForPeer(activePeerKeyRef.current);
     if (!operationId) return;
     try {
       await agentCoordinatorClient.interrupt(operationId);
@@ -3222,7 +3159,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setShowScrollToLatest(false);
     setComposer(
       peer.source === 'legacy' && peer.kind !== 'group' && !peer.miniAppId && isAgentPeer(peer)
-        ? agentWorkspaceControllerRef.current.draftForPeer(peer.key)
+        ? agentWorkspaceController.draftForPeer(peer.key)
         : drafts[peer.key] ?? '',
     );
     setSearch('');
@@ -3244,15 +3181,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       return;
     }
     if (isAgentPeer(peer)) {
-      if (!agentTranscriptStoreRef.current.has(peer.key) && peer.conversationId) {
+      if (!agentTranscriptStore.has(peer.key) && peer.conversationId) {
         const cached = cachedLegacyDisplayMessages(peer.conversationId);
         if (cached.length) {
-          agentTranscriptStoreRef.current.replace(peer.key, toAgentTranscriptSources(cached));
+          agentTranscriptStore.replace(peer.key, toAgentTranscriptSources(cached));
         } else if (!(await restoreAgentConversationFromCloud(peer))) {
-          agentTranscriptStoreRef.current.replace(peer.key, []);
+          agentTranscriptStore.replace(peer.key, []);
         }
-      } else if (!agentTranscriptStoreRef.current.has(peer.key)) {
-        agentTranscriptStoreRef.current.replace(peer.key, []);
+      } else if (!agentTranscriptStore.has(peer.key)) {
+        agentTranscriptStore.replace(peer.key, []);
       }
       notifyAgentWorkspaceState();
       if (peer.conversationId) {
@@ -3292,12 +3229,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       && !activePeer.miniAppId
       && isAgentPeer(activePeer);
     const stagedAgentAttachments = agentRequest
-      ? agentWorkspaceControllerRef.current.attachmentsForPeer(activePeer.key)
+      ? agentWorkspaceController.attachmentsForPeer(activePeer.key)
       : [];
     if (!text && !(agentRequest && stagedAgentAttachments.length)) return;
     if (legacySendPending && !agentRequest) return;
     if (agentRequest) {
-      const submittedDraft = agentWorkspaceControllerRef.current.takeDraft(activePeer.key);
+      const submittedDraft = agentWorkspaceController.takeDraft(activePeer.key);
       setComposer('');
       notifyAgentWorkspaceState();
       enqueueAgentPrompt(
@@ -3539,7 +3476,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   async function stageAgentFiles(peer: PeerItem, files: readonly File[]): Promise<void> {
     if (!isAgentPeer(peer) || peer.miniAppId || files.length === 0) return;
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
-    const controller = agentWorkspaceControllerRef.current;
+    const controller = agentWorkspaceController;
     const alreadyStaged = controller.attachmentsForPeer(peer.key);
     const availableSlots = Math.max(0, AGENT_ATTACHMENT_LIMIT - alreadyStaged.length);
     if (availableSlots === 0) {
@@ -3594,7 +3531,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function removeAgentAttachment(peerKey: string, attachmentId: string): void {
-    const controller = agentWorkspaceControllerRef.current;
+    const controller = agentWorkspaceController;
     controller.removeAttachment(peerKey, attachmentId);
     notifyAgentWorkspaceState();
     const remaining = controller.attachmentsForPeer(peerKey);
@@ -4566,21 +4503,21 @@ async function saveInvoiceDialog() {
                 notice={error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
                 composerReplyTarget={activeAgentReply ? { id: activeAgentReply.id, label: '回复', text: activeAgentReply.text } : undefined}
                 onClearComposerReply={() => clearAgentReply(activePeer.key)}
-                composerAccessory={agentWorkspaceControllerRef.current.isUploading(activePeer.key)
+                composerAccessory={agentWorkspaceController.isUploading(activePeer.key)
                   ? <span className={extra.uploadProgress}>Uploading attachments…</span>
                   : null}
                 composerValue={composer}
                 composerReady={hostReady}
                 composerBusy={Boolean(activeAgentOperationId)}
-                composerUploading={agentWorkspaceControllerRef.current.isUploading(activePeer.key)}
-                composerAttachments={agentWorkspaceControllerRef.current.attachmentsForPeer(activePeer.key)}
+                composerUploading={agentWorkspaceController.isUploading(activePeer.key)}
+                composerAttachments={agentWorkspaceController.attachmentsForPeer(activePeer.key)}
                 composerMentionCandidates={grokAgentItems
                   .filter((item) => item.key !== activePeer.key)
                   .map((item) => ({ id: item.agentId || item.key, name: item.name, description: item.description }))}
                 enterToSend={desktopPreferences.enterToSend}
                 onComposerChange={updateComposer}
                 onComposerMention={(candidate) => {
-                  agentWorkspaceControllerRef.current.upsertReference(activePeer.key, {
+                  agentWorkspaceController.upsertReference(activePeer.key, {
                     kind: 'agent',
                     id: candidate.id,
                     label: candidate.name,
