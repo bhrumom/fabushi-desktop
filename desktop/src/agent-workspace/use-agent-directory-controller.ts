@@ -9,7 +9,7 @@ export interface AgentDirectoryControllerOptions {
 }
 
 export interface AgentDirectoryController {
-  readonly agents: readonly BotSummary[];
+  readonly agents: BotSummary[];
   list(): Promise<unknown>;
   create(input: { name: string; description?: string }): Promise<unknown>;
   update(
