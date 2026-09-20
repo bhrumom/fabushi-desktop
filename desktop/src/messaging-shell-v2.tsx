@@ -1126,8 +1126,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const agentWorkspaceControllerRef = useRef(new AgentWorkspaceController(readAgentWorkspaceDrafts()));
   const pendingAgentDeltaRef = useRef(new Map<string, Extract<RuntimeEvent, { type: 'chat.delta' }>>());
   const agentDeltaFrameRef = useRef<number | null>(null);
-  const finishedAgentOperationsRef = useRef(new Set<string>());
-  const agentPeerKeyRef = useRef<Record<string, string>>({});
   const messageAreaRef = useRef<HTMLDivElement | null>(null);
   const stickToLatestRef = useRef(true);
   const remoteControlEnabledRef = useRef(hostSettings.remoteControlEnabled);
@@ -1505,16 +1503,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       const requestId = detail.command.requestId;
       if (detail.phase === 'dispatch') {
         if (!registry.isBusy(peerKey)) registry.beginRequest(peerKey, requestId);
-        rememberAgentPeer(requestId, peerKey);
         notifyAgentWorkspaceState();
         return;
       }
       if (detail.phase === 'accepted') {
         const operationId = detail.accepted.operationId;
         if (!operationId) return;
-        rememberAgentPeer(operationId, peerKey);
         adoptAgentRequestOperation(requestId, operationId, peerKey);
-        registry.adoptOperation(requestId, operationId, peerKey);
         notifyAgentWorkspaceState();
         appendAssistantTurnEvent({
           type: 'operation.started',
@@ -1526,7 +1521,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         return;
       }
       registry.cancelRequest(requestId);
-      delete agentPeerKeyRef.current[requestId];
       notifyAgentWorkspaceState();
       if (activePeerKeyRef.current === peerKey) setError(detail.error);
     };
@@ -1932,10 +1926,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     await store.checkpointRoot();
   }
 
-  function rememberAgentPeer(operationId: string, peerKey: string | null | undefined) {
-    if (peerKey) agentPeerKeyRef.current[operationId] = peerKey;
-  }
-
   function flushPendingAgentDelta(operationId?: string) {
     const pending = pendingAgentDeltaRef.current;
     const operationIds = operationId ? [operationId] : [...pending.keys()];
@@ -1964,7 +1954,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function updateAgentThread(operationId: string | undefined, update: (current: DisplayMessage[]) => DisplayMessage[]) {
-    const peerKey = operationId ? agentPeerKeyRef.current[operationId] : undefined;
+    const peerKey = operationId
+      ? agentWorkspaceControllerRef.current.peerForRuntimeId(operationId)
+      : null;
     if (!peerKey) {
       setMessages(update);
       return;
@@ -1977,14 +1969,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function adoptAgentRequestOperation(requestId: string | null, operationId: string, peerKey?: string | null) {
-    if (!requestId || requestId === operationId) return;
-    const ownerPeerKey = peerKey ?? agentPeerKeyRef.current[requestId] ?? null;
-    rememberAgentPeer(operationId, ownerPeerKey);
-    if (ownerPeerKey) {
+    if (!requestId) return;
+    const registry = agentWorkspaceControllerRef.current;
+    const ownerPeerKey = peerKey ?? registry.peerForRequest(requestId);
+    if (!ownerPeerKey) return;
+    if (requestId !== operationId) {
       const next = agentTranscriptStoreRef.current.adoptOperation(ownerPeerKey, requestId, operationId);
       if (ownerPeerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
     }
-    delete agentPeerKeyRef.current[requestId];
+    registry.adoptOperation(requestId, operationId, ownerPeerKey);
   }
 
   function rememberActiveBotThread() {
@@ -2008,40 +2001,34 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function claimAgentOperation(operationId?: string): boolean {
-    if (!operationId || finishedAgentOperationsRef.current.has(operationId)) return false;
+    if (!operationId) return false;
     const registry = agentWorkspaceControllerRef.current;
-    // Never infer runtime ownership from the visible Agent. A legacy event can
-    // only be adopted when exactly one Agent request is pending.
-    const peerKey = registry.peerForOperation(operationId)
-      ?? agentPeerKeyRef.current[operationId]
+    if (registry.isOperationFinished(operationId)) return false;
+    // Never infer runtime ownership from the visible Agent. An unowned legacy
+    // event may fall back only to its exact request id or one pending Agent.
+    const fallbackPeerKey = registry.peerForRequest(operationId)
       ?? registry.onlyPendingPeer();
+    const requestId = fallbackPeerKey
+      ? registry.requestForPeer(fallbackPeerKey)
+      : null;
+    const peerKey = registry.claimRuntimeOperation(operationId, fallbackPeerKey);
     if (!peerKey) return false;
-
-    const requestId = registry.requestForPeer(peerKey);
-    rememberAgentPeer(operationId, peerKey);
-    if (requestId) adoptAgentRequestOperation(requestId, operationId, peerKey);
-    registry.adoptOperation(requestId, operationId, peerKey);
+    if (requestId && requestId !== operationId) {
+      const next = agentTranscriptStoreRef.current.adoptOperation(peerKey, requestId, operationId);
+      if (peerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
+    }
     notifyAgentWorkspaceState();
     return true;
   }
 
   function clearAgentOperation(operationId: string, terminalStatus: 'completed' | 'failed' | 'interrupted' = 'completed') {
     const registry = agentWorkspaceControllerRef.current;
-    const peerKey = registry.peerForOperation(operationId)
-      ?? agentPeerKeyRef.current[operationId]
-      ?? null;
+    const peerKey = registry.finishRuntimeOperation(operationId);
     if (!peerKey) return false;
-    registry.finishOperation(operationId);
-
-    finishedAgentOperationsRef.current.add(operationId);
-    if (finishedAgentOperationsRef.current.size > 500) {
-      finishedAgentOperationsRef.current.delete(finishedAgentOperationsRef.current.values().next().value!);
-    }
     notifyAgentWorkspaceState();
 
     const next = agentTranscriptStoreRef.current.finishOperation(peerKey, operationId, terminalStatus);
     if (peerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
-    delete agentPeerKeyRef.current[operationId];
     return true;
   }
 
@@ -2050,10 +2037,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       ? event.operationId
       : undefined;
     if (!operationId) return;
-    const peerKey = agentWorkspaceControllerRef.current.peerForOperation(operationId)
-      ?? agentPeerKeyRef.current[operationId]
-      ?? agentWorkspaceControllerRef.current.peerForRequest(operationId)
-      ?? null;
+    const peerKey = agentWorkspaceControllerRef.current.peerForRuntimeId(operationId);
     if (!peerKey) return;
     const next = agentTranscriptStoreRef.current.appendAssistantTurnEvent(peerKey, event);
     if (peerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
@@ -3177,7 +3161,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     const requestId = nextRequestId('chat-send');
     registry.beginRequest(peer.key, requestId);
     notifyAgentWorkspaceState();
-    rememberAgentPeer(requestId, peer.key);
     const optimisticId = existingMessageId ?? 'optimistic:' + requestId;
     updateAgentThread(requestId, (current) => {
       const nextMessage: DisplayMessage = {
@@ -3223,14 +3206,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         return;
       }
       const operationId = accepted.operationId ?? requestId;
-      rememberAgentPeer(operationId, peer.key);
-      if (finishedAgentOperationsRef.current.has(operationId)) {
+      if (registry.isOperationFinished(operationId)) {
         registry.cancelRequest(requestId);
         notifyAgentWorkspaceState();
         return;
       }
       adoptAgentRequestOperation(requestId, operationId, peer.key);
-      registry.adoptOperation(requestId, operationId, peer.key);
       notifyAgentWorkspaceState();
       updateAgentThread(operationId, (current) => current.map((message) => message.id === optimisticId
         ? { ...message, operationId, optimistic: false, queued: false }
