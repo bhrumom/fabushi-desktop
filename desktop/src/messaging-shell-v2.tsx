@@ -130,6 +130,7 @@ import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
 import GrokAgentSidebar, { type GrokAgentSidebarItem } from './grok-shell/grok-agent-sidebar';
 import GrokAgentHeader from './grok-shell/grok-agent-header';
 import GrokAgentComposer from './grok-shell/grok-agent-composer';
+import GrokAgentNetwork from './grok-shell/grok-agent-network';
 import GrokCommandPalette from './grok-shell/grok-command-palette';
 import { AgentOperationRegistry } from './grok-runtime/agent-operation-registry';
 import { grokAgentKey, projectActiveGrokAgentKey, projectGrokAgentSidebarItems } from './grok-runtime/agent-model';
@@ -346,6 +347,7 @@ const accountSyncCursorKey = 'fabushi.desktop.account-sync-cursor.v1';
 const messengerConversationJournalKey = 'fabushi.desktop.mahayana-conversation-journal.v1';
 const miniAppExecutionPersistencePrefix = 'fabushi.desktop.miniapp-execution.v1:';
 const messengerPreferencesKey = 'fabushi.desktop.telegram-settings.v1';
+const grokPinnedOrderKey = 'fabushi.desktop.grok-pinned-order.v1';
 const initialPeerRenderCount = 120;
 const initialMessageRenderCount = 240;
 const initialSyncLimit = 20;
@@ -413,6 +415,30 @@ async function readDurableMessengerProjection(): Promise<MessengerProjection | n
   } catch {
     return null;
   }
+}
+
+function readGrokPinnedOrder(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const value = JSON.parse(window.localStorage.getItem(grokPinnedOrderKey) || '[]');
+    return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistGrokPinnedOrder(order: readonly string[]): void {
+  if (typeof window === 'undefined') return;
+  const value = [...order];
+  try {
+    window.localStorage.setItem(grokPinnedOrderKey, JSON.stringify(value));
+  } catch {
+    // Native persistence below remains the durable mirror.
+  }
+  void invokeNativeDesktop<boolean>('writeClientPersistence', {
+    key: grokPinnedOrderKey,
+    value,
+  }).catch(() => {});
 }
 
 function readDesktopMessengerPreferences(): DesktopMessengerPreferences {
@@ -935,6 +961,9 @@ function DesktopFastStartBootstrap() {
           onHide={noop}
           onDuplicate={noop}
           onDelete={noop}
+          onReorderPinned={noop}
+          onBroadcast={noop}
+          onOpenNetwork={noop}
           onOpenPlugins={noop}
           onOpenSettings={noop}
         />
@@ -994,6 +1023,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [search, setSearch] = useState('');
   const [grokPaletteOpen, setGrokPaletteOpen] = useState(false);
   const [grokPaletteQuery, setGrokPaletteQuery] = useState('');
+  const [grokNetworkOpen, setGrokNetworkOpen] = useState(false);
+  const [grokNetworkBroadcastMode, setGrokNetworkBroadcastMode] = useState(false);
+  const [grokPinnedOrder, setGrokPinnedOrder] = useState<string[]>(readGrokPinnedOrder);
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [globalSearchCategory, setGlobalSearchCategory] = useState<SearchCategory>('chats');
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
