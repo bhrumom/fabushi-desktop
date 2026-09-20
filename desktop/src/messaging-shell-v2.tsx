@@ -153,7 +153,7 @@ import {
 import { projectFabuAgentProfile, projectFabuAgentSettings, projectFabuBotIdentity } from './fabu-runtime/agent-domain';
 import { FabuAgentStore } from './fabu-runtime/agent-store';
 import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
-import GrokAgentSidebar, { type GrokAgentSidebarItem } from './grok-shell/grok-agent-sidebar';
+import AgentSidebar, { type AgentSidebarItem as GrokAgentSidebarItem } from './agent-workspace/agent-sidebar';
 import GrokAgentHeader from './grok-shell/grok-agent-header';
 import GrokAgentNetwork from './grok-shell/grok-agent-network';
 import GrokCommandPalette from './grok-shell/grok-command-palette';
@@ -970,7 +970,7 @@ function DesktopFastStartBootstrap() {
       style={{ gridTemplateColumns: '300px minmax(420px,1fr)' }}
     >
       <aside className={styles.chatList}>
-        <GrokAgentSidebar
+        <AgentSidebar
           agents={[bootstrapAgent]}
           activeKey={bootstrapAgent.key}
           query=""
@@ -4451,7 +4451,7 @@ async function saveInvoiceDialog() {
       onClick={() => { setMessageMenu(null); setProfileMenuOpen(false); setCreateMenuOpen(false); }}
     >
       <aside className={styles.chatList} data-testid="messenger-sidebar" data-collapsed={sidebarWidth <= 112 || undefined} onClick={(event) => event.stopPropagation()}>
-        <GrokAgentSidebar
+        <AgentSidebar
           agents={grokAgentItems}
           activeKey={activeGrokAgentKey}
           query={search}
@@ -4603,10 +4603,8 @@ async function saveInvoiceDialog() {
                   if (sourceMessage) setMessageMenu({ message: sourceMessage, x: event.clientX, y: event.clientY });
                 }}
                 notice={error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
-                beforeComposer={<>
-                  {replyTo ? <div className={extra.composerBanner} data-testid="reply-message-banner"><Reply size={15} /><div><strong>回复</strong><span>{replyTo.text}</span></div><button type="button" data-testid="reply-message-cancel" onClick={() => setReplyTo(null)}><X size={14} /></button></div> : null}
-                  {scheduledAtMs ? <div className={extra.composerBanner}><span>⏱</span><div><strong>定时发送</strong><span>{new Date(scheduledAtMs).toLocaleString()}</span></div><button type="button" onClick={() => setScheduledAtMs(undefined)}><X size={14} /></button></div> : null}
-                </>}
+                composerReplyTarget={replyTo ? { id: replyTo.id, label: '回复', text: replyTo.text } : undefined}
+                onClearComposerReply={() => setReplyTo(null)}
                 composerAccessory={agentAttachmentUploadingPeers.has(activePeer.key)
                   ? <span className={extra.uploadProgress}>Uploading attachments…</span>
                   : null}
