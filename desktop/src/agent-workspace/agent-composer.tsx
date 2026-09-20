@@ -82,8 +82,6 @@ export default function AgentComposer({
 }) {
   const hasText = value.trim().length > 0;
   const hasPayload = hasText || attachments.length > 0;
-  const canSend = hasPayload && ready && !uploading && voiceState === 'idle';
-  const atAttachmentLimit = attachments.length >= AGENT_ATTACHMENT_LIMIT;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const editorControlsRef = useRef<AgentRichTextEditorControls | null>(null);
@@ -92,11 +90,11 @@ export default function AgentComposer({
   const [voiceState, setVoiceState] = useState<'idle' | 'recording' | 'transcribing'>('idle');
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
+  const canSend = hasPayload && ready && !uploading && voiceState === 'idle';
+  const atAttachmentLimit = attachments.length >= AGENT_ATTACHMENT_LIMIT;
   const voiceRecorderRef = useRef<MediaRecorder | null>(null);
   const voiceStreamRef = useRef<MediaStream | null>(null);
   const voiceChunksRef = useRef<Blob[]>([]);
-  const valueRef = useRef(value);
-  valueRef.current = value;
 
   const mentionMatch = /(?:^|\s)@([^@\n]{0,50})$/.exec(value);
   const mentionQuery = mentionMatch?.[1]?.trim().toLocaleLowerCase() ?? null;
