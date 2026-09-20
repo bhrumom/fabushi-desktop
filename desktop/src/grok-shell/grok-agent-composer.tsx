@@ -38,6 +38,7 @@ export default function GrokAgentComposer({
   replyTarget,
   mentionCandidates = [],
   onClearReplyTarget,
+  onMention,
   onChange,
   onSubmit,
   onAttachFiles,
@@ -55,6 +56,7 @@ export default function GrokAgentComposer({
   replyTarget?: GrokComposerReplyTarget;
   mentionCandidates?: readonly GrokComposerMentionCandidate[];
   onClearReplyTarget?(): void;
+  onMention?(candidate: GrokComposerMentionCandidate): void;
   onChange(value: string): void;
   onSubmit(event: FormEvent<HTMLFormElement>): void;
   onAttachFiles(files: readonly File[]): void;
@@ -108,6 +110,7 @@ export default function GrokAgentComposer({
   const insertMention = (candidate: GrokComposerMentionCandidate) => {
     const next = value.replace(/(^|\s)@([^@\n]{0,50})$/, (_match, prefix: string) => `${prefix}@${candidate.name} `);
     onChange(next);
+    onMention?.(candidate);
     window.requestAnimationFrame(() => editorRef.current?.focus());
   };
 
