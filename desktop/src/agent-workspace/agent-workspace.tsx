@@ -32,11 +32,11 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   composerUploading?: boolean;
   composerAttachments?: ReadonlyArray<{ id: string; name: string; sizeBytes?: number }>;
   composerReplyTarget?: { id: string; label: string; text: string };
-  composerMentionCandidates?: ReadonlyArray<{ id: string; name: string; description?: string }>;
+  composerMentionCandidates?: ReadonlyArray<{ id: string; name: string; description?: string; kind?: 'agent' | 'mcp' }>;
   composerWorkflowCandidates?: ReadonlyArray<{ id: string; name: string; description?: string }>;
   enterToSend: boolean;
   onComposerChange(value: string, richText?: string): void;
-  onComposerMention?(candidate: { id: string; name: string; description?: string }): void;
+  onComposerMention?(candidate: { id: string; name: string; description?: string; kind?: 'agent' | 'mcp' }): void;
   onComposerWorkflowReference?(candidate: { id: string; name: string; description?: string }): void;
   onComposerSubmit(event: FormEvent<HTMLFormElement>): void;
   onComposerFiles(files: readonly File[]): void;
