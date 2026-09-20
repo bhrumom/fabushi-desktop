@@ -88,13 +88,20 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
 
     await completeBrowserLogin(page);
 
-    await test.step('canonical Messenger remains the only product shell', async () => {
+    await test.step('canonical Agent workspace replaces the Messenger navigation shell', async () => {
       await expect(page.getByTestId('messenger-workspace')).toHaveCount(1);
       await expect(page.locator('.desktop-mode-switch')).toHaveCount(0);
-      await expect(page.getByTestId('profile-navigation-trigger').locator('[data-engine="fabushi-motion-v3"]').first()).toBeVisible();
+      await expect(page.getByTestId('grok-new-agent')).toBeVisible();
+      await expect(page.getByTestId('profile-navigation-trigger')).toBeHidden();
+
+      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
+      await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
+      await expect(page.getByPlaceholder('Search agents or run a command')).toBeFocused();
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeHidden();
     });
 
-    await test.step('conversation and composer expose dark low-contrast material', async () => {
+    await test.step('Agent conversation and composer expose dark low-contrast material', async () => {
       const peer = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
       await expect(peer).toBeVisible();
       await peer.click();
