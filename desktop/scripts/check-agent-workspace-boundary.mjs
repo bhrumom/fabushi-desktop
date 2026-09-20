@@ -19,6 +19,7 @@ const forbidden = [
   ['legacy Grok Agent Network mounted by primary shell', /import\s+GrokAgentNetwork\s+from\s+['"]\.\/grok-shell\/grok-agent-network['"]/],
   ['legacy Grok Command Palette mounted by primary shell', /import\s+GrokCommandPalette\s+from\s+['"]\.\/grok-shell\/grok-command-palette['"]/],
   ['primary Agent shell directly imports Grok implementation layers', /from\s+['"]\.\/grok-(?:shell|runtime)\//],
+  ['Grok-named runtime state leaked back into primary Agent shell', /\bgrok(?:Palette|Network|Pinned|Sidebar|Selected|Activity|Busy|Agent)[A-Z]\w*/],
   ['renderer-owned Agent group create command', /type:\s*['"]group\.create['"]/],
   ['renderer-owned Agent group update command', /type:\s*['"]group\.update['"]/],
   ['renderer-owned Agent group delete command', /type:\s*['"]group\.delete['"]/],
