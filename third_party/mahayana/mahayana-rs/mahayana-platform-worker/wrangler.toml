@@ -32,6 +32,14 @@ database_name = "fabushi-db"
 database_id = "7b6318f0-fbc2-42f9-9887-85f878ae76d0"
 migrations_dir = "account-migrations"
 
+# Immutable content-addressed Agent blobs. D1 stores only mutable refs/metadata;
+# the existing private R2 bucket carries the actual object bytes under the
+# agent-store/v1/ prefix.
+[[r2_buckets]]
+binding = "AGENT_STORE"
+bucket_name = "bushi"
+preview_bucket_name = "bushi"
+
 [[queues.producers]]
 binding = "PLATFORM_EVENTS"
 queue = "mahayana-platform-events"

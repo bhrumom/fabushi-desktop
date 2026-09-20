@@ -426,6 +426,7 @@ struct AuthenticatedAccount {
 }
 
 mod account;
+mod account_agent_store;
 mod ai_usage;
 mod ci_runner;
 mod commerce;
@@ -437,6 +438,7 @@ mod security;
 mod user_payment_proxy;
 
 use account::*;
+use account_agent_store::*;
 use ai_usage::*;
 use ci_runner::*;
 use commerce::*;
@@ -534,6 +536,19 @@ pub async fn main(request: Request, env: Env, _context: Context) -> Result<Respo
         )
         .get_async("/v1/marketplace/plugins", marketplace_plugins)
         .get_async("/v1/marketplace/added", marketplace_added)
+        .get_async("/v1/account/sync", account_state_sync)
+        .get_async("/v1/account/bots", account_bots)
+        .post_async("/v1/account/bots/:bot_id/add", account_bot_add)
+        .delete_async("/v1/account/bots/:bot_id/add", account_bot_remove)
+        .get_async("/v1/account/agents", account_agents)
+        .get_async("/v1/account/agents/:agent_id", account_agent_get)
+        .put_async("/v1/account/agents/:agent_id", account_agent_put)
+        .get_async("/v1/account/agents/:agent_id/store", account_agent_store_get)
+        .put_async("/v1/account/agents/:agent_id/store", account_agent_store_put)
+        .delete_async("/v1/account/agents/:agent_id/store", account_agent_store_delete)
+        .get_async("/v1/miniapps/:mini_app_id/cloud-storage", miniapp_cloud_get)
+        .put_async("/v1/miniapps/:mini_app_id/cloud-storage", miniapp_cloud_put)
+        .delete_async("/v1/miniapps/:mini_app_id/cloud-storage", miniapp_cloud_delete)
         .post_async(
             "/v1/marketplace/plugins/:plugin_id/add",
             marketplace_plugin_add,
