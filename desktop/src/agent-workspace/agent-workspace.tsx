@@ -31,6 +31,7 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   composerUploading?: boolean;
   composerAttachments?: ReadonlyArray<{ id: string; name: string; sizeBytes?: number }>;
   composerReplyTarget?: { id: string; label: string; text: string };
+  composerMentionCandidates?: ReadonlyArray<{ id: string; name: string; description?: string }>;
   enterToSend: boolean;
   onComposerChange(value: string): void;
   onComposerSubmit(event: FormEvent<HTMLFormElement>): void;
@@ -107,6 +108,7 @@ export default function AgentWorkspace(props: AgentWorkspaceProps) {
       uploading={props.composerUploading}
       attachments={props.composerAttachments}
       replyTarget={props.composerReplyTarget}
+      mentionCandidates={props.composerMentionCandidates}
       onClearReplyTarget={props.onClearComposerReply}
       enterToSend={props.enterToSend}
       onChange={props.onComposerChange}
