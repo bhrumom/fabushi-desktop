@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { AgentTranscriptStore } from '../src/agent-workspace/agent-transcript-store';
 import { AgentWorkspaceController } from '../src/agent-workspace/agent-workspace-controller';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -116,6 +117,59 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.draftForPeer('agent:a')).toBe('newer draft typed while the send was pending');
       expect(controller.attachmentsForPeer('agent:a').map((attachment) => attachment.id)).toEqual(['attachment:a']);
       expect(controller.replyForPeer('agent:a')?.id).toBe('reply:a');
+    });
+
+    await test.step('Agent transcript store keeps one ordered assistant turn through adoption and finalization', async () => {
+      const transcripts = new AgentTranscriptStore();
+      transcripts.replace('agent:a', [{
+        id: 'user:a',
+        source: 'legacy',
+        role: 'me',
+        text: '你好',
+        createdAtMs: 1,
+        kind: 'message',
+        operationId: 'request:a',
+      }]);
+      transcripts.appendAssistantTurnEvent('agent:a', {
+        type: 'operation.started',
+        timestamp: new Date(2).toISOString(),
+        operationId: 'request:a',
+        label: '正在思考',
+        interruptible: true,
+      });
+      transcripts.appendAssistantTurnEvent('agent:a', {
+        type: 'chat.delta',
+        timestamp: new Date(3).toISOString(),
+        operationId: 'request:a',
+        delta: '你',
+      });
+      transcripts.appendAssistantTurnEvent('agent:a', {
+        type: 'chat.delta',
+        timestamp: new Date(4).toISOString(),
+        operationId: 'request:a',
+        delta: '好',
+      });
+
+      transcripts.adoptOperation('agent:a', 'request:a', 'operation:a');
+      transcripts.appendAssistantTurnEvent('agent:a', {
+        type: 'chat.message',
+        timestamp: new Date(5).toISOString(),
+        operationId: 'operation:a',
+        role: 'assistant',
+        text: '你好',
+      });
+      transcripts.appendAssistantTurnEvent('agent:a', {
+        type: 'operation.completed',
+        timestamp: new Date(6).toISOString(),
+        operationId: 'operation:a',
+      });
+
+      const thread = transcripts.thread('agent:a');
+      const assistantTurns = thread.filter((message) => message.kind === 'assistant-turn');
+      expect(assistantTurns).toHaveLength(1);
+      expect(assistantTurns[0]?.operationId).toBe('operation:a');
+      expect(assistantTurns[0]?.text).toBe('你好');
+      expect(transcripts.entries('agent:a').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
     });
 
     await test.step('parity stylesheet and surface marker load before authentication', async () => {
