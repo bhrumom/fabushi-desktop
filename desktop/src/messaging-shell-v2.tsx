@@ -2212,8 +2212,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       case 'conversation.opened':
-        if (agentOperationIdRef.current
-          && agentPeerKeyRef.current[agentOperationIdRef.current] === activePeerKeyRef.current) break;
+        if (agentOperationRegistryRef.current.operationForPeer(activePeerKeyRef.current)) break;
         if (activePeerKeyRef.current === `legacy:conversation:${event.conversationId}`
           || peersRef.current.some((peer) => peer.key === activePeerKeyRef.current
             && peer.source === 'legacy'
@@ -2396,10 +2395,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         break;
       }
       case 'operation.started':
-        if (claimAgentOperation(event.operationId)) {
-          setPendingSend(true);
-          appendAssistantTurnEvent(event);
-        }
+        if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
         break;
       case 'model.routed':
         if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
@@ -2408,18 +2404,18 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
         break;
       case 'operation.interrupted':
-        if (agentOperationIdRef.current === event.operationId) appendAssistantTurnEvent(event);
-        if (clearAgentOperation(event.operationId, 'interrupted')) {
-          setPendingSend(false);
-          agentSubmissionQueue.flush();
+        if (agentOperationRegistryRef.current.peerForOperation(event.operationId)
+          || agentPeerKeyRef.current[event.operationId]) {
+          appendAssistantTurnEvent(event);
         }
+        if (clearAgentOperation(event.operationId, 'interrupted')) agentSubmissionQueue.flush();
         break;
       case 'operation.completed':
-        if (agentOperationIdRef.current === event.operationId) appendAssistantTurnEvent(event);
-        if (clearAgentOperation(event.operationId)) {
-          setPendingSend(false);
-          agentSubmissionQueue.flush();
+        if (agentOperationRegistryRef.current.peerForOperation(event.operationId)
+          || agentPeerKeyRef.current[event.operationId]) {
+          appendAssistantTurnEvent(event);
         }
+        if (clearAgentOperation(event.operationId)) agentSubmissionQueue.flush();
         break;
       case 'miniapp.opened':
         if (event.html) {
@@ -2429,15 +2425,21 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           });
         }
         break;
-      case 'operation.failed':
-        if (agentOperationIdRef.current === event.operationId) appendAssistantTurnEvent(event);
+      case 'operation.failed': {
+        const owner = agentOperationRegistryRef.current.peerForOperation(event.operationId)
+          ?? agentPeerKeyRef.current[event.operationId]
+          ?? null;
+        if (owner) appendAssistantTurnEvent(event);
         if (clearAgentOperation(event.operationId, 'failed')) {
-          setPendingSend(false);
-          setError(event.message);
+          if (owner === activePeerKeyRef.current) setError(event.message);
           agentSubmissionQueue.flush();
         }
         break;
+      }
       case 'host.closed':
+        agentOperationRegistryRef.current.clear();
+        syncAgentOperationSnapshot();
+        projectActiveAgentOperation(activePeerKeyRef.current);
         setHostReady(false);
         break;
       default:
