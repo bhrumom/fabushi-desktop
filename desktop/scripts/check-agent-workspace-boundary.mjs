@@ -8,6 +8,8 @@ const shellPath = path.join(desktopRoot, 'src', 'messaging-shell-v2.tsx');
 const shell = fs.readFileSync(shellPath, 'utf8');
 const networkControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-network-controller.ts');
 const networkController = fs.readFileSync(networkControllerPath, 'utf8');
+const workflowControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-workflow-controller.ts');
+const workflowController = fs.readFileSync(workflowControllerPath, 'utf8');
 
 const forbidden = [
   ['renderer-global Agent operation pointer', /\bagentOperationId\b/],
@@ -99,6 +101,18 @@ for (const method of ['listGroups', 'createGroup', 'updateGroup', 'deleteGroup',
   if (!new RegExp(`client\\.${method}\\s*\\(`).test(networkController)) {
     violations.push(`Agent Network controller no longer routes ${method} through AgentCoordinatorClient`);
   }
+}
+
+if (!/useAgentWorkflowController\s*\(/.test(shell)) {
+  violations.push('Agent workflow discovery escaped the Agent workspace controller');
+}
+if (/agentWorkflowsById|setAgentWorkflowsById|type:\s*['"]workflow\.list['"]/.test(shell)) {
+  violations.push('primary shell recreated Agent workflow cache or raw workflow.list ownership');
+}
+if (!/client\.listWorkflows\s*\(/.test(workflowController)
+  || !/event\.type === ['"]workflow\.listed['"]/.test(workflowController)
+  || !/event\.type === ['"]workflow\.changed['"]/.test(workflowController)) {
+  violations.push('Agent workflow controller no longer owns workflow list/cache refresh');
 }
 
 if (violations.length) {
