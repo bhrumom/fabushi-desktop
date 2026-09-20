@@ -51,8 +51,6 @@ jobs:
           MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
           MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID_VAR: ${{ vars.APPLE_TEAM_ID }}
-          APPLE_TEAM_ID_SECRET: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
@@ -61,16 +59,10 @@ jobs:
           set -euo pipefail
           test -n "$MACOS_CERTIFICATE_P12_BASE64"
           test -n "$MACOS_CERTIFICATE_PASSWORD"
-          team_id="${APPLE_TEAM_ID_VAR:-$APPLE_TEAM_ID_SECRET}"
-          if [ -z "$team_id" ]; then
-            echo "::error::APPLE_TEAM_ID is not configured as an organization/repository variable or secret."
-            exit 1
-          fi
           if { [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_SPECIFIC_PASSWORD" ]; } &&              { [ -z "$APP_STORE_CONNECT_API_KEY_ID" ] || [ -z "$APP_STORE_CONNECT_API_ISSUER_ID" ] || [ -z "$APP_STORE_CONNECT_API_KEY_BASE64" ]; }; then
             echo "::error::Apple notarization credentials are not configured."
             exit 1
           fi
-          echo "APPLE_TEAM_ID_RESOLVED=$team_id" >> "$GITHUB_ENV"
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -127,6 +119,12 @@ jobs:
           echo "MACOS_CODESIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
           echo "CSC_NAME=$identity" >> "$GITHUB_ENV"
           echo "CSC_IDENTITY_AUTO_DISCOVERY=true" >> "$GITHUB_ENV"
+          probe="$RUNNER_TEMP/fabushi-team-probe"
+          cp /usr/bin/true "$probe"
+          codesign --force --options runtime --timestamp --sign "$identity" "$probe"
+          team_id="$(codesign -dv --verbose=4 "$probe" 2>&1 | awk -F= '/^TeamIdentifier=/{print $2; exit}')"
+          test -n "$team_id"
+          echo "APPLE_TEAM_ID_RESOLVED=$team_id" >> "$GITHUB_ENV"
           security find-identity -v -p codesigning "$keychain"
 
       - name: Build and stage Mahayana desktop host
