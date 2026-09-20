@@ -27,6 +27,8 @@ export type AccountSyncEnvelope = {
 export type AccountBotMembership = {
   bot: {
     id: string;
+    /** Cloud Bot identity is distinct from the runtime Agent identity it owns. */
+    agentId?: string;
     username?: string;
     displayName?: string;
     description?: string;
