@@ -4403,6 +4403,18 @@ async function saveInvoiceDialog() {
           settingsReturnSectionRef.current = 'bots';
           setSection('settings');
         }}
+        entries={allAgentTranscriptEntries}
+        onOpenTranscriptEntry={scrollToTranscriptEntry}
+        onConversationSearch={() => {
+          setConversationSearchOpen(true);
+          setAgentConversationSearch('');
+        }}
+        onComputer={() => {
+          if (!activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId) return;
+          setComputerProfileOpen(true);
+          if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
+          void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-palette')).catch(() => {});
+        }}
       />
 
       <section className={styles.chatWorkspace}>
