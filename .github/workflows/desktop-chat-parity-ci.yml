@@ -1,0 +1,65 @@
+name: Desktop Chat Parity CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "desktop/**"
+      - "frontend/apps/web/**"
+      - "projects/desktop-chat-streaming-parity/**"
+      - ".github/workflows/desktop-chat-parity-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-chat-parity-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  renderer:
+    name: Renderer typecheck and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build:renderer
+
+  focused-electron-e2e:
+    name: Focused Electron chat E2E
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm run build:renderer
+      - name: Run Mahayana chat regression
+        env:
+          FABUSHI_FEATURE_HOST_MODE: test
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "keeps user send local-first"
+      - name: Upload Playwright evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-chat-parity-playwright
+          path: |
+            desktop/playwright-report
+            desktop/test-results
+          if-no-files-found: ignore
