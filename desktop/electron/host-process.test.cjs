@@ -234,6 +234,40 @@ function harness(options = {}) {
   return { host, children };
 }
 
+test('development Host prefers the staged desktop binary before a release-profile fallback', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fabushi-staged-host-'));
+  try {
+    const electronDir = path.join(root, 'desktop', 'electron');
+    const staged = path.join(root, 'desktop', 'resources', 'bin', 'mahayana-app-host');
+    fs.mkdirSync(electronDir, { recursive: true });
+    fs.mkdirSync(path.dirname(staged), { recursive: true });
+    fs.writeFileSync(staged, '#!/bin/sh\n');
+    fs.chmodSync(staged, 0o755);
+
+    const stagedHost = new MahayanaHostProcess({
+      app: defaultApp,
+      env: {},
+      platform: 'linux',
+      electronDir,
+      fs,
+    });
+    assert.equal(stagedHost.executablePath(), staged);
+
+    const explicit = path.join(root, 'explicit-mahayana-app-host');
+    fs.writeFileSync(explicit, '#!/bin/sh\n');
+    const explicitHost = new MahayanaHostProcess({
+      app: defaultApp,
+      env: { MAHAYANA_APP_HOST_BIN: explicit },
+      platform: 'linux',
+      electronDir,
+      fs,
+    });
+    assert.equal(explicitHost.executablePath(), explicit);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('product API overrides are development-only and reject unsafe development origins', () => {
   assert.equal(productApiBaseUrl({ isPackaged: false }, {}), DEVELOPMENT_PRODUCT_API_BASE_URL);
   assert.equal(productApiBaseUrl({ isPackaged: true }, {}), PRODUCTION_PRODUCT_API_BASE_URL);
