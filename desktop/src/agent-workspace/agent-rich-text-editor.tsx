@@ -15,6 +15,11 @@ export interface AgentRichTextEditorControls {
   focus(): void;
   blur(): void;
   insertText(value: string): void;
+  replaceTokenWithEmoji(tokenLength: number, native: string): void;
+  replaceTokenWithPullRequest(
+    tokenLength: number,
+    pullRequest: { prNumber: number; title: string; url: string },
+  ): void;
 }
 
 export function agentEditorContent(prompt: string, richText?: string): Record<string, unknown> {
@@ -153,6 +158,52 @@ const WorkflowReference = TiptapNode.create({
   },
 });
 
+function formatPullRequestReference(value: unknown): string {
+  const number = typeof value === 'number' ? value : Number(value);
+  return Number.isInteger(number) && number > 0 ? `#${number}` : '#';
+}
+
+const PullRequestReference = TiptapNode.create({
+  name: 'prReference',
+  group: 'inline',
+  inline: true,
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      prNumber: { default: null },
+      title: { default: null },
+      url: { default: null },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'span[data-type="pr-reference"]' }];
+  },
+  renderHTML({ node, HTMLAttributes }) {
+    return ['span', mergeAttributes(HTMLAttributes, {
+      'data-type': 'pr-reference',
+      'data-pr-number': formatPullRequestReference(node.attrs.prNumber).slice(1),
+      'data-title': node.attrs.title,
+      'data-url': node.attrs.url,
+      class: 'agent-pr-reference',
+    }), formatPullRequestReference(node.attrs.prNumber)];
+  },
+  renderText({ node }) {
+    return formatPullRequestReference(node.attrs.prNumber);
+  },
+  addNodeView() {
+    return ({ node }) => {
+      const dom = document.createElement('span');
+      dom.className = 'agent-pr-reference';
+      dom.dataset.type = 'pr-reference';
+      dom.dataset.prNumber = String(node.attrs.prNumber ?? '');
+      if (typeof node.attrs.title === 'string') dom.title = node.attrs.title;
+      dom.textContent = formatPullRequestReference(node.attrs.prNumber);
+      return { dom };
+    };
+  },
+});
+
 function filesFromClipboard(event: globalThis.ClipboardEvent): File[] {
   return Array.from(event.clipboardData?.items ?? [])
     .filter((item) => item.kind === 'file')
@@ -213,6 +264,7 @@ export default function AgentRichTextEditor({
     }),
     AgentMention,
     WorkflowReference,
+    PullRequestReference,
   ], [placeholder]);
 
   const editor = useEditor({
@@ -270,6 +322,30 @@ export default function AgentRichTextEditor({
         const before = editor.state.doc.textBetween(0, editor.state.selection.from, '\n');
         const needsSpace = before.length > 0 && !/\s$/.test(before) && !/^\s/.test(value);
         editor.chain().focus().insertContent(`${needsSpace ? ' ' : ''}${value}`).run();
+      },
+      replaceTokenWithEmoji: (tokenLength, native) => {
+        const to = editor.state.selection.from;
+        const from = Math.max(1, to - Math.max(0, tokenLength));
+        editor.chain().focus().deleteRange({ from, to }).insertContent(`${native} `).run();
+      },
+      replaceTokenWithPullRequest: (tokenLength, pullRequest) => {
+        const to = editor.state.selection.from;
+        const from = Math.max(1, to - Math.max(0, tokenLength));
+        editor.chain()
+          .focus()
+          .deleteRange({ from, to })
+          .insertContent([
+            {
+              type: 'prReference',
+              attrs: {
+                prNumber: pullRequest.prNumber,
+                title: pullRequest.title,
+                url: pullRequest.url,
+              },
+            },
+            { type: 'text', text: ' ' },
+          ])
+          .run();
       },
     };
     onControls?.(controls);
