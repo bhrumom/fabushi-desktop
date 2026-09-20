@@ -2,7 +2,7 @@ import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahay
 import { AgentOperationRegistry, type AgentOperationSnapshot } from '../grok-runtime/agent-operation-registry';
 import { AGENT_ATTACHMENT_LIMIT } from './agent-attachments';
 import type { PersistedAgentDraft, PersistedAgentDrafts } from './agent-draft-store';
-import type { AgentPromptReference, AgentReplyContext } from './prompt-context';
+import { agentPromptReferenceMarker, type AgentPromptReference, type AgentReplyContext } from './prompt-context';
 
 export interface AgentWorkspaceDraftSnapshot {
   readonly [peerKey: string]: string;
@@ -27,7 +27,10 @@ function normalizeDraft(draft: Partial<PersistedAgentDraft> | undefined): Persis
       ? [...draft.attachments].slice(0, AGENT_ATTACHMENT_LIMIT)
       : [],
     ...(Array.isArray(draft?.references) && draft.references.length
-      ? { references: draft.references.filter((reference) => reference?.kind === 'agent').slice(0, 32) }
+      ? { references: draft.references.filter((reference) =>
+        reference
+        && ['agent', 'workflow', 'mcp', 'file', 'link'].includes(reference.kind),
+      ).slice(0, 32) }
       : {}),
     ...(draft?.replyTo ? { replyTo: draft.replyTo } : {}),
   };
@@ -234,7 +237,7 @@ export class AgentWorkspaceController {
   upsertReference(peerKey: string, reference: AgentPromptReference): void {
     const current = this.drafts.get(peerKey) ?? normalizeDraft(undefined);
     const references = [
-      ...(current.references ?? []).filter((candidate) => candidate.id !== reference.id),
+      ...(current.references ?? []).filter((candidate) => candidate.kind !== reference.kind || candidate.id !== reference.id),
       reference,
     ].slice(-32);
     const next = { ...current, references };
@@ -245,7 +248,7 @@ export class AgentWorkspaceController {
   pruneReferences(peerKey: string, text: string): void {
     const current = this.drafts.get(peerKey);
     if (!current?.references?.length) return;
-    const references = current.references.filter((reference) => text.includes(`@${reference.label}`));
+    const references = current.references.filter((reference) => text.includes(agentPromptReferenceMarker(reference)));
     const next = { ...current, ...(references.length ? { references } : {}) };
     if (!references.length) delete next.references;
     if (draftHasPayload(next)) this.drafts.set(peerKey, next);
@@ -300,7 +303,9 @@ export class AgentWorkspaceController {
       attachments: [...attachmentById.values()],
       references: [
         ...(current.references ?? []),
-        ...(draft.references ?? []).filter((reference) => !(current.references ?? []).some((candidate) => candidate.id === reference.id)),
+        ...(draft.references ?? []).filter((reference) => !(current.references ?? []).some((candidate) =>
+          candidate.kind === reference.kind && candidate.id === reference.id,
+        )),
       ],
       replyTo: current.replyTo ?? draft.replyTo,
     });
