@@ -53,6 +53,7 @@ import type {
   RuntimeEvent,
   SandboxRuntime,
   UpdateState,
+  WorkflowSummary,
 } from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import {
   ElectronMahayanaHostTransport,
