@@ -6717,18 +6717,60 @@ impl FeatureHostController {
 
     #[cfg(feature = "production")]
     fn receive_production(&self, timeout: Duration) -> Result<Option<HostEvent>, FeatureHostError> {
+        let mut pending_chat_delta: Option<HostEvent> = None;
         for index in 0..16 {
-            // Block only for the first runtime event. Once awakened, drain already-queued
-            // events without adding latency between streamed events.
+            // Block only for the first runtime event. Once awakened, drain an
+            // already-queued burst without adding latency between streamed
+            // events. Consecutive chat deltas for the same operation are
+            // coalesced before they cross the desktop process boundary.
             let receive_timeout = if index == 0 { timeout } else { Duration::ZERO };
             let Some(event) = self.runtime()?.receive(receive_timeout)? else {
-                return Ok(None);
+                return Ok(pending_chat_delta);
             };
-            if let Some(event) = self.translate_runtime_event(event)? {
-                return Ok(Some(event));
+            let Some(event) = self.translate_runtime_event(event)? else {
+                continue;
+            };
+
+            match event {
+                HostEvent::ChatDelta {
+                    timestamp,
+                    operation_id,
+                    delta,
+                } => {
+                    if let Some(HostEvent::ChatDelta {
+                        operation_id: pending_operation_id,
+                        delta: pending_delta,
+                        ..
+                    }) = pending_chat_delta.as_mut()
+                    {
+                        if *pending_operation_id == operation_id {
+                            pending_delta.push_str(&delta);
+                            continue;
+                        }
+                    }
+
+                    let next_delta = HostEvent::ChatDelta {
+                        timestamp,
+                        operation_id,
+                        delta,
+                    };
+                    if let Some(pending) = pending_chat_delta.replace(next_delta) {
+                        return Ok(Some(pending));
+                    }
+                }
+                ordered_event => {
+                    if let Some(pending) = pending_chat_delta.take() {
+                        // Preserve tool/final/terminal ordering. The already
+                        // translated non-delta event is served first on the next
+                        // feature.receive call after the coalesced text chunk.
+                        self.state()?.events.push_front(ordered_event);
+                        return Ok(Some(pending));
+                    }
+                    return Ok(Some(ordered_event));
+                }
             }
         }
-        Ok(None)
+        Ok(pending_chat_delta)
     }
 
     #[cfg(feature = "production")]
