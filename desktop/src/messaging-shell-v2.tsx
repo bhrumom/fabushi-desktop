@@ -53,7 +53,6 @@ import type {
   RuntimeEvent,
   SandboxRuntime,
   UpdateState,
-  WorkflowSummary,
 } from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import {
   ElectronMahayanaHostTransport,
@@ -149,11 +148,9 @@ import {
 import { projectFabuAgentProfile, projectFabuAgentSettings, projectFabuBotIdentity } from './fabu-runtime/agent-domain';
 import {
   FABU_AGENT_ATTACHMENT_INDEX_PATH,
-  FABU_AGENT_MEMORY_INDEX_PATH,
   FABU_AGENT_RUNTIME_CHECKPOINT_PATH,
   FABU_AGENT_WORKFLOW_INDEX_PATH,
   FabuAgentStore,
-  fabuAgentAutomationPath,
   fabuAgentConversationTranscriptPath,
 } from './fabu-runtime/agent-store';
 import { restoreAgentStoreWorkspace } from './agent-workspace/agent-store-recovery';
