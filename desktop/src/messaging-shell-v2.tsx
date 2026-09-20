@@ -2633,22 +2633,61 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [conversations, bots, accountBots, groups, selfActors, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps, selfHosted.actorId]);
 
   peersRef.current = peers;
-  const grokAgentItems: GrokAgentSidebarItem[] = peers
-    .filter((peer) => peer.kind === 'bot' || peer.kind === 'group')
-    .map((peer) => ({
-      key: peer.key,
-      id: peer.id,
-      agentId: peer.agentId ?? peer.actorId ?? peer.id,
-      name: peer.title,
-      description: peer.subtitle,
-      pinned: peer.pinned,
-      hidden: peer.hidden === true,
-      unread: peer.unread,
-      busy: Boolean(agentOperationByPeer[peer.key]),
-      isGroup: peer.kind === 'group',
-      updatedAtMs: peer.updatedAtMs,
-    }));
+  const grokAgentKey = (peer: PeerItem): string => peer.kind === 'group'
+    ? `group:${peer.id}`
+    : `agent:${peer.agentId ?? peer.actorId ?? peer.id}`;
+  const grokAgentItems: GrokAgentSidebarItem[] = Array.from(
+    peers
+      .filter((peer) => peer.kind === 'bot' || peer.kind === 'group')
+      .reduce((items, peer) => {
+        const key = grokAgentKey(peer);
+        const existing = items.get(key);
+        const candidate: GrokAgentSidebarItem = {
+          key,
+          peerKey: peer.key,
+          id: peer.id,
+          agentId: peer.agentId ?? peer.actorId ?? peer.id,
+          name: peer.title,
+          description: peer.subtitle,
+          pinned: peer.pinned,
+          hidden: peer.hidden === true,
+          unread: peer.unread,
+          busy: Boolean(agentOperationByPeer[peer.key]),
+          isGroup: peer.kind === 'group',
+          updatedAtMs: peer.updatedAtMs,
+        };
+        // Prefer the concrete conversation projection over profile-only peers
+        // so opening an Agent always restores its transcript. Otherwise keep
+        // the freshest/pinned projection for the same runtime Agent identity.
+        const candidateHasConversation = Boolean(peer.conversationId);
+        const existingPeer = existing
+          ? peers.find((entry) => entry.key === existing.peerKey)
+          : undefined;
+        const existingHasConversation = Boolean(existingPeer?.conversationId);
+        if (!existing
+          || (candidateHasConversation && !existingHasConversation)
+          || (candidateHasConversation === existingHasConversation
+            && (candidate.pinned && !existing.pinned
+              || candidate.updatedAtMs > existing.updatedAtMs))) {
+          items.set(key, candidate);
+        } else if (existing) {
+          items.set(key, {
+            ...existing,
+            pinned: existing.pinned || candidate.pinned,
+            hidden: existing.hidden && candidate.hidden,
+            unread: Math.max(existing.unread, candidate.unread),
+            busy: existing.busy || candidate.busy,
+            updatedAtMs: Math.max(existing.updatedAtMs, candidate.updatedAtMs),
+          });
+        }
+        return items;
+      }, new Map<string, GrokAgentSidebarItem>())
+      .values(),
+  );
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
+  const activeGrokAgentKey = activePeer && (activePeer.kind === 'bot' || activePeer.kind === 'group')
+    ? grokAgentKey(activePeer)
+    : null;
 
   useEffect(() => {
     if (!pendingOpenAgentId) return;
@@ -2736,7 +2775,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function peerForGrokAgent(item: GrokAgentSidebarItem): PeerItem | undefined {
-    return peersRef.current.find((peer) => peer.key === item.key);
+    return peersRef.current.find((peer) => peer.key === item.peerKey)
+      ?? peersRef.current.find((peer) =>
+        (peer.kind === 'bot' || peer.kind === 'group') && grokAgentKey(peer) === item.key,
+      );
   }
 
   async function renameGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
@@ -4060,7 +4102,7 @@ async function saveInvoiceDialog() {
       <aside className={styles.chatList} data-testid="messenger-sidebar" data-collapsed={sidebarWidth <= 112 || undefined} onClick={(event) => event.stopPropagation()}>
         <GrokAgentSidebar
           agents={grokAgentItems}
-          activeKey={activePeerKey}
+          activeKey={activeGrokAgentKey}
           query={search}
           collapsed={sidebarWidth <= 112}
           hostReady={hostReady}
