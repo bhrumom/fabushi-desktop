@@ -1999,13 +1999,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   function claimAgentOperation(operationId?: string): boolean {
     if (!operationId || finishedAgentOperationsRef.current.has(operationId)) return false;
     const registry = agentWorkspaceControllerRef.current;
-    let peerKey = registry.peerForOperation(operationId)
-      ?? agentPeerKeyRef.current[operationId]
-      ?? null;
-
     // Never infer runtime ownership from the visible Agent. A legacy event can
     // only be adopted when exactly one Agent request is pending.
-    if (!peerKey) peerKey = registry.onlyPendingPeer();
+    const peerKey = registry.peerForOperation(operationId)
+      ?? agentPeerKeyRef.current[operationId]
+      ?? registry.onlyPendingPeer();
     if (!peerKey) return false;
 
     const requestId = registry.requestForPeer(peerKey);
@@ -4711,7 +4709,7 @@ async function saveInvoiceDialog() {
                 }}
               />
             ) : (
-            <div className={styles.messageArea} data-testid="message-list" data-agent-operation-id={agentOperationId ?? undefined}>
+            <div className={styles.messageArea} data-testid="message-list" data-agent-operation-id={activeAgentOperationId ?? undefined}>
               <div className={styles.dayDivider}>今天</div>
               {matchingMessages.length > renderedMessages.length ? <button type="button" data-testid="message-list-load-earlier" onClick={() => setMessageRenderCount((count) => count + initialMessageRenderCount)}>加载更早消息</button> : null}
               {renderedMessages.map((message) => message.kind === 'assistant-turn' && message.assistantTurn ? (
