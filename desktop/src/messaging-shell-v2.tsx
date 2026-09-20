@@ -1945,58 +1945,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setAgentWorkspaceRevision((revision) => revision + 1);
   }
 
-  function unambiguousAgentOperationId(): string | undefined {
-    const registry = agentWorkspaceControllerRef.current;
-    const candidates = [...new Set([
-      ...Object.values(registry.snapshot()),
-      ...Object.values(registry.requestSnapshot()),
-    ])];
-    return candidates.length === 1 ? candidates[0] : undefined;
-  }
-
-  function claimAgentOperation(operationId?: string): boolean {
-    if (!operationId) return false;
-    const registry = agentWorkspaceControllerRef.current;
-    if (registry.isOperationFinished(operationId)) return false;
-    // Never infer runtime ownership from the visible Agent. An unowned legacy
-    // event may fall back only to its exact request id or one pending Agent.
-    const fallbackPeerKey = registry.peerForRequest(operationId)
-      ?? registry.onlyPendingPeer();
-    const requestId = fallbackPeerKey
-      ? registry.requestForPeer(fallbackPeerKey)
-      : null;
-    const peerKey = registry.claimRuntimeOperation(operationId, fallbackPeerKey);
-    if (!peerKey) return false;
-    if (requestId && requestId !== operationId) {
-      const next = agentTranscriptStoreRef.current.adoptOperation(peerKey, requestId, operationId);
-      if (peerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
-    }
-    notifyAgentWorkspaceState();
-    return true;
-  }
-
-  function clearAgentOperation(operationId: string, terminalStatus: 'completed' | 'failed' | 'interrupted' = 'completed') {
-    const registry = agentWorkspaceControllerRef.current;
-    const peerKey = registry.finishRuntimeOperation(operationId);
-    if (!peerKey) return false;
-    notifyAgentWorkspaceState();
-
-    const next = agentTranscriptStoreRef.current.finishOperation(peerKey, operationId, terminalStatus);
-    if (peerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
-    return true;
-  }
-
-  function appendAssistantTurnEvent(event: RuntimeEvent) {
-    const operationId = 'operationId' in event && typeof event.operationId === 'string'
-      ? event.operationId
-      : undefined;
-    if (!operationId) return;
-    const peerKey = agentWorkspaceControllerRef.current.peerForRuntimeId(operationId);
-    if (!peerKey) return;
-    const next = agentTranscriptStoreRef.current.appendAssistantTurnEvent(peerKey, event);
-    if (peerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
-  }
-
   function showSelfConversation(conversationId: string) {
     setMessages((selfMessages[conversationId] ?? []).filter((message) => !message.deleted).map(displaySelfMessage));
   }
