@@ -69,5 +69,7 @@ jobs:
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
       - name: Check Electron Host boundary
         run: node --test desktop/electron/host-process.test.cjs
+      - name: Check Agent workspace architecture boundary
+        run: node desktop/scripts/check-agent-workspace-boundary.mjs
       - name: Typecheck and build renderer
         run: npm --prefix desktop run build:renderer
