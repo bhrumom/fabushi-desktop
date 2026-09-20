@@ -787,11 +787,11 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(selectionBar).toBeVisible();
       await expect(selectionBar).toContainText('1 selected');
 
-      page.once('dialog', async (dialog) => {
-        expect(dialog.type()).toBe('prompt');
-        await dialog.accept('Focused work');
-      });
       await selectionBar.getByRole('button', { name: 'Section' }).click();
+      const sectionDialog = page.getByRole('dialog', { name: 'Create section' });
+      await expect(sectionDialog).toBeVisible();
+      await sectionDialog.getByLabel('Section name').fill('Focused work');
+      await sectionDialog.getByRole('button', { name: 'Create' }).click();
       await expect(page.locator('[data-section-id]').filter({ hasText: 'Focused work' })).toBeVisible();
       await expect(selectionBar).toHaveCount(0);
     });
