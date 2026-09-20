@@ -1506,8 +1506,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   useEffect(() => {
     let closed = false;
-    const unsubscribe = transport.subscribe((event) => {
-      if (!closed) handleRuntimeEvent(event);
+    const connection = agentCoordinatorClient.connect({
+      config: { profileId: 'desktop-messenger-v2', mode: 'production' },
+      onEvent: (event) => {
+        if (!closed) handleRuntimeEvent(event);
+      },
     });
     const onCommandBridge = (event: Event) => {
       const detail = (event as CustomEvent<MahayanaCommandBridgeDetail>).detail;
@@ -1540,7 +1543,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       if (activePeerKeyRef.current === peerKey) setError(detail.error);
     };
     window.addEventListener(MAHAYANA_COMMAND_EVENT_NAME, onCommandBridge);
-    void transport.initialize({ profileId: 'desktop-messenger-v2', mode: 'production' })
+    void connection.ready
       .then(async () => {
         if (closed) return;
         setHostReady(true);
@@ -1581,7 +1584,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           });
         }
         try {
-          const account = await transport.authStatus().catch(() => null);
+          const account = await agentCoordinatorClient.authStatus().catch(() => null);
           const cachedActor = startupProjection?.selfActors.find((actor) => actor.id === selfHosted.actorId);
           const username = account?.user?.username?.trim() || cachedActor?.username;
           const displayName = account?.user?.nickname?.trim()
@@ -1605,13 +1608,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
     return () => {
       closed = true;
-      unsubscribe();
       window.removeEventListener(MAHAYANA_COMMAND_EVENT_NAME, onCommandBridge);
       const remoteComputer = remoteComputerControllerRef.current;
-      if (remoteComputer) void remoteComputer.stop().finally(() => transport.close());
-      else void transport.close();
+      if (remoteComputer) void remoteComputer.stop().finally(() => connection.dispose());
+      else void connection.dispose();
     };
-  }, [transport, selfHosted, startupProjection]);
+  }, [agentCoordinatorClient, selfHosted, startupProjection]);
 
   useEffect(() => {
     if (!remoteAccountScope) {
