@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { AgentWorkspaceController } from '../src/agent-workspace/agent-workspace-controller';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
@@ -77,6 +78,28 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
   try {
     const page = await app.firstWindow();
 
+    await test.step('Agent controller keeps simultaneous requests isolated by peer', async () => {
+      const controller = new AgentWorkspaceController();
+      controller.beginRequest('agent:a', 'request:a');
+      controller.beginRequest('agent:b', 'request:b');
+      expect(controller.onlyPendingPeer()).toBeNull();
+      expect(controller.requestSnapshot()).toEqual({
+        'agent:a': 'request:a',
+        'agent:b': 'request:b',
+      });
+
+      controller.adoptOperation('request:a', 'operation:a', 'agent:a');
+      expect(controller.operationForPeer('agent:a')).toBe('operation:a');
+      expect(controller.requestForPeer('agent:b')).toBe('request:b');
+      expect(controller.isBusy('agent:a')).toBe(true);
+      expect(controller.isBusy('agent:b')).toBe(true);
+
+      controller.finishOperation('operation:a');
+      expect(controller.isBusy('agent:a')).toBe(false);
+      expect(controller.isBusy('agent:b')).toBe(true);
+      expect(controller.onlyPendingPeer()).toBe('agent:b');
+    });
+
     await test.step('parity stylesheet and surface marker load before authentication', async () => {
       await expect(page.locator('body')).toHaveAttribute('data-fabushi-surface', 'grok-parity-v1');
       const parityLoaded = await page.evaluate(() => Array.from(document.styleSheets).some((sheet) =>
@@ -92,7 +115,8 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(page.getByTestId('messenger-workspace')).toHaveCount(1);
       await expect(page.locator('.desktop-mode-switch')).toHaveCount(0);
       await expect(page.getByTestId('grok-new-agent')).toBeVisible();
-      await expect(page.getByTestId('profile-navigation-trigger')).toBeHidden();
+      await expect(page.getByTestId('profile-navigation-trigger')).toHaveCount(0);
+      await expect(page.locator('[data-testid^="legacy-peer-"]')).toHaveCount(0);
 
       await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
       await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
