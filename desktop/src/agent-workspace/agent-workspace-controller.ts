@@ -63,6 +63,14 @@ export class AgentWorkspaceController {
     return this.operations.snapshot();
   }
 
+  requestSnapshot(): Readonly<Record<string, string>> {
+    return this.operations.requestSnapshot();
+  }
+
+  onlyPendingPeer(): string | null {
+    return this.operations.onlyPendingPeer();
+  }
+
   clearPeer(peerKey: string): void {
     this.operations.clearPeer(peerKey);
     this.drafts.delete(peerKey);
