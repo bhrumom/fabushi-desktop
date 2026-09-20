@@ -5832,8 +5832,14 @@ impl FeatureHostController {
             *active != next_account_id
         };
         if changed {
-            self.runtime()?.reset_session()?;
             let account_id = next_account_id.as_deref();
+            let history_path = match (self.memory_root_path.as_deref(), account_id) {
+                (Some(root), Some(id)) => Some(
+                    account_scoped_path(root, id).join("_runtime-transcript.json"),
+                ),
+                _ => None,
+            };
+            self.runtime()?.switch_conversation_history(history_path)?;
             let mut automations = match (self.memory_root_path.as_deref(), account_id) {
                 (Some(root), Some(id)) => {
                     load_fabu_agent_automations(&account_scoped_path(root, id))
