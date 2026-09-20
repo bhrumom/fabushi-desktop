@@ -225,6 +225,63 @@ async fn ensure_agent(
     Ok(())
 }
 
+async fn mirror_bot_agent_profile(
+    database: &worker::D1Database,
+    account_id: &str,
+    agent_id: &str,
+    profile: Value,
+    initial_metadata: Value,
+    now: i64,
+) -> Result<()> {
+    let profile_json = serde_json::to_string(&json_object(profile))
+        .map_err(|error| worker::Error::RustError(error.to_string()))?;
+    let metadata_json = serde_json::to_string(&json_object(initial_metadata))
+        .map_err(|error| worker::Error::RustError(error.to_string()))?;
+    worker::query!(
+        database,
+        "INSERT INTO account_agents
+         (account_user_id, agent_id, profile_json, metadata_json, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?5)
+         ON CONFLICT(account_user_id, agent_id) DO UPDATE SET
+           profile_json = excluded.profile_json,
+           updated_at = excluded.updated_at",
+        account_id,
+        agent_id,
+        profile_json,
+        metadata_json,
+        now
+    )?
+    .run()
+    .await?;
+    Ok(())
+}
+
+async fn ensure_agent_exists(
+    database: &worker::D1Database,
+    account_id: &str,
+    agent_id: &str,
+    now: i64,
+) -> Result<()> {
+    let profile_json = serde_json::to_string(&json!({"agentId": agent_id, "name": agent_id}))
+        .map_err(|error| worker::Error::RustError(error.to_string()))?;
+    let metadata_json = serde_json::to_string(&json!({"agentId": agent_id, "name": agent_id, "mode": "default"}))
+        .map_err(|error| worker::Error::RustError(error.to_string()))?;
+    worker::query!(
+        database,
+        "INSERT OR IGNORE INTO account_agents
+         (account_user_id, agent_id, profile_json, metadata_json, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?5)",
+        account_id,
+        agent_id,
+        profile_json,
+        metadata_json,
+        now
+    )?
+    .run()
+    .await?;
+    Ok(())
+}
+
 pub(super) async fn account_bots(
     request: Request,
     context: RouteContext<()>,
@@ -317,7 +374,7 @@ pub(super) async fn account_bot_add(
         "isRunEverything": false,
         "createdAt": now.saturating_mul(1000),
     });
-    ensure_agent(&database, &account.user_id, &agent_id, agent_profile, agent_metadata, now).await?;
+    mirror_bot_agent_profile(&database, &account.user_id, &agent_id, agent_profile, agent_metadata, now).await?;
     append_account_state_event(
         &database,
         &account.user_id,
@@ -590,14 +647,7 @@ pub(super) async fn account_agent_store_put(
     let object_key = agent_blob_key(&account.user_id, &agent_id, &sha256);
     bucket.put(object_key, bytes.clone()).sha256(Sha256::digest(&bytes).to_vec()).execute().await?;
 
-    ensure_agent(
-        &database,
-        &account.user_id,
-        &agent_id,
-        json!({"agentId": agent_id, "name": agent_id}),
-        json!({"agentId": agent_id, "name": agent_id, "mode": "default"}),
-        now,
-    ).await?;
+    ensure_agent_exists(&database, &account.user_id, &agent_id, now).await?;
     let revision = append_account_state_event(
         &database,
         &account.user_id,
