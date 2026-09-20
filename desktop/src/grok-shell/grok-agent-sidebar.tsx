@@ -86,6 +86,12 @@ function AgentRow({
       data-testid={`peer-${item.key}`}
       data-agent-id={item.agentId}
       onClick={onOpen}
+      onDoubleClick={(event) => {
+        if (item.isGroup) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onRename();
+      }}
     >
       <span className={styles.avatar}>
         <BotMark
