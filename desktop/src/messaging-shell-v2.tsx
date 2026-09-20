@@ -157,7 +157,7 @@ import AgentRootShell from './agent-workspace/agent-root-shell';
 import AgentSidebar from './agent-workspace/agent-sidebar';
 import { agentWorkspaceKey, projectActiveAgentKey, projectAgentSidebarItems, type AgentSidebarItem } from './agent-workspace/agent-model';
 import AgentSearch from './agent-workspace/agent-search';
-import GrokAgentHeader from './grok-shell/grok-agent-header';
+import AgentHeader from './agent-workspace/agent-header';
 import AgentNetwork from './agent-workspace/agent-network';
 import AgentCommandPalette from './agent-workspace/agent-command-palette';
 import { MahayanaAssistantTurnView } from './mahayana-assistant-turn-view';
@@ -4464,7 +4464,7 @@ async function saveInvoiceDialog() {
             ) : (
               <>
             {isAgentPeer(activePeer) ? (
-              <GrokAgentHeader
+              <AgentHeader
                 title={activePeer.title}
                 description={activePeer.subtitle}
                 botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
