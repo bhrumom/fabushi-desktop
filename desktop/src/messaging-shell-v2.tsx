@@ -1858,6 +1858,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setAgentOperationByPeer({ ...agentOperationRegistryRef.current.snapshot() });
   }
 
+  function unambiguousAgentOperationId(): string | undefined {
+    const running = [...new Set(Object.values(agentOperationRegistryRef.current.snapshot()))];
+    if (running.length === 1) return running[0];
+    if (running.length > 1) return undefined;
+    return agentOperationIdRef.current ?? agentRequestIdRef.current ?? undefined;
+  }
+
   function projectActiveAgentOperation(peerKey: string | null | undefined) {
     const operationId = agentOperationRegistryRef.current.operationForPeer(peerKey);
     const requestId = agentOperationRegistryRef.current.requestForPeer(peerKey);
@@ -2351,10 +2358,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           // though the active send already owns a provisional/authoritative turn.
           // Bind that body to the current turn instead of painting a second
           // peer message beside the AssistantTurn.
-          const assistantOperationId = event.operationId
-            ?? agentOperationIdRef.current
-            ?? agentRequestIdRef.current
-            ?? undefined;
+          const assistantOperationId = event.operationId ?? unambiguousAgentOperationId();
           if (assistantOperationId) {
             const ownedOperation = claimAgentOperation(assistantOperationId)
               || Boolean(agentPeerKeyRef.current[assistantOperationId]);
@@ -2392,10 +2396,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         });
         break;
       case 'chat.delta': {
-        const deltaOperationId = event.operationId
-          ?? agentOperationIdRef.current
-          ?? agentRequestIdRef.current
-          ?? undefined;
+        const deltaOperationId = event.operationId ?? unambiguousAgentOperationId();
         if (deltaOperationId && finishedAgentOperationsRef.current.has(deltaOperationId)) break;
         if (deltaOperationId && (
           claimAgentOperation(deltaOperationId)
