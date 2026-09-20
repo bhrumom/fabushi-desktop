@@ -1,3 +1,4 @@
+import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 export type AgentSubmissionPhase = 'pending' | 'queued' | 'failed' | 'sent' | 'cancelled';
 
 export interface AgentSubmission {
@@ -6,6 +7,7 @@ export interface AgentSubmission {
   peerKey: string;
   agentId: string;
   prompt: string;
+  attachments?: readonly AttachmentContext[];
   createdAtMs: number;
 }
 
