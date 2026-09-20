@@ -28,7 +28,7 @@ function nonEmpty(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
-function normalizeServer(value: unknown): AgentMcpReference | null {
+export function normalizeAgentMcpServer(value: unknown): AgentMcpReference | null {
   if (!isRecord(value)) return null;
   const id = nonEmpty(value.id)
     ?? nonEmpty(value.serverIdentifier)
@@ -55,6 +55,13 @@ function normalizeServer(value: unknown): AgentMcpReference | null {
     ...(status ? { status } : {}),
     toolCount,
   };
+}
+
+export function projectAgentMcpReferences(servers: readonly unknown[]): AgentMcpReference[] {
+  return servers
+    .map(normalizeAgentMcpServer)
+    .filter((item): item is AgentMcpReference => item !== null)
+    .filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index);
 }
 
 function requestId(): string {
@@ -88,11 +95,7 @@ export function useAgentMcpController(
 
   const handle = useCallback((event: RuntimeEvent): boolean => {
     if (event.type === 'mcp.listed') {
-      const next = event.servers
-        .map(normalizeServer)
-        .filter((item): item is AgentMcpReference => item !== null)
-        .filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index);
-      setReferences(next);
+      setReferences(projectAgentMcpReferences(event.servers));
       return true;
     }
     if (event.type === 'mcp.refreshed' || event.type === 'mcp.oauth') {
