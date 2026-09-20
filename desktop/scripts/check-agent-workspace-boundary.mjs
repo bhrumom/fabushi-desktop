@@ -12,6 +12,8 @@ const workflowControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 
 const workflowController = fs.readFileSync(workflowControllerPath, 'utf8');
 const storeSyncControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-store-sync-controller.ts');
 const storeSyncController = fs.readFileSync(storeSyncControllerPath, 'utf8');
+const directoryControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-directory-controller.ts');
+const directoryController = fs.readFileSync(directoryControllerPath, 'utf8');
 
 const forbidden = [
   ['renderer-global Agent operation pointer', /\bagentOperationId\b/],
@@ -129,6 +131,22 @@ if (!/client\.listMemory\s*\(/.test(storeSyncController)
   || !/event\.type === ['"]automation\.changed['"]/.test(storeSyncController)
   || !/event\.type === ['"]automation\.listed['"]/.test(storeSyncController)) {
   violations.push('Agent store sync controller no longer owns memory/automation synchronization');
+}
+
+if (!/useAgentDirectoryController\s*\(/.test(shell)) {
+  violations.push('Agent directory cache/commands escaped the Agent workspace controller');
+}
+if (/type:\s*['"]bot\.(?:list|create|update|clone|delete|setHidden)['"]|case\s+['"]bot\.(?:listed|changed)['"]|setBots\s*\(/.test(shell)) {
+  violations.push('primary shell recreated raw Bot/Agent directory ownership');
+}
+for (const method of ['listAgents', 'createAgent', 'updateAgent', 'duplicateAgent', 'deleteAgent', 'setAgentHidden']) {
+  if (!new RegExp(`client\\.${method}\\s*\\(`).test(directoryController)) {
+    violations.push(`Agent directory controller no longer routes ${method} through AgentCoordinatorClient`);
+  }
+}
+if (!/event\.type === ['"]bot\.listed['"]/.test(directoryController)
+  || !/event\.type === ['"]bot\.changed['"]/.test(directoryController)) {
+  violations.push('Agent directory controller no longer owns Host directory event projection');
 }
 
 if (violations.length) {
