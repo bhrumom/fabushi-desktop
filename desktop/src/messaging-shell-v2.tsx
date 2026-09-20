@@ -3711,13 +3711,27 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
       }
       if (staged.length) {
+        const byId = new Map([...alreadyStaged, ...staged].map((attachment) => [attachment.id, attachment]));
+        const nextAttachments = [...byId.values()].slice(0, AGENT_ATTACHMENT_LIMIT);
         setAgentAttachmentsByPeer((current) => {
           const previous = current[peer.key] ?? [];
-          const byId = new Map([...previous, ...staged].map((attachment) => [attachment.id, attachment]));
+          const currentById = new Map([...previous, ...staged].map((attachment) => [attachment.id, attachment]));
           return {
             ...current,
-            [peer.key]: [...byId.values()].slice(0, AGENT_ATTACHMENT_LIMIT),
+            [peer.key]: [...currentById.values()].slice(0, AGENT_ATTACHMENT_LIMIT),
           };
+        });
+        void mirrorAgentCloudSnapshot(agentId, FABU_AGENT_ATTACHMENT_INDEX_PATH, {
+          schemaVersion: 1,
+          agentId,
+          attachments: nextAttachments.map((attachment) => ({
+            id: attachment.id,
+            name: attachment.name,
+            path: attachment.path,
+            mimeType: attachment.mimeType,
+            sizeBytes: attachment.sizeBytes,
+          })),
+          updatedAtMs: Date.now(),
         });
       }
     } finally {
@@ -3730,12 +3744,28 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function removeAgentAttachment(peerKey: string, attachmentId: string): void {
+    const remaining = (agentAttachmentsByPeer[peerKey] ?? [])
+      .filter((attachment) => attachment.id !== attachmentId);
     setAgentAttachmentsByPeer((current) => {
-      const remaining = (current[peerKey] ?? []).filter((attachment) => attachment.id !== attachmentId);
       const next = { ...current };
       if (remaining.length) next[peerKey] = remaining;
       else delete next[peerKey];
       return next;
+    });
+    const peer = agentPeerForRuntimeKey(peerKey);
+    if (!peer) return;
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    void mirrorAgentCloudSnapshot(agentId, FABU_AGENT_ATTACHMENT_INDEX_PATH, {
+      schemaVersion: 1,
+      agentId,
+      attachments: remaining.map((attachment) => ({
+        id: attachment.id,
+        name: attachment.name,
+        path: attachment.path,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+      })),
+      updatedAtMs: Date.now(),
     });
   }
 
