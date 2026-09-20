@@ -7021,39 +7021,50 @@ impl FeatureHostController {
             ),
             other => return Err(unexpected_response("runtime.status", other)),
         };
-        let mut runtime_text =
-            compose_agent_input(&text, mode, mode_statement.as_deref(), &attachments);
-        if let Some(mcp_context) = self.mcp_instruction_context()? {
-            runtime_text = format!(
-                "{mcp_context}
+        // Fabu's turn owner keeps acknowledgement/submission separate from
+        // expensive Agent context assembly. A lightweight conversational turn
+        // must not enumerate MCP servers, scan durable memory, render workflow
+        // catalogs, or wrap the user's text before the low-latency model lane.
+        let lightweight_conversation =
+            attachments.is_empty() && is_lightweight_conversation_text(&text);
+        let mut runtime_text = if lightweight_conversation {
+            text.clone()
+        } else {
+            compose_agent_input(&text, mode, mode_statement.as_deref(), &attachments)
+        };
+        if !lightweight_conversation {
+            if let Some(mcp_context) = self.mcp_instruction_context()? {
+                runtime_text = format!(
+                    "{mcp_context}
 
 [Current turn]
 {runtime_text}"
-            );
-        }
-        let memory_agent_id = runtime_agent_id.as_deref().unwrap_or("mahayana-assistant");
-        if is_safe_memory_agent_id(memory_agent_id) {
-            if let Some(root) = self.active_account_root(self.memory_root_path.as_deref()) {
-                let memory_dir = root.join(memory_agent_id).join("memory");
-                let memory_prompt = render_memory_system_prompt(&memory_dir);
-                if !memory_prompt.is_empty() {
-                    runtime_text = format!(
-                        "[Persistent agent memory]\n{memory_prompt}\n\n[Current turn]\n{runtime_text}"
-                    );
-                }
+                );
             }
-            let account_workflow_root =
-                self.active_account_root(self.workflow_root_path.as_deref());
-            let account_memory_root = self.active_account_root(self.memory_root_path.as_deref());
-            if let (Some(workflow_root), Some(agent_root)) = (
-                account_workflow_root.as_deref(),
-                account_memory_root.as_deref(),
-            ) {
-                let workflow_catalog =
-                    render_workflow_catalog(workflow_root, agent_root, memory_agent_id);
-                if !workflow_catalog.is_empty() {
-                    runtime_text =
-                        format!("[Available workflows]\n{workflow_catalog}\n\n{runtime_text}");
+            let memory_agent_id = runtime_agent_id.as_deref().unwrap_or("mahayana-assistant");
+            if is_safe_memory_agent_id(memory_agent_id) {
+                if let Some(root) = self.active_account_root(self.memory_root_path.as_deref()) {
+                    let memory_dir = root.join(memory_agent_id).join("memory");
+                    let memory_prompt = render_memory_system_prompt(&memory_dir);
+                    if !memory_prompt.is_empty() {
+                        runtime_text = format!(
+                            "[Persistent agent memory]\n{memory_prompt}\n\n[Current turn]\n{runtime_text}"
+                        );
+                    }
+                }
+                let account_workflow_root =
+                    self.active_account_root(self.workflow_root_path.as_deref());
+                let account_memory_root = self.active_account_root(self.memory_root_path.as_deref());
+                if let (Some(workflow_root), Some(agent_root)) = (
+                    account_workflow_root.as_deref(),
+                    account_memory_root.as_deref(),
+                ) {
+                    let workflow_catalog =
+                        render_workflow_catalog(workflow_root, agent_root, memory_agent_id);
+                    if !workflow_catalog.is_empty() {
+                        runtime_text =
+                            format!("[Available workflows]\n{workflow_catalog}\n\n{runtime_text}");
+                    }
                 }
             }
         }
@@ -9046,6 +9057,37 @@ fn clone_agent_display_name(name: &str) -> String {
     } else {
         format!("{trimmed} copy")
     }
+}
+
+fn is_lightweight_conversation_text(text: &str) -> bool {
+    let value = text.trim();
+    if value.is_empty() || value.chars().count() > 48 || value.contains('\n') {
+        return false;
+    }
+    let normalized = value
+        .trim_matches(|ch: char| ch.is_ascii_punctuation() || ch.is_whitespace())
+        .to_lowercase();
+    matches!(
+        normalized.as_str(),
+        "你好"
+            | "您好"
+            | "嗨"
+            | "哈喽"
+            | "在吗"
+            | "早上好"
+            | "下午好"
+            | "晚上好"
+            | "谢谢"
+            | "谢谢你"
+            | "hi"
+            | "hello"
+            | "hey"
+            | "thanks"
+            | "thank you"
+            | "good morning"
+            | "good afternoon"
+            | "good evening"
+    )
 }
 
 fn compose_agent_input(
