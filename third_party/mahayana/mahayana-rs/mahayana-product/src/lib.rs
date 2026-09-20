@@ -339,6 +339,7 @@ fn default_surface_bots() -> Vec<BotSummary> {
     vec![
         BotSummary {
             id: "mahayana-assistant".into(),
+            agent_id: Some("mahayana-assistant".into()),
             name: "大乘助手".into(),
             description: "General-purpose Mahayana assistant.".into(),
             title: String::new(),
@@ -353,6 +354,7 @@ fn default_surface_bots() -> Vec<BotSummary> {
         },
         BotSummary {
             id: "research-bot".into(),
+            agent_id: Some("research".into()),
             name: "Research Bot".into(),
             description: "Source verification and research synthesis.".into(),
             title: String::new(),
@@ -367,6 +369,7 @@ fn default_surface_bots() -> Vec<BotSummary> {
         },
         BotSummary {
             id: "incident-bot".into(),
+            agent_id: Some("incident".into()),
             name: "Incident Bot".into(),
             description: "Incident triage and operational coordination.".into(),
             title: String::new(),
