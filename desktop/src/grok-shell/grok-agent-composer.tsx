@@ -1,5 +1,5 @@
-import { Paperclip, Send, Square, X } from 'lucide-react';
-import React, { useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent } from 'react';
+import { LoaderCircle, Mic, Paperclip, Send, Square, X } from 'lucide-react';
+import React, { useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent } from 'react';
 import styles from './grok-agent-composer.module.css';
 
 export interface GrokComposerAttachment {
@@ -27,6 +27,7 @@ export default function GrokAgentComposer({
   onSubmit,
   onAttachFiles,
   onRemoveAttachment,
+  onTranscribeVoice,
   onStop,
 }: {
   value: string;
@@ -40,12 +41,96 @@ export default function GrokAgentComposer({
   onSubmit(event: FormEvent<HTMLFormElement>): void;
   onAttachFiles(files: readonly File[]): void;
   onRemoveAttachment(id: string): void;
+  onTranscribeVoice?(file: File): Promise<string>;
   onStop(): void;
 }) {
   const hasText = value.trim().length > 0;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
   const [dragOver, setDragOver] = useState(false);
+  const [voiceState, setVoiceState] = useState<'idle' | 'recording' | 'transcribing'>('idle');
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const voiceRecorderRef = useRef<MediaRecorder | null>(null);
+  const voiceStreamRef = useRef<MediaStream | null>(null);
+  const voiceChunksRef = useRef<Blob[]>([]);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  const stopVoiceTracks = () => {
+    for (const track of voiceStreamRef.current?.getTracks() ?? []) track.stop();
+    voiceStreamRef.current = null;
+  };
+
+  const stopVoice = () => {
+    const recorder = voiceRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+  };
+
+  const startVoice = async () => {
+    if (!onTranscribeVoice || voiceState !== 'idle') return;
+    setVoiceError(null);
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setVoiceError('Voice recording is unavailable on this device.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      voiceStreamRef.current = stream;
+      const preferred = 'audio/webm;codecs=opus';
+      const recorder = MediaRecorder.isTypeSupported(preferred)
+        ? new MediaRecorder(stream, { mimeType: preferred })
+        : new MediaRecorder(stream);
+      voiceRecorderRef.current = recorder;
+      voiceChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) voiceChunksRef.current.push(event.data);
+      };
+      recorder.onerror = () => {
+        stopVoiceTracks();
+        voiceRecorderRef.current = null;
+        setVoiceState('idle');
+        setVoiceError('Voice recording failed.');
+      };
+      recorder.onstop = () => {
+        const chunks = [...voiceChunksRef.current];
+        voiceChunksRef.current = [];
+        const mimeType = recorder.mimeType || 'audio/webm';
+        voiceRecorderRef.current = null;
+        stopVoiceTracks();
+        if (!chunks.length) {
+          setVoiceState('idle');
+          return;
+        }
+        const extension = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') ? 'm4a' : 'webm';
+        const file = new File(chunks, `voice-${Date.now()}.${extension}`, { type: mimeType });
+        setVoiceState('transcribing');
+        void onTranscribeVoice(file).then((text) => {
+          const transcript = text.trim();
+          if (transcript) {
+            const current = valueRef.current.trimEnd();
+            onChange(current ? `${current}\n${transcript}` : transcript);
+          }
+          setVoiceState('idle');
+        }).catch((cause: unknown) => {
+          setVoiceState('idle');
+          setVoiceError(cause instanceof Error ? cause.message : String(cause));
+        });
+      };
+      recorder.start(250);
+      setVoiceState('recording');
+    } catch (cause) {
+      stopVoiceTracks();
+      voiceRecorderRef.current = null;
+      setVoiceState('idle');
+      setVoiceError(cause instanceof Error ? cause.message : 'Microphone access was denied.');
+    }
+  };
+
+  useEffect(() => () => {
+    const recorder = voiceRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    stopVoiceTracks();
+  }, []);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     const submitWithEnter = enterToSend && event.key === 'Enter' && !event.shiftKey;
@@ -101,9 +186,20 @@ export default function GrokAgentComposer({
         <button type="button" aria-label={`Remove ${attachment.name}`} onClick={() => onRemoveAttachment(attachment.id)}><X size={13} /></button>
       </span>)}
     </div> : null}
-    <button type="button" className={styles.attach} title="Attach files" aria-label="Attach files" disabled={!ready || uploading} onClick={() => fileInputRef.current?.click()}>
+    <button type="button" className={styles.attach} title="Attach files" aria-label="Attach files" disabled={!ready || uploading || voiceState !== 'idle'} onClick={() => fileInputRef.current?.click()}>
       <Paperclip size={18} />
     </button>
+    {onTranscribeVoice ? <button
+      type="button"
+      className={styles.voice}
+      data-state={voiceState}
+      title={voiceState === 'recording' ? 'Stop dictation' : voiceState === 'transcribing' ? 'Transcribing' : 'Dictate'}
+      aria-label={voiceState === 'recording' ? 'Stop dictation' : voiceState === 'transcribing' ? 'Transcribing voice' : 'Start dictation'}
+      disabled={!ready || uploading || voiceState === 'transcribing'}
+      onClick={() => voiceState === 'recording' ? stopVoice() : void startVoice()}
+    >
+      {voiceState === 'transcribing' ? <LoaderCircle size={17} className={styles.spin} /> : voiceState === 'recording' ? <Square size={13} fill="currentColor" /> : <Mic size={17} />}
+    </button> : null}
     <input
       ref={fileInputRef}
       className={styles.fileInput}
@@ -135,6 +231,7 @@ export default function GrokAgentComposer({
         onAttachFiles(files);
       }}
     />
+    {voiceState === 'recording' ? <span className={styles.voiceStatus}>Recording…</span> : voiceError ? <span className={styles.voiceError} title={voiceError}>Voice unavailable</span> : null}
     {hasText ? (
       <button data-testid="messenger-send" className={styles.primary} type="submit" disabled={!ready || uploading}>
         <Send size={17} />
