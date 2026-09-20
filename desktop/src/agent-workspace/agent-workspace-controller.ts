@@ -147,11 +147,15 @@ export class AgentWorkspaceController {
     this.uploadingPeers.delete(peerKey);
   }
 
-  clear(): void {
+  clearOperations(): void {
     this.operations.clear();
-    this.drafts.clear();
     this.uploadingPeers.clear();
     this.finishedOperations.clear();
+  }
+
+  clear(): void {
+    this.clearOperations();
+    this.drafts.clear();
   }
 
   setDraft(peerKey: string, value: string): void {
