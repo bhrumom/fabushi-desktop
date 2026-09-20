@@ -88,7 +88,6 @@ jobs:
       - name: Package Developer ID signed and notarized macOS build
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "true"
-          CSC_NAME: ${{ env.MACOS_CODESIGN_IDENTITY }}
           FABUSHI_MACOS_NOTARIZE: "1"
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
