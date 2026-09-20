@@ -4,7 +4,10 @@ import { BotMark, type BotMarkState } from '../../../frontend/apps/web/src/app/h
 import styles from './grok-agent-sidebar.module.css';
 
 export type GrokAgentSidebarItem = {
+  /** Stable Agent/group identity used by the Agent-first shell. */
   key: string;
+  /** Current compatibility peer used to open the underlying conversation. */
+  peerKey: string;
   id: string;
   agentId: string;
   name: string;
@@ -83,7 +86,8 @@ function AgentRow({
       className={styles.row}
       aria-current={active ? 'page' : undefined}
       aria-label={item.name}
-      data-testid={`peer-${item.key}`}
+      data-testid={`peer-${item.peerKey}`}
+      data-agent-key={item.key}
       data-agent-id={item.agentId}
       onClick={onOpen}
       onDoubleClick={(event) => {
