@@ -12,8 +12,10 @@ import {
   type AgentSidebarSection,
 } from './agent-sidebar-state';
 import {
+  mergeAccountSidebarLayoutState,
   readAccountSidebarLayout,
   writeAccountSidebarLayout,
+  type AccountSidebarLayoutSnapshot,
 } from './account-sidebar-layout';
 
 const legacyPinnedOrderKey = 'fabushi.desktop.grok-pinned-order.v1';
@@ -110,6 +112,35 @@ async function readPinnedOrderDurable(accountScope: string): Promise<string[]> {
   return fallback;
 }
 
+function sameStringOrder(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((entry, index) => entry === right[index]);
+}
+
+function sameSections(left: readonly AgentSidebarSection[], right: readonly AgentSidebarSection[]): boolean {
+  return left.length === right.length && left.every((section, index) => {
+    const candidate = right[index];
+    return Boolean(candidate)
+      && section.id === candidate.id
+      && section.name === candidate.name
+      && section.isCollapsed === candidate.isCollapsed
+      && sameStringOrder(section.agentKeys, candidate.agentKeys);
+  });
+}
+
+function layoutMatchesSnapshot(
+  pinnedOrder: readonly string[],
+  sections: readonly AgentSidebarSection[],
+  snapshot: AccountSidebarLayoutSnapshot | null,
+): boolean {
+  return Boolean(snapshot)
+    && sameStringOrder(pinnedOrder, snapshot!.layout.pinnedOrder)
+    && sameSections(sections, snapshot!.layout.sections);
+}
+
+function cloneSections(sections: readonly AgentSidebarSection[]): AgentSidebarSection[] {
+  return sections.map((section) => ({ ...section, agentKeys: [...section.agentKeys] }));
+}
+
 function persistPinnedOrder(accountScope: string, order: readonly string[]): void {
   const key = pinnedOrderKey(accountScope);
   const value = normalizePinnedOrder(order);
@@ -145,6 +176,18 @@ export function useAgentSidebarController(
   const pinStateManagedRef = useRef(false);
   const layoutMutationRevisionRef = useRef(0);
   const cloudWriteChainRef = useRef<Promise<unknown>>(Promise.resolve());
+  const cloudSnapshotRef = useRef<AccountSidebarLayoutSnapshot | null>(null);
+  const pinnedOrderRef = useRef<string[]>([]);
+  const sectionsRef = useRef<AgentSidebarSection[]>([]);
+  const activeScopeRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    pinnedOrderRef.current = [...pinnedOrder];
+  }, [pinnedOrder]);
+
+  useEffect(() => {
+    sectionsRef.current = cloneSections(sections);
+  }, [sections]);
 
   const updatePinnedOrder = useCallback((build: (current: readonly string[]) => string[]) => {
     setPinnedOrderState((current) => {
@@ -161,6 +204,8 @@ export function useAgentSidebarController(
     setSelectedKeys([]);
     selectionAnchorRef.current = null;
     setLayoutScope(null);
+    activeScopeRef.current = null;
+    cloudSnapshotRef.current = null;
     pinStateManagedRef.current = false;
     setPinStateManaged(false);
     if (!accountScope) {
@@ -170,6 +215,7 @@ export function useAgentSidebarController(
     }
 
     const scope = accountScope;
+    activeScopeRef.current = scope;
     let cancelled = false;
     const hydrationMutationRevision = layoutMutationRevisionRef.current;
     const localPinStateManaged = readPinStateManaged(scope);
@@ -183,7 +229,8 @@ export function useAgentSidebarController(
       readAgentSidebarSectionsDurable(scope),
       readAccountSidebarLayout(scope).catch(() => null),
     ]).then(([nativePinnedOrder, nativeSections, cloud]) => {
-      if (cancelled) return;
+      if (cancelled || activeScopeRef.current !== scope) return;
+      cloudSnapshotRef.current = cloud;
       if (layoutMutationRevisionRef.current === hydrationMutationRevision) {
         if (cloud) {
           // A managed cloud document is authoritative. For a pre-migration
@@ -211,8 +258,57 @@ export function useAgentSidebarController(
       setLayoutScope(scope);
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (activeScopeRef.current === scope) activeScopeRef.current = null;
+    };
   }, [accountScope]);
+
+  useEffect(() => {
+    if (!accountScope || layoutScope !== accountScope) return;
+    const scope = accountScope;
+    let cancelled = false;
+
+    const refreshRemoteLayout = async () => {
+      try {
+        const remote = await readAccountSidebarLayout(scope);
+        if (cancelled || activeScopeRef.current !== scope || !remote) return;
+        const previous = cloudSnapshotRef.current;
+        if (previous && remote.etag === previous.etag && remote.serverRevision === previous.serverRevision) return;
+
+        const merged = mergeAccountSidebarLayoutState(
+          previous?.layout ?? null,
+          {
+            pinnedOrder: pinnedOrderRef.current,
+            sections: sectionsRef.current,
+          },
+          remote.layout,
+        );
+        cloudSnapshotRef.current = remote;
+
+        const managed = remote.layout.pinStateManaged || pinStateManagedRef.current;
+        pinStateManagedRef.current = managed;
+        setPinStateManaged(managed);
+        if (managed) persistPinStateManaged(scope);
+
+        if (!sameStringOrder(pinnedOrderRef.current, merged.pinnedOrder)) {
+          setPinnedOrderState(merged.pinnedOrder);
+        }
+        if (!sameSections(sectionsRef.current, merged.sections)) {
+          setSections(cloneSections(merged.sections));
+        }
+      } catch {
+        // Cloud polling is best-effort. Local/native mirrors remain usable offline.
+      }
+    };
+
+    void refreshRemoteLayout();
+    const timer = window.setInterval(() => { void refreshRemoteLayout(); }, 5_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [accountScope, layoutScope]);
 
   useEffect(() => {
     if (!accountScope || layoutScope !== accountScope || !pinStateManaged) return;
@@ -222,16 +318,36 @@ export function useAgentSidebarController(
 
     const scope = accountScope;
     const pinnedSnapshot = [...pinnedOrder];
-    const sectionSnapshot = sections.map((section) => ({
-      ...section,
-      agentKeys: [...section.agentKeys],
-    }));
-    // Serialize writes from this renderer. Each cloud write still performs its
-    // own server-side CAS read/write cycle so a second device cannot be blindly
-    // overwritten with a stale etag.
+    const sectionSnapshot = cloneSections(sections);
+    const baseSnapshot = cloudSnapshotRef.current;
+    if (baseSnapshot?.layout.pinStateManaged && layoutMatchesSnapshot(pinnedSnapshot, sectionSnapshot, baseSnapshot)) {
+      return;
+    }
+
+    // Serialize renderer writes and carry the last authoritative snapshot into
+    // the account-level three-way merge. The committed merged result is then
+    // projected back locally so concurrent remote-only edits appear here too.
     cloudWriteChainRef.current = cloudWriteChainRef.current
       .catch(() => undefined)
-      .then(() => writeAccountSidebarLayout(scope, pinnedSnapshot, sectionSnapshot))
+      .then(async () => {
+        const currentBase = cloudSnapshotRef.current ?? baseSnapshot;
+        const committed = await writeAccountSidebarLayout(
+          scope,
+          pinnedSnapshot,
+          sectionSnapshot,
+          { base: currentBase },
+        );
+        if (activeScopeRef.current !== scope) return;
+        cloudSnapshotRef.current = committed;
+        pinStateManagedRef.current = true;
+        setPinStateManaged(true);
+        if (!sameStringOrder(pinnedOrderRef.current, committed.layout.pinnedOrder)) {
+          setPinnedOrderState(committed.layout.pinnedOrder);
+        }
+        if (!sameSections(sectionsRef.current, committed.layout.sections)) {
+          setSections(cloneSections(committed.layout.sections));
+        }
+      })
       .catch(() => undefined);
   }, [accountScope, layoutScope, pinStateManaged, pinnedOrder, sections]);
 
