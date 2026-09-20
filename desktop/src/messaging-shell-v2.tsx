@@ -111,6 +111,7 @@ import AgentWorkspace from './agent-workspace/agent-workspace';
 import AgentOverlays from './agent-workspace/agent-overlays';
 import { AgentWorkspaceController } from './agent-workspace/agent-workspace-controller';
 import { AgentCoordinatorClient } from './agent-workspace/coordinator-client';
+import { AgentRuntimeCoordinator } from './agent-workspace/agent-runtime-coordinator';
 import {
   AgentTranscriptStore,
   type AgentTranscriptSourceMessage,
@@ -1124,6 +1125,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sessionResetInFlightRef = useRef(false);
   const agentWorkspaceControllerRef = useRef(new AgentWorkspaceController(readAgentWorkspaceDrafts()));
+  const agentRuntimeCoordinatorRef = useRef<AgentRuntimeCoordinator | null>(null);
   const pendingAgentDeltaRef = useRef(new Map<string, Extract<RuntimeEvent, { type: 'chat.delta' }>>());
   const agentDeltaFrameRef = useRef<number | null>(null);
   const messageAreaRef = useRef<HTMLDivElement | null>(null);
@@ -1193,7 +1195,31 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     },
   }), [removeQueuedAgentPrompt]);
 
+  if (!agentRuntimeCoordinatorRef.current) {
+    agentRuntimeCoordinatorRef.current = new AgentRuntimeCoordinator(
+      agentWorkspaceControllerRef.current,
+      agentTranscriptStoreRef.current,
+      {
+        onTranscriptChanged: () => notifyAgentWorkspaceState(),
+        onOperationChanged: () => notifyAgentWorkspaceState(),
+        onOperationStarted: (peerKey, operationId) => {
+          mirrorAgentRuntimeCheckpoint(peerKey, 'running', operationId);
+        },
+        onOperationTerminal: (peerKey, operationId, status, message) => {
+          mirrorAgentRuntimeCheckpoint(peerKey, status, operationId, message);
+          mirrorAgentConversationSnapshot(peerKey);
+          agentSubmissionQueue.flush();
+          if (status === 'failed' && message && peerKey === activePeerKeyRef.current) {
+            setError(message);
+          }
+        },
+      },
+    );
+  }
+  const agentRuntimeCoordinator = agentRuntimeCoordinatorRef.current;
+
   useEffect(() => () => agentSubmissionQueue.dispose(), [agentSubmissionQueue]);
+  useEffect(() => () => agentRuntimeCoordinator.dispose(), [agentRuntimeCoordinator]);
 
   useEffect(() => {
     const controller = agentWorkspaceControllerRef.current;
@@ -1509,9 +1535,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       if (detail.phase === 'accepted') {
         const operationId = detail.accepted.operationId;
         if (!operationId) return;
-        adoptAgentRequestOperation(requestId, operationId, peerKey);
-        notifyAgentWorkspaceState();
-        appendAssistantTurnEvent({
+        agentRuntimeCoordinator.adoptOperation(requestId, operationId, peerKey);
+        agentRuntimeCoordinator.handle({
           type: 'operation.started',
           timestamp: new Date().toISOString(),
           operationId,
@@ -1980,13 +2005,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     registry.adoptOperation(requestId, operationId, ownerPeerKey);
   }
 
-  function rememberActiveBotThread() {
-    const peerKey = activePeerKeyRef.current;
-    const peer = peersRef.current.find((candidate) => candidate.key === peerKey);
-    if (!peerKey || !peer || !isAgentPeer(peer) || peer.miniAppId) return;
-    agentTranscriptStoreRef.current.replace(peerKey, toAgentTranscriptSources(messages));
-  }
-
   function notifyAgentWorkspaceState() {
     setAgentWorkspaceRevision((revision) => revision + 1);
   }
@@ -2233,6 +2251,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   function handleRuntimeEvent(event: RuntimeEvent) {
     if (handleSelfHostedEvent(event)) return;
+    // Normal Agent chat/operation events are owned by AgentRuntimeCoordinator.
+    // The switch below remains only as a compatibility fallback for legacy
+    // Messenger/Host event shapes that cannot be attributed to an Agent.
+    if (agentRuntimeCoordinator.handle(event)) return;
 
     // Keep stream ordering deterministic while avoiding one React update per
     // token. Grok App uses the same backpressure idea: high-frequency deltas
@@ -2293,7 +2315,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           // overwritten by a late conversation.opened response.
           if (!agentWorkspaceControllerRef.current.operationForPeer(ownerPeer.key)) {
             agentTranscriptStoreRef.current.replace(ownerPeer.key, toAgentTranscriptSources(openedMessages));
-            if (activePeerKeyRef.current === ownerPeer.key) setMessages(openedMessages);
+            notifyAgentWorkspaceState();
           }
           break;
         }
@@ -2523,7 +2545,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         break;
       }
       case 'host.closed':
-        agentWorkspaceControllerRef.current.clear();
+        agentRuntimeCoordinator.resetOperations();
         notifyAgentWorkspaceState();
         setHostReady(false);
         break;
@@ -2809,7 +2831,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     : localComputerOnline
       ? hostSettings.remoteControlEnabled ? '在线，等待连接' : '在线，仅可发现'
       : remoteComputerState?.running ? '正在注册' : '离线';
-  const matchingMessages = messages;
+  // Normal Agent timelines render directly from AgentTranscriptStore. The
+  // renderer-global messages array is now compatibility-only for Messenger,
+  // groups and Mini Apps.
+  const matchingMessages = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
+    ? toDisplayAgentMessages(agentTranscriptStoreRef.current.thread(activePeer.key))
+    : messages;
   const renderedMessages = matchingMessages.slice(Math.max(0, matchingMessages.length - messageRenderCount));
   const botTranscriptMessages = activePeer && isAgentPeer(activePeer)
     ? [...renderedMessages, ...(queuedAgentPrompts[activePeer.key] ?? [])]
@@ -3152,39 +3179,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       throw new Error('This Agent is already busy.');
     }
     const requestId = nextRequestId('chat-send');
-    registry.beginRequest(peer.key, requestId);
-    notifyAgentWorkspaceState();
     const optimisticId = existingMessageId ?? 'optimistic:' + requestId;
-    updateAgentThread(requestId, (current) => {
-      const nextMessage: DisplayMessage = {
-        id: optimisticId,
-        source: 'legacy',
-        role: 'me',
-        text,
-        createdAtMs: Date.now(),
-        kind: 'message',
-        operationId: requestId,
-        optimistic: true,
-        queued: false,
-        ...(attachments.length ? { attachments } : {}),
-      };
-      const existingIndex = current.findIndex((message) => message.id === optimisticId);
-      if (existingIndex < 0) return [...current, nextMessage];
-      return current.map((message, index) => index === existingIndex
-        ? { ...message, ...nextMessage }
-        : message);
+    agentRuntimeCoordinator.beginLocalTurn({
+      peerKey: peer.key,
+      requestId,
+      messageId: optimisticId,
+      text,
+      createdAtMs: Date.now(),
+      attachments,
     });
-    // Paint the assistant turn locally in the same renderer tick as the user
-    // bubble. The Host operation id is adopted later without creating a second
-    // "thinking" row, so slow process wake-up never leaves the chat visually idle.
-    appendAssistantTurnEvent({
-      type: 'operation.started',
-      timestamp: new Date().toISOString(),
-      operationId: requestId,
-      label: '正在思考',
-      interruptible: true,
-    });
-    notifyAgentWorkspaceState();
     try {
       const accepted = await agentCoordinatorClient.send({
         requestId,
@@ -3195,7 +3198,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         replyTo: replyContext,
       });
       if (!accepted) {
-        updateAgentThread(requestId, (current) => current.filter((message) => message.id !== optimisticId));
+        agentRuntimeCoordinator.cancelLocalTurn(peer.key, requestId, optimisticId);
         return;
       }
       const operationId = accepted.operationId ?? requestId;
@@ -3204,21 +3207,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         notifyAgentWorkspaceState();
         return;
       }
-      adoptAgentRequestOperation(requestId, operationId, peer.key);
-      notifyAgentWorkspaceState();
-      updateAgentThread(operationId, (current) => current.map((message) => message.id === optimisticId
-        ? { ...message, operationId, optimistic: false, queued: false }
-        : message));
-      claimAgentOperation(operationId);
+      agentRuntimeCoordinator.adoptOperation(requestId, operationId, peer.key);
+      agentRuntimeCoordinator.claimOperation(operationId, peer.key);
     } catch (cause) {
-      updateAgentThread(requestId, (current) => current.filter((message) =>
-        message.id !== optimisticId && message.operationId !== requestId,
-      ));
-      registry.cancelRequest(requestId);
-      notifyAgentWorkspaceState();
+      agentRuntimeCoordinator.cancelLocalTurn(peer.key, requestId, optimisticId);
       setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      notifyAgentWorkspaceState();
     }
   }
 
@@ -3276,7 +3269,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [activePeerKey, messages, agentWorkspaceRevision, queuedAgentPrompts]);
 
   async function openPeer(peer: PeerItem) {
-    rememberActiveBotThread();
     activePeerKeyRef.current = peer.key;
     setActivePeerKey(peer.key);
     if (!isAgentPeer(peer)) setLegacySendPending(false);
@@ -3306,16 +3298,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       return;
     }
     if (isAgentPeer(peer)) {
-      if (agentTranscriptStoreRef.current.has(peer.key)) {
-        setMessages(toDisplayAgentMessages(agentTranscriptStoreRef.current.thread(peer.key)));
-      } else if (peer.conversationId) {
+      if (!agentTranscriptStoreRef.current.has(peer.key) && peer.conversationId) {
         const cached = cachedLegacyDisplayMessages(peer.conversationId);
         agentTranscriptStoreRef.current.replace(peer.key, toAgentTranscriptSources(cached));
-        setMessages(cached);
-      } else {
+      } else if (!agentTranscriptStoreRef.current.has(peer.key)) {
         agentTranscriptStoreRef.current.replace(peer.key, []);
-        setMessages([]);
       }
+      notifyAgentWorkspaceState();
       if (peer.conversationId) {
         await agentCoordinatorClient.openConversation(nextRequestId('conversation-open'), peer.conversationId).catch((cause: unknown) => {
           setError(cause instanceof Error ? cause.message : String(cause));
