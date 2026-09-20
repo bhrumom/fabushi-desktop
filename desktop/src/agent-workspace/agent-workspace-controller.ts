@@ -1,19 +1,51 @@
+import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import { AgentOperationRegistry, type AgentOperationSnapshot } from '../grok-runtime/agent-operation-registry';
+import { AGENT_ATTACHMENT_LIMIT } from './agent-attachments';
+import type { PersistedAgentDraft, PersistedAgentDrafts } from './agent-draft-store';
+import type { AgentReplyContext } from './prompt-context';
 
 export interface AgentWorkspaceDraftSnapshot {
   readonly [peerKey: string]: string;
 }
 
+export interface AgentWorkspaceAttachmentSnapshot {
+  readonly [peerKey: string]: readonly AttachmentContext[];
+}
+
+export interface AgentWorkspaceReplySnapshot {
+  readonly [peerKey: string]: AgentReplyContext;
+}
+
+function normalizeDraft(draft: Partial<PersistedAgentDraft> | undefined): PersistedAgentDraft {
+  return {
+    text: typeof draft?.text === 'string' ? draft.text : '',
+    attachments: Array.isArray(draft?.attachments)
+      ? [...draft.attachments].slice(0, AGENT_ATTACHMENT_LIMIT)
+      : [],
+    ...(draft?.replyTo ? { replyTo: draft.replyTo } : {}),
+  };
+}
+
+function draftHasPayload(draft: PersistedAgentDraft): boolean {
+  return Boolean(draft.text || draft.attachments.length || draft.replyTo);
+}
+
 /**
  * Renderer-facing state owner for the Agent workspace.
  *
- * The view layer must not know how request ids become runtime operation ids.
- * Keeping that adoption state here mirrors Fabu's renderer/controller boundary
- * and prevents an active-chat pointer from becoming the source of truth.
+ * The view layer must not know how request ids become runtime operation ids,
+ * and it must not keep Agent drafts/attachments/replies in renderer-global
+ * React maps. This controller owns those Agent-scoped lifecycles so opening
+ * Agent B cannot mutate Agent A while Agent A is still working.
  */
 export class AgentWorkspaceController {
   private readonly operations = new AgentOperationRegistry();
-  private readonly drafts = new Map<string, string>();
+  private readonly drafts = new Map<string, PersistedAgentDraft>();
+  private readonly uploadingPeers = new Set<string>();
+
+  constructor(initialDrafts: PersistedAgentDrafts = {}) {
+    this.hydratePersistedDrafts(initialDrafts);
+  }
 
   beginRequest(peerKey: string, requestId: string): void {
     this.operations.beginRequest(peerKey, requestId);
@@ -74,31 +106,157 @@ export class AgentWorkspaceController {
   clearPeer(peerKey: string): void {
     this.operations.clearPeer(peerKey);
     this.drafts.delete(peerKey);
+    this.uploadingPeers.delete(peerKey);
   }
 
   clear(): void {
     this.operations.clear();
     this.drafts.clear();
+    this.uploadingPeers.clear();
   }
 
   setDraft(peerKey: string, value: string): void {
-    const normalized = value;
-    if (normalized) this.drafts.set(peerKey, normalized);
+    const current = this.drafts.get(peerKey) ?? normalizeDraft(undefined);
+    const next = { ...current, text: value };
+    if (draftHasPayload(next)) this.drafts.set(peerKey, next);
     else this.drafts.delete(peerKey);
   }
 
   hydrateDrafts(snapshot: Readonly<Record<string, string>>): void {
+    for (const [peerKey, value] of Object.entries(snapshot)) {
+      if (!peerKey) continue;
+      const current = this.drafts.get(peerKey) ?? normalizeDraft(undefined);
+      const next = { ...current, text: value };
+      if (draftHasPayload(next)) this.drafts.set(peerKey, next);
+      else this.drafts.delete(peerKey);
+    }
+  }
+
+  hydratePersistedDrafts(snapshot: PersistedAgentDrafts): void {
     this.drafts.clear();
     for (const [peerKey, value] of Object.entries(snapshot)) {
-      if (peerKey && value) this.drafts.set(peerKey, value);
+      if (!peerKey) continue;
+      const next = normalizeDraft(value);
+      if (draftHasPayload(next)) this.drafts.set(peerKey, next);
     }
   }
 
   draftForPeer(peerKey: string | null | undefined): string {
-    return peerKey ? this.drafts.get(peerKey) ?? '' : '';
+    return peerKey ? this.drafts.get(peerKey)?.text ?? '' : '';
+  }
+
+  attachmentsForPeer(peerKey: string | null | undefined): readonly AttachmentContext[] {
+    if (!peerKey) return [];
+    return this.drafts.get(peerKey)?.attachments ?? [];
+  }
+
+  setAttachments(peerKey: string, attachments: readonly AttachmentContext[]): void {
+    const current = this.drafts.get(peerKey) ?? normalizeDraft(undefined);
+    const next = {
+      ...current,
+      attachments: [...attachments].slice(0, AGENT_ATTACHMENT_LIMIT),
+    };
+    if (draftHasPayload(next)) this.drafts.set(peerKey, next);
+    else this.drafts.delete(peerKey);
+  }
+
+  appendAttachments(peerKey: string, attachments: readonly AttachmentContext[]): void {
+    if (!attachments.length) return;
+    const current = this.drafts.get(peerKey) ?? normalizeDraft(undefined);
+    const byId = new Map(
+      [...current.attachments, ...attachments].map((attachment) => [attachment.id, attachment] as const),
+    );
+    this.setAttachments(peerKey, [...byId.values()]);
+  }
+
+  removeAttachment(peerKey: string, attachmentId: string): void {
+    this.setAttachments(
+      peerKey,
+      this.attachmentsForPeer(peerKey).filter((attachment) => attachment.id !== attachmentId),
+    );
+  }
+
+  replyForPeer(peerKey: string | null | undefined): AgentReplyContext | undefined {
+    return peerKey ? this.drafts.get(peerKey)?.replyTo : undefined;
+  }
+
+  setReply(peerKey: string, replyTo: AgentReplyContext | undefined): void {
+    const current = this.drafts.get(peerKey) ?? normalizeDraft(undefined);
+    const next: PersistedAgentDraft = {
+      ...current,
+      ...(replyTo ? { replyTo } : {}),
+    };
+    if (!replyTo) delete next.replyTo;
+    if (draftHasPayload(next)) this.drafts.set(peerKey, next);
+    else this.drafts.delete(peerKey);
+  }
+
+  clearReply(peerKey: string): void {
+    this.setReply(peerKey, undefined);
+  }
+
+  setUploading(peerKey: string, uploading: boolean): void {
+    if (uploading) this.uploadingPeers.add(peerKey);
+    else this.uploadingPeers.delete(peerKey);
+  }
+
+  isUploading(peerKey: string | null | undefined): boolean {
+    return Boolean(peerKey && this.uploadingPeers.has(peerKey));
+  }
+
+  takeDraft(peerKey: string): PersistedAgentDraft {
+    const current = normalizeDraft(this.drafts.get(peerKey));
+    this.drafts.delete(peerKey);
+    return current;
+  }
+
+  restoreDraft(peerKey: string, draft: Partial<PersistedAgentDraft>): void {
+    const current = this.drafts.get(peerKey) ?? normalizeDraft(undefined);
+    const merged = normalizeDraft({
+      text: draft.text ?? current.text,
+      attachments: draft.attachments
+        ? [...current.attachments, ...draft.attachments]
+        : current.attachments,
+      replyTo: draft.replyTo ?? current.replyTo,
+    });
+    if (draftHasPayload(merged)) this.drafts.set(peerKey, merged);
+    else this.drafts.delete(peerKey);
+  }
+
+  persistedDraftSnapshot(): PersistedAgentDrafts {
+    return Object.fromEntries(
+      [...this.drafts.entries()].map(([peerKey, draft]) => [
+        peerKey,
+        {
+          text: draft.text,
+          attachments: [...draft.attachments],
+          ...(draft.replyTo ? { replyTo: { ...draft.replyTo } } : {}),
+        },
+      ]),
+    );
   }
 
   draftSnapshot(): AgentWorkspaceDraftSnapshot {
-    return Object.freeze(Object.fromEntries(this.drafts));
+    return Object.freeze(Object.fromEntries(
+      [...this.drafts.entries()]
+        .filter(([, draft]) => Boolean(draft.text))
+        .map(([peerKey, draft]) => [peerKey, draft.text]),
+    ));
+  }
+
+  attachmentSnapshot(): AgentWorkspaceAttachmentSnapshot {
+    return Object.freeze(Object.fromEntries(
+      [...this.drafts.entries()]
+        .filter(([, draft]) => draft.attachments.length > 0)
+        .map(([peerKey, draft]) => [peerKey, Object.freeze([...draft.attachments])]),
+    ));
+  }
+
+  replySnapshot(): AgentWorkspaceReplySnapshot {
+    return Object.freeze(Object.fromEntries(
+      [...this.drafts.entries()]
+        .filter(([, draft]) => Boolean(draft.replyTo))
+        .map(([peerKey, draft]) => [peerKey, { ...draft.replyTo! }]),
+    ));
   }
 }
