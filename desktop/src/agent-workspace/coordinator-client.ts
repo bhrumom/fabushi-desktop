@@ -312,6 +312,13 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  listMcpServers(requestId: string) {
+    return this.transport.execute({
+      type: 'mcp.list',
+      requestId,
+    } as HostCommand);
+  }
+
   listMemory(requestId: string, agentId: string, limit = 1000) {
     return this.transport.execute({
       type: 'memory.list',
