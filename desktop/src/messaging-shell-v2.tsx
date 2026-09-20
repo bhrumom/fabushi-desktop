@@ -42,6 +42,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, type FormEven
 import HostClient from '../../frontend/apps/web/src/app/host/host-client';
 import { BotMark, type BotMarkState } from '../../frontend/apps/web/src/app/host/bot-mark';
 import type {
+  AttachmentContext,
   AuthState,
   BotSummary,
   ConversationSummary,
@@ -110,6 +111,12 @@ import AgentWorkspace from './agent-workspace/agent-workspace';
 import { AgentWorkspaceController } from './agent-workspace/agent-workspace-controller';
 import { AgentCoordinatorClient } from './agent-workspace/coordinator-client';
 import { projectTranscriptEntries, type TranscriptEntry } from './agent-workspace/transcript-model';
+import {
+  AGENT_ATTACHMENT_LIMIT,
+  agentFileToBase64,
+  enrichAgentAttachmentPreview,
+  validateAgentAttachment,
+} from './agent-workspace/agent-attachments';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -1066,6 +1073,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [invoiceDialog, setInvoiceDialog] = useState<InvoiceDialogState>(null);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const [attachmentProgress, setAttachmentProgress] = useState<string | null>(null);
+  const [agentAttachmentsByPeer, setAgentAttachmentsByPeer] = useState<Record<string, AttachmentContext[]>>({});
+  const [agentAttachmentUploadingPeers, setAgentAttachmentUploadingPeers] = useState<Set<string>>(() => new Set());
   const [localCall, setLocalCall] = useState<LocalCall | null>(null);
   const [incomingCall, setIncomingCall] = useState<IncomingFabushiCall | null>(null);
   const [miniApp, setMiniApp] = useState<{ id: string; title: string; url: string } | null>(null);
@@ -1133,7 +1142,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     send: async (input) => {
       const peer = peersRef.current.find((candidate) => candidate.key === input.peerKey);
       if (!peer || !isAgentPeer(peer)) throw new Error('Agent peer is no longer available.');
-      await dispatchAgentPromptNow(peer, input.prompt, input.messageId);
+      await dispatchAgentPromptNow(peer, input.prompt, input.messageId, input.attachments);
     },
     onPhase: (submission) => {
       if (submission.phase === 'queued') {
@@ -1161,6 +1170,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     },
     onFailure: (submission, cause) => {
       removeQueuedAgentPrompt(submission.peerKey, submission.messageId);
+      if (submission.attachments?.length) {
+        setAgentAttachmentsByPeer((current) => ({
+          ...current,
+          [submission.peerKey]: [
+            ...(current[submission.peerKey] ?? []),
+            ...submission.attachments!,
+          ].slice(0, AGENT_ATTACHMENT_LIMIT),
+        }));
+      }
       setError(cause instanceof Error ? cause.message : String(cause));
     },
   }), [removeQueuedAgentPrompt]);
@@ -3008,7 +3026,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setReplyTo(null);
   }
 
-  async function dispatchAgentPromptNow(peer: PeerItem, text: string, existingMessageId?: string): Promise<void> {
+  async function dispatchAgentPromptNow(
+    peer: PeerItem,
+    text: string,
+    existingMessageId?: string,
+    attachments: readonly AttachmentContext[] = [],
+  ): Promise<void> {
     const registry = agentWorkspaceControllerRef.current;
     if (registry.isBusy(peer.key)) {
       throw new Error('This Agent is already busy.');
@@ -3058,6 +3081,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         text,
         conversationId: peer.conversationId,
         agentId: peer.agentId ?? peer.actorId,
+        attachments,
       });
       if (!accepted) {
         updateAgentThread(requestId, (current) => current.filter((message) => message.id !== optimisticId));
@@ -3096,7 +3120,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
-  function enqueueAgentPrompt(peer: PeerItem, text: string, existingMessageId?: string) {
+  function enqueueAgentPrompt(
+    peer: PeerItem,
+    text: string,
+    existingMessageId?: string,
+    attachments: readonly AttachmentContext[] = [],
+  ) {
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
     const messageId = existingMessageId ?? nextRequestId('queued-chat-send');
     agentSubmissionQueue.submit({
@@ -3105,6 +3134,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       peerKey: peer.key,
       agentId,
       prompt: text,
+      ...(attachments.length ? { attachments: [...attachments] } : {}),
       createdAtMs: Date.now(),
     });
   }
@@ -3219,8 +3249,14 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       && isAgentPeer(activePeer);
     if (pendingSend && !agentRequest) return;
     if (agentRequest) {
+      const attachments = agentAttachmentsByPeer[activePeer.key] ?? [];
       updateComposer('');
-      enqueueAgentPrompt(activePeer, text);
+      setAgentAttachmentsByPeer((current) => {
+        const next = { ...current };
+        delete next[activePeer.key];
+        return next;
+      });
+      enqueueAgentPrompt(activePeer, text, undefined, attachments);
       setReplyTo(null);
       setScheduledAtMs(undefined);
       return;
