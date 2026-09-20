@@ -78,9 +78,8 @@ impl RuntimeBuilder {
             .first()
             .map(|path| path.to_string_lossy().to_string());
         let model = Some(self.config.model.model.clone());
-        let history_path = self
-            .config
-            .data_dir
+        let data_root = self.config.data_dir.clone();
+        let history_path = data_root
             .as_ref()
             .map(|root| root.join("provider-neutral-assistant-transcript.json"));
         self.providers
@@ -90,6 +89,7 @@ impl RuntimeBuilder {
                 workspace_root,
                 model,
                 history_path,
+                data_root,
             )))?;
         Ok(self)
     }
@@ -258,6 +258,27 @@ impl MahayanaRuntime {
         }
         for provider in self.providers.providers() {
             self.async_runtime.block_on(provider.reset_session())?;
+        }
+        lock(&self.operations)?.clear();
+        lock(&self.approvals)?.clear();
+        while self.event_rx.try_recv().is_ok() {}
+        Ok(())
+    }
+
+    /// Switch long-lived local providers to an account-scoped transcript path
+    /// without deleting the previous account's durable Agent state.
+    pub fn switch_conversation_history(
+        &self,
+        path: Option<std::path::PathBuf>,
+    ) -> Result<(), RuntimeError> {
+        if let Some(backend) = self.agent_backend.as_ref() {
+            backend
+                .reset_session()
+                .map_err(|error| RuntimeError::AgentBackend(error.to_string()))?;
+        }
+        for provider in self.providers.providers() {
+            self.async_runtime
+                .block_on(provider.set_history_path(path.clone()))?;
         }
         lock(&self.operations)?.clear();
         lock(&self.approvals)?.clear();
