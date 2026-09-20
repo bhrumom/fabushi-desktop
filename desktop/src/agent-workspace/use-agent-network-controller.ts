@@ -6,7 +6,7 @@ export interface AgentNetworkController {
   readonly open: boolean;
   readonly broadcastMode: boolean;
   readonly groups: readonly GroupSummary[];
-  readonly peerMessages: readonly AgentPeerMessage[];
+  readonly peerMessagesByAgentId: Readonly<Record<string, readonly AgentPeerMessage[]>>;
   openNetwork(): void;
   openBroadcast(): void;
   close(): void;
@@ -38,7 +38,7 @@ export function useAgentNetworkController(
   const [open, setOpen] = useState(false);
   const [broadcastMode, setBroadcastMode] = useState(false);
   const [groups, setGroups] = useState<readonly GroupSummary[]>([]);
-  const [peerMessages, setPeerMessages] = useState<readonly AgentPeerMessage[]>([]);
+  const [peerMessagesByAgentId, setPeerMessagesByAgentId] = useState<Record<string, readonly AgentPeerMessage[]>>({});
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
@@ -128,14 +128,22 @@ export function useAgentNetworkController(
       return false;
     }
     if (event.type === 'agent.peerHistory') {
-      setPeerMessages(event.messages);
+      setPeerMessagesByAgentId((current) => ({ ...current, [event.agentId]: event.messages }));
       return true;
     }
     if (event.type === 'agent.peerMessage') {
-      setPeerMessages((current) => {
-        const next = current.filter((message) => message.id !== event.message.id);
-        next.push(event.message);
-        return next.sort((left, right) => left.createdAtMs - right.createdAtMs).slice(-500);
+      setPeerMessagesByAgentId((current) => {
+        const append = (messages: readonly AgentPeerMessage[] | undefined) => {
+          const next = (messages ?? []).filter((message) => message.id !== event.message.id);
+          next.push(event.message);
+          return next.sort((left, right) => left.createdAtMs - right.createdAtMs).slice(-500);
+        };
+        const next = { ...current };
+        next[event.message.fromAgentId] = append(current[event.message.fromAgentId]);
+        if (event.message.targetId !== event.message.fromAgentId) {
+          next[event.message.targetId] = append(current[event.message.targetId]);
+        }
+        return next;
       });
       return true;
     }
@@ -146,7 +154,7 @@ export function useAgentNetworkController(
     open,
     broadcastMode,
     groups,
-    peerMessages,
+    peerMessagesByAgentId,
     openNetwork,
     openBroadcast,
     close,
