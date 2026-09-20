@@ -14,7 +14,7 @@ use mahayana_kernel::{
     RuntimeProfile, SessionId, SharedKernelEventSink,
 };
 use serde_json::{Value, json};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -95,7 +95,7 @@ pub struct KernelConversationProvider {
     profile: BuildProfile,
     workspace_root: Option<String>,
     model: Option<String>,
-    session_id: AsyncMutex<Option<SessionId>>,
+    session_ids: AsyncMutex<HashMap<String, SessionId>>,
     state: Arc<Mutex<ConversationState>>,
     history_path: Option<PathBuf>,
 }
@@ -117,7 +117,7 @@ impl KernelConversationProvider {
             profile,
             workspace_root,
             model,
-            session_id: AsyncMutex::new(None),
+            session_ids: AsyncMutex::new(HashMap::new()),
             state: Arc::new(Mutex::new(ConversationState::new(history))),
             history_path,
         }
@@ -127,8 +127,11 @@ impl KernelConversationProvider {
         &self,
         conversation_id: &ConversationId,
     ) -> Result<SessionId, ConversationError> {
-        let mut session_id = self.session_id.lock().await;
-        if let Some(session_id) = session_id.as_ref() {
+        // Fabu/Grok parity: every Bot/Agent conversation owns an isolated
+        // inference session. A single provider-global session caused unrelated
+        // Bots to share prompt history, tool state, and latency.
+        let mut session_ids = self.session_ids.lock().await;
+        if let Some(session_id) = session_ids.get(conversation_id.as_str()) {
             return Ok(session_id.clone());
         }
         let history = self
@@ -164,7 +167,7 @@ impl KernelConversationProvider {
             })
             .await
             .map_err(kernel_error)?;
-        *session_id = Some(created.clone());
+        session_ids.insert(conversation_id.as_str().to_string(), created.clone());
         Ok(created)
     }
 }
@@ -279,7 +282,7 @@ impl ConversationProvider for KernelConversationProvider {
 
     async fn reset_session(&self) -> Result<(), ConversationError> {
         self.backend.reset_session().map_err(kernel_error)?;
-        *self.session_id.lock().await = None;
+        self.session_ids.lock().await.clear();
         {
             let mut state = self.state.lock().map_err(|_| {
                 ConversationError::Provider("kernel conversation state mutex poisoned".into())
