@@ -67,5 +67,7 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - name: Install desktop dependencies
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+      - name: Check Electron Host boundary
+        run: node --test desktop/electron/host-process.test.cjs
       - name: Typecheck and build renderer
         run: npm --prefix desktop run build:renderer
