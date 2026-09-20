@@ -45,6 +45,7 @@ export default function GrokAgentComposer({
   onStop(): void;
 }) {
   const hasText = value.trim().length > 0;
+  const hasPayload = hasText || attachments.length > 0;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
   const [dragOver, setDragOver] = useState(false);
@@ -232,7 +233,7 @@ export default function GrokAgentComposer({
       }}
     />
     {voiceState === 'recording' ? <span className={styles.voiceStatus}>Recording…</span> : voiceError ? <span className={styles.voiceError} title={voiceError}>Voice unavailable</span> : null}
-    {hasText ? (
+    {hasPayload ? (
       <button data-testid="messenger-send" className={styles.primary} type="submit" disabled={!ready || uploading}>
         <Send size={17} />
       </button>
