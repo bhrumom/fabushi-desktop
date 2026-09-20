@@ -2511,6 +2511,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       actorId: bot?.id,
       agentId: bot?.agentId ?? bot?.id,
       kind,
+      hidden: bot?.hidden,
       title: conversation.title,
       subtitle: kind === 'bot' ? bot?.description || bot?.title || 'AI Bot' : conversation.kind,
       unread: conversation.unreadCount,
@@ -2774,20 +2775,26 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   async function duplicateGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
     const peer = peerForGrokAgent(item);
-    if (!peer || peer.kind !== 'bot' || !peer.key.startsWith('legacy:bot:')) {
+    const botId = peer?.source === 'legacy' && peer.kind === 'bot'
+      ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
+      : undefined;
+    if (!peer || !botId) {
       setError('Only locally managed Agents can be duplicated from this shell.');
       return;
     }
     await execute({
       type: 'bot.clone',
       requestId: nextRequestId('grok-duplicate-agent'),
-      id: peer.id,
+      id: botId,
     });
   }
 
   async function deleteGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
     const peer = peerForGrokAgent(item);
-    if (!peer || peer.kind !== 'bot' || !peer.key.startsWith('legacy:bot:')) {
+    const botId = peer?.source === 'legacy' && peer.kind === 'bot'
+      ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
+      : undefined;
+    if (!peer || !botId) {
       setError('Only locally managed Agents can be deleted from this shell.');
       return;
     }
@@ -2797,7 +2804,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     await execute({
       type: 'bot.delete',
       requestId: nextRequestId('grok-delete-agent'),
-      id: peer.id,
+      id: botId,
     });
     if (peer.key === activePeerKeyRef.current) {
       activePeerKeyRef.current = null;
@@ -2809,14 +2816,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   async function hideGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
     const peer = peerForGrokAgent(item);
-    if (!peer || peer.kind !== 'bot' || !peer.key.startsWith('legacy:bot:')) {
+    const botId = peer?.source === 'legacy' && peer.kind === 'bot'
+      ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
+      : undefined;
+    if (!peer || !botId) {
       setError('Only locally managed Agents can be hidden from this shell.');
       return;
     }
     await execute({
       type: 'bot.setHidden',
       requestId: nextRequestId('grok-hide-agent'),
-      id: peer.id,
+      id: botId,
       hidden: true,
     });
     if (peer.key === activePeerKeyRef.current) {
