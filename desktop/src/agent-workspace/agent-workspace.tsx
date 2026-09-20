@@ -32,6 +32,7 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   composerAttachments?: ReadonlyArray<{ id: string; name: string; sizeBytes?: number }>;
   composerReplyTarget?: { id: string; label: string; text: string };
   composerMentionCandidates?: ReadonlyArray<{ id: string; name: string; description?: string }>;
+  composerWorkflowCandidates?: ReadonlyArray<{ id: string; name: string; description?: string }>;
   enterToSend: boolean;
   onComposerChange(value: string): void;
   onComposerMention?(candidate: { id: string; name: string; description?: string }): void;
