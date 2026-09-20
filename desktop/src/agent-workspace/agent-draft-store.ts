@@ -1,11 +1,13 @@
 import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import { AGENT_ATTACHMENT_LIMIT } from './agent-attachments';
+import type { AgentReplyContext } from './prompt-context';
 
 const storageKey = 'fabushi.agent-workspace.drafts.v1';
 
 export interface PersistedAgentDraft {
   text: string;
   attachments: AttachmentContext[];
+  replyTo?: AgentReplyContext;
 }
 
 export type PersistedAgentDrafts = Record<string, PersistedAgentDraft>;
@@ -21,6 +23,14 @@ function validAttachment(value: unknown): value is AttachmentContext {
     && (attachment.sizeBytes == null || typeof attachment.sizeBytes === 'number');
 }
 
+function validReplyContext(value: unknown): value is AgentReplyContext {
+  if (!value || typeof value !== 'object') return false;
+  const reply = value as Partial<AgentReplyContext>;
+  return typeof reply.id === 'string'
+    && (reply.role === 'me' || reply.role === 'peer')
+    && typeof reply.text === 'string';
+}
+
 export function readAgentWorkspaceDrafts(): PersistedAgentDrafts {
   if (typeof window === 'undefined') return {};
   try {
@@ -31,12 +41,15 @@ export function readAgentWorkspaceDrafts(): PersistedAgentDrafts {
     const result: PersistedAgentDrafts = {};
     for (const [peerKey, value] of Object.entries(parsed as Record<string, unknown>)) {
       if (!value || typeof value !== 'object') continue;
-      const draft = value as { text?: unknown; attachments?: unknown };
+      const draft = value as { text?: unknown; attachments?: unknown; replyTo?: unknown };
       const text = typeof draft.text === 'string' ? draft.text : '';
       const attachments = Array.isArray(draft.attachments)
         ? draft.attachments.filter(validAttachment).slice(0, AGENT_ATTACHMENT_LIMIT)
         : [];
-      if (text || attachments.length) result[peerKey] = { text, attachments };
+      const replyTo = validReplyContext(draft.replyTo) ? draft.replyTo : undefined;
+      if (text || attachments.length || replyTo) {
+        result[peerKey] = { text, attachments, ...(replyTo ? { replyTo } : {}) };
+      }
     }
     return result;
   } catch {
@@ -47,14 +60,22 @@ export function readAgentWorkspaceDrafts(): PersistedAgentDrafts {
 export function persistAgentWorkspaceDrafts(
   textByPeer: Readonly<Record<string, string>>,
   attachmentsByPeer: Readonly<Record<string, readonly AttachmentContext[]>>,
+  replyByPeer: Readonly<Record<string, AgentReplyContext>> = {},
 ): void {
   if (typeof window === 'undefined') return;
-  const peerKeys = new Set([...Object.keys(textByPeer), ...Object.keys(attachmentsByPeer)]);
+  const peerKeys = new Set([
+    ...Object.keys(textByPeer),
+    ...Object.keys(attachmentsByPeer),
+    ...Object.keys(replyByPeer),
+  ]);
   const snapshot: PersistedAgentDrafts = {};
   for (const peerKey of peerKeys) {
     const text = textByPeer[peerKey] ?? '';
     const attachments = [...(attachmentsByPeer[peerKey] ?? [])].slice(0, AGENT_ATTACHMENT_LIMIT);
-    if (text || attachments.length) snapshot[peerKey] = { text, attachments };
+    const replyTo = replyByPeer[peerKey];
+    if (text || attachments.length || replyTo) {
+      snapshot[peerKey] = { text, attachments, ...(replyTo ? { replyTo } : {}) };
+    }
   }
   try {
     if (Object.keys(snapshot).length) {
