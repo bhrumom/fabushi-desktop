@@ -1,4 +1,5 @@
 import type { AttachmentContext, RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { MahayanaCommandBridgeDetail } from '../../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
 import type { AgentWorkspaceController } from './agent-workspace-controller';
 import {
   AgentTranscriptStore,
@@ -21,6 +22,7 @@ export interface AgentRuntimeCoordinatorHooks {
   onTranscriptChanged?(peerKey: string, thread: readonly AgentTranscriptSourceMessage[]): void;
   onOperationChanged?(peerKey: string): void;
   onOperationStarted?(peerKey: string, operationId: string): void;
+  onRequestFailed?(peerKey: string, requestId: string, message: string): void;
   onOperationTerminal?(
     peerKey: string,
     operationId: string,
@@ -192,6 +194,37 @@ export class AgentRuntimeCoordinator {
     this.emitOperation(finishedPeer);
     this.hooks.onOperationTerminal?.(finishedPeer, operationId, status, message);
     return finishedPeer;
+  }
+
+  handleCommandBridge(detail: MahayanaCommandBridgeDetail): boolean {
+    if (detail.command.type !== 'chat.send') return false;
+    const peerKey = detail.context?.conversationKey;
+    if (!peerKey) return false;
+
+    const requestId = detail.command.requestId;
+    if (detail.phase === 'dispatch') {
+      if (!this.workspace.isBusy(peerKey)) this.workspace.beginRequest(peerKey, requestId);
+      this.emitOperation(peerKey);
+      return true;
+    }
+    if (detail.phase === 'accepted') {
+      const operationId = detail.accepted.operationId;
+      if (!operationId) return true;
+      this.adoptOperation(requestId, operationId, peerKey);
+      this.handle({
+        type: 'operation.started',
+        timestamp: new Date().toISOString(),
+        operationId,
+        label: '正在思考',
+        interruptible: true,
+      });
+      return true;
+    }
+
+    this.workspace.cancelRequest(requestId);
+    this.emitOperation(peerKey);
+    this.hooks.onRequestFailed?.(peerKey, requestId, detail.error);
+    return true;
   }
 
   handle(event: RuntimeEvent): boolean {
