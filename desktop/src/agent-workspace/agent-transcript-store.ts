@@ -116,6 +116,12 @@ export class AgentTranscriptStore {
     return this.update(peerKey, (current) => current.filter((message) => !removed.has(message.id)));
   }
 
+  removeQueuedUserMessage(peerKey: string, messageId: string): AgentTranscriptSourceMessage[] {
+    return this.update(peerKey, (current) => current.filter((message) =>
+      message.id !== messageId || message.role !== 'me' || message.queued !== true,
+    ));
+  }
+
   markUserOperationAccepted(peerKey: string, operationId: string): AgentTranscriptSourceMessage[] {
     return this.update(peerKey, (current) => current.map((message) =>
       message.role === 'me'
