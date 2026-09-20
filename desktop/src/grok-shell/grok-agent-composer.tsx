@@ -1,5 +1,5 @@
 import { Paperclip, Send, Square, X } from 'lucide-react';
-import React, { useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from 'react';
+import React, { useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent } from 'react';
 import styles from './grok-agent-composer.module.css';
 
 export interface GrokComposerAttachment {
@@ -125,6 +125,15 @@ export default function GrokAgentComposer({
       placeholder={attachments.length ? `Add a message for ${agentName}` : `Message ${agentName}`}
       onChange={(event) => onChange(event.target.value)}
       onKeyDown={handleKeyDown}
+      onPaste={(event: ClipboardEvent<HTMLTextAreaElement>) => {
+        const files = Array.from(event.clipboardData.items)
+          .filter((item) => item.kind === 'file')
+          .map((item) => item.getAsFile())
+          .filter((file): file is File => file != null);
+        if (!files.length) return;
+        event.preventDefault();
+        onAttachFiles(files);
+      }}
     />
     {hasText ? (
       <button data-testid="messenger-send" className={styles.primary} type="submit" disabled={!ready || uploading}>
