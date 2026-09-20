@@ -576,6 +576,16 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeHidden();
     });
 
+    await test.step('Agent Network is the Agent-domain group surface', async () => {
+      await page.getByRole('button', { name: 'Agent network' }).click();
+      const network = page.getByTestId('grok-agent-network');
+      await expect(network).toBeVisible();
+      await expect(network.getByRole('button', { name: 'Create from selected' })).toBeVisible();
+      await expect(network.getByText(/agents · \d+ groups/)).toBeVisible();
+      await network.getByRole('button', { name: 'Close Agent network' }).click();
+      await expect(network).toBeHidden();
+    });
+
     await test.step('Agent conversation and composer expose dark low-contrast material', async () => {
       const peer = primaryMahayanaAgentPeer(page);
       await expect(peer).toBeVisible();
