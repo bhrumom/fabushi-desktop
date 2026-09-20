@@ -32,6 +32,8 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - name: Enforce Agent workspace architecture boundary
+        run: node scripts/check-agent-workspace-boundary.mjs
       - run: npm run typecheck
       - run: npm run build:renderer
 
