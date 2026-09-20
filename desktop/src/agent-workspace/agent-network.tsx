@@ -1,17 +1,17 @@
 import { Bot, Megaphone, Network, Plus, Trash2, Users, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { GroupSummary } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
-import type { GrokAgentSidebarItem } from '../grok-runtime/agent-model';
+import type { AgentSidebarItem } from './agent-model';
 import styles from './agent-network.module.css';
 
 export interface AgentNetworkProps {
   open: boolean;
-  agents: readonly GrokAgentSidebarItem[];
+  agents: readonly AgentSidebarItem[];
   groups: readonly GroupSummary[];
   activeKey: string | null;
   broadcastMode?: boolean;
   onClose(): void;
-  onOpenAgent(agent: GrokAgentSidebarItem): void;
+  onOpenAgent(agent: AgentSidebarItem): void;
   onRefreshGroups(): Promise<void>;
   onCreateGroup(name: string, memberAgentIds: readonly string[]): Promise<void>;
   onUpdateGroup(id: string, patch: { name?: string; memberAgentIds?: readonly string[] }): Promise<void>;
@@ -20,7 +20,7 @@ export interface AgentNetworkProps {
   onBroadcast(message: string, targetAgentIds?: readonly string[]): Promise<void>;
 }
 
-function statusLabel(agent: GrokAgentSidebarItem): string {
+function statusLabel(agent: AgentSidebarItem): string {
   if (agent.waitingReason?.trim()) return `Waiting for you · ${agent.waitingReason.trim()}`;
   if (agent.busy) return 'Working';
   if (agent.unread > 0) return 'Unread activity';
@@ -92,7 +92,7 @@ export default function AgentNetwork({
     setSelectedGroupId(group.id);
   };
 
-  const toggleAgent = (agent: GrokAgentSidebarItem) => {
+  const toggleAgent = (agent: AgentSidebarItem) => {
     setSelectedGroupId(null);
     setSelected((current) => {
       const next = new Set(current);
