@@ -3119,12 +3119,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   function regenerateBotMessage(message: BotTranscriptMessage | TranscriptEntry) {
     if (!activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId) return;
-    const entries = agentTranscriptStore.entries(activePeer.key);
-    const index = entries.findIndex((candidate) => candidate.id === message.id);
-    if (index < 0) return;
-    const prompt = [...entries.slice(0, index)].reverse().find((candidate) =>
-      candidate.kind === 'message' && candidate.role === 'me' && !candidate.queued,
-    );
+    const prompt = agentTranscriptStore.userPromptBefore(activePeer.key, message.id);
     if (!prompt) {
       setError('找不到这条回复对应的用户消息。');
       return;
