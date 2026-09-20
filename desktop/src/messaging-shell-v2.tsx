@@ -125,6 +125,7 @@ import type { AgentPromptReference, AgentReplyContext } from './agent-workspace/
 import type { AgentSidebarSection } from './agent-workspace/agent-sidebar-state';
 import { useAgentSidebarController } from './agent-workspace/use-agent-sidebar-controller';
 import { useAgentNetworkController } from './agent-workspace/use-agent-network-controller';
+import { useAgentCommandPaletteController } from './agent-workspace/use-agent-command-palette-controller';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -1008,8 +1009,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [silentSend, setSilentSend] = useState(false);
   const [scheduledAtMs, setScheduledAtMs] = useState<number | undefined>();
   const [search, setSearch] = useState('');
-  const [agentPaletteOpen, setGrokPaletteOpen] = useState(false);
-  const [agentPaletteQuery, setGrokPaletteQuery] = useState('');
+  const agentPaletteController = useAgentCommandPaletteController();
   const agentSidebarController = useAgentSidebarController(remoteAccountScope);
   const agentPinnedOrder = agentSidebarController.pinnedOrder;
   const agentSidebarSections = agentSidebarController.sections;
@@ -1572,20 +1572,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
     return () => { disposed = true; };
   }, [hostReady, section, settingsCategory]);
-
-  useEffect(() => {
-    const handleGrokPaletteKeys = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setGrokPaletteQuery('');
-        setGrokPaletteOpen((value) => !value);
-        return;
-      }
-      if (event.key === 'Escape') setGrokPaletteOpen(false);
-    };
-    window.addEventListener('keydown', handleGrokPaletteKeys);
-    return () => window.removeEventListener('keydown', handleGrokPaletteKeys);
-  }, []);
 
   useEffect(() => {
     if (section !== 'settings') return;
@@ -4239,11 +4225,11 @@ async function saveInvoiceDialog() {
       </aside>
 
       <AgentCommandPalette
-        open={agentPaletteOpen}
+        open={agentPaletteController.open}
         agents={agentItems}
-        query={agentPaletteQuery}
-        onQuery={setGrokPaletteQuery}
-        onClose={() => setGrokPaletteOpen(false)}
+        query={agentPaletteController.query}
+        onQuery={agentPaletteController.setQuery}
+        onClose={agentPaletteController.close}
         onOpenAgent={openAgent}
         onNewAgent={() => void createAgent()}
         onNetwork={agentNetworkController.openNetwork}
