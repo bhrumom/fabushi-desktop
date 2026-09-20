@@ -3265,4 +3265,84 @@ mod tests {
         assert!(snapshot.state.to_string().contains("first provider reply"));
         std::fs::remove_dir_all(root).expect("cleanup");
     }
+
+    #[test]
+    fn lightweight_context_projects_only_the_current_user_turn() {
+        let huge = "x".repeat(180_000);
+        let history = vec![
+            json!({"role":"user","content":"previous task"}),
+            json!({"role":"assistant","content":huge}),
+            json!({"role":"user","content":"你好"}),
+        ];
+        let projected = project_model_history(&history, true);
+        assert_eq!(projected.items.len(), 1);
+        assert_eq!(projected.items[0]["role"], "user");
+        assert_eq!(projected.items[0]["content"], "你好");
+        assert_eq!(projected.omitted_items, 2);
+        assert!(projected.serialized_chars < 256);
+    }
+
+    #[test]
+    fn normal_context_keeps_latest_turn_and_bounds_prior_transcript() {
+        let mut history = Vec::new();
+        for index in 0..40 {
+            history.push(json!({"role":"user","content":format!("old user {index} {}", "u".repeat(10_000))}));
+            history.push(json!({"role":"assistant","content":format!("old assistant {index} {}", "a".repeat(10_000))}));
+        }
+        history.push(json!({"role":"user","content":"current task must survive"}));
+        let projected = project_model_history(&history, false);
+        assert!(projected.omitted_items > 0);
+        assert!(projected.serialized_chars <= MODEL_CONTEXT_HISTORY_CHAR_BUDGET + 512);
+        assert!(
+            projected
+                .items
+                .iter()
+                .any(|item| item.to_string().contains("current task must survive"))
+        );
+    }
+
+    #[tokio::test]
+    async fn agent_memory_and_workflows_are_isolated_per_session() {
+        let model = Arc::new(FakeModel {
+            outputs: Mutex::new(VecDeque::new()),
+        });
+        let engine = NativeEngine::new(model, NativeEngineConfig::embedded("model"))
+            .expect("create engine");
+        let left = engine
+            .open_session(OpenSessionRequest {
+                profile: mahayana_kernel::RuntimeProfile::Headless,
+                workspace_root: None,
+                model: None,
+                metadata: json!({"conversationId":"agent:left"}),
+            })
+            .await
+            .expect("open left");
+        let right = engine
+            .open_session(OpenSessionRequest {
+                profile: mahayana_kernel::RuntimeProfile::Headless,
+                workspace_root: None,
+                model: None,
+                metadata: json!({"conversationId":"agent:right"}),
+            })
+            .await
+            .expect("open right");
+
+        {
+            let left_session = engine.session(&left).expect("left session");
+            let mut left_session = left_session.lock().await;
+            left_session
+                .memory
+                .upsert("profile", "name", json!("left-only"), Vec::new(), None)
+                .expect("write left memory");
+            let workflow = Workflow::new("left workflow").expect("workflow");
+            left_session
+                .workflows
+                .insert(workflow.id.clone(), workflow);
+        }
+
+        let right_session = engine.session(&right).expect("right session");
+        let right_session = right_session.lock().await;
+        assert!(right_session.memory.get("profile", "name").is_none());
+        assert!(right_session.workflows.is_empty());
+    }
 }
