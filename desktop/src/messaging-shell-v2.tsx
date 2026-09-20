@@ -2717,18 +2717,45 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     const lastMessage = [...thread]
       .reverse()
       .find((message) => message.kind === 'message' && Boolean(message.text.trim()));
+    const runningTurn = [...thread]
+      .reverse()
+      .find((message) => message.kind === 'assistant-turn' && message.assistantTurn?.status === 'running')
+      ?.assistantTurn;
+    const runningActivity = runningTurn
+      ? [...runningTurn.parts].reverse().find((part) =>
+        (part.kind === 'tool' || part.kind === 'activity') && part.status === 'running',
+      )
+      : undefined;
+    const waitingActivity = runningTurn
+      ? [...runningTurn.parts].reverse().find((part) =>
+        part.kind === 'activity'
+        && part.status === 'running'
+        && (part.title === '等待授权' || part.title === '需要补充信息'),
+      )
+      : undefined;
     const isComposingMessage = peer.source === 'selfhosted'
       && Boolean(peer.conversationId)
       && Object.keys(typingByConversation[peer.conversationId!] ?? {}).length > 0;
     return [peer.key, {
-      draftPrompt: drafts[peer.key],
+      draftPrompt: agentWorkspaceControllerRef.current.draftForPeer(peer.key) || drafts[peer.key],
       lastMessage: lastMessage?.text.trim().slice(0, 180),
+      waitingReason: waitingActivity
+        ? (waitingActivity.detail?.trim() || waitingActivity.title)
+        : undefined,
+      currentActivity: runningActivity
+        ? (runningActivity.detail?.trim() || runningActivity.title)
+        : undefined,
       isComposingMessage,
     }] as const;
   }));
+  const grokBusyByPeer = Object.fromEntries(peers.flatMap((peer) => {
+    const activityId = agentOperationByPeer[peer.key]
+      ?? agentWorkspaceControllerRef.current.requestForPeer(peer.key);
+    return activityId ? [[peer.key, activityId] as const] : [];
+  }));
   const grokAgentItems: GrokAgentSidebarItem[] = projectGrokAgentSidebarItems(
     peers,
-    agentOperationByPeer,
+    grokBusyByPeer,
     grokActivityByPeer,
     grokPinnedOrder,
   );
