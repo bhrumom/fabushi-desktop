@@ -1032,13 +1032,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     startupLegacyConversation ? cachedLegacyDisplayMessages(startupLegacyConversation) : [],
   );
   const [composer, setComposer] = useState('');
-  const [drafts, setDrafts] = useState<Record<string, string>>(() => Object.fromEntries(
-    Object.entries(readAgentWorkspaceDrafts()).map(([peerKey, draft]) => [peerKey, draft.text]),
-  ));
+  // Compatibility Messenger drafts remain React-owned. Agent drafts live in
+  // AgentWorkspaceController and never share this renderer-global map.
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [legacyReplyTo, setLegacyReplyTo] = useState<DisplayMessage | null>(null);
-  const [agentReplyByPeer, setAgentReplyByPeer] = useState<Record<string, AgentReplyContext>>(() => Object.fromEntries(
-    Object.entries(readAgentWorkspaceDrafts()).flatMap(([peerKey, draft]) => draft.replyTo ? [[peerKey, draft.replyTo]] : []),
-  ));
   const [silentSend, setSilentSend] = useState(false);
   const [scheduledAtMs, setScheduledAtMs] = useState<number | undefined>();
   const [search, setSearch] = useState('');
@@ -1083,10 +1080,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [invoiceDialog, setInvoiceDialog] = useState<InvoiceDialogState>(null);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const [attachmentProgress, setAttachmentProgress] = useState<string | null>(null);
-  const [agentAttachmentsByPeer, setAgentAttachmentsByPeer] = useState<Record<string, AttachmentContext[]>>(() => Object.fromEntries(
-    Object.entries(readAgentWorkspaceDrafts()).map(([peerKey, draft]) => [peerKey, draft.attachments]),
-  ));
-  const [agentAttachmentUploadingPeers, setAgentAttachmentUploadingPeers] = useState<Set<string>>(() => new Set());
   const [localCall, setLocalCall] = useState<LocalCall | null>(null);
   const [incomingCall, setIncomingCall] = useState<IncomingFabushiCall | null>(null);
   const [miniApp, setMiniApp] = useState<{ id: string; title: string; url: string } | null>(null);
@@ -1119,7 +1112,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sessionResetInFlightRef = useRef(false);
-  const agentWorkspaceControllerRef = useRef(new AgentWorkspaceController());
+  const agentWorkspaceControllerRef = useRef(new AgentWorkspaceController(readAgentWorkspaceDrafts()));
   const pendingAgentDeltaRef = useRef(new Map<string, Extract<RuntimeEvent, { type: 'chat.delta' }>>());
   const agentDeltaFrameRef = useRef<number | null>(null);
   const finishedAgentOperationsRef = useRef(new Set<string>());
@@ -1177,14 +1170,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     },
     onFailure: (submission, cause) => {
       removeQueuedAgentPrompt(submission.peerKey, submission.messageId);
-      if (submission.attachments?.length) {
-        setAgentAttachmentsByPeer((current) => ({
-          ...current,
-          [submission.peerKey]: [
-            ...(current[submission.peerKey] ?? []),
-            ...submission.attachments!,
-          ].slice(0, AGENT_ATTACHMENT_LIMIT),
-        }));
+      const controller = agentWorkspaceControllerRef.current;
+      controller.restoreDraft(submission.peerKey, {
+        text: submission.prompt,
+        attachments: submission.attachments ? [...submission.attachments] : [],
+        replyTo: submission.replyTo,
+      });
+      notifyAgentWorkspaceState();
+      if (activePeerKeyRef.current === submission.peerKey) {
+        setComposer(controller.draftForPeer(submission.peerKey));
       }
       setError(cause instanceof Error ? cause.message : String(cause));
     },
@@ -1193,9 +1187,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   useEffect(() => () => agentSubmissionQueue.dispose(), [agentSubmissionQueue]);
 
   useEffect(() => {
-    agentWorkspaceControllerRef.current.hydrateDrafts(drafts);
-    persistAgentWorkspaceDrafts(drafts, agentAttachmentsByPeer, agentReplyByPeer);
-  }, [drafts, agentAttachmentsByPeer, agentReplyByPeer]);
+    const controller = agentWorkspaceControllerRef.current;
+    persistAgentWorkspaceDrafts(
+      controller.draftSnapshot(),
+      controller.attachmentSnapshot(),
+      controller.replySnapshot(),
+    );
+  }, [agentWorkspaceRevision]);
 
   useEffect(() => {
     if (hostReady) agentSubmissionQueue.flush();
@@ -1380,7 +1378,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   useEffect(() => {
     if (!activePeerKey) return;
-    setComposer(drafts[activePeerKey] ?? '');
+    const peer = peersRef.current.find((candidate) => candidate.key === activePeerKey);
+    const isWorkspaceAgent = Boolean(
+      peer
+      && peer.source === 'legacy'
+      && peer.kind !== 'group'
+      && !peer.miniAppId
+      && isAgentPeer(peer)
+    );
+    setComposer(isWorkspaceAgent
+      ? agentWorkspaceControllerRef.current.draftForPeer(activePeerKey)
+      : drafts[activePeerKey] ?? '');
     setSearch('');
     setConversationSearchOpen(false);
     setAgentConversationSearch('');
@@ -2828,7 +2836,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       && Boolean(peer.conversationId)
       && Object.keys(typingByConversation[peer.conversationId!] ?? {}).length > 0;
     return [peer.key, {
-      draftPrompt: agentWorkspaceControllerRef.current.draftForPeer(peer.key) || drafts[peer.key],
+      draftPrompt: peer.source === 'legacy' && peer.kind !== 'group' && !peer.miniAppId
+        ? agentWorkspaceControllerRef.current.draftForPeer(peer.key)
+        : drafts[peer.key],
       lastMessage: lastMessage?.text.trim().slice(0, 180),
       waitingReason: waitingActivity?.kind === 'activity'
         ? (waitingActivity.detail?.trim() || waitingActivity.title)
@@ -2861,7 +2871,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const pinnedGrokAgentSignature = pinnedGrokAgentKeys.join('\u001f');
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
   const activeAgentReply = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
-    ? agentReplyByPeer[activePeer.key]
+    ? agentWorkspaceControllerRef.current.replyForPeer(activePeer.key)
     : undefined;
   const activeGrokAgentKey = projectActiveGrokAgentKey(activePeer);
 
@@ -3148,7 +3158,19 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setComposer(value);
     const activeKey = activePeerKeyRef.current;
     if (!activeKey) return;
-    agentWorkspaceControllerRef.current.setDraft(activeKey, value);
+    const peer = peersRef.current.find((candidate) => candidate.key === activeKey);
+    const isWorkspaceAgent = Boolean(
+      peer
+      && peer.source === 'legacy'
+      && peer.kind !== 'group'
+      && !peer.miniAppId
+      && isAgentPeer(peer)
+    );
+    if (isWorkspaceAgent) {
+      agentWorkspaceControllerRef.current.setDraft(activeKey, value);
+      notifyAgentWorkspaceState();
+      return;
+    }
     if (activeKey.startsWith('selfhosted:')) {
       const conversationId = activeKey.slice('selfhosted:'.length);
       if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
@@ -3163,8 +3185,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     setDrafts((current) => {
       const next = { ...current };
-      if (value) next[activePeerKeyRef.current!] = value;
-      else delete next[activePeerKeyRef.current!];
+      if (value) next[activeKey] = value;
+      else delete next[activeKey];
       return next;
     });
   }
@@ -3202,21 +3224,19 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function clearAgentReply(peerKey: string): void {
-    setAgentReplyByPeer((current) => {
-      if (!current[peerKey]) return current;
-      const next = { ...current };
-      delete next[peerKey];
-      return next;
-    });
+    agentWorkspaceControllerRef.current.clearReply(peerKey);
+    notifyAgentWorkspaceState();
   }
 
   function setReplyTarget(message: DisplayMessage): void {
     const peer = activePeer;
     if (peer && isAgentPeer(peer) && !peer.miniAppId) {
-      setAgentReplyByPeer((current) => ({
-        ...current,
-        [peer.key]: { id: message.id, role: message.role, text: message.text },
-      }));
+      agentWorkspaceControllerRef.current.setReply(peer.key, {
+        id: message.id,
+        role: message.role,
+        text: message.text,
+      });
+      notifyAgentWorkspaceState();
       return;
     }
     setLegacyReplyTo(message);
@@ -3372,7 +3392,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (!isAgentPeer(peer)) setLegacySendPending(false);
     stickToLatestRef.current = true;
     setShowScrollToLatest(false);
-    setComposer(agentWorkspaceControllerRef.current.draftForPeer(peer.key) || drafts[peer.key] || '');
+    setComposer(
+      peer.source === 'legacy' && peer.kind !== 'group' && !peer.miniAppId && isAgentPeer(peer)
+        ? agentWorkspaceControllerRef.current.draftForPeer(peer.key)
+        : drafts[peer.key] ?? '',
+    );
     setSearch('');
     setMessageRenderCount(initialMessageRenderCount);
     setLegacyReplyTo(null);
@@ -3428,26 +3452,26 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     event.preventDefault();
     const text = composer.trim();
     if (!activePeer) return;
-    const stagedAgentAttachments = isAgentPeer(activePeer) && !activePeer.miniAppId
-      ? agentAttachmentsByPeer[activePeer.key] ?? []
-      : [];
     const agentRequest = activePeer.source === 'legacy'
       && activePeer.kind !== 'group'
       && !activePeer.miniAppId
       && isAgentPeer(activePeer);
+    const stagedAgentAttachments = agentRequest
+      ? agentWorkspaceControllerRef.current.attachmentsForPeer(activePeer.key)
+      : [];
     if (!text && !(agentRequest && stagedAgentAttachments.length)) return;
     if (legacySendPending && !agentRequest) return;
     if (agentRequest) {
-      const attachments = stagedAgentAttachments;
-      const replyContext = activeAgentReply;
-      updateComposer('');
-      setAgentAttachmentsByPeer((current) => {
-        const next = { ...current };
-        delete next[activePeer.key];
-        return next;
-      });
-      enqueueAgentPrompt(activePeer, text, undefined, attachments, replyContext);
-      clearAgentReply(activePeer.key);
+      const submittedDraft = agentWorkspaceControllerRef.current.takeDraft(activePeer.key);
+      setComposer('');
+      notifyAgentWorkspaceState();
+      enqueueAgentPrompt(
+        activePeer,
+        text,
+        undefined,
+        submittedDraft.attachments,
+        submittedDraft.replyTo,
+      );
       setScheduledAtMs(undefined);
       return;
     }
@@ -3682,14 +3706,16 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   async function stageAgentFiles(peer: PeerItem, files: readonly File[]): Promise<void> {
     if (!isAgentPeer(peer) || peer.miniAppId || files.length === 0) return;
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
-    const alreadyStaged = agentAttachmentsByPeer[peer.key] ?? [];
+    const controller = agentWorkspaceControllerRef.current;
+    const alreadyStaged = controller.attachmentsForPeer(peer.key);
     const availableSlots = Math.max(0, AGENT_ATTACHMENT_LIMIT - alreadyStaged.length);
     if (availableSlots === 0) {
       setError(`You can attach up to ${AGENT_ATTACHMENT_LIMIT} files to one Agent draft.`);
       return;
     }
 
-    setAgentAttachmentUploadingPeers((current) => new Set(current).add(peer.key));
+    controller.setUploading(peer.key, true);
+    notifyAgentWorkspaceState();
     const staged: AttachmentContext[] = [];
     try {
       for (const file of files.slice(0, availableSlots)) {
@@ -3712,16 +3738,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
       }
       if (staged.length) {
-        const byId = new Map([...alreadyStaged, ...staged].map((attachment) => [attachment.id, attachment]));
-        const nextAttachments = [...byId.values()].slice(0, AGENT_ATTACHMENT_LIMIT);
-        setAgentAttachmentsByPeer((current) => {
-          const previous = current[peer.key] ?? [];
-          const currentById = new Map([...previous, ...staged].map((attachment) => [attachment.id, attachment]));
-          return {
-            ...current,
-            [peer.key]: [...currentById.values()].slice(0, AGENT_ATTACHMENT_LIMIT),
-          };
-        });
+        controller.appendAttachments(peer.key, staged);
+        notifyAgentWorkspaceState();
+        const nextAttachments = controller.attachmentsForPeer(peer.key);
         void mirrorAgentCloudSnapshot(agentId, FABU_AGENT_ATTACHMENT_INDEX_PATH, {
           schemaVersion: 1,
           agentId,
@@ -3736,23 +3755,16 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         });
       }
     } finally {
-      setAgentAttachmentUploadingPeers((current) => {
-        const next = new Set(current);
-        next.delete(peer.key);
-        return next;
-      });
+      controller.setUploading(peer.key, false);
+      notifyAgentWorkspaceState();
     }
   }
 
   function removeAgentAttachment(peerKey: string, attachmentId: string): void {
-    const remaining = (agentAttachmentsByPeer[peerKey] ?? [])
-      .filter((attachment) => attachment.id !== attachmentId);
-    setAgentAttachmentsByPeer((current) => {
-      const next = { ...current };
-      if (remaining.length) next[peerKey] = remaining;
-      else delete next[peerKey];
-      return next;
-    });
+    const controller = agentWorkspaceControllerRef.current;
+    controller.removeAttachment(peerKey, attachmentId);
+    notifyAgentWorkspaceState();
+    const remaining = controller.attachmentsForPeer(peerKey);
     const peer = agentPeerForRuntimeKey(peerKey);
     if (!peer) return;
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
@@ -4685,14 +4697,14 @@ async function saveInvoiceDialog() {
                 notice={error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
                 composerReplyTarget={activeAgentReply ? { id: activeAgentReply.id, label: '回复', text: activeAgentReply.text } : undefined}
                 onClearComposerReply={() => clearAgentReply(activePeer.key)}
-                composerAccessory={agentAttachmentUploadingPeers.has(activePeer.key)
+                composerAccessory={agentWorkspaceControllerRef.current.isUploading(activePeer.key)
                   ? <span className={extra.uploadProgress}>Uploading attachments…</span>
                   : null}
                 composerValue={composer}
                 composerReady={hostReady}
                 composerBusy={Boolean(activeAgentOperationId)}
-                composerUploading={agentAttachmentUploadingPeers.has(activePeer.key)}
-                composerAttachments={agentAttachmentsByPeer[activePeer.key] ?? []}
+                composerUploading={agentWorkspaceControllerRef.current.isUploading(activePeer.key)}
+                composerAttachments={agentWorkspaceControllerRef.current.attachmentsForPeer(activePeer.key)}
                 composerMentionCandidates={grokAgentItems
                   .filter((item) => item.key !== activePeer.key)
                   .map((item) => ({ id: item.agentId || item.key, name: item.name, description: item.description }))}
