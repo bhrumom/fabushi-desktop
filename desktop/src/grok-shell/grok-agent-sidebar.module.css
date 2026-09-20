@@ -76,7 +76,7 @@
   text-transform: uppercase;
   letter-spacing: .04em;
 }
-.rowWrap { position: relative; border-radius: 9px; }
+.rowWrap { position: relative; border-radius: 10px; }
 .rowWrap[data-active] { background: rgba(255,255,255,.075); }
 .row {
   display: flex;
@@ -88,7 +88,7 @@
   color: inherit;
   text-align: left;
   border: 0;
-  border-radius: 9px;
+  border-radius: 10px;
   background: transparent;
 }
 .row:hover { background: rgba(255,255,255,.045); }
@@ -178,3 +178,6 @@
 .root[data-collapsed] .row { justify-content: center; padding: 6px; }
 .root[data-collapsed] .rowWrap { margin-bottom: 3px; }
 .root[data-collapsed] .footer { justify-items: center; padding-inline: 6px; }
+
+.menu button[data-danger="true"] { color: #efb0b0; }
+.menu button[data-danger="true"]:hover { background: rgba(176,58,58,.18); }
