@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { AgentTranscriptStore } from '../src/agent-workspace/agent-transcript-store';
 import { AgentWorkspaceController } from '../src/agent-workspace/agent-workspace-controller';
 import { AgentRuntimeCoordinator } from '../src/agent-workspace/agent-runtime-coordinator';
+import { agentMatchesGroupMember, indexAgentsByRuntimeOrSurfaceId, type AgentSidebarItem } from '../src/agent-workspace/agent-model';
 import { composeAgentPromptText } from '../src/agent-workspace/prompt-context';
 import { restoreAgentStoreWorkspace } from '../src/agent-workspace/agent-store-recovery';
 import type { TranscriptEntry } from '../src/agent-workspace/transcript-model';
@@ -156,6 +157,29 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       controller.setDraft('agent:a', 'new draft without a mention');
       controller.pruneReferences('agent:a', 'new draft without a mention');
       expect(controller.referencesForPeer('agent:a')).toEqual([]);
+    });
+
+    await test.step('Agent group identity survives Host runtime-to-surface normalization', async () => {
+      const agent: AgentSidebarItem = {
+        key: 'agent:runtime-agent',
+        peerKey: 'legacy:bot:surface-bot',
+        id: 'surface-bot',
+        agentId: 'runtime-agent',
+        name: 'Research',
+        description: 'Research Agent',
+        pinned: false,
+        hidden: false,
+        unread: 0,
+        busy: false,
+        isGroup: false,
+        updatedAtMs: 1,
+      };
+      expect(agentMatchesGroupMember(agent, 'runtime-agent')).toBe(true);
+      expect(agentMatchesGroupMember(agent, 'surface-bot')).toBe(true);
+      expect(agentMatchesGroupMember(agent, 'other-agent')).toBe(false);
+      const index = indexAgentsByRuntimeOrSurfaceId([agent]);
+      expect(index.get('runtime-agent')?.key).toBe(agent.key);
+      expect(index.get('surface-bot')?.key).toBe(agent.key);
     });
 
     await test.step('Agent Store root restores a cross-device transcript snapshot without last-write-wins guessing', async () => {
