@@ -4772,7 +4772,7 @@ async function saveInvoiceDialog() {
                     {generatedPreview.complete ? <button type="button" data-testid="generated-miniapp-open" onClick={() => void showMiniAppDocument(generatedPreview.id, generatedPreview.title, generatedPreview.html)}>打开小程序</button> : null}
                   </div> : <StructuredMessageBody text={message.text} peers={peers} />}
                   <div className={extra.messageHoverActions} data-testid="message-hover-actions">
-                    <button type="button" title="回复" aria-label="回复" onClick={() => setReplyTarget(message)><span aria-hidden="true">↩</span></button>
+                    <button type="button" title="回复" aria-label="回复" onClick={() => setReplyTarget(message)}><span aria-hidden="true">↩</span></button>
                     <button type="button" title="复制" aria-label="复制" onClick={() => void navigator.clipboard.writeText(message.text)}><span aria-hidden="true">⧉</span></button>
                     <button type="button" title="更多" aria-label="更多" onClick={(event) => {
                       const rect = event.currentTarget.getBoundingClientRect();
