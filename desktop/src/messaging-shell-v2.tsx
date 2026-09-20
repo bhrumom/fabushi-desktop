@@ -2635,7 +2635,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     newAgentRequestPendingRef.current = true;
     const accepted = await execute({
       type: 'bot.create',
-      requestId: nextRequestId('grok-new-agent'),
+      requestId: nextRequestId('agent-new'),
       name: 'New chat',
       description: '',
     });
@@ -2659,7 +2659,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (!name || name === peer.title) return;
     await execute({
       type: 'bot.update',
-      requestId: nextRequestId('grok-rename-agent'),
+      requestId: nextRequestId('agent-rename'),
       id: peer.actorId ?? peer.id,
       name,
     });
@@ -2676,7 +2676,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     await execute({
       type: 'bot.clone',
-      requestId: nextRequestId('grok-duplicate-agent'),
+      requestId: nextRequestId('agent-duplicate'),
       id: botId,
     });
   }
@@ -2695,7 +2695,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     notifyAgentWorkspaceState();
     await execute({
       type: 'bot.delete',
-      requestId: nextRequestId('grok-delete-agent'),
+      requestId: nextRequestId('agent-delete'),
       id: botId,
     });
     if (peer.key === activePeerKeyRef.current) {
@@ -2716,7 +2716,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     await execute({
       type: 'bot.setHidden',
-      requestId: nextRequestId('grok-hide-agent'),
+      requestId: nextRequestId('agent-hide'),
       id: botId,
       hidden: true,
     });
