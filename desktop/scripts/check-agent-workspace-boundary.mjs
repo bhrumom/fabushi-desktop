@@ -6,6 +6,8 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.resolve(scriptDir, '..');
 const shellPath = path.join(desktopRoot, 'src', 'messaging-shell-v2.tsx');
 const shell = fs.readFileSync(shellPath, 'utf8');
+const networkControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-network-controller.ts');
+const networkController = fs.readFileSync(networkControllerPath, 'utf8');
 
 const forbidden = [
   ['renderer-global Agent operation pointer', /\bagentOperationId\b/],
@@ -80,19 +82,16 @@ if (!/from\s+['"]\.\/agent-workspace\/agent-model['"]/.test(shell)
   || !/projectActiveAgentKey\s*\(/.test(shell)) {
   violations.push('primary shell is not consuming the Agent-owned navigation projection model');
 }
-if (!/agentCoordinatorClient\.(?:listGroups|createGroup|updateGroup|deleteGroup|sendGroup)\s*\(/.test(shell)) {
-  violations.push('Agent group lifecycle escaped AgentCoordinatorClient');
+if (!/useAgentNetworkController\s*\(/.test(shell)) {
+  violations.push('Agent Network UI/controller state escaped the Agent workspace controller hook');
 }
-
-const agentNetworkStart = shell.indexOf('async function refreshAgentGroups');
-const agentNetworkEnd = shell.indexOf('function openAgent', agentNetworkStart);
-const agentNetworkSlice = agentNetworkStart >= 0 && agentNetworkEnd > agentNetworkStart
-  ? shell.slice(agentNetworkStart, agentNetworkEnd)
-  : '';
-if (!agentNetworkSlice) {
-  violations.push('Agent Network collaboration handlers are missing from the primary shell');
-} else if (/type:\s*['"]group\.(?:list|create|update|delete|send)['"]/.test(agentNetworkSlice)) {
-  violations.push('Agent Network collaboration path bypassed AgentCoordinatorClient');
+if (/agentCoordinatorClient\.(?:listGroups|createGroup|updateGroup|deleteGroup|sendGroup|broadcast)\s*\(/.test(shell)) {
+  violations.push('primary shell directly owns Agent collaboration commands');
+}
+for (const method of ['listGroups', 'createGroup', 'updateGroup', 'deleteGroup', 'sendGroup', 'broadcast']) {
+  if (!new RegExp(`client\\.${method}\\s*\\(`).test(networkController)) {
+    violations.push(`Agent Network controller no longer routes ${method} through AgentCoordinatorClient`);
+  }
 }
 
 if (violations.length) {
