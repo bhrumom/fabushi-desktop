@@ -1,4 +1,4 @@
-import type { AttachmentContext, AuthState, HostConfig, HostInfo, RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { ApprovalResolution, AttachmentContext, AuthState, HostConfig, HostInfo, RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { MahayanaHostTransport } from '../../../frontend/apps/web/src/lib/mahayana-host/transport';
 import { composeAgentPromptText, type AgentReplyContext } from './prompt-context';
 
@@ -143,6 +143,10 @@ export class AgentCoordinatorClient {
       throw cause;
     }
     return stored;
+  }
+
+  resolveApproval(resolution: ApprovalResolution): Promise<void> {
+    return this.transport.resolveApproval(resolution);
   }
 
   interrupt(operationId: string): Promise<void> {
