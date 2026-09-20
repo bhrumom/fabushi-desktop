@@ -1,7 +1,16 @@
+export type AgentPromptReferenceKind = 'agent' | 'workflow' | 'mcp' | 'file' | 'link';
+
 export interface AgentPromptReference {
-  readonly kind: 'agent';
+  readonly kind: AgentPromptReferenceKind;
   readonly id: string;
   readonly label: string;
+}
+
+export function agentPromptReferenceMarker(reference: AgentPromptReference): string {
+  if (reference.kind === 'agent') return `@${reference.label}`;
+  if (reference.kind === 'workflow') return `/${reference.label}`;
+  if (reference.kind === 'mcp') return `@${reference.label}`;
+  return reference.label;
 }
 
 export interface AgentReplyContext {
@@ -17,12 +26,12 @@ export function composeAgentPromptText(
 ): string {
   const blocks: string[] = [];
   const stableReferences = references
-    .filter((reference) => reference.kind === 'agent' && reference.id.trim() && reference.label.trim())
-    .filter((reference, index, all) => all.findIndex((candidate) => candidate.id === reference.id) === index);
+    .filter((reference) => reference.id.trim() && reference.label.trim())
+    .filter((reference, index, all) => all.findIndex((candidate) => candidate.kind === reference.kind && candidate.id === reference.id) === index);
   if (stableReferences.length) {
     blocks.push(
-      'Referenced Agents (stable ids from the composer):',
-      ...stableReferences.map((reference) => `- @${reference.label} [agent:${reference.id}]`),
+      'Referenced context (stable ids from the composer):',
+      ...stableReferences.map((reference) => `- ${agentPromptReferenceMarker(reference)} [${reference.kind}:${reference.id}]`),
       '',
     );
   }
