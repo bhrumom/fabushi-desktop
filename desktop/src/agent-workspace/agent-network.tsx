@@ -62,10 +62,14 @@ export default function AgentNetwork({
     () => agents.filter((agent) => !agent.isGroup && !agent.hidden),
     [agents],
   );
-  const agentById = useMemo(
-    () => new Map(directAgents.map((agent) => [agent.agentId, agent] as const)),
-    [directAgents],
-  );
+  const agentByMemberId = useMemo(() => {
+    const index = new Map<string, AgentSidebarItem>();
+    for (const agent of directAgents) {
+      index.set(agent.agentId, agent);
+      index.set(agent.id, agent);
+    }
+    return index;
+  }, [directAgents]);
 
   useEffect(() => {
     if (!open) return;
@@ -86,7 +90,7 @@ export default function AgentNetwork({
 
   const chooseGroup = (group: GroupSummary) => {
     const keys = directAgents
-      .filter((agent) => group.memberIds.includes(agent.agentId))
+      .filter((agent) => group.memberIds.includes(agent.agentId) || group.memberIds.includes(agent.id))
       .map((agent) => agent.key);
     setSelected(new Set(keys));
     setSelectedGroupId(group.id);
@@ -104,7 +108,7 @@ export default function AgentNetwork({
 
   const createGroup = async () => {
     if (selectedAgentIds.length < 2 || groupBusy) return;
-    const suggested = selectedAgentIds.map((id) => agentById.get(id)?.name).filter(Boolean).slice(0, 3).join(' + ');
+    const suggested = selectedAgentIds.map((id) => agentByMemberId.get(id)?.name).filter(Boolean).slice(0, 3).join(' + ');
     const name = window.prompt('Group name', suggested || 'Agent group')?.trim();
     if (!name) return;
     setGroupBusy(true);
@@ -209,7 +213,7 @@ export default function AgentNetwork({
         </div>
         <div className={styles.nodes}>
           {groups.map((group) => {
-            const memberNames = group.memberIds.map((id) => agentById.get(id)?.name ?? id).join(', ');
+            const memberNames = group.memberIds.map((id) => agentByMemberId.get(id)?.name ?? id).join(', ');
             return <article className={styles.node} data-active={selectedGroupId === group.id || undefined} key={group.id}>
               <button type="button" className={styles.openNode} onClick={() => chooseGroup(group)}>
                 <span className={styles.nodeMark}><Users size={17} /></span>
