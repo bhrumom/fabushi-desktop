@@ -1,4 +1,4 @@
-import { Bot, Command, Plug, Plus, Settings } from 'lucide-react';
+import { Bot, Command, Megaphone, Network, Plug, Plus, Settings } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import type { GrokAgentSidebarItem } from './grok-agent-sidebar';
 import styles from './grok-command-palette.module.css';
@@ -15,6 +15,8 @@ export default function GrokCommandPalette({
   onClose,
   onOpenAgent,
   onNewAgent,
+  onNetwork,
+  onBroadcast,
   onPlugins,
   onSettings,
 }: {
@@ -25,6 +27,8 @@ export default function GrokCommandPalette({
   onClose(): void;
   onOpenAgent(agent: GrokAgentSidebarItem): void;
   onNewAgent(): void;
+  onNetwork(): void;
+  onBroadcast(): void;
   onPlugins(): void;
   onSettings(): void;
 }) {
@@ -32,6 +36,8 @@ export default function GrokCommandPalette({
   const items = useMemo<CommandItem[]>(() => {
     const commands: CommandItem[] = [
       { kind: 'command', key: 'new', label: 'New chat', detail: 'Create a new Agent', icon: <Plus size={16} />, run: onNewAgent },
+      { kind: 'command', key: 'network', label: 'Agent Network', detail: 'View Agents and groups', icon: <Network size={16} />, run: onNetwork },
+      { kind: 'command', key: 'broadcast', label: 'Broadcast to agents', detail: 'Send one owner message to multiple Agents', icon: <Megaphone size={16} />, run: onBroadcast },
       { kind: 'command', key: 'plugins', label: 'Plugins', detail: 'Open installed apps and plugins', icon: <Plug size={16} />, run: onPlugins },
       { kind: 'command', key: 'settings', label: 'Settings', detail: 'Open Fabushi settings', icon: <Settings size={16} />, run: onSettings },
     ];
@@ -49,7 +55,7 @@ export default function GrokCommandPalette({
     return normalized
       ? all.filter((item) => `${item.label} ${item.detail}`.toLocaleLowerCase().includes(normalized))
       : all;
-  }, [agents, onNewAgent, onPlugins, onSettings, query]);
+  }, [agents, onBroadcast, onNetwork, onNewAgent, onPlugins, onSettings, query]);
 
   useEffect(() => {
     if (open) setSelected(0);
