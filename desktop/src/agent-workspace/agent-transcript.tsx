@@ -2,7 +2,7 @@ import React, { type ReactNode } from 'react';
 import { AppWindow, ArrowDown, Check, Copy, Edit3, FileText, RotateCcw } from 'lucide-react';
 import { BotMark } from '../../../frontend/apps/web/src/app/host/bot-mark';
 import { MahayanaAssistantTurnView } from '../mahayana-assistant-turn-view';
-import type { TranscriptEntry } from './transcript-model';
+import type { TranscriptApprovalDecision, TranscriptEntry } from './transcript-model';
 import { formatAgentAttachmentSize } from './agent-attachments';
 import styles from '../bot-conversation-view.module.css';
 
@@ -22,6 +22,7 @@ export type AgentTranscriptProps = {
   onCopyMessage?: (message: TranscriptEntry) => void;
   onRegenerate?: (message: TranscriptEntry) => void;
   onEdit?: (message: TranscriptEntry) => void;
+  onResolveApproval?: (approvalId: string, decision: TranscriptApprovalDecision) => void;
   onContextMenu?: (event: React.MouseEvent<HTMLElement>, message: TranscriptEntry) => void;
 };
 
@@ -148,10 +149,45 @@ function ToolGroup({ entries }: { entries: TranscriptEntry[] }) {
   </section>;
 }
 
+function ApprovalCard({ entry, onResolveApproval }: {
+  entry: TranscriptEntry;
+  onResolveApproval?: (approvalId: string, decision: TranscriptApprovalDecision) => void;
+}) {
+  const approval = entry.approval;
+  if (!approval) return null;
+  const pending = !approval.decision;
+  const decisionLabel = approval.decision === 'allow-once'
+    ? 'Allowed once'
+    : approval.decision === 'allow-session'
+      ? 'Allowed for this session'
+      : approval.decision === 'deny'
+        ? 'Denied'
+        : null;
+  return <section
+    className={styles.approvalCard}
+    data-testid="agent-approval"
+    data-approval-id={approval.approvalId}
+    data-operation-id={entry.operationId}
+    data-status={pending ? 'pending' : 'resolved'}
+  >
+    <div className={styles.approvalHeader}>
+      <div><strong>{entry.title || approval.subject || 'Permission required'}</strong><span>{approval.capability}</span></div>
+      <span className={styles.approvalState}>{pending ? 'Needs attention' : decisionLabel}</span>
+    </div>
+    <p>{approval.detail || approval.reason}</p>
+    {approval.location ? <small>Location: {approval.location}</small> : null}
+    {pending && onResolveApproval ? <div className={styles.approvalActions} role="group" aria-label="Approval actions">
+      <button type="button" onClick={() => onResolveApproval(approval.approvalId, 'allow-once')}>Allow once</button>
+      <button type="button" onClick={() => onResolveApproval(approval.approvalId, 'allow-session')}>Allow for session</button>
+      <button type="button" data-danger="true" onClick={() => onResolveApproval(approval.approvalId, 'deny')}>Deny</button>
+    </div> : null}
+  </section>;
+}
+
 export default function AgentTranscript({
   title, description, botId, entries, activeOperationId, hasEarlierMessages = false,
   messageAreaRef, showScrollToLatest = false, onLoadEarlier, onOpenMiniApp, onScroll,
-  onScrollToLatest, onCopyMessage, onRegenerate, onEdit, onContextMenu,
+  onScrollToLatest, onCopyMessage, onRegenerate, onEdit, onResolveApproval, onContextMenu,
 }: AgentTranscriptProps) {
   return <div className={styles.root}>
     <div ref={messageAreaRef} className={styles.messageArea} data-testid="message-list" data-agent-operation-id={activeOperationId ?? undefined} onScroll={onScroll} aria-label={title + ' 会话'}>
@@ -159,6 +195,9 @@ export default function AgentTranscript({
       {hasEarlierMessages && onLoadEarlier ? <button type="button" className={styles.loadEarlier} onClick={onLoadEarlier}>查看更早的消息</button> : null}
       {entries.length === 0 ? <div className={styles.emptyState}><strong>开始一个新会话</strong><span>向 {title} 提问，回复、工具和授权会按一个连续时间线显示。</span></div> : <div className={styles.transcript}>
         {entries.map((entry, index) => {
+          if (entry.kind === 'approval' && entry.approval) {
+            return <ApprovalCard key={entry.id} entry={entry} onResolveApproval={onResolveApproval} />;
+          }
           if (entry.kind === 'assistant-turn' && entry.assistantTurn) {
             return <div key={entry.id} data-transcript-entry-id={entry.id}>
               <MahayanaAssistantTurnView turn={entry.assistantTurn} label={title} avatar={<BotMark botId={botId} state={entry.streaming ? 'writing' : 'idle'} size={28} label={title} />} />
