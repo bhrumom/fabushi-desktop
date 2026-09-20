@@ -2,6 +2,7 @@ import React, { type FormEvent, type ReactNode } from 'react';
 import type { BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
 import AgentHeader from './agent-header';
 import AgentComposer from './agent-composer';
+import AgentSearch from './agent-search';
 import AgentTranscript, { type AgentTranscriptProps } from './agent-transcript';
 
 export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' | 'description' | 'botId'> {
@@ -12,11 +13,14 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   status: string;
   pinned: boolean;
   searchActive: boolean;
+  searchQuery: string;
   computerActive: boolean;
   infoActive: boolean;
   miniAppTitle?: string;
   onOpenMiniAppHeader?(): void;
   onToggleSearch(): void;
+  onSearchQuery(value: string): void;
+  onSelectSearchResult(entryId: string): void;
   onToggleComputer(): void;
   onTogglePin(): void;
   onToggleInfo(): void;
@@ -67,6 +71,13 @@ export default function AgentWorkspace(props: AgentWorkspaceProps) {
       onTogglePin={props.onTogglePin}
       onToggleInfo={props.onToggleInfo}
     />
+    {props.searchActive ? <AgentSearch
+      entries={props.entries}
+      query={props.searchQuery}
+      onQuery={props.onSearchQuery}
+      onClose={props.onToggleSearch}
+      onSelect={props.onSelectSearchResult}
+    /> : null}
     {props.notice}
     <AgentTranscript
       title={props.title}
