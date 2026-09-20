@@ -77,12 +77,14 @@ function EditableField({
  * account/CAS mirroring to the authoritative bot.changed projection.
  */
 export default function AgentSettingsPanel(props: AgentSettingsPanelProps) {
-  const updateProfile = (field: 'name' | 'title' | 'description', value: string) => {
+  const updateProfile = (field: 'name' | 'title' | 'description' | 'avatarShape' | 'avatarColor', value: string) => {
     if (props.pending) return;
     const next: AgentSettingsProfileUpdate = {
       name: props.value.name,
       ...(props.value.title === undefined ? {} : { title: props.value.title }),
       description: props.value.description,
+      avatarShape: props.value.avatarShape,
+      avatarColor: props.value.avatarColor,
       [field]: value,
     };
     void props.onUpdateProfile(next);
@@ -98,6 +100,8 @@ export default function AgentSettingsPanel(props: AgentSettingsPanelProps) {
     <label><span>Name</span><EditableField label="Agent name" value={props.value.name} required disabled={props.pending != null} placeholder="Agent name" onCommit={(value) => void updateProfile('name', value)} /></label>
     {props.value.title === undefined ? null : <label><span>Title</span><EditableField label="Agent title" value={props.value.title} disabled={props.pending != null} placeholder="Describe what your Agent does" onCommit={(value) => void updateProfile('title', value)} /></label>}
     <label><span>Description</span><EditableField label="Agent description" value={props.value.description} multiline disabled={props.pending != null} placeholder="What this Agent is for" onCommit={(value) => void updateProfile('description', value)} /></label>
+    <label><span>Avatar shape</span><EditableField label="Agent avatar shape" value={props.value.avatarShape} disabled={props.pending != null} placeholder="circle" onCommit={(value) => void updateProfile('avatarShape', value)} /></label>
+    <label><span>Avatar color</span><EditableField label="Agent avatar color" value={props.value.avatarColor} disabled={props.pending != null} placeholder="#7c3aed" onCommit={(value) => void updateProfile('avatarColor', value)} /></label>
     <div className={styles.row}>
       <span><strong>Notifications</strong><small>Get notified when this Agent finishes or needs input</small></span>
       <button type="button" role="switch" aria-checked={props.value.notifyOnUpdatesEnabled} disabled={props.pending != null} onClick={toggleNotifications}>
