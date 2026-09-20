@@ -169,6 +169,30 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       coordinator.flushPendingDeltas();
 
       expect(coordinator.handle({
+        type: 'approval.requested',
+        timestamp: new Date(4).toISOString(),
+        operationId: 'operation:b',
+        agentId: 'agent:b',
+        approvalId: 'approval:b',
+        miniAppId: 'runtime',
+        capability: 'filesystem.write',
+        reason: 'Write the requested file.',
+      })).toBe(true);
+      expect(transcripts.entries('agent:b').filter((entry) => entry.kind === 'approval')).toHaveLength(1);
+      expect(transcripts.entries('agent:a').filter((entry) => entry.kind === 'approval')).toHaveLength(0);
+      expect(transcripts.entries('agent:b').find((entry) => entry.kind === 'approval')?.approval?.approvalId).toBe('approval:b');
+
+      expect(coordinator.handle({
+        type: 'approval.resolved',
+        timestamp: new Date(4).toISOString(),
+        operationId: 'operation:b',
+        agentId: 'agent:b',
+        approvalId: 'approval:b',
+        decision: 'allow-once',
+      })).toBe(true);
+      expect(transcripts.entries('agent:b').find((entry) => entry.kind === 'approval')?.approval?.decision).toBe('allow-once');
+
+      expect(coordinator.handle({
         type: 'operation.completed',
         timestamp: new Date(5).toISOString(),
         operationId: 'operation:a',
