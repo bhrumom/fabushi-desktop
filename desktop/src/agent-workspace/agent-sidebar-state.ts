@@ -1,3 +1,5 @@
+import { invokeNativeDesktop } from '../../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
+
 export const AGENT_SIDEBAR_UNASSIGNED_ID = '__agents__';
 
 export interface AgentSidebarSection {
@@ -19,6 +21,13 @@ const schemaVersion = 1;
 
 function storageKey(accountScope: string): string {
   return `fabushi.agent-sidebar.sections.v1.${encodeURIComponent(accountScope)}`;
+}
+
+function parseSectionSnapshot(value: unknown): AgentSidebarSection[] | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const parsed = value as { schemaVersion?: unknown; sections?: unknown };
+  if (parsed.schemaVersion !== schemaVersion || !Array.isArray(parsed.sections)) return null;
+  return normalizeAgentSidebarSections(parsed.sections.filter(isSection));
 }
 
 function isSection(value: unknown): value is AgentSidebarSection {
@@ -60,11 +69,32 @@ export function readAgentSidebarSections(accountScope: string | null | undefined
   try {
     const raw = window.localStorage.getItem(storageKey(accountScope));
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as { schemaVersion?: unknown; sections?: unknown };
-    if (parsed?.schemaVersion !== schemaVersion || !Array.isArray(parsed.sections)) return [];
-    return normalizeAgentSidebarSections(parsed.sections.filter(isSection));
+    return parseSectionSnapshot(JSON.parse(raw)) ?? [];
   } catch {
     return [];
+  }
+}
+
+export async function readAgentSidebarSectionsDurable(
+  accountScope: string | null | undefined,
+): Promise<AgentSidebarSection[]> {
+  const fallback = readAgentSidebarSections(accountScope);
+  if (!accountScope) return fallback;
+  try {
+    const stored = await invokeNativeDesktop<unknown>('readClientPersistence', {
+      key: storageKey(accountScope),
+    });
+    const native = parseSectionSnapshot(stored);
+    if (native == null) return fallback;
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(storageKey(accountScope), JSON.stringify({
+        schemaVersion,
+        sections: native,
+      }));
+    }
+    return native;
+  } catch {
+    return fallback;
   }
 }
 
@@ -72,19 +102,29 @@ export function persistAgentSidebarSections(
   accountScope: string | null | undefined,
   sections: readonly AgentSidebarSection[],
 ): void {
-  if (!accountScope || typeof window === 'undefined') return;
+  if (!accountScope) return;
   const normalized = normalizeAgentSidebarSections(sections);
-  try {
-    if (normalized.length) {
-      window.localStorage.setItem(storageKey(accountScope), JSON.stringify({
-        schemaVersion,
-        sections: normalized,
-      }));
-    } else {
-      window.localStorage.removeItem(storageKey(accountScope));
+  const snapshot = {
+    schemaVersion,
+    sections: normalized,
+  };
+  if (typeof window !== 'undefined') {
+    try {
+      if (normalized.length) window.localStorage.setItem(storageKey(accountScope), JSON.stringify(snapshot));
+      else window.localStorage.removeItem(storageKey(accountScope));
+    } catch {
+      // Native persistence below remains the durable source when localStorage is denied.
     }
-  } catch {
-    // Sidebar organization remains usable in-memory when persistence is denied.
+  }
+  if (normalized.length) {
+    void invokeNativeDesktop<boolean>('writeClientPersistence', {
+      key: storageKey(accountScope),
+      value: snapshot,
+    }).catch(() => {});
+  } else {
+    void invokeNativeDesktop<boolean>('removeClientPersistence', {
+      key: storageKey(accountScope),
+    }).catch(() => {});
   }
 }
 
