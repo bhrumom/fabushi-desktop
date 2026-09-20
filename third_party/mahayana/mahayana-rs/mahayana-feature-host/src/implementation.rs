@@ -2023,11 +2023,12 @@ impl FeatureHostController {
                 RuntimeResponse::Accepted { operation_id } => operation_id.to_string(),
                 other => return Err(unexpected_response("teach.learn", other)),
             };
+            let runtime_agent_id = bot_runtime_agent_id(&bot).to_string();
             let mut state = self.state()?;
             state.background_operations.insert(
                 operation_id.clone(),
                 BackgroundOperationContext {
-                    agent_id: bot.id.clone(),
+                    agent_id: runtime_agent_id.clone(),
                     agent_name: bot.name.clone(),
                     source: "teach-recording".into(),
                     teach_artifact: Some(video_path.to_string()),
@@ -2035,7 +2036,7 @@ impl FeatureHostController {
             );
             state.events.push_back(HostEvent::AgentBackgroundStarted {
                 timestamp: timestamp(),
-                agent_id: bot.id,
+                agent_id: runtime_agent_id,
                 agent_name: bot.name,
                 operation_id: operation_id.clone(),
                 source: "teach-recording".into(),
@@ -2053,8 +2054,7 @@ impl FeatureHostController {
         markdown: &str,
     ) -> Result<WorkflowSummary, FeatureHostError> {
         let workflow_root = self
-            .workflow_root_path
-            .as_deref()
+            .active_account_root(self.workflow_root_path.as_deref())
             .ok_or_else(|| FeatureHostError::Contract("workflow storage is unavailable".into()))?;
         let body = clamp_block(markdown, 100_000);
         if body.is_empty() {
@@ -2176,16 +2176,21 @@ impl FeatureHostController {
             } => {
                 let state = self.state()?;
                 ensure_open(&state)?;
-                if !state.bots.contains_key(&agent_id) {
-                    return Err(FeatureHostError::Contract(format!(
-                        "unknown bot: {agent_id}"
-                    )));
-                }
+                let bot = find_bot_by_runtime_or_surface_id(&state, &agent_id)
+                    .cloned()
+                    .ok_or_else(|| {
+                        FeatureHostError::Contract(format!("unknown bot: {agent_id}"))
+                    })?;
+                let surface_id = bot.id.clone();
+                let agent_id = bot_runtime_agent_id(&bot).to_string();
                 let mut messages = state
                     .peer_messages
                     .iter()
                     .filter(|message| {
-                        message.from_agent_id == agent_id || message.target_id == agent_id
+                        message.from_agent_id == agent_id
+                            || message.from_agent_id == surface_id
+                            || message.target_id == agent_id
+                            || message.target_id == surface_id
                     })
                     .cloned()
                     .collect::<Vec<_>>();
@@ -2220,25 +2225,32 @@ impl FeatureHostController {
                         "agent message must not be empty".into(),
                     ));
                 }
-                if from_agent_id == target_id {
-                    return Err(FeatureHostError::Contract(
-                        "an agent cannot message itself".into(),
-                    ));
-                }
-
                 let mut kick_group: Option<String> = None;
                 let direct_target = {
                     let mut state = self.state()?;
                     ensure_open(&state)?;
-                    let sender = state.bots.get(&from_agent_id).cloned().ok_or_else(|| {
-                        FeatureHostError::Contract(format!("unknown sender bot: {from_agent_id}"))
-                    })?;
-                    if let Some(target) = state.bots.get(&target_id).cloned() {
+                    let sender = find_bot_by_runtime_or_surface_id(&state, &from_agent_id)
+                        .cloned()
+                        .ok_or_else(|| {
+                            FeatureHostError::Contract(format!(
+                                "unknown sender bot: {from_agent_id}"
+                            ))
+                        })?;
+                    if let Some(target) =
+                        find_bot_by_runtime_or_surface_id(&state, &target_id).cloned()
+                    {
+                        let sender_agent_id = bot_runtime_agent_id(&sender).to_string();
+                        let target_agent_id = bot_runtime_agent_id(&target).to_string();
+                        if sender_agent_id == target_agent_id {
+                            return Err(FeatureHostError::Contract(
+                                "an agent cannot message itself".into(),
+                            ));
+                        }
                         let peer = AgentPeerMessage {
                             id: next_id(&mut state, "agent-message"),
-                            from_agent_id: sender.id.clone(),
+                            from_agent_id: sender_agent_id,
                             from_agent_name: sender.name.clone(),
-                            target_id: target.id.clone(),
+                            target_id: target_agent_id,
                             target_name: target.name.clone(),
                             text: text.clone(),
                             priority,
@@ -2259,10 +2271,11 @@ impl FeatureHostController {
                         if !group_snapshot
                             .member_ids
                             .iter()
-                            .any(|id| id == &from_agent_id)
+                            .any(|id| id == &sender.id)
                         {
                             return Err(FeatureHostError::Contract(format!(
-                                "agent {from_agent_id} is not a member of group {target_id}"
+                                "agent {} is not a member of group {target_id}",
+                                bot_runtime_agent_id(&sender)
                             )));
                         }
                         let now = now_millis();
@@ -2289,7 +2302,7 @@ impl FeatureHostController {
                         let mut responders = group
                             .member_ids
                             .iter()
-                            .filter(|id| *id != &from_agent_id)
+                            .filter(|id| *id != &sender.id)
                             .cloned()
                             .collect::<Vec<_>>();
                         let lower = text.to_lowercase();
@@ -2386,7 +2399,9 @@ impl FeatureHostController {
                             let unique = ids.into_iter().collect::<BTreeSet<_>>();
                             unique
                                 .into_iter()
-                                .filter_map(|id| state.bots.get(&id).cloned())
+                                .filter_map(|id| {
+                                    find_bot_by_runtime_or_surface_id(&state, &id).cloned()
+                                })
                                 .collect::<Vec<_>>()
                         }
                         None => state.bots.values().cloned().collect::<Vec<_>>(),
@@ -2430,18 +2445,19 @@ impl FeatureHostController {
         client_message_id: String,
     ) -> Result<Option<String>, FeatureHostError> {
         if self.config.mode == HostMode::Test {
-            let operation_id = format!("background-test-{}-{}", target.id, now_millis());
+            let runtime_agent_id = bot_runtime_agent_id(target).to_string();
+            let operation_id = format!("background-test-{}-{}", runtime_agent_id, now_millis());
             let mut state = self.state()?;
             state.events.push_back(HostEvent::AgentBackgroundStarted {
                 timestamp: timestamp(),
-                agent_id: target.id.clone(),
+                agent_id: runtime_agent_id.clone(),
                 agent_name: target.name.clone(),
                 operation_id: operation_id.clone(),
                 source: source.to_string(),
             });
             state.events.push_back(HostEvent::AgentBackgroundMessage {
                 timestamp: timestamp(),
-                agent_id: target.id.clone(),
+                agent_id: runtime_agent_id.clone(),
                 agent_name: target.name.clone(),
                 operation_id: operation_id.clone(),
                 source: source.to_string(),
@@ -2449,7 +2465,7 @@ impl FeatureHostController {
             });
             state.events.push_back(HostEvent::AgentBackgroundFinished {
                 timestamp: timestamp(),
-                agent_id: target.id.clone(),
+                agent_id: runtime_agent_id,
                 agent_name: target.name.clone(),
                 operation_id: operation_id.clone(),
                 source: source.to_string(),
@@ -2473,11 +2489,12 @@ impl FeatureHostController {
                 RuntimeResponse::Accepted { operation_id } => operation_id.to_string(),
                 other => return Err(unexpected_response("agent.background", other)),
             };
+            let runtime_agent_id = bot_runtime_agent_id(target).to_string();
             let mut state = self.state()?;
             state.background_operations.insert(
                 operation_id.clone(),
                 BackgroundOperationContext {
-                    agent_id: target.id.clone(),
+                    agent_id: runtime_agent_id.clone(),
                     agent_name: target.name.clone(),
                     source: source.to_string(),
                     teach_artifact: None,
@@ -2485,7 +2502,7 @@ impl FeatureHostController {
             );
             state.events.push_back(HostEvent::AgentBackgroundStarted {
                 timestamp: timestamp(),
-                agent_id: target.id.clone(),
+                agent_id: runtime_agent_id,
                 agent_name: target.name.clone(),
                 operation_id: operation_id.clone(),
                 source: source.to_string(),
@@ -3412,16 +3429,16 @@ impl FeatureHostController {
                     HostMode::Production => {
                         #[cfg(feature = "production")]
                         {
-                            let conversation_id = self
-                                .state()?
-                                .bots
-                                .get(&agent_id)
-                                .and_then(|bot| bot.conversation_id.clone())
-                                .ok_or_else(|| {
-                                    FeatureHostError::Contract(format!(
-                                        "bot has no conversation: {agent_id}"
-                                    ))
-                                })?;
+                            let conversation_id = {
+                                let state = self.state()?;
+                                find_bot_by_runtime_or_surface_id(&state, &agent_id)
+                                    .and_then(|bot| bot.conversation_id.clone())
+                                    .ok_or_else(|| {
+                                        FeatureHostError::Contract(format!(
+                                            "bot has no conversation: {agent_id}"
+                                        ))
+                                    })?
+                            };
                             let (provider, model) = match self
                                 .runtime()?
                                 .execute(RuntimeCommand::Status)?
@@ -6002,16 +6019,17 @@ impl FeatureHostController {
             let account_memory_root = self.active_account_root(self.memory_root_path.as_deref());
             let account_workflow_root =
                 self.active_account_root(self.workflow_root_path.as_deref());
+            let member_agent_id = bot_runtime_agent_id(&member);
             let memory_prompt = account_memory_root
                 .as_deref()
-                .map(|root| render_memory_system_prompt(&root.join(&member.id).join("memory")))
+                .map(|root| render_memory_system_prompt(&root.join(member_agent_id).join("memory")))
                 .unwrap_or_default();
             let workflow_catalog = match (
                 account_workflow_root.as_deref(),
                 account_memory_root.as_deref(),
             ) {
                 (Some(workflow_root), Some(agent_root)) => {
-                    render_workflow_catalog(workflow_root, agent_root, &member.id)
+                    render_workflow_catalog(workflow_root, agent_root, member_agent_id)
                 }
                 _ => String::new(),
             };
@@ -10579,12 +10597,12 @@ fn validate_group_members(
                 "a group chat can only contain individual agents, not other group chats".into(),
             ));
         }
-        if !state.bots.contains_key(&id) {
+        let Some(bot) = find_bot_by_runtime_or_surface_id(state, &id) else {
             return Err(FeatureHostError::Contract(format!(
                 "unknown group member: {id}"
             )));
-        }
-        members.push(id);
+        };
+        members.push(bot.id.clone());
     }
     if members.is_empty() {
         return Err(FeatureHostError::Contract(
