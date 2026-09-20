@@ -1,7 +1,7 @@
 import { Bot, Megaphone, Network, Plus, Trash2, Users, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { GroupSummary } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
-import type { AgentSidebarItem } from './agent-model';
+import { agentMatchesGroupMember, indexAgentsByRuntimeOrSurfaceId, type AgentSidebarItem } from './agent-model';
 import styles from './agent-network.module.css';
 
 export interface AgentNetworkProps {
@@ -62,14 +62,10 @@ export default function AgentNetwork({
     () => agents.filter((agent) => !agent.isGroup && !agent.hidden),
     [agents],
   );
-  const agentByMemberId = useMemo(() => {
-    const index = new Map<string, AgentSidebarItem>();
-    for (const agent of directAgents) {
-      index.set(agent.agentId, agent);
-      index.set(agent.id, agent);
-    }
-    return index;
-  }, [directAgents]);
+  const agentByMemberId = useMemo(
+    () => indexAgentsByRuntimeOrSurfaceId(directAgents),
+    [directAgents],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -90,7 +86,7 @@ export default function AgentNetwork({
 
   const chooseGroup = (group: GroupSummary) => {
     const keys = directAgents
-      .filter((agent) => group.memberIds.includes(agent.agentId) || group.memberIds.includes(agent.id))
+      .filter((agent) => group.memberIds.some((memberId) => agentMatchesGroupMember(agent, memberId)))
       .map((agent) => agent.key);
     setSelected(new Set(keys));
     setSelectedGroupId(group.id);
