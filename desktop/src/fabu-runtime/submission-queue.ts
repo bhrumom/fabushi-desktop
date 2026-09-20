@@ -7,6 +7,7 @@ export interface AgentSubmission {
   messageId: string;
   peerKey: string;
   agentId: string;
+  conversationId?: string;
   prompt: string;
   richText?: string;
   attachments?: readonly AttachmentContext[];

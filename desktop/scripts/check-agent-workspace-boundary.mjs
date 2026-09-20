@@ -25,6 +25,8 @@ const forbidden = [
   ['renderer-owned Agent operation claiming', /\bclaimAgentOperation\s*\(/],
   ['renderer-owned Agent operation clearing', /\bclearAgentOperation\s*\(/],
   ['renderer-owned AssistantTurn event reducer', /\bappendAssistantTurnEvent\s*\(/],
+  ['renderer-owned Agent submission queue', /\bagentSubmissionQueue\b|submissionQueue\s*:/],
+  ['renderer-owned Agent transport dispatch', /\bdispatchAgentPromptNow\b/],
   ['Agent transcript copy-back through renderer messages', /setMessages\(toDisplayAgentMessages/],
   ['legacy Grok Agent Network mounted by primary shell', /import\s+GrokAgentNetwork\s+from\s+['"]\.\/grok-shell\/grok-agent-network['"]/],
   ['legacy Grok Command Palette mounted by primary shell', /import\s+GrokCommandPalette\s+from\s+['"]\.\/grok-shell\/grok-command-palette['"]/],
@@ -63,6 +65,9 @@ if (/new AgentRuntimeCoordinator\s*\(/.test(shell)) {
 }
 if (/createAgentSubmissionQueue\s*\(/.test(shell)) {
   violations.push('Messenger shell recreated Agent submission-queue ownership');
+}
+if (!/submit:\s*submitAgentWorkspace/.test(shell) || !/submitAgentWorkspace\s*\(\s*\{/.test(shell)) {
+  violations.push('primary Agent send path is not routed through Agent workspace runtime submit');
 }
 if (/readAgentWorkspaceDrafts\s*\(|persistAgentWorkspaceDrafts\s*\(/.test(shell)) {
   violations.push('Messenger shell recreated Agent draft persistence ownership');

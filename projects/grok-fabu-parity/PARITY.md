@@ -103,6 +103,12 @@ The Agent transcript source store now canonicalizes by `operationId`: only one `
 
 Failure recovery also no longer copies an Agent draft back into the renderer-global Messenger composer. The controller remains the sole owner through send, queue, failure and retry.
 
+## 2026-09-20 Runtime-owned submission/adoption cutover
+
+The primary renderer no longer creates Mahayana chat request ids, begins optimistic Agent turns, calls `AgentCoordinatorClient.send`, or adopts operation ids. `useAgentWorkspaceRuntime` now owns that complete lifecycle and exposes a narrow `submit(...)` boundary. The shell supplies stable Agent/conversation identity plus the Agent-owned draft; queueing, request creation, optimistic transcript projection, transport send, operation adoption, rollback and failed-draft restoration stay inside the Agent runtime boundary.
+
+`check-agent-workspace-boundary.mjs` now rejects any reintroduction of `agentSubmissionQueue`, raw submission-queue wiring, or `dispatchAgentPromptNow` in the primary shell.
+
 ## Refactor rule
 
 Do not repeat the abandoned wholesale-source replacement. Keep Mahayana as the authoritative Rust Agent/runtime layer, but port the reference's domain boundaries and visible interaction model:

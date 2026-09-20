@@ -6,6 +6,7 @@ import {
   type AgentSubmissionQueue,
 } from '../fabu-runtime/submission-queue';
 import { readAgentWorkspaceDrafts, persistAgentWorkspaceDrafts } from './agent-draft-store';
+import { AgentCoordinatorClient } from './coordinator-client';
 import { AgentRuntimeCoordinator } from './agent-runtime-coordinator';
 import {
   AgentTranscriptStore,
@@ -15,7 +16,7 @@ import { AgentWorkspaceController } from './agent-workspace-controller';
 
 export interface UseAgentWorkspaceRuntimeOptions {
   readonly hostReady: boolean;
-  send(input: AgentSubmission): Promise<void>;
+  readonly coordinatorClient: AgentCoordinatorClient;
   onError?(peerKey: string, message: string): void;
   onComputerStatus?(status: ComputerStatus): void;
   onOperationStarted?(peerKey: string, operationId: string): void;
@@ -27,13 +28,27 @@ export interface UseAgentWorkspaceRuntimeOptions {
   ): void;
 }
 
+export type AgentWorkspaceSubmissionInput = Omit<
+  AgentSubmission,
+  'nonce' | 'messageId' | 'createdAtMs'
+> & {
+  readonly messageId?: string;
+};
+
 export interface AgentWorkspaceRuntimeFacade {
   readonly controller: AgentWorkspaceController;
   readonly transcriptStore: AgentTranscriptStore;
   readonly coordinator: AgentRuntimeCoordinator;
-  readonly submissionQueue: AgentSubmissionQueue;
   readonly revision: number;
+  submit(input: AgentWorkspaceSubmissionInput): ReturnType<AgentSubmissionQueue['submit']>;
   notify(): void;
+}
+
+let runtimeSubmissionSequence = 0;
+
+function nextRuntimeSubmissionId(prefix: string): string {
+  runtimeSubmissionSequence += 1;
+  return `${prefix}:${Date.now().toString(36)}:${runtimeSubmissionSequence.toString(36)}`;
 }
 
 function errorMessage(cause: unknown): string {
@@ -69,11 +84,56 @@ export function useAgentWorkspaceRuntime(
   if (!transcriptStoreRef.current) transcriptStoreRef.current = new AgentTranscriptStore();
   const transcriptStore = transcriptStoreRef.current;
 
+  // Declared before the queue because queue sends execute later, after the
+  // coordinator has been created below. This avoids routing operation
+  // ownership back through the React renderer.
+  const coordinatorRef = useRef<AgentRuntimeCoordinator | null>(null);
   const submissionQueueRef = useRef<AgentSubmissionQueue | null>(null);
   if (!submissionQueueRef.current) {
     submissionQueueRef.current = createAgentSubmissionQueue({
       isBlocked: (input) => !optionsRef.current.hostReady || controller.isBusy(input.peerKey),
-      send: (input) => optionsRef.current.send(input),
+      send: async (input) => {
+        const coordinator = coordinatorRef.current;
+        if (!coordinator) throw new Error('Agent runtime coordinator is unavailable.');
+        const requestId = nextRuntimeSubmissionId('chat-send');
+        coordinator.beginLocalTurn({
+          peerKey: input.peerKey,
+          requestId,
+          messageId: input.messageId,
+          text: input.prompt,
+          richText: input.richText,
+          createdAtMs: input.createdAtMs,
+          attachments: input.attachments,
+        });
+        try {
+          const accepted = await optionsRef.current.coordinatorClient.send({
+            requestId,
+            text: input.prompt,
+            conversationId: input.conversationId,
+            agentId: input.agentId,
+            attachments: input.attachments,
+            replyTo: input.replyTo,
+            references: input.references,
+          });
+          if (!accepted) {
+            coordinator.cancelLocalTurn(input.peerKey, requestId, input.messageId);
+            throw new Error('Agent prompt was not accepted by Mahayana.');
+          }
+          const operationId = accepted.operationId ?? requestId;
+          if (controller.isOperationFinished(operationId)) {
+            controller.cancelRequest(requestId);
+            notify();
+            return;
+          }
+          coordinator.adoptOperation(requestId, operationId, input.peerKey);
+          coordinator.claimOperation(operationId, input.peerKey);
+        } catch (cause) {
+          if (controller.peerForRequest(requestId) || controller.peerForRuntimeId(requestId)) {
+            coordinator.cancelLocalTurn(input.peerKey, requestId, input.messageId);
+          }
+          throw cause;
+        }
+      },
       onPhase: (submission) => {
         if (submission.phase === 'queued') {
           transcriptStore.appendUserMessage(submission.peerKey, {
@@ -107,7 +167,6 @@ export function useAgentWorkspaceRuntime(
   }
   const submissionQueue = submissionQueueRef.current;
 
-  const coordinatorRef = useRef<AgentRuntimeCoordinator | null>(null);
   if (!coordinatorRef.current) {
     coordinatorRef.current = new AgentRuntimeCoordinator(
       controller,
@@ -136,6 +195,15 @@ export function useAgentWorkspaceRuntime(
   }
   const coordinator = coordinatorRef.current;
 
+  const submit = useCallback((input: AgentWorkspaceSubmissionInput) => {
+    return submissionQueue.submit({
+      ...input,
+      nonce: nextRuntimeSubmissionId('agent-submission'),
+      messageId: input.messageId ?? nextRuntimeSubmissionId('agent-message'),
+      createdAtMs: Date.now(),
+    });
+  }, [submissionQueue]);
+
   useEffect(() => {
     persistAgentWorkspaceDrafts(
       controller.draftSnapshot(),
@@ -159,8 +227,8 @@ export function useAgentWorkspaceRuntime(
     controller,
     transcriptStore,
     coordinator,
-    submissionQueue,
     revision,
+    submit,
     notify,
   };
 }

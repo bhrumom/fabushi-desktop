@@ -1126,24 +1126,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     controller: agentWorkspaceController,
     transcriptStore: agentTranscriptStore,
     coordinator: agentRuntimeCoordinator,
-    submissionQueue: agentSubmissionQueue,
+    submit: submitAgentWorkspace,
     revision: agentWorkspaceRevision,
     notify: notifyAgentWorkspaceState,
   } = useAgentWorkspaceRuntime({
     hostReady,
-    send: async (input) => {
-      const peer = peersRef.current.find((candidate) => candidate.key === input.peerKey);
-      if (!peer || !isAgentPeer(peer)) throw new Error('Agent peer is no longer available.');
-      await dispatchAgentPromptNow(
-        peer,
-        input.prompt,
-        input.messageId,
-        input.attachments,
-        input.replyTo,
-        input.references,
-        input.richText,
-      );
-    },
+    coordinatorClient: agentCoordinatorClient,
     onError: (peerKey, message) => {
       if (peerKey === activePeerKeyRef.current) setError(message);
     },
@@ -2852,59 +2840,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     updateComposer(message.text);
   }
 
-  async function dispatchAgentPromptNow(
-    peer: PeerItem,
-    text: string,
-    existingMessageId?: string,
-    attachments: readonly AttachmentContext[] = [],
-    replyContext?: AgentReplyContext,
-    references: readonly AgentPromptReference[] = [],
-    richText?: string,
-  ): Promise<void> {
-    const registry = agentWorkspaceController;
-    if (registry.isBusy(peer.key)) {
-      throw new Error('This Agent is already busy.');
-    }
-    const requestId = nextRequestId('chat-send');
-    const optimisticId = existingMessageId ?? 'optimistic:' + requestId;
-    agentRuntimeCoordinator.beginLocalTurn({
-      peerKey: peer.key,
-      requestId,
-      messageId: optimisticId,
-      text,
-      richText,
-      createdAtMs: Date.now(),
-      attachments,
-    });
-    try {
-      const accepted = await agentCoordinatorClient.send({
-        requestId,
-        text,
-        conversationId: peer.conversationId,
-        agentId: peer.agentId ?? peer.actorId,
-        attachments,
-        replyTo: replyContext,
-        references,
-      });
-      if (!accepted) {
-        agentRuntimeCoordinator.cancelLocalTurn(peer.key, requestId, optimisticId);
-        return;
-      }
-      const operationId = accepted.operationId ?? requestId;
-      if (registry.isOperationFinished(operationId)) {
-        registry.cancelRequest(requestId);
-        notifyAgentWorkspaceState();
-        return;
-      }
-      agentRuntimeCoordinator.adoptOperation(requestId, operationId, peer.key);
-      agentRuntimeCoordinator.claimOperation(operationId, peer.key);
-    } catch (cause) {
-      agentRuntimeCoordinator.cancelLocalTurn(peer.key, requestId, optimisticId);
-      setError(cause instanceof Error ? cause.message : String(cause));
-      throw cause;
-    }
-  }
-
   function enqueueAgentPrompt(
     peer: PeerItem,
     text: string,
@@ -2913,20 +2848,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     replyContext?: AgentReplyContext,
     references: readonly AgentPromptReference[] = [],
     richText?: string,
-  ) {
-    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
-    const messageId = existingMessageId ?? nextRequestId('queued-chat-send');
-    agentSubmissionQueue.submit({
-      nonce: nextRequestId('agent-submission'),
-      messageId,
+  ) {    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    submitAgentWorkspace({
+      ...(existingMessageId ? { messageId: existingMessageId } : {}),
       peerKey: peer.key,
       agentId,
+      ...(peer.conversationId ? { conversationId: peer.conversationId } : {}),
       prompt: text,
       ...(richText ? { richText } : {}),
       ...(attachments.length ? { attachments: [...attachments] } : {}),
       ...(replyContext ? { replyTo: replyContext } : {}),
       ...(references.length ? { references: [...references] } : {}),
-      createdAtMs: Date.now(),
     });
   }
 
