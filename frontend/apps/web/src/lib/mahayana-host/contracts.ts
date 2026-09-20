@@ -199,6 +199,8 @@ export interface SkillTeamSummary {
 
 export interface BotSummary {
   id: string;
+  /** Explicit runtime Agent identity. Bot identity and Agent identity are separate domains. */
+  agentId?: string;
   name: string;
   description: string;
   title: string;

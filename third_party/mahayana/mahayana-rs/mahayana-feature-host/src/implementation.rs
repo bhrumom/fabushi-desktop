@@ -1447,6 +1447,7 @@ impl FeatureHostController {
                 let id = next_id(&mut state, "agent");
                 let bot = BotSummary {
                     id: id.clone(),
+                    agent_id: Some(id.clone()),
                     name,
                     description: clamp_block(&description, 2000),
                     title: title.trim().to_string(),
@@ -1524,6 +1525,7 @@ impl FeatureHostController {
                 let clone_name = clone_agent_display_name(&source.name);
                 let bot = BotSummary {
                     id: new_id.clone(),
+                    agent_id: Some(new_id.clone()),
                     name: clone_name,
                     description: source.description,
                     title: source.title,
@@ -6949,14 +6951,18 @@ impl FeatureHostController {
     ) -> Result<CommandAccepted, FeatureHostError> {
         self.require_authenticated_account()?;
         let text = required(text, "chat text")?;
-        let bot_conversation_id = if let Some(agent_id) = agent_id.as_deref() {
-            self.state()?
-                .bots
-                .get(agent_id)
-                .and_then(|bot| bot.conversation_id.clone())
+        let bot_binding = if let Some(bot_id) = agent_id.as_deref() {
+            self.state()?.bots.get(bot_id).cloned()
         } else {
             None
         };
+        let bot_conversation_id = bot_binding
+            .as_ref()
+            .and_then(|bot| bot.conversation_id.clone());
+        let runtime_agent_id = bot_binding
+            .as_ref()
+            .and_then(|bot| bot.agent_id.clone())
+            .or_else(|| agent_id.clone());
         if let Some(mini_app_id) = agent_id
             .as_deref()
             .filter(|id| *id != "mahayana-assistant" && bot_conversation_id.is_none())
@@ -7025,7 +7031,7 @@ impl FeatureHostController {
 {runtime_text}"
             );
         }
-        let memory_agent_id = agent_id.as_deref().unwrap_or("mahayana-assistant");
+        let memory_agent_id = runtime_agent_id.as_deref().unwrap_or("mahayana-assistant");
         if is_safe_memory_agent_id(memory_agent_id) {
             if let Some(root) = self.active_account_root(self.memory_root_path.as_deref()) {
                 let memory_dir = root.join(memory_agent_id).join("memory");
@@ -7065,7 +7071,7 @@ impl FeatureHostController {
         state.operations.insert(operation_id.clone());
         state.operation_agents.insert(
             operation_id.clone(),
-            agent_id
+            runtime_agent_id
                 .clone()
                 .unwrap_or_else(|| "mahayana-assistant".into()),
         );
@@ -8359,6 +8365,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
     [
         BotSummary {
             id: "mahayana-assistant".into(),
+            agent_id: Some("mahayana-assistant".into()),
             name: "大乘助手".into(),
             description: "General-purpose Mahayana assistant.".into(),
             title: String::new(),
@@ -8373,6 +8380,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
         },
         BotSummary {
             id: "research-bot".into(),
+            agent_id: Some("research".into()),
             name: "Research Bot".into(),
             description: "Source verification and research synthesis.".into(),
             title: String::new(),
@@ -8387,6 +8395,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
         },
         BotSummary {
             id: "incident-bot".into(),
+            agent_id: Some("incident".into()),
             name: "Incident Bot".into(),
             description: "Incident triage and operational coordination.".into(),
             title: String::new(),
@@ -11721,6 +11730,7 @@ mod tests {
                 "research-bot".into(),
                 BotSummary {
                     id: "research-bot".into(),
+                    agent_id: Some("research".into()),
                     name: "Research Bot".into(),
                     description: String::new(),
                     title: String::new(),
@@ -11738,6 +11748,7 @@ mod tests {
                 "incident-bot".into(),
                 BotSummary {
                     id: "incident-bot".into(),
+                    agent_id: Some("incident".into()),
                     name: "Incident Bot".into(),
                     description: String::new(),
                     title: String::new(),

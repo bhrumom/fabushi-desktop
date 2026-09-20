@@ -168,7 +168,7 @@ type MessengerSection =
   | 'miniapps'
   | 'payments'
   | 'settings';
-type PeerKind = 'conversation' | 'bot' | 'group' | 'channel' | 'saved';
+type PeerKind = 'conversation' | 'contact' | 'bot' | 'group' | 'channel' | 'saved';
 type PeerSource = 'legacy' | 'selfhosted';
 
 type PeerItem = {
@@ -177,6 +177,8 @@ type PeerItem = {
   source: PeerSource;
   conversationId?: string;
   actorId?: string;
+  /** Explicit runtime Agent identity. Never infer Agent-ness from a title/id string. */
+  agentId?: string;
   groupId?: string;
   kind: PeerKind;
   title: string;
@@ -498,8 +500,9 @@ function isActionableDesktopUpdateState(value: UpdateState | null): value is Act
 
 
 function isAgentPeer(peer: PeerItem): boolean {
-  const identity = `${peer.kind} ${peer.id} ${peer.actorId ?? ''} ${peer.title}`.toLocaleLowerCase();
-  return peer.kind === 'bot' || /(agent|assistant|mahayana|codex|grok|大乘|智能体)/u.test(identity);
+  // Grok-style identity boundary: an Agent/Bot is a declared domain object,
+  // never a contact whose title/id happens to contain "agent" or "assistant".
+  return peer.kind === 'bot';
 }
 
 function localComputerLabel(): string {
@@ -547,16 +550,24 @@ function formatTime(timestamp: number): string {
 }
 
 function legacyKind(conversation: ConversationSummary): PeerKind {
-  const key = `${conversation.id} ${conversation.kind}`.toLowerCase();
-  if (key.includes('saved')) return 'saved';
-  if (key.includes('channel')) return 'channel';
+  const id = conversation.id.toLowerCase();
+  const kind = conversation.kind.toLowerCase();
+  if (id.startsWith('mahayana:contact:') || id.startsWith('telegram:user:') || kind.includes('direct') || kind.includes('contact')) return 'contact';
+  if (id.startsWith('mahayana-ai:') || id.startsWith('codex:') || kind.includes('agent') || kind.includes('bot') || kind.includes('assistant')) return 'bot';
+  if (kind.includes('saved')) return 'saved';
+  if (kind.includes('channel')) return 'channel';
   return 'conversation';
 }
 
-function selfKind(conversation: MessagingConversation): PeerKind {
+function selfKind(conversation: MessagingConversation, counterparty?: MessagingActor): PeerKind {
   if (conversation.kind === 'channel') return 'channel';
   if (conversation.kind === 'group') return 'group';
   if (conversation.kind === 'savedMessages') return 'saved';
+  if (conversation.kind === 'direct' || conversation.kind === 'secret') {
+    return counterparty && ['assistant', 'bot', 'service'].includes(counterparty.kind)
+      ? 'bot'
+      : 'contact';
+  }
   return 'conversation';
 }
 
@@ -579,7 +590,7 @@ function sectionTitle(section: MessengerSection): string {
 
 function matchesSection(peer: PeerItem, section: MessengerSection): boolean {
   if (section === 'chats') return !peer.archived;
-  if (section === 'contacts') return Boolean(peer.miniAppId) || (peer.source === 'legacy' && peer.kind === 'conversation' && peer.id.startsWith('mahayana:contact:'));
+  if (section === 'contacts') return peer.kind === 'contact';
   if (section === 'bots') return peer.kind === 'bot';
   if (section === 'groups') return peer.kind === 'group';
   if (section === 'channels') return peer.kind === 'channel';
@@ -2026,6 +2037,22 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setBots((current) => event.action === 'deleted'
           ? current.filter((bot) => bot.id !== event.bot.id)
           : upsertById(current, event.bot));
+        // Local Host profile remains usable offline, while the account service
+        // mirrors the complete Bot profile and its explicit Agent binding.
+        // Deleting a Bot membership intentionally leaves the Agent store intact,
+        // matching the Grok-style separation between surface and Agent state.
+        if (event.action === 'deleted') {
+          void invokeNativeDesktop('removeBotFromAccount', { botId: event.bot.id }).catch(() => {});
+        } else {
+          void invokeNativeDesktop('addBotToAccount', {
+            botId: event.bot.id,
+            bot: {
+              ...event.bot,
+              agentId: event.bot.agentId ?? event.bot.id,
+              displayName: event.bot.name,
+            },
+          }).catch(() => {});
+        }
         break;
       case 'group.listed':
         initialLegacyHydrationMaskRef.current |= 0b100;
@@ -2171,19 +2198,30 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     .sort((left, right) => right.createdAtMs - left.createdAtMs), [selfStories, selfHosted]);
 
   const peers = useMemo<PeerItem[]>(() => {
-    const legacyConversations = conversations.map((conversation): PeerItem => ({
+    const botByConversationId = new Map(
+      bots
+        .filter((bot) => Boolean(bot.conversationId))
+        .map((bot) => [bot.conversationId!, bot] as const),
+    );
+    const legacyConversations = conversations.map((conversation): PeerItem => {
+      const bot = botByConversationId.get(conversation.id);
+      const kind = bot ? 'bot' : legacyKind(conversation);
+      return {
       key: `legacy:conversation:${conversation.id}`,
       id: conversation.id,
       source: 'legacy',
       conversationId: conversation.id,
-      kind: legacyKind(conversation),
+      actorId: bot?.id,
+      agentId: bot?.agentId ?? bot?.id,
+      kind,
       title: conversation.title,
-      subtitle: conversation.kind,
+      subtitle: kind === 'bot' ? bot?.description || bot?.title || 'AI Bot' : conversation.kind,
       unread: conversation.unreadCount,
       pinned: conversation.pinned || pinnedPeerKeys.has(`legacy:conversation:${conversation.id}`),
       archived: archivedPeerKeys.has(`legacy:conversation:${conversation.id}`),
       updatedAtMs: conversation.updatedAtMs,
-    }));
+      };
+    });
     const miniAppBotProjections = installedMiniAppBotProjections(miniAppIdentityCatalog, installedMiniApps);
     const miniAppByBotId = new Map(miniAppBotProjections.map((projection) => [projection.id, projection]));
     const conversationIds = new Set(conversations.map((conversation) => conversation.id));
@@ -2194,6 +2232,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         id: bot.id,
         source: 'legacy',
         actorId: bot.id,
+        agentId: bot.agentId ?? bot.id,
         conversationId: bot.conversationId,
         kind: 'bot',
         title: bot.name,
@@ -2227,6 +2266,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           title: entry.bot.displayName ?? entry.bot.username ?? entry.bot.id,
           subtitle: entry.bot.username ? `@${entry.bot.username}` : entry.bot.description ?? 'Bot',
           actorId: entry.bot.id,
+          agentId: entry.bot.agentId ?? entry.bot.id,
           conversationId: entry.bot.conversationId,
           unread: 0,
           pinned: pinnedPeerKeys.has(miniAppSource ? `miniapp:bot:${miniAppSource.sourceId}` : `account:bot:${entry.bot.id}`),
@@ -2246,6 +2286,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         id: projection.id,
         source: 'legacy',
         actorId: projection.id,
+        agentId: projection.id,
         conversationId: projection.conversationId,
         kind: 'bot',
         title: projection.displayName,
@@ -2272,28 +2313,42 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       archived: archivedPeerKeys.has(`legacy:group:${group.id}`),
       updatedAtMs: group.updatedAtMs,
     }));
-    const nativePeers = selfConversations.map((conversation): PeerItem => ({
-      key: `selfhosted:${conversation.id}`,
-      id: conversation.id,
-      source: 'selfhosted',
-      conversationId: conversation.id,
-      actorId: conversation.participants.length === 2
+    const actorById = new Map(selfActors.map((actor) => [actor.id, actor] as const));
+    const nativePeers = selfConversations.map((conversation): PeerItem => {
+      const actorId = conversation.participants.length === 2
         ? conversation.participants.find((participant) => participant.actorId !== selfHosted.actorId)?.actorId
-        : undefined,
-      kind: selfKind(conversation),
-      title: conversation.title,
-      subtitle: conversation.description || ({ channel: '频道', group: '群组', saved: '收藏消息', conversation: '私聊', bot: 'Bot' } as const)[selfKind(conversation)],
-      unread: conversation.unreadCount,
-      pinned: conversation.pinned,
-      archived: conversation.archived,
-      updatedAtMs: conversation.updatedAtMs,
-      avatar: conversation.avatarUrl,
-    }));
+        : undefined;
+      const actor = actorId ? actorById.get(actorId) : undefined;
+      const kind = selfKind(conversation, actor);
+      return {
+        key: `selfhosted:${conversation.id}`,
+        id: conversation.id,
+        source: 'selfhosted',
+        conversationId: conversation.id,
+        actorId,
+        agentId: kind === 'bot' ? actorId : undefined,
+        kind,
+        title: conversation.title,
+        subtitle: conversation.description || ({
+          channel: '频道',
+          group: '群组',
+          saved: '收藏消息',
+          conversation: '会话',
+          contact: '联系人',
+          bot: 'AI Bot',
+        } as const)[kind],
+        unread: conversation.unreadCount,
+        pinned: conversation.pinned,
+        archived: conversation.archived,
+        updatedAtMs: conversation.updatedAtMs,
+        avatar: conversation.avatarUrl,
+      };
+    });
     return [...legacyConversations, ...botPeers, ...accountBotPeers, ...miniAppBotPeers, ...legacyGroups, ...nativePeers].sort((left, right) => {
       if (left.pinned !== right.pinned) return left.pinned ? -1 : 1;
       return right.updatedAtMs - left.updatedAtMs;
     });
-  }, [conversations, bots, accountBots, groups, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps]);
+  }, [conversations, bots, accountBots, groups, selfActors, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps, selfHosted.actorId]);
 
   peersRef.current = peers;
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
@@ -2451,7 +2506,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         requestId,
         text,
         conversationId: peer.conversationId,
-        agentId: peer.actorId,
+        agentId: peer.agentId ?? peer.actorId,
       });
       if (!accepted) {
         updateAgentThread(requestId, (current) => current.filter((message) => message.id !== optimisticId));
@@ -2463,7 +2518,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       adoptAgentRequestOperation(agentRequestIdRef.current, operationId, peer.key);
       agentRequestIdRef.current = null;
       updateAgentThread(operationId, (current) => current.map((message) => message.id === optimisticId
-        ? { ...message, operationId, optimistic: true, queued: false }
+        ? { ...message, operationId, optimistic: false, queued: false }
         : message));
       claimAgentOperation(operationId);
     } catch (cause) {
@@ -2699,7 +2754,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         if (accepted.operationId) {
           setMessages((current) => current.map((message) => message.id === optimisticId
-            ? { ...message, operationId: accepted.operationId }
+            ? { ...message, operationId: accepted.operationId, optimistic: false, queued: false }
             : message));
         }
         if (agentRequest && accepted.operationId && claimAgentOperation(accepted.operationId)) {
@@ -3944,7 +3999,7 @@ async function saveInvoiceDialog() {
       ) : null}
 
       {contactGroups.managerOpen ? <SidebarContactGroupManager
-        peers={peers.filter((peer) => !peer.archived && (peer.kind === 'conversation' || peer.kind === 'bot')).map((peer) => ({ key: peer.key, title: peer.title, subtitle: peer.subtitle, pinned: peer.pinned }))}
+        peers={peers.filter((peer) => !peer.archived && peer.kind === 'contact').map((peer) => ({ key: peer.key, title: peer.title, subtitle: peer.subtitle, pinned: peer.pinned }))}
         groups={contactGroups.groups}
         onCreate={contactGroups.create}
         onUpdate={contactGroups.update}
