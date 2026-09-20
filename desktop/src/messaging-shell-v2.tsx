@@ -1006,6 +1006,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const agentOperationIdRef = useRef<string | null>(null);
   const agentRequestPendingRef = useRef(false);
   const agentRequestPeerRef = useRef<string | null>(null);
+  const agentRequestIdRef = useRef<string | null>(null);
   const finishedAgentOperationsRef = useRef(new Set<string>());
   const agentPeerKeyRef = useRef<Record<string, string>>({});
   const messageAreaRef = useRef<HTMLDivElement | null>(null);
@@ -1302,6 +1303,33 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       .then(async () => {
         if (closed) return;
         setHostReady(true);
+        // First-frame identity hydration must not wait behind self-hosted sync or
+        // account cursor reconciliation. These reads are lightweight and let
+        // installed Mini App Bots (for example 全球法布施) appear immediately.
+        void readAccountBots()
+          .then((entries) => { if (!closed) setAccountBots(entries); })
+          .catch(() => {});
+        void readAccountMiniApps()
+          .then((account) => {
+            if (closed) return;
+            const accountApps = accountMiniAppsAsMarketplaceSummaries(account);
+            if (!accountApps.length) return;
+            setMiniAppIdentityCatalog((current) => {
+              const merged = new Map(current.map((app) => [app.pluginId, app]));
+              for (const accountApp of accountApps) {
+                const existing = merged.get(accountApp.pluginId);
+                merged.set(accountApp.pluginId, {
+                  ...existing,
+                  ...accountApp,
+                  bot: accountApp.bot ?? existing?.bot,
+                  commands: accountApp.commands?.length ? accountApp.commands : existing?.commands,
+                  surfaces: accountApp.surfaces?.length ? accountApp.surfaces : existing?.surfaces,
+                });
+              }
+              return [...merged.values()];
+            });
+          })
+          .catch(() => {});
         void execute({ type: 'settings.get', requestId: nextRequestId('settings-get') });
         refreshLegacy();
         if (startupLegacyConversation) {
@@ -1533,6 +1561,49 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setMessages(update);
   }
 
+  function rekeyAssistantTurn(turn: AssistantTurn, operationId: string): AssistantTurn {
+    if (turn.operationId === operationId) return turn;
+    const previousPrefix = `${turn.operationId}:`;
+    const nextPrefix = `${operationId}:`;
+    return {
+      ...turn,
+      id: `assistant-turn:${operationId}`,
+      operationId,
+      parts: turn.parts.map((part) => ({
+        ...part,
+        id: part.id.startsWith(previousPrefix)
+          ? `${nextPrefix}${part.id.slice(previousPrefix.length)}`
+          : part.id,
+      })),
+    };
+  }
+
+  function adoptAgentRequestOperation(requestId: string | null, operationId: string, peerKey?: string | null) {
+    if (!requestId || requestId === operationId) return;
+    rememberAgentPeer(operationId, peerKey ?? agentPeerKeyRef.current[requestId] ?? agentRequestPeerRef.current);
+    updateAgentThread(requestId, (current) => {
+      const alreadyAuthoritative = current.some((message) =>
+        message.kind === 'assistant-turn' && message.operationId === operationId,
+      );
+      return current.flatMap((message) => {
+        if (message.operationId !== requestId) return [message];
+        if (message.kind === 'assistant-turn' && message.assistantTurn) {
+          if (alreadyAuthoritative) return [];
+          const assistantTurn = rekeyAssistantTurn(message.assistantTurn, operationId);
+          return [{
+            ...message,
+            id: `${operationId}:assistant-turn`,
+            operationId,
+            text: assistantTurnPlainText(assistantTurn),
+            assistantTurn,
+          }];
+        }
+        return [{ ...message, operationId }];
+      });
+    });
+    delete agentPeerKeyRef.current[requestId];
+  }
+
   function rememberActiveBotThread() {
     const peerKey = activePeerKeyRef.current;
     const peer = peersRef.current.find((candidate) => candidate.key === peerKey);
@@ -1547,7 +1618,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       return true;
     }
     if (!agentRequestPendingRef.current) return false;
+    const requestId = agentRequestIdRef.current;
     rememberAgentPeer(operationId, agentPeerKeyRef.current[operationId] ?? agentRequestPeerRef.current);
+    adoptAgentRequestOperation(requestId, operationId, agentRequestPeerRef.current);
+    agentRequestIdRef.current = null;
     agentRequestPendingRef.current = false;
     agentOperationIdRef.current = operationId;
     setAgentOperationId(operationId);
@@ -1563,6 +1637,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     agentOperationIdRef.current = null;
     setAgentOperationId(null);
     agentRequestPendingRef.current = false;
+    agentRequestIdRef.current = null;
     updateAgentThread(operationId, (current) => current
       .filter((message) => !(message.kind === 'thinking' && message.operationId === operationId))
       .map((message) => {
@@ -1904,10 +1979,18 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setHostSettings(event.settings);
         break;
       case 'chat.message':
-        if (event.operationId && finishedAgentOperationsRef.current.has(event.operationId)) break;
-        if (event.role === 'assistant' && event.operationId && claimAgentOperation(event.operationId)) {
-          appendAssistantTurnEvent(event);
-          break;
+        if (event.role === 'assistant' && event.operationId) {
+          // A terminal Host signal can race ahead of the canonical final body.
+          // Accept that late final message for an operation we already own and
+          // reconcile it into the existing assistant turn instead of dropping it
+          // or painting a second bubble.
+          const ownedOperation = claimAgentOperation(event.operationId)
+            || Boolean(agentPeerKeyRef.current[event.operationId]);
+          if (ownedOperation) {
+            appendAssistantTurnEvent(event);
+            break;
+          }
+          if (finishedAgentOperationsRef.current.has(event.operationId)) break;
         }
         updateAgentThread(event.operationId, (current) => {
           if (event.role === 'user') {
@@ -2262,9 +2345,20 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         ? { ...message, ...nextMessage }
         : message);
     });
+    // Paint the assistant turn locally in the same renderer tick as the user
+    // bubble. The Host operation id is adopted later without creating a second
+    // "thinking" row, so slow process wake-up never leaves the chat visually idle.
+    appendAssistantTurnEvent({
+      type: 'operation.started',
+      timestamp: new Date().toISOString(),
+      operationId: requestId,
+      label: '正在思考',
+      interruptible: true,
+    });
     setPendingSend(true);
     agentRequestPendingRef.current = true;
     agentRequestPeerRef.current = peer.key;
+    agentRequestIdRef.current = requestId;
     try {
       const accepted = await execute({
         type: 'chat.send',
@@ -2280,18 +2374,23 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       const operationId = accepted.operationId ?? requestId;
       rememberAgentPeer(operationId, peer.key);
       if (finishedAgentOperationsRef.current.has(operationId)) return;
+      adoptAgentRequestOperation(agentRequestIdRef.current ?? requestId, operationId, peer.key);
       updateAgentThread(operationId, (current) => current.map((message) => message.id === optimisticId
         ? { ...message, operationId, optimistic: true, queued: false }
         : message));
-      if (claimAgentOperation(operationId)) {
-        appendAgentThinking(operationId, '正在思考');
-      }
+      claimAgentOperation(operationId);
     } catch (cause) {
-      updateAgentThread(requestId, (current) => current.filter((message) => message.id !== optimisticId));
+      updateAgentThread(requestId, (current) => current.filter((message) =>
+        message.id !== optimisticId && message.operationId !== requestId,
+      ));
+      agentRequestIdRef.current = null;
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       agentRequestPendingRef.current = false;
-      if (!agentOperationIdRef.current) setPendingSend(false);
+      if (!agentOperationIdRef.current) {
+        agentRequestIdRef.current = null;
+        setPendingSend(false);
+      }
     }
   }
 
