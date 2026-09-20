@@ -1086,6 +1086,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [wideInfoLayout, setWideInfoLayout] = useState(() => typeof window === 'undefined' ? true : window.innerWidth > 1280);
   const [infoTab, setInfoTab] = useState<InfoTab>('media');
   const [computerProfileOpen, setComputerProfileOpen] = useState(false);
+  const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
   const [remoteComputerState, setRemoteComputerState] = useState<RemoteComputerDesktopState | null>(null);
   const [computerCapabilityStatus, setComputerCapabilityStatus] = useState<ComputerStatus | null>(null);
   // Compatibility Messenger/Mini App sends retain transport pending state.
@@ -2660,6 +2661,41 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const pinnedGrokAgentKeys = grokAgentItems.filter((item) => item.pinned).map((item) => item.key);
   const pinnedGrokAgentSignature = pinnedGrokAgentKeys.join('\u001f');
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
+  const activeAgentBot: BotSummary | null = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
+    ? bots.find((bot) => bot.id === (activePeer.actorId ?? activePeer.id))
+      ?? (() => {
+        const membership = accountBots.find((entry) => entry.bot.id === (activePeer.actorId ?? activePeer.id));
+        if (!membership) return null;
+        const bot = membership.bot;
+        return {
+          id: bot.id,
+          agentId: bot.agentId ?? activePeer.agentId ?? bot.id,
+          name: bot.displayName ?? bot.username ?? activePeer.title,
+          description: bot.description ?? '',
+          title: bot.title ?? '',
+          hidden: bot.hidden === true,
+          ...(bot.avatar ? { avatar: bot.avatar } : {}),
+          ...(bot.avatarShape ? { avatarShape: bot.avatarShape } : {}),
+          ...(bot.avatarColor ? { avatarColor: bot.avatarColor } : {}),
+          notificationsEnabled: bot.notificationsEnabled ?? true,
+          notifyOnUpdates: bot.notifyOnUpdates ?? bot.notificationsEnabled ?? true,
+          unread: bot.unread === true,
+          ...(bot.conversationId ? { conversationId: bot.conversationId } : {}),
+        } satisfies BotSummary;
+      })()
+      ?? {
+        id: activePeer.actorId ?? activePeer.id,
+        agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
+        name: activePeer.title,
+        description: activePeer.subtitle,
+        title: '',
+        hidden: activePeer.hidden === true,
+        notificationsEnabled: true,
+        notifyOnUpdates: true,
+        unread: activePeer.unread > 0,
+        ...(activePeer.conversationId ? { conversationId: activePeer.conversationId } : {}),
+      }
+    : null;
   const activeAgentReply = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
     ? agentWorkspaceControllerRef.current.replyForPeer(activePeer.key)
     : undefined;
@@ -2732,6 +2768,29 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     activeAgentOperationId
     || agentRequestSnapshot[activePeer.key]
   ));
+
+  async function updateActiveAgentProfile(profile: { name: string; title?: string; description: string }): Promise<void> {
+    if (!activeAgentBot) throw new Error('No active Agent profile.');
+    await transport.execute({
+      type: 'bot.update',
+      requestId: nextRequestId('agent-settings-profile'),
+      id: activeAgentBot.id,
+      name: profile.name,
+      title: profile.title ?? '',
+      description: profile.description,
+    });
+  }
+
+  async function setActiveAgentNotifications(enabled: boolean): Promise<void> {
+    if (!activeAgentBot) throw new Error('No active Agent profile.');
+    await transport.execute({
+      type: 'bot.update',
+      requestId: nextRequestId('agent-settings-notifications'),
+      id: activeAgentBot.id,
+      notifyOnUpdates: enabled,
+      notificationsEnabled: enabled,
+    });
+  }
 
   async function createGrokAgent(): Promise<void> {
     setSection('bots');
@@ -4411,6 +4470,7 @@ async function saveInvoiceDialog() {
         }}
         onComputer={() => {
           if (!activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId) return;
+          setAgentSettingsOpen(false);
           setComputerProfileOpen(true);
           if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
           void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-palette')).catch(() => {});
@@ -4456,6 +4516,7 @@ async function saveInvoiceDialog() {
                 onSearchQuery={setAgentConversationSearch}
                 onSelectSearchResult={scrollToTranscriptEntry}
                 onToggleComputer={() => {
+                  setAgentSettingsOpen(false);
                   setComputerProfileOpen((value) => !value);
                   if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
                   void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-open')).catch(() => {});
@@ -4746,6 +4807,7 @@ async function saveInvoiceDialog() {
               state: remoteComputerState,
               capabilityStatus: computerCapabilityStatus,
               onToggle: () => {
+                setAgentSettingsOpen(false);
                 setComputerProfileOpen((value) => !value);
                 void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-overlay')).catch(() => {});
                 void invokeNativeDesktop('reportOpenComputer', {
@@ -4773,6 +4835,22 @@ async function saveInvoiceDialog() {
                   url: `https://fabushi.ombhrum.com/remote-computer?agentId=${encodeURIComponent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id)}`,
                 }).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
               },
+            }}
+            settings={{
+              agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
+              open: agentSettingsOpen,
+              value: {
+                name: activeAgentBot?.name ?? activePeer.title,
+                title: activeAgentBot?.title ?? '',
+                description: activeAgentBot?.description ?? activePeer.subtitle,
+                notifyOnUpdatesEnabled: activeAgentBot?.notifyOnUpdates ?? true,
+              },
+              onToggle: () => {
+                setComputerProfileOpen(false);
+                setAgentSettingsOpen((value) => !value);
+              },
+              onUpdateProfile: updateActiveAgentProfile,
+              onSetNotifications: setActiveAgentNotifications,
             }}
           />
         ) : (
