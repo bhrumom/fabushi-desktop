@@ -570,17 +570,24 @@ impl NativeEngine {
                 explicit_tool_plan.retain(|planned| !called_names.contains(planned.name.as_str()));
             }
             if calls.is_empty() {
+                let streamed_text = collector.text()?;
                 let text = mahayana_model::responses::extract_output_text(&payload)
-                    .or_else(|| collector.text().ok().filter(|text| !text.is_empty()))
+                    .or_else(|| (!streamed_text.is_empty()).then(|| streamed_text.clone()))
                     .ok_or_else(|| {
                         KernelError::Backend(
                             "model completed without assistant text or tool calls".into(),
                         )
                     })?;
-                events.emit(KernelEvent::MessageDelta {
-                    operation_id: operation_id.clone(),
-                    delta: text.clone(),
-                })?;
+                // OutputTextDelta is already forwarded live by ModelCollector.
+                // Re-emitting the complete body as another delta duplicated every
+                // streamed answer. Only synthesize a delta for providers that
+                // return a completed payload without any streaming text.
+                if streamed_text.is_empty() {
+                    events.emit(KernelEvent::MessageDelta {
+                        operation_id: operation_id.clone(),
+                        delta: text.clone(),
+                    })?;
+                }
                 events.emit(KernelEvent::MessageCompleted {
                     operation_id: operation_id.clone(),
                     text: text.clone(),
