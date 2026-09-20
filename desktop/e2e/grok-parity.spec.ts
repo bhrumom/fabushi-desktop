@@ -659,7 +659,8 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await overlays.getByTestId('bot-computer-toggle').click();
       await expect(settings).toHaveCount(0);
       await expect(overlays.getByTestId('bot-computer-panel')).toBeVisible();
-      await page.getByTestId('conversation-info-toggle').click();
+      await overlays.getByRole('button', { name: 'Close Agent info' }).click();
+      await expect(overlays).toHaveCount(0);
     });
 
     await test.step('Agent sidebar supports modifier selection and account-scoped sections', async () => {
