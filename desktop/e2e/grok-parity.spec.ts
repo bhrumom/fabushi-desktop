@@ -113,6 +113,8 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
 
     await test.step('canonical Agent workspace replaces the Messenger navigation shell', async () => {
       await expect(page.getByTestId('messenger-workspace')).toHaveCount(1);
+      await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-agent-root-shell', 'true');
+      await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-product-shell', 'agent');
       await expect(page.locator('.desktop-mode-switch')).toHaveCount(0);
       await expect(page.getByTestId('grok-new-agent')).toBeVisible();
       await expect(page.getByTestId('profile-navigation-trigger')).toHaveCount(0);
@@ -134,7 +136,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
 
       const material = await page.evaluate(() => {
         const inputElement = document.querySelector('[data-testid="messenger-input"]');
-        const composer = inputElement?.parentElement;
+        const composer = inputElement?.closest('[data-testid="grok-agent-composer"]');
         const peerElement = document.querySelector('[data-testid="peer-legacy:conversation:mahayana-ai:agent:assistant"]');
         if (!composer || !peerElement) return null;
         const composerStyle = getComputedStyle(composer);
@@ -169,6 +171,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(composer.getByText('agent-notes.txt')).toBeVisible();
 
       const input = page.getByTestId('messenger-input');
+      await expect(input).toHaveAttribute('contenteditable', 'true');
       await input.fill('Use the attached note.');
       await page.getByTestId('messenger-send').click();
 
