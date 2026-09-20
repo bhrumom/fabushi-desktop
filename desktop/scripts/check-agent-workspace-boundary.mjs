@@ -10,6 +10,8 @@ const networkControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', '
 const networkController = fs.readFileSync(networkControllerPath, 'utf8');
 const workflowControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-workflow-controller.ts');
 const workflowController = fs.readFileSync(workflowControllerPath, 'utf8');
+const storeSyncControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-store-sync-controller.ts');
+const storeSyncController = fs.readFileSync(storeSyncControllerPath, 'utf8');
 
 const forbidden = [
   ['renderer-global Agent operation pointer', /\bagentOperationId\b/],
@@ -113,6 +115,20 @@ if (!/client\.listWorkflows\s*\(/.test(workflowController)
   || !/event\.type === ['"]workflow\.listed['"]/.test(workflowController)
   || !/event\.type === ['"]workflow\.changed['"]/.test(workflowController)) {
   violations.push('Agent workflow controller no longer owns workflow list/cache refresh');
+}
+
+if (!/useAgentStoreSyncController\s*\(/.test(shell)) {
+  violations.push('Agent memory/automation CAS sync escaped the Agent workspace controller');
+}
+if (/type:\s*['"]memory\.list['"]|case\s+['"]memory\.(?:changed|listed)['"]|case\s+['"]automation\.(?:changed|listed)['"]/.test(shell)) {
+  violations.push('primary shell recreated Agent memory/automation runtime sync ownership');
+}
+if (!/client\.listMemory\s*\(/.test(storeSyncController)
+  || !/event\.type === ['"]memory\.changed['"]/.test(storeSyncController)
+  || !/event\.type === ['"]memory\.listed['"]/.test(storeSyncController)
+  || !/event\.type === ['"]automation\.changed['"]/.test(storeSyncController)
+  || !/event\.type === ['"]automation\.listed['"]/.test(storeSyncController)) {
+  violations.push('Agent store sync controller no longer owns memory/automation synchronization');
 }
 
 if (violations.length) {
