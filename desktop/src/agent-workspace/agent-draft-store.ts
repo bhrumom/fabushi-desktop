@@ -27,7 +27,7 @@ function validAttachment(value: unknown): value is AttachmentContext {
 function validPromptReference(value: unknown): value is AgentPromptReference {
   if (!value || typeof value !== 'object') return false;
   const reference = value as Partial<AgentPromptReference>;
-  return reference.kind === 'agent'
+  return ['agent', 'workflow', 'mcp', 'file', 'link'].includes(String(reference.kind))
     && typeof reference.id === 'string'
     && reference.id.trim().length > 0
     && typeof reference.label === 'string'
