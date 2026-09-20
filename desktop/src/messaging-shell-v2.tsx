@@ -124,6 +124,7 @@ import {
 import type { AgentPromptReference, AgentReplyContext } from './agent-workspace/prompt-context';
 import type { AgentSidebarSection } from './agent-workspace/agent-sidebar-state';
 import { useAgentSidebarController } from './agent-workspace/use-agent-sidebar-controller';
+import { useAgentNetworkController } from './agent-workspace/use-agent-network-controller';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -1009,8 +1010,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [search, setSearch] = useState('');
   const [agentPaletteOpen, setGrokPaletteOpen] = useState(false);
   const [agentPaletteQuery, setGrokPaletteQuery] = useState('');
-  const [agentNetworkOpen, setGrokNetworkOpen] = useState(false);
-  const [agentNetworkBroadcastMode, setGrokNetworkBroadcastMode] = useState(false);
   const agentSidebarController = useAgentSidebarController(remoteAccountScope);
   const agentPinnedOrder = agentSidebarController.pinnedOrder;
   const agentSidebarSections = agentSidebarController.sections;
@@ -1060,6 +1059,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [miniAppLoading, setMiniAppLoading] = useState(false);
   const [miniAppBusy, setMiniAppBusy] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<string | null>(null);
+  const agentNetworkController = useAgentNetworkController(agentCoordinatorClient, setError);
   const [mutedPeerKeys, setMutedPeerKeys] = useState<Set<string>>(() => new Set());
   const [pinnedPeerKeys, setPinnedPeerKeys] = useState<Set<string>>(() => new Set());
   const [archivedPeerKeys, setArchivedPeerKeys] = useState<Set<string>>(() => new Set());
@@ -2807,63 +2807,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     clearAgentSelection();
   }
 
-  async function refreshAgentGroups(): Promise<void> {
-    await agentCoordinatorClient.listGroups(nextRequestId('agent-network-group-list'));
-  }
-
-  async function createAgentGroup(name: string, memberAgentIds: readonly string[]): Promise<void> {
-    await agentCoordinatorClient.createGroup(
-      nextRequestId('agent-network-group-create'),
-      name,
-      memberAgentIds,
-    );
-  }
-
-  async function updateAgentGroup(
-    id: string,
-    patch: { name?: string; memberAgentIds?: readonly string[] },
-  ): Promise<void> {
-    await agentCoordinatorClient.updateGroup(
-      nextRequestId('agent-network-group-update'),
-      id,
-      patch,
-    );
-  }
-
-  async function deleteAgentGroup(id: string): Promise<void> {
-    await agentCoordinatorClient.deleteGroup(
-      nextRequestId('agent-network-group-delete'),
-      id,
-    );
-  }
-
-  async function sendAgentGroup(id: string, message: string): Promise<void> {
-    await agentCoordinatorClient.sendGroup(
-      nextRequestId('agent-network-group-send'),
-      id,
-      message,
-    );
-  }
-
-  async function broadcastAgents(message: string, targetAgentIds?: readonly string[]): Promise<void> {
-    try {
-      await agentCoordinatorClient.broadcast(
-        nextRequestId('grok-agent-broadcast'),
-        message,
-        targetAgentIds,
-      );
-    } catch (cause) {
-      const reason = cause instanceof Error ? cause.message : String(cause);
-      setError(reason);
-      throw cause;
-    }
-  }
-
   function openAgent(item: AgentSidebarItem): void {
     const peer = peerForAgent(item);
     if (!peer) return;
-    setGrokNetworkOpen(false);
-    setGrokNetworkBroadcastMode(false);
+    agentNetworkController.close();
     setSection('bots');
     void openPeer(peer);
   }
@@ -4269,14 +4216,8 @@ async function saveInvoiceDialog() {
           onRenameSection={renameAgentSidebarSection}
           onDeleteSection={deleteAgentSidebarSection}
           onMoveToSection={moveAgentToSection}
-          onBroadcast={() => {
-            setGrokNetworkBroadcastMode(true);
-            setGrokNetworkOpen(true);
-          }}
-          onOpenNetwork={() => {
-            setGrokNetworkBroadcastMode(false);
-            setGrokNetworkOpen(true);
-          }}
+          onBroadcast={agentNetworkController.openBroadcast}
+          onOpenNetwork={agentNetworkController.openNetwork}
           onOpenPlugins={() => {
             setSearch('');
             setSection('miniapps');
@@ -4305,14 +4246,8 @@ async function saveInvoiceDialog() {
         onClose={() => setGrokPaletteOpen(false)}
         onOpenAgent={openAgent}
         onNewAgent={() => void createAgent()}
-        onNetwork={() => {
-          setGrokNetworkBroadcastMode(false);
-          setGrokNetworkOpen(true);
-        }}
-        onBroadcast={() => {
-          setGrokNetworkBroadcastMode(true);
-          setGrokNetworkOpen(true);
-        }}
+        onNetwork={agentNetworkController.openNetwork}
+        onBroadcast={agentNetworkController.openBroadcast}
         onPlugins={() => {
           setSearch('');
           setSection('miniapps');
@@ -4338,24 +4273,21 @@ async function saveInvoiceDialog() {
 
       <section className={styles.chatWorkspace}>
         <AgentNetwork
-          open={agentNetworkOpen}
+          open={agentNetworkController.open}
           agents={agentItems}
           groups={groups}
           activeKey={activeAgentKey}
-          broadcastMode={agentNetworkBroadcastMode}
-          onClose={() => {
-            setGrokNetworkOpen(false);
-            setGrokNetworkBroadcastMode(false);
-          }}
+          broadcastMode={agentNetworkController.broadcastMode}
+          onClose={agentNetworkController.close}
           onOpenAgent={openAgent}
-          onRefreshGroups={refreshAgentGroups}
-          onCreateGroup={createAgentGroup}
-          onUpdateGroup={updateAgentGroup}
-          onDeleteGroup={deleteAgentGroup}
-          onSendGroup={sendAgentGroup}
-          onBroadcast={broadcastAgents}
+          onRefreshGroups={agentNetworkController.refreshGroups}
+          onCreateGroup={agentNetworkController.createGroup}
+          onUpdateGroup={agentNetworkController.updateGroup}
+          onDeleteGroup={agentNetworkController.deleteGroup}
+          onSendGroup={agentNetworkController.sendGroup}
+          onBroadcast={agentNetworkController.broadcast}
         />
-        {agentNetworkOpen ? null : activePeer && sectionIsPeerList ? (
+        {agentNetworkController.open ? null : activePeer && sectionIsPeerList ? (
           <>
             {isAgentPeer(activePeer) && !activePeer.miniAppId ? (
               <AgentWorkspace
