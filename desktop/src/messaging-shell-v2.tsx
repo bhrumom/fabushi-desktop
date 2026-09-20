@@ -162,6 +162,7 @@ import {
   fabuAgentConversationTranscriptPath,
 } from './fabu-runtime/agent-store';
 import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
+import AgentRootShell from './agent-workspace/agent-root-shell';
 import AgentSidebar, { type AgentSidebarItem as GrokAgentSidebarItem } from './agent-workspace/agent-sidebar';
 import AgentSearch from './agent-workspace/agent-search';
 import GrokAgentHeader from './grok-shell/grok-agent-header';
@@ -4520,9 +4521,10 @@ async function saveInvoiceDialog() {
   }
 
   return (
-    <main
+    <AgentRootShell
       className={`${styles.messenger} ${styles.fabushiUnified}`}
       data-testid="messenger-workspace"
+      data-product-shell="agent"
       data-initial-host-hydrated={initialLegacyHydrated ? 'true' : undefined}
       data-sidebar-collapsed={sidebarWidth <= 112 || undefined}
       data-reduce-motion={desktopPreferences.reducedMotion || undefined}
@@ -5033,7 +5035,7 @@ async function saveInvoiceDialog() {
           </div>
         </section>
       </div> : null}
-    </main>
+    </AgentRootShell>
   );
 }
 
