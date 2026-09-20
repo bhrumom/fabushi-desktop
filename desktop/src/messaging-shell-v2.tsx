@@ -122,6 +122,17 @@ import {
   readAgentWorkspaceDrafts,
 } from './agent-workspace/agent-draft-store';
 import {
+  AGENT_SIDEBAR_UNASSIGNED_ID,
+  assignAgentsToSidebarSection,
+  createAgentSidebarSection,
+  persistAgentSidebarSections,
+  readAgentSidebarSections,
+  removeAgentSidebarSection,
+  renameAgentSidebarSection,
+  toggleAgentSidebarSection,
+  type AgentSidebarSection,
+} from './agent-workspace/agent-sidebar-state';
+import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
   deleteAccountAgentStoreObject,
@@ -1042,6 +1053,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [grokNetworkOpen, setGrokNetworkOpen] = useState(false);
   const [grokNetworkBroadcastMode, setGrokNetworkBroadcastMode] = useState(false);
   const [grokPinnedOrder, setGrokPinnedOrder] = useState<string[]>(readGrokPinnedOrder);
+  const [grokSidebarSections, setGrokSidebarSections] = useState<AgentSidebarSection[]>([]);
+  const [grokSidebarSectionsScope, setGrokSidebarSectionsScope] = useState<string | null>(null);
+  const [grokSelectedAgentKeys, setGrokSelectedAgentKeys] = useState<string[]>([]);
+  const grokSelectionAnchorRef = useRef<string | null>(null);
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [globalSearchCategory, setGlobalSearchCategory] = useState<SearchCategory>('chats');
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -1577,6 +1592,25 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       else void transport.close();
     };
   }, [transport, selfHosted, startupProjection]);
+
+  useEffect(() => {
+    if (!remoteAccountScope) {
+      setGrokSidebarSections([]);
+      setGrokSidebarSectionsScope(null);
+      setGrokSelectedAgentKeys([]);
+      grokSelectionAnchorRef.current = null;
+      return;
+    }
+    setGrokSidebarSections(readAgentSidebarSections(remoteAccountScope));
+    setGrokSidebarSectionsScope(remoteAccountScope);
+    setGrokSelectedAgentKeys([]);
+    grokSelectionAnchorRef.current = null;
+  }, [remoteAccountScope]);
+
+  useEffect(() => {
+    if (!remoteAccountScope || grokSidebarSectionsScope !== remoteAccountScope) return;
+    persistAgentSidebarSections(remoteAccountScope, grokSidebarSections);
+  }, [remoteAccountScope, grokSidebarSectionsScope, grokSidebarSections]);
 
   useEffect(() => {
     if (!hostReady || initialLegacyHydrated) return;
@@ -2919,7 +2953,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
   }
 
-  async function deleteGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
+  async function deleteGrokAgent(item: GrokAgentSidebarItem, confirmDelete = true): Promise<void> {
     const peer = peerForGrokAgent(item);
     const botId = peer?.source === 'legacy' && peer.kind === 'bot'
       ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
@@ -2928,7 +2962,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       setError('Only locally managed Agents can be deleted from this shell.');
       return;
     }
-    if (!window.confirm(`Delete “${peer.title}”? The Agent store is retained for recovery.`)) return;
+    if (confirmDelete && !window.confirm(`Delete “${peer.title}”? The Agent store is retained for recovery.`)) return;
     agentWorkspaceControllerRef.current.clearPeer(peer.key);
     syncAgentOperationSnapshot();
     await execute({
@@ -2987,6 +3021,84 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       persistGrokPinnedOrder(base);
       return base;
     });
+  }
+
+  function setSidebarSections(next: AgentSidebarSection[]): void {
+    setGrokSidebarSections(next);
+  }
+
+  function toggleGrokAgentSelection(item: GrokAgentSidebarItem): void {
+    grokSelectionAnchorRef.current = item.key;
+    setGrokSelectedAgentKeys((current) => current.includes(item.key)
+      ? current.filter((key) => key !== item.key)
+      : [...current, item.key]);
+  }
+
+  function rangeSelectGrokAgent(item: GrokAgentSidebarItem): void {
+    const query = search.trim().toLocaleLowerCase();
+    const ordered = grokAgentItems.filter((candidate) =>
+      !candidate.hidden
+      && (!query || `${candidate.name} ${candidate.description}`.toLocaleLowerCase().includes(query)),
+    );
+    const anchorKey = grokSelectionAnchorRef.current;
+    const anchorIndex = anchorKey ? ordered.findIndex((candidate) => candidate.key === anchorKey) : -1;
+    const targetIndex = ordered.findIndex((candidate) => candidate.key === item.key);
+    if (anchorIndex < 0 || targetIndex < 0) {
+      grokSelectionAnchorRef.current = item.key;
+      setGrokSelectedAgentKeys([item.key]);
+      return;
+    }
+    const start = Math.min(anchorIndex, targetIndex);
+    const end = Math.max(anchorIndex, targetIndex);
+    const range = ordered.slice(start, end + 1).map((candidate) => candidate.key);
+    setGrokSelectedAgentKeys((current) => [...new Set([...current, ...range])]);
+  }
+
+  function clearGrokAgentSelection(): void {
+    setGrokSelectedAgentKeys([]);
+    grokSelectionAnchorRef.current = null;
+  }
+
+  function createGrokSidebarSection(items: readonly GrokAgentSidebarItem[]): void {
+    const name = window.prompt('Section name', 'New section')?.trim();
+    if (!name) return;
+    const sectionable = items.filter((item) => !item.pinned).map((item) => item.key);
+    const created = createAgentSidebarSection(grokSidebarSections, name, sectionable);
+    setSidebarSections(created.sections);
+    clearGrokAgentSelection();
+  }
+
+  function moveGrokAgentsToSection(items: readonly GrokAgentSidebarItem[], sectionId: string): void {
+    const keys = items.filter((item) => !item.pinned).map((item) => item.key);
+    if (!keys.length) return;
+    setSidebarSections(assignAgentsToSidebarSection(grokSidebarSections, keys, sectionId));
+    clearGrokAgentSelection();
+  }
+
+  function moveGrokAgentToSection(item: GrokAgentSidebarItem, sectionId: string): void {
+    if (item.pinned) return;
+    setSidebarSections(assignAgentsToSidebarSection(grokSidebarSections, [item.key], sectionId));
+  }
+
+  function renameGrokSidebarSection(section: AgentSidebarSection): void {
+    const name = window.prompt('Rename section', section.name)?.trim();
+    if (!name || name === section.name) return;
+    setSidebarSections(renameAgentSidebarSection(grokSidebarSections, section.id, name));
+  }
+
+  function deleteGrokSidebarSection(section: AgentSidebarSection): void {
+    if (!window.confirm(`Delete “${section.name}”? Its Agents move to Unassigned.`)) return;
+    setSidebarSections(removeAgentSidebarSection(grokSidebarSections, section.id));
+  }
+
+  async function deleteSelectedGrokAgents(items: readonly GrokAgentSidebarItem[]): Promise<void> {
+    const deletable = items.filter((item) => !item.isGroup);
+    if (!deletable.length) return;
+    if (!window.confirm(`Delete ${deletable.length} selected Agent${deletable.length === 1 ? '' : 's'}? Agent stores are retained for recovery.`)) return;
+    for (const item of deletable) {
+      await deleteGrokAgent(item, false);
+    }
+    clearGrokAgentSelection();
   }
 
   async function broadcastGrokAgents(message: string, targetAgentIds?: string[]): Promise<void> {
@@ -4336,6 +4448,8 @@ async function saveInvoiceDialog() {
           collapsed={sidebarWidth <= 112}
           hostReady={hostReady}
           accountLabel={currentActor?.displayName ?? 'Account'}
+          sections={grokSidebarSections}
+          selectedKeys={grokSelectedAgentKeys}
           onQuery={setSearch}
           onOpen={openGrokAgent}
           onNewAgent={() => void createGrokAgent()}
@@ -4349,6 +4463,16 @@ async function saveInvoiceDialog() {
           onDuplicate={(item) => void duplicateGrokAgent(item)}
           onDelete={(item) => void deleteGrokAgent(item)}
           onReorderPinned={reorderGrokPinned}
+          onToggleSelection={toggleGrokAgentSelection}
+          onRangeSelection={rangeSelectGrokAgent}
+          onClearSelection={clearGrokAgentSelection}
+          onDeleteSelected={(items) => void deleteSelectedGrokAgents(items)}
+          onMoveSelectedToSection={moveGrokAgentsToSection}
+          onCreateSection={createGrokSidebarSection}
+          onToggleSection={(section) => setSidebarSections(toggleAgentSidebarSection(grokSidebarSections, section.id))}
+          onRenameSection={renameGrokSidebarSection}
+          onDeleteSection={deleteGrokSidebarSection}
+          onMoveToSection={moveGrokAgentToSection}
           onBroadcast={() => {
             setGrokNetworkBroadcastMode(true);
             setGrokNetworkOpen(true);
