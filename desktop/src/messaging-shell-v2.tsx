@@ -123,6 +123,7 @@ import { useAgentNetworkController } from './agent-workspace/use-agent-network-c
 import { useAgentCommandPaletteController } from './agent-workspace/use-agent-command-palette-controller';
 import { useAgentWorkflowController } from './agent-workspace/use-agent-workflow-controller';
 import { useAgentMcpController } from './agent-workspace/use-agent-mcp-controller';
+import { useAgentPrSuggestionController } from './agent-workspace/use-agent-pr-suggestion-controller';
 import { useAgentStoreSyncController } from './agent-workspace/use-agent-store-sync-controller';
 import { useAgentDirectoryController } from './agent-workspace/use-agent-directory-controller';
 import { useAgentSettingsController } from './agent-workspace/use-agent-settings-controller';
@@ -1065,6 +1066,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const agentMcpController = useAgentMcpController(agentCoordinatorClient, {
     onError: setError,
   });
+  const agentPrSuggestionController = useAgentPrSuggestionController(
+    agentCoordinatorClient,
+    agentMcpController.pullRequestTool,
+  );
   const agentStoreSyncController = useAgentStoreSyncController(agentCoordinatorClient, {
     mirror: (agentId, objectPath, value) => mirrorAgentCloudSnapshot(agentId, objectPath, value),
     remove: (agentId, objectPath) => removeAgentCloudObject(agentId, objectPath),
@@ -4217,6 +4222,7 @@ async function saveInvoiceDialog() {
                 composerWorkflowCandidates={(agentWorkflowController.workflowsByAgentId[activePeer.agentId ?? activePeer.actorId ?? activePeer.id] ?? [])
                   .filter((workflow) => workflow.isEnabledForAgent)
                   .map((workflow) => ({ id: workflow.id, name: workflow.name, description: workflow.description }))}
+                composerPullRequestCandidates={agentPrSuggestionController.candidates}
                 enterToSend={desktopPreferences.enterToSend}
                 onComposerChange={(value, richText) => updateAgentComposer(activePeer.key, value, richText)}
                 onComposerMention={(candidate) => {
