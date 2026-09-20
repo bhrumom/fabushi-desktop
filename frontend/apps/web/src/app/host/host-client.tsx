@@ -619,6 +619,7 @@ export default function HostClient({ onAuthStateChange }: HostClientProps) {
   const [ruleDraft, setRuleDraft] = useState("");
   const [ruleBehavior, setRuleBehavior] = useState<"allow" | "ask">("allow");
   const [activeAgentId, setActiveAgentId] = useState("mahayana-assistant");
+  const activeBotMarkId = activeAgentId || "mahayana-assistant";
 
   useEffect(() => {
     if (!networkOpen || networkView !== "workspace") return;
@@ -2539,7 +2540,6 @@ export default function HostClient({ onAuthStateChange }: HostClientProps) {
       : operationState === "failed" || operationState === "interrupted"
       ? "waking"
       : "idle";
-  const activeBotMarkId = activeAgentId || "mahayana-assistant";
   const activeBotProfile = bots.find((bot) => bot.id === activeBotMarkId);
   const primaryBotProfile = bots.find((bot) => bot.id === "mahayana-assistant");
   const activeBotShape = activeBotProfile?.avatarShape as BotMarkShape | undefined;
