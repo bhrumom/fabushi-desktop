@@ -10,6 +10,11 @@ import { agentMatchesGroupMember, indexAgentsByRuntimeOrSurfaceId, type AgentSid
 import { composeAgentPromptText } from '../src/agent-workspace/prompt-context';
 import { restoreAgentStoreWorkspace } from '../src/agent-workspace/agent-store-recovery';
 import { projectAgentMcpReferences } from '../src/agent-workspace/use-agent-mcp-controller';
+import {
+  emojiSuggestions,
+  findPullRequestReadTool,
+  parsePullRequestToolResult,
+} from '../src/agent-workspace/agent-composer-suggestion-provider';
 import type { TranscriptEntry } from '../src/agent-workspace/transcript-model';
 import {
   FABU_AGENT_ATTACHMENT_INDEX_PATH,
@@ -190,6 +195,61 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
           toolCount: 0,
         },
       ]);
+    });
+
+    await test.step('Composer suggestions project emoji and read-only GitHub PR references', async () => {
+      expect(emojiSuggestions('thi').some((candidate) => candidate.shortcodes.includes('thinking'))).toBe(true);
+      expect(findPullRequestReadTool([
+        {
+          name: 'github',
+          tools: [
+            { name: 'pull' },
+            { name: 'create_pull_request' },
+            { name: 'search_pull_requests' },
+          ],
+        },
+      ])).toEqual({ server: 'github', tool: 'search_pull_requests' });
+      expect(parsePullRequestToolResult({
+        items: [{
+          number: 7,
+          title: 'Agent workspace parity',
+          html_url: 'https://github.com/bhrumom/fabushi-desktop/pull/7',
+        }],
+      })).toEqual([{
+        prNumber: 7,
+        title: 'Agent workspace parity',
+        url: 'https://github.com/bhrumom/fabushi-desktop/pull/7',
+      }]);
+
+      const controller = new AgentWorkspaceController();
+      const richText = JSON.stringify({
+        type: 'doc',
+        content: [{
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Review ' },
+            {
+              type: 'prReference',
+              attrs: {
+                prNumber: 7,
+                title: 'Agent workspace parity',
+                url: 'https://github.com/bhrumom/fabushi-desktop/pull/7',
+              },
+            },
+          ],
+        }],
+      });
+      controller.setDraftDocument('agent:pr', 'Review #7', richText);
+      expect(controller.referencesForPeer('agent:pr')).toContainEqual({
+        kind: 'pull-request',
+        id: 'https://github.com/bhrumom/fabushi-desktop/pull/7',
+        label: '7',
+      });
+      expect(composeAgentPromptText(
+        controller.draftForPeer('agent:pr'),
+        undefined,
+        controller.referencesForPeer('agent:pr'),
+      )).toContain('#7 [pull-request:https://github.com/bhrumom/fabushi-desktop/pull/7]');
     });
 
     await test.step('Agent transcript canonicalizes duplicate legacy assistant rows into one operation timeline', async () => {
