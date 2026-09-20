@@ -182,6 +182,22 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       coordinator.resetOperations();
       expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
       expect(controller.isBusy('agent:b')).toBe(false);
+
+      expect(coordinator.handleCommandBridge({
+        phase: 'dispatch',
+        command: { type: 'chat.send', requestId: 'request:c', text: 'C' },
+        context: { conversationKey: 'agent:c' },
+      })).toBe(true);
+      expect(controller.requestForPeer('agent:c')).toBe('request:c');
+      expect(coordinator.handleCommandBridge({
+        phase: 'accepted',
+        command: { type: 'chat.send', requestId: 'request:c', text: 'C' },
+        accepted: { requestId: 'request:c', operationId: 'operation:c' },
+        context: { conversationKey: 'agent:c' },
+      })).toBe(true);
+      expect(controller.operationForPeer('agent:c')).toBe('operation:c');
+      expect(transcripts.entries('agent:c').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
+
       coordinator.dispose();
     });
 
