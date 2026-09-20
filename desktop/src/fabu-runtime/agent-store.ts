@@ -125,13 +125,32 @@ export class FabuAgentStore {
     if (!this.refsLoaded) await this.refresh();
   }
 
-  async readText(path: string): Promise<string> {
-    const object = await this.transport.read(this.agentId, path);
+  private validateMaterializedObject(path: string, object: FabuAgentStoreObject): FabuAgentStoreObject {
+    const expected = this.refs.get(path);
+    if (object.path && object.path !== path) {
+      throw new Error(`Agent Store object path mismatch for ${this.agentId}:${path}.`);
+    }
+    if (expected?.blobId && object.blobId !== expected.blobId) {
+      throw new Error(`Agent Store blob mismatch for ${this.agentId}:${path}.`);
+    }
+    if (expected?.etag && object.etag !== expected.etag) {
+      throw new Error(`Agent Store etag mismatch for ${this.agentId}:${path}.`);
+    }
+    if (expected?.revision != null && object.revision !== expected.revision) {
+      throw new Error(`Agent Store revision mismatch for ${this.agentId}:${path}.`);
+    }
     if (typeof object.dataBase64 !== 'string') {
       throw new Error('Agent Store object has no body: ' + path);
     }
+    return { ...object, path };
+  }
+
+  async readText(path: string): Promise<string> {
+    const cached = this.refs.get(path);
+    if (typeof cached?.dataBase64 === 'string') return decodeUtf8Base64(cached.dataBase64);
+    const object = this.validateMaterializedObject(path, await this.transport.read(this.agentId, path));
     this.refs.set(path, object);
-    return decodeUtf8Base64(object.dataBase64);
+    return decodeUtf8Base64(object.dataBase64!);
   }
 
   async readJson<T>(path: string): Promise<T> {
@@ -237,6 +256,21 @@ export class FabuAgentStore {
 
   hasRootPath(path: string): boolean {
     return this.refs.has(path);
+  }
+
+  async materializeRoot(): Promise<ReadonlyMap<string, FabuAgentStoreObject>> {
+    await this.ensureRefs();
+    const paths = [...this.refs.keys()]
+      .filter((path) => path !== FABU_AGENT_ROOT_PATH)
+      .sort((left, right) => left.localeCompare(right));
+    const materialized = await Promise.all(paths.map(async (path) => {
+      const current = this.refs.get(path);
+      if (typeof current?.dataBase64 === 'string') return [path, current] as const;
+      const object = this.validateMaterializedObject(path, await this.transport.read(this.agentId, path));
+      return [path, object] as const;
+    }));
+    for (const [path, object] of materialized) this.refs.set(path, object);
+    return new Map(materialized);
   }
 
 
