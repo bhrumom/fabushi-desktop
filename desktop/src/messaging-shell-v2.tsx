@@ -4622,6 +4622,9 @@ async function saveInvoiceDialog() {
                 composerBusy={Boolean(activeAgentOperationId)}
                 composerUploading={agentAttachmentUploadingPeers.has(activePeer.key)}
                 composerAttachments={agentAttachmentsByPeer[activePeer.key] ?? []}
+                composerMentionCandidates={grokAgentItems
+                  .filter((item) => item.key !== activePeer.key)
+                  .map((item) => ({ id: item.agentId ?? item.key, name: item.name, description: item.subtitle }))}
                 enterToSend={desktopPreferences.enterToSend}
                 onComposerChange={updateComposer}
                 onComposerSubmit={(event) => void sendMessage(event)}
