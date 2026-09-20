@@ -1,7 +1,20 @@
 import type { FabuAgentProfile, FabuAgentSettings } from './agent-domain';
 
+export const FABU_AGENT_ROOT_PATH = 'root.json';
 export const FABU_AGENT_PROFILE_PATH = 'profile.json';
 export const FABU_AGENT_SETTINGS_PATH = 'settings.json';
+export const FABU_AGENT_MEMORY_INDEX_PATH = 'memory/index.json';
+export const FABU_AGENT_WORKFLOW_INDEX_PATH = 'workflows/index.json';
+export const FABU_AGENT_ATTACHMENT_INDEX_PATH = 'attachments/index.json';
+export const FABU_AGENT_RUNTIME_CHECKPOINT_PATH = 'runtime/checkpoint.json';
+
+export function fabuAgentConversationTranscriptPath(conversationId: string): string {
+  return `conversations/${encodeURIComponent(conversationId.trim()).replace(/%2F/gi, '_')}/transcript.json`;
+}
+
+export function fabuAgentAutomationPath(automationId: string): string {
+  return `automations/${encodeURIComponent(automationId.trim()).replace(/%2F/gi, '_')}/automation.json`;
+}
 
 export interface FabuAgentStoreObject {
   path: string;
@@ -9,6 +22,20 @@ export interface FabuAgentStoreObject {
   etag?: string;
   revision?: number;
   dataBase64?: string;
+}
+
+export interface FabuAgentRootEntry {
+  path: string;
+  blobId?: string;
+  etag?: string;
+  revision?: number;
+}
+
+export interface FabuAgentRootManifest {
+  schemaVersion: 1;
+  agentId: string;
+  updatedAtMs: number;
+  files: FabuAgentRootEntry[];
 }
 
 export interface FabuAgentStoreTransport {
@@ -148,6 +175,33 @@ export class FabuAgentStore {
     const current = this.refs.get(path);
     await this.transport.delete(this.agentId, path, current?.etag);
     this.refs.delete(path);
+  }
+
+  rootManifest(): FabuAgentRootManifest {
+    const files = [...this.refs.values()]
+      .filter((entry) => entry.path !== FABU_AGENT_ROOT_PATH)
+      .map((entry) => ({
+        path: entry.path,
+        ...(entry.blobId ? { blobId: entry.blobId } : {}),
+        ...(entry.etag ? { etag: entry.etag } : {}),
+        ...(entry.revision != null ? { revision: entry.revision } : {}),
+      }))
+      .sort((left, right) => left.path.localeCompare(right.path));
+    return {
+      schemaVersion: 1,
+      agentId: this.agentId,
+      updatedAtMs: Date.now(),
+      files,
+    };
+  }
+
+  async checkpointRoot(): Promise<FabuAgentStoreObject> {
+    await this.ensureRefs();
+    return this.writeJson(FABU_AGENT_ROOT_PATH, this.rootManifest());
+  }
+
+  async readRoot(): Promise<FabuAgentRootManifest> {
+    return this.readJson<FabuAgentRootManifest>(FABU_AGENT_ROOT_PATH);
   }
 
   writeProfile(profile: FabuAgentProfile): Promise<FabuAgentStoreObject> {
