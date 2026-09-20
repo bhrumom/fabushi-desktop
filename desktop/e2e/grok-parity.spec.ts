@@ -139,6 +139,9 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
         { kind: 'agent', id: 'agent:research', label: 'Research' },
         { kind: 'workflow', id: 'workflow:review', label: 'Review changes' },
       ]);
+      expect(submitted.richText).toContain('"type":"doc"');
+      expect(submitted.richText).toContain('"type":"mention"');
+      expect(submitted.richText).toContain('"type":"workflowReference"');
       const composedPrompt = composeAgentPromptText(submitted.text, submitted.replyTo, submitted.references);
       expect(composedPrompt).toContain('@Research [agent:agent:research]');
       expect(composedPrompt).toContain('/Review changes [workflow:workflow:review]');
@@ -157,6 +160,56 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       controller.setDraft('agent:a', 'new draft without a mention');
       controller.pruneReferences('agent:a', 'new draft without a mention');
       expect(controller.referencesForPeer('agent:a')).toEqual([]);
+    });
+
+    await test.step('Agent transcript canonicalizes duplicate legacy assistant rows into one operation timeline', async () => {
+      const transcripts = new AgentTranscriptStore();
+      transcripts.replace('agent:canonical', [{
+        id: 'operation:canonical:assistant-turn',
+        source: 'legacy',
+        role: 'peer',
+        text: '',
+        createdAtMs: 1,
+        kind: 'assistant-turn',
+        operationId: 'operation:canonical',
+        assistantTurn: {
+          id: 'assistant-turn:operation:canonical',
+          operationId: 'operation:canonical',
+          createdAtMs: 1,
+          updatedAtMs: 1,
+          status: 'completed',
+          parts: [],
+        },
+      }, {
+        id: 'legacy-final',
+        source: 'legacy',
+        role: 'peer',
+        text: 'single canonical answer',
+        createdAtMs: 2,
+        kind: 'message',
+        operationId: 'operation:canonical',
+      }, {
+        id: 'operation:canonical:duplicate',
+        source: 'legacy',
+        role: 'peer',
+        text: 'stale duplicate',
+        createdAtMs: 0,
+        kind: 'assistant-turn',
+        operationId: 'operation:canonical',
+        assistantTurn: {
+          id: 'assistant-turn:operation:canonical:duplicate',
+          operationId: 'operation:canonical',
+          createdAtMs: 0,
+          updatedAtMs: 0,
+          status: 'running',
+          parts: [],
+        },
+      }]);
+      const entries = transcripts.entries('agent:canonical');
+      expect(entries.filter((entry) => entry.operationId === 'operation:canonical')).toHaveLength(1);
+      expect(entries[0]?.kind).toBe('assistant-turn');
+      expect(entries[0]?.text).toBe('single canonical answer');
+      expect(entries[0]?.assistantTurn?.parts.filter((part) => part.kind === 'text')).toHaveLength(1);
     });
 
     await test.step('Agent group identity survives Host runtime-to-surface normalization', async () => {

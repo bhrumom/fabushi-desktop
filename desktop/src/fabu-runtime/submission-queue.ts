@@ -8,6 +8,7 @@ export interface AgentSubmission {
   peerKey: string;
   agentId: string;
   prompt: string;
+  richText?: string;
   attachments?: readonly AttachmentContext[];
   references?: readonly AgentPromptReference[];
   replyTo?: AgentReplyContext;

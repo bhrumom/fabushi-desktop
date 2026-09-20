@@ -17,6 +17,63 @@ export interface AgentTranscriptSourceMessage extends TranscriptSourceMessage {
 
 export type AgentTranscriptTerminalStatus = 'completed' | 'failed' | 'interrupted';
 
+function assistantTurnRank(message: AgentTranscriptSourceMessage): number {
+  const turn = message.assistantTurn;
+  const terminal = turn?.status === 'completed' ? 4 : turn?.status === 'failed' ? 3 : turn?.status === 'interrupted' ? 2 : 1;
+  return (turn?.updatedAtMs ?? message.createdAtMs) * 10_000 + terminal * 1_000 + message.text.length;
+}
+
+function canonicalizeThread(messages: readonly AgentTranscriptSourceMessage[]): AgentTranscriptSourceMessage[] {
+  const selectedByOperation = new Map<string, number>();
+  messages.forEach((message, index) => {
+    if (message.kind !== 'assistant-turn' || !message.operationId) return;
+    const previousIndex = selectedByOperation.get(message.operationId);
+    if (previousIndex == null || assistantTurnRank(message) >= assistantTurnRank(messages[previousIndex]!)) {
+      selectedByOperation.set(message.operationId, index);
+    }
+  });
+
+  const next = [...messages];
+  for (const [operationId, index] of selectedByOperation) {
+    const selected = next[index];
+    if (!selected?.assistantTurn || assistantTurnPlainText(selected.assistantTurn).trim()) continue;
+    const legacyFinal = [...messages].reverse().find((message) =>
+      message.kind === 'message'
+      && message.role === 'peer'
+      && message.operationId === operationId
+      && message.text.trim().length > 0,
+    );
+    if (!legacyFinal) continue;
+    const assistantTurn: AssistantTurn = {
+      ...selected.assistantTurn,
+      updatedAtMs: Math.max(selected.assistantTurn.updatedAtMs, legacyFinal.createdAtMs),
+      parts: [
+        ...selected.assistantTurn.parts.filter((part) => part.kind !== 'text'),
+        {
+          id: `${operationId}:final-text`,
+          kind: 'text',
+          text: legacyFinal.text,
+          status: 'completed',
+        },
+      ],
+    };
+    next[index] = { ...selected, text: legacyFinal.text, assistantTurn };
+  }
+
+  return next.filter((message, index) => {
+    if (message.kind === 'assistant-turn' && message.operationId) {
+      return selectedByOperation.get(message.operationId) === index;
+    }
+    if (
+      message.kind === 'message'
+      && message.role === 'peer'
+      && message.operationId
+      && selectedByOperation.has(message.operationId)
+    ) return false;
+    return true;
+  });
+}
+
 function rekeyAssistantTurn(turn: AssistantTurn, operationId: string): AssistantTurn {
   if (turn.operationId === operationId) return turn;
   const previousPrefix = `${turn.operationId}:`;
@@ -58,7 +115,7 @@ export class AgentTranscriptStore {
   }
 
   replace(peerKey: string, messages: readonly AgentTranscriptSourceMessage[]): AgentTranscriptSourceMessage[] {
-    const next = [...messages];
+    const next = canonicalizeThread(messages);
     this.threads.set(peerKey, next);
     return [...next];
   }
@@ -69,6 +126,7 @@ export class AgentTranscriptStore {
       source: 'legacy',
       role: entry.role,
       text: entry.text,
+      ...(entry.richText ? { richText: entry.richText } : {}),
       createdAtMs: entry.createdAtMs,
       kind: entry.kind === 'tool-call' ? 'action' : entry.kind,
       ...(entry.operationId ? { operationId: entry.operationId } : {}),
@@ -91,8 +149,8 @@ export class AgentTranscriptStore {
     updater: (current: AgentTranscriptSourceMessage[]) => AgentTranscriptSourceMessage[],
   ): AgentTranscriptSourceMessage[] {
     const current = this.thread(peerKey);
-    const next = updater(current);
-    this.threads.set(peerKey, [...next]);
+    const next = canonicalizeThread(updater(current));
+    this.threads.set(peerKey, next);
     return [...next];
   }
 
@@ -116,6 +174,7 @@ export class AgentTranscriptStore {
     input: {
       readonly id: string;
       readonly text: string;
+      readonly richText?: string;
       readonly createdAtMs: number;
       readonly operationId?: string;
       readonly optimistic?: boolean;
@@ -128,6 +187,7 @@ export class AgentTranscriptStore {
       source: 'legacy',
       role: 'me',
       text: input.text,
+      ...(input.richText ? { richText: input.richText } : {}),
       createdAtMs: input.createdAtMs,
       kind: 'message',
       optimistic: input.optimistic === true,

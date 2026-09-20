@@ -14,6 +14,7 @@ export interface AgentLocalTurn {
   readonly requestId: string;
   readonly messageId: string;
   readonly text: string;
+  readonly richText?: string;
   readonly createdAtMs: number;
   readonly attachments?: readonly AttachmentContext[];
 }
@@ -89,6 +90,7 @@ export class AgentRuntimeCoordinator {
     this.transcripts.appendUserMessage(input.peerKey, {
       id: input.messageId,
       text: input.text,
+      richText: input.richText,
       createdAtMs: input.createdAtMs,
       operationId: input.requestId,
       optimistic: true,

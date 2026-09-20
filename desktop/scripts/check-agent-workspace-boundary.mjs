@@ -45,6 +45,9 @@ if (/from\s+['"]\.\.\/grok-shell\//.test(agentComposer)) {
 if (/composerValue=\{composer\}/.test(shell) || /onComposerChange=\{updateComposer\}/.test(shell)) {
   violations.push('primary Agent Composer leaked back into renderer-global Messenger composer state');
 }
+if (/onDraftRestored\s*:\s*\([^)]*\)\s*=>\s*\{[^}]*setComposer/s.test(shell)) {
+  violations.push('failed Agent submissions copy restored drafts back into Messenger composer state');
+}
 if (!/composerValue=\{agentWorkspaceController\.draftForPeer\(activePeer\.key\)\}/.test(shell)
   || !/onComposerSubmit=\{\(event\) => sendAgentMessage\(event, activePeer\)\}/.test(shell)) {
   violations.push('primary Agent Composer is not bound directly to AgentWorkspaceController');

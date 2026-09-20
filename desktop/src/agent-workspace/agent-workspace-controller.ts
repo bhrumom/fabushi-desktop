@@ -3,8 +3,13 @@ import { AgentOperationRegistry, type AgentOperationSnapshot } from '../grok-run
 import { AGENT_ATTACHMENT_LIMIT } from './agent-attachments';
 import type { PersistedAgentDraft, PersistedAgentDrafts } from './agent-draft-store';
 import { agentPromptReferenceMarker, type AgentPromptReference, type AgentReplyContext } from './prompt-context';
+import { agentPromptReferencesFromRichText, normalizeAgentRichText, serializeAgentRichText } from './agent-rich-text';
 
 export interface AgentWorkspaceDraftSnapshot {
+  readonly [peerKey: string]: string;
+}
+
+export interface AgentWorkspaceRichTextSnapshot {
   readonly [peerKey: string]: string;
 }
 
@@ -21,17 +26,21 @@ export interface AgentWorkspaceReferenceSnapshot {
 }
 
 function normalizeDraft(draft: Partial<PersistedAgentDraft> | undefined): PersistedAgentDraft {
+  const text = typeof draft?.text === 'string' ? draft.text : '';
+  const references = Array.isArray(draft?.references)
+    ? draft.references.filter((reference) =>
+      reference
+      && ['agent', 'workflow', 'mcp', 'file', 'link'].includes(reference.kind),
+    ).slice(0, 32)
+    : [];
+  const richText = normalizeAgentRichText(draft?.richText, text, references);
   return {
-    text: typeof draft?.text === 'string' ? draft.text : '',
+    text,
+    ...(richText ? { richText } : {}),
     attachments: Array.isArray(draft?.attachments)
       ? [...draft.attachments].slice(0, AGENT_ATTACHMENT_LIMIT)
       : [],
-    ...(Array.isArray(draft?.references) && draft.references.length
-      ? { references: draft.references.filter((reference) =>
-        reference
-        && ['agent', 'workflow', 'mcp', 'file', 'link'].includes(reference.kind),
-      ).slice(0, 32) }
-      : {}),
+    ...(references.length ? { references } : {}),
     ...(draft?.replyTo ? { replyTo: draft.replyTo } : {}),
   };
 }
@@ -169,8 +178,24 @@ export class AgentWorkspaceController {
   }
 
   setDraft(peerKey: string, value: string): void {
+    this.setDraftDocument(peerKey, value);
+  }
+
+  setDraftDocument(peerKey: string, value: string, richText?: string): void {
     const current = this.drafts.get(peerKey) ?? normalizeDraft(undefined);
-    const next = { ...current, text: value };
+    const recoveredReferences = agentPromptReferencesFromRichText(richText);
+    const references = [
+      ...(current.references ?? []).filter((reference) => value.includes(agentPromptReferenceMarker(reference))),
+      ...recoveredReferences,
+    ].filter((reference, index, all) =>
+      all.findIndex((candidate) => candidate.kind === reference.kind && candidate.id === reference.id) === index,
+    ).slice(-32);
+    const next = normalizeDraft({
+      ...current,
+      text: value,
+      richText: normalizeAgentRichText(richText, value, references),
+      references,
+    });
     if (draftHasPayload(next)) this.drafts.set(peerKey, next);
     else this.drafts.delete(peerKey);
   }
@@ -178,10 +203,7 @@ export class AgentWorkspaceController {
   hydrateDrafts(snapshot: Readonly<Record<string, string>>): void {
     for (const [peerKey, value] of Object.entries(snapshot)) {
       if (!peerKey) continue;
-      const current = this.drafts.get(peerKey) ?? normalizeDraft(undefined);
-      const next = { ...current, text: value };
-      if (draftHasPayload(next)) this.drafts.set(peerKey, next);
-      else this.drafts.delete(peerKey);
+      this.setDraftDocument(peerKey, value);
     }
   }
 
@@ -196,6 +218,10 @@ export class AgentWorkspaceController {
 
   draftForPeer(peerKey: string | null | undefined): string {
     return peerKey ? this.drafts.get(peerKey)?.text ?? '' : '';
+  }
+
+  richTextForPeer(peerKey: string | null | undefined): string | undefined {
+    return peerKey ? this.drafts.get(peerKey)?.richText : undefined;
   }
 
   attachmentsForPeer(peerKey: string | null | undefined): readonly AttachmentContext[] {
@@ -240,7 +266,11 @@ export class AgentWorkspaceController {
       ...(current.references ?? []).filter((candidate) => candidate.kind !== reference.kind || candidate.id !== reference.id),
       reference,
     ].slice(-32);
-    const next = { ...current, references };
+    const next = normalizeDraft({
+      ...current,
+      references,
+      richText: serializeAgentRichText(current.text, references),
+    });
     if (draftHasPayload(next)) this.drafts.set(peerKey, next);
     else this.drafts.delete(peerKey);
   }
@@ -249,7 +279,11 @@ export class AgentWorkspaceController {
     const current = this.drafts.get(peerKey);
     if (!current?.references?.length) return;
     const references = current.references.filter((reference) => text.includes(agentPromptReferenceMarker(reference)));
-    const next = { ...current, ...(references.length ? { references } : {}) };
+    const next = normalizeDraft({
+      ...current,
+      references,
+      richText: serializeAgentRichText(text, references),
+    });
     if (!references.length) delete next.references;
     if (draftHasPayload(next)) this.drafts.set(peerKey, next);
     else this.drafts.delete(peerKey);
@@ -300,6 +334,7 @@ export class AgentWorkspaceController {
       // prompt. Never overwrite that newer text; only restore the submitted
       // prompt when the current Agent draft is still empty.
       text: current.text || draft.text || '',
+      richText: current.text ? current.richText : draft.richText,
       attachments: [...attachmentById.values()],
       references: [
         ...(current.references ?? []),
@@ -319,6 +354,7 @@ export class AgentWorkspaceController {
         peerKey,
         {
           text: draft.text,
+          ...(draft.richText ? { richText: draft.richText } : {}),
           attachments: [...draft.attachments],
           ...(draft.references?.length ? { references: draft.references.map((reference) => ({ ...reference })) } : {}),
           ...(draft.replyTo ? { replyTo: { ...draft.replyTo } } : {}),
@@ -332,6 +368,14 @@ export class AgentWorkspaceController {
       [...this.drafts.entries()]
         .filter(([, draft]) => Boolean(draft.text))
         .map(([peerKey, draft]) => [peerKey, draft.text]),
+    ));
+  }
+
+  richTextSnapshot(): AgentWorkspaceRichTextSnapshot {
+    return Object.freeze(Object.fromEntries(
+      [...this.drafts.entries()]
+        .filter(([, draft]) => Boolean(draft.richText))
+        .map(([peerKey, draft]) => [peerKey, draft.richText!]),
     ));
   }
 

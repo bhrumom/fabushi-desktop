@@ -1141,10 +1141,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         input.attachments,
         input.replyTo,
         input.references,
+        input.richText,
       );
-    },
-    onDraftRestored: (peerKey, text) => {
-      if (activePeerKeyRef.current === peerKey) setComposer(text);
     },
     onError: (peerKey, message) => {
       if (peerKey === activePeerKeyRef.current) setError(message);
@@ -2844,9 +2842,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setLegacyReplyTo(message);
   }
 
-  function editBotMessage(message: BotTranscriptMessage) {
+  function editBotMessage(message: BotTranscriptMessage | TranscriptEntry) {
     if (activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId) {
-      updateAgentComposer(activePeer.key, message.text);
+      agentWorkspaceController.setDraftDocument(activePeer.key, message.text, 'richText' in message ? message.richText : undefined);
+      notifyAgentWorkspaceState();
       clearAgentReply(activePeer.key);
       return;
     }
@@ -2860,6 +2859,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     attachments: readonly AttachmentContext[] = [],
     replyContext?: AgentReplyContext,
     references: readonly AgentPromptReference[] = [],
+    richText?: string,
   ): Promise<void> {
     const registry = agentWorkspaceController;
     if (registry.isBusy(peer.key)) {
@@ -2872,6 +2872,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       requestId,
       messageId: optimisticId,
       text,
+      richText,
       createdAtMs: Date.now(),
       attachments,
     });
@@ -2911,6 +2912,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     attachments: readonly AttachmentContext[] = [],
     replyContext?: AgentReplyContext,
     references: readonly AgentPromptReference[] = [],
+    richText?: string,
   ) {
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
     const messageId = existingMessageId ?? nextRequestId('queued-chat-send');
@@ -2920,6 +2922,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       peerKey: peer.key,
       agentId,
       prompt: text,
+      ...(richText ? { richText } : {}),
       ...(attachments.length ? { attachments: [...attachments] } : {}),
       ...(replyContext ? { replyTo: replyContext } : {}),
       ...(references.length ? { references: [...references] } : {}),
@@ -2945,6 +2948,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       submittedDraft.attachments,
       submittedDraft.replyTo,
       submittedDraft.references ?? [],
+      submittedDraft.richText,
     );
     setScheduledAtMs(undefined);
   }
@@ -2958,7 +2962,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     agentTranscriptStore.removeByIds(activePeer.key, [message.id]);
     notifyAgentWorkspaceState();
-    enqueueAgentPrompt(activePeer, prompt.text, undefined, prompt.attachments ?? []);
+    enqueueAgentPrompt(activePeer, prompt.text, undefined, prompt.attachments ?? [], undefined, [], prompt.richText);
   }
 
   async function stopAgentOperation(): Promise<void> {
@@ -4277,7 +4281,7 @@ async function saveInvoiceDialog() {
                 onScrollToLatest={scrollToLatest}
                 onCopyMessage={(entry) => void copyBotMessage(entry as BotTranscriptMessage)}
                 onRegenerate={(entry) => regenerateBotMessage(entry as BotTranscriptMessage)}
-                onEdit={(entry) => editBotMessage(entry as BotTranscriptMessage)}
+                onEdit={(entry) => editBotMessage(entry)}
                 onResolveApproval={(approvalId, decision) => {
                   void agentCoordinatorClient.resolveApproval({ approvalId, decision }).catch((cause: unknown) => {
                     setError(cause instanceof Error ? cause.message : String(cause));

@@ -95,6 +95,14 @@ The primary Agent Composer no longer copies Agent text into the renderer-global 
 
 This slice deliberately does not claim full TipTap parity yet. The reference snapshot persists a structured rich-text document in addition to plain prompt text; the next Composer parity slice should add that structured Agent-owned draft representation without changing Mahayana's plain-text execution contract.
 
+## 2026-09-20 Structured draft + canonical transcript cutover
+
+Agent drafts now persist both the normalized plain prompt used by Mahayana and a TipTap-compatible serialized `richText` document. The document preserves stable Agent/workflow nodes, is carried through queued submissions and failure recovery, and is attached to optimistic user transcript entries. This gives the later exact Fabu rich editor a stable storage contract without changing the Rust execution protocol.
+
+The Agent transcript source store now canonicalizes by `operationId`: only one `assistant-turn` survives for an operation, and a legacy peer message with the same operation is folded into an otherwise-empty assistant turn instead of rendering as a second answer. This normalization runs on hydration and every store update, so restart/cloud history cannot reintroduce the duplicate-reply UI that the live reducer already avoided.
+
+Failure recovery also no longer copies an Agent draft back into the renderer-global Messenger composer. The controller remains the sole owner through send, queue, failure and retry.
+
 ## Refactor rule
 
 Do not repeat the abandoned wholesale-source replacement. Keep Mahayana as the authoritative Rust Agent/runtime layer, but port the reference's domain boundaries and visible interaction model:

@@ -40,6 +40,7 @@ export interface TranscriptEntry {
   readonly kind: TranscriptEntryKind;
   readonly role: 'me' | 'peer';
   readonly text: string;
+  readonly richText?: string;
   readonly createdAtMs: number;
   readonly operationId?: string;
   readonly streaming?: boolean;
@@ -58,6 +59,7 @@ export interface TranscriptSourceMessage {
   readonly id: string;
   readonly role: 'me' | 'peer';
   readonly text: string;
+  readonly richText?: string;
   readonly createdAtMs: number;
   readonly kind?: TranscriptEntryKind | 'action';
   readonly operationId?: string;
@@ -107,6 +109,7 @@ export function projectTranscriptEntries(
     kind: sourceKind(message),
     role: message.role,
     text: message.text,
+    ...(message.richText ? { richText: message.richText } : {}),
     createdAtMs: message.createdAtMs,
     ...(message.operationId ? { operationId: message.operationId } : {}),
     ...(message.streaming ? { streaming: true } : {}),

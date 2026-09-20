@@ -1,11 +1,14 @@
 import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import { AGENT_ATTACHMENT_LIMIT } from './agent-attachments';
 import type { AgentPromptReference, AgentReplyContext } from './prompt-context';
+import { normalizeAgentRichText } from './agent-rich-text';
 
 const storageKey = 'fabushi.agent-workspace.drafts.v1';
 
 export interface PersistedAgentDraft {
   text: string;
+  /** Serialized TipTap-compatible Agent-owned document. Mahayana executes text. */
+  richText?: string;
   attachments: AttachmentContext[];
   references?: AgentPromptReference[];
   replyTo?: AgentReplyContext;
@@ -52,7 +55,7 @@ export function readAgentWorkspaceDrafts(): PersistedAgentDrafts {
     const result: PersistedAgentDrafts = {};
     for (const [peerKey, value] of Object.entries(parsed as Record<string, unknown>)) {
       if (!value || typeof value !== 'object') continue;
-      const draft = value as { text?: unknown; attachments?: unknown; references?: unknown; replyTo?: unknown };
+      const draft = value as { text?: unknown; richText?: unknown; attachments?: unknown; references?: unknown; replyTo?: unknown };
       const text = typeof draft.text === 'string' ? draft.text : '';
       const attachments = Array.isArray(draft.attachments)
         ? draft.attachments.filter(validAttachment).slice(0, AGENT_ATTACHMENT_LIMIT)
@@ -61,9 +64,15 @@ export function readAgentWorkspaceDrafts(): PersistedAgentDrafts {
         ? draft.references.filter(validPromptReference).slice(0, 32)
         : [];
       const replyTo = validReplyContext(draft.replyTo) ? draft.replyTo : undefined;
+      const richText = normalizeAgentRichText(
+        typeof draft.richText === 'string' ? draft.richText : undefined,
+        text,
+        references,
+      );
       if (text || attachments.length || references.length || replyTo) {
         result[peerKey] = {
           text,
+          ...(richText ? { richText } : {}),
           attachments,
           ...(references.length ? { references } : {}),
           ...(replyTo ? { replyTo } : {}),
@@ -81,6 +90,7 @@ export function persistAgentWorkspaceDrafts(
   attachmentsByPeer: Readonly<Record<string, readonly AttachmentContext[]>>,
   replyByPeer: Readonly<Record<string, AgentReplyContext>> = {},
   referencesByPeer: Readonly<Record<string, readonly AgentPromptReference[]>> = {},
+  richTextByPeer: Readonly<Record<string, string>> = {},
 ): void {
   if (typeof window === 'undefined') return;
   const peerKeys = new Set([
@@ -88,6 +98,7 @@ export function persistAgentWorkspaceDrafts(
     ...Object.keys(attachmentsByPeer),
     ...Object.keys(replyByPeer),
     ...Object.keys(referencesByPeer),
+    ...Object.keys(richTextByPeer),
   ]);
   const snapshot: PersistedAgentDrafts = {};
   for (const peerKey of peerKeys) {
@@ -95,9 +106,11 @@ export function persistAgentWorkspaceDrafts(
     const attachments = [...(attachmentsByPeer[peerKey] ?? [])].slice(0, AGENT_ATTACHMENT_LIMIT);
     const replyTo = replyByPeer[peerKey];
     const references = [...(referencesByPeer[peerKey] ?? [])].slice(0, 32);
+    const richText = normalizeAgentRichText(richTextByPeer[peerKey], text, references);
     if (text || attachments.length || references.length || replyTo) {
       snapshot[peerKey] = {
         text,
+        ...(richText ? { richText } : {}),
         attachments,
         ...(references.length ? { references } : {}),
         ...(replyTo ? { replyTo } : {}),

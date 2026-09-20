@@ -16,7 +16,6 @@ import { AgentWorkspaceController } from './agent-workspace-controller';
 export interface UseAgentWorkspaceRuntimeOptions {
   readonly hostReady: boolean;
   send(input: AgentSubmission): Promise<void>;
-  onDraftRestored?(peerKey: string, text: string): void;
   onError?(peerKey: string, message: string): void;
   onComputerStatus?(status: ComputerStatus): void;
   onOperationStarted?(peerKey: string, operationId: string): void;
@@ -80,6 +79,7 @@ export function useAgentWorkspaceRuntime(
           transcriptStore.appendUserMessage(submission.peerKey, {
             id: submission.messageId,
             text: submission.prompt,
+            richText: submission.richText,
             createdAtMs: submission.createdAtMs,
             optimistic: true,
             queued: true,
@@ -95,15 +95,12 @@ export function useAgentWorkspaceRuntime(
         transcriptStore.removeQueuedUserMessage(submission.peerKey, submission.messageId);
         controller.restoreDraft(submission.peerKey, {
           text: submission.prompt,
+          richText: submission.richText,
           attachments: submission.attachments ? [...submission.attachments] : [],
           references: submission.references ? [...submission.references] : [],
           replyTo: submission.replyTo,
         });
         notify();
-        optionsRef.current.onDraftRestored?.(
-          submission.peerKey,
-          controller.draftForPeer(submission.peerKey),
-        );
         optionsRef.current.onError?.(submission.peerKey, errorMessage(cause));
       },
     });
@@ -145,6 +142,7 @@ export function useAgentWorkspaceRuntime(
       controller.attachmentSnapshot(),
       controller.replySnapshot(),
       controller.referenceSnapshot(),
+      controller.richTextSnapshot(),
     );
   }, [controller, revision]);
 
