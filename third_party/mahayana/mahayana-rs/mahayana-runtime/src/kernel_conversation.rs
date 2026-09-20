@@ -97,7 +97,8 @@ pub struct KernelConversationProvider {
     model: Option<String>,
     session_ids: AsyncMutex<HashMap<String, SessionId>>,
     state: Arc<Mutex<ConversationState>>,
-    history_path: Option<PathBuf>,
+    history_path: Mutex<Option<PathBuf>>,
+    data_root: Option<PathBuf>,
 }
 
 impl KernelConversationProvider {
@@ -107,6 +108,7 @@ impl KernelConversationProvider {
         workspace_root: Option<String>,
         model: Option<String>,
         history_path: Option<PathBuf>,
+        data_root: Option<PathBuf>,
     ) -> Self {
         let history = history_path
             .as_deref()
@@ -119,8 +121,44 @@ impl KernelConversationProvider {
             model,
             session_ids: AsyncMutex::new(HashMap::new()),
             state: Arc::new(Mutex::new(ConversationState::new(history))),
-            history_path,
+            history_path: Mutex::new(history_path),
+            data_root,
         }
+    }
+
+    fn current_history_path(&self) -> Result<Option<PathBuf>, ConversationError> {
+        self.history_path
+            .lock()
+            .map_err(|_| {
+                ConversationError::Provider(
+                    "kernel conversation history path mutex poisoned".into(),
+                )
+            })
+            .map(|path| path.clone())
+    }
+
+    fn session_state_relative_path(
+        &self,
+        conversation_id: &ConversationId,
+    ) -> Result<Option<String>, ConversationError> {
+        let Some(history_path) = self.current_history_path()? else {
+            return Ok(None);
+        };
+        let Some(account_agent_root) = history_path.parent() else {
+            return Ok(None);
+        };
+        let Some(data_root) = self.data_root.as_deref() else {
+            return Ok(None);
+        };
+        let agent_id = agent_storage_id(conversation_id.as_str());
+        let absolute = account_agent_root
+            .join(agent_id)
+            .join("conversation")
+            .join("session.json");
+        let Ok(relative) = absolute.strip_prefix(data_root) else {
+            return Ok(None);
+        };
+        Ok(Some(relative.to_string_lossy().replace('\\', "/")))
     }
 
     async fn session_id(
@@ -153,6 +191,8 @@ impl KernelConversationProvider {
             .and_then(|message| message.get("createdAtMs"))
             .and_then(Value::as_i64)
             .unwrap_or(0);
+        let session_state_relative_path =
+            self.session_state_relative_path(conversation_id)?;
         let created = self
             .backend
             .open_session(OpenSessionRequest {
@@ -163,6 +203,7 @@ impl KernelConversationProvider {
                     "conversationId": conversation_id.as_str(),
                     "bootstrapHistory": history,
                     "transcriptUpdatedAtMs": transcript_updated_at_ms,
+                    "sessionStateRelativePath": session_state_relative_path,
                 }),
             })
             .await
@@ -245,7 +286,8 @@ impl ConversationProvider for KernelConversationProvider {
                 })?
                 .history
                 .push(user_message);
-            persist_history(&self.state, self.history_path.as_deref()).map_err(kernel_error)?;
+            let history_path = self.current_history_path()?;
+            persist_history(&self.state, history_path.as_deref()).map_err(kernel_error)?;
         }
 
         let kernel_operation_id = KernelOperationId::from_string(request.operation_id.as_str());
@@ -254,7 +296,7 @@ impl ConversationProvider for KernelConversationProvider {
             operation_id: request.operation_id,
             events,
             state: Arc::clone(&self.state),
-            history_path: self.history_path.clone(),
+            history_path: self.current_history_path()?,
             hidden: request.hidden,
         });
         self.backend
@@ -283,13 +325,29 @@ impl ConversationProvider for KernelConversationProvider {
     async fn reset_session(&self) -> Result<(), ConversationError> {
         self.backend.reset_session().map_err(kernel_error)?;
         self.session_ids.lock().await.clear();
+        let mut state = self.state.lock().map_err(|_| {
+            ConversationError::Provider("kernel conversation state mutex poisoned".into())
+        })?;
+        state.clear();
+        // Fabu keeps Agent-owned state on disk when the active account changes.
+        // Reset drops the in-memory session only; switching history paths loads
+        // the target account's durable transcript without erasing the source.
+        Ok(())
+    }
+
+    async fn set_history_path(&self, path: Option<PathBuf>) -> Result<(), ConversationError> {
+        self.session_ids.lock().await.clear();
+        let history = path.as_deref().map(load_history).unwrap_or_default();
         {
             let mut state = self.state.lock().map_err(|_| {
                 ConversationError::Provider("kernel conversation state mutex poisoned".into())
             })?;
-            state.clear();
+            *state = ConversationState::new(history);
         }
-        persist_history(&self.state, self.history_path.as_deref()).map_err(kernel_error)
+        *self.history_path.lock().map_err(|_| {
+            ConversationError::Provider("kernel conversation history path mutex poisoned".into())
+        })? = path;
+        Ok(())
     }
 
     async fn resolve_approval(
@@ -490,6 +548,39 @@ impl KernelEventSink for RuntimeKernelEventBridge {
             ),
         }
     }
+}
+
+fn safe_storage_segment(value: &str) -> String {
+    if !value.is_empty()
+        && value
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
+    {
+        return value.to_string();
+    }
+    let mut encoded = String::from("conversation-");
+    for byte in value.as_bytes() {
+        use std::fmt::Write as _;
+        let _ = write!(&mut encoded, "{byte:02x}");
+    }
+    encoded
+}
+
+fn agent_storage_id(conversation_id: &str) -> String {
+    if conversation_id == mahayana_core::MAHAYANA_AI_CONVERSATION_ID {
+        return "mahayana-assistant".into();
+    }
+    for prefix in ["mahayana-ai:agent:", "codex:agent:"] {
+        if let Some(agent_id) = conversation_id.strip_prefix(prefix) {
+            return safe_storage_segment(agent_id);
+        }
+    }
+    safe_storage_segment(
+        conversation_id
+            .rsplit(':')
+            .next()
+            .unwrap_or(conversation_id),
+    )
 }
 
 fn runtime_profile(profile: BuildProfile) -> RuntimeProfile {
