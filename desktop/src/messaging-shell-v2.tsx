@@ -4409,6 +4409,74 @@ async function saveInvoiceDialog() {
         />
         {grokNetworkOpen ? null : activePeer && sectionIsPeerList ? (
           <>
+            {isAgentPeer(activePeer) && !activePeer.miniAppId ? (
+              <AgentWorkspace
+                title={activePeer.title}
+                description={activePeer.subtitle}
+                botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+                botState={botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)}
+                status={activeTypingActors.length
+                  ? 'Typing…'
+                  : activePeerBusy
+                    ? 'Working…'
+                    : `${activePeer.subtitle}${hostReady ? ' · Online' : ' · Connecting'}`}
+                pinned={activePeer.pinned}
+                searchActive={conversationSearchOpen}
+                computerActive={computerProfileOpen}
+                infoActive={layoutInfoOpen}
+                onToggleSearch={() => {
+                  const next = !conversationSearchOpen;
+                  setConversationSearchOpen(next);
+                  setGlobalSearchOpen(next);
+                  setGlobalSearchCategory(next ? 'posts' : 'chats');
+                  setSearch('');
+                  window.setTimeout(() => searchInputRef.current?.focus(), 0);
+                }}
+                onToggleComputer={() => {
+                  setComputerProfileOpen((value) => !value);
+                  if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
+                }}
+                onTogglePin={() => void togglePinConversation(activePeer)}
+                onToggleInfo={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}
+                entries={agentTranscriptEntries}
+                activeOperationId={activeAgentOperationId}
+                hasEarlierMessages={matchingMessages.length > renderedMessages.length}
+                messageAreaRef={messageAreaRef}
+                showScrollToLatest={showScrollToLatest}
+                onLoadEarlier={() => setMessageRenderCount((count) => count + initialMessageRenderCount)}
+                onOpenMiniApp={(id) => void openMiniApp(id)}
+                onScroll={handleMessageAreaScroll}
+                onScrollToLatest={scrollToLatest}
+                onCopyMessage={(entry) => void copyBotMessage(entry as BotTranscriptMessage)}
+                onRegenerate={(entry) => regenerateBotMessage(entry as BotTranscriptMessage)}
+                onEdit={(entry) => editBotMessage(entry as BotTranscriptMessage)}
+                onContextMenu={(event, entry) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  const sourceMessage = [...renderedMessages, ...(queuedAgentPrompts[activePeer.key] ?? [])]
+                    .find((message) => message.id === entry.id);
+                  if (sourceMessage) setMessageMenu({ message: sourceMessage, x: event.clientX, y: event.clientY });
+                }}
+                notice={error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
+                beforeComposer={<>
+                  {replyTo ? <div className={extra.composerBanner} data-testid="reply-message-banner"><Reply size={15} /><div><strong>回复</strong><span>{replyTo.text}</span></div><button type="button" data-testid="reply-message-cancel" onClick={() => setReplyTo(null)}><X size={14} /></button></div> : null}
+                  {scheduledAtMs ? <div className={extra.composerBanner}><span>⏱</span><div><strong>定时发送</strong><span>{new Date(scheduledAtMs).toLocaleString()}</span></div><button type="button" onClick={() => setScheduledAtMs(undefined)}><X size={14} /></button></div> : null}
+                </>}
+                composerAccessory={<>
+                  <input ref={fileInputRef} type="file" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
+                  {attachmentProgress ? <span className={extra.uploadProgress}>{attachmentProgress}</span> : null}
+                </>}
+                composerValue={composer}
+                composerReady={hostReady}
+                composerBusy={Boolean(activeAgentOperationId)}
+                enterToSend={desktopPreferences.enterToSend}
+                onComposerChange={updateComposer}
+                onComposerSubmit={(event) => void sendMessage(event)}
+                onAttach={() => fileInputRef.current?.click()}
+                onStop={() => void stopAgentOperation()}
+              />
+            ) : (
+              <>
             {isAgentPeer(activePeer) ? (
               <GrokAgentHeader
                 title={activePeer.title}
@@ -4597,6 +4665,8 @@ async function saveInvoiceDialog() {
                   ? <button data-testid="messenger-send" className={styles.sendButton} type="submit" disabled={!hostReady || pendingSend}><Send size={19} /></button>
                   : null}
               </form>
+            )}
+              </>
             )}
           </>
         ) : (
