@@ -32,8 +32,8 @@ export interface AgentOverlaySettingsProps {
   pending: import('./agent-settings-controller').AgentSettingsPending;
   error: string | null;
   onToggle(): void;
-  onUpdateProfile(profile: AgentSettingsProfileUpdate): Promise<void>;
-  onSetNotifications(enabled: boolean): Promise<void>;
+  onUpdateProfile(profile: AgentSettingsProfileUpdate): Promise<unknown>;
+  onSetNotifications(enabled: boolean): Promise<unknown>;
 }
 
 export interface AgentOverlaysProps {
