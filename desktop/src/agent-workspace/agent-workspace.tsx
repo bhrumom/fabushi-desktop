@@ -2,6 +2,7 @@ import React, { type FormEvent, type ReactNode } from 'react';
 import type { BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
 import AgentHeader from './agent-header';
 import AgentComposer from './agent-composer';
+import type { AgentPullRequestSuggestion } from './agent-composer-suggestion-provider';
 import AgentSearch from './agent-search';
 import AgentTranscript, { type AgentTranscriptProps } from './agent-transcript';
 
@@ -34,6 +35,7 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   composerReplyTarget?: { id: string; label: string; text: string };
   composerMentionCandidates?: ReadonlyArray<{ id: string; name: string; description?: string; kind?: 'agent' | 'mcp' }>;
   composerWorkflowCandidates?: ReadonlyArray<{ id: string; name: string; description?: string }>;
+  composerPullRequestCandidates?: readonly AgentPullRequestSuggestion[];
   enterToSend: boolean;
   onComposerChange(value: string, richText?: string): void;
   onComposerMention?(candidate: { id: string; name: string; description?: string; kind?: 'agent' | 'mcp' }): void;
@@ -117,6 +119,7 @@ export default function AgentWorkspace(props: AgentWorkspaceProps) {
       replyTarget={props.composerReplyTarget}
       mentionCandidates={props.composerMentionCandidates}
       workflowCandidates={props.composerWorkflowCandidates}
+      pullRequestCandidates={props.composerPullRequestCandidates}
       onClearReplyTarget={props.onClearComposerReply}
       onMention={props.onComposerMention}
       onWorkflowReference={props.onComposerWorkflowReference}
