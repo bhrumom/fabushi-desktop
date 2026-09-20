@@ -1,3 +1,4 @@
+import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { AssistantTurn } from '../mahayana-assistant-turn';
 
 export type TranscriptEntryKind =
@@ -33,6 +34,7 @@ export interface TranscriptEntry {
   readonly detail?: string;
   readonly status?: TranscriptEntryStatus;
   readonly assistantTurn?: AssistantTurn;
+  readonly attachments?: readonly AttachmentContext[];
   readonly miniAppId?: string;
 }
 
@@ -50,6 +52,7 @@ export interface TranscriptSourceMessage {
   readonly actionDetail?: string;
   readonly actionStatus?: 'running' | 'completed' | 'failed' | 'interrupted';
   readonly assistantTurn?: AssistantTurn;
+  readonly attachments?: readonly AttachmentContext[];
   readonly miniAppId?: string;
 }
 
@@ -90,6 +93,7 @@ export function projectTranscriptEntries(
     ...(message.actionDetail ? { detail: message.actionDetail } : {}),
     ...(message.actionStatus ? { status: message.actionStatus } : {}),
     ...(message.assistantTurn ? { assistantTurn: message.assistantTurn } : {}),
+    ...(message.attachments?.length ? { attachments: message.attachments } : {}),
     ...(message.miniAppId ? { miniAppId: message.miniAppId } : {}),
   }));
 }
