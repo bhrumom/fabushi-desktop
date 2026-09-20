@@ -1,7 +1,7 @@
 import { Monitor, Pin, Search, Settings, X } from 'lucide-react';
 import React from 'react';
 import { BotMark, type BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
-import type { ComputerStatus } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { ComputerStatus, InferenceProvider } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { RemoteComputerDesktopState } from '../../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
 import AgentSettingsPanel, { type AgentSettingsProfileUpdate, type AgentSettingsProfileValue } from './agent-settings-panel';
 import styles from './agent-overlays.module.css';
@@ -34,6 +34,7 @@ export interface AgentOverlaySettingsProps {
   onToggle(): void;
   onUpdateProfile(profile: AgentSettingsProfileUpdate): Promise<unknown>;
   onSetNotifications(enabled: boolean): Promise<unknown>;
+  onSetInferenceProvider(provider: InferenceProvider | 'account-default'): Promise<unknown>;
 }
 
 export interface AgentOverlaysProps {
@@ -85,6 +86,7 @@ export default function AgentOverlays(props: AgentOverlaysProps) {
       error={settings.error}
       onUpdateProfile={settings.onUpdateProfile}
       onSetNotifications={settings.onSetNotifications}
+      onSetInferenceProvider={settings.onSetInferenceProvider}
     /> : null}
 
     {computer.open ? <section className={styles.computer} data-testid="bot-computer-panel" data-agent-id={computer.agentId}>

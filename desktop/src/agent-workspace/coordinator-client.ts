@@ -1,3 +1,4 @@
+import type { InferenceProvider } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { ApprovalResolution, AttachmentContext, AuthState, HostConfig, HostInfo, RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { MahayanaHostTransport } from '../../../frontend/apps/web/src/lib/mahayana-host/transport';
 import { composeAgentPromptText, type AgentPromptReference, type AgentReplyContext } from './prompt-context';
@@ -209,6 +210,8 @@ export class AgentCoordinatorClient {
       avatarColor?: string;
       notifyOnUpdates?: boolean;
       notificationsEnabled?: boolean;
+      inferenceProvider?: InferenceProvider;
+      clearInferenceProvider?: boolean;
     },
   ) {
     return this.transport.execute({

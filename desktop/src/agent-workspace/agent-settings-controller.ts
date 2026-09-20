@@ -1,4 +1,4 @@
-import type { BotSummary } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { BotSummary, InferenceProvider } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { AgentDirectoryController } from './use-agent-directory-controller';
 
 export interface AgentSettingsProfileValue {
@@ -8,6 +8,7 @@ export interface AgentSettingsProfileValue {
   readonly avatarShape: string;
   readonly avatarColor: string;
   readonly notifyOnUpdatesEnabled: boolean;
+  readonly inferenceProvider: InferenceProvider | 'account-default';
 }
 
 export interface AgentSettingsProfileUpdate {
@@ -18,7 +19,7 @@ export interface AgentSettingsProfileUpdate {
   readonly avatarColor: string;
 }
 
-export type AgentSettingsPending = 'profile' | 'notifications' | null;
+export type AgentSettingsPending = 'profile' | 'notifications' | 'provider' | null;
 
 export interface AgentSettingsSnapshot {
   readonly agent: BotSummary | null;
@@ -41,6 +42,7 @@ function profileValue(agent: BotSummary | null): AgentSettingsProfileValue | nul
     avatarShape: agent.avatarShape?.trim() ?? '',
     avatarColor: agent.avatarColor?.trim() ?? '',
     notifyOnUpdatesEnabled: agent.notifyOnUpdates ?? agent.notificationsEnabled,
+    inferenceProvider: agent.inferenceProvider ?? 'account-default',
   };
 }
 
@@ -53,7 +55,8 @@ function sameAgent(left: BotSummary | null, right: BotSummary | null): boolean {
     && (left.avatarShape ?? '') === (right.avatarShape ?? '')
     && (left.avatarColor ?? '') === (right.avatarColor ?? '')
     && left.notifyOnUpdates === right.notifyOnUpdates
-    && left.notificationsEnabled === right.notificationsEnabled;
+    && left.notificationsEnabled === right.notificationsEnabled
+    && (left.inferenceProvider ?? 'fabushi') === (right.inferenceProvider ?? 'fabushi');
 }
 
 /**
@@ -130,6 +133,31 @@ export function createAgentSettingsController(source: AgentSettingsSource, initi
           avatarShape: normalized.avatarShape,
           avatarColor: normalized.avatarColor,
         });
+        return requestGeneration === generation && agent?.id === agentId;
+      } catch (cause) {
+        if (requestGeneration === generation && agent?.id === agentId) {
+          error = cause instanceof Error ? cause.message : String(cause);
+          emit();
+        }
+        return false;
+      } finally {
+        if (requestGeneration === generation && agent?.id === agentId) {
+          pending = null;
+          emit();
+        }
+      }
+    },
+    async setInferenceProvider(provider: InferenceProvider | 'account-default'): Promise<boolean> {
+      if (!agent || pending || (agent.inferenceProvider ?? 'account-default') === provider) return false;
+      const requestGeneration = generation;
+      const agentId = agent.id;
+      pending = 'provider';
+      error = null;
+      emit();
+      try {
+        await source.update(agentId, provider === 'account-default'
+          ? { clearInferenceProvider: true }
+          : { inferenceProvider: provider });
         return requestGeneration === generation && agent?.id === agentId;
       } catch (cause) {
         if (requestGeneration === generation && agent?.id === agentId) {

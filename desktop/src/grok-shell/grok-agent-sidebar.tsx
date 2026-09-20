@@ -288,7 +288,7 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
   const selectedSet = useMemo(() => new Set(props.selectedKeys ?? []), [props.selectedKeys]);
   const selectedItems = visible.filter((item) => selectedSet.has(item.key));
   const selectionEnabled = selectedItems.length > 0;
-  const movableSelected = selectedItems.filter((item) => !item.pinned);
+  const movableSelected = selectedItems;
 
   const renderRow = (item: GrokAgentSidebarItem) => <AgentRow
     key={item.key}
@@ -370,7 +370,7 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
             onCreate={section.isSynthetic && props.onCreateSection ? () => props.onCreateSection!([]) : undefined}
             onDropAgent={props.onMoveToSection ? (key) => {
               const item = props.agents.find((candidate) => candidate.key === key);
-              if (item && !item.pinned) props.onMoveToSection!(item, section.id);
+              if (item) props.onMoveToSection!(item, section.id);
             } : undefined}
           />
           {section.isCollapsed ? null : section.agents.map(renderRow)}

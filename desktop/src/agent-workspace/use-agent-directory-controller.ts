@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import type { BotSummary, RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { BotSummary, InferenceProvider, RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { AgentCoordinatorClient } from './coordinator-client';
 
 export interface AgentDirectoryControllerOptions {
@@ -23,6 +23,8 @@ export interface AgentDirectoryController {
       avatarColor?: string;
       notifyOnUpdates?: boolean;
       notificationsEnabled?: boolean;
+      inferenceProvider?: InferenceProvider;
+      clearInferenceProvider?: boolean;
     },
   ): Promise<unknown>;
   duplicate(id: string): Promise<unknown>;
@@ -90,6 +92,8 @@ export function useAgentDirectoryController(
       avatarColor?: string;
       notifyOnUpdates?: boolean;
       notificationsEnabled?: boolean;
+      inferenceProvider?: InferenceProvider;
+      clearInferenceProvider?: boolean;
     },
   ) => {
     try {

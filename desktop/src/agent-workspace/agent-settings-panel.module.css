@@ -22,7 +22,8 @@
   font-size: 11px;
 }
 .root input,
-.root textarea {
+.root textarea,
+.root select {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid rgba(255,255,255,.08);
@@ -36,12 +37,14 @@
   resize: vertical;
 }
 .root input:focus,
-.root textarea:focus {
+.root textarea:focus,
+.root select:focus {
   border-color: rgba(255,255,255,.22);
   background: rgba(0,0,0,.24);
 }
 .root input:disabled,
 .root textarea:disabled,
+.root select:disabled,
 .row button:disabled {
   opacity: .55;
 }

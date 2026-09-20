@@ -852,8 +852,19 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(sectionDialog).toBeVisible();
       await sectionDialog.getByLabel('Section name').fill('Focused work');
       await sectionDialog.getByRole('button', { name: 'Create' }).click();
-      await expect(page.locator('[data-section-id]').filter({ hasText: 'Focused work' })).toBeVisible();
+      const focusedWork = page.locator('[data-section-id]').filter({ hasText: 'Focused work' });
+      await expect(focusedWork).toBeVisible();
       await expect(selectionBar).toHaveCount(0);
+
+      // Pinning is a presentation dimension, not section ownership. The Agent
+      // stays under Pinned while pinned, then must project back into the section
+      // that was just persisted when it is unpinned. This guards the original
+      // 35522950977 failure instead of merely asserting that an empty header exists.
+      await expect(peer.locator('..')).toHaveAttribute('data-pinned', 'true');
+      await expect(focusedWork.getByRole('button', { name: /大乘助手/ })).toHaveCount(0);
+      await page.getByRole('button', { name: /大乘助手 actions/ }).click();
+      await page.getByRole('menuitem', { name: 'Unpin' }).click();
+      await expect(focusedWork.getByRole('button', { name: /大乘助手/ })).toBeVisible();
     });
   } finally {
     await app.close();

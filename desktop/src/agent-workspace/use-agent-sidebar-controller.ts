@@ -253,14 +253,14 @@ export function useAgentSidebarController(
   }, []);
 
   const createSection = useCallback((name: string, items: readonly AgentSidebarStateItem[]) => {
-    const sectionable = items.filter((item) => !item.pinned).map((item) => item.key);
+    const sectionable = items.map((item) => item.key);
     layoutMutationRevisionRef.current += 1;
     setSections((current) => createAgentSidebarSection(current, name, sectionable).sections);
     clearSelection();
   }, [clearSelection]);
 
   const moveToSection = useCallback((items: readonly AgentSidebarStateItem[], sectionId: string) => {
-    const keys = items.filter((item) => !item.pinned).map((item) => item.key);
+    const keys = items.map((item) => item.key);
     if (!keys.length) return;
     layoutMutationRevisionRef.current += 1;
     setSections((current) => assignAgentsToSidebarSection(current, keys, sectionId));

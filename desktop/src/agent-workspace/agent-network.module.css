@@ -188,7 +188,42 @@
 .send:disabled { opacity: .35; }
 .error { color: #f4b2b2; font-size: 11px; }
 .empty { padding: 18px; color: rgba(255,255,255,.42); font-size: 11px; }
+
+.orgGraph {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.075);
+  border-radius: 14px;
+  background: rgba(255,255,255,.018);
+}
+.orgSummary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.orgSummary > span { display: grid; gap: 2px; padding: 9px 10px; border-radius: 10px; background: rgba(255,255,255,.03); }
+.orgSummary strong { font-size: 15px; }
+.orgSummary small { color: rgba(255,255,255,.42); font-size: 9px; text-transform: uppercase; letter-spacing: .04em; }
+.orgTopology { display: grid; grid-template-columns: minmax(150px, .7fr) minmax(0, 2fr); gap: 10px; align-items: stretch; }
+.orgHub { display: flex; align-items: center; gap: 9px; min-height: 70px; padding: 12px; border-radius: 11px; background: rgba(255,255,255,.05); }
+.orgHub > span { display: grid; min-width: 0; gap: 3px; }
+.orgHub strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.orgHub small { color: rgba(255,255,255,.42); font-size: 9px; }
+.orgEdges { display: flex; flex-wrap: wrap; align-content: center; gap: 7px; min-width: 0; padding: 8px; border-radius: 11px; background: rgba(255,255,255,.02); }
+.orgEdge { display: inline-flex; align-items: center; gap: 5px; min-height: 27px; padding: 0 8px; color: rgba(255,255,255,.64); font-size: 9px; border: 1px solid rgba(255,255,255,.07); border-radius: 999px; background: rgba(255,255,255,.025); }
+.orgEdge:hover { color: rgba(255,255,255,.9); background: rgba(255,255,255,.06); }
+.orgEdge span { color: rgba(255,255,255,.38); }
+.orgEdge b { color: rgba(255,255,255,.28); font-weight: 400; }
+.orgEmpty { align-self: center; color: rgba(255,255,255,.38); font-size: 10px; }
+.coordinationFeed { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 7px; }
+.coordinationFeed button { display: grid; gap: 4px; min-width: 0; padding: 9px 10px; color: inherit; text-align: left; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.02); }
+.coordinationFeed button:hover { background: rgba(255,255,255,.05); }
+.coordinationFeed span { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 9px; }
+.coordinationFeed b { color: rgba(255,255,255,.3); font-weight: 400; }
+.coordinationFeed em { margin-left: auto; color: rgba(255,255,255,.52); font-size: 8px; font-style: normal; }
+.coordinationFeed small { overflow: hidden; color: rgba(255,255,255,.42); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.headingMeta { margin-left: auto; color: rgba(255,255,255,.34); font-size: 9px; font-weight: 500; text-transform: none; letter-spacing: 0; }
 @media (max-width: 900px) {
   .body { grid-template-columns: 1fr; overflow: auto; }
   .broadcast { border-left: 0; border-top: 1px solid rgba(255,255,255,.07); }
+  .orgSummary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .orgTopology { grid-template-columns: 1fr; }
 }

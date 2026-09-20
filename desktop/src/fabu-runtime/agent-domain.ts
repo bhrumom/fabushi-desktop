@@ -1,5 +1,4 @@
 import type { InferenceProvider } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
-
 export interface FabuBotLike {
   id: string;
   agentId?: string | null;
@@ -33,7 +32,7 @@ export interface FabuAgentProfile {
 export interface FabuAgentSettings {
   notifyOnAgentUpdates: boolean;
   hiddenFromSidebar: boolean;
-  inferenceProvider: InferenceProvider;
+  inferenceProvider?: InferenceProvider;
 }
 
 function clean(value: unknown): string {
@@ -87,6 +86,6 @@ export function projectFabuAgentSettings(bot: FabuBotLike): FabuAgentSettings {
         ? bot.notificationsEnabled
         : true,
     hiddenFromSidebar: bot.hidden === true,
-    inferenceProvider: bot.inferenceProvider ?? 'fabushi',
+    ...(bot.inferenceProvider ? { inferenceProvider: bot.inferenceProvider } : {}),
   };
 }

@@ -389,6 +389,8 @@ mod tests {
                     operation_id: OperationId("operation:test".into()),
                     text: "收到".into(),
                     client_message_id: Some("client:test".into()),
+                    inference_provider: None,
+                    hidden: false,
                 },
                 events.clone(),
             )

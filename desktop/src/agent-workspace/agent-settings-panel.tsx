@@ -1,4 +1,5 @@
 import React, { useEffect, useState, type KeyboardEvent } from 'react';
+import type { InferenceProvider } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { AgentSettingsPending, AgentSettingsProfileUpdate, AgentSettingsProfileValue } from './agent-settings-controller';
 export type { AgentSettingsProfileUpdate, AgentSettingsProfileValue } from './agent-settings-controller';
 import styles from './agent-settings-panel.module.css';
@@ -10,6 +11,7 @@ export interface AgentSettingsPanelProps {
   readonly error: string | null;
   readonly onUpdateProfile: (profile: AgentSettingsProfileUpdate) => Promise<unknown>;
   readonly onSetNotifications: (enabled: boolean) => Promise<unknown>;
+  readonly onSetInferenceProvider: (provider: InferenceProvider | 'account-default') => Promise<unknown>;
 }
 
 function EditableField({
@@ -102,6 +104,22 @@ export default function AgentSettingsPanel(props: AgentSettingsPanelProps) {
     <label><span>Description</span><EditableField label="Agent description" value={props.value.description} multiline disabled={props.pending != null} placeholder="What this Agent is for" onCommit={(value) => void updateProfile('description', value)} /></label>
     <label><span>Avatar shape</span><EditableField label="Agent avatar shape" value={props.value.avatarShape} disabled={props.pending != null} placeholder="circle" onCommit={(value) => void updateProfile('avatarShape', value)} /></label>
     <label><span>Avatar color</span><EditableField label="Agent avatar color" value={props.value.avatarColor} disabled={props.pending != null} placeholder="#7c3aed" onCommit={(value) => void updateProfile('avatarColor', value)} /></label>
+    <label>
+      <span>Inference provider</span>
+      <select
+        aria-label="Agent inference provider"
+        value={props.value.inferenceProvider}
+        disabled={props.pending != null}
+        onChange={(event) => void props.onSetInferenceProvider(event.currentTarget.value as InferenceProvider | 'account-default')}
+      >
+        <option value="account-default">Account default</option>
+        <option value="fabushi">Fabushi</option>
+        <option value="codex">Codex</option>
+        <option value="openrouter">OpenRouter</option>
+        <option value="claude-code">Claude Code</option>
+      </select>
+      <small>This setting belongs to this Agent and is persisted with its Mahayana session.</small>
+    </label>
     <div className={styles.row}>
       <span><strong>Notifications</strong><small>Get notified when this Agent finishes or needs input</small></span>
       <button type="button" role="switch" aria-checked={props.value.notifyOnUpdatesEnabled} disabled={props.pending != null} onClick={toggleNotifications}>

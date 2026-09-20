@@ -71,10 +71,15 @@ impl ProviderRoutingEngineBackend {
         default_provider: impl Into<String>,
         backends: HashMap<String, Arc<dyn EngineBackend>>,
     ) -> Result<Self, KernelError> {
-        let default_provider = normalize_provider(&default_provider.into())
+        let requested_default = normalize_provider(&default_provider.into())
             .unwrap_or(PROVIDER_FABUSHI)
             .to_string();
-        let default_backend = backends.get(&default_provider).or_else(|| backends.get(PROVIDER_FABUSHI))
+        let default_provider = if backends.contains_key(&requested_default) {
+            requested_default
+        } else {
+            PROVIDER_FABUSHI.to_string()
+        };
+        let default_backend = backends.get(&default_provider)
             .ok_or_else(|| KernelError::BackendUnavailable(
                 "provider router requires a Fabushi/default backend".into(),
             ))?;

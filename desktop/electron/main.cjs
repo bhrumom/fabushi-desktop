@@ -97,25 +97,20 @@ function encryptedProviderSecret(name) {
 }
 
 function providerEnvironment(inferenceProvider) {
-  if (inferenceProvider === 'openrouter') {
-    const value = encryptedProviderSecret('inference/openrouter/api-key');
-    if (!value) return {};
-    return {
-      MAHAYANA_MODEL_BEARER_TOKEN: value,
-      MAHAYANA_OPENROUTER_MODEL: process.env.MAHAYANA_OPENROUTER_MODEL || 'openai/gpt-5.2',
-    };
+  const result = {};
+  const openrouter = encryptedProviderSecret('inference/openrouter/api-key');
+  if (openrouter && !/[\r\n]/.test(openrouter)) {
+    result.MAHAYANA_OPENROUTER_API_KEY = openrouter;
+    result.MAHAYANA_OPENROUTER_MODEL = process.env.MAHAYANA_OPENROUTER_MODEL || 'openai/gpt-5.2';
+    if (inferenceProvider === 'openrouter') result.MAHAYANA_MODEL_BEARER_TOKEN = openrouter;
   }
-  if (inferenceProvider === 'claude-code') {
-    const value = encryptedProviderSecret('inference/claude/api-key') || process.env.ANTHROPIC_API_KEY?.trim();
-    if (!value || /[\r\n]/.test(value)) return {};
-    return {
-      MAHAYANA_MODEL_BEARER_TOKEN: value,
-      MAHAYANA_CLAUDE_MODEL: process.env.MAHAYANA_CLAUDE_MODEL || 'claude-sonnet-4-6',
-    };
+  const claude = encryptedProviderSecret('inference/claude/api-key') || process.env.ANTHROPIC_API_KEY?.trim();
+  if (claude && !/[\r\n]/.test(claude)) {
+    result.MAHAYANA_CLAUDE_API_KEY = claude;
+    result.MAHAYANA_CLAUDE_MODEL = process.env.MAHAYANA_CLAUDE_MODEL || 'claude-sonnet-4-6';
+    if (inferenceProvider === 'claude-code') result.MAHAYANA_MODEL_BEARER_TOKEN = claude;
   }
-  return {
-    // Never forward provider credentials to the Fabushi/Codex Host generation.
-  };
+  return result;
 }
 
 const host = new MahayanaHostProcess({ providerEnvironment });

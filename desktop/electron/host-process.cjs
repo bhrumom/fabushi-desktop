@@ -317,6 +317,8 @@ class MahayanaHostProcess {
           ANTHROPIC_API_KEY: '',
           OPENROUTER_API_KEY: '',
           MAHAYANA_MODEL_BEARER_TOKEN: '',
+          MAHAYANA_OPENROUTER_API_KEY: '',
+          MAHAYANA_CLAUDE_API_KEY: '',
           MAHAYANA_API_BASE_URL: productApiBaseUrl(this.app, this.env),
           MAHAYANA_AUTH_STORAGE_NAMESPACE: this.env.MAHAYANA_AUTH_STORAGE_NAMESPACE || 'fabushi-desktop-v2',
           FABUSHI_APP_DATA: this.app.getPath('userData'),

@@ -94,6 +94,7 @@ use mahayana_host_protocol::HostConfig;
 use mahayana_host_protocol::HostEvent;
 use mahayana_host_protocol::HostInfo;
 use mahayana_host_protocol::HostMode;
+use mahayana_host_protocol::InferenceProvider;
 use mahayana_host_protocol::ListenerIntegrationSummary;
 use mahayana_host_protocol::ListenerPlatform;
 use mahayana_host_protocol::LocalToolPermission;
@@ -1526,6 +1527,7 @@ impl FeatureHostController {
                         "bot name must not be empty".into(),
                     ));
                 }
+                agent_inference_provider_key(inference_provider)?;
                 let id = next_id(&mut state, "agent");
                 let bot = BotSummary {
                     id: id.clone(),
@@ -1539,9 +1541,9 @@ impl FeatureHostController {
                     avatar_color: clean_optional_string(avatar_color),
                     notifications_enabled: true,
                     notify_on_updates: true,
-                    inference_provider: inference_provider.unwrap_or(state.settings.inference_provider),
                     unread: false,
                     conversation_id: Some(format!("codex:agent:{id}")),
+                    inference_provider,
                 };
                 state.bots.insert(id, bot.clone());
                 ("created", bot)
@@ -1558,6 +1560,7 @@ impl FeatureHostController {
                 notify_on_updates,
                 inference_provider,
                 unread,
+                clear_inference_provider,
                 ..
             } => {
                 let bot = state
@@ -1594,11 +1597,19 @@ impl FeatureHostController {
                 if let Some(enabled) = notify_on_updates {
                     bot.notify_on_updates = enabled;
                 }
-                if let Some(provider) = inference_provider {
-                    bot.inference_provider = provider;
-                }
                 if let Some(unread) = unread {
                     bot.unread = unread;
+                }
+                if clear_inference_provider && inference_provider.is_some() {
+                    return Err(FeatureHostError::Contract(
+                        "bot.update cannot set and clear inferenceProvider in the same request".into(),
+                    ));
+                }
+                if clear_inference_provider {
+                    bot.inference_provider = None;
+                } else if let Some(provider) = inference_provider {
+                    agent_inference_provider_key(Some(provider))?;
+                    bot.inference_provider = Some(provider);
                 }
                 ("updated", bot.clone())
             }
@@ -1623,9 +1634,9 @@ impl FeatureHostController {
                     avatar_color: source.avatar_color,
                     notifications_enabled: source.notifications_enabled,
                     notify_on_updates: source.notify_on_updates,
-                    inference_provider: source.inference_provider,
                     unread: false,
                     conversation_id: Some(format!("codex:agent:{new_id}")),
+                    inference_provider: source.inference_provider,
                 };
                 // Match Fabu clone semantics: copy reusable Agent-owned state
                 // (memory, automations, workflow enablement) but never transcript
@@ -2110,6 +2121,7 @@ impl FeatureHostController {
                 conversation_id: ConversationId(conversation_id),
                 text: prompt,
                 client_message_id: Some(format!("teach:{}:{}", bot.id, now_millis())),
+                inference_provider: agent_inference_provider_key(bot.inference_provider)?,
                 hidden: true,
             })?;
             let operation_id = match response {
@@ -2536,6 +2548,7 @@ impl FeatureHostController {
         source: &str,
         prompt: String,
         client_message_id: String,
+                        inference_provider: None,
     ) -> Result<Option<String>, FeatureHostError> {
         if self.config.mode == HostMode::Test {
             let runtime_agent_id = bot_runtime_agent_id(target).to_string();
@@ -2576,6 +2589,7 @@ impl FeatureHostController {
                 conversation_id: ConversationId(conversation_id),
                 text: prompt,
                 client_message_id: Some(client_message_id),
+                inference_provider: agent_inference_provider_key(target.inference_provider)?,
                 hidden: true,
             })?;
             let operation_id = match response {
@@ -3556,15 +3570,18 @@ impl FeatureHostController {
                     HostMode::Production => {
                         #[cfg(feature = "production")]
                         {
-                            let conversation_id = {
+                            let (conversation_id, inference_provider) = {
                                 let state = self.state()?;
-                                find_bot_by_runtime_or_surface_id(&state, &agent_id)
-                                    .and_then(|bot| bot.conversation_id.clone())
-                                    .ok_or_else(|| {
-                                        FeatureHostError::Contract(format!(
-                                            "bot has no conversation: {agent_id}"
-                                        ))
-                                    })?
+                                let bot = find_bot_by_runtime_or_surface_id(&state, &agent_id)
+                                    .ok_or_else(|| FeatureHostError::Contract(format!(
+                                        "unknown bot: {agent_id}"
+                                    )))?;
+                                let conversation_id = bot.conversation_id.clone().ok_or_else(|| {
+                                    FeatureHostError::Contract(format!(
+                                        "bot has no conversation: {agent_id}"
+                                    ))
+                                })?;
+                                (conversation_id, agent_inference_provider_key(bot.inference_provider)?)
                             };
                             let (provider, model) = match self
                                 .runtime()?
@@ -3581,6 +3598,7 @@ impl FeatureHostController {
                                     conversation_id: ConversationId(conversation_id),
                                     text: runtime_text,
                                     client_message_id: Some(request_id.clone()),
+                                    inference_provider,
                                     hidden: true,
                                 })?;
                             let operation_id = match response {
@@ -6242,9 +6260,10 @@ impl FeatureHostController {
                 },
                 conversation_id,
                 runtime_text,
+                agent_inference_provider_key(member.inference_provider)?,
             )
         };
-        let (context, conversation_id, runtime_text) = prepared;
+        let (context, conversation_id, runtime_text, inference_provider) = prepared;
         let response = self.runtime()?.execute(RuntimeCommand::SendMessage {
             conversation_id: ConversationId(conversation_id),
             text: runtime_text,
@@ -6252,6 +6271,7 @@ impl FeatureHostController {
                 "{}:{}:{}",
                 context.run_id, context.group_id, context.member_id
             )),
+            inference_provider,
             hidden: true,
         })?;
         let operation_id = match response {
@@ -7240,6 +7260,9 @@ impl FeatureHostController {
             .as_ref()
             .and_then(|bot| bot.agent_id.clone())
             .or_else(|| agent_id.clone());
+        let runtime_inference_provider = agent_inference_provider_key(
+            bot_binding.as_ref().and_then(|bot| bot.inference_provider),
+        )?;
         if let Some(mini_app_id) = agent_id
             .as_deref()
             .filter(|id| *id != "mahayana-assistant" && bot_conversation_id.is_none())
@@ -7349,6 +7372,7 @@ impl FeatureHostController {
             conversation_id,
             text: runtime_text,
             client_message_id: Some(request_id.clone()),
+            inference_provider: runtime_inference_provider,
             hidden: false,
         })?;
         let operation_id = match response {
@@ -8667,9 +8691,9 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             avatar_color: None,
             notifications_enabled: true,
             notify_on_updates: true,
-            inference_provider: Default::default(),
             unread: false,
             conversation_id: Some(MAHAYANA_AI_CONVERSATION_ID.into()),
+            inference_provider: None,
         },
         BotSummary {
             id: "research-bot".into(),
@@ -8683,9 +8707,9 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             avatar_color: None,
             notifications_enabled: true,
             notify_on_updates: true,
-            inference_provider: Default::default(),
             unread: false,
             conversation_id: Some("codex:agent:research".into()),
+            inference_provider: None,
         },
         BotSummary {
             id: "incident-bot".into(),
@@ -8699,9 +8723,9 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             avatar_color: None,
             notifications_enabled: true,
             notify_on_updates: true,
-            inference_provider: Default::default(),
             unread: false,
             conversation_id: Some("codex:agent:incident".into()),
+            inference_provider: None,
         },
     ]
     .into_iter()
@@ -9519,6 +9543,18 @@ struct ParsedMemoryFact {
 
 fn bot_runtime_agent_id(bot: &BotSummary) -> &str {
     bot.agent_id.as_deref().unwrap_or(bot.id.as_str())
+}
+
+fn agent_inference_provider_key(
+    provider: Option<InferenceProvider>,
+) -> Result<Option<String>, FeatureHostError> {
+    match provider {
+        None => Ok(None),
+        Some(InferenceProvider::Fabushi) => Ok(Some("fabushi".to_string())),
+        Some(InferenceProvider::ClaudeCode) => Ok(Some("claude-code".to_string())),
+        Some(InferenceProvider::OpenRouter) => Ok(Some("openrouter".to_string())),
+        Some(InferenceProvider::Codex) => Ok(Some("codex".to_string())),
+    }
 }
 
 fn find_bot_by_runtime_or_surface_id<'a>(
@@ -11794,11 +11830,13 @@ fn persist_fabu_agent_manifest(agent_dir: &Path, bot: &BotSummary) -> Result<(),
         "avatarShape": bot.avatar_shape.clone().unwrap_or_default(),
         "avatarColor": bot.avatar_color.clone().unwrap_or_default(),
     });
-    let settings = json!({
+    let mut settings = json!({
         "notifyOnAgentUpdates": bot.notify_on_updates,
         "hiddenFromSidebar": bot.hidden,
-        "inferenceProvider": bot.inference_provider,
     });
+    if let Some(provider) = bot.inference_provider {
+        settings["inferenceProvider"] = json!(provider);
+    }
     persist_json_atomic(&agent_dir.join("profile.json"), &profile, "Agent profile")?;
     persist_json_atomic(&agent_dir.join("settings.json"), &settings, "Agent settings")
 }
@@ -12546,9 +12584,9 @@ mod tests {
                     avatar_color: None,
                     notifications_enabled: true,
                     notify_on_updates: true,
-                    inference_provider: Default::default(),
                     unread: false,
                     conversation_id: Some("codex:agent:research".into()),
+                    inference_provider: None,
                 },
             ),
             (
@@ -12565,9 +12603,9 @@ mod tests {
                     avatar_color: None,
                     notifications_enabled: true,
                     notify_on_updates: true,
-                    inference_provider: Default::default(),
                     unread: false,
                     conversation_id: Some("codex:agent:incident".into()),
+                    inference_provider: None,
                 },
             ),
         ]);
@@ -14096,6 +14134,7 @@ mod tests {
                 conversation_id: assistant.clone(),
                 text: "visible assistant completion".into(),
                 client_message_id: Some("visible-completion".into()),
+                inference_provider: None,
                 hidden: false,
             })
             .expect("visible production runtime send");
@@ -14143,6 +14182,7 @@ mod tests {
                 conversation_id: assistant.clone(),
                 text: "hidden background completion".into(),
                 client_message_id: Some("hidden-completion".into()),
+                inference_provider: None,
                 hidden: true,
             })
             .expect("hidden production runtime send");

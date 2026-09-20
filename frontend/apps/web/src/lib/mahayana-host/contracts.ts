@@ -210,9 +210,9 @@ export interface BotSummary {
   avatarColor?: string;
   notificationsEnabled: boolean;
   notifyOnUpdates: boolean;
-  inferenceProvider?: InferenceProvider;
   unread: boolean;
   conversationId?: string;
+  inferenceProvider?: InferenceProvider;
 }
 
 export type GroupSpeaker =
@@ -718,6 +718,7 @@ export type RuntimeCommand =
       notifyOnUpdates?: boolean;
       inferenceProvider?: InferenceProvider;
       unread?: boolean;
+      clearInferenceProvider?: boolean;
     })
   | (CommandBase & { type: "bot.clone"; id: string })
   | (CommandBase & { type: "bot.delete"; id: string })

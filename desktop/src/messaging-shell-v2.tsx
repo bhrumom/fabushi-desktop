@@ -9,7 +9,6 @@ import {
   Copy,
   Edit3,
   FileText,
-  Folder,
   Forward,
   Image,
   Link2,
@@ -67,7 +66,6 @@ import type { InstalledPluginPointer, MahayanaHostTransport, MarketplacePluginSu
 import { marketplaceInstallAction, marketplaceInstallActionLabel } from '../../frontend/apps/web/src/lib/marketplace-install-contract';
 import {
   SelfHostedMessagingClientV2,
-  asMessagingHostEvent,
   messagingText,
   type MessagingActor,
   type MessagingBotExecution,
@@ -93,17 +91,15 @@ import {
 } from './webrtc-call-controller';
 import { isTerminalAuthSessionFailure } from './auth-session';
 import {
-  installedMiniAppBotProjections,
   miniAppBotResponseText,
   type MiniAppBotCallProgram,
-  type MiniAppBotCallPrograms,
-  type MiniAppBotCommand,
 } from './miniapp-bot-projection';
 import { MiniAppCallDialog } from './miniapp-call-dialog';
 import { executeDesktopMiniAppBotInput, prepareDesktopMiniAppWebMcpDocument } from './miniapp-webmcp-host';
 import BotConversationView from './bot-conversation-view';
 import type { BotTranscriptMessage } from './bot-conversation-view';
 import AgentWorkspace from './agent-workspace/agent-workspace';
+import { CompatibilitySurface, buildCompatibilityPeers, compatibilityMessagingEnvelope, type CompatibilityPeerItem as PeerItem, type CompatibilityPeerKind as PeerKind, type CompatibilityPeerSource as PeerSource, type CompatibilitySection as MessengerSection } from './agent-workspace/messenger-compatibility-adapter';
 import AgentOverlays from './agent-workspace/agent-overlays';
 import { AgentCoordinatorClient } from './agent-workspace/coordinator-client';
 import type { AgentTranscriptSourceMessage } from './agent-workspace/agent-transcript-store';
@@ -186,46 +182,6 @@ function miniAppReleaseLabel(app: MarketplacePluginSummary): string {
   const sourceRef = typeof source?.sourceRef === 'string' ? source.sourceRef.slice(0, 9) : '';
   return sourceRef ? `GitHub · ${sourceRef}` : 'GitHub 来源待确认';
 }
-
-type MessengerSection =
-  | 'chats'
-  | 'contacts'
-  | 'bots'
-  | 'groups'
-  | 'channels'
-  | 'calls'
-  | 'saved'
-  | 'archive'
-  | 'folders'
-  | 'miniapps'
-  | 'payments'
-  | 'settings';
-type PeerKind = 'conversation' | 'contact' | 'bot' | 'group' | 'channel' | 'saved';
-type PeerSource = 'legacy' | 'selfhosted';
-
-type PeerItem = {
-  key: string;
-  id: string;
-  source: PeerSource;
-  conversationId?: string;
-  actorId?: string;
-  /** Explicit runtime Agent identity. Never infer Agent-ness from a title/id string. */
-  agentId?: string;
-  groupId?: string;
-  kind: PeerKind;
-  hidden?: boolean;
-  title: string;
-  subtitle: string;
-  unread: number;
-  pinned: boolean;
-  archived: boolean;
-  updatedAtMs: number;
-  avatar?: string;
-  miniAppId?: string;
-  miniAppCommands?: MiniAppBotCommand[];
-  miniAppMenuButtonText?: string;
-  miniAppCalls?: MiniAppBotCallPrograms;
-};
 
 type GeneratedMiniAppPreview = {
   id: string;
@@ -571,28 +527,6 @@ function formatTime(timestamp: number): string {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
   return date.toLocaleDateString([], { month: 'numeric', day: 'numeric' });
-}
-
-function legacyKind(conversation: ConversationSummary): PeerKind {
-  const id = conversation.id.toLowerCase();
-  const kind = conversation.kind.toLowerCase();
-  if (id.startsWith('mahayana:contact:') || id.startsWith('telegram:user:') || kind.includes('direct') || kind.includes('contact')) return 'contact';
-  if (id.startsWith('mahayana-ai:') || id.startsWith('codex:') || kind.includes('agent') || kind.includes('bot') || kind.includes('assistant')) return 'bot';
-  if (kind.includes('saved')) return 'saved';
-  if (kind.includes('channel')) return 'channel';
-  return 'conversation';
-}
-
-function selfKind(conversation: MessagingConversation, counterparty?: MessagingActor): PeerKind {
-  if (conversation.kind === 'channel') return 'channel';
-  if (conversation.kind === 'group') return 'group';
-  if (conversation.kind === 'savedMessages') return 'saved';
-  if (conversation.kind === 'direct' || conversation.kind === 'secret') {
-    return counterparty && ['assistant', 'bot', 'service'].includes(counterparty.kind)
-      ? 'bot'
-      : 'contact';
-  }
-  return 'conversation';
 }
 
 function sectionTitle(section: MessengerSection): string {
@@ -1833,11 +1767,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function handleSelfHostedEvent(runtimeEvent: RuntimeEvent): boolean {
-    const hostEvent = asMessagingHostEvent(runtimeEvent);
-    if (!hostEvent) return false;
+    const envelope = compatibilityMessagingEnvelope(runtimeEvent);
+    if (!envelope) return false;
     const previousCursor = messagingCursorRef.current;
-    if (hostEvent.envelope.cursor) messagingCursorRef.current = hostEvent.envelope.cursor;
-    const event = hostEvent.envelope.event;
+    if (envelope.cursor) messagingCursorRef.current = envelope.cursor;
+    const event = envelope.event;
     switch (event.type) {
       case 'syncBatch': {
         const payload = event as unknown as {
@@ -2211,161 +2145,19 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     .filter((story) => story.ownerId !== selfHosted.actorId && (story.pinnedToProfile || story.expiresAtMs > Date.now()))
     .sort((left, right) => right.createdAtMs - left.createdAtMs), [selfStories, selfHosted]);
 
-  const peers = useMemo<PeerItem[]>(() => {
-    const botByConversationId = new Map(
-      bots
-        .filter((bot) => Boolean(bot.conversationId))
-        .map((bot) => [bot.conversationId!, bot] as const),
-    );
-    const legacyConversations = conversations.map((conversation): PeerItem => {
-      const bot = botByConversationId.get(conversation.id);
-      const kind = bot ? 'bot' : legacyKind(conversation);
-      return {
-      key: `legacy:conversation:${conversation.id}`,
-      id: conversation.id,
-      source: 'legacy',
-      conversationId: conversation.id,
-      actorId: bot?.id,
-      agentId: bot?.agentId ?? bot?.id,
-      kind,
-      hidden: bot?.hidden,
-      title: conversation.title,
-      subtitle: kind === 'bot' ? bot?.description || bot?.title || 'AI Bot' : conversation.kind,
-      unread: conversation.unreadCount,
-      pinned: conversation.pinned || pinnedPeerKeys.has(`legacy:conversation:${conversation.id}`),
-      archived: archivedPeerKeys.has(`legacy:conversation:${conversation.id}`),
-      updatedAtMs: conversation.updatedAtMs,
-      };
-    });
-    const miniAppBotProjections = installedMiniAppBotProjections(miniAppIdentityCatalog, installedMiniApps);
-    const miniAppByBotId = new Map(miniAppBotProjections.map((projection) => [projection.id, projection]));
-    const conversationIds = new Set(conversations.map((conversation) => conversation.id));
-    const botPeers = bots
-      .filter((bot) => !bot.conversationId || !conversationIds.has(bot.conversationId))
-      .map((bot): PeerItem => ({
-        key: `legacy:bot:${bot.id}`,
-        id: bot.id,
-        source: 'legacy',
-        actorId: bot.id,
-        agentId: bot.agentId ?? bot.id,
-        conversationId: bot.conversationId,
-        kind: 'bot',
-        hidden: bot.hidden,
-        title: bot.name,
-        subtitle: bot.description || bot.title || 'AI Bot',
-        unread: bot.unread ? 1 : 0,
-        pinned: pinnedPeerKeys.has(`legacy:bot:${bot.id}`),
-        archived: archivedPeerKeys.has(`legacy:bot:${bot.id}`),
-        updatedAtMs: 0,
-        avatar: bot.avatar,
-        miniAppId: miniAppByBotId.get(bot.id)?.miniAppId,
-        miniAppCommands: miniAppByBotId.get(bot.id)?.commands,
-        miniAppMenuButtonText: miniAppByBotId.get(bot.id)?.menuButtonText,
-        miniAppCalls: miniAppByBotId.get(bot.id)?.calls,
-      }));
-    const existingBotIds = new Set(botPeers.map((peer) => peer.actorId ?? peer.id));
-    const accountBotPeers = accountBots
-      .filter((entry) => entry?.bot?.id && !existingBotIds.has(entry.bot.id))
-      .map((entry): PeerItem => {
-        const miniAppSource = entry.sources.find((source) => source.source === 'miniapp');
-        const projection = miniAppSource
-          ? miniAppBotProjections.find((candidate) => candidate.miniAppId === miniAppSource.sourceId)
-          : miniAppByBotId.get(entry.bot.id);
-        return {
-          // A Mini App-backed account Bot must keep the same peer identity before and
-          // after the asynchronous account-membership projection arrives. Otherwise
-          // activePeerKey points at the retired synthetic peer and the composer vanishes.
-          key: miniAppSource ? `miniapp:bot:${miniAppSource.sourceId}` : `account:bot:${entry.bot.id}`,
-          id: entry.bot.id,
-          source: 'legacy',
-          kind: 'bot',
-          hidden: entry.bot.hidden,
-          title: entry.bot.displayName ?? entry.bot.username ?? entry.bot.id,
-          subtitle: entry.bot.username ? `@${entry.bot.username}` : entry.bot.description ?? 'Bot',
-          actorId: entry.bot.id,
-          agentId: entry.bot.agentId ?? entry.bot.id,
-          conversationId: entry.bot.conversationId,
-          unread: 0,
-          pinned: pinnedPeerKeys.has(miniAppSource ? `miniapp:bot:${miniAppSource.sourceId}` : `account:bot:${entry.bot.id}`),
-          archived: archivedPeerKeys.has(miniAppSource ? `miniapp:bot:${miniAppSource.sourceId}` : `account:bot:${entry.bot.id}`),
-          updatedAtMs: entry.updatedAtMs ?? 0,
-          miniAppId: miniAppSource?.sourceId,
-          miniAppCommands: projection?.commands,
-          miniAppMenuButtonText: projection?.menuButtonText ?? (miniAppSource ? '打开小程序' : undefined),
-          miniAppCalls: projection?.calls,
-        };
-      });
-    for (const peer of accountBotPeers) existingBotIds.add(peer.actorId ?? peer.id);
-    const miniAppBotPeers = miniAppBotProjections
-      .filter((projection) => !existingBotIds.has(projection.id))
-      .map((projection): PeerItem => ({
-        key: `miniapp:bot:${projection.miniAppId}`,
-        id: projection.id,
-        source: 'legacy',
-        actorId: projection.id,
-        agentId: projection.id,
-        conversationId: projection.conversationId,
-        kind: 'bot',
-        title: projection.displayName,
-        subtitle: projection.username ? `@${projection.username} · ${projection.description}` : projection.description,
-        unread: 0,
-        pinned: pinnedPeerKeys.has(`miniapp:bot:${projection.miniAppId}`),
-        archived: archivedPeerKeys.has(`miniapp:bot:${projection.miniAppId}`),
-        updatedAtMs: 0,
-        miniAppId: projection.miniAppId,
-        miniAppCommands: projection.commands,
-        miniAppMenuButtonText: projection.menuButtonText,
-        miniAppCalls: projection.calls,
-      }));
-    const legacyGroups = groups.map((group): PeerItem => ({
-      key: `legacy:group:${group.id}`,
-      id: group.id,
-      source: 'legacy',
-      groupId: group.id,
-      kind: 'group',
-      title: group.name,
-      subtitle: `${group.memberIds.length} 个 AI / 成员`,
-      unread: 0,
-      pinned: pinnedPeerKeys.has(`legacy:group:${group.id}`),
-      archived: archivedPeerKeys.has(`legacy:group:${group.id}`),
-      updatedAtMs: group.updatedAtMs,
-    }));
-    const actorById = new Map(selfActors.map((actor) => [actor.id, actor] as const));
-    const nativePeers = selfConversations.map((conversation): PeerItem => {
-      const actorId = conversation.participants.length === 2
-        ? conversation.participants.find((participant) => participant.actorId !== selfHosted.actorId)?.actorId
-        : undefined;
-      const actor = actorId ? actorById.get(actorId) : undefined;
-      const kind = selfKind(conversation, actor);
-      return {
-        key: `selfhosted:${conversation.id}`,
-        id: conversation.id,
-        source: 'selfhosted',
-        conversationId: conversation.id,
-        actorId,
-        agentId: kind === 'bot' ? actorId : undefined,
-        kind,
-        title: conversation.title,
-        subtitle: conversation.description || ({
-          channel: '频道',
-          group: '群组',
-          saved: '收藏消息',
-          conversation: '会话',
-          contact: '联系人',
-          bot: 'AI Bot',
-        } as const)[kind],
-        unread: conversation.unreadCount,
-        pinned: conversation.pinned,
-        archived: conversation.archived,
-        updatedAtMs: conversation.updatedAtMs,
-        avatar: conversation.avatarUrl,
-      };
-    });
-    return [...legacyConversations, ...botPeers, ...accountBotPeers, ...miniAppBotPeers, ...legacyGroups, ...nativePeers].sort((left, right) => {
-      if (left.pinned !== right.pinned) return left.pinned ? -1 : 1;
-      return right.updatedAtMs - left.updatedAtMs;
-    });
-  }, [conversations, bots, accountBots, groups, selfActors, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps, selfHosted.actorId]);
+  const peers = useMemo<PeerItem[]>(() => buildCompatibilityPeers({
+    conversations,
+    bots,
+    accountBots,
+    groups,
+    selfActors,
+    selfConversations,
+    pinnedPeerKeys,
+    archivedPeerKeys,
+    miniAppIdentityCatalog,
+    installedMiniApps,
+    selfActorId: selfHosted.actorId,
+  }), [conversations, bots, accountBots, groups, selfActors, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps, selfHosted.actorId]);
 
   peersRef.current = peers;
   useEffect(() => {
@@ -4481,6 +4273,7 @@ async function saveInvoiceDialog() {
                 avatarShape: activeAgentBot?.avatarShape ?? '',
                 avatarColor: activeAgentBot?.avatarColor ?? '',
                 notifyOnUpdatesEnabled: true,
+                inferenceProvider: activeAgentBot?.inferenceProvider ?? 'account-default',
               },
               pending: agentSettingsSnapshot.pending,
               error: agentSettingsSnapshot.error,
@@ -4490,6 +4283,7 @@ async function saveInvoiceDialog() {
               },
               onUpdateProfile: (profile) => agentSettingsController.updateProfile(profile),
               onSetNotifications: (enabled) => agentSettingsController.setNotifications(enabled),
+              onSetInferenceProvider: (provider) => agentSettingsController.setInferenceProvider(provider),
             }}
           />
         ) : (
@@ -5188,19 +4982,13 @@ function SettingsWorkspace({ category, preferences, onPreference, actor, actorId
   </div>;
 }
 
-function SectionPanel({ section, onInvoice, payment, onRefund, settings: _settings, ...miniAppProps }: { section: MessengerSection; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void; settings: SettingsNavigationProps } & MiniAppMarketplaceProps) {
-  if (section === 'miniapps') return <MiniAppMarketplaceList {...miniAppProps} />;
-  if (section === 'payments') return <div className={styles.sectionList}><PaymentOverview payment={payment} onInvoice={onInvoice} onRefund={onRefund} compact /></div>;
-  if (section === 'folders') return <div className={styles.sectionList}><div className={styles.panelHint}><Folder size={24} /><strong>聊天文件夹</strong><p>按联系人、Bot、群组、频道、未读和静音状态组织。</p></div></div>;
-  if (section === 'calls') return <div className={styles.sectionList}><div className={styles.panelHint}><Phone size={24} /><strong>最近通话</strong><p>从会话顶部发起语音/视频。</p></div></div>;
-  if (section === 'settings') return <div className={styles.sectionList} aria-hidden="true" />;
-  return <div className={styles.sectionList}><div className={styles.panelHint}><Settings size={24} /><strong>{sectionTitle(section)}</strong><p>该功能入口已合并进统一 Messenger。</p></div></div>;
-}
-
 function FeatureWorkspace({ section, onInvoice, payment, onRefund, settings: _settings, ...miniAppProps }: { section: MessengerSection; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void; settings: SettingsWorkspaceProps } & MiniAppMarketplaceProps) {
-  if (section === 'miniapps') return <MiniAppMarketplaceWorkspace {...miniAppProps} />;
-  if (section === 'payments') return <div className={styles.featureWorkspace}><WalletCards size={54} /><h2>Fabushi Pay</h2><p>自建余额、Invoice、Order、退款与外部 settlement 都由 Rust 账本结算。</p><PaymentOverview payment={payment} onInvoice={onInvoice} onRefund={onRefund} /></div>;
-  if (section === 'calls') return <div className={styles.featureWorkspace}><Phone size={54} /><h2>通话</h2><p>本机媒体已接通，Rust realtime 已具备一对一/群组通话信令状态。</p></div>;
-  if (section === 'settings') return <div className={styles.featureWorkspace} aria-hidden="true" />;
-  return <div className={styles.featureWorkspace}><MessageCircle size={54} /><h2>{sectionTitle(section)}</h2><p>联系人、Bot、群组和频道正在统一到同一个 Fabushi Actor/Conversation 模型。</p></div>;
+  return <CompatibilitySurface
+    section={section}
+    miniApps={<MiniAppMarketplaceWorkspace {...miniAppProps} />}
+    payments={<div className={styles.featureWorkspace}><WalletCards size={54} /><h2>Fabushi Pay</h2><p>自建余额、Invoice、Order、退款与外部 settlement 都由 Rust 账本结算。</p><PaymentOverview payment={payment} onInvoice={onInvoice} onRefund={onRefund} /></div>}
+    calls={<div className={styles.featureWorkspace}><Phone size={54} /><h2>通话</h2><p>本机媒体已接通，Rust realtime 已具备一对一/群组通话信令状态。</p></div>}
+    settings={<div className={styles.featureWorkspace} aria-hidden="true" />}
+    fallback={<div className={styles.featureWorkspace}><MessageCircle size={54} /><h2>{sectionTitle(section)}</h2><p>联系人、Bot、群组和频道正在统一到同一个 Fabushi Actor/Conversation 模型。</p></div>}
+  />;
 }

@@ -1,7 +1,7 @@
 use base64::Engine as _;
 use mahayana_core::{ModelProviderMode, RuntimeConfig};
 use mahayana_feature_host::FeatureHostController;
-use mahayana_host::HostCreateConfig;
+use mahayana_host::{HostCreateConfig, ModelRouteConfig};
 use mahayana_host_protocol::{
     ApprovalResolution, FeatureCommand, HostConfig, HostMode, SurfacePlatform,
 };
@@ -989,23 +989,40 @@ fn create_feature_host(
     std::fs::create_dir_all(&root).map_err(|error| AppHostError::Operation(error.to_string()))?;
     let provider =
         std::env::var("MAHAYANA_INFERENCE_PROVIDER").unwrap_or_else(|_| "fabushi".into());
-    let mut runtime = RuntimeConfig {
+    // Keep the base Runtime on Fabushi. Agent-scoped provider overrides are
+    // routed inside Mahayana rather than by restarting the entire Host.
+    let runtime = RuntimeConfig {
         data_dir: Some(root.join("runtime")),
         ..RuntimeConfig::default()
     };
-    if provider == "openrouter" {
-        runtime.model.provider = ModelProviderMode::UserConfiguredRemote;
-        runtime.model.base_url = Some("https://openrouter.ai/api/v1".into());
-        runtime.model.model =
-            std::env::var("MAHAYANA_OPENROUTER_MODEL").unwrap_or_else(|_| "openai/gpt-5.2".into());
-        runtime.model.credential_key = Some("inference/openrouter/api-key".into());
-    } else if provider == "claude-code" {
-        runtime.model.provider = ModelProviderMode::UserConfiguredRemote;
-        runtime.model.base_url = Some("https://api.anthropic.com/v1".into());
-        runtime.model.model =
-            std::env::var("MAHAYANA_CLAUDE_MODEL").unwrap_or_else(|_| "claude-sonnet-4-6".into());
-        runtime.model.credential_key = Some("inference/claude/api-key".into());
-    }
+    let openrouter_token = std::env::var("MAHAYANA_OPENROUTER_API_KEY")
+        .ok()
+        .filter(|value| !value.trim().is_empty());
+    let claude_token = std::env::var("MAHAYANA_CLAUDE_API_KEY")
+        .ok()
+        .filter(|value| !value.trim().is_empty());
+    let model_routes = vec![
+        ModelRouteConfig {
+            key: "openrouter".into(),
+            base_url: "https://openrouter.ai/api/v1".into(),
+            default_model: std::env::var("MAHAYANA_OPENROUTER_MODEL")
+                .unwrap_or_else(|_| "openai/gpt-5.2".into()),
+            bearer_token: openrouter_token,
+            provider_mode: ModelProviderMode::UserConfiguredRemote,
+            wire_api: mahayana_model::responses::ResponsesWireApi::ChatCompletions,
+            use_product_session_token: false,
+        },
+        ModelRouteConfig {
+            key: "claude-code".into(),
+            base_url: "https://api.anthropic.com/v1".into(),
+            default_model: std::env::var("MAHAYANA_CLAUDE_MODEL")
+                .unwrap_or_else(|_| "claude-sonnet-4-6".into()),
+            bearer_token: claude_token,
+            provider_mode: ModelProviderMode::UserConfiguredRemote,
+            wire_api: mahayana_model::responses::ResponsesWireApi::AnthropicMessages,
+            use_product_session_token: false,
+        },
+    ];
     let host_config = HostCreateConfig {
         runtime,
         product_session_path: Some(root.join("account-session.json")),
@@ -1014,14 +1031,15 @@ fn create_feature_host(
         use_codex_account: std::env::var("MAHAYANA_USE_CODEX_ACCOUNT").as_deref() == Ok("1"),
         codex_home: std::env::var_os("MAHAYANA_CODEX_HOME").map(PathBuf::from),
         product_storage_passphrase: storage_passphrase,
-        model_bearer_token: std::env::var("MAHAYANA_MODEL_BEARER_TOKEN")
-            .ok()
-            .filter(|value| !value.is_empty()),
-        model_wire_api: match provider.as_str() {
-            "openrouter" => mahayana_model::responses::ResponsesWireApi::ChatCompletions,
-            "claude-code" => mahayana_model::responses::ResponsesWireApi::AnthropicMessages,
-            _ => mahayana_model::responses::ResponsesWireApi::Responses,
-        },
+        model_bearer_token: None,
+        model_wire_api: mahayana_model::responses::ResponsesWireApi::Responses,
+        model_routes,
+        model_route_default: Some(match provider.as_str() {
+            "openrouter" => "openrouter",
+            "claude-code" => "claude-code",
+            "codex" => "codex",
+            _ => "fabushi",
+        }.to_string()),
         inherit_installed_plugins: Some(false),
         process_execution: if std::env::var("MAHAYANA_SANDBOX_RUNTIME").as_deref()
             == Ok("local-docker")

@@ -351,6 +351,7 @@ fn default_surface_bots() -> Vec<BotSummary> {
             notify_on_updates: true,
             unread: false,
             conversation_id: Some("mahayana-ai:agent:assistant".into()),
+            inference_provider: None,
         },
         BotSummary {
             id: "research-bot".into(),
@@ -366,6 +367,7 @@ fn default_surface_bots() -> Vec<BotSummary> {
             notify_on_updates: true,
             unread: false,
             conversation_id: Some("codex:agent:research".into()),
+            inference_provider: None,
         },
         BotSummary {
             id: "incident-bot".into(),
@@ -381,6 +383,7 @@ fn default_surface_bots() -> Vec<BotSummary> {
             notify_on_updates: true,
             unread: false,
             conversation_id: Some("codex:agent:incident".into()),
+            inference_provider: None,
         },
     ]
 }

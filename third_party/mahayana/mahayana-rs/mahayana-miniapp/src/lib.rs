@@ -1293,6 +1293,8 @@ mod tests {
                     operation_id: OperationId("operation:test".into()),
                     text: "开始复习".into(),
                     client_message_id: None,
+                    inference_provider: None,
+                    hidden: false,
                 },
                 events.clone(),
             )
@@ -1410,6 +1412,8 @@ mod tests {
                             operation_id: OperationId("operation:approval".into()),
                             text: "/write 原样内容".into(),
                             client_message_id: None,
+                            inference_provider: None,
+                            hidden: false,
                         },
                         events,
                     )
@@ -1554,6 +1558,8 @@ mod tests {
                     operation_id: OperationId("operation:paid".into()),
                     text: "/weather:forecast".into(),
                     client_message_id: None,
+                    inference_provider: None,
+                    hidden: false,
                 },
                 Arc::new(Events::default()),
             )
@@ -1715,6 +1721,8 @@ mod tests {
                     operation_id: OperationId("operation:article".into()),
                     text: "A1".into(),
                     client_message_id: None,
+                    inference_provider: None,
+                    hidden: false,
                 },
                 events.clone(),
             )
@@ -1739,6 +1747,8 @@ mod tests {
                     operation_id: OperationId("operation:fallback".into()),
                     text: "普通消息".into(),
                     client_message_id: None,
+                    inference_provider: None,
+                    hidden: false,
                 },
                 Arc::new(Events::default()),
             )
@@ -1764,6 +1774,8 @@ mod tests {
                     operation_id: OperationId("operation:error".into()),
                     text: "普通消息".into(),
                     client_message_id: None,
+                    inference_provider: None,
+                    hidden: false,
                 },
                 events.clone(),
             )

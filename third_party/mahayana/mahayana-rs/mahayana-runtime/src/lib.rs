@@ -557,12 +557,14 @@ impl MahayanaRuntime {
                 conversation_id,
                 text,
                 client_message_id,
+                inference_provider,
                 hidden,
             } => Ok(RuntimeResponse::Accepted {
                 operation_id: self.start_message(
                     conversation_id,
                     text,
                     client_message_id,
+                    inference_provider,
                     hidden,
                 )?,
             }),
@@ -637,6 +639,7 @@ impl MahayanaRuntime {
         conversation_id: ConversationId,
         text: String,
         client_message_id: Option<String>,
+        inference_provider: Option<String>,
         hidden: bool,
     ) -> Result<OperationId, RuntimeError> {
         if text.trim().is_empty() {
@@ -651,6 +654,7 @@ impl MahayanaRuntime {
             operation_id: operation_id.clone(),
             text,
             client_message_id,
+            inference_provider,
             hidden,
         };
         let sink: SharedConversationEventSink = Arc::new(RuntimeEventSink {
@@ -909,6 +913,7 @@ mod tests {
                 conversation_id: ConversationId(CODEX_ASSISTANT_CONVERSATION_ID.to_string()),
                 text: "你好".to_string(),
                 client_message_id: None,
+                                inference_provider: None,
                 hidden: false,
             })
             .expect("send message");
@@ -1023,6 +1028,7 @@ mod tests {
                 conversation_id,
                 text: "first visible prompt".to_string(),
                 client_message_id: Some("first-visible-prompt".to_string()),
+                                inference_provider: None,
                 hidden: false,
             })
             .expect("send first message");

@@ -268,11 +268,12 @@ pub struct BotSummary {
     #[serde(default = "default_true")]
     pub notify_on_updates: bool,
     #[serde(default)]
-    pub inference_provider: InferenceProvider,
-    #[serde(default)]
     pub unread: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub conversation_id: Option<String>,
+    /// Agent-scoped inference route. None preserves the account/default route.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inference_provider: Option<InferenceProvider>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1342,6 +1343,8 @@ pub enum FeatureCommand {
         inference_provider: Option<InferenceProvider>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         unread: Option<bool>,
+        #[serde(rename = "clearInferenceProvider", default)]
+        clear_inference_provider: bool,
     },
     #[serde(rename = "bot.clone")]
     BotClone {

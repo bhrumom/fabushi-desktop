@@ -18,6 +18,14 @@ const agentComposerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agen
 const agentComposer = fs.readFileSync(agentComposerPath, 'utf8');
 const agentRichEditorPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agent-rich-text-editor.tsx');
 const agentRichEditor = fs.readFileSync(agentRichEditorPath, 'utf8');
+const compatibilityAdapterPath = path.join(desktopRoot, 'src', 'agent-workspace', 'messenger-compatibility-adapter.tsx');
+const compatibilityAdapter = fs.readFileSync(compatibilityAdapterPath, 'utf8');
+const repoRoot = path.resolve(desktopRoot, '..');
+const accountSidebarLayout = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'account-sidebar-layout.ts'), 'utf8');
+const hostProtocol = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-host-protocol', 'src', 'lib.rs'), 'utf8');
+const runtimeCore = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-core', 'src', 'lib.rs'), 'utf8');
+const kernelConversation = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-runtime', 'src', 'kernel_conversation.rs'), 'utf8');
+const providerRouter = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-host', 'src', 'provider_router.rs'), 'utf8');
 
 const forbidden = [
   ['renderer-global Agent operation pointer', /\bagentOperationId\b/],
@@ -45,6 +53,44 @@ const forbidden = [
 const violations = forbidden
   .filter(([, pattern]) => pattern.test(shell))
   .map(([label]) => label);
+
+if (!/messenger-compatibility-adapter/.test(shell)
+  || !/buildCompatibilityPeers\s*\(/.test(shell)
+  || !/compatibilityMessagingEnvelope\s*\(/.test(shell)
+  || !/CompatibilitySurface/.test(shell)) {
+  violations.push('Contacts/Telegram/Mini App compatibility routing escaped the compatibility adapter');
+}
+if (/function\s+(?:legacyKind|selfKind)\s*\(|installedMiniAppBotProjections\s*\(/.test(shell)) {
+  violations.push('Messenger shell reconstructed compatibility-only peer identity instead of using the adapter');
+}
+if (/type\s+PeerKind\s*=|type\s+MessengerSection\s*=/.test(shell)) {
+  violations.push('Messenger shell recreated compatibility navigation/domain types');
+}
+if (!/export function buildCompatibilityPeers/.test(compatibilityAdapter)
+  || !/export function compatibilityMessagingEnvelope/.test(compatibilityAdapter)
+  || !/export function CompatibilitySurface/.test(compatibilityAdapter)) {
+  violations.push('compatibility adapter no longer owns peer, event-envelope and secondary-surface routing');
+}
+if (!/<AgentRootShell\b/.test(shell) || /<div\s+hidden\b|hidden\s+aria-hidden=['"]true['"]/.test(shell)) {
+  violations.push('AgentRootShell is not the sole visible product root or hidden legacy navigation returned');
+}
+
+if (!/inference_provider:\s*Option<InferenceProvider>/.test(hostProtocol)
+  || !/inference_provider:\s*Option<String>/.test(runtimeCore)
+  || !/session_providers:\s*AsyncMutex/.test(kernelConversation)
+  || !/inferenceProvider/.test(kernelConversation)
+  || !/pub struct ProviderRoutingEngineBackend/.test(providerRouter)
+  || !/PROVIDER_CODEX/.test(providerRouter)
+  || !/PROVIDER_OPENROUTER/.test(providerRouter)
+  || !/PROVIDER_CLAUDE_CODE/.test(providerRouter)) {
+  violations.push('per-Agent inference provider UI is not backed by the Rust Agent/session/EngineBackend contract');
+}
+if (!/revision:\s*number/.test(accountSidebarLayout)
+  || !/baseEtag:\s*current\.etag/.test(accountSidebarLayout)
+  || !/expectAbsent:\s*true/.test(accountSidebarLayout)
+  || !/writeAccountAgentStoreObject\s*\(/.test(accountSidebarLayout)) {
+  violations.push('Agent sidebar sections/pinned order lost account-level CAS/revision persistence');
+}
 
 if (!/useAgentWorkspaceRuntime\s*\(/.test(shell)) {
   violations.push('Agent workspace runtime facade is not mounted by the desktop Agent shell');

@@ -75,6 +75,24 @@ export default function AgentNetwork({
   );
   const activeAgent = directAgents.find((agent) => agent.key === activeKey) ?? null;
 
+  const recentNetworkMessages = useMemo(() => Object.values(peerMessagesByAgentId)
+    .flatMap((items) => [...items])
+    .sort((left, right) => right.createdAtMs - left.createdAtMs)
+    .slice(0, 12), [peerMessagesByAgentId]);
+  const coordinationStats = useMemo(() => ({
+    working: directAgents.filter((agent) => agent.busy).length,
+    waiting: directAgents.filter((agent) => Boolean(agent.waitingReason)).length,
+    unread: directAgents.filter((agent) => agent.unread > 0).length,
+  }), [directAgents]);
+  const organizationEdges = useMemo(() => groups.flatMap((group) => group.memberIds
+    .map((memberId) => ({
+      id: `${group.id}:${memberId}`,
+      groupId: group.id,
+      groupName: group.name,
+      agent: agentByMemberId.get(memberId),
+    }))
+    .filter((edge) => Boolean(edge.agent))), [agentByMemberId, groups]);
+
   useEffect(() => {
     if (!open) return;
     setError(null);
@@ -203,7 +221,42 @@ export default function AgentNetwork({
 
     <div className={styles.body}>
       <div className={styles.graph}>
-        <div className={styles.sectionHeading}><Bot size={15} /><span>Agents</span></div>
+        <section className={styles.orgGraph} data-testid="agent-org-graph" aria-label="Agent organization graph">
+          <div className={styles.orgSummary}>
+            <span><strong>{directAgents.length}</strong><small>Agents</small></span>
+            <span><strong>{coordinationStats.working}</strong><small>Working</small></span>
+            <span><strong>{coordinationStats.waiting}</strong><small>Needs input</small></span>
+            <span><strong>{groups.length}</strong><small>Groups</small></span>
+          </div>
+          <div className={styles.orgTopology}>
+            <div className={styles.orgHub}>
+              <Network size={18} />
+              <span><strong>{activeAgent?.name ?? 'Agent Network'}</strong><small>{activeAgent ? 'Current coordination hub' : 'Select an Agent to coordinate'}</small></span>
+            </div>
+            <div className={styles.orgEdges} aria-label="Organization relationships">
+              {organizationEdges.slice(0, 18).map((edge) => <button
+                type="button"
+                className={styles.orgEdge}
+                key={edge.id}
+                onClick={() => edge.agent && onOpenAgent(edge.agent)}
+              >
+                <span>{edge.groupName}</span><b aria-hidden="true">→</b><strong>{edge.agent?.name}</strong>
+              </button>)}
+              {!organizationEdges.length ? <span className={styles.orgEmpty}>Create a group to map durable Agent relationships.</span> : null}
+            </div>
+          </div>
+          {recentNetworkMessages.length ? <div className={styles.coordinationFeed} data-testid="agent-coordination-feed">
+            {recentNetworkMessages.slice(0, 6).map((item) => <button type="button" key={item.id} onClick={() => {
+              const target = agentByMemberId.get(item.targetId);
+              if (target) onOpenAgent(target);
+            }}>
+              <span><strong>{item.fromAgentName}</strong><b aria-hidden="true">→</b><strong>{item.targetName}</strong>{item.priority ? <em>Priority</em> : null}</span>
+              <small>{item.text}</small>
+            </button>)}
+          </div> : null}
+        </section>
+
+        <div className={styles.sectionHeading}><Bot size={15} /><span>Agents</span><small className={styles.headingMeta}>{coordinationStats.unread} unread</small></div>
         <div className={styles.nodes}>
           {directAgents.map((agent) => <article
             className={styles.node}
