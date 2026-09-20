@@ -1796,6 +1796,72 @@ function createNativeCapabilityHandlers(deps) {
       return platformRequest('GET', '/v1/account/bots');
     },
 
+    getAccountAgents() {
+      return platformRequest('GET', '/v1/account/agents');
+    },
+
+    async getAccountAgent(params) {
+      const agentId = cleanString(params.agentId ?? params.id, 160);
+      if (!agentId) throw new Error('Agent id is required.');
+      return platformRequest('GET', `/v1/account/agents/${encodeURIComponent(agentId)}`);
+    },
+
+    async upsertAccountAgent(params) {
+      const agentId = cleanString(params.agentId ?? params.id, 160);
+      if (!agentId) throw new Error('Agent id is required.');
+      return platformRequest('PUT', `/v1/account/agents/${encodeURIComponent(agentId)}`, {
+        body: {
+          profile: params.profile && typeof params.profile === 'object' ? params.profile : {},
+          metadata: params.metadata && typeof params.metadata === 'object' ? params.metadata : {},
+        },
+      });
+    },
+
+    async listAgentStore(params) {
+      const agentId = cleanString(params.agentId ?? params.id, 160);
+      if (!agentId) throw new Error('Agent id is required.');
+      const prefix = cleanString(params.prefix, 4096);
+      return platformRequest('GET', `/v1/account/agents/${encodeURIComponent(agentId)}/store`, {
+        query: prefix ? { prefix } : undefined,
+      });
+    },
+
+    async getAgentStoreObject(params) {
+      const agentId = cleanString(params.agentId ?? params.id, 160);
+      const storePath = cleanString(params.path, 4096);
+      if (!agentId || !storePath) throw new Error('Agent id and path are required.');
+      return platformRequest('GET', `/v1/account/agents/${encodeURIComponent(agentId)}/store`, {
+        query: { path: storePath },
+      });
+    },
+
+    async putAgentStoreObject(params) {
+      const agentId = cleanString(params.agentId ?? params.id, 160);
+      const storePath = cleanString(params.path, 4096);
+      const dataBase64 = cleanString(params.dataBase64, 12 * 1024 * 1024);
+      if (!agentId || !storePath || !dataBase64) throw new Error('Agent id, path and data are required.');
+      return platformRequest('PUT', `/v1/account/agents/${encodeURIComponent(agentId)}/store`, {
+        body: {
+          path: storePath,
+          dataBase64,
+          ...(params.baseEtag ? { baseEtag: cleanString(params.baseEtag, 256) } : {}),
+          ...(params.expectAbsent === true ? { expectAbsent: true } : {}),
+        },
+      });
+    },
+
+    async deleteAgentStoreObject(params) {
+      const agentId = cleanString(params.agentId ?? params.id, 160);
+      const storePath = cleanString(params.path, 4096);
+      if (!agentId || !storePath) throw new Error('Agent id and path are required.');
+      return platformRequest('DELETE', `/v1/account/agents/${encodeURIComponent(agentId)}/store`, {
+        query: {
+          path: storePath,
+          ...(params.baseEtag ? { baseEtag: cleanString(params.baseEtag, 256) } : {}),
+        },
+      });
+    },
+
     async addBotToAccount(params) {
       const botId = cleanString(params.botId ?? params.id, 160);
       if (!botId) throw new Error('Bot id is required.');
