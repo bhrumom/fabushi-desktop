@@ -63,6 +63,29 @@ export class AgentTranscriptStore {
     return [...next];
   }
 
+  hydrateEntries(peerKey: string, entries: readonly TranscriptEntry[]): AgentTranscriptSourceMessage[] {
+    return this.replace(peerKey, entries.map((entry) => ({
+      id: entry.id,
+      source: 'legacy',
+      role: entry.role,
+      text: entry.text,
+      createdAtMs: entry.createdAtMs,
+      kind: entry.kind === 'tool-call' ? 'action' : entry.kind,
+      ...(entry.operationId ? { operationId: entry.operationId } : {}),
+      ...(entry.streaming ? { streaming: true } : {}),
+      ...(entry.optimistic ? { optimistic: true } : {}),
+      ...(entry.queued ? { queued: true } : {}),
+      ...(entry.title ? { actionTitle: entry.title } : {}),
+      ...(entry.detail ? { actionDetail: entry.detail } : {}),
+      ...(entry.status ? { status: entry.status } : {}),
+      ...(entry.assistantTurn ? { assistantTurn: entry.assistantTurn } : {}),
+      ...(entry.attachments?.length ? { attachments: [...entry.attachments] } : {}),
+      ...(entry.approval ? { approval: entry.approval } : {}),
+      ...(entry.miniAppId ? { miniAppId: entry.miniAppId } : {}),
+    })));
+  }
+
+
   update(
     peerKey: string,
     updater: (current: AgentTranscriptSourceMessage[]) => AgentTranscriptSourceMessage[],

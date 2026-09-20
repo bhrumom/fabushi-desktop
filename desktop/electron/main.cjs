@@ -928,6 +928,21 @@ function broadcastMahayanaEvent(event) {
   }
 }
 
+host.onLifecycle((lifecycle) => {
+  const at = Number(lifecycle?.at);
+  broadcastMahayanaEvent({
+    type: 'host.lifecycle',
+    timestamp: new Date(Number.isFinite(at) ? at : Date.now()).toISOString(),
+    lifecycle: String(lifecycle?.type || 'unknown'),
+    state: String(lifecycle?.state || 'unknown'),
+    generation: Number(lifecycle?.generation || 0),
+    sequence: Number(lifecycle?.sequence || 0),
+    ...(lifecycle?.recoverable !== undefined ? { recoverable: Boolean(lifecycle.recoverable) } : {}),
+    ...(lifecycle?.reason ? { reason: String(lifecycle.reason) } : {}),
+    ...(lifecycle?.error ? { error: String(lifecycle.error) } : {}),
+  });
+});
+
 function startHostEventPump() {
   if (hostEventPump) return;
   hostEventPumpStopped = false;

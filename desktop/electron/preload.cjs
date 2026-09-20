@@ -82,6 +82,7 @@ function subscribeEdge(edge, eventName, listener) {
 // transient deltas remain live-only and account boundaries clear the snapshots.
 const MAHAYANA_REPLAYABLE_EVENTS = new Set([
   'host.ready',
+  'host.lifecycle',
   'conversation.listed',
   'bot.listed',
   'group.listed',

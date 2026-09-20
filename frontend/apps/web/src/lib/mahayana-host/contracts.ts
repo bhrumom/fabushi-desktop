@@ -898,6 +898,16 @@ interface EventBase {
 export type RuntimeEvent =
   | (EventBase & { type: "host.ready"; info: HostInfo })
   | (EventBase & {
+      type: "host.lifecycle";
+      lifecycle: string;
+      state: string;
+      generation: number;
+      sequence: number;
+      recoverable?: boolean;
+      reason?: string;
+      error?: string;
+    })
+  | (EventBase & {
       type: "chat.message";
       role: "user" | "assistant";
       text: string;

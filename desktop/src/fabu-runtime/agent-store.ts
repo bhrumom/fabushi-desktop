@@ -214,6 +214,32 @@ export class FabuAgentStore {
     return this.readJson<FabuAgentRootManifest>(FABU_AGENT_ROOT_PATH);
   }
 
+  async restoreRoot(): Promise<FabuAgentRootManifest> {
+    const root = await this.readRoot();
+    if (root.schemaVersion !== 1 || root.agentId !== this.agentId || !Array.isArray(root.files)) {
+      throw new Error(`Invalid Agent Store root for ${this.agentId}.`);
+    }
+    const rootObject = this.refs.get(FABU_AGENT_ROOT_PATH);
+    this.refs.clear();
+    if (rootObject) this.refs.set(FABU_AGENT_ROOT_PATH, rootObject);
+    for (const entry of root.files) {
+      if (!entry || typeof entry.path !== 'string' || !entry.path.trim() || entry.path === FABU_AGENT_ROOT_PATH) continue;
+      this.refs.set(entry.path, {
+        path: entry.path,
+        ...(entry.blobId ? { blobId: entry.blobId } : {}),
+        ...(entry.etag ? { etag: entry.etag } : {}),
+        ...(entry.revision != null ? { revision: entry.revision } : {}),
+      });
+    }
+    this.refsLoaded = true;
+    return root;
+  }
+
+  hasRootPath(path: string): boolean {
+    return this.refs.has(path);
+  }
+
+
   writeProfile(profile: FabuAgentProfile): Promise<FabuAgentStoreObject> {
     return this.writeJson(FABU_AGENT_PROFILE_PATH, profile);
   }

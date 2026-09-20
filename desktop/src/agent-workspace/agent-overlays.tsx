@@ -5,6 +5,7 @@ import type { RemoteComputerDesktopState } from '../../../frontend/apps/web/src/
 import styles from './agent-overlays.module.css';
 
 export interface AgentOverlayComputerProps {
+  agentId: string;
   open: boolean;
   label: string;
   status: string;
@@ -61,7 +62,7 @@ export default function AgentOverlays(props: AgentOverlaysProps) {
       </div>
     </section>
 
-    {computer.open ? <section className={styles.computer} data-testid="bot-computer-panel">
+    {computer.open ? <section className={styles.computer} data-testid="bot-computer-panel" data-agent-id={computer.agentId}>
       <header>
         <span className={styles.computerIcon}><Monitor size={18} /></span>
         <span><strong>This computer</strong><small>{computer.label}</small></span>

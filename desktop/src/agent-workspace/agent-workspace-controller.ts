@@ -147,10 +147,10 @@ export class AgentWorkspaceController {
     this.uploadingPeers.delete(peerKey);
   }
 
-  clearOperations(): void {
+  clearOperations(options: { preserveFinished?: boolean } = {}): void {
     this.operations.clear();
     this.uploadingPeers.clear();
-    this.finishedOperations.clear();
+    if (!options.preserveFinished) this.finishedOperations.clear();
   }
 
   clear(): void {

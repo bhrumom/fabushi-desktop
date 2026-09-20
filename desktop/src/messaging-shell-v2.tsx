@@ -1498,6 +1498,21 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       onEvent: (event) => {
         if (!closed) handleRuntimeEvent(event);
       },
+      onState: (state) => {
+        if (closed) return;
+        setHostReady(state.phase === 'ready');
+        if (state.phase !== 'ready' || !state.recovered) return;
+        void execute({ type: 'settings.get', requestId: nextRequestId('settings-recover') }).catch(() => {});
+        refreshLegacy();
+        const activeKey = activePeerKeyRef.current;
+        const active = peersRef.current.find((peer) => peer.key === activeKey);
+        if (active?.conversationId) {
+          void agentCoordinatorClient.openConversation(
+            nextRequestId('conversation-recover'),
+            active.conversationId,
+          ).catch(() => {});
+        }
+      },
     });
     const onCommandBridge = (event: Event) => {
       const detail = (event as CustomEvent<MahayanaCommandBridgeDetail>).detail;
@@ -1862,6 +1877,31 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }, 0);
   }
 
+  async function restoreAgentConversationFromCloud(peer: PeerItem): Promise<boolean> {
+    if (!isAgentPeer(peer) || peer.miniAppId || !peer.conversationId) return false;
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    const path = fabuAgentConversationTranscriptPath(peer.conversationId);
+    try {
+      const store = agentStoreFor(agentId);
+      await store.restoreRoot();
+      if (!store.hasRootPath(path)) return false;
+      const snapshot = await store.readJson<{
+        schemaVersion?: number;
+        agentId?: string;
+        conversationId?: string;
+        entries?: TranscriptEntry[];
+      }>(path);
+      if (!Array.isArray(snapshot.entries) || !snapshot.entries.length) return false;
+      if (agentWorkspaceControllerRef.current.operationForPeer(peer.key)) return false;
+      if (agentTranscriptStoreRef.current.entries(peer.key).length) return false;
+      agentTranscriptStoreRef.current.hydrateEntries(peer.key, snapshot.entries);
+      notifyAgentWorkspaceState();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async function mirrorBotAgentCloud(bot: BotSummary): Promise<void> {
     const identity = projectFabuBotIdentity(bot);
     const profile = projectFabuAgentProfile({
@@ -2144,8 +2184,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           // history, and an owner that is actively streaming must never be
           // overwritten by a late conversation.opened response.
           if (!agentWorkspaceControllerRef.current.operationForPeer(ownerPeer.key)) {
-            agentTranscriptStoreRef.current.replace(ownerPeer.key, toAgentTranscriptSources(openedMessages));
-            notifyAgentWorkspaceState();
+            const currentEntries = agentTranscriptStoreRef.current.entries(ownerPeer.key);
+            if (openedMessages.length || currentEntries.length === 0) {
+              agentTranscriptStoreRef.current.replace(ownerPeer.key, toAgentTranscriptSources(openedMessages));
+              notifyAgentWorkspaceState();
+            }
           }
           break;
         }
@@ -3097,7 +3140,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (isAgentPeer(peer)) {
       if (!agentTranscriptStoreRef.current.has(peer.key) && peer.conversationId) {
         const cached = cachedLegacyDisplayMessages(peer.conversationId);
-        agentTranscriptStoreRef.current.replace(peer.key, toAgentTranscriptSources(cached));
+        if (cached.length) {
+          agentTranscriptStoreRef.current.replace(peer.key, toAgentTranscriptSources(cached));
+        } else if (!(await restoreAgentConversationFromCloud(peer))) {
+          agentTranscriptStoreRef.current.replace(peer.key, []);
+        }
       } else if (!agentTranscriptStoreRef.current.has(peer.key)) {
         agentTranscriptStoreRef.current.replace(peer.key, []);
       }
@@ -4603,6 +4650,7 @@ async function saveInvoiceDialog() {
             }}
             onTogglePin={() => void togglePinConversation(activePeer)}
             computer={{
+              agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
               open: computerProfileOpen,
               label: localComputerLabel(),
               status: localComputerStatus,

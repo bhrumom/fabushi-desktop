@@ -6,6 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { AgentTranscriptStore } from '../src/agent-workspace/agent-transcript-store';
 import { AgentWorkspaceController } from '../src/agent-workspace/agent-workspace-controller';
 import { AgentRuntimeCoordinator } from '../src/agent-workspace/agent-runtime-coordinator';
+import type { TranscriptEntry } from '../src/agent-workspace/transcript-model';
+import {
+  FABU_AGENT_ROOT_PATH,
+  FabuAgentStore,
+  fabuAgentConversationTranscriptPath,
+} from '../src/fabu-runtime/agent-store';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
@@ -128,6 +134,62 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.replyForPeer('agent:a')?.id).toBe('reply:a');
     });
 
+    await test.step('Agent Store root restores a cross-device transcript snapshot without last-write-wins guessing', async () => {
+      const agentId = 'agent:cloud';
+      const conversationId = 'conversation:cloud';
+      const transcriptPath = fabuAgentConversationTranscriptPath(conversationId);
+      const entries: TranscriptEntry[] = [{
+        id: 'cloud:user:1',
+        kind: 'message',
+        role: 'me',
+        text: 'restored prompt',
+        createdAtMs: 1,
+      }, {
+        id: 'cloud:assistant:1',
+        kind: 'message',
+        role: 'peer',
+        text: 'restored answer',
+        createdAtMs: 2,
+      }];
+      const encode = (value: unknown) => Buffer.from(JSON.stringify(value), 'utf8').toString('base64');
+      const objects = new Map([
+        [FABU_AGENT_ROOT_PATH, {
+          path: FABU_AGENT_ROOT_PATH,
+          etag: 'root-etag',
+          dataBase64: encode({
+            schemaVersion: 1,
+            agentId,
+            updatedAtMs: 3,
+            files: [{ path: transcriptPath, blobId: 'blob-transcript', etag: 'transcript-etag', revision: 4 }],
+          }),
+        }],
+        [transcriptPath, {
+          path: transcriptPath,
+          blobId: 'blob-transcript',
+          etag: 'transcript-etag',
+          revision: 4,
+          dataBase64: encode({ schemaVersion: 1, agentId, conversationId, entries, updatedAtMs: 3 }),
+        }],
+      ]);
+      const store = new FabuAgentStore(agentId, {
+        async list() { return { files: [] }; },
+        async read(_agentId, path) {
+          const object = objects.get(path);
+          if (!object) throw new Error(`missing ${path}`);
+          return object;
+        },
+        async write() { return {}; },
+        async delete() { return {}; },
+      });
+      const root = await store.restoreRoot();
+      expect(root.agentId).toBe(agentId);
+      expect(store.hasRootPath(transcriptPath)).toBe(true);
+      const snapshot = await store.readJson<{ entries: TranscriptEntry[] }>(transcriptPath);
+      const transcripts = new AgentTranscriptStore();
+      transcripts.hydrateEntries('agent:cloud-peer', snapshot.entries);
+      expect(transcripts.entries('agent:cloud-peer').map((entry) => entry.text)).toEqual(['restored prompt', 'restored answer']);
+    });
+
     await test.step('Agent runtime coordinator isolates concurrent Agent streams and preserves drafts on reconnect', async () => {
       const controller = new AgentWorkspaceController();
       const transcripts = new AgentTranscriptStore();
@@ -206,6 +268,29 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       coordinator.resetOperations();
       expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
       expect(controller.isBusy('agent:b')).toBe(false);
+
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:restart',
+        requestId: 'request:restart',
+        messageId: 'user:restart',
+        text: 'survive host restart',
+        createdAtMs: 6,
+      });
+      coordinator.adoptOperation('request:restart', 'operation:restart', 'agent:restart');
+      expect(coordinator.handle({
+        type: 'host.lifecycle',
+        timestamp: new Date(7).toISOString(),
+        lifecycle: 'stopped',
+        state: 'stopped',
+        generation: 9,
+        sequence: 20,
+        recoverable: true,
+        error: 'fault injection',
+      })).toBe(true);
+      expect(controller.isBusy('agent:restart')).toBe(false);
+      expect(controller.isOperationFinished('operation:restart')).toBe(true);
+      expect(transcripts.entries('agent:restart').find((entry) => entry.kind === 'assistant-turn')?.assistantTurn?.status).toBe('interrupted');
+      expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
 
       expect(coordinator.handleCommandBridge({
         phase: 'dispatch',

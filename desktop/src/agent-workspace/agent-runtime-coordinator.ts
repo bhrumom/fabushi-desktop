@@ -43,6 +43,7 @@ export interface AgentRuntimeCoordinatorHooks {
 export class AgentRuntimeCoordinator {
   private readonly pendingDeltas = new Map<string, AgentDeltaEvent>();
   private deltaTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
+  private lastRecoveredGeneration = -1;
 
   constructor(
     private readonly workspace: AgentWorkspaceController,
@@ -196,6 +197,42 @@ export class AgentRuntimeCoordinator {
     return finishedPeer;
   }
 
+  private recoverInterruptedOperations(event: Extract<RuntimeEvent, { type: 'host.lifecycle' }>): void {
+    if (event.generation === this.lastRecoveredGeneration) return;
+    this.lastRecoveredGeneration = event.generation;
+    this.flushPendingDeltas();
+
+    const operations = this.workspace.snapshot();
+    const requests = this.workspace.requestSnapshot();
+    const touched = new Set<string>();
+    for (const [peerKey, operationId] of Object.entries(operations)) {
+      this.transcripts.appendAssistantTurnEvent(peerKey, {
+        type: 'operation.interrupted',
+        timestamp: event.timestamp,
+        operationId,
+      });
+      this.transcripts.finishOperation(peerKey, operationId, 'interrupted');
+      this.workspace.finishRuntimeOperation(operationId);
+      touched.add(peerKey);
+      this.hooks.onOperationTerminal?.(
+        peerKey,
+        operationId,
+        'interrupted',
+        event.reason || event.error || 'Agent runtime restarted.',
+      );
+    }
+    for (const [peerKey, requestId] of Object.entries(requests)) {
+      this.workspace.cancelRequest(requestId);
+      touched.add(peerKey);
+      this.hooks.onRequestFailed?.(peerKey, requestId, event.reason || event.error || 'Agent runtime restarted.');
+    }
+    this.workspace.clearOperations({ preserveFinished: true });
+    for (const peerKey of touched) {
+      this.emitTranscript(peerKey);
+      this.emitOperation(peerKey);
+    }
+  }
+
   handleCommandBridge(detail: MahayanaCommandBridgeDetail): boolean {
     if (detail.command.type !== 'chat.send') return false;
     const peerKey = detail.context?.conversationKey;
@@ -244,6 +281,13 @@ export class AgentRuntimeCoordinator {
     }
 
     switch (event.type) {
+      case 'host.lifecycle': {
+        if (['restarting', 'stopped', 'spawn-failed', 'protocol-error'].includes(event.lifecycle)) {
+          this.recoverInterruptedOperations(event);
+        }
+        return true;
+      }
+
       case 'chat.message': {
         const operationId = event.operationId ?? this.unambiguousRuntimeId();
         if (event.role === 'assistant') {

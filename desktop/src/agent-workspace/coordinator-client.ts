@@ -21,6 +21,16 @@ export interface AgentAttachmentUpload {
   readonly bytesBase64: string;
 }
 
+export type AgentCoordinatorConnectionPhase = 'connecting' | 'ready' | 'recovering' | 'closed';
+
+export interface AgentCoordinatorConnectionState {
+  readonly phase: AgentCoordinatorConnectionPhase;
+  readonly generation: number;
+  readonly attempt: number;
+  readonly recovered: boolean;
+  readonly error?: string;
+}
+
 export interface AgentCoordinatorConnection {
   readonly ready: Promise<HostInfo>;
   dispose(): Promise<void>;
@@ -29,6 +39,7 @@ export interface AgentCoordinatorConnection {
 export interface AgentCoordinatorConnectionOptions {
   readonly config: HostConfig;
   readonly onEvent: (event: RuntimeEvent) => void;
+  readonly onState?: (state: AgentCoordinatorConnectionState) => void;
 }
 
 /**
@@ -49,16 +60,94 @@ export class AgentCoordinatorClient {
    */
   connect(options: AgentCoordinatorConnectionOptions): AgentCoordinatorConnection {
     let disposed = false;
+    let everReady = false;
+    let observedGeneration = 0;
+    let readyGeneration = 0;
+    let retryAttempt = 0;
+    let retryTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
+    let handshake: Promise<void> | null = null;
+    let resolveFirstReady: (info: HostInfo) => void = () => {};
+    const ready = new Promise<HostInfo>((resolve) => { resolveFirstReady = resolve; });
+
+    const emitState = (
+      phase: AgentCoordinatorConnectionPhase,
+      error?: unknown,
+      recovered = everReady,
+    ) => {
+      options.onState?.({
+        phase,
+        generation: observedGeneration,
+        attempt: retryAttempt,
+        recovered,
+        ...(error ? { error: error instanceof Error ? error.message : String(error) } : {}),
+      });
+    };
+
+    const clearRetry = () => {
+      if (retryTimer !== null) globalThis.clearTimeout(retryTimer);
+      retryTimer = null;
+    };
+
+    const retryDelay = () => Math.min(3_000, [100, 250, 500, 1_000, 2_000, 3_000][Math.min(retryAttempt, 5)] ?? 3_000);
+
+    const scheduleRecovery = (cause?: unknown) => {
+      if (disposed || retryTimer !== null) return;
+      emitState(everReady ? 'recovering' : 'connecting', cause);
+      const delay = retryDelay();
+      retryAttempt += 1;
+      retryTimer = globalThis.setTimeout(() => {
+        retryTimer = null;
+        void performHandshake();
+      }, delay);
+    };
+
+    const performHandshake = async () => {
+      if (disposed || handshake) return handshake ?? Promise.resolve();
+      emitState(everReady ? 'recovering' : 'connecting');
+      const current = this.transport.initialize(options.config)
+        .then((info) => {
+          if (disposed) return;
+          clearRetry();
+          retryAttempt = 0;
+          readyGeneration = Math.max(readyGeneration, observedGeneration);
+          const recovered = everReady;
+          if (!everReady) resolveFirstReady(info);
+          everReady = true;
+          emitState('ready', undefined, recovered);
+        })
+        .catch((cause: unknown) => {
+          if (!disposed) scheduleRecovery(cause);
+        })
+        .finally(() => {
+          if (handshake === current) handshake = null;
+        });
+      handshake = current;
+      return current;
+    };
+
     const unsubscribe = this.transport.subscribe((event) => {
-      if (!disposed) options.onEvent(event);
+      if (disposed) return;
+      if (event.type === 'host.lifecycle') {
+        observedGeneration = Math.max(observedGeneration, event.generation);
+        const unavailable = ['restarting', 'stopped', 'spawn-failed', 'protocol-error', 'request-timeout'].includes(event.lifecycle);
+        if (unavailable) scheduleRecovery(event.error || event.reason || `Host ${event.lifecycle}`);
+        if (event.lifecycle === 'running' && event.generation > readyGeneration) {
+          clearRetry();
+          void performHandshake();
+        }
+      }
+      options.onEvent(event);
     });
-    const ready = this.transport.initialize(options.config);
+
+    void performHandshake();
     return {
       ready,
       dispose: async () => {
         if (disposed) return;
         disposed = true;
+        clearRetry();
         unsubscribe();
+        emitState('closed');
         await this.transport.close();
       },
     };
