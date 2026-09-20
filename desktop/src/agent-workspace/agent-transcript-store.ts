@@ -254,6 +254,34 @@ export class AgentTranscriptStore {
     });
   }
 
+  appendComputerHandoff(
+    peerKey: string,
+    event: Extract<RuntimeEvent, { type: 'computer.snapshot' | 'computer.result' }>,
+  ): AgentTranscriptSourceMessage[] {
+    const createdAtMs = Number.isFinite(Date.parse(event.timestamp)) ? Date.parse(event.timestamp) : Date.now();
+    const isSnapshot = event.type === 'computer.snapshot';
+    const origin = isSnapshot ? event.origin : event.result.origin;
+    const detail = isSnapshot
+      ? `Captured this computer for the Agent (${origin}).`
+      : `Completed ${event.result.actionsExecuted} computer action${event.result.actionsExecuted === 1 ? '' : 's'} (${origin}).`;
+    const next: AgentTranscriptSourceMessage = {
+      id: `computer:${event.requestId}:${event.type}`,
+      source: 'legacy',
+      role: 'peer',
+      text: '',
+      createdAtMs,
+      kind: 'computer-handoff',
+      actionTitle: isSnapshot ? 'Computer snapshot' : 'Computer action',
+      actionDetail: detail,
+      status: 'completed',
+    };
+    return this.update(peerKey, (current) => {
+      const index = current.findIndex((message) => message.id === next.id);
+      if (index < 0) return [...current, next];
+      return current.map((message, messageIndex) => messageIndex === index ? next : message);
+    });
+  }
+
   appendApprovalRequested(
     peerKey: string,
     event: Extract<RuntimeEvent, { type: 'approval.requested' }>,

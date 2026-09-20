@@ -2623,6 +2623,7 @@ impl FeatureHostController {
             }
             FeatureCommand::ComputerScreenshot {
                 origin,
+                agent_id,
                 session_id,
                 target,
                 ..
@@ -2633,6 +2634,24 @@ impl FeatureHostController {
                     &target,
                     &settings,
                 )?;
+                let attributed_agent_id = if let Some(requested_agent_id) = agent_id.as_deref() {
+                    let state = self.state()?;
+                    Some(canonical_runtime_agent_id(&state, requested_agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown computer-control agent: {requested_agent_id}"
+                        ))
+                    })?)
+                } else {
+                    None
+                };
+                let audit_agent_id = attributed_agent_id
+                    .clone()
+                    .unwrap_or_else(|| "mahayana-assistant".to_string());
+                if !is_safe_memory_agent_id(&audit_agent_id) {
+                    return Err(FeatureHostError::Contract(format!(
+                        "unsafe computer-control agent: {audit_agent_id}"
+                    )));
+                }
                 let snapshot = if self.config.mode == HostMode::Test {
                     test_computer_snapshot()
                 } else {
@@ -2640,7 +2659,7 @@ impl FeatureHostController {
                         .map_err(|error| FeatureHostError::Contract(error.to_string()))?
                 };
                 let _ = self.append_action_audit(
-                    "mahayana-assistant",
+                    &audit_agent_id,
                     session_id.as_deref(),
                     json!({
                         "kind": "computerScreenshot",
@@ -2654,6 +2673,7 @@ impl FeatureHostController {
                     .push_back(HostEvent::ComputerSnapshotCaptured {
                         timestamp: timestamp(),
                         request_id: request_id.clone(),
+                        agent_id: attributed_agent_id,
                         origin,
                         snapshot,
                     });
@@ -2673,16 +2693,19 @@ impl FeatureHostController {
                     &target,
                     &settings,
                 )?;
-                let audit_agent_id = if let Some(requested_agent_id) = agent_id.as_deref() {
+                let attributed_agent_id = if let Some(requested_agent_id) = agent_id.as_deref() {
                     let state = self.state()?;
-                    canonical_runtime_agent_id(&state, requested_agent_id).ok_or_else(|| {
+                    Some(canonical_runtime_agent_id(&state, requested_agent_id).ok_or_else(|| {
                         FeatureHostError::Contract(format!(
                             "unknown computer-control agent: {requested_agent_id}"
                         ))
-                    })?
+                    })?)
                 } else {
-                    "mahayana-assistant".to_string()
+                    None
                 };
+                let audit_agent_id = attributed_agent_id
+                    .clone()
+                    .unwrap_or_else(|| "mahayana-assistant".to_string());
                 if !is_safe_memory_agent_id(&audit_agent_id) {
                     return Err(FeatureHostError::Contract(format!(
                         "unsafe computer-control agent: {audit_agent_id}"
@@ -2729,6 +2752,7 @@ impl FeatureHostController {
                     .push_back(HostEvent::ComputerActionCompleted {
                         timestamp: timestamp(),
                         request_id: request_id.clone(),
+                        agent_id: attributed_agent_id,
                         result,
                     });
             }

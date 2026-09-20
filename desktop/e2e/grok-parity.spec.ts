@@ -194,6 +194,30 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       const controller = new AgentWorkspaceController();
       const transcripts = new AgentTranscriptStore();
       const coordinator = new AgentRuntimeCoordinator(controller, transcripts);
+      coordinator.bindAgentPeers([{ agentId: 'agent:runtime-b', peerKey: 'agent:b' }]);
+      expect(coordinator.handle({
+        type: 'computer.result',
+        timestamp: new Date(1).toISOString(),
+        requestId: 'computer:b',
+        agentId: 'agent:runtime-b',
+        result: {
+          origin: 'ai',
+          actionsExecuted: 1,
+          snapshot: { capturedAtMs: 1, dataUrl: 'data:image/png;base64,AA==' },
+        },
+      })).toBe(true);
+      expect(transcripts.entries('agent:b').filter((entry) => entry.kind === 'computer-handoff')).toHaveLength(1);
+      expect(transcripts.entries('agent:a').filter((entry) => entry.kind === 'computer-handoff')).toHaveLength(0);
+      expect(coordinator.handle({
+        type: 'computer.result',
+        timestamp: new Date(1).toISOString(),
+        requestId: 'computer:unscoped',
+        result: {
+          origin: 'local-ui',
+          actionsExecuted: 1,
+          snapshot: { capturedAtMs: 1, dataUrl: 'data:image/png;base64,AA==' },
+        },
+      })).toBe(false);
 
       controller.setDraft('agent:a', 'draft survives reconnect');
       coordinator.beginLocalTurn({

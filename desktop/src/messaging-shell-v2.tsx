@@ -2562,6 +2562,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [conversations, bots, accountBots, groups, selfActors, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps, selfHosted.actorId]);
 
   peersRef.current = peers;
+  useEffect(() => {
+    agentRuntimeCoordinator.bindAgentPeers(peers.flatMap((peer) => {
+      if (!isAgentPeer(peer) || peer.miniAppId) return [];
+      const agentId = peer.agentId ?? peer.actorId;
+      return agentId ? [{ agentId, peerKey: peer.key }] : [];
+    }));
+  }, [agentRuntimeCoordinator, peers]);
   const grokActivityByPeer = Object.fromEntries(peers.map((peer) => {
     const thread = isAgentPeer(peer) && !peer.miniAppId
       ? toDisplayAgentMessages(agentTranscriptStoreRef.current.thread(peer.key))

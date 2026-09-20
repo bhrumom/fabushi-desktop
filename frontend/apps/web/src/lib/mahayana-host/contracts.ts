@@ -744,7 +744,7 @@ export type RuntimeCommand =
   | (CommandBase & { type: "teach.start"; agentId: string; entryPoint: TeachEntryPoint })
   | (CommandBase & { type: "teach.stop"; agentId: string; save: boolean })
   | (CommandBase & { type: "computer.status" })
-  | (CommandBase & { type: "computer.screenshot"; origin?: ComputerControlOrigin; sessionId?: string; target?: ComputerControlTarget })
+  | (CommandBase & { type: "computer.screenshot"; origin?: ComputerControlOrigin; agentId?: string; sessionId?: string; target?: ComputerControlTarget })
   | (CommandBase & { type: "computer.action"; origin?: ComputerControlOrigin; agentId?: string; sessionId?: string; target?: ComputerControlTarget; action: ComputerAction; then?: ComputerAction[] })
   | (CommandBase & {
       type: "remoteComputer.register";
@@ -1013,8 +1013,8 @@ export type RuntimeEvent =
   | (EventBase & { type: "asyncTask.changed"; agentId: string; tasks: AsyncTaskSummary[] })
   | (EventBase & { type: "teach.changed"; status: TeachRecordingStatus; result?: TeachRecordingResult })
   | (EventBase & { type: "computer.status"; requestId: string; status: ComputerStatus })
-  | (EventBase & { type: "computer.snapshot"; requestId: string; origin: ComputerControlOrigin; snapshot: ComputerSnapshot })
-  | (EventBase & { type: "computer.result"; requestId: string; result: ComputerActionResult })
+  | (EventBase & { type: "computer.snapshot"; requestId: string; agentId?: string; origin: ComputerControlOrigin; snapshot: ComputerSnapshot })
+  | (EventBase & { type: "computer.result"; requestId: string; agentId?: string; result: ComputerActionResult })
   | (EventBase & { type: "remoteComputer.changed"; requestId: string; action: string; data: unknown })
   | (EventBase & { type: "memory.listed"; agentId: string; memories: MemoryRecord[]; count: number; location?: string })
   | (EventBase & { type: "memory.changed"; agentId: string; action: string; memory?: MemoryRecord })

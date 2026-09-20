@@ -44,6 +44,7 @@ export class AgentRuntimeCoordinator {
   private readonly pendingDeltas = new Map<string, AgentDeltaEvent>();
   private deltaTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   private lastRecoveredGeneration = -1;
+  private readonly peerByAgentId = new Map<string, string>();
 
   constructor(
     private readonly workspace: AgentWorkspaceController,
@@ -73,6 +74,13 @@ export class AgentRuntimeCoordinator {
 
   private hasAgentWork(): boolean {
     return this.knownRuntimeIds().length > 0;
+  }
+
+  bindAgentPeers(bindings: readonly { agentId: string; peerKey: string }[]): void {
+    this.peerByAgentId.clear();
+    for (const binding of bindings) {
+      if (binding.agentId.trim() && binding.peerKey.trim()) this.peerByAgentId.set(binding.agentId, binding.peerKey);
+    }
   }
 
   beginLocalTurn(input: AgentLocalTurn): void {
@@ -285,6 +293,16 @@ export class AgentRuntimeCoordinator {
         if (['restarting', 'stopped', 'spawn-failed', 'protocol-error'].includes(event.lifecycle)) {
           this.recoverInterruptedOperations(event);
         }
+        return true;
+      }
+
+      case 'computer.snapshot':
+      case 'computer.result': {
+        if (!event.agentId) return false;
+        const peerKey = this.peerByAgentId.get(event.agentId);
+        if (!peerKey) return false;
+        this.transcripts.appendComputerHandoff(peerKey, event);
+        this.emitTranscript(peerKey);
         return true;
       }
 

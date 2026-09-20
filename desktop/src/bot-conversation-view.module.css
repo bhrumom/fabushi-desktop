@@ -573,3 +573,37 @@
 .approvalActions button[data-danger='true'] {
   color: #e7b1b1;
 }
+
+.timelineCard {
+  max-width: 680px;
+  margin-left: 40px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  color: #a9a2b5;
+}
+
+.timelineCard > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timelineCard strong {
+  color: #d8d3df;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.timelineCard span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}

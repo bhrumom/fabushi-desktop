@@ -1415,7 +1415,7 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
         return { requestId: command.requestId };
       case "computer.screenshot": {
         const snapshot = mockComputerSnapshot();
-        this.emit({ type: "computer.snapshot", timestamp: now(), requestId: command.requestId, origin: command.origin ?? "local-ui", snapshot });
+        this.emit({ type: "computer.snapshot", timestamp: now(), requestId: command.requestId, agentId: command.agentId, origin: command.origin ?? "local-ui", snapshot });
         return { requestId: command.requestId };
       }
       case "computer.action": {
@@ -1423,7 +1423,7 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
         const actions = [command.action, ...(command.then ?? [])];
         if (actions.length > 10) throw new Error("At most 10 computer actions can be batched");
         const snapshot = mockComputerSnapshot();
-        this.emit({ type: "computer.result", timestamp: now(), requestId: command.requestId, result: { origin, actionsExecuted: actions.length, snapshot } });
+        this.emit({ type: "computer.result", timestamp: now(), requestId: command.requestId, agentId: command.agentId, result: { origin, actionsExecuted: actions.length, snapshot } });
         return { requestId: command.requestId };
       }
       case "remoteComputer.register":

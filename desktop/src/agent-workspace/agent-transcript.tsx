@@ -1,5 +1,5 @@
 import React, { type ReactNode } from 'react';
-import { AppWindow, ArrowDown, Check, Copy, Edit3, FileText, RotateCcw } from 'lucide-react';
+import { AppWindow, ArrowDown, Check, Copy, Edit3, FileText, Monitor, RotateCcw } from 'lucide-react';
 import { BotMark } from '../../../frontend/apps/web/src/app/host/bot-mark';
 import { MahayanaAssistantTurnView } from '../mahayana-assistant-turn-view';
 import type { TranscriptApprovalDecision, TranscriptEntry } from './transcript-model';
@@ -149,6 +149,18 @@ function ToolGroup({ entries }: { entries: TranscriptEntry[] }) {
   </section>;
 }
 
+function ComputerHandoffCard({ entry }: { entry: TranscriptEntry }) {
+  return <section
+    className={styles.timelineCard}
+    data-testid="agent-computer-handoff"
+    data-transcript-entry-id={entry.id}
+  >
+    <Monitor size={16} />
+    <div><strong>{entry.title || 'Computer'}</strong><span>{entry.detail || 'Computer activity completed.'}</span></div>
+    <Check size={15} aria-label="Completed" />
+  </section>;
+}
+
 function ApprovalCard({ entry, onResolveApproval }: {
   entry: TranscriptEntry;
   onResolveApproval?: (approvalId: string, decision: TranscriptApprovalDecision) => void;
@@ -197,6 +209,9 @@ export default function AgentTranscript({
         {entries.map((entry, index) => {
           if (entry.kind === 'approval' && entry.approval) {
             return <ApprovalCard key={entry.id} entry={entry} onResolveApproval={onResolveApproval} />;
+          }
+          if (entry.kind === 'computer-handoff') {
+            return <ComputerHandoffCard key={entry.id} entry={entry} />;
           }
           if (entry.kind === 'assistant-turn' && entry.assistantTurn) {
             return <div key={entry.id} data-transcript-entry-id={entry.id}>

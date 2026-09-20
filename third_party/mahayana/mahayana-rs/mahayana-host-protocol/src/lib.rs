@@ -1464,6 +1464,8 @@ pub enum FeatureCommand {
         request_id: String,
         #[serde(default)]
         origin: ComputerControlOrigin,
+        #[serde(rename = "agentId", default, skip_serializing_if = "Option::is_none")]
+        agent_id: Option<String>,
         #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
         session_id: Option<String>,
         #[serde(default)]
@@ -2379,6 +2381,8 @@ pub enum HostEvent {
         timestamp: String,
         #[serde(rename = "requestId")]
         request_id: String,
+        #[serde(rename = "agentId", default, skip_serializing_if = "Option::is_none")]
+        agent_id: Option<String>,
         origin: ComputerControlOrigin,
         snapshot: ComputerSnapshot,
     },
@@ -2387,6 +2391,8 @@ pub enum HostEvent {
         timestamp: String,
         #[serde(rename = "requestId")]
         request_id: String,
+        #[serde(rename = "agentId", default, skip_serializing_if = "Option::is_none")]
+        agent_id: Option<String>,
         result: ComputerActionResult,
     },
     #[serde(rename = "remoteComputer.changed")]

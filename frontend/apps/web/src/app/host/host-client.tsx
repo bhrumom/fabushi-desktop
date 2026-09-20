@@ -1083,6 +1083,7 @@ export default function HostClient({ onAuthStateChange }: HostClientProps) {
           type: "computer.screenshot",
           requestId: `computer-snapshot-${Date.now()}`,
           origin: "local-ui",
+          agentId: activeBotMarkId,
         });
       } catch (cause) {
         if (!stopped) setError(cause instanceof Error ? cause.message : String(cause));
@@ -1097,7 +1098,7 @@ export default function HostClient({ onAuthStateChange }: HostClientProps) {
       stopped = true;
       window.clearInterval(timer);
     };
-  }, [computerOpen, computerStatus?.captureSupported, computerStatus?.screenRecordingGranted, transport]);
+  }, [activeBotMarkId, computerOpen, computerStatus?.captureSupported, computerStatus?.screenRecordingGranted, transport]);
 
   useEffect(() => {
     if (!settingsOpen || settingsSection !== "mcp") return;
