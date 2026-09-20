@@ -59,7 +59,7 @@ function runningCheckpointNotice(
     kind: 'notice',
     role: 'peer',
     text: '',
-    createdAtMs: Number.isFinite(checkpoint.updatedAtMs) ? checkpoint.updatedAtMs! : Date.now(),
+    createdAtMs: typeof checkpoint.updatedAtMs === 'number' && Number.isFinite(checkpoint.updatedAtMs) ? checkpoint.updatedAtMs : Date.now(),
     operationId: checkpoint.operationId,
     title: 'Previous device run',
     detail: checkpoint.message?.trim()
