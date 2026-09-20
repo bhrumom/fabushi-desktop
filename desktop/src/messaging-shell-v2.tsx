@@ -1203,6 +1203,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         onOperationStarted: (peerKey, operationId) => {
           mirrorAgentRuntimeCheckpoint(peerKey, 'running', operationId);
         },
+        onRequestFailed: (peerKey, _requestId, message) => {
+          if (peerKey === activePeerKeyRef.current) setError(message);
+        },
         onOperationTerminal: (peerKey, operationId, status, message) => {
           mirrorAgentRuntimeCheckpoint(peerKey, status, operationId, message);
           mirrorAgentConversationSnapshot(peerKey);
@@ -1514,33 +1517,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
     const onCommandBridge = (event: Event) => {
       const detail = (event as CustomEvent<MahayanaCommandBridgeDetail>).detail;
-      if (!detail || detail.command.type !== 'chat.send') return;
-      const peerKey = detail.context?.conversationKey;
-      if (!peerKey) return;
-
-      const registry = agentWorkspaceControllerRef.current;
-      const requestId = detail.command.requestId;
-      if (detail.phase === 'dispatch') {
-        if (!registry.isBusy(peerKey)) registry.beginRequest(peerKey, requestId);
-        notifyAgentWorkspaceState();
-        return;
-      }
-      if (detail.phase === 'accepted') {
-        const operationId = detail.accepted.operationId;
-        if (!operationId) return;
-        agentRuntimeCoordinator.adoptOperation(requestId, operationId, peerKey);
-        agentRuntimeCoordinator.handle({
-          type: 'operation.started',
-          timestamp: new Date().toISOString(),
-          operationId,
-          label: '正在思考',
-          interruptible: true,
-        });
-        return;
-      }
-      registry.cancelRequest(requestId);
-      notifyAgentWorkspaceState();
-      if (activePeerKeyRef.current === peerKey) setError(detail.error);
+      if (detail) agentRuntimeCoordinator.handleCommandBridge(detail);
     };
     window.addEventListener(MAHAYANA_COMMAND_EVENT_NAME, onCommandBridge);
     void connection.ready
