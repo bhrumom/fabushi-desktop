@@ -1,4 +1,4 @@
-export type AgentPromptReferenceKind = 'agent' | 'workflow' | 'mcp' | 'file' | 'link';
+export type AgentPromptReferenceKind = 'agent' | 'workflow' | 'mcp' | 'pull-request' | 'file' | 'link';
 
 export interface AgentPromptReference {
   readonly kind: AgentPromptReferenceKind;
@@ -10,6 +10,7 @@ export function agentPromptReferenceMarker(reference: AgentPromptReference): str
   if (reference.kind === 'agent') return `@${reference.label}`;
   if (reference.kind === 'workflow') return `/${reference.label}`;
   if (reference.kind === 'mcp') return `@${reference.label}`;
+  if (reference.kind === 'pull-request') return `#${reference.label.replace(/^#/, '')}`;
   return reference.label;
 }
 
