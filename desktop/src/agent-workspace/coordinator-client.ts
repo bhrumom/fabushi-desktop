@@ -348,6 +348,52 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  async callMcpTool(
+    requestId: string,
+    server: string,
+    tool: string,
+    argumentsValue: unknown = {},
+    timeoutMs = 10_000,
+  ): Promise<unknown> {
+    let cancelWait = () => {};
+    const result = new Promise<unknown>((resolve, reject) => {
+      const timeout = globalThis.setTimeout(() => {
+        unsubscribe();
+        reject(new Error(`Timed out waiting for MCP tool result: ${server}/${tool}`));
+      }, timeoutMs);
+      const unsubscribe = this.transport.subscribe((event) => {
+        if (
+          event.type !== 'mcp.toolResult'
+          || event.requestId !== requestId
+          || event.server !== server
+          || event.tool !== tool
+        ) return;
+        globalThis.clearTimeout(timeout);
+        unsubscribe();
+        resolve(event.result);
+      });
+      cancelWait = () => {
+        globalThis.clearTimeout(timeout);
+        unsubscribe();
+      };
+    });
+
+    try {
+      await this.transport.execute({
+        type: 'mcp.toolCall',
+        requestId,
+        server,
+        tool,
+        arguments: argumentsValue,
+      } as HostCommand);
+    } catch (cause) {
+      cancelWait();
+      void result.catch(() => {});
+      throw cause;
+    }
+    return result;
+  }
+
   listMemory(requestId: string, agentId: string, limit = 1000) {
     return this.transport.execute({
       type: 'memory.list',
