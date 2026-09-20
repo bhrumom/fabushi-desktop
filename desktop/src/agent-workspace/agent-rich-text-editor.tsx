@@ -13,6 +13,7 @@ export interface AgentRichTextDraft {
 export interface AgentRichTextEditorControls {
   focus(): void;
   blur(): void;
+  insertText(value: string): void;
 }
 
 export function agentEditorContent(prompt: string, richText?: string): Record<string, unknown> {
@@ -232,6 +233,10 @@ export default function AgentRichTextEditor({
     const controls: AgentRichTextEditorControls = {
       focus: () => editor.commands.focus('end'),
       blur: () => editor.view.dom.blur(),
+      insertText: (value) => {
+        if (!value) return;
+        editor.chain().focus().insertContent(value).run();
+      },
     };
     onControls?.(controls);
     return () => onControls?.(null);
