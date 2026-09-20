@@ -1,11 +1,12 @@
-import { Bot, Command, Megaphone, Network, Plug, Plus, Settings } from 'lucide-react';
+import { Bot, Command, FileText, Link2, Megaphone, MessageSquareText, Monitor, Network, Plug, Plus, Search, Settings } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import type { GrokAgentSidebarItem } from './grok-agent-sidebar';
+import type { TranscriptEntry } from '../agent-workspace/transcript-model';
 import styles from './grok-command-palette.module.css';
 
 type CommandItem =
   | { kind: 'agent'; key: string; label: string; detail: string; agent: GrokAgentSidebarItem }
-  | { kind: 'command'; key: string; label: string; detail: string; icon: React.ReactNode; run(): void };
+  | { kind: 'command' | 'resource'; key: string; label: string; detail: string; icon: React.ReactNode; run(): void };
 
 export default function GrokCommandPalette({
   open,
@@ -19,6 +20,10 @@ export default function GrokCommandPalette({
   onBroadcast,
   onPlugins,
   onSettings,
+  entries = [],
+  onOpenTranscriptEntry,
+  onConversationSearch,
+  onComputer,
 }: {
   open: boolean;
   agents: readonly GrokAgentSidebarItem[];
@@ -31,11 +36,17 @@ export default function GrokCommandPalette({
   onBroadcast(): void;
   onPlugins(): void;
   onSettings(): void;
+  entries?: readonly TranscriptEntry[];
+  onOpenTranscriptEntry?(entryId: string): void;
+  onConversationSearch?(): void;
+  onComputer?(): void;
 }) {
   const [selected, setSelected] = useState(0);
   const items = useMemo<CommandItem[]>(() => {
     const commands: CommandItem[] = [
       { kind: 'command', key: 'new', label: 'New chat', detail: 'Create a new Agent', icon: <Plus size={16} />, run: onNewAgent },
+      { kind: 'command', key: 'find', label: 'Find in conversation', detail: 'Search the current Agent transcript', icon: <Search size={16} />, run: () => onConversationSearch?.() },
+      { kind: 'command', key: 'computer', label: 'Computer', detail: 'Open the current Agent computer', icon: <Monitor size={16} />, run: () => onComputer?.() },
       { kind: 'command', key: 'network', label: 'Agent Network', detail: 'View Agents and groups', icon: <Network size={16} />, run: onNetwork },
       { kind: 'command', key: 'broadcast', label: 'Broadcast to agents', detail: 'Send one owner message to multiple Agents', icon: <Megaphone size={16} />, run: onBroadcast },
       { kind: 'command', key: 'plugins', label: 'Plugins', detail: 'Open installed apps and plugins', icon: <Plug size={16} />, run: onPlugins },
@@ -50,12 +61,49 @@ export default function GrokCommandPalette({
         detail: agent.busy ? 'Working…' : agent.description || 'Agent',
         agent,
       }));
+
+    const resourceItems: CommandItem[] = [];
+    for (const entry of entries.slice(-240)) {
+      const label = entry.text.trim().replace(/\s+/g, ' ');
+      if (label && (entry.kind === 'message' || entry.kind === 'assistant-turn')) {
+        resourceItems.push({
+          kind: 'resource',
+          key: `message:${entry.id}`,
+          label: label.slice(0, 90),
+          detail: entry.role === 'me' ? 'Your message' : 'Agent message',
+          icon: <MessageSquareText size={16} />,
+          run: () => onOpenTranscriptEntry?.(entry.id),
+        });
+      }
+      for (const attachment of entry.attachments ?? []) {
+        resourceItems.push({
+          kind: 'resource',
+          key: `file:${entry.id}:${attachment.id}`,
+          label: attachment.name,
+          detail: 'Attachment',
+          icon: <FileText size={16} />,
+          run: () => onOpenTranscriptEntry?.(entry.id),
+        });
+      }
+      for (const match of entry.text.matchAll(/https?:\/\/[^\s)\]}>"']+/g)) {
+        const url = match[0];
+        resourceItems.push({
+          kind: 'resource',
+          key: `link:${entry.id}:${url}`,
+          label: url.length > 90 ? `${url.slice(0, 87)}…` : url,
+          detail: 'Link in conversation',
+          icon: <Link2 size={16} />,
+          run: () => onOpenTranscriptEntry?.(entry.id),
+        });
+      }
+    }
+
     const normalized = query.trim().toLocaleLowerCase();
-    const all = [...commands, ...agentItems];
+    const all = normalized ? [...commands, ...agentItems, ...resourceItems] : [...commands, ...agentItems];
     return normalized
       ? all.filter((item) => `${item.label} ${item.detail}`.toLocaleLowerCase().includes(normalized))
       : all;
-  }, [agents, onBroadcast, onNetwork, onNewAgent, onPlugins, onSettings, query]);
+  }, [agents, entries, onBroadcast, onComputer, onConversationSearch, onNetwork, onNewAgent, onOpenTranscriptEntry, onPlugins, onSettings, query]);
 
   useEffect(() => {
     if (open) setSelected(0);
