@@ -5,6 +5,8 @@ export interface AgentSettingsProfileValue {
   readonly name: string;
   readonly title?: string;
   readonly description: string;
+  readonly avatarShape: string;
+  readonly avatarColor: string;
   readonly notifyOnUpdatesEnabled: boolean;
 }
 
@@ -12,6 +14,8 @@ export interface AgentSettingsProfileUpdate {
   readonly name: string;
   readonly title?: string;
   readonly description: string;
+  readonly avatarShape: string;
+  readonly avatarColor: string;
 }
 
 export type AgentSettingsPending = 'profile' | 'notifications' | null;
@@ -34,6 +38,8 @@ function profileValue(agent: BotSummary | null): AgentSettingsProfileValue | nul
     name: agent.name,
     title: agent.title,
     description: agent.description,
+    avatarShape: agent.avatarShape?.trim() ?? '',
+    avatarColor: agent.avatarColor?.trim() ?? '',
     notifyOnUpdatesEnabled: agent.notifyOnUpdates ?? agent.notificationsEnabled,
   };
 }
@@ -44,6 +50,8 @@ function sameAgent(left: BotSummary | null, right: BotSummary | null): boolean {
   return left.name === right.name
     && left.title === right.title
     && left.description === right.description
+    && (left.avatarShape ?? '') === (right.avatarShape ?? '')
+    && (left.avatarColor ?? '') === (right.avatarColor ?? '')
     && left.notifyOnUpdates === right.notifyOnUpdates
     && left.notificationsEnabled === right.notificationsEnabled;
 }
@@ -98,12 +106,16 @@ export function createAgentSettingsController(source: AgentSettingsSource, initi
         name: profile.name.trim(),
         ...(profile.title === undefined ? {} : { title: profile.title.trim() }),
         description: profile.description.trim(),
+        avatarShape: profile.avatarShape.trim(),
+        avatarColor: profile.avatarColor.trim(),
       };
       if (!normalized.name) return false;
       if (
         normalized.name === agent.name
         && (normalized.title ?? '') === (agent.title ?? '')
         && normalized.description === agent.description
+        && normalized.avatarShape === (agent.avatarShape ?? '')
+        && normalized.avatarColor === (agent.avatarColor ?? '')
       ) return false;
       const requestGeneration = generation;
       const agentId = agent.id;
@@ -115,6 +127,8 @@ export function createAgentSettingsController(source: AgentSettingsSource, initi
           name: normalized.name,
           title: normalized.title ?? '',
           description: normalized.description,
+          avatarShape: normalized.avatarShape,
+          avatarColor: normalized.avatarColor,
         });
         return requestGeneration === generation && agent?.id === agentId;
       } catch (cause) {
