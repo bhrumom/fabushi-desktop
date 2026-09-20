@@ -268,6 +268,8 @@ pub struct BotSummary {
     #[serde(default = "default_true")]
     pub notify_on_updates: bool,
     #[serde(default)]
+    pub inference_provider: InferenceProvider,
+    #[serde(default)]
     pub unread: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub conversation_id: Option<String>,
@@ -1288,6 +1290,12 @@ pub enum FeatureCommand {
             skip_serializing_if = "Option::is_none"
         )]
         avatar_color: Option<String>,
+        #[serde(
+            rename = "inferenceProvider",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        inference_provider: Option<InferenceProvider>,
     },
     #[serde(rename = "bot.update")]
     BotUpdate {
@@ -1326,6 +1334,12 @@ pub enum FeatureCommand {
             skip_serializing_if = "Option::is_none"
         )]
         notify_on_updates: Option<bool>,
+        #[serde(
+            rename = "inferenceProvider",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        inference_provider: Option<InferenceProvider>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         unread: Option<bool>,
     },

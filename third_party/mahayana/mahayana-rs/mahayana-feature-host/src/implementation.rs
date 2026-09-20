@@ -1517,6 +1517,7 @@ impl FeatureHostController {
                 avatar,
                 avatar_shape,
                 avatar_color,
+                inference_provider,
                 ..
             } => {
                 let name = clamp_line(&name, 72);
@@ -1538,6 +1539,7 @@ impl FeatureHostController {
                     avatar_color: clean_optional_string(avatar_color),
                     notifications_enabled: true,
                     notify_on_updates: true,
+                    inference_provider: inference_provider.unwrap_or(state.settings.inference_provider),
                     unread: false,
                     conversation_id: Some(format!("codex:agent:{id}")),
                 };
@@ -1554,6 +1556,7 @@ impl FeatureHostController {
                 avatar_color,
                 notifications_enabled,
                 notify_on_updates,
+                inference_provider,
                 unread,
                 ..
             } => {
@@ -1591,6 +1594,9 @@ impl FeatureHostController {
                 if let Some(enabled) = notify_on_updates {
                     bot.notify_on_updates = enabled;
                 }
+                if let Some(provider) = inference_provider {
+                    bot.inference_provider = provider;
+                }
                 if let Some(unread) = unread {
                     bot.unread = unread;
                 }
@@ -1617,6 +1623,7 @@ impl FeatureHostController {
                     avatar_color: source.avatar_color,
                     notifications_enabled: source.notifications_enabled,
                     notify_on_updates: source.notify_on_updates,
+                    inference_provider: source.inference_provider,
                     unread: false,
                     conversation_id: Some(format!("codex:agent:{new_id}")),
                 };
@@ -8660,6 +8667,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             avatar_color: None,
             notifications_enabled: true,
             notify_on_updates: true,
+            inference_provider: Default::default(),
             unread: false,
             conversation_id: Some(MAHAYANA_AI_CONVERSATION_ID.into()),
         },
@@ -8675,6 +8683,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             avatar_color: None,
             notifications_enabled: true,
             notify_on_updates: true,
+            inference_provider: Default::default(),
             unread: false,
             conversation_id: Some("codex:agent:research".into()),
         },
@@ -8690,6 +8699,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             avatar_color: None,
             notifications_enabled: true,
             notify_on_updates: true,
+            inference_provider: Default::default(),
             unread: false,
             conversation_id: Some("codex:agent:incident".into()),
         },
@@ -11787,6 +11797,7 @@ fn persist_fabu_agent_manifest(agent_dir: &Path, bot: &BotSummary) -> Result<(),
     let settings = json!({
         "notifyOnAgentUpdates": bot.notify_on_updates,
         "hiddenFromSidebar": bot.hidden,
+        "inferenceProvider": bot.inference_provider,
     });
     persist_json_atomic(&agent_dir.join("profile.json"), &profile, "Agent profile")?;
     persist_json_atomic(&agent_dir.join("settings.json"), &settings, "Agent settings")
@@ -12535,6 +12546,7 @@ mod tests {
                     avatar_color: None,
                     notifications_enabled: true,
                     notify_on_updates: true,
+                    inference_provider: Default::default(),
                     unread: false,
                     conversation_id: Some("codex:agent:research".into()),
                 },
@@ -12553,6 +12565,7 @@ mod tests {
                     avatar_color: None,
                     notifications_enabled: true,
                     notify_on_updates: true,
+                    inference_provider: Default::default(),
                     unread: false,
                     conversation_id: Some("codex:agent:incident".into()),
                 },
@@ -13693,6 +13706,7 @@ mod tests {
                 avatar: None,
                 avatar_shape: None,
                 avatar_color: None,
+                inference_provider: None,
             })
             .expect("create peer bot");
         let peer = drain(&controller)

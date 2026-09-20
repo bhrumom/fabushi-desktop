@@ -210,6 +210,7 @@ export interface BotSummary {
   avatarColor?: string;
   notificationsEnabled: boolean;
   notifyOnUpdates: boolean;
+  inferenceProvider?: InferenceProvider;
   unread: boolean;
   conversationId?: string;
 }
@@ -702,6 +703,7 @@ export type RuntimeCommand =
       avatar?: string;
       avatarShape?: string;
       avatarColor?: string;
+      inferenceProvider?: InferenceProvider;
     })
   | (CommandBase & {
       type: "bot.update";
@@ -714,6 +716,7 @@ export type RuntimeCommand =
       avatarColor?: string;
       notificationsEnabled?: boolean;
       notifyOnUpdates?: boolean;
+      inferenceProvider?: InferenceProvider;
       unread?: boolean;
     })
   | (CommandBase & { type: "bot.clone"; id: string })
