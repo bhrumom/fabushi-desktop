@@ -123,14 +123,20 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       controller.appendAttachments('agent:a', [{ id: 'attachment:a', name: 'a.txt' }]);
       controller.setReply('agent:a', { id: 'reply:a', role: 'peer', text: 'previous answer' });
       controller.upsertReference('agent:a', { kind: 'agent', id: 'agent:research', label: 'Research' });
+      controller.upsertReference('agent:a', { kind: 'workflow', id: 'workflow:review', label: 'Review changes' });
       controller.setDraft('agent:b', 'independent draft');
 
       const submitted = controller.takeDraft('agent:a');
       expect(submitted.text).toBe('first prompt');
       expect(submitted.attachments.map((attachment) => attachment.id)).toEqual(['attachment:a']);
       expect(submitted.replyTo?.id).toBe('reply:a');
-      expect(submitted.references).toEqual([{ kind: 'agent', id: 'agent:research', label: 'Research' }]);
-      expect(composeAgentPromptText(submitted.text, submitted.replyTo, submitted.references)).toContain('@Research [agent:agent:research]');
+      expect(submitted.references).toEqual([
+        { kind: 'agent', id: 'agent:research', label: 'Research' },
+        { kind: 'workflow', id: 'workflow:review', label: 'Review changes' },
+      ]);
+      const composedPrompt = composeAgentPromptText(submitted.text, submitted.replyTo, submitted.references);
+      expect(composedPrompt).toContain('@Research [agent:agent:research]');
+      expect(composedPrompt).toContain('/Review changes [workflow:workflow:review]');
       expect(controller.draftForPeer('agent:a')).toBe('');
       expect(controller.draftForPeer('agent:b')).toBe('independent draft');
 
@@ -139,7 +145,10 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.draftForPeer('agent:a')).toBe('newer draft typed while the send was pending');
       expect(controller.attachmentsForPeer('agent:a').map((attachment) => attachment.id)).toEqual(['attachment:a']);
       expect(controller.replyForPeer('agent:a')?.id).toBe('reply:a');
-      expect(controller.referencesForPeer('agent:a')).toEqual([{ kind: 'agent', id: 'agent:research', label: 'Research' }]);
+      expect(controller.referencesForPeer('agent:a')).toEqual([
+        { kind: 'agent', id: 'agent:research', label: 'Research' },
+        { kind: 'workflow', id: 'workflow:review', label: 'Review changes' },
+      ]);
       controller.setDraft('agent:a', 'new draft without a mention');
       controller.pruneReferences('agent:a', 'new draft without a mention');
       expect(controller.referencesForPeer('agent:a')).toEqual([]);
