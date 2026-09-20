@@ -2608,6 +2608,14 @@ pub enum HostEvent {
         timestamp: String,
         #[serde(rename = "approvalId")]
         approval_id: String,
+        #[serde(
+            rename = "operationId",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        operation_id: Option<String>,
+        #[serde(rename = "agentId", default, skip_serializing_if = "Option::is_none")]
+        agent_id: Option<String>,
         #[serde(rename = "miniAppId")]
         mini_app_id: String,
         capability: String,
@@ -2632,6 +2640,14 @@ pub enum HostEvent {
         timestamp: String,
         #[serde(rename = "approvalId")]
         approval_id: String,
+        #[serde(
+            rename = "operationId",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        operation_id: Option<String>,
+        #[serde(rename = "agentId", default, skip_serializing_if = "Option::is_none")]
+        agent_id: Option<String>,
         decision: ApprovalDecision,
     },
     #[serde(rename = "operation.started")]

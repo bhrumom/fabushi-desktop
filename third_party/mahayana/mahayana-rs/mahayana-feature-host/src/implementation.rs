@@ -164,6 +164,8 @@ struct PendingApproval {
     mini_app_id: String,
     capability: String,
     runtime_approval_id: Option<String>,
+    operation_id: Option<String>,
+    agent_id: Option<String>,
 }
 
 const GROUP_MAX_MEMBER_TURNS: usize = 10;
@@ -6024,18 +6026,18 @@ impl FeatureHostController {
         if self.config.mode == HostMode::Production {
             #[cfg(feature = "production")]
             {
-                if let Some(runtime_approval_id) = pending.runtime_approval_id {
+                if let Some(runtime_approval_id) = pending.runtime_approval_id.as_ref() {
                     let decision = match resolution.decision {
                         ApprovalDecision::AllowOnce => RuntimeApprovalDecision::Accept,
                         ApprovalDecision::AllowSession => RuntimeApprovalDecision::AcceptForSession,
                         ApprovalDecision::Deny => RuntimeApprovalDecision::Decline,
                     };
                     self.runtime()?.resolve_approval(
-                        ApprovalId(runtime_approval_id),
+                        ApprovalId(runtime_approval_id.clone()),
                         decision,
                         json!({
-                            "miniAppId": pending.mini_app_id,
-                            "capability": pending.capability,
+                            "miniAppId": pending.mini_app_id.clone(),
+                            "capability": pending.capability.clone(),
                         }),
                     )?;
                 }
@@ -6049,6 +6051,8 @@ impl FeatureHostController {
         self.state()?.events.push_back(HostEvent::ApprovalResolved {
             timestamp: timestamp(),
             approval_id: resolution.approval_id,
+            operation_id: pending.operation_id,
+            agent_id: pending.agent_id,
             decision: resolution.decision,
         });
         Ok(())
@@ -6474,11 +6478,11 @@ impl FeatureHostController {
                 }
             }
             RuntimeEvent::ApprovalRequested {
+                operation_id,
                 approval_id,
                 title,
                 details,
-                ..
-            } => Some(self.translate_runtime_approval(approval_id, title, details)?),
+            } => Some(self.translate_runtime_approval(operation_id, approval_id, title, details)?),
             RuntimeEvent::OperationCompleted { operation_id } => {
                 let operation_id = operation_id.to_string();
                 let group_context = self.state()?.group_operations.remove(&operation_id);
@@ -6800,11 +6804,17 @@ impl FeatureHostController {
     #[cfg(feature = "production")]
     fn translate_runtime_approval(
         &self,
+        operation_id: OperationId,
         approval_id: ApprovalId,
         title: String,
         details: serde_json::Value,
     ) -> Result<HostEvent, FeatureHostError> {
         let approval_key = approval_id.to_string();
+        let operation_key = operation_id.to_string();
+        let agent_id = {
+            let state = self.state()?;
+            activity_parent_agent_id(&state, &operation_key)
+        };
         let mini_app_id = details
             .get("pluginId")
             .and_then(serde_json::Value::as_str)
@@ -6866,12 +6876,8 @@ impl FeatureHostController {
                     "reason": reason,
                 }),
             )?;
-            let agent_id = details
-                .get("agentId")
-                .and_then(Value::as_str)
-                .unwrap_or("mahayana-assistant");
             let _ = self.append_action_audit(
-                agent_id,
+                &agent_id,
                 None,
                 json!({
                     "kind": "autoReview",
@@ -6887,7 +6893,7 @@ impl FeatureHostController {
             );
             self.state()?.events.push_back(HostEvent::AgentStep {
                 timestamp: timestamp(),
-                operation_id: None,
+                operation_id: Some(operation_key.clone()),
                 step_id: format!("auto-review:{approval_key}"),
                 kind: "auto-review".into(),
                 title: match decision {
@@ -6903,6 +6909,8 @@ impl FeatureHostController {
             return Ok(HostEvent::ApprovalResolved {
                 timestamp: timestamp(),
                 approval_id: approval_key,
+                operation_id: Some(operation_key),
+                agent_id: Some(agent_id),
                 decision,
             });
         }
@@ -6913,11 +6921,15 @@ impl FeatureHostController {
                 mini_app_id: mini_app_id.clone(),
                 capability: capability.clone(),
                 runtime_approval_id: Some(approval_id.to_string()),
+                operation_id: Some(operation_key.clone()),
+                agent_id: Some(agent_id.clone()),
             },
         );
         Ok(HostEvent::ApprovalRequested {
             timestamp: timestamp(),
             approval_id: approval_key,
+            operation_id: Some(operation_key),
+            agent_id: Some(agent_id),
             mini_app_id,
             capability,
             reason,
@@ -7068,11 +7080,15 @@ impl FeatureHostController {
                 mini_app_id: mini_app_id.clone(),
                 capability: capability.clone(),
                 runtime_approval_id: None,
+                operation_id: None,
+                agent_id: None,
             },
         );
         state.events.push_back(HostEvent::ApprovalRequested {
             timestamp: timestamp(),
             approval_id,
+            operation_id: None,
+            agent_id: None,
             mini_app_id,
             capability,
             reason,
@@ -7781,11 +7797,15 @@ impl FeatureHostController {
                         mini_app_id: mini_app_id.clone(),
                         capability: capability.clone(),
                         runtime_approval_id: None,
+                        operation_id: None,
+                        agent_id: None,
                     },
                 );
                 state.events.push_back(HostEvent::ApprovalRequested {
                     timestamp: timestamp(),
                     approval_id,
+                    operation_id: None,
+                    agent_id: None,
                     mini_app_id,
                     capability,
                     reason,

@@ -231,6 +231,60 @@ export class AgentTranscriptStore {
     });
   }
 
+  appendApprovalRequested(
+    peerKey: string,
+    event: Extract<RuntimeEvent, { type: 'approval.requested' }>,
+  ): AgentTranscriptSourceMessage[] {
+    if (!event.operationId) return this.thread(peerKey);
+    const approval = {
+      approvalId: event.approvalId,
+      miniAppId: event.miniAppId,
+      capability: event.capability,
+      reason: event.reason,
+      kind: event.kind,
+      subject: event.subject,
+      detail: event.detail,
+      proposedRule: event.proposedRule,
+      location: event.location,
+    };
+    const id = `${event.operationId}:approval:${event.approvalId}`;
+    const next: AgentTranscriptSourceMessage = {
+      id,
+      source: 'legacy',
+      role: 'peer',
+      text: event.reason,
+      createdAtMs: Number.isFinite(Date.parse(event.timestamp)) ? Date.parse(event.timestamp) : Date.now(),
+      kind: 'approval',
+      operationId: event.operationId,
+      actionTitle: event.subject || event.capability || 'Permission required',
+      actionDetail: event.detail || event.reason,
+      status: 'pending',
+      approval,
+    };
+    return this.update(peerKey, (current) => {
+      const index = current.findIndex((message) => message.id === id);
+      if (index < 0) return [...current, next];
+      return current.map((message, messageIndex) => messageIndex === index
+        ? { ...message, ...next, createdAtMs: message.createdAtMs }
+        : message);
+    });
+  }
+
+  resolveApproval(
+    peerKey: string,
+    event: Extract<RuntimeEvent, { type: 'approval.resolved' }>,
+  ): AgentTranscriptSourceMessage[] {
+    return this.update(peerKey, (current) => current.map((message) => {
+      if (message.kind !== 'approval' || message.approval?.approvalId !== event.approvalId) return message;
+      return {
+        ...message,
+        status: 'completed',
+        ...(event.operationId ? { operationId: event.operationId } : {}),
+        approval: { ...message.approval, decision: event.decision },
+      };
+    }));
+  }
+
   finishOperation(
     peerKey: string,
     operationId: string,

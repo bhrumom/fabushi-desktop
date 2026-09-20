@@ -1071,6 +1071,8 @@ export type RuntimeEvent =
   | (EventBase & {
       type: "approval.requested";
       approvalId: string;
+      operationId?: string;
+      agentId?: string;
       miniAppId: string;
       capability: string;
       reason: string;
@@ -1083,6 +1085,8 @@ export type RuntimeEvent =
   | (EventBase & {
       type: "approval.resolved";
       approvalId: string;
+      operationId?: string;
+      agentId?: string;
       decision: "allow-once" | "allow-session" | "deny";
     })
   | (EventBase & {

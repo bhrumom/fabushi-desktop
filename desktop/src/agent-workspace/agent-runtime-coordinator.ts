@@ -231,6 +231,8 @@ export class AgentRuntimeCoordinator {
     if (
       event.type === 'chat.message'
       || event.type === 'agent.step'
+      || event.type === 'approval.requested'
+      || event.type === 'approval.resolved'
       || event.type === 'operation.completed'
       || event.type === 'operation.failed'
       || event.type === 'operation.interrupted'
@@ -286,6 +288,26 @@ export class AgentRuntimeCoordinator {
         const peerKey = this.claimOperation(operationId);
         if (!peerKey) return this.hasAgentWork();
         this.appendAssistantEvent(peerKey, { ...event, operationId });
+        return true;
+      }
+
+      case 'approval.requested': {
+        if (!event.operationId) return false;
+        if (this.workspace.isOperationFinished(event.operationId)) return true;
+        const peerKey = this.claimOperation(event.operationId);
+        if (!peerKey) return this.hasAgentWork();
+        this.transcripts.appendApprovalRequested(peerKey, event);
+        this.emitTranscript(peerKey);
+        return true;
+      }
+
+      case 'approval.resolved': {
+        if (!event.operationId) return false;
+        const peerKey = this.workspace.peerForOperation(event.operationId)
+          ?? this.claimOperation(event.operationId);
+        if (!peerKey) return this.workspace.isOperationFinished(event.operationId);
+        this.transcripts.resolveApproval(peerKey, event);
+        this.emitTranscript(peerKey);
         return true;
       }
 
