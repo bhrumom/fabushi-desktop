@@ -1,5 +1,5 @@
 import { Bot, Megaphone, Network, Plus, Trash2, Users, X } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { GroupSummary } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { GrokAgentSidebarItem } from '../grok-runtime/agent-model';
 import styles from './agent-network.module.css';
@@ -55,6 +55,8 @@ export default function AgentNetwork({
   const [sending, setSending] = useState(false);
   const [groupBusy, setGroupBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const refreshGroupsRef = useRef(onRefreshGroups);
+  refreshGroupsRef.current = onRefreshGroups;
 
   const directAgents = useMemo(
     () => agents.filter((agent) => !agent.isGroup && !agent.hidden),
@@ -68,12 +70,12 @@ export default function AgentNetwork({
   useEffect(() => {
     if (!open) return;
     setError(null);
-    void onRefreshGroups().catch((cause) => setError(cause instanceof Error ? cause.message : String(cause)));
+    void refreshGroupsRef.current().catch((cause) => setError(cause instanceof Error ? cause.message : String(cause)));
     if (!broadcastMode) {
       setSelected(new Set());
       setSelectedGroupId(null);
     }
-  }, [broadcastMode, onRefreshGroups, open]);
+  }, [broadcastMode, open]);
 
   if (!open) return null;
 
