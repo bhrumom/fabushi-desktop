@@ -1,4 +1,4 @@
-import { Bot, ChevronsLeft, ChevronsRight, Copy, EyeOff, MoreHorizontal, Pin, Plus, Search, Settings, Plug } from 'lucide-react';
+import { Bot, ChevronsLeft, ChevronsRight, Copy, EyeOff, MoreHorizontal, Pencil, Pin, Plus, Search, Settings, Plug, Trash2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { BotMark, type BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
 import styles from './grok-agent-sidebar.module.css';
@@ -29,8 +29,10 @@ export type GrokAgentSidebarProps = {
   onNewAgent(): void;
   onToggleCollapsed(): void;
   onTogglePin(item: GrokAgentSidebarItem): void;
+  onRename(item: GrokAgentSidebarItem): void;
   onHide(item: GrokAgentSidebarItem): void;
   onDuplicate(item: GrokAgentSidebarItem): void;
+  onDelete(item: GrokAgentSidebarItem): void;
   onOpenPlugins(): void;
   onOpenSettings(): void;
 };
@@ -58,8 +60,10 @@ function AgentRow({
   hostReady,
   onOpen,
   onTogglePin,
+  onRename,
   onHide,
   onDuplicate,
+  onDelete,
 }: {
   item: GrokAgentSidebarItem;
   active: boolean;
@@ -67,8 +71,10 @@ function AgentRow({
   hostReady: boolean;
   onOpen(): void;
   onTogglePin(): void;
+  onRename(): void;
   onHide(): void;
   onDuplicate(): void;
+  onDelete(): void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return <div className={styles.rowWrap} data-active={active || undefined} data-pinned={item.pinned || undefined}>
@@ -110,8 +116,10 @@ function AgentRow({
     ><MoreHorizontal size={16} /></button>}
     {!collapsed && menuOpen ? <div className={styles.menu} role="menu" onClick={(event) => event.stopPropagation()}>
       <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onTogglePin(); }}><Pin size={14} />{item.pinned ? 'Unpin' : 'Pin'}</button>
+      {!item.isGroup ? <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onRename(); }}><Pencil size={14} />Rename</button> : null}
       {!item.isGroup ? <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onDuplicate(); }}><Copy size={14} />Duplicate</button> : null}
       {!item.isGroup ? <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onHide(); }}><EyeOff size={14} />Hide</button> : null}
+      {!item.isGroup ? <button type="button" role="menuitem" data-danger="true" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</button> : null}
     </div> : null}
   </div>;
 }
@@ -143,9 +151,9 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
 
     <div className={styles.list}>
       {pinned.length && !props.collapsed ? <div className={styles.sectionLabel}>Pinned</div> : null}
-      {pinned.map((item) => <AgentRow key={item.key} item={item} active={item.key === props.activeKey} collapsed={props.collapsed} hostReady={props.hostReady} onOpen={() => props.onOpen(item)} onTogglePin={() => props.onTogglePin(item)} onHide={() => props.onHide(item)} onDuplicate={() => props.onDuplicate(item)} />)}
+      {pinned.map((item) => <AgentRow key={item.key} item={item} active={item.key === props.activeKey} collapsed={props.collapsed} hostReady={props.hostReady} onOpen={() => props.onOpen(item)} onTogglePin={() => props.onTogglePin(item)} onRename={() => props.onRename(item)} onHide={() => props.onHide(item)} onDuplicate={() => props.onDuplicate(item)} onDelete={() => props.onDelete(item)} />)}
       {unpinned.length && !props.collapsed ? <div className={styles.sectionLabel}>Agents</div> : null}
-      {unpinned.map((item) => <AgentRow key={item.key} item={item} active={item.key === props.activeKey} collapsed={props.collapsed} hostReady={props.hostReady} onOpen={() => props.onOpen(item)} onTogglePin={() => props.onTogglePin(item)} onHide={() => props.onHide(item)} onDuplicate={() => props.onDuplicate(item)} />)}
+      {unpinned.map((item) => <AgentRow key={item.key} item={item} active={item.key === props.activeKey} collapsed={props.collapsed} hostReady={props.hostReady} onOpen={() => props.onOpen(item)} onTogglePin={() => props.onTogglePin(item)} onRename={() => props.onRename(item)} onHide={() => props.onHide(item)} onDuplicate={() => props.onDuplicate(item)} onDelete={() => props.onDelete(item)} />)}
       {!visible.length && !props.collapsed ? <div className={styles.empty}><Bot size={24} /><strong>No agents yet</strong><small>Create a new chat to start an Agent.</small></div> : null}
     </div>
 
