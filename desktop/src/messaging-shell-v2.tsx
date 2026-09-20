@@ -126,6 +126,7 @@ import type { AgentSidebarSection } from './agent-workspace/agent-sidebar-state'
 import { useAgentSidebarController } from './agent-workspace/use-agent-sidebar-controller';
 import { useAgentNetworkController } from './agent-workspace/use-agent-network-controller';
 import { useAgentCommandPaletteController } from './agent-workspace/use-agent-command-palette-controller';
+import { useAgentWorkflowController } from './agent-workspace/use-agent-workflow-controller';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -982,7 +983,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [pendingOpenAgentId, setPendingOpenAgentId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>(startupProjection?.legacyConversations ?? []);
   const [bots, setBots] = useState<BotSummary[]>(startupProjection?.legacyBots ?? []);
-  const [agentWorkflowsById, setAgentWorkflowsById] = useState<Record<string, WorkflowSummary[]>>({});
   const [groups, setGroups] = useState<GroupSummary[]>(startupProjection?.legacyGroups ?? []);
   const [selfActors, setSelfActors] = useState<MessagingActor[]>(startupProjection?.selfActors ?? []);
   const [selfConversations, setSelfConversations] = useState<MessagingConversation[]>(startupProjection?.selfConversations ?? []);
@@ -1060,6 +1060,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [miniAppBusy, setMiniAppBusy] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<string | null>(null);
   const agentNetworkController = useAgentNetworkController(agentCoordinatorClient, setError);
+  const agentWorkflowController = useAgentWorkflowController(agentCoordinatorClient, {
+    onListed: (agentId, workflows) => {
+      void mirrorAgentCloudSnapshot(agentId, FABU_AGENT_WORKFLOW_INDEX_PATH, {
+        version: 1,
+        workflows,
+      });
+    },
+    onError: (_agentId, message) => setError(message),
+  });
   const [mutedPeerKeys, setMutedPeerKeys] = useState<Set<string>>(() => new Set());
   const [pinnedPeerKeys, setPinnedPeerKeys] = useState<Set<string>>(() => new Set());
   const [archivedPeerKeys, setArchivedPeerKeys] = useState<Set<string>>(() => new Set());
@@ -2012,6 +2021,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   function handleRuntimeEvent(event: RuntimeEvent) {
     if (handleSelfHostedEvent(event)) return;
+    if (agentWorkflowController.handle(event)) return;
     // Normal Agent chat/operation events are owned by AgentRuntimeCoordinator.
     // The switch below remains only as a compatibility fallback for legacy
     // Messenger/Host event shapes that cannot be attributed to an Agent.
@@ -2091,20 +2101,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           version: 1,
           count: event.count,
           memories: event.memories,
-        });
-        break;
-      case 'workflow.changed':
-        void execute({
-          type: 'workflow.list',
-          requestId: nextRequestId('workflow-cloud-sync'),
-          agentId: event.agentId,
-        }).catch(() => {});
-        break;
-      case 'workflow.listed':
-        setAgentWorkflowsById((current) => ({ ...current, [event.agentId]: event.workflows }));
-        void mirrorAgentCloudSnapshot(event.agentId, FABU_AGENT_WORKFLOW_INDEX_PATH, {
-          version: 1,
-          workflows: event.workflows,
         });
         break;
       case 'automation.changed': {
@@ -3047,11 +3043,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           setError(cause instanceof Error ? cause.message : String(cause));
         });
       }
-      void execute({
-        type: 'workflow.list',
-        requestId: nextRequestId('workflow-composer'),
-        agentId: peer.agentId ?? peer.actorId ?? peer.id,
-      }).catch(() => {});
+      void agentWorkflowController.list(peer.agentId ?? peer.actorId ?? peer.id).catch(() => {});
       return;
     }
     if (peer.kind === 'group' && peer.groupId) {
@@ -4360,7 +4352,7 @@ async function saveInvoiceDialog() {
                 composerMentionCandidates={agentItems
                   .filter((item) => item.key !== activePeer.key)
                   .map((item) => ({ id: item.agentId || item.key, name: item.name, description: item.description }))}
-                composerWorkflowCandidates={(agentWorkflowsById[activePeer.agentId ?? activePeer.actorId ?? activePeer.id] ?? [])
+                composerWorkflowCandidates={(agentWorkflowController.workflowsByAgentId[activePeer.agentId ?? activePeer.actorId ?? activePeer.id] ?? [])
                   .filter((workflow) => workflow.isEnabledForAgent)
                   .map((workflow) => ({ id: workflow.id, name: workflow.name, description: workflow.description }))}
                 enterToSend={desktopPreferences.enterToSend}
