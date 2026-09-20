@@ -127,6 +127,7 @@ import {
 import { projectFabuAgentProfile, projectFabuAgentSettings, projectFabuBotIdentity } from './fabu-runtime/agent-domain';
 import { FabuAgentStore } from './fabu-runtime/agent-store';
 import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
+import GrokAgentSidebar, { type GrokAgentSidebarItem } from './grok-shell/grok-agent-sidebar';
 import {
   SidebarContactGroupManager,
   projectSidebarContactGroups,
@@ -189,6 +190,7 @@ type PeerItem = {
   agentId?: string;
   groupId?: string;
   kind: PeerKind;
+  hidden?: boolean;
   title: string;
   subtitle: string;
   unread: number;
@@ -934,7 +936,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [initialLegacyHydrationMask, setInitialLegacyHydrationMask] = useState(0);
   const initialLegacyHydrationMaskRef = useRef(0);
   const initialLegacyHydrated = initialLegacyHydrationMask === 0b111;
-  const [section, setSection] = useState<MessengerSection>('chats');
+  // Grok/Fabu parity: the primary desktop shell is Agent-first. Messenger,
+  // Contacts, Channels, Calls and Payments remain backend capabilities but no
+  // longer own top-level navigation.
+  const [section, setSection] = useState<MessengerSection>('bots');
+  const newAgentRequestPendingRef = useRef(false);
+  const [pendingOpenAgentId, setPendingOpenAgentId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>(startupProjection?.legacyConversations ?? []);
   const [bots, setBots] = useState<BotSummary[]>(startupProjection?.legacyBots ?? []);
   const [groups, setGroups] = useState<GroupSummary[]>(startupProjection?.legacyGroups ?? []);
@@ -2240,6 +2247,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setBots((current) => event.action === 'deleted'
           ? current.filter((bot) => bot.id !== event.bot.id)
           : upsertById(current, event.bot));
+        if (event.action === 'created' && newAgentRequestPendingRef.current) {
+          newAgentRequestPendingRef.current = false;
+          setPendingOpenAgentId(event.bot.agentId ?? event.bot.id);
+        }
         // Local Host profile remains usable offline, while the account service
         // mirrors the complete Bot profile and its explicit Agent binding.
         // Deleting a Bot membership intentionally leaves the Agent store intact,
@@ -2441,6 +2452,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         agentId: bot.agentId ?? bot.id,
         conversationId: bot.conversationId,
         kind: 'bot',
+        hidden: bot.hidden,
         title: bot.name,
         subtitle: bot.description || bot.title || 'AI Bot',
         unread: bot.unread ? 1 : 0,
@@ -2469,6 +2481,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           id: entry.bot.id,
           source: 'legacy',
           kind: 'bot',
+          hidden: entry.bot.hidden,
           title: entry.bot.displayName ?? entry.bot.username ?? entry.bot.id,
           subtitle: entry.bot.username ? `@${entry.bot.username}` : entry.bot.description ?? 'Bot',
           actorId: entry.bot.id,
@@ -2557,6 +2570,21 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [conversations, bots, accountBots, groups, selfActors, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps, selfHosted.actorId]);
 
   peersRef.current = peers;
+  const grokAgentItems: GrokAgentSidebarItem[] = peers
+    .filter((peer) => peer.kind === 'bot' || peer.kind === 'group')
+    .map((peer) => ({
+      key: peer.key,
+      id: peer.id,
+      agentId: peer.agentId ?? peer.actorId ?? peer.id,
+      name: peer.title,
+      description: peer.subtitle,
+      pinned: peer.pinned,
+      hidden: peer.hidden === true,
+      unread: peer.unread,
+      busy: Boolean(agentOperationId && agentPeerKeyRef.current[agentOperationId] === peer.key),
+      isGroup: peer.kind === 'group',
+      updatedAtMs: peer.updatedAtMs,
+    }));
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
   const activeTypingActors = activePeer?.source === 'selfhosted' && activePeer.conversationId
     ? Object.keys(typingByConversation[activePeer.conversationId] ?? {})
@@ -2615,6 +2643,62 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   useEffect(() => {
     setPeerRenderCount(initialPeerRenderCount);
   }, [section, search]);
+
+  async function createGrokAgent(): Promise<void> {
+    setSection('bots');
+    setGlobalSearchOpen(false);
+    setSearch('');
+    newAgentRequestPendingRef.current = true;
+    const accepted = await execute({
+      type: 'bot.create',
+      requestId: nextRequestId('grok-new-agent'),
+      name: 'New chat',
+      description: '',
+    });
+    if (!accepted) newAgentRequestPendingRef.current = false;
+  }
+
+  function peerForGrokAgent(item: GrokAgentSidebarItem): PeerItem | undefined {
+    return peersRef.current.find((peer) => peer.key === item.key);
+  }
+
+  async function duplicateGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
+    const peer = peerForGrokAgent(item);
+    if (!peer || peer.kind !== 'bot' || !peer.key.startsWith('legacy:bot:')) {
+      setError('Only locally managed Agents can be duplicated from this shell.');
+      return;
+    }
+    await execute({
+      type: 'bot.clone',
+      requestId: nextRequestId('grok-duplicate-agent'),
+      id: peer.id,
+    });
+  }
+
+  async function hideGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
+    const peer = peerForGrokAgent(item);
+    if (!peer || peer.kind !== 'bot' || !peer.key.startsWith('legacy:bot:')) {
+      setError('Only locally managed Agents can be hidden from this shell.');
+      return;
+    }
+    await execute({
+      type: 'bot.setHidden',
+      requestId: nextRequestId('grok-hide-agent'),
+      id: peer.id,
+      hidden: true,
+    });
+    if (peer.key === activePeerKeyRef.current) {
+      setActivePeerKey(null);
+      setMessages([]);
+    }
+  }
+
+  function openGrokAgent(item: GrokAgentSidebarItem): void {
+    const peer = peerForGrokAgent(item);
+    if (!peer) return;
+    setSection('bots');
+    void openPeer(peer);
+  }
 
   function updateComposer(value: string) {
     setComposer(value);
@@ -3811,7 +3895,7 @@ async function saveInvoiceDialog() {
   }
 
   function closeSettings() {
-    setSection(settingsReturnSectionRef.current === 'settings' ? 'chats' : settingsReturnSectionRef.current);
+    setSection(settingsReturnSectionRef.current === 'settings' ? 'bots' : settingsReturnSectionRef.current);
   }
 
   return (
@@ -3826,6 +3910,34 @@ async function saveInvoiceDialog() {
       onClick={() => { setMessageMenu(null); setProfileMenuOpen(false); setCreateMenuOpen(false); }}
     >
       <aside className={styles.chatList} data-testid="messenger-sidebar" data-collapsed={sidebarWidth <= 112 || undefined} onClick={(event) => event.stopPropagation()}>
+        <GrokAgentSidebar
+          agents={grokAgentItems}
+          activeKey={activePeerKey}
+          query={search}
+          collapsed={sidebarWidth <= 112}
+          hostReady={hostReady}
+          accountLabel={currentActor?.displayName ?? 'Account'}
+          onQuery={setSearch}
+          onOpen={openGrokAgent}
+          onNewAgent={() => void createGrokAgent()}
+          onToggleCollapsed={() => setSidebarWidth((width) => width <= 112 ? 300 : 88)}
+          onTogglePin={(item) => {
+            const peer = peerForGrokAgent(item);
+            if (peer) void togglePinConversation(peer);
+          }}
+          onHide={(item) => void hideGrokAgent(item)}
+          onDuplicate={(item) => void duplicateGrokAgent(item)}
+          onOpenPlugins={() => {
+            setSearch('');
+            setGlobalSearchOpen(false);
+            setSection('miniapps');
+          }}
+          onOpenSettings={() => {
+            settingsReturnSectionRef.current = 'bots';
+            setSection('settings');
+          }}
+        />
+        <div hidden aria-hidden="true">
         <header className={styles.listHeader}>
           <span className={styles.sidebarBrand} title="Fabushi"><BotMark botId="fabushi:brand" state="idle" size={30} label="Fabushi" /></span>
           <strong>{sectionTitle(section)}</strong>
@@ -3949,6 +4061,7 @@ async function saveInvoiceDialog() {
             <BotMark botId={`self:${selfHosted.actorId || 'local'}`} state="idle" size={38} label="我的头像" />
             <span><strong>我</strong><small>导航与设置</small></span>
           </button>
+        </div>
         </div>
         <div
           className={styles.sidebarResizer}
