@@ -96,6 +96,7 @@ export default function AgentWorkspace(props: AgentWorkspaceProps) {
       onCopyMessage={props.onCopyMessage}
       onRegenerate={props.onRegenerate}
       onEdit={props.onEdit}
+      onResolveApproval={props.onResolveApproval}
       onContextMenu={props.onContextMenu}
     />
     {props.beforeComposer}
