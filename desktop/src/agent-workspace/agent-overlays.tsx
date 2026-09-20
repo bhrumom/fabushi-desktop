@@ -1,6 +1,7 @@
 import { Monitor, Pin, Search, X } from 'lucide-react';
 import React from 'react';
 import { BotMark, type BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
+import type { ComputerStatus } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { RemoteComputerDesktopState } from '../../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
 import styles from './agent-overlays.module.css';
 
@@ -13,6 +14,7 @@ export interface AgentOverlayComputerProps {
   aiControlEnabled: boolean;
   remoteControlEnabled: boolean;
   state: RemoteComputerDesktopState | null;
+  capabilityStatus?: ComputerStatus | null;
   onToggle(): void;
   onRefreshPairingCode(): void;
   onApproveSession(sessionId: string): void;
@@ -73,6 +75,14 @@ export default function AgentOverlays(props: AgentOverlaysProps) {
         <span><small>Authorized clients</small><strong>{computer.state?.clients.length ?? 0}</strong></span>
         <span><small>Agent control</small><strong>{computer.aiControlEnabled ? 'Allowed' : 'Off'}</strong></span>
       </div>
+      {computer.capabilityStatus ? <div className={styles.metrics} data-testid="agent-computer-permissions">
+        <span><small>Screen Recording</small><strong>{computer.capabilityStatus.screenRecordingGranted ? 'Granted' : 'Required'}</strong></span>
+        <span><small>Accessibility</small><strong>{computer.capabilityStatus.accessibilityGranted ? 'Granted' : 'Required'}</strong></span>
+        <span><small>Capture</small><strong>{computer.capabilityStatus.captureSupported ? 'Supported' : 'Unavailable'}</strong></span>
+        <span><small>Input</small><strong>{computer.capabilityStatus.inputSupported ? 'Supported' : 'Unavailable'}</strong></span>
+        <span><small>Local execution</small><strong>{computer.capabilityStatus.localExecutionEnabled ? 'Enabled' : 'Off'}</strong></span>
+        <span><small>Platform</small><strong>{computer.capabilityStatus.platform}</strong></span>
+      </div> : null}
       <p>The Computer surface belongs to this Agent. Execution is bound to the machine where Fabushi is installed, not a cloud computer.</p>
 
       {computer.remoteControlEnabled && computer.state?.registration?.pairingCode ? <div className={styles.request}>
