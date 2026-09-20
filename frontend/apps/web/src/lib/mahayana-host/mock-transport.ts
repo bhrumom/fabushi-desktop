@@ -1765,7 +1765,7 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
         this.emit({ type: "mcp.refreshed", timestamp: now() });
         return { requestId: command.requestId };
       case "mcp.toolCall":
-        this.emit({ type: "mcp.toolResult", timestamp: now(), server: command.server, tool: command.tool, result: { ok: true, arguments: command.arguments ?? null } });
+        this.emit({ type: "mcp.toolResult", timestamp: now(), requestId: command.requestId, server: command.server, tool: command.tool, result: { ok: true, arguments: command.arguments ?? null } });
         return { requestId: command.requestId };
       case "settings.get":
         this.emit({ type: "settings.changed", timestamp: now(), settings: this.hostSettings });
