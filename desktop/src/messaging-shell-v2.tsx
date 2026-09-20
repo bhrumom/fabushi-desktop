@@ -2374,7 +2374,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       const operationId = accepted.operationId ?? requestId;
       rememberAgentPeer(operationId, peer.key);
       if (finishedAgentOperationsRef.current.has(operationId)) return;
-      adoptAgentRequestOperation(agentRequestIdRef.current ?? requestId, operationId, peer.key);
+      adoptAgentRequestOperation(agentRequestIdRef.current, operationId, peer.key);
+      agentRequestIdRef.current = null;
       updateAgentThread(operationId, (current) => current.map((message) => message.id === optimisticId
         ? { ...message, operationId, optimistic: true, queued: false }
         : message));
