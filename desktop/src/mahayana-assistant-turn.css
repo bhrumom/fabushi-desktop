@@ -35,6 +35,7 @@
 
 .mahayana-assistant-turn__body {
   min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -111,7 +112,8 @@
   font-size: 14px;
   line-height: 1.58;
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .mahayana-assistant-turn__meta {
