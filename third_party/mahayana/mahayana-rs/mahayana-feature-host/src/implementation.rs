@@ -6717,18 +6717,62 @@ impl FeatureHostController {
 
     #[cfg(feature = "production")]
     fn receive_production(&self, timeout: Duration) -> Result<Option<HostEvent>, FeatureHostError> {
+        let mut pending_chat_delta: Option<HostEvent> = None;
         for index in 0..16 {
-            // Block only for the first runtime event. Once awakened, drain already-queued
-            // events without adding latency between streamed events.
+            // Block only for the first runtime event. Once awakened, drain an
+            // already-queued burst without adding latency between streamed
+            // events. Consecutive chat deltas for the same operation are
+            // coalesced before they cross the desktop process boundary.
             let receive_timeout = if index == 0 { timeout } else { Duration::ZERO };
             let Some(event) = self.runtime()?.receive(receive_timeout)? else {
-                return Ok(None);
+                return Ok(pending_chat_delta);
             };
-            if let Some(event) = self.translate_runtime_event(event)? {
-                return Ok(Some(event));
+            let Some(event) = self.translate_runtime_event(event)? else {
+                continue;
+            };
+
+            match event {
+                HostEvent::ChatDelta {
+                    timestamp,
+                    operation_id,
+                    delta,
+                } => {
+                    if let Some(HostEvent::ChatDelta {
+                        operation_id: pending_operation_id,
+                        delta: pending_delta,
+                        ..
+                    }) = pending_chat_delta.as_mut()
+                    {
+                        if *pending_operation_id == operation_id {
+                            pending_delta.push_str(&delta);
+                            continue;
+                        }
+                    }
+
+                    let next_delta = HostEvent::ChatDelta {
+                        timestamp,
+                        operation_id,
+                        delta,
+                    };
+                    if let Some(pending) = pending_chat_delta.take() {
+                        self.state()?.events.push_front(next_delta);
+                        return Ok(Some(pending));
+                    }
+                    pending_chat_delta = Some(next_delta);
+                }
+                ordered_event => {
+                    if let Some(pending) = pending_chat_delta.take() {
+                        // Preserve tool/final/terminal ordering. The already
+                        // translated non-delta event is served first on the next
+                        // feature.receive call after the coalesced text chunk.
+                        self.state()?.events.push_front(ordered_event);
+                        return Ok(Some(pending));
+                    }
+                    return Ok(Some(ordered_event));
+                }
             }
         }
-        Ok(None)
+        Ok(pending_chat_delta)
     }
 
     #[cfg(feature = "production")]
@@ -7328,13 +7372,25 @@ impl FeatureHostController {
                     progress: Some(1),
                     total: Some(1),
                 });
+                let response_text = agent_id
+                    .filter(|id| id != "mahayana-assistant")
+                    .map(|id| format!("{id}机器人收到：{text}"))
+                    .unwrap_or_else(|| format!("收到：{text}"));
+                // Exercise the real CJK streaming shape in the deterministic
+                // desktop Host: one visible character can arrive per delta.
+                // The renderer must coalesce these without producing one line
+                // per character or a second final reply.
+                for delta in response_text.chars() {
+                    state.events.push_back(HostEvent::ChatDelta {
+                        timestamp: timestamp(),
+                        operation_id: operation_id.clone(),
+                        delta: delta.to_string(),
+                    });
+                }
                 state.events.push_back(HostEvent::ChatMessage {
                     timestamp: timestamp(),
                     role: MessageRole::Assistant,
-                    text: agent_id
-                        .filter(|id| id != "mahayana-assistant")
-                        .map(|id| format!("{id}机器人收到：{text}"))
-                        .unwrap_or_else(|| format!("收到：{text}")),
+                    text: response_text,
                     operation_id: Some(operation_id.clone()),
                 });
                 state.events.push_back(HostEvent::UsageUpdated {

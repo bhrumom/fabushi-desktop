@@ -144,7 +144,15 @@ async function expectHermesAssistantTurn(page: Page, expectedText: string): Prom
 
   await expect.poll(async () => turn.locator('[data-part-kind="tool"]').count()).toBeGreaterThanOrEqual(1);
   await expect.poll(async () => turn.locator('[data-part-kind="tool"][data-status="completed"]').count()).toBeGreaterThanOrEqual(1);
-  await expect(turn.locator('[data-part-kind="text"]').last()).toContainText(expectedText);
+  const textParts = turn.locator('[data-part-kind="text"]');
+  await expect(textParts.last()).toContainText(expectedText);
+
+  // This fixture ends with one canonical assistant body. Token-sized legacy
+  // deltas must coalesce into that body, and the late final chat.message must
+  // reconcile into it rather than creating another paragraph/reply.
+  await expect(textParts).toHaveCount(1);
+  const body = (await textParts.allTextContents()).join('');
+  expect(body.split(expectedText).length - 1).toBe(1);
   return turn;
 }
 
@@ -165,10 +173,14 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
     // The user bubble is a local-first transition and must paint before the
     // Mahayana Host finishes accepting/routing the agent turn.
     await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 1_000 });
+    await expect(page.getByTestId('mahayana-assistant-turn')).toBeVisible({ timeout: 1_000 });
+    await expect(page.getByTestId('messenger-input')).toBeVisible();
 
     const turn = await expectHermesAssistantTurn(page, '收到：请分析这个任务');
     await expect(turn).toHaveCount(1);
+    await expect(page.getByTestId('agent-thinking')).toHaveCount(0);
     await expect(page.getByTestId('agent-run')).toBeHidden();
+    await expect(page.getByTestId('messenger-input')).toBeVisible();
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });

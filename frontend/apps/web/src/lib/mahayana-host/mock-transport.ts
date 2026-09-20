@@ -908,11 +908,24 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
           progress: 1,
           total: 1,
         });
+        const responseText = `收到：${command.text}`;
+        // Reproduce the production failure mode that motivated this regression:
+        // CJK providers may emit one visible character per delta. The renderer
+        // must coalesce these into one live paragraph and reconcile the final
+        // message into that same assistant turn.
+        for (const delta of Array.from(responseText)) {
+          this.emit({
+            type: "chat.delta",
+            timestamp: now(),
+            operationId,
+            delta,
+          });
+        }
         this.emit({
           type: "chat.message",
           timestamp: now(),
           role: "assistant",
-          text: `收到：${command.text}`,
+          text: responseText,
           operationId,
         });
         this.emit({

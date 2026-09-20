@@ -97,6 +97,44 @@ function visibleText(parts: AssistantTurnPart[]): string {
     .join('');
 }
 
+function comparableAssistantText(value: string): string {
+  return value
+    .normalize('NFKC')
+    .replace(/[\u200b-\u200d\ufeff\ufe0f]/g, '')
+    .replace(/\s+/g, '')
+    .trim();
+}
+
+function hasOrderedActivity(parts: AssistantTurnPart[]): boolean {
+  return parts.some((part) => part.kind === 'tool' || part.kind === 'activity');
+}
+
+function canonicalFinalTextParts(
+  turn: AssistantTurn,
+  parts: AssistantTurnPart[],
+  finalText: string,
+): AssistantTurnPart[] {
+  const firstTextIndex = parts.findIndex((part) => part.kind === 'text');
+  const withoutText = parts.filter((part) => part.kind !== 'text');
+  const finalPart: AssistantTurnPart = {
+    id: partId(turn, 'final-text'),
+    kind: 'text',
+    text: finalText,
+    status: 'completed',
+  };
+  if (firstTextIndex < 0) return [...parts, finalPart];
+
+  // No tool/activity boundary means the provider's final message is the
+  // canonical body for this turn. Replace the streamed fragments in-place
+  // instead of appending another nearly-identical answer.
+  const insertionIndex = Math.min(firstTextIndex, withoutText.length);
+  return [
+    ...withoutText.slice(0, insertionIndex),
+    finalPart,
+    ...withoutText.slice(insertionIndex),
+  ];
+}
+
 /**
  * Reconcile a legacy final assistant message without collapsing the ordered
  * transcript. Hermes can seal interim assistant text, run tools, and then
@@ -120,13 +158,28 @@ function reconcileLegacyFinalText(turn: AssistantTurn, finalText: string): Assis
     ];
   }
 
-  // The final message commonly repeats the complete token stream. Keep the
-  // already-ordered parts instead of duplicating the response.
-  if (finalText === emittedText || emittedText.endsWith(finalText)) return parts;
+  const comparableFinal = comparableAssistantText(finalText);
+  const comparableEmitted = comparableAssistantText(emittedText);
 
-  // If the final message is the complete answer and the current transcript is
-  // its prefix, append only the not-yet-seen suffix. This preserves any tool
-  // parts that occurred between earlier and later assistant text.
+  // The final message commonly repeats the complete token stream. Providers
+  // may differ only by whitespace, variation selectors or zero-width markers,
+  // so compare a display-equivalent form before deciding to append anything.
+  if (
+    finalText === emittedText ||
+    emittedText.endsWith(finalText) ||
+    comparableFinal === comparableEmitted
+  ) return parts;
+
+  // For ordinary chat turns there is no ordered tool boundary to preserve.
+  // Treat chat.message as the canonical body. This prevents a late final event
+  // from becoming the second visible reply when its punctuation/spacing differs
+  // slightly from the live token stream.
+  if (!hasOrderedActivity(parts)) {
+    return canonicalFinalTextParts(turn, parts, finalText);
+  }
+
+  // Tool-bearing turns keep their stream order. If the final message extends
+  // the exact emitted body, append only the missing suffix after the last tool.
   if (finalText.startsWith(emittedText)) {
     const suffix = finalText.slice(emittedText.length);
     return suffix
@@ -142,8 +195,7 @@ function reconcileLegacyFinalText(turn: AssistantTurn, finalText: string): Assis
       : parts;
   }
 
-  // Some legacy providers emit only the post-tool completion here. Preserve
-  // the earlier ordered transcript and append that completion as the next part.
+  // Some legacy tool providers emit only the post-tool completion here.
   return [
     ...parts,
     {
@@ -206,15 +258,16 @@ function reduceLegacyRuntimeEvent(turn: AssistantTurn, event: RuntimeEvent, now:
         }),
       };
     case 'chat.delta':
+      // A legacy provider can emit one event per token (and for Chinese, often
+      // one event per character). Keep the current text part open so those
+      // deltas paint as one continuously growing assistant body. Sealing on
+      // every delta created one <p> per token and produced the observed
+      // one-character-per-line transcript.
       return {
         ...turn,
         updatedAtMs: now,
         status: 'running',
-        parts: appendStreamingText(
-          { ...turn, parts: sealStreamingParts(turn.parts) },
-          'text',
-          event.delta,
-        ),
+        parts: appendStreamingText(turn, 'text', event.delta),
       };
     case 'chat.message':
       if (event.role !== 'assistant') return turn;
