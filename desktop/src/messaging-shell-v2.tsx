@@ -154,12 +154,12 @@ import {
 } from './fabu-runtime/agent-store';
 import { restoreAgentStoreWorkspace } from './agent-workspace/agent-store-recovery';
 import AgentRootShell from './agent-workspace/agent-root-shell';
-import AgentSidebar, { type AgentSidebarItem as GrokAgentSidebarItem } from './agent-workspace/agent-sidebar';
+import AgentSidebar from './agent-workspace/agent-sidebar';
+import { agentWorkspaceKey, projectActiveAgentKey, projectAgentSidebarItems, type AgentSidebarItem } from './agent-workspace/agent-model';
 import AgentSearch from './agent-workspace/agent-search';
 import GrokAgentHeader from './grok-shell/grok-agent-header';
 import AgentNetwork from './agent-workspace/agent-network';
 import AgentCommandPalette from './agent-workspace/agent-command-palette';
-import { grokAgentKey, projectActiveGrokAgentKey, projectGrokAgentSidebarItems } from './grok-runtime/agent-model';
 import { MahayanaAssistantTurnView } from './mahayana-assistant-turn-view';
 import type { AssistantTurn } from './mahayana-assistant-turn';
 
@@ -903,7 +903,7 @@ export default function DesktopShellV2() {
 }
 
 function DesktopFastStartBootstrap() {
-  const bootstrapAgent: GrokAgentSidebarItem = {
+  const bootstrapAgent: AgentSidebarItem = {
     key: 'agent:mahayana-assistant',
     peerKey: 'bootstrap:mahayana-assistant',
     id: 'mahayana-assistant',
@@ -2514,7 +2514,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     const activityId = agentOperationSnapshot[peer.key] ?? agentRequestSnapshot[peer.key];
     return activityId ? [[peer.key, activityId] as const] : [];
   }));
-  const grokAgentItems: GrokAgentSidebarItem[] = projectGrokAgentSidebarItems(
+  const grokAgentItems: AgentSidebarItem[] = projectAgentSidebarItems(
     peers,
     grokBusyByPeer,
     grokActivityByPeer,
@@ -2561,7 +2561,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const activeAgentReply = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
     ? agentWorkspaceController.replyForPeer(activePeer.key)
     : undefined;
-  const activeGrokAgentKey = projectActiveGrokAgentKey(activePeer);
+  const activeGrokAgentKey = projectActiveAgentKey(activePeer);
 
   useEffect(() => {
     agentSidebarController.reconcilePinnedOrder(pinnedGrokAgentKeys);
@@ -2656,14 +2656,14 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (!accepted) newAgentRequestPendingRef.current = false;
   }
 
-  function peerForGrokAgent(item: GrokAgentSidebarItem): PeerItem | undefined {
+  function peerForGrokAgent(item: AgentSidebarItem): PeerItem | undefined {
     return peersRef.current.find((peer) => peer.key === item.peerKey)
       ?? peersRef.current.find((peer) =>
-        (peer.kind === 'bot' || peer.kind === 'group') && grokAgentKey(peer) === item.key,
+        (peer.kind === 'bot' || peer.kind === 'group') && agentWorkspaceKey(peer) === item.key,
       );
   }
 
-  async function renameGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
+  async function renameGrokAgent(item: AgentSidebarItem): Promise<void> {
     const peer = peerForGrokAgent(item);
     if (!peer || peer.kind !== 'bot' || !peer.key.startsWith('legacy:bot:') && !peer.key.startsWith('legacy:conversation:')) {
       setError('Only locally managed Agents can be renamed from this shell.');
@@ -2679,7 +2679,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
   }
 
-  async function duplicateGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
+  async function duplicateGrokAgent(item: AgentSidebarItem): Promise<void> {
     const peer = peerForGrokAgent(item);
     const botId = peer?.source === 'legacy' && peer.kind === 'bot'
       ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
@@ -2695,7 +2695,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
   }
 
-  async function deleteGrokAgent(item: GrokAgentSidebarItem, confirmDelete = true): Promise<void> {
+  async function deleteGrokAgent(item: AgentSidebarItem, confirmDelete = true): Promise<void> {
     const peer = peerForGrokAgent(item);
     const botId = peer?.source === 'legacy' && peer.kind === 'bot'
       ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
@@ -2719,7 +2719,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
-  async function hideGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
+  async function hideGrokAgent(item: AgentSidebarItem): Promise<void> {
     const peer = peerForGrokAgent(item);
     const botId = peer?.source === 'legacy' && peer.kind === 'bot'
       ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
@@ -2741,8 +2741,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function reorderGrokPinned(
-    moved: GrokAgentSidebarItem,
-    target: GrokAgentSidebarItem,
+    moved: AgentSidebarItem,
+    target: AgentSidebarItem,
     position: 'before' | 'after',
   ): void {
     agentSidebarController.reorderPinned(
@@ -2753,11 +2753,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     );
   }
 
-  function toggleGrokAgentSelection(item: GrokAgentSidebarItem): void {
+  function toggleGrokAgentSelection(item: AgentSidebarItem): void {
     agentSidebarController.toggleSelection(item.key);
   }
 
-  function rangeSelectGrokAgent(item: GrokAgentSidebarItem): void {
+  function rangeSelectGrokAgent(item: AgentSidebarItem): void {
     const query = search.trim().toLocaleLowerCase();
     const orderedKeys = grokAgentItems
       .filter((candidate) =>
@@ -2772,17 +2772,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     agentSidebarController.clearSelection();
   }
 
-  function createGrokSidebarSection(items: readonly GrokAgentSidebarItem[]): void {
+  function createGrokSidebarSection(items: readonly AgentSidebarItem[]): void {
     const name = window.prompt('Section name', 'New section')?.trim();
     if (!name) return;
     agentSidebarController.createSection(name, items);
   }
 
-  function moveGrokAgentsToSection(items: readonly GrokAgentSidebarItem[], sectionId: string): void {
+  function moveGrokAgentsToSection(items: readonly AgentSidebarItem[], sectionId: string): void {
     agentSidebarController.moveToSection(items, sectionId);
   }
 
-  function moveGrokAgentToSection(item: GrokAgentSidebarItem, sectionId: string): void {
+  function moveGrokAgentToSection(item: AgentSidebarItem, sectionId: string): void {
     agentSidebarController.moveToSection([item], sectionId);
   }
 
@@ -2797,7 +2797,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     agentSidebarController.removeSection(section.id);
   }
 
-  async function deleteSelectedGrokAgents(items: readonly GrokAgentSidebarItem[]): Promise<void> {
+  async function deleteSelectedGrokAgents(items: readonly AgentSidebarItem[]): Promise<void> {
     const deletable = items.filter((item) => !item.isGroup);
     if (!deletable.length) return;
     if (!window.confirm(`Delete ${deletable.length} selected Agent${deletable.length === 1 ? '' : 's'}? Agent stores are retained for recovery.`)) return;
@@ -2859,7 +2859,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
-  function openGrokAgent(item: GrokAgentSidebarItem): void {
+  function openGrokAgent(item: AgentSidebarItem): void {
     const peer = peerForGrokAgent(item);
     if (!peer) return;
     setGrokNetworkOpen(false);
