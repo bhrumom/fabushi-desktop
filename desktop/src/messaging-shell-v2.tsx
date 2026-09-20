@@ -2752,10 +2752,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     return [peer.key, {
       draftPrompt: agentWorkspaceControllerRef.current.draftForPeer(peer.key) || drafts[peer.key],
       lastMessage: lastMessage?.text.trim().slice(0, 180),
-      waitingReason: waitingActivity
+      waitingReason: waitingActivity?.kind === 'activity'
         ? (waitingActivity.detail?.trim() || waitingActivity.title)
         : undefined,
-      currentActivity: runningActivity
+      currentActivity: runningActivity && (runningActivity.kind === 'tool' || runningActivity.kind === 'activity')
         ? (runningActivity.detail?.trim() || runningActivity.title)
         : undefined,
       isComposingMessage,
