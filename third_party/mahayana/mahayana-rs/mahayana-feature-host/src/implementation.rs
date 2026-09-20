@@ -1214,16 +1214,16 @@ impl FeatureHostController {
                     });
                 let previous = state.automations.get(&id).cloned();
                 let requested_agent_id = match agent_id {
-                    Some(agent_id) => Some(required(agent_id, "automation agent id")?),
+                    Some(agent_id) => {
+                        let requested = required(agent_id, "automation agent id")?;
+                        Some(canonical_runtime_agent_id(&state, &requested).ok_or_else(|| {
+                            FeatureHostError::Contract(format!(
+                                "unknown automation agent: {requested}"
+                            ))
+                        })?)
+                    }
                     None => None,
                 };
-                if let Some(agent_id) = requested_agent_id.as_deref() {
-                    if !state.bots.contains_key(agent_id) {
-                        return Err(FeatureHostError::Contract(format!(
-                            "unknown automation agent: {agent_id}"
-                        )));
-                    }
-                }
                 if let (Some(previous), Some(agent_id)) =
                     (previous.as_ref(), requested_agent_id.as_deref())
                 {
@@ -1774,11 +1774,18 @@ impl FeatureHostController {
                 entry_point,
                 ..
             } => {
-                if !is_safe_memory_agent_id(&agent_id)
-                    || !self.state()?.bots.contains_key(&agent_id)
-                {
+                let requested_agent_id = agent_id;
+                let agent_id = {
+                    let state = self.state()?;
+                    canonical_runtime_agent_id(&state, &requested_agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown teach agent: {requested_agent_id}"
+                        ))
+                    })?
+                };
+                if !is_safe_memory_agent_id(&agent_id) {
                     return Err(FeatureHostError::Contract(format!(
-                        "unknown teach agent: {agent_id}"
+                        "unsafe teach agent id: {agent_id}"
                     )));
                 }
                 let mut guard = self
@@ -1986,9 +1993,14 @@ impl FeatureHostController {
         video_path: &str,
         session_dir: &Path,
     ) -> Result<Option<String>, FeatureHostError> {
-        let bot = self.state()?.bots.get(agent_id).cloned().ok_or_else(|| {
-            FeatureHostError::Contract(format!("unknown teach agent: {agent_id}"))
-        })?;
+        let bot = {
+            let state = self.state()?;
+            find_bot_by_runtime_or_surface_id(&state, agent_id)
+                .cloned()
+                .ok_or_else(|| {
+                    FeatureHostError::Contract(format!("unknown teach agent: {agent_id}"))
+                })?
+        };
         let frames_dir = session_dir.join("frames").to_string_lossy().to_string();
         let prompt = format!(
             "[teach-recording] The user just demonstrated a repeatable task for you.\nRecording: {video_path}\nExtracted frames (when present): {frames_dir}\n\nStudy the demonstration carefully. Infer the intent, ordered steps, important UI landmarks, decision points, and safety checks. Return a reusable Markdown workflow/skill only: start with a concise # heading, then instructions another future run can follow. Do not merely summarize the recording and do not mention this hidden teach prompt."
@@ -2558,16 +2570,20 @@ impl FeatureHostController {
                     &target,
                     &settings,
                 )?;
-                let audit_agent_id = agent_id
-                    .as_deref()
-                    .filter(|id| is_safe_memory_agent_id(id))
-                    .unwrap_or("mahayana-assistant");
-                if let Some(agent_id) = agent_id.as_deref() {
-                    if !self.state()?.bots.contains_key(agent_id) {
-                        return Err(FeatureHostError::Contract(format!(
-                            "unknown computer-control agent: {agent_id}"
-                        )));
-                    }
+                let audit_agent_id = if let Some(requested_agent_id) = agent_id.as_deref() {
+                    let state = self.state()?;
+                    canonical_runtime_agent_id(&state, requested_agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown computer-control agent: {requested_agent_id}"
+                        ))
+                    })?
+                } else {
+                    "mahayana-assistant".to_string()
+                };
+                if !is_safe_memory_agent_id(&audit_agent_id) {
+                    return Err(FeatureHostError::Contract(format!(
+                        "unsafe computer-control agent: {audit_agent_id}"
+                    )));
                 }
                 let mut actions = Vec::with_capacity(1 + then.len());
                 actions.push(action);
@@ -2594,7 +2610,7 @@ impl FeatureHostController {
                 };
                 let serialized_actions = serde_json::to_value(&actions).unwrap_or(Value::Null);
                 self.append_action_audit(
-                    audit_agent_id,
+                    &audit_agent_id,
                     session_id.as_deref(),
                     json!({
                         "kind": "computerUse",
@@ -3001,23 +3017,21 @@ impl FeatureHostController {
             FeatureCommand::MemoryClear { agent_id, .. } => (agent_id, MemoryAction::Clear),
             _ => unreachable!("non-memory command routed to memory executor"),
         };
-        {
+        let requested_agent_id = agent_id;
+        let agent_id = {
             let state = self.state()?;
             ensure_open(&state)?;
-            if !state.bots.contains_key(&agent_id) {
-                return Err(FeatureHostError::Contract(format!(
-                    "unknown bot: {agent_id}"
-                )));
-            }
-        }
+            canonical_runtime_agent_id(&state, &requested_agent_id).ok_or_else(|| {
+                FeatureHostError::Contract(format!("unknown bot: {requested_agent_id}"))
+            })?
+        };
         if !is_safe_memory_agent_id(&agent_id) {
             return Err(FeatureHostError::Contract(format!(
                 "unsafe memory agent id: {agent_id}"
             )));
         }
         let root = self
-            .memory_root_path
-            .as_deref()
+            .active_account_root(self.memory_root_path.as_deref())
             .ok_or_else(|| FeatureHostError::Contract("memory storage is unavailable".into()))?;
         let memory_dir = root.join(&agent_id).join("memory");
         match action {
@@ -3140,14 +3154,14 @@ impl FeatureHostController {
         command: FeatureCommand,
     ) -> Result<CommandAccepted, FeatureHostError> {
         let request_id = command.request_id().to_string();
-        let workflow_root = self
-            .workflow_root_path
-            .as_deref()
+        let workflow_root_buf = self
+            .active_account_root(self.workflow_root_path.as_deref())
             .ok_or_else(|| FeatureHostError::Contract("workflow storage is unavailable".into()))?;
-        let agent_root = self
-            .memory_root_path
-            .as_deref()
+        let agent_root_buf = self
+            .active_account_root(self.memory_root_path.as_deref())
             .ok_or_else(|| FeatureHostError::Contract("agent storage is unavailable".into()))?;
+        let workflow_root = workflow_root_buf.as_path();
+        let agent_root = agent_root_buf.as_path();
         let agent_id = match &command {
             FeatureCommand::WorkflowList { agent_id, .. }
             | FeatureCommand::WorkflowUpsert { agent_id, .. }
@@ -3158,15 +3172,14 @@ impl FeatureHostController {
             | FeatureCommand::WorkflowImportLiveSource { agent_id, .. } => agent_id.clone(),
             _ => unreachable!("non-workflow command routed to workflow executor"),
         };
-        {
+        let requested_agent_id = agent_id;
+        let agent_id = {
             let state = self.state()?;
             ensure_open(&state)?;
-            if !state.bots.contains_key(&agent_id) {
-                return Err(FeatureHostError::Contract(format!(
-                    "unknown bot: {agent_id}"
-                )));
-            }
-        }
+            canonical_runtime_agent_id(&state, &requested_agent_id).ok_or_else(|| {
+                FeatureHostError::Contract(format!("unknown bot: {requested_agent_id}"))
+            })?
+        };
         if !is_safe_memory_agent_id(&agent_id) {
             return Err(FeatureHostError::Contract(format!(
                 "unsafe workflow agent id: {agent_id}"
@@ -3596,11 +3609,18 @@ impl FeatureHostController {
                 bytes_base64,
                 ..
             } => {
-                if !is_safe_memory_agent_id(&agent_id)
-                    || !self.state()?.bots.contains_key(&agent_id)
-                {
+                let requested_agent_id = agent_id;
+                let agent_id = {
+                    let state = self.state()?;
+                    canonical_runtime_agent_id(&state, &requested_agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown attachment owner: {requested_agent_id}"
+                        ))
+                    })?
+                };
+                if !is_safe_memory_agent_id(&agent_id) {
                     return Err(FeatureHostError::Contract(format!(
-                        "unknown attachment owner: {agent_id}"
+                        "unsafe attachment owner: {agent_id}"
                     )));
                 }
                 let filename = filename.trim();
@@ -4170,16 +4190,22 @@ impl FeatureHostController {
             FeatureCommand::AuditList {
                 agent_id, limit, ..
             } => {
-                if !is_safe_memory_agent_id(&agent_id)
-                    || !self.state()?.bots.contains_key(&agent_id)
-                {
+                let requested_agent_id = agent_id;
+                let agent_id = {
+                    let state = self.state()?;
+                    canonical_runtime_agent_id(&state, &requested_agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown audit agent: {requested_agent_id}"
+                        ))
+                    })?
+                };
+                if !is_safe_memory_agent_id(&agent_id) {
                     return Err(FeatureHostError::Contract(format!(
-                        "unknown audit agent: {agent_id}"
+                        "unsafe audit agent: {agent_id}"
                     )));
                 }
                 let records = self
-                    .memory_root_path
-                    .as_deref()
+                    .active_account_root(self.memory_root_path.as_deref())
                     .map(|root| {
                         read_action_audit(
                             &root.join(&agent_id).join("audit.jsonl"),
@@ -6983,8 +7009,9 @@ impl FeatureHostController {
     ) -> Result<CommandAccepted, FeatureHostError> {
         self.require_authenticated_account()?;
         let text = required(text, "chat text")?;
-        let bot_binding = if let Some(bot_id) = agent_id.as_deref() {
-            self.state()?.bots.get(bot_id).cloned()
+        let bot_binding = if let Some(requested_agent_id) = agent_id.as_deref() {
+            let state = self.state()?;
+            find_bot_by_runtime_or_surface_id(&state, requested_agent_id).cloned()
         } else {
             None
         };
@@ -9263,6 +9290,28 @@ struct ParsedMemoryFact {
     path: PathBuf,
     line_index: usize,
     order: usize,
+}
+
+fn bot_runtime_agent_id(bot: &BotSummary) -> &str {
+    bot.agent_id.as_deref().unwrap_or(bot.id.as_str())
+}
+
+fn find_bot_by_runtime_or_surface_id<'a>(
+    state: &'a FeatureState,
+    id: &str,
+) -> Option<&'a BotSummary> {
+    state.bots.get(id).or_else(|| {
+        state
+            .bots
+            .values()
+            .find(|bot| bot.agent_id.as_deref() == Some(id))
+    })
+}
+
+fn canonical_runtime_agent_id(state: &FeatureState, id: &str) -> Option<String> {
+    find_bot_by_runtime_or_surface_id(state, id)
+        .map(bot_runtime_agent_id)
+        .map(str::to_owned)
 }
 
 fn is_safe_memory_agent_id(agent_id: &str) -> bool {
