@@ -6,9 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { AgentTranscriptStore } from '../src/agent-workspace/agent-transcript-store';
 import { AgentWorkspaceController } from '../src/agent-workspace/agent-workspace-controller';
 import { AgentRuntimeCoordinator } from '../src/agent-workspace/agent-runtime-coordinator';
+import { restoreAgentStoreWorkspace } from '../src/agent-workspace/agent-store-recovery';
 import type { TranscriptEntry } from '../src/agent-workspace/transcript-model';
 import {
+  FABU_AGENT_ATTACHMENT_INDEX_PATH,
   FABU_AGENT_ROOT_PATH,
+  FABU_AGENT_RUNTIME_CHECKPOINT_PATH,
   FabuAgentStore,
   fabuAgentConversationTranscriptPath,
 } from '../src/fabu-runtime/agent-store';
@@ -171,6 +174,44 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
           dataBase64: encode({ schemaVersion: 1, agentId, conversationId, entries, updatedAtMs: 3 }),
         }],
       ]);
+      objects.set(FABU_AGENT_ATTACHMENT_INDEX_PATH, {
+        path: FABU_AGENT_ATTACHMENT_INDEX_PATH,
+        blobId: 'blob-attachments',
+        etag: 'attachments-etag',
+        revision: 2,
+        dataBase64: encode({
+          schemaVersion: 1,
+          agentId,
+          attachments: [{ id: 'attachment:cloud', name: 'cloud.txt', path: '/agent/cloud.txt', sizeBytes: 12 }],
+        }),
+      });
+      objects.set(FABU_AGENT_RUNTIME_CHECKPOINT_PATH, {
+        path: FABU_AGENT_RUNTIME_CHECKPOINT_PATH,
+        blobId: 'blob-checkpoint',
+        etag: 'checkpoint-etag',
+        revision: 3,
+        dataBase64: encode({
+          schemaVersion: 1,
+          agentId,
+          conversationId,
+          operationId: 'operation:cloud-stale',
+          status: 'running',
+          updatedAtMs: 3,
+        }),
+      });
+      objects.set(FABU_AGENT_ROOT_PATH, {
+        ...objects.get(FABU_AGENT_ROOT_PATH)!,
+        dataBase64: encode({
+          schemaVersion: 1,
+          agentId,
+          updatedAtMs: 4,
+          files: [
+            { path: transcriptPath, blobId: 'blob-transcript', etag: 'transcript-etag', revision: 4 },
+            { path: FABU_AGENT_ATTACHMENT_INDEX_PATH, blobId: 'blob-attachments', etag: 'attachments-etag', revision: 2 },
+            { path: FABU_AGENT_RUNTIME_CHECKPOINT_PATH, blobId: 'blob-checkpoint', etag: 'checkpoint-etag', revision: 3 },
+          ],
+        }),
+      });
       const store = new FabuAgentStore(agentId, {
         async list() { return { files: [] }; },
         async read(_agentId, path) {
@@ -181,13 +222,14 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
         async write() { return {}; },
         async delete() { return {}; },
       });
-      const root = await store.restoreRoot();
-      expect(root.agentId).toBe(agentId);
-      expect(store.hasRootPath(transcriptPath)).toBe(true);
-      const snapshot = await store.readJson<{ entries: TranscriptEntry[] }>(transcriptPath);
+      const recovered = await restoreAgentStoreWorkspace(store, conversationId);
+      expect(recovered.attachments.map((attachment) => attachment.id)).toEqual(['attachment:cloud']);
+      expect(recovered.checkpoint?.operationId).toBe('operation:cloud-stale');
+      expect(recovered.entries.filter((entry) => entry.kind === 'notice')).toHaveLength(1);
+      expect(recovered.entries.find((entry) => entry.kind === 'notice')?.status).toBe('interrupted');
       const transcripts = new AgentTranscriptStore();
-      transcripts.hydrateEntries('agent:cloud-peer', snapshot.entries);
-      expect(transcripts.entries('agent:cloud-peer').map((entry) => entry.text)).toEqual(['restored prompt', 'restored answer']);
+      transcripts.hydrateEntries('agent:cloud-peer', recovered.entries);
+      expect(transcripts.entries('agent:cloud-peer').map((entry) => entry.text)).toEqual(['restored prompt', 'restored answer', '']);
     });
 
     await test.step('Agent runtime coordinator isolates concurrent Agent streams and preserves drafts on reconnect', async () => {
