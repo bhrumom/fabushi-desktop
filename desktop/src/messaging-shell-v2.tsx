@@ -123,7 +123,6 @@ import {
 } from './agent-workspace/agent-draft-store';
 import type { AgentReplyContext } from './agent-workspace/prompt-context';
 import {
-  AGENT_SIDEBAR_UNASSIGNED_ID,
   assignAgentsToSidebarSection,
   createAgentSidebarSection,
   persistAgentSidebarSections,
