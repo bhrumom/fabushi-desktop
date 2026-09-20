@@ -100,6 +100,17 @@ export class AgentTranscriptStore {
     return projectTranscriptEntries(this.threads.get(peerKey) ?? []);
   }
 
+  userPromptBefore(peerKey: string, entryId: string): TranscriptEntry | undefined {
+    const entries = this.entries(peerKey);
+    const index = entries.findIndex((entry) => entry.id === entryId);
+    if (index < 0) return undefined;
+    for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+      const entry = entries[cursor];
+      if (entry.kind === 'message' && entry.role === 'me' && !entry.queued) return entry;
+    }
+    return undefined;
+  }
+
   appendUserMessage(
     peerKey: string,
     input: {
