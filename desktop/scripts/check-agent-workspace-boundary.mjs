@@ -77,6 +77,13 @@ if (!/import\s+AgentCommandPalette\s+from\s+['"]\.\/agent-workspace\/agent-comma
   violations.push('primary shell is not mounting the Agent-owned command palette boundary');
 }
 
+if (!/useAgentCommandPaletteController\s*\(/.test(shell)) {
+  violations.push('command palette lifecycle escaped the Agent-owned controller hook');
+}
+if (/setGrokPalette|agentPaletteOpen|agentPaletteQuery/.test(shell)) {
+  violations.push('primary shell recreated command palette runtime state');
+}
+
 if (!/from\s+['"]\.\/agent-workspace\/agent-model['"]/.test(shell)
   || !/projectAgentSidebarItems\s*\(/.test(shell)
   || !/projectActiveAgentKey\s*\(/.test(shell)) {
