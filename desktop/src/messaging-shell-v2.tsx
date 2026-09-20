@@ -1341,9 +1341,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       && !peer.miniAppId
       && isAgentPeer(peer)
     );
-    setComposer(isWorkspaceAgent
-      ? agentWorkspaceController.draftForPeer(activePeerKey)
-      : drafts[activePeerKey] ?? '');
+    // Compatibility Messenger owns the renderer-global composer string.
+    // Normal Agents render directly from AgentWorkspaceController and must
+    // never copy their draft into this global state.
+    if (!isWorkspaceAgent) setComposer(drafts[activePeerKey] ?? '');
     setSearch('');
     setConversationSearchOpen(false);
     setAgentConversationSearch('');
@@ -2761,25 +2762,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     void openPeer(peer);
   }
 
+  function updateAgentComposer(peerKey: string, value: string) {
+    agentWorkspaceController.setDraft(peerKey, value);
+    agentWorkspaceController.pruneReferences(peerKey, value);
+    notifyAgentWorkspaceState();
+  }
+
   function updateComposer(value: string) {
+    // Compatibility-only composer state for Messenger, Mini Apps and groups.
     setComposer(value);
     const activeKey = activePeerKeyRef.current;
     if (!activeKey) return;
-    const peer = peersRef.current.find((candidate) => candidate.key === activeKey);
-    const isWorkspaceAgent = Boolean(
-      peer
-      && peer.source === 'legacy'
-      && peer.kind !== 'group'
-      && !peer.miniAppId
-      && isAgentPeer(peer)
-    );
-    if (isWorkspaceAgent) {
-      const controller = agentWorkspaceController;
-      controller.setDraft(activeKey, value);
-      controller.pruneReferences(activeKey, value);
-      notifyAgentWorkspaceState();
-      return;
-    }
     if (activeKey.startsWith('selfhosted:')) {
       const conversationId = activeKey.slice('selfhosted:'.length);
       if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
@@ -2852,8 +2845,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function editBotMessage(message: BotTranscriptMessage) {
+    if (activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId) {
+      updateAgentComposer(activePeer.key, message.text);
+      clearAgentReply(activePeer.key);
+      return;
+    }
     updateComposer(message.text);
-    if (activePeer) clearAgentReply(activePeer.key);
   }
 
   async function dispatchAgentPromptNow(
@@ -2930,6 +2927,28 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
   }
 
+  function sendAgentMessage(event: FormEvent, peer: PeerItem): void {
+    event.preventDefault();
+    if (!isAgentPeer(peer) || peer.miniAppId || peer.kind === 'group') return;
+    const text = agentWorkspaceController.draftForPeer(peer.key).trim();
+    const attachments = agentWorkspaceController.attachmentsForPeer(peer.key);
+    if (!text && !attachments.length) return;
+
+    // Take the complete Agent-owned draft atomically. A failed/queued send is
+    // restored by useAgentWorkspaceRuntime without overwriting a newer draft.
+    const submittedDraft = agentWorkspaceController.takeDraft(peer.key);
+    notifyAgentWorkspaceState();
+    enqueueAgentPrompt(
+      peer,
+      submittedDraft.text.trim(),
+      undefined,
+      submittedDraft.attachments,
+      submittedDraft.replyTo,
+      submittedDraft.references ?? [],
+    );
+    setScheduledAtMs(undefined);
+  }
+
   function regenerateBotMessage(message: BotTranscriptMessage | TranscriptEntry) {
     if (!activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId) return;
     const prompt = agentTranscriptStore.userPromptBefore(activePeer.key, message.id);
@@ -2967,11 +2986,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (!isAgentPeer(peer)) setLegacySendPending(false);
     stickToLatestRef.current = true;
     setShowScrollToLatest(false);
-    setComposer(
-      peer.source === 'legacy' && peer.kind !== 'group' && !peer.miniAppId && isAgentPeer(peer)
-        ? agentWorkspaceController.draftForPeer(peer.key)
-        : drafts[peer.key] ?? '',
-    );
+    const isWorkspaceAgent = peer.source === 'legacy'
+      && peer.kind !== 'group'
+      && !peer.miniAppId
+      && isAgentPeer(peer);
+    if (!isWorkspaceAgent) setComposer(drafts[peer.key] ?? '');
     setSearch('');
     setMessageRenderCount(initialMessageRenderCount);
     setLegacyReplyTo(null);
@@ -3033,32 +3052,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   async function sendMessage(event: FormEvent) {
     event.preventDefault();
-    const text = composer.trim();
     if (!activePeer) return;
     const agentRequest = activePeer.source === 'legacy'
       && activePeer.kind !== 'group'
       && !activePeer.miniAppId
       && isAgentPeer(activePeer);
-    const stagedAgentAttachments = agentRequest
-      ? agentWorkspaceController.attachmentsForPeer(activePeer.key)
-      : [];
-    if (!text && !(agentRequest && stagedAgentAttachments.length)) return;
-    if (legacySendPending && !agentRequest) return;
     if (agentRequest) {
-      const submittedDraft = agentWorkspaceController.takeDraft(activePeer.key);
-      setComposer('');
-      notifyAgentWorkspaceState();
-      enqueueAgentPrompt(
-        activePeer,
-        text,
-        undefined,
-        submittedDraft.attachments,
-        submittedDraft.replyTo,
-        submittedDraft.references ?? [],
-      );
-      setScheduledAtMs(undefined);
+      sendAgentMessage(event, activePeer);
       return;
     }
+    const text = composer.trim();
+    if (!text || legacySendPending) return;
     setLegacySendPending(true);
     updateComposer('');
     try {
@@ -4308,7 +4312,7 @@ async function saveInvoiceDialog() {
                 composerAccessory={agentWorkspaceController.isUploading(activePeer.key)
                   ? <span className={extra.uploadProgress}>Uploading attachments…</span>
                   : null}
-                composerValue={composer}
+                composerValue={agentWorkspaceController.draftForPeer(activePeer.key)}
                 composerReady={hostReady}
                 composerBusy={Boolean(activeAgentOperationId)}
                 composerUploading={agentWorkspaceController.isUploading(activePeer.key)}
@@ -4320,7 +4324,7 @@ async function saveInvoiceDialog() {
                   .filter((workflow) => workflow.isEnabledForAgent)
                   .map((workflow) => ({ id: workflow.id, name: workflow.name, description: workflow.description }))}
                 enterToSend={desktopPreferences.enterToSend}
-                onComposerChange={updateComposer}
+                onComposerChange={(value) => updateAgentComposer(activePeer.key, value)}
                 onComposerMention={(candidate) => {
                   agentWorkspaceController.upsertReference(activePeer.key, {
                     kind: 'agent',
@@ -4329,7 +4333,15 @@ async function saveInvoiceDialog() {
                   });
                   notifyAgentWorkspaceState();
                 }}
-                onComposerSubmit={(event) => void sendMessage(event)}
+                onComposerWorkflowReference={(candidate) => {
+                  agentWorkspaceController.upsertReference(activePeer.key, {
+                    kind: 'workflow',
+                    id: candidate.id,
+                    label: candidate.name,
+                  });
+                  notifyAgentWorkspaceState();
+                }}
+                onComposerSubmit={(event) => sendAgentMessage(event, activePeer)}
                 onComposerFiles={(files) => void stageAgentFiles(activePeer, files)}
                 onRemoveComposerAttachment={(attachmentId) => removeAgentAttachment(activePeer.key, attachmentId)}
                 onTranscribeVoice={(file) => transcribeAgentVoice(activePeer, file)}

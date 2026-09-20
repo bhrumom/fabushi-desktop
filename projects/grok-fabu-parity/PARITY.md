@@ -83,6 +83,18 @@ This refactor slice is implemented on PR #7 without merging `main`.
 
 This is not a claim of full parity. Operation-scoped approval request/resolution and generation-aware Host recovery are owned by the Agent runtime boundary. `root.json` now materializes and validates its full CAS graph before transcript/attachment/checkpoint hydration; stale running checkpoints fail closed into an interrupted recovery notice. Computer permission/status projection and Native Host sidebar durability are implemented. Remaining gates are the full Fabu rich-document/provider/workflow editor, account-level cross-device sidebar sync, Agent settings/profile parity, extraction of the remaining compatibility Messenger renderer branches, and packaged macOS parity acceptance.
 
+## 2026-09-20 Composer ownership cutover
+
+The primary Agent Composer no longer copies Agent text into the renderer-global `composer` state. Normal Agent input now reads and writes `AgentWorkspaceController` directly, and send atomically takes the complete Agent-owned draft before entering `AgentSubmissionQueue`. Failed/queued submissions continue to restore through `useAgentWorkspaceRuntime` without clobbering a newer draft.
+
+- `desktop/src/agent-workspace/agent-composer.tsx` now owns the actual Agent Composer implementation; `grok-shell/grok-agent-composer.tsx` is compatibility-only.
+- Agent switching no longer hydrates the Messenger `composer` string from an Agent draft.
+- Edit-message for a normal Agent writes directly to the Agent draft.
+- Workflow suggestions now persist a stable `workflow:id` prompt reference, matching the existing stable `agent:id` reference behavior.
+- `check-agent-workspace-boundary.mjs` fails CI if the primary Agent Composer reimports the Grok compatibility shell or is rebound to renderer-global Messenger composer state.
+
+This slice deliberately does not claim full TipTap parity yet. The reference snapshot persists a structured rich-text document in addition to plain prompt text; the next Composer parity slice should add that structured Agent-owned draft representation without changing Mahayana's plain-text execution contract.
+
 ## Refactor rule
 
 Do not repeat the abandoned wholesale-source replacement. Keep Mahayana as the authoritative Rust Agent/runtime layer, but port the reference's domain boundaries and visible interaction model:

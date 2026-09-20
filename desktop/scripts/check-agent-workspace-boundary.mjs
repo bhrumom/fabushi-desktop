@@ -14,6 +14,8 @@ const storeSyncControllerPath = path.join(desktopRoot, 'src', 'agent-workspace',
 const storeSyncController = fs.readFileSync(storeSyncControllerPath, 'utf8');
 const directoryControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-directory-controller.ts');
 const directoryController = fs.readFileSync(directoryControllerPath, 'utf8');
+const agentComposerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agent-composer.tsx');
+const agentComposer = fs.readFileSync(agentComposerPath, 'utf8');
 
 const forbidden = [
   ['renderer-global Agent operation pointer', /\bagentOperationId\b/],
@@ -36,6 +38,16 @@ const violations = forbidden
 
 if (!/useAgentWorkspaceRuntime\s*\(/.test(shell)) {
   violations.push('Agent workspace runtime facade is not mounted by the desktop Agent shell');
+}
+if (/from\s+['"]\.\.\/grok-shell\//.test(agentComposer)) {
+  violations.push('primary Agent Composer implementation still depends on the Grok compatibility shell');
+}
+if (/composerValue=\{composer\}/.test(shell) || /onComposerChange=\{updateComposer\}/.test(shell)) {
+  violations.push('primary Agent Composer leaked back into renderer-global Messenger composer state');
+}
+if (!/composerValue=\{agentWorkspaceController\.draftForPeer\(activePeer\.key\)\}/.test(shell)
+  || !/onComposerSubmit=\{\(event\) => sendAgentMessage\(event, activePeer\)\}/.test(shell)) {
+  violations.push('primary Agent Composer is not bound directly to AgentWorkspaceController');
 }
 if (!/useAgentSidebarController\s*\(/.test(shell)) {
   violations.push('Agent sidebar controller is not mounted by the desktop Agent shell');
