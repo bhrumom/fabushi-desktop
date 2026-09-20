@@ -95,7 +95,7 @@ export default function AgentNetwork({
   if (!open) return null;
 
   const selectedAgentIds = directAgents
-    .filter((agent) => selected.has(agent.key))
+    .filter((agent) => selected.has(agent.key) && (broadcastMode || agent.key !== activeKey))
     .map((agent) => agent.agentId);
   const selectedGroup = selectedGroupId ? groups.find((group) => group.id === selectedGroupId) ?? null : null;
   const directTarget = !broadcastMode && !selectedGroup && activeAgent && selectedAgentIds.length === 1
@@ -217,8 +217,13 @@ export default function AgentNetwork({
               <span><strong>{agent.name}</strong><small>{statusLabel(agent)}</small></span>
             </button>
             <label className={styles.select}>
-              <input type="checkbox" checked={selected.has(agent.key)} onChange={() => toggleAgent(agent)} />
-              <span>{broadcastMode ? 'Broadcast' : 'Select'}</span>
+              <input
+                type="checkbox"
+                checked={selected.has(agent.key)}
+                disabled={!broadcastMode && agent.key === activeKey}
+                onChange={() => toggleAgent(agent)}
+              />
+              <span>{!broadcastMode && agent.key === activeKey ? 'Current Agent' : broadcastMode ? 'Broadcast' : 'Select'}</span>
             </label>
           </article>)}
           {!directAgents.length ? <div className={styles.empty}>Create an Agent to build your network.</div> : null}
