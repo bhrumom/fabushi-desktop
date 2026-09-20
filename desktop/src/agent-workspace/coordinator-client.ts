@@ -1,3 +1,4 @@
+import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { MahayanaHostTransport } from '../../../frontend/apps/web/src/lib/mahayana-host/transport';
 
 type HostCommand = Parameters<MahayanaHostTransport['execute']>[0];
@@ -7,6 +8,15 @@ export interface AgentPromptRequest {
   readonly text: string;
   readonly conversationId?: string;
   readonly agentId?: string;
+  readonly attachments?: readonly AttachmentContext[];
+}
+
+export interface AgentAttachmentUpload {
+  readonly requestId: string;
+  readonly agentId: string;
+  readonly filename: string;
+  readonly mimeType?: string;
+  readonly bytesBase64: string;
 }
 
 /**
@@ -27,6 +37,7 @@ export class AgentCoordinatorClient {
       text: request.text,
       conversationId: request.conversationId,
       agentId: request.agentId,
+      ...(request.attachments?.length ? { attachments: [...request.attachments] } : {}),
     } as HostCommand);
   }
 
@@ -45,6 +56,52 @@ export class AgentCoordinatorClient {
       ...(targetIds?.length ? { targetIds: [...targetIds] } : {}),
       message,
     } as HostCommand);
+  }
+
+  async uploadAttachment(input: AgentAttachmentUpload, timeoutMs = 20_000): Promise<AttachmentContext> {
+    let cancelWait = () => {};
+    const stored = new Promise<AttachmentContext>((resolve, reject) => {
+      let unsubscribe = () => {};
+      const timeout = globalThis.setTimeout(() => {
+        unsubscribe();
+        reject(new Error(`Timed out while storing ${input.filename} for Agent ${input.agentId}.`));
+      }, timeoutMs);
+      cancelWait = () => {
+        globalThis.clearTimeout(timeout);
+        unsubscribe();
+      };
+      unsubscribe = this.transport.subscribe((event) => {
+        if (
+          event.type !== 'attachment.stored'
+          || event.attachment.agentId !== input.agentId
+          || event.attachment.name !== input.filename
+        ) return;
+        cancelWait();
+        resolve({
+          id: event.attachment.id,
+          name: event.attachment.name,
+          mimeType: event.attachment.mimeType,
+          path: event.attachment.path,
+          sizeBytes: event.attachment.sizeBytes,
+        });
+      });
+    });
+
+    try {
+      await this.transport.execute({
+        type: 'attachment.upload',
+        requestId: input.requestId,
+        agentId: input.agentId,
+        filename: input.filename,
+        mimeType: input.mimeType,
+        bytesBase64: input.bytesBase64,
+      } as HostCommand);
+    } catch (cause) {
+      cancelWait();
+      void stored.catch(() => {});
+      throw cause;
+    }
+    return stored;
   }
 
   interrupt(operationId: string): Promise<void> {
