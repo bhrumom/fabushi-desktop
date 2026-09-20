@@ -1,13 +1,23 @@
-name: Publish macOS installer from main
+name: Package macOS installer from exact source
 
 on:
   workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact source commit to package. Empty means main.
+        required: false
+        type: string
+      publish_release:
+        description: Publish the signed artifact as a GitHub prerelease.
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: write
 
 concurrency:
-  group: publish-macos-main-${{ github.ref }}
+  group: package-macos-${{ inputs.source_sha || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -19,10 +29,10 @@ jobs:
       SUPPORT_REPO: bhrumom/fabushi
       SUPPORT_SHA: 5d75920308fa17f5000308df1a0153309eb8e9ab
     steps:
-      - name: Checkout exact main source
+      - name: Checkout exact source
         uses: actions/checkout@v6
         with:
-          ref: main
+          ref: ${{ inputs.source_sha || 'main' }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -31,8 +41,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse --abbrev-ref HEAD)" = "main"
           sha="$(git rev-parse HEAD)"
+          requested="${{ inputs.source_sha }}"
+          if [ -n "$requested" ]; then
+            test "$sha" = "$requested"
+          else
+            test "$(git rev-parse --abbrev-ref HEAD)" = "main"
+          fi
           version="$(node -p "require('./desktop/package.json').version")"
           short="${sha:0:12}"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
@@ -40,8 +55,9 @@ jobs:
           echo "short=$short" >> "$GITHUB_OUTPUT"
           echo "tag=macos-main-v${version}-${short}" >> "$GITHUB_OUTPUT"
           {
-            echo "## macOS main release"
+            echo "## macOS exact-source package"
             echo "- Source: \`$sha\`"
+            echo "- Publish release: \`${{ inputs.publish_release }}\`"
             echo "- Version: \`$version\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -241,7 +257,7 @@ jobs:
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: fabushi-macos-main-${{ steps.source.outputs.short }}
+          name: fabushi-macos-${{ steps.source.outputs.short }}
           path: |
             desktop/release/*.dmg
             desktop/release/*.zip
@@ -251,6 +267,7 @@ jobs:
           compression-level: 0
 
       - name: Publish GitHub prerelease
+        if: ${{ inputs.publish_release }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -262,7 +279,7 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release delete "$TAG" --yes --cleanup-tag
           fi
-          gh release create "$TAG"             desktop/release/*.dmg             desktop/release/*.zip             desktop/release/SHA256SUMS.txt             --target "$SOURCE_SHA"             --title "Fabushi macOS $VERSION — main ${SOURCE_SHA:0:12}"             --notes "Signed and Apple-notarized macOS arm64 installer built from exact fabushi-desktop main commit \`$SOURCE_SHA\`."             --prerelease
+          gh release create "$TAG"             desktop/release/*.dmg             desktop/release/*.zip             desktop/release/SHA256SUMS.txt             --target "$SOURCE_SHA"             --title "Fabushi macOS $VERSION — ${SOURCE_SHA:0:12}"             --notes "Signed and Apple-notarized macOS arm64 installer built from exact fabushi-desktop commit \`$SOURCE_SHA\`."             --prerelease
           url="$(gh release view "$TAG" --json url -q .url)"
           echo "### Published" >> "$GITHUB_STEP_SUMMARY"
           echo "- Release: $url" >> "$GITHUB_STEP_SUMMARY"
