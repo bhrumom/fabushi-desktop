@@ -16,6 +16,11 @@ export interface AccountSidebarLayout {
   schemaVersion: 1;
   accountScope: string;
   revision: number;
+  /**
+   * False only for pre-Agent-layout documents that still need a one-time
+   * migration from legacy Messenger pin state.
+   */
+  pinStateManaged: boolean;
   pinnedOrder: string[];
   sections: AgentSidebarSection[];
   updatedAtMs: number;
@@ -56,6 +61,7 @@ function parseLayout(value: unknown, accountScope: string): AccountSidebarLayout
     schemaVersion: 1,
     accountScope,
     revision: Number.isSafeInteger(revision) && revision >= 0 ? revision : 0,
+    pinStateManaged: candidate.pinStateManaged === true,
     pinnedOrder: cleanOrder(candidate.pinnedOrder),
     sections: Array.isArray(candidate.sections)
       ? normalizeAgentSidebarSections(candidate.sections.filter((section): section is AgentSidebarSection => {
@@ -123,6 +129,7 @@ export async function writeAccountSidebarLayout(
       schemaVersion: 1,
       accountScope,
       revision: Math.max(current?.layout.revision ?? 0, current?.serverRevision ?? 0) + 1,
+      pinStateManaged: true,
       pinnedOrder: cleanOrder(pinnedOrder),
       sections: normalizeAgentSidebarSections(sections),
       updatedAtMs: Date.now(),

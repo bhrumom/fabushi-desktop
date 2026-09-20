@@ -22,16 +22,40 @@ function pinnedOrderKey(accountScope: string): string {
   return `fabushi.desktop.agent-pinned-order.v2.${encodeURIComponent(accountScope)}`;
 }
 
+function pinStateManagedKey(accountScope: string): string {
+  return 'fabushi.desktop.agent-pin-state-managed.v1.' + encodeURIComponent(accountScope);
+}
+
+function readPinStateManaged(accountScope: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(pinStateManagedKey(accountScope)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function persistPinStateManaged(accountScope: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(pinStateManagedKey(accountScope), '1');
+  } catch {
+    // The account CAS object remains authoritative when localStorage is unavailable.
+  }
+}
+
 export interface AgentSidebarStateItem {
   readonly key: string;
   readonly pinned: boolean;
 }
 
 export interface AgentSidebarController {
+  readonly ready: boolean;
   readonly pinnedOrder: readonly string[];
   readonly sections: readonly AgentSidebarSection[];
   readonly selectedKeys: readonly string[];
-  reconcilePinnedOrder(pinnedKeys: readonly string[]): void;
+  adoptLegacyPinnedState(pinnedKeys: readonly string[]): void;
+  togglePin(key: string): void;
   reorderPinned(
     movedKey: string,
     targetKey: string,
@@ -115,8 +139,10 @@ export function useAgentSidebarController(
   const [pinnedOrder, setPinnedOrderState] = useState<string[]>([]);
   const [sections, setSections] = useState<AgentSidebarSection[]>([]);
   const [layoutScope, setLayoutScope] = useState<string | null>(null);
+  const [pinStateManaged, setPinStateManaged] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const selectionAnchorRef = useRef<string | null>(null);
+  const pinStateManagedRef = useRef(false);
   const layoutMutationRevisionRef = useRef(0);
   const cloudWriteChainRef = useRef<Promise<unknown>>(Promise.resolve());
 
@@ -135,6 +161,8 @@ export function useAgentSidebarController(
     setSelectedKeys([]);
     selectionAnchorRef.current = null;
     setLayoutScope(null);
+    pinStateManagedRef.current = false;
+    setPinStateManaged(false);
     if (!accountScope) {
       setPinnedOrderState([]);
       setSections([]);
@@ -144,6 +172,9 @@ export function useAgentSidebarController(
     const scope = accountScope;
     let cancelled = false;
     const hydrationMutationRevision = layoutMutationRevisionRef.current;
+    const localPinStateManaged = readPinStateManaged(scope);
+    pinStateManagedRef.current = localPinStateManaged;
+    setPinStateManaged(localPinStateManaged);
     setPinnedOrderState(readPinnedOrder(scope));
     setSections(readAgentSidebarSections(scope));
 
@@ -155,11 +186,24 @@ export function useAgentSidebarController(
       if (cancelled) return;
       if (layoutMutationRevisionRef.current === hydrationMutationRevision) {
         if (cloud) {
-          setPinnedOrderState(cloud.layout.pinnedOrder);
+          // A managed cloud document is authoritative. For a pre-migration
+          // cloud document, preserve a locally managed pin state so a failed
+          // CAS retry cannot resurrect a legacy Messenger pin on next launch.
+          const managed = cloud.layout.pinStateManaged || localPinStateManaged;
+          setPinnedOrderState(
+            cloud.layout.pinStateManaged || !localPinStateManaged
+              ? cloud.layout.pinnedOrder
+              : nativePinnedOrder,
+          );
           setSections(cloud.layout.sections);
+          pinStateManagedRef.current = managed;
+          setPinStateManaged(managed);
+          if (managed) persistPinStateManaged(scope);
         } else {
           setPinnedOrderState(nativePinnedOrder);
           setSections(nativeSections);
+          pinStateManagedRef.current = localPinStateManaged;
+          setPinStateManaged(localPinStateManaged);
         }
       }
       // Any user mutation that raced hydration stays local and is written via
@@ -171,7 +215,8 @@ export function useAgentSidebarController(
   }, [accountScope]);
 
   useEffect(() => {
-    if (!accountScope || layoutScope !== accountScope) return;
+    if (!accountScope || layoutScope !== accountScope || !pinStateManaged) return;
+    persistPinStateManaged(accountScope);
     persistPinnedOrder(accountScope, pinnedOrder);
     persistAgentSidebarSections(accountScope, sections);
 
@@ -188,17 +233,29 @@ export function useAgentSidebarController(
       .catch(() => undefined)
       .then(() => writeAccountSidebarLayout(scope, pinnedSnapshot, sectionSnapshot))
       .catch(() => undefined);
-  }, [accountScope, layoutScope, pinnedOrder, sections]);
+  }, [accountScope, layoutScope, pinStateManaged, pinnedOrder, sections]);
 
-  const reconcilePinnedOrder = useCallback((pinnedKeys: readonly string[]) => {
-    updatePinnedOrder((current) => {
-      const pinned = new Set(pinnedKeys);
-      return [
-        ...current.filter((key) => pinned.has(key)),
-        ...pinnedKeys.filter((key) => !current.includes(key)),
-      ];
-    });
-  }, [updatePinnedOrder]);
+  const adoptLegacyPinnedState = useCallback((pinnedKeys: readonly string[]) => {
+    if (!accountScope || layoutScope !== accountScope || pinStateManagedRef.current) return;
+    const legacyPinned = [...new Set(pinnedKeys.filter((key) => key.trim().length > 0))];
+    updatePinnedOrder((current) => current.length ? [...current] : legacyPinned);
+    pinStateManagedRef.current = true;
+    setPinStateManaged(true);
+    persistPinStateManaged(accountScope);
+  }, [accountScope, layoutScope, updatePinnedOrder]);
+
+  const togglePin = useCallback((key: string) => {
+    const normalized = key.trim();
+    if (!normalized || !accountScope || layoutScope !== accountScope) return;
+    if (!pinStateManagedRef.current) {
+      pinStateManagedRef.current = true;
+      setPinStateManaged(true);
+      persistPinStateManaged(accountScope);
+    }
+    updatePinnedOrder((current) => current.includes(normalized)
+      ? current.filter((candidate) => candidate !== normalized)
+      : [...current, normalized]);
+  }, [accountScope, layoutScope, updatePinnedOrder]);
 
   const reorderPinned = useCallback((
     movedKey: string,
@@ -283,10 +340,12 @@ export function useAgentSidebarController(
   }, []);
 
   return {
+    ready: Boolean(accountScope && layoutScope === accountScope),
     pinnedOrder,
     sections,
     selectedKeys,
-    reconcilePinnedOrder,
+    adoptLegacyPinnedState,
+    togglePin,
     reorderPinned,
     toggleSelection,
     rangeSelect,

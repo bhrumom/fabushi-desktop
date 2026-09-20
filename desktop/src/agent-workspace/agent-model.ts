@@ -117,7 +117,7 @@ export function projectAgentSidebarItems(
       agentId: peer.agentId ?? peer.actorId ?? peer.id,
       name: peer.title,
       description: peer.subtitle,
-      pinned: peer.pinned,
+      pinned: pinnedOrder.includes(key),
       hidden: peer.hidden === true,
       unread: peer.unread,
       busy: Boolean(operationByPeer[peer.key]),

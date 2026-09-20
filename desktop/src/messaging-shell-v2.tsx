@@ -2223,14 +2223,16 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     const activityId = agentOperationSnapshot[peer.key] ?? agentRequestSnapshot[peer.key];
     return activityId ? [[peer.key, activityId] as const] : [];
   }));
+  const legacyPinnedAgentKeys = [...new Set(peers
+    .filter((peer) => peer.pinned && (peer.kind === 'bot' || peer.kind === 'group'))
+    .map((peer) => agentWorkspaceKey(peer)))];
+  const legacyPinnedAgentSignature = legacyPinnedAgentKeys.join('\u001f');
   const agentItems: AgentSidebarItem[] = projectAgentSidebarItems(
     peers,
     agentBusyByPeer,
     agentActivityByPeer,
     agentPinnedOrder,
   );
-  const pinnedAgentKeys = agentItems.filter((item) => item.pinned).map((item) => item.key);
-  const pinnedAgentSignature = pinnedAgentKeys.join('\u001f');
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
   const activeAgentBot: BotSummary | null = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
     ? bots.find((bot) => bot.id === (activePeer.actorId ?? activePeer.id))
@@ -2275,10 +2277,20 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     snapshot: agentSettingsSnapshot,
   } = useAgentSettingsController(agentDirectoryController, activeAgentBot);
   const activeAgentKey = projectActiveAgentKey(activePeer);
+  const activeAgentItem = activeAgentKey
+    ? agentItems.find((item) => item.key === activeAgentKey) ?? null
+    : null;
+  const activeAgentPinned = activeAgentItem?.pinned === true;
 
   useEffect(() => {
-    agentSidebarController.reconcilePinnedOrder(pinnedAgentKeys);
-  }, [agentSidebarController.reconcilePinnedOrder, pinnedAgentSignature]);
+    if (!initialLegacyHydrated || !agentSidebarController.ready) return;
+    agentSidebarController.adoptLegacyPinnedState(legacyPinnedAgentKeys);
+  }, [
+    initialLegacyHydrated,
+    agentSidebarController.ready,
+    agentSidebarController.adoptLegacyPinnedState,
+    legacyPinnedAgentSignature,
+  ]);
 
   useEffect(() => {
     if (!pendingOpenAgentId) return;
@@ -3820,8 +3832,7 @@ async function saveInvoiceDialog() {
           onNewAgent={() => void createAgent()}
           onToggleCollapsed={() => setSidebarWidth((width) => width <= 112 ? 300 : 88)}
           onTogglePin={(item) => {
-            const peer = peerForAgent(item);
-            if (peer) void togglePinConversation(peer);
+            agentSidebarController.togglePin(item.key);
           }}
           onRename={(item) => void renameAgent(item)}
           onHide={(item) => void hideAgent(item)}
@@ -3924,7 +3935,7 @@ async function saveInvoiceDialog() {
                   : activePeerBusy
                     ? 'Working…'
                     : `${activePeer.subtitle}${hostReady ? ' · Online' : ' · Connecting'}`}
-                pinned={activePeer.pinned}
+                pinned={activeAgentPinned}
                 searchActive={conversationSearchOpen}
                 searchQuery={agentConversationSearch}
                 computerActive={agentComputer.open}
@@ -3941,7 +3952,9 @@ async function saveInvoiceDialog() {
                   agentComputer.toggleForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'agent-header');
                   if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
                 }}
-                onTogglePin={() => void togglePinConversation(activePeer)}
+                onTogglePin={() => {
+                  if (activeAgentKey) agentSidebarController.togglePin(activeAgentKey);
+                }}
                 onToggleInfo={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}
                 entries={agentTranscriptEntries}
                 activeOperationId={activeAgentOperationId}
@@ -4234,14 +4247,16 @@ async function saveInvoiceDialog() {
             description={activePeer.subtitle}
             botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
             botState={botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)}
-            pinned={activePeer.pinned}
+            pinned={activeAgentPinned}
             overlay={!wideInfoLayout}
             onClose={() => wideInfoLayout ? setInfoOpen(false) : setNarrowInfoOpen(false)}
             onSearch={() => {
               setConversationSearchOpen(true);
               setAgentConversationSearch('');
             }}
-            onTogglePin={() => void togglePinConversation(activePeer)}
+            onTogglePin={() => {
+              if (activeAgentKey) agentSidebarController.togglePin(activeAgentKey);
+            }}
             computer={{
               agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
               open: agentComputer.open,
