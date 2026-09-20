@@ -29,6 +29,7 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   onComposerSubmit(event: FormEvent<HTMLFormElement>): void;
   onAttach(): void;
   onStop(): void;
+  notice?: ReactNode;
   beforeComposer?: ReactNode;
   composerAccessory?: ReactNode;
 }
@@ -60,6 +61,7 @@ export default function AgentWorkspace(props: AgentWorkspaceProps) {
       onTogglePin={props.onTogglePin}
       onToggleInfo={props.onToggleInfo}
     />
+    {props.notice}
     <AgentTranscript
       title={props.title}
       description={props.description}
