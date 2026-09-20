@@ -1,24 +1,10 @@
 import { Bot, ChevronsLeft, ChevronsRight, Copy, EyeOff, MoreHorizontal, Pencil, Pin, Plus, Search, Settings, Plug, Trash2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { BotMark, type BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
+import type { GrokAgentSidebarItem } from '../grok-runtime/agent-model';
 import styles from './grok-agent-sidebar.module.css';
 
-export type GrokAgentSidebarItem = {
-  /** Stable Agent/group identity used by the Agent-first shell. */
-  key: string;
-  /** Current compatibility peer used to open the underlying conversation. */
-  peerKey: string;
-  id: string;
-  agentId: string;
-  name: string;
-  description: string;
-  pinned: boolean;
-  hidden: boolean;
-  unread: number;
-  busy: boolean;
-  isGroup: boolean;
-  updatedAtMs: number;
-};
+export type { GrokAgentSidebarItem } from '../grok-runtime/agent-model';
 
 export type GrokAgentSidebarProps = {
   agents: readonly GrokAgentSidebarItem[];
