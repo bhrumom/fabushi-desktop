@@ -1,0 +1,159 @@
+import type { RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import {
+  assistantTurnPlainText,
+  createAssistantTurn,
+  reduceAssistantTurn,
+  type AssistantTurn,
+} from '../mahayana-assistant-turn';
+import {
+  projectTranscriptEntries,
+  type TranscriptEntry,
+  type TranscriptSourceMessage,
+} from './transcript-model';
+
+export interface AgentTranscriptSourceMessage extends TranscriptSourceMessage {
+  readonly source: 'legacy';
+}
+
+export type AgentTranscriptTerminalStatus = 'completed' | 'failed' | 'interrupted';
+
+function rekeyAssistantTurn(turn: AssistantTurn, operationId: string): AssistantTurn {
+  if (turn.operationId === operationId) return turn;
+  const previousPrefix = `${turn.operationId}:`;
+  const nextPrefix = `${operationId}:`;
+  return {
+    ...turn,
+    id: `assistant-turn:${operationId}`,
+    operationId,
+    parts: turn.parts.map((part) => ({
+      ...part,
+      id: part.id.startsWith(previousPrefix)
+        ? `${nextPrefix}${part.id.slice(previousPrefix.length)}`
+        : part.id,
+    })),
+  };
+}
+
+/**
+ * Agent-owned transcript source store.
+ *
+ * Runtime events are reduced here, outside the Messenger renderer. The store
+ * intentionally accepts the temporary legacy source shape only at its outer
+ * boundary; views consume canonical TranscriptEntry projections.
+ */
+export class AgentTranscriptStore {
+  private readonly threads = new Map<string, AgentTranscriptSourceMessage[]>();
+
+  has(peerKey: string): boolean {
+    return this.threads.has(peerKey);
+  }
+
+  clear(peerKey?: string): void {
+    if (peerKey) this.threads.delete(peerKey);
+    else this.threads.clear();
+  }
+
+  thread(peerKey: string): AgentTranscriptSourceMessage[] {
+    return [...(this.threads.get(peerKey) ?? [])];
+  }
+
+  replace(peerKey: string, messages: readonly AgentTranscriptSourceMessage[]): AgentTranscriptSourceMessage[] {
+    const next = [...messages];
+    this.threads.set(peerKey, next);
+    return [...next];
+  }
+
+  update(
+    peerKey: string,
+    updater: (current: AgentTranscriptSourceMessage[]) => AgentTranscriptSourceMessage[],
+  ): AgentTranscriptSourceMessage[] {
+    const current = this.thread(peerKey);
+    const next = updater(current);
+    this.threads.set(peerKey, [...next]);
+    return [...next];
+  }
+
+  entries(peerKey: string): TranscriptEntry[] {
+    return projectTranscriptEntries(this.threads.get(peerKey) ?? []);
+  }
+
+  adoptOperation(peerKey: string, requestId: string, operationId: string): AgentTranscriptSourceMessage[] {
+    if (!requestId || requestId === operationId) return this.thread(peerKey);
+    return this.update(peerKey, (current) => {
+      const alreadyAuthoritative = current.some((message) =>
+        message.kind === 'assistant-turn' && message.operationId === operationId,
+      );
+      return current.flatMap((message) => {
+        if (message.operationId !== requestId) return [message];
+        if (message.kind === 'assistant-turn' && message.assistantTurn) {
+          if (alreadyAuthoritative) return [];
+          const assistantTurn = rekeyAssistantTurn(message.assistantTurn, operationId);
+          return [{
+            ...message,
+            id: `${operationId}:assistant-turn`,
+            operationId,
+            text: assistantTurnPlainText(assistantTurn),
+            assistantTurn,
+          }];
+        }
+        return [{ ...message, operationId }];
+      });
+    });
+  }
+
+  appendAssistantTurnEvent(peerKey: string, event: RuntimeEvent): AgentTranscriptSourceMessage[] {
+    const operationId = 'operationId' in event && typeof event.operationId === 'string'
+      ? event.operationId
+      : undefined;
+    if (!operationId) return this.thread(peerKey);
+    return this.update(peerKey, (current) => {
+      const index = current.findIndex((message) =>
+        message.kind === 'assistant-turn' && message.operationId === operationId,
+      );
+      const existingTurn = index >= 0 ? current[index]?.assistantTurn : undefined;
+      const assistantTurn = reduceAssistantTurn(
+        existingTurn ?? createAssistantTurn(operationId),
+        event,
+      );
+      const next: AgentTranscriptSourceMessage = {
+        id: `${operationId}:assistant-turn`,
+        source: 'legacy',
+        role: 'peer',
+        text: assistantTurnPlainText(assistantTurn),
+        createdAtMs: assistantTurn.createdAtMs,
+        kind: 'assistant-turn',
+        operationId,
+        streaming: assistantTurn.status === 'running',
+        assistantTurn,
+      };
+      if (index < 0) return [...current, next];
+      return current.map((message, messageIndex) =>
+        messageIndex === index
+          ? { ...message, ...next, createdAtMs: message.createdAtMs }
+          : message,
+      );
+    });
+  }
+
+  finishOperation(
+    peerKey: string,
+    operationId: string,
+    terminalStatus: AgentTranscriptTerminalStatus = 'completed',
+  ): AgentTranscriptSourceMessage[] {
+    return this.update(peerKey, (current) => current
+      .filter((message) => !(message.kind === 'thinking' && message.operationId === operationId))
+      .map((message) => {
+        if (
+          message.kind === 'tool-call'
+          && message.operationId === operationId
+          && message.status === 'running'
+        ) {
+          return { ...message, status: terminalStatus };
+        }
+        if (message.kind === 'message' && message.operationId === operationId && message.streaming) {
+          return { ...message, streaming: false, optimistic: false };
+        }
+        return message;
+      }));
+  }
+}
