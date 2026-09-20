@@ -2,7 +2,7 @@ import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahay
 import { AgentOperationRegistry, type AgentOperationSnapshot } from '../grok-runtime/agent-operation-registry';
 import { AGENT_ATTACHMENT_LIMIT } from './agent-attachments';
 import type { PersistedAgentDraft, PersistedAgentDrafts } from './agent-draft-store';
-import type { AgentReplyContext } from './prompt-context';
+import type { AgentPromptReference, AgentReplyContext } from './prompt-context';
 
 export interface AgentWorkspaceDraftSnapshot {
   readonly [peerKey: string]: string;
@@ -16,18 +16,25 @@ export interface AgentWorkspaceReplySnapshot {
   readonly [peerKey: string]: AgentReplyContext;
 }
 
+export interface AgentWorkspaceReferenceSnapshot {
+  readonly [peerKey: string]: readonly AgentPromptReference[];
+}
+
 function normalizeDraft(draft: Partial<PersistedAgentDraft> | undefined): PersistedAgentDraft {
   return {
     text: typeof draft?.text === 'string' ? draft.text : '',
     attachments: Array.isArray(draft?.attachments)
       ? [...draft.attachments].slice(0, AGENT_ATTACHMENT_LIMIT)
       : [],
+    ...(Array.isArray(draft?.references) && draft.references.length
+      ? { references: draft.references.filter((reference) => reference?.kind === 'agent').slice(0, 32) }
+      : {}),
     ...(draft?.replyTo ? { replyTo: draft.replyTo } : {}),
   };
 }
 
 function draftHasPayload(draft: PersistedAgentDraft): boolean {
-  return Boolean(draft.text || draft.attachments.length || draft.replyTo);
+  return Boolean(draft.text || draft.attachments.length || draft.references?.length || draft.replyTo);
 }
 
 /**
@@ -219,6 +226,32 @@ export class AgentWorkspaceController {
     );
   }
 
+  referencesForPeer(peerKey: string | null | undefined): readonly AgentPromptReference[] {
+    if (!peerKey) return [];
+    return this.drafts.get(peerKey)?.references ?? [];
+  }
+
+  upsertReference(peerKey: string, reference: AgentPromptReference): void {
+    const current = this.drafts.get(peerKey) ?? normalizeDraft(undefined);
+    const references = [
+      ...(current.references ?? []).filter((candidate) => candidate.id !== reference.id),
+      reference,
+    ].slice(-32);
+    const next = { ...current, references };
+    if (draftHasPayload(next)) this.drafts.set(peerKey, next);
+    else this.drafts.delete(peerKey);
+  }
+
+  pruneReferences(peerKey: string, text: string): void {
+    const current = this.drafts.get(peerKey);
+    if (!current?.references?.length) return;
+    const references = current.references.filter((reference) => text.includes(`@${reference.label}`));
+    const next = { ...current, ...(references.length ? { references } : {}) };
+    if (!references.length) delete next.references;
+    if (draftHasPayload(next)) this.drafts.set(peerKey, next);
+    else this.drafts.delete(peerKey);
+  }
+
   replyForPeer(peerKey: string | null | undefined): AgentReplyContext | undefined {
     return peerKey ? this.drafts.get(peerKey)?.replyTo : undefined;
   }
@@ -265,6 +298,10 @@ export class AgentWorkspaceController {
       // prompt when the current Agent draft is still empty.
       text: current.text || draft.text || '',
       attachments: [...attachmentById.values()],
+      references: [
+        ...(current.references ?? []),
+        ...(draft.references ?? []).filter((reference) => !(current.references ?? []).some((candidate) => candidate.id === reference.id)),
+      ],
       replyTo: current.replyTo ?? draft.replyTo,
     });
     if (draftHasPayload(merged)) this.drafts.set(peerKey, merged);
@@ -278,6 +315,7 @@ export class AgentWorkspaceController {
         {
           text: draft.text,
           attachments: [...draft.attachments],
+          ...(draft.references?.length ? { references: draft.references.map((reference) => ({ ...reference })) } : {}),
           ...(draft.replyTo ? { replyTo: { ...draft.replyTo } } : {}),
         },
       ]),
@@ -305,6 +343,17 @@ export class AgentWorkspaceController {
       [...this.drafts.entries()]
         .filter(([, draft]) => Boolean(draft.replyTo))
         .map(([peerKey, draft]) => [peerKey, { ...draft.replyTo! }]),
+    ));
+  }
+
+  referenceSnapshot(): AgentWorkspaceReferenceSnapshot {
+    return Object.freeze(Object.fromEntries(
+      [...this.drafts.entries()]
+        .filter(([, draft]) => Boolean(draft.references?.length))
+        .map(([peerKey, draft]) => [
+          peerKey,
+          Object.freeze((draft.references ?? []).map((reference) => Object.freeze({ ...reference }))),
+        ]),
     ));
   }
 }
