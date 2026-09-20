@@ -130,9 +130,9 @@ export class AgentTranscriptStore {
       text: input.text,
       createdAtMs: input.createdAtMs,
       kind: 'message',
+      optimistic: input.optimistic === true,
+      queued: input.queued === true,
       ...(input.operationId ? { operationId: input.operationId } : {}),
-      ...(input.optimistic ? { optimistic: true } : {}),
-      ...(input.queued ? { queued: true } : {}),
       ...(input.attachments?.length ? { attachments: input.attachments } : {}),
     };
     return this.update(peerKey, (current) => {
