@@ -4470,6 +4470,8 @@ async function saveInvoiceDialog() {
                 name: activePeer.title,
                 title: '',
                 description: activePeer.subtitle,
+                avatarShape: activeAgentBot?.avatarShape ?? '',
+                avatarColor: activeAgentBot?.avatarColor ?? '',
                 notifyOnUpdatesEnabled: true,
               },
               pending: agentSettingsSnapshot.pending,
