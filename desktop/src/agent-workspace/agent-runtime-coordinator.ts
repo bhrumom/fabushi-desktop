@@ -1,4 +1,4 @@
-import type { AttachmentContext, RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { AttachmentContext, ComputerStatus, RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { MahayanaCommandBridgeDetail } from '../../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
 import type { AgentWorkspaceController } from './agent-workspace-controller';
 import {
@@ -21,6 +21,7 @@ export interface AgentLocalTurn {
 export interface AgentRuntimeCoordinatorHooks {
   onTranscriptChanged?(peerKey: string, thread: readonly AgentTranscriptSourceMessage[]): void;
   onOperationChanged?(peerKey: string): void;
+  onComputerStatus?(status: ComputerStatus): void;
   onOperationStarted?(peerKey: string, operationId: string): void;
   onRequestFailed?(peerKey: string, requestId: string, message: string): void;
   onOperationTerminal?(
@@ -293,6 +294,11 @@ export class AgentRuntimeCoordinator {
         if (['restarting', 'stopped', 'spawn-failed', 'protocol-error'].includes(event.lifecycle)) {
           this.recoverInterruptedOperations(event);
         }
+        return true;
+      }
+
+      case 'computer.status': {
+        this.hooks.onComputerStatus?.(event.status);
         return true;
       }
 
