@@ -62,6 +62,7 @@ jobs:
       - name: Run Grok Agent shell and Mahayana chat regression
         env:
           FABUSHI_FEATURE_HOST_MODE: test
+          MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
         run: npx playwright test e2e/mahayana-agent-workbench.spec.ts e2e/grok-parity.spec.ts --grep "Mahayana renders one Hermes-style assistant turn|desktop uses the Fabushi-owned Grok parity surface"
       - name: Upload Playwright evidence
         if: always()
