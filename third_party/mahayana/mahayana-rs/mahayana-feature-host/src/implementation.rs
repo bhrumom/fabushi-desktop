@@ -4282,6 +4282,7 @@ impl FeatureHostController {
                 );
                 self.state()?.events.push_back(HostEvent::McpToolResult {
                     timestamp: timestamp(),
+                    request_id: request_id.clone(),
                     server,
                     tool,
                     result,
