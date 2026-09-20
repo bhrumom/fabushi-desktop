@@ -134,6 +134,7 @@ import {
   createAgentSidebarSection,
   persistAgentSidebarSections,
   readAgentSidebarSections,
+  readAgentSidebarSectionsDurable,
   removeAgentSidebarSection,
   renameAgentSidebarSection,
   toggleAgentSidebarSection,
@@ -1052,6 +1053,18 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [grokNetworkOpen, setGrokNetworkOpen] = useState(false);
   const [grokNetworkBroadcastMode, setGrokNetworkBroadcastMode] = useState(false);
   const [grokPinnedOrder, setGrokPinnedOrder] = useState<string[]>(readGrokPinnedOrder);
+  useEffect(() => {
+    let cancelled = false;
+    void invokeNativeDesktop<unknown>('readClientPersistence', { key: grokPinnedOrderKey }).then((value) => {
+      if (cancelled || !Array.isArray(value)) return;
+      const nativeOrder = value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0);
+      if (nativeOrder.length) {
+        try { window.localStorage.setItem(grokPinnedOrderKey, JSON.stringify(nativeOrder)); } catch {}
+        setGrokPinnedOrder(nativeOrder);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   const [grokSidebarSections, setGrokSidebarSections] = useState<AgentSidebarSection[]>([]);
   const [grokSidebarSectionsScope, setGrokSidebarSectionsScope] = useState<string | null>(null);
   const [grokSelectedAgentKeys, setGrokSelectedAgentKeys] = useState<string[]>([]);
@@ -1599,10 +1612,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       grokSelectionAnchorRef.current = null;
       return;
     }
+    let cancelled = false;
     setGrokSidebarSections(readAgentSidebarSections(remoteAccountScope));
-    setGrokSidebarSectionsScope(remoteAccountScope);
+    setGrokSidebarSectionsScope(null);
     setGrokSelectedAgentKeys([]);
     grokSelectionAnchorRef.current = null;
+    void readAgentSidebarSectionsDurable(remoteAccountScope).then((sections) => {
+      if (cancelled) return;
+      setGrokSidebarSections(sections);
+      setGrokSidebarSectionsScope(remoteAccountScope);
+    });
+    return () => { cancelled = true; };
   }, [remoteAccountScope]);
 
   useEffect(() => {
