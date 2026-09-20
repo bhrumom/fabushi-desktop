@@ -1829,6 +1829,48 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
+  function agentPeerForRuntimeKey(peerKey: string | null | undefined): PeerItem | undefined {
+    if (!peerKey) return undefined;
+    const peer = peersRef.current.find((candidate) => candidate.key === peerKey);
+    return peer && isAgentPeer(peer) && !peer.miniAppId ? peer : undefined;
+  }
+
+  function mirrorAgentRuntimeCheckpoint(
+    peerKey: string | null | undefined,
+    status: 'running' | 'completed' | 'failed' | 'interrupted',
+    operationId: string,
+    message?: string,
+  ): void {
+    const peer = agentPeerForRuntimeKey(peerKey);
+    if (!peer) return;
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    void mirrorAgentCloudSnapshot(agentId, FABU_AGENT_RUNTIME_CHECKPOINT_PATH, {
+      schemaVersion: 1,
+      agentId,
+      conversationId: peer.conversationId,
+      operationId,
+      status,
+      updatedAtMs: Date.now(),
+      ...(message ? { message } : {}),
+    });
+  }
+
+  function mirrorAgentConversationSnapshot(peerKey: string | null | undefined): void {
+    const peer = agentPeerForRuntimeKey(peerKey);
+    if (!peer?.conversationId) return;
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    window.setTimeout(() => {
+      const thread = botThreadsRef.current[peer.key] ?? [];
+      void mirrorAgentCloudSnapshot(agentId, fabuAgentConversationTranscriptPath(peer.conversationId!), {
+        schemaVersion: 1,
+        agentId,
+        conversationId: peer.conversationId,
+        entries: projectTranscriptEntries(thread),
+        updatedAtMs: Date.now(),
+      });
+    }, 0);
+  }
+
   async function mirrorBotAgentCloud(bot: BotSummary): Promise<void> {
     const identity = projectFabuBotIdentity(bot);
     const profile = projectFabuAgentProfile({
@@ -1908,7 +1950,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       botThreadsRef.current[peerKey] = update(botThreadsRef.current[peerKey] ?? []);
       return;
     }
-    setMessages(update);
+    setMessages((current) => {
+      const next = update(current);
+      if (peerKey) botThreadsRef.current[peerKey] = next;
+      return next;
+    });
   }
 
   function rekeyAssistantTurn(turn: AssistantTurn, operationId: string): AssistantTurn {
