@@ -18,6 +18,9 @@ export interface AgentDirectoryController {
       name?: string;
       title?: string;
       description?: string;
+      avatar?: string;
+      avatarShape?: string;
+      avatarColor?: string;
       notifyOnUpdates?: boolean;
       notificationsEnabled?: boolean;
     },
@@ -82,6 +85,9 @@ export function useAgentDirectoryController(
       name?: string;
       title?: string;
       description?: string;
+      avatar?: string;
+      avatarShape?: string;
+      avatarColor?: string;
       notifyOnUpdates?: boolean;
       notificationsEnabled?: boolean;
     },
