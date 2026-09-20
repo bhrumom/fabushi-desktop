@@ -1,4 +1,4 @@
-import { Bot, ChevronsLeft, ChevronsRight, Copy, EyeOff, MoreHorizontal, Pencil, Pin, Plus, Search, Settings, Plug, Trash2 } from 'lucide-react';
+import { Bot, ChevronsLeft, ChevronsRight, Copy, EyeOff, Megaphone, MoreHorizontal, Network, Pencil, Pin, Plus, Search, Settings, Plug, Trash2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { BotMark, type BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
 import type { GrokAgentSidebarItem } from '../grok-runtime/agent-model';
@@ -22,6 +22,9 @@ export type GrokAgentSidebarProps = {
   onHide(item: GrokAgentSidebarItem): void;
   onDuplicate(item: GrokAgentSidebarItem): void;
   onDelete(item: GrokAgentSidebarItem): void;
+  onReorderPinned(moved: GrokAgentSidebarItem, target: GrokAgentSidebarItem, position: 'before' | 'after'): void;
+  onBroadcast(): void;
+  onOpenNetwork(): void;
   onOpenPlugins(): void;
   onOpenSettings(): void;
 };
@@ -53,6 +56,7 @@ function AgentRow({
   onHide,
   onDuplicate,
   onDelete,
+  onReorderPinned,
 }: {
   item: GrokAgentSidebarItem;
   active: boolean;
@@ -64,6 +68,7 @@ function AgentRow({
   onHide(): void;
   onDuplicate(): void;
   onDelete(): void;
+  onReorderPinned(movedKey: string, targetKey: string, position: 'before' | 'after'): void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return <div className={styles.rowWrap} data-active={active || undefined} data-pinned={item.pinned || undefined}>
@@ -76,6 +81,26 @@ function AgentRow({
       data-agent-key={item.key}
       data-agent-id={item.agentId}
       onClick={onOpen}
+      draggable={item.pinned}
+      onDragStart={(event) => {
+        if (!item.pinned) return;
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/x-grok-agent-key', item.key);
+      }}
+      onDragOver={(event) => {
+        if (!item.pinned) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+      }}
+      onDrop={(event) => {
+        if (!item.pinned) return;
+        const movedKey = event.dataTransfer.getData('text/x-grok-agent-key');
+        if (!movedKey || movedKey === item.key) return;
+        event.preventDefault();
+        const bounds = event.currentTarget.getBoundingClientRect();
+        const position = event.clientY < bounds.top + bounds.height / 2 ? 'before' : 'after';
+        onReorderPinned(movedKey, item.key, position);
+      }}
       onDoubleClick={(event) => {
         if (item.isGroup) return;
         event.preventDefault();
@@ -97,7 +122,17 @@ function AgentRow({
           <strong>{item.name}</strong>
           <time>{relativeTime(item.updatedAtMs)}</time>
         </span>
-        <small>{item.busy ? 'Working…' : item.description || (item.isGroup ? 'Agent group' : 'Agent')}</small>
+        <small data-state={item.waitingReason ? 'waiting' : item.busy ? 'working' : item.unread ? 'unread' : undefined}>{
+          item.draftPrompt?.trim()
+            ? `Draft: ${item.draftPrompt.trim()}`
+            : item.waitingReason?.trim()
+              ? `Waiting for you: ${item.waitingReason.trim()}`
+              : item.busy
+                ? item.lastMessage?.trim() ? `Working… · ${item.lastMessage.trim()}` : 'Working…'
+                : item.isComposingMessage
+                  ? 'Composing…'
+                  : item.lastMessage?.trim() || item.description || (item.isGroup ? 'Agent group' : 'Agent')
+        }</small>
       </span>}
     </button>
     {collapsed ? null : <button
@@ -132,9 +167,13 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
 
   return <div className={styles.root} data-collapsed={props.collapsed || undefined}>
     <header className={styles.header}>
-      <button type="button" className={styles.newButton} onClick={props.onNewAgent} title="New chat" data-testid="grok-new-agent">
-        <Plus size={18} /><span>{props.collapsed ? null : 'New'}</span>
-      </button>
+      <div className={styles.headerActions}>
+        {!props.collapsed ? <button type="button" className={styles.headerIcon} onClick={props.onBroadcast} title="Broadcast to agents" aria-label="Broadcast to agents"><Megaphone size={16} /></button> : null}
+        {!props.collapsed ? <button type="button" className={styles.headerIcon} onClick={props.onOpenNetwork} title="Agent network" aria-label="Agent network"><Network size={16} /></button> : null}
+        <button type="button" className={styles.newButton} onClick={props.onNewAgent} title="New chat" data-testid="grok-new-agent">
+          <Plus size={18} /><span>{props.collapsed ? null : 'New'}</span>
+        </button>
+      </div>
       <button type="button" className={styles.collapseButton} onClick={props.onToggleCollapsed} title={props.collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
         {props.collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
       </button>
@@ -147,9 +186,13 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
 
     <div className={styles.list}>
       {pinned.length && !props.collapsed ? <div className={styles.sectionLabel}>Pinned</div> : null}
-      {pinned.map((item) => <AgentRow key={item.key} item={item} active={item.key === props.activeKey} collapsed={props.collapsed} hostReady={props.hostReady} onOpen={() => props.onOpen(item)} onTogglePin={() => props.onTogglePin(item)} onRename={() => props.onRename(item)} onHide={() => props.onHide(item)} onDuplicate={() => props.onDuplicate(item)} onDelete={() => props.onDelete(item)} />)}
+      {pinned.map((item) => <AgentRow key={item.key} item={item} active={item.key === props.activeKey} collapsed={props.collapsed} hostReady={props.hostReady} onOpen={() => props.onOpen(item)} onTogglePin={() => props.onTogglePin(item)} onRename={() => props.onRename(item)} onHide={() => props.onHide(item)} onDuplicate={() => props.onDuplicate(item)} onDelete={() => props.onDelete(item)} onReorderPinned={(movedKey, targetKey, position) => {
+        const moved = props.agents.find((candidate) => candidate.key === movedKey);
+        const target = props.agents.find((candidate) => candidate.key === targetKey);
+        if (moved && target) props.onReorderPinned(moved, target, position);
+      }} />)}
       {unpinned.length && !props.collapsed ? <div className={styles.sectionLabel}>Agents</div> : null}
-      {unpinned.map((item) => <AgentRow key={item.key} item={item} active={item.key === props.activeKey} collapsed={props.collapsed} hostReady={props.hostReady} onOpen={() => props.onOpen(item)} onTogglePin={() => props.onTogglePin(item)} onRename={() => props.onRename(item)} onHide={() => props.onHide(item)} onDuplicate={() => props.onDuplicate(item)} onDelete={() => props.onDelete(item)} />)}
+      {unpinned.map((item) => <AgentRow key={item.key} item={item} active={item.key === props.activeKey} collapsed={props.collapsed} hostReady={props.hostReady} onOpen={() => props.onOpen(item)} onTogglePin={() => props.onTogglePin(item)} onRename={() => props.onRename(item)} onHide={() => props.onHide(item)} onDuplicate={() => props.onDuplicate(item)} onDelete={() => props.onDelete(item)} onReorderPinned={() => {}} />)}
       {!visible.length && !props.collapsed ? <div className={styles.empty}><Bot size={24} /><strong>No agents yet</strong><small>Create a new chat to start an Agent.</small></div> : null}
     </div>
 
