@@ -1,8 +1,9 @@
 import React, { type ReactNode } from 'react';
-import { AppWindow, ArrowDown, Check, Copy, Edit3, RotateCcw } from 'lucide-react';
+import { AppWindow, ArrowDown, Check, Copy, Edit3, FileText, RotateCcw } from 'lucide-react';
 import { BotMark } from '../../../frontend/apps/web/src/app/host/bot-mark';
 import { MahayanaAssistantTurnView } from '../mahayana-assistant-turn-view';
 import type { TranscriptEntry } from './transcript-model';
+import { formatAgentAttachmentSize } from './agent-attachments';
 import styles from '../bot-conversation-view.module.css';
 
 export type AgentTranscriptProps = {
@@ -184,7 +185,13 @@ export default function AgentTranscript({
             {!userMessage ? <BotMark botId={botId} state={entry.streaming ? 'writing' : 'idle'} size={28} label={title} /> : null}
             <div className={styles.messageColumn}>
               <div className={styles.messageMeta}><span>{userMessage ? '你' : title}</span><time dateTime={new Date(entry.createdAtMs).toISOString()}>{formatTime(entry.createdAtMs)}</time></div>
-              <div className={styles.messageBody}><MarkdownContent value={entry.text || (entry.streaming ? ' ' : '暂无内容')} />{entry.streaming ? <span className={styles.streamingCursor} aria-label="正在生成" /> : null}</div>
+              {entry.text || entry.streaming ? <div className={styles.messageBody}><MarkdownContent value={entry.text || ' '} />{entry.streaming ? <span className={styles.streamingCursor} aria-label="正在生成" /> : null}</div> : null}
+              {entry.attachments?.length ? <div className={styles.messageAttachments} aria-label="Attachments">
+                {entry.attachments.map((attachment) => <span key={attachment.id} className={styles.messageAttachment}>
+                  <FileText size={15} />
+                  <span><strong>{attachment.name}</strong>{attachment.sizeBytes != null ? <small>{formatAgentAttachmentSize(attachment.sizeBytes)}</small> : null}</span>
+                </span>)}
+              </div> : null}
               {entry.miniAppId && onOpenMiniApp ? <button type="button" className={styles.artifactCard} data-testid="bot-miniapp-result" onClick={() => onOpenMiniApp(entry.miniAppId!)}><AppWindow size={22} /><span><strong>打开小程序</strong><small>查看并使用本次结果</small></span></button> : null}
               <div className={styles.messageState}>{entry.queued ? '排队中' : entry.optimistic ? '发送中' : null}</div>
             </div>
