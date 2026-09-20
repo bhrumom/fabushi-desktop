@@ -36,7 +36,10 @@ export class AgentCoordinatorClient {
     return this.transport.execute({
       type: 'chat.send',
       requestId: request.requestId,
-      text: composeAgentPromptText(request.text, request.replyTo),
+      text: composeAgentPromptText(
+        request.text.trim() || (request.attachments?.length ? 'Please review the attached file(s).' : request.text),
+        request.replyTo,
+      ),
       conversationId: request.conversationId,
       agentId: request.agentId,
       ...(request.attachments?.length ? { attachments: [...request.attachments] } : {}),
