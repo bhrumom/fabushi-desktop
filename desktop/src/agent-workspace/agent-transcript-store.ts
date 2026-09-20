@@ -77,6 +77,96 @@ export class AgentTranscriptStore {
     return projectTranscriptEntries(this.threads.get(peerKey) ?? []);
   }
 
+  appendUserMessage(
+    peerKey: string,
+    input: {
+      readonly id: string;
+      readonly text: string;
+      readonly createdAtMs: number;
+      readonly operationId?: string;
+      readonly optimistic?: boolean;
+      readonly queued?: boolean;
+      readonly attachments?: AgentTranscriptSourceMessage['attachments'];
+    },
+  ): AgentTranscriptSourceMessage[] {
+    const nextMessage: AgentTranscriptSourceMessage = {
+      id: input.id,
+      source: 'legacy',
+      role: 'me',
+      text: input.text,
+      createdAtMs: input.createdAtMs,
+      kind: 'message',
+      ...(input.operationId ? { operationId: input.operationId } : {}),
+      ...(input.optimistic ? { optimistic: true } : {}),
+      ...(input.queued ? { queued: true } : {}),
+      ...(input.attachments?.length ? { attachments: input.attachments } : {}),
+    };
+    return this.update(peerKey, (current) => {
+      const index = current.findIndex((message) => message.id === input.id);
+      if (index < 0) return [...current, nextMessage];
+      return current.map((message, messageIndex) =>
+        messageIndex === index ? { ...message, ...nextMessage } : message,
+      );
+    });
+  }
+
+  removeByIds(peerKey: string, ids: readonly string[]): AgentTranscriptSourceMessage[] {
+    if (!ids.length) return this.thread(peerKey);
+    const removed = new Set(ids);
+    return this.update(peerKey, (current) => current.filter((message) => !removed.has(message.id)));
+  }
+
+  markUserOperationAccepted(peerKey: string, operationId: string): AgentTranscriptSourceMessage[] {
+    return this.update(peerKey, (current) => current.map((message) =>
+      message.role === 'me'
+      && message.kind === 'message'
+      && message.operationId === operationId
+      && (message.optimistic || message.queued)
+        ? { ...message, optimistic: false, queued: false }
+        : message,
+    ));
+  }
+
+  reconcileUserMessage(
+    peerKey: string,
+    text: string,
+    operationId?: string,
+    now = Date.now(),
+  ): AgentTranscriptSourceMessage[] {
+    return this.update(peerKey, (current) => {
+      const optimisticIndex = current.findIndex((message) =>
+        message.role === 'me'
+        && message.kind === 'message'
+        && message.optimistic === true
+        && message.text === text,
+      );
+      if (optimisticIndex >= 0) {
+        return current.map((message, messageIndex) => messageIndex === optimisticIndex
+          ? {
+              ...message,
+              optimistic: false,
+              queued: false,
+              ...(operationId ? { operationId } : {}),
+            }
+          : message);
+      }
+      if (current.some((message) =>
+        message.role === 'me'
+        && message.kind === 'message'
+        && message.text === text
+        && (!operationId || message.operationId === operationId))) return current;
+      return [...current, {
+        id: `${operationId ?? 'agent'}:user:${now}`,
+        source: 'legacy',
+        role: 'me',
+        text,
+        createdAtMs: now,
+        kind: 'message',
+        ...(operationId ? { operationId } : {}),
+      }];
+    });
+  }
+
   adoptOperation(peerKey: string, requestId: string, operationId: string): AgentTranscriptSourceMessage[] {
     if (!requestId || requestId === operationId) return this.thread(peerKey);
     return this.update(peerKey, (current) => {
