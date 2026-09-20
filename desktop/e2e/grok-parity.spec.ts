@@ -98,6 +98,24 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.isBusy('agent:a')).toBe(false);
       expect(controller.isBusy('agent:b')).toBe(true);
       expect(controller.onlyPendingPeer()).toBe('agent:b');
+
+      controller.setDraft('agent:a', 'first prompt');
+      controller.appendAttachments('agent:a', [{ id: 'attachment:a', name: 'a.txt' }]);
+      controller.setReply('agent:a', { id: 'reply:a', role: 'peer', text: 'previous answer' });
+      controller.setDraft('agent:b', 'independent draft');
+
+      const submitted = controller.takeDraft('agent:a');
+      expect(submitted.text).toBe('first prompt');
+      expect(submitted.attachments.map((attachment) => attachment.id)).toEqual(['attachment:a']);
+      expect(submitted.replyTo?.id).toBe('reply:a');
+      expect(controller.draftForPeer('agent:a')).toBe('');
+      expect(controller.draftForPeer('agent:b')).toBe('independent draft');
+
+      controller.setDraft('agent:a', 'newer draft typed while the send was pending');
+      controller.restoreDraft('agent:a', submitted);
+      expect(controller.draftForPeer('agent:a')).toBe('newer draft typed while the send was pending');
+      expect(controller.attachmentsForPeer('agent:a').map((attachment) => attachment.id)).toEqual(['attachment:a']);
+      expect(controller.replyForPeer('agent:a')?.id).toBe('reply:a');
     });
 
     await test.step('parity stylesheet and surface marker load before authentication', async () => {
