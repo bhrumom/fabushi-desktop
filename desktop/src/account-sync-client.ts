@@ -34,8 +34,18 @@ export type AccountBotMembership = {
     username?: string;
     displayName?: string;
     description?: string;
+    title?: string;
+    hidden?: boolean;
+    avatar?: string;
+    avatarShape?: string;
+    avatarColor?: string;
+    notificationsEnabled?: boolean;
+    notifyOnUpdates?: boolean;
+    unread?: boolean;
     conversationId?: string;
     managedBy?: string;
+    mainApp?: boolean;
+    naturalLanguage?: boolean;
     menuButton?: Record<string, unknown>;
   };
   sources: Array<{ source: string; sourceId: string; addedAtMs?: number }>;
