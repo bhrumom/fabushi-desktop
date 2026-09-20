@@ -1,7 +1,7 @@
 import React, { type FormEvent, type ReactNode } from 'react';
 import type { BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
-import GrokAgentHeader from '../grok-shell/grok-agent-header';
-import GrokAgentComposer from '../grok-shell/grok-agent-composer';
+import AgentHeader from './agent-header';
+import AgentComposer from './agent-composer';
 import AgentTranscript, { type AgentTranscriptProps } from './agent-transcript';
 
 export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' | 'description' | 'botId'> {
@@ -26,11 +26,13 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   composerBusy: boolean;
   composerUploading?: boolean;
   composerAttachments?: ReadonlyArray<{ id: string; name: string; sizeBytes?: number }>;
+  composerReplyTarget?: { id: string; label: string; text: string };
   enterToSend: boolean;
   onComposerChange(value: string): void;
   onComposerSubmit(event: FormEvent<HTMLFormElement>): void;
   onComposerFiles(files: readonly File[]): void;
   onRemoveComposerAttachment(id: string): void;
+  onClearComposerReply?(): void;
   onTranscribeVoice?(file: File): Promise<string>;
   onStop(): void;
   notice?: ReactNode;
@@ -48,7 +50,7 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
  */
 export default function AgentWorkspace(props: AgentWorkspaceProps) {
   return <>
-    <GrokAgentHeader
+    <AgentHeader
       title={props.title}
       description={props.description}
       botId={props.botId}
@@ -86,13 +88,15 @@ export default function AgentWorkspace(props: AgentWorkspaceProps) {
     />
     {props.beforeComposer}
     {props.composerAccessory}
-    <GrokAgentComposer
+    <AgentComposer
       value={props.composerValue}
       agentName={props.title}
       ready={props.composerReady}
       busy={props.composerBusy}
       uploading={props.composerUploading}
       attachments={props.composerAttachments}
+      replyTarget={props.composerReplyTarget}
+      onClearReplyTarget={props.onClearComposerReply}
       enterToSend={props.enterToSend}
       onChange={props.onComposerChange}
       onSubmit={props.onComposerSubmit}
