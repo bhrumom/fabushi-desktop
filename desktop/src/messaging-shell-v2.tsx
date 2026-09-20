@@ -155,15 +155,11 @@ import { projectFabuAgentProfile, projectFabuAgentSettings, projectFabuBotIdenti
 import { FabuAgentStore } from './fabu-runtime/agent-store';
 import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
 import AgentSidebar, { type AgentSidebarItem as GrokAgentSidebarItem } from './agent-workspace/agent-sidebar';
+import AgentSearch from './agent-workspace/agent-search';
 import GrokAgentHeader from './grok-shell/grok-agent-header';
 import GrokAgentNetwork from './grok-shell/grok-agent-network';
 import GrokCommandPalette from './grok-shell/grok-command-palette';
 import { grokAgentKey, projectActiveGrokAgentKey, projectGrokAgentSidebarItems } from './grok-runtime/agent-model';
-import {
-  SidebarContactGroupManager,
-  projectSidebarContactGroups,
-  useSidebarContactGroups,
-} from './sidebar-contact-groups';
 import { MahayanaAssistantTurnView } from './mahayana-assistant-turn-view';
 import {
   assistantTurnPlainText,
@@ -310,7 +306,6 @@ type ForwardDialogState = { sourceConversationId: string; message: DisplayMessag
 type EditDialogState = { conversationId: string; messageId: string; originalText: string; text: string } | null;
 type InvoiceDialogState = { conversationId: string; title: string; amount: string } | null;
 type InfoTab = 'media' | 'files' | 'links';
-type SearchCategory = 'chats' | 'channels' | 'apps' | 'posts' | 'images' | 'videos' | 'downloads' | 'links' | 'files' | 'music' | 'audio';
 type SettingsCategory = 'account' | 'router' | 'usage' | 'updates' | 'notifications' | 'privacy' | 'data' | 'chat' | 'folders' | 'devices' | 'calls' | 'language' | 'advanced' | 'fabushi';
 
 type InferenceRouterStatus = {
@@ -351,20 +346,6 @@ type MessengerProjection = {
   selfMessages: Record<string, MessagingMessage[]>;
 };
 
-const searchCategories: ReadonlyArray<{ id: SearchCategory; label: string }> = [
-  { id: 'chats', label: '聊天' },
-  { id: 'channels', label: '频道' },
-  { id: 'apps', label: '应用' },
-  { id: 'posts', label: '贴文' },
-  { id: 'images', label: '图片' },
-  { id: 'videos', label: '视频' },
-  { id: 'downloads', label: '下载' },
-  { id: 'links', label: '链接' },
-  { id: 'files', label: '文件' },
-  { id: 'music', label: '音乐' },
-  { id: 'audio', label: '声音' },
-];
-
 const messengerSettingsKey = 'fabushi.desktop.messenger-settings.v2';
 const messengerDraftsKey = 'fabushi.desktop.messenger-drafts.v2';
 const messengerSidebarWidthKey = 'fabushi.desktop.sidebar-width.v3';
@@ -374,7 +355,6 @@ const messengerConversationJournalKey = 'fabushi.desktop.mahayana-conversation-j
 const miniAppExecutionPersistencePrefix = 'fabushi.desktop.miniapp-execution.v1:';
 const messengerPreferencesKey = 'fabushi.desktop.telegram-settings.v1';
 const grokPinnedOrderKey = 'fabushi.desktop.grok-pinned-order.v1';
-const initialPeerRenderCount = 120;
 const initialMessageRenderCount = 240;
 const initialSyncLimit = 20;
 const backgroundSyncLimit = 100;
@@ -1059,16 +1039,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [grokSidebarSectionsScope, setGrokSidebarSectionsScope] = useState<string | null>(null);
   const [grokSelectedAgentKeys, setGrokSelectedAgentKeys] = useState<string[]>([]);
   const grokSelectionAnchorRef = useRef<string | null>(null);
-  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
-  const [globalSearchCategory, setGlobalSearchCategory] = useState<SearchCategory>('chats');
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(330);
   const [conversationSearchOpen, setConversationSearchOpen] = useState(false);
   const [agentConversationSearch, setAgentConversationSearch] = useState('');
   const [desktopUpdateState, setDesktopUpdateState] = useState<UpdateState | null>(null);
   const [desktopUpdateBusy, setDesktopUpdateBusy] = useState(false);
-  const [peerRenderCount, setPeerRenderCount] = useState(initialPeerRenderCount);
   const [messageRenderCount, setMessageRenderCount] = useState(initialMessageRenderCount);
   const [desktopPreferences, setDesktopPreferences] = useState<DesktopMessengerPreferences>(() => readDesktopMessengerPreferences());
   const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>('account');
@@ -1117,7 +1092,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [mutedPeerKeys, setMutedPeerKeys] = useState<Set<string>>(() => new Set());
   const [pinnedPeerKeys, setPinnedPeerKeys] = useState<Set<string>>(() => new Set());
   const [archivedPeerKeys, setArchivedPeerKeys] = useState<Set<string>>(() => new Set());
-  const contactGroups = useSidebarContactGroups();
   const activePeerKeyRef = useRef<string | null>(null);
   const messagingCursorRef = useRef<string | null>(startupProjection?.cursor ?? null);
   const accountSyncCursorRef = useRef<string | null>(readAccountSyncCursor());
@@ -1132,7 +1106,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const sessionResetInFlightRef = useRef(false);
   const agentWorkspaceControllerRef = useRef(new AgentWorkspaceController());
   const pendingAgentDeltaRef = useRef(new Map<string, Extract<RuntimeEvent, { type: 'chat.delta' }>>());
@@ -1397,8 +1370,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (!activePeerKey) return;
     setComposer(drafts[activePeerKey] ?? '');
     setSearch('');
-    setGlobalSearchOpen(false);
     setConversationSearchOpen(false);
+    setAgentConversationSearch('');
     setMessageRenderCount(initialMessageRenderCount);
   }, [activePeerKey]);
 
@@ -1742,12 +1715,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }, 250);
     return () => window.clearTimeout(timer);
   }, [hostReady, section, miniAppQuery]);
-
-  useEffect(() => {
-    if (!hostReady || !globalSearchOpen || globalSearchCategory !== 'apps') return;
-    const timer = window.setTimeout(() => { void refreshMiniApps(search); }, 250);
-    return () => window.clearTimeout(timer);
-  }, [hostReady, globalSearchOpen, globalSearchCategory, search]);
 
   useEffect(() => {
     if (!hostReady) return;
@@ -2828,11 +2795,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const activeTypingActors = activePeer?.source === 'selfhosted' && activePeer.conversationId
     ? Object.keys(typingByConversation[activePeer.conversationId] ?? {})
     : [];
-  const visiblePeers = peers.filter((peer) => {
-    if (['chats', 'contacts', 'bots', 'groups', 'channels', 'saved', 'archive'].includes(section) && !matchesSection(peer, section)) return false;
-    const query = search.trim().toLowerCase();
-    return !query || `${peer.title} ${peer.subtitle}`.toLowerCase().includes(query);
-  });
   const sectionIsPeerList = ['chats', 'contacts', 'bots', 'groups', 'channels', 'saved', 'archive'].includes(section);
   const layoutInfoOpen = wideInfoLayout ? infoOpen : narrowInfoOpen;
   const infoPanelVisible = Boolean(layoutInfoOpen && activePeer && sectionIsPeerList);
@@ -2844,10 +2806,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     : localComputerOnline
       ? hostSettings.remoteControlEnabled ? '在线，等待连接' : '在线，仅可发现'
       : remoteComputerState?.running ? '正在注册' : '离线';
-  const renderedPeers = visiblePeers.slice(0, peerRenderCount);
-  const renderedContactGroups = ['chats', 'contacts'].includes(section) && contactGroups.groups.length
-    ? projectSidebarContactGroups(renderedPeers, contactGroups.groups, Boolean(search.trim()))
-    : [];
   const matchingMessages = messages;
   const renderedMessages = matchingMessages.slice(Math.max(0, matchingMessages.length - messageRenderCount));
   const botTranscriptMessages = activePeer && isAgentPeer(activePeer)
@@ -2864,31 +2822,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     || agentRequestSnapshot[activePeer.key]
   ));
 
-  function renderPeerRow(peer: PeerItem) {
-    const peerBusy = Boolean(agentOperationSnapshot[peer.key] || agentRequestSnapshot[peer.key]);
-    return <button data-testid={`legacy-peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
-      <BotMark
-        botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`}
-        state={isAgentPeer(peer) ? botMarkStateForPeer(peer, selfBotExecutions, peerBusy, hostReady) : peer.unread ? 'notifying' : 'idle'}
-        size={48}
-        className={styles.agentAvatarMark}
-        label={peer.title}
-      />
-      <span className={styles.peerCopy}>
-        <span><strong>{peer.title}</strong><time>{formatTime(peer.updatedAtMs)}</time></span>
-        <small>{desktopPreferences.messagePreview ? peer.subtitle : peer.unread ? '有新消息' : '消息预览已关闭'}</small>
-      </span>
-      <span className={styles.peerMeta}>{peer.pinned ? <Pin size={12} /> : null}{mutedPeerKeys.has(peer.key) ? <BellOff size={12} /> : null}{peer.unread ? <b>{peer.unread}</b> : null}</span>
-    </button>;
-  }
-
-  useEffect(() => {
-    setPeerRenderCount(initialPeerRenderCount);
-  }, [section, search]);
-
   async function createGrokAgent(): Promise<void> {
     setSection('bots');
-    setGlobalSearchOpen(false);
     setSearch('');
     newAgentRequestPendingRef.current = true;
     const accepted = await execute({
@@ -3318,7 +3253,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setShowScrollToLatest(false);
     setComposer(agentWorkspaceControllerRef.current.draftForPeer(peer.key) || drafts[peer.key] || '');
     setSearch('');
-    setGlobalSearchOpen(false);
     setMessageRenderCount(initialMessageRenderCount);
     setReplyTo(null);
     setError(null);
@@ -4433,17 +4367,6 @@ async function saveInvoiceDialog() {
     window.addEventListener('pointerup', onUp);
   }
 
-  function navigateFromProfile(next: MessengerSection) {
-    setProfileMenuOpen(false);
-    setGlobalSearchOpen(false);
-    if (next === 'saved') {
-      void ensureSavedMessages();
-      return;
-    }
-    if (next === 'settings' && section !== 'settings') settingsReturnSectionRef.current = section;
-    setSection(next);
-  }
-
   function closeSettings() {
     setSection(settingsReturnSectionRef.current === 'settings' ? 'bots' : settingsReturnSectionRef.current);
   }
@@ -4457,7 +4380,7 @@ async function saveInvoiceDialog() {
       data-reduce-motion={desktopPreferences.reducedMotion || undefined}
       data-testid-ready-projection={startupProjection ? 'true' : undefined}
       style={{ gridTemplateColumns: infoPanelDocked ? `${sidebarWidth}px minmax(420px,1fr) 286px` : `${sidebarWidth}px minmax(420px,1fr)` }}
-      onClick={() => { setMessageMenu(null); setProfileMenuOpen(false); setCreateMenuOpen(false); }}
+      onClick={() => { setMessageMenu(null); }}
     >
       <aside className={styles.chatList} data-testid="messenger-sidebar" data-collapsed={sidebarWidth <= 112 || undefined} onClick={(event) => event.stopPropagation()}>
         <AgentSidebar
@@ -4502,7 +4425,6 @@ async function saveInvoiceDialog() {
           }}
           onOpenPlugins={() => {
             setSearch('');
-            setGlobalSearchOpen(false);
             setSection('miniapps');
           }}
           onOpenSettings={() => {
@@ -4539,7 +4461,6 @@ async function saveInvoiceDialog() {
         }}
         onPlugins={() => {
           setSearch('');
-          setGlobalSearchOpen(false);
           setSection('miniapps');
         }}
         onSettings={() => {
@@ -4655,11 +4576,8 @@ async function saveInvoiceDialog() {
                 onToggleSearch={() => {
                   const next = !conversationSearchOpen;
                   setConversationSearchOpen(next);
-                  setGlobalSearchOpen(next);
-                  setGlobalSearchCategory(next ? 'posts' : 'chats');
-                  setSearch('');
-                  window.setTimeout(() => searchInputRef.current?.focus(), 0);
-                }}
+                  if (!next) setAgentConversationSearch('');
+                  }}
                 onToggleComputer={() => {
                   setComputerProfileOpen((value) => !value);
                   if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
@@ -4677,16 +4595,23 @@ async function saveInvoiceDialog() {
                   <button type="button" title="搜索当前会话" data-active={conversationSearchOpen} onClick={() => {
                     const next = !conversationSearchOpen;
                     setConversationSearchOpen(next);
-                    setGlobalSearchOpen(next);
-                    setGlobalSearchCategory(next ? 'posts' : 'chats');
                     setSearch('');
-                    window.setTimeout(() => searchInputRef.current?.focus(), 0);
-                  }}><Search size={18} /></button>
+                    }}><Search size={18} /></button>
                   <button type="button" title={activePeer.pinned ? '取消置顶' : '置顶'} onClick={() => void togglePinConversation(activePeer)}><Pin size={18} /></button>
                   <button type="button" title="资料" data-testid="conversation-info-toggle" data-active={layoutInfoOpen} onClick={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}><MoreVertical size={18} /></button>
                 </div>
               </header>
             )}
+            {conversationSearchOpen ? <AgentSearch
+              entries={isAgentPeer(activePeer) ? agentTranscriptEntries : projectTranscriptEntries(renderedMessages)}
+              query={agentConversationSearch}
+              onQuery={setAgentConversationSearch}
+              onClose={() => {
+                setConversationSearchOpen(false);
+                setAgentConversationSearch('');
+              }}
+              onSelect={scrollToTranscriptEntry}
+            /> : null}
             {error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
             {isAgentPeer(activePeer) ? (
               <BotConversationView
@@ -4875,7 +4800,7 @@ async function saveInvoiceDialog() {
           <div className={styles.profileCard}>
             <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady) : 'idle'} size={92} className={styles.agentProfileMark} label={activePeer.title} />
             <strong>{activePeer.title}</strong><small>{activePeer.subtitle}</small>
-            <div className={styles.profileQuickActions} data-columns={isAgentPeer(activePeer) ? '4' : '3'}><button type="button" onClick={() => void startCall('voice')}><PhoneCall size={18} /><span>通话</span></button><button type="button" onClick={() => void startCall('video')}><Video size={18} /><span>视频</span></button><button type="button" onClick={() => { setConversationSearchOpen(true); setGlobalSearchOpen(true); setGlobalSearchCategory('posts'); setSearch(''); window.setTimeout(() => searchInputRef.current?.focus(), 0); }}><Search size={18} /><span>搜索</span></button>{isAgentPeer(activePeer) ? <button type="button" data-testid="bot-computer-toggle" data-active={computerProfileOpen} onClick={() => {
+            <div className={styles.profileQuickActions} data-columns={isAgentPeer(activePeer) ? '4' : '3'}><button type="button" onClick={() => void startCall('voice')}><PhoneCall size={18} /><span>通话</span></button><button type="button" onClick={() => void startCall('video')}><Video size={18} /><span>视频</span></button><button type="button" onClick={() => { setConversationSearchOpen(true); setAgentConversationSearch(''); }}><Search size={18} /><span>搜索</span></button>{isAgentPeer(activePeer) ? <button type="button" data-testid="bot-computer-toggle" data-active={computerProfileOpen} onClick={() => {
               setComputerProfileOpen((value) => !value);
               void invokeNativeDesktop('reportOpenComputer', {
                 source: 'bot-profile',
@@ -4924,15 +4849,6 @@ async function saveInvoiceDialog() {
         )
       ) : null}
 
-      {contactGroups.managerOpen ? <SidebarContactGroupManager
-        peers={peers.filter((peer) => !peer.archived && peer.kind === 'contact').map((peer) => ({ key: peer.key, title: peer.title, subtitle: peer.subtitle, pinned: peer.pinned }))}
-        groups={contactGroups.groups}
-        onCreate={contactGroups.create}
-        onUpdate={contactGroups.update}
-        onRemove={contactGroups.remove}
-        onMove={contactGroups.move}
-        onClose={contactGroups.closeManager}
-      /> : null}
       {messageMenu ? <MessageContextMenu menu={messageMenu} onAction={(action) => void handleMessageAction(action)} /> : null}
       {forwardDialog ? <ForwardMessageDialog message={forwardDialog.message} peers={peers.filter((peer) => peer.source === 'selfhosted' && Boolean(peer.conversationId) && peer.conversationId !== forwardDialog.sourceConversationId)} onClose={() => setForwardDialog(null)} onSelect={(peer) => void forwardToPeer(peer)} /> : null}
       {editDialog ? <EditMessageDialog value={editDialog.text} onChange={(text) => setEditDialog((current) => current ? { ...current, text } : current)} onClose={() => setEditDialog(null)} onSave={() => void saveEditedMessage()} /> : null}
@@ -4971,94 +4887,6 @@ async function saveInvoiceDialog() {
       </div> : null}
     </main>
   );
-}
-
-function ProfileNavigationMenu({ section, onNavigate }: { section: MessengerSection; onNavigate: (section: MessengerSection) => void }) {
-  const items: Array<{ section: MessengerSection; label: string; icon: React.ReactNode }> = [
-    { section: 'chats', label: '聊天', icon: <MessageCircle size={17} /> },
-    { section: 'contacts', label: '联系人', icon: <Users size={17} /> },
-    { section: 'bots', label: 'Bots', icon: <Bot size={17} /> },
-    { section: 'groups', label: '群组', icon: <Users size={17} /> },
-    { section: 'channels', label: '频道', icon: <Radio size={17} /> },
-    { section: 'calls', label: '通话', icon: <Phone size={17} /> },
-    { section: 'saved', label: '收藏', icon: <Bookmark size={17} /> },
-    { section: 'archive', label: '归档', icon: <Archive size={17} /> },
-    { section: 'folders', label: '文件夹', icon: <Folder size={17} /> },
-    { section: 'miniapps', label: 'Mini Apps', icon: <AppWindow size={17} /> },
-    { section: 'payments', label: '支付', icon: <WalletCards size={17} /> },
-    { section: 'settings', label: '设置', icon: <Settings size={17} /> },
-  ];
-  return <div className={styles.profileNavigationMenu} data-testid="profile-navigation-menu" onClick={(event) => event.stopPropagation()}>
-    <header><BotMark botId="fabushi:navigation" state="idle" size={34} label="Fabushi" /><div><strong>Fabushi</strong><small>统一导航</small></div></header>
-    <div>{items.map((item) => <button key={item.section} type="button" title={item.label} data-testid={"profile-navigation-" + item.section} data-active={section === item.section} onClick={() => onNavigate(item.section)}>{item.icon}<span>{item.label}</span></button>)}</div>
-  </div>;
-}
-
-type GlobalSearchWorkspaceProps = {
-  query: string;
-  category: SearchCategory;
-  onCategory: (value: SearchCategory) => void;
-  scopePeer?: PeerItem | null;
-  peers: PeerItem[];
-  messages: DisplayMessage[];
-  miniApps: MarketplacePluginSummary[];
-  installedMiniApps: Record<string, InstalledPluginPointer>;
-  miniAppBusy: Set<string>;
-  miniAppLoading: boolean;
-  onOpenPeer: (peer: PeerItem) => void;
-  onOpenMiniApp: (id: string) => Promise<void>;
-  onInstallMiniApp: (app: MarketplacePluginSummary) => Promise<void>;
-  onUninstallMiniApp: (id: string) => Promise<void>;
-};
-
-function GlobalSearchWorkspace(props: GlobalSearchWorkspaceProps) {
-  const normalized = props.query.trim().toLocaleLowerCase();
-  const matches = (value: string) => !normalized || value.toLocaleLowerCase().includes(normalized);
-  const peerResults = props.peers.filter((peer) => matches(`${peer.title} ${peer.subtitle}`));
-  const messageResults = props.messages.filter((message) => matches(message.text));
-  const mediaResults = messageResults.filter((message) => {
-    if (props.category === 'images') return message.mediaType === 'photo';
-    if (props.category === 'videos') return message.mediaType === 'video';
-    if (props.category === 'files' || props.category === 'downloads') return message.mediaType === 'document';
-    if (props.category === 'links') return /https?:\/\//iu.test(message.text);
-    return props.category === 'posts';
-  });
-  const appResults = props.miniApps.filter((app) => matches(`${app.displayName} ${app.description} ${app.pluginId}`));
-  const unsupportedMediaCategory = props.category === 'music' || props.category === 'audio';
-  const categories = props.scopePeer
-    ? searchCategories.filter((item) => ['posts', 'images', 'videos', 'downloads', 'links', 'files', 'music', 'audio'].includes(item.id))
-    : searchCategories;
-
-  return <div className={styles.globalSearch} data-testid="global-search-surface" data-scoped={props.scopePeer ? 'true' : undefined}>
-    <nav className={styles.globalSearchTabs} aria-label={props.scopePeer ? '当前会话搜索分类' : '搜索分类'}>
-      {categories.map((item) => <button key={item.id} type="button" data-testid={`global-search-tab-${item.id}`} data-active={props.category === item.id} onClick={() => props.onCategory(item.id)}>{props.scopePeer && item.id === 'posts' ? '消息' : item.label}</button>)}
-    </nav>
-    <div className={styles.globalSearchResults}>
-      {!props.scopePeer && props.category === 'chats' ? peerResults.filter((peer) => peer.kind !== 'channel').map((peer) => <button key={peer.key} type="button" className={styles.searchResultRow} onClick={() => props.onOpenPeer(peer)}><BotMark botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`} state="idle" size={46} animated={false} label={peer.title} /><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><time>{formatTime(peer.updatedAtMs)}</time></button>) : null}
-      {!props.scopePeer && props.category === 'channels' ? peerResults.filter((peer) => peer.kind === 'channel').map((peer) => <button key={peer.key} type="button" className={styles.searchResultRow} onClick={() => props.onOpenPeer(peer)}><BotMark botId={`peer:channel:${peer.id}`} state="idle" size={46} animated={false} label={peer.title} /><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><time>{formatTime(peer.updatedAtMs)}</time></button>) : null}
-      {!props.scopePeer && props.category === 'apps' ? <div className={styles.searchAppResults}>{props.miniAppLoading ? <div className={styles.marketplaceStatus}>正在搜索在线应用市场…</div> : appResults.map((app) => {
-        const installed = props.installedMiniApps[app.pluginId];
-        const busy = props.miniAppBusy.has(app.pluginId);
-        const action = miniAppMarketplaceAction(app, installed);
-        const needsInstall = action === 'install' || action === 'update' || action === 'reinstall';
-        return <article key={app.pluginId} className={styles.searchAppCard} data-testid={`global-search-app-${app.pluginId}`}><BotMark botId={`miniapp:${app.pluginId}`} state={installed ? 'idle' : 'sleeping'} size={52} animated={false} label={app.displayName} /><div><strong>{app.displayName}</strong><small>{app.description}</small><em>{installed ? `已安装 ${installed.version}` : `在线 · ${app.latestVersion}`} · {miniAppReleaseLabel(app)}</em></div><aside>{installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}{needsInstall ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中' : marketplaceInstallActionLabel(action)}</button> : action === 'blocked' ? <button type="button" disabled>阻止降级</button> : null}{installed ? <button type="button" disabled={busy} onClick={() => void props.onUninstallMiniApp(app.pluginId)}>卸载</button> : null}</aside></article>;
-      })}</div> : null}
-      {['posts', 'images', 'videos', 'downloads', 'links', 'files'].includes(props.category) ? mediaResults.map((message) => <article key={message.id} className={styles.searchMessageResult}><BotMark botId={`search-message:${message.id}`} state="idle" size={38} animated={false} label="消息" /><div><p>{message.text || (message.mediaType === 'photo' ? '图片' : message.mediaType === 'video' ? '视频' : '文件')}</p><small>{new Date(message.createdAtMs).toLocaleString()}</small></div></article>) : null}
-      {unsupportedMediaCategory ? <SearchEmptyState label="当前会话尚无可搜索的音频索引" /> : null}
-      {!props.scopePeer && props.category === 'chats' && !peerResults.filter((peer) => peer.kind !== 'channel').length ? <SearchEmptyState label={normalized ? '没有匹配的聊天' : '最近搜索结果将显示在此处'} /> : null}
-      {!props.scopePeer && props.category === 'channels' && !peerResults.filter((peer) => peer.kind === 'channel').length ? <SearchEmptyState label={normalized ? '没有匹配的频道' : '最近搜索结果将显示在此处'} /> : null}
-      {!props.scopePeer && props.category === 'apps' && !props.miniAppLoading && !appResults.length ? <SearchEmptyState label="没有匹配的在线应用" /> : null}
-      {['posts', 'images', 'videos', 'downloads', 'links', 'files'].includes(props.category) && !mediaResults.length ? <SearchEmptyState label={normalized ? '当前已加载内容中没有匹配结果' : '最近搜索结果将显示在此处'} /> : null}
-    </div>
-  </div>;
-}
-
-function SearchEmptyState({ label }: { label: string }) {
-  return <div className={styles.globalSearchEmpty}><Search size={44} /><strong>{label}</strong><small>在左侧搜索框输入关键词，或切换分类继续搜索。</small></div>;
-}
-
-function EmptyList({ section }: { section: MessengerSection }) {
-  return <div className={styles.emptyList}><MessageCircle size={27} /><strong>暂无{sectionTitle(section)}</strong><p>新建会话后会显示在这里。</p></div>;
 }
 
 function AttachmentMenu({ onMedia, onFile, onPoll, onLocation, onSchedule }: { onMedia: () => void; onFile: () => void; onPoll: () => void; onLocation: () => void; onSchedule: () => void }) {
