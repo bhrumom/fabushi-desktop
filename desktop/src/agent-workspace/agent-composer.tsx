@@ -20,6 +20,7 @@ export interface AgentComposerMentionCandidate {
   id: string;
   name: string;
   description?: string;
+  kind?: 'agent' | 'mcp';
 }
 
 export interface AgentComposerWorkflowCandidate {
@@ -365,7 +366,7 @@ export default function AgentComposer({
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => insertMention(candidate)}
         >
-          <span><strong>@{candidate.name}</strong>{candidate.description ? <small>{candidate.description}</small> : null}</span>
+          <span><strong>@{candidate.name}</strong>{candidate.description ? <small>{candidate.description}</small> : null}</span><small>{candidate.kind === 'mcp' ? 'MCP' : 'Agent'}</small>
         </button>)}
       </div> : null}
       {workflowResults.length ? <div className={styles.mentions} role="listbox" aria-label="Reference a workflow">
