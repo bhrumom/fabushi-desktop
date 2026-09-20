@@ -25,8 +25,11 @@ const violations = forbidden
 if (!/new AgentRuntimeCoordinator\s*\(/.test(shell)) {
   violations.push('AgentRuntimeCoordinator is not mounted by the desktop Agent shell');
 }
-if (!/agentTranscriptStoreRef\.current\.thread\(activePeer\.key\)/.test(shell)) {
+if (!/agentTranscriptStoreRef\.current\.(?:thread|entries)\(activePeer\.key\)/.test(shell)) {
   violations.push('normal Agent rendering no longer reads directly from AgentTranscriptStore');
+}
+if (/toDisplayAgentMessages\(agentTranscriptStoreRef\.current\.(?:thread|entries)/.test(shell)) {
+  violations.push('normal Agent rendering reintroduced the Messenger DisplayMessage bridge');
 }
 if (!/agentCoordinatorClient\.connect\s*\(/.test(shell)) {
   violations.push('Host transport lifecycle escaped AgentCoordinatorClient');
