@@ -10,6 +10,7 @@ const shell = fs.readFileSync(shellPath, 'utf8');
 const forbidden = [
   ['renderer-global Agent operation pointer', /\bagentOperationId\b/],
   ['renderer-global pending Agent send pointer', /\bpendingSend\b/],
+  ['renderer-owned queued Agent transcript', /\bqueuedAgentPrompts\b/],
   ['renderer-owned Agent delta buffer', /pendingAgentDeltaRef|agentDeltaFrameRef/],
   ['renderer-owned Agent operation claiming', /\bclaimAgentOperation\s*\(/],
   ['renderer-owned Agent operation clearing', /\bclearAgentOperation\s*\(/],
