@@ -4496,7 +4496,7 @@ async function saveInvoiceDialog() {
               <button type="button" data-enabled={hostSettings.remoteControlEnabled} onClick={() => updateHostSetting('remoteControlEnabled', !hostSettings.remoteControlEnabled)}>{hostSettings.remoteControlEnabled ? '关闭远程控制' : '开启远程控制'}</button>
               <button type="button" onClick={() => agentComputer.openControlPage(activePeer.agentId ?? activePeer.actorId ?? activePeer.id)}>打开控制页面</button>
             </div>
-            {agentComputer.state?.error ? <small className={styles.computerProfileError}>{remoteComputerState.error}</small> : null}
+            {agentComputer.state?.error ? <small className={styles.computerProfileError}>{agentComputer.state.error}</small> : null}
           </section> : null}
           <nav className={styles.infoTabs}><button type="button" data-active={infoTab === 'media'} onClick={() => setInfoTab('media')}>媒体</button><button type="button" data-active={infoTab === 'files'} onClick={() => setInfoTab('files')}>文件</button><button type="button" data-active={infoTab === 'links'} onClick={() => setInfoTab('links')}>链接</button></nav>
           <div className={styles.infoContent}>{infoTab === 'media' ? <><Image size={30} /><strong>共享媒体</strong><p>图片、视频和动画按消息索引展示。</p></> : null}{infoTab === 'files' ? <><FileText size={30} /><strong>共享文件</strong><p>文档、音频和附件由 Rust 媒体层管理。</p></> : null}{infoTab === 'links' ? <><Link2 size={30} /><strong>共享链接</strong><p>富文本 URL 建立可搜索索引。</p></> : null}</div>
