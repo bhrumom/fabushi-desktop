@@ -1,6 +1,6 @@
 import type { ApprovalResolution, AttachmentContext, AuthState, HostConfig, HostInfo, RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { MahayanaHostTransport } from '../../../frontend/apps/web/src/lib/mahayana-host/transport';
-import { composeAgentPromptText, type AgentReplyContext } from './prompt-context';
+import { composeAgentPromptText, type AgentPromptReference, type AgentReplyContext } from './prompt-context';
 
 type HostCommand = Parameters<MahayanaHostTransport['execute']>[0];
 
@@ -10,6 +10,7 @@ export interface AgentPromptRequest {
   readonly conversationId?: string;
   readonly agentId?: string;
   readonly attachments?: readonly AttachmentContext[];
+  readonly references?: readonly AgentPromptReference[];
   readonly replyTo?: AgentReplyContext;
 }
 
@@ -164,6 +165,7 @@ export class AgentCoordinatorClient {
       text: composeAgentPromptText(
         request.text.trim() || (request.attachments?.length ? 'Please review the attached file(s).' : request.text),
         request.replyTo,
+        request.references,
       ),
       conversationId: request.conversationId,
       agentId: request.agentId,
