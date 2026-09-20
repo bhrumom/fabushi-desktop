@@ -2687,12 +2687,49 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [conversations, bots, accountBots, groups, selfActors, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps, selfHosted.actorId]);
 
   peersRef.current = peers;
+  const grokActivityByPeer = Object.fromEntries(peers.map((peer) => {
+    const thread = peer.key === activePeerKey
+      ? messages
+      : peer.miniAppId
+        ? miniAppBotThreadsRef.current[peer.miniAppId] ?? []
+        : botThreadsRef.current[peer.key] ?? [];
+    const lastMessage = [...thread]
+      .reverse()
+      .find((message) => message.kind === 'message' && Boolean(message.text.trim()));
+    const isComposingMessage = peer.source === 'selfhosted'
+      && Boolean(peer.conversationId)
+      && Object.keys(typingByConversation[peer.conversationId!] ?? {}).length > 0;
+    return [peer.key, {
+      draftPrompt: drafts[peer.key],
+      lastMessage: lastMessage?.text.trim().slice(0, 180),
+      isComposingMessage,
+    }] as const;
+  }));
   const grokAgentItems: GrokAgentSidebarItem[] = projectGrokAgentSidebarItems(
     peers,
     agentOperationByPeer,
+    grokActivityByPeer,
+    grokPinnedOrder,
   );
+  const pinnedGrokAgentKeys = grokAgentItems.filter((item) => item.pinned).map((item) => item.key);
+  const pinnedGrokAgentSignature = pinnedGrokAgentKeys.join('\u001f');
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
   const activeGrokAgentKey = projectActiveGrokAgentKey(activePeer);
+
+  useEffect(() => {
+    setGrokPinnedOrder((current) => {
+      const pinned = new Set(pinnedGrokAgentKeys);
+      const next = [
+        ...current.filter((key) => pinned.has(key)),
+        ...pinnedGrokAgentKeys.filter((key) => !current.includes(key)),
+      ];
+      if (next.length === current.length && next.every((key, index) => key === current[index])) {
+        return current;
+      }
+      persistGrokPinnedOrder(next);
+      return next;
+    });
+  }, [pinnedGrokAgentSignature]);
 
   useEffect(() => {
     if (!pendingOpenAgentId) return;
@@ -2864,9 +2901,50 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
+  function reorderGrokPinned(
+    moved: GrokAgentSidebarItem,
+    target: GrokAgentSidebarItem,
+    position: 'before' | 'after',
+  ): void {
+    if (!moved.pinned || !target.pinned || moved.key === target.key) return;
+    setGrokPinnedOrder((current) => {
+      const pinned = grokAgentItems.filter((item) => item.pinned).map((item) => item.key);
+      const base = [
+        ...current.filter((key) => pinned.includes(key)),
+        ...pinned.filter((key) => !current.includes(key)),
+      ].filter((key) => key !== moved.key);
+      const targetIndex = base.indexOf(target.key);
+      const insertionIndex = targetIndex < 0
+        ? base.length
+        : position === 'after'
+          ? targetIndex + 1
+          : targetIndex;
+      base.splice(insertionIndex, 0, moved.key);
+      persistGrokPinnedOrder(base);
+      return base;
+    });
+  }
+
+  async function broadcastGrokAgents(message: string, targetAgentIds?: string[]): Promise<void> {
+    try {
+      await transport.execute({
+        type: 'agent.broadcast',
+        requestId: nextRequestId('grok-agent-broadcast'),
+        ...(targetAgentIds?.length ? { targetIds: targetAgentIds } : {}),
+        message,
+      });
+    } catch (cause) {
+      const reason = cause instanceof Error ? cause.message : String(cause);
+      setError(reason);
+      throw cause;
+    }
+  }
+
   function openGrokAgent(item: GrokAgentSidebarItem): void {
     const peer = peerForGrokAgent(item);
     if (!peer) return;
+    setGrokNetworkOpen(false);
+    setGrokNetworkBroadcastMode(false);
     setSection('bots');
     void openPeer(peer);
   }
@@ -4124,6 +4202,15 @@ async function saveInvoiceDialog() {
           onHide={(item) => void hideGrokAgent(item)}
           onDuplicate={(item) => void duplicateGrokAgent(item)}
           onDelete={(item) => void deleteGrokAgent(item)}
+          onReorderPinned={reorderGrokPinned}
+          onBroadcast={() => {
+            setGrokNetworkBroadcastMode(true);
+            setGrokNetworkOpen(true);
+          }}
+          onOpenNetwork={() => {
+            setGrokNetworkBroadcastMode(false);
+            setGrokNetworkOpen(true);
+          }}
           onOpenPlugins={() => {
             setSearch('');
             setGlobalSearchOpen(false);
@@ -4279,6 +4366,14 @@ async function saveInvoiceDialog() {
         onClose={() => setGrokPaletteOpen(false)}
         onOpenAgent={openGrokAgent}
         onNewAgent={() => void createGrokAgent()}
+        onNetwork={() => {
+          setGrokNetworkBroadcastMode(false);
+          setGrokNetworkOpen(true);
+        }}
+        onBroadcast={() => {
+          setGrokNetworkBroadcastMode(true);
+          setGrokNetworkOpen(true);
+        }}
         onPlugins={() => {
           setSearch('');
           setGlobalSearchOpen(false);
@@ -4291,7 +4386,19 @@ async function saveInvoiceDialog() {
       />
 
       <section className={styles.chatWorkspace}>
-        {activePeer && sectionIsPeerList ? (
+        <GrokAgentNetwork
+          open={grokNetworkOpen}
+          agents={grokAgentItems}
+          activeKey={activeGrokAgentKey}
+          broadcastMode={grokNetworkBroadcastMode}
+          onClose={() => {
+            setGrokNetworkOpen(false);
+            setGrokNetworkBroadcastMode(false);
+          }}
+          onOpenAgent={openGrokAgent}
+          onBroadcast={broadcastGrokAgents}
+        />
+        {grokNetworkOpen ? null : activePeer && sectionIsPeerList ? (
           <>
             {isAgentPeer(activePeer) ? (
               <GrokAgentHeader
