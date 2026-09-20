@@ -2511,6 +2511,8 @@ pub enum HostEvent {
     #[serde(rename = "mcp.toolResult")]
     McpToolResult {
         timestamp: String,
+        #[serde(rename = "requestId")]
+        request_id: String,
         server: String,
         tool: String,
         result: Value,
