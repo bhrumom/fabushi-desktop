@@ -2948,6 +2948,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     rememberActiveBotThread();
     activePeerKeyRef.current = peer.key;
     setActivePeerKey(peer.key);
+    if (isAgentPeer(peer)) projectActiveAgentOperation(peer.key);
+    else {
+      agentOperationIdRef.current = null;
+      setAgentOperationId(null);
+      setPendingSend(false);
+      agentRequestPendingRef.current = false;
+      agentRequestPeerRef.current = null;
+      agentRequestIdRef.current = null;
+    }
     stickToLatestRef.current = true;
     setShowScrollToLatest(false);
     setComposer(drafts[peer.key] ?? '');
