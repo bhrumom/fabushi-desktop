@@ -4102,7 +4102,7 @@ async function saveInvoiceDialog() {
           open={agentNetworkController.open}
           agents={agentItems}
           groups={agentNetworkController.groups}
-          peerMessages={agentNetworkController.peerMessages}
+          peerMessagesByAgentId={agentNetworkController.peerMessagesByAgentId}
           activeKey={activeAgentKey}
           broadcastMode={agentNetworkController.broadcastMode}
           onClose={agentNetworkController.close}
