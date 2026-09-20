@@ -158,7 +158,7 @@ import AgentSidebar, { type AgentSidebarItem as GrokAgentSidebarItem } from './a
 import AgentSearch from './agent-workspace/agent-search';
 import GrokAgentHeader from './grok-shell/grok-agent-header';
 import AgentNetwork from './agent-workspace/agent-network';
-import GrokCommandPalette from './grok-shell/grok-command-palette';
+import AgentCommandPalette from './agent-workspace/agent-command-palette';
 import { grokAgentKey, projectActiveGrokAgentKey, projectGrokAgentSidebarItems } from './grok-runtime/agent-model';
 import { MahayanaAssistantTurnView } from './mahayana-assistant-turn-view';
 import type { AssistantTurn } from './mahayana-assistant-turn';
@@ -4297,7 +4297,7 @@ async function saveInvoiceDialog() {
         />
       </aside>
 
-      <GrokCommandPalette
+      <AgentCommandPalette
         open={grokPaletteOpen}
         agents={grokAgentItems}
         query={grokPaletteQuery}
