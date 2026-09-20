@@ -479,6 +479,8 @@ impl NativeEngine {
         // still goes through authorization, execute_tool, loop protection,
         // and function_call_output history, so the UI reflects real work.
         let mut explicit_tool_plan = explicit_tool_request_plan(&prompt);
+        let conversational_fast_path = is_lightweight_conversation_prompt(&prompt)
+            && explicit_tool_plan.is_empty();
         let mut last_workflow_id: Option<String> = None;
 
         for turn in 0..self.config.max_model_turns {
@@ -510,21 +512,32 @@ impl NativeEngine {
             ));
             let sink: SharedModelEventSink = collector.clone();
             let started = Instant::now();
+            let mut model_metadata = json!({
+                "instructions": self.config.system_instructions,
+                "tools": tool_definitions(
+                    self.config.enable_process_tools,
+                    self.web_research.is_some(),
+                ),
+                "tool_choice": "auto",
+                "parallel_tool_calls": false,
+            });
+            if conversational_fast_path && turn == 0 {
+                // Grok-style fast conversational lane: greetings/small-talk do
+                // not need the full tool schema or deep reasoning budget. This
+                // removes avoidable first-token latency without weakening real
+                // Agent tasks, which remain on the normal tool-capable path.
+                model_metadata["tools"] = json!([]);
+                model_metadata["tool_choice"] = json!("none");
+                model_metadata["reasoning"] = json!({ "effort": "low" });
+                model_metadata["max_output_tokens"] = json!(512);
+            }
             let inference = self
                 .model
                 .infer(
                     ModelRequest {
                         model: self.config.model.clone(),
                         input: Value::Array(session.history.clone()),
-                        metadata: json!({
-                            "instructions": self.config.system_instructions,
-                            "tools": tool_definitions(
-                                self.config.enable_process_tools,
-                                self.web_research.is_some(),
-                            ),
-                            "tool_choice": "auto",
-                            "parallel_tool_calls": false,
-                        }),
+                        metadata: model_metadata,
                     },
                     sink,
                 )
@@ -2015,6 +2028,37 @@ impl ModelEventSink for ModelCollector {
         }
         Ok(())
     }
+}
+
+fn is_lightweight_conversation_prompt(prompt: &str) -> bool {
+    let value = prompt.trim();
+    if value.is_empty() || value.chars().count() > 48 || value.contains('\n') {
+        return false;
+    }
+    let normalized = value
+        .trim_matches(|ch: char| ch.is_ascii_punctuation() || ch.is_whitespace())
+        .to_lowercase();
+    matches!(
+        normalized.as_str(),
+        "你好"
+            | "您好"
+            | "嗨"
+            | "哈喽"
+            | "在吗"
+            | "早上好"
+            | "下午好"
+            | "晚上好"
+            | "谢谢"
+            | "谢谢你"
+            | "hi"
+            | "hello"
+            | "hey"
+            | "thanks"
+            | "thank you"
+            | "good morning"
+            | "good afternoon"
+            | "good evening"
+    )
 }
 
 fn workspace_root(session: &NativeSession) -> Result<&Path, KernelError> {
