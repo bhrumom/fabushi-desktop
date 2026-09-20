@@ -83,6 +83,10 @@ function rgbLuma(value: string): number {
   return components[0] * 0.2126 + components[1] * 0.7152 + components[2] * 0.0722;
 }
 
+function primaryMahayanaAgentPeer(page: Page) {
+  return page.getByTestId('messenger-sidebar').locator('button[data-agent-id="mahayana-assistant"]');
+}
+
 test('desktop uses the Fabushi-owned Grok parity surface without a parallel Messenger', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-grok-parity-'));
   const app = await launchDesktopApp(appDataDir);
@@ -573,7 +577,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
     });
 
     await test.step('Agent conversation and composer expose dark low-contrast material', async () => {
-      const peer = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
+      const peer = primaryMahayanaAgentPeer(page);
       await expect(peer).toBeVisible();
       await peer.click();
       const input = page.getByTestId('messenger-input');
@@ -582,7 +586,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       const material = await page.evaluate(() => {
         const inputElement = document.querySelector('[data-testid="messenger-input"]');
         const composer = inputElement?.closest('[data-testid="grok-agent-composer"]');
-        const peerElement = document.querySelector('[data-testid="peer-legacy:conversation:mahayana-ai:agent:assistant"]');
+        const peerElement = document.querySelector('#root [data-testid="messenger-sidebar"] button[data-agent-id="mahayana-assistant"]');
         if (!composer || !peerElement) return null;
         const composerStyle = getComputedStyle(composer);
         const peerStyle = getComputedStyle(peerElement);
@@ -659,7 +663,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
     });
 
     await test.step('Agent sidebar supports modifier selection and account-scoped sections', async () => {
-      const peer = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
+      const peer = primaryMahayanaAgentPeer(page);
       await peer.click({ modifiers: [process.platform === 'darwin' ? 'Meta' : 'Control'] });
       const selectionBar = page.getByTestId('agent-selection-bar');
       await expect(selectionBar).toBeVisible();
