@@ -1,5 +1,6 @@
 import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { MahayanaHostTransport } from '../../../frontend/apps/web/src/lib/mahayana-host/transport';
+import { composeAgentPromptText, type AgentReplyContext } from './prompt-context';
 
 type HostCommand = Parameters<MahayanaHostTransport['execute']>[0];
 
@@ -9,6 +10,7 @@ export interface AgentPromptRequest {
   readonly conversationId?: string;
   readonly agentId?: string;
   readonly attachments?: readonly AttachmentContext[];
+  readonly replyTo?: AgentReplyContext;
 }
 
 export interface AgentAttachmentUpload {
@@ -34,7 +36,7 @@ export class AgentCoordinatorClient {
     return this.transport.execute({
       type: 'chat.send',
       requestId: request.requestId,
-      text: request.text,
+      text: composeAgentPromptText(request.text, request.replyTo),
       conversationId: request.conversationId,
       agentId: request.agentId,
       ...(request.attachments?.length ? { attachments: [...request.attachments] } : {}),
