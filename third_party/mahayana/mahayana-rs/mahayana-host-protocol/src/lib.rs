@@ -248,6 +248,10 @@ pub struct SkillTeamSummary {
 #[serde(rename_all = "camelCase")]
 pub struct BotSummary {
     pub id: String,
+    /// Runtime Agent identity owned by this Bot. Bot id and Agent id are
+    /// intentionally separate so contacts, bots, and agents never alias.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     pub name: String,
     pub description: String,
     #[serde(default)]
