@@ -50,6 +50,21 @@ export function agentWorkspaceKey(peer: AgentPeerProjection): string {
     : `agent:${peer.agentId ?? peer.actorId ?? peer.id}`;
 }
 
+export function agentMatchesGroupMember(agent: AgentSidebarItem, memberId: string): boolean {
+  return memberId === agent.agentId || memberId === agent.id;
+}
+
+export function indexAgentsByRuntimeOrSurfaceId(
+  agents: readonly AgentSidebarItem[],
+): ReadonlyMap<string, AgentSidebarItem> {
+  const index = new Map<string, AgentSidebarItem>();
+  for (const agent of agents) {
+    index.set(agent.agentId, agent);
+    index.set(agent.id, agent);
+  }
+  return index;
+}
+
 function mergeActivity(
   preferred: AgentSidebarItem,
   fallback: AgentSidebarItem,
