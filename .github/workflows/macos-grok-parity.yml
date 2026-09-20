@@ -105,18 +105,36 @@ jobs:
           test -n "$APP"
           ASAR="$APP/Contents/Resources/app.asar"
           test -f "$ASAR"
-          ASAR_CLI="$(find node_modules/@electron/asar -type f \( -name 'asar.js' -o -name 'cli.js' \) -print -quit)"
-          test -n "$ASAR_CLI"
-          node "$ASAR_CLI" list "$ASAR" | sort > "$RUNNER_TEMP/asar-entries.txt"
-          find electron -type f -name '*.cjs' -print | sed 's#^#/#' | sort > "$RUNNER_TEMP/source-electron-cjs.txt"
-          comm -23 "$RUNNER_TEMP/source-electron-cjs.txt" "$RUNNER_TEMP/asar-entries.txt" > "$RUNNER_TEMP/missing-electron-cjs.txt"
-          if [ -s "$RUNNER_TEMP/missing-electron-cjs.txt" ]; then
-            echo "::error::Packaged app.asar is missing Electron runtime modules:"
-            cat "$RUNNER_TEMP/missing-electron-cjs.txt"
-            exit 1
-          fi
-          grep -Fx '/electron/grok-conversation-outline.cjs' "$RUNNER_TEMP/asar-entries.txt"
-          echo "All Electron .cjs runtime modules are present in app.asar."
+          node - "$ASAR" <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const asar = require('@electron/asar');
+          const asarPath = process.argv[2];
+          const normalize = value => String(value).replace(/^[/\\]+/, '').replaceAll('\\', '/');
+          const entries = new Set(asar.listPackage(asarPath).map(normalize));
+          const expected = [];
+          const walk = dir => {
+            for (const name of fs.readdirSync(dir)) {
+              const full = path.join(dir, name);
+              const stat = fs.statSync(full);
+              if (stat.isDirectory()) walk(full);
+              else if (name.endsWith('.cjs') && !name.endsWith('.test.cjs') && !name.endsWith('.bench.cjs')) {
+                expected.push(normalize(full));
+              }
+            }
+          };
+          walk('electron');
+          const missing = expected.filter(file => !entries.has(file));
+          if (missing.length) {
+            console.error('Packaged app.asar is missing Electron runtime modules:\n' + missing.join('\n'));
+            process.exit(1);
+          }
+          if (!entries.has('electron/grok-conversation-outline.cjs')) {
+            console.error('Packaged app.asar is missing electron/grok-conversation-outline.cjs');
+            process.exit(1);
+          }
+          console.log(`Verified ${expected.length} Electron runtime .cjs modules in app.asar.`);
+          NODE
 
       - name: Notarize and staple macOS disk image
         shell: bash

@@ -130,6 +130,8 @@
     "files": [
       "dist/**",
       "electron/**/*.cjs",
+      "!electron/**/*.test.cjs",
+      "!electron/**/*.bench.cjs",
       "electron/bootstrap.cjs",
       "electron/main.cjs",
       "electron/preload.cjs",
