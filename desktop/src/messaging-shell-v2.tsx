@@ -1504,7 +1504,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       // persisted opt-in before any remote session polling is allowed.
       controlEnabled: remoteControlEnabledRef.current,
       resolveAgentId: (requestedAgentId) => requestedAgentId === 'mahayana-assistant'
-        || peersRef.current.some((peer) => isAgentPeer(peer) && (peer.actorId ?? peer.id) === requestedAgentId)
+        || peersRef.current.some((peer) => isAgentPeer(peer)
+          && (peer.agentId ?? peer.actorId ?? peer.id) === requestedAgentId)
         ? requestedAgentId
         : null,
       onState: (state) => {
