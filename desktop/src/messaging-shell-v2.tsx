@@ -1013,6 +1013,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [pendingOpenAgentId, setPendingOpenAgentId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>(startupProjection?.legacyConversations ?? []);
   const [bots, setBots] = useState<BotSummary[]>(startupProjection?.legacyBots ?? []);
+  const [agentWorkflowsById, setAgentWorkflowsById] = useState<Record<string, WorkflowSummary[]>>({});
   const [groups, setGroups] = useState<GroupSummary[]>(startupProjection?.legacyGroups ?? []);
   const [selfActors, setSelfActors] = useState<MessagingActor[]>(startupProjection?.selfActors ?? []);
   const [selfConversations, setSelfConversations] = useState<MessagingConversation[]>(startupProjection?.selfConversations ?? []);
@@ -2186,6 +2187,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }).catch(() => {});
         break;
       case 'workflow.listed':
+        setAgentWorkflowsById((current) => ({ ...current, [event.agentId]: event.workflows }));
         void mirrorAgentCloudSnapshot(event.agentId, FABU_AGENT_WORKFLOW_INDEX_PATH, {
           version: 1,
           workflows: event.workflows,
@@ -3197,6 +3199,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           setError(cause instanceof Error ? cause.message : String(cause));
         });
       }
+      void execute({
+        type: 'workflow.list',
+        requestId: nextRequestId('workflow-composer'),
+        agentId: peer.agentId ?? peer.actorId ?? peer.id,
+      }).catch(() => {});
       return;
     }
     if (peer.kind === 'group' && peer.groupId) {
@@ -4514,6 +4521,9 @@ async function saveInvoiceDialog() {
                 composerMentionCandidates={grokAgentItems
                   .filter((item) => item.key !== activePeer.key)
                   .map((item) => ({ id: item.agentId || item.key, name: item.name, description: item.description }))}
+                composerWorkflowCandidates={(agentWorkflowsById[activePeer.agentId ?? activePeer.actorId ?? activePeer.id] ?? [])
+                  .filter((workflow) => workflow.isEnabledForAgent)
+                  .map((workflow) => ({ id: workflow.id, name: workflow.name, description: workflow.description }))}
                 enterToSend={desktopPreferences.enterToSend}
                 onComposerChange={updateComposer}
                 onComposerMention={(candidate) => {
