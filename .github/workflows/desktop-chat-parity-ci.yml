@@ -49,6 +49,15 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: third_party/mahayana/mahayana-rs -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Build deterministic Mahayana test host
+        run: npm run build:host:ci
       - run: npm run build:renderer
       - name: Run Mahayana chat regression
         env:
