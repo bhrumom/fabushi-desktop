@@ -179,8 +179,8 @@ export function miniAppBotProjection(app: MarketplacePluginSummary): MiniAppBotP
 }
 
 export function installedMiniAppBotProjections(
-  catalog: MarketplacePluginSummary[],
-  installed: Record<string, InstalledPluginPointer>,
+  catalog: readonly MarketplacePluginSummary[],
+  installed: Readonly<Record<string, InstalledPluginPointer>>,
 ): MiniAppBotProjection[] {
   return catalog
     .filter((app) => Boolean(installed[app.pluginId]))

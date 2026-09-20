@@ -324,7 +324,7 @@ impl MahayanaRuntime {
                 }
                 let conversation_id = capability.conversation_id;
                 let operation_id =
-                    self.start_message(conversation_id.clone(), text, client_message_id, false)?;
+                    self.start_message(conversation_id.clone(), text, client_message_id, None, false)?;
                 Ok(RuntimeResponse::CapabilityAccepted {
                     capability_id: capability.id,
                     conversation_id,
