@@ -82,13 +82,9 @@ export function MahayanaAssistantTurnView({
       </div>
       <div className="mahayana-assistant-turn__body">
         {turn.parts.map(renderPart)}
-        {turn.status !== 'running' ? (
+        {turn.status === 'failed' || turn.status === 'interrupted' ? (
           <span className="mahayana-assistant-turn__meta" data-turn-status={turn.status}>
-            {turn.status === 'completed'
-              ? '完成'
-              : turn.status === 'failed'
-                ? '失败'
-                : '已暂停'}
+            {turn.status === 'failed' ? '失败' : '已暂停'}
           </span>
         ) : null}
       </div>
