@@ -11,8 +11,16 @@ import {
   toggleAgentSidebarSection,
   type AgentSidebarSection,
 } from './agent-sidebar-state';
+import {
+  readAccountSidebarLayout,
+  writeAccountSidebarLayout,
+} from './account-sidebar-layout';
 
-const pinnedOrderKey = 'fabushi.desktop.grok-pinned-order.v1';
+const legacyPinnedOrderKey = 'fabushi.desktop.grok-pinned-order.v1';
+
+function pinnedOrderKey(accountScope: string): string {
+  return `fabushi.desktop.agent-pinned-order.v2.${encodeURIComponent(accountScope)}`;
+}
 
 export interface AgentSidebarStateItem {
   readonly key: string;
@@ -40,28 +48,56 @@ export interface AgentSidebarController {
   toggleSection(sectionId: string): void;
 }
 
-function readPinnedOrder(): string[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const value = JSON.parse(window.localStorage.getItem(pinnedOrderKey) || '[]');
-    return Array.isArray(value)
-      ? value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
-      : [];
-  } catch {
-    return [];
-  }
+function normalizePinnedOrder(value: unknown): string[] {
+  return Array.isArray(value)
+    ? [...new Set(value.filter((entry): entry is string =>
+        typeof entry === 'string' && entry.trim().length > 0,
+      ).map((entry) => entry.trim()))]
+    : [];
 }
 
-function persistPinnedOrder(order: readonly string[]): void {
-  if (typeof window === 'undefined') return;
-  const value = [...order];
-  try {
-    window.localStorage.setItem(pinnedOrderKey, JSON.stringify(value));
-  } catch {
-    // Native persistence below remains the durable mirror.
+function readPinnedOrder(accountScope: string): string[] {
+  if (typeof window === 'undefined') return [];
+  for (const key of [pinnedOrderKey(accountScope), legacyPinnedOrderKey]) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) continue;
+      const value = normalizePinnedOrder(JSON.parse(raw));
+      if (value.length) return value;
+    } catch {
+      // Try the next durable mirror.
+    }
+  }
+  return [];
+}
+
+async function readPinnedOrderDurable(accountScope: string): Promise<string[]> {
+  const fallback = readPinnedOrder(accountScope);
+  for (const key of [pinnedOrderKey(accountScope), legacyPinnedOrderKey]) {
+    try {
+      const value = normalizePinnedOrder(
+        await invokeNativeDesktop<unknown>('readClientPersistence', { key }),
+      );
+      if (value.length) return value;
+    } catch {
+      // Native persistence is an offline mirror; cloud hydration below remains authoritative.
+    }
+  }
+  return fallback;
+}
+
+function persistPinnedOrder(accountScope: string, order: readonly string[]): void {
+  const key = pinnedOrderKey(accountScope);
+  const value = normalizePinnedOrder(order);
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // Native persistence remains the local durable mirror.
+    }
   }
   void invokeNativeDesktop<boolean>('writeClientPersistence', {
-    key: pinnedOrderKey,
+    key,
     value,
   }).catch(() => {});
 }
@@ -69,77 +105,90 @@ function persistPinnedOrder(order: readonly string[]): void {
 /**
  * Agent-owned sidebar state controller.
  *
- * Pinned ordering, custom sections and multi-selection are durable Agent
- * workspace concerns, not Messenger navigation state. The shell may supply
- * prompts/confirmations, but it no longer owns these state machines.
+ * Pinned ordering and custom sections are one account workspace document.
+ * LocalStorage/Native Host are offline mirrors only; authenticated devices
+ * converge through the account Agent-store CAS object (etag + revision).
  */
 export function useAgentSidebarController(
   accountScope: string | null | undefined,
 ): AgentSidebarController {
-  const [pinnedOrder, setPinnedOrderState] = useState<string[]>(readPinnedOrder);
+  const [pinnedOrder, setPinnedOrderState] = useState<string[]>([]);
   const [sections, setSections] = useState<AgentSidebarSection[]>([]);
-  const [sectionsScope, setSectionsScope] = useState<string | null>(null);
+  const [layoutScope, setLayoutScope] = useState<string | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const selectionAnchorRef = useRef<string | null>(null);
-  const sectionMutationRevisionRef = useRef(0);
+  const layoutMutationRevisionRef = useRef(0);
+  const cloudWriteChainRef = useRef<Promise<unknown>>(Promise.resolve());
 
   const updatePinnedOrder = useCallback((build: (current: readonly string[]) => string[]) => {
     setPinnedOrderState((current) => {
       const next = build(current);
-      if (next.length === current.length && next.every((key, index) => key === current[index])) return current;
-      persistPinnedOrder(next);
+      if (next.length === current.length && next.every((key, index) => key === current[index])) {
+        return current;
+      }
+      layoutMutationRevisionRef.current += 1;
       return next;
     });
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    void invokeNativeDesktop<unknown>('readClientPersistence', { key: pinnedOrderKey }).then((value) => {
-      if (cancelled || !Array.isArray(value)) return;
-      const nativeOrder = value.filter((entry): entry is string =>
-        typeof entry === 'string' && entry.length > 0,
-      );
-      if (!nativeOrder.length) return;
-      try {
-        window.localStorage.setItem(pinnedOrderKey, JSON.stringify(nativeOrder));
-      } catch {
-        // Native persistence remains authoritative.
-      }
-      setPinnedOrderState(nativeOrder);
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
     setSelectedKeys([]);
     selectionAnchorRef.current = null;
+    setLayoutScope(null);
     if (!accountScope) {
+      setPinnedOrderState([]);
       setSections([]);
-      setSectionsScope(null);
       return;
     }
 
+    const scope = accountScope;
     let cancelled = false;
-    const hydrationMutationRevision = sectionMutationRevisionRef.current;
-    setSections(readAgentSidebarSections(accountScope));
-    setSectionsScope(null);
-    void readAgentSidebarSectionsDurable(accountScope).then((nextSections) => {
+    const hydrationMutationRevision = layoutMutationRevisionRef.current;
+    setPinnedOrderState(readPinnedOrder(scope));
+    setSections(readAgentSidebarSections(scope));
+
+    void Promise.all([
+      readPinnedOrderDurable(scope),
+      readAgentSidebarSectionsDurable(scope),
+      readAccountSidebarLayout(scope).catch(() => null),
+    ]).then(([nativePinnedOrder, nativeSections, cloud]) => {
       if (cancelled) return;
-      if (sectionMutationRevisionRef.current === hydrationMutationRevision) {
-        setSections(nextSections);
+      if (layoutMutationRevisionRef.current === hydrationMutationRevision) {
+        if (cloud) {
+          setPinnedOrderState(cloud.layout.pinnedOrder);
+          setSections(cloud.layout.sections);
+        } else {
+          setPinnedOrderState(nativePinnedOrder);
+          setSections(nativeSections);
+        }
       }
-      // If the user mutated sections while the durable read was in flight,
-      // keep the newer local state and allow the persistence effect to write
-      // it back instead of letting an older native snapshot clobber it.
-      setSectionsScope(accountScope);
+      // Any user mutation that raced hydration stays local and is written via
+      // CAS after scope activation instead of being clobbered by an old device.
+      setLayoutScope(scope);
     });
+
     return () => { cancelled = true; };
   }, [accountScope]);
 
   useEffect(() => {
-    if (!accountScope || sectionsScope !== accountScope) return;
+    if (!accountScope || layoutScope !== accountScope) return;
+    persistPinnedOrder(accountScope, pinnedOrder);
     persistAgentSidebarSections(accountScope, sections);
-  }, [accountScope, sections, sectionsScope]);
+
+    const scope = accountScope;
+    const pinnedSnapshot = [...pinnedOrder];
+    const sectionSnapshot = sections.map((section) => ({
+      ...section,
+      agentKeys: [...section.agentKeys],
+    }));
+    // Serialize writes from this renderer. Each cloud write still performs its
+    // own server-side CAS read/write cycle so a second device cannot be blindly
+    // overwritten with a stale etag.
+    cloudWriteChainRef.current = cloudWriteChainRef.current
+      .catch(() => undefined)
+      .then(() => writeAccountSidebarLayout(scope, pinnedSnapshot, sectionSnapshot))
+      .catch(() => undefined);
+  }, [accountScope, layoutScope, pinnedOrder, sections]);
 
   const reconcilePinnedOrder = useCallback((pinnedKeys: readonly string[]) => {
     updatePinnedOrder((current) => {
@@ -205,7 +254,7 @@ export function useAgentSidebarController(
 
   const createSection = useCallback((name: string, items: readonly AgentSidebarStateItem[]) => {
     const sectionable = items.filter((item) => !item.pinned).map((item) => item.key);
-    sectionMutationRevisionRef.current += 1;
+    layoutMutationRevisionRef.current += 1;
     setSections((current) => createAgentSidebarSection(current, name, sectionable).sections);
     clearSelection();
   }, [clearSelection]);
@@ -213,23 +262,23 @@ export function useAgentSidebarController(
   const moveToSection = useCallback((items: readonly AgentSidebarStateItem[], sectionId: string) => {
     const keys = items.filter((item) => !item.pinned).map((item) => item.key);
     if (!keys.length) return;
-    sectionMutationRevisionRef.current += 1;
+    layoutMutationRevisionRef.current += 1;
     setSections((current) => assignAgentsToSidebarSection(current, keys, sectionId));
     clearSelection();
   }, [clearSelection]);
 
   const renameSection = useCallback((sectionId: string, name: string) => {
-    sectionMutationRevisionRef.current += 1;
+    layoutMutationRevisionRef.current += 1;
     setSections((current) => renameAgentSidebarSection(current, sectionId, name));
   }, []);
 
   const removeSection = useCallback((sectionId: string) => {
-    sectionMutationRevisionRef.current += 1;
+    layoutMutationRevisionRef.current += 1;
     setSections((current) => removeAgentSidebarSection(current, sectionId));
   }, []);
 
   const toggleSection = useCallback((sectionId: string) => {
-    sectionMutationRevisionRef.current += 1;
+    layoutMutationRevisionRef.current += 1;
     setSections((current) => toggleAgentSidebarSection(current, sectionId));
   }, []);
 
