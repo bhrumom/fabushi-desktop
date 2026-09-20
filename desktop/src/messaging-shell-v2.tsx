@@ -46,6 +46,7 @@ import type {
   AuthState,
   BotSummary,
   ConversationSummary,
+  ComputerStatus,
   GroupSummary,
   InferenceProvider,
   ProductHostSettings,
@@ -1078,6 +1079,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [infoTab, setInfoTab] = useState<InfoTab>('media');
   const [computerProfileOpen, setComputerProfileOpen] = useState(false);
   const [remoteComputerState, setRemoteComputerState] = useState<RemoteComputerDesktopState | null>(null);
+  const [computerCapabilityStatus, setComputerCapabilityStatus] = useState<ComputerStatus | null>(null);
   // Compatibility Messenger/Mini App sends retain transport pending state.
   // Agent request/operation ownership is exclusively per-peer in the workspace controller.
   const [legacySendPending, setLegacySendPending] = useState(false);
@@ -1184,6 +1186,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       {
         onTranscriptChanged: () => notifyAgentWorkspaceState(),
         onOperationChanged: () => notifyAgentWorkspaceState(),
+        onComputerStatus: (status) => setComputerCapabilityStatus(status),
         onOperationStarted: (peerKey, operationId) => {
           mirrorAgentRuntimeCheckpoint(peerKey, 'running', operationId);
         },
@@ -1503,6 +1506,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setHostReady(state.phase === 'ready');
         if (state.phase !== 'ready' || !state.recovered) return;
         void execute({ type: 'settings.get', requestId: nextRequestId('settings-recover') }).catch(() => {});
+        void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-recover')).catch(() => {});
         refreshLegacy();
         const activeKey = activePeerKeyRef.current;
         const active = peersRef.current.find((peer) => peer.key === activeKey);
@@ -1551,6 +1555,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           })
           .catch(() => {});
         void execute({ type: 'settings.get', requestId: nextRequestId('settings-get') });
+        void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-startup')).catch(() => {});
         refreshLegacy();
         if (startupLegacyConversation) {
           void execute({
@@ -2675,11 +2680,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const infoPanelDocked = Boolean(infoPanelVisible && wideInfoLayout);
   const currentActor = selfActors.find((actor) => actor.id === selfHosted.actorId);
   const localComputerOnline = Boolean(remoteComputerState?.running && remoteComputerState.registration);
-  const localComputerStatus = remoteComputerState?.channelOpen
-    ? '正在远程控制'
-    : localComputerOnline
-      ? hostSettings.remoteControlEnabled ? '在线，等待连接' : '在线，仅可发现'
-      : remoteComputerState?.running ? '正在注册' : '离线';
+  const localComputerStatus = computerCapabilityStatus && !computerCapabilityStatus.available
+    ? '本机控制不可用'
+    : computerCapabilityStatus && (!computerCapabilityStatus.accessibilityGranted || !computerCapabilityStatus.screenRecordingGranted)
+      ? '需要系统权限'
+      : remoteComputerState?.channelOpen
+        ? '正在远程控制'
+        : localComputerOnline
+          ? hostSettings.remoteControlEnabled ? '在线，等待连接' : '在线，仅可发现'
+          : remoteComputerState?.running ? '正在注册' : computerCapabilityStatus?.available ? '本机可用' : '离线';
   // Normal Agent timelines render directly from AgentTranscriptStore. The
   // renderer-global messages array is now compatibility-only for Messenger,
   // groups and Mini Apps.
@@ -4405,6 +4414,7 @@ async function saveInvoiceDialog() {
                 onToggleComputer={() => {
                   setComputerProfileOpen((value) => !value);
                   if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
+                  void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-open')).catch(() => {});
                 }}
                 onTogglePin={() => void togglePinConversation(activePeer)}
                 onToggleInfo={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}
@@ -4665,8 +4675,10 @@ async function saveInvoiceDialog() {
               aiControlEnabled: hostSettings.aiComputerControlEnabled,
               remoteControlEnabled: hostSettings.remoteControlEnabled,
               state: remoteComputerState,
+              capabilityStatus: computerCapabilityStatus,
               onToggle: () => {
                 setComputerProfileOpen((value) => !value);
+                void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-overlay')).catch(() => {});
                 void invokeNativeDesktop('reportOpenComputer', {
                   source: 'agent-workspace',
                   agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
