@@ -1,6 +1,4 @@
 use super::*;
-use base64::Engine as _;
-
 const AGENT_STORE_BUCKET: &str = "AGENT_STORE";
 const MAX_AGENT_OBJECT_BYTES: usize = 8 * 1024 * 1024;
 const MAX_CLOUD_KEYS: i64 = 1024;
@@ -341,7 +339,18 @@ pub(super) async fn account_bot_remove(
     };
     let bot_id = normalized_identity(route_identifier(&context, "bot_id")?, "Bot id")?;
     let database = context.env.d1(DATABASE_BINDING)?;
-    let result = worker::query!(
+    let existed = worker::query!(
+        &database,
+        "SELECT COUNT(*) AS count FROM account_bot_profiles
+         WHERE account_user_id = ?1 AND bot_id = ?2",
+        &account.user_id,
+        &bot_id
+    )?
+    .first::<CountRow>(None)
+    .await?
+    .map(|row| row.count > 0)
+    .unwrap_or(false);
+    worker::query!(
         &database,
         "DELETE FROM account_bot_profiles WHERE account_user_id = ?1 AND bot_id = ?2",
         &account.user_id,
@@ -359,7 +368,7 @@ pub(super) async fn account_bot_remove(
         now,
     ).await?;
     Response::from_json(&json!({
-        "removed": result.meta().map(|meta| meta.changes() > 0).unwrap_or(false),
+        "removed": existed,
         "botId": bot_id,
         "agentStoreRetained": true,
     }))
