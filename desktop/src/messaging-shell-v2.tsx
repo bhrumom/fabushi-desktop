@@ -128,7 +128,7 @@ import {
   persistAgentWorkspaceDrafts,
   readAgentWorkspaceDrafts,
 } from './agent-workspace/agent-draft-store';
-import type { AgentReplyContext } from './agent-workspace/prompt-context';
+import type { AgentPromptReference, AgentReplyContext } from './agent-workspace/prompt-context';
 import {
   assignAgentsToSidebarSection,
   createAgentSidebarSection,
@@ -1154,7 +1154,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     send: async (input) => {
       const peer = peersRef.current.find((candidate) => candidate.key === input.peerKey);
       if (!peer || !isAgentPeer(peer)) throw new Error('Agent peer is no longer available.');
-      await dispatchAgentPromptNow(peer, input.prompt, input.messageId, input.attachments, input.replyTo);
+      await dispatchAgentPromptNow(peer, input.prompt, input.messageId, input.attachments, input.replyTo, input.references);
     },
     onPhase: (submission) => {
       if (submission.phase === 'queued') {
@@ -1177,6 +1177,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       controller.restoreDraft(submission.peerKey, {
         text: submission.prompt,
         attachments: submission.attachments ? [...submission.attachments] : [],
+        references: submission.references ? [...submission.references] : [],
         replyTo: submission.replyTo,
       });
       notifyAgentWorkspaceState();
@@ -1223,6 +1224,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       controller.draftSnapshot(),
       controller.attachmentSnapshot(),
       controller.replySnapshot(),
+      controller.referenceSnapshot(),
     );
   }, [agentWorkspaceRevision]);
 
@@ -2966,7 +2968,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       && isAgentPeer(peer)
     );
     if (isWorkspaceAgent) {
-      agentWorkspaceControllerRef.current.setDraft(activeKey, value);
+      const controller = agentWorkspaceControllerRef.current;
+      controller.setDraft(activeKey, value);
+      controller.pruneReferences(activeKey, value);
       notifyAgentWorkspaceState();
       return;
     }
@@ -3052,6 +3056,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     existingMessageId?: string,
     attachments: readonly AttachmentContext[] = [],
     replyContext?: AgentReplyContext,
+    references: readonly AgentPromptReference[] = [],
   ): Promise<void> {
     const registry = agentWorkspaceControllerRef.current;
     if (registry.isBusy(peer.key)) {
@@ -3075,6 +3080,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         agentId: peer.agentId ?? peer.actorId,
         attachments,
         replyTo: replyContext,
+        references,
       });
       if (!accepted) {
         agentRuntimeCoordinator.cancelLocalTurn(peer.key, requestId, optimisticId);
@@ -3100,6 +3106,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     existingMessageId?: string,
     attachments: readonly AttachmentContext[] = [],
     replyContext?: AgentReplyContext,
+    references: readonly AgentPromptReference[] = [],
   ) {
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
     const messageId = existingMessageId ?? nextRequestId('queued-chat-send');
@@ -3111,6 +3118,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       prompt: text,
       ...(attachments.length ? { attachments: [...attachments] } : {}),
       ...(replyContext ? { replyTo: replyContext } : {}),
+      ...(references.length ? { references: [...references] } : {}),
       createdAtMs: Date.now(),
     });
   }
@@ -3239,6 +3247,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         undefined,
         submittedDraft.attachments,
         submittedDraft.replyTo,
+        submittedDraft.references ?? [],
       );
       setScheduledAtMs(undefined);
       return;
@@ -4497,6 +4506,14 @@ async function saveInvoiceDialog() {
                   .map((item) => ({ id: item.agentId || item.key, name: item.name, description: item.description }))}
                 enterToSend={desktopPreferences.enterToSend}
                 onComposerChange={updateComposer}
+                onComposerMention={(candidate) => {
+                  agentWorkspaceControllerRef.current.upsertReference(activePeer.key, {
+                    kind: 'agent',
+                    id: candidate.id,
+                    label: candidate.name,
+                  });
+                  notifyAgentWorkspaceState();
+                }}
                 onComposerSubmit={(event) => void sendMessage(event)}
                 onComposerFiles={(files) => void stageAgentFiles(activePeer, files)}
                 onRemoveComposerAttachment={(attachmentId) => removeAgentAttachment(activePeer.key, attachmentId)}
