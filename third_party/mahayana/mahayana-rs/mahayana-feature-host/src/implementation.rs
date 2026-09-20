@@ -1522,6 +1522,7 @@ impl FeatureHostController {
                     .cloned()
                     .ok_or_else(|| FeatureHostError::Contract(format!("unknown bot: {id}")))?;
                 let new_id = next_id(&mut state, "agent");
+                let source_agent_id = bot_runtime_agent_id(&source).to_string();
                 let clone_name = clone_agent_display_name(&source.name);
                 let bot = BotSummary {
                     id: new_id.clone(),
@@ -1538,6 +1539,10 @@ impl FeatureHostController {
                     unread: false,
                     conversation_id: Some(format!("codex:agent:{new_id}")),
                 };
+                // Match Fabu clone semantics: copy reusable Agent-owned state
+                // (memory, automations, workflow enablement) but never transcript
+                // history, audits, attachments, or teach recordings.
+                self.clone_agent_local_state(&source_agent_id, &new_id)?;
                 state.bots.insert(new_id, bot.clone());
                 ("cloned", bot)
             }
@@ -5608,6 +5613,24 @@ impl FeatureHostController {
             return Ok(());
         };
         persist_fabu_agent_manifest(&root.join(agent_id), bot)
+    }
+
+    fn clone_agent_local_state(
+        &self,
+        source_agent_id: &str,
+        target_agent_id: &str,
+    ) -> Result<(), FeatureHostError> {
+        if !is_safe_memory_agent_id(source_agent_id)
+            || !is_safe_memory_agent_id(target_agent_id)
+        {
+            return Err(FeatureHostError::Contract(
+                "unsafe Agent id for clone".into(),
+            ));
+        }
+        let Some(root) = self.active_account_root(self.memory_root_path.as_deref()) else {
+            return Ok(());
+        };
+        clone_fabu_agent_local_state(&root, source_agent_id, target_agent_id)
     }
 
     fn persist_groups(
@@ -11505,6 +11528,78 @@ fn persist_json_atomic(path: &Path, value: &Value, label: &str) -> Result<(), Fe
     std::fs::rename(&temp, path)
         .map_err(|error| FeatureHostError::Contract(format!("commit {label}: {error}")))?;
     Ok(())
+}
+
+fn copy_agent_state_tree(source: &Path, target: &Path) -> Result<(), FeatureHostError> {
+    if !source.exists() {
+        return Ok(());
+    }
+    std::fs::create_dir_all(target).map_err(|error| {
+        FeatureHostError::Contract(format!("create cloned Agent directory: {error}"))
+    })?;
+    for entry in std::fs::read_dir(source).map_err(|error| {
+        FeatureHostError::Contract(format!("read Agent clone source: {error}"))
+    })? {
+        let entry = entry.map_err(|error| {
+            FeatureHostError::Contract(format!("read Agent clone entry: {error}"))
+        })?;
+        let file_type = entry.file_type().map_err(|error| {
+            FeatureHostError::Contract(format!("inspect Agent clone entry: {error}"))
+        })?;
+        let destination = target.join(entry.file_name());
+        if file_type.is_symlink() {
+            continue;
+        }
+        if file_type.is_dir() {
+            copy_agent_state_tree(&entry.path(), &destination)?;
+        } else if file_type.is_file() {
+            std::fs::copy(entry.path(), &destination).map_err(|error| {
+                FeatureHostError::Contract(format!("copy Agent clone file: {error}"))
+            })?;
+        }
+    }
+    Ok(())
+}
+
+fn clone_fabu_agent_local_state(
+    agent_root: &Path,
+    source_agent_id: &str,
+    target_agent_id: &str,
+) -> Result<(), FeatureHostError> {
+    let source = agent_root.join(source_agent_id);
+    if !source.exists() {
+        return Ok(());
+    }
+    let target = agent_root.join(target_agent_id);
+    if target.exists() {
+        return Err(FeatureHostError::Contract(format!(
+            "Agent clone target already exists: {target_agent_id}"
+        )));
+    }
+    std::fs::create_dir_all(&target).map_err(|error| {
+        FeatureHostError::Contract(format!("create Agent clone target: {error}"))
+    })?;
+    let result = (|| {
+        copy_agent_state_tree(&source.join("memory"), &target.join("memory"))?;
+        copy_agent_state_tree(&source.join("automations"), &target.join("automations"))?;
+        let workflow_enablement = source.join(WORKFLOW_ENABLEMENT_FILENAME);
+        if workflow_enablement.is_file() {
+            std::fs::copy(
+                &workflow_enablement,
+                target.join(WORKFLOW_ENABLEMENT_FILENAME),
+            )
+            .map_err(|error| {
+                FeatureHostError::Contract(format!(
+                    "copy Agent workflow enablement: {error}"
+                ))
+            })?;
+        }
+        Ok::<(), FeatureHostError>(())
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_dir_all(&target);
+    }
+    result
 }
 
 fn persist_fabu_agent_manifest(agent_dir: &Path, bot: &BotSummary) -> Result<(), FeatureHostError> {
