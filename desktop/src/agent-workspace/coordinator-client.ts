@@ -252,6 +252,15 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  listMemory(requestId: string, agentId: string, limit = 1000) {
+    return this.transport.execute({
+      type: 'memory.list',
+      requestId,
+      agentId,
+      limit,
+    } as HostCommand);
+  }
+
   refreshComputerStatus(requestId: string) {
     return this.transport.execute({
       type: 'computer.status',
