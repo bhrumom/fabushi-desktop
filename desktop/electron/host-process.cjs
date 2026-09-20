@@ -191,6 +191,7 @@ class MahayanaHostProcess {
     this.env = options.env ?? process.env;
     this.platform = options.platform ?? process.platform;
     this.resourcesPath = options.resourcesPath ?? process.resourcesPath;
+    this.electronDir = options.electronDir ?? __dirname;
     this.now = options.now ?? Date.now;
     this.fs = options.fs ?? fs;
     this.providerEnvironment = options.providerEnvironment ?? (() => ({}));
@@ -222,12 +223,29 @@ class MahayanaHostProcess {
   }
 
   executablePath() {
-    if (!this.app.isPackaged && this.env.MAHAYANA_APP_HOST_BIN) {
-      return this.env.MAHAYANA_APP_HOST_BIN;
-    }
     const name = this.platform === 'win32' ? 'mahayana-app-host.exe' : 'mahayana-app-host';
     if (this.app.isPackaged) return path.join(this.resourcesPath, 'bin', name);
-    return path.resolve(__dirname, '..', '..', 'third_party', 'mahayana', 'mahayana-rs', 'target', 'release', name);
+
+    const explicit = String(this.env.MAHAYANA_APP_HOST_BIN || '').trim();
+    if (explicit) return explicit;
+
+    // CI and development builds stage the exact Host generation that should
+    // accompany the renderer into desktop/resources/bin. Prefer that staged
+    // executable before falling back to a local release-profile Cargo build.
+    const staged = path.resolve(this.electronDir, '..', 'resources', 'bin', name);
+    if (safeIsFileSync(this.fs, staged)) return staged;
+
+    return path.resolve(
+      this.electronDir,
+      '..',
+      '..',
+      'third_party',
+      'mahayana',
+      'mahayana-rs',
+      'target',
+      'release',
+      name,
+    );
   }
 
   health() {
