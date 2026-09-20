@@ -917,25 +917,6 @@ function DesktopFastStartBootstrap() {
           </button>
         </div>
       </aside>
-      <GrokCommandPalette
-        open={grokPaletteOpen}
-        agents={grokAgentItems}
-        query={grokPaletteQuery}
-        onQuery={setGrokPaletteQuery}
-        onClose={() => setGrokPaletteOpen(false)}
-        onOpenAgent={openGrokAgent}
-        onNewAgent={() => void createGrokAgent()}
-        onPlugins={() => {
-          setSearch('');
-          setGlobalSearchOpen(false);
-          setSection('miniapps');
-        }}
-        onSettings={() => {
-          settingsReturnSectionRef.current = 'bots';
-          setSection('settings');
-        }}
-      />
-
       <section className={styles.chatWorkspace}>
         <div className={styles.chatEmpty}>
           <BotMark botId="fabushi:bootstrap:workspace" state="idle" size={72} paused label="Fabushi" />
@@ -4241,6 +4222,25 @@ async function saveInvoiceDialog() {
           onDoubleClick={() => setSidebarWidth((width) => width <= 112 ? 330 : 88)}
         />
       </aside>
+
+      <GrokCommandPalette
+        open={grokPaletteOpen}
+        agents={grokAgentItems}
+        query={grokPaletteQuery}
+        onQuery={setGrokPaletteQuery}
+        onClose={() => setGrokPaletteOpen(false)}
+        onOpenAgent={openGrokAgent}
+        onNewAgent={() => void createGrokAgent()}
+        onPlugins={() => {
+          setSearch('');
+          setGlobalSearchOpen(false);
+          setSection('miniapps');
+        }}
+        onSettings={() => {
+          settingsReturnSectionRef.current = 'bots';
+          setSection('settings');
+        }}
+      />
 
       <section className={styles.chatWorkspace}>
         {activePeer && sectionIsPeerList ? (
