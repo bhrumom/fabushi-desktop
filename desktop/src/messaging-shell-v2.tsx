@@ -3615,6 +3615,40 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
+  async function transcribeAgentVoice(peer: PeerItem, file: File): Promise<string> {
+    if (!isAgentPeer(peer) || peer.miniAppId) throw new Error('Voice dictation is only available for Agents.');
+    const validationError = validateAgentAttachment(file);
+    if (validationError) throw new Error(validationError);
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    const stored = await agentCoordinatorClient.uploadAttachment({
+      requestId: nextRequestId('agent-voice-upload'),
+      agentId,
+      filename: file.name,
+      mimeType: file.type || 'audio/webm',
+      bytesBase64: await agentFileToBase64(file),
+    });
+    if (!stored.path) throw new Error('Voice recording was stored without a local path.');
+    const result = await invokeNativeDesktop<Record<string, unknown>>('transcribeAudio', {
+      path: stored.path,
+      language: 'auto',
+    });
+    const nested = result?.result && typeof result.result === 'object'
+      ? result.result as Record<string, unknown>
+      : null;
+    const text = typeof result?.text === 'string'
+      ? result.text
+      : typeof result?.transcript === 'string'
+        ? result.transcript
+        : typeof nested?.text === 'string'
+          ? nested.text
+          : '';
+    if (text.trim()) return text.trim();
+    if (result?.available === false) {
+      throw new Error('Voice transcription is unavailable. Install the offline ASR model or enable a runtime transcription tool.');
+    }
+    throw new Error('Voice transcription returned no text.');
+  }
+
   async function stageAgentFiles(peer: PeerItem, files: readonly File[]): Promise<void> {
     if (!isAgentPeer(peer) || peer.miniAppId || files.length === 0) return;
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
@@ -4744,6 +4778,7 @@ async function saveInvoiceDialog() {
                 onComposerSubmit={(event) => void sendMessage(event)}
                 onComposerFiles={(files) => void stageAgentFiles(activePeer, files)}
                 onRemoveComposerAttachment={(attachmentId) => removeAgentAttachment(activePeer.key, attachmentId)}
+                onTranscribeVoice={(file) => transcribeAgentVoice(activePeer, file)}
                 onStop={() => void stopAgentOperation()}
               />
             ) : (
