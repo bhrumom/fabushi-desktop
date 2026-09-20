@@ -77,7 +77,8 @@ function AgentRow({
       className={styles.row}
       aria-current={active ? 'page' : undefined}
       aria-label={item.name}
-      data-testid={`grok-agent-row-${item.agentId}`}
+      data-testid={`peer-${item.key}`}
+      data-agent-id={item.agentId}
       onClick={onOpen}
     >
       <span className={styles.avatar}>
