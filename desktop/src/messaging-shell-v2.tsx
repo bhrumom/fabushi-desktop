@@ -128,6 +128,7 @@ import { projectFabuAgentProfile, projectFabuAgentSettings, projectFabuBotIdenti
 import { FabuAgentStore } from './fabu-runtime/agent-store';
 import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
 import GrokAgentSidebar, { type GrokAgentSidebarItem } from './grok-shell/grok-agent-sidebar';
+import GrokCommandPalette from './grok-shell/grok-command-palette';
 import { AgentOperationRegistry } from './grok-runtime/agent-operation-registry';
 import {
   SidebarContactGroupManager,
@@ -916,6 +917,25 @@ function DesktopFastStartBootstrap() {
           </button>
         </div>
       </aside>
+      <GrokCommandPalette
+        open={grokPaletteOpen}
+        agents={grokAgentItems}
+        query={grokPaletteQuery}
+        onQuery={setGrokPaletteQuery}
+        onClose={() => setGrokPaletteOpen(false)}
+        onOpenAgent={openGrokAgent}
+        onNewAgent={() => void createGrokAgent()}
+        onPlugins={() => {
+          setSearch('');
+          setGlobalSearchOpen(false);
+          setSection('miniapps');
+        }}
+        onSettings={() => {
+          settingsReturnSectionRef.current = 'bots';
+          setSection('settings');
+        }}
+      />
+
       <section className={styles.chatWorkspace}>
         <div className={styles.chatEmpty}>
           <BotMark botId="fabushi:bootstrap:workspace" state="idle" size={72} paused label="Fabushi" />
@@ -969,6 +989,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [silentSend, setSilentSend] = useState(false);
   const [scheduledAtMs, setScheduledAtMs] = useState<number | undefined>();
   const [search, setSearch] = useState('');
+  const [grokPaletteOpen, setGrokPaletteOpen] = useState(false);
+  const [grokPaletteQuery, setGrokPaletteQuery] = useState('');
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [globalSearchCategory, setGlobalSearchCategory] = useState<SearchCategory>('chats');
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -1561,6 +1583,20 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
     return () => { disposed = true; };
   }, [hostReady, section, settingsCategory]);
+
+  useEffect(() => {
+    const handleGrokPaletteKeys = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setGrokPaletteQuery('');
+        setGrokPaletteOpen((value) => !value);
+        return;
+      }
+      if (event.key === 'Escape') setGrokPaletteOpen(false);
+    };
+    window.addEventListener('keydown', handleGrokPaletteKeys);
+    return () => window.removeEventListener('keydown', handleGrokPaletteKeys);
+  }, []);
 
   useEffect(() => {
     if (section !== 'settings') return;
@@ -2682,7 +2718,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   function renderPeerRow(peer: PeerItem) {
     const peerBusy = Boolean(agentOperationByPeer[peer.key]
       || agentOperationRegistryRef.current.requestForPeer(peer.key));
-    return <button data-testid={`peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
+    return <button data-testid={`legacy-peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
       <BotMark
         botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`}
         state={isAgentPeer(peer) ? botMarkStateForPeer(peer, selfBotExecutions, peerBusy, hostReady) : peer.unread ? 'notifying' : 'idle'}
