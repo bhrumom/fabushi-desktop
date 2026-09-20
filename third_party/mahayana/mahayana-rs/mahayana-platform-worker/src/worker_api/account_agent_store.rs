@@ -5,7 +5,6 @@ const MAX_CLOUD_KEYS: i64 = 1024;
 const MAX_CLOUD_VALUE_BYTES: usize = 4096;
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct AccountBotRow {
     bot_id: String,
     agent_id: String,
@@ -16,7 +15,6 @@ struct AccountBotRow {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct AccountAgentRow {
     agent_id: String,
     profile_json: String,
@@ -27,6 +25,17 @@ struct AccountAgentRow {
 
 #[derive(Debug, Deserialize)]
 struct AgentStoreRefRow {
+    rel_path: String,
+    blob_id: String,
+    etag: String,
+    size_bytes: i64,
+    revision: i64,
+    updated_at: i64,
+}
+
+#[derive(Debug, Deserialize)]
+struct AgentStoreSyncRow {
+    agent_id: String,
     rel_path: String,
     blob_id: String,
     etag: String,
@@ -930,14 +939,16 @@ pub(super) async fn account_state_sync(
     )?.all().await?.results::<AccountAgentRow>()?;
     let ref_rows = worker::query!(
         &database,
-        "SELECT rel_path, blob_id, etag, size_bytes, revision, updated_at
+        "SELECT agent_id, rel_path, blob_id, etag, size_bytes, revision, updated_at
          FROM account_agent_store_refs WHERE account_user_id = ?1 ORDER BY agent_id, rel_path",
         &account.user_id
-    )?.all().await?.results::<AgentStoreRefRow>()?;
+    )?.all().await?.results::<AgentStoreSyncRow>()?;
     let agent_store_revisions = ref_rows.iter().map(|row| json!({
+        "agentId": row.agent_id,
         "path": row.rel_path,
         "blobId": row.blob_id,
         "etag": row.etag,
+        "sizeBytes": row.size_bytes,
         "revision": row.revision,
         "updatedAtMs": row.updated_at.saturating_mul(1000),
     })).collect::<Vec<_>>();
