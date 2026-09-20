@@ -181,6 +181,13 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  listAgents(requestId: string) {
+    return this.transport.execute({
+      type: 'bot.list',
+      requestId,
+    } as HostCommand);
+  }
+
   createAgent(requestId: string, input: { name: string; description?: string }) {
     return this.transport.execute({
       type: 'bot.create',
