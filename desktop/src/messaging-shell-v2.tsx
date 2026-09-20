@@ -1126,8 +1126,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const sessionResetInFlightRef = useRef(false);
   const agentWorkspaceControllerRef = useRef(new AgentWorkspaceController(readAgentWorkspaceDrafts()));
   const agentRuntimeCoordinatorRef = useRef<AgentRuntimeCoordinator | null>(null);
-  const pendingAgentDeltaRef = useRef(new Map<string, Extract<RuntimeEvent, { type: 'chat.delta' }>>());
-  const agentDeltaFrameRef = useRef<number | null>(null);
   const messageAreaRef = useRef<HTMLDivElement | null>(null);
   const stickToLatestRef = useRef(true);
   const remoteControlEnabledRef = useRef(hostSettings.remoteControlEnabled);
@@ -1237,14 +1235,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   useEffect(() => {
     activePeerKeyRef.current = activePeerKey;
   }, [activePeerKey]);
-
-  useEffect(() => () => {
-    if (agentDeltaFrameRef.current !== null) {
-      window.cancelAnimationFrame(agentDeltaFrameRef.current);
-      agentDeltaFrameRef.current = null;
-    }
-    pendingAgentDeltaRef.current.clear();
-  }, []);
 
   useEffect(() => {
     const onResize = () => {
@@ -1951,60 +1941,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     await store.checkpointRoot();
   }
 
-  function flushPendingAgentDelta(operationId?: string) {
-    const pending = pendingAgentDeltaRef.current;
-    const operationIds = operationId ? [operationId] : [...pending.keys()];
-    for (const id of operationIds) {
-      const event = pending.get(id);
-      if (!event) continue;
-      pending.delete(id);
-      appendAssistantTurnEvent(event);
-    }
-    if (pending.size === 0 && agentDeltaFrameRef.current !== null) {
-      window.cancelAnimationFrame(agentDeltaFrameRef.current);
-      agentDeltaFrameRef.current = null;
-    }
-  }
-
-  function queueAgentDelta(event: Extract<RuntimeEvent, { type: 'chat.delta' }> & { operationId: string }) {
-    const current = pendingAgentDeltaRef.current.get(event.operationId);
-    pendingAgentDeltaRef.current.set(event.operationId, current
-      ? { ...event, delta: `${current.delta}${event.delta}` }
-      : event);
-    if (agentDeltaFrameRef.current !== null) return;
-    agentDeltaFrameRef.current = window.requestAnimationFrame(() => {
-      agentDeltaFrameRef.current = null;
-      flushPendingAgentDelta();
-    });
-  }
-
-  function updateAgentThread(operationId: string | undefined, update: (current: DisplayMessage[]) => DisplayMessage[]) {
-    const peerKey = operationId
-      ? agentWorkspaceControllerRef.current.peerForRuntimeId(operationId)
-      : null;
-    if (!peerKey) {
-      setMessages(update);
-      return;
-    }
-    const next = agentTranscriptStoreRef.current.update(
-      peerKey,
-      (current) => toAgentTranscriptSources(update(toDisplayAgentMessages(current))),
-    );
-    if (peerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
-  }
-
-  function adoptAgentRequestOperation(requestId: string | null, operationId: string, peerKey?: string | null) {
-    if (!requestId) return;
-    const registry = agentWorkspaceControllerRef.current;
-    const ownerPeerKey = peerKey ?? registry.peerForRequest(requestId);
-    if (!ownerPeerKey) return;
-    if (requestId !== operationId) {
-      const next = agentTranscriptStoreRef.current.adoptOperation(ownerPeerKey, requestId, operationId);
-      if (ownerPeerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
-    }
-    registry.adoptOperation(requestId, operationId, ownerPeerKey);
-  }
-
   function notifyAgentWorkspaceState() {
     setAgentWorkspaceRevision((revision) => revision + 1);
   }
@@ -2431,23 +2367,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setHostSettings(event.settings);
         break;
       case 'chat.message':
-        if (event.role === 'assistant') {
-          // Some legacy adapters omit operationId on the assistant body even
-          // though the active send already owns a provisional/authoritative turn.
-          // Bind that body to the current turn instead of painting a second
-          // peer message beside the AssistantTurn.
-          const assistantOperationId = event.operationId ?? unambiguousAgentOperationId();
-          if (assistantOperationId) {
-            const ownedOperation = claimAgentOperation(assistantOperationId)
-              || Boolean(agentWorkspaceControllerRef.current.peerForRuntimeId(assistantOperationId));
-            if (ownedOperation) {
-              appendAssistantTurnEvent({ ...event, operationId: assistantOperationId });
-              break;
-            }
-            if (agentWorkspaceControllerRef.current.isOperationFinished(assistantOperationId)) break;
-          }
-        }
-        updateAgentThread(event.operationId, (current) => {
+        // Agent-owned chat is consumed above by AgentRuntimeCoordinator.
+        // What reaches this branch belongs to compatibility Messenger surfaces.
+        setMessages((current) => {
           if (event.role === 'user') {
             const optimisticIndex = current.findIndex((message) =>
               message.role === 'me' && message.optimistic === true && message.text === event.text,
@@ -2457,9 +2379,18 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
                 ? { ...message, optimistic: false, operationId: event.operationId ?? message.operationId }
                 : message);
             }
-            if (current.some((message) =>
-              message.role === 'me' && message.text === event.text &&
-              (!event.operationId || message.operationId === event.operationId))) return current;
+          } else if (event.operationId) {
+            const streamingIndex = current.findIndex((message) =>
+              message.role === 'peer'
+              && message.kind === 'message'
+              && message.operationId === event.operationId
+              && message.streaming === true,
+            );
+            if (streamingIndex >= 0) {
+              return current.map((message, messageIndex) => messageIndex === streamingIndex
+                ? { ...message, text: event.text, streaming: false }
+                : message);
+            }
           }
           return [...current, {
             id: nextRequestId('message'),
@@ -2473,56 +2404,36 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           }];
         });
         break;
-      case 'chat.delta': {
-        const deltaOperationId = event.operationId ?? unambiguousAgentOperationId();
-        if (deltaOperationId && agentWorkspaceControllerRef.current.isOperationFinished(deltaOperationId)) break;
-        if (deltaOperationId && (
-          claimAgentOperation(deltaOperationId)
-          || Boolean(agentWorkspaceControllerRef.current.peerForRuntimeId(deltaOperationId))
-        )) {
-          queueAgentDelta({ ...event, operationId: deltaOperationId });
-          break;
-        }
-        updateAgentThread(deltaOperationId, (current) => {
-          const index = current.findIndex((message) => message.kind === 'message' && message.operationId === deltaOperationId && message.streaming);
-          if (index < 0) return [...current, { id: `${deltaOperationId ?? 'legacy'}:stream`, source: 'legacy', role: 'peer', text: event.delta, createdAtMs: Date.now(), kind: 'message', operationId: deltaOperationId, streaming: true }];
-          return current.map((message, messageIndex) => messageIndex === index ? { ...message, text: `${message.text}${event.delta}`, kind: 'message', streaming: true } : message);
+      case 'chat.delta':
+        setMessages((current) => {
+          const operationId = event.operationId;
+          const index = current.findIndex((message) =>
+            message.kind === 'message'
+            && message.role === 'peer'
+            && message.operationId === operationId
+            && message.streaming === true,
+          );
+          if (index < 0) return [...current, {
+            id: `${operationId ?? 'legacy'}:stream`,
+            source: 'legacy',
+            role: 'peer',
+            text: event.delta,
+            createdAtMs: Date.now(),
+            kind: 'message',
+            operationId,
+            streaming: true,
+          }];
+          return current.map((message, messageIndex) => messageIndex === index
+            ? { ...message, text: `${message.text}${event.delta}`, streaming: true }
+            : message);
         });
         break;
-      }
       case 'operation.started':
-        if (claimAgentOperation(event.operationId)) {
-          appendAssistantTurnEvent(event);
-          const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId);
-          mirrorAgentRuntimeCheckpoint(owner, 'running', event.operationId);
-        }
-        break;
       case 'model.routed':
-        if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
-        break;
       case 'agent.step':
-        if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
+      case 'operation.interrupted':
+      case 'operation.completed':
         break;
-      case 'operation.interrupted': {
-        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId);
-        if (owner) {
-          appendAssistantTurnEvent(event);
-          mirrorAgentRuntimeCheckpoint(owner, 'interrupted', event.operationId);
-          mirrorAgentConversationSnapshot(owner);
-        }
-        if (clearAgentOperation(event.operationId, 'interrupted')) agentSubmissionQueue.flush();
-        break;
-      }
-      case 'operation.completed': {
-        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId);
-        if (owner) {
-          appendAssistantTurnEvent(event);
-          mirrorAgentRuntimeCheckpoint(owner, 'completed', event.operationId);
-          mirrorAgentConversationSnapshot(owner);
-        }
-        if (clearAgentOperation(event.operationId)) agentSubmissionQueue.flush();
-        break;
-      }
       case 'miniapp.opened':
         if (event.html) {
           const title = miniAppIdentityCatalog.find((app) => app.pluginId === event.miniAppId)?.displayName ?? marketplaceApps.find((app) => app.pluginId === event.miniAppId)?.displayName ?? event.miniAppId;
@@ -2531,19 +2442,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           });
         }
         break;
-      case 'operation.failed': {
-        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId);
-        if (owner) {
-          appendAssistantTurnEvent(event);
-          mirrorAgentRuntimeCheckpoint(owner, 'failed', event.operationId, event.message);
-          mirrorAgentConversationSnapshot(owner);
-        }
-        if (clearAgentOperation(event.operationId, 'failed')) {
-          if (owner === activePeerKeyRef.current) setError(event.message);
-          agentSubmissionQueue.flush();
-        }
+      case 'operation.failed':
+        // Agent failures are consumed by AgentRuntimeCoordinator. Preserve the
+        // legacy error banner only for compatibility operations.
+        setError(event.message);
         break;
-      }
       case 'host.closed':
         agentRuntimeCoordinator.resetOperations();
         notifyAgentWorkspaceState();
@@ -3454,9 +3357,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           setMessages((current) => current.map((message) => message.id === optimisticId
             ? { ...message, operationId: accepted.operationId, optimistic: false, queued: false }
             : message));
-        }
-        if (agentRequest && accepted.operationId && claimAgentOperation(accepted.operationId)) {
-          appendAssistantTurnEvent({ type: 'operation.started', timestamp: new Date().toISOString(), operationId: accepted.operationId, label: '正在思考', interruptible: true });
         }
       }
       setLegacyReplyTo(null);
