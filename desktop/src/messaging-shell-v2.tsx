@@ -1080,11 +1080,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [infoTab, setInfoTab] = useState<InfoTab>('media');
   const [computerProfileOpen, setComputerProfileOpen] = useState(false);
   const [remoteComputerState, setRemoteComputerState] = useState<RemoteComputerDesktopState | null>(null);
-  const [pendingSend, setPendingSend] = useState(false);
-  // Kept as the active-peer projection for compatibility with existing
-  // transcript DOM contracts. The authoritative ownership is per Agent below.
-  const [agentOperationId, setAgentOperationId] = useState<string | null>(null);
-  const [agentOperationByPeer, setAgentOperationByPeer] = useState<Record<string, string>>({});
+  // Compatibility Messenger/Mini App sends retain transport pending state.
+  // Agent request/operation ownership is exclusively per-peer in the workspace controller.
+  const [legacySendPending, setLegacySendPending] = useState(false);
+  const [agentWorkspaceRevision, setAgentWorkspaceRevision] = useState(0);
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
   const [queuedAgentPrompts, setQueuedAgentPrompts] = useState<Record<string, DisplayMessage[]>>({});
   const [typingByConversation, setTypingByConversation] = useState<Record<string, Record<string, number>>>({});
@@ -1133,11 +1132,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const sessionResetInFlightRef = useRef(false);
-  const agentOperationIdRef = useRef<string | null>(null);
   const agentWorkspaceControllerRef = useRef(new AgentWorkspaceController());
-  const agentRequestPendingRef = useRef(false);
-  const agentRequestPeerRef = useRef<string | null>(null);
-  const agentRequestIdRef = useRef<string | null>(null);
   const pendingAgentDeltaRef = useRef(new Map<string, Extract<RuntimeEvent, { type: 'chat.delta' }>>());
   const agentDeltaFrameRef = useRef<number | null>(null);
   const finishedAgentOperationsRef = useRef(new Set<string>());
@@ -1497,17 +1492,24 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     const onCommandBridge = (event: Event) => {
       const detail = (event as CustomEvent<MahayanaCommandBridgeDetail>).detail;
       if (!detail || detail.command.type !== 'chat.send') return;
-      const conversationKey = detail.context?.conversationKey;
-      if (!conversationKey || activePeerKeyRef.current !== conversationKey) return;
+      const peerKey = detail.context?.conversationKey;
+      if (!peerKey) return;
 
+      const registry = agentWorkspaceControllerRef.current;
+      const requestId = detail.command.requestId;
       if (detail.phase === 'dispatch') {
-        agentRequestPendingRef.current = true;
-        setPendingSend(true);
+        if (!registry.isBusy(peerKey)) registry.beginRequest(peerKey, requestId);
+        rememberAgentPeer(requestId, peerKey);
+        notifyAgentWorkspaceState();
         return;
       }
       if (detail.phase === 'accepted') {
         const operationId = detail.accepted.operationId;
-        if (!operationId || !claimAgentOperation(operationId)) return;
+        if (!operationId) return;
+        rememberAgentPeer(operationId, peerKey);
+        adoptAgentRequestOperation(requestId, operationId, peerKey);
+        registry.adoptOperation(requestId, operationId, peerKey);
+        notifyAgentWorkspaceState();
         appendAssistantTurnEvent({
           type: 'operation.started',
           timestamp: new Date().toISOString(),
@@ -1517,9 +1519,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         });
         return;
       }
-      agentRequestPendingRef.current = false;
-      setPendingSend(false);
-      setError(detail.error);
+      registry.cancelRequest(requestId);
+      delete agentPeerKeyRef.current[requestId];
+      notifyAgentWorkspaceState();
+      if (activePeerKeyRef.current === peerKey) setError(detail.error);
     };
     window.addEventListener(MAHAYANA_COMMAND_EVENT_NAME, onCommandBridge);
     void transport.initialize({ profileId: 'desktop-messenger-v2', mode: 'production' })
@@ -1947,7 +1950,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   function adoptAgentRequestOperation(requestId: string | null, operationId: string, peerKey?: string | null) {
     if (!requestId || requestId === operationId) return;
-    rememberAgentPeer(operationId, peerKey ?? agentPeerKeyRef.current[requestId] ?? agentRequestPeerRef.current);
+    rememberAgentPeer(operationId, peerKey ?? agentPeerKeyRef.current[requestId]);
     updateAgentThread(requestId, (current) => {
       const alreadyAuthoritative = current.some((message) =>
         message.kind === 'assistant-turn' && message.operationId === operationId,
@@ -1978,26 +1981,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     botThreadsRef.current[peerKey] = messages;
   }
 
-  function syncAgentOperationSnapshot() {
-    setAgentOperationByPeer({ ...agentWorkspaceControllerRef.current.snapshot() });
+  function notifyAgentWorkspaceState() {
+    setAgentWorkspaceRevision((revision) => revision + 1);
   }
 
   function unambiguousAgentOperationId(): string | undefined {
-    const running = [...new Set(Object.values(agentWorkspaceControllerRef.current.snapshot()))];
-    if (running.length === 1) return running[0];
-    if (running.length > 1) return undefined;
-    return agentOperationIdRef.current ?? agentRequestIdRef.current ?? undefined;
-  }
-
-  function projectActiveAgentOperation(peerKey: string | null | undefined) {
-    const operationId = agentWorkspaceControllerRef.current.operationForPeer(peerKey);
-    const requestId = agentWorkspaceControllerRef.current.requestForPeer(peerKey);
-    agentOperationIdRef.current = operationId;
-    setAgentOperationId(operationId);
-    agentRequestPendingRef.current = Boolean(requestId);
-    agentRequestPeerRef.current = requestId ? peerKey ?? null : null;
-    agentRequestIdRef.current = requestId;
-    setPendingSend(Boolean(operationId || requestId));
+    const registry = agentWorkspaceControllerRef.current;
+    const candidates = [...new Set([
+      ...Object.values(registry.snapshot()),
+      ...Object.values(registry.requestSnapshot()),
+    ])];
+    return candidates.length === 1 ? candidates[0] : undefined;
   }
 
   function claimAgentOperation(operationId?: string): boolean {
@@ -2007,47 +2001,32 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       ?? agentPeerKeyRef.current[operationId]
       ?? null;
 
-    if (!peerKey && agentRequestIdRef.current) {
-      peerKey = registry.peerForRequest(agentRequestIdRef.current)
-        ?? agentPeerKeyRef.current[agentRequestIdRef.current]
-        ?? agentRequestPeerRef.current;
-    }
+    // Never infer runtime ownership from the visible Agent. A legacy event can
+    // only be adopted when exactly one Agent request is pending.
+    if (!peerKey) peerKey = registry.onlyPendingPeer();
     if (!peerKey) return false;
 
     const requestId = registry.requestForPeer(peerKey);
     rememberAgentPeer(operationId, peerKey);
     if (requestId) adoptAgentRequestOperation(requestId, operationId, peerKey);
     registry.adoptOperation(requestId, operationId, peerKey);
-    syncAgentOperationSnapshot();
-
-    if (activePeerKeyRef.current === peerKey) {
-      agentOperationIdRef.current = operationId;
-      setAgentOperationId(operationId);
-      agentRequestPendingRef.current = false;
-      agentRequestPeerRef.current = null;
-      agentRequestIdRef.current = null;
-      setPendingSend(true);
-    }
+    notifyAgentWorkspaceState();
     return true;
   }
 
   function clearAgentOperation(operationId: string, terminalStatus: 'completed' | 'failed' | 'interrupted' = 'completed') {
     const registry = agentWorkspaceControllerRef.current;
-    const peerKey = registry.finishOperation(operationId)
-      ?? registry.peerForOperation(operationId)
+    const peerKey = registry.peerForOperation(operationId)
       ?? agentPeerKeyRef.current[operationId]
       ?? null;
-    if (!peerKey && agentOperationIdRef.current !== operationId) return false;
+    if (!peerKey) return false;
+    registry.finishOperation(operationId);
 
     finishedAgentOperationsRef.current.add(operationId);
     if (finishedAgentOperationsRef.current.size > 500) {
       finishedAgentOperationsRef.current.delete(finishedAgentOperationsRef.current.values().next().value!);
     }
-    syncAgentOperationSnapshot();
-
-    if (agentOperationIdRef.current === operationId || activePeerKeyRef.current === peerKey) {
-      projectActiveAgentOperation(activePeerKeyRef.current);
-    }
+    notifyAgentWorkspaceState();
 
     updateAgentThread(operationId, (current) => current
       .filter((message) => !(message.kind === 'thinking' && message.operationId === operationId))
@@ -2231,7 +2210,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
             void selfHosted.markRead(message.conversationId, message.id).catch(() => {});
           }
         }
-        setPendingSend(false);
+        setLegacySendPending(false);
         break;
       }
       case 'readChanged': {
@@ -2470,7 +2449,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
             text: message.content,
             createdAtMs: message.createdAtMs,
           })));
-          setPendingSend(false);
+          setLegacySendPending(false);
         }
         break;
       case 'settings.changed':
@@ -2580,8 +2559,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       }
       case 'host.closed':
         agentWorkspaceControllerRef.current.clear();
-        syncAgentOperationSnapshot();
-        projectActiveAgentOperation(activePeerKeyRef.current);
+        notifyAgentWorkspaceState();
         setHostReady(false);
         break;
       default:
@@ -2797,9 +2775,16 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       isComposingMessage,
     }] as const;
   }));
+  const agentOperationSnapshot = useMemo(
+    () => agentWorkspaceControllerRef.current.snapshot(),
+    [agentWorkspaceRevision],
+  );
+  const agentRequestSnapshot = useMemo(
+    () => agentWorkspaceControllerRef.current.requestSnapshot(),
+    [agentWorkspaceRevision],
+  );
   const grokBusyByPeer = Object.fromEntries(peers.flatMap((peer) => {
-    const activityId = agentOperationByPeer[peer.key]
-      ?? agentWorkspaceControllerRef.current.requestForPeer(peer.key);
+    const activityId = agentOperationSnapshot[peer.key] ?? agentRequestSnapshot[peer.key];
     return activityId ? [[peer.key, activityId] as const] : [];
   }));
   const grokAgentItems: GrokAgentSidebarItem[] = projectGrokAgentSidebarItems(
@@ -2872,16 +2857,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     ? projectTranscriptEntries(botTranscriptMessages)
     : [];
   const activeAgentOperationId = activePeer
-    ? agentOperationByPeer[activePeer.key] ?? null
+    ? agentOperationSnapshot[activePeer.key] ?? null
     : null;
   const activePeerBusy = Boolean(activePeer && (
     activeAgentOperationId
-    || agentWorkspaceControllerRef.current.requestForPeer(activePeer.key)
+    || agentRequestSnapshot[activePeer.key]
   ));
 
   function renderPeerRow(peer: PeerItem) {
-    const peerBusy = Boolean(agentOperationByPeer[peer.key]
-      || agentWorkspaceControllerRef.current.requestForPeer(peer.key));
+    const peerBusy = Boolean(agentOperationSnapshot[peer.key] || agentRequestSnapshot[peer.key]);
     return <button data-testid={`legacy-peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
       <BotMark
         botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`}
@@ -2966,7 +2950,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     if (confirmDelete && !window.confirm(`Delete “${peer.title}”? The Agent store is retained for recovery.`)) return;
     agentWorkspaceControllerRef.current.clearPeer(peer.key);
-    syncAgentOperationSnapshot();
+    notifyAgentWorkspaceState();
     await execute({
       type: 'bot.delete',
       requestId: nextRequestId('grok-delete-agent'),
@@ -2976,7 +2960,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       activePeerKeyRef.current = null;
       setActivePeerKey(null);
       setMessages([]);
-      projectActiveAgentOperation(null);
     }
   }
 
@@ -3193,7 +3176,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     const requestId = nextRequestId('chat-send');
     registry.beginRequest(peer.key, requestId);
-    syncAgentOperationSnapshot();
+    notifyAgentWorkspaceState();
     rememberAgentPeer(requestId, peer.key);
     const optimisticId = existingMessageId ?? 'optimistic:' + requestId;
     updateAgentThread(requestId, (current) => {
@@ -3225,12 +3208,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       label: '正在思考',
       interruptible: true,
     });
-    if (activePeerKeyRef.current === peer.key) {
-      setPendingSend(true);
-      agentRequestPendingRef.current = true;
-      agentRequestPeerRef.current = peer.key;
-      agentRequestIdRef.current = requestId;
-    }
+    notifyAgentWorkspaceState();
     try {
       const accepted = await agentCoordinatorClient.send({
         requestId,
@@ -3248,15 +3226,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       rememberAgentPeer(operationId, peer.key);
       if (finishedAgentOperationsRef.current.has(operationId)) {
         registry.cancelRequest(requestId);
-        syncAgentOperationSnapshot();
+        notifyAgentWorkspaceState();
         return;
       }
       adoptAgentRequestOperation(requestId, operationId, peer.key);
       registry.adoptOperation(requestId, operationId, peer.key);
-      syncAgentOperationSnapshot();
-      if (activePeerKeyRef.current === peer.key) {
-        agentRequestIdRef.current = null;
-      }
+      notifyAgentWorkspaceState();
       updateAgentThread(operationId, (current) => current.map((message) => message.id === optimisticId
         ? { ...message, operationId, optimistic: false, queued: false }
         : message));
@@ -3266,14 +3241,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         message.id !== optimisticId && message.operationId !== requestId,
       ));
       registry.cancelRequest(requestId);
-      syncAgentOperationSnapshot();
-      if (activePeerKeyRef.current === peer.key) agentRequestIdRef.current = null;
+      notifyAgentWorkspaceState();
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
-      if (activePeerKeyRef.current === peer.key) {
-        agentRequestPendingRef.current = false;
-        projectActiveAgentOperation(peer.key);
-      }
+      notifyAgentWorkspaceState();
     }
   }
 
@@ -3312,8 +3283,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   async function stopAgentOperation(): Promise<void> {
-    const operationId = agentWorkspaceControllerRef.current.operationForPeer(activePeerKeyRef.current)
-      ?? agentOperationIdRef.current;
+    const operationId = agentWorkspaceControllerRef.current.operationForPeer(activePeerKeyRef.current);
     if (!operationId) return;
     try {
       await agentCoordinatorClient.interrupt(operationId);
@@ -3329,21 +3299,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       if (node) node.scrollTop = node.scrollHeight;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [activePeerKey, messages, pendingSend, queuedAgentPrompts]);
+  }, [activePeerKey, messages, agentWorkspaceRevision, queuedAgentPrompts]);
 
   async function openPeer(peer: PeerItem) {
     rememberActiveBotThread();
     activePeerKeyRef.current = peer.key;
     setActivePeerKey(peer.key);
-    if (isAgentPeer(peer)) projectActiveAgentOperation(peer.key);
-    else {
-      agentOperationIdRef.current = null;
-      setAgentOperationId(null);
-      setPendingSend(false);
-      agentRequestPendingRef.current = false;
-      agentRequestPeerRef.current = null;
-      agentRequestIdRef.current = null;
-    }
+    if (!isAgentPeer(peer)) setLegacySendPending(false);
     stickToLatestRef.current = true;
     setShowScrollToLatest(false);
     setComposer(agentWorkspaceControllerRef.current.draftForPeer(peer.key) || drafts[peer.key] || '');
@@ -3410,7 +3372,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       && !activePeer.miniAppId
       && isAgentPeer(activePeer);
     if (!text && !(agentRequest && stagedAgentAttachments.length)) return;
-    if (pendingSend && !agentRequest) return;
+    if (legacySendPending && !agentRequest) return;
     if (agentRequest) {
       const attachments = stagedAgentAttachments;
       const replyContext: AgentReplyContext | undefined = replyTo
@@ -3427,7 +3389,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       setScheduledAtMs(undefined);
       return;
     }
-    setPendingSend(true);
+    setLegacySendPending(true);
     updateComposer('');
     try {
       if (activePeer.miniAppId) {
@@ -3538,7 +3500,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       updateComposer(text);
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
-      setPendingSend(false);
+      setLegacySendPending(false);
     }
   }
 
@@ -3722,7 +3684,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       return;
     }
     setAttachmentMenuOpen(false);
-    setPendingSend(true);
+    setLegacySendPending(true);
     setAttachmentProgress(`正在上传 ${file.name}…`);
     try {
       await selfHosted.sendAttachment(
@@ -3736,7 +3698,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
-      setPendingSend(false);
+      setLegacySendPending(false);
       setAttachmentProgress(null);
     }
   }
@@ -4539,132 +4501,6 @@ async function saveInvoiceDialog() {
             setSection('settings');
           }}
         />
-        <div hidden aria-hidden="true">
-        <header className={styles.listHeader}>
-          <span className={styles.sidebarBrand} title="Fabushi"><BotMark botId="fabushi:brand" state="idle" size={30} label="Fabushi" /></span>
-          <strong>{sectionTitle(section)}</strong>
-          <div className={styles.createMenuWrap}>
-            <button type="button" className={styles.iconButton} aria-label="新建" data-active={createMenuOpen} onClick={(event) => { event.stopPropagation(); setCreateMenuOpen((value) => !value); }}><SquarePen size={18} /></button>
-            {createMenuOpen ? <div className={styles.createMenu} onClick={(event) => event.stopPropagation()}>
-              <button type="button" onClick={() => { setCreateMenuOpen(false); setNewDialog({ type: 'group', name: '', selectedBotIds: new Set() }); }}><Users size={16} /><span>新建群组</span></button>
-              <button type="button" onClick={() => { setCreateMenuOpen(false); setNewDialog({ type: 'channel', name: '', description: '' }); }}><Radio size={16} /><span>新建频道</span></button>
-              {['chats', 'contacts'].includes(section) ? <button type="button" data-testid="open-contact-groups" onClick={() => { setCreateMenuOpen(false); contactGroups.openManager(); }}><Folder size={16} /><span>联系人分组</span></button> : null}
-            </div> : null}
-          </div>
-        </header>
-        <label className={styles.searchBox} data-testid="global-search-trigger" onClick={() => { if (sidebarWidth <= 112) setSidebarWidth(330); setGlobalSearchOpen(true); }}>
-          <Search size={16} />
-          <input
-            ref={searchInputRef}
-            data-testid="global-search-input"
-            value={search}
-            onFocus={() => { if (sidebarWidth <= 112) setSidebarWidth(330); setGlobalSearchOpen(true); }}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={conversationSearchOpen && activePeer ? `搜索 ${activePeer.title}` : '搜索'}
-          />
-          {search ? <button type="button" aria-label="清除搜索" onClick={(event) => { event.stopPropagation(); setSearch(''); searchInputRef.current?.focus(); }}><X size={14} /></button> : globalSearchOpen && !conversationSearchOpen ? <button type="button" aria-label="关闭搜索" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setGlobalSearchOpen(false); setGlobalSearchCategory('chats'); }}><X size={14} /></button> : null}
-        </label>
-        {conversationSearchOpen && activePeer ? <div className={styles.searchScope} data-testid="conversation-search-scope">
-          <span>此聊天</span><strong>{activePeer.title}</strong>
-          <button type="button" aria-label="退出当前会话搜索" onClick={() => { setConversationSearchOpen(false); setGlobalSearchCategory('chats'); setSearch(''); searchInputRef.current?.focus(); }}><X size={13} /></button>
-        </div> : null}
-        {['chats', 'contacts'].includes(section) && sidebarWidth > 112 && visibleStories.length ? <div className={extra.storyStrip}>
-          {visibleStories.map((story) => {
-            const actor = selfActors.find((item) => item.id === story.ownerId);
-            const name = actor?.displayName ?? (story.ownerId === selfHosted.actorId ? '我' : story.ownerId);
-            return <button type="button" className={extra.storyItem} key={story.id} onClick={() => void openStory(story)} title={name}>
-              <span className={extra.storyRing}><BotMark botId={`story:${story.ownerId}`} state="idle" size={40} animated={false} label={name} /></span><small>{name}</small>
-            </button>;
-          })}
-        </div> : null}
-        {globalSearchOpen ? (
-          <GlobalSearchWorkspace
-            query={search}
-            category={globalSearchCategory}
-            onCategory={setGlobalSearchCategory}
-            scopePeer={conversationSearchOpen ? activePeer : null}
-            peers={peers}
-            messages={messages}
-            miniApps={marketplaceApps}
-            installedMiniApps={installedMiniApps}
-            miniAppBusy={miniAppBusy}
-            miniAppLoading={miniAppLoading}
-            onOpenPeer={(peer) => { setGlobalSearchOpen(false); setConversationSearchOpen(false); setSearch(''); setSection(peer.kind === 'channel' ? 'channels' : 'chats'); void openPeer(peer); }}
-            onOpenMiniApp={openMiniApp}
-            onInstallMiniApp={installMiniApp}
-            onUninstallMiniApp={uninstallMiniApp}
-          />
-        ) : sectionIsPeerList ? (
-          <div className={styles.peerList}>
-            {renderedContactGroups.length ? renderedContactGroups.map((group) => (
-              <section className="fabushi-contact-group" data-testid={`contact-group-${group.id}`} key={group.id}>
-                <button
-                  type="button"
-                  className="fabushi-contact-group__header"
-                  data-collapsed={group.isCollapsed}
-                  data-synthetic={group.isSynthetic}
-                  aria-expanded={!group.isCollapsed}
-                  onClick={() => { if (!group.isSynthetic) contactGroups.toggleCollapsed(group.id); }}
-                >
-                  <span>›</span><strong>{group.name}</strong><em>{group.peers.length}</em>
-                </button>
-                {!group.isCollapsed ? group.peers.map(renderPeerRow) : null}
-              </section>
-            )) : renderedPeers.map(renderPeerRow)}
-            {visiblePeers.length > renderedPeers.length ? <button type="button" data-testid="peer-list-load-more" onClick={() => setPeerRenderCount((count) => count + initialPeerRenderCount)}>显示更多会话</button> : null}
-            {!visiblePeers.length ? <EmptyList section={section} /> : null}
-          </div>
-        ) : (
-          <SectionPanel section={section} onOpenMiniApp={openMiniApp} onInstallMiniApp={installMiniApp} onUninstallMiniApp={uninstallMiniApp} miniApps={marketplaceApps} installedMiniApps={installedMiniApps} miniAppQuery={miniAppQuery} onMiniAppQuery={setMiniAppQuery} miniAppLoading={miniAppLoading} miniAppBusy={miniAppBusy} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} settings={{ category: settingsCategory, onCategory: setSettingsCategory }} />
-        )}
-        <div className={styles.sidebarFooter}>
-          {profileMenuOpen ? <ProfileNavigationMenu section={section} onNavigate={navigateFromProfile} /> : null}
-          {isActionableDesktopUpdateState(desktopUpdateState) ? <button
-            type="button"
-            className={styles.updateCloudButton}
-            data-testid="desktop-update-cloud"
-            data-state={desktopUpdateState.type}
-            disabled={desktopUpdateBusy}
-            title={desktopUpdateState.type === 'ready' ? '更新已下载，点击后立即安装并重启' : '点击一次即可下载、安装并自动重启'}
-            onClick={() => void installDesktopUpdate(desktopUpdateState)}
-          >
-            <CloudDownload size={18} />
-            <span>{desktopUpdateState.type === 'ready'
-              ? '重启并更新'
-              : desktopUpdateState.type === 'downloading'
-                ? `下载更新 ${Math.max(0, Math.min(100, Math.round(desktopUpdateState.progress ?? 0)))}%`
-                : desktopUpdateState.type === 'staging'
-                  ? '正在安装并重启…'
-                  : `更新 ${desktopUpdateState.version}`}</span>
-            {desktopUpdateState.type === 'downloading' || desktopUpdateState.type === 'staging' ? (
-              <span
-                className={styles.updateProgressTrack}
-                data-testid="desktop-update-progress"
-                data-indeterminate={desktopUpdateState.type === 'staging' || undefined}
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={desktopUpdateState.type === 'downloading' ? Math.max(0, Math.min(100, Math.round(desktopUpdateState.progress ?? 0))) : undefined}
-              >
-                <i
-                  className={styles.updateProgressFill}
-                  style={desktopUpdateState.type === 'downloading' ? { width: `${Math.max(0, Math.min(100, desktopUpdateState.progress ?? 0))}%` } : undefined}
-                />
-              </span>
-            ) : null}
-          </button> : null}
-          <button
-            type="button"
-            className={styles.profileNavigationTrigger}
-            data-testid="profile-navigation-trigger"
-            title="个人与导航"
-            onClick={(event) => { event.stopPropagation(); setProfileMenuOpen((value) => !value); }}
-          >
-            <BotMark botId={`self:${selfHosted.actorId || 'local'}`} state="idle" size={38} label="我的头像" />
-            <span><strong>我</strong><small>导航与设置</small></span>
-          </button>
-        </div>
-        </div>
         <div
           className={styles.sidebarResizer}
           data-testid="sidebar-resizer"
@@ -4957,7 +4793,7 @@ async function saveInvoiceDialog() {
                   if (submitWithEnter || submitWithShortcut) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); }
                 }} placeholder="消息" rows={1} />
                 {composer.trim()
-                  ? <button data-testid="messenger-send" className={styles.sendButton} type="submit" disabled={!hostReady || pendingSend}><Send size={19} /></button>
+                  ? <button data-testid="messenger-send" className={styles.sendButton} type="submit" disabled={!hostReady || legacySendPending}><Send size={19} /></button>
                   : null}
               </form>
               </>
