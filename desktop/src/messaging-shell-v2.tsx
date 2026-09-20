@@ -46,7 +46,6 @@ import type {
   AuthState,
   BotSummary,
   ConversationSummary,
-  ComputerStatus,
   GroupSummary,
   InferenceProvider,
   ProductHostSettings,
@@ -66,10 +65,6 @@ import { MockMahayanaHostTransport } from '../../frontend/apps/web/src/lib/mahay
 import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
 import type { InstalledPluginPointer, MahayanaHostTransport, MarketplacePluginSummary } from '../../frontend/apps/web/src/lib/mahayana-host/transport';
 import { marketplaceInstallAction, marketplaceInstallActionLabel } from '../../frontend/apps/web/src/lib/marketplace-install-contract';
-import {
-  RemoteComputerDesktopController,
-  type RemoteComputerDesktopState,
-} from '../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
 import {
   SelfHostedMessagingClientV2,
   asMessagingHostEvent,
@@ -113,6 +108,7 @@ import AgentOverlays from './agent-workspace/agent-overlays';
 import { AgentCoordinatorClient } from './agent-workspace/coordinator-client';
 import type { AgentTranscriptSourceMessage } from './agent-workspace/agent-transcript-store';
 import { useAgentWorkspaceRuntime } from './agent-workspace/use-agent-workspace-runtime';
+import { useAgentComputerController } from './agent-workspace/use-agent-computer-controller';
 import { projectTranscriptEntries, type TranscriptEntry } from './agent-workspace/transcript-model';
 import {
   AGENT_ATTACHMENT_LIMIT,
@@ -1029,10 +1025,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [narrowInfoOpen, setNarrowInfoOpen] = useState(false);
   const [wideInfoLayout, setWideInfoLayout] = useState(() => typeof window === 'undefined' ? true : window.innerWidth > 1280);
   const [infoTab, setInfoTab] = useState<InfoTab>('media');
-  const [computerProfileOpen, setComputerProfileOpen] = useState(false);
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
-  const [remoteComputerState, setRemoteComputerState] = useState<RemoteComputerDesktopState | null>(null);
-  const [computerCapabilityStatus, setComputerCapabilityStatus] = useState<ComputerStatus | null>(null);
   // Compatibility Messenger/Mini App sends retain transport pending state.
   // Agent request/operation ownership is exclusively per-peer in the workspace controller.
   const [legacySendPending, setLegacySendPending] = useState(false);
@@ -1110,7 +1103,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const typingStopTimerRef = useRef<number | null>(null);
   const peersRef = useRef<PeerItem[]>([]);
   const webRtcRef = useRef<FabushiWebRtcController | null>(null);
-  const remoteComputerControllerRef = useRef<RemoteComputerDesktopController | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
@@ -1119,9 +1111,23 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const sessionResetInFlightRef = useRef(false);
   const messageAreaRef = useRef<HTMLDivElement | null>(null);
   const stickToLatestRef = useRef(true);
-  const remoteControlEnabledRef = useRef(hostSettings.remoteControlEnabled);
-  remoteControlEnabledRef.current = hostSettings.remoteControlEnabled;
   const agentStoresRef = useRef(new Map<string, FabuAgentStore>());
+  const agentComputer = useAgentComputerController({
+    hostReady,
+    hydrated: initialLegacyHydrated,
+    accountScope: remoteAccountScope,
+    activePeerKey,
+    transport,
+    coordinatorClient: agentCoordinatorClient,
+    label: localComputerLabel(),
+    remoteControlEnabled: hostSettings.remoteControlEnabled,
+    resolveAgentId: (requestedAgentId) => requestedAgentId === 'mahayana-assistant'
+      || peersRef.current.some((peer) => isAgentPeer(peer)
+        && (peer.agentId ?? peer.actorId ?? peer.id) === requestedAgentId)
+      ? requestedAgentId
+      : null,
+    onError: setError,
+  });
 
   const {
     controller: agentWorkspaceController,
@@ -1136,7 +1142,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     onError: (peerKey, message) => {
       if (peerKey === activePeerKeyRef.current) setError(message);
     },
-    onComputerStatus: setComputerCapabilityStatus,
+    onComputerStatus: agentComputer.handleCapabilityStatus,
     onOperationStarted: (peerKey, operationId) => {
       mirrorAgentRuntimeCheckpoint(peerKey, 'running', operationId);
     },
@@ -1434,7 +1440,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setHostReady(state.phase === 'ready');
         if (state.phase !== 'ready' || !state.recovered) return;
         void execute({ type: 'settings.get', requestId: nextRequestId('settings-recover') }).catch(() => {});
-        void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-recover')).catch(() => {});
         refreshLegacy();
         const activeKey = activePeerKeyRef.current;
         const active = peersRef.current.find((peer) => peer.key === activeKey);
@@ -1483,7 +1488,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           })
           .catch(() => {});
         void execute({ type: 'settings.get', requestId: nextRequestId('settings-get') });
-        void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-startup')).catch(() => {});
         refreshLegacy();
         if (startupLegacyConversation) {
           void execute({
@@ -1518,9 +1522,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     return () => {
       closed = true;
       window.removeEventListener(MAHAYANA_COMMAND_EVENT_NAME, onCommandBridge);
-      const remoteComputer = remoteComputerControllerRef.current;
-      if (remoteComputer) void remoteComputer.stop().finally(() => connection.dispose());
-      else void connection.dispose();
+      void connection.dispose();
     };
   }, [agentCoordinatorClient, selfHosted, startupProjection]);
 
@@ -1536,52 +1538,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     retryMissing();
     return () => window.clearInterval(timer);
   }, [hostReady, initialLegacyHydrated]);
-
-  useEffect(() => {
-    // Remote presence shares the Host request path with Messenger bootstrap.
-    // Keep background registration off that path until all core legacy lists
-    // have produced their first authoritative projection.
-    if (!hostReady || !remoteAccountScope) return;
-    if (!initialLegacyHydrated) return;
-    let disposed = false;
-    const controller = new RemoteComputerDesktopController({
-      transport,
-      label: localComputerLabel(),
-      identityScope: remoteAccountScope,
-      // Presence begins automatically after login. The controller receives the
-      // persisted opt-in before any remote session polling is allowed.
-      controlEnabled: remoteControlEnabledRef.current,
-      resolveAgentId: (requestedAgentId) => requestedAgentId === 'mahayana-assistant'
-        || peersRef.current.some((peer) => isAgentPeer(peer)
-          && (peer.agentId ?? peer.actorId ?? peer.id) === requestedAgentId)
-        ? requestedAgentId
-        : null,
-      onState: (state) => {
-        if (!disposed) setRemoteComputerState(state);
-      },
-    });
-    remoteComputerControllerRef.current = controller;
-    setRemoteComputerState(controller.snapshot());
-    void controller.start();
-    return () => {
-      disposed = true;
-      if (remoteComputerControllerRef.current === controller) remoteComputerControllerRef.current = null;
-      void controller.stop();
-    };
-  }, [hostReady, initialLegacyHydrated, remoteAccountScope, transport]);
-
-  useEffect(() => {
-    if (!hostReady) return;
-    const controller = remoteComputerControllerRef.current;
-    if (!controller) return;
-    void controller.setControlEnabled(hostSettings.remoteControlEnabled).catch((cause: unknown) => {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    });
-  }, [hostReady, hostSettings.remoteControlEnabled]);
-
-  useEffect(() => {
-    setComputerProfileOpen(false);
-  }, [activePeerKey]);
 
   useEffect(() => {
     if (!hostReady || section !== 'settings' || !['router', 'usage'].includes(settingsCategory)) return;
@@ -2526,16 +2482,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const infoPanelVisible = Boolean(layoutInfoOpen && activePeer && sectionIsPeerList);
   const infoPanelDocked = Boolean(infoPanelVisible && wideInfoLayout);
   const currentActor = selfActors.find((actor) => actor.id === selfHosted.actorId);
-  const localComputerOnline = Boolean(remoteComputerState?.running && remoteComputerState.registration);
-  const localComputerStatus = computerCapabilityStatus && !computerCapabilityStatus.available
-    ? '本机控制不可用'
-    : computerCapabilityStatus && (!computerCapabilityStatus.accessibilityGranted || !computerCapabilityStatus.screenRecordingGranted)
-      ? '需要系统权限'
-      : remoteComputerState?.channelOpen
-        ? '正在远程控制'
-        : localComputerOnline
-          ? hostSettings.remoteControlEnabled ? '在线，等待连接' : '在线，仅可发现'
-          : remoteComputerState?.running ? '正在注册' : computerCapabilityStatus?.available ? '本机可用' : '离线';
+  const localComputerOnline = agentComputer.online;
+  const localComputerStatus = agentComputer.status;
   // Normal Agent timelines render directly from AgentTranscriptStore. The
   // renderer-global messages array is now compatibility-only for Messenger,
   // groups and Mini Apps.
@@ -4128,9 +4076,8 @@ async function saveInvoiceDialog() {
         onComputer={() => {
           if (!activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId) return;
           setAgentSettingsOpen(false);
-          setComputerProfileOpen(true);
+          agentComputer.openForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'command-palette');
           if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
-          void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-palette')).catch(() => {});
         }}
       />
 
@@ -4166,7 +4113,7 @@ async function saveInvoiceDialog() {
                 pinned={activePeer.pinned}
                 searchActive={conversationSearchOpen}
                 searchQuery={agentConversationSearch}
-                computerActive={computerProfileOpen}
+                computerActive={agentComputer.open}
                 infoActive={layoutInfoOpen}
                 onToggleSearch={() => {
                   const next = !conversationSearchOpen;
@@ -4177,9 +4124,8 @@ async function saveInvoiceDialog() {
                 onSelectSearchResult={scrollToTranscriptEntry}
                 onToggleComputer={() => {
                   setAgentSettingsOpen(false);
-                  setComputerProfileOpen((value) => !value);
+                  agentComputer.toggleForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'agent-header');
                   if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
-                  void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-open')).catch(() => {});
                 }}
                 onTogglePin={() => void togglePinConversation(activePeer)}
                 onToggleInfo={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}
@@ -4280,7 +4226,7 @@ async function saveInvoiceDialog() {
                     : `${activePeer.subtitle}${hostReady ? ' · Online' : ' · Connecting'}`}
                 pinned={activePeer.pinned}
                 searchActive={conversationSearchOpen}
-                computerActive={computerProfileOpen}
+                computerActive={agentComputer.open}
                 infoActive={layoutInfoOpen}
                 miniAppTitle={activePeer.miniAppMenuButtonText}
                 onOpenMiniApp={activePeer.miniAppId ? () => void openMiniApp(activePeer.miniAppId!) : undefined}
@@ -4290,7 +4236,7 @@ async function saveInvoiceDialog() {
                   if (!next) setAgentConversationSearch('');
                   }}
                 onToggleComputer={() => {
-                  setComputerProfileOpen((value) => !value);
+                  agentComputer.toggleForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'compatibility-agent-header');
                   if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
                 }}
                 onTogglePin={() => void togglePinConversation(activePeer)}
@@ -4470,43 +4416,24 @@ async function saveInvoiceDialog() {
             onTogglePin={() => void togglePinConversation(activePeer)}
             computer={{
               agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
-              open: computerProfileOpen,
+              open: agentComputer.open,
               label: localComputerLabel(),
               status: localComputerStatus,
               online: localComputerOnline,
               aiControlEnabled: hostSettings.aiComputerControlEnabled,
               remoteControlEnabled: hostSettings.remoteControlEnabled,
-              state: remoteComputerState,
-              capabilityStatus: computerCapabilityStatus,
+              state: agentComputer.state,
+              capabilityStatus: agentComputer.capabilityStatus,
               onToggle: () => {
                 setAgentSettingsOpen(false);
-                setComputerProfileOpen((value) => !value);
-                void agentCoordinatorClient.refreshComputerStatus(nextRequestId('computer-status-overlay')).catch(() => {});
-                void invokeNativeDesktop('reportOpenComputer', {
-                  source: 'agent-workspace',
-                  agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
-                  connected: remoteComputerState?.channelOpen === true,
-                }).catch(() => {});
+                agentComputer.toggleForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'agent-overlay');
               },
-              onRefreshPairingCode: () => {
-                void remoteComputerControllerRef.current?.refreshPairingCode()
-                  .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
-              },
-              onApproveSession: (sessionId) => {
-                void remoteComputerControllerRef.current?.approvePendingSession(sessionId)
-                  .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
-              },
-              onDenySession: (sessionId) => {
-                void remoteComputerControllerRef.current?.denyPendingSession(sessionId)
-                  .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
-              },
-              onDisconnect: () => { void remoteComputerControllerRef.current?.disconnectActive(); },
+              onRefreshPairingCode: agentComputer.refreshPairingCode,
+              onApproveSession: agentComputer.approveSession,
+              onDenySession: agentComputer.denySession,
+              onDisconnect: agentComputer.disconnect,
               onToggleRemoteControl: () => updateHostSetting('remoteControlEnabled', !hostSettings.remoteControlEnabled),
-              onOpenControlPage: () => {
-                void invokeNativeDesktop('openExternal', {
-                  url: `https://fabushi.ombhrum.com/remote-computer?agentId=${encodeURIComponent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id)}`,
-                }).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
-              },
+              onOpenControlPage: () => agentComputer.openControlPage(activePeer.agentId ?? activePeer.actorId ?? activePeer.id),
             }}
             settings={{
               agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
@@ -4520,7 +4447,7 @@ async function saveInvoiceDialog() {
               pending: agentSettingsSnapshot.pending,
               error: agentSettingsSnapshot.error,
               onToggle: () => {
-                setComputerProfileOpen(false);
+                agentComputer.close();
                 setAgentSettingsOpen((value) => !value);
               },
               onUpdateProfile: (profile) => agentSettingsController.updateProfile(profile),
@@ -4533,13 +4460,8 @@ async function saveInvoiceDialog() {
           <div className={styles.profileCard}>
             <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady) : 'idle'} size={92} className={styles.agentProfileMark} label={activePeer.title} />
             <strong>{activePeer.title}</strong><small>{activePeer.subtitle}</small>
-            <div className={styles.profileQuickActions} data-columns={isAgentPeer(activePeer) ? '4' : '3'}><button type="button" onClick={() => void startCall('voice')}><PhoneCall size={18} /><span>通话</span></button><button type="button" onClick={() => void startCall('video')}><Video size={18} /><span>视频</span></button><button type="button" onClick={() => { setConversationSearchOpen(true); setAgentConversationSearch(''); }}><Search size={18} /><span>搜索</span></button>{isAgentPeer(activePeer) ? <button type="button" data-testid="bot-computer-toggle" data-active={computerProfileOpen} onClick={() => {
-              setComputerProfileOpen((value) => !value);
-              void invokeNativeDesktop('reportOpenComputer', {
-                source: 'bot-profile',
-                agentId: activePeer.actorId ?? activePeer.id,
-                connected: remoteComputerState?.channelOpen === true,
-              }).catch(() => {});
+            <div className={styles.profileQuickActions} data-columns={isAgentPeer(activePeer) ? '4' : '3'}><button type="button" onClick={() => void startCall('voice')}><PhoneCall size={18} /><span>通话</span></button><button type="button" onClick={() => void startCall('video')}><Video size={18} /><span>视频</span></button><button type="button" onClick={() => { setConversationSearchOpen(true); setAgentConversationSearch(''); }}><Search size={18} /><span>搜索</span></button>{isAgentPeer(activePeer) ? <button type="button" data-testid="bot-computer-toggle" data-active={agentComputer.open} onClick={() => {
+              agentComputer.toggleForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'bot-profile');
             }}><Monitor size={18} /><span>电脑</span></button> : null}</div>
           </div>
           <div className={styles.profileActions}>
@@ -4548,33 +4470,33 @@ async function saveInvoiceDialog() {
             <button type="button" onClick={() => { void toggleArchiveConversation(activePeer); setSection('archive'); }}><Archive size={17} /><span>{activePeer.archived ? '移出归档' : '归档会话'}</span></button>
             {activePeer.source === 'selfhosted' && ['group', 'channel'].includes(activePeer.kind) ? <button type="button" onClick={() => void openCommunityAdmin(activePeer)}><Settings size={17} /><span>管理群组/频道</span></button> : null}
           </div>
-          {isAgentPeer(activePeer) && computerProfileOpen ? <section className={styles.computerProfile} data-testid="bot-computer-panel">
+          {isAgentPeer(activePeer) && agentComputer.open ? <section className={styles.computerProfile} data-testid="bot-computer-panel">
             <header>
               <span className={styles.computerProfileIcon}><Monitor size={18} /></span>
               <span><strong>这台电脑</strong><small>{localComputerLabel()}</small></span>
-              <i data-live={remoteComputerState?.channelOpen ? 'active' : localComputerOnline ? 'online' : 'offline'} />
+              <i data-live={agentComputer.state?.channelOpen ? 'active' : localComputerOnline ? 'online' : 'offline'} />
             </header>
             <div className={styles.computerProfileStatus}>
               <span><small>设备状态</small><strong>{localComputerStatus}</strong></span>
-              <span><small>已授权客户端</small><strong>{remoteComputerState?.clients.length ?? 0}</strong></span>
+              <span><small>已授权客户端</small><strong>{agentComputer.state?.clients.length ?? 0}</strong></span>
               <span><small>AI 操控</small><strong>{hostSettings.aiComputerControlEnabled ? '已允许' : '已关闭'}</strong></span>
             </div>
             <p>Fabushi 登录后会在后台保持设备在线；远控关闭时只能被同账号发现，不能读取画面或发送输入。</p>
-            {hostSettings.remoteControlEnabled && remoteComputerState?.registration?.pairingCode ? <div className={styles.computerPairingCode}>
-              <span><small>配对码</small><strong>{remoteComputerState.registration.pairingCode}</strong></span>
-              <button type="button" onClick={() => void remoteComputerControllerRef.current?.refreshPairingCode().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))}>刷新</button>
+            {hostSettings.remoteControlEnabled && agentComputer.state?.registration?.pairingCode ? <div className={styles.computerPairingCode}>
+              <span><small>配对码</small><strong>{agentComputer.state.registration.pairingCode}</strong></span>
+              <button type="button" onClick={() => agentComputer.refreshPairingCode()}>刷新</button>
             </div> : null}
-            {remoteComputerState?.pendingAuthorization ? <div className={styles.computerPairingCode} data-testid="remote-session-consent">
-              <span><small>远控请求</small><strong>{remoteComputerState.pendingAuthorization.clientLabel || '已配对设备'}</strong></span>
-              <button type="button" onClick={() => void remoteComputerControllerRef.current?.approvePendingSession(remoteComputerState.pendingAuthorization!.sessionId).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))}>允许本次连接</button>
-              <button type="button" className={styles.computerDangerButton} onClick={() => void remoteComputerControllerRef.current?.denyPendingSession(remoteComputerState.pendingAuthorization!.sessionId).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))}>拒绝</button>
+            {agentComputer.state?.pendingAuthorization ? <div className={styles.computerPairingCode} data-testid="remote-session-consent">
+              <span><small>远控请求</small><strong>{agentComputer.state.pendingAuthorization.clientLabel || '已配对设备'}</strong></span>
+              <button type="button" onClick={() => agentComputer.approveSession(agentComputer.state.pendingAuthorization!.sessionId)}>允许本次连接</button>
+              <button type="button" className={styles.computerDangerButton} onClick={() => agentComputer.denySession(agentComputer.state.pendingAuthorization!.sessionId)}>拒绝</button>
             </div> : null}
-            {remoteComputerState?.activeSessionId ? <button type="button" className={styles.computerDangerButton} onClick={() => void remoteComputerControllerRef.current?.disconnectActive()}>断开当前远控</button> : null}
+            {agentComputer.state?.activeSessionId ? <button type="button" className={styles.computerDangerButton} onClick={() => agentComputer.disconnect()}>断开当前远控</button> : null}
             <div className={styles.computerProfileButtons}>
               <button type="button" data-enabled={hostSettings.remoteControlEnabled} onClick={() => updateHostSetting('remoteControlEnabled', !hostSettings.remoteControlEnabled)}>{hostSettings.remoteControlEnabled ? '关闭远程控制' : '开启远程控制'}</button>
-              <button type="button" onClick={() => void invokeNativeDesktop('openExternal', { url: `https://fabushi.ombhrum.com/remote-computer?agentId=${encodeURIComponent(activePeer.actorId ?? activePeer.id)}` }).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))}>打开控制页面</button>
+              <button type="button" onClick={() => agentComputer.openControlPage(activePeer.agentId ?? activePeer.actorId ?? activePeer.id)}>打开控制页面</button>
             </div>
-            {remoteComputerState?.error ? <small className={styles.computerProfileError}>{remoteComputerState.error}</small> : null}
+            {agentComputer.state?.error ? <small className={styles.computerProfileError}>{remoteComputerState.error}</small> : null}
           </section> : null}
           <nav className={styles.infoTabs}><button type="button" data-active={infoTab === 'media'} onClick={() => setInfoTab('media')}>媒体</button><button type="button" data-active={infoTab === 'files'} onClick={() => setInfoTab('files')}>文件</button><button type="button" data-active={infoTab === 'links'} onClick={() => setInfoTab('links')}>链接</button></nav>
           <div className={styles.infoContent}>{infoTab === 'media' ? <><Image size={30} /><strong>共享媒体</strong><p>图片、视频和动画按消息索引展示。</p></> : null}{infoTab === 'files' ? <><FileText size={30} /><strong>共享文件</strong><p>文档、音频和附件由 Rust 媒体层管理。</p></> : null}{infoTab === 'links' ? <><Link2 size={30} /><strong>共享链接</strong><p>富文本 URL 建立可搜索索引。</p></> : null}</div>
