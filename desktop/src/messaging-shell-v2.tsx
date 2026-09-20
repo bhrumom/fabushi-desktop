@@ -1026,7 +1026,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [drafts, setDrafts] = useState<Record<string, string>>(() => Object.fromEntries(
     Object.entries(readAgentWorkspaceDrafts()).map(([peerKey, draft]) => [peerKey, draft.text]),
   ));
-  const [replyTo, setReplyTo] = useState<DisplayMessage | null>(null);
+  const [legacyReplyTo, setLegacyReplyTo] = useState<DisplayMessage | null>(null);
+  const [agentReplyByPeer, setAgentReplyByPeer] = useState<Record<string, AgentReplyContext>>(() => Object.fromEntries(
+    Object.entries(readAgentWorkspaceDrafts()).flatMap(([peerKey, draft]) => draft.replyTo ? [[peerKey, draft.replyTo]] : []),
+  ));
   const [silentSend, setSilentSend] = useState(false);
   const [scheduledAtMs, setScheduledAtMs] = useState<number | undefined>();
   const [search, setSearch] = useState('');
@@ -1182,8 +1185,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   useEffect(() => {
     agentWorkspaceControllerRef.current.hydrateDrafts(drafts);
-    persistAgentWorkspaceDrafts(drafts, agentAttachmentsByPeer);
-  }, [drafts, agentAttachmentsByPeer]);
+    persistAgentWorkspaceDrafts(drafts, agentAttachmentsByPeer, agentReplyByPeer);
+  }, [drafts, agentAttachmentsByPeer, agentReplyByPeer]);
 
   useEffect(() => {
     if (hostReady) agentSubmissionQueue.flush();
@@ -2763,6 +2766,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const pinnedGrokAgentKeys = grokAgentItems.filter((item) => item.pinned).map((item) => item.key);
   const pinnedGrokAgentSignature = pinnedGrokAgentKeys.join('\u001f');
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
+  const activeAgentReply = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
+    ? agentReplyByPeer[activePeer.key]
+    : undefined;
   const activeGrokAgentKey = projectActiveGrokAgentKey(activePeer);
 
   useEffect(() => {
@@ -3101,9 +3107,30 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
+  function clearAgentReply(peerKey: string): void {
+    setAgentReplyByPeer((current) => {
+      if (!current[peerKey]) return current;
+      const next = { ...current };
+      delete next[peerKey];
+      return next;
+    });
+  }
+
+  function setReplyTarget(message: DisplayMessage): void {
+    const peer = activePeer;
+    if (peer && isAgentPeer(peer) && !peer.miniAppId) {
+      setAgentReplyByPeer((current) => ({
+        ...current,
+        [peer.key]: { id: message.id, role: message.role, text: message.text },
+      }));
+      return;
+    }
+    setLegacyReplyTo(message);
+  }
+
   function editBotMessage(message: BotTranscriptMessage) {
     updateComposer(message.text);
-    setReplyTo(null);
+    if (activePeer) clearAgentReply(activePeer.key);
   }
 
   async function dispatchAgentPromptNow(
@@ -3254,7 +3281,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setComposer(agentWorkspaceControllerRef.current.draftForPeer(peer.key) || drafts[peer.key] || '');
     setSearch('');
     setMessageRenderCount(initialMessageRenderCount);
-    setReplyTo(null);
+    setLegacyReplyTo(null);
     setError(null);
     setConversationSearchOpen(false);
     setAgentConversationSearch('');
@@ -3318,9 +3345,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (legacySendPending && !agentRequest) return;
     if (agentRequest) {
       const attachments = stagedAgentAttachments;
-      const replyContext: AgentReplyContext | undefined = replyTo
-        ? { id: replyTo.id, role: replyTo.role, text: replyTo.text }
-        : undefined;
+      const replyContext = activeAgentReply;
       updateComposer('');
       setAgentAttachmentsByPeer((current) => {
         const next = { ...current };
@@ -3328,7 +3353,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         return next;
       });
       enqueueAgentPrompt(activePeer, text, undefined, attachments, replyContext);
-      setReplyTo(null);
+      clearAgentReply(activePeer.key);
       setScheduledAtMs(undefined);
       return;
     }
@@ -3391,7 +3416,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }]);
       } else if (activePeer.source === 'selfhosted' && activePeer.conversationId) {
         await selfHosted.sendText(activePeer.conversationId, text, {
-          replyToMessageId: replyTo?.id,
+          replyToMessageId: legacyReplyTo?.id,
           scheduledAtMs,
           silent: silentSend,
         });
@@ -3431,7 +3456,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           appendAssistantTurnEvent({ type: 'operation.started', timestamp: new Date().toISOString(), operationId: accepted.operationId, label: '正在思考', interruptible: true });
         }
       }
-      setReplyTo(null);
+      setLegacyReplyTo(null);
       setScheduledAtMs(undefined);
     } catch (cause) {
       if (activePeer.miniAppId) {
@@ -3633,10 +3658,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       await selfHosted.sendAttachment(
         activePeer.conversationId,
         file,
-        { replyToMessageId: replyTo?.id, scheduledAtMs, silent: silentSend },
+        { replyToMessageId: legacyReplyTo?.id, scheduledAtMs, silent: silentSend },
         (uploaded, total) => setAttachmentProgress(`正在上传 ${file.name} · ${Math.round((uploaded / total) * 100)}%`),
       );
-      setReplyTo(null);
+      setLegacyReplyTo(null);
       setScheduledAtMs(undefined);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -3725,7 +3750,7 @@ async function saveInvoiceDialog() {
       return;
     }
     if (action === 'reply') {
-      setReplyTo(target);
+      setReplyTarget(target);
       return;
     }
     if (action === 'forward') {
@@ -4533,8 +4558,8 @@ async function saveInvoiceDialog() {
                   if (sourceMessage) setMessageMenu({ message: sourceMessage, x: event.clientX, y: event.clientY });
                 }}
                 notice={error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
-                composerReplyTarget={replyTo ? { id: replyTo.id, label: '回复', text: replyTo.text } : undefined}
-                onClearComposerReply={() => setReplyTo(null)}
+                composerReplyTarget={activeAgentReply ? { id: activeAgentReply.id, label: '回复', text: activeAgentReply.text } : undefined}
+                onClearComposerReply={() => clearAgentReply(activePeer.key)}
                 composerAccessory={agentAttachmentUploadingPeers.has(activePeer.key)
                   ? <span className={extra.uploadProgress}>Uploading attachments…</span>
                   : null}
@@ -4693,7 +4718,7 @@ async function saveInvoiceDialog() {
                     {generatedPreview.complete ? <button type="button" data-testid="generated-miniapp-open" onClick={() => void showMiniAppDocument(generatedPreview.id, generatedPreview.title, generatedPreview.html)}>打开小程序</button> : null}
                   </div> : <StructuredMessageBody text={message.text} peers={peers} />}
                   <div className={extra.messageHoverActions} data-testid="message-hover-actions">
-                    <button type="button" title="回复" aria-label="回复" onClick={() => setReplyTo(message)}><span aria-hidden="true">↩</span></button>
+                    <button type="button" title="回复" aria-label="回复" onClick={() => setReplyTarget(message)><span aria-hidden="true">↩</span></button>
                     <button type="button" title="复制" aria-label="复制" onClick={() => void navigator.clipboard.writeText(message.text)}><span aria-hidden="true">⧉</span></button>
                     <button type="button" title="更多" aria-label="更多" onClick={(event) => {
                       const rect = event.currentTarget.getBoundingClientRect();
@@ -4707,7 +4732,7 @@ async function saveInvoiceDialog() {
               {!matchingMessages.length ? <div className={styles.chatEmpty} data-testid="message-search-empty"><BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, false, hostReady) : 'idle'} size={78} className={styles.agentAvatarMark} label={activePeer.title} /><strong>{activePeer.title}</strong><p>联系人、AI Bot、群组和频道使用同一个 Fabushi 消息产品层。</p></div> : null}
             </div>
             )}
-            {replyTo ? <div className={extra.composerBanner} data-testid="reply-message-banner"><Reply size={15} /><div><strong>回复</strong><span>{replyTo.text}</span></div><button type="button" data-testid="reply-message-cancel" onClick={() => setReplyTo(null)}><X size={14} /></button></div> : null}
+            {legacyReplyTo ? <div className={extra.composerBanner} data-testid="reply-message-banner"><Reply size={15} /><div><strong>回复</strong><span>{legacyReplyTo.text}</span></div><button type="button" data-testid="reply-message-cancel" onClick={() => setLegacyReplyTo(null)}><X size={14} /></button></div> : null}
             {scheduledAtMs ? <div className={extra.composerBanner}><span>⏱</span><div><strong>定时发送</strong><span>{new Date(scheduledAtMs).toLocaleString()}</span></div><button type="button" onClick={() => setScheduledAtMs(undefined)}><X size={14} /></button></div> : null}
             {activePeer.miniAppId && composer.trimStart().startsWith('/') && activePeer.miniAppCommands?.length ? <div className={extra.composerBanner} data-testid="miniapp-bot-commands"><AppWindow size={15} /><div><strong>小程序命令</strong><span>{activePeer.miniAppCommands.map((command) => `/${command.name}`).join(' · ')}</span></div>{activePeer.miniAppCommands.slice(0, 4).map((command) => <button key={command.name} type="button" title={command.description} onClick={() => updateComposer(command.usage)}>{`/${command.name}`}</button>)}</div> : null}
               <form className={styles.composer} onSubmit={(event) => void sendMessage(event)}>
