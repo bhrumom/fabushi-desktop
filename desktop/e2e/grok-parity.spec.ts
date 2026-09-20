@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AgentTranscriptStore } from '../src/agent-workspace/agent-transcript-store';
 import { AgentWorkspaceController } from '../src/agent-workspace/agent-workspace-controller';
+import { AgentRuntimeCoordinator } from '../src/agent-workspace/agent-runtime-coordinator';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
@@ -125,6 +126,63 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.draftForPeer('agent:a')).toBe('newer draft typed while the send was pending');
       expect(controller.attachmentsForPeer('agent:a').map((attachment) => attachment.id)).toEqual(['attachment:a']);
       expect(controller.replyForPeer('agent:a')?.id).toBe('reply:a');
+    });
+
+    await test.step('Agent runtime coordinator isolates concurrent Agent streams and preserves drafts on reconnect', async () => {
+      const controller = new AgentWorkspaceController();
+      const transcripts = new AgentTranscriptStore();
+      const coordinator = new AgentRuntimeCoordinator(controller, transcripts);
+
+      controller.setDraft('agent:a', 'draft survives reconnect');
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:a',
+        requestId: 'request:a',
+        messageId: 'user:a',
+        text: 'A',
+        createdAtMs: 1,
+      });
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:b',
+        requestId: 'request:b',
+        messageId: 'user:b',
+        text: 'B',
+        createdAtMs: 2,
+      });
+
+      coordinator.adoptOperation('request:a', 'operation:a', 'agent:a');
+      coordinator.adoptOperation('request:b', 'operation:b', 'agent:b');
+      expect(controller.operationForPeer('agent:a')).toBe('operation:a');
+      expect(controller.operationForPeer('agent:b')).toBe('operation:b');
+
+      expect(coordinator.handle({
+        type: 'chat.delta',
+        timestamp: new Date(3).toISOString(),
+        operationId: 'operation:a',
+        delta: 'alpha',
+      })).toBe(true);
+      expect(coordinator.handle({
+        type: 'chat.delta',
+        timestamp: new Date(4).toISOString(),
+        operationId: 'operation:b',
+        delta: 'beta',
+      })).toBe(true);
+      coordinator.flushPendingDeltas();
+
+      expect(coordinator.handle({
+        type: 'operation.completed',
+        timestamp: new Date(5).toISOString(),
+        operationId: 'operation:a',
+      })).toBe(true);
+      expect(controller.isBusy('agent:a')).toBe(false);
+      expect(controller.isBusy('agent:b')).toBe(true);
+      expect(transcripts.entries('agent:a').map((entry) => entry.text).join(' ')).toContain('alpha');
+      expect(transcripts.entries('agent:b').map((entry) => entry.text).join(' ')).toContain('beta');
+      expect(transcripts.entries('agent:a').map((entry) => entry.text).join(' ')).not.toContain('beta');
+
+      coordinator.resetOperations();
+      expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
+      expect(controller.isBusy('agent:b')).toBe(false);
+      coordinator.dispose();
     });
 
     await test.step('Agent transcript store keeps one ordered assistant turn through adoption and finalization', async () => {
