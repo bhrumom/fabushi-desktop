@@ -106,6 +106,10 @@ import { MiniAppCallDialog } from './miniapp-call-dialog';
 import { executeDesktopMiniAppBotInput, prepareDesktopMiniAppWebMcpDocument } from './miniapp-webmcp-host';
 import BotConversationView from './bot-conversation-view';
 import type { BotTranscriptMessage } from './bot-conversation-view';
+import AgentWorkspace from './agent-workspace/agent-workspace';
+import { AgentWorkspaceController } from './agent-workspace/agent-workspace-controller';
+import { AgentCoordinatorClient } from './agent-workspace/coordinator-client';
+import { projectTranscriptEntries, type TranscriptEntry } from './agent-workspace/transcript-model';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -129,10 +133,8 @@ import { FabuAgentStore } from './fabu-runtime/agent-store';
 import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
 import GrokAgentSidebar, { type GrokAgentSidebarItem } from './grok-shell/grok-agent-sidebar';
 import GrokAgentHeader from './grok-shell/grok-agent-header';
-import GrokAgentComposer from './grok-shell/grok-agent-composer';
 import GrokAgentNetwork from './grok-shell/grok-agent-network';
 import GrokCommandPalette from './grok-shell/grok-command-palette';
-import { AgentOperationRegistry } from './grok-runtime/agent-operation-registry';
 import { grokAgentKey, projectActiveGrokAgentKey, projectGrokAgentSidebarItems } from './grok-runtime/agent-model';
 import {
   SidebarContactGroupManager,
@@ -981,6 +983,7 @@ function DesktopFastStartBootstrap() {
 
 function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection?: MessengerProjection | null; onLogout: () => Promise<void> }) {
   const transport = useMemo(() => createTransport(), []);
+  const agentCoordinatorClient = useMemo(() => new AgentCoordinatorClient(transport), [transport]);
   const startupProjection = useMemo(() => initialProjection ?? readMessengerProjection(), [initialProjection]);
   const startupLegacyConversation = useMemo(() => startupLegacyConversationId(startupProjection), [startupProjection]);
   const selfHosted = useMemo(() => new SelfHostedMessagingClientV2(transport, { actorId: startupProjection?.actorId }), [transport, startupProjection]);
@@ -1098,7 +1101,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const searchInputRef = useRef<HTMLInputElement>(null);
   const sessionResetInFlightRef = useRef(false);
   const agentOperationIdRef = useRef<string | null>(null);
-  const agentOperationRegistryRef = useRef(new AgentOperationRegistry());
+  const agentWorkspaceControllerRef = useRef(new AgentWorkspaceController());
   const agentRequestPendingRef = useRef(false);
   const agentRequestPeerRef = useRef<string | null>(null);
   const agentRequestIdRef = useRef<string | null>(null);
@@ -1126,7 +1129,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   const agentSubmissionQueue = useMemo(() => createAgentSubmissionQueue({
     isBlocked: (input) => !hostReadyRef.current
-      || agentOperationRegistryRef.current.isBusy(input.peerKey),
+      || agentWorkspaceControllerRef.current.isBusy(input.peerKey),
     send: async (input) => {
       const peer = peersRef.current.find((candidate) => candidate.key === input.peerKey);
       if (!peer || !isAgentPeer(peer)) throw new Error('Agent peer is no longer available.');
@@ -1909,19 +1912,19 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function syncAgentOperationSnapshot() {
-    setAgentOperationByPeer({ ...agentOperationRegistryRef.current.snapshot() });
+    setAgentOperationByPeer({ ...agentWorkspaceControllerRef.current.snapshot() });
   }
 
   function unambiguousAgentOperationId(): string | undefined {
-    const running = [...new Set(Object.values(agentOperationRegistryRef.current.snapshot()))];
+    const running = [...new Set(Object.values(agentWorkspaceControllerRef.current.snapshot()))];
     if (running.length === 1) return running[0];
     if (running.length > 1) return undefined;
     return agentOperationIdRef.current ?? agentRequestIdRef.current ?? undefined;
   }
 
   function projectActiveAgentOperation(peerKey: string | null | undefined) {
-    const operationId = agentOperationRegistryRef.current.operationForPeer(peerKey);
-    const requestId = agentOperationRegistryRef.current.requestForPeer(peerKey);
+    const operationId = agentWorkspaceControllerRef.current.operationForPeer(peerKey);
+    const requestId = agentWorkspaceControllerRef.current.requestForPeer(peerKey);
     agentOperationIdRef.current = operationId;
     setAgentOperationId(operationId);
     agentRequestPendingRef.current = Boolean(requestId);
@@ -1932,7 +1935,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   function claimAgentOperation(operationId?: string): boolean {
     if (!operationId || finishedAgentOperationsRef.current.has(operationId)) return false;
-    const registry = agentOperationRegistryRef.current;
+    const registry = agentWorkspaceControllerRef.current;
     let peerKey = registry.peerForOperation(operationId)
       ?? agentPeerKeyRef.current[operationId]
       ?? null;
@@ -1962,7 +1965,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function clearAgentOperation(operationId: string, terminalStatus: 'completed' | 'failed' | 'interrupted' = 'completed') {
-    const registry = agentOperationRegistryRef.current;
+    const registry = agentWorkspaceControllerRef.current;
     const peerKey = registry.finishOperation(operationId)
       ?? registry.peerForOperation(operationId)
       ?? agentPeerKeyRef.current[operationId]
@@ -2290,7 +2293,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       case 'conversation.opened':
-        if (agentOperationRegistryRef.current.operationForPeer(activePeerKeyRef.current)) break;
+        if (agentWorkspaceControllerRef.current.operationForPeer(activePeerKeyRef.current)) break;
         if (activePeerKeyRef.current === `legacy:conversation:${event.conversationId}`
           || peersRef.current.some((peer) => peer.key === activePeerKeyRef.current
             && peer.source === 'legacy'
@@ -2476,14 +2479,14 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
         break;
       case 'operation.interrupted':
-        if (agentOperationRegistryRef.current.peerForOperation(event.operationId)
+        if (agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
           || agentPeerKeyRef.current[event.operationId]) {
           appendAssistantTurnEvent(event);
         }
         if (clearAgentOperation(event.operationId, 'interrupted')) agentSubmissionQueue.flush();
         break;
       case 'operation.completed':
-        if (agentOperationRegistryRef.current.peerForOperation(event.operationId)
+        if (agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
           || agentPeerKeyRef.current[event.operationId]) {
           appendAssistantTurnEvent(event);
         }
@@ -2498,7 +2501,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       case 'operation.failed': {
-        const owner = agentOperationRegistryRef.current.peerForOperation(event.operationId)
+        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
           ?? agentPeerKeyRef.current[event.operationId]
           ?? null;
         if (owner) appendAssistantTurnEvent(event);
@@ -2509,7 +2512,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         break;
       }
       case 'host.closed':
-        agentOperationRegistryRef.current.clear();
+        agentWorkspaceControllerRef.current.clear();
         syncAgentOperationSnapshot();
         projectActiveAgentOperation(activePeerKeyRef.current);
         setHostReady(false);
@@ -2771,17 +2774,20 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const botTranscriptMessages: BotTranscriptMessage[] = activePeer && isAgentPeer(activePeer)
     ? [...renderedMessages, ...(queuedAgentPrompts[activePeer.key] ?? [])]
     : renderedMessages;
+  const agentTranscriptEntries: TranscriptEntry[] = activePeer && isAgentPeer(activePeer)
+    ? projectTranscriptEntries(botTranscriptMessages)
+    : [];
   const activeAgentOperationId = activePeer
     ? agentOperationByPeer[activePeer.key] ?? null
     : null;
   const activePeerBusy = Boolean(activePeer && (
     activeAgentOperationId
-    || agentOperationRegistryRef.current.requestForPeer(activePeer.key)
+    || agentWorkspaceControllerRef.current.requestForPeer(activePeer.key)
   ));
 
   function renderPeerRow(peer: PeerItem) {
     const peerBusy = Boolean(agentOperationByPeer[peer.key]
-      || agentOperationRegistryRef.current.requestForPeer(peer.key));
+      || agentWorkspaceControllerRef.current.requestForPeer(peer.key));
     return <button data-testid={`legacy-peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
       <BotMark
         botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`}
@@ -2865,7 +2871,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       return;
     }
     if (!window.confirm(`Delete “${peer.title}”? The Agent store is retained for recovery.`)) return;
-    agentOperationRegistryRef.current.clearPeer(peer.key);
+    agentWorkspaceControllerRef.current.clearPeer(peer.key);
     syncAgentOperationSnapshot();
     await execute({
       type: 'bot.delete',
@@ -2927,12 +2933,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   async function broadcastGrokAgents(message: string, targetAgentIds?: string[]): Promise<void> {
     try {
-      await transport.execute({
-        type: 'agent.broadcast',
-        requestId: nextRequestId('grok-agent-broadcast'),
-        ...(targetAgentIds?.length ? { targetIds: targetAgentIds } : {}),
+      await agentCoordinatorClient.broadcast(
+        nextRequestId('grok-agent-broadcast'),
         message,
-      });
+        targetAgentIds,
+      );
     } catch (cause) {
       const reason = cause instanceof Error ? cause.message : String(cause);
       setError(reason);
@@ -2953,6 +2958,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setComposer(value);
     const activeKey = activePeerKeyRef.current;
     if (!activeKey) return;
+    agentWorkspaceControllerRef.current.setDraft(activeKey, value);
     if (activeKey.startsWith('selfhosted:')) {
       const conversationId = activeKey.slice('selfhosted:'.length);
       if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
@@ -3003,7 +3009,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   async function dispatchAgentPromptNow(peer: PeerItem, text: string, existingMessageId?: string): Promise<void> {
-    const registry = agentOperationRegistryRef.current;
+    const registry = agentWorkspaceControllerRef.current;
     if (registry.isBusy(peer.key)) {
       throw new Error('This Agent is already busy.');
     }
@@ -3047,8 +3053,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       agentRequestIdRef.current = requestId;
     }
     try {
-      const accepted = await execute({
-        type: 'chat.send',
+      const accepted = await agentCoordinatorClient.send({
         requestId,
         text,
         conversationId: peer.conversationId,
@@ -3118,11 +3123,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   async function stopAgentOperation(): Promise<void> {
-    const operationId = agentOperationRegistryRef.current.operationForPeer(activePeerKeyRef.current)
+    const operationId = agentWorkspaceControllerRef.current.operationForPeer(activePeerKeyRef.current)
       ?? agentOperationIdRef.current;
     if (!operationId) return;
     try {
-      await transport.interrupt(operationId);
+      await agentCoordinatorClient.interrupt(operationId);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -3152,7 +3157,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     stickToLatestRef.current = true;
     setShowScrollToLatest(false);
-    setComposer(drafts[peer.key] ?? '');
+    setComposer(agentWorkspaceControllerRef.current.draftForPeer(peer.key) || drafts[peer.key] || '');
     setSearch('');
     setGlobalSearchOpen(false);
     setMessageRenderCount(initialMessageRenderCount);
@@ -3177,7 +3182,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       else if (peer.conversationId) setMessages(cachedLegacyDisplayMessages(peer.conversationId));
       else setMessages([]);
       if (peer.conversationId) {
-        await execute({ type: 'conversation.open', requestId: nextRequestId('conversation-open'), conversationId: peer.conversationId });
+        await agentCoordinatorClient.openConversation(nextRequestId('conversation-open'), peer.conversationId).catch((cause: unknown) => {
+          setError(cause instanceof Error ? cause.message : String(cause));
+        });
       }
       return;
     }
@@ -3194,7 +3201,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     if (peer.conversationId) {
       setMessages(cachedLegacyDisplayMessages(peer.conversationId));
-      await execute({ type: 'conversation.open', requestId: nextRequestId('conversation-open'), conversationId: peer.conversationId });
+      await agentCoordinatorClient.openConversation(nextRequestId('conversation-open'), peer.conversationId).catch((cause: unknown) => {
+          setError(cause instanceof Error ? cause.message : String(cause));
+        });
       return;
     }
     setMessages([]);
