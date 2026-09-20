@@ -1691,3 +1691,122 @@
   border-color: rgb(25 24 32 / 12%);
   background: rgb(25 24 32 / 4%);
 }
+
+
+/* Grok/Fabu Agent-first desktop parity shell.
+ * Keep the legacy Messenger implementation mounted only as a compatibility
+ * backend; the primary visible surface follows the recovered Grok Bot shell. */
+.grokParity {
+  background: #17161b;
+  color: #eceaf2;
+}
+.grokParity .chatList {
+  background: #1b1a1f;
+  border-right-color: rgba(255,255,255,.08);
+}
+.grokParity .sidebarResizer { background: transparent; }
+.grokParity .sidebarResizer:hover { background: rgba(184,161,255,.36); }
+.grokParity .chatWorkspace {
+  background: #17161b;
+}
+.grokParity .chatWorkspace::before { display: none; }
+.grokParity .chatHeader {
+  height: 54px;
+  padding: 0 18px;
+  color: #eceaf2;
+  background: #17161b;
+  border-bottom-color: rgba(255,255,255,.08);
+}
+.grokParity .chatIdentity strong { color: #f2eff7; font-size: 13px; font-weight: 600; }
+.grokParity .chatIdentity small { color: #77727f; font-size: 11px; }
+.grokParity .headerActions button {
+  color: #8f8998;
+  background: transparent;
+}
+.grokParity .headerActions button:hover,
+.grokParity .headerActions button[data-active="true"] {
+  color: #f4f0fa;
+  background: rgba(255,255,255,.07);
+}
+.grokParity .composer {
+  width: min(760px, calc(100% - 40px));
+  margin: 0 auto 18px;
+  min-height: 52px;
+  padding: 5px 7px;
+  color: #eceaf2;
+  background: #242229;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.22);
+}
+.grokParity .composer textarea {
+  color: #f0edf4;
+  background: transparent;
+}
+.grokParity .composer textarea::placeholder { color: #716c78; }
+.grokParity .composer > button,
+.grokParity .composer > div > button {
+  color: #918a9b;
+}
+.grokParity .composer > button:hover,
+.grokParity .composer > div > button:hover {
+  color: #f1edf7;
+  background: rgba(255,255,255,.07);
+}
+.grokParity .composer .sendButton {
+  color: #1b1820;
+  background: #ebe6f4;
+}
+.grokParity .composer .sendButton:hover {
+  color: #111014;
+  background: #fff;
+}
+.grokParity .errorBanner {
+  color: #f6c5c5;
+  background: rgba(128,47,47,.22);
+  border-bottom-color: rgba(255,255,255,.06);
+}
+.grokParity .infoPanel {
+  color: #e9e5ef;
+  background: #1e1d22;
+  border-left-color: rgba(255,255,255,.08);
+}
+.grokParity .infoPanel > header,
+.grokParity .profileCard,
+.grokParity .profileActions,
+.grokParity .infoTabs {
+  border-color: rgba(255,255,255,.08);
+}
+.grokParity .profileCard > small,
+.grokParity .infoContent,
+.grokParity .infoContent p { color: #8e8996; }
+.grokParity .profileCard > div button,
+.grokParity .profileActions button {
+  color: #c7c0d1;
+  background: rgba(255,255,255,.045);
+}
+.grokParity .profileActions button { background: transparent; }
+.grokParity .profileActions button:hover,
+.grokParity .profileCard > div button:hover { background: rgba(255,255,255,.075); }
+.grokParity .computerProfile {
+  color: #ddd7e4;
+  background: #211f25;
+  border-color: rgba(255,255,255,.08);
+}
+.grokParity .computerProfileStatus > span,
+.grokParity .computerPairingCode { background: rgba(255,255,255,.045); border-color: rgba(255,255,255,.08); }
+.grokParity .featureWorkspace {
+  color: #ece8f1;
+  background: #201e24;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 18px 52px rgba(0,0,0,.3);
+}
+.grokParity .featureWorkspace > p,
+.grokParity .sectionList small { color: #8f8997; }
+.grokParity .featureGrid button {
+  color: #d8ccef;
+  background: #29262f;
+  border-color: rgba(255,255,255,.08);
+}
+.grokParity .featureGrid button strong { color: #f0edf5; }
+.grokParity .featureGrid button small { color: #8f8997; }
