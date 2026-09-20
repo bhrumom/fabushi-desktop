@@ -129,6 +129,10 @@ Approval resolution and interrupt are now exposed by `useAgentWorkspaceRuntime`;
 
 `desktop/scripts/check-agent-workspace-boundary.mjs` now fails CI if the primary shell reintroduces `RemoteComputerDesktopController`, Computer capability state setters, direct `computer.status`, `reportOpenComputer`, approval resolution or interrupt calls.
 
+## 2026-09-21 Agent conversation + attachment IO cutover
+
+Normal Agent `conversation.open` and attachment/voice uploads now enter `useAgentWorkspaceRuntime` rather than calling `AgentCoordinatorClient` from `messaging-shell-v2.tsx`. Compatibility Messenger conversations keep their direct adapter path, but Agent conversation activation and Agent-owned file persistence are now fenced by the workspace runtime and report failures to the owning Agent.
+
 ## Refactor rule
 
 Do not repeat the abandoned wholesale-source replacement. Keep Mahayana as the authoritative Rust Agent/runtime layer, but port the reference's domain boundaries and visible interaction model:

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ApprovalResolution, ComputerStatus } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { ApprovalResolution, AttachmentContext, ComputerStatus } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import {
   createAgentSubmissionQueue,
   type AgentSubmission,
   type AgentSubmissionQueue,
 } from '../fabu-runtime/submission-queue';
 import { readAgentWorkspaceDrafts, persistAgentWorkspaceDrafts } from './agent-draft-store';
-import { AgentCoordinatorClient } from './coordinator-client';
+import { AgentCoordinatorClient, type AgentAttachmentUpload } from './coordinator-client';
 import { AgentRuntimeCoordinator } from './agent-runtime-coordinator';
 import {
   AgentTranscriptStore,
@@ -41,6 +41,8 @@ export interface AgentWorkspaceRuntimeFacade {
   readonly coordinator: AgentRuntimeCoordinator;
   readonly revision: number;
   submit(input: AgentWorkspaceSubmissionInput): ReturnType<AgentSubmissionQueue['submit']>;
+  openConversation(peerKey: string, conversationId: string): Promise<void>;
+  uploadAttachment(peerKey: string, input: Omit<AgentAttachmentUpload, 'requestId'>): Promise<AttachmentContext>;
   resolveApproval(resolution: ApprovalResolution): Promise<void>;
   interrupt(peerKey: string | null | undefined): Promise<void>;
   notify(): void;
@@ -206,6 +208,33 @@ export function useAgentWorkspaceRuntime(
     });
   }, [submissionQueue]);
 
+  const openConversation = useCallback(async (peerKey: string, conversationId: string) => {
+    try {
+      await optionsRef.current.coordinatorClient.openConversation(
+        nextRuntimeSubmissionId('conversation-open'),
+        conversationId,
+      );
+    } catch (cause) {
+      optionsRef.current.onError?.(peerKey, errorMessage(cause));
+      throw cause;
+    }
+  }, []);
+
+  const uploadAttachment = useCallback(async (
+    peerKey: string,
+    input: Omit<AgentAttachmentUpload, 'requestId'>,
+  ): Promise<AttachmentContext> => {
+    try {
+      return await optionsRef.current.coordinatorClient.uploadAttachment({
+        ...input,
+        requestId: nextRuntimeSubmissionId('agent-attachment'),
+      });
+    } catch (cause) {
+      optionsRef.current.onError?.(peerKey, errorMessage(cause));
+      throw cause;
+    }
+  }, []);
+
   const resolveApproval = useCallback((resolution: ApprovalResolution) => {
     return optionsRef.current.coordinatorClient.resolveApproval(resolution);
   }, []);
@@ -241,6 +270,8 @@ export function useAgentWorkspaceRuntime(
     coordinator,
     revision,
     submit,
+    openConversation,
+    uploadAttachment,
     resolveApproval,
     interrupt,
     notify,

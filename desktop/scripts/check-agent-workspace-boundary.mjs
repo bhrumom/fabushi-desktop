@@ -39,6 +39,7 @@ const forbidden = [
   ['renderer bypasses Agent Computer controller', /agentCoordinatorClient\.refreshComputerStatus\s*\(|reportOpenComputer/],
   ['renderer bypasses Agent runtime approval facade', /agentCoordinatorClient\.resolveApproval\s*\(/],
   ['renderer bypasses Agent runtime interrupt facade', /agentCoordinatorClient\.interrupt\s*\(/],
+  ['renderer bypasses Agent attachment facade', /agentCoordinatorClient\.uploadAttachment\s*\(/],
 ];
 
 const violations = forbidden
@@ -47,6 +48,11 @@ const violations = forbidden
 
 if (!/useAgentWorkspaceRuntime\s*\(/.test(shell)) {
   violations.push('Agent workspace runtime facade is not mounted by the desktop Agent shell');
+}
+if (!/openConversation:\s*openAgentConversation/.test(shell)
+  || !/uploadAttachment:\s*uploadAgentAttachment/.test(shell)
+  || !/uploadAgentAttachment\(peer\.key/.test(shell)) {
+  violations.push('normal Agent conversation/attachment IO escaped the workspace runtime facade');
 }
 if (!/useAgentComputerController\s*\(/.test(shell)) {
   violations.push('Agent Computer lifecycle controller is not mounted by the desktop Agent shell');

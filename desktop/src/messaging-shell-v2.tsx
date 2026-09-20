@@ -1134,6 +1134,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     transcriptStore: agentTranscriptStore,
     coordinator: agentRuntimeCoordinator,
     submit: submitAgentWorkspace,
+    openConversation: openAgentConversation,
+    uploadAttachment: uploadAgentAttachment,
     resolveApproval: resolveAgentApproval,
     interrupt: interruptAgentWorkspace,
     revision: agentWorkspaceRevision,
@@ -1446,10 +1448,14 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         const activeKey = activePeerKeyRef.current;
         const active = peersRef.current.find((peer) => peer.key === activeKey);
         if (active?.conversationId) {
-          void agentCoordinatorClient.openConversation(
-            nextRequestId('conversation-recover'),
-            active.conversationId,
-          ).catch(() => {});
+          if (isAgentPeer(active) && !active.miniAppId) {
+            void openAgentConversation(active.key, active.conversationId).catch(() => {});
+          } else {
+            void agentCoordinatorClient.openConversation(
+              nextRequestId('conversation-recover'),
+              active.conversationId,
+            ).catch(() => {});
+          }
         }
       },
     });
@@ -2887,9 +2893,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       }
       notifyAgentWorkspaceState();
       if (peer.conversationId) {
-        await agentCoordinatorClient.openConversation(nextRequestId('conversation-open'), peer.conversationId).catch((cause: unknown) => {
-          setError(cause instanceof Error ? cause.message : String(cause));
-        });
+        await openAgentConversation(peer.key, peer.conversationId).catch(() => {});
       }
       void agentWorkflowController.list(peer.agentId ?? peer.actorId ?? peer.id).catch(() => {});
       return;
@@ -3124,8 +3128,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     const validationError = validateAgentAttachment(file);
     if (validationError) throw new Error(validationError);
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
-    const stored = await agentCoordinatorClient.uploadAttachment({
-      requestId: nextRequestId('agent-voice-upload'),
+    const stored = await uploadAgentAttachment(peer.key, {
       agentId,
       filename: file.name,
       mimeType: file.type || 'audio/webm',
@@ -3175,8 +3178,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           continue;
         }
         try {
-          const stored = await agentCoordinatorClient.uploadAttachment({
-            requestId: nextRequestId('agent-attachment-upload'),
+          const stored = await uploadAgentAttachment(peer.key, {
             agentId,
             filename: file.name,
             mimeType: file.type || undefined,
