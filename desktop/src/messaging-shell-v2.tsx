@@ -893,36 +893,55 @@ export default function DesktopShellV2() {
 }
 
 function DesktopFastStartBootstrap() {
+  const bootstrapAgent: GrokAgentSidebarItem = {
+    key: 'agent:mahayana-assistant',
+    peerKey: 'bootstrap:mahayana-assistant',
+    id: 'mahayana-assistant',
+    agentId: 'mahayana-assistant',
+    name: 'Mahayana',
+    description: 'Connecting to local Agent…',
+    pinned: true,
+    hidden: false,
+    unread: 0,
+    busy: false,
+    isGroup: false,
+    updatedAtMs: Date.now(),
+  };
+  const noop = () => {};
   return (
     <main
       className={`${styles.messenger} ${styles.fabushiUnified} ${styles.grokParity}`}
       data-testid="desktop-fast-start-bootstrap"
       aria-busy="true"
-      aria-label="Fabushi 正在连接"
-      style={{ gridTemplateColumns: '330px minmax(420px,1fr)' }}
+      aria-label="Fabushi is connecting"
+      style={{ gridTemplateColumns: '300px minmax(420px,1fr)' }}
     >
       <aside className={styles.chatList}>
-        <header className={styles.listHeader}>
-          <span className={styles.sidebarBrand} title="Fabushi"><BotMark botId="fabushi:bootstrap" state="idle" size={30} paused label="Fabushi" /></span>
-          <strong>聊天</strong>
-        </header>
-        <label className={styles.searchBox}>
-          <Search size={16} />
-          <input disabled placeholder="搜索" aria-label="搜索" />
-        </label>
-        <div className={styles.peerList} aria-hidden="true" />
-        <div className={styles.sidebarFooter}>
-          <button type="button" className={styles.profileNavigationTrigger} disabled>
-            <BotMark botId="fabushi:bootstrap:self" state="idle" size={38} paused label="我的头像" />
-            <span><strong>我</strong><small>正在连接</small></span>
-          </button>
-        </div>
+        <GrokAgentSidebar
+          agents={[bootstrapAgent]}
+          activeKey={bootstrapAgent.key}
+          query=""
+          collapsed={false}
+          hostReady={false}
+          accountLabel="Connecting…"
+          onQuery={noop}
+          onOpen={noop}
+          onNewAgent={noop}
+          onToggleCollapsed={noop}
+          onTogglePin={noop}
+          onRename={noop}
+          onHide={noop}
+          onDuplicate={noop}
+          onDelete={noop}
+          onOpenPlugins={noop}
+          onOpenSettings={noop}
+        />
       </aside>
       <section className={styles.chatWorkspace}>
         <div className={styles.chatEmpty}>
-          <BotMark botId="fabushi:bootstrap:workspace" state="idle" size={72} paused label="Fabushi" />
-          <strong>Fabushi</strong>
-          <p>界面已经就绪，正在后台连接本机服务。</p>
+          <BotMark botId="fabushi:bootstrap:workspace" state="waking" size={72} paused label="Fabushi" />
+          <strong>Mahayana</strong>
+          <p>The Agent workspace is ready. Connecting to the local runtime…</p>
         </div>
       </section>
     </main>
