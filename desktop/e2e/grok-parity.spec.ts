@@ -149,7 +149,34 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await page.getByTestId('messenger-send').click();
 
       await expect(composer.getByText('agent-notes.txt')).toHaveCount(0);
-      await expect(page.locator('[data-agent-message-role="me"]').filter({ hasText: 'Use the attached note.' })).toHaveCount(1);
+      const firstUserTurn = page.locator('[data-agent-message-role="me"]').filter({ hasText: 'Use the attached note.' });
+      await expect(firstUserTurn).toHaveCount(1);
+      await expect(firstUserTurn.getByText('agent-notes.txt')).toBeVisible();
+
+      await fileInput.setInputFiles({
+        name: 'attachment-only.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('Attachment-only Agent submission'),
+      });
+      await expect(page.getByTestId('messenger-send')).toBeVisible();
+      await page.getByTestId('messenger-send').click();
+      await expect(page.getByTestId('message-list').getByText('attachment-only.txt')).toBeVisible();
+    });
+
+    await test.step('Agent sidebar supports modifier selection and account-scoped sections', async () => {
+      const peer = page.getByTestId('peer-legacy:conversation:mahayana-ai:agent:assistant');
+      await peer.click({ modifiers: [process.platform === 'darwin' ? 'Meta' : 'Control'] });
+      const selectionBar = page.getByTestId('agent-selection-bar');
+      await expect(selectionBar).toBeVisible();
+      await expect(selectionBar).toContainText('1 selected');
+
+      page.once('dialog', async (dialog) => {
+        expect(dialog.type()).toBe('prompt');
+        await dialog.accept('Focused work');
+      });
+      await selectionBar.getByRole('button', { name: 'Section' }).click();
+      await expect(page.locator('[data-section-id]').filter({ hasText: 'Focused work' })).toBeVisible();
+      await expect(selectionBar).toHaveCount(0);
     });
   } finally {
     await app.close();
