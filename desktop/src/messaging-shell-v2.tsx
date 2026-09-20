@@ -2623,7 +2623,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       pinned: peer.pinned,
       hidden: peer.hidden === true,
       unread: peer.unread,
-      busy: Boolean(agentOperationId && agentPeerKeyRef.current[agentOperationId] === peer.key),
+      busy: Boolean(agentOperationByPeer[peer.key]),
       isGroup: peer.kind === 'group',
       updatedAtMs: peer.updatedAtMs,
     }));
@@ -2669,16 +2669,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const botTranscriptMessages: BotTranscriptMessage[] = activePeer && isAgentPeer(activePeer)
     ? [...renderedMessages, ...(queuedAgentPrompts[activePeer.key] ?? [])]
     : renderedMessages;
-  const activeAgentOperationId = activePeer && agentOperationId
-    && agentPeerKeyRef.current[agentOperationId] === activePeer.key
-    ? agentOperationId
+  const activeAgentOperationId = activePeer
+    ? agentOperationByPeer[activePeer.key] ?? null
     : null;
-  const activePeerBusy = Boolean(activePeer && (agentOperationId ? activeAgentOperationId : pendingSend));
+  const activePeerBusy = Boolean(activePeer && (
+    activeAgentOperationId
+    || agentOperationRegistryRef.current.requestForPeer(activePeer.key)
+  ));
 
   function renderPeerRow(peer: PeerItem) {
-    const peerBusy = peer.key === activePeerKey && (agentOperationId
-      ? agentPeerKeyRef.current[agentOperationId] === peer.key
-      : pendingSend);
+    const peerBusy = Boolean(agentOperationByPeer[peer.key]
+      || agentOperationRegistryRef.current.requestForPeer(peer.key));
     return <button data-testid={`peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
       <BotMark
         botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`}
