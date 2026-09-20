@@ -81,6 +81,7 @@ export function useAgentSidebarController(
   const [sectionsScope, setSectionsScope] = useState<string | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const selectionAnchorRef = useRef<string | null>(null);
+  const sectionMutationRevisionRef = useRef(0);
 
   const updatePinnedOrder = useCallback((build: (current: readonly string[]) => string[]) => {
     setPinnedOrderState((current) => {
@@ -119,11 +120,17 @@ export function useAgentSidebarController(
     }
 
     let cancelled = false;
+    const hydrationMutationRevision = sectionMutationRevisionRef.current;
     setSections(readAgentSidebarSections(accountScope));
     setSectionsScope(null);
     void readAgentSidebarSectionsDurable(accountScope).then((nextSections) => {
       if (cancelled) return;
-      setSections(nextSections);
+      if (sectionMutationRevisionRef.current === hydrationMutationRevision) {
+        setSections(nextSections);
+      }
+      // If the user mutated sections while the durable read was in flight,
+      // keep the newer local state and allow the persistence effect to write
+      // it back instead of letting an older native snapshot clobber it.
       setSectionsScope(accountScope);
     });
     return () => { cancelled = true; };
@@ -198,6 +205,7 @@ export function useAgentSidebarController(
 
   const createSection = useCallback((name: string, items: readonly AgentSidebarStateItem[]) => {
     const sectionable = items.filter((item) => !item.pinned).map((item) => item.key);
+    sectionMutationRevisionRef.current += 1;
     setSections((current) => createAgentSidebarSection(current, name, sectionable).sections);
     clearSelection();
   }, [clearSelection]);
@@ -205,19 +213,23 @@ export function useAgentSidebarController(
   const moveToSection = useCallback((items: readonly AgentSidebarStateItem[], sectionId: string) => {
     const keys = items.filter((item) => !item.pinned).map((item) => item.key);
     if (!keys.length) return;
+    sectionMutationRevisionRef.current += 1;
     setSections((current) => assignAgentsToSidebarSection(current, keys, sectionId));
     clearSelection();
   }, [clearSelection]);
 
   const renameSection = useCallback((sectionId: string, name: string) => {
+    sectionMutationRevisionRef.current += 1;
     setSections((current) => renameAgentSidebarSection(current, sectionId, name));
   }, []);
 
   const removeSection = useCallback((sectionId: string) => {
+    sectionMutationRevisionRef.current += 1;
     setSections((current) => removeAgentSidebarSection(current, sectionId));
   }, []);
 
   const toggleSection = useCallback((sectionId: string) => {
+    sectionMutationRevisionRef.current += 1;
     setSections((current) => toggleAgentSidebarSection(current, sectionId));
   }, []);
 
