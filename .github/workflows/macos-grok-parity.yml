@@ -126,6 +126,8 @@ jobs:
             echo "::error::Apple notarization credentials are unavailable"
             exit 1
           fi
+          codesign --force --timestamp --sign "$MACOS_CODESIGN_IDENTITY" "$dmg"
+          codesign --verify --strict --verbose=2 "$dmg"
           result="$RUNNER_TEMP/notary-dmg.json"
           xcrun notarytool submit "$dmg" "${credentials[@]}" --wait --output-format json > "$result"
           cat "$result"
