@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ComputerStatus } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { ApprovalResolution, ComputerStatus } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import {
   createAgentSubmissionQueue,
   type AgentSubmission,
@@ -41,6 +41,8 @@ export interface AgentWorkspaceRuntimeFacade {
   readonly coordinator: AgentRuntimeCoordinator;
   readonly revision: number;
   submit(input: AgentWorkspaceSubmissionInput): ReturnType<AgentSubmissionQueue['submit']>;
+  resolveApproval(resolution: ApprovalResolution): Promise<void>;
+  interrupt(peerKey: string | null | undefined): Promise<void>;
   notify(): void;
 }
 
@@ -204,6 +206,16 @@ export function useAgentWorkspaceRuntime(
     });
   }, [submissionQueue]);
 
+  const resolveApproval = useCallback((resolution: ApprovalResolution) => {
+    return optionsRef.current.coordinatorClient.resolveApproval(resolution);
+  }, []);
+
+  const interrupt = useCallback(async (peerKey: string | null | undefined) => {
+    const operationId = controller.operationForPeer(peerKey);
+    if (!operationId) return;
+    await optionsRef.current.coordinatorClient.interrupt(operationId);
+  }, [controller]);
+
   useEffect(() => {
     persistAgentWorkspaceDrafts(
       controller.draftSnapshot(),
@@ -229,6 +241,8 @@ export function useAgentWorkspaceRuntime(
     coordinator,
     revision,
     submit,
+    resolveApproval,
+    interrupt,
     notify,
   };
 }
