@@ -212,12 +212,17 @@ export class AgentWorkspaceController {
 
   restoreDraft(peerKey: string, draft: Partial<PersistedAgentDraft>): void {
     const current = this.drafts.get(peerKey) ?? normalizeDraft(undefined);
+    const attachmentById = new Map(
+      [...current.attachments, ...(draft.attachments ?? [])]
+        .map((attachment) => [attachment.id, attachment] as const),
+    );
     const merged = normalizeDraft({
-      text: draft.text ?? current.text,
-      attachments: draft.attachments
-        ? [...current.attachments, ...draft.attachments]
-        : current.attachments,
-      replyTo: draft.replyTo ?? current.replyTo,
+      // A failed send may settle after the user has already started the next
+      // prompt. Never overwrite that newer text; only restore the submitted
+      // prompt when the current Agent draft is still empty.
+      text: current.text || draft.text || '',
+      attachments: [...attachmentById.values()],
+      replyTo: current.replyTo ?? draft.replyTo,
     });
     if (draftHasPayload(merged)) this.drafts.set(peerKey, merged);
     else this.drafts.delete(peerKey);
