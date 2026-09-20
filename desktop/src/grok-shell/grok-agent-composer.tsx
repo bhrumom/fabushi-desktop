@@ -326,8 +326,8 @@ export default function GrokAgentComposer({
           <span><strong>@{candidate.name}</strong>{candidate.description ? <small>{candidate.description}</small> : null}</span>
         </button>)}
       </div> : null}
+      {voiceState === 'recording' ? <span className={styles.voiceStatus}>Recording…</span> : voiceError ? <span className={styles.voiceError} title={voiceError}>Voice unavailable</span> : null}
     </div>
-    {voiceState === 'recording' ? <span className={styles.voiceStatus}>Recording…</span> : voiceError ? <span className={styles.voiceError} title={voiceError}>Voice unavailable</span> : null}
     {hasPayload ? (
       <button data-testid="messenger-send" className={styles.primary} type="submit" disabled={!ready || uploading}>
         <Send size={17} />
