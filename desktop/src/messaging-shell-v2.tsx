@@ -1134,6 +1134,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     transcriptStore: agentTranscriptStore,
     coordinator: agentRuntimeCoordinator,
     submit: submitAgentWorkspace,
+    resolveApproval: resolveAgentApproval,
+    interrupt: interruptAgentWorkspace,
     revision: agentWorkspaceRevision,
     notify: notifyAgentWorkspaceState,
   } = useAgentWorkspaceRuntime({
@@ -2827,10 +2829,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   async function stopAgentOperation(): Promise<void> {
-    const operationId = agentWorkspaceController.operationForPeer(activePeerKeyRef.current);
-    if (!operationId) return;
     try {
-      await agentCoordinatorClient.interrupt(operationId);
+      await interruptAgentWorkspace(activePeerKeyRef.current);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -4142,7 +4142,7 @@ async function saveInvoiceDialog() {
                 onRegenerate={(entry) => regenerateBotMessage(entry as BotTranscriptMessage)}
                 onEdit={(entry) => editBotMessage(entry)}
                 onResolveApproval={(approvalId, decision) => {
-                  void agentCoordinatorClient.resolveApproval({ approvalId, decision }).catch((cause: unknown) => {
+                  void resolveAgentApproval({ approvalId, decision }).catch((cause: unknown) => {
                     setError(cause instanceof Error ? cause.message : String(cause));
                   });
                 }}
