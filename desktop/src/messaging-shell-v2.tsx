@@ -2140,23 +2140,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     // Messenger/Host event shapes that cannot be attributed to an Agent.
     if (agentRuntimeCoordinator.handle(event)) return;
 
-    // Keep stream ordering deterministic while avoiding one React update per
-    // token. Grok App uses the same backpressure idea: high-frequency deltas
-    // are coalesced, but we flush them before any ordered step/final/terminal
-    // event so tools and the final answer never overtake visible text.
-    if (
-      event.type === 'chat.message'
-      || event.type === 'agent.step'
-      || event.type === 'operation.completed'
-      || event.type === 'operation.failed'
-      || event.type === 'operation.interrupted'
-    ) {
-      const operationId = ('operationId' in event && typeof event.operationId === 'string'
-        ? event.operationId
-        : unambiguousAgentOperationId()) ?? undefined;
-      if (operationId) flushPendingAgentDelta(operationId);
-    }
-
     switch (event.type) {
       case 'host.ready':
         setHostReady(true);
