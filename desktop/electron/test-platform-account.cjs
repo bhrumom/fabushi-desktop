@@ -63,6 +63,7 @@ function emptyState() {
     bots: {},
     messages: {},
     cloud: {},
+    agentStores: {},
     contentState: {},
     payments: {},
     paymentIdempotency: {},
@@ -263,6 +264,88 @@ class TestPlatformAccount {
         suggestedCommand: ranked[0]?.score > 0 ? ranked[0].command : null,
         requiresMahayanaPlanning: ranked[0]?.score <= 0,
       });
+    }
+
+    match = requestPath.match(/^\/v1\/account\/agents\/([^/]+)\/store$/);
+    if (match) {
+      const agentId = decodeURIComponent(match[1]);
+      state.agentStores[agentId] ??= {};
+      const store = state.agentStores[agentId];
+      if (method === 'GET') {
+        const storePath = String(query.path ?? '').trim();
+        if (storePath) {
+          const object = store[storePath];
+          return object
+            ? response(clone(object))
+            : response({ error: 'agent_store_not_found', agentId, path: storePath }, 404);
+        }
+        const prefix = String(query.prefix ?? '').trim();
+        const files = Object.values(store)
+          .filter((object) => !prefix || String(object.path).startsWith(prefix))
+          .sort((left, right) => String(left.path).localeCompare(String(right.path)))
+          .map(clone);
+        return response({ agentId, files });
+      }
+      if (method === 'PUT') {
+        const storePath = String(body.path ?? '').trim();
+        const dataBase64 = String(body.dataBase64 ?? '').trim();
+        if (!storePath || !dataBase64) {
+          return response({ error: 'invalid_agent_store_write' }, 400);
+        }
+        const current = store[storePath] ?? null;
+        if (body.expectAbsent === true && current) {
+          return response({
+            error: 'agent_store_conflict',
+            currentEtag: current.etag,
+            currentRevision: current.revision,
+          }, 409);
+        }
+        if (body.baseEtag != null && String(body.baseEtag) !== String(current?.etag ?? '')) {
+          return response({
+            error: 'agent_store_conflict',
+            currentEtag: current?.etag ?? null,
+            currentRevision: current?.revision ?? 0,
+          }, 409);
+        }
+        const revision = Number(current?.revision ?? 0) + 1;
+        const now = this.now();
+        const object = {
+          agentId,
+          path: storePath,
+          blobId: `test-agent-store:${agentId}:${revision}`,
+          etag: `test-etag:${agentId}:${revision}:${now}`,
+          revision,
+          updatedAtMs: now,
+          sizeBytes: Buffer.byteLength(dataBase64, 'base64'),
+          dataBase64,
+        };
+        store[storePath] = object;
+        this.event(state, 'agent.store.changed', agentId, {
+          agentId,
+          path: storePath,
+          etag: object.etag,
+          revision,
+        });
+        this.save(state);
+        return response(clone(object), current ? 200 : 201);
+      }
+      if (method === 'DELETE') {
+        const storePath = String(query.path ?? '').trim();
+        const current = store[storePath] ?? null;
+        if (query.baseEtag != null && String(query.baseEtag) !== String(current?.etag ?? '')) {
+          return response({
+            error: 'agent_store_conflict',
+            currentEtag: current?.etag ?? null,
+            currentRevision: current?.revision ?? 0,
+          }, 409);
+        }
+        if (current) {
+          delete store[storePath];
+          this.event(state, 'agent.store.changed', agentId, { agentId, path: storePath, deleted: true });
+          this.save(state);
+        }
+        return response({ deleted: Boolean(current), agentId, path: storePath });
+      }
     }
 
     if (method === 'GET' && requestPath === '/v1/account/bots') {
