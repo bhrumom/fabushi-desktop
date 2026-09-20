@@ -2564,7 +2564,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   useEffect(() => {
     agentSidebarController.reconcilePinnedOrder(pinnedGrokAgentKeys);
-  }, [agentSidebarController, pinnedGrokAgentSignature]);
+  }, [agentSidebarController.reconcilePinnedOrder, pinnedGrokAgentSignature]);
 
   useEffect(() => {
     if (!pendingOpenAgentId) return;
