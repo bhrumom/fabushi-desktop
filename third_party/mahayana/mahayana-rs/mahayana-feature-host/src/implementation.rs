@@ -6754,9 +6754,11 @@ impl FeatureHostController {
                         operation_id,
                         delta,
                     };
-                    if let Some(pending) = pending_chat_delta.replace(next_delta) {
+                    if let Some(pending) = pending_chat_delta.take() {
+                        self.state()?.events.push_front(next_delta);
                         return Ok(Some(pending));
                     }
+                    pending_chat_delta = Some(next_delta);
                 }
                 ordered_event => {
                     if let Some(pending) = pending_chat_delta.take() {
