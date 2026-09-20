@@ -2014,6 +2014,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   function handleRuntimeEvent(event: RuntimeEvent) {
     if (handleSelfHostedEvent(event)) return;
     if (agentDirectoryController.handle(event)) return;
+    if (agentNetworkController.handle(event)) return;
     if (agentStoreSyncController.handle(event)) return;
     if (agentWorkflowController.handle(event)) return;
     if (agentMcpController.handle(event)) return;
@@ -4100,16 +4101,19 @@ async function saveInvoiceDialog() {
         <AgentNetwork
           open={agentNetworkController.open}
           agents={agentItems}
-          groups={groups}
+          groups={agentNetworkController.groups}
+          peerMessages={agentNetworkController.peerMessages}
           activeKey={activeAgentKey}
           broadcastMode={agentNetworkController.broadcastMode}
           onClose={agentNetworkController.close}
           onOpenAgent={openAgent}
           onRefreshGroups={agentNetworkController.refreshGroups}
+          onRefreshPeerHistory={agentNetworkController.refreshPeerHistory}
           onCreateGroup={agentNetworkController.createGroup}
           onUpdateGroup={agentNetworkController.updateGroup}
           onDeleteGroup={agentNetworkController.deleteGroup}
           onSendGroup={agentNetworkController.sendGroup}
+          onSendPeer={agentNetworkController.sendPeer}
           onBroadcast={agentNetworkController.broadcast}
         />
         {agentNetworkController.open ? null : activePeer && sectionIsPeerList ? (
