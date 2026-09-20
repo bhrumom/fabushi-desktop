@@ -1979,18 +1979,24 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setHostSettings(event.settings);
         break;
       case 'chat.message':
-        if (event.role === 'assistant' && event.operationId) {
-          // A terminal Host signal can race ahead of the canonical final body.
-          // Accept that late final message for an operation we already own and
-          // reconcile it into the existing assistant turn instead of dropping it
-          // or painting a second bubble.
-          const ownedOperation = claimAgentOperation(event.operationId)
-            || Boolean(agentPeerKeyRef.current[event.operationId]);
-          if (ownedOperation) {
-            appendAssistantTurnEvent(event);
-            break;
+        if (event.role === 'assistant') {
+          // Some legacy adapters omit operationId on the assistant body even
+          // though the active send already owns a provisional/authoritative turn.
+          // Bind that body to the current turn instead of painting a second
+          // peer message beside the AssistantTurn.
+          const assistantOperationId = event.operationId
+            ?? agentOperationIdRef.current
+            ?? agentRequestIdRef.current
+            ?? undefined;
+          if (assistantOperationId) {
+            const ownedOperation = claimAgentOperation(assistantOperationId)
+              || Boolean(agentPeerKeyRef.current[assistantOperationId]);
+            if (ownedOperation) {
+              appendAssistantTurnEvent({ ...event, operationId: assistantOperationId });
+              break;
+            }
+            if (finishedAgentOperationsRef.current.has(assistantOperationId)) break;
           }
-          if (finishedAgentOperationsRef.current.has(event.operationId)) break;
         }
         updateAgentThread(event.operationId, (current) => {
           if (event.role === 'user') {
@@ -2018,18 +2024,26 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           }];
         });
         break;
-      case 'chat.delta':
-        if (event.operationId && finishedAgentOperationsRef.current.has(event.operationId)) break;
-        if (claimAgentOperation(event.operationId)) {
-          appendAssistantTurnEvent(event);
+      case 'chat.delta': {
+        const deltaOperationId = event.operationId
+          ?? agentOperationIdRef.current
+          ?? agentRequestIdRef.current
+          ?? undefined;
+        if (deltaOperationId && finishedAgentOperationsRef.current.has(deltaOperationId)) break;
+        if (deltaOperationId && (
+          claimAgentOperation(deltaOperationId)
+          || Boolean(agentPeerKeyRef.current[deltaOperationId])
+        )) {
+          appendAssistantTurnEvent({ ...event, operationId: deltaOperationId });
           break;
         }
-        updateAgentThread(event.operationId, (current) => {
-          const index = current.findIndex((message) => message.kind === 'message' && message.operationId === event.operationId && message.streaming);
-          if (index < 0) return [...current, { id: `${event.operationId}:stream`, source: 'legacy', role: 'peer', text: event.delta, createdAtMs: Date.now(), kind: 'message', operationId: event.operationId, streaming: true }];
+        updateAgentThread(deltaOperationId, (current) => {
+          const index = current.findIndex((message) => message.kind === 'message' && message.operationId === deltaOperationId && message.streaming);
+          if (index < 0) return [...current, { id: `${deltaOperationId ?? 'legacy'}:stream`, source: 'legacy', role: 'peer', text: event.delta, createdAtMs: Date.now(), kind: 'message', operationId: deltaOperationId, streaming: true }];
           return current.map((message, messageIndex) => messageIndex === index ? { ...message, text: `${message.text}${event.delta}`, kind: 'message', streaming: true } : message);
         });
         break;
+      }
       case 'operation.started':
         if (claimAgentOperation(event.operationId)) {
           setPendingSend(true);
