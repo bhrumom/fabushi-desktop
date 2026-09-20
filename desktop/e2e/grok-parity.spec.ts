@@ -129,6 +129,28 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(rgbLuma(material!.peerBackground)).toBeLessThan(80);
       expect(parseFloat(material!.peerRadius)).toBeGreaterThanOrEqual(10);
     });
+
+    await test.step('Agent uses one canonical workspace and Agent-scoped attachment draft', async () => {
+      const composer = page.getByTestId('grok-agent-composer');
+      await expect(composer).toHaveCount(1);
+      await expect(page.getByTestId('message-list')).toHaveCount(1);
+
+      const fileInput = composer.locator('input[type="file"]');
+      await expect(fileInput).toHaveAttribute('multiple', '');
+      await fileInput.setInputFiles({
+        name: 'agent-notes.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('Agent-owned attachment context'),
+      });
+      await expect(composer.getByText('agent-notes.txt')).toBeVisible();
+
+      const input = page.getByTestId('messenger-input');
+      await input.fill('Use the attached note.');
+      await page.getByTestId('messenger-send').click();
+
+      await expect(composer.getByText('agent-notes.txt')).toHaveCount(0);
+      await expect(page.locator('[data-agent-message-role="me"]').filter({ hasText: 'Use the attached note.' })).toHaveCount(1);
+    });
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });
