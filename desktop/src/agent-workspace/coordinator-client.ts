@@ -181,6 +181,59 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  createAgent(requestId: string, input: { name: string; description?: string }) {
+    return this.transport.execute({
+      type: 'bot.create',
+      requestId,
+      name: input.name,
+      description: input.description ?? '',
+    } as HostCommand);
+  }
+
+  updateAgent(
+    requestId: string,
+    id: string,
+    patch: {
+      name?: string;
+      title?: string;
+      description?: string;
+      notifyOnUpdates?: boolean;
+      notificationsEnabled?: boolean;
+    },
+  ) {
+    return this.transport.execute({
+      type: 'bot.update',
+      requestId,
+      id,
+      ...patch,
+    } as HostCommand);
+  }
+
+  duplicateAgent(requestId: string, id: string) {
+    return this.transport.execute({
+      type: 'bot.clone',
+      requestId,
+      id,
+    } as HostCommand);
+  }
+
+  deleteAgent(requestId: string, id: string) {
+    return this.transport.execute({
+      type: 'bot.delete',
+      requestId,
+      id,
+    } as HostCommand);
+  }
+
+  setAgentHidden(requestId: string, id: string, hidden: boolean) {
+    return this.transport.execute({
+      type: 'bot.setHidden',
+      requestId,
+      id,
+      hidden,
+    } as HostCommand);
+  }
+
   broadcast(requestId: string, message: string, targetIds?: readonly string[]) {
     return this.transport.execute({
       type: 'agent.broadcast',
