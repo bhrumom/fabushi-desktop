@@ -1065,6 +1065,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(330);
   const [conversationSearchOpen, setConversationSearchOpen] = useState(false);
+  const [agentConversationSearch, setAgentConversationSearch] = useState('');
   const [desktopUpdateState, setDesktopUpdateState] = useState<UpdateState | null>(null);
   const [desktopUpdateBusy, setDesktopUpdateBusy] = useState(false);
   const [peerRenderCount, setPeerRenderCount] = useState(initialPeerRenderCount);
@@ -3151,6 +3152,14 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' });
   }
 
+  function scrollToTranscriptEntry(entryId: string) {
+    const root = messageAreaRef.current;
+    if (!root) return;
+    const target = Array.from(root.querySelectorAll<HTMLElement>('[data-transcript-entry-id]'))
+      .find((element) => element.dataset.transcriptEntryId === entryId);
+    target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   async function copyBotMessage(message: BotTranscriptMessage): Promise<void> {
     try {
       await navigator.clipboard?.writeText(message.text);
@@ -3316,6 +3325,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setReplyTo(null);
     setError(null);
     setConversationSearchOpen(false);
+    setAgentConversationSearch('');
     if (peer.miniAppId) {
       setMessages(miniAppBotThreadsRef.current[peer.miniAppId] ?? []);
       void loadMiniAppBotThread(peer.miniAppId).catch(() => {});
@@ -4568,16 +4578,16 @@ async function saveInvoiceDialog() {
                     : `${activePeer.subtitle}${hostReady ? ' · Online' : ' · Connecting'}`}
                 pinned={activePeer.pinned}
                 searchActive={conversationSearchOpen}
+                searchQuery={agentConversationSearch}
                 computerActive={computerProfileOpen}
                 infoActive={layoutInfoOpen}
                 onToggleSearch={() => {
                   const next = !conversationSearchOpen;
                   setConversationSearchOpen(next);
-                  setGlobalSearchOpen(next);
-                  setGlobalSearchCategory(next ? 'posts' : 'chats');
-                  setSearch('');
-                  window.setTimeout(() => searchInputRef.current?.focus(), 0);
+                  if (!next) setAgentConversationSearch('');
                 }}
+                onSearchQuery={setAgentConversationSearch}
+                onSelectSearchResult={scrollToTranscriptEntry}
                 onToggleComputer={() => {
                   setComputerProfileOpen((value) => !value);
                   if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
@@ -4818,10 +4828,7 @@ async function saveInvoiceDialog() {
             onClose={() => wideInfoLayout ? setInfoOpen(false) : setNarrowInfoOpen(false)}
             onSearch={() => {
               setConversationSearchOpen(true);
-              setGlobalSearchOpen(true);
-              setGlobalSearchCategory('posts');
-              setSearch('');
-              window.setTimeout(() => searchInputRef.current?.focus(), 0);
+              setAgentConversationSearch('');
             }}
             onTogglePin={() => void togglePinConversation(activePeer)}
             computer={{
