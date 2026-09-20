@@ -2286,34 +2286,39 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         const ownerPeer = peersRef.current.find((peer) =>
           peer.conversationId === event.conversationId && isAgentPeer(peer) && !peer.miniAppId,
         );
+        const openedMessages: DisplayMessage[] = event.messages.map((message) => ({
+          id: message.id,
+          source: 'legacy',
+          role: message.role === 'user' ? 'me' : 'peer',
+          text: message.text,
+          createdAtMs: message.createdAtMs,
+          kind: 'message',
+        }));
         if (ownerPeer) {
           const agentId = ownerPeer.agentId ?? ownerPeer.actorId ?? ownerPeer.id;
           void mirrorAgentCloudSnapshot(agentId, fabuAgentConversationTranscriptPath(event.conversationId), {
             schemaVersion: 1,
             agentId,
             conversationId: event.conversationId,
-            entries: event.messages.map((message) => ({
-              id: message.id,
-              kind: 'message',
-              role: message.role === 'user' ? 'me' : 'peer',
-              text: message.text,
-              createdAtMs: message.createdAtMs,
-            })),
+            entries: projectTranscriptEntries(openedMessages),
             updatedAtMs: Date.now(),
           });
+          // Hydration is owned by the Agent whose conversation was opened.
+          // A different visible Agent being busy must never suppress this
+          // history, and an owner that is actively streaming must never be
+          // overwritten by a late conversation.opened response.
+          if (!agentWorkspaceControllerRef.current.operationForPeer(ownerPeer.key)) {
+            agentTranscriptStoreRef.current.replace(ownerPeer.key, toAgentTranscriptSources(openedMessages));
+            if (activePeerKeyRef.current === ownerPeer.key) setMessages(openedMessages);
+          }
+          break;
         }
         if (agentWorkspaceControllerRef.current.operationForPeer(activePeerKeyRef.current)) break;
         if (activePeerKeyRef.current === `legacy:conversation:${event.conversationId}`
           || peersRef.current.some((peer) => peer.key === activePeerKeyRef.current
             && peer.source === 'legacy'
             && peer.conversationId === event.conversationId)) {
-          setMessages(event.messages.map((message) => ({
-            id: message.id,
-            source: 'legacy',
-            role: message.role === 'user' ? 'me' : 'peer',
-            text: message.text,
-            createdAtMs: message.createdAtMs,
-          })));
+          setMessages(openedMessages);
         }
         break;
       }
