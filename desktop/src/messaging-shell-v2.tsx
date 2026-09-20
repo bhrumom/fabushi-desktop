@@ -1007,14 +1007,14 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [silentSend, setSilentSend] = useState(false);
   const [scheduledAtMs, setScheduledAtMs] = useState<number | undefined>();
   const [search, setSearch] = useState('');
-  const [grokPaletteOpen, setGrokPaletteOpen] = useState(false);
-  const [grokPaletteQuery, setGrokPaletteQuery] = useState('');
-  const [grokNetworkOpen, setGrokNetworkOpen] = useState(false);
-  const [grokNetworkBroadcastMode, setGrokNetworkBroadcastMode] = useState(false);
+  const [agentPaletteOpen, setGrokPaletteOpen] = useState(false);
+  const [agentPaletteQuery, setGrokPaletteQuery] = useState('');
+  const [agentNetworkOpen, setGrokNetworkOpen] = useState(false);
+  const [agentNetworkBroadcastMode, setGrokNetworkBroadcastMode] = useState(false);
   const agentSidebarController = useAgentSidebarController(remoteAccountScope);
-  const grokPinnedOrder = agentSidebarController.pinnedOrder;
-  const grokSidebarSections = agentSidebarController.sections;
-  const grokSelectedAgentKeys = agentSidebarController.selectedKeys;
+  const agentPinnedOrder = agentSidebarController.pinnedOrder;
+  const agentSidebarSections = agentSidebarController.sections;
+  const agentSelectedKeys = agentSidebarController.selectedKeys;
   const [sidebarWidth, setSidebarWidth] = useState(330);
   const [conversationSearchOpen, setConversationSearchOpen] = useState(false);
   const [agentConversationSearch, setAgentConversationSearch] = useState('');
@@ -2458,7 +2458,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       return agentId ? [{ agentId, peerKey: peer.key }] : [];
     }));
   }, [agentRuntimeCoordinator, peers]);
-  const grokActivityByPeer = Object.fromEntries(peers.map((peer) => {
+  const agentActivityByPeer = Object.fromEntries(peers.map((peer) => {
     const thread = isAgentPeer(peer) && !peer.miniAppId
       ? agentTranscriptStore.thread(peer.key)
       : peer.key === activePeerKey
@@ -2510,18 +2510,18 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     () => agentWorkspaceController.requestSnapshot(),
     [agentWorkspaceRevision],
   );
-  const grokBusyByPeer = Object.fromEntries(peers.flatMap((peer) => {
+  const agentBusyByPeer = Object.fromEntries(peers.flatMap((peer) => {
     const activityId = agentOperationSnapshot[peer.key] ?? agentRequestSnapshot[peer.key];
     return activityId ? [[peer.key, activityId] as const] : [];
   }));
-  const grokAgentItems: AgentSidebarItem[] = projectAgentSidebarItems(
+  const agentItems: AgentSidebarItem[] = projectAgentSidebarItems(
     peers,
-    grokBusyByPeer,
-    grokActivityByPeer,
-    grokPinnedOrder,
+    agentBusyByPeer,
+    agentActivityByPeer,
+    agentPinnedOrder,
   );
-  const pinnedGrokAgentKeys = grokAgentItems.filter((item) => item.pinned).map((item) => item.key);
-  const pinnedGrokAgentSignature = pinnedGrokAgentKeys.join('\u001f');
+  const pinnedAgentKeys = agentItems.filter((item) => item.pinned).map((item) => item.key);
+  const pinnedAgentSignature = pinnedAgentKeys.join('\u001f');
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
   const activeAgentBot: BotSummary | null = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
     ? bots.find((bot) => bot.id === (activePeer.actorId ?? activePeer.id))
@@ -2561,11 +2561,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const activeAgentReply = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
     ? agentWorkspaceController.replyForPeer(activePeer.key)
     : undefined;
-  const activeGrokAgentKey = projectActiveAgentKey(activePeer);
+  const activeAgentKey = projectActiveAgentKey(activePeer);
 
   useEffect(() => {
-    agentSidebarController.reconcilePinnedOrder(pinnedGrokAgentKeys);
-  }, [agentSidebarController.reconcilePinnedOrder, pinnedGrokAgentSignature]);
+    agentSidebarController.reconcilePinnedOrder(pinnedAgentKeys);
+  }, [agentSidebarController.reconcilePinnedOrder, pinnedAgentSignature]);
 
   useEffect(() => {
     if (!pendingOpenAgentId) return;
@@ -2643,7 +2643,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
   }
 
-  async function createGrokAgent(): Promise<void> {
+  async function createAgent(): Promise<void> {
     setSection('bots');
     setSearch('');
     newAgentRequestPendingRef.current = true;
@@ -2656,15 +2656,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (!accepted) newAgentRequestPendingRef.current = false;
   }
 
-  function peerForGrokAgent(item: AgentSidebarItem): PeerItem | undefined {
+  function peerForAgent(item: AgentSidebarItem): PeerItem | undefined {
     return peersRef.current.find((peer) => peer.key === item.peerKey)
       ?? peersRef.current.find((peer) =>
         (peer.kind === 'bot' || peer.kind === 'group') && agentWorkspaceKey(peer) === item.key,
       );
   }
 
-  async function renameGrokAgent(item: AgentSidebarItem): Promise<void> {
-    const peer = peerForGrokAgent(item);
+  async function renameAgent(item: AgentSidebarItem): Promise<void> {
+    const peer = peerForAgent(item);
     if (!peer || peer.kind !== 'bot' || !peer.key.startsWith('legacy:bot:') && !peer.key.startsWith('legacy:conversation:')) {
       setError('Only locally managed Agents can be renamed from this shell.');
       return;
@@ -2679,8 +2679,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
   }
 
-  async function duplicateGrokAgent(item: AgentSidebarItem): Promise<void> {
-    const peer = peerForGrokAgent(item);
+  async function duplicateAgent(item: AgentSidebarItem): Promise<void> {
+    const peer = peerForAgent(item);
     const botId = peer?.source === 'legacy' && peer.kind === 'bot'
       ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
       : undefined;
@@ -2695,8 +2695,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     });
   }
 
-  async function deleteGrokAgent(item: AgentSidebarItem, confirmDelete = true): Promise<void> {
-    const peer = peerForGrokAgent(item);
+  async function deleteAgent(item: AgentSidebarItem, confirmDelete = true): Promise<void> {
+    const peer = peerForAgent(item);
     const botId = peer?.source === 'legacy' && peer.kind === 'bot'
       ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
       : undefined;
@@ -2719,8 +2719,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
-  async function hideGrokAgent(item: AgentSidebarItem): Promise<void> {
-    const peer = peerForGrokAgent(item);
+  async function hideAgent(item: AgentSidebarItem): Promise<void> {
+    const peer = peerForAgent(item);
     const botId = peer?.source === 'legacy' && peer.kind === 'bot'
       ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
       : undefined;
@@ -2740,7 +2740,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
-  function reorderGrokPinned(
+  function reorderPinnedAgents(
     moved: AgentSidebarItem,
     target: AgentSidebarItem,
     position: 'before' | 'after',
@@ -2749,17 +2749,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       moved.key,
       target.key,
       position,
-      grokAgentItems.filter((item) => item.pinned).map((item) => item.key),
+      agentItems.filter((item) => item.pinned).map((item) => item.key),
     );
   }
 
-  function toggleGrokAgentSelection(item: AgentSidebarItem): void {
+  function toggleAgentSelection(item: AgentSidebarItem): void {
     agentSidebarController.toggleSelection(item.key);
   }
 
-  function rangeSelectGrokAgent(item: AgentSidebarItem): void {
+  function rangeSelectAgent(item: AgentSidebarItem): void {
     const query = search.trim().toLocaleLowerCase();
-    const orderedKeys = grokAgentItems
+    const orderedKeys = agentItems
       .filter((candidate) =>
         !candidate.hidden
         && (!query || `${candidate.name} ${candidate.description}`.toLocaleLowerCase().includes(query)),
@@ -2768,43 +2768,43 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     agentSidebarController.rangeSelect(item.key, orderedKeys);
   }
 
-  function clearGrokAgentSelection(): void {
+  function clearAgentSelection(): void {
     agentSidebarController.clearSelection();
   }
 
-  function createGrokSidebarSection(items: readonly AgentSidebarItem[]): void {
+  function createAgentSidebarSection(items: readonly AgentSidebarItem[]): void {
     const name = window.prompt('Section name', 'New section')?.trim();
     if (!name) return;
     agentSidebarController.createSection(name, items);
   }
 
-  function moveGrokAgentsToSection(items: readonly AgentSidebarItem[], sectionId: string): void {
+  function moveAgentsToSection(items: readonly AgentSidebarItem[], sectionId: string): void {
     agentSidebarController.moveToSection(items, sectionId);
   }
 
-  function moveGrokAgentToSection(item: AgentSidebarItem, sectionId: string): void {
+  function moveAgentToSection(item: AgentSidebarItem, sectionId: string): void {
     agentSidebarController.moveToSection([item], sectionId);
   }
 
-  function renameGrokSidebarSection(section: AgentSidebarSection): void {
+  function renameAgentSidebarSection(section: AgentSidebarSection): void {
     const name = window.prompt('Rename section', section.name)?.trim();
     if (!name || name === section.name) return;
     agentSidebarController.renameSection(section.id, name);
   }
 
-  function deleteGrokSidebarSection(section: AgentSidebarSection): void {
+  function deleteAgentSidebarSection(section: AgentSidebarSection): void {
     if (!window.confirm(`Delete “${section.name}”? Its Agents move to Unassigned.`)) return;
     agentSidebarController.removeSection(section.id);
   }
 
-  async function deleteSelectedGrokAgents(items: readonly AgentSidebarItem[]): Promise<void> {
+  async function deleteSelectedAgents(items: readonly AgentSidebarItem[]): Promise<void> {
     const deletable = items.filter((item) => !item.isGroup);
     if (!deletable.length) return;
     if (!window.confirm(`Delete ${deletable.length} selected Agent${deletable.length === 1 ? '' : 's'}? Agent stores are retained for recovery.`)) return;
     for (const item of deletable) {
-      await deleteGrokAgent(item, false);
+      await deleteAgent(item, false);
     }
-    clearGrokAgentSelection();
+    clearAgentSelection();
   }
 
   async function refreshAgentGroups(): Promise<void> {
@@ -2845,7 +2845,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     );
   }
 
-  async function broadcastGrokAgents(message: string, targetAgentIds?: readonly string[]): Promise<void> {
+  async function broadcastAgents(message: string, targetAgentIds?: readonly string[]): Promise<void> {
     try {
       await agentCoordinatorClient.broadcast(
         nextRequestId('grok-agent-broadcast'),
@@ -2859,8 +2859,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
-  function openGrokAgent(item: AgentSidebarItem): void {
-    const peer = peerForGrokAgent(item);
+  function openAgent(item: AgentSidebarItem): void {
+    const peer = peerForAgent(item);
     if (!peer) return;
     setGrokNetworkOpen(false);
     setGrokNetworkBroadcastMode(false);
@@ -4238,37 +4238,37 @@ async function saveInvoiceDialog() {
     >
       <aside className={styles.chatList} data-testid="messenger-sidebar" data-collapsed={sidebarWidth <= 112 || undefined} onClick={(event) => event.stopPropagation()}>
         <AgentSidebar
-          agents={grokAgentItems}
-          activeKey={activeGrokAgentKey}
+          agents={agentItems}
+          activeKey={activeAgentKey}
           query={search}
           collapsed={sidebarWidth <= 112}
           hostReady={hostReady}
           accountLabel={currentActor?.displayName ?? 'Account'}
-          sections={grokSidebarSections}
-          selectedKeys={grokSelectedAgentKeys}
+          sections={agentSidebarSections}
+          selectedKeys={agentSelectedKeys}
           onQuery={setSearch}
-          onOpen={openGrokAgent}
-          onNewAgent={() => void createGrokAgent()}
+          onOpen={openAgent}
+          onNewAgent={() => void createAgent()}
           onToggleCollapsed={() => setSidebarWidth((width) => width <= 112 ? 300 : 88)}
           onTogglePin={(item) => {
-            const peer = peerForGrokAgent(item);
+            const peer = peerForAgent(item);
             if (peer) void togglePinConversation(peer);
           }}
-          onRename={(item) => void renameGrokAgent(item)}
-          onHide={(item) => void hideGrokAgent(item)}
-          onDuplicate={(item) => void duplicateGrokAgent(item)}
-          onDelete={(item) => void deleteGrokAgent(item)}
-          onReorderPinned={reorderGrokPinned}
-          onToggleSelection={toggleGrokAgentSelection}
-          onRangeSelection={rangeSelectGrokAgent}
-          onClearSelection={clearGrokAgentSelection}
-          onDeleteSelected={(items) => void deleteSelectedGrokAgents(items)}
-          onMoveSelectedToSection={moveGrokAgentsToSection}
-          onCreateSection={createGrokSidebarSection}
+          onRename={(item) => void renameAgent(item)}
+          onHide={(item) => void hideAgent(item)}
+          onDuplicate={(item) => void duplicateAgent(item)}
+          onDelete={(item) => void deleteAgent(item)}
+          onReorderPinned={reorderPinnedAgents}
+          onToggleSelection={toggleAgentSelection}
+          onRangeSelection={rangeSelectAgent}
+          onClearSelection={clearAgentSelection}
+          onDeleteSelected={(items) => void deleteSelectedAgents(items)}
+          onMoveSelectedToSection={moveAgentsToSection}
+          onCreateSection={createAgentSidebarSection}
           onToggleSection={(section) => agentSidebarController.toggleSection(section.id)}
-          onRenameSection={renameGrokSidebarSection}
-          onDeleteSection={deleteGrokSidebarSection}
-          onMoveToSection={moveGrokAgentToSection}
+          onRenameSection={renameAgentSidebarSection}
+          onDeleteSection={deleteAgentSidebarSection}
+          onMoveToSection={moveAgentToSection}
           onBroadcast={() => {
             setGrokNetworkBroadcastMode(true);
             setGrokNetworkOpen(true);
@@ -4298,13 +4298,13 @@ async function saveInvoiceDialog() {
       </aside>
 
       <AgentCommandPalette
-        open={grokPaletteOpen}
-        agents={grokAgentItems}
-        query={grokPaletteQuery}
+        open={agentPaletteOpen}
+        agents={agentItems}
+        query={agentPaletteQuery}
         onQuery={setGrokPaletteQuery}
         onClose={() => setGrokPaletteOpen(false)}
-        onOpenAgent={openGrokAgent}
-        onNewAgent={() => void createGrokAgent()}
+        onOpenAgent={openAgent}
+        onNewAgent={() => void createAgent()}
         onNetwork={() => {
           setGrokNetworkBroadcastMode(false);
           setGrokNetworkOpen(true);
@@ -4338,24 +4338,24 @@ async function saveInvoiceDialog() {
 
       <section className={styles.chatWorkspace}>
         <AgentNetwork
-          open={grokNetworkOpen}
-          agents={grokAgentItems}
+          open={agentNetworkOpen}
+          agents={agentItems}
           groups={groups}
-          activeKey={activeGrokAgentKey}
-          broadcastMode={grokNetworkBroadcastMode}
+          activeKey={activeAgentKey}
+          broadcastMode={agentNetworkBroadcastMode}
           onClose={() => {
             setGrokNetworkOpen(false);
             setGrokNetworkBroadcastMode(false);
           }}
-          onOpenAgent={openGrokAgent}
+          onOpenAgent={openAgent}
           onRefreshGroups={refreshAgentGroups}
           onCreateGroup={createAgentGroup}
           onUpdateGroup={updateAgentGroup}
           onDeleteGroup={deleteAgentGroup}
           onSendGroup={sendAgentGroup}
-          onBroadcast={broadcastGrokAgents}
+          onBroadcast={broadcastAgents}
         />
-        {grokNetworkOpen ? null : activePeer && sectionIsPeerList ? (
+        {agentNetworkOpen ? null : activePeer && sectionIsPeerList ? (
           <>
             {isAgentPeer(activePeer) && !activePeer.miniAppId ? (
               <AgentWorkspace
@@ -4439,7 +4439,7 @@ async function saveInvoiceDialog() {
                 composerBusy={Boolean(activeAgentOperationId)}
                 composerUploading={agentWorkspaceController.isUploading(activePeer.key)}
                 composerAttachments={agentWorkspaceController.attachmentsForPeer(activePeer.key)}
-                composerMentionCandidates={grokAgentItems
+                composerMentionCandidates={agentItems
                   .filter((item) => item.key !== activePeer.key)
                   .map((item) => ({ id: item.agentId || item.key, name: item.name, description: item.description }))}
                 composerWorkflowCandidates={(agentWorkflowsById[activePeer.agentId ?? activePeer.actorId ?? activePeer.id] ?? [])
