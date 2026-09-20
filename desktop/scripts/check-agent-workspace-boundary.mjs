@@ -57,6 +57,11 @@ if (!/openConversation:\s*openAgentConversation/.test(shell)
 if (!/useAgentComputerController\s*\(/.test(shell)) {
   violations.push('Agent Computer lifecycle controller is not mounted by the desktop Agent shell');
 }
+if (!/useAgentMcpController\s*\(/.test(shell)
+  || !/agentMcpController\.handle\(event\)/.test(shell)
+  || !/kind:\s*candidate\.kind === ['"]mcp['"] \? ['"]mcp['"] : ['"]agent['"]/.test(shell)) {
+  violations.push('MCP reference discovery escaped the Agent-owned Composer/controller boundary');
+}
 if (/from\s+['"]\.\.\/grok-shell\//.test(agentComposer)) {
   violations.push('primary Agent Composer implementation still depends on the Grok compatibility shell');
 }
