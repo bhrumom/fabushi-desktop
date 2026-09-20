@@ -22,14 +22,34 @@ const violations = forbidden
   .filter(([, pattern]) => pattern.test(shell))
   .map(([label]) => label);
 
-if (!/new AgentRuntimeCoordinator\s*\(/.test(shell)) {
-  violations.push('AgentRuntimeCoordinator is not mounted by the desktop Agent shell');
+if (!/useAgentWorkspaceRuntime\s*\(/.test(shell)) {
+  violations.push('Agent workspace runtime facade is not mounted by the desktop Agent shell');
 }
-if (!/agentTranscriptStoreRef\.current\.(?:thread|entries)\(activePeer\.key\)/.test(shell)) {
+if (/new AgentRuntimeCoordinator\s*\(/.test(shell)) {
+  violations.push('Messenger shell recreated AgentRuntimeCoordinator ownership');
+}
+if (/createAgentSubmissionQueue\s*\(/.test(shell)) {
+  violations.push('Messenger shell recreated Agent submission-queue ownership');
+}
+if (/readAgentWorkspaceDrafts\s*\(|persistAgentWorkspaceDrafts\s*\(/.test(shell)) {
+  violations.push('Messenger shell recreated Agent draft persistence ownership');
+}
+if (!/agentTranscriptStore\.(?:thread|entries)\(activePeer\.key\)/.test(shell)) {
   violations.push('normal Agent rendering no longer reads directly from AgentTranscriptStore');
 }
-if (/toDisplayAgentMessages\(agentTranscriptStoreRef\.current\.(?:thread|entries)/.test(shell)) {
+if (/toDisplayAgentMessages\(agentTranscriptStore\.(?:thread|entries)/.test(shell)) {
   violations.push('normal Agent rendering reintroduced the Messenger DisplayMessage bridge');
+}
+const regenerateStart = shell.indexOf('function regenerateBotMessage');
+const regenerateEnd = shell.indexOf('async function stopAgentOperation', regenerateStart);
+const regenerateSlice = regenerateStart >= 0 && regenerateEnd > regenerateStart
+  ? shell.slice(regenerateStart, regenerateEnd)
+  : '';
+if (!regenerateSlice.includes('agentTranscriptStore.entries(activePeer.key)')) {
+  violations.push('Agent regenerate action no longer resolves its prompt from canonical Agent transcript');
+}
+if (/\bmessages\.(?:findIndex|slice)\b/.test(regenerateSlice)) {
+  violations.push('Agent regenerate action fell back to renderer-global Messenger messages');
 }
 if (!/agentCoordinatorClient\.connect\s*\(/.test(shell)) {
   violations.push('Host transport lifecycle escaped AgentCoordinatorClient');
