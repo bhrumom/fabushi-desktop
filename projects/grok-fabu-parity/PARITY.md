@@ -91,6 +91,15 @@ The branch then replaced the browser prompt with the Agent-owned section dialog 
 
 No merge to `main` is allowed until the fresh code gates and same-HEAD packaged macOS acceptance are both green with retained evidence.
 
+### 2026-09-21 cross-device Sidebar convergence hardening
+
+The account Sidebar document is no longer merely CAS-protected last-write-wins data. `account-sidebar-layout.ts` now performs a three-way merge from the renderer's last authoritative account snapshot, the local mutation, and the newest remote snapshot observed after an etag conflict. Unpin/removal cannot be resurrected by a concurrent reorder; remote-only pinned Agents and independently-created sections survive local retries; concurrent rename/collapse edits merge by field. `use-agent-sidebar-controller.ts` retains the authoritative snapshot, polls the account object revision/etag while the account is active, projects remote changes back into the Agent-owned Sidebar state, and writes the merged committed result through the existing serialized cloud write chain.
+
+The regression is executable rather than documentary: `grok-parity.spec.ts` covers a local unpin + remote pin addition + independent local/remote section edits, while the visible Section journey continues through the Agent-owned `Create section` dialog and proves that a pinned Agent retains section ownership and appears there after Unpin. `check-agent-workspace-boundary.mjs` rejects removal of the three-way merge, authoritative cloud snapshot, remote refresh, or base-aware write path, and Desktop Chat Parity's renderer job now runs that architecture gate before typecheck/build.
+
+Desktop Chat Parity run `35536089732` on exact code HEAD `a5d686de8671e64ddcb732eb5e6ffc7477bdb054` passed both `Focused Electron chat E2E` job `106145271909` and `Renderer typecheck and build` job `106145272030`. Playwright artifact `10612852168` has digest `sha256:907d42f5212af0dc5587b31b9593fa8f2d8de98bdf6c78ea9745dc55cd613d35`; its successful trace contains the cross-device CAS regression and the Section → `Focused work` → Unpin journey. This inventory update itself is documentation-only, so the release/package gate still requires a fresh run on the resulting exact HEAD before packaging.
+
+
 ## 2026-09-20 Composer ownership cutover
 
 The primary Agent Composer no longer copies Agent text into the renderer-global `composer` state. Normal Agent input now reads and writes `AgentWorkspaceController` directly, and send atomically takes the complete Agent-owned draft before entering `AgentSubmissionQueue`. Failed/queued submissions continue to restore through `useAgentWorkspaceRuntime` without clobbering a newer draft.
