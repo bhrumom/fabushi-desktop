@@ -2548,7 +2548,6 @@ impl FeatureHostController {
         source: &str,
         prompt: String,
         client_message_id: String,
-                        inference_provider: None,
     ) -> Result<Option<String>, FeatureHostError> {
         if self.config.mode == HostMode::Test {
             let runtime_agent_id = bot_runtime_agent_id(target).to_string();
