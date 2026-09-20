@@ -1083,7 +1083,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [legacySendPending, setLegacySendPending] = useState(false);
   const [agentWorkspaceRevision, setAgentWorkspaceRevision] = useState(0);
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
-  const [queuedAgentPrompts, setQueuedAgentPrompts] = useState<Record<string, DisplayMessage[]>>({});
   const [typingByConversation, setTypingByConversation] = useState<Record<string, Record<string, number>>>({});
   const [newDialog, setNewDialog] = useState<NewDialog>(null);
   const [messageMenu, setMessageMenu] = useState<MessageMenu>(null);
@@ -1135,13 +1134,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const agentStoresRef = useRef(new Map<string, FabuAgentStore>());
 
   const removeQueuedAgentPrompt = useCallback((peerKey: string, messageId: string) => {
-    setQueuedAgentPrompts((current) => {
-      const pending = (current[peerKey] ?? []).filter((message) => message.id !== messageId);
-      const next = { ...current };
-      if (pending.length) next[peerKey] = pending;
-      else delete next[peerKey];
-      return next;
-    });
+    agentTranscriptStoreRef.current.removeQueuedUserMessage(peerKey, messageId);
+    notifyAgentWorkspaceState();
   }, []);
 
   const agentSubmissionQueue = useMemo(() => createAgentSubmissionQueue({
@@ -1154,25 +1148,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     },
     onPhase: (submission) => {
       if (submission.phase === 'queued') {
-        const queuedMessage: DisplayMessage = {
+        agentTranscriptStoreRef.current.appendUserMessage(submission.peerKey, {
           id: submission.messageId,
-          source: 'legacy',
-          role: 'me',
           text: submission.prompt,
           createdAtMs: submission.createdAtMs,
-          kind: 'message',
           optimistic: true,
           queued: true,
-          ...(submission.attachments?.length ? { attachments: submission.attachments } : {}),
-        };
-        setQueuedAgentPrompts((current) => {
-          const list = current[submission.peerKey] ?? [];
-          const index = list.findIndex((message) => message.id === submission.messageId);
-          const nextList = index < 0
-            ? [...list, queuedMessage]
-            : list.map((message, messageIndex) => messageIndex === index ? queuedMessage : message);
-          return { ...current, [submission.peerKey]: nextList };
+          attachments: submission.attachments,
         });
+        notifyAgentWorkspaceState();
         return;
       }
       removeQueuedAgentPrompt(submission.peerKey, submission.messageId);
@@ -2536,11 +2520,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   peersRef.current = peers;
   const grokActivityByPeer = Object.fromEntries(peers.map((peer) => {
-    const thread = peer.key === activePeerKey
-      ? messages
-      : peer.miniAppId
-        ? miniAppBotThreadsRef.current[peer.miniAppId] ?? []
-        : toDisplayAgentMessages(agentTranscriptStoreRef.current.thread(peer.key));
+    const thread = isAgentPeer(peer) && !peer.miniAppId
+      ? toDisplayAgentMessages(agentTranscriptStoreRef.current.thread(peer.key))
+      : peer.key === activePeerKey
+        ? messages
+        : peer.miniAppId
+          ? miniAppBotThreadsRef.current[peer.miniAppId] ?? []
+          : [];
     const lastMessage = [...thread]
       .reverse()
       .find((message) => message.kind === 'message' && Boolean(message.text.trim()));
@@ -2651,9 +2637,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     ? toDisplayAgentMessages(agentTranscriptStoreRef.current.thread(activePeer.key))
     : messages;
   const renderedMessages = matchingMessages.slice(Math.max(0, matchingMessages.length - messageRenderCount));
-  const botTranscriptMessages = activePeer && isAgentPeer(activePeer)
-    ? [...renderedMessages, ...(queuedAgentPrompts[activePeer.key] ?? [])]
-    : renderedMessages;
+  const botTranscriptMessages = renderedMessages;
   const agentTranscriptEntries: TranscriptEntry[] = activePeer && isAgentPeer(activePeer)
     ? projectTranscriptEntries(botTranscriptMessages)
     : [];
@@ -3079,7 +3063,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       if (node) node.scrollTop = node.scrollHeight;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [activePeerKey, messages, agentWorkspaceRevision, queuedAgentPrompts]);
+  }, [activePeerKey, messages, agentWorkspaceRevision]);
 
   async function openPeer(peer: PeerItem) {
     activePeerKeyRef.current = peer.key;
@@ -4385,8 +4369,7 @@ async function saveInvoiceDialog() {
                 onContextMenu={(event, entry) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  const sourceMessage = [...renderedMessages, ...(queuedAgentPrompts[activePeer.key] ?? [])]
-                    .find((message) => message.id === entry.id);
+                  const sourceMessage = renderedMessages.find((message) => message.id === entry.id);
                   if (sourceMessage) setMessageMenu({ message: sourceMessage, x: event.clientX, y: event.clientY });
                 }}
                 notice={error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
