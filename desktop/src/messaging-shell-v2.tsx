@@ -118,6 +118,10 @@ import {
   validateAgentAttachment,
 } from './agent-workspace/agent-attachments';
 import {
+  persistAgentWorkspaceDrafts,
+  readAgentWorkspaceDrafts,
+} from './agent-workspace/agent-draft-store';
+import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
   deleteAccountAgentStoreObject,
@@ -1026,7 +1030,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     startupLegacyConversation ? cachedLegacyDisplayMessages(startupLegacyConversation) : [],
   );
   const [composer, setComposer] = useState('');
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [drafts, setDrafts] = useState<Record<string, string>>(() => Object.fromEntries(
+    Object.entries(readAgentWorkspaceDrafts()).map(([peerKey, draft]) => [peerKey, draft.text]),
+  ));
   const [replyTo, setReplyTo] = useState<DisplayMessage | null>(null);
   const [silentSend, setSilentSend] = useState(false);
   const [scheduledAtMs, setScheduledAtMs] = useState<number | undefined>();
@@ -1073,7 +1079,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [invoiceDialog, setInvoiceDialog] = useState<InvoiceDialogState>(null);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const [attachmentProgress, setAttachmentProgress] = useState<string | null>(null);
-  const [agentAttachmentsByPeer, setAgentAttachmentsByPeer] = useState<Record<string, AttachmentContext[]>>({});
+  const [agentAttachmentsByPeer, setAgentAttachmentsByPeer] = useState<Record<string, AttachmentContext[]>>(() => Object.fromEntries(
+    Object.entries(readAgentWorkspaceDrafts()).map(([peerKey, draft]) => [peerKey, draft.attachments]),
+  ));
   const [agentAttachmentUploadingPeers, setAgentAttachmentUploadingPeers] = useState<Set<string>>(() => new Set());
   const [localCall, setLocalCall] = useState<LocalCall | null>(null);
   const [incomingCall, setIncomingCall] = useState<IncomingFabushiCall | null>(null);
@@ -1184,6 +1192,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }), [removeQueuedAgentPrompt]);
 
   useEffect(() => () => agentSubmissionQueue.dispose(), [agentSubmissionQueue]);
+
+  useEffect(() => {
+    agentWorkspaceControllerRef.current.hydrateDrafts(drafts);
+    persistAgentWorkspaceDrafts(drafts, agentAttachmentsByPeer);
+  }, [drafts, agentAttachmentsByPeer]);
 
   useEffect(() => {
     if (hostReady) agentSubmissionQueue.flush();
