@@ -265,6 +265,17 @@ impl MahayanaHost {
     pub fn reset_session(&self) -> Result<(), HostError> {
         self.runtime.reset_session().map_err(HostError::from)
     }
+
+    /// Switch local Agent transcript/session persistence to the authenticated
+    /// account without deleting the previous account's durable state.
+    pub fn switch_conversation_history(
+        &self,
+        path: Option<PathBuf>,
+    ) -> Result<(), HostError> {
+        self.runtime
+            .switch_conversation_history(path)
+            .map_err(HostError::from)
+    }
 }
 
 /// Canonical Rust-owned account session shared by the Mahayana CLI and native
