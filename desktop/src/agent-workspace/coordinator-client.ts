@@ -190,6 +190,60 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  listGroups(requestId: string) {
+    return this.transport.execute({
+      type: 'group.list',
+      requestId,
+    } as HostCommand);
+  }
+
+  createGroup(
+    requestId: string,
+    name: string,
+    memberAgentIds: readonly string[],
+    description = '',
+  ) {
+    return this.transport.execute({
+      type: 'group.create',
+      requestId,
+      name,
+      description,
+      memberIds: [...memberAgentIds],
+    } as HostCommand);
+  }
+
+  updateGroup(
+    requestId: string,
+    id: string,
+    patch: { name?: string; description?: string; memberAgentIds?: readonly string[] },
+  ) {
+    return this.transport.execute({
+      type: 'group.update',
+      requestId,
+      id,
+      ...(patch.name !== undefined ? { name: patch.name } : {}),
+      ...(patch.description !== undefined ? { description: patch.description } : {}),
+      ...(patch.memberAgentIds !== undefined ? { memberIds: [...patch.memberAgentIds] } : {}),
+    } as HostCommand);
+  }
+
+  deleteGroup(requestId: string, id: string) {
+    return this.transport.execute({
+      type: 'group.delete',
+      requestId,
+      id,
+    } as HostCommand);
+  }
+
+  sendGroup(requestId: string, id: string, message: string) {
+    return this.transport.execute({
+      type: 'group.send',
+      requestId,
+      id,
+      text: message,
+    } as HostCommand);
+  }
+
   refreshComputerStatus(requestId: string) {
     return this.transport.execute({
       type: 'computer.status',
