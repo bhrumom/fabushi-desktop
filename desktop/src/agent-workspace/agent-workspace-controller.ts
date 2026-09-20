@@ -42,6 +42,7 @@ export class AgentWorkspaceController {
   private readonly operations = new AgentOperationRegistry();
   private readonly drafts = new Map<string, PersistedAgentDraft>();
   private readonly uploadingPeers = new Set<string>();
+  private readonly finishedOperations = new Set<string>();
 
   constructor(initialDrafts: PersistedAgentDrafts = {}) {
     this.hydratePersistedDrafts(initialDrafts);
@@ -67,8 +68,45 @@ export class AgentWorkspaceController {
     return this.operations.claimOperation(operationId, peerKey);
   }
 
+  /**
+   * Adopt a runtime operation without consulting the currently visible Agent.
+   * Legacy events that omit request ownership may only fall back when exactly
+   * one Agent request is pending.
+   */
+  claimRuntimeOperation(operationId: string, fallbackPeerKey?: string | null): string | null {
+    if (!operationId || this.finishedOperations.has(operationId)) return null;
+    const peerKey = this.operations.peerForOperation(operationId)
+      ?? fallbackPeerKey
+      ?? this.operations.onlyPendingPeer();
+    if (!peerKey) return null;
+    const requestId = this.operations.requestForPeer(peerKey);
+    this.operations.adoptOperation(requestId, operationId, peerKey);
+    return peerKey;
+  }
+
   finishOperation(operationId: string): string | null {
     return this.operations.finishOperation(operationId);
+  }
+
+  finishRuntimeOperation(operationId: string): string | null {
+    const peerKey = this.operations.peerForOperation(operationId);
+    if (!peerKey) return null;
+    this.operations.finishOperation(operationId);
+    this.finishedOperations.add(operationId);
+    if (this.finishedOperations.size > 500) {
+      const oldest = this.finishedOperations.values().next().value;
+      if (oldest) this.finishedOperations.delete(oldest);
+    }
+    return peerKey;
+  }
+
+  isOperationFinished(operationId: string | null | undefined): boolean {
+    return Boolean(operationId && this.finishedOperations.has(operationId));
+  }
+
+  peerForRuntimeId(runtimeId: string | null | undefined): string | null {
+    return this.operations.peerForOperation(runtimeId)
+      ?? this.operations.peerForRequest(runtimeId);
   }
 
   operationForPeer(peerKey: string | null | undefined): string | null {
@@ -113,6 +151,7 @@ export class AgentWorkspaceController {
     this.operations.clear();
     this.drafts.clear();
     this.uploadingPeers.clear();
+    this.finishedOperations.clear();
   }
 
   setDraft(peerKey: string, value: string): void {
