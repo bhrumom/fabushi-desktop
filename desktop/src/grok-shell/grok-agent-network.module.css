@@ -1,0 +1,159 @@
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  color: var(--cursor-text-primary, #f2f2f3);
+  background: var(--cursor-bg-editor, #141416);
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 54px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.header > div { display: flex; align-items: center; gap: 10px; }
+.header span { display: grid; gap: 2px; }
+.header strong { font-size: 13px; }
+.header small { color: rgba(255,255,255,.44); font-size: 10px; }
+.header button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: inherit;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+}
+.header button:hover { background: rgba(255,255,255,.07); }
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  min-height: 0;
+  flex: 1;
+}
+.graph {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+}
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 10px;
+  color: rgba(255,255,255,.46);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: .045em;
+}
+.sectionHeading:not(:first-child) { margin-top: 26px; }
+.nodes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.node {
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.075);
+  border-radius: 12px;
+  background: rgba(255,255,255,.028);
+}
+.node[data-active] { border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.055); }
+.node[data-busy] { box-shadow: inset 2px 0 rgba(140,185,255,.62); }
+.node[data-waiting] { box-shadow: inset 2px 0 rgba(255,190,100,.7); }
+.openNode {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 12px;
+  color: inherit;
+  text-align: left;
+  border: 0;
+  background: transparent;
+}
+.openNode:hover { background: rgba(255,255,255,.04); }
+.nodeMark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.07);
+}
+.openNode > span:last-child { display: grid; min-width: 0; gap: 4px; }
+.openNode strong,
+.openNode small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.openNode strong { font-size: 12px; }
+.openNode small { color: rgba(255,255,255,.48); font-size: 10px; }
+.select {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 0 12px 8px 56px;
+  color: rgba(255,255,255,.42);
+  font-size: 10px;
+}
+.select input { accent-color: currentColor; }
+.broadcast {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 22px 18px;
+  border-left: 1px solid rgba(255,255,255,.07);
+  background: rgba(255,255,255,.018);
+}
+.broadcastTitle { display: flex; align-items: center; gap: 8px; }
+.broadcastTitle strong { font-size: 13px; }
+.broadcast p {
+  margin: 0;
+  color: rgba(255,255,255,.48);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.broadcast textarea {
+  width: 100%;
+  min-height: 130px;
+  resize: vertical;
+  padding: 11px 12px;
+  color: inherit;
+  line-height: 1.5;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 11px;
+  outline: 0;
+  background: rgba(255,255,255,.035);
+}
+.broadcast textarea:focus { border-color: rgba(255,255,255,.2); }
+.send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 12px;
+  color: #121214;
+  font-weight: 650;
+  border: 0;
+  border-radius: 9px;
+  background: rgba(255,255,255,.88);
+}
+.send:disabled { opacity: .35; }
+.error { color: #f4b2b2; font-size: 11px; }
+.empty { padding: 18px; color: rgba(255,255,255,.42); font-size: 11px; }
+@media (max-width: 900px) {
+  .body { grid-template-columns: 1fr; overflow: auto; }
+  .broadcast { border-left: 0; border-top: 1px solid rgba(255,255,255,.07); }
+}
