@@ -124,7 +124,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.isOperationFinished('operation:b')).toBe(true);
       expect(controller.claimRuntimeOperation('operation:b', 'agent:b')).toBeNull();
 
-      controller.setDraft('agent:a', 'first prompt');
+      controller.setDraft('agent:a', 'first prompt @Research /Review changes');
       controller.appendAttachments('agent:a', [{ id: 'attachment:a', name: 'a.txt' }]);
       controller.setReply('agent:a', { id: 'reply:a', role: 'peer', text: 'previous answer' });
       controller.upsertReference('agent:a', { kind: 'agent', id: 'agent:research', label: 'Research' });
@@ -132,7 +132,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       controller.setDraft('agent:b', 'independent draft');
 
       const submitted = controller.takeDraft('agent:a');
-      expect(submitted.text).toBe('first prompt');
+      expect(submitted.text).toBe('first prompt @Research /Review changes');
       expect(submitted.attachments.map((attachment) => attachment.id)).toEqual(['attachment:a']);
       expect(submitted.replyTo?.id).toBe('reply:a');
       expect(submitted.references).toEqual([
