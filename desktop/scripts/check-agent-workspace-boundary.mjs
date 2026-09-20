@@ -139,6 +139,9 @@ if (!/useAgentDirectoryController\s*\(/.test(shell)) {
 if (/type:\s*['"]bot\.(?:list|create|update|clone|delete|setHidden)['"]|case\s+['"]bot\.(?:listed|changed)['"]|setBots\s*\(/.test(shell)) {
   violations.push('primary shell recreated raw Bot/Agent directory ownership');
 }
+if (/agentCoordinatorClient\.(?:listAgents|createAgent|updateAgent|duplicateAgent|deleteAgent|setAgentHidden)\s*\(/.test(shell)) {
+  violations.push('primary shell bypassed AgentDirectoryController');
+}
 for (const method of ['listAgents', 'createAgent', 'updateAgent', 'duplicateAgent', 'deleteAgent', 'setAgentHidden']) {
   if (!new RegExp(`client\\.${method}\\s*\\(`).test(directoryController)) {
     violations.push(`Agent directory controller no longer routes ${method} through AgentCoordinatorClient`);
