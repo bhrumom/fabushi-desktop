@@ -75,6 +75,24 @@ if (!/from\s+['"]@tiptap\/react['"]/.test(agentRichEditor)
 if (/contentEditable=/.test(agentComposer) || /innerText\s*=/.test(agentComposer)) {
   violations.push('primary Agent Composer regressed to a hand-managed contentEditable surface');
 }
+if (!/AGENT_ATTACHMENT_LIMIT/.test(agentComposer)
+  || !/const stageFiles\s*=/.test(agentComposer)
+  || !/onPasteFiles=\{stageFiles\}/.test(agentComposer)) {
+  violations.push('Agent Composer no longer caps file selection/drop/paste at the Agent attachment boundary');
+}
+if (!/voiceState === ['"]idle['"]/.test(agentComposer)
+  || !/if \(canSend\) formRef\.current\?\.requestSubmit\(\)/.test(agentComposer)) {
+  violations.push('Agent Composer can submit while voice capture/transcription is active');
+}
+if (!/event\.isComposing/.test(agentComposer)
+  || !/editorControlsRef\.current\?\.blur\(\)/.test(agentComposer)
+  || !/editorControlsRef\.current\?\.insertText\(transcript\)/.test(agentComposer)) {
+  violations.push('Agent Composer keyboard/voice editor contract drifted from the frozen Fabu reference');
+}
+if (!/insertText\(value: string\): void/.test(agentRichEditor)
+  || !/editor\.chain\(\)\.focus\(\)\.insertContent/.test(agentRichEditor)) {
+  violations.push('Agent rich editor no longer exposes cursor-preserving text insertion');
+}
 
 if (!/useAgentSidebarController\s*\(/.test(shell)) {
   violations.push('Agent sidebar controller is not mounted by the desktop Agent shell');
