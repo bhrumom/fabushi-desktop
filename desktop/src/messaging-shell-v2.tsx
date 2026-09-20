@@ -2417,12 +2417,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           const assistantOperationId = event.operationId ?? unambiguousAgentOperationId();
           if (assistantOperationId) {
             const ownedOperation = claimAgentOperation(assistantOperationId)
-              || Boolean(agentPeerKeyRef.current[assistantOperationId]);
+              || Boolean(agentWorkspaceControllerRef.current.peerForRuntimeId(assistantOperationId));
             if (ownedOperation) {
               appendAssistantTurnEvent({ ...event, operationId: assistantOperationId });
               break;
             }
-            if (finishedAgentOperationsRef.current.has(assistantOperationId)) break;
+            if (agentWorkspaceControllerRef.current.isOperationFinished(assistantOperationId)) break;
           }
         }
         updateAgentThread(event.operationId, (current) => {
@@ -2453,10 +2453,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         break;
       case 'chat.delta': {
         const deltaOperationId = event.operationId ?? unambiguousAgentOperationId();
-        if (deltaOperationId && finishedAgentOperationsRef.current.has(deltaOperationId)) break;
+        if (deltaOperationId && agentWorkspaceControllerRef.current.isOperationFinished(deltaOperationId)) break;
         if (deltaOperationId && (
           claimAgentOperation(deltaOperationId)
-          || Boolean(agentPeerKeyRef.current[deltaOperationId])
+          || Boolean(agentWorkspaceControllerRef.current.peerForRuntimeId(deltaOperationId))
         )) {
           queueAgentDelta({ ...event, operationId: deltaOperationId });
           break;
@@ -2471,8 +2471,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       case 'operation.started':
         if (claimAgentOperation(event.operationId)) {
           appendAssistantTurnEvent(event);
-          const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
-            ?? agentPeerKeyRef.current[event.operationId];
+          const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId);
           mirrorAgentRuntimeCheckpoint(owner, 'running', event.operationId);
         }
         break;
@@ -2483,9 +2482,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
         break;
       case 'operation.interrupted': {
-        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
-          ?? agentPeerKeyRef.current[event.operationId]
-          ?? null;
+        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId);
         if (owner) {
           appendAssistantTurnEvent(event);
           mirrorAgentRuntimeCheckpoint(owner, 'interrupted', event.operationId);
@@ -2495,9 +2492,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         break;
       }
       case 'operation.completed': {
-        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
-          ?? agentPeerKeyRef.current[event.operationId]
-          ?? null;
+        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId);
         if (owner) {
           appendAssistantTurnEvent(event);
           mirrorAgentRuntimeCheckpoint(owner, 'completed', event.operationId);
@@ -2515,9 +2510,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       case 'operation.failed': {
-        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId)
-          ?? agentPeerKeyRef.current[event.operationId]
-          ?? null;
+        const owner = agentWorkspaceControllerRef.current.peerForOperation(event.operationId);
         if (owner) {
           appendAssistantTurnEvent(event);
           mirrorAgentRuntimeCheckpoint(owner, 'failed', event.operationId, event.message);
