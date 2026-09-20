@@ -188,6 +188,13 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  refreshComputerStatus(requestId: string) {
+    return this.transport.execute({
+      type: 'computer.status',
+      requestId,
+    } as HostCommand);
+  }
+
   async uploadAttachment(input: AgentAttachmentUpload, timeoutMs = 20_000): Promise<AttachmentContext> {
     let cancelWait = () => {};
     const stored = new Promise<AttachmentContext>((resolve, reject) => {
