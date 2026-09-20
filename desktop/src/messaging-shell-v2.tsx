@@ -4627,23 +4627,6 @@ async function saveInvoiceDialog() {
             {replyTo ? <div className={extra.composerBanner} data-testid="reply-message-banner"><Reply size={15} /><div><strong>回复</strong><span>{replyTo.text}</span></div><button type="button" data-testid="reply-message-cancel" onClick={() => setReplyTo(null)}><X size={14} /></button></div> : null}
             {scheduledAtMs ? <div className={extra.composerBanner}><span>⏱</span><div><strong>定时发送</strong><span>{new Date(scheduledAtMs).toLocaleString()}</span></div><button type="button" onClick={() => setScheduledAtMs(undefined)}><X size={14} /></button></div> : null}
             {activePeer.miniAppId && composer.trimStart().startsWith('/') && activePeer.miniAppCommands?.length ? <div className={extra.composerBanner} data-testid="miniapp-bot-commands"><AppWindow size={15} /><div><strong>小程序命令</strong><span>{activePeer.miniAppCommands.map((command) => `/${command.name}`).join(' · ')}</span></div>{activePeer.miniAppCommands.slice(0, 4).map((command) => <button key={command.name} type="button" title={command.description} onClick={() => updateComposer(command.usage)}>{`/${command.name}`}</button>)}</div> : null}
-            {isAgentPeer(activePeer) && !activePeer.miniAppId ? (
-              <>
-                <input ref={fileInputRef} type="file" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
-                {attachmentProgress ? <span className={extra.uploadProgress}>{attachmentProgress}</span> : null}
-                <GrokAgentComposer
-                  value={composer}
-                  agentName={activePeer.title}
-                  ready={hostReady}
-                  busy={Boolean(activeAgentOperationId)}
-                  enterToSend={desktopPreferences.enterToSend}
-                  onChange={updateComposer}
-                  onSubmit={(event) => void sendMessage(event)}
-                  onAttach={() => fileInputRef.current?.click()}
-                  onStop={() => void stopAgentOperation()}
-                />
-              </>
-            ) : (
               <form className={styles.composer} onSubmit={(event) => void sendMessage(event)}>
                 <div className={extra.attachmentAnchor}>
                   <button type="button" title="附件" onClick={() => setAttachmentMenuOpen((value) => !value)}><Paperclip size={20} /></button>
@@ -4665,7 +4648,6 @@ async function saveInvoiceDialog() {
                   ? <button data-testid="messenger-send" className={styles.sendButton} type="submit" disabled={!hostReady || pendingSend}><Send size={19} /></button>
                   : null}
               </form>
-            )}
               </>
             )}
           </>
