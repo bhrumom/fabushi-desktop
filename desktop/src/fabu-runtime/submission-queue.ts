@@ -1,4 +1,5 @@
 import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { AgentReplyContext } from '../agent-workspace/prompt-context';
 export type AgentSubmissionPhase = 'pending' | 'queued' | 'failed' | 'sent' | 'cancelled';
 
 export interface AgentSubmission {
@@ -8,6 +9,7 @@ export interface AgentSubmission {
   agentId: string;
   prompt: string;
   attachments?: readonly AttachmentContext[];
+  replyTo?: AgentReplyContext;
   createdAtMs: number;
 }
 
