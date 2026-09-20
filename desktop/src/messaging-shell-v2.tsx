@@ -2810,10 +2810,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   async function dispatchAgentPromptNow(peer: PeerItem, text: string, existingMessageId?: string): Promise<void> {
-    if (agentOperationIdRef.current || agentRequestPendingRef.current) {
-      throw new Error('Agent transport is busy.');
+    const registry = agentOperationRegistryRef.current;
+    if (registry.isBusy(peer.key)) {
+      throw new Error('This Agent is already busy.');
     }
     const requestId = nextRequestId('chat-send');
+    registry.beginRequest(peer.key, requestId);
+    syncAgentOperationSnapshot();
     rememberAgentPeer(requestId, peer.key);
     const optimisticId = existingMessageId ?? 'optimistic:' + requestId;
     updateAgentThread(requestId, (current) => {
@@ -2844,10 +2847,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       label: '正在思考',
       interruptible: true,
     });
-    setPendingSend(true);
-    agentRequestPendingRef.current = true;
-    agentRequestPeerRef.current = peer.key;
-    agentRequestIdRef.current = requestId;
+    if (activePeerKeyRef.current === peer.key) {
+      setPendingSend(true);
+      agentRequestPendingRef.current = true;
+      agentRequestPeerRef.current = peer.key;
+      agentRequestIdRef.current = requestId;
+    }
     try {
       const accepted = await execute({
         type: 'chat.send',
@@ -2862,9 +2867,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       }
       const operationId = accepted.operationId ?? requestId;
       rememberAgentPeer(operationId, peer.key);
-      if (finishedAgentOperationsRef.current.has(operationId)) return;
-      adoptAgentRequestOperation(agentRequestIdRef.current, operationId, peer.key);
-      agentRequestIdRef.current = null;
+      if (finishedAgentOperationsRef.current.has(operationId)) {
+        registry.cancelRequest(requestId);
+        syncAgentOperationSnapshot();
+        return;
+      }
+      adoptAgentRequestOperation(requestId, operationId, peer.key);
+      registry.adoptOperation(requestId, operationId, peer.key);
+      syncAgentOperationSnapshot();
+      if (activePeerKeyRef.current === peer.key) {
+        agentRequestIdRef.current = null;
+      }
       updateAgentThread(operationId, (current) => current.map((message) => message.id === optimisticId
         ? { ...message, operationId, optimistic: false, queued: false }
         : message));
@@ -2873,13 +2886,14 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       updateAgentThread(requestId, (current) => current.filter((message) =>
         message.id !== optimisticId && message.operationId !== requestId,
       ));
-      agentRequestIdRef.current = null;
+      registry.cancelRequest(requestId);
+      syncAgentOperationSnapshot();
+      if (activePeerKeyRef.current === peer.key) agentRequestIdRef.current = null;
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
-      agentRequestPendingRef.current = false;
-      if (!agentOperationIdRef.current) {
-        agentRequestIdRef.current = null;
-        setPendingSend(false);
+      if (activePeerKeyRef.current === peer.key) {
+        agentRequestPendingRef.current = false;
+        projectActiveAgentOperation(peer.key);
       }
     }
   }
@@ -2911,7 +2925,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   async function stopAgentOperation(): Promise<void> {
-    const operationId = agentOperationIdRef.current;
+    const operationId = agentOperationRegistryRef.current.operationForPeer(activePeerKeyRef.current)
+      ?? agentOperationIdRef.current;
     if (!operationId) return;
     try {
       await transport.interrupt(operationId);
