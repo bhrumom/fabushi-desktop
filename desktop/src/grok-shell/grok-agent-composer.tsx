@@ -20,6 +20,12 @@ export interface GrokComposerMentionCandidate {
   description?: string;
 }
 
+export interface GrokComposerWorkflowCandidate {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 function attachmentSize(sizeBytes?: number): string {
   if (sizeBytes == null || !Number.isFinite(sizeBytes)) return '';
   if (sizeBytes < 1024) return `${sizeBytes} B`;
@@ -37,8 +43,10 @@ export default function GrokAgentComposer({
   attachments = [],
   replyTarget,
   mentionCandidates = [],
+  workflowCandidates = [],
   onClearReplyTarget,
   onMention,
+  onWorkflowReference,
   onChange,
   onSubmit,
   onAttachFiles,
@@ -55,8 +63,10 @@ export default function GrokAgentComposer({
   attachments?: readonly GrokComposerAttachment[];
   replyTarget?: GrokComposerReplyTarget;
   mentionCandidates?: readonly GrokComposerMentionCandidate[];
+  workflowCandidates?: readonly GrokComposerWorkflowCandidate[];
   onClearReplyTarget?(): void;
   onMention?(candidate: GrokComposerMentionCandidate): void;
+  onWorkflowReference?(candidate: GrokComposerWorkflowCandidate): void;
   onChange(value: string): void;
   onSubmit(event: FormEvent<HTMLFormElement>): void;
   onAttachFiles(files: readonly File[]): void;
@@ -86,10 +96,18 @@ export default function GrokAgentComposer({
     : mentionCandidates
       .filter((candidate) => !mentionQuery || `${candidate.name} ${candidate.description ?? ''}`.toLocaleLowerCase().includes(mentionQuery))
       .slice(0, 8), [mentionCandidates, mentionQuery]);
+  const workflowMatch = /(?:^|\s)\/([^/\n]{0,50})$/.exec(value);
+  const workflowQuery = workflowMatch?.[1]?.trim().toLocaleLowerCase() ?? null;
+  const workflowResults = useMemo(() => workflowQuery == null
+    ? []
+    : workflowCandidates
+      .filter((candidate) => !workflowQuery || `${candidate.name} ${candidate.description ?? ''}`.toLocaleLowerCase().includes(workflowQuery))
+      .slice(0, 8), [workflowCandidates, workflowQuery]);
+  const suggestionCount = mentionResults.length || workflowResults.length;
 
   useEffect(() => {
-    setMentionIndex((index) => Math.min(index, Math.max(0, mentionResults.length - 1)));
-  }, [mentionResults.length]);
+    setMentionIndex((index) => Math.min(index, Math.max(0, suggestionCount - 1)));
+  }, [suggestionCount]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -111,6 +129,13 @@ export default function GrokAgentComposer({
     const next = value.replace(/(^|\s)@([^@\n]{0,50})$/, (_match, prefix: string) => `${prefix}@${candidate.name} `);
     onChange(next);
     onMention?.(candidate);
+    window.requestAnimationFrame(() => editorRef.current?.focus());
+  };
+
+  const insertWorkflow = (candidate: GrokComposerWorkflowCandidate) => {
+    const next = value.replace(/(^|\s)\/([^/\n]{0,50})$/, (_match, prefix: string) => `${prefix}/${candidate.name} `);
+    onChange(next);
+    onWorkflowReference?.(candidate);
     window.requestAnimationFrame(() => editorRef.current?.focus());
   };
 
@@ -191,11 +216,11 @@ export default function GrokAgentComposer({
   }, []);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (mentionResults.length) {
+    if (suggestionCount) {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         const delta = event.key === 'ArrowDown' ? 1 : -1;
-        setMentionIndex((index) => (index + delta + mentionResults.length) % mentionResults.length);
+        setMentionIndex((index) => (index + delta + suggestionCount) % suggestionCount);
         return;
       }
       if ((event.key === 'Enter' || event.key === 'Tab') && mentionResults[mentionIndex]) {
@@ -203,9 +228,15 @@ export default function GrokAgentComposer({
         insertMention(mentionResults[mentionIndex]!);
         return;
       }
+      if ((event.key === 'Enter' || event.key === 'Tab') && workflowResults[mentionIndex]) {
+        event.preventDefault();
+        insertWorkflow(workflowResults[mentionIndex]!);
+        return;
+      }
       if (event.key === 'Escape') {
         event.preventDefault();
-        onChange(value.replace(/(^|\s)@([^@\n]{0,50})$/, '$1'));
+        if (mentionResults.length) onChange(value.replace(/(^|\s)@([^@\n]{0,50})$/, '$1'));
+        else onChange(value.replace(/(^|\s)\/([^/\n]{0,50})$/, '$1'));
         return;
       }
     }
@@ -327,6 +358,18 @@ export default function GrokAgentComposer({
           onClick={() => insertMention(candidate)}
         >
           <span><strong>@{candidate.name}</strong>{candidate.description ? <small>{candidate.description}</small> : null}</span>
+        </button>)}
+      </div> : null}
+      {workflowResults.length ? <div className={styles.mentions} role="listbox" aria-label="Reference a workflow">
+        {workflowResults.map((candidate, index) => <button
+          key={candidate.id}
+          type="button"
+          role="option"
+          aria-selected={index === mentionIndex}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => insertWorkflow(candidate)}
+        >
+          <span><strong>/{candidate.name}</strong>{candidate.description ? <small>{candidate.description}</small> : null}</span>
         </button>)}
       </div> : null}
       {voiceState === 'recording' ? <span className={styles.voiceStatus}>Recording…</span> : voiceError ? <span className={styles.voiceError} title={voiceError}>Voice unavailable</span> : null}
