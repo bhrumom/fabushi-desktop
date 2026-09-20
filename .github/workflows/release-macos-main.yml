@@ -117,7 +117,6 @@ jobs:
           fi
           case "$identity" in *'Developer ID Application:'*) ;; *) echo "::error::Developer ID Application identity was not found."; exit 1 ;; esac
           echo "MACOS_CODESIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
-          echo "CSC_NAME=$identity" >> "$GITHUB_ENV"
           echo "CSC_IDENTITY_AUTO_DISCOVERY=true" >> "$GITHUB_ENV"
           probe="$RUNNER_TEMP/fabushi-team-probe"
           cp /usr/bin/true "$probe"
