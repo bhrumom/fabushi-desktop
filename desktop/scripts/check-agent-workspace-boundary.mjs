@@ -22,6 +22,7 @@ const compatibilityAdapterPath = path.join(desktopRoot, 'src', 'agent-workspace'
 const compatibilityAdapter = fs.readFileSync(compatibilityAdapterPath, 'utf8');
 const repoRoot = path.resolve(desktopRoot, '..');
 const accountSidebarLayout = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'account-sidebar-layout.ts'), 'utf8');
+const sidebarController = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-sidebar-controller.ts'), 'utf8');
 const hostProtocol = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-host-protocol', 'src', 'lib.rs'), 'utf8');
 const runtimeCore = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-core', 'src', 'lib.rs'), 'utf8');
 const kernelConversation = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-runtime', 'src', 'kernel_conversation.rs'), 'utf8');
@@ -88,8 +89,17 @@ if (!/inference_provider:\s*Option<InferenceProvider>/.test(hostProtocol)
 if (!/revision:\s*number/.test(accountSidebarLayout)
   || !/baseEtag:\s*current\.etag/.test(accountSidebarLayout)
   || !/expectAbsent:\s*true/.test(accountSidebarLayout)
-  || !/writeAccountAgentStoreObject\s*\(/.test(accountSidebarLayout)) {
-  violations.push('Agent sidebar sections/pinned order lost account-level CAS/revision persistence');
+  || !/writeAccountAgentStoreObject\s*\(/.test(accountSidebarLayout)
+  || !/export function mergeAccountSidebarLayoutState\s*\(/.test(accountSidebarLayout)
+  || !/AccountSidebarLayoutWriteOptions/.test(accountSidebarLayout)
+  || !/mergeOrderedKeys\s*\(/.test(accountSidebarLayout)
+  || !/mergeAccountSidebarLayoutState\(base, localState, current\?\.layout \?\? null\)/.test(accountSidebarLayout)
+  || !/cloudSnapshotRef/.test(sidebarController)
+  || !/mergeAccountSidebarLayoutState\s*\(/.test(sidebarController)
+  || !/readAccountSidebarLayout\(scope\)/.test(sidebarController)
+  || !/setInterval\s*\(/.test(sidebarController)
+  || !/\{ base: currentBase \}/.test(sidebarController)) {
+  violations.push('Agent sidebar sections/pinned order lost cross-device CAS/revision merge convergence');
 }
 
 if (!/useAgentWorkspaceRuntime\s*\(/.test(shell)) {
