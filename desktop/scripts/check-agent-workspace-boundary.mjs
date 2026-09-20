@@ -45,7 +45,7 @@ const regenerateEnd = shell.indexOf('async function stopAgentOperation', regener
 const regenerateSlice = regenerateStart >= 0 && regenerateEnd > regenerateStart
   ? shell.slice(regenerateStart, regenerateEnd)
   : '';
-if (!regenerateSlice.includes('agentTranscriptStore.entries(activePeer.key)')) {
+if (!regenerateSlice.includes('agentTranscriptStore.userPromptBefore(activePeer.key, message.id)')) {
   violations.push('Agent regenerate action no longer resolves its prompt from canonical Agent transcript');
 }
 if (/\bmessages\.(?:findIndex|slice)\b/.test(regenerateSlice)) {
