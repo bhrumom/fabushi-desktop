@@ -1,4 +1,4 @@
-import { LoaderCircle, Mic, Paperclip, Send, Square, X } from 'lucide-react';
+import { LoaderCircle, Mic, Paperclip, Reply, Send, Square, X } from 'lucide-react';
 import React, { useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent } from 'react';
 import styles from './grok-agent-composer.module.css';
 
@@ -6,6 +6,12 @@ export interface GrokComposerAttachment {
   id: string;
   name: string;
   sizeBytes?: number;
+}
+
+export interface GrokComposerReplyTarget {
+  id: string;
+  label: string;
+  text: string;
 }
 
 function attachmentSize(sizeBytes?: number): string {
@@ -23,6 +29,8 @@ export default function GrokAgentComposer({
   uploading = false,
   enterToSend,
   attachments = [],
+  replyTarget,
+  onClearReplyTarget,
   onChange,
   onSubmit,
   onAttachFiles,
@@ -37,6 +45,8 @@ export default function GrokAgentComposer({
   uploading?: boolean;
   enterToSend: boolean;
   attachments?: readonly GrokComposerAttachment[];
+  replyTarget?: GrokComposerReplyTarget;
+  onClearReplyTarget?(): void;
   onChange(value: string): void;
   onSubmit(event: FormEvent<HTMLFormElement>): void;
   onAttachFiles(files: readonly File[]): void;
@@ -181,6 +191,11 @@ export default function GrokAgentComposer({
     onDrop={handleDrop}
   >
     {dragOver ? <div className={styles.dropOverlay} aria-hidden="true">Drop files to add to {agentName}</div> : null}
+    {replyTarget ? <div className={styles.replyTarget} data-testid="reply-message-banner">
+      <Reply size={15} />
+      <div><strong>{replyTarget.label}</strong><span>{replyTarget.text}</span></div>
+      {onClearReplyTarget ? <button type="button" data-testid="reply-message-cancel" aria-label="Cancel reply" onClick={onClearReplyTarget}><X size={14} /></button> : null}
+    </div> : null}
     {attachments.length ? <div className={styles.attachments} role="list" aria-label="Attachments">
       {attachments.map((attachment) => <span key={attachment.id} className={styles.attachment} role="listitem">
         <span><strong>{attachment.name}</strong>{attachmentSize(attachment.sizeBytes) ? <small>{attachmentSize(attachment.sizeBytes)}</small> : null}</span>
