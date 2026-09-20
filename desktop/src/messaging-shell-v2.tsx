@@ -2037,6 +2037,22 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setBots((current) => event.action === 'deleted'
           ? current.filter((bot) => bot.id !== event.bot.id)
           : upsertById(current, event.bot));
+        // Local Host profile remains usable offline, while the account service
+        // mirrors the complete Bot profile and its explicit Agent binding.
+        // Deleting a Bot membership intentionally leaves the Agent store intact,
+        // matching the Grok-style separation between surface and Agent state.
+        if (event.action === 'deleted') {
+          void invokeNativeDesktop('removeBotFromAccount', { botId: event.bot.id }).catch(() => {});
+        } else {
+          void invokeNativeDesktop('addBotToAccount', {
+            botId: event.bot.id,
+            bot: {
+              ...event.bot,
+              agentId: event.bot.agentId ?? event.bot.id,
+              displayName: event.bot.name,
+            },
+          }).catch(() => {});
+        }
         break;
       case 'group.listed':
         initialLegacyHydrationMaskRef.current |= 0b100;
