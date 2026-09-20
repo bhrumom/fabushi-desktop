@@ -1,4 +1,5 @@
 import { Node as TiptapNode, mergeAttributes, type Editor, type NodeViewRenderer } from '@tiptap/core';
+import { Link } from '@tiptap/extension-link';
 import { Placeholder } from '@tiptap/extension-placeholder';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -36,15 +37,36 @@ export function agentEditorContent(prompt: string, richText?: string): Record<st
   };
 }
 
-function serializeEditorNode(node: ProseMirrorNode): string {
-  if (node.isText) return node.text ?? '';
+function linkHref(node: ProseMirrorNode): string | null {
+  for (const mark of node.marks) {
+    if (mark.type.name === 'link' && typeof mark.attrs.href === 'string') return mark.attrs.href;
+  }
+  return null;
+}
+
+function linkTextMatches(text: string, href: string): boolean {
+  const normalized = text.trim();
+  return normalized === href
+    || normalized === `https://${href}`
+    || normalized === `http://${href}`
+    || normalized === `mailto:${href}`;
+}
+
+function serializeEditorNode(node: ProseMirrorNode, parent?: ProseMirrorNode, index = 0): string {
+  if (node.isText) {
+    const text = node.text ?? '';
+    const href = linkHref(node);
+    if (!href || linkTextMatches(text, href)) return text;
+    const next = parent && index + 1 < parent.childCount ? parent.child(index + 1) : null;
+    return next && linkHref(next) === href ? text : `${text} (${href})`;
+  }
   if (node.type.name === 'hardBreak') return '\n';
   const toText = node.type.spec.toText;
   if (typeof toText === 'function') return toText({ node });
   let text = '';
-  node.forEach((child, _offset, index) => {
-    if (node.type.name === 'doc' && index > 0) text += '\n';
-    text += serializeEditorNode(child);
+  node.forEach((child, _offset, childIndex) => {
+    if (node.type.name === 'doc' && childIndex > 0) text += '\n';
+    text += serializeEditorNode(child, node, childIndex);
   });
   return text;
 }
@@ -62,6 +84,12 @@ function simpleNodeView(className: string, marker: string): NodeViewRenderer {
     return { dom };
   };
 }
+
+const PromptLink = Link.extend({
+  inclusive() {
+    return false;
+  },
+});
 
 const AgentMention = TiptapNode.create({
   name: 'mention',
@@ -173,6 +201,10 @@ export default function AgentRichTextEditor({
       orderedList: false,
       strike: false,
       undoRedo: { newGroupDelay: 100 },
+    }),
+    PromptLink.configure({
+      openOnClick: false,
+      defaultProtocol: 'https',
     }),
     Placeholder.configure({
       placeholder,
