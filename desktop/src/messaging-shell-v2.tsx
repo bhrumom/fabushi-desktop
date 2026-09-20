@@ -297,6 +297,11 @@ type MessengerProjection = {
   legacyConversations?: ConversationSummary[];
   legacyBots?: BotSummary[];
   legacyGroups?: GroupSummary[];
+  // Account-installed Bot/Mini App identities are also lightweight first-frame
+  // summaries. Persist them so bots such as 全球法布施 do not disappear until
+  // a slower account sync finishes after every launch.
+  accountBots?: AccountBotMembership[];
+  miniAppIdentityCatalog?: MarketplacePluginSummary[];
   selfActors: MessagingActor[];
   selfConversations: MessagingConversation[];
   selfMessages: Record<string, MessagingMessage[]>;
@@ -362,6 +367,8 @@ function asMessengerProjection(value: unknown): MessengerProjection | null {
   if (parsed.legacyConversations !== undefined && !Array.isArray(parsed.legacyConversations)) return null;
   if (parsed.legacyBots !== undefined && !Array.isArray(parsed.legacyBots)) return null;
   if (parsed.legacyGroups !== undefined && !Array.isArray(parsed.legacyGroups)) return null;
+  if (parsed.accountBots !== undefined && !Array.isArray(parsed.accountBots)) return null;
+  if (parsed.miniAppIdentityCatalog !== undefined && !Array.isArray(parsed.miniAppIdentityCatalog)) return null;
   return parsed as MessengerProjection;
 }
 
@@ -975,9 +982,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [miniAppCall, setMiniAppCall] = useState<MiniAppCallSession | null>(null);
   const miniAppBotThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
   const botThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
-  const [accountBots, setAccountBots] = useState<AccountBotMembership[]>([]);
+  const [accountBots, setAccountBots] = useState<AccountBotMembership[]>(startupProjection?.accountBots ?? []);
   const [marketplaceApps, setMarketplaceApps] = useState<MarketplacePluginSummary[]>([]);
-  const [miniAppIdentityCatalog, setMiniAppIdentityCatalog] = useState<MarketplacePluginSummary[]>([]);
+  const [miniAppIdentityCatalog, setMiniAppIdentityCatalog] = useState<MarketplacePluginSummary[]>(startupProjection?.miniAppIdentityCatalog ?? []);
   const [installedMiniApps, setInstalledMiniApps] = useState<Record<string, InstalledPluginPointer>>({});
   const [miniAppQuery, setMiniAppQuery] = useState('');
   const [miniAppLoading, setMiniAppLoading] = useState(false);
@@ -1067,7 +1074,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [startupProjection]);
 
   useEffect(() => {
-    if (!selfConversations.length && !selfActors.length && !conversations.length && !bots.length && !groups.length) return;
+    if (
+      !selfConversations.length
+      && !selfActors.length
+      && !conversations.length
+      && !bots.length
+      && !groups.length
+      && !accountBots.length
+      && !miniAppIdentityCatalog.length
+    ) return;
     const timer = window.setTimeout(() => {
       const conversationIds = new Set(
         [...selfConversations]
@@ -1089,6 +1104,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         legacyConversations: conversations,
         legacyBots: bots,
         legacyGroups: groups,
+        accountBots,
+        miniAppIdentityCatalog,
         selfActors,
         selfConversations: [...selfConversations]
           .sort((left, right) => right.updatedAtMs - left.updatedAtMs)
@@ -1097,7 +1114,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       });
     }, 60);
     return () => window.clearTimeout(timer);
-  }, [activePeerKey, bots, conversations, groups, selfActors, selfConversations, selfMessages, selfHosted.actorId]);
+  }, [activePeerKey, accountBots, bots, conversations, groups, miniAppIdentityCatalog, selfActors, selfConversations, selfMessages, selfHosted.actorId]);
 
   function updateDesktopPreference<K extends keyof DesktopMessengerPreferences>(key: K, value: DesktopMessengerPreferences[K]) {
     setDesktopPreferences((current) => ({ ...current, [key]: value }));
