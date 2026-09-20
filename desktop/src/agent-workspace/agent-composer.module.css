@@ -35,12 +35,26 @@
   border: 0;
   outline: 0;
 }
-.editor:empty::before {
+.editor :global(p) { margin: 0; min-height: 20px; }
+.editor :global(.is-agent-editor-empty)::before {
   content: attr(data-placeholder);
+  float: left;
+  height: 0;
   color: var(--cursor-text-tertiary, #716c78);
   pointer-events: none;
 }
 .editor[contenteditable="false"] { opacity: .55; }
+.editor :global(.agent-mention),
+.editor :global(.agent-workflow-reference) {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 1px;
+  padding: 0 4px;
+  border-radius: 5px;
+  color: var(--cursor-text-primary, #eceaf2);
+  background: rgba(255,255,255,.08);
+  font-weight: 550;
+}
 .mentions {
   position: absolute;
   z-index: 30;

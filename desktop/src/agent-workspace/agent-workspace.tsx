@@ -26,6 +26,7 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   onToggleInfo(): void;
 
   composerValue: string;
+  composerRichText?: string;
   composerReady: boolean;
   composerBusy: boolean;
   composerUploading?: boolean;
@@ -34,7 +35,7 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   composerMentionCandidates?: ReadonlyArray<{ id: string; name: string; description?: string }>;
   composerWorkflowCandidates?: ReadonlyArray<{ id: string; name: string; description?: string }>;
   enterToSend: boolean;
-  onComposerChange(value: string): void;
+  onComposerChange(value: string, richText?: string): void;
   onComposerMention?(candidate: { id: string; name: string; description?: string }): void;
   onComposerWorkflowReference?(candidate: { id: string; name: string; description?: string }): void;
   onComposerSubmit(event: FormEvent<HTMLFormElement>): void;
@@ -106,6 +107,8 @@ export default function AgentWorkspace(props: AgentWorkspaceProps) {
     {props.composerAccessory}
     <AgentComposer
       value={props.composerValue}
+      richText={props.composerRichText}
+      scopeKey={props.botId}
       agentName={props.title}
       ready={props.composerReady}
       busy={props.composerBusy}

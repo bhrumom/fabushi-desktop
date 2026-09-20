@@ -1,5 +1,6 @@
 import { LoaderCircle, Mic, Paperclip, Reply, Send, Square, X } from 'lucide-react';
-import React, { useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent } from 'react';
+import React, { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
+import AgentRichTextEditor, { type AgentRichTextEditorControls } from './agent-rich-text-editor';
 import styles from './agent-composer.module.css';
 
 export interface AgentComposerAttachment {
@@ -35,6 +36,8 @@ function attachmentSize(sizeBytes?: number): string {
 
 export default function AgentComposer({
   value,
+  richText,
+  scopeKey,
   agentName,
   ready,
   busy,
@@ -55,6 +58,8 @@ export default function AgentComposer({
   onStop,
 }: {
   value: string;
+  richText?: string;
+  scopeKey: string;
   agentName: string;
   ready: boolean;
   busy: boolean;
@@ -67,7 +72,7 @@ export default function AgentComposer({
   onClearReplyTarget?(): void;
   onMention?(candidate: AgentComposerMentionCandidate): void;
   onWorkflowReference?(candidate: AgentComposerWorkflowCandidate): void;
-  onChange(value: string): void;
+  onChange(value: string, richText?: string): void;
   onSubmit(event: FormEvent<HTMLFormElement>): void;
   onAttachFiles(files: readonly File[]): void;
   onRemoveAttachment(id: string): void;
@@ -77,7 +82,8 @@ export default function AgentComposer({
   const hasText = value.trim().length > 0;
   const hasPayload = hasText || attachments.length > 0;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const editorRef = useRef<HTMLDivElement | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const editorControlsRef = useRef<AgentRichTextEditorControls | null>(null);
   const dragDepthRef = useRef(0);
   const [dragOver, setDragOver] = useState(false);
   const [voiceState, setVoiceState] = useState<'idle' | 'recording' | 'transcribing'>('idle');
@@ -109,34 +115,18 @@ export default function AgentComposer({
     setMentionIndex((index) => Math.min(index, Math.max(0, suggestionCount - 1)));
   }, [suggestionCount]);
 
-  useEffect(() => {
-    const editor = editorRef.current;
-    if (!editor) return;
-    const current = editor.innerText.replace(/\u00a0/g, ' ');
-    if (current === value) return;
-    editor.innerText = value;
-    if (document.activeElement === editor) {
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.selectNodeContents(editor);
-      range.collapse(false);
-      selection?.removeAllRanges();
-      selection?.addRange(range);
-    }
-  }, [value]);
-
   const insertMention = (candidate: AgentComposerMentionCandidate) => {
     const next = value.replace(/(^|\s)@([^@\n]{0,50})$/, (_match, prefix: string) => `${prefix}@${candidate.name} `);
     onChange(next);
     onMention?.(candidate);
-    window.requestAnimationFrame(() => editorRef.current?.focus());
+    window.requestAnimationFrame(() => editorControlsRef.current?.focus());
   };
 
   const insertWorkflow = (candidate: AgentComposerWorkflowCandidate) => {
     const next = value.replace(/(^|\s)\/([^/\n]{0,50})$/, (_match, prefix: string) => `${prefix}/${candidate.name} `);
     onChange(next);
     onWorkflowReference?.(candidate);
-    window.requestAnimationFrame(() => editorRef.current?.focus());
+    window.requestAnimationFrame(() => editorControlsRef.current?.focus());
   };
 
   const stopVoiceTracks = () => {
@@ -215,38 +205,39 @@ export default function AgentComposer({
     stopVoiceTracks();
   }, []);
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (event: globalThis.KeyboardEvent): boolean => {
     if (suggestionCount) {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         const delta = event.key === 'ArrowDown' ? 1 : -1;
         setMentionIndex((index) => (index + delta + suggestionCount) % suggestionCount);
-        return;
+        return true;
       }
       if ((event.key === 'Enter' || event.key === 'Tab') && mentionResults[mentionIndex]) {
         event.preventDefault();
         insertMention(mentionResults[mentionIndex]!);
-        return;
+        return true;
       }
       if ((event.key === 'Enter' || event.key === 'Tab') && workflowResults[mentionIndex]) {
         event.preventDefault();
         insertWorkflow(workflowResults[mentionIndex]!);
-        return;
+        return true;
       }
       if (event.key === 'Escape') {
         event.preventDefault();
         if (mentionResults.length) onChange(value.replace(/(^|\s)@([^@\n]{0,50})$/, '$1'));
         else onChange(value.replace(/(^|\s)\/([^/\n]{0,50})$/, '$1'));
-        return;
+        return true;
       }
     }
     const submitWithEnter = enterToSend && event.key === 'Enter' && !event.shiftKey;
     const submitWithShortcut = !enterToSend
       && event.key === 'Enter'
       && (event.metaKey || event.ctrlKey);
-    if (!submitWithEnter && !submitWithShortcut) return;
+    if (!submitWithEnter && !submitWithShortcut) return false;
     event.preventDefault();
-    event.currentTarget.closest('form')?.requestSubmit();
+    formRef.current?.requestSubmit();
+    return true;
   };
 
   const hasDraggedFiles = (event: DragEvent<HTMLElement>) =>
@@ -275,6 +266,7 @@ export default function AgentComposer({
   };
 
   return <form
+    ref={formRef}
     className={styles.root}
     data-testid="grok-agent-composer"
     data-drag-over={dragOver || undefined}
@@ -326,27 +318,19 @@ export default function AgentComposer({
       }}
     />
     <div className={styles.editorWrap}>
-      <div
-        ref={editorRef}
-        data-testid="messenger-input"
+      <AgentRichTextEditor
+        key={scopeKey}
+        prompt={value}
+        richText={richText}
+        scopeKey={scopeKey}
+        disabled={!ready || uploading}
+        placeholder={attachments.length ? `Add a message for ${agentName}` : `Message ${agentName}`}
         className={styles.editor}
-        role="textbox"
-        aria-multiline="true"
-        aria-label={`Message ${agentName}`}
-        data-placeholder={attachments.length ? `Add a message for ${agentName}` : `Message ${agentName}`}
-        contentEditable={ready && !uploading}
-        suppressContentEditableWarning
-        onInput={(event) => onChange(event.currentTarget.innerText.replace(/\u00a0/g, ' '))}
+        ariaLabel={`Message ${agentName}`}
+        onChange={(draft) => onChange(draft.prompt, draft.richText)}
         onKeyDown={handleKeyDown}
-        onPaste={(event: ClipboardEvent<HTMLDivElement>) => {
-          const files = Array.from(event.clipboardData.items)
-            .filter((item) => item.kind === 'file')
-            .map((item) => item.getAsFile())
-            .filter((file): file is File => file != null);
-          if (!files.length) return;
-          event.preventDefault();
-          onAttachFiles(files);
-        }}
+        onPasteFiles={onAttachFiles}
+        onControls={(controls) => { editorControlsRef.current = controls; }}
       />
       {mentionResults.length ? <div className={styles.mentions} role="listbox" aria-label="Mention an Agent">
         {mentionResults.map((candidate, index) => <button

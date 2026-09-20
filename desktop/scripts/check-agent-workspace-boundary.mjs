@@ -16,6 +16,8 @@ const directoryControllerPath = path.join(desktopRoot, 'src', 'agent-workspace',
 const directoryController = fs.readFileSync(directoryControllerPath, 'utf8');
 const agentComposerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agent-composer.tsx');
 const agentComposer = fs.readFileSync(agentComposerPath, 'utf8');
+const agentRichEditorPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agent-rich-text-editor.tsx');
+const agentRichEditor = fs.readFileSync(agentRichEditorPath, 'utf8');
 
 const forbidden = [
   ['renderer-global Agent operation pointer', /\bagentOperationId\b/],
@@ -54,6 +56,18 @@ if (!/composerValue=\{agentWorkspaceController\.draftForPeer\(activePeer\.key\)\
   || !/onComposerSubmit=\{\(event\) => sendAgentMessage\(event, activePeer\)\}/.test(shell)) {
   violations.push('primary Agent Composer is not bound directly to AgentWorkspaceController');
 }
+if (!/composerRichText=\{agentWorkspaceController\.richTextForPeer\(activePeer\.key\)\}/.test(shell)) {
+  violations.push('primary Agent Composer is not bound to Agent rich-text draft state');
+}
+if (!/from\s+['"]@tiptap\/react['"]/.test(agentRichEditor)
+  || !/useEditor\s*\(/.test(agentRichEditor)
+  || !/commands\.setContent\(expected,\s*\{\s*emitUpdate:\s*false\s*\}\)/.test(agentRichEditor)) {
+  violations.push('Agent rich editor no longer uses the Fabu-compatible TipTap document boundary');
+}
+if (/contentEditable=/.test(agentComposer) || /innerText\s*=/.test(agentComposer)) {
+  violations.push('primary Agent Composer regressed to a hand-managed contentEditable surface');
+}
+
 if (!/useAgentSidebarController\s*\(/.test(shell)) {
   violations.push('Agent sidebar controller is not mounted by the desktop Agent shell');
 }

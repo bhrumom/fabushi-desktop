@@ -2748,9 +2748,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     void openPeer(peer);
   }
 
-  function updateAgentComposer(peerKey: string, value: string) {
-    agentWorkspaceController.setDraft(peerKey, value);
-    agentWorkspaceController.pruneReferences(peerKey, value);
+  function updateAgentComposer(peerKey: string, value: string, richText?: string) {
+    agentWorkspaceController.setDraftDocument(peerKey, value, richText);
     notifyAgentWorkspaceState();
   }
 
@@ -4249,6 +4248,7 @@ async function saveInvoiceDialog() {
                   ? <span className={extra.uploadProgress}>Uploading attachments…</span>
                   : null}
                 composerValue={agentWorkspaceController.draftForPeer(activePeer.key)}
+                composerRichText={agentWorkspaceController.richTextForPeer(activePeer.key)}
                 composerReady={hostReady}
                 composerBusy={Boolean(activeAgentOperationId)}
                 composerUploading={agentWorkspaceController.isUploading(activePeer.key)}
@@ -4260,7 +4260,7 @@ async function saveInvoiceDialog() {
                   .filter((workflow) => workflow.isEnabledForAgent)
                   .map((workflow) => ({ id: workflow.id, name: workflow.name, description: workflow.description }))}
                 enterToSend={desktopPreferences.enterToSend}
-                onComposerChange={(value) => updateAgentComposer(activePeer.key, value)}
+                onComposerChange={(value, richText) => updateAgentComposer(activePeer.key, value, richText)}
                 onComposerMention={(candidate) => {
                   agentWorkspaceController.upsertReference(activePeer.key, {
                     kind: 'agent',

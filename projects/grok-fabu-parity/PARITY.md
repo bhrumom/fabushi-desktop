@@ -93,7 +93,7 @@ The primary Agent Composer no longer copies Agent text into the renderer-global 
 - Workflow suggestions now persist a stable `workflow:id` prompt reference, matching the existing stable `agent:id` reference behavior.
 - `check-agent-workspace-boundary.mjs` fails CI if the primary Agent Composer reimports the Grok compatibility shell or is rebound to renderer-global Messenger composer state.
 
-This slice deliberately does not claim full TipTap parity yet. The reference snapshot persists a structured rich-text document in addition to plain prompt text; the next Composer parity slice should add that structured Agent-owned draft representation without changing Mahayana's plain-text execution contract.
+The structured draft contract from this slice is now consumed by the TipTap editor parity slice below; Mahayana continues to execute the normalized plain-text projection.
 
 ## 2026-09-20 Structured draft + canonical transcript cutover
 
@@ -108,6 +108,14 @@ Failure recovery also no longer copies an Agent draft back into the renderer-glo
 The primary renderer no longer creates Mahayana chat request ids, begins optimistic Agent turns, calls `AgentCoordinatorClient.send`, or adopts operation ids. `useAgentWorkspaceRuntime` now owns that complete lifecycle and exposes a narrow `submit(...)` boundary. The shell supplies stable Agent/conversation identity plus the Agent-owned draft; queueing, request creation, optimistic transcript projection, transport send, operation adoption, rollback and failed-draft restoration stay inside the Agent runtime boundary.
 
 `check-agent-workspace-boundary.mjs` now rejects any reintroduction of `agentSubmissionQueue`, raw submission-queue wiring, or `dispatchAgentPromptNow` in the primary shell.
+
+## 2026-09-20 TipTap Composer parity cutover
+
+The primary Agent input surface now uses TipTap 3.14.0, matching the frozen Fabu reference dependency line. `AgentRichTextEditor` owns the ProseMirror document, serializes the same `doc/paragraph/text` shape, preserves Agent mention and workflow-reference nodes, handles external `setContent(..., { emitUpdate: false })` synchronization, and routes file paste through the existing Agent attachment path.
+
+The existing Composer shell remains responsible for attachment chips, drag/drop, voice dictation, reply state and suggestion list presentation, but it no longer mutates `contentEditable.innerText` directly. Agent switching remounts the editor by Agent scope key, while `AgentWorkspaceController` remains the durable owner of `prompt + richText + references`.
+
+`desktop/package.json` and `desktop/package-lock.json` are updated together from the pinned Fabu 3.14.0 dependency graph so CI can continue using a locked install.
 
 ## Refactor rule
 
