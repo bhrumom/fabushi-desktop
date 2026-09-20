@@ -2657,9 +2657,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     agentSidebarController.clearSelection();
   }
 
-  function createAgentSidebarSection(items: readonly AgentSidebarItem[]): void {
-    const name = window.prompt('Section name', 'New section')?.trim();
-    if (!name) return;
+  function createAgentSidebarSection(name: string, items: readonly AgentSidebarItem[]): void {
     agentSidebarController.createSection(name, items);
   }
 
