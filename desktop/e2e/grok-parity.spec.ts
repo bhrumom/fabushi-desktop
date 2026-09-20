@@ -198,6 +198,25 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.operationForPeer('agent:c')).toBe('operation:c');
       expect(transcripts.entries('agent:c').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
 
+      transcripts.appendUserMessage('agent:q', {
+        id: 'queued:q',
+        text: 'queued once',
+        createdAtMs: 10,
+        optimistic: true,
+        queued: true,
+      });
+      expect(transcripts.thread('agent:q').filter((message) => message.queued)).toHaveLength(1);
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:q',
+        requestId: 'request:q',
+        messageId: 'queued:q',
+        text: 'queued once',
+        createdAtMs: 11,
+      });
+      transcripts.removeQueuedUserMessage('agent:q', 'queued:q');
+      expect(transcripts.thread('agent:q').filter((message) => message.id === 'queued:q')).toHaveLength(1);
+      expect(transcripts.thread('agent:q').find((message) => message.id === 'queued:q')?.queued).toBe(false);
+
       coordinator.dispose();
     });
 
