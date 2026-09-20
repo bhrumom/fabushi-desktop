@@ -111,6 +111,10 @@ import AgentWorkspace from './agent-workspace/agent-workspace';
 import AgentOverlays from './agent-workspace/agent-overlays';
 import { AgentWorkspaceController } from './agent-workspace/agent-workspace-controller';
 import { AgentCoordinatorClient } from './agent-workspace/coordinator-client';
+import {
+  AgentTranscriptStore,
+  type AgentTranscriptSourceMessage,
+} from './agent-workspace/agent-transcript-store';
 import { projectTranscriptEntries, type TranscriptEntry } from './agent-workspace/transcript-model';
 import {
   AGENT_ATTACHMENT_LIMIT,
@@ -285,6 +289,18 @@ type DisplayMessage = {
   media?: MessagingMediaRef;
   mediaType?: 'photo' | 'video' | 'document';
 };
+
+function toAgentTranscriptSources(
+  messages: readonly DisplayMessage[],
+): AgentTranscriptSourceMessage[] {
+  return messages.map((message) => ({ ...message, source: 'legacy' as const }));
+}
+
+function toDisplayAgentMessages(
+  messages: readonly AgentTranscriptSourceMessage[],
+): DisplayMessage[] {
+  return messages.map((message) => ({ ...message, source: 'legacy' as const }));
+}
 
 type NewDialog =
   | { type: 'group'; name: string; selectedBotIds: Set<string> }
@@ -1085,7 +1101,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [miniApp, setMiniApp] = useState<{ id: string; title: string; url: string } | null>(null);
   const [miniAppCall, setMiniAppCall] = useState<MiniAppCallSession | null>(null);
   const miniAppBotThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
-  const botThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
+  const agentTranscriptStoreRef = useRef(new AgentTranscriptStore());
   const [accountBots, setAccountBots] = useState<AccountBotMembership[]>(startupProjection?.accountBots ?? []);
   const [marketplaceApps, setMarketplaceApps] = useState<MarketplacePluginSummary[]>([]);
   const [miniAppIdentityCatalog, setMiniAppIdentityCatalog] = useState<MarketplacePluginSummary[]>(startupProjection?.miniAppIdentityCatalog ?? []);
@@ -1869,12 +1885,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (!peer?.conversationId) return;
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
     window.setTimeout(() => {
-      const thread = botThreadsRef.current[peer.key] ?? [];
       void mirrorAgentCloudSnapshot(agentId, fabuAgentConversationTranscriptPath(peer.conversationId!), {
         schemaVersion: 1,
         agentId,
         conversationId: peer.conversationId,
-        entries: projectTranscriptEntries(thread),
+        entries: agentTranscriptStoreRef.current.entries(peer.key),
         updatedAtMs: Date.now(),
       });
     }, 0);
@@ -1955,57 +1970,25 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   function updateAgentThread(operationId: string | undefined, update: (current: DisplayMessage[]) => DisplayMessage[]) {
     const peerKey = operationId ? agentPeerKeyRef.current[operationId] : undefined;
-    if (peerKey && peerKey !== activePeerKeyRef.current) {
-      botThreadsRef.current[peerKey] = update(botThreadsRef.current[peerKey] ?? []);
+    if (!peerKey) {
+      setMessages(update);
       return;
     }
-    setMessages((current) => {
-      const next = update(current);
-      if (peerKey) botThreadsRef.current[peerKey] = next;
-      return next;
-    });
-  }
-
-  function rekeyAssistantTurn(turn: AssistantTurn, operationId: string): AssistantTurn {
-    if (turn.operationId === operationId) return turn;
-    const previousPrefix = `${turn.operationId}:`;
-    const nextPrefix = `${operationId}:`;
-    return {
-      ...turn,
-      id: `assistant-turn:${operationId}`,
-      operationId,
-      parts: turn.parts.map((part) => ({
-        ...part,
-        id: part.id.startsWith(previousPrefix)
-          ? `${nextPrefix}${part.id.slice(previousPrefix.length)}`
-          : part.id,
-      })),
-    };
+    const next = agentTranscriptStoreRef.current.update(
+      peerKey,
+      (current) => toAgentTranscriptSources(update(toDisplayAgentMessages(current))),
+    );
+    if (peerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
   }
 
   function adoptAgentRequestOperation(requestId: string | null, operationId: string, peerKey?: string | null) {
     if (!requestId || requestId === operationId) return;
-    rememberAgentPeer(operationId, peerKey ?? agentPeerKeyRef.current[requestId]);
-    updateAgentThread(requestId, (current) => {
-      const alreadyAuthoritative = current.some((message) =>
-        message.kind === 'assistant-turn' && message.operationId === operationId,
-      );
-      return current.flatMap((message) => {
-        if (message.operationId !== requestId) return [message];
-        if (message.kind === 'assistant-turn' && message.assistantTurn) {
-          if (alreadyAuthoritative) return [];
-          const assistantTurn = rekeyAssistantTurn(message.assistantTurn, operationId);
-          return [{
-            ...message,
-            id: `${operationId}:assistant-turn`,
-            operationId,
-            text: assistantTurnPlainText(assistantTurn),
-            assistantTurn,
-          }];
-        }
-        return [{ ...message, operationId }];
-      });
-    });
+    const ownerPeerKey = peerKey ?? agentPeerKeyRef.current[requestId] ?? null;
+    rememberAgentPeer(operationId, ownerPeerKey);
+    if (ownerPeerKey) {
+      const next = agentTranscriptStoreRef.current.adoptOperation(ownerPeerKey, requestId, operationId);
+      if (ownerPeerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
+    }
     delete agentPeerKeyRef.current[requestId];
   }
 
@@ -2013,7 +1996,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     const peerKey = activePeerKeyRef.current;
     const peer = peersRef.current.find((candidate) => candidate.key === peerKey);
     if (!peerKey || !peer || !isAgentPeer(peer) || peer.miniAppId) return;
-    botThreadsRef.current[peerKey] = messages;
+    agentTranscriptStoreRef.current.replace(peerKey, toAgentTranscriptSources(messages));
   }
 
   function notifyAgentWorkspaceState() {
@@ -2061,64 +2044,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     notifyAgentWorkspaceState();
 
-    updateAgentThread(operationId, (current) => current
-      .filter((message) => !(message.kind === 'thinking' && message.operationId === operationId))
-      .map((message) => {
-        if (message.kind === 'action' &&
-          message.operationId === operationId &&
-          message.actionStatus === 'running') {
-          return { ...message, actionStatus: terminalStatus };
-        }
-        if (message.kind === 'message' && message.operationId === operationId && message.streaming) {
-          return { ...message, streaming: false, optimistic: false };
-        }
-        return message;
-      }));
+    const next = agentTranscriptStoreRef.current.finishOperation(peerKey, operationId, terminalStatus);
+    if (peerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
     delete agentPeerKeyRef.current[operationId];
     return true;
-  }
-
-  function appendAgentThinking(operationId: string, label: string) {
-    updateAgentThread(operationId, (current) => [
-      ...current.filter((message) => !(message.kind === 'thinking' && message.operationId === operationId)),
-      {
-        id: `${operationId}:thinking`,
-        source: 'legacy',
-        role: 'peer',
-        text: '',
-        createdAtMs: Date.now(),
-        kind: 'thinking',
-        operationId,
-        actionTitle: label || '正在思考',
-        actionStatus: 'running',
-      },
-    ]);
-  }
-
-  function upsertAgentAction(input: {
-    id: string;
-    operationId: string;
-    title: string;
-    detail?: string;
-    status: 'running' | 'completed' | 'failed';
-  }) {
-    updateAgentThread(input.operationId, (current) => {
-      const next: DisplayMessage = {
-        id: input.id,
-        source: 'legacy',
-        role: 'peer',
-        text: '',
-        createdAtMs: Date.now(),
-        kind: 'action',
-        operationId: input.operationId,
-        actionTitle: input.title,
-        actionDetail: input.detail,
-        actionStatus: input.status,
-      };
-      const index = current.findIndex((message) => message.kind === 'action' && message.id === input.id);
-      if (index < 0) return [...current, next];
-      return current.map((message, messageIndex) => messageIndex === index ? { ...message, ...next, createdAtMs: message.createdAtMs } : message);
-    });
   }
 
   function appendAssistantTurnEvent(event: RuntimeEvent) {
@@ -2126,26 +2055,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       ? event.operationId
       : undefined;
     if (!operationId) return;
-    updateAgentThread(operationId, (current) => {
-      const index = current.findIndex((message) =>
-        message.kind === 'assistant-turn' && message.operationId === operationId,
-      );
-      const existingTurn = index >= 0 ? current[index]?.assistantTurn : undefined;
-      const assistantTurn = reduceAssistantTurn(existingTurn ?? createAssistantTurn(operationId), event);
-      const next: DisplayMessage = {
-        id: `${operationId}:assistant-turn`,
-        source: 'legacy',
-        role: 'peer',
-        text: assistantTurnPlainText(assistantTurn),
-        createdAtMs: assistantTurn.createdAtMs,
-        kind: 'assistant-turn',
-        operationId,
-        streaming: assistantTurn.status === 'running',
-        assistantTurn,
-      };
-      if (index < 0) return [...current, next];
-      return current.map((message, messageIndex) => messageIndex === index ? { ...message, ...next, createdAtMs: message.createdAtMs } : message);
-    });
+    const peerKey = agentWorkspaceControllerRef.current.peerForOperation(operationId)
+      ?? agentPeerKeyRef.current[operationId]
+      ?? agentWorkspaceControllerRef.current.peerForRequest(operationId)
+      ?? null;
+    if (!peerKey) return;
+    const next = agentTranscriptStoreRef.current.appendAssistantTurnEvent(peerKey, event);
+    if (peerKey === activePeerKeyRef.current) setMessages(toDisplayAgentMessages(next));
   }
 
   function showSelfConversation(conversationId: string) {
@@ -2812,7 +2728,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       ? messages
       : peer.miniAppId
         ? miniAppBotThreadsRef.current[peer.miniAppId] ?? []
-        : botThreadsRef.current[peer.key] ?? [];
+        : toDisplayAgentMessages(agentTranscriptStoreRef.current.thread(peer.key));
     const lastMessage = [...thread]
       .reverse()
       .find((message) => message.kind === 'message' && Boolean(message.text.trim()));
@@ -3416,10 +3332,16 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       return;
     }
     if (isAgentPeer(peer)) {
-      const remembered = botThreadsRef.current[peer.key];
-      if (remembered) setMessages(remembered);
-      else if (peer.conversationId) setMessages(cachedLegacyDisplayMessages(peer.conversationId));
-      else setMessages([]);
+      if (agentTranscriptStoreRef.current.has(peer.key)) {
+        setMessages(toDisplayAgentMessages(agentTranscriptStoreRef.current.thread(peer.key)));
+      } else if (peer.conversationId) {
+        const cached = cachedLegacyDisplayMessages(peer.conversationId);
+        agentTranscriptStoreRef.current.replace(peer.key, toAgentTranscriptSources(cached));
+        setMessages(cached);
+      } else {
+        agentTranscriptStoreRef.current.replace(peer.key, []);
+        setMessages([]);
+      }
       if (peer.conversationId) {
         await agentCoordinatorClient.openConversation(nextRequestId('conversation-open'), peer.conversationId).catch((cause: unknown) => {
           setError(cause instanceof Error ? cause.message : String(cause));
