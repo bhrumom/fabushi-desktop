@@ -1,5 +1,5 @@
 import { LoaderCircle, Mic, Paperclip, Reply, Send, Square, X } from 'lucide-react';
-import React, { useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent } from 'react';
+import React, { useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent } from 'react';
 import styles from './grok-agent-composer.module.css';
 
 export interface GrokComposerAttachment {
@@ -12,6 +12,12 @@ export interface GrokComposerReplyTarget {
   id: string;
   label: string;
   text: string;
+}
+
+export interface GrokComposerMentionCandidate {
+  id: string;
+  name: string;
+  description?: string;
 }
 
 function attachmentSize(sizeBytes?: number): string {
@@ -30,6 +36,7 @@ export default function GrokAgentComposer({
   enterToSend,
   attachments = [],
   replyTarget,
+  mentionCandidates = [],
   onClearReplyTarget,
   onChange,
   onSubmit,
@@ -46,6 +53,7 @@ export default function GrokAgentComposer({
   enterToSend: boolean;
   attachments?: readonly GrokComposerAttachment[];
   replyTarget?: GrokComposerReplyTarget;
+  mentionCandidates?: readonly GrokComposerMentionCandidate[];
   onClearReplyTarget?(): void;
   onChange(value: string): void;
   onSubmit(event: FormEvent<HTMLFormElement>): void;
@@ -57,15 +65,51 @@ export default function GrokAgentComposer({
   const hasText = value.trim().length > 0;
   const hasPayload = hasText || attachments.length > 0;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
   const dragDepthRef = useRef(0);
   const [dragOver, setDragOver] = useState(false);
   const [voiceState, setVoiceState] = useState<'idle' | 'recording' | 'transcribing'>('idle');
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
   const voiceRecorderRef = useRef<MediaRecorder | null>(null);
   const voiceStreamRef = useRef<MediaStream | null>(null);
   const voiceChunksRef = useRef<Blob[]>([]);
   const valueRef = useRef(value);
   valueRef.current = value;
+
+  const mentionMatch = /(?:^|\s)@([^@\n]{0,50})$/.exec(value);
+  const mentionQuery = mentionMatch?.[1]?.trim().toLocaleLowerCase() ?? null;
+  const mentionResults = useMemo(() => mentionQuery == null
+    ? []
+    : mentionCandidates
+      .filter((candidate) => !mentionQuery || `${candidate.name} ${candidate.description ?? ''}`.toLocaleLowerCase().includes(mentionQuery))
+      .slice(0, 8), [mentionCandidates, mentionQuery]);
+
+  useEffect(() => {
+    setMentionIndex((index) => Math.min(index, Math.max(0, mentionResults.length - 1)));
+  }, [mentionResults.length]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const current = editor.innerText.replace(/\u00a0/g, ' ');
+    if (current === value) return;
+    editor.innerText = value;
+    if (document.activeElement === editor) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+  }, [value]);
+
+  const insertMention = (candidate: GrokComposerMentionCandidate) => {
+    const next = value.replace(/(^|\s)@([^@\n]{0,50})$/, (_match, prefix: string) => `${prefix}@${candidate.name} `);
+    onChange(next);
+    window.requestAnimationFrame(() => editorRef.current?.focus());
+  };
 
   const stopVoiceTracks = () => {
     for (const track of voiceStreamRef.current?.getTracks() ?? []) track.stop();
@@ -143,14 +187,32 @@ export default function GrokAgentComposer({
     stopVoiceTracks();
   }, []);
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (mentionResults.length) {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const delta = event.key === 'ArrowDown' ? 1 : -1;
+        setMentionIndex((index) => (index + delta + mentionResults.length) % mentionResults.length);
+        return;
+      }
+      if ((event.key === 'Enter' || event.key === 'Tab') && mentionResults[mentionIndex]) {
+        event.preventDefault();
+        insertMention(mentionResults[mentionIndex]!);
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onChange(value.replace(/(^|\s)@([^@\n]{0,50})$/, '$1'));
+        return;
+      }
+    }
     const submitWithEnter = enterToSend && event.key === 'Enter' && !event.shiftKey;
     const submitWithShortcut = !enterToSend
       && event.key === 'Enter'
       && (event.metaKey || event.ctrlKey);
     if (!submitWithEnter && !submitWithShortcut) return;
     event.preventDefault();
-    event.currentTarget.form?.requestSubmit();
+    event.currentTarget.closest('form')?.requestSubmit();
   };
 
   const hasDraggedFiles = (event: DragEvent<HTMLElement>) =>
@@ -229,24 +291,42 @@ export default function GrokAgentComposer({
         if (files.length) onAttachFiles(files);
       }}
     />
-    <textarea
-      data-testid="messenger-input"
-      value={value}
-      rows={1}
-      aria-label={`Message ${agentName}`}
-      placeholder={attachments.length ? `Add a message for ${agentName}` : `Message ${agentName}`}
-      onChange={(event) => onChange(event.target.value)}
-      onKeyDown={handleKeyDown}
-      onPaste={(event: ClipboardEvent<HTMLTextAreaElement>) => {
-        const files = Array.from(event.clipboardData.items)
-          .filter((item) => item.kind === 'file')
-          .map((item) => item.getAsFile())
-          .filter((file): file is File => file != null);
-        if (!files.length) return;
-        event.preventDefault();
-        onAttachFiles(files);
-      }}
-    />
+    <div className={styles.editorWrap}>
+      <div
+        ref={editorRef}
+        data-testid="messenger-input"
+        className={styles.editor}
+        role="textbox"
+        aria-multiline="true"
+        aria-label={`Message ${agentName}`}
+        data-placeholder={attachments.length ? `Add a message for ${agentName}` : `Message ${agentName}`}
+        contentEditable={ready && !uploading}
+        suppressContentEditableWarning
+        onInput={(event) => onChange(event.currentTarget.innerText.replace(/\u00a0/g, ' '))}
+        onKeyDown={handleKeyDown}
+        onPaste={(event: ClipboardEvent<HTMLDivElement>) => {
+          const files = Array.from(event.clipboardData.items)
+            .filter((item) => item.kind === 'file')
+            .map((item) => item.getAsFile())
+            .filter((file): file is File => file != null);
+          if (!files.length) return;
+          event.preventDefault();
+          onAttachFiles(files);
+        }}
+      />
+      {mentionResults.length ? <div className={styles.mentions} role="listbox" aria-label="Mention an Agent">
+        {mentionResults.map((candidate, index) => <button
+          key={candidate.id}
+          type="button"
+          role="option"
+          aria-selected={index === mentionIndex}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => insertMention(candidate)}
+        >
+          <span><strong>@{candidate.name}</strong>{candidate.description ? <small>{candidate.description}</small> : null}</span>
+        </button>)}
+      </div> : null}
+    </div>
     {voiceState === 'recording' ? <span className={styles.voiceStatus}>Recording…</span> : voiceError ? <span className={styles.voiceError} title={voiceError}>Voice unavailable</span> : null}
     {hasPayload ? (
       <button data-testid="messenger-send" className={styles.primary} type="submit" disabled={!ready || uploading}>
