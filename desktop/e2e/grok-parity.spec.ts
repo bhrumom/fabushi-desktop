@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { AgentTranscriptStore } from '../src/agent-workspace/agent-transcript-store';
 import { AgentWorkspaceController } from '../src/agent-workspace/agent-workspace-controller';
 import { AgentRuntimeCoordinator } from '../src/agent-workspace/agent-runtime-coordinator';
+import { mergeAccountSidebarLayoutState } from '../src/agent-workspace/account-sidebar-layout';
 import { agentMatchesGroupMember, indexAgentsByRuntimeOrSurfaceId, type AgentSidebarItem } from '../src/agent-workspace/agent-model';
 import { composeAgentPromptText } from '../src/agent-workspace/prompt-context';
 import { restoreAgentStoreWorkspace } from '../src/agent-workspace/agent-store-recovery';
@@ -170,6 +171,69 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       controller.setDraft('agent:a', 'new draft without a mention');
       controller.pruneReferences('agent:a', 'new draft without a mention');
       expect(controller.referencesForPeer('agent:a')).toEqual([]);
+    });
+
+    await test.step('Account sidebar CAS preserves concurrent cross-device edits', async () => {
+      const base = {
+        pinnedOrder: ['agent:a', 'agent:b'],
+        sections: [{
+          id: 'focus',
+          name: 'Focus',
+          agentKeys: ['agent:a'],
+          isCollapsed: false,
+        }],
+      };
+      const merged = mergeAccountSidebarLayoutState(
+        base,
+        {
+          pinnedOrder: ['agent:b'],
+          sections: [
+            {
+              id: 'focus',
+              name: 'Focused work',
+              agentKeys: ['agent:a'],
+              isCollapsed: false,
+            },
+            {
+              id: 'local',
+              name: 'Local only',
+              agentKeys: ['agent:b'],
+              isCollapsed: false,
+            },
+          ],
+        },
+        {
+          pinnedOrder: ['agent:a', 'agent:b', 'agent:c'],
+          sections: [
+            {
+              id: 'focus',
+              name: 'Focus',
+              agentKeys: ['agent:a'],
+              isCollapsed: true,
+            },
+            {
+              id: 'remote',
+              name: 'Remote only',
+              agentKeys: ['agent:c'],
+              isCollapsed: false,
+            },
+          ],
+        },
+      );
+
+      // Local unpin wins over a concurrent remote reorder, while the remote-only
+      // pinned Agent is retained. Independent section edits from both devices
+      // are also merged rather than overwritten by a CAS retry.
+      expect(merged.pinnedOrder).toEqual(['agent:b', 'agent:c']);
+      expect(merged.sections.map((section) => section.id)).toEqual(['focus', 'local', 'remote']);
+      expect(merged.sections[0]).toEqual({
+        id: 'focus',
+        name: 'Focused work',
+        agentKeys: ['agent:a'],
+        isCollapsed: true,
+      });
+      expect(merged.sections[1]?.agentKeys).toEqual(['agent:b']);
+      expect(merged.sections[2]?.agentKeys).toEqual(['agent:c']);
     });
 
     await test.step('Agent MCP catalog normalizes untyped Host rows into stable Composer references', async () => {
