@@ -101,6 +101,7 @@ function numberField(value: unknown): number | undefined {
 export class FabuAgentStore {
   private readonly refs = new Map<string, FabuAgentStoreObject>();
   private refsLoaded = false;
+  private rootCheckpointTail: Promise<void> = Promise.resolve();
 
   constructor(
     readonly agentId: string,
@@ -196,8 +197,17 @@ export class FabuAgentStore {
   }
 
   async checkpointRoot(): Promise<FabuAgentStoreObject> {
-    await this.ensureRefs();
-    return this.writeJson(FABU_AGENT_ROOT_PATH, this.rootManifest());
+    let stored: FabuAgentStoreObject | undefined;
+    const checkpoint = this.rootCheckpointTail
+      .catch(() => {})
+      .then(async () => {
+        await this.ensureRefs();
+        stored = await this.writeJson(FABU_AGENT_ROOT_PATH, this.rootManifest());
+      });
+    this.rootCheckpointTail = checkpoint;
+    await checkpoint;
+    if (!stored) throw new Error('Agent root checkpoint did not produce a stored object.');
+    return stored;
   }
 
   async readRoot(): Promise<FabuAgentRootManifest> {
