@@ -204,6 +204,7 @@ export default function AgentComposer({
   }, []);
 
   const handleKeyDown = (event: globalThis.KeyboardEvent): boolean => {
+    if (event.isComposing) return false;
     if (event.key === 'Escape' && voiceState === 'recording') {
       event.preventDefault();
       stopVoice();
@@ -233,13 +234,18 @@ export default function AgentComposer({
         return true;
       }
     }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      editorControlsRef.current?.blur();
+      return true;
+    }
     const submitWithEnter = enterToSend && event.key === 'Enter' && !event.shiftKey;
     const submitWithShortcut = !enterToSend
       && event.key === 'Enter'
       && (event.metaKey || event.ctrlKey);
     if (!submitWithEnter && !submitWithShortcut) return false;
     event.preventDefault();
-    formRef.current?.requestSubmit();
+    if (canSend) formRef.current?.requestSubmit();
     return true;
   };
 
@@ -280,7 +286,13 @@ export default function AgentComposer({
     className={styles.root}
     data-testid="grok-agent-composer"
     data-drag-over={dragOver || undefined}
-    onSubmit={onSubmit}
+    onSubmit={(event) => {
+      if (!canSend) {
+        event.preventDefault();
+        return;
+      }
+      onSubmit(event);
+    }}
     onDragEnter={handleDragEnter}
     onDragLeave={handleDragLeave}
     onDragOver={(event) => {
