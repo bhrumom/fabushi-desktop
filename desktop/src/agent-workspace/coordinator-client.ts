@@ -244,6 +244,32 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  sendAgentPeer(
+    requestId: string,
+    fromAgentId: string,
+    targetId: string,
+    text: string,
+    priority = false,
+  ) {
+    return this.transport.execute({
+      type: 'agent.send',
+      requestId,
+      fromAgentId,
+      targetId,
+      text,
+      priority,
+    } as HostCommand);
+  }
+
+  listAgentPeerHistory(requestId: string, agentId: string, limit = 100) {
+    return this.transport.execute({
+      type: 'agent.peerHistory',
+      requestId,
+      agentId,
+      limit,
+    } as HostCommand);
+  }
+
   broadcast(requestId: string, message: string, targetIds?: readonly string[]) {
     return this.transport.execute({
       type: 'agent.broadcast',
