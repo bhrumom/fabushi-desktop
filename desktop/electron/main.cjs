@@ -1338,6 +1338,19 @@ function installAppProtocol() {
   protocol.handle('fabushi-miniapp', handleMiniAppDocumentRequest);
 }
 
+function trustedRendererAudioPermission(webContents, permission, details = {}) {
+  if (permission !== 'media' || !webContents || webContents.isDestroyed()) return false;
+  let url;
+  try { url = new URL(webContents.getURL()); } catch { return false; }
+  if (url.protocol !== 'app:' || url.hostname !== 'bundle') return false;
+  const mediaTypes = Array.isArray(details.mediaTypes)
+    ? details.mediaTypes
+    : details.mediaType
+      ? [details.mediaType]
+      : [];
+  return mediaTypes.includes('audio') && !mediaTypes.includes('video');
+}
+
 applyStartupNativePreferences();
 
 app.whenReady().then(async () => {
@@ -1345,7 +1358,10 @@ app.whenReady().then(async () => {
   installApplicationMenu();
   installAutoUpdaterEvents();
   if (primaryInstance && app.isPackaged) app.setAsDefaultProtocolClient('fabushi');
-  session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
+  session.defaultSession.setPermissionCheckHandler((webContents, permission, _origin, details) =>
+    trustedRendererAudioPermission(webContents, permission, details));
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) =>
+    callback(trustedRendererAudioPermission(webContents, permission, details)));
   installIpcHandlers();
   await startAppAgentSurfaceServer().catch((error) => {
     console.error('[app-agent-surface] failed to start', error);
