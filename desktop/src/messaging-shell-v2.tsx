@@ -2571,37 +2571,37 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   async function updateActiveAgentProfile(profile: { name: string; title?: string; description: string }): Promise<void> {
     if (!activeAgentBot) throw new Error('No active Agent profile.');
-    await transport.execute({
-      type: 'bot.update',
-      requestId: nextRequestId('agent-settings-profile'),
-      id: activeAgentBot.id,
-      name: profile.name,
-      title: profile.title ?? '',
-      description: profile.description,
-    });
+    await agentCoordinatorClient.updateAgent(
+      nextRequestId('agent-settings-profile'),
+      activeAgentBot.id,
+      {
+        name: profile.name,
+        title: profile.title ?? '',
+        description: profile.description,
+      },
+    );
   }
 
   async function setActiveAgentNotifications(enabled: boolean): Promise<void> {
     if (!activeAgentBot) throw new Error('No active Agent profile.');
-    await transport.execute({
-      type: 'bot.update',
-      requestId: nextRequestId('agent-settings-notifications'),
-      id: activeAgentBot.id,
-      notifyOnUpdates: enabled,
-      notificationsEnabled: enabled,
-    });
+    await agentCoordinatorClient.updateAgent(
+      nextRequestId('agent-settings-notifications'),
+      activeAgentBot.id,
+      {
+        notifyOnUpdates: enabled,
+        notificationsEnabled: enabled,
+      },
+    );
   }
 
   async function createAgent(): Promise<void> {
     setSection('bots');
     setSearch('');
     newAgentRequestPendingRef.current = true;
-    const accepted = await execute({
-      type: 'bot.create',
-      requestId: nextRequestId('agent-new'),
-      name: 'New chat',
-      description: '',
-    });
+    const accepted = await agentCoordinatorClient.createAgent(
+      nextRequestId('agent-new'),
+      { name: 'New chat', description: '' },
+    );
     if (!accepted) newAgentRequestPendingRef.current = false;
   }
 
@@ -2620,12 +2620,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     const name = window.prompt('Rename Agent', peer.title)?.trim();
     if (!name || name === peer.title) return;
-    await execute({
-      type: 'bot.update',
-      requestId: nextRequestId('agent-rename'),
-      id: peer.actorId ?? peer.id,
-      name,
-    });
+    await agentCoordinatorClient.updateAgent(
+      nextRequestId('agent-rename'),
+      peer.actorId ?? peer.id,
+      { name },
+    );
   }
 
   async function duplicateAgent(item: AgentSidebarItem): Promise<void> {
@@ -2637,11 +2636,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       setError('Only locally managed Agents can be duplicated from this shell.');
       return;
     }
-    await execute({
-      type: 'bot.clone',
-      requestId: nextRequestId('agent-duplicate'),
-      id: botId,
-    });
+    await agentCoordinatorClient.duplicateAgent(
+      nextRequestId('agent-duplicate'),
+      botId,
+    );
   }
 
   async function deleteAgent(item: AgentSidebarItem, confirmDelete = true): Promise<void> {
@@ -2656,11 +2654,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (confirmDelete && !window.confirm(`Delete “${peer.title}”? The Agent store is retained for recovery.`)) return;
     agentWorkspaceController.clearPeer(peer.key);
     notifyAgentWorkspaceState();
-    await execute({
-      type: 'bot.delete',
-      requestId: nextRequestId('agent-delete'),
-      id: botId,
-    });
+    await agentCoordinatorClient.deleteAgent(
+      nextRequestId('agent-delete'),
+      botId,
+    );
     if (peer.key === activePeerKeyRef.current) {
       activePeerKeyRef.current = null;
       setActivePeerKey(null);
@@ -2677,12 +2674,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       setError('Only locally managed Agents can be hidden from this shell.');
       return;
     }
-    await execute({
-      type: 'bot.setHidden',
-      requestId: nextRequestId('agent-hide'),
-      id: botId,
-      hidden: true,
-    });
+    await agentCoordinatorClient.setAgentHidden(
+      nextRequestId('agent-hide'),
+      botId,
+      true,
+    );
     if (peer.key === activePeerKeyRef.current) {
       setActivePeerKey(null);
       setMessages([]);
