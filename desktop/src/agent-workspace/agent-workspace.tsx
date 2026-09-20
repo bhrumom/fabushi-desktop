@@ -31,6 +31,7 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   onComposerSubmit(event: FormEvent<HTMLFormElement>): void;
   onComposerFiles(files: readonly File[]): void;
   onRemoveComposerAttachment(id: string): void;
+  onTranscribeVoice?(file: File): Promise<string>;
   onStop(): void;
   notice?: ReactNode;
   beforeComposer?: ReactNode;
@@ -97,6 +98,7 @@ export default function AgentWorkspace(props: AgentWorkspaceProps) {
       onSubmit={props.onComposerSubmit}
       onAttachFiles={props.onComposerFiles}
       onRemoveAttachment={props.onRemoveComposerAttachment}
+      onTranscribeVoice={props.onTranscribeVoice}
       onStop={props.onStop}
     />
   </>;
