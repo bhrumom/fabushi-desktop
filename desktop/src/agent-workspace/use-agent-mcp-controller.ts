@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { AgentCoordinatorClient } from './coordinator-client';
+import { findPullRequestReadTool, type AgentPullRequestToolTarget } from './agent-composer-suggestion-provider';
 
 export interface AgentMcpReference {
   readonly id: string;
@@ -16,6 +17,7 @@ export interface AgentMcpControllerOptions {
 
 export interface AgentMcpController {
   readonly references: readonly AgentMcpReference[];
+  readonly pullRequestTool: AgentPullRequestToolTarget | null;
   list(): Promise<void>;
   handle(event: RuntimeEvent): boolean;
 }
@@ -81,6 +83,7 @@ export function useAgentMcpController(
   options: AgentMcpControllerOptions = {},
 ): AgentMcpController {
   const [references, setReferences] = useState<readonly AgentMcpReference[]>([]);
+  const [pullRequestTool, setPullRequestTool] = useState<AgentPullRequestToolTarget | null>(null);
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
@@ -96,6 +99,7 @@ export function useAgentMcpController(
   const handle = useCallback((event: RuntimeEvent): boolean => {
     if (event.type === 'mcp.listed') {
       setReferences(projectAgentMcpReferences(event.servers));
+      setPullRequestTool(findPullRequestReadTool(event.servers));
       return true;
     }
     if (event.type === 'mcp.refreshed' || event.type === 'mcp.oauth') {
@@ -105,5 +109,5 @@ export function useAgentMcpController(
     return false;
   }, [list]);
 
-  return { references, list, handle };
+  return { references, pullRequestTool, list, handle };
 }
