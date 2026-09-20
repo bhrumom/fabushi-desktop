@@ -1,12 +1,13 @@
 import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import { AGENT_ATTACHMENT_LIMIT } from './agent-attachments';
-import type { AgentReplyContext } from './prompt-context';
+import type { AgentPromptReference, AgentReplyContext } from './prompt-context';
 
 const storageKey = 'fabushi.agent-workspace.drafts.v1';
 
 export interface PersistedAgentDraft {
   text: string;
   attachments: AttachmentContext[];
+  references?: AgentPromptReference[];
   replyTo?: AgentReplyContext;
 }
 
@@ -21,6 +22,16 @@ function validAttachment(value: unknown): value is AttachmentContext {
     && (attachment.text == null || typeof attachment.text === 'string')
     && (attachment.mimeType == null || typeof attachment.mimeType === 'string')
     && (attachment.sizeBytes == null || typeof attachment.sizeBytes === 'number');
+}
+
+function validPromptReference(value: unknown): value is AgentPromptReference {
+  if (!value || typeof value !== 'object') return false;
+  const reference = value as Partial<AgentPromptReference>;
+  return reference.kind === 'agent'
+    && typeof reference.id === 'string'
+    && reference.id.trim().length > 0
+    && typeof reference.label === 'string'
+    && reference.label.trim().length > 0;
 }
 
 function validReplyContext(value: unknown): value is AgentReplyContext {
@@ -41,14 +52,22 @@ export function readAgentWorkspaceDrafts(): PersistedAgentDrafts {
     const result: PersistedAgentDrafts = {};
     for (const [peerKey, value] of Object.entries(parsed as Record<string, unknown>)) {
       if (!value || typeof value !== 'object') continue;
-      const draft = value as { text?: unknown; attachments?: unknown; replyTo?: unknown };
+      const draft = value as { text?: unknown; attachments?: unknown; references?: unknown; replyTo?: unknown };
       const text = typeof draft.text === 'string' ? draft.text : '';
       const attachments = Array.isArray(draft.attachments)
         ? draft.attachments.filter(validAttachment).slice(0, AGENT_ATTACHMENT_LIMIT)
         : [];
+      const references = Array.isArray(draft.references)
+        ? draft.references.filter(validPromptReference).slice(0, 32)
+        : [];
       const replyTo = validReplyContext(draft.replyTo) ? draft.replyTo : undefined;
-      if (text || attachments.length || replyTo) {
-        result[peerKey] = { text, attachments, ...(replyTo ? { replyTo } : {}) };
+      if (text || attachments.length || references.length || replyTo) {
+        result[peerKey] = {
+          text,
+          attachments,
+          ...(references.length ? { references } : {}),
+          ...(replyTo ? { replyTo } : {}),
+        };
       }
     }
     return result;
@@ -61,20 +80,28 @@ export function persistAgentWorkspaceDrafts(
   textByPeer: Readonly<Record<string, string>>,
   attachmentsByPeer: Readonly<Record<string, readonly AttachmentContext[]>>,
   replyByPeer: Readonly<Record<string, AgentReplyContext>> = {},
+  referencesByPeer: Readonly<Record<string, readonly AgentPromptReference[]>> = {},
 ): void {
   if (typeof window === 'undefined') return;
   const peerKeys = new Set([
     ...Object.keys(textByPeer),
     ...Object.keys(attachmentsByPeer),
     ...Object.keys(replyByPeer),
+    ...Object.keys(referencesByPeer),
   ]);
   const snapshot: PersistedAgentDrafts = {};
   for (const peerKey of peerKeys) {
     const text = textByPeer[peerKey] ?? '';
     const attachments = [...(attachmentsByPeer[peerKey] ?? [])].slice(0, AGENT_ATTACHMENT_LIMIT);
     const replyTo = replyByPeer[peerKey];
-    if (text || attachments.length || replyTo) {
-      snapshot[peerKey] = { text, attachments, ...(replyTo ? { replyTo } : {}) };
+    const references = [...(referencesByPeer[peerKey] ?? [])].slice(0, 32);
+    if (text || attachments.length || references.length || replyTo) {
+      snapshot[peerKey] = {
+        text,
+        attachments,
+        ...(references.length ? { references } : {}),
+        ...(replyTo ? { replyTo } : {}),
+      };
     }
   }
   try {
