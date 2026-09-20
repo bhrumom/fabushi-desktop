@@ -9,6 +9,7 @@ import { AgentRuntimeCoordinator } from '../src/agent-workspace/agent-runtime-co
 import { agentMatchesGroupMember, indexAgentsByRuntimeOrSurfaceId, type AgentSidebarItem } from '../src/agent-workspace/agent-model';
 import { composeAgentPromptText } from '../src/agent-workspace/prompt-context';
 import { restoreAgentStoreWorkspace } from '../src/agent-workspace/agent-store-recovery';
+import { projectAgentMcpReferences } from '../src/agent-workspace/use-agent-mcp-controller';
 import type { TranscriptEntry } from '../src/agent-workspace/transcript-model';
 import {
   FABU_AGENT_ATTACHMENT_INDEX_PATH,
@@ -124,20 +125,22 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.isOperationFinished('operation:b')).toBe(true);
       expect(controller.claimRuntimeOperation('operation:b', 'agent:b')).toBeNull();
 
-      controller.setDraft('agent:a', 'first prompt @Research /Review changes');
+      controller.setDraft('agent:a', 'first prompt @Research /Review changes @GitHub');
       controller.appendAttachments('agent:a', [{ id: 'attachment:a', name: 'a.txt' }]);
       controller.setReply('agent:a', { id: 'reply:a', role: 'peer', text: 'previous answer' });
       controller.upsertReference('agent:a', { kind: 'agent', id: 'agent:research', label: 'Research' });
       controller.upsertReference('agent:a', { kind: 'workflow', id: 'workflow:review', label: 'Review changes' });
+      controller.upsertReference('agent:a', { kind: 'mcp', id: 'mcp:github', label: 'GitHub' });
       controller.setDraft('agent:b', 'independent draft');
 
       const submitted = controller.takeDraft('agent:a');
-      expect(submitted.text).toBe('first prompt @Research /Review changes');
+      expect(submitted.text).toBe('first prompt @Research /Review changes @GitHub');
       expect(submitted.attachments.map((attachment) => attachment.id)).toEqual(['attachment:a']);
       expect(submitted.replyTo?.id).toBe('reply:a');
       expect(submitted.references).toEqual([
         { kind: 'agent', id: 'agent:research', label: 'Research' },
         { kind: 'workflow', id: 'workflow:review', label: 'Review changes' },
+        { kind: 'mcp', id: 'mcp:github', label: 'GitHub' },
       ]);
       expect(submitted.richText).toContain('"type":"doc"');
       expect(submitted.richText).toContain('"type":"mention"');
@@ -145,6 +148,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       const composedPrompt = composeAgentPromptText(submitted.text, submitted.replyTo, submitted.references);
       expect(composedPrompt).toContain('@Research [agent:agent:research]');
       expect(composedPrompt).toContain('/Review changes [workflow:workflow:review]');
+      expect(composedPrompt).toContain('@GitHub [mcp:mcp:github]');
       expect(controller.draftForPeer('agent:a')).toBe('');
       expect(controller.draftForPeer('agent:b')).toBe('independent draft');
 
@@ -156,10 +160,36 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.referencesForPeer('agent:a')).toEqual([
         { kind: 'agent', id: 'agent:research', label: 'Research' },
         { kind: 'workflow', id: 'workflow:review', label: 'Review changes' },
+        { kind: 'mcp', id: 'mcp:github', label: 'GitHub' },
       ]);
       controller.setDraft('agent:a', 'new draft without a mention');
       controller.pruneReferences('agent:a', 'new draft without a mention');
       expect(controller.referencesForPeer('agent:a')).toEqual([]);
+    });
+
+    await test.step('Agent MCP catalog normalizes untyped Host rows into stable Composer references', async () => {
+      expect(projectAgentMcpReferences([
+        { name: 'github', status: 'connected', transport: 'streamable_http', tools: [{ name: 'search' }, { name: 'pull' }] },
+        { id: 'custom-id', displayName: 'Custom MCP', status: 'auth_required', tools: [] },
+        { name: 'github', status: 'connected', tools: [] },
+        null,
+        { status: 'connected' },
+      ])).toEqual([
+        {
+          id: 'mcp:github',
+          name: 'github',
+          description: 'connected · 2 tools · streamable_http',
+          status: 'connected',
+          toolCount: 2,
+        },
+        {
+          id: 'mcp:custom-id',
+          name: 'Custom MCP',
+          description: 'auth_required',
+          status: 'auth_required',
+          toolCount: 0,
+        },
+      ]);
     });
 
     await test.step('Agent transcript canonicalizes duplicate legacy assistant rows into one operation timeline', async () => {
