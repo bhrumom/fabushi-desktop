@@ -1,4 +1,5 @@
 export type AgentOperationSnapshot = Readonly<Record<string, string>>;
+export type AgentRequestSnapshot = Readonly<Record<string, string>>;
 
 /**
  * Tracks Agent transport ownership by peer instead of globally.
@@ -83,6 +84,15 @@ export class AgentOperationRegistry {
 
   snapshot(): AgentOperationSnapshot {
     return Object.freeze(Object.fromEntries(this.operationByPeer));
+  }
+
+  requestSnapshot(): AgentRequestSnapshot {
+    return Object.freeze(Object.fromEntries(this.requestByPeer));
+  }
+
+  onlyPendingPeer(): string | null {
+    if (this.requestByPeer.size !== 1) return null;
+    return this.requestByPeer.keys().next().value ?? null;
   }
 
   clearPeer(peerKey: string): void {
