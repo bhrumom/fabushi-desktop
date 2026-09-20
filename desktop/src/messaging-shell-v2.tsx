@@ -108,6 +108,7 @@ import { executeDesktopMiniAppBotInput, prepareDesktopMiniAppWebMcpDocument } fr
 import BotConversationView from './bot-conversation-view';
 import type { BotTranscriptMessage } from './bot-conversation-view';
 import AgentWorkspace from './agent-workspace/agent-workspace';
+import AgentOverlays from './agent-workspace/agent-overlays';
 import { AgentWorkspaceController } from './agent-workspace/agent-workspace-controller';
 import { AgentCoordinatorClient } from './agent-workspace/coordinator-client';
 import { projectTranscriptEntries, type TranscriptEntry } from './agent-workspace/transcript-model';
@@ -4806,6 +4807,61 @@ async function saveInvoiceDialog() {
       </section>
 
       {infoPanelVisible && activePeer ? (
+        isAgentPeer(activePeer) && !activePeer.miniAppId ? (
+          <AgentOverlays
+            title={activePeer.title}
+            description={activePeer.subtitle}
+            botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+            botState={botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)}
+            pinned={activePeer.pinned}
+            overlay={!wideInfoLayout}
+            onClose={() => wideInfoLayout ? setInfoOpen(false) : setNarrowInfoOpen(false)}
+            onSearch={() => {
+              setConversationSearchOpen(true);
+              setGlobalSearchOpen(true);
+              setGlobalSearchCategory('posts');
+              setSearch('');
+              window.setTimeout(() => searchInputRef.current?.focus(), 0);
+            }}
+            onTogglePin={() => void togglePinConversation(activePeer)}
+            computer={{
+              open: computerProfileOpen,
+              label: localComputerLabel(),
+              status: localComputerStatus,
+              online: localComputerOnline,
+              aiControlEnabled: hostSettings.aiComputerControlEnabled,
+              remoteControlEnabled: hostSettings.remoteControlEnabled,
+              state: remoteComputerState,
+              onToggle: () => {
+                setComputerProfileOpen((value) => !value);
+                void invokeNativeDesktop('reportOpenComputer', {
+                  source: 'agent-workspace',
+                  agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
+                  connected: remoteComputerState?.channelOpen === true,
+                }).catch(() => {});
+              },
+              onRefreshPairingCode: () => {
+                void remoteComputerControllerRef.current?.refreshPairingCode()
+                  .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
+              },
+              onApproveSession: (sessionId) => {
+                void remoteComputerControllerRef.current?.approvePendingSession(sessionId)
+                  .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
+              },
+              onDenySession: (sessionId) => {
+                void remoteComputerControllerRef.current?.denyPendingSession(sessionId)
+                  .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
+              },
+              onDisconnect: () => { void remoteComputerControllerRef.current?.disconnectActive(); },
+              onToggleRemoteControl: () => updateHostSetting('remoteControlEnabled', !hostSettings.remoteControlEnabled),
+              onOpenControlPage: () => {
+                void invokeNativeDesktop('openExternal', {
+                  url: `https://fabushi.ombhrum.com/remote-computer?agentId=${encodeURIComponent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id)}`,
+                }).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
+              },
+            }}
+          />
+        ) : (
         <aside className={styles.infoPanel} data-testid="messenger-info-panel" data-overlay={!wideInfoLayout || undefined}>
           <header><strong>资料</strong><button type="button" onClick={() => wideInfoLayout ? setInfoOpen(false) : setNarrowInfoOpen(false)}><X size={17} /></button></header>
           <div className={styles.profileCard}>
@@ -4857,6 +4913,7 @@ async function saveInvoiceDialog() {
           <nav className={styles.infoTabs}><button type="button" data-active={infoTab === 'media'} onClick={() => setInfoTab('media')}>媒体</button><button type="button" data-active={infoTab === 'files'} onClick={() => setInfoTab('files')}>文件</button><button type="button" data-active={infoTab === 'links'} onClick={() => setInfoTab('links')}>链接</button></nav>
           <div className={styles.infoContent}>{infoTab === 'media' ? <><Image size={30} /><strong>共享媒体</strong><p>图片、视频和动画按消息索引展示。</p></> : null}{infoTab === 'files' ? <><FileText size={30} /><strong>共享文件</strong><p>文档、音频和附件由 Rust 媒体层管理。</p></> : null}{infoTab === 'links' ? <><Link2 size={30} /><strong>共享链接</strong><p>富文本 URL 建立可搜索索引。</p></> : null}</div>
         </aside>
+        )
       ) : null}
 
       {contactGroups.managerOpen ? <SidebarContactGroupManager
