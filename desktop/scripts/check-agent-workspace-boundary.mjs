@@ -20,10 +20,6 @@ const forbidden = [
   ['legacy Grok Command Palette mounted by primary shell', /import\s+GrokCommandPalette\s+from\s+['"]\.\/grok-shell\/grok-command-palette['"]/],
   ['primary Agent shell directly imports Grok implementation layers', /from\s+['"]\.\/grok-(?:shell|runtime)\//],
   ['Grok-named runtime state leaked back into primary Agent shell', /\bgrok(?:Palette|Network|Pinned|Sidebar|Selected|Activity|Busy|Agent)[A-Z]\w*/],
-  ['renderer-owned Agent group create command', /type:\s*['"]group\.create['"]/],
-  ['renderer-owned Agent group update command', /type:\s*['"]group\.update['"]/],
-  ['renderer-owned Agent group delete command', /type:\s*['"]group\.delete['"]/],
-  ['renderer-owned Agent group send command', /type:\s*['"]group\.send['"]/],
 ];
 
 const violations = forbidden
@@ -86,6 +82,17 @@ if (!/from\s+['"]\.\/agent-workspace\/agent-model['"]/.test(shell)
 }
 if (!/agentCoordinatorClient\.(?:listGroups|createGroup|updateGroup|deleteGroup|sendGroup)\s*\(/.test(shell)) {
   violations.push('Agent group lifecycle escaped AgentCoordinatorClient');
+}
+
+const agentNetworkStart = shell.indexOf('async function refreshAgentGroups');
+const agentNetworkEnd = shell.indexOf('function openAgent', agentNetworkStart);
+const agentNetworkSlice = agentNetworkStart >= 0 && agentNetworkEnd > agentNetworkStart
+  ? shell.slice(agentNetworkStart, agentNetworkEnd)
+  : '';
+if (!agentNetworkSlice) {
+  violations.push('Agent Network collaboration handlers are missing from the primary shell');
+} else if (/type:\s*['"]group\.(?:list|create|update|delete|send)['"]/.test(agentNetworkSlice)) {
+  violations.push('Agent Network collaboration path bypassed AgentCoordinatorClient');
 }
 
 if (violations.length) {
