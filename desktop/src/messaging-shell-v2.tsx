@@ -157,7 +157,7 @@ import AgentRootShell from './agent-workspace/agent-root-shell';
 import AgentSidebar, { type AgentSidebarItem as GrokAgentSidebarItem } from './agent-workspace/agent-sidebar';
 import AgentSearch from './agent-workspace/agent-search';
 import GrokAgentHeader from './grok-shell/grok-agent-header';
-import GrokAgentNetwork from './grok-shell/grok-agent-network';
+import AgentNetwork from './agent-workspace/agent-network';
 import GrokCommandPalette from './grok-shell/grok-command-palette';
 import { grokAgentKey, projectActiveGrokAgentKey, projectGrokAgentSidebarItems } from './grok-runtime/agent-model';
 import { MahayanaAssistantTurnView } from './mahayana-assistant-turn-view';
@@ -2807,7 +2807,54 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     clearGrokAgentSelection();
   }
 
-  async function broadcastGrokAgents(message: string, targetAgentIds?: string[]): Promise<void> {
+  async function refreshAgentGroups(): Promise<void> {
+    await execute({
+      type: 'group.list',
+      requestId: nextRequestId('agent-network-group-list'),
+    });
+  }
+
+  async function createAgentGroup(name: string, memberAgentIds: readonly string[]): Promise<void> {
+    await execute({
+      type: 'group.create',
+      requestId: nextRequestId('agent-network-group-create'),
+      name,
+      description: '',
+      memberIds: [...memberAgentIds],
+    });
+  }
+
+  async function updateAgentGroup(
+    id: string,
+    patch: { name?: string; memberAgentIds?: readonly string[] },
+  ): Promise<void> {
+    await execute({
+      type: 'group.update',
+      requestId: nextRequestId('agent-network-group-update'),
+      id,
+      ...(patch.name !== undefined ? { name: patch.name } : {}),
+      ...(patch.memberAgentIds !== undefined ? { memberIds: [...patch.memberAgentIds] } : {}),
+    });
+  }
+
+  async function deleteAgentGroup(id: string): Promise<void> {
+    await execute({
+      type: 'group.delete',
+      requestId: nextRequestId('agent-network-group-delete'),
+      id,
+    });
+  }
+
+  async function sendAgentGroup(id: string, message: string): Promise<void> {
+    await execute({
+      type: 'group.send',
+      requestId: nextRequestId('agent-network-group-send'),
+      id,
+      text: message,
+    });
+  }
+
+  async function broadcastGrokAgents(message: string, targetAgentIds?: readonly string[]): Promise<void> {
     try {
       await agentCoordinatorClient.broadcast(
         nextRequestId('grok-agent-broadcast'),
@@ -4299,9 +4346,10 @@ async function saveInvoiceDialog() {
       />
 
       <section className={styles.chatWorkspace}>
-        <GrokAgentNetwork
+        <AgentNetwork
           open={grokNetworkOpen}
           agents={grokAgentItems}
+          groups={groups}
           activeKey={activeGrokAgentKey}
           broadcastMode={grokNetworkBroadcastMode}
           onClose={() => {
@@ -4309,6 +4357,11 @@ async function saveInvoiceDialog() {
             setGrokNetworkBroadcastMode(false);
           }}
           onOpenAgent={openGrokAgent}
+          onRefreshGroups={refreshAgentGroups}
+          onCreateGroup={createAgentGroup}
+          onUpdateGroup={updateAgentGroup}
+          onDeleteGroup={deleteAgentGroup}
+          onSendGroup={sendAgentGroup}
           onBroadcast={broadcastGrokAgents}
         />
         {grokNetworkOpen ? null : activePeer && sectionIsPeerList ? (
