@@ -238,6 +238,23 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       const transcripts = new AgentTranscriptStore();
       transcripts.hydrateEntries('agent:cloud-peer', recovered.entries);
       expect(transcripts.entries('agent:cloud-peer').map((entry) => entry.text)).toEqual(['restored prompt', 'restored answer', '']);
+
+      const corruptObjects = new Map(objects);
+      corruptObjects.set(transcriptPath, {
+        ...corruptObjects.get(transcriptPath)!,
+        etag: 'unexpected-etag',
+      });
+      const corruptStore = new FabuAgentStore(agentId, {
+        async list() { return { files: [] }; },
+        async read(_agentId, path) {
+          const object = corruptObjects.get(path);
+          if (!object) throw new Error(`missing ${path}`);
+          return object;
+        },
+        async write() { return {}; },
+        async delete() { return {}; },
+      });
+      await expect(restoreAgentStoreWorkspace(corruptStore, conversationId)).rejects.toThrow('Agent Store etag mismatch');
     });
 
     await test.step('Agent runtime coordinator isolates concurrent Agent streams and preserves drafts on reconnect', async () => {
@@ -566,6 +583,29 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(page.getByTestId('messenger-send')).toBeVisible();
       await page.getByTestId('messenger-send').click();
       await expect(page.getByTestId('message-list').getByText('attachment-only.txt')).toBeVisible();
+
+      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
+      const palette = page.getByRole('dialog', { name: 'Command palette' });
+      await expect(palette).toBeVisible();
+      await page.getByPlaceholder('Search agents or run a command').fill('agent-notes.txt');
+      await expect(palette.getByText('agent-notes.txt')).toBeVisible();
+      await page.keyboard.press('Escape');
+    });
+
+    await test.step('Agent settings are an Agent-owned secondary surface', async () => {
+      await page.getByTestId('conversation-info-toggle').click();
+      const overlays = page.getByTestId('agent-overlays');
+      await expect(overlays).toBeVisible();
+      await overlays.getByTestId('agent-settings-toggle').click();
+      const settings = overlays.getByRole('region', { name: 'Agent settings' });
+      await expect(settings).toBeVisible();
+      await expect(settings.getByLabel('Agent name')).toHaveValue(/.+/);
+      await expect(settings.getByLabel('Agent description')).toBeVisible();
+      await expect(settings.getByRole('switch')).toBeVisible();
+      await overlays.getByTestId('bot-computer-toggle').click();
+      await expect(settings).toHaveCount(0);
+      await expect(overlays.getByTestId('bot-computer-panel')).toBeVisible();
+      await page.getByTestId('conversation-info-toggle').click();
     });
 
     await test.step('Agent sidebar supports modifier selection and account-scoped sections', async () => {
