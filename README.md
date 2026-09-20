@@ -1,10 +1,14 @@
 # Fabushi desktop
 
-This repository is the independent desktop boundary extracted from
-bhrumom/fabushi@7851b689d2fe3fc3893cd9f4363899cc4a03e83b by the FAB-P0013 platform repository export workflow.
+This repository is the independent Fabushi desktop application.
 
-Source roots: desktop
+The Electron desktop source was originally extracted from `bhrumom/fabushi`, and the Rust runtime required by that desktop has now been restored into this repository so the desktop is self-contained again.
 
-Product builds, CI, Releases, and dependency boundaries are maintained here independently
-after the migration acceptance gates pass. Do not add credentials or source paths owned by
-another platform repository.
+Current source boundaries:
+
+- `desktop` — Electron desktop application
+- `third_party/mahayana/mahayana-rs` — Mahayana Rust runtime and desktop host
+- `third_party/mahayana/codex-rs` — Rust compatibility/runtime crates required by Mahayana
+- `native/mahayana-messaging` — native messaging crate used by the Mahayana workspace
+
+See `MIGRATION_SOURCE.md` for the original platform extraction and `RUST_RUNTIME_SOURCE.md` for the Rust restoration provenance.

@@ -1,0 +1,63 @@
+name: Rust desktop runtime
+
+on:
+  push:
+    branches: [main, restore/rust-desktop-runtime]
+    paths:
+      - 'desktop/**'
+      - 'third_party/mahayana/mahayana-rs/**'
+      - 'third_party/mahayana/codex-rs/**'
+      - 'native/mahayana-messaging/**'
+      - '.github/workflows/rust-desktop-runtime.yml'
+      - 'RUST_RUNTIME_SOURCE.md'
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - 'third_party/mahayana/mahayana-rs/**'
+      - 'third_party/mahayana/codex-rs/**'
+      - 'native/mahayana-messaging/**'
+      - '.github/workflows/rust-desktop-runtime.yml'
+      - 'RUST_RUNTIME_SOURCE.md'
+
+permissions:
+  contents: read
+
+jobs:
+  rust-host:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: third_party/mahayana/mahayana-rs -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Validate local Cargo dependency closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f third_party/mahayana/mahayana-rs/Cargo.toml
+          test -f third_party/mahayana/codex-rs/Cargo.toml
+          test -f native/mahayana-messaging/Cargo.toml
+          cargo metadata --no-deps --format-version 1 --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml >/dev/null
+      - name: Check desktop Mahayana host
+        shell: bash
+        run: cargo check --profile ci -p mahayana-app-host-desktop --bin mahayana-app-host --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml
+
+  renderer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install desktop dependencies
+        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+      - name: Typecheck and build renderer
+        run: npm --prefix desktop run build:renderer
