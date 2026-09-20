@@ -235,9 +235,9 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
     await test.step('Agent runtime coordinator isolates concurrent Agent streams and preserves drafts on reconnect', async () => {
       const controller = new AgentWorkspaceController();
       const transcripts = new AgentTranscriptStore();
-      let computerStatus: import('../../frontend/apps/web/src/lib/mahayana-host/contracts').ComputerStatus | null = null;
+      const computerStatuses: import('../../frontend/apps/web/src/lib/mahayana-host/contracts').ComputerStatus[] = [];
       const coordinator = new AgentRuntimeCoordinator(controller, transcripts, {
-        onComputerStatus: (status) => { computerStatus = status; },
+        onComputerStatus: (status) => { computerStatuses.push(status); },
       });
       expect(coordinator.handle({
         type: 'computer.status',
@@ -256,8 +256,8 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
           aiControlEnabled: true,
         },
       })).toBe(true);
-      expect(computerStatus?.platform).toBe('macos');
-      expect(computerStatus?.accessibilityGranted).toBe(false);
+      expect(computerStatuses[0]?.platform).toBe('macos');
+      expect(computerStatuses[0]?.accessibilityGranted).toBe(false);
       coordinator.bindAgentPeers([{ agentId: 'agent:runtime-b', peerKey: 'agent:b' }]);
       expect(coordinator.handle({
         type: 'computer.result',
