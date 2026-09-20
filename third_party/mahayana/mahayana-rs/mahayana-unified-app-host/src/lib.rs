@@ -10,6 +10,7 @@
 use mahayana_app_host::{
     AppHost, AppHostError, AppHostFeatureMode, HostRequest, HostResponse, default_app_data_dir,
 };
+pub use mahayana_app_host::{PlatformRequestHost, is_platform_request_json};
 use mahayana_core::BuildProfile;
 use mahayana_harness_protocol::HarnessApi;
 use serde::{Deserialize, Serialize};

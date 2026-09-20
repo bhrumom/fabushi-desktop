@@ -88,6 +88,82 @@ pub struct AppHost {
     feature: FeatureHostController,
 }
 
+/// Lightweight platform-only request lane used by desktop. Network-backed
+/// account sync must never block the FeatureHost event/command lane; this
+/// helper intentionally owns only the shared Rust product client and no JS or
+/// Agent runtime state.
+#[derive(Clone)]
+pub struct PlatformRequestHost {
+    product: MahayanaProductClient,
+}
+
+impl PlatformRequestHost {
+    pub fn new(app_data_dir: impl Into<PathBuf>) -> Result<Self, AppHostError> {
+        let app_data_dir = app_data_dir.into();
+        std::fs::create_dir_all(&app_data_dir)
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        let root = feature_host_root(&app_data_dir);
+        std::fs::create_dir_all(&root)
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        let product = MahayanaProductClient::new_with_default_api_base_url(
+            root.join("account-session.json"),
+            root.join("product-surface.json"),
+        );
+        product.bootstrap_ci_test_account_session().map_err(|error| {
+            AppHostError::Operation(format!(
+                "GitHub Actions test-account bootstrap failed: {error}"
+            ))
+        })?;
+        Ok(Self { product })
+    }
+
+    pub fn dispatch_json(&self, input: &str) -> String {
+        let response = match serde_json::from_str::<HostRequest>(input) {
+            Ok(request) if request.method == "platform.request" => {
+                let id = request.id;
+                match self.product.execute("mahayana.platform.request", &request.params) {
+                    Ok(result) => HostResponse {
+                        id,
+                        ok: true,
+                        result: Some(result),
+                        error: None,
+                    },
+                    Err(error) => HostResponse {
+                        id,
+                        ok: false,
+                        result: None,
+                        error: Some(AppHostError::Operation(error.to_string()).to_string()),
+                    },
+                }
+            }
+            Ok(request) => HostResponse {
+                id: request.id,
+                ok: false,
+                result: None,
+                error: Some(format!(
+                    "invalid request: platform lane cannot execute {}",
+                    request.method
+                )),
+            },
+            Err(error) => HostResponse {
+                id: None,
+                ok: false,
+                result: None,
+                error: Some(format!("invalid JSON request: {error}")),
+            },
+        };
+        serde_json::to_string(&response).unwrap_or_else(|error| {
+            format!("{{\"ok\":false,\"error\":\"serialization failed: {error}\"}}")
+        })
+    }
+}
+
+pub fn is_platform_request_json(input: &str) -> bool {
+    serde_json::from_str::<HostRequest>(input)
+        .map(|request| request.method == "platform.request")
+        .unwrap_or(false)
+}
+
 impl AppHost {
     pub fn new(app_data_dir: impl Into<PathBuf>) -> Result<Self, AppHostError> {
         let feature_mode = configured_feature_host_mode()?;
