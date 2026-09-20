@@ -527,12 +527,27 @@ impl NativeEngine {
                 model_metadata["reasoning"] = json!({ "effort": "low" });
                 model_metadata["max_output_tokens"] = json!(512);
             }
+            let context_projection =
+                project_model_history(&session.history, conversational_fast_path && turn == 0);
+            events.emit(KernelEvent::Activity {
+                operation_id: operation_id.clone(),
+                kind: "context".into(),
+                title: "Mahayana context projected".into(),
+                detail: None,
+                metadata: json!({
+                    "historyItems": session.history.len(),
+                    "projectedItems": context_projection.items.len(),
+                    "projectedChars": context_projection.serialized_chars,
+                    "omittedItems": context_projection.omitted_items,
+                    "fastConversation": conversational_fast_path && turn == 0,
+                }),
+            })?;
             let inference = self
                 .model
                 .infer(
                     ModelRequest {
                         model: self.config.model.clone(),
-                        input: Value::Array(session.history.clone()),
+                        input: Value::Array(context_projection.items),
                         metadata: model_metadata,
                     },
                     sink,
@@ -1997,6 +2012,168 @@ impl ModelEventSink for ModelCollector {
             }
         }
         Ok(())
+    }
+}
+
+const MODEL_CONTEXT_HISTORY_CHAR_BUDGET: usize = 96_000;
+const MODEL_CONTEXT_RECENT_MESSAGE_LIMIT: usize = 12;
+const MODEL_CONTEXT_ENTRY_CHAR_LIMIT: usize = 16_000;
+const LIGHTWEIGHT_CONTEXT_CHAR_LIMIT: usize = 4_000;
+
+#[derive(Debug)]
+struct ModelContextProjection {
+    items: Vec<Value>,
+    omitted_items: usize,
+    serialized_chars: usize,
+}
+
+fn json_serialized_chars(value: &Value) -> usize {
+    serde_json::to_string(value)
+        .map(|value| value.chars().count())
+        .unwrap_or_default()
+}
+
+fn truncate_model_string(value: &str, max_chars: usize) -> String {
+    let length = value.chars().count();
+    if length <= max_chars {
+        return value.to_string();
+    }
+    if max_chars < 64 {
+        return value.chars().take(max_chars).collect();
+    }
+    let marker = format!("\n...[{} chars omitted from model context]...\n", length - max_chars);
+    let marker_len = marker.chars().count();
+    let usable = max_chars.saturating_sub(marker_len);
+    let head_len = usable.saturating_mul(3) / 4;
+    let tail_len = usable.saturating_sub(head_len);
+    let head = value.chars().take(head_len).collect::<String>();
+    let tail = value
+        .chars()
+        .rev()
+        .take(tail_len)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect::<String>();
+    format!("{head}{marker}{tail}")
+}
+
+fn truncate_model_item(value: &Value, max_string_chars: usize) -> Value {
+    match value {
+        Value::String(text) => Value::String(truncate_model_string(text, max_string_chars)),
+        Value::Array(values) => Value::Array(
+            values
+                .iter()
+                .map(|value| truncate_model_item(value, max_string_chars))
+                .collect(),
+        ),
+        Value::Object(values) => Value::Object(
+            values
+                .iter()
+                .map(|(key, value)| {
+                    (
+                        key.clone(),
+                        if matches!(key.as_str(), "content" | "text" | "output" | "arguments") {
+                            truncate_model_item(value, max_string_chars)
+                        } else {
+                            value.clone()
+                        },
+                    )
+                })
+                .collect(),
+        ),
+        _ => value.clone(),
+    }
+}
+
+fn model_message_role(value: &Value) -> Option<&str> {
+    value.get("role").and_then(Value::as_str)
+}
+
+fn project_model_history(history: &[Value], lightweight: bool) -> ModelContextProjection {
+    if history.is_empty() {
+        return ModelContextProjection {
+            items: Vec::new(),
+            omitted_items: 0,
+            serialized_chars: 0,
+        };
+    }
+
+    let last_user = history
+        .iter()
+        .rposition(|item| model_message_role(item) == Some("user"));
+
+    if lightweight {
+        let items = last_user
+            .and_then(|index| history.get(index))
+            .map(|item| vec![truncate_model_item(item, LIGHTWEIGHT_CONTEXT_CHAR_LIMIT)])
+            .unwrap_or_else(|| {
+                vec![truncate_model_item(
+                    history.last().expect("history is non-empty"),
+                    LIGHTWEIGHT_CONTEXT_CHAR_LIMIT,
+                )]
+            });
+        let serialized_chars = items.iter().map(json_serialized_chars).sum();
+        return ModelContextProjection {
+            omitted_items: history.len().saturating_sub(items.len()),
+            items,
+            serialized_chars,
+        };
+    }
+
+    let turn_start = last_user.unwrap_or(history.len().saturating_sub(1));
+    // Fabu keeps the active turn lossless enough for tool-call continuity.
+    // Only large strings inside an entry are trimmed; the durable transcript
+    // remains untouched and continues to own the full data.
+    let active_turn = history[turn_start..]
+        .iter()
+        .map(|item| truncate_model_item(item, MODEL_CONTEXT_ENTRY_CHAR_LIMIT))
+        .collect::<Vec<_>>();
+    let active_chars = active_turn.iter().map(json_serialized_chars).sum::<usize>();
+
+    let mut previous = Vec::new();
+    let mut previous_chars = 0usize;
+    for item in history[..turn_start].iter().rev() {
+        if previous.len() >= MODEL_CONTEXT_RECENT_MESSAGE_LIMIT {
+            break;
+        }
+        if !matches!(model_message_role(item), Some("user" | "assistant")) {
+            continue;
+        }
+        let projected = truncate_model_item(item, MODEL_CONTEXT_ENTRY_CHAR_LIMIT);
+        let item_chars = json_serialized_chars(&projected);
+        if active_chars
+            .saturating_add(previous_chars)
+            .saturating_add(item_chars)
+            > MODEL_CONTEXT_HISTORY_CHAR_BUDGET
+        {
+            break;
+        }
+        previous_chars = previous_chars.saturating_add(item_chars);
+        previous.push(projected);
+    }
+    previous.reverse();
+
+    let selected_count = previous.len().saturating_add(active_turn.len());
+    let omitted_items = history.len().saturating_sub(selected_count);
+    let mut items = Vec::with_capacity(selected_count + usize::from(omitted_items > 0));
+    if omitted_items > 0 {
+        items.push(json!({
+            "role": "system",
+            "content": format!(
+                "[{} earlier transcript item(s) omitted from this inference context. The full durable transcript remains stored by the Agent.]",
+                omitted_items
+            ),
+        }));
+    }
+    items.extend(previous);
+    items.extend(active_turn);
+    let serialized_chars = items.iter().map(json_serialized_chars).sum();
+
+    ModelContextProjection {
+        items,
+        omitted_items,
+        serialized_chars,
     }
 }
 
