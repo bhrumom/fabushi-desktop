@@ -8,7 +8,7 @@ export interface AgentNetworkProps {
   open: boolean;
   agents: readonly AgentSidebarItem[];
   groups: readonly GroupSummary[];
-  peerMessages: readonly AgentPeerMessage[];
+  peerMessagesByAgentId: Readonly<Record<string, readonly AgentPeerMessage[]>>;
   activeKey: string | null;
   broadcastMode?: boolean;
   onClose(): void;
@@ -41,7 +41,7 @@ export default function AgentNetwork({
   open,
   agents,
   groups,
-  peerMessages,
+  peerMessagesByAgentId,
   activeKey,
   broadcastMode = false,
   onClose,
@@ -102,7 +102,7 @@ export default function AgentNetwork({
     ? directAgents.find((agent) => agent.agentId === selectedAgentIds[0] && agent.key !== activeAgent.key) ?? null
     : null;
   const visiblePeerMessages = activeAgent
-    ? peerMessages.filter((item) => item.fromAgentId === activeAgent.agentId || item.targetId === activeAgent.agentId).slice(-8)
+    ? (peerMessagesByAgentId[activeAgent.agentId] ?? []).slice(-8)
     : [];
 
   const chooseGroup = (group: GroupSummary) => {
