@@ -2349,10 +2349,9 @@ impl MahayanaProductClient {
             if let Some(query) = query {
                 let mut pairs = url.query_pairs_mut();
                 for (name, value) in query {
-                    let value = value
-                        .as_str()
-                        .ok_or(ProductError::InvalidParameter("query"))?;
-                    pairs.append_pair(name, value);
+                    if let Some(value) = platform_query_value(value)? {
+                        pairs.append_pair(name, &value);
+                    }
                 }
             }
             let mut builder = client
@@ -3177,6 +3176,16 @@ fn copy_optional_fields(request: &Value, body: &mut Value, fields: &[&str]) {
     }
 }
 
+fn platform_query_value(value: &Value) -> Result<Option<String>, ProductError> {
+    match value {
+        Value::Null => Ok(None),
+        Value::String(value) => Ok(Some(value.clone())),
+        Value::Bool(value) => Ok(Some(value.to_string())),
+        Value::Number(value) => Ok(Some(value.to_string())),
+        _ => Err(ProductError::InvalidParameter("query")),
+    }
+}
+
 fn http_client() -> Result<reqwest::blocking::Client, ProductError> {
     build_http_client(false)
 }
@@ -3428,6 +3437,22 @@ pub fn redact_secrets(value: &Value) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn platform_query_accepts_native_scalar_values_without_stringifying_structures() {
+        assert_eq!(platform_query_value(&json!(200)), Ok(Some("200".into())));
+        assert_eq!(platform_query_value(&json!(true)), Ok(Some("true".into())));
+        assert_eq!(platform_query_value(&json!("as1:42")), Ok(Some("as1:42".into())));
+        assert_eq!(platform_query_value(&Value::Null), Ok(None));
+        assert_eq!(
+            platform_query_value(&json!({"nested": true})),
+            Err(ProductError::InvalidParameter("query"))
+        );
+        assert_eq!(
+            platform_query_value(&json!(["nested"])),
+            Err(ProductError::InvalidParameter("query"))
+        );
+    }
 
     #[test]
     fn redaction_removes_nested_account_tokens() {
