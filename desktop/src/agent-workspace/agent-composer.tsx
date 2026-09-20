@@ -1,6 +1,11 @@
 import { LoaderCircle, Mic, Paperclip, Reply, Send, Square, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import AgentRichTextEditor, { type AgentRichTextEditorControls } from './agent-rich-text-editor';
+import {
+  emojiSuggestions,
+  filterPullRequestSuggestions,
+  type AgentPullRequestSuggestion,
+} from './agent-composer-suggestion-provider';
 import { AGENT_ATTACHMENT_LIMIT } from './agent-attachments';
 import styles from './agent-composer.module.css';
 
@@ -49,6 +54,7 @@ export default function AgentComposer({
   replyTarget,
   mentionCandidates = [],
   workflowCandidates = [],
+  pullRequestCandidates = [],
   onClearReplyTarget,
   onMention,
   onWorkflowReference,
@@ -71,6 +77,7 @@ export default function AgentComposer({
   replyTarget?: AgentComposerReplyTarget;
   mentionCandidates?: readonly AgentComposerMentionCandidate[];
   workflowCandidates?: readonly AgentComposerWorkflowCandidate[];
+  pullRequestCandidates?: readonly AgentPullRequestSuggestion[];
   onClearReplyTarget?(): void;
   onMention?(candidate: AgentComposerMentionCandidate): void;
   onWorkflowReference?(candidate: AgentComposerWorkflowCandidate): void;
@@ -91,6 +98,15 @@ export default function AgentComposer({
   const [voiceState, setVoiceState] = useState<'idle' | 'recording' | 'transcribing'>('idle');
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
+  const [recentEmojiIds, setRecentEmojiIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem('fabushi.desktop.composer-recent-emoji.v1') || '[]');
+      return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string').slice(0, 24) : [];
+    } catch {
+      return [];
+    }
+  });
   const canSend = hasPayload && ready && !uploading && voiceState === 'idle';
   const atAttachmentLimit = attachments.length >= AGENT_ATTACHMENT_LIMIT;
   const voiceRecorderRef = useRef<MediaRecorder | null>(null);
@@ -111,7 +127,22 @@ export default function AgentComposer({
     : workflowCandidates
       .filter((candidate) => !workflowQuery || `${candidate.name} ${candidate.description ?? ''}`.toLocaleLowerCase().includes(workflowQuery))
       .slice(0, 8), [workflowCandidates, workflowQuery]);
-  const suggestionCount = mentionResults.length || workflowResults.length;
+  const emojiMatch = /(?:^|\s):([a-z0-9_+\-]{2,50})$/i.exec(value);
+  const emojiQuery = emojiMatch?.[1] ?? null;
+  const emojiResults = useMemo(
+    () => emojiQuery == null ? [] : emojiSuggestions(emojiQuery, recentEmojiIds, 12),
+    [emojiQuery, recentEmojiIds],
+  );
+  const pullRequestMatch = /(?:^|\s)#([^#\n]{0,50})$/.exec(value);
+  const pullRequestQuery = pullRequestMatch?.[1] ?? null;
+  const pullRequestResults = useMemo(
+    () => pullRequestQuery == null ? [] : filterPullRequestSuggestions(pullRequestCandidates, pullRequestQuery),
+    [pullRequestCandidates, pullRequestQuery],
+  );
+  const suggestionCount = mentionResults.length
+    || workflowResults.length
+    || emojiResults.length
+    || pullRequestResults.length;
 
   useEffect(() => {
     setMentionIndex((index) => Math.min(index, Math.max(0, suggestionCount - 1)));
@@ -129,6 +160,25 @@ export default function AgentComposer({
     onChange(next);
     onWorkflowReference?.(candidate);
     window.requestAnimationFrame(() => editorControlsRef.current?.focus());
+  };
+
+  const insertEmoji = (candidate: ReturnType<typeof emojiSuggestions>[number]) => {
+    const tokenLength = 1 + (emojiMatch?.[1]?.length ?? 0);
+    editorControlsRef.current?.replaceTokenWithEmoji(tokenLength, candidate.native);
+    setRecentEmojiIds((current) => {
+      const next = [candidate.id, ...current.filter((id) => id !== candidate.id)].slice(0, 24);
+      try {
+        window.localStorage.setItem('fabushi.desktop.composer-recent-emoji.v1', JSON.stringify(next));
+      } catch {
+        // Recency is only a local ranking hint.
+      }
+      return next;
+    });
+  };
+
+  const insertPullRequest = (candidate: AgentPullRequestSuggestion) => {
+    const tokenLength = 1 + (pullRequestMatch?.[1]?.length ?? 0);
+    editorControlsRef.current?.replaceTokenWithPullRequest(tokenLength, candidate);
   };
 
   const stopVoiceTracks = () => {
@@ -228,10 +278,22 @@ export default function AgentComposer({
         insertWorkflow(workflowResults[mentionIndex]!);
         return true;
       }
+      if ((event.key === 'Enter' || event.key === 'Tab') && emojiResults[mentionIndex]) {
+        event.preventDefault();
+        insertEmoji(emojiResults[mentionIndex]!);
+        return true;
+      }
+      if ((event.key === 'Enter' || event.key === 'Tab') && pullRequestResults[mentionIndex]) {
+        event.preventDefault();
+        insertPullRequest(pullRequestResults[mentionIndex]!);
+        return true;
+      }
       if (event.key === 'Escape') {
         event.preventDefault();
         if (mentionResults.length) onChange(value.replace(/(^|\s)@([^@\n]{0,50})$/, '$1'));
-        else onChange(value.replace(/(^|\s)\/([^/\n]{0,50})$/, '$1'));
+        else if (workflowResults.length) onChange(value.replace(/(^|\s)\/([^/\n]{0,50})$/, '$1'));
+        else if (emojiResults.length) onChange(value.replace(/(^|\s):([a-z0-9_+\-]{2,50})$/i, '$1'));
+        else onChange(value.replace(/(^|\s)#([^#\n]{0,50})$/, '$1'));
         return true;
       }
     }
@@ -379,6 +441,30 @@ export default function AgentComposer({
           onClick={() => insertWorkflow(candidate)}
         >
           <span><strong>/{candidate.name}</strong>{candidate.description ? <small>{candidate.description}</small> : null}</span>
+        </button>)}
+      </div> : null}
+      {emojiResults.length ? <div className={styles.mentions} role="listbox" aria-label="Insert emoji">
+        {emojiResults.map((candidate, index) => <button
+          key={candidate.id}
+          type="button"
+          role="option"
+          aria-selected={index === mentionIndex}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => insertEmoji(candidate)}
+        >
+          <span><strong>{candidate.native} :{candidate.shortcodes[0] ?? candidate.id}:</strong><small>{candidate.name}</small></span>
+        </button>)}
+      </div> : null}
+      {pullRequestResults.length ? <div className={styles.mentions} role="listbox" aria-label="Reference a pull request">
+        {pullRequestResults.map((candidate, index) => <button
+          key={candidate.url}
+          type="button"
+          role="option"
+          aria-selected={index === mentionIndex}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => insertPullRequest(candidate)}
+        >
+          <span><strong>#{candidate.prNumber} {candidate.title}</strong>{candidate.repository ? <small>{candidate.repository}</small> : null}</span><small>PR</small>
         </button>)}
       </div> : null}
       {voiceState === 'recording' ? <span className={styles.voiceStatus}>Recording…</span> : voiceError ? <span className={styles.voiceError} title={voiceError}>Voice unavailable</span> : null}
