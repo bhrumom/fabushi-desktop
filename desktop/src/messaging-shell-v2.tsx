@@ -2504,6 +2504,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const currentActor = selfActors.find((actor) => actor.id === selfHosted.actorId);
   const localComputerOnline = agentComputer.online;
   const localComputerStatus = agentComputer.status;
+  const pendingRemoteAuthorization = agentComputer.state?.pendingAuthorization ?? null;
   // Normal Agent timelines render directly from AgentTranscriptStore. The
   // renderer-global messages array is now compatibility-only for Messenger,
   // groups and Mini Apps.
@@ -4513,10 +4514,10 @@ async function saveInvoiceDialog() {
               <span><small>配对码</small><strong>{agentComputer.state.registration.pairingCode}</strong></span>
               <button type="button" onClick={() => agentComputer.refreshPairingCode()}>刷新</button>
             </div> : null}
-            {agentComputer.state?.pendingAuthorization ? <div className={styles.computerPairingCode} data-testid="remote-session-consent">
-              <span><small>远控请求</small><strong>{agentComputer.state.pendingAuthorization.clientLabel || '已配对设备'}</strong></span>
-              <button type="button" onClick={() => agentComputer.approveSession(agentComputer.state.pendingAuthorization!.sessionId)}>允许本次连接</button>
-              <button type="button" className={styles.computerDangerButton} onClick={() => agentComputer.denySession(agentComputer.state.pendingAuthorization!.sessionId)}>拒绝</button>
+            {pendingRemoteAuthorization ? <div className={styles.computerPairingCode} data-testid="remote-session-consent">
+              <span><small>远控请求</small><strong>{pendingRemoteAuthorization.clientLabel || '已配对设备'}</strong></span>
+              <button type="button" onClick={() => agentComputer.approveSession(pendingRemoteAuthorization.sessionId)}>允许本次连接</button>
+              <button type="button" className={styles.computerDangerButton} onClick={() => agentComputer.denySession(pendingRemoteAuthorization.sessionId)}>拒绝</button>
             </div> : null}
             {agentComputer.state?.activeSessionId ? <button type="button" className={styles.computerDangerButton} onClick={() => agentComputer.disconnect()}>断开当前远控</button> : null}
             <div className={styles.computerProfileButtons}>
