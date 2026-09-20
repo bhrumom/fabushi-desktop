@@ -1,8 +1,9 @@
-import { Monitor, Pin, Search, X } from 'lucide-react';
+import { Monitor, Pin, Search, Settings, X } from 'lucide-react';
 import React from 'react';
 import { BotMark, type BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
 import type { ComputerStatus } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { RemoteComputerDesktopState } from '../../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
+import AgentSettingsPanel, { type AgentSettingsProfileUpdate, type AgentSettingsProfileValue } from './agent-settings-panel';
 import styles from './agent-overlays.module.css';
 
 export interface AgentOverlayComputerProps {
@@ -24,6 +25,15 @@ export interface AgentOverlayComputerProps {
   onOpenControlPage(): void;
 }
 
+export interface AgentOverlaySettingsProps {
+  agentId: string;
+  open: boolean;
+  value: AgentSettingsProfileValue;
+  onToggle(): void;
+  onUpdateProfile(profile: AgentSettingsProfileUpdate): Promise<void>;
+  onSetNotifications(enabled: boolean): Promise<void>;
+}
+
 export interface AgentOverlaysProps {
   title: string;
   description: string;
@@ -32,6 +42,7 @@ export interface AgentOverlaysProps {
   pinned: boolean;
   overlay: boolean;
   computer: AgentOverlayComputerProps;
+  settings: AgentOverlaySettingsProps;
   onClose(): void;
   onSearch(): void;
   onTogglePin(): void;
@@ -45,7 +56,7 @@ export interface AgentOverlaysProps {
  * capability while its executor remains the installed Fabushi machine.
  */
 export default function AgentOverlays(props: AgentOverlaysProps) {
-  const { computer } = props;
+  const { computer, settings } = props;
   const pending = computer.state?.pendingAuthorization;
   return <aside className={styles.root} data-testid="agent-overlays" data-overlay={props.overlay || undefined}>
     <header className={styles.header}>
@@ -61,8 +72,16 @@ export default function AgentOverlays(props: AgentOverlaysProps) {
         <button type="button" onClick={props.onSearch}><Search size={17} /><span>Search</span></button>
         <button type="button" data-active={props.pinned || undefined} onClick={props.onTogglePin}><Pin size={17} /><span>{props.pinned ? 'Unpin' : 'Pin'}</span></button>
         <button type="button" data-testid="bot-computer-toggle" data-active={computer.open || undefined} onClick={computer.onToggle}><Monitor size={17} /><span>Computer</span></button>
+        <button type="button" data-testid="agent-settings-toggle" data-active={settings.open || undefined} onClick={settings.onToggle}><Settings size={17} /><span>Settings</span></button>
       </div>
     </section>
+
+    {settings.open ? <AgentSettingsPanel
+      agentId={settings.agentId}
+      value={settings.value}
+      onUpdateProfile={settings.onUpdateProfile}
+      onSetNotifications={settings.onSetNotifications}
+    /> : null}
 
     {computer.open ? <section className={styles.computer} data-testid="bot-computer-panel" data-agent-id={computer.agentId}>
       <header>
