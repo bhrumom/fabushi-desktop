@@ -25,6 +25,12 @@ const violations = forbidden
 if (!/useAgentWorkspaceRuntime\s*\(/.test(shell)) {
   violations.push('Agent workspace runtime facade is not mounted by the desktop Agent shell');
 }
+if (!/useAgentSidebarController\s*\(/.test(shell)) {
+  violations.push('Agent sidebar controller is not mounted by the desktop Agent shell');
+}
+if (/readAgentSidebarSections(?:Durable)?\s*\(|persistAgentSidebarSections\s*\(|setGrokPinnedOrder\s*\(|setGrokSidebarSections\s*\(|setGrokSelectedAgentKeys\s*\(/.test(shell)) {
+  violations.push('Messenger shell recreated Agent sidebar state or persistence ownership');
+}
 if (/new AgentRuntimeCoordinator\s*\(/.test(shell)) {
   violations.push('Messenger shell recreated AgentRuntimeCoordinator ownership');
 }
