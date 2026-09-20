@@ -62,6 +62,12 @@ if (!/useAgentMcpController\s*\(/.test(shell)
   || !/kind:\s*candidate\.kind === ['"]mcp['"] \? ['"]mcp['"] : ['"]agent['"]/.test(shell)) {
   violations.push('MCP reference discovery escaped the Agent-owned Composer/controller boundary');
 }
+if (!/agentNetworkController\.handle\(event\)/.test(shell)
+  || !/groups=\{agentNetworkController\.groups\}/.test(shell)
+  || !/peerMessages=\{agentNetworkController\.peerMessages\}/.test(shell)
+  || !/onSendPeer=\{agentNetworkController\.sendPeer\}/.test(shell)) {
+  violations.push('Agent Network state or direct handoff escaped the Agent-owned controller boundary');
+}
 if (/from\s+['"]\.\.\/grok-shell\//.test(agentComposer)) {
   violations.push('primary Agent Composer implementation still depends on the Grok compatibility shell');
 }
