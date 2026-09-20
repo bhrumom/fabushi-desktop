@@ -892,7 +892,7 @@ export default function DesktopShellV2() {
 function DesktopFastStartBootstrap() {
   return (
     <main
-      className={`${styles.messenger} ${styles.fabushiUnified}`}
+      className={`${styles.messenger} ${styles.fabushiUnified} ${styles.grokParity}`}
       data-testid="desktop-fast-start-bootstrap"
       aria-busy="true"
       aria-label="Fabushi 正在连接"
@@ -4102,11 +4102,8 @@ async function saveInvoiceDialog() {
                 <div><strong>{activePeer.title}</strong><small data-testid="conversation-status">{activeTypingActors.length ? '正在输入…' : `${activePeer.subtitle}${hostReady ? ' · 在线' : ' · 正在连接'}`}</small></div>
               </div>
               <div className={styles.headerActions}>
-                {activePeer.miniAppId ? <button type="button" data-testid="miniapp-bot-open" title={activePeer.miniAppMenuButtonText ?? '打开小程序'} onClick={() => void openMiniApp(activePeer.miniAppId!)}><AppWindow size={18} /></button> : null}
-                <button type="button" title="语音通话" onClick={() => void startCall('voice')}><PhoneCall size={18} /></button>
-                <button type="button" title="视频通话" onClick={() => void startCall('video')}><Video size={18} /></button>
-                {activePeer.source === 'selfhosted' ? <button type="button" title="发送账单" onClick={() => void createInvoiceForActivePeer()}><WalletCards size={18} /></button> : null}
-                <button type="button" title="搜索当前会话" data-active={conversationSearchOpen} onClick={() => {
+                {activePeer.miniAppId ? <button type="button" data-testid="miniapp-bot-open" title={activePeer.miniAppMenuButtonText ?? 'Open app'} onClick={() => void openMiniApp(activePeer.miniAppId!)}><AppWindow size={18} /></button> : null}
+                <button type="button" title="Search conversation" data-active={conversationSearchOpen} onClick={() => {
                   const next = !conversationSearchOpen;
                   setConversationSearchOpen(next);
                   setGlobalSearchOpen(next);
@@ -4114,9 +4111,12 @@ async function saveInvoiceDialog() {
                   setSearch('');
                   window.setTimeout(() => searchInputRef.current?.focus(), 0);
                 }}><Search size={18} /></button>
-                <button type="button" title={activePeer.pinned ? '取消置顶' : '置顶'} onClick={() => void togglePinConversation(activePeer)}><Pin size={18} /></button>
-                <button type="button" title={mutedPeerKeys.has(activePeer.key) ? '开启通知' : '静音'} onClick={() => void toggleMuteConversation(activePeer)}><BellOff size={18} /></button>
-                <button type="button" title="资料" data-testid="conversation-info-toggle" data-active={layoutInfoOpen} onClick={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}><MoreVertical size={18} /></button>
+                {isAgentPeer(activePeer) ? <button type="button" title="Computer" data-active={computerProfileOpen} onClick={() => {
+                  setComputerProfileOpen((value) => !value);
+                  if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
+                }}><Monitor size={18} /></button> : null}
+                <button type="button" title={activePeer.pinned ? 'Unpin' : 'Pin'} onClick={() => void togglePinConversation(activePeer)}><Pin size={18} /></button>
+                <button type="button" title="Agent info" data-testid="conversation-info-toggle" data-active={layoutInfoOpen} onClick={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}><MoreVertical size={18} /></button>
               </div>
             </header>
             {error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
@@ -4218,14 +4218,18 @@ async function saveInvoiceDialog() {
             {scheduledAtMs ? <div className={extra.composerBanner}><span>⏱</span><div><strong>定时发送</strong><span>{new Date(scheduledAtMs).toLocaleString()}</span></div><button type="button" onClick={() => setScheduledAtMs(undefined)}><X size={14} /></button></div> : null}
             {activePeer.miniAppId && composer.trimStart().startsWith('/') && activePeer.miniAppCommands?.length ? <div className={extra.composerBanner} data-testid="miniapp-bot-commands"><AppWindow size={15} /><div><strong>小程序命令</strong><span>{activePeer.miniAppCommands.map((command) => `/${command.name}`).join(' · ')}</span></div>{activePeer.miniAppCommands.slice(0, 4).map((command) => <button key={command.name} type="button" title={command.description} onClick={() => updateComposer(command.usage)}>{`/${command.name}`}</button>)}</div> : null}
             <form className={styles.composer} onSubmit={(event) => void sendMessage(event)}>
-              <div className={extra.attachmentAnchor}>
-                <button type="button" title="附件" onClick={() => setAttachmentMenuOpen((value) => !value)}><Paperclip size={20} /></button>
-                {attachmentMenuOpen ? <AttachmentMenu onMedia={() => mediaInputRef.current?.click()} onFile={() => fileInputRef.current?.click()} onPoll={() => void sendPoll()} onLocation={() => void sendLocation()} onSchedule={() => {
-                  const minutes = Number(window.prompt('多少分钟后发送？', '10'));
-                  if (Number.isFinite(minutes) && minutes > 0) setScheduledAtMs(Date.now() + minutes * 60_000);
-                  setAttachmentMenuOpen(false);
-                }} /> : null}
-              </div>
+              {isAgentPeer(activePeer) ? (
+                <button type="button" title="Attach files" onClick={() => fileInputRef.current?.click()}><Paperclip size={20} /></button>
+              ) : (
+                <div className={extra.attachmentAnchor}>
+                  <button type="button" title="附件" onClick={() => setAttachmentMenuOpen((value) => !value)}><Paperclip size={20} /></button>
+                  {attachmentMenuOpen ? <AttachmentMenu onMedia={() => mediaInputRef.current?.click()} onFile={() => fileInputRef.current?.click()} onPoll={() => void sendPoll()} onLocation={() => void sendLocation()} onSchedule={() => {
+                    const minutes = Number(window.prompt('多少分钟后发送？', '10'));
+                    if (Number.isFinite(minutes) && minutes > 0) setScheduledAtMs(Date.now() + minutes * 60_000);
+                    setAttachmentMenuOpen(false);
+                  }} /> : null}
+                </div>
+              )}
               <input ref={mediaInputRef} type="file" accept="image/*,video/*" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
               <input ref={fileInputRef} type="file" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
               {attachmentProgress ? <span className={extra.uploadProgress}>{attachmentProgress}</span> : null}
@@ -4233,14 +4237,12 @@ async function saveInvoiceDialog() {
                 const submitWithEnter = desktopPreferences.enterToSend && event.key === 'Enter' && !event.shiftKey;
                 const submitWithShortcut = !desktopPreferences.enterToSend && event.key === 'Enter' && (event.metaKey || event.ctrlKey);
                 if (submitWithEnter || submitWithShortcut) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); }
-              }} placeholder="消息" rows={1} />
-              <button type="button" title="表情"><Smile size={20} /></button>
-              <button type="button" data-active={silentSend} title={silentSend ? '关闭静默发送' : '静默发送'} onClick={() => setSilentSend((value) => !value)}><BellOff size={19} /></button>
+              }} placeholder={isAgentPeer(activePeer) ? `Message ${activePeer.title}` : '消息'} rows={1} />
               {composer.trim()
                 ? <button data-testid="messenger-send" className={styles.sendButton} type="submit" disabled={!hostReady || (pendingSend && (!isAgentPeer(activePeer) || Boolean(activePeer.miniAppId)))}><Send size={19} /></button>
                 : activeAgentOperationId && isAgentPeer(activePeer) && !activePeer.miniAppId
-                  ? <button data-testid="messenger-stop" className={styles.sendButton} type="button" title="停止生成" aria-label="停止生成" onClick={() => void stopAgentOperation()}><X size={19} /></button>
-                  : <button type="button" title="语音消息"><Mic size={20} /></button>}
+                  ? <button data-testid="messenger-stop" className={styles.sendButton} type="button" title="Stop" aria-label="Stop" onClick={() => void stopAgentOperation()}><X size={19} /></button>
+                  : null}
             </form>
           </>
         ) : (
