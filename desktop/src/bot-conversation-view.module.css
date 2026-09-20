@@ -1,8 +1,9 @@
 .root {
   min-height: 0;
-  height: 100%;
+  height: auto;
   display: flex;
-  flex: 1;
+  flex: 1 1 0;
+  overflow: hidden;
   background:
     radial-gradient(circle at 50% -16%, rgba(118, 93, 185, 0.13), transparent 32%),
     #17161b;
@@ -11,9 +12,12 @@
 .messageArea {
   position: relative;
   min-height: 0;
+  flex: 1 1 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   width: 100%;
-  padding: 30px clamp(20px, 6vw, 96px) 142px;
+  box-sizing: border-box;
+  padding: 30px clamp(20px, 6vw, 96px) 28px;
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
 }
