@@ -127,6 +127,7 @@ import { useAgentNetworkController } from './agent-workspace/use-agent-network-c
 import { useAgentCommandPaletteController } from './agent-workspace/use-agent-command-palette-controller';
 import { useAgentWorkflowController } from './agent-workspace/use-agent-workflow-controller';
 import { useAgentStoreSyncController } from './agent-workspace/use-agent-store-sync-controller';
+import { useAgentDirectoryController } from './agent-workspace/use-agent-directory-controller';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -980,7 +981,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const newAgentRequestPendingRef = useRef(false);
   const [pendingOpenAgentId, setPendingOpenAgentId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>(startupProjection?.legacyConversations ?? []);
-  const [bots, setBots] = useState<BotSummary[]>(startupProjection?.legacyBots ?? []);
   const [groups, setGroups] = useState<GroupSummary[]>(startupProjection?.legacyGroups ?? []);
   const [selfActors, setSelfActors] = useState<MessagingActor[]>(startupProjection?.selfActors ?? []);
   const [selfConversations, setSelfConversations] = useState<MessagingConversation[]>(startupProjection?.selfConversations ?? []);
@@ -1072,6 +1072,32 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     remove: (agentId, objectPath) => removeAgentCloudObject(agentId, objectPath),
     onError: (_agentId, message) => setError(message),
   });
+  const agentDirectoryController = useAgentDirectoryController(
+    agentCoordinatorClient,
+    startupProjection?.legacyBots ?? [],
+    {
+      onListed: (agents) => {
+        initialLegacyHydrationMaskRef.current |= 0b010;
+        setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
+        for (const agent of agents) {
+          void mirrorBotAgentCloud(agent).catch(() => {});
+        }
+      },
+      onChanged: (action, agent) => {
+        if (action === 'created' && newAgentRequestPendingRef.current) {
+          newAgentRequestPendingRef.current = false;
+          setPendingOpenAgentId(agent.agentId ?? agent.id);
+        }
+        if (action === 'deleted') {
+          void invokeNativeDesktop('removeBotFromAccount', { botId: agent.id }).catch(() => {});
+        } else {
+          void mirrorBotAgentCloud(agent).catch(() => {});
+        }
+      },
+      onError: setError,
+    },
+  );
+  const bots = agentDirectoryController.agents;
   const [mutedPeerKeys, setMutedPeerKeys] = useState<Set<string>>(() => new Set());
   const [pinnedPeerKeys, setPinnedPeerKeys] = useState<Set<string>>(() => new Set());
   const [archivedPeerKeys, setArchivedPeerKeys] = useState<Set<string>>(() => new Set());
@@ -1655,7 +1681,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   function refreshLegacy(mask = 0) {
     const requests: Array<Promise<unknown>> = [];
     if ((mask & 0b001) === 0) requests.push(execute({ type: 'conversation.list', requestId: nextRequestId('conversation-list') }));
-    if ((mask & 0b010) === 0) requests.push(execute({ type: 'bot.list', requestId: nextRequestId('bot-list') }));
+    if ((mask & 0b010) === 0) requests.push(agentDirectoryController.list());
     if ((mask & 0b100) === 0) requests.push(execute({ type: 'group.list', requestId: nextRequestId('group-list') }));
     void Promise.all(requests).catch(() => {});
   }
@@ -2024,6 +2050,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   function handleRuntimeEvent(event: RuntimeEvent) {
     if (handleSelfHostedEvent(event)) return;
+    if (agentDirectoryController.handle(event)) return;
     if (agentStoreSyncController.handle(event)) return;
     if (agentWorkflowController.handle(event)) return;
     // Normal Agent chat/operation events are owned by AgentRuntimeCoordinator.
@@ -2089,35 +2116,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       }
-      case 'bot.listed':
-        initialLegacyHydrationMaskRef.current |= 0b010;
-        setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
-        setBots(event.bots);
-        for (const bot of event.bots) {
-          void mirrorBotAgentCloud(bot).catch(() => {});
-        }
-        break;
-      case 'bot.changed':
-        setBots((current) => event.action === 'deleted'
-          ? current.filter((bot) => bot.id !== event.bot.id)
-          : upsertById(current, event.bot));
-        if (event.action === 'created' && newAgentRequestPendingRef.current) {
-          newAgentRequestPendingRef.current = false;
-          setPendingOpenAgentId(event.bot.agentId ?? event.bot.id);
-        }
-        // Local Host profile remains usable offline, while the account service
-        // mirrors the complete Bot profile and its explicit Agent binding.
-        // Deleting a Bot membership intentionally leaves the Agent store intact,
-        // matching the Grok-style separation between surface and Agent state.
-        if (event.action === 'deleted') {
-          void invokeNativeDesktop('removeBotFromAccount', { botId: event.bot.id }).catch(() => {});
-        } else {
-          void mirrorBotAgentCloud(event.bot).catch(() => {
-            // Local Host state stays authoritative while account sync is unavailable.
-            // A later account reconciliation retries the durable cloud projection.
-          });
-        }
-        break;
       case 'group.listed':
         initialLegacyHydrationMaskRef.current |= 0b100;
         setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
@@ -2571,8 +2569,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   async function updateActiveAgentProfile(profile: { name: string; title?: string; description: string }): Promise<void> {
     if (!activeAgentBot) throw new Error('No active Agent profile.');
-    await agentCoordinatorClient.updateAgent(
-      nextRequestId('agent-settings-profile'),
+    await agentDirectoryController.update(
       activeAgentBot.id,
       {
         name: profile.name,
@@ -2584,8 +2581,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   async function setActiveAgentNotifications(enabled: boolean): Promise<void> {
     if (!activeAgentBot) throw new Error('No active Agent profile.');
-    await agentCoordinatorClient.updateAgent(
-      nextRequestId('agent-settings-notifications'),
+    await agentDirectoryController.update(
       activeAgentBot.id,
       {
         notifyOnUpdates: enabled,
@@ -2598,10 +2594,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setSection('bots');
     setSearch('');
     newAgentRequestPendingRef.current = true;
-    const accepted = await agentCoordinatorClient.createAgent(
-      nextRequestId('agent-new'),
-      { name: 'New chat', description: '' },
-    );
+    let accepted: unknown;
+    try {
+      accepted = await agentDirectoryController.create({ name: 'New chat', description: '' });
+    } catch {
+      newAgentRequestPendingRef.current = false;
+      return;
+    }
     if (!accepted) newAgentRequestPendingRef.current = false;
   }
 
@@ -2620,11 +2619,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     const name = window.prompt('Rename Agent', peer.title)?.trim();
     if (!name || name === peer.title) return;
-    await agentCoordinatorClient.updateAgent(
-      nextRequestId('agent-rename'),
-      peer.actorId ?? peer.id,
-      { name },
-    );
+    try {
+      await agentDirectoryController.update(peer.actorId ?? peer.id, { name });
+    } catch {
+      return;
+    }
   }
 
   async function duplicateAgent(item: AgentSidebarItem): Promise<void> {
@@ -2636,10 +2635,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       setError('Only locally managed Agents can be duplicated from this shell.');
       return;
     }
-    await agentCoordinatorClient.duplicateAgent(
-      nextRequestId('agent-duplicate'),
-      botId,
-    );
+    try {
+      await agentDirectoryController.duplicate(botId);
+    } catch {
+      return;
+    }
   }
 
   async function deleteAgent(item: AgentSidebarItem, confirmDelete = true): Promise<void> {
@@ -2654,10 +2654,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (confirmDelete && !window.confirm(`Delete “${peer.title}”? The Agent store is retained for recovery.`)) return;
     agentWorkspaceController.clearPeer(peer.key);
     notifyAgentWorkspaceState();
-    await agentCoordinatorClient.deleteAgent(
-      nextRequestId('agent-delete'),
-      botId,
-    );
+    try {
+      await agentDirectoryController.delete(botId);
+    } catch {
+      return;
+    }
     if (peer.key === activePeerKeyRef.current) {
       activePeerKeyRef.current = null;
       setActivePeerKey(null);
@@ -2674,11 +2675,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       setError('Only locally managed Agents can be hidden from this shell.');
       return;
     }
-    await agentCoordinatorClient.setAgentHidden(
-      nextRequestId('agent-hide'),
-      botId,
-      true,
-    );
+    try {
+      await agentDirectoryController.setHidden(botId, true);
+    } catch {
+      return;
+    }
     if (peer.key === activePeerKeyRef.current) {
       setActivePeerKey(null);
       setMessages([]);
