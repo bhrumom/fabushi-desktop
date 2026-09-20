@@ -122,6 +122,7 @@ import { useAgentSidebarController } from './agent-workspace/use-agent-sidebar-c
 import { useAgentNetworkController } from './agent-workspace/use-agent-network-controller';
 import { useAgentCommandPaletteController } from './agent-workspace/use-agent-command-palette-controller';
 import { useAgentWorkflowController } from './agent-workspace/use-agent-workflow-controller';
+import { useAgentMcpController } from './agent-workspace/use-agent-mcp-controller';
 import { useAgentStoreSyncController } from './agent-workspace/use-agent-store-sync-controller';
 import { useAgentDirectoryController } from './agent-workspace/use-agent-directory-controller';
 import { useAgentSettingsController } from './agent-workspace/use-agent-settings-controller';
@@ -1061,6 +1062,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     },
     onError: (_agentId, message) => setError(message),
   });
+  const agentMcpController = useAgentMcpController(agentCoordinatorClient, {
+    onError: setError,
+  });
   const agentStoreSyncController = useAgentStoreSyncController(agentCoordinatorClient, {
     mirror: (agentId, objectPath, value) => mirrorAgentCloudSnapshot(agentId, objectPath, value),
     remove: (agentId, objectPath) => removeAgentCloudObject(agentId, objectPath),
@@ -1444,6 +1448,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setHostReady(state.phase === 'ready');
         if (state.phase !== 'ready' || !state.recovered) return;
         void execute({ type: 'settings.get', requestId: nextRequestId('settings-recover') }).catch(() => {});
+        void agentMcpController.list().catch(() => {});
         refreshLegacy();
         const activeKey = activePeerKeyRef.current;
         const active = peersRef.current.find((peer) => peer.key === activeKey);
@@ -1496,6 +1501,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           })
           .catch(() => {});
         void execute({ type: 'settings.get', requestId: nextRequestId('settings-get') });
+        void agentMcpController.list().catch(() => {});
         refreshLegacy();
         if (startupLegacyConversation) {
           void execute({
@@ -2005,6 +2011,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (agentDirectoryController.handle(event)) return;
     if (agentStoreSyncController.handle(event)) return;
     if (agentWorkflowController.handle(event)) return;
+    if (agentMcpController.handle(event)) return;
     // Normal Agent chat/operation events are owned by AgentRuntimeCoordinator.
     // The switch below remains only as a compatibility fallback for legacy
     // Messenger/Host event shapes that cannot be attributed to an Agent.
@@ -4183,9 +4190,22 @@ async function saveInvoiceDialog() {
                 composerBusy={Boolean(activeAgentOperationId)}
                 composerUploading={agentWorkspaceController.isUploading(activePeer.key)}
                 composerAttachments={agentWorkspaceController.attachmentsForPeer(activePeer.key)}
-                composerMentionCandidates={agentItems
-                  .filter((item) => item.key !== activePeer.key)
-                  .map((item) => ({ id: item.agentId || item.key, name: item.name, description: item.description }))}
+                composerMentionCandidates={[
+                  ...agentItems
+                    .filter((item) => item.key !== activePeer.key)
+                    .map((item) => ({
+                      id: item.agentId || item.key,
+                      name: item.name,
+                      description: item.description,
+                      kind: 'agent' as const,
+                    })),
+                  ...agentMcpController.references.map((reference) => ({
+                    id: reference.id,
+                    name: reference.name,
+                    description: reference.description,
+                    kind: 'mcp' as const,
+                  })),
+                ]}
                 composerWorkflowCandidates={(agentWorkflowController.workflowsByAgentId[activePeer.agentId ?? activePeer.actorId ?? activePeer.id] ?? [])
                   .filter((workflow) => workflow.isEnabledForAgent)
                   .map((workflow) => ({ id: workflow.id, name: workflow.name, description: workflow.description }))}
@@ -4193,7 +4213,7 @@ async function saveInvoiceDialog() {
                 onComposerChange={(value, richText) => updateAgentComposer(activePeer.key, value, richText)}
                 onComposerMention={(candidate) => {
                   agentWorkspaceController.upsertReference(activePeer.key, {
-                    kind: 'agent',
+                    kind: candidate.kind === 'mcp' ? 'mcp' : 'agent',
                     id: candidate.id,
                     label: candidate.name,
                   });
