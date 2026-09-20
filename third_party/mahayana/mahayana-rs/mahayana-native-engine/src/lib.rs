@@ -157,6 +157,12 @@ struct NativeSession {
     permissions: PermissionLedger,
     #[serde(default)]
     approvals: ApprovalLedger,
+    /// Fabu-style Agent-owned durable state. Memory/workflows belong to the
+    /// conversation Agent session, never to the process-global engine.
+    #[serde(default)]
+    memory: MemoryStore,
+    #[serde(default)]
+    workflows: HashMap<String, Workflow>,
     #[serde(default)]
     loop_state: LoopState,
     #[serde(default)]
@@ -191,8 +197,6 @@ pub struct NativeEngine {
     sessions: Mutex<HashMap<String, Arc<AsyncMutex<NativeSession>>>>,
     active_operations: Mutex<HashMap<String, Arc<OperationControl>>>,
     approvals: Mutex<HashMap<String, ApprovalWaiter>>,
-    memory: Mutex<MemoryStore>,
-    workflows: Mutex<HashMap<String, Workflow>>,
     subagents: Mutex<SubagentScheduler>,
     hooks: Mutex<HookRegistry>,
     telemetry: Arc<RuntimeTelemetry>,
@@ -222,8 +226,6 @@ impl NativeEngine {
             sessions: Mutex::new(HashMap::new()),
             active_operations: Mutex::new(HashMap::new()),
             approvals: Mutex::new(HashMap::new()),
-            memory: Mutex::new(MemoryStore::default()),
-            workflows: Mutex::new(HashMap::new()),
             subagents: Mutex::new(
                 SubagentScheduler::new(4)
                     .map_err(|error| KernelError::Backend(error.to_string()))?,
@@ -268,15 +270,6 @@ impl NativeEngine {
         self.persisted_sessions
             .lock()
             .map_err(|_| KernelError::Backend("persisted session registry poisoned".into()))?
-            .clear();
-        *self
-            .memory
-            .lock()
-            .map_err(|_| KernelError::Backend("memory store poisoned".into()))? =
-            MemoryStore::default();
-        self.workflows
-            .lock()
-            .map_err(|_| KernelError::Backend("workflow store poisoned".into()))?
             .clear();
         *self
             .subagents
@@ -931,10 +924,8 @@ impl NativeEngine {
                         .filter_map(Value::as_str)
                         .map(str::to_owned)
                         .collect::<Vec<_>>();
-                    let record = self
+                    let record = session
                         .memory
-                        .lock()
-                        .map_err(|_| KernelError::Backend("memory store poisoned".into()))?
                         .upsert(namespace, key, value, tags, None)
                         .map_err(|error| KernelError::Backend(error.to_string()))?;
                     serde_json::to_value(record)
@@ -943,11 +934,7 @@ impl NativeEngine {
                 "memory_get" => {
                     let namespace = string_arg(&call.arguments, "namespace")?;
                     let key = string_arg(&call.arguments, "key")?;
-                    let record = self
-                        .memory
-                        .lock()
-                        .map_err(|_| KernelError::Backend("memory store poisoned".into()))?
-                        .get(namespace, key);
+                    let record = session.memory.get(namespace, key);
                     Ok(json!({"record": record}))
                 }
                 "memory_search" => {
@@ -962,11 +949,7 @@ impl NativeEngine {
                         .filter_map(Value::as_str)
                         .map(str::to_owned)
                         .collect::<Vec<_>>();
-                    let records = self
-                        .memory
-                        .lock()
-                        .map_err(|_| KernelError::Backend("memory store poisoned".into()))?
-                        .search(namespace, query, &tags, 50);
+                    let records = session.memory.search(namespace, query, &tags, 50);
                     Ok(json!({"records": records}))
                 }
                 "workflow_create" => {
@@ -996,19 +979,13 @@ impl NativeEngine {
                     let id = workflow.id.clone();
                     let snapshot = serde_json::to_value(&workflow)
                         .map_err(|error| KernelError::Backend(error.to_string()))?;
-                    self.workflows
-                        .lock()
-                        .map_err(|_| KernelError::Backend("workflow store poisoned".into()))?
-                        .insert(id.clone(), workflow);
+                    session.workflows.insert(id.clone(), workflow);
                     Ok(json!({"workflow_id": id, "workflow": snapshot}))
                 }
                 "workflow_status" => {
                     let id = string_arg(&call.arguments, "workflow_id")?;
-                    let workflows = self
+                    let workflow = session
                         .workflows
-                        .lock()
-                        .map_err(|_| KernelError::Backend("workflow store poisoned".into()))?;
-                    let workflow = workflows
                         .get(id)
                         .ok_or_else(|| KernelError::Backend(format!("workflow not found: {id}")))?;
                     serde_json::to_value(workflow)
@@ -1506,6 +1483,8 @@ impl EngineBackend for NativeEngine {
                     active_prompt: None,
                     permissions: PermissionLedger::default(),
                     approvals: ApprovalLedger::default(),
+                    memory: MemoryStore::default(),
+                    workflows: HashMap::new(),
                     loop_state: LoopState::default(),
                     attempts: Vec::new(),
                     updated_at_ms: request
@@ -1627,17 +1606,9 @@ impl EngineBackend for NativeEngine {
         let session = session.lock().await.clone();
         let updated_at_ms = session.updated_at_ms;
         let state = NativeSnapshotState {
+            memory: session.memory.clone(),
+            workflows: session.workflows.clone(),
             session,
-            memory: self
-                .memory
-                .lock()
-                .map_err(|_| KernelError::Backend("memory store poisoned".into()))?
-                .clone(),
-            workflows: self
-                .workflows
-                .lock()
-                .map_err(|_| KernelError::Backend("workflow store poisoned".into()))?
-                .clone(),
             subagents: self
                 .subagents
                 .lock()
@@ -1668,16 +1639,12 @@ impl EngineBackend for NativeEngine {
                 snapshot.backend_id
             )));
         }
-        let state: NativeSnapshotState = serde_json::from_value(snapshot.state)
+        let mut state: NativeSnapshotState = serde_json::from_value(snapshot.state)
             .map_err(|error| KernelError::Backend(format!("invalid native snapshot: {error}")))?;
-        *self
-            .memory
-            .lock()
-            .map_err(|_| KernelError::Backend("memory store poisoned".into()))? = state.memory;
-        *self
-            .workflows
-            .lock()
-            .map_err(|_| KernelError::Backend("workflow store poisoned".into()))? = state.workflows;
+        // Outer fields keep backward compatibility with 1.2.73 snapshots;
+        // live ownership is now the Agent session itself.
+        state.session.memory = state.memory.clone();
+        state.session.workflows = state.workflows.clone();
         *self
             .subagents
             .lock()
