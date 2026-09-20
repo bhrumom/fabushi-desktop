@@ -1,0 +1,245 @@
+import { Bot, Megaphone, Network, Plus, Trash2, Users, X } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { GroupSummary } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { GrokAgentSidebarItem } from '../grok-runtime/agent-model';
+import styles from './agent-network.module.css';
+
+export interface AgentNetworkProps {
+  open: boolean;
+  agents: readonly GrokAgentSidebarItem[];
+  groups: readonly GroupSummary[];
+  activeKey: string | null;
+  broadcastMode?: boolean;
+  onClose(): void;
+  onOpenAgent(agent: GrokAgentSidebarItem): void;
+  onRefreshGroups(): Promise<void>;
+  onCreateGroup(name: string, memberAgentIds: readonly string[]): Promise<void>;
+  onUpdateGroup(id: string, patch: { name?: string; memberAgentIds?: readonly string[] }): Promise<void>;
+  onDeleteGroup(id: string): Promise<void>;
+  onSendGroup(id: string, message: string): Promise<void>;
+  onBroadcast(message: string, targetAgentIds?: readonly string[]): Promise<void>;
+}
+
+function statusLabel(agent: GrokAgentSidebarItem): string {
+  if (agent.waitingReason?.trim()) return `Waiting for you · ${agent.waitingReason.trim()}`;
+  if (agent.busy) return 'Working';
+  if (agent.unread > 0) return 'Unread activity';
+  return agent.lastMessage?.trim() || agent.description || 'Agent';
+}
+
+/**
+ * Agent collaboration surface backed by Mahayana group.* / agent.broadcast.
+ *
+ * Runtime groups are never projected as Messenger peers here. A group is an
+ * Agent-domain object with stable member Agent ids, while each member still
+ * owns its own conversation, draft, operation and Computer context.
+ */
+export default function AgentNetwork({
+  open,
+  agents,
+  groups,
+  activeKey,
+  broadcastMode = false,
+  onClose,
+  onOpenAgent,
+  onRefreshGroups,
+  onCreateGroup,
+  onUpdateGroup,
+  onDeleteGroup,
+  onSendGroup,
+  onBroadcast,
+}: AgentNetworkProps) {
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [groupBusy, setGroupBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const directAgents = useMemo(
+    () => agents.filter((agent) => !agent.isGroup && !agent.hidden),
+    [agents],
+  );
+  const agentById = useMemo(
+    () => new Map(directAgents.map((agent) => [agent.agentId, agent] as const)),
+    [directAgents],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    setError(null);
+    void onRefreshGroups().catch((cause) => setError(cause instanceof Error ? cause.message : String(cause)));
+    if (!broadcastMode) {
+      setSelected(new Set());
+      setSelectedGroupId(null);
+    }
+  }, [broadcastMode, onRefreshGroups, open]);
+
+  if (!open) return null;
+
+  const selectedAgentIds = directAgents
+    .filter((agent) => selected.has(agent.key))
+    .map((agent) => agent.agentId);
+  const selectedGroup = selectedGroupId ? groups.find((group) => group.id === selectedGroupId) ?? null : null;
+
+  const chooseGroup = (group: GroupSummary) => {
+    const keys = directAgents
+      .filter((agent) => group.memberIds.includes(agent.agentId))
+      .map((agent) => agent.key);
+    setSelected(new Set(keys));
+    setSelectedGroupId(group.id);
+  };
+
+  const toggleAgent = (agent: GrokAgentSidebarItem) => {
+    setSelectedGroupId(null);
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(agent.key)) next.delete(agent.key);
+      else next.add(agent.key);
+      return next;
+    });
+  };
+
+  const createGroup = async () => {
+    if (selectedAgentIds.length < 2 || groupBusy) return;
+    const suggested = selectedAgentIds.map((id) => agentById.get(id)?.name).filter(Boolean).slice(0, 3).join(' + ');
+    const name = window.prompt('Group name', suggested || 'Agent group')?.trim();
+    if (!name) return;
+    setGroupBusy(true);
+    setError(null);
+    try {
+      await onCreateGroup(name, selectedAgentIds);
+      await onRefreshGroups();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setGroupBusy(false);
+    }
+  };
+
+  const renameGroup = async (group: GroupSummary) => {
+    if (groupBusy) return;
+    const name = window.prompt('Rename Agent group', group.name)?.trim();
+    if (!name || name === group.name) return;
+    setGroupBusy(true);
+    setError(null);
+    try {
+      await onUpdateGroup(group.id, { name });
+      await onRefreshGroups();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setGroupBusy(false);
+    }
+  };
+
+  const deleteGroup = async (group: GroupSummary) => {
+    if (groupBusy || !window.confirm(`Delete Agent group “${group.name}”? Agents and their histories will not be deleted.`)) return;
+    setGroupBusy(true);
+    setError(null);
+    try {
+      await onDeleteGroup(group.id);
+      if (selectedGroupId === group.id) {
+        setSelectedGroupId(null);
+        setSelected(new Set());
+      }
+      await onRefreshGroups();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setGroupBusy(false);
+    }
+  };
+
+  const submit = async () => {
+    const trimmed = message.trim();
+    if (!trimmed || sending) return;
+    setSending(true);
+    setError(null);
+    try {
+      if (selectedGroup) await onSendGroup(selectedGroup.id, trimmed);
+      else await onBroadcast(trimmed, selectedAgentIds.length ? selectedAgentIds : undefined);
+      setMessage('');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return <section className={styles.root} data-testid="grok-agent-network" aria-label="Agent network">
+    <header className={styles.header}>
+      <div>
+        <Network size={18} />
+        <span><strong>Agent Network</strong><small>{directAgents.length} agents · {groups.length} groups</small></span>
+      </div>
+      <button type="button" onClick={onClose} aria-label="Close Agent network"><X size={17} /></button>
+    </header>
+
+    <div className={styles.body}>
+      <div className={styles.graph}>
+        <div className={styles.sectionHeading}><Bot size={15} /><span>Agents</span></div>
+        <div className={styles.nodes}>
+          {directAgents.map((agent) => <article
+            className={styles.node}
+            data-active={agent.key === activeKey || undefined}
+            data-busy={agent.busy || undefined}
+            data-waiting={Boolean(agent.waitingReason) || undefined}
+            key={agent.key}
+          >
+            <button type="button" className={styles.openNode} onClick={() => onOpenAgent(agent)}>
+              <span className={styles.nodeMark}><Bot size={17} /></span>
+              <span><strong>{agent.name}</strong><small>{statusLabel(agent)}</small></span>
+            </button>
+            <label className={styles.select}>
+              <input type="checkbox" checked={selected.has(agent.key)} onChange={() => toggleAgent(agent)} />
+              <span>Broadcast</span>
+            </label>
+          </article>)}
+          {!directAgents.length ? <div className={styles.empty}>Create an Agent to build your network.</div> : null}
+        </div>
+
+        <div className={styles.sectionHeading}>
+          <Users size={15} /><span>Groups</span>
+          <button type="button" className={styles.sectionAction} disabled={selectedAgentIds.length < 2 || groupBusy} onClick={() => void createGroup()}>
+            <Plus size={13} />Create from selected
+          </button>
+        </div>
+        <div className={styles.nodes}>
+          {groups.map((group) => {
+            const memberNames = group.memberIds.map((id) => agentById.get(id)?.name ?? id).join(', ');
+            return <article className={styles.node} data-active={selectedGroupId === group.id || undefined} key={group.id}>
+              <button type="button" className={styles.openNode} onClick={() => chooseGroup(group)}>
+                <span className={styles.nodeMark}><Users size={17} /></span>
+                <span><strong>{group.name}</strong><small>{group.memberIds.length} agents{memberNames ? ` · ${memberNames}` : ''}</small></span>
+              </button>
+              <div className={styles.groupActions}>
+                <button type="button" onClick={() => void renameGroup(group)}>Rename</button>
+                <button type="button" aria-label={`Delete ${group.name}`} onClick={() => void deleteGroup(group)}><Trash2 size={13} /></button>
+              </div>
+            </article>;
+          })}
+          {!groups.length ? <div className={styles.empty}>Select at least two Agents to create a runtime Agent group.</div> : null}
+        </div>
+      </div>
+
+      <aside className={styles.broadcast}>
+        <div className={styles.broadcastTitle}><Megaphone size={16} /><strong>{selectedGroup ? selectedGroup.name : 'Broadcast'}</strong></div>
+        <p>{selectedGroup
+          ? `Send one group message through Mahayana to ${selectedGroup.memberIds.length} member Agents.`
+          : `Send one owner message to ${selectedAgentIds.length ? `${selectedAgentIds.length} selected Agent${selectedAgentIds.length === 1 ? '' : 's'}` : 'all Agents'}. Each Agent receives it as its own asynchronous turn.`}</p>
+        <textarea
+          autoFocus={broadcastMode}
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          placeholder="Tell your agents what changed or what to do next…"
+          rows={7}
+        />
+        {error ? <div className={styles.error} role="alert">{error}</div> : null}
+        <button type="button" className={styles.send} disabled={!message.trim() || sending || directAgents.length === 0} onClick={() => void submit()}>
+          <Megaphone size={15} />{sending ? 'Sending…' : selectedGroup ? 'Send to group' : selectedAgentIds.length ? 'Send to selected' : 'Broadcast to all'}
+        </button>
+      </aside>
+    </div>
+  </section>;
+}
