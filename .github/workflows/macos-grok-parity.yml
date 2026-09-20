@@ -97,6 +97,27 @@ jobs:
           APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
         run: npx electron-builder --mac dmg zip --publish never
 
+      - name: Verify packaged Electron runtime modules are complete
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="$(find release -type d -name '*.app' -print -quit)"
+          test -n "$APP"
+          ASAR="$APP/Contents/Resources/app.asar"
+          test -f "$ASAR"
+          ASAR_CLI="$(find node_modules/@electron/asar -type f \( -name 'asar.js' -o -name 'cli.js' \) -print -quit)"
+          test -n "$ASAR_CLI"
+          node "$ASAR_CLI" list "$ASAR" | sort > "$RUNNER_TEMP/asar-entries.txt"
+          find electron -type f -name '*.cjs' -print | sed 's#^#/#' | sort > "$RUNNER_TEMP/source-electron-cjs.txt"
+          comm -23 "$RUNNER_TEMP/source-electron-cjs.txt" "$RUNNER_TEMP/asar-entries.txt" > "$RUNNER_TEMP/missing-electron-cjs.txt"
+          if [ -s "$RUNNER_TEMP/missing-electron-cjs.txt" ]; then
+            echo "::error::Packaged app.asar is missing Electron runtime modules:"
+            cat "$RUNNER_TEMP/missing-electron-cjs.txt"
+            exit 1
+          fi
+          grep -Fx '/electron/grok-conversation-outline.cjs' "$RUNNER_TEMP/asar-entries.txt"
+          echo "All Electron .cjs runtime modules are present in app.asar."
+
       - name: Notarize and staple macOS disk image
         shell: bash
         env:
