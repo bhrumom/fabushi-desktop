@@ -2808,50 +2808,41 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   async function refreshAgentGroups(): Promise<void> {
-    await execute({
-      type: 'group.list',
-      requestId: nextRequestId('agent-network-group-list'),
-    });
+    await agentCoordinatorClient.listGroups(nextRequestId('agent-network-group-list'));
   }
 
   async function createAgentGroup(name: string, memberAgentIds: readonly string[]): Promise<void> {
-    await execute({
-      type: 'group.create',
-      requestId: nextRequestId('agent-network-group-create'),
+    await agentCoordinatorClient.createGroup(
+      nextRequestId('agent-network-group-create'),
       name,
-      description: '',
-      memberIds: [...memberAgentIds],
-    });
+      memberAgentIds,
+    );
   }
 
   async function updateAgentGroup(
     id: string,
     patch: { name?: string; memberAgentIds?: readonly string[] },
   ): Promise<void> {
-    await execute({
-      type: 'group.update',
-      requestId: nextRequestId('agent-network-group-update'),
+    await agentCoordinatorClient.updateGroup(
+      nextRequestId('agent-network-group-update'),
       id,
-      ...(patch.name !== undefined ? { name: patch.name } : {}),
-      ...(patch.memberAgentIds !== undefined ? { memberIds: [...patch.memberAgentIds] } : {}),
-    });
+      patch,
+    );
   }
 
   async function deleteAgentGroup(id: string): Promise<void> {
-    await execute({
-      type: 'group.delete',
-      requestId: nextRequestId('agent-network-group-delete'),
+    await agentCoordinatorClient.deleteGroup(
+      nextRequestId('agent-network-group-delete'),
       id,
-    });
+    );
   }
 
   async function sendAgentGroup(id: string, message: string): Promise<void> {
-    await execute({
-      type: 'group.send',
-      requestId: nextRequestId('agent-network-group-send'),
+    await agentCoordinatorClient.sendGroup(
+      nextRequestId('agent-network-group-send'),
       id,
-      text: message,
-    });
+      message,
+    );
   }
 
   async function broadcastGrokAgents(message: string, targetAgentIds?: readonly string[]): Promise<void> {
