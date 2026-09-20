@@ -28,10 +28,10 @@ The parity source is the accessible Fabu reconstruction:
 
 | Area | Fabu/Grok behavior | Fabushi legacy behavior | Refactor state |
 | --- | --- | --- | --- |
-| Product shell | Agent-first sidebar + transcript + composer; secondary capabilities live behind overlays/menus | Telegram-like sections for Chats, Contacts, Bots, Groups, Channels, Calls, Saved, Payments and Mini Apps | IN PROGRESS: Agent-first sidebar, dark shell, simplified Agent header/composer now mounted as primary UI |
+| Product shell | Agent-first sidebar + transcript + composer; secondary capabilities live behind overlays/menus | Telegram-like sections for Chats, Contacts, Bots, Groups, Channels, Calls, Saved, Payments and Mini Apps | IN PROGRESS: normal Agents now mount `AgentWorkspace -> AgentTranscript -> GrokAgentComposer`; Messenger remains only as compatibility routing for non-Agent/Mini App surfaces |
 | New chat | Creates a new Agent and opens it immediately | New button primarily creates groups/channels | IMPLEMENTED: visible New button issues `bot.create`, then opens the created Agent |
 | Agent identity | Agent is the runtime/state owner; presentation identity is separate | Bot/conversation IDs were frequently reused as runtime identity | IMPLEMENTED: explicit Bot -> `agentId` mapping and runtime-ID routing |
-| Sidebar state | Pinned/unpinned Agents, Working, unread/attention, hidden Agents, collapse, rename/duplicate/delete | Generic peer list and messenger status | IN PROGRESS: Working/unread/collapse/pin/hide/rename/duplicate/delete implemented; drag reorder/sections remain |
+| Sidebar state | Pinned/unpinned Agents, Working, unread/attention, hidden Agents, collapse, rename/duplicate/delete | Generic peer list and messenger status | IN PROGRESS: pinned drag reorder, Working/unread/collapse/pin/hide/rename/duplicate/delete plus draft/waiting/current-activity projection implemented; custom sections/multi-select batch move remain |
 | Parallel Agents | One Agent may work while another Agent is opened or receives work | One renderer-global `agentOperationId` / pending request blocked unrelated Agents | IMPLEMENTED: `AgentOperationRegistry` owns request/operation state per Agent peer |
 | Send lifecycle | pending/queued/failed/sent/cancelled is transport state; thinking/running is separate | UI pending state and runtime operation state were partially coupled | IMPLEMENTED: Fabu-style submission queue plus per-Agent runtime ownership |
 | Agent files | each Agent owns `profile.json`, `settings.json`, memory, automations, workflow enablement | mixed global/profile JSON and runtime-specific state | IMPLEMENTED for profile/settings, memory/workflows, per-Agent automation folders and clone semantics |
@@ -40,12 +40,29 @@ The parity source is the accessible Fabu reconstruction:
 | Inference session | independent session per Agent conversation | historically provider-global or active-chat-oriented state | IMPLEMENTED: session ID is conversation scoped; session snapshot path is Agent scoped |
 | Account switching | durable Agent state survives account/session switching | reset path could destroy local transcript/session state | IMPLEMENTED: non-destructive history switching + account-scoped persistence |
 | Cloud Agent store | immutable CAS blobs + mutable root/reference state | renderer cloud sync was profile-oriented | IN PROGRESS: profile/memory/workflow/automation mirror through account Agent Store; full local CAS graph sync remains |
-| Coordinator boundary | narrow lifecycle + command/event protocol, reconnection, pending requests outside view components | `messaging-shell-v2.tsx` owns too many runtime, product and presentation concerns | NOT COMPLETE: Host protocol exists, but renderer controller is still monolithic |
-| Transcript projection | ordered rich entries for text, reasoning, tools, approvals, attachments and timeline state | mixed DisplayMessage / AssistantTurn / legacy message paths | PARTIAL: canonical AssistantTurn exists; projection types still need consolidation |
+| Coordinator boundary | narrow lifecycle + command/event protocol, reconnection, pending requests outside view components | `messaging-shell-v2.tsx` owns too many runtime, product and presentation concerns | IN PROGRESS: `AgentWorkspaceController` now owns request/operation adoption and draft projection; `AgentCoordinatorClient` owns send/open/broadcast/interrupt/attachment upload; reconnect/event-family extraction remains |
+| Transcript projection | ordered rich entries for text, reasoning, tools, approvals, attachments and timeline state | mixed DisplayMessage / AssistantTurn / legacy message paths | IN PROGRESS: canonical `TranscriptEntry` adapter and `AgentTranscript` are mounted for normal Agents; message/thinking/tool/AssistantTurn now share one timeline boundary; approval/permission/computer-handoff emitters still need full projection |
 | Command palette | keyboard-first Agent navigation/actions | no equivalent primary Agent palette | IMPLEMENTED component and `Cmd/Ctrl+K` integration |
 | Plugins / Computer | secondary overlays from Agent workspace | top-level messenger/product sections and profile panels | PARTIAL: Plugins/Settings moved to Agent footer; Computer is a primary Agent header action |
 | Groups / Agent network | first-class Agent group/org semantics | group/channel semantics are primarily messenger/community based | PARTIAL: Agent groups exist, but org/network UX and Grok-style group coordination are not yet at parity |
-| Legacy messenger | not the primary desktop product shell | dominates navigation and renderer architecture | TRANSITION: legacy DOM is compatibility-only and hidden; must be removed after adapters/tests migrate |
+| Legacy messenger | not the primary desktop product shell | dominates navigation and renderer architecture | TRANSITION: normal Agent header/transcript/composer no longer render through the Messenger path; non-Agent/Mini App compatibility UI and hidden legacy navigation still need final removal |
+
+## 2026-09-20 Agent workspace extraction
+
+This refactor slice is implemented on PR #7 without merging `main`.
+
+- `desktop/src/agent-workspace/agent-workspace-controller.ts`: per-Agent request/operation ownership plus Agent-scoped draft projection.
+- `desktop/src/agent-workspace/coordinator-client.ts`: narrow Mahayana boundary for send/open/broadcast/interrupt and `attachment.upload -> attachment.stored`.
+- `desktop/src/agent-workspace/transcript-model.ts`: canonical `TranscriptEntry` domain replacing view-level dependence on three overlapping transcript shapes.
+- `desktop/src/agent-workspace/agent-transcript.tsx`: primary ordered Agent timeline for messages, thinking, tools and AssistantTurn.
+- `desktop/src/agent-workspace/agent-workspace.tsx`: Agent-owned composition of header, transcript, notices and composer.
+- `desktop/src/agent-workspace/agent-attachments.ts`: six-file Agent attachment validation/upload preparation matching the existing Mahayana Host limits.
+- `desktop/src/agent-workspace/agent-draft-store.ts`: restart-safe text and uploaded attachment draft recovery keyed by Agent compatibility peer.
+- `desktop/src/grok-shell/grok-agent-composer.tsx`: multi-file input, drag/drop, attachment pills/removal, queued-send compatible behavior.
+- `desktop/src/messaging-shell-v2.tsx`: normal Agent rendering and lifecycle calls route through the new workspace/controller/coordinator; Messenger attachment sending is no longer used by normal Agents.
+- `desktop/e2e/grok-parity.spec.ts`: verifies exactly one canonical Agent composer/message list and an Agent-owned attachment upload/send flow.
+
+This is not a claim of full parity. Custom sidebar sections/multi-select, full approval/permission/computer transcript projection, final Computer workspace extraction, complete CAS graph restoration and removal of the remaining compatibility Messenger DOM remain open gates.
 
 ## Refactor rule
 
