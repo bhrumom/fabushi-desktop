@@ -10,6 +10,10 @@ on:
       - 'native/mahayana-messaging/**'
       - '.github/workflows/rust-desktop-runtime.yml'
       - 'RUST_RUNTIME_SOURCE.md'
+      - 'DESKTOP_SOURCE_CLOSURE.md'
+      - 'frontend/**'
+      - 'chatgpt-vps-control/**'
+      - 'contracts/**'
   pull_request:
     paths:
       - 'desktop/**'
@@ -18,6 +22,10 @@ on:
       - 'native/mahayana-messaging/**'
       - '.github/workflows/rust-desktop-runtime.yml'
       - 'RUST_RUNTIME_SOURCE.md'
+      - 'DESKTOP_SOURCE_CLOSURE.md'
+      - 'frontend/**'
+      - 'chatgpt-vps-control/**'
+      - 'contracts/**'
 
 permissions:
   contents: read
