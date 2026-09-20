@@ -478,6 +478,7 @@ fn build_runtime(
             .data_dir
             .as_ref()
             .map(|root| root.join("provider-neutral-assistant-session.json"));
+        engine_config.session_state_root = runtime_config.data_dir.clone();
         let native_engine = Arc::new(
             NativeEngine::new(model_runtime, engine_config)
                 .map_err(|error| HostError::new(error.to_string()))?,
