@@ -3455,6 +3455,67 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
+  async function stageAgentFiles(peer: PeerItem, files: readonly File[]): Promise<void> {
+    if (!isAgentPeer(peer) || peer.miniAppId || files.length === 0) return;
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    const alreadyStaged = agentAttachmentsByPeer[peer.key] ?? [];
+    const availableSlots = Math.max(0, AGENT_ATTACHMENT_LIMIT - alreadyStaged.length);
+    if (availableSlots === 0) {
+      setError(`You can attach up to ${AGENT_ATTACHMENT_LIMIT} files to one Agent draft.`);
+      return;
+    }
+
+    setAgentAttachmentUploadingPeers((current) => new Set(current).add(peer.key));
+    const staged: AttachmentContext[] = [];
+    try {
+      for (const file of files.slice(0, availableSlots)) {
+        const validationError = validateAgentAttachment(file);
+        if (validationError) {
+          setError(validationError);
+          continue;
+        }
+        try {
+          const stored = await agentCoordinatorClient.uploadAttachment({
+            requestId: nextRequestId('agent-attachment-upload'),
+            agentId,
+            filename: file.name,
+            mimeType: file.type || undefined,
+            bytesBase64: await agentFileToBase64(file),
+          });
+          staged.push(await enrichAgentAttachmentPreview(stored, file));
+        } catch (cause) {
+          setError(cause instanceof Error ? cause.message : String(cause));
+        }
+      }
+      if (staged.length) {
+        setAgentAttachmentsByPeer((current) => {
+          const previous = current[peer.key] ?? [];
+          const byId = new Map([...previous, ...staged].map((attachment) => [attachment.id, attachment]));
+          return {
+            ...current,
+            [peer.key]: [...byId.values()].slice(0, AGENT_ATTACHMENT_LIMIT),
+          };
+        });
+      }
+    } finally {
+      setAgentAttachmentUploadingPeers((current) => {
+        const next = new Set(current);
+        next.delete(peer.key);
+        return next;
+      });
+    }
+  }
+
+  function removeAgentAttachment(peerKey: string, attachmentId: string): void {
+    setAgentAttachmentsByPeer((current) => {
+      const remaining = (current[peerKey] ?? []).filter((attachment) => attachment.id !== attachmentId);
+      const next = { ...current };
+      if (remaining.length) next[peerKey] = remaining;
+      else delete next[peerKey];
+      return next;
+    });
+  }
+
   async function sendAttachmentFile(file: File) {
     if (!activePeer?.conversationId || activePeer.source !== 'selfhosted') {
       setError('附件需要发送到 Fabushi 自建会话。');
@@ -4498,17 +4559,19 @@ async function saveInvoiceDialog() {
                   {replyTo ? <div className={extra.composerBanner} data-testid="reply-message-banner"><Reply size={15} /><div><strong>回复</strong><span>{replyTo.text}</span></div><button type="button" data-testid="reply-message-cancel" onClick={() => setReplyTo(null)}><X size={14} /></button></div> : null}
                   {scheduledAtMs ? <div className={extra.composerBanner}><span>⏱</span><div><strong>定时发送</strong><span>{new Date(scheduledAtMs).toLocaleString()}</span></div><button type="button" onClick={() => setScheduledAtMs(undefined)}><X size={14} /></button></div> : null}
                 </>}
-                composerAccessory={<>
-                  <input ref={fileInputRef} type="file" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
-                  {attachmentProgress ? <span className={extra.uploadProgress}>{attachmentProgress}</span> : null}
-                </>}
+                composerAccessory={agentAttachmentUploadingPeers.has(activePeer.key)
+                  ? <span className={extra.uploadProgress}>Uploading attachments…</span>
+                  : null}
                 composerValue={composer}
                 composerReady={hostReady}
                 composerBusy={Boolean(activeAgentOperationId)}
+                composerUploading={agentAttachmentUploadingPeers.has(activePeer.key)}
+                composerAttachments={agentAttachmentsByPeer[activePeer.key] ?? []}
                 enterToSend={desktopPreferences.enterToSend}
                 onComposerChange={updateComposer}
                 onComposerSubmit={(event) => void sendMessage(event)}
-                onAttach={() => fileInputRef.current?.click()}
+                onComposerFiles={(files) => void stageAgentFiles(activePeer, files)}
+                onRemoveComposerAttachment={(attachmentId) => removeAgentAttachment(activePeer.key, attachmentId)}
                 onStop={() => void stopAgentOperation()}
               />
             ) : (
