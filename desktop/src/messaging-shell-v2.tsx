@@ -174,12 +174,7 @@ import GrokAgentNetwork from './grok-shell/grok-agent-network';
 import GrokCommandPalette from './grok-shell/grok-command-palette';
 import { grokAgentKey, projectActiveGrokAgentKey, projectGrokAgentSidebarItems } from './grok-runtime/agent-model';
 import { MahayanaAssistantTurnView } from './mahayana-assistant-turn-view';
-import {
-  assistantTurnPlainText,
-  createAssistantTurn,
-  reduceAssistantTurn,
-  type AssistantTurn,
-} from './mahayana-assistant-turn';
+import type { AssistantTurn } from './mahayana-assistant-turn';
 
 function miniAppMarketplaceAction(
   app: MarketplacePluginSummary,
