@@ -128,6 +128,7 @@ import { projectFabuAgentProfile, projectFabuAgentSettings, projectFabuBotIdenti
 import { FabuAgentStore } from './fabu-runtime/agent-store';
 import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
 import GrokAgentSidebar, { type GrokAgentSidebarItem } from './grok-shell/grok-agent-sidebar';
+import GrokAgentHeader from './grok-shell/grok-agent-header';
 import GrokCommandPalette from './grok-shell/grok-command-palette';
 import { AgentOperationRegistry } from './grok-runtime/agent-operation-registry';
 import { grokAgentKey, projectActiveGrokAgentKey, projectGrokAgentSidebarItems } from './grok-runtime/agent-model';
@@ -4259,35 +4260,58 @@ async function saveInvoiceDialog() {
       <section className={styles.chatWorkspace}>
         {activePeer && sectionIsPeerList ? (
           <>
-            <header className={styles.chatHeader}>
-              <div className={styles.chatIdentity}>
-                <BotMark
-                  botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
-                  state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady) : 'idle'}
-                  size={40}
-                  className={styles.agentAvatarMark}
-                  label={activePeer.title}
-                />
-                <div><strong>{activePeer.title}</strong><small data-testid="conversation-status">{activeTypingActors.length ? '正在输入…' : `${activePeer.subtitle}${hostReady ? ' · 在线' : ' · 正在连接'}`}</small></div>
-              </div>
-              <div className={styles.headerActions}>
-                {activePeer.miniAppId ? <button type="button" data-testid="miniapp-bot-open" title={activePeer.miniAppMenuButtonText ?? 'Open app'} onClick={() => void openMiniApp(activePeer.miniAppId!)}><AppWindow size={18} /></button> : null}
-                <button type="button" title="Search conversation" data-active={conversationSearchOpen} onClick={() => {
+            {isAgentPeer(activePeer) ? (
+              <GrokAgentHeader
+                title={activePeer.title}
+                description={activePeer.subtitle}
+                botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+                botState={botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)}
+                status={activeTypingActors.length
+                  ? 'Typing…'
+                  : activePeerBusy
+                    ? 'Working…'
+                    : `${activePeer.subtitle}${hostReady ? ' · Online' : ' · Connecting'}`}
+                pinned={activePeer.pinned}
+                searchActive={conversationSearchOpen}
+                computerActive={computerProfileOpen}
+                infoActive={layoutInfoOpen}
+                miniAppTitle={activePeer.miniAppMenuButtonText}
+                onOpenMiniApp={activePeer.miniAppId ? () => void openMiniApp(activePeer.miniAppId!) : undefined}
+                onToggleSearch={() => {
                   const next = !conversationSearchOpen;
                   setConversationSearchOpen(next);
                   setGlobalSearchOpen(next);
                   setGlobalSearchCategory(next ? 'posts' : 'chats');
                   setSearch('');
                   window.setTimeout(() => searchInputRef.current?.focus(), 0);
-                }}><Search size={18} /></button>
-                {isAgentPeer(activePeer) ? <button type="button" title="Computer" data-active={computerProfileOpen} onClick={() => {
+                }}
+                onToggleComputer={() => {
                   setComputerProfileOpen((value) => !value);
                   if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
-                }}><Monitor size={18} /></button> : null}
-                <button type="button" title={activePeer.pinned ? 'Unpin' : 'Pin'} onClick={() => void togglePinConversation(activePeer)}><Pin size={18} /></button>
-                <button type="button" title="Agent info" data-testid="conversation-info-toggle" data-active={layoutInfoOpen} onClick={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}><MoreVertical size={18} /></button>
-              </div>
-            </header>
+                }}
+                onTogglePin={() => void togglePinConversation(activePeer)}
+                onToggleInfo={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}
+              />
+            ) : (
+              <header className={styles.chatHeader}>
+                <div className={styles.chatIdentity}>
+                  <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state="idle" size={40} className={styles.agentAvatarMark} label={activePeer.title} />
+                  <div><strong>{activePeer.title}</strong><small data-testid="conversation-status">{activeTypingActors.length ? '正在输入…' : `${activePeer.subtitle}${hostReady ? ' · 在线' : ' · 正在连接'}`}</small></div>
+                </div>
+                <div className={styles.headerActions}>
+                  <button type="button" title="搜索当前会话" data-active={conversationSearchOpen} onClick={() => {
+                    const next = !conversationSearchOpen;
+                    setConversationSearchOpen(next);
+                    setGlobalSearchOpen(next);
+                    setGlobalSearchCategory(next ? 'posts' : 'chats');
+                    setSearch('');
+                    window.setTimeout(() => searchInputRef.current?.focus(), 0);
+                  }}><Search size={18} /></button>
+                  <button type="button" title={activePeer.pinned ? '取消置顶' : '置顶'} onClick={() => void togglePinConversation(activePeer)}><Pin size={18} /></button>
+                  <button type="button" title="资料" data-testid="conversation-info-toggle" data-active={layoutInfoOpen} onClick={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}><MoreVertical size={18} /></button>
+                </div>
+              </header>
+            )}
             {error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
             {isAgentPeer(activePeer) ? (
               <BotConversationView
