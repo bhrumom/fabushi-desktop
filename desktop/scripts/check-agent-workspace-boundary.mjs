@@ -16,6 +16,11 @@ const forbidden = [
   ['renderer-owned Agent operation clearing', /\bclearAgentOperation\s*\(/],
   ['renderer-owned AssistantTurn event reducer', /\bappendAssistantTurnEvent\s*\(/],
   ['Agent transcript copy-back through renderer messages', /setMessages\(toDisplayAgentMessages/],
+  ['legacy Grok Agent Network mounted by primary shell', /import\s+GrokAgentNetwork\s+from\s+['"]\.\/grok-shell\/grok-agent-network['"]/],
+  ['renderer-owned Agent group create command', /type:\s*['"]group\.create['"]/],
+  ['renderer-owned Agent group update command', /type:\s*['"]group\.update['"]/],
+  ['renderer-owned Agent group delete command', /type:\s*['"]group\.delete['"]/],
+  ['renderer-owned Agent group send command', /type:\s*['"]group\.send['"]/],
 ];
 
 const violations = forbidden
@@ -59,6 +64,14 @@ if (/\bmessages\.(?:findIndex|slice)\b/.test(regenerateSlice)) {
 }
 if (!/agentCoordinatorClient\.connect\s*\(/.test(shell)) {
   violations.push('Host transport lifecycle escaped AgentCoordinatorClient');
+}
+
+if (!/import\s+AgentNetwork\s+from\s+['"]\.\/agent-workspace\/agent-network['"]/.test(shell)
+  || !/<AgentNetwork\b/.test(shell)) {
+  violations.push('primary shell is not mounting the Agent-owned Network surface');
+}
+if (!/agentCoordinatorClient\.(?:listGroups|createGroup|updateGroup|deleteGroup|sendGroup)\s*\(/.test(shell)) {
+  violations.push('Agent group lifecycle escaped AgentCoordinatorClient');
 }
 
 if (violations.length) {
