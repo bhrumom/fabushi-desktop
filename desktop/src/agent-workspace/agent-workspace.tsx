@@ -34,6 +34,7 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   composerMentionCandidates?: ReadonlyArray<{ id: string; name: string; description?: string }>;
   enterToSend: boolean;
   onComposerChange(value: string): void;
+  onComposerMention?(candidate: { id: string; name: string; description?: string }): void;
   onComposerSubmit(event: FormEvent<HTMLFormElement>): void;
   onComposerFiles(files: readonly File[]): void;
   onRemoveComposerAttachment(id: string): void;
@@ -111,6 +112,7 @@ export default function AgentWorkspace(props: AgentWorkspaceProps) {
       replyTarget={props.composerReplyTarget}
       mentionCandidates={props.composerMentionCandidates}
       onClearReplyTarget={props.onClearComposerReply}
+      onMention={props.onComposerMention}
       enterToSend={props.enterToSend}
       onChange={props.onComposerChange}
       onSubmit={props.onComposerSubmit}
