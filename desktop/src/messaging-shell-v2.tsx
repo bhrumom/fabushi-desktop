@@ -2756,6 +2756,22 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     return peersRef.current.find((peer) => peer.key === item.key);
   }
 
+  async function renameGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
+    const peer = peerForGrokAgent(item);
+    if (!peer || peer.kind !== 'bot' || !peer.key.startsWith('legacy:bot:') && !peer.key.startsWith('legacy:conversation:')) {
+      setError('Only locally managed Agents can be renamed from this shell.');
+      return;
+    }
+    const name = window.prompt('Rename Agent', peer.title)?.trim();
+    if (!name || name === peer.title) return;
+    await execute({
+      type: 'bot.update',
+      requestId: nextRequestId('grok-rename-agent'),
+      id: peer.actorId ?? peer.id,
+      name,
+    });
+  }
+
   async function duplicateGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
     const peer = peerForGrokAgent(item);
     if (!peer || peer.kind !== 'bot' || !peer.key.startsWith('legacy:bot:')) {
@@ -2767,6 +2783,28 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       requestId: nextRequestId('grok-duplicate-agent'),
       id: peer.id,
     });
+  }
+
+  async function deleteGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
+    const peer = peerForGrokAgent(item);
+    if (!peer || peer.kind !== 'bot' || !peer.key.startsWith('legacy:bot:')) {
+      setError('Only locally managed Agents can be deleted from this shell.');
+      return;
+    }
+    if (!window.confirm(`Delete “${peer.title}”? The Agent store is retained for recovery.`)) return;
+    agentOperationRegistryRef.current.clearPeer(peer.key);
+    syncAgentOperationSnapshot();
+    await execute({
+      type: 'bot.delete',
+      requestId: nextRequestId('grok-delete-agent'),
+      id: peer.id,
+    });
+    if (peer.key === activePeerKeyRef.current) {
+      activePeerKeyRef.current = null;
+      setActivePeerKey(null);
+      setMessages([]);
+      projectActiveAgentOperation(null);
+    }
   }
 
   async function hideGrokAgent(item: GrokAgentSidebarItem): Promise<void> {
@@ -4043,8 +4081,10 @@ async function saveInvoiceDialog() {
             const peer = peerForGrokAgent(item);
             if (peer) void togglePinConversation(peer);
           }}
+          onRename={(item) => void renameGrokAgent(item)}
           onHide={(item) => void hideGrokAgent(item)}
           onDuplicate={(item) => void duplicateGrokAgent(item)}
+          onDelete={(item) => void deleteGrokAgent(item)}
           onOpenPlugins={() => {
             setSearch('');
             setGlobalSearchOpen(false);
