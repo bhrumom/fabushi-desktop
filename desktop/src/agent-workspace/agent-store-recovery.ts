@@ -80,6 +80,7 @@ export async function restoreAgentStoreWorkspace(
   conversationId: string,
 ): Promise<AgentStoreWorkspaceRecovery> {
   await store.restoreRoot();
+  await store.materializeRoot();
   const transcriptPath = fabuAgentConversationTranscriptPath(conversationId);
 
   const transcript = store.hasRootPath(transcriptPath)
