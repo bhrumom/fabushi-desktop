@@ -2216,7 +2216,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     ) {
       const operationId = ('operationId' in event && typeof event.operationId === 'string'
         ? event.operationId
-        : agentOperationIdRef.current ?? agentRequestIdRef.current) ?? undefined;
+        : unambiguousAgentOperationId()) ?? undefined;
       if (operationId) flushPendingAgentDelta(operationId);
     }
 
