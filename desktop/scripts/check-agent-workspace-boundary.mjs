@@ -18,6 +18,7 @@ const forbidden = [
   ['Agent transcript copy-back through renderer messages', /setMessages\(toDisplayAgentMessages/],
   ['legacy Grok Agent Network mounted by primary shell', /import\s+GrokAgentNetwork\s+from\s+['"]\.\/grok-shell\/grok-agent-network['"]/],
   ['legacy Grok Command Palette mounted by primary shell', /import\s+GrokCommandPalette\s+from\s+['"]\.\/grok-shell\/grok-command-palette['"]/],
+  ['primary Agent shell directly imports Grok implementation layers', /from\s+['"]\.\/grok-(?:shell|runtime)\//],
   ['renderer-owned Agent group create command', /type:\s*['"]group\.create['"]/],
   ['renderer-owned Agent group update command', /type:\s*['"]group\.update['"]/],
   ['renderer-owned Agent group delete command', /type:\s*['"]group\.delete['"]/],
@@ -75,6 +76,12 @@ if (!/import\s+AgentNetwork\s+from\s+['"]\.\/agent-workspace\/agent-network['"]/
 if (!/import\s+AgentCommandPalette\s+from\s+['"]\.\/agent-workspace\/agent-command-palette['"]/.test(shell)
   || !/<AgentCommandPalette\b/.test(shell)) {
   violations.push('primary shell is not mounting the Agent-owned command palette boundary');
+}
+
+if (!/from\s+['"]\.\/agent-workspace\/agent-model['"]/.test(shell)
+  || !/projectAgentSidebarItems\s*\(/.test(shell)
+  || !/projectActiveAgentKey\s*\(/.test(shell)) {
+  violations.push('primary shell is not consuming the Agent-owned navigation projection model');
 }
 if (!/agentCoordinatorClient\.(?:listGroups|createGroup|updateGroup|deleteGroup|sendGroup)\s*\(/.test(shell)) {
   violations.push('Agent group lifecycle escaped AgentCoordinatorClient');
