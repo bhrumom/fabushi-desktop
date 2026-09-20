@@ -17,6 +17,7 @@ export interface GrokAgentActivityProjection {
   draftPrompt?: string;
   lastMessage?: string;
   waitingReason?: string;
+  currentActivity?: string;
   isComposingMessage?: boolean;
 }
 
@@ -39,6 +40,7 @@ export interface GrokAgentSidebarItem {
   draftPrompt?: string;
   lastMessage?: string;
   waitingReason?: string;
+  currentActivity?: string;
   isComposingMessage?: boolean;
 }
 
@@ -62,6 +64,7 @@ function mergeActivity(
     draftPrompt: preferred.draftPrompt || fallback.draftPrompt,
     lastMessage: preferred.lastMessage || fallback.lastMessage,
     waitingReason: preferred.waitingReason || fallback.waitingReason,
+    currentActivity: preferred.currentActivity || fallback.currentActivity,
     isComposingMessage: preferred.isComposingMessage || fallback.isComposingMessage,
   };
 }
