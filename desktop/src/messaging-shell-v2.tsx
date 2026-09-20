@@ -552,7 +552,7 @@ function formatTime(timestamp: number): string {
 function legacyKind(conversation: ConversationSummary): PeerKind {
   const id = conversation.id.toLowerCase();
   const kind = conversation.kind.toLowerCase();
-  if (id.startsWith('mahayana:contact:')) return 'contact';
+  if (id.startsWith('mahayana:contact:') || id.startsWith('telegram:user:') || kind.includes('direct') || kind.includes('contact')) return 'contact';
   if (id.startsWith('mahayana-ai:') || id.startsWith('codex:') || kind.includes('agent') || kind.includes('bot') || kind.includes('assistant')) return 'bot';
   if (kind.includes('saved')) return 'saved';
   if (kind.includes('channel')) return 'channel';
@@ -3999,7 +3999,7 @@ async function saveInvoiceDialog() {
       ) : null}
 
       {contactGroups.managerOpen ? <SidebarContactGroupManager
-        peers={peers.filter((peer) => !peer.archived && (peer.kind === 'conversation' || peer.kind === 'bot')).map((peer) => ({ key: peer.key, title: peer.title, subtitle: peer.subtitle, pinned: peer.pinned }))}
+        peers={peers.filter((peer) => !peer.archived && peer.kind === 'contact').map((peer) => ({ key: peer.key, title: peer.title, subtitle: peer.subtitle, pinned: peer.pinned }))}
         groups={contactGroups.groups}
         onCreate={contactGroups.create}
         onUpdate={contactGroups.update}
