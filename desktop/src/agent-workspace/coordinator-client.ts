@@ -1,4 +1,4 @@
-import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { AttachmentContext, AuthState, HostConfig, HostInfo, RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { MahayanaHostTransport } from '../../../frontend/apps/web/src/lib/mahayana-host/transport';
 import { composeAgentPromptText, type AgentReplyContext } from './prompt-context';
 
@@ -21,6 +21,16 @@ export interface AgentAttachmentUpload {
   readonly bytesBase64: string;
 }
 
+export interface AgentCoordinatorConnection {
+  readonly ready: Promise<HostInfo>;
+  dispose(): Promise<void>;
+}
+
+export interface AgentCoordinatorConnectionOptions {
+  readonly config: HostConfig;
+  readonly onEvent: (event: RuntimeEvent) => void;
+}
+
 /**
  * Narrow renderer -> Mahayana boundary for Agent lifecycle operations.
  *
@@ -31,6 +41,32 @@ export interface AgentAttachmentUpload {
  */
 export class AgentCoordinatorClient {
   constructor(private readonly transport: MahayanaHostTransport) {}
+
+  /**
+   * Own the long-lived transport subscription + Host initialization lifecycle.
+   * React surfaces receive projected events, but do not directly subscribe to
+   * or close the Host transport.
+   */
+  connect(options: AgentCoordinatorConnectionOptions): AgentCoordinatorConnection {
+    let disposed = false;
+    const unsubscribe = this.transport.subscribe((event) => {
+      if (!disposed) options.onEvent(event);
+    });
+    const ready = this.transport.initialize(options.config);
+    return {
+      ready,
+      dispose: async () => {
+        if (disposed) return;
+        disposed = true;
+        unsubscribe();
+        await this.transport.close();
+      },
+    };
+  }
+
+  authStatus(): Promise<AuthState> {
+    return this.transport.authStatus();
+  }
 
   send(request: AgentPromptRequest) {
     return this.transport.execute({
