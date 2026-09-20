@@ -13,6 +13,13 @@ export interface GrokAgentPeerProjection {
   updatedAtMs: number;
 }
 
+export interface GrokAgentActivityProjection {
+  draftPrompt?: string;
+  lastMessage?: string;
+  waitingReason?: string;
+  isComposingMessage?: boolean;
+}
+
 export interface GrokAgentSidebarItem {
   /** Stable Agent/group identity used by the Agent-first shell. */
   key: string;
@@ -28,12 +35,40 @@ export interface GrokAgentSidebarItem {
   busy: boolean;
   isGroup: boolean;
   updatedAtMs: number;
+  /** Fabu/Grok row detail precedence: draft -> waiting -> working -> last message. */
+  draftPrompt?: string;
+  lastMessage?: string;
+  waitingReason?: string;
+  isComposingMessage?: boolean;
 }
 
 export function grokAgentKey(peer: GrokAgentPeerProjection): string {
   return peer.kind === 'group'
     ? `group:${peer.id}`
     : `agent:${peer.agentId ?? peer.actorId ?? peer.id}`;
+}
+
+function mergeActivity(
+  preferred: GrokAgentSidebarItem,
+  fallback: GrokAgentSidebarItem,
+): GrokAgentSidebarItem {
+  return {
+    ...preferred,
+    pinned: preferred.pinned || fallback.pinned,
+    hidden: preferred.hidden && fallback.hidden,
+    unread: Math.max(preferred.unread, fallback.unread),
+    busy: preferred.busy || fallback.busy,
+    updatedAtMs: Math.max(preferred.updatedAtMs, fallback.updatedAtMs),
+    draftPrompt: preferred.draftPrompt || fallback.draftPrompt,
+    lastMessage: preferred.lastMessage || fallback.lastMessage,
+    waitingReason: preferred.waitingReason || fallback.waitingReason,
+    isComposingMessage: preferred.isComposingMessage || fallback.isComposingMessage,
+  };
+}
+
+function pinnedRank(key: string, pinnedOrder: readonly string[]): number {
+  const index = pinnedOrder.indexOf(key);
+  return index < 0 ? Number.MAX_SAFE_INTEGER : index;
 }
 
 /**
@@ -47,6 +82,8 @@ export function grokAgentKey(peer: GrokAgentPeerProjection): string {
 export function projectGrokAgentSidebarItems(
   peers: readonly GrokAgentPeerProjection[],
   operationByPeer: Readonly<Record<string, string>>,
+  activityByPeer: Readonly<Record<string, GrokAgentActivityProjection>> = {},
+  pinnedOrder: readonly string[] = [],
 ): GrokAgentSidebarItem[] {
   const visiblePeers = peers.filter((peer) => peer.kind === 'bot' || peer.kind === 'group');
   const peerByKey = new Map(visiblePeers.map((peer) => [peer.key, peer] as const));
@@ -55,6 +92,7 @@ export function projectGrokAgentSidebarItems(
   for (const peer of visiblePeers) {
     const key = grokAgentKey(peer);
     const existing = items.get(key);
+    const activity = activityByPeer[peer.key] ?? {};
     const candidate: GrokAgentSidebarItem = {
       key,
       peerKey: peer.key,
@@ -68,6 +106,7 @@ export function projectGrokAgentSidebarItems(
       busy: Boolean(operationByPeer[peer.key]),
       isGroup: peer.kind === 'group',
       updatedAtMs: peer.updatedAtMs,
+      ...activity,
     };
 
     if (!existing) {
@@ -82,29 +121,20 @@ export function projectGrokAgentSidebarItems(
         && ((candidate.pinned && !existing.pinned)
           || candidate.updatedAtMs > existing.updatedAtMs));
 
-    if (candidateWins) {
-      items.set(key, {
-        ...candidate,
-        pinned: existing.pinned || candidate.pinned,
-        hidden: existing.hidden && candidate.hidden,
-        unread: Math.max(existing.unread, candidate.unread),
-        busy: existing.busy || candidate.busy,
-        updatedAtMs: Math.max(existing.updatedAtMs, candidate.updatedAtMs),
-      });
-    } else {
-      items.set(key, {
-        ...existing,
-        pinned: existing.pinned || candidate.pinned,
-        hidden: existing.hidden && candidate.hidden,
-        unread: Math.max(existing.unread, candidate.unread),
-        busy: existing.busy || candidate.busy,
-        updatedAtMs: Math.max(existing.updatedAtMs, candidate.updatedAtMs),
-      });
-    }
+    items.set(
+      key,
+      candidateWins
+        ? mergeActivity(candidate, existing)
+        : mergeActivity(existing, candidate),
+    );
   }
 
   return [...items.values()].sort((left, right) => {
     if (left.pinned !== right.pinned) return left.pinned ? -1 : 1;
+    if (left.pinned && right.pinned) {
+      const rankDelta = pinnedRank(left.key, pinnedOrder) - pinnedRank(right.key, pinnedOrder);
+      if (rankDelta !== 0) return rankDelta;
+    }
     return right.updatedAtMs - left.updatedAtMs;
   });
 }
