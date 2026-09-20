@@ -1,6 +1,7 @@
 import { LoaderCircle, Mic, Paperclip, Reply, Send, Square, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import AgentRichTextEditor, { type AgentRichTextEditorControls } from './agent-rich-text-editor';
+import { AGENT_ATTACHMENT_LIMIT } from './agent-attachments';
 import styles from './agent-composer.module.css';
 
 export interface AgentComposerAttachment {
@@ -81,6 +82,8 @@ export default function AgentComposer({
 }) {
   const hasText = value.trim().length > 0;
   const hasPayload = hasText || attachments.length > 0;
+  const canSend = hasPayload && ready && !uploading && voiceState === 'idle';
+  const atAttachmentLimit = attachments.length >= AGENT_ATTACHMENT_LIMIT;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const editorControlsRef = useRef<AgentRichTextEditorControls | null>(null);
@@ -179,10 +182,7 @@ export default function AgentComposer({
         setVoiceState('transcribing');
         void onTranscribeVoice(file).then((text) => {
           const transcript = text.trim();
-          if (transcript) {
-            const current = valueRef.current.trimEnd();
-            onChange(current ? `${current}\n${transcript}` : transcript);
-          }
+          if (transcript) editorControlsRef.current?.insertText(transcript);
           setVoiceState('idle');
         }).catch((cause: unknown) => {
           setVoiceState('idle');
@@ -206,6 +206,11 @@ export default function AgentComposer({
   }, []);
 
   const handleKeyDown = (event: globalThis.KeyboardEvent): boolean => {
+    if (event.key === 'Escape' && voiceState === 'recording') {
+      event.preventDefault();
+      stopVoice();
+      return true;
+    }
     if (suggestionCount) {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
@@ -240,6 +245,13 @@ export default function AgentComposer({
     return true;
   };
 
+  const stageFiles = (files: readonly File[]) => {
+    const remaining = Math.max(0, AGENT_ATTACHMENT_LIMIT - attachments.length);
+    if (remaining === 0) return;
+    const accepted = files.slice(0, remaining);
+    if (accepted.length) onAttachFiles(accepted);
+  };
+
   const hasDraggedFiles = (event: DragEvent<HTMLElement>) =>
     Array.from(event.dataTransfer.types).includes('Files');
 
@@ -262,7 +274,7 @@ export default function AgentComposer({
     dragDepthRef.current = 0;
     setDragOver(false);
     const files = Array.from(event.dataTransfer.files ?? []);
-    if (files.length) onAttachFiles(files);
+    if (files.length) stageFiles(files);
   };
 
   return <form
@@ -274,7 +286,9 @@ export default function AgentComposer({
     onDragEnter={handleDragEnter}
     onDragLeave={handleDragLeave}
     onDragOver={(event) => {
-      if (hasDraggedFiles(event)) event.preventDefault();
+      if (!hasDraggedFiles(event)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
     }}
     onDrop={handleDrop}
   >
@@ -290,7 +304,7 @@ export default function AgentComposer({
         <button type="button" aria-label={`Remove ${attachment.name}`} onClick={() => onRemoveAttachment(attachment.id)}><X size={13} /></button>
       </span>)}
     </div> : null}
-    <button type="button" className={styles.attach} title="Attach files" aria-label="Attach files" disabled={!ready || uploading || voiceState !== 'idle'} onClick={() => fileInputRef.current?.click()}>
+    <button type="button" className={styles.attach} title="Attach files" aria-label="Attach files" disabled={!ready || uploading || voiceState !== 'idle' || atAttachmentLimit} onClick={() => fileInputRef.current?.click()}>
       <Paperclip size={18} />
     </button>
     {onTranscribeVoice ? <button
@@ -314,7 +328,7 @@ export default function AgentComposer({
       onChange={(event) => {
         const files = Array.from(event.currentTarget.files ?? []);
         event.currentTarget.value = '';
-        if (files.length) onAttachFiles(files);
+        if (files.length) stageFiles(files);
       }}
     />
     <div className={styles.editorWrap}>
@@ -329,7 +343,7 @@ export default function AgentComposer({
         ariaLabel={`Message ${agentName}`}
         onChange={(draft) => onChange(draft.prompt, draft.richText)}
         onKeyDown={handleKeyDown}
-        onPasteFiles={onAttachFiles}
+        onPasteFiles={stageFiles}
         onControls={(controls) => { editorControlsRef.current = controls; }}
       />
       {mentionResults.length ? <div className={styles.mentions} role="listbox" aria-label="Mention an Agent">
@@ -359,7 +373,7 @@ export default function AgentComposer({
       {voiceState === 'recording' ? <span className={styles.voiceStatus}>Recording…</span> : voiceError ? <span className={styles.voiceError} title={voiceError}>Voice unavailable</span> : null}
     </div>
     {hasPayload ? (
-      <button data-testid="messenger-send" className={styles.primary} type="submit" disabled={!ready || uploading}>
+      <button data-testid="messenger-send" className={styles.primary} type="submit" disabled={!canSend}>
         <Send size={17} />
       </button>
     ) : busy ? (
