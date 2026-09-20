@@ -168,6 +168,7 @@ import {
   fabuAgentConversationTranscriptPath,
 } from './fabu-runtime/agent-store';
 import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
+import { restoreAgentStoreWorkspace } from './agent-workspace/agent-store-recovery';
 import AgentRootShell from './agent-workspace/agent-root-shell';
 import AgentSidebar, { type AgentSidebarItem as GrokAgentSidebarItem } from './agent-workspace/agent-sidebar';
 import AgentSearch from './agent-workspace/agent-search';
@@ -1885,23 +1886,27 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   async function restoreAgentConversationFromCloud(peer: PeerItem): Promise<boolean> {
     if (!isAgentPeer(peer) || peer.miniAppId || !peer.conversationId) return false;
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
-    const path = fabuAgentConversationTranscriptPath(peer.conversationId);
     try {
-      const store = agentStoreFor(agentId);
-      await store.restoreRoot();
-      if (!store.hasRootPath(path)) return false;
-      const snapshot = await store.readJson<{
-        schemaVersion?: number;
-        agentId?: string;
-        conversationId?: string;
-        entries?: TranscriptEntry[];
-      }>(path);
-      if (!Array.isArray(snapshot.entries) || !snapshot.entries.length) return false;
-      if (agentWorkspaceControllerRef.current.operationForPeer(peer.key)) return false;
-      if (agentTranscriptStoreRef.current.entries(peer.key).length) return false;
-      agentTranscriptStoreRef.current.hydrateEntries(peer.key, snapshot.entries);
-      notifyAgentWorkspaceState();
-      return true;
+      const recovered = await restoreAgentStoreWorkspace(agentStoreFor(agentId), peer.conversationId);
+      const controller = agentWorkspaceControllerRef.current;
+      let changed = false;
+
+      if (
+        recovered.entries.length
+        && !controller.operationForPeer(peer.key)
+        && agentTranscriptStoreRef.current.entries(peer.key).length === 0
+      ) {
+        agentTranscriptStoreRef.current.hydrateEntries(peer.key, recovered.entries);
+        changed = true;
+      }
+
+      if (recovered.attachments.length && controller.attachmentsForPeer(peer.key).length === 0) {
+        controller.setAttachments(peer.key, recovered.attachments);
+        changed = true;
+      }
+
+      if (changed) notifyAgentWorkspaceState();
+      return recovered.entries.length > 0;
     } catch {
       return false;
     }
