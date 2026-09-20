@@ -1294,7 +1294,14 @@ impl FeatureHostController {
                 let mut state = self.state()?;
                 let requested_owner = agent_id
                     .as_deref()
-                    .and_then(|requested| canonical_runtime_agent_id(&state, requested));
+                    .map(|requested| {
+                        canonical_runtime_agent_id(&state, requested).ok_or_else(|| {
+                            FeatureHostError::Contract(format!(
+                                "unknown automation agent: {requested}"
+                            ))
+                        })
+                    })
+                    .transpose()?;
                 let key = find_automation_state_key(
                     &state.automations,
                     &id,
@@ -1333,7 +1340,14 @@ impl FeatureHostController {
                 let mut state = self.state()?;
                 let requested_owner = agent_id
                     .as_deref()
-                    .and_then(|requested| canonical_runtime_agent_id(&state, requested));
+                    .map(|requested| {
+                        canonical_runtime_agent_id(&state, requested).ok_or_else(|| {
+                            FeatureHostError::Contract(format!(
+                                "unknown automation agent: {requested}"
+                            ))
+                        })
+                    })
+                    .transpose()?;
                 let key = find_automation_state_key(
                     &state.automations,
                     &id,
@@ -1367,7 +1381,14 @@ impl FeatureHostController {
                         let mut state = self.state()?;
                         let requested_owner = agent_id
                             .as_deref()
-                            .and_then(|requested| canonical_runtime_agent_id(&state, requested));
+                            .map(|requested| {
+                                canonical_runtime_agent_id(&state, requested).ok_or_else(|| {
+                                    FeatureHostError::Contract(format!(
+                                        "unknown automation agent: {requested}"
+                                    ))
+                                })
+                            })
+                            .transpose()?;
                         let key = find_automation_state_key(
                             &state.automations,
                             &id,
