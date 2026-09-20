@@ -64,7 +64,7 @@ if (!/useAgentMcpController\s*\(/.test(shell)
 }
 if (!/agentNetworkController\.handle\(event\)/.test(shell)
   || !/groups=\{agentNetworkController\.groups\}/.test(shell)
-  || !/peerMessages=\{agentNetworkController\.peerMessages\}/.test(shell)
+  || !/peerMessagesByAgentId=\{agentNetworkController\.peerMessagesByAgentId\}/.test(shell)
   || !/onSendPeer=\{agentNetworkController\.sendPeer\}/.test(shell)) {
   violations.push('Agent Network state or direct handoff escaped the Agent-owned controller boundary');
 }
