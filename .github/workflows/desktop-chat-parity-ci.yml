@@ -53,7 +53,7 @@ jobs:
       - name: Run Mahayana chat regression
         env:
           FABUSHI_FEATURE_HOST_MODE: test
-        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "keeps user send local-first"
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "Mahayana renders one Hermes-style assistant turn"
       - name: Upload Playwright evidence
         if: always()
         uses: actions/upload-artifact@v4
