@@ -24,10 +24,13 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   composerValue: string;
   composerReady: boolean;
   composerBusy: boolean;
+  composerUploading?: boolean;
+  composerAttachments?: ReadonlyArray<{ id: string; name: string; sizeBytes?: number }>;
   enterToSend: boolean;
   onComposerChange(value: string): void;
   onComposerSubmit(event: FormEvent<HTMLFormElement>): void;
-  onAttach(): void;
+  onComposerFiles(files: readonly File[]): void;
+  onRemoveComposerAttachment(id: string): void;
   onStop(): void;
   notice?: ReactNode;
   beforeComposer?: ReactNode;
@@ -87,10 +90,13 @@ export default function AgentWorkspace(props: AgentWorkspaceProps) {
       agentName={props.title}
       ready={props.composerReady}
       busy={props.composerBusy}
+      uploading={props.composerUploading}
+      attachments={props.composerAttachments}
       enterToSend={props.enterToSend}
       onChange={props.onComposerChange}
       onSubmit={props.onComposerSubmit}
-      onAttach={props.onAttach}
+      onAttachFiles={props.onComposerFiles}
+      onRemoveAttachment={props.onRemoveComposerAttachment}
       onStop={props.onStop}
     />
   </>;
