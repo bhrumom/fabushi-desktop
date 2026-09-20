@@ -46,6 +46,16 @@ function decodeUtf8Base64(value: string): string {
   return new TextDecoder().decode(bytes);
 }
 
+async function sha256Etag(value: string): Promise<string | undefined> {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) return undefined;
+  const digest = await subtle.digest('SHA-256', new TextEncoder().encode(value));
+  const hex = [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+  return `sha256:${hex}`;
+}
+
 function stringField(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
@@ -103,6 +113,10 @@ export class FabuAgentStore {
   async writeText(path: string, value: string): Promise<FabuAgentStoreObject> {
     await this.ensureRefs();
     const current = this.refs.get(path);
+    const nextEtag = await sha256Etag(value);
+    if (current?.etag && nextEtag && current.etag === nextEtag) {
+      return current;
+    }
     const response = await this.transport.write(
       this.agentId,
       path,
