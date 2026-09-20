@@ -861,12 +861,14 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       // that was just persisted when it is unpinned. This guards the original
       // 35522950977 failure instead of merely asserting that an empty header exists.
       const pinnedRow = peer.locator('..');
+      const focusedAgentRow = focusedWork.locator('button[data-agent-key="agent:mahayana-assistant"]');
       await expect(pinnedRow).toHaveAttribute('data-pinned', 'true');
-      await expect(focusedWork.getByRole('button', { name: /大乘助手/ })).toHaveCount(0);
+      await expect(focusedAgentRow).toHaveCount(0);
       await pinnedRow.hover();
       await pinnedRow.getByRole('button', { name: /大乘助手 actions/ }).click();
       await page.getByRole('menuitem', { name: 'Unpin' }).click();
-      await expect(focusedWork.getByRole('button', { name: /大乘助手/ })).toBeVisible();
+      await expect(focusedAgentRow).toHaveCount(1);
+      await expect(focusedAgentRow).toBeVisible();
     });
   } finally {
     await app.close();
