@@ -128,6 +128,7 @@ import { useAgentCommandPaletteController } from './agent-workspace/use-agent-co
 import { useAgentWorkflowController } from './agent-workspace/use-agent-workflow-controller';
 import { useAgentStoreSyncController } from './agent-workspace/use-agent-store-sync-controller';
 import { useAgentDirectoryController } from './agent-workspace/use-agent-directory-controller';
+import { useAgentSettingsController } from './agent-workspace/use-agent-settings-controller';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -2495,6 +2496,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const activeAgentReply = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
     ? agentWorkspaceController.replyForPeer(activePeer.key)
     : undefined;
+  const {
+    controller: agentSettingsController,
+    snapshot: agentSettingsSnapshot,
+  } = useAgentSettingsController(agentDirectoryController, activeAgentBot);
   const activeAgentKey = projectActiveAgentKey(activePeer);
 
   useEffect(() => {
@@ -2553,29 +2558,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     activeAgentOperationId
     || agentRequestSnapshot[activePeer.key]
   ));
-
-  async function updateActiveAgentProfile(profile: { name: string; title?: string; description: string }): Promise<void> {
-    if (!activeAgentBot) throw new Error('No active Agent profile.');
-    await agentDirectoryController.update(
-      activeAgentBot.id,
-      {
-        name: profile.name,
-        title: profile.title ?? '',
-        description: profile.description,
-      },
-    );
-  }
-
-  async function setActiveAgentNotifications(enabled: boolean): Promise<void> {
-    if (!activeAgentBot) throw new Error('No active Agent profile.');
-    await agentDirectoryController.update(
-      activeAgentBot.id,
-      {
-        notifyOnUpdates: enabled,
-        notificationsEnabled: enabled,
-      },
-    );
-  }
 
   async function createAgent(): Promise<void> {
     setSection('bots');
@@ -4529,18 +4511,20 @@ async function saveInvoiceDialog() {
             settings={{
               agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
               open: agentSettingsOpen,
-              value: {
-                name: activeAgentBot?.name ?? activePeer.title,
-                title: activeAgentBot?.title ?? '',
-                description: activeAgentBot?.description ?? activePeer.subtitle,
-                notifyOnUpdatesEnabled: activeAgentBot?.notifyOnUpdates ?? true,
+              value: agentSettingsSnapshot.value ?? {
+                name: activePeer.title,
+                title: '',
+                description: activePeer.subtitle,
+                notifyOnUpdatesEnabled: true,
               },
+              pending: agentSettingsSnapshot.pending,
+              error: agentSettingsSnapshot.error,
               onToggle: () => {
                 setComputerProfileOpen(false);
                 setAgentSettingsOpen((value) => !value);
               },
-              onUpdateProfile: updateActiveAgentProfile,
-              onSetNotifications: setActiveAgentNotifications,
+              onUpdateProfile: (profile) => agentSettingsController.updateProfile(profile),
+              onSetNotifications: (enabled) => agentSettingsController.setNotifications(enabled),
             }}
           />
         ) : (

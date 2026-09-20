@@ -167,6 +167,13 @@ if (!/client\.listMemory\s*\(/.test(storeSyncController)
   violations.push('Agent store sync controller no longer owns memory/automation synchronization');
 }
 
+if (!/useAgentSettingsController\s*\(/.test(shell)) {
+  violations.push('Agent settings mutation/generation state escaped the Agent settings controller');
+}
+if (/function\s+(?:updateActiveAgentProfile|setActiveAgentNotifications)\s*\(/.test(shell)) {
+  violations.push('primary shell recreated Agent settings mutations');
+}
+
 if (!/useAgentDirectoryController\s*\(/.test(shell)) {
   violations.push('Agent directory cache/commands escaped the Agent workspace controller');
 }

@@ -117,6 +117,10 @@ The existing Composer shell remains responsible for attachment chips, drag/drop,
 
 `desktop/package.json` and `desktop/package-lock.json` are updated together from the pinned Fabu 3.14.0 dependency graph so CI can continue using a locked install.
 
+## 2026-09-20 Agent Settings controller cutover
+
+The Agent settings UI now follows the frozen Fabu controller boundary rather than owning request generation/pending/error state inside the view. `AgentSettingsController` fences profile/notification mutations by selected Agent generation, consumes the authoritative `AgentDirectoryController` projection, and prevents late replies from a previous Agent selection from mutating the newly opened Agent settings surface. The Messenger compatibility shell no longer defines direct profile/notification mutation helpers.
+
 ## Refactor rule
 
 Do not repeat the abandoned wholesale-source replacement. Keep Mahayana as the authoritative Rust Agent/runtime layer, but port the reference's domain boundaries and visible interaction model:

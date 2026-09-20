@@ -1,24 +1,15 @@
-import React, { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import React, { useEffect, useState, type KeyboardEvent } from 'react';
+import type { AgentSettingsPending, AgentSettingsProfileUpdate, AgentSettingsProfileValue } from './agent-settings-controller';
+export type { AgentSettingsProfileUpdate, AgentSettingsProfileValue } from './agent-settings-controller';
 import styles from './agent-settings-panel.module.css';
-
-export interface AgentSettingsProfileValue {
-  readonly name: string;
-  readonly title?: string;
-  readonly description: string;
-  readonly notifyOnUpdatesEnabled: boolean;
-}
-
-export interface AgentSettingsProfileUpdate {
-  readonly name: string;
-  readonly title?: string;
-  readonly description: string;
-}
 
 export interface AgentSettingsPanelProps {
   readonly agentId: string;
   readonly value: AgentSettingsProfileValue;
-  readonly onUpdateProfile: (profile: AgentSettingsProfileUpdate) => Promise<void>;
-  readonly onSetNotifications: (enabled: boolean) => Promise<void>;
+  readonly pending: AgentSettingsPending;
+  readonly error: string | null;
+  readonly onUpdateProfile: (profile: AgentSettingsProfileUpdate) => Promise<unknown>;
+  readonly onSetNotifications: (enabled: boolean) => Promise<unknown>;
 }
 
 function EditableField({
@@ -86,61 +77,33 @@ function EditableField({
  * account/CAS mirroring to the authoritative bot.changed projection.
  */
 export default function AgentSettingsPanel(props: AgentSettingsPanelProps) {
-  const [pending, setPending] = useState<'profile' | 'notifications' | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const generation = useRef(0);
-
-  useEffect(() => {
-    generation.current += 1;
-    setPending(null);
-    setError(null);
-  }, [props.agentId]);
-
-  const updateProfile = async (field: 'name' | 'title' | 'description', value: string) => {
-    if (pending) return;
-    const requestGeneration = generation.current;
+  const updateProfile = (field: 'name' | 'title' | 'description', value: string) => {
+    if (props.pending) return;
     const next: AgentSettingsProfileUpdate = {
       name: props.value.name,
       ...(props.value.title === undefined ? {} : { title: props.value.title }),
       description: props.value.description,
       [field]: value,
     };
-    setPending('profile');
-    setError(null);
-    try {
-      await props.onUpdateProfile(next);
-    } catch (cause) {
-      if (generation.current === requestGeneration) setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      if (generation.current === requestGeneration) setPending(null);
-    }
+    void props.onUpdateProfile(next);
   };
 
-  const toggleNotifications = async () => {
-    if (pending) return;
-    const requestGeneration = generation.current;
-    setPending('notifications');
-    setError(null);
-    try {
-      await props.onSetNotifications(!props.value.notifyOnUpdatesEnabled);
-    } catch (cause) {
-      if (generation.current === requestGeneration) setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      if (generation.current === requestGeneration) setPending(null);
-    }
+  const toggleNotifications = () => {
+    if (props.pending) return;
+    void props.onSetNotifications(!props.value.notifyOnUpdatesEnabled);
   };
 
-  return <section className={styles.root} aria-label="Agent settings" data-agent-id={props.agentId} data-pending={pending ?? undefined}>
+  return <section className={styles.root} aria-label="Agent settings" data-agent-id={props.agentId} data-pending={props.pending ?? undefined}>
     <header><strong>Agent settings</strong><small>Agent-owned profile and notifications</small></header>
-    <label><span>Name</span><EditableField label="Agent name" value={props.value.name} required disabled={pending != null} placeholder="Agent name" onCommit={(value) => void updateProfile('name', value)} /></label>
-    {props.value.title === undefined ? null : <label><span>Title</span><EditableField label="Agent title" value={props.value.title} disabled={pending != null} placeholder="Describe what your Agent does" onCommit={(value) => void updateProfile('title', value)} /></label>}
-    <label><span>Description</span><EditableField label="Agent description" value={props.value.description} multiline disabled={pending != null} placeholder="What this Agent is for" onCommit={(value) => void updateProfile('description', value)} /></label>
+    <label><span>Name</span><EditableField label="Agent name" value={props.value.name} required disabled={props.pending != null} placeholder="Agent name" onCommit={(value) => void updateProfile('name', value)} /></label>
+    {props.value.title === undefined ? null : <label><span>Title</span><EditableField label="Agent title" value={props.value.title} disabled={props.pending != null} placeholder="Describe what your Agent does" onCommit={(value) => void updateProfile('title', value)} /></label>}
+    <label><span>Description</span><EditableField label="Agent description" value={props.value.description} multiline disabled={props.pending != null} placeholder="What this Agent is for" onCommit={(value) => void updateProfile('description', value)} /></label>
     <div className={styles.row}>
       <span><strong>Notifications</strong><small>Get notified when this Agent finishes or needs input</small></span>
-      <button type="button" role="switch" aria-checked={props.value.notifyOnUpdatesEnabled} disabled={pending != null} onClick={() => void toggleNotifications()}>
+      <button type="button" role="switch" aria-checked={props.value.notifyOnUpdatesEnabled} disabled={props.pending != null} onClick={toggleNotifications}>
         {props.value.notifyOnUpdatesEnabled ? 'On' : 'Off'}
       </button>
     </div>
-    {error ? <div className={styles.error} role="status" aria-live="polite">{error}</div> : null}
+    {props.error ? <div className={styles.error} role="status" aria-live="polite">{props.error}</div> : null}
   </section>;
 }

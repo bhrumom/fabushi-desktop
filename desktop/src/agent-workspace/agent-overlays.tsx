@@ -29,6 +29,8 @@ export interface AgentOverlaySettingsProps {
   agentId: string;
   open: boolean;
   value: AgentSettingsProfileValue;
+  pending: import('./agent-settings-controller').AgentSettingsPending;
+  error: string | null;
   onToggle(): void;
   onUpdateProfile(profile: AgentSettingsProfileUpdate): Promise<void>;
   onSetNotifications(enabled: boolean): Promise<void>;
@@ -79,6 +81,8 @@ export default function AgentOverlays(props: AgentOverlaysProps) {
     {settings.open ? <AgentSettingsPanel
       agentId={settings.agentId}
       value={settings.value}
+      pending={settings.pending}
+      error={settings.error}
       onUpdateProfile={settings.onUpdateProfile}
       onSetNotifications={settings.onSetNotifications}
     /> : null}
