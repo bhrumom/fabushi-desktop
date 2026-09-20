@@ -7328,13 +7328,25 @@ impl FeatureHostController {
                     progress: Some(1),
                     total: Some(1),
                 });
+                let response_text = agent_id
+                    .filter(|id| id != "mahayana-assistant")
+                    .map(|id| format!("{id}机器人收到：{text}"))
+                    .unwrap_or_else(|| format!("收到：{text}"));
+                // Exercise the real CJK streaming shape in the deterministic
+                // desktop Host: one visible character can arrive per delta.
+                // The renderer must coalesce these without producing one line
+                // per character or a second final reply.
+                for delta in response_text.chars() {
+                    state.events.push_back(HostEvent::ChatDelta {
+                        timestamp: timestamp(),
+                        operation_id: operation_id.clone(),
+                        delta: delta.to_string(),
+                    });
+                }
                 state.events.push_back(HostEvent::ChatMessage {
                     timestamp: timestamp(),
                     role: MessageRole::Assistant,
-                    text: agent_id
-                        .filter(|id| id != "mahayana-assistant")
-                        .map(|id| format!("{id}机器人收到：{text}"))
-                        .unwrap_or_else(|| format!("收到：{text}")),
+                    text: response_text,
                     operation_id: Some(operation_id.clone()),
                 });
                 state.events.push_back(HostEvent::UsageUpdated {
