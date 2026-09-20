@@ -128,7 +128,9 @@ function AgentRow({
             : item.waitingReason?.trim()
               ? `Waiting for you: ${item.waitingReason.trim()}`
               : item.busy
-                ? item.lastMessage?.trim() ? `Working… · ${item.lastMessage.trim()}` : 'Working…'
+                ? item.currentActivity?.trim()
+                  ? `Working… · ${item.currentActivity.trim()}`
+                  : item.lastMessage?.trim() ? `Working… · ${item.lastMessage.trim()}` : 'Working…'
                 : item.isComposingMessage
                   ? 'Composing…'
                   : item.lastMessage?.trim() || item.description || (item.isGroup ? 'Agent group' : 'Agent')
