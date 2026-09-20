@@ -1147,13 +1147,23 @@ impl FeatureHostController {
         let request_id = command.request_id().to_string();
         match command {
             FeatureCommand::AutomationList { agent_id, .. } => {
+                let owner = if let Some(requested) = agent_id.as_deref() {
+                    let state = self.state()?;
+                    Some(canonical_runtime_agent_id(&state, requested).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown automation agent: {requested}"
+                        ))
+                    })?)
+                } else {
+                    None
+                };
                 let mut automations = self
                     .state()?
                     .automations
                     .values()
                     .filter(|automation| {
-                        agent_id.as_ref().is_none_or(|agent_id| {
-                            automation.agent_id.as_deref() == Some(agent_id.as_str())
+                        owner.as_ref().is_none_or(|agent_id| {
+                            fabu_automation_owner(automation) == agent_id
                         })
                     })
                     .cloned()
@@ -1212,7 +1222,6 @@ impl FeatureHostController {
                         state.sequence += 1;
                         format!("routine-{}-{}", now, state.sequence)
                     });
-                let previous = state.automations.get(&id).cloned();
                 let requested_agent_id = match agent_id {
                     Some(agent_id) => {
                         let requested = required(agent_id, "automation agent id")?;
@@ -1224,13 +1233,22 @@ impl FeatureHostController {
                     }
                     None => None,
                 };
+                let previous_key =
+                    find_automation_state_key(&state.automations, &id, requested_agent_id.as_deref());
+                let previous = previous_key
+                    .as_ref()
+                    .and_then(|key| state.automations.get(key))
+                    .cloned();
                 if let (Some(previous), Some(agent_id)) =
                     (previous.as_ref(), requested_agent_id.as_deref())
                 {
                     ensure_automation_agent_scope(previous, Some(agent_id))?;
                 }
-                let resolved_agent_id = requested_agent_id
-                    .or_else(|| previous.as_ref().and_then(|item| item.agent_id.clone()));
+                let resolved_agent_id = Some(
+                    requested_agent_id
+                        .or_else(|| previous.as_ref().and_then(|item| item.agent_id.clone()))
+                        .unwrap_or_else(|| "mahayana-assistant".into()),
+                );
                 let action = if previous.is_some() {
                     "updated"
                 } else {
@@ -1248,7 +1266,14 @@ impl FeatureHostController {
                     last_run_at_ms: previous.as_ref().and_then(|item| item.last_run_at_ms),
                     next_run_at_ms: automation_next_run(&trigger, &schedule, enabled, now),
                 };
-                state.automations.insert(id, automation.clone());
+                if let Some(previous_key) = previous_key {
+                    state.automations.remove(&previous_key);
+                }
+                let state_key = automation_state_key(
+                    fabu_automation_owner(&automation),
+                    &automation.id,
+                );
+                state.automations.insert(state_key, automation.clone());
                 self.persist_automations(&state.automations)?;
                 state.events.push_back(HostEvent::AutomationChanged {
                     timestamp: timestamp(),
@@ -1267,10 +1292,21 @@ impl FeatureHostController {
                 ..
             } => {
                 let mut state = self.state()?;
-                let automation = state.automations.get_mut(&id).ok_or_else(|| {
+                let requested_owner = agent_id
+                    .as_deref()
+                    .and_then(|requested| canonical_runtime_agent_id(&state, requested));
+                let key = find_automation_state_key(
+                    &state.automations,
+                    &id,
+                    requested_owner.as_deref(),
+                )
+                .ok_or_else(|| {
                     FeatureHostError::Contract(format!("unknown automation: {id}"))
                 })?;
-                ensure_automation_agent_scope(automation, agent_id.as_deref())?;
+                let automation = state.automations.get_mut(&key).ok_or_else(|| {
+                    FeatureHostError::Contract(format!("unknown automation: {id}"))
+                })?;
+                ensure_automation_agent_scope(automation, requested_owner.as_deref())?;
                 automation.enabled = enabled;
                 let trigger =
                     automation
@@ -1295,13 +1331,24 @@ impl FeatureHostController {
             }
             FeatureCommand::AutomationDelete { id, agent_id, .. } => {
                 let mut state = self.state()?;
-                let existing = state.automations.get(&id).ok_or_else(|| {
+                let requested_owner = agent_id
+                    .as_deref()
+                    .and_then(|requested| canonical_runtime_agent_id(&state, requested));
+                let key = find_automation_state_key(
+                    &state.automations,
+                    &id,
+                    requested_owner.as_deref(),
+                )
+                .ok_or_else(|| {
                     FeatureHostError::Contract(format!("unknown automation: {id}"))
                 })?;
-                ensure_automation_agent_scope(existing, agent_id.as_deref())?;
+                let existing = state.automations.get(&key).ok_or_else(|| {
+                    FeatureHostError::Contract(format!("unknown automation: {id}"))
+                })?;
+                ensure_automation_agent_scope(existing, requested_owner.as_deref())?;
                 let automation = state
                     .automations
-                    .remove(&id)
+                    .remove(&key)
                     .expect("automation checked above");
                 self.persist_automations(&state.automations)?;
                 state.events.push_back(HostEvent::AutomationChanged {
@@ -1318,10 +1365,21 @@ impl FeatureHostController {
                 let automation =
                     {
                         let mut state = self.state()?;
-                        let automation = state.automations.get_mut(&id).ok_or_else(|| {
+                        let requested_owner = agent_id
+                            .as_deref()
+                            .and_then(|requested| canonical_runtime_agent_id(&state, requested));
+                        let key = find_automation_state_key(
+                            &state.automations,
+                            &id,
+                            requested_owner.as_deref(),
+                        )
+                        .ok_or_else(|| {
                             FeatureHostError::Contract(format!("unknown automation: {id}"))
                         })?;
-                        ensure_automation_agent_scope(automation, agent_id.as_deref())?;
+                        let automation = state.automations.get_mut(&key).ok_or_else(|| {
+                            FeatureHostError::Contract(format!("unknown automation: {id}"))
+                        })?;
+                        ensure_automation_agent_scope(automation, requested_owner.as_deref())?;
                         let now = now_millis();
                         automation.last_run_at_ms = Some(now);
                         let trigger = automation.trigger.clone().unwrap_or_else(|| {
@@ -3248,14 +3306,16 @@ impl FeatureHostController {
                     let automation_id = id.clone().unwrap_or_else(|| slugify_workflow_name(&name));
                     let automation = {
                         let mut state = self.state()?;
+                        let automation_key =
+                            automation_state_key(&agent_id, &automation_id);
                         let created_at_ms = state
                             .automations
-                            .get(&automation_id)
+                            .get(&automation_key)
                             .map(|automation| automation.created_at_ms)
                             .unwrap_or(now);
                         let last_run_at_ms = state
                             .automations
-                            .get(&automation_id)
+                            .get(&automation_key)
                             .and_then(|automation| automation.last_run_at_ms);
                         let automation = AutomationSummary {
                             id: automation_id.clone(),
@@ -3276,7 +3336,7 @@ impl FeatureHostController {
                         };
                         state
                             .automations
-                            .insert(automation_id.clone(), automation.clone());
+                            .insert(automation_key, automation.clone());
                         self.persist_automations(&state.automations)?;
                         automation
                     };
@@ -3296,10 +3356,12 @@ impl FeatureHostController {
                     if let Some(existing_id) = id.as_deref() {
                         let removed_automation = {
                             let mut state = self.state()?;
-                            if let Some(existing) = state.automations.get(existing_id) {
+                            let automation_key =
+                                automation_state_key(&agent_id, existing_id);
+                            if let Some(existing) = state.automations.get(&automation_key) {
                                 ensure_automation_agent_scope(existing, Some(agent_id.as_str()))?;
                             }
-                            let removed = state.automations.remove(existing_id).is_some();
+                            let removed = state.automations.remove(&automation_key).is_some();
                             if removed {
                                 self.persist_automations(&state.automations)?;
                             }
@@ -3332,7 +3394,8 @@ impl FeatureHostController {
             FeatureCommand::WorkflowSetEnabled { id, enabled, .. } => {
                 let automation = {
                     let mut state = self.state()?;
-                    if let Some(automation) = state.automations.get_mut(&id) {
+                    let automation_key = automation_state_key(&agent_id, &id);
+                    if let Some(automation) = state.automations.get_mut(&automation_key) {
                         ensure_automation_agent_scope(automation, Some(agent_id.as_str()))?;
                         automation.enabled = enabled;
                         automation.next_run_at_ms = if enabled {
@@ -3364,10 +3427,11 @@ impl FeatureHostController {
             FeatureCommand::WorkflowDelete { id, .. } => {
                 let removed_automation = {
                     let mut state = self.state()?;
-                    if let Some(existing) = state.automations.get(&id) {
+                    let automation_key = automation_state_key(&agent_id, &id);
+                    if let Some(existing) = state.automations.get(&automation_key) {
                         ensure_automation_agent_scope(existing, Some(agent_id.as_str()))?;
                     }
-                    let removed = state.automations.remove(&id).is_some();
+                    let removed = state.automations.remove(&automation_key).is_some();
                     if removed {
                         self.persist_automations(&state.automations)?;
                     }
@@ -3391,7 +3455,11 @@ impl FeatureHostController {
                 });
             }
             FeatureCommand::WorkflowRun { id, .. } => {
-                if self.state()?.automations.contains_key(&id) {
+                if self
+                    .state()?
+                    .automations
+                    .contains_key(&automation_state_key(&agent_id, &id))
+                {
                     return self.execute_automation(FeatureCommand::AutomationRun {
                         request_id,
                         id,
@@ -3544,7 +3612,10 @@ impl FeatureHostController {
                     };
                     {
                         let mut state = self.state()?;
-                        state.automations.insert(id, automation.clone());
+                        state.automations.insert(
+                            automation_state_key(&agent_id, &id),
+                            automation.clone(),
+                        );
                         self.persist_automations(&state.automations)?;
                     }
                     workflow_from_automation(&automation)
@@ -5449,14 +5520,22 @@ impl FeatureHostController {
                                 .contains(&filter.to_ascii_lowercase())
                         })
                 })
-                .map(|automation| automation.id.clone())
+                .map(|automation| {
+                    (
+                        automation_state_key(
+                            fabu_automation_owner(automation),
+                            &automation.id,
+                        ),
+                        automation.id.clone(),
+                    )
+                })
                 .collect::<Vec<_>>()
         };
 
-        for id in &matching_ids {
+        for (state_key, id) in &matching_ids {
             let automation = {
                 let mut state = self.state()?;
-                let automation = state.automations.get_mut(id).ok_or_else(|| {
+                let automation = state.automations.get_mut(state_key).ok_or_else(|| {
                     FeatureHostError::Contract(format!("unknown automation: {id}"))
                 })?;
                 automation.last_run_at_ms = Some(event.occurred_at_ms.unwrap_or_else(now_millis));
@@ -5569,7 +5648,12 @@ impl FeatureHostController {
             .find(|automation| {
                 automation.enabled && automation.next_run_at_ms.is_some_and(|next| next <= now)
             })
-            .map(|automation| (automation.id.clone(), automation.agent_id.clone()));
+            .map(|automation| {
+                (
+                    automation.id.clone(),
+                    Some(fabu_automation_owner(automation).to_string()),
+                )
+            });
         if let Some((id, agent_id)) = due {
             let _ = self.execute_automation(FeatureCommand::AutomationRun {
                 request_id: format!("scheduled-{id}-{now}"),
@@ -5744,7 +5828,10 @@ impl FeatureHostController {
                     if automation.agent_id.is_none() {
                         automation.agent_id = Some("mahayana-assistant".into());
                     }
-                    automations.entry(legacy_id).or_insert(automation);
+                    let owner = fabu_automation_owner(&automation).to_string();
+                    automations
+                        .entry(automation_state_key(&owner, &legacy_id))
+                        .or_insert(automation);
                 }
             }
             if let (Some(root), Some(id)) = (self.memory_root_path.as_deref(), account_id) {
@@ -11636,6 +11723,31 @@ fn persist_fabu_agent_manifest(agent_dir: &Path, bot: &BotSummary) -> Result<(),
 const FABU_AUTOMATIONS_DIRNAME: &str = "automations";
 const FABU_AUTOMATION_CONFIG_FILENAME: &str = "automation.json";
 
+fn automation_state_key(agent_id: &str, automation_id: &str) -> String {
+    format!("{agent_id}\u{1f}{automation_id}")
+}
+
+fn find_automation_state_key(
+    automations: &BTreeMap<String, AutomationSummary>,
+    automation_id: &str,
+    agent_id: Option<&str>,
+) -> Option<String> {
+    if let Some(agent_id) = agent_id {
+        let key = automation_state_key(agent_id, automation_id);
+        return automations.contains_key(&key).then_some(key);
+    }
+    let main_key = automation_state_key("mahayana-assistant", automation_id);
+    if automations.contains_key(&main_key) {
+        return Some(main_key);
+    }
+    let mut matches = automations
+        .iter()
+        .filter(|(_, automation)| automation.id == automation_id)
+        .map(|(key, _)| key.clone());
+    let first = matches.next()?;
+    matches.next().is_none().then_some(first)
+}
+
 fn fabu_automation_owner(automation: &AutomationSummary) -> &str {
     automation
         .agent_id
@@ -11760,8 +11872,9 @@ fn load_fabu_agent_automations(agent_root: &Path) -> BTreeMap<String, Automation
                 .and_then(Value::as_i64)
                 .filter(|next| *next > now)
                 .or_else(|| automation_next_run(&trigger, &schedule, enabled, now));
+            let state_key = automation_state_key(&owner, &id);
             automations.insert(
-                id.clone(),
+                state_key,
                 AutomationSummary {
                     id,
                     agent_id: Some(owner),
