@@ -284,7 +284,7 @@ export class AgentRuntimeCoordinator {
     if (this.deltaTimer !== null) globalThis.clearTimeout(this.deltaTimer);
     this.deltaTimer = null;
     this.pendingDeltas.clear();
-    this.workspace.clear();
+    this.workspace.clearOperations();
   }
 
   dispose(): void {
