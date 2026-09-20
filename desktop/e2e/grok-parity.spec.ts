@@ -100,6 +100,14 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.isBusy('agent:b')).toBe(true);
       expect(controller.onlyPendingPeer()).toBe('agent:b');
 
+      const claimedPeer = controller.claimRuntimeOperation('operation:b', controller.peerForRequest('request:b'));
+      expect(claimedPeer).toBe('agent:b');
+      expect(controller.peerForRuntimeId('operation:b')).toBe('agent:b');
+      expect(controller.requestForPeer('agent:b')).toBeNull();
+      expect(controller.finishRuntimeOperation('operation:b')).toBe('agent:b');
+      expect(controller.isOperationFinished('operation:b')).toBe(true);
+      expect(controller.claimRuntimeOperation('operation:b', 'agent:b')).toBeNull();
+
       controller.setDraft('agent:a', 'first prompt');
       controller.appendAttachments('agent:a', [{ id: 'attachment:a', name: 'a.txt' }]);
       controller.setReply('agent:a', { id: 'reply:a', role: 'peer', text: 'previous answer' });
