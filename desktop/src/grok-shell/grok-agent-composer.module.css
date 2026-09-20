@@ -5,8 +5,10 @@
   gap: 5px;
   width: min(760px, calc(100% - 40px));
   min-height: 52px;
+  position: relative;
   margin: 0 auto 18px;
   padding: 6px;
+  overflow: hidden;
   color: var(--cursor-text-primary, #eceaf2);
   background: var(--cursor-bg-secondary, #242229);
   border: 1px solid var(--cursor-stroke-secondary, rgba(255,255,255,.09));
@@ -48,3 +50,68 @@
 .primary:hover:not(:disabled) { color: #111014; background: #fff; }
 .primary:disabled { opacity: .45; cursor: default; }
 .primaryPlaceholder { width: 32px; height: 32px; }
+
+.root[data-drag-over="true"] {
+  border-color: rgba(235, 230, 244, .34);
+  box-shadow: 0 12px 32px rgba(0,0,0,.22), 0 0 0 2px rgba(235,230,244,.08);
+}
+.attachments {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 2px 0;
+}
+.attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  max-width: 230px;
+  padding: 6px 7px 6px 9px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 9px;
+  background: rgba(255,255,255,.045);
+}
+.attachment > span {
+  min-width: 0;
+  display: grid;
+}
+.attachment strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 550;
+}
+.attachment small {
+  color: var(--cursor-text-tertiary, #716c78);
+  font-size: 10px;
+}
+.attachment button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: var(--cursor-text-secondary, #918a9b);
+  background: transparent;
+}
+.attachment button:hover { color: var(--cursor-text-primary, #f1edf7); background: rgba(255,255,255,.07); }
+.fileInput { display: none; }
+.dropOverlay {
+  position: absolute;
+  inset: 5px;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgba(235,230,244,.32);
+  border-radius: 10px;
+  color: var(--cursor-text-primary, #eceaf2);
+  background: rgba(36,34,41,.92);
+  pointer-events: none;
+  font-size: 12px;
+}
