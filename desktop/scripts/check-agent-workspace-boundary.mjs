@@ -34,6 +34,11 @@ const forbidden = [
   ['legacy Grok Command Palette mounted by primary shell', /import\s+GrokCommandPalette\s+from\s+['"]\.\/grok-shell\/grok-command-palette['"]/],
   ['primary Agent shell directly imports Grok implementation layers', /from\s+['"]\.\/grok-(?:shell|runtime)\//],
   ['Grok-named runtime state leaked back into primary Agent shell', /\bgrok(?:Palette|Network|Pinned|Sidebar|Selected|Activity|Busy|Agent)[A-Z]\w*/],
+  ['renderer owns RemoteComputerDesktopController', /\bRemoteComputerDesktopController\b|\bremoteComputerControllerRef\b/],
+  ['renderer owns Computer capability state', /setComputerCapabilityStatus\b|setRemoteComputerState\b/],
+  ['renderer bypasses Agent Computer controller', /agentCoordinatorClient\.refreshComputerStatus\s*\(|reportOpenComputer/],
+  ['renderer bypasses Agent runtime approval facade', /agentCoordinatorClient\.resolveApproval\s*\(/],
+  ['renderer bypasses Agent runtime interrupt facade', /agentCoordinatorClient\.interrupt\s*\(/],
 ];
 
 const violations = forbidden
@@ -42,6 +47,9 @@ const violations = forbidden
 
 if (!/useAgentWorkspaceRuntime\s*\(/.test(shell)) {
   violations.push('Agent workspace runtime facade is not mounted by the desktop Agent shell');
+}
+if (!/useAgentComputerController\s*\(/.test(shell)) {
+  violations.push('Agent Computer lifecycle controller is not mounted by the desktop Agent shell');
 }
 if (/from\s+['"]\.\.\/grok-shell\//.test(agentComposer)) {
   violations.push('primary Agent Composer implementation still depends on the Grok compatibility shell');
