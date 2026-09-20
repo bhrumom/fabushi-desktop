@@ -127,6 +127,7 @@ import { useAgentSidebarController } from './agent-workspace/use-agent-sidebar-c
 import { useAgentNetworkController } from './agent-workspace/use-agent-network-controller';
 import { useAgentCommandPaletteController } from './agent-workspace/use-agent-command-palette-controller';
 import { useAgentWorkflowController } from './agent-workspace/use-agent-workflow-controller';
+import { useAgentStoreSyncController } from './agent-workspace/use-agent-store-sync-controller';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -1067,6 +1068,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         workflows,
       });
     },
+    onError: (_agentId, message) => setError(message),
+  });
+  const agentStoreSyncController = useAgentStoreSyncController(agentCoordinatorClient, {
+    mirror: (agentId, objectPath, value) => mirrorAgentCloudSnapshot(agentId, objectPath, value),
+    remove: (agentId, objectPath) => removeAgentCloudObject(agentId, objectPath),
     onError: (_agentId, message) => setError(message),
   });
   const [mutedPeerKeys, setMutedPeerKeys] = useState<Set<string>>(() => new Set());
@@ -2021,6 +2027,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   function handleRuntimeEvent(event: RuntimeEvent) {
     if (handleSelfHostedEvent(event)) return;
+    if (agentStoreSyncController.handle(event)) return;
     if (agentWorkflowController.handle(event)) return;
     // Normal Agent chat/operation events are owned by AgentRuntimeCoordinator.
     // The switch below remains only as a compatibility fallback for legacy
@@ -2085,43 +2092,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       }
-      case 'memory.changed':
-        // Fabu persists Agent-owned memory independently of chat delivery.
-        // Re-list after every mutation so removals/clears also produce a
-        // complete cloud snapshot instead of an append-only partial mirror.
-        void execute({
-          type: 'memory.list',
-          requestId: nextRequestId('memory-cloud-sync'),
-          agentId: event.agentId,
-          limit: 1000,
-        }).catch(() => {});
-        break;
-      case 'memory.listed':
-        void mirrorAgentCloudSnapshot(event.agentId, FABU_AGENT_MEMORY_INDEX_PATH, {
-          version: 1,
-          count: event.count,
-          memories: event.memories,
-        });
-        break;
-      case 'automation.changed': {
-        const owner = event.automation.agentId;
-        if (owner) {
-          const path = fabuAgentAutomationPath(event.automation.id);
-          if (event.action === 'deleted') void removeAgentCloudObject(owner, path);
-          else void mirrorAgentCloudSnapshot(owner, path, event.automation);
-        }
-        break;
-      }
-      case 'automation.listed':
-        for (const automation of event.automations) {
-          if (!automation.agentId) continue;
-          void mirrorAgentCloudSnapshot(
-            automation.agentId,
-            fabuAgentAutomationPath(automation.id),
-            automation,
-          );
-        }
-        break;
       case 'bot.listed':
         initialLegacyHydrationMaskRef.current |= 0b010;
         setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
