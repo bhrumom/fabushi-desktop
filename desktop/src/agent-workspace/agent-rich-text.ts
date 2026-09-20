@@ -22,6 +22,12 @@ function referenceNode(reference: AgentPromptReference): RichTextNode | null {
   if (reference.kind === 'workflow') {
     return { type: 'workflowReference', attrs: { id: reference.id, label: reference.label } };
   }
+  if (reference.kind === 'pull-request') {
+    const prNumber = Number(reference.label.replace(/^#/, ''));
+    return Number.isInteger(prNumber) && prNumber > 0
+      ? { type: 'prReference', attrs: { prNumber, title: reference.label, url: reference.id } }
+      : null;
+  }
   return null;
 }
 
@@ -90,7 +96,7 @@ export function normalizeAgentRichText(
 }
 
 function promptReferenceKind(value: unknown): AgentPromptReferenceKind | null {
-  return value === 'agent' || value === 'workflow' || value === 'mcp' || value === 'file' || value === 'link'
+  return value === 'agent' || value === 'workflow' || value === 'mcp' || value === 'pull-request' || value === 'file' || value === 'link'
     ? value
     : null;
 }
@@ -109,6 +115,12 @@ export function agentPromptReferencesFromRichText(value: string | undefined): Ag
       const id = typeof node.attrs?.id === 'string' ? node.attrs.id : '';
       const label = typeof node.attrs?.label === 'string' ? node.attrs.label : '';
       if (id && label) result.push({ kind: 'workflow', id, label });
+    } else if (node.type === 'prReference') {
+      const prNumber = Number(node.attrs?.prNumber);
+      const url = typeof node.attrs?.url === 'string' ? node.attrs.url : '';
+      if (Number.isInteger(prNumber) && prNumber > 0 && url) {
+        result.push({ kind: 'pull-request', id: url, label: String(prNumber) });
+      }
     }
     for (const child of node.content ?? []) visit(child);
   };
