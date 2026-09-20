@@ -19,7 +19,9 @@ export type AccountSyncEnvelope = {
   snapshot: null | {
     miniApps: Array<Record<string, unknown>>;
     bots: AccountBotMembership[];
+    agents?: AccountAgentSummary[];
     cloudRevisions: Array<Record<string, unknown>>;
+    agentStoreRevisions?: Array<Record<string, unknown>>;
   };
   events: AccountSyncEvent[];
 };
@@ -38,6 +40,51 @@ export type AccountBotMembership = {
   };
   sources: Array<{ source: string; sourceId: string; addedAtMs?: number }>;
   updatedAtMs?: number;
+};
+
+export type AccountAgentSummary = {
+  agentId: string;
+  profile: {
+    agentId?: string;
+    name?: string;
+    description?: string;
+    title?: string;
+    avatarShape?: string;
+    avatarColor?: string;
+  };
+  metadata: {
+    agentId?: string;
+    latestRootBlobId?: string;
+    name?: string;
+    mode?: 'default' | 'plan' | 'debug' | 'search' | string;
+    isRunEverything?: boolean;
+    approvalMode?: 'allowlist' | 'unrestricted' | 'auto-review' | string;
+    createdAt?: number;
+    lastUsedModel?: string;
+    lastDebugServerPort?: number;
+    currentPlanUri?: string;
+    subagentInfo?: Record<string, unknown>;
+    blobEncryptionKeyId?: string;
+  };
+  createdAtMs?: number;
+  updatedAtMs?: number;
+};
+
+export type AccountAgentStoreObject = {
+  agentId: string;
+  path: string;
+  blobId: string;
+  sha256?: string;
+  etag: string;
+  revision: number;
+  updatedAtMs: number;
+  sizeBytes?: number;
+  dataBase64?: string;
+};
+
+export type AccountAgentStoreList = {
+  agentId: string;
+  files: AccountAgentStoreObject[];
 };
 
 export type AccountMiniAppList = {
@@ -83,6 +130,53 @@ export async function readAccountBots(): Promise<AccountBotMembership[]> {
 
 export async function readAccountMiniApps(): Promise<AccountMiniAppList> {
   return invokeNativeDesktop<AccountMiniAppList>('getAccountMiniApps', {});
+}
+
+export async function readAccountAgents(): Promise<AccountAgentSummary[]> {
+  const response = await invokeNativeDesktop<{ agents?: AccountAgentSummary[] }>('getAccountAgents', {});
+  return Array.isArray(response?.agents) ? response.agents : [];
+}
+
+export async function readAccountAgent(agentId: string): Promise<AccountAgentSummary> {
+  return invokeNativeDesktop<AccountAgentSummary>('getAccountAgent', { agentId });
+}
+
+export async function upsertAccountAgent(
+  agentId: string,
+  profile: AccountAgentSummary['profile'],
+  metadata: AccountAgentSummary['metadata'],
+): Promise<AccountAgentSummary> {
+  return invokeNativeDesktop<AccountAgentSummary>('upsertAccountAgent', { agentId, profile, metadata });
+}
+
+export async function listAccountAgentStore(agentId: string, prefix = ''): Promise<AccountAgentStoreList> {
+  return invokeNativeDesktop<AccountAgentStoreList>('listAgentStore', { agentId, prefix });
+}
+
+export async function readAccountAgentStoreObject(agentId: string, path: string): Promise<AccountAgentStoreObject> {
+  return invokeNativeDesktop<AccountAgentStoreObject>('getAgentStoreObject', { agentId, path });
+}
+
+export async function writeAccountAgentStoreObject(
+  agentId: string,
+  path: string,
+  dataBase64: string,
+  options: { baseEtag?: string; expectAbsent?: boolean } = {},
+): Promise<Record<string, unknown>> {
+  return invokeNativeDesktop<Record<string, unknown>>('putAgentStoreObject', {
+    agentId,
+    path,
+    dataBase64,
+    ...options,
+  });
+}
+
+export async function deleteAccountAgentStoreObject(
+  agentId: string,
+  path: string,
+  baseEtag?: string,
+): Promise<Record<string, unknown>> {
+  return invokeNativeDesktop<Record<string, unknown>>('deleteAgentStoreObject', { agentId, path, baseEtag });
 }
 
 export function accountMiniAppsAsMarketplaceSummaries(account: AccountMiniAppList): MarketplacePluginSummary[] {
