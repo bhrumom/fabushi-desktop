@@ -4366,6 +4366,11 @@ async function saveInvoiceDialog() {
                 onCopyMessage={(entry) => void copyBotMessage(entry as BotTranscriptMessage)}
                 onRegenerate={(entry) => regenerateBotMessage(entry as BotTranscriptMessage)}
                 onEdit={(entry) => editBotMessage(entry as BotTranscriptMessage)}
+                onResolveApproval={(approvalId, decision) => {
+                  void agentCoordinatorClient.resolveApproval({ approvalId, decision }).catch((cause: unknown) => {
+                    setError(cause instanceof Error ? cause.message : String(cause));
+                  });
+                }}
                 onContextMenu={(event, entry) => {
                   event.preventDefault();
                   event.stopPropagation();
