@@ -152,7 +152,15 @@ import {
   type AccountBotMembership,
 } from './account-sync-client';
 import { projectFabuAgentProfile, projectFabuAgentSettings, projectFabuBotIdentity } from './fabu-runtime/agent-domain';
-import { FabuAgentStore } from './fabu-runtime/agent-store';
+import {
+  FABU_AGENT_ATTACHMENT_INDEX_PATH,
+  FABU_AGENT_MEMORY_INDEX_PATH,
+  FABU_AGENT_RUNTIME_CHECKPOINT_PATH,
+  FABU_AGENT_WORKFLOW_INDEX_PATH,
+  FabuAgentStore,
+  fabuAgentAutomationPath,
+  fabuAgentConversationTranscriptPath,
+} from './fabu-runtime/agent-store';
 import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
 import AgentSidebar, { type AgentSidebarItem as GrokAgentSidebarItem } from './agent-workspace/agent-sidebar';
 import AgentSearch from './agent-workspace/agent-search';
@@ -1793,10 +1801,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     return store;
   }
 
-  function agentStorePathSegment(value: string): string {
-    return encodeURIComponent(value.trim()).replace(/%2F/gi, '_');
-  }
-
   async function mirrorAgentCloudSnapshot(
     agentId: string,
     path: string,
@@ -1806,6 +1810,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     const store = agentStoreFor(agentId);
     try {
       await store.writeJson(path, value);
+      await store.checkpointRoot();
     } catch {
       // The local Host remains authoritative while offline or during an
       // etag conflict. The content-addressed backend preserves conflicting
@@ -1816,7 +1821,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   async function removeAgentCloudObject(agentId: string, path: string): Promise<void> {
     if (!agentId.trim()) return;
     try {
-      await agentStoreFor(agentId).delete(path);
+      const store = agentStoreFor(agentId);
+      await store.delete(path);
+      await store.checkpointRoot();
     } catch {
       // Deletion is best-effort; account sync/reconciliation can retry.
     }
@@ -1861,6 +1868,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       store.writeProfile(profile),
       store.writeSettings(settings),
     ]);
+    await store.checkpointRoot();
   }
 
   function rememberAgentPeer(operationId: string, peerKey: string | null | undefined) {
@@ -2335,7 +2343,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }).catch(() => {});
         break;
       case 'memory.listed':
-        void mirrorAgentCloudSnapshot(event.agentId, 'memory/index.json', {
+        void mirrorAgentCloudSnapshot(event.agentId, FABU_AGENT_MEMORY_INDEX_PATH, {
           version: 1,
           count: event.count,
           memories: event.memories,
@@ -2349,7 +2357,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }).catch(() => {});
         break;
       case 'workflow.listed':
-        void mirrorAgentCloudSnapshot(event.agentId, 'workflows/index.json', {
+        void mirrorAgentCloudSnapshot(event.agentId, FABU_AGENT_WORKFLOW_INDEX_PATH, {
           version: 1,
           workflows: event.workflows,
         });
@@ -2357,7 +2365,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       case 'automation.changed': {
         const owner = event.automation.agentId;
         if (owner) {
-          const path = `automations/${agentStorePathSegment(event.automation.id)}/automation.json`;
+          const path = fabuAgentAutomationPath(event.automation.id);
           if (event.action === 'deleted') void removeAgentCloudObject(owner, path);
           else void mirrorAgentCloudSnapshot(owner, path, event.automation);
         }
@@ -2368,7 +2376,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           if (!automation.agentId) continue;
           void mirrorAgentCloudSnapshot(
             automation.agentId,
-            `automations/${agentStorePathSegment(automation.id)}/automation.json`,
+            fabuAgentAutomationPath(automation.id),
             automation,
           );
         }
