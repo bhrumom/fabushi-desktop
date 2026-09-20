@@ -860,9 +860,11 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       // stays under Pinned while pinned, then must project back into the section
       // that was just persisted when it is unpinned. This guards the original
       // 35522950977 failure instead of merely asserting that an empty header exists.
-      await expect(peer.locator('..')).toHaveAttribute('data-pinned', 'true');
+      const pinnedRow = peer.locator('..');
+      await expect(pinnedRow).toHaveAttribute('data-pinned', 'true');
       await expect(focusedWork.getByRole('button', { name: /大乘助手/ })).toHaveCount(0);
-      await page.getByRole('button', { name: /大乘助手 actions/ }).click();
+      await pinnedRow.hover();
+      await pinnedRow.getByRole('button', { name: /大乘助手 actions/ }).click();
       await page.getByRole('menuitem', { name: 'Unpin' }).click();
       await expect(focusedWork.getByRole('button', { name: /大乘助手/ })).toBeVisible();
     });

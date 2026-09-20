@@ -12,12 +12,15 @@ on:
         required: true
         default: true
         type: boolean
+  push:
+    tags:
+      - 'package-macos-*'
 
 permissions:
   contents: write
 
 concurrency:
-  group: package-macos-${{ inputs.source_sha || github.ref }}
+  group: package-macos-${{ github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -32,7 +35,7 @@ jobs:
       - name: Checkout exact source
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.source_sha || 'main' }}
+          ref: ${{ github.event_name == 'push' && github.sha || inputs.source_sha || 'main' }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -45,6 +48,9 @@ jobs:
           requested="${{ inputs.source_sha }}"
           if [ -n "$requested" ]; then
             test "$sha" = "$requested"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            test "$sha" = "${{ github.sha }}"
+            case "${{ github.ref_name }}" in package-macos-*) ;; *) exit 1 ;; esac
           else
             test "$(git rev-parse --abbrev-ref HEAD)" = "main"
           fi
@@ -267,7 +273,7 @@ jobs:
           compression-level: 0
 
       - name: Publish GitHub prerelease
-        if: ${{ inputs.publish_release }}
+        if: ${{ github.event_name == 'push' || inputs.publish_release }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
