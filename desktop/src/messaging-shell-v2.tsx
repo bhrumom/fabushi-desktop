@@ -128,6 +128,7 @@ import { projectFabuAgentProfile, projectFabuAgentSettings, projectFabuBotIdenti
 import { FabuAgentStore } from './fabu-runtime/agent-store';
 import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
 import GrokAgentSidebar, { type GrokAgentSidebarItem } from './grok-shell/grok-agent-sidebar';
+import { AgentOperationRegistry } from './grok-runtime/agent-operation-registry';
 import {
   SidebarContactGroupManager,
   projectSidebarContactGroups,
@@ -991,7 +992,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [computerProfileOpen, setComputerProfileOpen] = useState(false);
   const [remoteComputerState, setRemoteComputerState] = useState<RemoteComputerDesktopState | null>(null);
   const [pendingSend, setPendingSend] = useState(false);
+  // Kept as the active-peer projection for compatibility with existing
+  // transcript DOM contracts. The authoritative ownership is per Agent below.
   const [agentOperationId, setAgentOperationId] = useState<string | null>(null);
+  const [agentOperationByPeer, setAgentOperationByPeer] = useState<Record<string, string>>({});
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
   const [queuedAgentPrompts, setQueuedAgentPrompts] = useState<Record<string, DisplayMessage[]>>({});
   const [typingByConversation, setTypingByConversation] = useState<Record<string, Record<string, number>>>({});
@@ -1037,6 +1041,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const searchInputRef = useRef<HTMLInputElement>(null);
   const sessionResetInFlightRef = useRef(false);
   const agentOperationIdRef = useRef<string | null>(null);
+  const agentOperationRegistryRef = useRef(new AgentOperationRegistry());
   const agentRequestPendingRef = useRef(false);
   const agentRequestPeerRef = useRef<string | null>(null);
   const agentRequestIdRef = useRef<string | null>(null);
@@ -1063,9 +1068,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, []);
 
   const agentSubmissionQueue = useMemo(() => createAgentSubmissionQueue({
-    isBlocked: () => !hostReadyRef.current
-      || Boolean(agentOperationIdRef.current)
-      || agentRequestPendingRef.current,
+    isBlocked: (input) => !hostReadyRef.current
+      || agentOperationRegistryRef.current.isBusy(input.peerKey),
     send: async (input) => {
       const peer = peersRef.current.find((candidate) => candidate.key === input.peerKey);
       if (!peer || !isAgentPeer(peer)) throw new Error('Agent peer is no longer available.');
