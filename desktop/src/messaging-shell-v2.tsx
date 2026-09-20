@@ -272,6 +272,7 @@ type DisplayMessage = {
   actionDetail?: string;
   actionStatus?: 'running' | 'completed' | 'failed' | 'interrupted';
   assistantTurn?: AssistantTurn;
+  attachments?: readonly AttachmentContext[];
   miniAppId?: string;
   pinned?: boolean;
   reactions?: string[];
@@ -1179,6 +1180,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           kind: 'message',
           optimistic: true,
           queued: true,
+          ...(submission.attachments?.length ? { attachments: submission.attachments } : {}),
         };
         setQueuedAgentPrompts((current) => {
           const list = current[submission.peerKey] ?? [];
@@ -2864,7 +2866,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     : [];
   const matchingMessages = messages;
   const renderedMessages = matchingMessages.slice(Math.max(0, matchingMessages.length - messageRenderCount));
-  const botTranscriptMessages: BotTranscriptMessage[] = activePeer && isAgentPeer(activePeer)
+  const botTranscriptMessages = activePeer && isAgentPeer(activePeer)
     ? [...renderedMessages, ...(queuedAgentPrompts[activePeer.key] ?? [])]
     : renderedMessages;
   const agentTranscriptEntries: TranscriptEntry[] = activePeer && isAgentPeer(activePeer)
@@ -3206,6 +3208,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         operationId: requestId,
         optimistic: true,
         queued: false,
+        ...(attachments.length ? { attachments } : {}),
       };
       const existingIndex = current.findIndex((message) => message.id === optimisticId);
       if (existingIndex < 0) return [...current, nextMessage];
@@ -3399,14 +3402,18 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   async function sendMessage(event: FormEvent) {
     event.preventDefault();
     const text = composer.trim();
-    if (!text || !activePeer) return;
+    if (!activePeer) return;
+    const stagedAgentAttachments = isAgentPeer(activePeer) && !activePeer.miniAppId
+      ? agentAttachmentsByPeer[activePeer.key] ?? []
+      : [];
     const agentRequest = activePeer.source === 'legacy'
       && activePeer.kind !== 'group'
       && !activePeer.miniAppId
       && isAgentPeer(activePeer);
+    if (!text && !(agentRequest && stagedAgentAttachments.length)) return;
     if (pendingSend && !agentRequest) return;
     if (agentRequest) {
-      const attachments = agentAttachmentsByPeer[activePeer.key] ?? [];
+      const attachments = stagedAgentAttachments;
       const replyContext: AgentReplyContext | undefined = replyTo
         ? { id: replyTo.id, role: replyTo.role, text: replyTo.text }
         : undefined;
