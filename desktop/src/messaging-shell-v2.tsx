@@ -109,16 +109,24 @@ import type { BotTranscriptMessage } from './bot-conversation-view';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
+  deleteAccountAgentStoreObject,
+  deleteMiniAppCloudStorage,
+  listAccountAgentStore,
+  readAccountAgentStoreObject,
   readAccountBots,
   readAccountMiniApps,
   readAccountSync,
   readMiniAppBotMessages,
   readMiniAppCloudStorage,
   reconcileAccountMiniApps,
+  upsertAccountAgent,
+  writeAccountAgentStoreObject,
   writeMiniAppCloudStorage,
-  deleteMiniAppCloudStorage,
   type AccountBotMembership,
 } from './account-sync-client';
+import { projectFabuAgentProfile, projectFabuAgentSettings, projectFabuBotIdentity } from './fabu-runtime/agent-domain';
+import { FabuAgentStore } from './fabu-runtime/agent-store';
+import { createAgentSubmissionQueue } from './fabu-runtime/submission-queue';
 import {
   SidebarContactGroupManager,
   projectSidebarContactGroups,
@@ -1033,6 +1041,64 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const stickToLatestRef = useRef(true);
   const remoteControlEnabledRef = useRef(hostSettings.remoteControlEnabled);
   remoteControlEnabledRef.current = hostSettings.remoteControlEnabled;
+  const hostReadyRef = useRef(hostReady);
+  hostReadyRef.current = hostReady;
+  const agentStoresRef = useRef(new Map<string, FabuAgentStore>());
+
+  const removeQueuedAgentPrompt = useCallback((peerKey: string, messageId: string) => {
+    setQueuedAgentPrompts((current) => {
+      const pending = (current[peerKey] ?? []).filter((message) => message.id !== messageId);
+      const next = { ...current };
+      if (pending.length) next[peerKey] = pending;
+      else delete next[peerKey];
+      return next;
+    });
+  }, []);
+
+  const agentSubmissionQueue = useMemo(() => createAgentSubmissionQueue({
+    isBlocked: () => !hostReadyRef.current
+      || Boolean(agentOperationIdRef.current)
+      || agentRequestPendingRef.current,
+    send: async (input) => {
+      const peer = peersRef.current.find((candidate) => candidate.key === input.peerKey);
+      if (!peer || !isAgentPeer(peer)) throw new Error('Agent peer is no longer available.');
+      await dispatchAgentPromptNow(peer, input.prompt, input.messageId);
+    },
+    onPhase: (submission) => {
+      if (submission.phase === 'queued') {
+        const queuedMessage: DisplayMessage = {
+          id: submission.messageId,
+          source: 'legacy',
+          role: 'me',
+          text: submission.prompt,
+          createdAtMs: submission.createdAtMs,
+          kind: 'message',
+          optimistic: true,
+          queued: true,
+        };
+        setQueuedAgentPrompts((current) => {
+          const list = current[submission.peerKey] ?? [];
+          const index = list.findIndex((message) => message.id === submission.messageId);
+          const nextList = index < 0
+            ? [...list, queuedMessage]
+            : list.map((message, messageIndex) => messageIndex === index ? queuedMessage : message);
+          return { ...current, [submission.peerKey]: nextList };
+        });
+        return;
+      }
+      removeQueuedAgentPrompt(submission.peerKey, submission.messageId);
+    },
+    onFailure: (submission, cause) => {
+      removeQueuedAgentPrompt(submission.peerKey, submission.messageId);
+      setError(cause instanceof Error ? cause.message : String(cause));
+    },
+  }), [removeQueuedAgentPrompt]);
+
+  useEffect(() => () => agentSubmissionQueue.dispose(), [agentSubmissionQueue]);
+
+  useEffect(() => {
+    if (hostReady) agentSubmissionQueue.flush();
+  }, [agentSubmissionQueue, hostReady]);
 
   useEffect(() => {
     activePeerKeyRef.current = activePeerKey;
@@ -1586,6 +1652,60 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     };
   }
 
+  function agentStoreFor(agentId: string): FabuAgentStore {
+    const existing = agentStoresRef.current.get(agentId);
+    if (existing) return existing;
+    const store = new FabuAgentStore(agentId, {
+      list: (id, prefix) => listAccountAgentStore(id, prefix),
+      read: (id, path) => readAccountAgentStoreObject(id, path),
+      write: (id, path, dataBase64, options) => writeAccountAgentStoreObject(id, path, dataBase64, options),
+      delete: (id, path, baseEtag) => deleteAccountAgentStoreObject(id, path, baseEtag),
+    });
+    agentStoresRef.current.set(agentId, store);
+    return store;
+  }
+
+  async function mirrorBotAgentCloud(bot: BotSummary): Promise<void> {
+    const identity = projectFabuBotIdentity(bot);
+    const profile = projectFabuAgentProfile({
+      id: bot.id,
+      agentId: bot.agentId,
+      conversationId: bot.conversationId,
+      name: bot.name,
+      description: bot.description,
+      title: bot.title,
+      avatarShape: bot.avatarShape,
+      avatarColor: bot.avatarColor,
+      hidden: bot.hidden,
+      notificationsEnabled: bot.notificationsEnabled,
+      notifyOnUpdates: bot.notifyOnUpdates,
+    });
+    const settings = projectFabuAgentSettings({
+      id: bot.id,
+      hidden: bot.hidden,
+      notificationsEnabled: bot.notificationsEnabled,
+      notifyOnUpdates: bot.notifyOnUpdates,
+    });
+    await invokeNativeDesktop('addBotToAccount', {
+      botId: identity.botId,
+      bot: {
+        ...bot,
+        agentId: identity.agentId,
+        displayName: bot.name,
+      },
+    });
+    await upsertAccountAgent(identity.agentId, profile, {
+      agentId: identity.agentId,
+      name: profile.name,
+      mode: 'default',
+    });
+    const store = agentStoreFor(identity.agentId);
+    await Promise.all([
+      store.writeProfile(profile),
+      store.writeSettings(settings),
+    ]);
+  }
+
   function rememberAgentPeer(operationId: string, peerKey: string | null | undefined) {
     if (peerKey) agentPeerKeyRef.current[operationId] = peerKey;
   }
@@ -2044,14 +2164,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         if (event.action === 'deleted') {
           void invokeNativeDesktop('removeBotFromAccount', { botId: event.bot.id }).catch(() => {});
         } else {
-          void invokeNativeDesktop('addBotToAccount', {
-            botId: event.bot.id,
-            bot: {
-              ...event.bot,
-              agentId: event.bot.agentId ?? event.bot.id,
-              displayName: event.bot.name,
-            },
-          }).catch(() => {});
+          void mirrorBotAgentCloud(event.bot).catch(() => {
+            // Local Host state stays authoritative while account sync is unavailable.
+            // A later account reconciliation retries the durable cloud projection.
+          });
         }
         break;
       case 'group.listed':
@@ -2157,11 +2273,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         break;
       case 'operation.interrupted':
         if (agentOperationIdRef.current === event.operationId) appendAssistantTurnEvent(event);
-        if (clearAgentOperation(event.operationId, 'interrupted')) setPendingSend(false);
+        if (clearAgentOperation(event.operationId, 'interrupted')) {
+          setPendingSend(false);
+          agentSubmissionQueue.flush();
+        }
         break;
       case 'operation.completed':
         if (agentOperationIdRef.current === event.operationId) appendAssistantTurnEvent(event);
-        if (clearAgentOperation(event.operationId)) setPendingSend(false);
+        if (clearAgentOperation(event.operationId)) {
+          setPendingSend(false);
+          agentSubmissionQueue.flush();
+        }
         break;
       case 'miniapp.opened':
         if (event.html) {
@@ -2176,6 +2298,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         if (clearAgentOperation(event.operationId, 'failed')) {
           setPendingSend(false);
           setError(event.message);
+          agentSubmissionQueue.flush();
         }
         break;
       case 'host.closed':
@@ -2463,8 +2586,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     setReplyTo(null);
   }
 
-  async function dispatchAgentPrompt(peer: PeerItem, text: string, existingMessageId?: string): Promise<void> {
-    if (agentOperationIdRef.current || agentRequestPendingRef.current) return;
+  async function dispatchAgentPromptNow(peer: PeerItem, text: string, existingMessageId?: string): Promise<void> {
+    if (agentOperationIdRef.current || agentRequestPendingRef.current) {
+      throw new Error('Agent transport is busy.');
+    }
     const requestId = nextRequestId('chat-send');
     rememberAgentPeer(requestId, peer.key);
     const optimisticId = existingMessageId ?? 'optimistic:' + requestId;
@@ -2536,8 +2661,21 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
+  function enqueueAgentPrompt(peer: PeerItem, text: string, existingMessageId?: string) {
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    const messageId = existingMessageId ?? nextRequestId('queued-chat-send');
+    agentSubmissionQueue.submit({
+      nonce: nextRequestId('agent-submission'),
+      messageId,
+      peerKey: peer.key,
+      agentId,
+      prompt: text,
+      createdAtMs: Date.now(),
+    });
+  }
+
   function regenerateBotMessage(message: BotTranscriptMessage) {
-    if (!activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId || pendingSend) return;
+    if (!activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId) return;
     const index = messages.findIndex((candidate) => candidate.id === message.id);
     if (index < 0) return;
     const prompt = [...messages.slice(0, index)].reverse().find((candidate) => candidate.role === 'me' && !candidate.queued);
@@ -2546,7 +2684,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       return;
     }
     setMessages((current) => current.filter((candidate) => candidate.id !== message.id));
-    void dispatchAgentPrompt(activePeer, prompt.text);
+    enqueueAgentPrompt(activePeer, prompt.text);
   }
 
   async function stopAgentOperation(): Promise<void> {
@@ -2630,36 +2768,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       && activePeer.kind !== 'group'
       && !activePeer.miniAppId
       && isAgentPeer(activePeer);
-    if (pendingSend) {
-      if (!agentRequest) return;
-      const queuedMessage: DisplayMessage = {
-        id: nextRequestId('queued-chat-send'),
-        source: 'legacy',
-        role: 'me',
-        text,
-        createdAtMs: Date.now(),
-        kind: 'message',
-        optimistic: true,
-        queued: true,
-      };
-      setQueuedAgentPrompts((current) => ({
-        ...current,
-        [activePeer.key]: [...(current[activePeer.key] ?? []), queuedMessage],
-      }));
-      updateComposer('');
-      setReplyTo(null);
-      return;
-    }
+    if (pendingSend && !agentRequest) return;
     if (agentRequest) {
       updateComposer('');
-      try {
-        await dispatchAgentPrompt(activePeer, text);
-        setReplyTo(null);
-        setScheduledAtMs(undefined);
-      } catch (cause) {
-        updateComposer(text);
-        setError(cause instanceof Error ? cause.message : String(cause));
-      }
+      enqueueAgentPrompt(activePeer, text);
+      setReplyTo(null);
+      setScheduledAtMs(undefined);
       return;
     }
     setPendingSend(true);
@@ -2776,22 +2890,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       setPendingSend(false);
     }
   }
-
-  useEffect(() => {
-    if (pendingSend || !activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId) return;
-    const next = queuedAgentPrompts[activePeer.key]?.[0];
-    if (!next) return;
-    setQueuedAgentPrompts((current) => {
-      const pending = current[activePeer.key] ?? [];
-      if (pending[0]?.id !== next.id) return current;
-      const remaining = pending.slice(1);
-      const updated = { ...current };
-      if (remaining.length) updated[activePeer.key] = remaining;
-      else delete updated[activePeer.key];
-      return updated;
-    });
-    void dispatchAgentPrompt(activePeer, next.text, next.id);
-  }, [activePeerKey, pendingSend, queuedAgentPrompts]);
 
   async function saveNewDialog() {
     if (!newDialog || !newDialog.name.trim()) return;
