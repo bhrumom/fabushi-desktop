@@ -2586,6 +2586,19 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       updatedAtMs: peer.updatedAtMs,
     }));
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
+
+  useEffect(() => {
+    if (!pendingOpenAgentId) return;
+    const peer = peers.find((candidate) =>
+      candidate.kind === 'bot'
+      && (candidate.agentId ?? candidate.actorId ?? candidate.id) === pendingOpenAgentId,
+    );
+    if (!peer) return;
+    setPendingOpenAgentId(null);
+    setSection('bots');
+    void openPeer(peer);
+  }, [pendingOpenAgentId, peers]);
+
   const activeTypingActors = activePeer?.source === 'selfhosted' && activePeer.conversationId
     ? Object.keys(typingByConversation[activePeer.conversationId] ?? {})
     : [];
