@@ -12294,6 +12294,109 @@ mod tests {
     }
 
     #[test]
+    fn fabu_automation_store_namespaces_same_id_per_agent() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-fabu-automation-store-{}-{}",
+            std::process::id(),
+            now_millis()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        let make = |agent_id: &str| AutomationSummary {
+            id: "daily-brief".into(),
+            agent_id: Some(agent_id.into()),
+            name: format!("{agent_id} brief"),
+            prompt: "Summarize the day.".into(),
+            schedule: "@daily".into(),
+            trigger: Some(AutomationTrigger::Schedule {
+                schedule: "@daily".into(),
+            }),
+            enabled: true,
+            created_at_ms: 1,
+            last_run_at_ms: None,
+            next_run_at_ms: None,
+        };
+        let research = make("research");
+        let incident = make("incident");
+        let automations = BTreeMap::from([
+            (
+                automation_state_key("research", "daily-brief"),
+                research.clone(),
+            ),
+            (
+                automation_state_key("incident", "daily-brief"),
+                incident.clone(),
+            ),
+        ]);
+        persist_fabu_agent_automations(&root, &automations)
+            .expect("persist Fabu Agent automations");
+        assert!(root
+            .join("research/automations/daily-brief/automation.json")
+            .is_file());
+        assert!(root
+            .join("incident/automations/daily-brief/automation.json")
+            .is_file());
+
+        let restored = load_fabu_agent_automations(&root);
+        assert_eq!(restored.len(), 2);
+        assert_eq!(
+            restored
+                .get(&automation_state_key("research", "daily-brief"))
+                .and_then(|automation| automation.agent_id.as_deref()),
+            Some("research")
+        );
+        assert_eq!(
+            restored
+                .get(&automation_state_key("incident", "daily-brief"))
+                .and_then(|automation| automation.agent_id.as_deref()),
+            Some("incident")
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn fabu_agent_clone_keeps_reusable_state_but_not_history_or_audit() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-fabu-agent-clone-{}-{}",
+            std::process::id(),
+            now_millis()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        let source = root.join("research");
+        std::fs::create_dir_all(source.join("memory")).expect("create memory");
+        std::fs::create_dir_all(source.join("automations/routine-a"))
+            .expect("create automation");
+        std::fs::create_dir_all(source.join("attachments")).expect("create attachments");
+        std::fs::write(source.join("memory/profile.json"), b"{}")
+            .expect("write memory");
+        std::fs::write(
+            source.join("automations/routine-a/automation.json"),
+            b"{}",
+        )
+        .expect("write automation");
+        std::fs::write(source.join(WORKFLOW_ENABLEMENT_FILENAME), b"[]")
+            .expect("write workflow enablement");
+        std::fs::write(source.join("audit.jsonl"), b"secret audit")
+            .expect("write audit");
+        std::fs::write(source.join("attachments/file.txt"), b"private attachment")
+            .expect("write attachment");
+        std::fs::write(source.join("conversation.json"), b"chat history")
+            .expect("write conversation");
+
+        clone_fabu_agent_local_state(&root, "research", "research-copy")
+            .expect("clone Fabu Agent state");
+        let target = root.join("research-copy");
+        assert!(target.join("memory/profile.json").is_file());
+        assert!(target
+            .join("automations/routine-a/automation.json")
+            .is_file());
+        assert!(target.join(WORKFLOW_ENABLEMENT_FILENAME).is_file());
+        assert!(!target.join("audit.jsonl").exists());
+        assert!(!target.join("attachments").exists());
+        assert!(!target.join("conversation.json").exists());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn remote_computer_target_rejects_stale_generation_and_wrong_device() {
         let controller = controller();
         {
