@@ -1,0 +1,50 @@
+.root {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 32px;
+  align-items: end;
+  gap: 5px;
+  width: min(760px, calc(100% - 40px));
+  min-height: 52px;
+  margin: 0 auto 18px;
+  padding: 6px;
+  color: var(--cursor-text-primary, #eceaf2);
+  background: var(--cursor-bg-secondary, #242229);
+  border: 1px solid var(--cursor-stroke-secondary, rgba(255,255,255,.09));
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.22);
+}
+.root textarea {
+  width: 100%;
+  min-height: 38px;
+  max-height: 180px;
+  resize: none;
+  padding: 9px 4px 7px;
+  color: inherit;
+  line-height: 20px;
+  background: transparent;
+  border: 0;
+  outline: 0;
+}
+.root textarea::placeholder { color: var(--cursor-text-tertiary, #716c78); }
+.attach,
+.primary {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+}
+.attach {
+  color: var(--cursor-text-secondary, #918a9b);
+  background: transparent;
+}
+.attach:hover { color: var(--cursor-text-primary, #f1edf7); background: rgba(255,255,255,.07); }
+.primary {
+  color: #1b1820;
+  background: #ebe6f4;
+}
+.primary:hover:not(:disabled) { color: #111014; background: #fff; }
+.primary:disabled { opacity: .45; cursor: default; }
+.primaryPlaceholder { width: 32px; height: 32px; }
