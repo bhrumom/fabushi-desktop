@@ -244,6 +244,14 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  listWorkflows(requestId: string, agentId: string) {
+    return this.transport.execute({
+      type: 'workflow.list',
+      requestId,
+      agentId,
+    } as HostCommand);
+  }
+
   refreshComputerStatus(requestId: string) {
     return this.transport.execute({
       type: 'computer.status',
