@@ -248,9 +248,11 @@ export class AgentRuntimeCoordinator {
 
       case 'model.routed':
       case 'agent.step': {
-        const peerKey = this.claimOperation(event.operationId);
-        if (!peerKey) return false;
-        this.appendAssistantEvent(peerKey, event);
+        const operationId = event.operationId ?? this.unambiguousRuntimeId();
+        if (!operationId) return this.hasAgentWork();
+        const peerKey = this.claimOperation(operationId);
+        if (!peerKey) return this.hasAgentWork();
+        this.appendAssistantEvent(peerKey, { ...event, operationId });
         return true;
       }
 
