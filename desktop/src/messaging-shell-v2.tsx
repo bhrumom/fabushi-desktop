@@ -1666,6 +1666,35 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     return store;
   }
 
+  function agentStorePathSegment(value: string): string {
+    return encodeURIComponent(value.trim()).replace(/%2F/gi, '_');
+  }
+
+  async function mirrorAgentCloudSnapshot(
+    agentId: string,
+    path: string,
+    value: unknown,
+  ): Promise<void> {
+    if (!agentId.trim()) return;
+    const store = agentStoreFor(agentId);
+    try {
+      await store.writeJson(path, value);
+    } catch {
+      // The local Host remains authoritative while offline or during an
+      // etag conflict. The content-addressed backend preserves conflicting
+      // writes instead of silently overwriting another device.
+    }
+  }
+
+  async function removeAgentCloudObject(agentId: string, path: string): Promise<void> {
+    if (!agentId.trim()) return;
+    try {
+      await agentStoreFor(agentId).delete(path);
+    } catch {
+      // Deletion is best-effort; account sync/reconciliation can retry.
+    }
+  }
+
   async function mirrorBotAgentCloud(bot: BotSummary): Promise<void> {
     const identity = projectFabuBotIdentity(bot);
     const profile = projectFabuAgentProfile({
@@ -2149,10 +2178,63 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           })));
         }
         break;
+      case 'memory.changed':
+        // Fabu persists Agent-owned memory independently of chat delivery.
+        // Re-list after every mutation so removals/clears also produce a
+        // complete cloud snapshot instead of an append-only partial mirror.
+        void execute({
+          type: 'memory.list',
+          requestId: nextRequestId('memory-cloud-sync'),
+          agentId: event.agentId,
+          limit: 1000,
+        }).catch(() => {});
+        break;
+      case 'memory.listed':
+        void mirrorAgentCloudSnapshot(event.agentId, 'memory/index.json', {
+          version: 1,
+          count: event.count,
+          memories: event.memories,
+        });
+        break;
+      case 'workflow.changed':
+        void execute({
+          type: 'workflow.list',
+          requestId: nextRequestId('workflow-cloud-sync'),
+          agentId: event.agentId,
+        }).catch(() => {});
+        break;
+      case 'workflow.listed':
+        void mirrorAgentCloudSnapshot(event.agentId, 'workflows/index.json', {
+          version: 1,
+          workflows: event.workflows,
+        });
+        break;
+      case 'automation.changed': {
+        const owner = event.automation.agentId;
+        if (owner) {
+          const path = `automations/${agentStorePathSegment(event.automation.id)}/automation.json`;
+          if (event.action === 'deleted') void removeAgentCloudObject(owner, path);
+          else void mirrorAgentCloudSnapshot(owner, path, event.automation);
+        }
+        break;
+      }
+      case 'automation.listed':
+        for (const automation of event.automations) {
+          if (!automation.agentId) continue;
+          void mirrorAgentCloudSnapshot(
+            automation.agentId,
+            `automations/${agentStorePathSegment(automation.id)}/automation.json`,
+            automation,
+          );
+        }
+        break;
       case 'bot.listed':
         initialLegacyHydrationMaskRef.current |= 0b010;
         setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
         setBots(event.bots);
+        for (const bot of event.bots) {
+          void mirrorBotAgentCloud(bot).catch(() => {});
+        }
         break;
       case 'bot.changed':
         setBots((current) => event.action === 'deleted'
