@@ -294,12 +294,6 @@ function toAgentTranscriptSources(
   return messages.map((message) => ({ ...message, source: 'legacy' as const }));
 }
 
-function toDisplayAgentMessages(
-  messages: readonly AgentTranscriptSourceMessage[],
-): DisplayMessage[] {
-  return messages.map((message) => ({ ...message, source: 'legacy' as const }));
-}
-
 type NewDialog =
   | { type: 'group'; name: string; selectedBotIds: Set<string> }
   | { type: 'channel'; name: string; description: string }
@@ -2581,7 +2575,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [agentRuntimeCoordinator, peers]);
   const grokActivityByPeer = Object.fromEntries(peers.map((peer) => {
     const thread = isAgentPeer(peer) && !peer.miniAppId
-      ? toDisplayAgentMessages(agentTranscriptStoreRef.current.thread(peer.key))
+      ? agentTranscriptStoreRef.current.thread(peer.key)
       : peer.key === activePeerKey
         ? messages
         : peer.miniAppId
@@ -2697,14 +2691,18 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   // Normal Agent timelines render directly from AgentTranscriptStore. The
   // renderer-global messages array is now compatibility-only for Messenger,
   // groups and Mini Apps.
-  const matchingMessages = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
-    ? toDisplayAgentMessages(agentTranscriptStoreRef.current.thread(activePeer.key))
-    : messages;
+  const matchingMessages = messages;
   const renderedMessages = matchingMessages.slice(Math.max(0, matchingMessages.length - messageRenderCount));
   const botTranscriptMessages = renderedMessages;
-  const agentTranscriptEntries: TranscriptEntry[] = activePeer && isAgentPeer(activePeer)
-    ? projectTranscriptEntries(botTranscriptMessages)
+  const allAgentTranscriptEntries: TranscriptEntry[] = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
+    ? agentTranscriptStoreRef.current.entries(activePeer.key)
     : [];
+  const agentTranscriptEntries: TranscriptEntry[] = allAgentTranscriptEntries.length || (activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId)
+    ? allAgentTranscriptEntries.slice(Math.max(0, allAgentTranscriptEntries.length - messageRenderCount))
+    : activePeer && isAgentPeer(activePeer)
+      ? projectTranscriptEntries(botTranscriptMessages)
+      : [];
+  const agentHasEarlierEntries = allAgentTranscriptEntries.length > agentTranscriptEntries.length;
   const activeAgentOperationId = activePeer
     ? agentOperationSnapshot[activePeer.key] ?? null
     : null;
@@ -4425,7 +4423,7 @@ async function saveInvoiceDialog() {
                 onToggleInfo={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}
                 entries={agentTranscriptEntries}
                 activeOperationId={activeAgentOperationId}
-                hasEarlierMessages={matchingMessages.length > renderedMessages.length}
+                hasEarlierMessages={agentHasEarlierEntries}
                 messageAreaRef={messageAreaRef}
                 showScrollToLatest={showScrollToLatest}
                 onLoadEarlier={() => setMessageRenderCount((count) => count + initialMessageRenderCount)}
@@ -4441,10 +4439,27 @@ async function saveInvoiceDialog() {
                   });
                 }}
                 onContextMenu={(event, entry) => {
+                  if (entry.kind !== 'message' && entry.kind !== 'assistant-turn') return;
                   event.preventDefault();
                   event.stopPropagation();
-                  const sourceMessage = renderedMessages.find((message) => message.id === entry.id);
-                  if (sourceMessage) setMessageMenu({ message: sourceMessage, x: event.clientX, y: event.clientY });
+                  setMessageMenu({
+                    message: {
+                      id: entry.id,
+                      source: 'legacy',
+                      role: entry.role,
+                      text: entry.text,
+                      createdAtMs: entry.createdAtMs,
+                      kind: entry.kind,
+                      ...(entry.operationId ? { operationId: entry.operationId } : {}),
+                      ...(entry.streaming ? { streaming: true } : {}),
+                      ...(entry.optimistic ? { optimistic: true } : {}),
+                      ...(entry.queued ? { queued: true } : {}),
+                      ...(entry.assistantTurn ? { assistantTurn: entry.assistantTurn } : {}),
+                      ...(entry.attachments?.length ? { attachments: entry.attachments } : {}),
+                    },
+                    x: event.clientX,
+                    y: event.clientY,
+                  });
                 }}
                 notice={error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
                 composerReplyTarget={activeAgentReply ? { id: activeAgentReply.id, label: '回复', text: activeAgentReply.text } : undefined}
