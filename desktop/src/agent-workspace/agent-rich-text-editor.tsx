@@ -235,7 +235,9 @@ export default function AgentRichTextEditor({
       blur: () => editor.view.dom.blur(),
       insertText: (value) => {
         if (!value) return;
-        editor.chain().focus().insertContent(value).run();
+        const before = editor.state.doc.textBetween(0, editor.state.selection.from, '\n');
+        const needsSpace = before.length > 0 && !/\s$/.test(before) && !/^\s/.test(value);
+        editor.chain().focus().insertContent(`${needsSpace ? ' ' : ''}${value}`).run();
       },
     };
     onControls?.(controls);
