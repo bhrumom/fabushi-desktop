@@ -121,6 +121,7 @@ import {
   persistAgentWorkspaceDrafts,
   readAgentWorkspaceDrafts,
 } from './agent-workspace/agent-draft-store';
+import type { AgentReplyContext } from './agent-workspace/prompt-context';
 import {
   AGENT_SIDEBAR_UNASSIGNED_ID,
   assignAgentsToSidebarSection,
@@ -1165,7 +1166,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     send: async (input) => {
       const peer = peersRef.current.find((candidate) => candidate.key === input.peerKey);
       if (!peer || !isAgentPeer(peer)) throw new Error('Agent peer is no longer available.');
-      await dispatchAgentPromptNow(peer, input.prompt, input.messageId, input.attachments);
+      await dispatchAgentPromptNow(peer, input.prompt, input.messageId, input.attachments, input.replyTo);
     },
     onPhase: (submission) => {
       if (submission.phase === 'queued') {
@@ -3183,6 +3184,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     text: string,
     existingMessageId?: string,
     attachments: readonly AttachmentContext[] = [],
+    replyContext?: AgentReplyContext,
   ): Promise<void> {
     const registry = agentWorkspaceControllerRef.current;
     if (registry.isBusy(peer.key)) {
@@ -3234,6 +3236,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         conversationId: peer.conversationId,
         agentId: peer.agentId ?? peer.actorId,
         attachments,
+        replyTo: replyContext,
       });
       if (!accepted) {
         updateAgentThread(requestId, (current) => current.filter((message) => message.id !== optimisticId));
@@ -3277,6 +3280,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     text: string,
     existingMessageId?: string,
     attachments: readonly AttachmentContext[] = [],
+    replyContext?: AgentReplyContext,
   ) {
     const agentId = peer.agentId ?? peer.actorId ?? peer.id;
     const messageId = existingMessageId ?? nextRequestId('queued-chat-send');
@@ -3287,6 +3291,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       agentId,
       prompt: text,
       ...(attachments.length ? { attachments: [...attachments] } : {}),
+      ...(replyContext ? { replyTo: replyContext } : {}),
       createdAtMs: Date.now(),
     });
   }
@@ -3402,13 +3407,16 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (pendingSend && !agentRequest) return;
     if (agentRequest) {
       const attachments = agentAttachmentsByPeer[activePeer.key] ?? [];
+      const replyContext: AgentReplyContext | undefined = replyTo
+        ? { id: replyTo.id, role: replyTo.role, text: replyTo.text }
+        : undefined;
       updateComposer('');
       setAgentAttachmentsByPeer((current) => {
         const next = { ...current };
         delete next[activePeer.key];
         return next;
       });
-      enqueueAgentPrompt(activePeer, text, undefined, attachments);
+      enqueueAgentPrompt(activePeer, text, undefined, attachments, replyContext);
       setReplyTo(null);
       setScheduledAtMs(undefined);
       return;
