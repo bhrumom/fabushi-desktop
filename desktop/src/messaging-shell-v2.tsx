@@ -1007,6 +1007,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const agentRequestPendingRef = useRef(false);
   const agentRequestPeerRef = useRef<string | null>(null);
   const agentRequestIdRef = useRef<string | null>(null);
+  const pendingAgentDeltaRef = useRef(new Map<string, Extract<RuntimeEvent, { type: 'chat.delta' }>>());
+  const agentDeltaFrameRef = useRef<number | null>(null);
   const finishedAgentOperationsRef = useRef(new Set<string>());
   const agentPeerKeyRef = useRef<Record<string, string>>({});
   const messageAreaRef = useRef<HTMLDivElement | null>(null);
@@ -1017,6 +1019,14 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   useEffect(() => {
     activePeerKeyRef.current = activePeerKey;
   }, [activePeerKey]);
+
+  useEffect(() => () => {
+    if (agentDeltaFrameRef.current !== null) {
+      window.cancelAnimationFrame(agentDeltaFrameRef.current);
+      agentDeltaFrameRef.current = null;
+    }
+    pendingAgentDeltaRef.current.clear();
+  }, []);
 
   useEffect(() => {
     const onResize = () => {
@@ -1552,6 +1562,33 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     if (peerKey) agentPeerKeyRef.current[operationId] = peerKey;
   }
 
+  function flushPendingAgentDelta(operationId?: string) {
+    const pending = pendingAgentDeltaRef.current;
+    const operationIds = operationId ? [operationId] : [...pending.keys()];
+    for (const id of operationIds) {
+      const event = pending.get(id);
+      if (!event) continue;
+      pending.delete(id);
+      appendAssistantTurnEvent(event);
+    }
+    if (pending.size === 0 && agentDeltaFrameRef.current !== null) {
+      window.cancelAnimationFrame(agentDeltaFrameRef.current);
+      agentDeltaFrameRef.current = null;
+    }
+  }
+
+  function queueAgentDelta(event: Extract<RuntimeEvent, { type: 'chat.delta' }> & { operationId: string }) {
+    const current = pendingAgentDeltaRef.current.get(event.operationId);
+    pendingAgentDeltaRef.current.set(event.operationId, current
+      ? { ...event, delta: `${current.delta}${event.delta}` }
+      : event);
+    if (agentDeltaFrameRef.current !== null) return;
+    agentDeltaFrameRef.current = window.requestAnimationFrame(() => {
+      agentDeltaFrameRef.current = null;
+      flushPendingAgentDelta();
+    });
+  }
+
   function updateAgentThread(operationId: string | undefined, update: (current: DisplayMessage[]) => DisplayMessage[]) {
     const peerKey = operationId ? agentPeerKeyRef.current[operationId] : undefined;
     if (peerKey && peerKey !== activePeerKeyRef.current) {
@@ -1914,6 +1951,24 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   function handleRuntimeEvent(event: RuntimeEvent) {
     if (handleSelfHostedEvent(event)) return;
+
+    // Keep stream ordering deterministic while avoiding one React update per
+    // token. Grok App uses the same backpressure idea: high-frequency deltas
+    // are coalesced, but we flush them before any ordered step/final/terminal
+    // event so tools and the final answer never overtake visible text.
+    if (
+      event.type === 'chat.message'
+      || event.type === 'agent.step'
+      || event.type === 'operation.completed'
+      || event.type === 'operation.failed'
+      || event.type === 'operation.interrupted'
+    ) {
+      const operationId = ('operationId' in event && typeof event.operationId === 'string'
+        ? event.operationId
+        : agentOperationIdRef.current ?? agentRequestIdRef.current) ?? undefined;
+      if (operationId) flushPendingAgentDelta(operationId);
+    }
+
     switch (event.type) {
       case 'host.ready':
         setHostReady(true);
@@ -2034,7 +2089,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           claimAgentOperation(deltaOperationId)
           || Boolean(agentPeerKeyRef.current[deltaOperationId])
         )) {
-          appendAssistantTurnEvent({ ...event, operationId: deltaOperationId });
+          queueAgentDelta({ ...event, operationId: deltaOperationId });
           break;
         }
         updateAgentThread(deltaOperationId, (current) => {
