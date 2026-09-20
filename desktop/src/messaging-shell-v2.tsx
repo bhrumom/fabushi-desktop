@@ -1448,7 +1448,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         setHostReady(state.phase === 'ready');
         if (state.phase !== 'ready' || !state.recovered) return;
         void execute({ type: 'settings.get', requestId: nextRequestId('settings-recover') }).catch(() => {});
-        void agentMcpController.list().catch(() => {});
         refreshLegacy();
         const activeKey = activePeerKeyRef.current;
         const active = peersRef.current.find((peer) => peer.key === activeKey);
@@ -1501,7 +1500,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           })
           .catch(() => {});
         void execute({ type: 'settings.get', requestId: nextRequestId('settings-get') });
-        void agentMcpController.list().catch(() => {});
         refreshLegacy();
         if (startupLegacyConversation) {
           void execute({
@@ -1552,6 +1550,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     retryMissing();
     return () => window.clearInterval(timer);
   }, [hostReady, initialLegacyHydrated]);
+
+  useEffect(() => {
+    if (!hostReady || !initialLegacyHydrated) return;
+    // MCP discovery is useful to the Composer but must never compete with the
+    // first-frame Agent/conversation hydration path.
+    void agentMcpController.list().catch(() => {});
+  }, [hostReady, initialLegacyHydrated, agentMcpController.list]);
 
   useEffect(() => {
     if (!hostReady || section !== 'settings' || !['router', 'usage'].includes(settingsCategory)) return;
