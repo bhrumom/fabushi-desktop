@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { AgentTranscriptStore } from '../src/agent-workspace/agent-transcript-store';
 import { AgentWorkspaceController } from '../src/agent-workspace/agent-workspace-controller';
 import { AgentRuntimeCoordinator } from '../src/agent-workspace/agent-runtime-coordinator';
+import { composeAgentPromptText } from '../src/agent-workspace/prompt-context';
 import { restoreAgentStoreWorkspace } from '../src/agent-workspace/agent-store-recovery';
 import type { TranscriptEntry } from '../src/agent-workspace/transcript-model';
 import {
@@ -121,12 +122,15 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       controller.setDraft('agent:a', 'first prompt');
       controller.appendAttachments('agent:a', [{ id: 'attachment:a', name: 'a.txt' }]);
       controller.setReply('agent:a', { id: 'reply:a', role: 'peer', text: 'previous answer' });
+      controller.upsertReference('agent:a', { kind: 'agent', id: 'agent:research', label: 'Research' });
       controller.setDraft('agent:b', 'independent draft');
 
       const submitted = controller.takeDraft('agent:a');
       expect(submitted.text).toBe('first prompt');
       expect(submitted.attachments.map((attachment) => attachment.id)).toEqual(['attachment:a']);
       expect(submitted.replyTo?.id).toBe('reply:a');
+      expect(submitted.references).toEqual([{ kind: 'agent', id: 'agent:research', label: 'Research' }]);
+      expect(composeAgentPromptText(submitted.text, submitted.replyTo, submitted.references)).toContain('@Research [agent:agent:research]');
       expect(controller.draftForPeer('agent:a')).toBe('');
       expect(controller.draftForPeer('agent:b')).toBe('independent draft');
 
@@ -135,6 +139,10 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.draftForPeer('agent:a')).toBe('newer draft typed while the send was pending');
       expect(controller.attachmentsForPeer('agent:a').map((attachment) => attachment.id)).toEqual(['attachment:a']);
       expect(controller.replyForPeer('agent:a')?.id).toBe('reply:a');
+      expect(controller.referencesForPeer('agent:a')).toEqual([{ kind: 'agent', id: 'agent:research', label: 'Research' }]);
+      controller.setDraft('agent:a', 'new draft without a mention');
+      controller.pruneReferences('agent:a', 'new draft without a mention');
+      expect(controller.referencesForPeer('agent:a')).toEqual([]);
     });
 
     await test.step('Agent Store root restores a cross-device transcript snapshot without last-write-wins guessing', async () => {
