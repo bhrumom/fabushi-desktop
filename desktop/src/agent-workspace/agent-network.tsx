@@ -1,6 +1,6 @@
 import { Bot, Megaphone, Network, Plus, Trash2, Users, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { GroupSummary } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { AgentPeerMessage, GroupSummary } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import { agentMatchesGroupMember, indexAgentsByRuntimeOrSurfaceId, type AgentSidebarItem } from './agent-model';
 import styles from './agent-network.module.css';
 
@@ -8,15 +8,18 @@ export interface AgentNetworkProps {
   open: boolean;
   agents: readonly AgentSidebarItem[];
   groups: readonly GroupSummary[];
+  peerMessages: readonly AgentPeerMessage[];
   activeKey: string | null;
   broadcastMode?: boolean;
   onClose(): void;
   onOpenAgent(agent: AgentSidebarItem): void;
   onRefreshGroups(): Promise<void>;
+  onRefreshPeerHistory(agentId: string): Promise<void>;
   onCreateGroup(name: string, memberAgentIds: readonly string[]): Promise<void>;
   onUpdateGroup(id: string, patch: { name?: string; memberAgentIds?: readonly string[] }): Promise<void>;
   onDeleteGroup(id: string): Promise<void>;
   onSendGroup(id: string, message: string): Promise<void>;
+  onSendPeer(fromAgentId: string, targetAgentId: string, message: string, priority?: boolean): Promise<void>;
   onBroadcast(message: string, targetAgentIds?: readonly string[]): Promise<void>;
 }
 
@@ -38,21 +41,25 @@ export default function AgentNetwork({
   open,
   agents,
   groups,
+  peerMessages,
   activeKey,
   broadcastMode = false,
   onClose,
   onOpenAgent,
   onRefreshGroups,
+  onRefreshPeerHistory,
   onCreateGroup,
   onUpdateGroup,
   onDeleteGroup,
   onSendGroup,
+  onSendPeer,
   onBroadcast,
 }: AgentNetworkProps) {
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [priority, setPriority] = useState(false);
   const [groupBusy, setGroupBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const refreshGroupsRef = useRef(onRefreshGroups);
@@ -66,6 +73,7 @@ export default function AgentNetwork({
     () => indexAgentsByRuntimeOrSurfaceId(directAgents),
     [directAgents],
   );
+  const activeAgent = directAgents.find((agent) => agent.key === activeKey) ?? null;
 
   useEffect(() => {
     if (!open) return;
@@ -77,12 +85,25 @@ export default function AgentNetwork({
     }
   }, [broadcastMode, open]);
 
+  useEffect(() => {
+    if (!open || !activeAgent?.agentId) return;
+    void onRefreshPeerHistory(activeAgent.agentId).catch((cause) => {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    });
+  }, [activeAgent?.agentId, onRefreshPeerHistory, open]);
+
   if (!open) return null;
 
   const selectedAgentIds = directAgents
     .filter((agent) => selected.has(agent.key))
     .map((agent) => agent.agentId);
   const selectedGroup = selectedGroupId ? groups.find((group) => group.id === selectedGroupId) ?? null : null;
+  const directTarget = !broadcastMode && !selectedGroup && activeAgent && selectedAgentIds.length === 1
+    ? directAgents.find((agent) => agent.agentId === selectedAgentIds[0] && agent.key !== activeAgent.key) ?? null
+    : null;
+  const visiblePeerMessages = activeAgent
+    ? peerMessages.filter((item) => item.fromAgentId === activeAgent.agentId || item.targetId === activeAgent.agentId).slice(-8)
+    : [];
 
   const chooseGroup = (group: GroupSummary) => {
     const keys = directAgents
@@ -160,8 +181,10 @@ export default function AgentNetwork({
     setError(null);
     try {
       if (selectedGroup) await onSendGroup(selectedGroup.id, trimmed);
+      else if (directTarget && activeAgent) await onSendPeer(activeAgent.agentId, directTarget.agentId, trimmed, priority);
       else await onBroadcast(trimmed, selectedAgentIds.length ? selectedAgentIds : undefined);
       setMessage('');
+      setPriority(false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -195,7 +218,7 @@ export default function AgentNetwork({
             </button>
             <label className={styles.select}>
               <input type="checkbox" checked={selected.has(agent.key)} onChange={() => toggleAgent(agent)} />
-              <span>Broadcast</span>
+              <span>{broadcastMode ? 'Broadcast' : 'Select'}</span>
             </label>
           </article>)}
           {!directAgents.length ? <div className={styles.empty}>Create an Agent to build your network.</div> : null}
@@ -226,10 +249,12 @@ export default function AgentNetwork({
       </div>
 
       <aside className={styles.broadcast}>
-        <div className={styles.broadcastTitle}><Megaphone size={16} /><strong>{selectedGroup ? selectedGroup.name : 'Broadcast'}</strong></div>
+        <div className={styles.broadcastTitle}><Megaphone size={16} /><strong>{selectedGroup ? selectedGroup.name : directTarget ? 'Agent handoff' : 'Broadcast'}</strong></div>
         <p>{selectedGroup
           ? `Send one group message through Mahayana to ${selectedGroup.memberIds.length} member Agents.`
-          : `Send one owner message to ${selectedAgentIds.length ? `${selectedAgentIds.length} selected Agent${selectedAgentIds.length === 1 ? '' : 's'}` : 'all Agents'}. Each Agent receives it as its own asynchronous turn.`}</p>
+          : directTarget && activeAgent
+            ? `Send directly from ${activeAgent.name} to ${directTarget.name} through Mahayana agent.send. This is Agent-to-Agent context, not an owner broadcast.`
+            : `Send one owner message to ${selectedAgentIds.length ? `${selectedAgentIds.length} selected Agent${selectedAgentIds.length === 1 ? '' : 's'}` : 'all Agents'}. Each Agent receives it as its own asynchronous turn.`}</p>
         <textarea
           autoFocus={broadcastMode}
           value={message}
@@ -237,9 +262,13 @@ export default function AgentNetwork({
           placeholder="Tell your agents what changed or what to do next…"
           rows={7}
         />
+        {directTarget ? <label className={styles.select}><input type="checkbox" checked={priority} onChange={(event) => setPriority(event.target.checked)} /><span>Priority handoff</span></label> : null}
+        {visiblePeerMessages.length ? <div className={styles.nodes} aria-label="Recent Agent handoffs">
+          {visiblePeerMessages.map((item) => <div className={styles.empty} key={item.id}><strong>{item.fromAgentName} → {item.targetName}</strong><span>{item.text}</span></div>)}
+        </div> : null}
         {error ? <div className={styles.error} role="alert">{error}</div> : null}
         <button type="button" className={styles.send} disabled={!message.trim() || sending || directAgents.length === 0} onClick={() => void submit()}>
-          <Megaphone size={15} />{sending ? 'Sending…' : selectedGroup ? 'Send to group' : selectedAgentIds.length ? 'Send to selected' : 'Broadcast to all'}
+          <Megaphone size={15} />{sending ? 'Sending…' : selectedGroup ? 'Send to group' : directTarget ? `Handoff to ${directTarget.name}` : selectedAgentIds.length ? 'Send to selected' : 'Broadcast to all'}
         </button>
       </aside>
     </div>
