@@ -526,6 +526,9 @@ impl NativeEngine {
                 // not need the full tool schema or deep reasoning budget. This
                 // removes avoidable first-token latency without weakening real
                 // Agent tasks, which remain on the normal tool-capable path.
+                model_metadata["instructions"] = json!(
+                    "You are Mahayana. Reply directly, naturally, and concisely. This turn is conversational: do not plan, call tools, or describe internal reasoning."
+                );
                 model_metadata["tools"] = json!([]);
                 model_metadata["tool_choice"] = json!("none");
                 model_metadata["reasoning"] = json!({ "effort": "low" });
