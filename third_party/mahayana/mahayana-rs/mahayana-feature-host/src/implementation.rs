@@ -1564,6 +1564,12 @@ impl FeatureHostController {
             _ => unreachable!("non-bot-profile command routed to bot executor"),
         };
         self.persist_bots(&state.bots)?;
+        // Fabu keeps the Bot surface and Agent runtime as separate identities.
+        // A Bot mutation mirrors presentation/settings into the Agent's own
+        // directory, while deleting the Bot deliberately retains Agent state.
+        if action != "deleted" {
+            self.persist_agent_manifest(&bot)?;
+        }
         state.events.push_back(HostEvent::BotChanged {
             timestamp: timestamp(),
             action: action.into(),
@@ -5550,6 +5556,17 @@ impl FeatureHostController {
         persist_bots(&path, bots)
     }
 
+    fn persist_agent_manifest(&self, bot: &BotSummary) -> Result<(), FeatureHostError> {
+        let agent_id = bot.agent_id.as_deref().unwrap_or(bot.id.as_str());
+        if !is_safe_memory_agent_id(agent_id) {
+            return Ok(());
+        }
+        let Some(root) = self.active_account_root(self.memory_root_path.as_deref()) else {
+            return Ok(());
+        };
+        persist_fabu_agent_manifest(&root.join(agent_id), bot)
+    }
+
     fn persist_groups(
         &self,
         groups: &BTreeMap<String, GroupSummary>,
@@ -5709,6 +5726,21 @@ impl FeatureHostController {
                 .active_account_id
                 .lock()
                 .map_err(|_| FeatureHostError::StatePoisoned)? = next_account_id.clone();
+
+            // Materialize Fabu-compatible per-Agent profile/settings files after
+            // the account scope becomes authoritative. This also migrates older
+            // bots.json-only profiles without deleting any existing Agent data.
+            if logged_in {
+                let bots = self
+                    .state()?
+                    .bots
+                    .values()
+                    .cloned()
+                    .collect::<Vec<_>>();
+                for bot in bots {
+                    self.persist_agent_manifest(&bot)?;
+                }
+            }
         }
         {
             let mut state = self.state()?;
@@ -11380,6 +11412,48 @@ fn persist_bots(path: &Path, bots: &BTreeMap<String, BotSummary>) -> Result<(), 
     std::fs::rename(&temp, path)
         .map_err(|error| FeatureHostError::Contract(format!("commit bot store: {error}")))?;
     Ok(())
+}
+
+fn persist_json_atomic(path: &Path, value: &Value, label: &str) -> Result<(), FeatureHostError> {
+    let parent = path.parent().ok_or_else(|| {
+        FeatureHostError::Contract(format!("{label} path has no parent"))
+    })?;
+    std::fs::create_dir_all(parent).map_err(|error| {
+        FeatureHostError::Contract(format!("create {label} directory: {error}"))
+    })?;
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("state.json");
+    let temp = parent.join(format!(
+        ".{file_name}.{}.{}.tmp",
+        std::process::id(),
+        now_millis()
+    ));
+    let mut data = serde_json::to_vec_pretty(value)
+        .map_err(|error| FeatureHostError::Contract(format!("serialize {label}: {error}")))?;
+    data.push(b'\n');
+    std::fs::write(&temp, data)
+        .map_err(|error| FeatureHostError::Contract(format!("write {label}: {error}")))?;
+    std::fs::rename(&temp, path)
+        .map_err(|error| FeatureHostError::Contract(format!("commit {label}: {error}")))?;
+    Ok(())
+}
+
+fn persist_fabu_agent_manifest(agent_dir: &Path, bot: &BotSummary) -> Result<(), FeatureHostError> {
+    let profile = json!({
+        "name": bot.name,
+        "description": bot.description,
+        "title": bot.title.trim(),
+        "avatarShape": bot.avatar_shape.clone().unwrap_or_default(),
+        "avatarColor": bot.avatar_color.clone().unwrap_or_default(),
+    });
+    let settings = json!({
+        "notifyOnAgentUpdates": bot.notify_on_updates,
+        "hiddenFromSidebar": bot.hidden,
+    });
+    persist_json_atomic(&agent_dir.join("profile.json"), &profile, "Agent profile")?;
+    persist_json_atomic(&agent_dir.join("settings.json"), &settings, "Agent settings")
 }
 
 fn load_automations(path: &Path) -> BTreeMap<String, AutomationSummary> {
