@@ -103,6 +103,12 @@ if (!/openConversation:\s*openAgentConversation/.test(shell)
 if (!/useAgentComputerController\s*\(/.test(shell)) {
   violations.push('Agent Computer lifecycle controller is not mounted by the desktop Agent shell');
 }
+if (!/const initialAgentWorkspaceHydrated = hostReady/.test(shell)
+  || /hydrated:\s*initialLegacyHydrated/.test(shell)
+  || /data-initial-host-hydrated=\{initialLegacyHydrated/.test(shell)
+  || /if \(!hostReady \|\| !initialLegacyHydrated\) return;[\s\S]{0,240}agentMcpController\.list/.test(shell)) {
+  violations.push('AgentRootShell/Computer/MCP readiness regressed behind legacy Messenger hydration');
+}
 if (!/useAgentMcpController\s*\(/.test(shell)
   || !/agentMcpController\.handle\(event\)/.test(shell)
   || !/kind:\s*candidate\.kind === ['"]mcp['"] \? ['"]mcp['"] : ['"]agent['"]/.test(shell)) {

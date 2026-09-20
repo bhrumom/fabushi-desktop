@@ -1035,6 +1035,12 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     },
   );
   const bots = agentDirectoryController.agents;
+  // AgentRootShell first-frame readiness is owned by the Agent domain, not by
+  // legacy conversations/groups. A durable Agent projection is enough to render
+  // and recover immediately while the authoritative directory refreshes in the
+  // background; fresh accounts wait for the first Agent directory response.
+  const initialAgentWorkspaceHydrated = hostReady
+    && (agentDirectoryController.ready || bots.length > 0 || Boolean(startupProjection?.legacyBots?.length));
   const [mutedPeerKeys, setMutedPeerKeys] = useState<Set<string>>(() => new Set());
   const [pinnedPeerKeys, setPinnedPeerKeys] = useState<Set<string>>(() => new Set());
   const [archivedPeerKeys, setArchivedPeerKeys] = useState<Set<string>>(() => new Set());
@@ -1057,7 +1063,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const agentStoresRef = useRef(new Map<string, FabuAgentStore>());
   const agentComputer = useAgentComputerController({
     hostReady,
-    hydrated: initialLegacyHydrated,
+    hydrated: initialAgentWorkspaceHydrated,
     accountScope: remoteAccountScope,
     activePeerKey,
     transport,
@@ -1461,10 +1467,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
             throw new Error('当前账号缺少电脑注册身份，无法启动后台在线状态');
           }
           setRemoteAccountScope(String(identityScope));
-          await selfHosted.ensureCurrentActor(displayName, username);
-          await selfHosted.sync(initialSyncLimit, messagingCursorRef.current);
-          await synchronizeAccountState();
-          void webRtcRef.current?.connect().catch(() => {});
+          // Contacts/Telegram/account-cursor reconciliation are compatibility
+          // capabilities. They must never hold AgentRootShell, Agent Computer or
+          // the Composer behind a legacy bootstrap round trip.
+          void (async () => {
+            await selfHosted.ensureCurrentActor(displayName, username);
+            await selfHosted.sync(initialSyncLimit, messagingCursorRef.current);
+            await synchronizeAccountState();
+            void webRtcRef.current?.connect().catch(() => {});
+          })().catch((cause: unknown) => {
+            if (!closed) setError(cause instanceof Error ? cause.message : String(cause));
+          });
         } catch (cause) {
           setError(cause instanceof Error ? cause.message : String(cause));
         }
@@ -1491,11 +1504,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [hostReady, initialLegacyHydrated]);
 
   useEffect(() => {
-    if (!hostReady || !initialLegacyHydrated) return;
-    // MCP discovery is useful to the Composer but must never compete with the
-    // first-frame Agent/conversation hydration path.
-    void agentMcpController.list().catch(() => {});
-  }, [hostReady, initialLegacyHydrated, agentMcpController.list]);
+    if (!initialAgentWorkspaceHydrated) return;
+    // MCP discovery belongs to the Agent Composer. Start it after the Agent
+    // surface is usable, independently of compatibility conversation/group
+    // hydration, and yield one frame so it cannot delay the first paint.
+    const timer = window.setTimeout(() => {
+      void agentMcpController.list().catch(() => {});
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [initialAgentWorkspaceHydrated, agentMcpController.list]);
 
   useEffect(() => {
     if (!hostReady || section !== 'settings' || !['router', 'usage'].includes(settingsCategory)) return;
@@ -2283,10 +2300,10 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const activeAgentPinned = activeAgentItem?.pinned === true;
 
   useEffect(() => {
-    if (!initialLegacyHydrated || !agentSidebarController.ready) return;
+    if (!initialAgentWorkspaceHydrated || !agentSidebarController.ready) return;
     agentSidebarController.adoptLegacyPinnedState(legacyPinnedAgentKeys);
   }, [
-    initialLegacyHydrated,
+    initialAgentWorkspaceHydrated,
     agentSidebarController.ready,
     agentSidebarController.adoptLegacyPinnedState,
     legacyPinnedAgentSignature,
@@ -3810,7 +3827,8 @@ async function saveInvoiceDialog() {
       className={`${styles.messenger} ${styles.fabushiUnified}`}
       data-testid="messenger-workspace"
       data-product-shell="agent"
-      data-initial-host-hydrated={initialLegacyHydrated ? 'true' : undefined}
+      data-initial-host-hydrated={initialAgentWorkspaceHydrated ? 'true' : undefined}
+      data-legacy-compatibility-hydrated={initialLegacyHydrated ? 'true' : undefined}
       data-sidebar-collapsed={sidebarWidth <= 112 || undefined}
       data-reduce-motion={desktopPreferences.reducedMotion || undefined}
       data-testid-ready-projection={startupProjection ? 'true' : undefined}
