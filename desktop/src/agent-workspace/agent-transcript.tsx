@@ -160,7 +160,9 @@ export default function AgentTranscript({
       {entries.length === 0 ? <div className={styles.emptyState}><strong>开始一个新会话</strong><span>向 {title} 提问，回复、工具和授权会按一个连续时间线显示。</span></div> : <div className={styles.transcript}>
         {entries.map((entry, index) => {
           if (entry.kind === 'assistant-turn' && entry.assistantTurn) {
-            return <MahayanaAssistantTurnView key={entry.id} turn={entry.assistantTurn} label={title} avatar={<BotMark botId={botId} state={entry.streaming ? 'writing' : 'idle'} size={28} label={title} />} />;
+            return <div key={entry.id} data-transcript-entry-id={entry.id}>
+              <MahayanaAssistantTurnView turn={entry.assistantTurn} label={title} avatar={<BotMark botId={botId} state={entry.streaming ? 'writing' : 'idle'} size={28} label={title} />} />
+            </div>;
           }
           if (entry.kind === 'tool-call') {
             const previous = entries[index - 1];
@@ -171,17 +173,17 @@ export default function AgentTranscript({
               if (step.kind !== 'tool-call' || step.operationId !== entry.operationId) break;
               steps.push(step);
             }
-            return <ToolGroup key={entry.id} entries={steps} />;
+            return <div key={entry.id} data-transcript-entry-id={entry.id}><ToolGroup entries={steps} /></div>;
           }
           if (entry.kind === 'thinking') {
-            return <div key={entry.id} className={styles.thinkingRow} data-testid="agent-thinking" data-operation-id={entry.operationId}>
+            return <div key={entry.id} className={styles.thinkingRow} data-testid="agent-thinking" data-transcript-entry-id={entry.id} data-operation-id={entry.operationId}>
               <BotMark botId={botId} state="thinking" size={28} label={title} />
               <div className={styles.thinkingCopy}><strong>{entry.title || '正在思考'}</strong><span>{entry.detail || '正在整理回复…'}</span></div>
               <span className={styles.thinkingDots} aria-hidden="true"><i /><i /><i /></span>
             </div>;
           }
           const userMessage = entry.role === 'me';
-          return <article key={entry.id} className={styles.messageRow + ' ' + (userMessage ? styles.userRow : styles.assistantRow)} data-message-id={entry.id} data-agent-message-role={entry.role} data-operation-id={entry.operationId} onContextMenu={(event) => onContextMenu?.(event, entry)}>
+          return <article key={entry.id} className={styles.messageRow + ' ' + (userMessage ? styles.userRow : styles.assistantRow)} data-message-id={entry.id} data-transcript-entry-id={entry.id} data-agent-message-role={entry.role} data-operation-id={entry.operationId} onContextMenu={(event) => onContextMenu?.(event, entry)}>
             {!userMessage ? <BotMark botId={botId} state={entry.streaming ? 'writing' : 'idle'} size={28} label={title} /> : null}
             <div className={styles.messageColumn}>
               <div className={styles.messageMeta}><span>{userMessage ? '你' : title}</span><time dateTime={new Date(entry.createdAtMs).toISOString()}>{formatTime(entry.createdAtMs)}</time></div>
