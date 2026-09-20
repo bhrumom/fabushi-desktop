@@ -504,6 +504,47 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(transcripts.entries('agent:a').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
     });
 
+    await test.step('Agent transcript store owns regenerate prompt lookup', async () => {
+      const transcripts = new AgentTranscriptStore();
+      transcripts.replace('agent:regen', [{
+        id: 'regen:user:1',
+        source: 'legacy',
+        role: 'me',
+        text: 'Review this attachment',
+        createdAtMs: 1,
+        kind: 'message',
+        attachments: [{ id: 'regen:attachment:1', name: 'input.txt' }],
+      }, {
+        id: 'regen:assistant:1',
+        source: 'legacy',
+        role: 'peer',
+        text: 'First answer',
+        createdAtMs: 2,
+        kind: 'message',
+      }, {
+        id: 'regen:queued:2',
+        source: 'legacy',
+        role: 'me',
+        text: 'Queued future prompt',
+        createdAtMs: 3,
+        kind: 'message',
+        queued: true,
+      }, {
+        id: 'regen:assistant:2',
+        source: 'legacy',
+        role: 'peer',
+        text: 'Target answer',
+        createdAtMs: 4,
+        kind: 'message',
+      }]);
+
+      const prompt = transcripts.userPromptBefore('agent:regen', 'regen:assistant:2');
+      expect(prompt?.id).toBe('regen:user:1');
+      expect(prompt?.text).toBe('Review this attachment');
+      expect(prompt?.attachments?.map((attachment) => attachment.id)).toEqual(['regen:attachment:1']);
+      expect(transcripts.userPromptBefore('agent:regen', 'missing')).toBeUndefined();
+    });
+
     await test.step('parity stylesheet and surface marker load before authentication', async () => {
       await expect(page.locator('body')).toHaveAttribute('data-fabushi-surface', 'grok-parity-v1');
       const parityLoaded = await page.evaluate(() => Array.from(document.styleSheets).some((sheet) =>
