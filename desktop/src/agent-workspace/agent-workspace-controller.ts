@@ -30,7 +30,7 @@ function normalizeDraft(draft: Partial<PersistedAgentDraft> | undefined): Persis
   const references = Array.isArray(draft?.references)
     ? draft.references.filter((reference) =>
       reference
-      && ['agent', 'workflow', 'mcp', 'file', 'link'].includes(reference.kind),
+      && ['agent', 'workflow', 'mcp', 'pull-request', 'file', 'link'].includes(reference.kind),
     ).slice(0, 32)
     : [];
   const richText = normalizeAgentRichText(draft?.richText, text, references);
