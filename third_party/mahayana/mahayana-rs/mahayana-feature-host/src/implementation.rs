@@ -5591,10 +5591,10 @@ impl FeatureHostController {
         &self,
         automations: &BTreeMap<String, AutomationSummary>,
     ) -> Result<(), FeatureHostError> {
-        let Some(path) = self.active_account_root(self.automation_path.as_deref()) else {
+        let Some(agent_root) = self.active_account_root(self.memory_root_path.as_deref()) else {
             return Ok(());
         };
-        persist_automations(&path, automations)
+        persist_fabu_agent_automations(&agent_root, automations)
     }
 
     fn persist_bots(&self, bots: &BTreeMap<String, BotSummary>) -> Result<(), FeatureHostError> {
@@ -5729,15 +5729,30 @@ impl FeatureHostController {
         if changed {
             self.runtime()?.reset_session()?;
             let account_id = next_account_id.as_deref();
-            let automations = self
-                .automation_path
-                .as_deref()
-                .map(|path| {
-                    account_id
-                        .map(|id| load_automations(&account_scoped_path(path, id)))
-                        .unwrap_or_default()
-                })
-                .unwrap_or_default();
+            let mut automations = match (self.memory_root_path.as_deref(), account_id) {
+                (Some(root), Some(id)) => {
+                    load_fabu_agent_automations(&account_scoped_path(root, id))
+                }
+                _ => BTreeMap::new(),
+            };
+            // One-time backward-compatible migration from the pre-Fabu
+            // account-wide automations.json into per-Agent automation roots.
+            if let (Some(path), Some(id)) = (self.automation_path.as_deref(), account_id) {
+                for (legacy_id, mut automation) in
+                    load_automations(&account_scoped_path(path, id))
+                {
+                    if automation.agent_id.is_none() {
+                        automation.agent_id = Some("mahayana-assistant".into());
+                    }
+                    automations.entry(legacy_id).or_insert(automation);
+                }
+            }
+            if let (Some(root), Some(id)) = (self.memory_root_path.as_deref(), account_id) {
+                persist_fabu_agent_automations(
+                    &account_scoped_path(root, id),
+                    &automations,
+                )?;
+            }
             let mut bots = default_bots();
             if let (Some(path), Some(account_id)) = (self.bot_state_path.as_deref(), account_id) {
                 bots.extend(load_bots(&account_scoped_path(path, account_id)));
@@ -11616,6 +11631,220 @@ fn persist_fabu_agent_manifest(agent_dir: &Path, bot: &BotSummary) -> Result<(),
     });
     persist_json_atomic(&agent_dir.join("profile.json"), &profile, "Agent profile")?;
     persist_json_atomic(&agent_dir.join("settings.json"), &settings, "Agent settings")
+}
+
+const FABU_AUTOMATIONS_DIRNAME: &str = "automations";
+const FABU_AUTOMATION_CONFIG_FILENAME: &str = "automation.json";
+
+fn fabu_automation_owner(automation: &AutomationSummary) -> &str {
+    automation
+        .agent_id
+        .as_deref()
+        .unwrap_or("mahayana-assistant")
+}
+
+fn fabu_automation_payload(automation: &AutomationSummary) -> Value {
+    json!({
+        // These top-level fields intentionally follow Fabu's automation.json
+        // contract so scheduled routines remain readable by that store.
+        "name": automation.name,
+        "prompt": automation.prompt,
+        "schedule": automation.schedule,
+        "enabled": automation.enabled,
+        "createdAt": automation.created_at_ms,
+        "lastRunAt": automation.last_run_at_ms,
+        // Mahayana keeps the richer trigger/runtime metadata in a namespaced
+        // extension without changing Fabu's stable file shape.
+        "_mahayana": {
+            "id": automation.id,
+            "agentId": fabu_automation_owner(automation),
+            "trigger": automation.trigger,
+            "nextRunAt": automation.next_run_at_ms,
+        }
+    })
+}
+
+fn load_fabu_agent_automations(agent_root: &Path) -> BTreeMap<String, AutomationSummary> {
+    let mut automations = BTreeMap::new();
+    let Ok(agent_entries) = std::fs::read_dir(agent_root) else {
+        return automations;
+    };
+    let now = now_millis();
+    for agent_entry in agent_entries.flatten() {
+        let Ok(file_type) = agent_entry.file_type() else {
+            continue;
+        };
+        if !file_type.is_dir() {
+            continue;
+        }
+        let agent_id = agent_entry.file_name().to_string_lossy().to_string();
+        if !is_safe_memory_agent_id(&agent_id) {
+            continue;
+        }
+        let automation_root = agent_entry.path().join(FABU_AUTOMATIONS_DIRNAME);
+        let Ok(entries) = std::fs::read_dir(&automation_root) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let Ok(entry_type) = entry.file_type() else {
+                continue;
+            };
+            if !entry_type.is_dir() {
+                continue;
+            }
+            let folder_id = entry.file_name().to_string_lossy().to_string();
+            if !is_safe_automation_id(&folder_id) {
+                continue;
+            }
+            let Ok(bytes) = std::fs::read(entry.path().join(FABU_AUTOMATION_CONFIG_FILENAME))
+            else {
+                continue;
+            };
+            let Ok(value) = serde_json::from_slice::<Value>(&bytes) else {
+                continue;
+            };
+            let extension = value.get("_mahayana").filter(|value| value.is_object());
+            let id = extension
+                .and_then(|value| value.get("id"))
+                .and_then(Value::as_str)
+                .filter(|id| is_safe_automation_id(id))
+                .unwrap_or(folder_id.as_str())
+                .to_string();
+            let owner = extension
+                .and_then(|value| value.get("agentId"))
+                .and_then(Value::as_str)
+                .filter(|id| is_safe_memory_agent_id(id))
+                .unwrap_or(agent_id.as_str())
+                .to_string();
+            let name = value
+                .get("name")
+                .and_then(Value::as_str)
+                .map(|value| value.trim().to_string())
+                .unwrap_or_default();
+            let prompt = value
+                .get("prompt")
+                .and_then(Value::as_str)
+                .map(|value| value.trim().to_string())
+                .unwrap_or_default();
+            let schedule = value
+                .get("schedule")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            if name.is_empty() || prompt.is_empty() {
+                continue;
+            }
+            let trigger = extension
+                .and_then(|value| value.get("trigger"))
+                .cloned()
+                .and_then(|value| serde_json::from_value::<AutomationTrigger>(value).ok())
+                .or_else(|| {
+                    normalize_automation_schedule(&schedule)
+                        .ok()
+                        .map(|schedule| AutomationTrigger::Schedule { schedule })
+                });
+            let Some(trigger) = trigger else {
+                continue;
+            };
+            let enabled = value
+                .get("enabled")
+                .and_then(Value::as_bool)
+                .unwrap_or(true);
+            let created_at_ms = value
+                .get("createdAt")
+                .and_then(Value::as_i64)
+                .unwrap_or(now);
+            let last_run_at_ms = value.get("lastRunAt").and_then(Value::as_i64);
+            let next_run_at_ms = extension
+                .and_then(|value| value.get("nextRunAt"))
+                .and_then(Value::as_i64)
+                .filter(|next| *next > now)
+                .or_else(|| automation_next_run(&trigger, &schedule, enabled, now));
+            automations.insert(
+                id.clone(),
+                AutomationSummary {
+                    id,
+                    agent_id: Some(owner),
+                    name,
+                    prompt,
+                    schedule,
+                    trigger: Some(trigger),
+                    enabled,
+                    created_at_ms,
+                    last_run_at_ms,
+                    next_run_at_ms,
+                },
+            );
+        }
+    }
+    automations
+}
+
+fn persist_fabu_agent_automations(
+    agent_root: &Path,
+    automations: &BTreeMap<String, AutomationSummary>,
+) -> Result<(), FeatureHostError> {
+    std::fs::create_dir_all(agent_root).map_err(|error| {
+        FeatureHostError::Contract(format!("create Agent automation root: {error}"))
+    })?;
+
+    let desired = automations
+        .values()
+        .filter(|automation| {
+            is_safe_automation_id(&automation.id)
+                && is_safe_memory_agent_id(fabu_automation_owner(automation))
+        })
+        .map(|automation| {
+            (
+                (
+                    fabu_automation_owner(automation).to_string(),
+                    automation.id.clone(),
+                ),
+                automation,
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+
+    // Remove only directories that contain our automation.json marker and are
+    // no longer represented in state. Other Agent-owned files are untouched.
+    if let Ok(agent_entries) = std::fs::read_dir(agent_root) {
+        for agent_entry in agent_entries.flatten() {
+            if !agent_entry.file_type().is_ok_and(|kind| kind.is_dir()) {
+                continue;
+            }
+            let agent_id = agent_entry.file_name().to_string_lossy().to_string();
+            let automation_root = agent_entry.path().join(FABU_AUTOMATIONS_DIRNAME);
+            let Ok(entries) = std::fs::read_dir(&automation_root) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                if !entry.file_type().is_ok_and(|kind| kind.is_dir()) {
+                    continue;
+                }
+                let automation_id = entry.file_name().to_string_lossy().to_string();
+                if !entry.path().join(FABU_AUTOMATION_CONFIG_FILENAME).is_file() {
+                    continue;
+                }
+                if !desired.contains_key(&(agent_id.clone(), automation_id)) {
+                    std::fs::remove_dir_all(entry.path()).map_err(|error| {
+                        FeatureHostError::Contract(format!(
+                            "remove stale Agent automation: {error}"
+                        ))
+                    })?;
+                }
+            }
+        }
+    }
+
+    for ((agent_id, automation_id), automation) in desired {
+        let path = agent_root
+            .join(agent_id)
+            .join(FABU_AUTOMATIONS_DIRNAME)
+            .join(automation_id)
+            .join(FABU_AUTOMATION_CONFIG_FILENAME);
+        persist_json_atomic(&path, &fabu_automation_payload(automation), "Agent automation")?;
+    }
+    Ok(())
 }
 
 fn load_automations(path: &Path) -> BTreeMap<String, AutomationSummary> {
