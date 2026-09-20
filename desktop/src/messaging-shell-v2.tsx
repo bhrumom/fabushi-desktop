@@ -1837,33 +1837,70 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     botThreadsRef.current[peerKey] = messages;
   }
 
-  function claimAgentOperation(operationId?: string): boolean {
-    if (!operationId || finishedAgentOperationsRef.current.has(operationId)) return false;
-    if (agentOperationIdRef.current === operationId) {
-      rememberAgentPeer(operationId, agentPeerKeyRef.current[operationId] ?? agentRequestPeerRef.current);
-      return true;
-    }
-    if (!agentRequestPendingRef.current) return false;
-    const requestId = agentRequestIdRef.current;
-    rememberAgentPeer(operationId, agentPeerKeyRef.current[operationId] ?? agentRequestPeerRef.current);
-    adoptAgentRequestOperation(requestId, operationId, agentRequestPeerRef.current);
-    agentRequestIdRef.current = null;
-    agentRequestPendingRef.current = false;
+  function syncAgentOperationSnapshot() {
+    setAgentOperationByPeer({ ...agentOperationRegistryRef.current.snapshot() });
+  }
+
+  function projectActiveAgentOperation(peerKey: string | null | undefined) {
+    const operationId = agentOperationRegistryRef.current.operationForPeer(peerKey);
+    const requestId = agentOperationRegistryRef.current.requestForPeer(peerKey);
     agentOperationIdRef.current = operationId;
     setAgentOperationId(operationId);
+    agentRequestPendingRef.current = Boolean(requestId);
+    agentRequestPeerRef.current = requestId ? peerKey ?? null : null;
+    agentRequestIdRef.current = requestId;
+    setPendingSend(Boolean(operationId || requestId));
+  }
+
+  function claimAgentOperation(operationId?: string): boolean {
+    if (!operationId || finishedAgentOperationsRef.current.has(operationId)) return false;
+    const registry = agentOperationRegistryRef.current;
+    let peerKey = registry.peerForOperation(operationId)
+      ?? agentPeerKeyRef.current[operationId]
+      ?? null;
+
+    if (!peerKey && agentRequestIdRef.current) {
+      peerKey = registry.peerForRequest(agentRequestIdRef.current)
+        ?? agentPeerKeyRef.current[agentRequestIdRef.current]
+        ?? agentRequestPeerRef.current;
+    }
+    if (!peerKey) return false;
+
+    const requestId = registry.requestForPeer(peerKey);
+    rememberAgentPeer(operationId, peerKey);
+    if (requestId) adoptAgentRequestOperation(requestId, operationId, peerKey);
+    registry.adoptOperation(requestId, operationId, peerKey);
+    syncAgentOperationSnapshot();
+
+    if (activePeerKeyRef.current === peerKey) {
+      agentOperationIdRef.current = operationId;
+      setAgentOperationId(operationId);
+      agentRequestPendingRef.current = false;
+      agentRequestPeerRef.current = null;
+      agentRequestIdRef.current = null;
+      setPendingSend(true);
+    }
     return true;
   }
 
   function clearAgentOperation(operationId: string, terminalStatus: 'completed' | 'failed' | 'interrupted' = 'completed') {
-    if (agentOperationIdRef.current !== operationId) return false;
+    const registry = agentOperationRegistryRef.current;
+    const peerKey = registry.finishOperation(operationId)
+      ?? registry.peerForOperation(operationId)
+      ?? agentPeerKeyRef.current[operationId]
+      ?? null;
+    if (!peerKey && agentOperationIdRef.current !== operationId) return false;
+
     finishedAgentOperationsRef.current.add(operationId);
     if (finishedAgentOperationsRef.current.size > 500) {
       finishedAgentOperationsRef.current.delete(finishedAgentOperationsRef.current.values().next().value!);
     }
-    agentOperationIdRef.current = null;
-    setAgentOperationId(null);
-    agentRequestPendingRef.current = false;
-    agentRequestIdRef.current = null;
+    syncAgentOperationSnapshot();
+
+    if (agentOperationIdRef.current === operationId || activePeerKeyRef.current === peerKey) {
+      projectActiveAgentOperation(activePeerKeyRef.current);
+    }
+
     updateAgentThread(operationId, (current) => current
       .filter((message) => !(message.kind === 'thinking' && message.operationId === operationId))
       .map((message) => {
@@ -1877,6 +1914,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         return message;
       }));
+    delete agentPeerKeyRef.current[operationId];
     return true;
   }
 
