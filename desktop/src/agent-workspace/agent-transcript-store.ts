@@ -144,11 +144,11 @@ export class AgentTranscriptStore {
       .filter((message) => !(message.kind === 'thinking' && message.operationId === operationId))
       .map((message) => {
         if (
-          message.kind === 'tool-call'
+          message.kind === 'action'
           && message.operationId === operationId
-          && message.status === 'running'
+          && message.actionStatus === 'running'
         ) {
-          return { ...message, status: terminalStatus };
+          return { ...message, actionStatus: terminalStatus };
         }
         if (message.kind === 'message' && message.operationId === operationId && message.streaming) {
           return { ...message, streaming: false, optimistic: false };
