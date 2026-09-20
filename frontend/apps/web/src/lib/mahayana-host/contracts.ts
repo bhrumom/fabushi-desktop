@@ -1032,7 +1032,7 @@ export type RuntimeEvent =
   | (EventBase & { type: "mcp.apps"; apps: unknown[] })
   | (EventBase & { type: "mcp.oauth"; server: string; authorizationUrl?: string; removed: boolean })
   | (EventBase & { type: "mcp.refreshed" })
-  | (EventBase & { type: "mcp.toolResult"; server: string; tool: string; result: unknown })
+  | (EventBase & { type: "mcp.toolResult"; requestId: string; server: string; tool: string; result: unknown })
   | (EventBase & { type: "settings.changed"; settings: ProductHostSettings })
   | (EventBase & { type: "audit.listed"; agentId: string; records: unknown[] })
   | (EventBase & {
