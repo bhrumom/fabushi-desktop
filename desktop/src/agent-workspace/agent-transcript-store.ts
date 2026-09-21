@@ -325,6 +325,31 @@ export class AgentTranscriptStore {
     });
   }
 
+  applyTurnState(
+    peerKey: string,
+    event: Extract<RuntimeEvent, { type: 'turn.state' }>,
+  ): AgentTranscriptSourceMessage[] {
+    return this.update(peerKey, (current) => current.map((message) => {
+      if (message.operationId !== event.operationId) return message;
+      if (message.kind === 'assistant-turn') {
+        return {
+          ...message,
+          status: event.state,
+          streaming: event.state === 'streaming',
+          queued: event.state === 'queued',
+        };
+      }
+      if (message.role === 'me' && message.kind === 'message') {
+        return {
+          ...message,
+          optimistic: event.state === 'accepted' || event.state === 'queued',
+          queued: event.state === 'queued',
+        };
+      }
+      return message;
+    }));
+  }
+
   appendComputerHandoff(
     peerKey: string,
     event: Extract<RuntimeEvent, { type: 'computer.snapshot' | 'computer.result' }>,
