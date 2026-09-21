@@ -93,6 +93,33 @@ export class AgentRuntimeCoordinator {
     }
   }
 
+  /**
+   * Command bridge context is transport-facing: conversationKey is normally a
+   * Rust conversation id (for example `codex:agent:research`), while the
+   * workspace registry is keyed by the canonical UI peer (for example
+   * `agent:research`). Resolve through the Agent directory bindings before
+   * touching request ownership so one request can never be registered under
+   * both keys.
+   */
+  private peerForCommandBridge(detail: MahayanaCommandBridgeDetail): string | null {
+    const context = detail.context;
+    const agentId = context?.agentId?.trim();
+    if (agentId) {
+      const peerKey = this.peerByAgentId.get(agentId);
+      if (peerKey) return peerKey;
+    }
+
+    const conversationId = context?.conversationId?.trim() || context?.conversationKey?.trim();
+    if (conversationId) {
+      const peerKey = this.peerByConversationId.get(conversationId);
+      if (peerKey) return peerKey;
+    }
+
+    const candidate = context?.conversationKey?.trim();
+    if (!candidate) return null;
+    return [...this.peerByAgentId.values()].includes(candidate) ? candidate : null;
+  }
+
   beginLocalTurn(input: AgentLocalTurn): void {
     this.recoveryMessageByPeer.delete(input.peerKey);
     this.workspace.beginRequest(input.peerKey, input.requestId);
@@ -266,7 +293,7 @@ export class AgentRuntimeCoordinator {
 
   handleCommandBridge(detail: MahayanaCommandBridgeDetail): boolean {
     if (detail.command.type !== 'chat.send') return false;
-    const peerKey = detail.context?.conversationKey;
+    const peerKey = this.peerForCommandBridge(detail);
     if (!peerKey) return false;
 
     const requestId = detail.command.requestId;
