@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useSyncExternalStore } from 'react';
 import styles from './fab-avatar.module.css';
 
 export type FabAvatarState =
@@ -49,6 +49,50 @@ export function normalizeFabAvatarState(state: FabAvatarInputState): FabAvatarSt
   }
 }
 
+export interface FabAvatarIdentityAlias {
+  readonly alias: string;
+  readonly canonical: string;
+}
+
+const identityAliases = new Map<string, string>();
+const identityAliasListeners = new Set<() => void>();
+let identityAliasRevision = 0;
+
+function aliasSnapshot(): number {
+  return identityAliasRevision;
+}
+
+function subscribeAliasRegistry(listener: () => void): () => void {
+  identityAliasListeners.add(listener);
+  return () => identityAliasListeners.delete(listener);
+}
+
+export function registerFabAvatarIdentityAliases(aliases: readonly FabAvatarIdentityAlias[]): void {
+  let changed = false;
+  for (const entry of aliases) {
+    const alias = entry.alias.trim();
+    const canonical = entry.canonical.trim();
+    if (!alias || !canonical || identityAliases.get(alias) === canonical) continue;
+    identityAliases.set(alias, canonical);
+    changed = true;
+  }
+  if (!changed) return;
+  identityAliasRevision += 1;
+  identityAliasListeners.forEach((listener) => listener());
+}
+
+export function resolveFabAvatarIdentity(identity: string): string {
+  let current = identity.trim() || 'fabushi:unknown';
+  const seen = new Set<string>();
+  while (!seen.has(current)) {
+    seen.add(current);
+    const next = identityAliases.get(current);
+    if (!next) break;
+    current = next;
+  }
+  return current;
+}
+
 function identityHue(identity: string): number {
   let hash = 2166136261;
   for (let index = 0; index < identity.length; index += 1) {
@@ -82,10 +126,13 @@ export default function FabAvatar({
   active = false,
   className,
 }: FabAvatarProps) {
+  useSyncExternalStore(subscribeAliasRegistry, aliasSnapshot, aliasSnapshot);
+  const canonicalIdentity = resolveFabAvatarIdentity(identity);
   const normalized = normalizeFabAvatarState(state);
+  const hue = identityHue(canonicalIdentity);
   const style = {
     '--fab-avatar-size': `${Math.max(16, Math.round(size))}px`,
-    '--fab-avatar-hue': String(identityHue(identity)),
+    '--fab-avatar-hue': String(hue),
   } as React.CSSProperties;
   return <span
     className={[styles.root, className].filter(Boolean).join(' ')}
@@ -93,8 +140,9 @@ export default function FabAvatar({
     role="img"
     aria-label={`${label} · ${normalized}`}
     data-fab-avatar="true"
-    data-avatar-identity={identity}
-    data-shape={`fab-geometric-${identityHue(identity) % 4}`}
+    data-avatar-input={identity}
+    data-avatar-identity={canonicalIdentity}
+    data-shape={`fab-geometric-${hue % 4}`}
     data-state={normalized}
     data-active={active || undefined}
     title={label}
