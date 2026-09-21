@@ -32,7 +32,7 @@ export function FabDialog({
   children,
 }: {
   readonly label: string;
-  readonly onClose(): void;
+  readonly onClose: () => void;
   readonly onSubmit?: React.FormEventHandler<HTMLFormElement>;
   readonly children: React.ReactNode;
 }) {
