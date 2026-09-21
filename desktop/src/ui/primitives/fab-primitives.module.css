@@ -1,12 +1,22 @@
 .button,
 .iconButton,
-.menuItem {
+.menuItem,
+.bareButton {
   appearance: none;
   border: 1px solid var(--fab-border-subtle);
   background: var(--fab-bg-hover);
   color: var(--fab-text-primary);
   font: inherit;
   cursor: pointer;
+}
+
+.bareButton {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  min-height: 0;
+  border-radius: 0;
 }
 
 .button {
@@ -32,9 +42,12 @@
 }
 
 .button:focus-visible,
+.bareButton:focus-visible,
 .iconButton:focus-visible,
 .input:focus-visible,
+.bareInput:focus-visible,
 .select:focus-visible,
+.bareSelect:focus-visible,
 .switch:focus-visible,
 .menuItem:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--fab-accent), transparent 18%);
@@ -62,6 +75,17 @@
 .button[data-variant="ghost"] {
   border-color: transparent;
   background: transparent;
+}
+
+.bareInput,
+.bareSelect {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  margin: 0;
+  font: inherit;
 }
 
 .input,
