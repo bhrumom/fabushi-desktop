@@ -37,6 +37,18 @@ const runtimeLib = fs.readFileSync(path.join(runtimeRoot, 'lib.rs'), 'utf8');
 const conversationActor = fs.readFileSync(path.join(runtimeRoot, 'conversation_actor.rs'), 'utf8');
 const runtimeStore = fs.readFileSync(path.join(runtimeRoot, 'runtime_store.rs'), 'utf8');
 const capabilityBroker = fs.readFileSync(path.join(runtimeRoot, 'capability_broker.rs'), 'utf8');
+const durableAgentState = fs.readFileSync(path.join(desktopRoot, 'src', 'durable-agent-state.ts'), 'utf8');
+const agentDraftStore = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'agent-draft-store.ts'), 'utf8');
+const removedMigrationRuntimePaths = [
+  'grok-chat-parity-runtime.tsx',
+  'mahayana-agent-workbench.tsx',
+  'mahayana-agent-workbench.module.css',
+  'mahayana-agent-inline-report.tsx',
+  'mahayana-agent-inline-report.module.css',
+  'mahayana-agent-inline-compat.ts',
+  'mahayana-agent-transcript-semantics.ts',
+  'mahayana-agent-transcript-semantics.css',
+].map((name) => path.join(desktopRoot, 'src', name));
 
 const forbidden = [
   ['renderer-global Agent operation pointer', /\bagentOperationId\b/],
@@ -84,6 +96,22 @@ if (!/export function buildCompatibilityPeers/.test(compatibilityAdapter)
 }
 if (fs.existsSync(obsoleteShellPath)) {
   violations.push('obsolete messaging-shell-v2.tsx still exists');
+}
+if (removedMigrationRuntimePaths.some((candidate) => fs.existsSync(candidate))) {
+  violations.push('migration-only DOM Agent runtime or portal files still exist');
+}
+if (/GrokChatParityRuntime|prepareGrokChatParityRuntime|MahayanaAgentWorkbench/.test(mainEntry)) {
+  violations.push('migration-only DOM runtimes returned to the desktop product entry');
+}
+if (/setInterval\s*\(/.test(shell)) {
+  violations.push('legacy compatibility adapter reintroduced interval polling');
+}
+if (!/AGENT_WORKSPACE_DRAFT_STORAGE_KEY/.test(agentDraftStore)
+  || !/AGENT_WORKSPACE_DRAFT_STORAGE_KEY/.test(durableAgentState)
+  || /AGENT_WORKBENCH_STORAGE_KEY/.test(durableAgentState)
+  || !/readNativeValue\(key\)/.test(durableAgentState)
+  || !/window\.localStorage\.setItem\(key, JSON\.stringify\(nativeValue\)\)/.test(durableAgentState)) {
+  violations.push('Agent drafts are not restored through native durable persistence before renderer cache use');
 }
 if (!/import\s+AgentRootShell\s+from\s+['"]\.\.\/agent-workspace\/agent-root-shell['"]/.test(desktopApp)
   || !/import\s+LegacyMessagingAdapter\s+from\s+['"]\.\.\/adapters\/legacy-messaging\/legacy-messaging-shell['"]/.test(desktopApp)
