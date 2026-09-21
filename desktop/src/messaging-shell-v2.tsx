@@ -40,6 +40,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import HostClient from '../../frontend/apps/web/src/app/host/host-client';
 import { BotMark, type BotMarkState } from '../../frontend/apps/web/src/app/host/bot-mark';
+import type { FabAvatarInputState } from './ui/avatar/fab-avatar';
 import type {
   AttachmentContext,
   AuthState,
@@ -503,20 +504,20 @@ function botMarkStateForPeer(
   executions: MessagingBotExecution[],
   busy: boolean,
   hostReady: boolean,
-): BotMarkState {
-  if (busy) return 'sending';
+): FabAvatarInputState {
+  if (busy) return 'thinking';
   const identities = [peer.id, peer.actorId].filter((value): value is string => Boolean(value));
   const execution = [...executions]
     .sort((left, right) => (right.startedAtMs ?? 0) - (left.startedAtMs ?? 0))
     .find((candidate) => identities.includes(candidate.botId));
-  if (!execution) return hostReady ? 'idle' : 'waking';
+  if (!execution) return hostReady ? 'idle' : 'offline';
   switch (execution.state) {
-    case 'queued': return 'waking';
+    case 'queued': return 'thinking';
     case 'running': return 'working';
-    case 'waitingForApproval': return 'alerting';
+    case 'waitingForApproval': return 'waiting';
     case 'failed': return 'error';
-    case 'cancelled': return 'sleeping';
-    case 'completed': return 'result';
+    case 'cancelled': return 'offline';
+    case 'completed': return 'success';
   }
 }
 
