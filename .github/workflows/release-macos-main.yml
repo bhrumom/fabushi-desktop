@@ -15,17 +15,25 @@ on:
   push:
     tags:
       - 'package-macos-*'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'frontend/apps/web/**'
+      - 'third_party/mahayana/mahayana-rs/**'
+      - '.github/workflows/release-macos-main.yml'
 
 permissions:
   contents: write
 
 concurrency:
-  group: package-macos-${{ github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
+  group: package-macos-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
   cancel-in-progress: false
 
 jobs:
   publish:
-    name: Build, notarize, and publish macOS arm64
+    name: Build, notarize, accept, and optionally publish macOS arm64
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'refactor/fabu-agent-architecture-')) }}
     runs-on: macos-15
     timeout-minutes: 180
     env:
@@ -35,8 +43,8 @@ jobs:
       - name: Checkout exact source
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'push' && github.sha || inputs.source_sha || 'main' }}
-          fetch-depth: 1
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event_name == 'push' && github.sha || inputs.source_sha || 'main' }}
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Bind exact source
@@ -46,7 +54,12 @@ jobs:
           set -euo pipefail
           sha="$(git rev-parse HEAD)"
           requested="${{ inputs.source_sha }}"
-          if [ -n "$requested" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+            base="${{ github.event.pull_request.base.sha }}"
+            test "$sha" = "$expected"
+            git merge-base --is-ancestor "$base" "$sha"
+          elif [ -n "$requested" ]; then
             test "$sha" = "$requested"
           elif [ "${{ github.event_name }}" = "push" ]; then
             test "$sha" = "${{ github.sha }}"
@@ -252,6 +265,38 @@ jobs:
           xcrun stapler validate "$app"
           spctl --assess --type execute --verbose=4 "$app"
 
+      - name: Run real signed-candidate packaged acceptance
+        if: ${{ github.event_name == 'pull_request' }}
+        working-directory: desktop
+        shell: bash
+        env:
+          OBF_REAL_ACCEPTANCE: '1'
+          OBF_ACCEPTANCE_KIND: candidate
+          OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_CANONICAL_MAIN_SHA: ${{ github.event.pull_request.base.sha }}
+          OBF_MAX_DIFF_PIXEL_RATIO: '0'
+          OBF_PIXEL_COLOR_THRESHOLD: '0'
+        run: |
+          set -euo pipefail
+          app="$(find release -maxdepth 3 -type d -name '*.app' -print -quit)"
+          test -n "$app"
+          executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          export FABUSHI_ELECTRON_EXECUTABLE="$executable"
+          test "$(git rev-parse HEAD)" = "$OBF_SOURCE_SHA"
+          npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1
+
+      - name: Upload signed-candidate acceptance evidence
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-signed-candidate-acceptance-${{ steps.source.outputs.short }}
+          path: |
+            desktop/playwright-report
+            desktop/test-results
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Write checksums
         shell: bash
         run: |
@@ -273,7 +318,7 @@ jobs:
           compression-level: 0
 
       - name: Publish GitHub prerelease
-        if: ${{ github.event_name == 'push' || inputs.publish_release }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
