@@ -1,6 +1,6 @@
 import { Monitor, Pin, Search, Settings, X } from 'lucide-react';
 import React from 'react';
-import { BotMark, type BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
+import FabAvatar, { type FabAvatarInputState } from '../ui/avatar/fab-avatar';
 import type { ComputerStatus, InferenceProvider } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { RemoteComputerDesktopState } from '../../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
 import AgentSettingsPanel, { type AgentSettingsProfileUpdate, type AgentSettingsProfileValue } from './agent-settings-panel';
@@ -41,7 +41,7 @@ export interface AgentOverlaysProps {
   title: string;
   description: string;
   botId: string;
-  botState: BotMarkState;
+  botState: FabAvatarInputState;
   pinned: boolean;
   overlay: boolean;
   computer: AgentOverlayComputerProps;
@@ -68,7 +68,7 @@ export default function AgentOverlays(props: AgentOverlaysProps) {
     </header>
 
     <section className={styles.identity}>
-      <BotMark botId={props.botId} state={props.botState} size={88} label={props.title} />
+      <FabAvatar identity={props.botId} state={props.botState} size={88} label={props.title} active={props.botState !== 'idle'} />
       <strong>{props.title}</strong>
       <small>{props.description}</small>
       <div className={styles.quickActions}>
