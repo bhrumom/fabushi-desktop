@@ -205,18 +205,29 @@ async function openAgent(page: Page, name: string): Promise<void> {
   await expect(page.getByTestId('grok-agent-header')).toContainText(name);
 }
 
-async function submitTurn(page: Page, prompt: string): Promise<void> {
+async function submitTurn(page: Page, prompt: string): Promise<number> {
+  const peerMessages = page.locator('[data-agent-message-role="peer"]');
+  const previousAssistantCount = await peerMessages.count();
   const input = page.getByTestId('messenger-input');
   await input.fill(prompt);
   await page.getByTestId('messenger-send').click();
   await expect(page.locator('[data-agent-message-role="me"]').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 5_000 });
+  return previousAssistantCount;
 }
 
-async function waitForCompletedTurn(page: Page, prompt: string): Promise<Locator> {
+async function waitForCompletedTurn(
+  page: Page,
+  prompt: string,
+  previousAssistantCount: number,
+): Promise<Locator> {
   await expect(page.locator('[data-agent-message-role="me"]').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 10_000 });
-  const turn = page.getByTestId('mahayana-assistant-turn').last();
-  await expect(turn).toBeVisible({ timeout: 30_000 });
-  await expect(turn).toHaveAttribute('data-status', 'completed', { timeout: 180_000 });
+  const peerMessages = page.locator('[data-agent-message-role="peer"]');
+  await expect.poll(
+    async () => peerMessages.count(),
+    { timeout: 180_000, message: 'A new final assistant message must be committed after the submitted turn.' },
+  ).toBeGreaterThan(previousAssistantCount);
+  const turn = peerMessages.last();
+  await expect(turn).toBeVisible({ timeout: 10_000 });
   return turn;
 }
 
@@ -432,7 +443,22 @@ test.describe('signed candidate packaged acceptance', () => {
     expect(process.env.FABUSHI_FEATURE_HOST_MODE || '').not.toBe('test');
     expect(process.env.FABUSHI_E2E || '').not.toBe('1');
 
-    await rm(evidenceRoot, { recursive: true, force: true });
+    // The workflow starts the fail-closed whole-session recorder before Playwright.
+    // Preserve recorder-owned PID/preflight/session-frames while clearing only
+    // test-owned evidence from an earlier attempt.
+    await mkdir(evidenceRoot, { recursive: true });
+    for (const relativePath of [
+      'screenshots',
+      'video',
+      'app-data',
+      'runtime.log',
+      'startup.json',
+      'failure.json',
+      'candidate.json',
+      'lifecycle.json',
+    ]) {
+      await rm(path.join(evidenceRoot, relativePath), { recursive: true, force: true });
+    }
     await mkdir(path.join(evidenceRoot, 'screenshots'), { recursive: true });
 
     const appDataDir = path.join(evidenceRoot, 'app-data');
@@ -527,29 +553,29 @@ test.describe('signed candidate packaged acceptance', () => {
       await screenshot(page, '04-broadcast');
 
       await openAgent(page, 'Research');
-      const researchPrompt = 'Research isolation token: R-ONLY. Use a real Agent run and return the token.';
-      await submitTurn(page, researchPrompt);
+      const researchPrompt = 'Two-Agent isolation acceptance for Research. Reply briefly and include marker FABUSHI-RESEARCH-ONLY-7421.';
+      const researchAssistantCount = await submitTurn(page, researchPrompt);
 
       await openAgent(page, 'Builder');
-      const builderPrompt = 'Builder isolation token: B-ONLY. Use a real Agent run and return the token.';
-      await submitTurn(page, builderPrompt);
+      const builderPrompt = 'Two-Agent isolation acceptance for Builder. Reply briefly and include marker FABUSHI-BUILDER-ONLY-5937.';
+      const builderAssistantCount = await submitTurn(page, builderPrompt);
 
       await openAgent(page, 'Research');
-      const researchTurn = await waitForCompletedTurn(page, researchPrompt);
-      await expect(researchTurn).toContainText('R-ONLY');
-      await expect(page.getByTestId('message-list')).not.toContainText('B-ONLY');
+      const researchTurn = await waitForCompletedTurn(page, researchPrompt, researchAssistantCount);
+      await expect(researchTurn).toContainText('FABUSHI-RESEARCH-ONLY-7421');
+      await expect(page.getByTestId('message-list')).not.toContainText('FABUSHI-BUILDER-ONLY-5937');
 
       await openAgent(page, 'Builder');
-      const builderTurn = await waitForCompletedTurn(page, builderPrompt);
-      await expect(builderTurn).toContainText('B-ONLY');
-      await expect(page.getByTestId('message-list')).not.toContainText('R-ONLY');
+      const builderTurn = await waitForCompletedTurn(page, builderPrompt, builderAssistantCount);
+      await expect(builderTurn).toContainText('FABUSHI-BUILDER-ONLY-5937');
+      await expect(page.getByTestId('message-list')).not.toContainText('FABUSHI-RESEARCH-ONLY-7421');
       await screenshot(page, '05-two-agent-isolation');
 
       await openAgent(page, 'Chief');
       await installLifecycleCapture(page);
       const lifecyclePrompt = 'Lifecycle acceptance: analyze the signed candidate and finish with CANDIDATE-LIFECYCLE-OK.';
-      await submitTurn(page, lifecyclePrompt);
-      const lifecycleTurn = await waitForCompletedTurn(page, lifecyclePrompt);
+      const lifecycleAssistantCount = await submitTurn(page, lifecyclePrompt);
+      const lifecycleTurn = await waitForCompletedTurn(page, lifecyclePrompt, lifecycleAssistantCount);
       await expect(lifecycleTurn).toContainText('CANDIDATE-LIFECYCLE-OK');
       const lifecycle = await page.evaluate(() => {
         const scope = window as typeof window & { __candidateLifecycle?: LifecycleSample[] };
