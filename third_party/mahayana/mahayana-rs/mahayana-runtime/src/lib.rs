@@ -334,6 +334,21 @@ impl MahayanaRuntime {
     pub fn execute(&self, command: RuntimeCommand) -> Result<RuntimeResponse, RuntimeError> {
         match command {
             RuntimeCommand::Status => Ok(RuntimeResponse::Status(self.status())),
+            RuntimeCommand::UiStateGet { key } => {
+                validate_runtime_state_key(&key)?;
+                Ok(RuntimeResponse::RuntimeUiState {
+                    value: self.store.read_ui_state(&key)?,
+                    key,
+                })
+            }
+            RuntimeCommand::UiStateSet { key, value } => {
+                validate_runtime_state_key(&key)?;
+                self.store.write_ui_state(&key, &value, now_millis())?;
+                Ok(RuntimeResponse::RuntimeUiState {
+                    key,
+                    value: Some(value),
+                })
+            }
             RuntimeCommand::ListConversations => Ok(RuntimeResponse::Conversations {
                 data: self.list_conversations()?,
             }),
@@ -1115,6 +1130,17 @@ fn handoff_prompt(intent: &HandoffIntent) -> String {
         "Agent handoff (depth {}):\nTask: {}{}{}",
         intent.depth, intent.task, constraints, expected
     )
+}
+
+fn validate_runtime_state_key(key: &str) -> Result<(), RuntimeError> {
+    let key = key.trim();
+    if key.is_empty() || key.len() > 240 || key.chars().any(char::is_control) {
+        return Err(RuntimeError::Collaboration(
+            "runtime state key must be non-empty, <= 240 bytes, and contain no control characters"
+                .to_string(),
+        ));
+    }
+    Ok(())
 }
 
 fn now_millis() -> i64 {
