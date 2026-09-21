@@ -271,6 +271,12 @@ class MahayanaHostProcess {
     return () => this.events.off('lifecycle', listener);
   }
 
+  onRuntimeEvent(listener) {
+    if (typeof listener !== 'function') throw new TypeError('Mahayana runtime event listener must be a function.');
+    this.events.on('runtime-event', listener);
+    return () => this.events.off('runtime-event', listener);
+  }
+
   emitLifecycle(type, detail = {}) {
     const event = Object.freeze({
       type,
@@ -366,6 +372,11 @@ class MahayanaHostProcess {
       } catch (error) {
         this.rejectGeneration(generation, new Error(`Invalid Mahayana host response: ${error}`));
         this.emitLifecycle('protocol-error', { error: error instanceof Error ? error.message : String(error) });
+        return;
+      }
+      if (!Object.prototype.hasOwnProperty.call(message, 'id') && message.event && typeof message.event === 'object') {
+        this.chromePlatformServer.broadcastEvent(message.event);
+        this.events.emit('runtime-event', message.event);
         return;
       }
       const key = String(message.id ?? '');
