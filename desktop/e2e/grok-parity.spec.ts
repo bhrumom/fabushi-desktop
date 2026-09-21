@@ -766,6 +766,132 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       coordinator.dispose();
     });
 
+    await test.step('Agent command bridge resolves Rust conversation ids back to canonical peers under concurrent sends', async () => {
+      const controller = new AgentWorkspaceController();
+      const transcripts = new AgentTranscriptStore();
+      const coordinator = new AgentRuntimeCoordinator(controller, transcripts);
+      coordinator.bindAgentPeers([
+        { agentId: 'research', peerKey: 'agent:research', conversationId: 'codex:agent:research' },
+        { agentId: 'builder', peerKey: 'agent:builder', conversationId: 'codex:agent:builder' },
+      ]);
+
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:research',
+        requestId: 'request:research',
+        messageId: 'user:research',
+        text: 'Research',
+        createdAtMs: 20,
+      });
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:builder',
+        requestId: 'request:builder',
+        messageId: 'user:builder',
+        text: 'Builder',
+        createdAtMs: 21,
+      });
+
+      const researchCommand = {
+        type: 'chat.send' as const,
+        requestId: 'request:research',
+        conversationId: 'codex:agent:research',
+        agentId: 'research',
+        text: 'Research',
+      };
+      const builderCommand = {
+        type: 'chat.send' as const,
+        requestId: 'request:builder',
+        conversationId: 'codex:agent:builder',
+        agentId: 'builder',
+        text: 'Builder',
+      };
+
+      expect(coordinator.handleCommandBridge({
+        phase: 'dispatch',
+        command: researchCommand,
+        context: {
+          conversationKey: 'codex:agent:research',
+          conversationId: 'codex:agent:research',
+          agentId: 'research',
+        },
+      })).toBe(true);
+      expect(coordinator.handleCommandBridge({
+        phase: 'dispatch',
+        command: builderCommand,
+        context: {
+          conversationKey: 'codex:agent:builder',
+          conversationId: 'codex:agent:builder',
+          agentId: 'builder',
+        },
+      })).toBe(true);
+
+      expect(controller.requestForPeer('agent:research')).toBe('request:research');
+      expect(controller.requestForPeer('agent:builder')).toBe('request:builder');
+      expect(controller.requestForPeer('codex:agent:research')).toBeNull();
+      expect(controller.requestForPeer('codex:agent:builder')).toBeNull();
+
+      expect(coordinator.handleCommandBridge({
+        phase: 'accepted',
+        command: researchCommand,
+        accepted: { requestId: 'request:research', operationId: 'operation:research' },
+        context: {
+          conversationKey: 'codex:agent:research',
+          conversationId: 'codex:agent:research',
+          agentId: 'research',
+        },
+      })).toBe(true);
+      expect(coordinator.handleCommandBridge({
+        phase: 'accepted',
+        command: builderCommand,
+        accepted: { requestId: 'request:builder', operationId: 'operation:builder' },
+        context: {
+          conversationKey: 'codex:agent:builder',
+          conversationId: 'codex:agent:builder',
+          agentId: 'builder',
+        },
+      })).toBe(true);
+
+      expect(controller.operationForPeer('agent:research')).toBe('operation:research');
+      expect(controller.operationForPeer('agent:builder')).toBe('operation:builder');
+      expect(controller.operationForPeer('codex:agent:research')).toBeNull();
+      expect(controller.operationForPeer('codex:agent:builder')).toBeNull();
+
+      for (const [operationId, conversationId, text] of [
+        ['operation:research', 'codex:agent:research', 'research complete'],
+        ['operation:builder', 'codex:agent:builder', 'builder complete'],
+      ] as const) {
+        expect(coordinator.handle({
+          type: 'chat.message',
+          timestamp: new Date(22).toISOString(),
+          operationId,
+          role: 'assistant',
+          text,
+        })).toBe(true);
+        expect(coordinator.handle({
+          type: 'turn.state',
+          timestamp: new Date(23).toISOString(),
+          operationId,
+          turnId: `turn:${operationId}`,
+          runId: `run:${operationId}`,
+          conversationId,
+          state: 'completed',
+          sequence: 4,
+        })).toBe(true);
+        expect(coordinator.handle({
+          type: 'operation.completed',
+          timestamp: new Date(24).toISOString(),
+          operationId,
+        })).toBe(true);
+      }
+
+      expect(controller.isBusy('agent:research')).toBe(false);
+      expect(controller.isBusy('agent:builder')).toBe(false);
+      expect(transcripts.entries('agent:research').map((entry) => entry.text).join(' ')).toContain('research complete');
+      expect(transcripts.entries('agent:builder').map((entry) => entry.text).join(' ')).toContain('builder complete');
+      expect(transcripts.entries('agent:research').map((entry) => entry.text).join(' ')).not.toContain('builder complete');
+      expect(transcripts.entries('agent:builder').map((entry) => entry.text).join(' ')).not.toContain('research complete');
+      coordinator.dispose();
+    });
+
     await test.step('Agent transcript store keeps one ordered assistant turn through adoption and finalization', async () => {
       const transcripts = new AgentTranscriptStore();
       transcripts.replace('agent:a', [{
