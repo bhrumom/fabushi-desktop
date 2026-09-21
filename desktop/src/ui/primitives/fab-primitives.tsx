@@ -44,10 +44,15 @@ export const FabInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttrib
   className,
   ...props
 }, ref) {
+  const primitiveClass = props.type === 'checkbox'
+    ? styles.checkbox
+    : variant === 'bare'
+      ? styles.bareInput
+      : styles.input;
   return <input
     {...props}
     ref={ref}
-    className={classes(variant === 'bare' ? styles.bareInput : styles.input, className)}
+    className={classes(primitiveClass, className)}
   />;
 });
 
