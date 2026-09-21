@@ -182,6 +182,23 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  readWorkspaceState(requestId: string, key: string) {
+    return this.transport.execute({
+      type: 'agent.workspaceState.get',
+      requestId,
+      key,
+    } as HostCommand);
+  }
+
+  writeWorkspaceState(requestId: string, key: string, value: unknown) {
+    return this.transport.execute({
+      type: 'agent.workspaceState.set',
+      requestId,
+      key,
+      value,
+    } as HostCommand);
+  }
+
   listAgents(requestId: string) {
     return this.transport.execute({
       type: 'bot.list',
