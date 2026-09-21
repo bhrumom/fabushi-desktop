@@ -89,6 +89,12 @@ impl RuntimeStore {
                         updated_at_ms INTEGER NOT NULL
                     );
 
+                    CREATE TABLE IF NOT EXISTS ui_state (
+                        key TEXT PRIMARY KEY,
+                        value_json TEXT NOT NULL,
+                        updated_at_ms INTEGER NOT NULL
+                    );
+
                     CREATE TABLE IF NOT EXISTS pending_intents (
                         intent_id TEXT PRIMARY KEY,
                         turn_id TEXT NOT NULL,
