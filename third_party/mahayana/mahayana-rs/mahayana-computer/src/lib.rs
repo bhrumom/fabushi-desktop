@@ -1237,6 +1237,31 @@ mod tests {
     use super::*;
     use mahayana_host_protocol::ComputerActionKind;
 
+    static LEASE_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    fn reset_control_lease() {
+        *CONTROL_LEASE.lock().expect("control lease lock") = None;
+    }
+
+    fn lease_request(
+        controller_id: &str,
+        run_id: &str,
+        origin: ComputerControlOrigin,
+    ) -> ComputerControlLeaseRequest {
+        ComputerControlLeaseRequest {
+            controller_id: controller_id.to_string(),
+            run_id: run_id.to_string(),
+            device_id: "local-desktop".to_string(),
+            origin,
+            mode: if origin == ComputerControlOrigin::Ai {
+                "agent".to_string()
+            } else {
+                "human".to_string()
+            },
+            ttl_ms: 60_000,
+        }
+    }
+
     fn action(kind: ComputerActionKind) -> ComputerAction {
         ComputerAction {
             action: kind,
@@ -1289,6 +1314,66 @@ mod tests {
             ensure_ai_not_preempted(epoch),
             Err(ComputerError::Preempted)
         ));
+    }
+
+    #[test]
+    fn control_lease_allows_same_run_blocks_other_ai_and_yields_to_human() {
+        let _serial = LEASE_TEST_LOCK.lock().expect("lease test serial lock");
+        reset_control_lease();
+
+        let first = lease_request("agent:first", "run:first", ComputerControlOrigin::Ai);
+        let acquired = acquire_control_lease_at(&first, 10_000).expect("first AI lease");
+        assert_eq!(acquired.acquired_at_ms, 10_000);
+        assert_eq!(acquired.expires_at_ms, 70_000);
+
+        let renewed = acquire_control_lease_at(&first, 20_000).expect("same run renews");
+        assert_eq!(renewed.acquired_at_ms, 10_000);
+        assert_eq!(renewed.expires_at_ms, 80_000);
+
+        let second = lease_request("agent:second", "run:second", ComputerControlOrigin::Ai);
+        assert!(matches!(
+            acquire_control_lease_at(&second, 20_001),
+            Err(ComputerError::LeaseBusy { .. })
+        ));
+
+        let human = lease_request("human:local", "takeover:1", ComputerControlOrigin::LocalUi);
+        let takeover = acquire_control_lease_at(&human, 20_002).expect("human takeover");
+        assert_eq!(takeover.controller_id, "human:local");
+        assert_eq!(
+            current_control_lease_at(20_003)
+                .expect("active human lease")
+                .controller_id,
+            "human:local"
+        );
+
+        assert!(release_control_lease("human:local", "takeover:1"));
+        assert!(current_control_lease_at(20_004).is_none());
+        reset_control_lease();
+    }
+
+    #[test]
+    fn expired_control_lease_allows_another_agent_and_raw_ai_requires_lease() {
+        let _serial = LEASE_TEST_LOCK.lock().expect("lease test serial lock");
+        reset_control_lease();
+
+        let mut first = lease_request("agent:first", "run:first", ComputerControlOrigin::Ai);
+        first.ttl_ms = MIN_CONTROL_LEASE_MS;
+        acquire_control_lease_at(&first, 100_000).expect("first lease");
+
+        let second = lease_request("agent:second", "run:second", ComputerControlOrigin::Ai);
+        let acquired = acquire_control_lease_at(
+            &second,
+            100_000 + MIN_CONTROL_LEASE_MS + 1,
+        )
+        .expect("expired lease can be replaced");
+        assert_eq!(acquired.controller_id, "agent:second");
+
+        let action = action(ComputerActionKind::Wait);
+        assert!(matches!(
+            execute(&[action], ComputerControlOrigin::Ai),
+            Err(ComputerError::LeaseRequired)
+        ));
+        reset_control_lease();
     }
 
     #[test]
