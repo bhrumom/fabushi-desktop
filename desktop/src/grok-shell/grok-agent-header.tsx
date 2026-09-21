@@ -1,6 +1,6 @@
 import { AppWindow, Monitor, MoreVertical, Pin, Search } from 'lucide-react';
 import React from 'react';
-import { BotMark, type BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
+import FabAvatar, { type FabAvatarInputState } from '../ui/avatar/fab-avatar';
 import styles from './grok-agent-header.module.css';
 
 export default function GrokAgentHeader({
@@ -23,7 +23,7 @@ export default function GrokAgentHeader({
   title: string;
   description: string;
   botId: string;
-  botState: BotMarkState;
+  botState: FabAvatarInputState;
   status: string;
   pinned: boolean;
   searchActive: boolean;
@@ -38,7 +38,7 @@ export default function GrokAgentHeader({
 }) {
   return <header className={styles.root} data-testid="grok-agent-header">
     <div className={styles.identity}>
-      <BotMark botId={botId} state={botState} size={34} label={title} />
+      <FabAvatar identity={botId} state={botState} size={34} label={title} active />
       <div>
         <strong>{title}</strong>
         <small data-testid="conversation-status">{status || description}</small>
