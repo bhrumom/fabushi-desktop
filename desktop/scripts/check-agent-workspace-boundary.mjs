@@ -429,6 +429,11 @@ requirePattern(
   /fn recover_interrupted_turns[\s\S]{0,3200}TurnState::Recovering[\s\S]{0,1200}start_message\(/,
 );
 requirePattern(
+  'Rust restart recovery must fail closed for waiting-user turns',
+  runtimeLib,
+  /pending\.state == TurnState::WaitingUser[\s\S]{0,900}TurnState::Failed[\s\S]{0,900}explicit retry is required/,
+);
+requirePattern(
   'Renderer recovery must reclaim a Rust recovering run by conversation identity',
   runtimeCoordinator,
   /peerByConversationId[\s\S]{0,2600}prepareOperationRecovery[\s\S]{0,5200}event\.state === ['"]recovering['"][\s\S]{0,1000}claimOperation\(event\.operationId, recoveryPeerKey\)/,
