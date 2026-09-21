@@ -117,6 +117,7 @@ import type {
   SettingsCategory,
   UsageSummary,
 } from './legacy-messaging-model';
+import { useLegacyMessagingCompatibilityState } from './use-legacy-messaging-compatibility-state';
 import AgentOverlays from '../../agent-workspace/agent-overlays';
 import { AgentCoordinatorClient } from '../../agent-workspace/coordinator-client';
 import type { AgentTranscriptSourceMessage } from '../../agent-workspace/agent-transcript-store';
@@ -829,32 +830,55 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [section, setSection] = useState<MessengerSection>('bots');
   const newAgentRequestPendingRef = useRef(false);
   const [pendingOpenAgentId, setPendingOpenAgentId] = useState<string | null>(null);
-  const [conversations, setConversations] = useState<ConversationSummary[]>(startupProjection?.legacyConversations ?? []);
-  const [groups, setGroups] = useState<GroupSummary[]>(startupProjection?.legacyGroups ?? []);
-  const [selfActors, setSelfActors] = useState<MessagingActor[]>(startupProjection?.selfActors ?? []);
-  const [selfConversations, setSelfConversations] = useState<MessagingConversation[]>(startupProjection?.selfConversations ?? []);
-  const [selfMessages, setSelfMessages] = useState<Record<string, MessagingMessage[]>>(startupProjection?.selfMessages ?? {});
-  const [selfStories, setSelfStories] = useState<MessagingStory[]>([]);
-  const [selfCommunities, setSelfCommunities] = useState<MessagingCommunityState[]>([]);
-  const [selfBotProfiles, setSelfBotProfiles] = useState<MessagingBotProfile[]>([]);
-  const [selfBotExecutions, setSelfBotExecutions] = useState<MessagingBotExecution[]>([]);
-  const [activeStory, setActiveStory] = useState<MessagingStory | null>(null);
-  const [communityDialogPeer, setCommunityDialogPeer] = useState<PeerItem | null>(null);
-  const [selfInvoices, setSelfInvoices] = useState<MessagingInvoice[]>([]);
-  const [selfOrders, setSelfOrders] = useState<MessagingOrder[]>([]);
-  const [walletAccount, setWalletAccount] = useState<MessagingWalletAccount | null>(null);
-  const [walletEntries, setWalletEntries] = useState<MessagingLedgerEntry[]>([]);
   const [activePeerKey, setActivePeerKey] = useState<string | null>(startupProjection?.activePeerKey ?? null);
-  const [messages, setMessages] = useState<DisplayMessage[]>(() =>
+  const legacyCompatibility = useLegacyMessagingCompatibilityState(
+    startupProjection,
     startupLegacyConversation ? cachedLegacyDisplayMessages(startupLegacyConversation) : [],
   );
-  const [composer, setComposer] = useState('');
-  // Compatibility Messenger drafts remain React-owned. Agent drafts live in
-  // AgentWorkspaceController and never share this renderer-global map.
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [legacyReplyTo, setLegacyReplyTo] = useState<DisplayMessage | null>(null);
-  const [silentSend, setSilentSend] = useState(false);
-  const [scheduledAtMs, setScheduledAtMs] = useState<number | undefined>();
+  const {
+    conversations, setConversations,
+    groups, setGroups,
+    selfActors, setSelfActors,
+    selfConversations, setSelfConversations,
+    selfMessages, setSelfMessages,
+    selfStories, setSelfStories,
+    selfCommunities, setSelfCommunities,
+    selfBotProfiles, setSelfBotProfiles,
+    selfBotExecutions, setSelfBotExecutions,
+    activeStory, setActiveStory,
+    communityDialogPeer, setCommunityDialogPeer,
+    selfInvoices, setSelfInvoices,
+    selfOrders, setSelfOrders,
+    walletAccount, setWalletAccount,
+    walletEntries, setWalletEntries,
+    messages, setMessages,
+    composer, setComposer,
+    drafts, setDrafts,
+    legacyReplyTo, setLegacyReplyTo,
+    silentSend, setSilentSend,
+    scheduledAtMs, setScheduledAtMs,
+    typingByConversation, setTypingByConversation,
+    typingExpiryTimersRef,
+    newDialog, setNewDialog,
+    messageMenu, setMessageMenu,
+    forwardDialog, setForwardDialog,
+    editDialog, setEditDialog,
+    invoiceDialog, setInvoiceDialog,
+    attachmentMenuOpen, setAttachmentMenuOpen,
+    attachmentProgress, setAttachmentProgress,
+    localCall, setLocalCall,
+    incomingCall, setIncomingCall,
+    miniApp, setMiniApp,
+    miniAppCall, setMiniAppCall,
+    miniAppBotThreadsRef,
+    accountBots, setAccountBots,
+    marketplaceApps, setMarketplaceApps,
+    miniAppIdentityCatalog, setMiniAppIdentityCatalog,
+    installedMiniApps, setInstalledMiniApps,
+    miniAppQuery, setMiniAppQuery,
+    miniAppLoading, setMiniAppLoading,
+    miniAppBusy, setMiniAppBusy,
+  } = legacyCompatibility;
   const [search, setSearch] = useState('');
   const [sidebarWidth, setSidebarWidth] = useState(330);
   const [conversationSearchOpen, setConversationSearchOpen] = useState(false);
@@ -877,27 +901,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   // Agent request/operation ownership is exclusively per-peer in the workspace controller.
   const [legacySendPending, setLegacySendPending] = useState(false);
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
-  const [typingByConversation, setTypingByConversation] = useState<Record<string, Record<string, number>>>({});
-  const typingExpiryTimersRef = useRef<Map<string, number>>(new Map());
-  const [newDialog, setNewDialog] = useState<NewDialog>(null);
-  const [messageMenu, setMessageMenu] = useState<MessageMenu>(null);
-  const [forwardDialog, setForwardDialog] = useState<ForwardDialogState>(null);
-  const [editDialog, setEditDialog] = useState<EditDialogState>(null);
-  const [invoiceDialog, setInvoiceDialog] = useState<InvoiceDialogState>(null);
-  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
-  const [attachmentProgress, setAttachmentProgress] = useState<string | null>(null);
-  const [localCall, setLocalCall] = useState<LocalCall | null>(null);
-  const [incomingCall, setIncomingCall] = useState<IncomingFabushiCall | null>(null);
-  const [miniApp, setMiniApp] = useState<{ id: string; title: string; url: string } | null>(null);
-  const [miniAppCall, setMiniAppCall] = useState<MiniAppCallSession | null>(null);
-  const miniAppBotThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
-  const [accountBots, setAccountBots] = useState<AccountBotMembership[]>(startupProjection?.accountBots ?? []);
-  const [marketplaceApps, setMarketplaceApps] = useState<MarketplacePluginSummary[]>([]);
-  const [miniAppIdentityCatalog, setMiniAppIdentityCatalog] = useState<MarketplacePluginSummary[]>(startupProjection?.miniAppIdentityCatalog ?? []);
-  const [installedMiniApps, setInstalledMiniApps] = useState<Record<string, InstalledPluginPointer>>({});
-  const [miniAppQuery, setMiniAppQuery] = useState('');
-  const [miniAppLoading, setMiniAppLoading] = useState(false);
-  const [miniAppBusy, setMiniAppBusy] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<string | null>(null);
   const agentProductControllers = useAgentProductControllers({
     client: agentCoordinatorClient,
