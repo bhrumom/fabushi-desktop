@@ -47,6 +47,29 @@ function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
+function acceptBackgroundState(
+  payload: unknown,
+  controlEnabled: boolean,
+  update: (state: RemoteComputerDesktopState) => void,
+): void {
+  const state = payload && typeof payload === 'object' && !Array.isArray(payload)
+    ? payload as Record<string, unknown>
+    : {};
+  const running = state.running === true;
+  const deviceId = typeof state.deviceId === 'string' ? state.deviceId : '';
+  const error = typeof state.error === 'string' && state.error.trim() ? state.error : undefined;
+  update({
+    running,
+    controlEnabled,
+    deviceId,
+    clients: [],
+    sessions: [],
+    connectionState: running ? 'connected' : 'idle',
+    channelOpen: false,
+    ...(error ? { error } : {}),
+  });
+}
+
 /**
  * Owns the installed-machine Computer lifecycle for Agent workspaces.
  *
