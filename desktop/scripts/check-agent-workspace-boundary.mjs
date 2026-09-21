@@ -24,6 +24,8 @@ const storeSyncControllerPath = path.join(desktopRoot, 'src', 'agent-workspace',
 const storeSyncController = fs.readFileSync(storeSyncControllerPath, 'utf8');
 const directoryControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-directory-controller.ts');
 const directoryController = fs.readFileSync(directoryControllerPath, 'utf8');
+const mcpController = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-mcp-controller.ts'), 'utf8');
+const productControllers = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-product-controllers.ts'), 'utf8');
 const agentComposerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agent-composer.tsx');
 const agentComposer = fs.readFileSync(agentComposerPath, 'utf8');
 const agentRichEditorPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agent-rich-text-editor.tsx');
@@ -227,9 +229,12 @@ if (!/const initialAgentWorkspaceHydrated = hostReady/.test(shell)
   || /if \(!hostReady \|\| !initialLegacyHydrated\) return;[\s\S]{0,240}agentMcpController\.list/.test(shell)) {
   violations.push('AgentRootShell/Computer/MCP readiness regressed behind legacy Messenger hydration');
 }
-if (!/useAgentMcpController\s*\(/.test(shell)
+if (!/useAgentProductControllers\s*\(/.test(shell)
+  || !/agentMcpController\s*=\s*agentProductControllers\.mcp/.test(shell)
   || !/agentMcpController\.handle\(event\)/.test(shell)
-  || !/kind:\s*candidate\.kind === ['"]mcp['"] \? ['"]mcp['"] : ['"]agent['"]/.test(shell)) {
+  || !/useAgentMcpController\s*\(/.test(productControllers)
+  || !/projectAgentMcpReferences\s*\(/.test(mcpController)
+  || !/event\.type === ['"]mcp\.listed['"]/.test(mcpController)) {
   violations.push('MCP reference discovery escaped the Agent-owned Composer/controller boundary');
 }
 if (!/agentNetworkController\.handle\(event\)/.test(shell)
@@ -281,8 +286,9 @@ if (!/insertText\(value: string\): void/.test(agentRichEditor)
   violations.push('Agent rich editor no longer exposes cursor-preserving text insertion');
 }
 
-if (!/useAgentSidebarController\s*\(/.test(shell)) {
-  violations.push('Agent sidebar controller is not mounted by the desktop Agent shell');
+if (!/agentSidebarController\s*=\s*agentProductControllers\.sidebar/.test(shell)
+  || !/useAgentSidebarController\s*\(/.test(productControllers)) {
+  violations.push('Agent sidebar controller escaped the Agent product-controller boundary');
 }
 if (/readAgentSidebarSections(?:Durable)?\s*\(|persistAgentSidebarSections\s*\(|setGrokPinnedOrder\s*\(|setGrokSidebarSections\s*\(|setGrokSelectedAgentKeys\s*\(/.test(shell)) {
   violations.push('Messenger shell recreated Agent sidebar state or persistence ownership');
@@ -330,8 +336,9 @@ if (!/import\s+AgentCommandPalette\s+from\s+['"](?:\.\.\/)+agent-workspace\/agen
   violations.push('primary shell is not mounting the Agent-owned command palette boundary');
 }
 
-if (!/useAgentCommandPaletteController\s*\(/.test(shell)) {
-  violations.push('command palette lifecycle escaped the Agent-owned controller hook');
+if (!/agentPaletteController\s*=\s*agentProductControllers\.palette/.test(shell)
+  || !/useAgentCommandPaletteController\s*\(/.test(productControllers)) {
+  violations.push('command palette lifecycle escaped the Agent product-controller boundary');
 }
 if (/setGrokPalette|agentPaletteOpen|agentPaletteQuery/.test(shell)) {
   violations.push('primary shell recreated command palette runtime state');
@@ -342,8 +349,12 @@ if (!/from\s+['"](?:\.\.\/)+agent-workspace\/agent-model['"]/.test(shell)
   || !/projectActiveAgentKey\s*\(/.test(shell)) {
   violations.push('primary shell is not consuming the Agent-owned navigation projection model');
 }
-if (!/useAgentNetworkController\s*\(/.test(shell)) {
-  violations.push('Agent Network UI/controller state escaped the Agent workspace controller hook');
+if (!/agentNetworkController\s*=\s*agentProductControllers\.network/.test(shell)
+  || !/useAgentNetworkController\s*\(/.test(productControllers)) {
+  violations.push('Agent Network UI/controller state escaped the Agent product-controller boundary');
+}
+if (/from\s+['"][^'"]*use-agent-(?:command-palette|sidebar|network|workflow|mcp|store-sync|directory)-controller['"]/.test(shell)) {
+  violations.push('compatibility shell directly constructs Agent product controllers');
 }
 if (/agentCoordinatorClient\.(?:listGroups|createGroup|updateGroup|deleteGroup|sendGroup|broadcast)\s*\(/.test(shell)) {
   violations.push('primary shell directly owns Agent collaboration commands');
@@ -354,8 +365,9 @@ for (const method of ['listGroups', 'createGroup', 'updateGroup', 'deleteGroup',
   }
 }
 
-if (!/useAgentWorkflowController\s*\(/.test(shell)) {
-  violations.push('Agent workflow discovery escaped the Agent workspace controller');
+if (!/agentWorkflowController\s*=\s*agentProductControllers\.workflow/.test(shell)
+  || !/useAgentWorkflowController\s*\(/.test(productControllers)) {
+  violations.push('Agent workflow discovery escaped the Agent product-controller boundary');
 }
 if (/agentWorkflowsById|setAgentWorkflowsById|type:\s*['"]workflow\.list['"]/.test(shell)) {
   violations.push('primary shell recreated Agent workflow cache or raw workflow.list ownership');
@@ -366,8 +378,9 @@ if (!/client\.listWorkflows\s*\(/.test(workflowController)
   violations.push('Agent workflow controller no longer owns workflow list/cache refresh');
 }
 
-if (!/useAgentStoreSyncController\s*\(/.test(shell)) {
-  violations.push('Agent memory/automation CAS sync escaped the Agent workspace controller');
+if (!/agentStoreSyncController\s*=\s*agentProductControllers\.storeSync/.test(shell)
+  || !/useAgentStoreSyncController\s*\(/.test(productControllers)) {
+  violations.push('Agent memory/automation CAS sync escaped the Agent product-controller boundary');
 }
 if (/type:\s*['"]memory\.list['"]|case\s+['"]memory\.(?:changed|listed)['"]|case\s+['"]automation\.(?:changed|listed)['"]/.test(shell)) {
   violations.push('primary shell recreated Agent memory/automation runtime sync ownership');
@@ -387,8 +400,9 @@ if (/function\s+(?:updateActiveAgentProfile|setActiveAgentNotifications)\s*\(/.t
   violations.push('primary shell recreated Agent settings mutations');
 }
 
-if (!/useAgentDirectoryController\s*\(/.test(shell)) {
-  violations.push('Agent directory cache/commands escaped the Agent workspace controller');
+if (!/agentDirectoryController\s*=\s*agentProductControllers\.directory/.test(shell)
+  || !/useAgentDirectoryController\s*\(/.test(productControllers)) {
+  violations.push('Agent directory cache/commands escaped the Agent product-controller boundary');
 }
 if (/type:\s*['"]bot\.(?:list|create|update|clone|delete|setHidden)['"]|case\s+['"]bot\.(?:listed|changed)['"]|setBots\s*\(/.test(shell)) {
   violations.push('primary shell recreated raw Bot/Agent directory ownership');
@@ -411,15 +425,19 @@ if (!/pub enum TurnState/.test(runtimeCore)
   || !/struct ConversationActorState/.test(conversationActor)
   || !/pub struct ConversationActorRegistry/.test(conversationActor)
   || !/AsyncMutex/.test(conversationActor)
+  || !/pub fn actor\s*\(&self, conversation_id: &ConversationId\)/.test(conversationActor)
   || !/PRAGMA journal_mode=WAL/.test(runtimeStore)
   || !/CREATE TABLE IF NOT EXISTS turns/.test(runtimeStore)
   || !/CREATE TABLE IF NOT EXISTS runs/.test(runtimeStore)
+  || !/CREATE TABLE IF NOT EXISTS workspace_state/.test(runtimeStore)
   || !/CREATE TABLE IF NOT EXISTS capability_audit/.test(runtimeStore)
   || !/CREATE TABLE IF NOT EXISTS computer_leases/.test(runtimeStore)
   || !/pub fn acquire_computer_lease/.test(runtimeStore)
   || !/pub struct CapabilityBroker/.test(capabilityBroker)
-  || !/capability_broker\.authorize/.test(runtimeLib)
-  || !/actors\.actor\(&conversation_id\)/.test(runtimeLib)
+  || !/pub fn authorize_request\s*\(/.test(capabilityBroker)
+  || !/\.capability_broker[\s\S]{0,160}\.authorize_request\s*\(/.test(runtimeLib)
+  || !/\.actors[\s\S]{0,100}\.actor\(&conversation_id\)/.test(runtimeLib)
+  || !/actor\.gate\.lock\(\)\.await/.test(runtimeLib)
   || !/transition_turn_state/.test(runtimeLib)) {
   violations.push('Mahayana Rust runtime lost ConversationActor/Turn/Run/CapabilityBroker/SQLite ownership');
 }
