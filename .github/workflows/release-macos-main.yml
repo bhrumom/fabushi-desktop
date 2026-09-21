@@ -16,6 +16,7 @@ on:
         default: false
         type: boolean
   push:
+    branches: [main]
     tags:
       - 'package-macos-*'
 
@@ -395,7 +396,7 @@ jobs:
           compression-level: 0
 
       - name: Publish GitHub prerelease
-        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
+        if: ${{ (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/package-macos-') || startsWith(github.event.head_commit.message, 'release:'))) || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
