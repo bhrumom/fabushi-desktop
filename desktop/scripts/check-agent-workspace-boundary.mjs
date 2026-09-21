@@ -294,6 +294,14 @@ requirePattern(
   /typeof window\.mahayana\.subscribe === ['"]function['"]/,
 );
 forbidPattern('Renderer Computer controller reintroduced WebRTC/polling ownership', computerController, /RemoteComputerDesktopController|RTCPeerConnection|SIGNAL_POLL_MS|SESSION_POLL_MS|HEARTBEAT_MS/);
+requirePattern('Renderer Computer controller must send explicit human takeover commands', computerController, /\.takeComputerControl\s*\([\s\S]{0,1000}\.releaseComputerControl\s*\(/);
+requirePattern('Renderer Computer controller must project host controlChanged state', computerController, /event\.type\s*!==\s*['"]computer\.controlChanged['"]/);
+requirePattern('Agent Computer panel must expose Take Control', agentOverlays, />Take Control</);
+requirePattern('Agent Computer panel must expose Release Control', agentOverlays, />Release Control</);
+requirePattern('Agent root must surface waiting-user Computer takeover', rootShell, /event\.type\s*===\s*['"]turn\.state['"][\s\S]{0,500}event\.state\s*===\s*['"]waiting-user['"][\s\S]{0,900}computer\.openForAgent/);
+requirePattern('FeatureHost must acquire a human ComputerControlLease', featureHost, /FeatureCommand::ComputerTakeControl[\s\S]{0,2600}acquire_control_lease\s*\(/);
+requirePattern('FeatureHost must release a human ComputerControlLease', featureHost, /FeatureCommand::ComputerReleaseControl[\s\S]{0,2200}release_control_lease\s*\(/);
+requirePattern('FeatureHost takeover must emit computer.controlChanged', featureHost, /FeatureCommand::ComputerTakeControl[\s\S]{0,3000}HostEvent::ComputerControlChanged/);
 requirePattern('Remote-device Main supervisor lost adaptive refresh scheduling', remoteSupervisor, /sessionRefreshDelay\s*\(/);
 
 // Execution-order checks prevent actor/broker types from existing while real calls bypass them.

@@ -2,7 +2,11 @@ import { Monitor, Pin, Search, Settings, X } from 'lucide-react';
 import React from 'react';
 import { FabButton } from '../ui/primitives/fab-primitives';
 import FabAvatar, { type FabAvatarInputState } from '../ui/avatar/fab-avatar';
-import type { ComputerStatus, InferenceProvider } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type {
+  ComputerControlLeaseState,
+  ComputerStatus,
+  InferenceProvider,
+} from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { RemoteComputerDesktopState } from '../../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
 import AgentSettingsPanel, { type AgentSettingsProfileUpdate, type AgentSettingsProfileValue } from './agent-settings-panel';
 import styles from './agent-overlays.module.css';
@@ -17,11 +21,14 @@ export interface AgentOverlayComputerProps {
   remoteControlEnabled: boolean;
   state: RemoteComputerDesktopState | null;
   capabilityStatus?: ComputerStatus | null;
+  control?: { agentId: string; leaseId: string; lease: ComputerControlLeaseState } | null;
   onToggle(): void;
   onRefreshPairingCode(): void;
   onApproveSession(sessionId: string): void;
   onDenySession(sessionId: string): void;
   onDisconnect(): void;
+  onTakeControl(): void;
+  onReleaseControl(): void;
   onToggleRemoteControl(): void;
   onOpenControlPage(): void;
 }
@@ -110,6 +117,16 @@ export default function AgentOverlays(props: AgentOverlaysProps) {
         <span><small>Platform</small><strong>{computer.capabilityStatus.platform}</strong></span>
       </div> : null}
       <p>The Computer surface belongs to this Agent. Execution is bound to the machine where Fabushi is installed, not a cloud computer.</p>
+
+      <div className={styles.request} data-testid="agent-computer-takeover">
+        <span>
+          <small>Control lease</small>
+          <strong>{computer.control?.agentId === computer.agentId ? 'You have control' : 'Agent control'}</strong>
+        </span>
+        {computer.control?.agentId === computer.agentId
+          ? <FabButton variant="bare" type="button" onClick={computer.onReleaseControl}>Release Control</FabButton>
+          : <FabButton variant="bare" type="button" onClick={computer.onTakeControl}>Take Control</FabButton>}
+      </div>
 
       {computer.remoteControlEnabled && computer.state?.registration?.pairingCode ? <div className={styles.request}>
         <span><small>Pairing code</small><strong>{computer.state.registration.pairingCode}</strong></span>

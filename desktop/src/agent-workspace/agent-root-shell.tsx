@@ -244,6 +244,18 @@ export default function AgentRootShell({
     if (product.storeSync.handle(event)) return;
     if (product.workflow.handle(event)) return;
     if (product.mcp.handle(event)) return;
+    if (computer.handleRuntimeEvent(event)) return;
+    if (event.type === 'turn.state' && event.state === 'waiting-user') {
+      const waitingPeer = peersRef.current.find(
+        (candidate) => runtime.controller.operationForPeer(candidate.key) === event.operationId,
+      );
+      if (waitingPeer?.key === activePeerKey) {
+        computer.openForAgent(waitingPeer.agentId || waitingPeer.id, 'waiting-user');
+        view.setAgentSettingsOpen(false);
+        if (view.wideInfoLayout) view.setInfoOpen(true);
+        else view.setNarrowInfoOpen(true);
+      }
+    }
     if (runtime.coordinator.handle(event)) return;
 
     if (event.type === 'conversation.opened') {
@@ -814,6 +826,7 @@ export default function AgentRootShell({
           remoteControlEnabled: hostSettings.remoteControlEnabled,
           state: computer.state,
           capabilityStatus: computer.capabilityStatus,
+          control: computer.control,
           onToggle: () => {
             view.setAgentSettingsOpen(false);
             computer.toggleForAgent(activePeer.agentId || activePeer.id, 'agent-overlay');
@@ -822,6 +835,11 @@ export default function AgentRootShell({
           onApproveSession: computer.approveSession,
           onDenySession: computer.denySession,
           onDisconnect: computer.disconnect,
+          onTakeControl: () => computer.takeControl(
+            activePeer.agentId || activePeer.id,
+            activeOperationId,
+          ),
+          onReleaseControl: computer.releaseControl,
           onToggleRemoteControl: () => updateHostSetting('remoteControlEnabled', !hostSettings.remoteControlEnabled),
           onOpenControlPage: () => computer.openControlPage(activePeer.agentId || activePeer.id),
         }}

@@ -1104,6 +1104,18 @@ impl FeatureHostController {
                     json!({"origin": origin, "sessionId": session_id, "target": target}),
                     "control the local computer",
                 ),
+                FeatureCommand::ComputerTakeControl { agent_id, lease_id, target, .. } => (
+                    "computer.input.takeover",
+                    Some(agent_id.clone()),
+                    json!({"leaseId": lease_id, "target": target}),
+                    "let the local user take over computer control",
+                ),
+                FeatureCommand::ComputerReleaseControl { agent_id, lease_id, .. } => (
+                    "computer.input.release",
+                    Some(agent_id.clone()),
+                    json!({"leaseId": lease_id}),
+                    "release local user computer control",
+                ),
                 FeatureCommand::RemoteComputerSessionActivate { device_id, session_id, .. }
                 | FeatureCommand::RemoteComputerSessionClose { device_id, session_id, .. }
                 | FeatureCommand::RemoteComputerSignal { device_id, session_id, .. }
@@ -1180,10 +1192,19 @@ impl FeatureHostController {
                     .and_then(|bot| bot.conversation_id.clone())
                     .unwrap_or_else(|| MAHAYANA_AI_CONVERSATION_ID.to_string())
             };
-            let actor = agent_id
-                .as_ref()
-                .map(|id| format!("agent:{id}"))
-                .unwrap_or_else(|| "human".to_string());
+            let human_control = matches!(
+                command,
+                FeatureCommand::ComputerTakeControl { .. }
+                    | FeatureCommand::ComputerReleaseControl { .. }
+            );
+            let actor = if human_control {
+                "human".to_string()
+            } else {
+                agent_id
+                    .as_ref()
+                    .map(|id| format!("agent:{id}"))
+                    .unwrap_or_else(|| "human".to_string())
+            };
             let response = self.runtime()?.execute(RuntimeCommand::AuthorizeCapability {
                 request: CapabilityRequest {
                     actor,
@@ -3043,6 +3064,107 @@ impl FeatureHostController {
                         agent_id: attributed_agent_id,
                         result,
                     });
+            }
+            FeatureCommand::ComputerTakeControl {
+                agent_id,
+                lease_id,
+                target,
+                ..
+            } => {
+                let canonical_agent_id = {
+                    let state = self.state()?;
+                    canonical_runtime_agent_id(&state, &agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown computer-control agent: {agent_id}"
+                        ))
+                    })?
+                };
+                if !is_safe_memory_agent_id(&canonical_agent_id) {
+                    return Err(FeatureHostError::Contract(format!(
+                        "unsafe computer-control agent: {canonical_agent_id}"
+                    )));
+                }
+                let controller_id = format!("human:{canonical_agent_id}");
+                let device_id = target
+                    .device_id
+                    .clone()
+                    .unwrap_or_else(|| "local-desktop".to_string());
+                let request = mahayana_computer::ComputerControlLeaseRequest::new(
+                    controller_id,
+                    lease_id.clone(),
+                    device_id,
+                    ComputerControlOrigin::LocalUi,
+                    "human-takeover",
+                );
+                let snapshot = mahayana_computer::acquire_control_lease(&request)
+                    .map_err(|error| FeatureHostError::Contract(error.to_string()))?;
+                let lease = ComputerControlLeaseState {
+                    controller_id: snapshot.controller_id,
+                    run_id: snapshot.run_id,
+                    device_id: snapshot.device_id,
+                    origin: snapshot.origin,
+                    mode: snapshot.mode,
+                    acquired_at_ms: snapshot.acquired_at_ms,
+                    expires_at_ms: snapshot.expires_at_ms,
+                };
+                self.append_action_audit(
+                    &canonical_agent_id,
+                    Some(&lease_id),
+                    json!({
+                        "kind": "computerControlTaken",
+                        "origin": "local-ui",
+                        "leaseId": lease_id,
+                        "deviceId": lease.device_id,
+                        "status": "active",
+                    }),
+                )?;
+                self.state()?.events.push_back(HostEvent::ComputerControlChanged {
+                    timestamp: timestamp(),
+                    request_id: request_id.clone(),
+                    agent_id: canonical_agent_id,
+                    lease_id,
+                    active: true,
+                    lease: Some(lease),
+                });
+            }
+            FeatureCommand::ComputerReleaseControl {
+                agent_id,
+                lease_id,
+                ..
+            } => {
+                let canonical_agent_id = {
+                    let state = self.state()?;
+                    canonical_runtime_agent_id(&state, &agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown computer-control agent: {agent_id}"
+                        ))
+                    })?
+                };
+                if !is_safe_memory_agent_id(&canonical_agent_id) {
+                    return Err(FeatureHostError::Contract(format!(
+                        "unsafe computer-control agent: {canonical_agent_id}"
+                    )));
+                }
+                let controller_id = format!("human:{canonical_agent_id}");
+                let released = mahayana_computer::release_control_lease(&controller_id, &lease_id);
+                self.append_action_audit(
+                    &canonical_agent_id,
+                    Some(&lease_id),
+                    json!({
+                        "kind": "computerControlReleased",
+                        "origin": "local-ui",
+                        "leaseId": lease_id,
+                        "status": if released { "released" } else { "already-inactive" },
+                    }),
+                )?;
+                self.state()?.events.push_back(HostEvent::ComputerControlChanged {
+                    timestamp: timestamp(),
+                    request_id: request_id.clone(),
+                    agent_id: canonical_agent_id,
+                    lease_id,
+                    active: false,
+                    lease: None,
+                });
             }
             _ => unreachable!("non-computer command routed to computer executor"),
         }
@@ -12894,6 +13016,57 @@ mod tests {
                 &settings,
             )
             .expect("current target accepted");
+    }
+
+    #[test]
+    fn computer_takeover_acquires_and_releases_a_human_control_lease() {
+        let controller = controller();
+        drain(&controller);
+
+        controller
+            .execute(FeatureCommand::ComputerTakeControl {
+                request_id: "take-control".into(),
+                agent_id: "mahayana-assistant".into(),
+                lease_id: "operation-human-takeover".into(),
+                target: ComputerControlTarget::default(),
+            })
+            .expect("take computer control");
+        let taken = drain(&controller);
+        assert!(taken.iter().any(|event| matches!(
+            event,
+            HostEvent::ComputerControlChanged {
+                agent_id,
+                lease_id,
+                active: true,
+                lease: Some(lease),
+                ..
+            } if agent_id == "mahayana-assistant"
+                && lease_id == "operation-human-takeover"
+                && lease.origin == ComputerControlOrigin::LocalUi
+                && lease.mode == "human-takeover"
+        )));
+        assert!(mahayana_computer::current_control_lease().is_some());
+
+        controller
+            .execute(FeatureCommand::ComputerReleaseControl {
+                request_id: "release-control".into(),
+                agent_id: "mahayana-assistant".into(),
+                lease_id: "operation-human-takeover".into(),
+            })
+            .expect("release computer control");
+        let released = drain(&controller);
+        assert!(released.iter().any(|event| matches!(
+            event,
+            HostEvent::ComputerControlChanged {
+                agent_id,
+                lease_id,
+                active: false,
+                lease: None,
+                ..
+            } if agent_id == "mahayana-assistant"
+                && lease_id == "operation-human-takeover"
+        )));
+        assert!(mahayana_computer::current_control_lease().is_none());
     }
 
     #[test]
