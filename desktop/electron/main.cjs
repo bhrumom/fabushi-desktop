@@ -612,6 +612,13 @@ function describeTheme() {
 }
 
 function broadcastNativeEvent(eventName, payload) {
+  if (eventName === 'account-state-changed' && remoteDeviceAgentSupervisor) {
+    setImmediate(() => {
+      void remoteDeviceAgentSupervisor?.sync().catch((error) => {
+        console.warn('[fabushi-remote-device] account-triggered sync failed', error instanceof Error ? error.message : String(error));
+      });
+    });
+  }
   if (!nativeEdgeServer) return;
   for (const win of BrowserWindow.getAllWindows()) {
     if (win.isDestroyed() || win.webContents.isDestroyed()) continue;
