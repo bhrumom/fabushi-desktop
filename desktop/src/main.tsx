@@ -19,6 +19,7 @@ import './mahayana-agent-transcript-semantics.css';
 import './mahayana-assistant-turn.css';
 import './credential-vault.css';
 import './sidebar-contact-groups.css';
+import './ui/tokens.css';
 
 const root = document.querySelector<HTMLDivElement>('#root');
 if (!root) {
