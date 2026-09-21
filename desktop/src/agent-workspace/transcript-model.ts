@@ -1,4 +1,4 @@
-import type { AttachmentContext } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { AttachmentContext, TurnLifecycleState } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { AssistantTurn } from '../mahayana-assistant-turn';
 
 export type TranscriptEntryKind =
@@ -14,10 +14,9 @@ export type TranscriptEntryKind =
   | 'notice';
 
 export type TranscriptEntryStatus =
+  | TurnLifecycleState
   | 'pending'
   | 'running'
-  | 'completed'
-  | 'failed'
   | 'interrupted';
 
 export type TranscriptApprovalDecision = 'allow-once' | 'allow-session' | 'deny';
