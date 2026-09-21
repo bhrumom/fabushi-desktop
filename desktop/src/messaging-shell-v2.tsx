@@ -967,6 +967,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [legacySendPending, setLegacySendPending] = useState(false);
   const [showScrollToLatest, setShowScrollToLatest] = useState(false);
   const [typingByConversation, setTypingByConversation] = useState<Record<string, Record<string, number>>>({});
+  const typingExpiryTimersRef = useRef<Map<string, number>>(new Map());
   const [newDialog, setNewDialog] = useState<NewDialog>(null);
   const [messageMenu, setMessageMenu] = useState<MessageMenu>(null);
   const [forwardDialog, setForwardDialog] = useState<ForwardDialogState>(null);
@@ -1569,25 +1570,41 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   useEffect(() => {
     if (!hostReady) return;
-    const timer = window.setInterval(() => {
-      const now = Date.now();
-      setTypingByConversation((current) => {
-        const next: Record<string, Record<string, number>> = {};
-        for (const [conversationId, actors] of Object.entries(current)) {
-          const active = Object.fromEntries(Object.entries(actors).filter(([, expiresAt]) => expiresAt > now));
-          if (Object.keys(active).length) next[conversationId] = active;
-        }
-        return next;
-      });
+    let disposed = false;
+    const synchronizeCompatibility = () => {
+      if (disposed) return;
       void synchronizeAccountState();
       if (syncInFlightRef.current) return;
       syncInFlightRef.current = true;
       void selfHosted.sync(backgroundSyncLimit, messagingCursorRef.current)
         .catch(() => {})
         .finally(() => { syncInFlightRef.current = false; });
-    }, 2_000);
-    return () => window.clearInterval(timer);
+    };
+    const refreshWhenForegrounded = () => {
+      if (document.visibilityState === 'visible') synchronizeCompatibility();
+    };
+    const unsubscribeNative = subscribeNativeDesktopEvents({
+      'account-state-changed': synchronizeCompatibility,
+      'window-state': (payload) => {
+        if ((payload as { focused?: boolean } | null)?.focused) synchronizeCompatibility();
+      },
+    });
+    window.addEventListener('focus', refreshWhenForegrounded);
+    window.addEventListener('online', synchronizeCompatibility);
+    document.addEventListener('visibilitychange', refreshWhenForegrounded);
+    return () => {
+      disposed = true;
+      unsubscribeNative();
+      window.removeEventListener('focus', refreshWhenForegrounded);
+      window.removeEventListener('online', synchronizeCompatibility);
+      document.removeEventListener('visibilitychange', refreshWhenForegrounded);
+    };
   }, [hostReady, selfHosted]);
+
+  useEffect(() => () => {
+    for (const timer of typingExpiryTimersRef.current.values()) window.clearTimeout(timer);
+    typingExpiryTimersRef.current.clear();
+  }, []);
 
   function nextRequestId(prefix: string): string {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1912,15 +1929,38 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       case 'typingChanged': {
         const payload = event as unknown as { conversationId: string; actorId: string; action?: string | null; expiresAtMs?: number | null };
         if (payload.actorId === selfHosted.actorId) break;
+        const timerKey = `${payload.conversationId}\0${payload.actorId}`;
+        const previousTimer = typingExpiryTimersRef.current.get(timerKey);
+        if (previousTimer !== undefined) {
+          window.clearTimeout(previousTimer);
+          typingExpiryTimersRef.current.delete(timerKey);
+        }
+        const expiresAtMs = payload.expiresAtMs ?? 0;
+        const active = Boolean(payload.action) && expiresAtMs > Date.now();
         setTypingByConversation((current) => {
           const actors = { ...(current[payload.conversationId] ?? {}) };
-          if (payload.action && (payload.expiresAtMs ?? 0) > Date.now()) actors[payload.actorId] = payload.expiresAtMs!;
+          if (active) actors[payload.actorId] = expiresAtMs;
           else delete actors[payload.actorId];
           const next = { ...current };
           if (Object.keys(actors).length) next[payload.conversationId] = actors;
           else delete next[payload.conversationId];
           return next;
         });
+        if (active) {
+          const timer = window.setTimeout(() => {
+            typingExpiryTimersRef.current.delete(timerKey);
+            setTypingByConversation((current) => {
+              const actors = { ...(current[payload.conversationId] ?? {}) };
+              if ((actors[payload.actorId] ?? 0) > Date.now()) return current;
+              delete actors[payload.actorId];
+              const next = { ...current };
+              if (Object.keys(actors).length) next[payload.conversationId] = actors;
+              else delete next[payload.conversationId];
+              return next;
+            });
+          }, Math.max(0, expiresAtMs - Date.now()) + 25);
+          typingExpiryTimersRef.current.set(timerKey, timer);
+        }
         break;
       }
       case 'storyChanged': {
