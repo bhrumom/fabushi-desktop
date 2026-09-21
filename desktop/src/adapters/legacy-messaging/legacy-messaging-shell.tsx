@@ -976,32 +976,27 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [miniAppLoading, setMiniAppLoading] = useState(false);
   const [miniAppBusy, setMiniAppBusy] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<string | null>(null);
-  const agentNetworkController = useAgentNetworkController(agentCoordinatorClient, setError);
-  const agentWorkflowController = useAgentWorkflowController(agentCoordinatorClient, {
-    onListed: (agentId, workflows) => {
-      void mirrorAgentCloudSnapshot(agentId, FABU_AGENT_WORKFLOW_INDEX_PATH, {
-        version: 1,
-        workflows,
-      });
-    },
-    onError: (_agentId, message) => setError(message),
-  });
-  const agentMcpController = useAgentMcpController(agentCoordinatorClient, {
+  const agentProductControllers = useAgentProductControllers({
+    client: agentCoordinatorClient,
+    accountScope: remoteAccountScope,
+    initialAgents: startupProjection?.legacyBots ?? [],
     onError: setError,
-  });
-  const agentPrSuggestionController = useAgentPrSuggestionController(
-    agentCoordinatorClient,
-    agentMcpController.pullRequestTool,
-  );
-  const agentStoreSyncController = useAgentStoreSyncController(agentCoordinatorClient, {
-    mirror: (agentId, objectPath, value) => mirrorAgentCloudSnapshot(agentId, objectPath, value),
-    remove: (agentId, objectPath) => removeAgentCloudObject(agentId, objectPath),
-    onError: (_agentId, message) => setError(message),
-  });
-  const agentDirectoryController = useAgentDirectoryController(
-    agentCoordinatorClient,
-    startupProjection?.legacyBots ?? [],
-    {
+    workflow: {
+      onListed: (agentId, workflows) => {
+        void mirrorAgentCloudSnapshot(agentId, FABU_AGENT_WORKFLOW_INDEX_PATH, {
+          version: 1,
+          workflows,
+        });
+      },
+      onError: (_agentId, message) => setError(message),
+    },
+    mcp: { onError: setError },
+    storeSync: {
+      mirror: (agentId, objectPath, value) => mirrorAgentCloudSnapshot(agentId, objectPath, value),
+      remove: (agentId, objectPath) => removeAgentCloudObject(agentId, objectPath),
+      onError: (_agentId, message) => setError(message),
+    },
+    directory: {
       onListed: (agents) => {
         initialLegacyHydrationMaskRef.current |= 0b010;
         setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
@@ -1022,7 +1017,18 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       },
       onError: setError,
     },
-  );
+  });
+  const agentPaletteController = agentProductControllers.palette;
+  const agentSidebarController = agentProductControllers.sidebar;
+  const agentNetworkController = agentProductControllers.network;
+  const agentWorkflowController = agentProductControllers.workflow;
+  const agentMcpController = agentProductControllers.mcp;
+  const agentPrSuggestionController = agentProductControllers.pullRequests;
+  const agentStoreSyncController = agentProductControllers.storeSync;
+  const agentDirectoryController = agentProductControllers.directory;
+  const agentPinnedOrder = agentSidebarController.pinnedOrder;
+  const agentSidebarSections = agentSidebarController.sections;
+  const agentSelectedKeys = agentSidebarController.selectedKeys;
   const bots = agentDirectoryController.agents;
   // AgentRootShell first-frame readiness is owned by the Agent domain, not by
   // legacy conversations/groups. A durable Agent projection is enough to render
