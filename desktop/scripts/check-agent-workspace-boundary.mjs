@@ -48,6 +48,8 @@ for (const removed of [
   'desktop/src/messaging-shell-v2.tsx',
   'desktop/src/adapters/legacy-messaging/legacy-messaging-shell.tsx',
   'desktop/src/adapters/legacy-messaging/legacy-messaging-shell.module.css',
+  'desktop/src/adapters/legacy-messaging/use-legacy-messaging-compatibility-state.ts',
+  'desktop/src/adapters/legacy-messaging/legacy-messaging-model.ts',
   'desktop/src/agent-workspace/messenger-compatibility-adapter.tsx',
 ]) {
   if (exists(removed)) violations.push(`removed legacy product shell/adapter returned: ${removed}`);
@@ -55,6 +57,7 @@ for (const removed of [
 
 requireMatch('DesktopApp must directly render AgentRootShell', desktopApp, /return\s+<AgentRootShell\s*\/>/);
 forbidMatch('DesktopApp must not mount a legacy messaging product root', desktopApp, /LegacyMessagingAdapter|legacy-messaging-shell|messaging-shell-v2/);
+forbidMatch('AgentRootShell must not depend on the legacy messaging namespace', rootShell, /legacy-messaging|useLegacyMessagingCompatibilityState/);
 requireMatch('main.tsx must mount DesktopApp', mainEntry, /<DesktopApp\s*\/>/);
 
 for (const [label, pattern] of [
