@@ -41,7 +41,7 @@ jobs:
             expected="${{ github.sha }}"
           fi
           test "$actual" = "$expected"
-          echo "Exact tested HEAD: `$actual`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -76,7 +76,7 @@ jobs:
             expected="${{ github.sha }}"
           fi
           test "$actual" = "$expected"
-          echo "Exact tested HEAD: `$actual`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
