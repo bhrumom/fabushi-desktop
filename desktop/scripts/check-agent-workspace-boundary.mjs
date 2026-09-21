@@ -413,10 +413,10 @@ requirePattern(
   runtimeStore,
   /pub fn retry_turn_generation[\s\S]{0,1800}MAX\(r\.generation\)/,
 );
-requirePattern(
+requireOrdered(
   'RuntimeStore must persist restartable turn execution inputs',
   runtimeStore,
-  /CREATE TABLE IF NOT EXISTS turn_requests[\s\S]{0,1200}pub fn record_turn_request/,
+  ['CREATE TABLE IF NOT EXISTS turn_requests', 'pub fn record_turn_request'],
 );
 requirePattern(
   'Runtime must recover interrupted logical turns before durable handoffs',
@@ -433,10 +433,15 @@ requirePattern(
   runtimeLib,
   /pending\.state == TurnState::WaitingUser[\s\S]{0,900}TurnState::Failed[\s\S]{0,900}explicit retry is required/,
 );
-requirePattern(
+requireOrdered(
   'Renderer recovery must reclaim a Rust recovering run by conversation identity',
   runtimeCoordinator,
-  /peerByConversationId[\s\S]{0,2600}prepareOperationRecovery[\s\S]{0,5200}event\.state === ['"]recovering['"][\s\S]{0,1000}claimOperation\(event\.operationId, recoveryPeerKey\)/,
+  [
+    'peerByConversationId',
+    'prepareOperationRecovery',
+    "event.state === 'recovering'",
+    'claimOperation(event.operationId, recoveryPeerKey)',
+  ],
 );
 requirePattern(
   'Waiting-user restart handling must remain fail-closed',
@@ -472,10 +477,15 @@ requirePattern(
   runtimeLib,
   /RuntimeEvent::AgentActivity[\s\S]{0,1500}kind == ["']computer["'][\s\S]{0,1800}CapabilityBroker::new[\s\S]{0,900}computer\.input\.control/,
 );
-requirePattern(
+requireOrdered(
   'Codex Computer pre-execution activity must propagate Runtime policy failure',
   codexAgentBackend,
-  /fn emit_computer_activity[\s\S]{0,1200}Result<\(\), AgentError>[\s\S]{0,1200}events\.emit[\s\S]{0,1200}if let Err\(error\) = self\.emit_computer_activity/,
+  [
+    'fn emit_computer_activity',
+    'Result<(), AgentError>',
+    'events.emit(AgentEvent::Activity',
+    'if let Err(error) = self.emit_computer_activity',
+  ],
 );
 requirePattern(
   'Durable handoff fan-out must consult RuntimeStore',
@@ -517,10 +527,20 @@ requireOrdered(
   runtimeLib.slice(runtimeLib.indexOf('RuntimeEvent::Ready'), runtimeLib.indexOf('pub fn status')),
   ['RuntimeEvent::Ready', 'recover_interrupted_turns()?', 'recover_pending_handoffs()?'],
 );
-requirePattern(
+requireOrdered(
   'Interrupted user-turn recovery must reuse durable request input and retry the same logical turn',
+  runtimeLib.slice(runtimeLib.indexOf('fn recover_interrupted_turns'), runtimeLib.indexOf('fn recover_pending_handoffs')),
+  [
+    'pending.text',
+    'TurnState::Recovering',
+    'self.start_message(',
+    'Some(pending.message_id.to_string())',
+  ],
+);
+requirePattern(
+  'Waiting-user Rust restart handling must fail closed and require explicit retry',
   runtimeLib,
-  /fn recover_interrupted_turns[\s\S]{0,5200}pending\.text[\s\S]{0,2200}TurnState::Recovering[\s\S]{0,1400}Some\(pending\.message_id\.to_string\(\)\)[\s\S]{0,1000}start_message/,
+  /pending\.state == TurnState::WaitingUser[\s\S]{0,1200}TurnState::Failed[\s\S]{0,1400}explicit retry is required/,
 );
 requirePattern(
   'Runtime must persist turn execution input before provider execution',
@@ -528,9 +548,9 @@ requirePattern(
   /record_turn\(&turn\)[\s\S]{0,500}record_turn_request\([\s\S]{0,700}record_run\(&run\)/,
 );
 requirePattern(
-  'Recoverable user turns must exclude waiting-user and Agent handoff intents',
+  'Recoverable user turns must exclude Agent handoff intents from the ordinary-turn recovery lane',
   runtimeStore,
-  /pub fn recoverable_turns[\s\S]{0,3200}WHERE t\.state IN[\s\S]{0,900}recovering[\s\S]{0,1700}p\.kind = 'agent-handoff'/,
+  /pub fn recoverable_turns[\s\S]{0,5000}p\.kind = 'agent-handoff'/,
 );
 requirePattern(
   'FeatureHost Agent sends must use Runtime handoff rather than hidden SendMessage',
