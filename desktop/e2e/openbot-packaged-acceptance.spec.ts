@@ -432,6 +432,9 @@ async function stableAvatarShape(locator: Locator): Promise<string> {
 
 test.describe('signed candidate packaged acceptance', () => {
   test.describe.configure({ retries: 0 });
+  // This packaged test owns tracing so the canonical evidence path is stable.
+  // Disable the runner trace to avoid starting two traces on the same Electron context.
+  test.use({ trace: 'off' });
   test.skip(!realAcceptance, 'Set OBF_REAL_ACCEPTANCE=1 to run signed packaged acceptance.');
 
   test('exact candidate covers handoff, broadcast, two-Agent isolation and real lifecycle', async () => {
