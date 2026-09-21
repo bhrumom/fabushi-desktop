@@ -38,20 +38,19 @@ function peerByName(page: Page, name: string): Locator {
 }
 
 async function completeBrowserLogin(page: Page): Promise<void> {
-  type LoginPhase = 'onboarding' | 'login' | 'ready' | 'waiting';
+  type LoginPhase = 'onboarding' | 'login' | 'browser-waiting' | 'ready' | 'waiting';
   const readPhase = async (): Promise<LoginPhase> => {
-    try {
-      return await page.evaluate(() => {
-        if (document.querySelector('[data-testid="onboarding-gate"]')) return 'onboarding';
-        if (document.querySelector('[data-testid="login-gate"]')) return 'login';
-        const workspace = document.querySelector('[data-testid="messenger-workspace"]');
-        if (workspace?.getAttribute('data-initial-host-hydrated') === 'true') return 'ready';
-        return 'waiting';
-      }) as LoginPhase;
-    } catch {
-      return 'waiting';
+    if (await page.getByTestId('messenger-workspace').count()) {
+      const hydrated = await page.getByTestId('messenger-workspace').getAttribute('data-initial-host-hydrated').catch(() => null);
+      if (hydrated === 'true') return 'ready';
     }
+    if (await page.getByTestId('onboarding-gate').count()) return 'onboarding';
+    if (await page.getByTestId('browser-login-waiting').count()) return 'browser-waiting';
+    if (await page.getByTestId('login-gate').count()) return 'login';
+    return 'waiting';
   };
+
+  await expect(page.getByTestId('desktop-shell')).toBeVisible({ timeout: 30_000 });
 
   for (let attempt = 0; attempt < 12; attempt += 1) {
     await expect.poll(readPhase, { timeout: 15_000 }).not.toBe('waiting');
@@ -61,7 +60,19 @@ async function completeBrowserLogin(page: Page): Promise<void> {
       continue;
     }
     if (phase === 'login') {
-      await page.getByTestId('browser-login-start').click();
+      const start = page.getByTestId('browser-login-start');
+      await expect(start).toBeVisible();
+      await start.click();
+      continue;
+    }
+    if (phase === 'browser-waiting') {
+      try {
+        await expect.poll(readPhase, { timeout: 45_000 }).not.toBe('browser-waiting');
+      } catch {
+        throw new Error(
+          'Production browser authorization did not complete. Signed candidate acceptance requires a pre-authorized CI account/session; test-mode auth fallback is forbidden.',
+        );
+      }
       continue;
     }
     if (phase === 'ready') return;
@@ -214,6 +225,7 @@ test.describe('signed candidate packaged acceptance', () => {
     let app: ElectronApplication | null = null;
     let pageForTrace: Page | null = null;
     let traceStarted = false;
+    let acceptanceCompleted = false;
 
     try {
       app = await electron.launch({
@@ -312,7 +324,24 @@ test.describe('signed candidate packaged acceptance', () => {
           lowPowerAvatarCutover: true,
         },
       }, null, 2));
+      acceptanceCompleted = true;
     } finally {
+      await writeFile(
+        path.join(evidenceRoot, 'runtime.log'),
+        runtimeLogs.map((row) => `[${new Date(row.at).toISOString()}] ${row.source}: ${row.text}`).join('\n'),
+      ).catch(() => undefined);
+      if (!acceptanceCompleted && pageForTrace) {
+        await pageForTrace.screenshot({
+          path: path.join(evidenceRoot, 'screenshots', '00-failure-state.png'),
+          fullPage: true,
+        }).catch(() => undefined);
+        await writeFile(path.join(evidenceRoot, 'failure.json'), JSON.stringify({
+          sourceSha,
+          expectedSourceSha,
+          executable,
+          url: pageForTrace.url(),
+        }, null, 2)).catch(() => undefined);
+      }
       if (traceStarted && pageForTrace) {
         await pageForTrace.context().tracing.stop({
           path: path.join(evidenceRoot, 'trace.zip'),
