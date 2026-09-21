@@ -223,7 +223,7 @@ for (const primitive of [
   'FabInput',
   'FabSurface',
   'FabSwitch',
-]) requirePattern(`Fabushi UI primitive missing: ${primitive}`, primitives, new RegExp(`(?:function|\\{)\\s*${primitive}\\b|export\\s+\\{[^}]*\\b${primitive}\\b`));
+]) requirePattern(`Fabushi UI primitive missing: ${primitive}`, primitives, new RegExp(`(?:function|const|\\{)\\s*${primitive}\\b|export\\s+\\{[^}]*\\b${primitive}\\b`));
 for (const token of ['--fab-bg-primary', '--fab-bg-raised', '--fab-border-subtle', '--fab-text-primary', '--fab-text-muted', '--fab-radius-sm', '--fab-radius-md', '--fab-space-1']) {
   if (!tokens.includes(token)) violations.push(`Fabushi design token missing: ${token}`);
 }
