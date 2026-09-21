@@ -25,7 +25,7 @@ import type { WebRtcCallStatus } from '../../webrtc-call-controller';
 import type { MiniAppBotCallProgram } from '../../miniapp-bot-projection';
 import type { AssistantTurn } from '../../mahayana-assistant-turn';
 import type { AccountBotMembership } from '../../account-sync-client';
-import type { CompatibilityPeerItem as PeerItem } from '../../agent-workspace/messenger-compatibility-adapter';
+import type { CompatibilityPeerItem as PeerItem } from '../compatibility/messenger-compatibility-adapter';
 
 export type DisplayMessage = {
   id: string;
