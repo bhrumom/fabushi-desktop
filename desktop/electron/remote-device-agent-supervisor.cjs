@@ -121,10 +121,30 @@ class RemoteDeviceAgentSupervisor {
     this.closed = false;
     this.syncing = false;
     this.tokenFile = path.join(this.app.getPath('userData'), 'remote-device', 'account-access-token');
+    this.onState = typeof options.onState === 'function' ? options.onState : null;
+    this.state = {
+      running: false,
+      deviceId: '',
+      sessionId: '',
+      username: '',
+      lastSyncAtMs: 0,
+      error: null,
+    };
+  }
+
+  snapshot() {
+    return { ...this.state };
+  }
+
+  emitState(patch = {}) {
+    this.state = { ...this.state, ...patch };
+    this.onState?.(this.snapshot());
+    return this.snapshot();
   }
 
   start() {
     if (this.closed) throw new Error('Fabushi remote device supervisor is closed.');
+    this.emitState({ error: null });
     this.schedule(0);
   }
 
@@ -143,6 +163,7 @@ class RemoteDeviceAgentSupervisor {
     this.activeKey = '';
     child?.kill();
     try { this.fs.rmSync(this.tokenFile, { force: true }); } catch {}
+    this.emitState({ running: false });
   }
 
   async sync() {
@@ -173,8 +194,18 @@ class RemoteDeviceAgentSupervisor {
 
       const session = validAgentSession(await this.host.request('feature.auth.deviceAgentSession', {}, 30_000));
       if (!session) throw new Error('Fabushi account did not return a valid remote-device session.');
+      this.emitState({
+        deviceId: session.deviceId,
+        sessionId: session.sessionId,
+        username: session.username,
+        lastSyncAtMs: Date.now(),
+        error: null,
+      });
       const key = `${session.deviceId}\0${session.sessionId}\0${session.accessToken}`;
-      if (this.child && this.activeKey === key) return;
+      if (this.child && this.activeKey === key) {
+        this.emitState({ running: true });
+        return;
+      }
 
       this.stopAgent();
       writePrivateToken(this.fs, this.tokenFile, session.accessToken);
@@ -209,6 +240,7 @@ class RemoteDeviceAgentSupervisor {
       });
       this.child = child;
       this.activeKey = key;
+      this.emitState({ running: true, error: null, lastSyncAtMs: Date.now() });
       child.stdout?.on('data', (chunk) => console.info(`[fabushi-remote-device] ${String(chunk).trimEnd()}`));
       child.stderr?.on('data', (chunk) => console.error(`[fabushi-remote-device] ${String(chunk).trimEnd()}`));
       child.on('error', (error) => console.error('[fabushi-remote-device] agent error', error));
@@ -224,7 +256,9 @@ class RemoteDeviceAgentSupervisor {
       });
     } catch (error) {
       this.stopAgent();
-      if (!/not logged in|notloggedin|missing account|session expired/iu.test(String(error?.message || error))) {
+      const message = String(error?.message || error);
+      this.emitState({ running: false, error: message, lastSyncAtMs: Date.now() });
+      if (!/not logged in|notloggedin|missing account|session expired/iu.test(message)) {
         console.error('[fabushi-remote-device] session sync failed', error);
       }
     } finally {
