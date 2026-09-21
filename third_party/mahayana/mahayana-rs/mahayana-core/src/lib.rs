@@ -57,6 +57,7 @@ string_id!(ApprovalId);
 string_id!(AgentThreadId);
 string_id!(TurnId);
 string_id!(RunId);
+string_id!(IntentId);
 
 /// Canonical lifecycle for one user-visible logical turn.
 ///
@@ -126,6 +127,7 @@ pub struct ExecutionRun {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HandoffIntent {
+    pub id: IntentId,
     pub target_agent: String,
     pub task: String,
     #[serde(default)]
@@ -396,6 +398,26 @@ pub enum RuntimeCommand {
         #[serde(default)]
         hidden: bool,
     },
+    #[serde(rename = "mahayana.agent.askUser")]
+    AskUser {
+        #[serde(rename = "operationId")]
+        operation_id: OperationId,
+        question: String,
+    },
+    #[serde(rename = "mahayana.agent.handoff")]
+    Handoff {
+        #[serde(rename = "operationId")]
+        operation_id: OperationId,
+        #[serde(rename = "targetAgent")]
+        target_agent: String,
+        task: String,
+        #[serde(default)]
+        constraints: Value,
+        #[serde(rename = "expectedOutput", default, skip_serializing_if = "Option::is_none")]
+        expected_output: Option<String>,
+        #[serde(default)]
+        depth: u8,
+    },
     #[serde(rename = "mahayana.operation.interrupt")]
     Interrupt {
         #[serde(rename = "operationId")]
@@ -498,6 +520,20 @@ pub enum RuntimeResponse {
     },
     #[serde(rename = "mahayana.conversation.history")]
     History { data: Vec<Message> },
+    #[serde(rename = "mahayana.agent.waitingUser")]
+    WaitingUser {
+        #[serde(rename = "operationId")]
+        operation_id: OperationId,
+    },
+    #[serde(rename = "mahayana.agent.handoffQueued")]
+    HandoffQueued {
+        #[serde(rename = "intentId")]
+        intent_id: IntentId,
+        #[serde(rename = "operationId")]
+        operation_id: OperationId,
+        #[serde(rename = "targetOperationId")]
+        target_operation_id: OperationId,
+    },
     #[serde(rename = "mahayana.operation.accepted")]
     Accepted {
         #[serde(rename = "operationId")]
