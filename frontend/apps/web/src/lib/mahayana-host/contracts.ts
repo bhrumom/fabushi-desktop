@@ -635,6 +635,8 @@ export type RuntimeCommand =
   | (CommandBase & { type: "conversation.list"; query?: string })
   | (CommandBase & { type: "conversation.open"; conversationId: string })
   | (CommandBase & { type: "capability.list"; query?: string })
+  | (CommandBase & { type: "agent.workspaceState.get"; key: string })
+  | (CommandBase & { type: "agent.workspaceState.set"; key: string; value: unknown })
   | (CommandBase & { type: "automation.list"; agentId?: string })
   | (CommandBase & {
       type: "automation.upsert";
@@ -1017,6 +1019,7 @@ export type RuntimeEvent =
       operationId: string;
       delta: string;
     })
+  | (EventBase & { type: "agent.workspaceState"; key: string; value?: unknown })
   | (EventBase & { type: "agent.peerMessage"; message: AgentPeerMessage })
   | (EventBase & { type: "agent.peerHistory"; agentId: string; messages: AgentPeerMessage[] })
   | (EventBase & { type: "agent.broadcasted"; result: AgentBroadcastResult })
