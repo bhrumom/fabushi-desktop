@@ -951,6 +951,35 @@ impl MahayanaRuntime {
             ));
         }
 
+        let source_conversation = origin_conversation
+            .clone()
+            .unwrap_or_else(|| ConversationId(MAHAYANA_AI_CONVERSATION_ID.to_string()));
+        let policy = self
+            .capability_broker
+            .authorize_request(
+                CapabilityAvailability::Ready,
+                None,
+                CapabilityRequest {
+                    actor: origin_agent
+                        .as_ref()
+                        .map(|id| format!("agent:{id}"))
+                        .unwrap_or_else(|| "human".to_string()),
+                    agent_id: origin_agent.clone(),
+                    conversation_id: source_conversation,
+                    run_id: Some(origin_run.clone()),
+                    capability: "agent.handoff".to_string(),
+                    target: serde_json::json!({
+                        "targetAgent": target_agent,
+                        "targetConversationId": target_conversation,
+                        "depth": depth.saturating_add(1),
+                    }),
+                    intent: "dispatch durable work to another Agent".to_string(),
+                },
+                now_millis(),
+            )
+            .map_err(RuntimeError::CapabilityBroker)?;
+        require_capability_execution_allowed("agent.handoff", policy)?;
+
         self.reserve_handoff_slot(&origin_run)?;
         let intent_id = IntentId::generated("handoff");
         let intent = HandoffIntent {
@@ -1226,6 +1255,54 @@ struct RuntimeEventSink {
 
 impl ConversationEventSink for RuntimeEventSink {
     fn emit(&self, event: RuntimeEvent) -> Result<(), ConversationError> {
+        if let RuntimeEvent::AgentActivity {
+            kind,
+            title,
+            status,
+            metadata,
+            ..
+        } = &event
+        {
+            if kind == "computer"
+                && matches!(status, mahayana_core::RuntimeActivityStatus::Running)
+            {
+                let action = metadata
+                    .as_ref()
+                    .and_then(|value| value.get("arguments"))
+                    .and_then(|value| value.get("action"))
+                    .and_then(Value::as_str)
+                    .unwrap_or("computer");
+                let agent_id = runtime_agent_id_from_conversation(&self.context.conversation_id);
+                let decision = CapabilityBroker::new(Arc::clone(&self.store))
+                    .authorize_request(
+                        CapabilityAvailability::Ready,
+                        None,
+                        CapabilityRequest {
+                            actor: agent_id
+                                .as_ref()
+                                .map(|id| format!("agent:{id}"))
+                                .unwrap_or_else(|| "agent-runtime".to_string()),
+                            agent_id,
+                            conversation_id: self.context.conversation_id.clone(),
+                            run_id: Some(self.context.run_id.clone()),
+                            capability: "computer.input.control".to_string(),
+                            target: serde_json::json!({
+                                "action": action,
+                                "deviceId": "local-desktop",
+                            }),
+                            intent: title.clone(),
+                        },
+                        now_millis(),
+                    )
+                    .map_err(ConversationError::Provider)?;
+                if decision != CapabilityPolicyDecision::Allow {
+                    return Err(ConversationError::Provider(
+                        "computer action was not allowed by capability policy".to_string(),
+                    ));
+                }
+            }
+        }
+
         let projected_state = match &event {
             RuntimeEvent::MessageDelta { .. } => Some(TurnState::Streaming),
             RuntimeEvent::ApprovalRequested { .. } => Some(TurnState::WaitingUser),

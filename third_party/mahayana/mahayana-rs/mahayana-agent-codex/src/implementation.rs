@@ -853,16 +853,16 @@ impl CodexAgentInner {
         params: &DynamicToolCallParams,
         status: AgentActivityStatus,
         detail: Option<String>,
-    ) {
-        let Ok(Some(events)) = self.operation_sink(&params.thread_id, Some(&params.turn_id)) else {
-            return;
+    ) -> Result<(), AgentError> {
+        let Some(events) = self.operation_sink(&params.thread_id, Some(&params.turn_id))? else {
+            return Ok(());
         };
         let action = params
             .arguments
             .get("action")
             .and_then(Value::as_str)
             .unwrap_or("computer");
-        let _ = events.emit(AgentEvent::Activity {
+        events.emit(AgentEvent::Activity {
             activity: AgentActivity {
                 step_id: params.call_id.clone(),
                 kind: "computer".into(),
@@ -875,7 +875,8 @@ impl CodexAgentInner {
                     "arguments": params.arguments,
                 })),
             },
-        });
+        })?;
+        Ok(())
     }
 
     async fn execute_computer_dynamic_tool(
@@ -902,11 +903,15 @@ impl CodexAgentInner {
         let mut actions = Vec::with_capacity(1 + follow_ups.len());
         actions.push(primary);
         actions.extend(follow_ups);
-        self.emit_computer_activity(
+        if let Err(error) = self.emit_computer_activity(
             params,
             AgentActivityStatus::Running,
             Some(params.arguments.to_string()),
-        );
+        ) {
+            return dynamic_tool_error(&format!(
+                "Computer capability authorization failed: {error}"
+            ));
+        }
         let execute_actions = actions.clone();
         let control_lease = mahayana_computer::ComputerControlLeaseRequest::new(
             params.thread_id.clone(),
@@ -926,7 +931,7 @@ impl CodexAgentInner {
         {
             Ok(Ok(result)) => result,
             Ok(Err(error)) => {
-                self.emit_computer_activity(
+                let _ = self.emit_computer_activity(
                     params,
                     AgentActivityStatus::Failed,
                     Some(error.to_string()),
@@ -934,7 +939,7 @@ impl CodexAgentInner {
                 return dynamic_tool_error(&error.to_string());
             }
             Err(error) => {
-                self.emit_computer_activity(
+                let _ = self.emit_computer_activity(
                     params,
                     AgentActivityStatus::Failed,
                     Some(error.to_string()),
@@ -942,7 +947,7 @@ impl CodexAgentInner {
                 return dynamic_tool_error(&format!("Computer executor stopped: {error}"));
             }
         };
-        self.emit_computer_activity(
+        let _ = self.emit_computer_activity(
             params,
             AgentActivityStatus::Completed,
             Some(format!("{} action(s) completed", result.actions_executed)),

@@ -396,6 +396,21 @@ requirePattern(
   runtimeLib,
   /RuntimeCommand::ExternalHandoff[\s\S]{0,1600}dispatch_handoff\s*\(/,
 );
+requireOrdered(
+  'Runtime handoff must authorize through CapabilityBroker before enqueue/start',
+  runtimeLib.slice(runtimeLib.indexOf('fn dispatch_handoff'), runtimeLib.indexOf('fn list_conversations')),
+  ['capability_broker', 'authorize_request(', 'require_capability_execution_allowed', 'reserve_handoff_slot', 'enqueue_handoff', 'start_message('],
+);
+requirePattern(
+  'Every dynamic Computer execution must enter CapabilityBroker before provider execution',
+  runtimeLib,
+  /RuntimeEvent::AgentActivity[\s\S]{0,1500}kind == ["']computer["'][\s\S]{0,1800}CapabilityBroker::new[\s\S]{0,900}computer\.input\.control/,
+);
+requirePattern(
+  'Codex Computer pre-execution activity must propagate Runtime policy failure',
+  agentCodex,
+  /fn emit_computer_activity[\s\S]{0,1200}Result<\(\), AgentError>[\s\S]{0,1200}events\.emit[\s\S]{0,1200}if let Err\(error\) = self\.emit_computer_activity/,
+);
 requirePattern(
   'Durable handoff fan-out must consult RuntimeStore',
   runtimeLib,
