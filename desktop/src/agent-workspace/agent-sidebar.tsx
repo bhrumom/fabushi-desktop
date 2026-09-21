@@ -169,7 +169,11 @@ export default function AgentSidebar({
           type="submit"
           variant={dialog.kind === 'delete-agents' || dialog.kind === 'delete-section' ? 'danger' : 'primary'}
           disabled={textDialog ? !textDialog.name.trim() : false}
-        >{dialog.kind === 'delete-agents' || dialog.kind === 'delete-section' ? 'Delete' : 'Save'}</FabButton>
+        >{dialog.kind === 'delete-agents' || dialog.kind === 'delete-section'
+          ? 'Delete'
+          : dialog.kind === 'rename-agent' || dialog.kind === 'rename-section'
+            ? 'Rename'
+            : 'Create'}</FabButton>
       </FabDialogActions>
     </FabDialog> : null}
   </>;
