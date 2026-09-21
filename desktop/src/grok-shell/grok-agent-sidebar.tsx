@@ -17,9 +17,14 @@ import {
   Search,
   Settings,
   Trash2,
+  Users,
+  MessageCircle,
+  WalletCards,
+  Phone,
   X,
 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
+import { FabMenu, FabMenuItem, FabPopover } from '../ui/primitives/fab-primitives';
 import FabAvatar, { type FabAvatarState } from '../ui/avatar/fab-avatar';
 import {
   AGENT_SIDEBAR_UNASSIGNED_ID,
@@ -54,6 +59,10 @@ export type GrokAgentSidebarProps = {
   onOpenNetwork(): void;
   onOpenPlugins(): void;
   onOpenSettings(): void;
+  onOpenContacts?(): void;
+  onOpenTelegram?(): void;
+  onOpenPayments?(): void;
+  onOpenCalls?(): void;
   onToggleSelection?(item: GrokAgentSidebarItem): void;
   onRangeSelection?(item: GrokAgentSidebarItem): void;
   onClearSelection?(): void;
@@ -276,6 +285,7 @@ function SidebarSectionHeader({
 }
 
 export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
+  const [compatibilityMenuOpen, setCompatibilityMenuOpen] = useState(false);
   const normalized = props.query.trim().toLocaleLowerCase();
   const visible = useMemo(
     () => props.agents.filter((item) => !item.hidden && (!normalized || `${item.name} ${item.description}`.toLocaleLowerCase().includes(normalized))),
@@ -384,6 +394,23 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
     <footer className={styles.footer}>
       {hiddenCount > 0 && !props.collapsed ? <div className={styles.hiddenHint}><EyeOff size={14} /><span>{hiddenCount} hidden bots</span></div> : null}
       <button type="button" onClick={props.onOpenPlugins} title="Plugins"><Plug size={17} />{props.collapsed ? null : <span>Plugins</span>}</button>
+      <FabPopover
+        open={compatibilityMenuOpen}
+        align="start"
+        anchor={<button
+          type="button"
+          title="Messaging and compatibility features"
+          aria-expanded={compatibilityMenuOpen}
+          onClick={() => setCompatibilityMenuOpen((open) => !open)}
+        ><MoreHorizontal size={17} />{props.collapsed ? null : <span>More</span>}</button>}
+      >
+        <FabMenu label="Messaging and compatibility features">
+          {props.onOpenContacts ? <FabMenuItem onClick={() => { setCompatibilityMenuOpen(false); props.onOpenContacts?.(); }}><Users size={15} /> Contacts</FabMenuItem> : null}
+          {props.onOpenTelegram ? <FabMenuItem onClick={() => { setCompatibilityMenuOpen(false); props.onOpenTelegram?.(); }}><MessageCircle size={15} /> Telegram / Messaging</FabMenuItem> : null}
+          {props.onOpenPayments ? <FabMenuItem onClick={() => { setCompatibilityMenuOpen(false); props.onOpenPayments?.(); }}><WalletCards size={15} /> Payments</FabMenuItem> : null}
+          {props.onOpenCalls ? <FabMenuItem onClick={() => { setCompatibilityMenuOpen(false); props.onOpenCalls?.(); }}><Phone size={15} /> Calls</FabMenuItem> : null}
+        </FabMenu>
+      </FabPopover>
       <button type="button" onClick={props.onOpenSettings} title="Settings"><Settings size={17} />{props.collapsed ? null : <span>{props.accountLabel}</span>}</button>
     </footer>
   </div>;
