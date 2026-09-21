@@ -54,6 +54,7 @@ const computerController = read(desktopRoot, 'src', 'agent-workspace', 'use-agen
 const sidebarController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-sidebar-controller.ts');
 const sidebarState = read(desktopRoot, 'src', 'agent-workspace', 'agent-sidebar-state.ts');
 const agentTranscript = read(desktopRoot, 'src', 'agent-workspace', 'agent-transcript.tsx');
+const agentTranscriptStore = read(desktopRoot, 'src', 'agent-workspace', 'agent-transcript-store.ts');
 const conversationIdentity = read(desktopRoot, 'src', 'agent-workspace', 'conversation-identity.ts');
 const agentHeader = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-header.tsx');
 const agentSidebar = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-sidebar.tsx');
@@ -391,6 +392,26 @@ requirePattern('ConversationActor per-conversation gate is missing', actor, /Asy
 requirePattern('Runtime no longer resolves a ConversationActor before execution', runtimeLib, /\.actors[\s\S]{0,120}\.actor\(&conversation_id\)/);
 requirePattern('Runtime no longer locks the ConversationActor execution gate', runtimeLib, /actor\.gate\.lock\(\)\.await/);
 requirePattern('Runtime no longer persists LogicalTurn/ExecutionRun state transitions', runtimeLib, /transition_turn_state/);
+requirePattern(
+  'Regenerate must preserve one logical user message id instead of creating a duplicate turn',
+  rootShell,
+  /prepareRetry\([\s\S]{0,500}messageId:\s*prompt\.id[\s\S]{0,240}retryOfMessageId:\s*prompt\.id/,
+);
+requirePattern(
+  'Transcript retry must replace the prior run projection instead of duplicating the user prompt',
+  agentTranscriptStore,
+  /prepareRetry\([\s\S]{0,900}message\.operationId === operationId/,
+);
+requirePattern(
+  'Runtime retry must resolve the next durable ExecutionRun generation',
+  runtimeLib,
+  /retry_of_client_message_id[\s\S]{0,1600}retry_turn_generation/,
+);
+requirePattern(
+  'RuntimeStore must compute retry generation from durable runs',
+  runtimeStore,
+  /pub fn retry_turn_generation[\s\S]{0,1800}MAX\(r\.generation\)/,
+);
 requirePattern('CapabilityBroker is missing', broker, /pub struct CapabilityBroker/);
 requirePattern('CapabilityBroker no longer owns authorization decisions', broker, /pub fn authorize_request\s*\(/);
 requirePattern('Runtime InvokeCapability bypasses CapabilityBroker', runtimeLib, /RuntimeCommand::InvokeCapability[\s\S]{0,2800}capability_broker[\s\S]{0,320}\.authorize\s*\(/);
