@@ -946,6 +946,15 @@ export default function HostClient({ onAuthStateChange }: HostClientProps) {
 
   useEffect(() => {
     const existing = remoteDesktopControllerRef.current;
+    // Electron desktop owns remote presence/control in Main. Never start the
+    // legacy renderer polling controller in the desktop shell, including the
+    // short authenticated transition while the login HostClient unmounts.
+    if (isElectronMahayanaHostAvailable()) {
+      remoteDesktopControllerRef.current = null;
+      if (existing) void existing.stop();
+      setRemoteDesktopState(null);
+      return;
+    }
     if (
       !hostSettingsHydrated ||
       hostStatus !== "ready" ||
