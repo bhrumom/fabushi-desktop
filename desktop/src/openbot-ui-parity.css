@@ -154,10 +154,10 @@
   background: var(--openbot-positive) !important;
 }
 
-/* Coworker silhouette is owned by BotMark's canonical identity. The parity
+/* Coworker silhouette is owned by FabAvatar's canonical identity. The parity
    layer sizes the mark but never derives shape from roster position; this keeps
    roster/header/transcript/restart geometry stable for the same Bot identity. */
-[data-testid='messenger-workspace'] button[data-testid^='peer-'] [data-engine='fabushi-motion-v3'] {
+[data-testid='messenger-workspace'] button[data-testid^='peer-'] [data-fab-avatar='true'] {
   width: 34px !important;
   height: 34px !important;
   overflow: visible;
@@ -404,7 +404,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   [data-testid='messenger-workspace'] [class*='navRail'] > button,
-  [data-testid='messenger-workspace'] button[data-testid^='peer-'] [data-engine='fabushi-motion-v3'] {
+  [data-testid='messenger-workspace'] button[data-testid^='peer-'] [data-fab-avatar='true'] {
     transition: none !important;
   }
 }
