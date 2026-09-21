@@ -212,6 +212,8 @@ test.describe('signed candidate packaged acceptance', () => {
     await mkdir(appDataDir, { recursive: true });
     const runtimeLogs: RuntimeLog[] = [];
     let app: ElectronApplication | null = null;
+    let pageForTrace: Page | null = null;
+    let traceStarted = false;
 
     try {
       app = await electron.launch({
@@ -225,6 +227,9 @@ test.describe('signed candidate packaged acceptance', () => {
         recordVideo: { dir: path.join(evidenceRoot, 'video'), size: { width: 1671, height: 937 } },
       });
       const page = await app.firstWindow();
+      pageForTrace = page;
+      await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true });
+      traceStarted = true;
       page.on('console', (message) => runtimeLogs.push({ at: Date.now(), source: 'page-console', text: `${message.type()}: ${message.text()}` }));
       page.on('pageerror', (error) => runtimeLogs.push({ at: Date.now(), source: 'page-error', text: error.stack || error.message }));
       app.process().stdout?.on('data', (chunk) => runtimeLogs.push({ at: Date.now(), source: 'app-stdout', text: String(chunk) }));
@@ -308,6 +313,11 @@ test.describe('signed candidate packaged acceptance', () => {
         },
       }, null, 2));
     } finally {
+      if (traceStarted && pageForTrace) {
+        await pageForTrace.context().tracing.stop({
+          path: path.join(evidenceRoot, 'trace.zip'),
+        }).catch(() => undefined);
+      }
       await app?.close().catch(() => undefined);
     }
   });
