@@ -20,7 +20,22 @@ impl CapabilityBroker {
         request: CapabilityRequest,
         now_ms: i64,
     ) -> Result<CapabilityPolicyDecision, String> {
-        let (decision, reason) = match descriptor.availability {
+        self.authorize_request(
+            descriptor.availability,
+            descriptor.unavailable_reason.clone(),
+            request,
+            now_ms,
+        )
+    }
+
+    pub fn authorize_request(
+        &self,
+        availability: CapabilityAvailability,
+        unavailable_reason: Option<String>,
+        request: CapabilityRequest,
+        now_ms: i64,
+    ) -> Result<CapabilityPolicyDecision, String> {
+        let (decision, reason) = match availability {
             CapabilityAvailability::Ready => (CapabilityPolicyDecision::Allow, None),
             CapabilityAvailability::PermissionRequired => (
                 CapabilityPolicyDecision::NeedsUser,
@@ -29,9 +44,7 @@ impl CapabilityBroker {
             CapabilityAvailability::Unavailable => (
                 CapabilityPolicyDecision::Deny,
                 Some(
-                    descriptor
-                        .unavailable_reason
-                        .clone()
+                    unavailable_reason
                         .unwrap_or_else(|| "capability is unavailable".to_string()),
                 ),
             ),
