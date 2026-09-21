@@ -352,6 +352,22 @@ impl MahayanaRuntime {
             RuntimeCommand::ListConversations => Ok(RuntimeResponse::Conversations {
                 data: self.list_conversations()?,
             }),
+            RuntimeCommand::AuthorizeCapability {
+                request,
+                availability,
+                unavailable_reason,
+            } => {
+                let decision = self
+                    .capability_broker
+                    .authorize_request(
+                        availability,
+                        unavailable_reason,
+                        request,
+                        now_millis(),
+                    )
+                    .map_err(RuntimeError::CapabilityBroker)?;
+                Ok(RuntimeResponse::CapabilityDecision { decision })
+            }
             RuntimeCommand::ListCapabilities { query } => {
                 let registry = CapabilityRegistry::from_conversations(
                     self.list_conversations()?,
