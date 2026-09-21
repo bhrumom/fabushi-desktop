@@ -6,7 +6,6 @@ const methodNames = [
   'host.platform',
   'feature.info',
   'feature.execute',
-  'feature.receive',
   'feature.approval.resolve',
   'feature.interrupt',
   'feature.auth.status',

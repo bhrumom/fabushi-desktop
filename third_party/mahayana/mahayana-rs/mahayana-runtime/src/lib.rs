@@ -25,6 +25,7 @@ use mahayana_conversation::ProviderRegistry;
 use mahayana_conversation::ResolveApprovalRequest;
 use mahayana_conversation::SendMessageRequest;
 use mahayana_conversation::SharedConversationEventSink;
+use mahayana_core::ApprovalDecision as RuntimeApprovalDecision;
 use mahayana_core::ApprovalId;
 use mahayana_core::CONVERSATION_SCHEMA_VERSION;
 use mahayana_core::Conversation;
@@ -35,7 +36,9 @@ use mahayana_core::HandoffIntent;
 use mahayana_core::IntentId;
 use mahayana_core::LogicalTurn;
 use mahayana_core::MessageId;
+use mahayana_core::MessageRole;
 use mahayana_core::MODEL_RUNTIME_VERSION;
+use mahayana_core::MAHAYANA_AI_CONVERSATION_ID;
 use mahayana_core::OperationId;
 use mahayana_core::RunId;
 use mahayana_core::PluginCommandDescriptor;
@@ -47,7 +50,7 @@ use mahayana_core::RuntimeResponse;
 use mahayana_core::RuntimeStatus;
 use mahayana_core::TurnId;
 use mahayana_core::TurnState;
-use mahayana_core::capability::{CapabilityPolicyDecision, CapabilityRegistry, CapabilityRequest};
+use mahayana_core::capability::{CapabilityAvailability, CapabilityPolicyDecision, CapabilityRegistry, CapabilityRequest};
 use mahayana_kernel::BackendDescriptor;
 use mahayana_kernel::Capability;
 use mahayana_kernel::CapabilitySet;
@@ -181,6 +184,12 @@ struct RunContext {
     actor: Arc<ConversationActor>,
 }
 
+#[derive(Clone)]
+struct PendingRuntimeApproval {
+    provider_key: String,
+    request: CapabilityRequest,
+}
+
 pub struct MahayanaRuntime {
     config: RuntimeConfig,
     providers: Arc<ProviderRegistry>,
@@ -190,8 +199,8 @@ pub struct MahayanaRuntime {
     event_rx: Receiver<RuntimeEvent>,
     operations: Arc<Mutex<HashMap<OperationId, String>>>,
     run_contexts: Arc<Mutex<HashMap<OperationId, RunContext>>>,
-    handoff_counts: Mutex<HashMap<OperationId, u8>>,
-    approvals: Arc<Mutex<HashMap<ApprovalId, String>>>,
+    handoff_counts: Mutex<HashMap<RunId, u8>>,
+    approvals: Arc<Mutex<HashMap<ApprovalId, PendingRuntimeApproval>>>,
     actors: Arc<ConversationActorRegistry>,
     store: Arc<RuntimeStore>,
     capability_broker: CapabilityBroker,
@@ -256,6 +265,8 @@ impl MahayanaRuntime {
                 status: runtime.status(),
             })
             .map_err(|_| RuntimeError::EventConsumerClosed)?;
+        runtime.recover_interrupted_turns()?;
+        runtime.recover_pending_handoffs()?;
         Ok(runtime)
     }
 
@@ -415,14 +426,16 @@ impl MahayanaRuntime {
                         now_millis(),
                     )
                     .map_err(RuntimeError::CapabilityBroker)?;
-                if matches!(decision, CapabilityPolicyDecision::Deny) {
-                    return Err(RuntimeError::CapabilityUnavailable {
-                        capability_id: capability.id,
-                        reason: "capability policy denied this request".to_string(),
-                    });
-                }
+                require_capability_execution_allowed(&capability.id, decision)?;
                 let operation_id =
-                    self.start_message(conversation_id.clone(), text, client_message_id, None, false)?;
+                    self.start_message(
+                        conversation_id.clone(),
+                        text,
+                        client_message_id,
+                        None,
+                        None,
+                        false,
+                    )?;
                 Ok(RuntimeResponse::CapabilityAccepted {
                     capability_id: capability.id,
                     conversation_id,
@@ -491,10 +504,34 @@ impl MahayanaRuntime {
                     .pointer("/annotations/readOnlyHint")
                     .and_then(Value::as_bool)
                     == Some(true);
-                if !read_only
-                    && !lock(&self.approved_local_plugin_tools)?
-                        .contains(&(plugin_id.clone(), tool.clone()))
-                {
+                let explicitly_approved = read_only
+                    || lock(&self.approved_local_plugin_tools)?
+                        .contains(&(plugin_id.clone(), tool.clone()));
+                let decision = self
+                    .capability_broker
+                    .authorize_request(
+                        if explicitly_approved {
+                            CapabilityAvailability::Ready
+                        } else {
+                            CapabilityAvailability::PermissionRequired
+                        },
+                        None,
+                        CapabilityRequest {
+                            actor: "human".to_string(),
+                            agent_id: None,
+                            conversation_id: ConversationId(format!("miniapp:{plugin_id}")),
+                            run_id: None,
+                            capability: format!("miniapp.{plugin_id}.tool.{tool}"),
+                            target: serde_json::json!({
+                                "pluginId": plugin_id.clone(),
+                                "tool": tool.clone(),
+                            }),
+                            intent: format!("invoke local Mini App tool {plugin_id}/{tool}"),
+                        },
+                        now_millis(),
+                    )
+                    .map_err(RuntimeError::CapabilityBroker)?;
+                if !matches!(decision, CapabilityPolicyDecision::Allow) {
                     return Err(RuntimeError::LocalPlugin(format!(
                         "host approval is required for {plugin_id}/{tool}"
                     )));
@@ -535,6 +572,11 @@ impl MahayanaRuntime {
                 Ok(RuntimeResponse::McpApps { data })
             }
             RuntimeCommand::McpOauthLogin { server } => {
+                self.authorize_human_capability(
+                    "mcp.oauth.manage",
+                    serde_json::json!({"server": server.clone()}),
+                    "start MCP OAuth login",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -549,6 +591,11 @@ impl MahayanaRuntime {
                 })
             }
             RuntimeCommand::McpOauthLogout { server } => {
+                self.authorize_human_capability(
+                    "mcp.oauth.manage",
+                    serde_json::json!({"server": server.clone()}),
+                    "remove MCP OAuth credentials",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -566,6 +613,11 @@ impl MahayanaRuntime {
                 })
             }
             RuntimeCommand::McpRemove { server } => {
+                self.authorize_human_capability(
+                    "mcp.server.manage",
+                    serde_json::json!({"server": server.clone()}),
+                    "remove an MCP server",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -589,6 +641,11 @@ impl MahayanaRuntime {
                 server,
                 instructions,
             } => {
+                self.authorize_human_capability(
+                    "mcp.server.configure",
+                    serde_json::json!({"server": server.clone()}),
+                    "change MCP server instructions",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -602,6 +659,15 @@ impl MahayanaRuntime {
                 tool,
                 disabled,
             } => {
+                self.authorize_human_capability(
+                    "mcp.tool.policy",
+                    serde_json::json!({
+                        "server": server.clone(),
+                        "tool": tool.clone(),
+                        "disabled": disabled,
+                    }),
+                    "change MCP tool policy",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -615,6 +681,11 @@ impl MahayanaRuntime {
                 })
             }
             RuntimeCommand::McpRefresh => {
+                self.authorize_human_capability(
+                    "mcp.refresh",
+                    serde_json::json!({}),
+                    "refresh MCP server state",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -628,6 +699,14 @@ impl MahayanaRuntime {
                 tool,
                 arguments,
             } => {
+                self.authorize_human_capability(
+                    "mcp.tool.call",
+                    serde_json::json!({
+                        "server": server.clone(),
+                        "tool": tool.clone(),
+                    }),
+                    &format!("invoke MCP tool {server}/{tool}"),
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -655,6 +734,7 @@ impl MahayanaRuntime {
                 conversation_id,
                 text,
                 client_message_id,
+                retry_of_client_message_id,
                 inference_provider,
                 hidden,
             } => Ok(RuntimeResponse::Accepted {
@@ -662,6 +742,7 @@ impl MahayanaRuntime {
                     conversation_id,
                     text,
                     client_message_id,
+                    retry_of_client_message_id,
                     inference_provider,
                     hidden,
                 )?,
@@ -711,83 +792,59 @@ impl MahayanaRuntime {
             RuntimeCommand::Handoff {
                 operation_id,
                 target_agent,
+                target_conversation_id,
+                inference_provider,
                 task,
                 constraints,
                 expected_output,
                 depth,
             } => {
-                let target_agent = target_agent.trim().to_string();
-                let task = task.trim().to_string();
-                if target_agent.is_empty() || target_agent.len() > 160 || target_agent.chars().any(char::is_control) {
-                    return Err(RuntimeError::Collaboration("handoff targetAgent is invalid".to_string()));
-                }
-                if task.is_empty() {
-                    return Err(RuntimeError::Collaboration("handoff requires a non-empty task".to_string()));
-                }
-                if depth >= MAX_HANDOFF_DEPTH {
-                    return Err(RuntimeError::Collaboration(format!(
-                        "handoff depth limit exceeded ({MAX_HANDOFF_DEPTH})"
-                    )));
-                }
                 let context = lock(&self.run_contexts)?
                     .get(&operation_id)
                     .cloned()
                     .ok_or_else(|| ConversationError::OperationNotFound(operation_id.clone()))?;
-                let target_conversation = ConversationId(format!("codex:agent:{target_agent}"));
-                if target_conversation == context.conversation_id {
-                    return Err(RuntimeError::Collaboration("an Agent cannot hand off work to itself".to_string()));
-                }
-                {
-                    let mut counts = lock(&self.handoff_counts)?;
-                    let count = counts.entry(operation_id.clone()).or_default();
-                    if *count >= MAX_HANDOFFS_PER_RUN {
-                        return Err(RuntimeError::Collaboration(format!(
-                            "handoff fan-out limit exceeded ({MAX_HANDOFFS_PER_RUN})"
-                        )));
-                    }
-                    *count = count.saturating_add(1);
-                }
-
-                let intent_id = IntentId::generated("handoff");
-                let intent = HandoffIntent {
-                    id: intent_id.clone(),
-                    target_agent: target_agent.clone(),
-                    task: task.clone(),
-                    constraints: constraints.clone(),
-                    expected_output: expected_output.clone(),
-                    origin_run: context.run_id.clone(),
-                    depth: depth.saturating_add(1),
-                };
-                self.store.enqueue_handoff(&intent, &context.turn_id, now_millis())?;
-                let target_prompt = handoff_prompt(&intent);
-                let target_operation_id = self.start_message(
-                    target_conversation,
-                    target_prompt,
-                    Some(intent_id.to_string()),
-                    None,
-                    true,
-                )?;
-                self.event_tx
-                    .send(RuntimeEvent::AgentActivity {
-                        operation_id: operation_id.clone(),
-                        step_id: intent_id.to_string(),
-                        kind: "handoff".to_string(),
-                        title: format!("Handoff → {target_agent}"),
-                        detail: Some(task),
-                        status: mahayana_core::RuntimeActivityStatus::Completed,
-                        metadata: Some(serde_json::json!({
-                            "intentId": intent_id,
-                            "targetAgent": target_agent,
-                            "targetOperationId": target_operation_id,
-                            "depth": intent.depth,
-                        })),
-                    })
-                    .map_err(|_| RuntimeError::EventConsumerClosed)?;
-                Ok(RuntimeResponse::HandoffQueued {
-                    intent_id,
+                self.dispatch_handoff(
                     operation_id,
-                    target_operation_id,
-                })
+                    context.run_id.clone(),
+                    context.turn_id.clone(),
+                    runtime_agent_id_from_conversation(&context.conversation_id),
+                    Some(context.conversation_id),
+                    target_agent,
+                    target_conversation_id,
+                    inference_provider,
+                    task,
+                    constraints,
+                    expected_output,
+                    depth,
+                )
+            }
+            RuntimeCommand::ExternalHandoff {
+                origin_run_id,
+                origin_turn_id,
+                origin_agent,
+                target_agent,
+                target_conversation_id,
+                inference_provider,
+                task,
+                constraints,
+                expected_output,
+                depth,
+            } => {
+                let synthetic_operation_id = OperationId(origin_run_id.to_string());
+                self.dispatch_handoff(
+                    synthetic_operation_id,
+                    origin_run_id,
+                    origin_turn_id,
+                    origin_agent,
+                    None,
+                    target_agent,
+                    target_conversation_id,
+                    inference_provider,
+                    task,
+                    constraints,
+                    expected_output,
+                    depth,
+                )
             }
             RuntimeCommand::Interrupt { operation_id } => {
                 let provider_key = lock(&self.operations)?
@@ -815,13 +872,39 @@ impl MahayanaRuntime {
                 decision,
                 payload,
             } => {
-                let provider_key = lock(&self.approvals)?
+                let pending = lock(&self.approvals)?
                     .remove(&approval_id)
                     .ok_or_else(|| ConversationError::ApprovalNotFound(approval_id.clone()))?;
+                let (availability, unavailable_reason, expected_decision) = match decision {
+                    RuntimeApprovalDecision::Accept | RuntimeApprovalDecision::AcceptForSession => (
+                        CapabilityAvailability::Ready,
+                        None,
+                        CapabilityPolicyDecision::Allow,
+                    ),
+                    RuntimeApprovalDecision::Decline | RuntimeApprovalDecision::Cancel => (
+                        CapabilityAvailability::Unavailable,
+                        Some("user denied the requested capability".to_string()),
+                        CapabilityPolicyDecision::Deny,
+                    ),
+                };
+                let broker_decision = self
+                    .capability_broker
+                    .authorize_request(
+                        availability,
+                        unavailable_reason,
+                        pending.request.clone(),
+                        now_millis(),
+                    )
+                    .map_err(RuntimeError::CapabilityBroker)?;
+                if broker_decision != expected_decision {
+                    return Err(RuntimeError::CapabilityBroker(
+                        "approval resolution disagreed with capability policy".to_string(),
+                    ));
+                }
                 let provider = self
                     .providers
-                    .get(&provider_key)
-                    .ok_or_else(|| ConversationError::ProviderUnavailable(provider_key.clone()))?;
+                    .get(&pending.provider_key)
+                    .ok_or_else(|| ConversationError::ProviderUnavailable(pending.provider_key.clone()))?;
                 self.async_runtime
                     .block_on(provider.resolve_approval(ResolveApprovalRequest {
                         approval_id: approval_id.clone(),
@@ -831,6 +914,381 @@ impl MahayanaRuntime {
                 Ok(RuntimeResponse::ApprovalResolved { approval_id })
             }
         }
+    }
+
+    fn authorize_human_capability(
+        &self,
+        capability: &str,
+        target: Value,
+        intent: &str,
+    ) -> Result<(), RuntimeError> {
+        let decision = self
+            .capability_broker
+            .authorize_request(
+                CapabilityAvailability::Ready,
+                None,
+                CapabilityRequest {
+                    actor: "human".to_string(),
+                    agent_id: None,
+                    conversation_id: ConversationId(MAHAYANA_AI_CONVERSATION_ID.to_string()),
+                    run_id: None,
+                    capability: capability.to_string(),
+                    target,
+                    intent: intent.to_string(),
+                },
+                now_millis(),
+            )
+            .map_err(RuntimeError::CapabilityBroker)?;
+        require_capability_execution_allowed(capability, decision)
+    }
+
+    fn reserve_handoff_slot(&self, origin_run: &RunId) -> Result<(), RuntimeError> {
+        let persisted = self.store.count_handoffs_for_run(origin_run)?;
+        let mut counts = lock(&self.handoff_counts)?;
+        let count = counts.entry(origin_run.clone()).or_default();
+        let effective = u64::from(*count).max(persisted);
+        if effective >= u64::from(MAX_HANDOFFS_PER_RUN) {
+            return Err(RuntimeError::Collaboration(format!(
+                "handoff fan-out limit exceeded ({MAX_HANDOFFS_PER_RUN})"
+            )));
+        }
+        *count = (effective + 1).min(u64::from(u8::MAX)) as u8;
+        Ok(())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn dispatch_handoff(
+        &self,
+        origin_operation_id: OperationId,
+        origin_run: RunId,
+        origin_turn: TurnId,
+        origin_agent: Option<String>,
+        origin_conversation: Option<ConversationId>,
+        target_agent: String,
+        target_conversation_id: Option<ConversationId>,
+        inference_provider: Option<String>,
+        task: String,
+        constraints: Value,
+        expected_output: Option<String>,
+        depth: u8,
+    ) -> Result<RuntimeResponse, RuntimeError> {
+        let target_agent = target_agent.trim().to_string();
+        let task = task.trim().to_string();
+        if target_agent.is_empty()
+            || target_agent.len() > 160
+            || target_agent.chars().any(char::is_control)
+        {
+            return Err(RuntimeError::Collaboration(
+                "handoff targetAgent is invalid".to_string(),
+            ));
+        }
+        if task.is_empty() {
+            return Err(RuntimeError::Collaboration(
+                "handoff requires a non-empty task".to_string(),
+            ));
+        }
+        if depth >= MAX_HANDOFF_DEPTH {
+            return Err(RuntimeError::Collaboration(format!(
+                "handoff depth limit exceeded ({MAX_HANDOFF_DEPTH})"
+            )));
+        }
+        if origin_agent.as_deref() == Some(target_agent.as_str()) {
+            return Err(RuntimeError::Collaboration(
+                "an Agent cannot hand off work to itself".to_string(),
+            ));
+        }
+
+        let target_conversation = target_conversation_id
+            .unwrap_or_else(|| ConversationId(format!("codex:agent:{target_agent}")));
+        if origin_conversation.as_ref() == Some(&target_conversation) {
+            return Err(RuntimeError::Collaboration(
+                "an Agent cannot hand off work to its own conversation".to_string(),
+            ));
+        }
+
+        let source_conversation = origin_conversation
+            .clone()
+            .unwrap_or_else(|| ConversationId(MAHAYANA_AI_CONVERSATION_ID.to_string()));
+        let policy = self
+            .capability_broker
+            .authorize_request(
+                CapabilityAvailability::Ready,
+                None,
+                CapabilityRequest {
+                    actor: origin_agent
+                        .as_ref()
+                        .map(|id| format!("agent:{id}"))
+                        .unwrap_or_else(|| "human".to_string()),
+                    agent_id: origin_agent.clone(),
+                    conversation_id: source_conversation,
+                    run_id: Some(origin_run.clone()),
+                    capability: "agent.handoff".to_string(),
+                    target: serde_json::json!({
+                        "targetAgent": target_agent,
+                        "targetConversationId": target_conversation,
+                        "depth": depth.saturating_add(1),
+                    }),
+                    intent: "dispatch durable work to another Agent".to_string(),
+                },
+                now_millis(),
+            )
+            .map_err(RuntimeError::CapabilityBroker)?;
+        require_capability_execution_allowed("agent.handoff", policy)?;
+
+        self.reserve_handoff_slot(&origin_run)?;
+        let intent_id = IntentId::generated("handoff");
+        let intent = HandoffIntent {
+            id: intent_id.clone(),
+            target_agent: target_agent.clone(),
+            target_conversation_id: Some(target_conversation.clone()),
+            inference_provider: inference_provider.clone(),
+            task: task.clone(),
+            constraints,
+            expected_output,
+            origin_run,
+            depth: depth.saturating_add(1),
+        };
+        self.store.enqueue_handoff(&intent, &origin_turn, now_millis())?;
+        let target_operation_id = self.start_message(
+            target_conversation,
+            handoff_prompt(&intent),
+            Some(intent_id.to_string()),
+            None,
+            inference_provider,
+            true,
+        )?;
+        self.store.mark_handoff_started(
+            intent_id.as_str(),
+            target_operation_id.as_str(),
+            now_millis(),
+        )?;
+        self.event_tx
+            .send(RuntimeEvent::AgentActivity {
+                operation_id: origin_operation_id.clone(),
+                step_id: intent_id.to_string(),
+                kind: "handoff".to_string(),
+                title: format!("Handoff → {target_agent}"),
+                detail: Some("Durable Agent work queued".to_string()),
+                status: mahayana_core::RuntimeActivityStatus::Completed,
+                metadata: Some(serde_json::json!({
+                    "intentId": intent_id,
+                    "targetAgent": target_agent,
+                    "targetOperationId": target_operation_id,
+                    "depth": intent.depth,
+                })),
+            })
+            .map_err(|_| RuntimeError::EventConsumerClosed)?;
+        Ok(RuntimeResponse::HandoffQueued {
+            intent_id,
+            operation_id: origin_operation_id,
+            target_operation_id,
+        })
+    }
+
+    fn recover_interrupted_turns(&self) -> Result<(), RuntimeError> {
+        for pending in self.store.recoverable_turns()? {
+            if pending.state == TurnState::WaitingUser {
+                self.store.set_run_state(
+                    &pending.last_run_id,
+                    TurnState::Failed,
+                    Some(now_millis()),
+                )?;
+                self.store
+                    .set_turn_state(&pending.turn_id, TurnState::Failed, None)?;
+                let _ = self.event_tx.send(RuntimeEvent::ProviderDegraded {
+                    provider: "turn-recovery".to_string(),
+                    message: format!(
+                        "logical turn {} was waiting for user input when the runtime restarted; explicit retry is required",
+                        pending.turn_id
+                    ),
+                });
+                continue;
+            }
+
+            let provider = self.providers.for_conversation(&pending.conversation_id)?;
+            let recovered_text = if let Some(text) = pending.text.clone() {
+                Some(text)
+            } else {
+                // Compatibility fallback for turns created before turn_requests
+                // existed. New work never depends on provider history for restart
+                // recovery because RuntimeStore persists the execution input.
+                self.async_runtime
+                    .block_on(provider.history(&pending.conversation_id, 500))
+                    .ok()
+                    .and_then(|history| {
+                        history
+                            .into_iter()
+                            .rev()
+                            .find(|message| {
+                                message.id == pending.message_id
+                                    && message.role == MessageRole::User
+                            })
+                            .map(|message| message.text)
+                    })
+            };
+
+            let Some(text) = recovered_text else {
+                self.store.set_run_state(
+                    &pending.last_run_id,
+                    TurnState::Failed,
+                    Some(now_millis()),
+                )?;
+                self.store
+                    .set_turn_state(&pending.turn_id, TurnState::Failed, None)?;
+                let _ = self.event_tx.send(RuntimeEvent::ProviderDegraded {
+                    provider: "turn-recovery".to_string(),
+                    message: format!(
+                        "could not recover logical turn {} generation {}: durable input unavailable",
+                        pending.turn_id, pending.generation
+                    ),
+                });
+                continue;
+            };
+
+            self.store.set_run_state(
+                &pending.last_run_id,
+                TurnState::Failed,
+                Some(now_millis()),
+            )?;
+            self.store
+                .set_turn_state(&pending.turn_id, TurnState::Recovering, None)?;
+
+            if let Err(error) = self.start_message(
+                pending.conversation_id.clone(),
+                text,
+                None,
+                Some(pending.message_id.to_string()),
+                pending.inference_provider.clone(),
+                pending.hidden.unwrap_or(false),
+            ) {
+                self.store
+                    .set_turn_state(&pending.turn_id, TurnState::Failed, None)?;
+                let _ = self.event_tx.send(RuntimeEvent::ProviderDegraded {
+                    provider: "turn-recovery".to_string(),
+                    message: format!(
+                        "could not restart logical turn {} after runtime recovery: {error}",
+                        pending.turn_id
+                    ),
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn recover_pending_handoffs(&self) -> Result<(), RuntimeError> {
+        for pending in self.store.recoverable_handoffs()? {
+            let target_conversation = pending
+                .intent
+                .target_conversation_id
+                .clone()
+                .unwrap_or_else(|| {
+                    ConversationId(format!("codex:agent:{}", pending.intent.target_agent))
+                });
+            let message_id = MessageId::new(pending.intent.id.to_string())
+                .map_err(|error| RuntimeError::Collaboration(error.to_string()))?;
+            let existing = self
+                .store
+                .find_turn_by_client_message(&target_conversation, &message_id)?;
+
+            if let Some(snapshot) = existing.as_ref() {
+                if snapshot.state == TurnState::Completed {
+                    self.store.mark_handoff_terminal(
+                        pending.intent.id.as_str(),
+                        true,
+                        now_millis(),
+                    )?;
+                    continue;
+                }
+                if matches!(snapshot.state, TurnState::Failed | TurnState::Cancelled) {
+                    self.store.mark_handoff_terminal(
+                        pending.intent.id.as_str(),
+                        false,
+                        now_millis(),
+                    )?;
+                    continue;
+                }
+            }
+
+            let decision = self
+                .capability_broker
+                .authorize_request(
+                    CapabilityAvailability::Ready,
+                    None,
+                    CapabilityRequest {
+                        actor: "runtime-recovery".to_string(),
+                        agent_id: None,
+                        conversation_id: ConversationId(
+                            MAHAYANA_AI_CONVERSATION_ID.to_string(),
+                        ),
+                        run_id: Some(pending.intent.origin_run.clone()),
+                        capability: "agent.handoff".to_string(),
+                        target: serde_json::json!({
+                            "targetAgent": pending.intent.target_agent.clone(),
+                            "targetConversationId": target_conversation.clone(),
+                            "depth": pending.intent.depth,
+                        }),
+                        intent: "recover durable Agent handoff after runtime restart".to_string(),
+                    },
+                    now_millis(),
+                )
+                .map_err(RuntimeError::CapabilityBroker)?;
+            if let Err(error) = require_capability_execution_allowed("agent.handoff", decision) {
+                self.store.mark_handoff_terminal(
+                    pending.intent.id.as_str(),
+                    false,
+                    now_millis(),
+                )?;
+                let _ = self.event_tx.send(RuntimeEvent::ProviderDegraded {
+                    provider: "handoff-recovery".to_string(),
+                    message: error.to_string(),
+                });
+                continue;
+            }
+
+            let retry_message_id = if let Some(snapshot) = existing.as_ref() {
+                if let Some(run_id) = snapshot.last_run_id.as_ref() {
+                    self.store
+                        .set_run_state(run_id, TurnState::Failed, Some(now_millis()))?;
+                }
+                self.store
+                    .set_turn_state(&snapshot.turn_id, TurnState::Recovering, None)?;
+                Some(pending.intent.id.to_string())
+            } else {
+                None
+            };
+            let client_message_id = if retry_message_id.is_some() {
+                None
+            } else {
+                Some(pending.intent.id.to_string())
+            };
+
+            match self.start_message(
+                target_conversation,
+                handoff_prompt(&pending.intent),
+                client_message_id,
+                retry_message_id,
+                pending.intent.inference_provider.clone(),
+                true,
+            ) {
+                Ok(operation_id) => {
+                    self.store.mark_handoff_started(
+                        pending.intent.id.as_str(),
+                        operation_id.as_str(),
+                        now_millis(),
+                    )?;
+                }
+                Err(error) => {
+                    let _ = self.event_tx.send(RuntimeEvent::ProviderDegraded {
+                        provider: "handoff-recovery".to_string(),
+                        message: format!(
+                            "could not recover handoff {} from turn {}: {error}",
+                            pending.intent.id, pending.origin_turn_id
+                        ),
+                    });
+                }
+            }
+        }
+        Ok(())
     }
 
     fn list_conversations(&self) -> Result<Vec<Conversation>, RuntimeError> {
@@ -868,6 +1326,7 @@ impl MahayanaRuntime {
         conversation_id: ConversationId,
         text: String,
         client_message_id: Option<String>,
+        retry_of_client_message_id: Option<String>,
         inference_provider: Option<String>,
         hidden: bool,
     ) -> Result<OperationId, RuntimeError> {
@@ -881,12 +1340,42 @@ impl MahayanaRuntime {
         // operationId remains the backwards-compatible wire key. Canonical
         // runtime ownership now belongs to ExecutionRun.
         let operation_id = OperationId(run_id.0.clone());
-        let turn_id = TurnId::generated("turn");
-        let created_at_ms = now_millis();
-        let user_message_id = client_message_id
-            .as_ref()
-            .and_then(|value| MessageId::new(value.clone()).ok())
-            .or_else(|| Some(MessageId::generated("message")));
+        let run_started_at_ms = now_millis();
+        let retrying = retry_of_client_message_id.is_some();
+        let (
+            turn_id,
+            user_message_id,
+            turn_created_at_ms,
+            generation,
+            provider_client_message_id,
+        ) = if let Some(retry_message_id) = retry_of_client_message_id {
+            let (turn_id, created_at_ms, generation) = self
+                .store
+                .retry_turn_generation(conversation_id.as_str(), &retry_message_id)?
+                .ok_or_else(|| RuntimeError::RetryTargetNotFound(retry_message_id.clone()))?;
+            let user_message_id = MessageId::new(retry_message_id.clone())
+                .map_err(|_| RuntimeError::RetryTargetNotFound(retry_message_id.clone()))?;
+            (
+                turn_id,
+                Some(user_message_id),
+                created_at_ms,
+                generation,
+                Some(retry_message_id),
+            )
+        } else {
+            let turn_id = TurnId::generated("turn");
+            let user_message_id = client_message_id
+                .as_ref()
+                .and_then(|value| MessageId::new(value.clone()).ok())
+                .or_else(|| Some(MessageId::generated("message")));
+            (
+                turn_id,
+                user_message_id,
+                run_started_at_ms,
+                1,
+                client_message_id,
+            )
+        };
         let actor = self
             .actors
             .actor(&conversation_id)
@@ -894,25 +1383,48 @@ impl MahayanaRuntime {
         let (queued, accepted_sequence) = actor
             .register(turn_id.clone())
             .map_err(RuntimeError::Synchronization)?;
+        let initial_state = if retrying {
+            TurnState::Recovering
+        } else {
+            TurnState::Accepted
+        };
+        let initial_sequence = if retrying {
+            actor
+                .set_state(&turn_id, TurnState::Recovering)
+                .map_err(RuntimeError::Synchronization)?
+                .unwrap_or(accepted_sequence)
+        } else {
+            accepted_sequence
+        };
 
         let turn = LogicalTurn {
             id: turn_id.clone(),
             conversation_id: conversation_id.clone(),
             user_message_id,
-            created_at_ms,
-            state: TurnState::Accepted,
+            created_at_ms: turn_created_at_ms,
+            state: initial_state,
             active_run_id: Some(run_id.clone()),
         };
         let run = ExecutionRun {
             id: run_id.clone(),
             turn_id: turn_id.clone(),
-            generation: 1,
+            generation,
             provider: provider_key.clone(),
-            started_at_ms: created_at_ms,
+            started_at_ms: run_started_at_ms,
             finished_at_ms: None,
-            state: TurnState::Accepted,
+            state: initial_state,
         };
         self.store.record_turn(&turn)?;
+        if let Some(message_id) = turn.user_message_id.as_ref() {
+            self.store.record_turn_request(
+                &turn_id,
+                message_id,
+                &text,
+                inference_provider.as_deref(),
+                hidden,
+                run_started_at_ms,
+            )?;
+        }
         self.store.record_run(&run)?;
 
         let context = RunContext {
@@ -930,19 +1442,20 @@ impl MahayanaRuntime {
                 turn_id: turn_id.clone(),
                 run_id: run_id.clone(),
                 conversation_id: conversation_id.clone(),
-                state: TurnState::Accepted,
-                sequence: accepted_sequence,
+                state: initial_state,
+                sequence: initial_sequence,
             })
             .map_err(|_| RuntimeError::EventConsumerClosed)?;
         if queued {
             transition_turn_state(&self.event_tx, &self.store, &context, TurnState::Queued)?;
         }
 
+        let durable_intent_id = provider_client_message_id.clone();
         let request = SendMessageRequest {
             conversation_id: conversation_id.clone(),
             operation_id: operation_id.clone(),
             text,
-            client_message_id,
+            client_message_id: provider_client_message_id,
             inference_provider,
             hidden,
         };
@@ -977,6 +1490,9 @@ impl MahayanaRuntime {
                 TurnState::Failed
             };
             let _ = transition_turn_state(&event_tx, &store, &context, terminal_state);
+            if let Some(intent_id) = durable_intent_id.as_deref() {
+                let _ = store.mark_handoff_terminal(intent_id, result.is_ok(), now_millis());
+            }
             let event = match result {
                 Ok(()) => RuntimeEvent::OperationCompleted {
                     operation_id: task_operation_id.clone(),
@@ -1057,13 +1573,61 @@ fn lock<T>(mutex: &Mutex<T>) -> Result<std::sync::MutexGuard<'_, T>, RuntimeErro
 struct RuntimeEventSink {
     provider_key: String,
     event_tx: Sender<RuntimeEvent>,
-    approvals: Arc<Mutex<HashMap<ApprovalId, String>>>,
+    approvals: Arc<Mutex<HashMap<ApprovalId, PendingRuntimeApproval>>>,
     context: RunContext,
     store: Arc<RuntimeStore>,
 }
 
 impl ConversationEventSink for RuntimeEventSink {
     fn emit(&self, event: RuntimeEvent) -> Result<(), ConversationError> {
+        if let RuntimeEvent::AgentActivity {
+            kind,
+            title,
+            status,
+            metadata,
+            ..
+        } = &event
+        {
+            if kind == "computer"
+                && matches!(status, mahayana_core::RuntimeActivityStatus::Running)
+            {
+                let action = metadata
+                    .as_ref()
+                    .and_then(|value| value.get("arguments"))
+                    .and_then(|value| value.get("action"))
+                    .and_then(Value::as_str)
+                    .unwrap_or("computer");
+                let agent_id = runtime_agent_id_from_conversation(&self.context.conversation_id);
+                let decision = CapabilityBroker::new(Arc::clone(&self.store))
+                    .authorize_request(
+                        CapabilityAvailability::Ready,
+                        None,
+                        CapabilityRequest {
+                            actor: agent_id
+                                .as_ref()
+                                .map(|id| format!("agent:{id}"))
+                                .unwrap_or_else(|| "agent-runtime".to_string()),
+                            agent_id,
+                            conversation_id: self.context.conversation_id.clone(),
+                            run_id: Some(self.context.run_id.clone()),
+                            capability: "computer.input.control".to_string(),
+                            target: serde_json::json!({
+                                "action": action,
+                                "deviceId": "local-desktop",
+                            }),
+                            intent: title.clone(),
+                        },
+                        now_millis(),
+                    )
+                    .map_err(ConversationError::Provider)?;
+                if decision != CapabilityPolicyDecision::Allow {
+                    return Err(ConversationError::Provider(
+                        "computer action was not allowed by capability policy".to_string(),
+                    ));
+                }
+            }
+        }
+
         let projected_state = match &event {
             RuntimeEvent::MessageDelta { .. } => Some(TurnState::Streaming),
             RuntimeEvent::ApprovalRequested { .. } => Some(TurnState::WaitingUser),
@@ -1083,15 +1647,94 @@ impl ConversationEventSink for RuntimeEventSink {
             transition_turn_state(&self.event_tx, &self.store, &self.context, state)
                 .map_err(|error| ConversationError::Provider(error.to_string()))?;
         }
-        if let RuntimeEvent::ApprovalRequested { approval_id, .. } = &event {
+        if let RuntimeEvent::ApprovalRequested {
+            approval_id,
+            title,
+            details,
+            ..
+        } = &event
+        {
+            let request = approval_capability_request(&self.context, title, details);
+            let decision = CapabilityBroker::new(Arc::clone(&self.store))
+                .authorize_request(
+                    CapabilityAvailability::PermissionRequired,
+                    None,
+                    request.clone(),
+                    now_millis(),
+                )
+                .map_err(ConversationError::Provider)?;
+            if decision != CapabilityPolicyDecision::NeedsUser {
+                return Err(ConversationError::Provider(
+                    "privileged provider approval did not enter needs-user policy".to_string(),
+                ));
+            }
             self.approvals
                 .lock()
                 .map_err(|_| ConversationError::Provider("approval map poisoned".to_string()))?
-                .insert(approval_id.clone(), self.provider_key.clone());
+                .insert(
+                    approval_id.clone(),
+                    PendingRuntimeApproval {
+                        provider_key: self.provider_key.clone(),
+                        request,
+                    },
+                );
         }
         self.event_tx
             .send(event)
             .map_err(|_| ConversationError::EventConsumerClosed)
+    }
+}
+
+fn runtime_agent_id_from_conversation(conversation_id: &ConversationId) -> Option<String> {
+    conversation_id
+        .as_str()
+        .strip_prefix("codex:agent:")
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+}
+
+fn approval_capability_request(
+    context: &RunContext,
+    title: &str,
+    details: &Value,
+) -> CapabilityRequest {
+    let explicit = details
+        .get("capability")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let has_network_context = details.get("networkApprovalContext").is_some()
+        || details.get("network_approval_context").is_some();
+    let capability = if explicit == Some("computer.control") {
+        "computer.input.control"
+    } else if has_network_context {
+        "browser.network"
+    } else if title.contains("执行命令") {
+        "shell.execute"
+    } else if title.contains("修改文件") || title.contains("应用补丁") {
+        "filesystem.write"
+    } else if title.contains("扩展权限") {
+        "runtime.permissions.expand"
+    } else {
+        "agent.tool.approval"
+    };
+    let agent_id = runtime_agent_id_from_conversation(&context.conversation_id);
+    CapabilityRequest {
+        actor: agent_id
+            .as_ref()
+            .map(|id| format!("agent:{id}"))
+            .unwrap_or_else(|| "agent-runtime".to_string()),
+        agent_id,
+        conversation_id: context.conversation_id.clone(),
+        run_id: Some(context.run_id.clone()),
+        capability: capability.to_string(),
+        target: serde_json::json!({
+            "kind": details.get("kind").cloned().unwrap_or(Value::Null),
+            "subject": details.get("subject").cloned().unwrap_or(Value::Null),
+            "location": details.get("location").cloned().unwrap_or(Value::Null),
+        }),
+        intent: title.to_string(),
     }
 }
 
@@ -1159,6 +1802,23 @@ fn validate_runtime_state_key(key: &str) -> Result<(), RuntimeError> {
     Ok(())
 }
 
+fn require_capability_execution_allowed(
+    capability_id: &str,
+    decision: CapabilityPolicyDecision,
+) -> Result<(), RuntimeError> {
+    match decision {
+        CapabilityPolicyDecision::Allow => Ok(()),
+        CapabilityPolicyDecision::NeedsUser => Err(RuntimeError::CapabilityUnavailable {
+            capability_id: capability_id.to_string(),
+            reason: "capability requires explicit user permission before execution".to_string(),
+        }),
+        CapabilityPolicyDecision::Deny => Err(RuntimeError::CapabilityUnavailable {
+            capability_id: capability_id.to_string(),
+            reason: "capability policy denied this request".to_string(),
+        }),
+    }
+}
+
 fn now_millis() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -1182,6 +1842,8 @@ pub enum RuntimeError {
     TelemetryNotCompiled,
     #[error("message text must not be empty")]
     EmptyMessage,
+    #[error("logical retry target was not found or is not terminal: {0}")]
+    RetryTargetNotFound(String),
     #[error(transparent)]
     Conversation(#[from] ConversationError),
     #[error("runtime event consumer is closed")]
@@ -1325,7 +1987,8 @@ mod tests {
                 conversation_id: ConversationId(CODEX_ASSISTANT_CONVERSATION_ID.to_string()),
                 text: "你好".to_string(),
                 client_message_id: None,
-                                inference_provider: None,
+                retry_of_client_message_id: None,
+                inference_provider: None,
                 hidden: false,
             })
             .expect("send message");
@@ -1336,12 +1999,16 @@ mod tests {
         let mut saw_delta = false;
         let mut saw_message = false;
         let mut saw_complete = false;
-        for _ in 0..5 {
+        let mut lifecycle = Vec::new();
+        for _ in 0..12 {
             let event = runtime
                 .receive(Duration::from_secs(1))
                 .expect("receive event")
                 .expect("event before timeout");
             match event {
+                RuntimeEvent::TurnStateChanged { state, .. } => {
+                    lifecycle.push(state);
+                }
                 RuntimeEvent::MessageDelta {
                     operation_id: event_operation,
                     delta,
@@ -1355,7 +2022,10 @@ mod tests {
                     assert_eq!(message.text, "大乘：你好");
                     saw_message = true;
                 }
-                RuntimeEvent::OperationCompleted { .. } => {
+                RuntimeEvent::OperationCompleted {
+                    operation_id: event_operation,
+                } => {
+                    assert_eq!(event_operation, operation_id);
                     saw_complete = true;
                     break;
                 }
@@ -1363,6 +2033,10 @@ mod tests {
             }
         }
         assert!(saw_delta && saw_message && saw_complete);
+        assert!(lifecycle.contains(&TurnState::Accepted));
+        assert!(lifecycle.contains(&TurnState::Preparing));
+        assert!(lifecycle.contains(&TurnState::Thinking));
+        assert!(lifecycle.contains(&TurnState::Completed));
     }
 
     struct CountingAgent {
@@ -1440,7 +2114,8 @@ mod tests {
                 conversation_id,
                 text: "first visible prompt".to_string(),
                 client_message_id: Some("first-visible-prompt".to_string()),
-                                inference_provider: None,
+                retry_of_client_message_id: None,
+                inference_provider: None,
                 hidden: false,
             })
             .expect("send first message");
@@ -1480,9 +2155,63 @@ mod tests {
     }
 
     #[test]
+    fn capability_execution_gate_is_fail_closed_for_needs_user_and_deny() {
+        assert!(require_capability_execution_allowed(
+            "capability:test",
+            CapabilityPolicyDecision::Allow,
+        ).is_ok());
+
+        for decision in [
+            CapabilityPolicyDecision::NeedsUser,
+            CapabilityPolicyDecision::Deny,
+        ] {
+            let error = require_capability_execution_allowed("capability:test", decision)
+                .expect_err("non-Allow decisions must never start an execution run");
+            assert!(matches!(
+                error,
+                RuntimeError::CapabilityUnavailable { capability_id, .. }
+                    if capability_id == "capability:test"
+            ));
+        }
+    }
+
+    #[test]
+    fn provider_approval_audit_is_sanitized_and_capability_typed() {
+        let conversation_id = ConversationId("codex:agent:research".to_string());
+        let actor = ConversationActorRegistry::default()
+            .actor(&conversation_id)
+            .expect("create conversation actor");
+        let context = RunContext {
+            turn_id: TurnId::generated("turn"),
+            run_id: RunId::generated("run"),
+            conversation_id,
+            actor,
+        };
+        let request = approval_capability_request(
+            &context,
+            "AI 请求控制这台电脑",
+            &serde_json::json!({
+                "kind": "local-tool",
+                "capability": "computer.control",
+                "subject": "Computer · click",
+                "location": "local",
+                "detail": "password=secret",
+                "reason": "OTP 123456"
+            }),
+        );
+        assert_eq!(request.capability, "computer.input.control");
+        assert_eq!(request.agent_id.as_deref(), Some("research"));
+        let encoded = serde_json::to_string(&request.target).expect("serialize safe target");
+        assert!(!encoded.contains("secret"));
+        assert!(!encoded.contains("123456"));
+        assert!(!encoded.contains("detail"));
+        assert!(!encoded.contains("reason"));
+    }
+
+    #[test]
     fn approval_decision_wire_values_remain_stable() {
         assert_eq!(
-            serde_json::to_value(ApprovalDecision::AcceptForSession).expect("serialize decision"),
+            serde_json::to_value(RuntimeApprovalDecision::AcceptForSession).expect("serialize decision"),
             "acceptForSession"
         );
     }

@@ -4,451 +4,617 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.resolve(scriptDir, '..');
-const obsoleteShellPath = path.join(desktopRoot, 'src', 'messaging-shell-v2.tsx');
-const shellPath = path.join(desktopRoot, 'src', 'adapters', 'legacy-messaging', 'legacy-messaging-shell.tsx');
-const shell = fs.readFileSync(shellPath, 'utf8');
 const repoRoot = path.resolve(desktopRoot, '..');
-const desktopApp = fs.readFileSync(path.join(desktopRoot, 'src', 'app', 'DesktopApp.tsx'), 'utf8');
-const mainEntry = fs.readFileSync(path.join(desktopRoot, 'src', 'main.tsx'), 'utf8');
-const computerController = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-computer-controller.ts'), 'utf8');
-const electronMain = fs.readFileSync(path.join(desktopRoot, 'electron', 'main.cjs'), 'utf8');
-const remoteDeviceSupervisor = fs.readFileSync(path.join(desktopRoot, 'electron', 'remote-device-agent-supervisor.cjs'), 'utf8');
-const hostClient = fs.readFileSync(path.join(repoRoot, 'frontend', 'apps', 'web', 'src', 'app', 'host', 'host-client.tsx'), 'utf8');
-const agentTranscript = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'agent-transcript.tsx'), 'utf8');
-const agentOverlays = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'agent-overlays.tsx'), 'utf8');
-const networkControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-network-controller.ts');
-const networkController = fs.readFileSync(networkControllerPath, 'utf8');
-const workflowControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-workflow-controller.ts');
-const workflowController = fs.readFileSync(workflowControllerPath, 'utf8');
-const storeSyncControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-store-sync-controller.ts');
-const storeSyncController = fs.readFileSync(storeSyncControllerPath, 'utf8');
-const directoryControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-directory-controller.ts');
-const directoryController = fs.readFileSync(directoryControllerPath, 'utf8');
-const mcpController = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-mcp-controller.ts'), 'utf8');
-const productControllers = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-product-controllers.ts'), 'utf8');
-const agentComposerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agent-composer.tsx');
-const agentComposer = fs.readFileSync(agentComposerPath, 'utf8');
-const agentRichEditorPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agent-rich-text-editor.tsx');
-const agentRichEditor = fs.readFileSync(agentRichEditorPath, 'utf8');
-const compatibilityAdapterPath = path.join(desktopRoot, 'src', 'agent-workspace', 'messenger-compatibility-adapter.tsx');
-const compatibilityAdapter = fs.readFileSync(compatibilityAdapterPath, 'utf8');
-const accountSidebarLayout = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'account-sidebar-layout.ts'), 'utf8');
-const sidebarController = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-sidebar-controller.ts'), 'utf8');
-const hostProtocol = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-host-protocol', 'src', 'lib.rs'), 'utf8');
-const runtimeCore = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-core', 'src', 'lib.rs'), 'utf8');
-const kernelConversation = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-runtime', 'src', 'kernel_conversation.rs'), 'utf8');
-const providerRouter = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-host', 'src', 'provider_router.rs'), 'utf8');
+const violations = [];
+// This checker is part of the exact-PR-head gate; merge-ref success is supplemental only.
+// Signed candidates are permitted only for trusted same-repository PR heads.
+
+const read = (...parts) => fs.readFileSync(path.join(...parts), 'utf8');
+const exists = (...parts) => fs.existsSync(path.join(...parts));
+
+function walk(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === 'release') continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walk(full, out);
+    else out.push(full);
+  }
+  return out;
+}
+
+function requirePattern(label, content, pattern) {
+  if (!pattern.test(content)) violations.push(label);
+}
+
+function forbidPattern(label, content, pattern) {
+  if (pattern.test(content)) violations.push(label);
+}
+
+function requireOrdered(label, content, markers) {
+  let cursor = 0;
+  for (const marker of markers) {
+    const next = content.indexOf(marker, cursor);
+    if (next < 0) {
+      violations.push(`${label}: missing or out of order: ${marker}`);
+      return;
+    }
+    cursor = next + marker.length;
+  }
+}
+
+const desktopApp = read(desktopRoot, 'src', 'app', 'DesktopApp.tsx');
+const desktopAuthBoundary = read(desktopRoot, 'src', 'app', 'desktop-auth-boundary.tsx');
+const rootShell = read(desktopRoot, 'src', 'agent-workspace', 'agent-root-shell.tsx');
+const rootCss = read(desktopRoot, 'src', 'agent-workspace', 'agent-root-shell.module.css');
+const productControllers = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-product-controllers.ts');
+const runtimeFacade = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-workspace-runtime.ts');
+const runtimeCoordinator = read(desktopRoot, 'src', 'agent-workspace', 'agent-runtime-coordinator.ts');
+const directoryController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-directory-controller.ts');
+const networkController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-network-controller.ts');
+const computerController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-computer-controller.ts');
+const sidebarController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-sidebar-controller.ts');
+const sidebarState = read(desktopRoot, 'src', 'agent-workspace', 'agent-sidebar-state.ts');
+const agentTranscript = read(desktopRoot, 'src', 'agent-workspace', 'agent-transcript.tsx');
+const agentTranscriptStore = read(desktopRoot, 'src', 'agent-workspace', 'agent-transcript-store.ts');
+const conversationIdentity = read(desktopRoot, 'src', 'agent-workspace', 'conversation-identity.ts');
+const agentHeader = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-header.tsx');
+const agentSidebar = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-sidebar.tsx');
+const agentSidebarBoundary = read(desktopRoot, 'src', 'agent-workspace', 'agent-sidebar.tsx');
+const agentOverlays = read(desktopRoot, 'src', 'agent-workspace', 'agent-overlays.tsx');
+const agentComposer = read(desktopRoot, 'src', 'agent-workspace', 'agent-composer.tsx');
+const agentSearch = read(desktopRoot, 'src', 'agent-workspace', 'agent-search.tsx');
+const agentNetwork = read(desktopRoot, 'src', 'agent-workspace', 'agent-network.tsx');
+const agentSettingsPanel = read(desktopRoot, 'src', 'agent-workspace', 'agent-settings-panel.tsx');
+const fabAvatar = read(desktopRoot, 'src', 'ui', 'avatar', 'fab-avatar.tsx');
+const primitives = read(desktopRoot, 'src', 'ui', 'primitives', 'fab-primitives.tsx');
+const primitiveStyles = read(desktopRoot, 'src', 'ui', 'primitives', 'fab-primitives.module.css');
+const tokens = read(desktopRoot, 'src', 'ui', 'tokens.css');
+const electronMain = read(desktopRoot, 'electron', 'main.cjs');
+const hostProcess = read(desktopRoot, 'electron', 'host-process.cjs');
+const mahayanaEdge = read(desktopRoot, 'electron', 'mahayana-edge.cjs');
+const electronTransport = read(repoRoot, 'frontend', 'apps', 'web', 'src', 'lib', 'mahayana-host', 'electron-transport.ts');
+const remoteSupervisor = read(desktopRoot, 'electron', 'remote-device-agent-supervisor.cjs');
+
 const runtimeRoot = path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-runtime', 'src');
-const runtimeLib = fs.readFileSync(path.join(runtimeRoot, 'lib.rs'), 'utf8');
-const conversationActor = fs.readFileSync(path.join(runtimeRoot, 'conversation_actor.rs'), 'utf8');
-const runtimeStore = fs.readFileSync(path.join(runtimeRoot, 'runtime_store.rs'), 'utf8');
-const capabilityBroker = fs.readFileSync(path.join(runtimeRoot, 'capability_broker.rs'), 'utf8');
-const computerExecutor = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-computer', 'src', 'lib.rs'), 'utf8');
-const codexAgent = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-agent-codex', 'src', 'implementation.rs'), 'utf8');
-const featureHost = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-feature-host', 'src', 'implementation.rs'), 'utf8');
-const durableAgentState = fs.readFileSync(path.join(desktopRoot, 'src', 'durable-agent-state.ts'), 'utf8');
-const agentDraftStore = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'agent-draft-store.ts'), 'utf8');
-const agentWorkspaceRuntime = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-workspace-runtime.ts'), 'utf8');
-const removedMigrationRuntimePaths = [
-  'grok-chat-parity-runtime.tsx',
-  'mahayana-agent-workbench.tsx',
-  'mahayana-agent-workbench.module.css',
-  'mahayana-agent-inline-report.tsx',
-  'mahayana-agent-inline-report.module.css',
-  'mahayana-agent-inline-compat.ts',
-  'mahayana-agent-transcript-semantics.ts',
-  'mahayana-agent-transcript-semantics.css',
-].map((name) => path.join(desktopRoot, 'src', name));
+const runtimeLib = read(runtimeRoot, 'lib.rs');
+const kernelConversation = read(runtimeRoot, 'kernel_conversation.rs');
+const actor = read(runtimeRoot, 'conversation_actor.rs');
+const broker = read(runtimeRoot, 'capability_broker.rs');
+const runtimeStore = read(runtimeRoot, 'runtime_store.rs');
+const featureHost = read(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-feature-host', 'src', 'implementation.rs');
+const computerRuntime = read(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-computer', 'src', 'lib.rs');
+const codexAgentBackend = read(
+  repoRoot,
+  'third_party',
+  'mahayana',
+  'mahayana-rs',
+  'mahayana-agent-codex',
+  'src',
+  'implementation.rs',
+);
+const codexSendStart = codexAgentBackend.indexOf('async fn send_message(');
+const codexSendEnd = codexSendStart >= 0
+  ? codexAgentBackend.indexOf('async fn interrupt(', codexSendStart)
+  : -1;
+const codexSendMessage = codexSendStart >= 0 && codexSendEnd > codexSendStart
+  ? codexAgentBackend.slice(codexSendStart, codexSendEnd)
+  : '';
 
-const forbidden = [
-  ['renderer-global Agent operation pointer', /\bagentOperationId\b/],
-  ['renderer-global pending Agent send pointer', /\bpendingSend\b/],
-  ['renderer-owned queued Agent transcript', /\bqueuedAgentPrompts\b/],
-  ['renderer-owned Agent delta buffer', /pendingAgentDeltaRef|agentDeltaFrameRef/],
-  ['renderer-owned Agent operation claiming', /\bclaimAgentOperation\s*\(/],
-  ['renderer-owned Agent operation clearing', /\bclearAgentOperation\s*\(/],
-  ['renderer-owned AssistantTurn event reducer', /\bappendAssistantTurnEvent\s*\(/],
-  ['renderer-owned Agent submission queue', /\bagentSubmissionQueue\b|submissionQueue\s*:/],
-  ['renderer-owned Agent transport dispatch', /\bdispatchAgentPromptNow\b/],
-  ['Agent transcript copy-back through renderer messages', /setMessages\(toDisplayAgentMessages/],
-  ['legacy Grok Agent Network mounted by primary shell', /import\s+GrokAgentNetwork\s+from\s+['"]\.\/grok-shell\/grok-agent-network['"]/],
-  ['legacy Grok Command Palette mounted by primary shell', /import\s+GrokCommandPalette\s+from\s+['"]\.\/grok-shell\/grok-command-palette['"]/],
-  ['primary Agent shell directly imports Grok implementation layers', /from\s+['"](?:\.\.\/)+grok-(?:shell|runtime)\//],
-  ['Grok-named runtime state leaked back into primary Agent shell', /\bgrok(?:Palette|Network|Pinned|Sidebar|Selected|Activity|Busy|Agent)[A-Z]\w*/],
-  ['renderer owns RemoteComputerDesktopController', /\bRemoteComputerDesktopController\b|\bremoteComputerControllerRef\b/],
-  ['renderer owns Computer capability state', /setComputerCapabilityStatus\b|setRemoteComputerState\b/],
-  ['renderer bypasses Agent Computer controller', /agentCoordinatorClient\.refreshComputerStatus\s*\(|reportOpenComputer/],
-  ['renderer bypasses Agent runtime approval facade', /agentCoordinatorClient\.resolveApproval\s*\(/],
-  ['renderer bypasses Agent runtime interrupt facade', /agentCoordinatorClient\.interrupt\s*\(/],
-  ['renderer bypasses Agent attachment facade', /agentCoordinatorClient\.uploadAttachment\s*\(/],
+requirePattern(
+  'Codex Agent backend must expose the pending-turn match used for pre-response app-server events',
+  codexAgentBackend,
+  /fn operation_turn_matches\([\s\S]{0,500}bound_turn_id\.is_empty\(\)/,
+);
+requireOrdered(
+  'Codex Agent backend must register operation ownership before TurnStart can emit fast completion events',
+  codexSendMessage,
+  [
+    'let (completion, result) = oneshot::channel();',
+    '.operations',
+    '.insert(',
+    'turn_id: String::new()',
+    'request_typed(ClientRequest::TurnStart',
+    'operation.turn_id = turn_id',
+    'result',
+    '.await',
+  ],
+);
+
+const legacyShell = path.join(desktopRoot, 'src', 'adapters', 'legacy-messaging', 'legacy-messaging-shell.tsx');
+const obsoleteShell = path.join(desktopRoot, 'src', 'messaging-shell-v2.tsx');
+const legacyMotionCss = path.join(desktopRoot, 'public', 'grok-motion-parity.css');
+if (fs.existsSync(legacyShell)) violations.push('legacy-messaging-shell.tsx still exists; the cutover must delete it instead of renaming it');
+if (fs.existsSync(obsoleteShell)) violations.push('messaging-shell-v2.tsx returned');
+if (fs.existsSync(legacyMotionCss)) violations.push('legacy grok-motion-parity.css returned');
+
+if (rootShell.split('\n').length > 1200) {
+  violations.push('AgentRootShell regressed into a god shell (>1200 lines)');
+}
+forbidPattern('AgentRootShell must not own durable state in localStorage', rootShell, /\blocalStorage\b/);
+forbidPattern('AgentRootShell must not use browser-native prompt/confirm dialogs', rootShell, /window\.(?:prompt|confirm)\s*\(/);
+forbidPattern('Agent Sidebar boundary must use FabDialog instead of browser-native prompt/confirm', agentSidebarBoundary, /window\.(?:prompt|confirm)\s*\(/);
+requirePattern('Agent Sidebar boundary must own FabDialog management flows', agentSidebarBoundary, /\bFabDialog\b/);
+forbidPattern('Agent Network must use FabDialog instead of browser-native prompt/confirm', agentNetwork, /window\.(?:prompt|confirm)\s*\(/);
+requirePattern('Agent Network must own FabDialog group management flows', agentNetwork, /\bFabDialog\b/);
+requirePattern(
+  'FabInput must route checkboxes through the dedicated checkbox primitive',
+  primitives,
+  /props\.type === ['"]checkbox['"][\s\S]{0,180}styles\.checkbox/,
+);
+requirePattern(
+  'Fab checkboxes must remain native, actionable and non-zero-sized',
+  primitiveStyles,
+  /\.checkbox\s*\{[\s\S]{0,240}appearance:\s*auto[\s\S]{0,240}width:\s*14px[\s\S]{0,160}height:\s*14px/,
+);
+forbidPattern(
+  'Conversation identity must not infer Telegram from string prefixes',
+  conversationIdentity,
+  /startsWith\(['"]telegram:/,
+);
+requirePattern(
+  'Conversation identity must switch on an explicit typed domain kind',
+  conversationIdentity,
+  /switch\s*\(peer\.kind\)[\s\S]{0,1800}case ['"]telegram['"][\s\S]{0,800}case ['"]miniapp-bot['"]/,
+);
+requirePattern('AgentRootShell must consume the shared FabIconButton primitive', rootShell, /\bFabIconButton\b/);
+requirePattern(
+  'DesktopApp must boot through DesktopAuthBoundary directly into AgentRootShell',
+  desktopApp,
+  /<DesktopAuthBoundary>[\s\S]*<AgentRootShell\s+transport=\{transport\}\s+onLogout=\{onLogout\}\s*\/>[\s\S]*<\/DesktopAuthBoundary>/,
+);
+forbidPattern('DesktopApp must not import any legacy messaging shell', desktopApp, /legacy-messaging|messaging-shell-v2/);
+forbidPattern('Desktop auth boundary must not import the legacy HostClient product shell', desktopAuthBoundary, /frontend\/apps\/web\/src\/app\/host\/host-client|\bHostClient\b/);
+requirePattern('Desktop auth boundary must use low-power FabAvatar', desktopAuthBoundary, /\bFabAvatar\b/);
+requirePattern('Desktop auth boundary must expose a dedicated login gate', desktopAuthBoundary, /data-testid=[\"']login-gate[\"']/);
+
+for (const required of [
+  ['AgentSidebar', /<AgentSidebar\b/],
+  ['AgentWorkspace', /<AgentWorkspace\b/],
+  ['AgentNetwork', /<AgentNetwork\b/],
+  ['AgentCommandPalette', /<AgentCommandPalette\b/],
+  ['AgentOverlays', /<AgentOverlays\b/],
+  ['useAgentProductControllers', /useAgentProductControllers\s*\(/],
+  ['useAgentWorkspaceRuntime', /useAgentWorkspaceRuntime\s*\(/],
+  ['useAgentComputerController', /useAgentComputerController\s*\(/],
+  ['useAgentSettingsController', /useAgentSettingsController\s*\(/],
+]) requirePattern(`AgentRootShell no longer owns ${required[0]}`, rootShell, required[1]);
+
+forbidPattern(
+  'AgentRootShell rebuilt raw bot command/event ownership instead of using AgentDirectoryController',
+  rootShell,
+  /type:\s*['"]bot\.(?:list|create|update|clone|delete|setHidden)['"]|case\s+['"]bot\.(?:listed|changed)['"]/,
+);
+forbidPattern(
+  'AgentRootShell bypasses Agent runtime facades for normal Agent operations',
+  rootShell,
+  /coordinatorClient\.(?:send|interrupt|uploadAttachment|resolveApproval|listAgents|createAgent|updateAgent|duplicateAgent|deleteAgent|setAgentHidden)\s*\(/,
+);
+forbidPattern(
+  'AgentRootShell re-imported Messenger compatibility peer construction',
+  rootShell,
+  /messenger-compatibility-adapter|buildCompatibilityPeers|compatibilityMessagingEnvelope/,
+);
+requirePattern('Agent product controllers no longer compose directory ownership', productControllers, /useAgentDirectoryController\s*\(/);
+requirePattern('Agent product controllers no longer compose network ownership', productControllers, /useAgentNetworkController\s*\(/);
+requirePattern('Agent product controllers must inject the coordinator into Sidebar persistence', productControllers, /useAgentSidebarController\s*\(options\.client,\s*options\.accountScope\)/);
+requirePattern('AgentRootShell must route Sidebar RuntimeStore events', rootShell, /product\.sidebar\.handle\(event\)/);
+requirePattern('Agent Sidebar local durability must read Mahayana RuntimeStore workspace state', sidebarController, /client\.readWorkspaceState\s*\(/);
+requirePattern('Agent Sidebar local durability must write Mahayana RuntimeStore workspace state', sidebarController, /client\.writeWorkspaceState\s*\(/);
+for (const [name, source] of [
+  ['Agent Sidebar controller', sidebarController],
+  ['Agent Sidebar state', sidebarState],
+]) {
+  forbidPattern(`${name} must not write business state to localStorage`, source, /localStorage\.(?:setItem|removeItem)\s*\(/);
+  forbidPattern(`${name} must not write renderer/native client persistence`, source, /(?:writeClientPersistence|removeClientPersistence)/);
+}
+requirePattern('Agent runtime facade no longer owns queued submission lifecycle', runtimeFacade, /createAgentSubmissionQueue\s*\(/);
+requirePattern('Agent directory no longer owns bot.listed projection', directoryController, /event\.type === ['"]bot\.listed['"]/);
+requirePattern('Agent directory no longer owns bot.changed projection', directoryController, /event\.type === ['"]bot\.changed['"]/);
+requirePattern('Agent network no longer routes direct handoff through coordinator', networkController, /client\.sendAgentPeer\s*\(/);
+requirePattern('Agent network no longer routes broadcast through coordinator', networkController, /client\.broadcast\s*\(/);
+
+const compatibilityAdapters = [
+  ['contacts', path.join(desktopRoot, 'src', 'features', 'contacts', 'contacts-compatibility-adapter.tsx')],
+  ['telegram', path.join(desktopRoot, 'src', 'features', 'telegram', 'telegram-compatibility-adapter.tsx')],
+  ['miniapps', path.join(desktopRoot, 'src', 'features', 'miniapps', 'miniapp-compatibility-adapter.tsx')],
+  ['payments', path.join(desktopRoot, 'src', 'features', 'payments', 'payments-compatibility-adapter.tsx')],
+  ['calls', path.join(desktopRoot, 'src', 'features', 'calls', 'calls-compatibility-adapter.tsx')],
+  ['settings', path.join(desktopRoot, 'src', 'features', 'settings', 'settings-compatibility-adapter.tsx')],
 ];
-
-const violations = forbidden
-  .filter(([, pattern]) => pattern.test(shell))
-  .map(([label]) => label);
-
-if (!/messenger-compatibility-adapter/.test(shell)
-  || !/buildCompatibilityPeers\s*\(/.test(shell)
-  || !/compatibilityMessagingEnvelope\s*\(/.test(shell)
-  || !/CompatibilitySurface/.test(shell)) {
-  violations.push('Contacts/Telegram/Mini App compatibility routing escaped the compatibility adapter');
-}
-if (/function\s+(?:legacyKind|selfKind)\s*\(|installedMiniAppBotProjections\s*\(/.test(shell)) {
-  violations.push('Messenger shell reconstructed compatibility-only peer identity instead of using the adapter');
-}
-if (/type\s+PeerKind\s*=|type\s+MessengerSection\s*=/.test(shell)) {
-  violations.push('Messenger shell recreated compatibility navigation/domain types');
-}
-if (!/export function buildCompatibilityPeers/.test(compatibilityAdapter)
-  || !/export function compatibilityMessagingEnvelope/.test(compatibilityAdapter)
-  || !/export function CompatibilitySurface/.test(compatibilityAdapter)) {
-  violations.push('compatibility adapter no longer owns peer, event-envelope and secondary-surface routing');
-}
-if (fs.existsSync(obsoleteShellPath)) {
-  violations.push('obsolete messaging-shell-v2.tsx still exists');
-}
-if (removedMigrationRuntimePaths.some((candidate) => fs.existsSync(candidate))) {
-  violations.push('migration-only DOM Agent runtime or portal files still exist');
-}
-if (/GrokChatParityRuntime|prepareGrokChatParityRuntime|MahayanaAgentWorkbench/.test(mainEntry)) {
-  violations.push('migration-only DOM runtimes returned to the desktop product entry');
-}
-if (/setInterval\s*\(/.test(shell)) {
-  violations.push('legacy compatibility adapter reintroduced interval polling');
-}
-if (/\bBotMark\b/.test(agentTranscript) || /\bBotMark\b/.test(agentOverlays)) {
-  violations.push('Agent-owned transcript or overlays regressed to the legacy animated BotMark engine');
-}
-if (!/if \(isElectronMahayanaHostAvailable\(\)\)/.test(hostClient)
-  || /SESSION_POLL_MS/.test(remoteDeviceSupervisor)
-  || !/sessionRefreshDelay\s*\(/.test(remoteDeviceSupervisor)
-  || !/eventName === ['"]account-state-changed['"]/.test(electronMain)
-  || !/remoteDeviceAgentSupervisor\?\.sync\(\)/.test(electronMain)) {
-  violations.push('Electron remote computer ownership regressed to Renderer or fixed session polling');
-}
-if (!/readLegacyAgentWorkspaceDrafts/.test(agentDraftStore)
-  || !/clearLegacyAgentWorkspaceDrafts/.test(agentDraftStore)
-  || /localStorage\.setItem/.test(agentDraftStore)
-  || /AGENT_WORKSPACE_DRAFT_STORAGE_KEY/.test(durableAgentState)
-  || !/AGENT_WORKSPACE_DURABLE_DRAFT_KEY/.test(agentWorkspaceRuntime)
-  || !/readWorkspaceState\s*\(/.test(agentWorkspaceRuntime)
-  || !/writeWorkspaceState\s*\(/.test(agentWorkspaceRuntime)
-  || !/normalizePersistedAgentDrafts/.test(agentWorkspaceRuntime)
-  || !/read_workspace_state\s*\(/.test(runtimeStore)
-  || !/write_workspace_state\s*\(/.test(runtimeStore)) {
-  violations.push('Agent drafts are not Rust RuntimeStore-owned with migration-only localStorage fallback');
-}
-if (!/import\s+AgentRootShell\s+from\s+['"]\.\.\/agent-workspace\/agent-root-shell['"]/.test(desktopApp)
-  || !/import\s+LegacyMessagingAdapter\s+from\s+['"]\.\.\/adapters\/legacy-messaging\/legacy-messaging-shell['"]/.test(desktopApp)
-  || !/<AgentRootShell>\s*<LegacyMessagingAdapter\s*\/>\s*<\/AgentRootShell>/.test(desktopApp)
-  || !/import\s+DesktopApp\s+from\s+['"]\.\/app\/DesktopApp['"]/.test(mainEntry)
-  || !/<DesktopApp\s*\/>/.test(mainEntry)
-  || /messaging-shell-v2/.test(mainEntry)
-  || /import\s+AgentRootShell/.test(shell)
-  || /\bRootShell\b/.test(shell)
-  || /<div\s+hidden\b|hidden\s+aria-hidden=['"]true['"]/.test(shell)) {
-  violations.push('DesktopApp/AgentRootShell is not the sole visible product root or hidden legacy navigation returned');
+for (const [name, file] of compatibilityAdapters) {
+  if (!fs.existsSync(file)) {
+    violations.push(`${name} compatibility adapter is missing`);
+    continue;
+  }
+  const body = fs.readFileSync(file, 'utf8');
+  if (/Agent(?:Sidebar|Header|Network|Workspace)|useAgent(?:WorkspaceRuntime|ProductControllers|ComputerController|SidebarController|DirectoryController)|AgentRuntimeCoordinator/.test(body)) {
+    violations.push(`${name} compatibility adapter illegally owns or renders Agent runtime state`);
+  }
+  if (name === 'settings' && /<input\b[^>]*role=['"]switch['"]/.test(body)) {
+    violations.push('settings compatibility adapter bypasses FabSwitch');
+  }
 }
 
-if (!/pub fn authorize_request\s*\(/.test(capabilityBroker)
-  || !/RuntimeCommand::AuthorizeCapability/.test(runtimeLib)
-  || !/fn authorize_feature_command\s*\(/.test(featureHost)
-  || !/computer\.input\.control/.test(featureHost)
-  || !/mcp\.tool\.call/.test(featureHost)
-  || !/filesystem\.agent\.(?:read|write)/.test(featureHost)
-  || !/agent\.handoff/.test(featureHost)) {
-  violations.push('privileged FeatureHost operations bypass the Rust CapabilityBroker');
+const desktopSourceFiles = walk(path.join(desktopRoot, 'src')).filter((file) => /\.(?:ts|tsx|js|mjs|cjs)$/.test(file));
+for (const file of desktopSourceFiles) {
+  const source = fs.readFileSync(file, 'utf8');
+  const relative = path.relative(desktopRoot, file);
+  if (/\bBotMark\b|FabushiAvatarRuntime|fabushi-avatar-runtime|fabushi-bot-mark-engine|fabushi-motion-v3/.test(source)) {
+    violations.push(`${relative} reintroduced the old desktop avatar runtime`);
+  }
 }
+for (const [name, source] of [
+  ['Agent sidebar', agentSidebar],
+  ['Agent header', agentHeader],
+  ['Agent transcript', agentTranscript],
+  ['Agent overlays', agentOverlays],
+]) {
+  requirePattern(`${name} does not use low-power FabAvatar`, source, /\bFabAvatar\b/);
+}
+forbidPattern('FabAvatar must not own requestAnimationFrame', fabAvatar, /requestAnimationFrame\s*\(/);
+forbidPattern('FabAvatar must not infer business state through MutationObserver', fabAvatar, /MutationObserver|closest\s*\(/);
+requirePattern('FabAvatar must expose stable identity marker', fabAvatar, /data-fab-avatar=['"]true['"]/);
 
-if (!/pub struct ComputerControlLeaseRequest/.test(computerExecutor)
-  || !/pub fn execute_with_lease\s*\(/.test(computerExecutor)
-  || !/ComputerError::LeaseRequired/.test(computerExecutor)
-  || !/ComputerError::LeaseBusy/.test(computerExecutor)
-  || !/USER_OVERRIDE_EPOCH\.fetch_add/.test(computerExecutor)
-  || !/mahayana_computer::execute_with_lease\s*\(/.test(codexAgent)
-  || !/mahayana_computer::release_control_lease\(thread_id, turn_id\)/.test(codexAgent)
-  || !/ComputerControlOrigin::RemoteMobile[\s\S]{0,1800}execute_with_lease/.test(featureHost)
-  || !/ComputerControlOrigin::Ai[\s\S]{0,1800}execute_with_lease/.test(featureHost)
-  || /mahayana_computer::execute\([^\n]*ComputerControlOrigin::Ai/.test(codexAgent)) {
-  violations.push('physical Computer control is not enforced by a single controller lease across AI/remote execution paths');
+for (const primitive of [
+  'FabButton',
+  'FabIconButton',
+  'FabMenu',
+  'FabPopover',
+  'FabDialog',
+  'FabTooltip',
+  'FabSelect',
+  'FabBadge',
+  'FabAvatar',
+  'FabSpinner',
+  'FabInput',
+  'FabSurface',
+  'FabSwitch',
+]) requirePattern(`Fabushi UI primitive missing: ${primitive}`, primitives, new RegExp(`(?:function|const|\\{)\\s*${primitive}\\b|export\\s+\\{[^}]*\\b${primitive}\\b`));
+for (const token of ['--fab-bg-primary', '--fab-bg-raised', '--fab-border-subtle', '--fab-text-primary', '--fab-text-muted', '--fab-radius-sm', '--fab-radius-md', '--fab-space-1']) {
+  if (!tokens.includes(token)) violations.push(`Fabushi design token missing: ${token}`);
 }
+requirePattern('Agent root layout no longer exposes the three-column Agent grid', rootCss, /grid-template-columns:[\s\S]*minmax\(420px,\s*1fr\)/);
 
-if (!/inference_provider:\s*Option<InferenceProvider>/.test(hostProtocol)
-  || !/inference_provider:\s*Option<String>/.test(runtimeCore)
-  || !/session_providers:\s*AsyncMutex/.test(kernelConversation)
-  || !/inferenceProvider/.test(kernelConversation)
-  || !/pub struct ProviderRoutingEngineBackend/.test(providerRouter)
-  || !/PROVIDER_CODEX/.test(providerRouter)
-  || !/PROVIDER_OPENROUTER/.test(providerRouter)
-  || !/PROVIDER_CLAUDE_CODE/.test(providerRouter)) {
-  violations.push('per-Agent inference provider UI is not backed by the Rust Agent/session/EngineBackend contract');
+const primaryAgentUi = [
+  ['Agent sidebar', agentSidebar],
+  ['Agent header', agentHeader],
+  ['Agent transcript', agentTranscript],
+  ['Agent composer', agentComposer],
+  ['Agent search', agentSearch],
+  ['Agent overlays', agentOverlays],
+  ['Agent network', agentNetwork],
+  ['Agent settings panel', agentSettingsPanel],
+];
+for (const [name, source] of primaryAgentUi) {
+  forbidPattern(`${name} bypasses FabButton with a raw button element`, source, /<button\b/);
+  forbidPattern(`${name} bypasses FabInput with a raw input element`, source, /<input\b/);
+  forbidPattern(`${name} bypasses FabSelect with a raw select element`, source, /<select\b/);
 }
-if (!/revision:\s*number/.test(accountSidebarLayout)
-  || !/baseEtag:\s*current\.etag/.test(accountSidebarLayout)
-  || !/expectAbsent:\s*true/.test(accountSidebarLayout)
-  || !/writeAccountAgentStoreObject\s*\(/.test(accountSidebarLayout)
-  || !/export function mergeAccountSidebarLayoutState\s*\(/.test(accountSidebarLayout)
-  || !/AccountSidebarLayoutWriteOptions/.test(accountSidebarLayout)
-  || !/mergeOrderedKeys\s*\(/.test(accountSidebarLayout)
-  || !/mergeAccountSidebarLayoutState\(base, localState, current\?\.layout \?\? null\)/.test(accountSidebarLayout)
-  || !/cloudSnapshotRef/.test(sidebarController)
-  || !/mergeAccountSidebarLayoutState\s*\(/.test(sidebarController)
-  || !/readAccountSidebarLayout\(scope\)/.test(sidebarController)
-  || /setInterval\s*\(/.test(sidebarController)
-  || !/subscribeNativeDesktopEvents\s*\(/.test(sidebarController)
-  || !/['"]account-state-changed['"]/.test(sidebarController)
-  || !/\{ base: currentBase \}/.test(sidebarController)) {
-  violations.push('Agent sidebar sections/pinned order lost cross-device CAS/revision merge convergence');
-}
+for (const [name, source] of [
+  ['Agent sidebar', agentSidebar],
+  ['Agent header', agentHeader],
+  ['Agent transcript', agentTranscript],
+  ['Agent composer', agentComposer],
+  ['Agent search', agentSearch],
+  ['Agent overlays', agentOverlays],
+  ['Agent network', agentNetwork],
+  ['Agent settings panel', agentSettingsPanel],
+]) requirePattern(`${name} no longer consumes FabButton`, source, /\bFabButton\b/);
+for (const [name, source] of [
+  ['Agent sidebar', agentSidebar],
+  ['Agent composer', agentComposer],
+  ['Agent search', agentSearch],
+  ['Agent network', agentNetwork],
+  ['Agent settings panel', agentSettingsPanel],
+]) requirePattern(`${name} no longer consumes FabInput`, source, /\bFabInput\b/);
+requirePattern('Agent sidebar no longer consumes FabSelect', agentSidebar, /\bFabSelect\b/);
+requirePattern('Agent settings panel no longer consumes FabSelect', agentSettingsPanel, /\bFabSelect\b/);
 
-if (!/useAgentWorkspaceRuntime\s*\(/.test(shell)) {
-  violations.push('Agent workspace runtime facade is not mounted by the desktop Agent shell');
-}
-if (!/openConversation:\s*openAgentConversation/.test(shell)
-  || !/uploadAttachment:\s*uploadAgentAttachment/.test(shell)
-  || !/uploadAgentAttachment\(peer\.key/.test(shell)) {
-  violations.push('normal Agent conversation/attachment IO escaped the workspace runtime facade');
-}
-if (!/useAgentComputerController\s*\(/.test(shell)) {
-  violations.push('Agent Computer lifecycle controller is not mounted by the desktop Agent shell');
-}
-if (/\bnew\s+RemoteComputerDesktopController\b|\bRTCPeerConnection\b|\bSIGNAL_POLL_MS\b|\bSESSION_POLL_MS\b|\bHEARTBEAT_MS\b/.test(computerController)
-  || /import\s*\{[^}]*\bRemoteComputerDesktopController\b[^}]*\}\s*from/.test(computerController)
-  || !/getRemoteComputerBackgroundState/.test(computerController)
-  || !/remote-computer-background-state/.test(computerController)
-  || !/class RemoteDeviceAgentSupervisor/.test(remoteDeviceSupervisor)
-  || !/sessionRefreshDelay\s*\(/.test(remoteDeviceSupervisor)) {
-  violations.push('Agent Computer lifecycle regressed into the React renderer instead of Main');
-}
 if (/backgroundThrottling:\s*false/.test(electronMain)
   || /HOST_EVENT_LONG_POLL_MS/.test(electronMain)
-  || /feature\.receive/.test(electronMain)
-  || !/host\.onRuntimeEvent\s*\(/.test(electronMain)) {
-  violations.push('desktop power/event architecture regressed to unthrottled renderer or Host polling');
+  || /feature\.receive/.test(electronMain)) {
+  violations.push('desktop power architecture regressed to unthrottled renderer or Host polling');
 }
-if (!/const initialAgentWorkspaceHydrated = hostReady/.test(shell)
-  || /hydrated:\s*initialLegacyHydrated/.test(shell)
-  || /data-initial-host-hydrated=\{initialLegacyHydrated/.test(shell)
-  || /if \(!hostReady \|\| !initialLegacyHydrated\) return;[\s\S]{0,240}agentMcpController\.list/.test(shell)) {
-  violations.push('AgentRootShell/Computer/MCP readiness regressed behind legacy Messenger hydration');
+requirePattern('Electron Main no longer receives pushed Host runtime events', electronMain, /host\.onRuntimeEvent\s*\(/);
+forbidPattern('Electron Host bridge must not retain feature.receive RPC compatibility', hostProcess, /feature\.receive/);
+forbidPattern('Electron Mahayana edge must not expose feature.receive polling', mahayanaEdge, /feature\.receive/);
+forbidPattern(
+  'Electron renderer transport reintroduced feature.receive polling fallback',
+  electronTransport,
+  /feature\.receive|startEventPump|pumpEvents/,
+);
+forbidPattern(
+  'Electron renderer transport must not persist conversation history in localStorage',
+  electronTransport,
+  /\blocalStorage\b|CONVERSATION_JOURNAL_KEY|persistConversationJournal/,
+);
+requirePattern(
+  'Electron renderer transport must require pushed runtime events',
+  electronTransport,
+  /typeof window\.mahayana\.subscribe === ['"]function['"]/,
+);
+forbidPattern('Renderer Computer controller reintroduced WebRTC/polling ownership', computerController, /RemoteComputerDesktopController|RTCPeerConnection|SIGNAL_POLL_MS|SESSION_POLL_MS|HEARTBEAT_MS/);
+requirePattern('Renderer Computer controller must send explicit human takeover commands', computerController, /\.takeComputerControl\s*\([\s\S]{0,1000}\.releaseComputerControl\s*\(/);
+requirePattern('Renderer Computer controller must project host controlChanged state', computerController, /event\.type\s*!==\s*['"]computer\.controlChanged['"]/);
+requirePattern('Agent Computer panel must expose Take Control', agentOverlays, />Take Control</);
+requirePattern('Agent Computer panel must expose Release Control', agentOverlays, />Release Control</);
+requirePattern('Agent root must surface waiting-user Computer takeover', rootShell, /event\.type\s*===\s*['"]turn\.state['"][\s\S]{0,500}event\.state\s*===\s*['"]waiting-user['"][\s\S]{0,900}computer\.openForAgent/);
+requirePattern('FeatureHost must acquire a human ComputerControlLease', featureHost, /FeatureCommand::ComputerTakeControl[\s\S]{0,2600}acquire_control_lease\s*\(/);
+requirePattern('FeatureHost must release a human ComputerControlLease', featureHost, /FeatureCommand::ComputerReleaseControl[\s\S]{0,2200}release_control_lease\s*\(/);
+requirePattern('FeatureHost takeover must emit computer.controlChanged', featureHost, /FeatureCommand::ComputerTakeControl[\s\S]{0,3000}HostEvent::ComputerControlChanged/);
+requirePattern('Remote-device Main supervisor lost adaptive refresh scheduling', remoteSupervisor, /sessionRefreshDelay\s*\(/);
+
+// Execution-order checks prevent actor/broker types from existing while real calls bypass them.
+const startMessageIndex = runtimeLib.indexOf('fn start_message');
+const startMessageSource = startMessageIndex >= 0 ? runtimeLib.slice(startMessageIndex) : '';
+requireOrdered(
+  'Conversation execution must register its actor, serialize provider execution, persist the terminal state, and release the actor run',
+  startMessageSource,
+  [
+    '.actors',
+    '.actor(&conversation_id)',
+    '.register(turn_id.clone())',
+    'record_turn(&turn)',
+    'record_run(&run)',
+    'actor.gate.lock().await',
+    'provider.send_message(request, sink).await',
+    'transition_turn_state(&event_tx, &store, &context, terminal_state)',
+    'actor.finish(&run_id)',
+  ],
+);
+
+function commandArm(name, nextName) {
+  const start = runtimeLib.indexOf(`RuntimeCommand::${name}`);
+  const end = nextName ? runtimeLib.indexOf(`RuntimeCommand::${nextName}`, start + 1) : -1;
+  if (start < 0) return '';
+  return runtimeLib.slice(start, end > start ? end : undefined);
 }
-if (!/useAgentProductControllers\s*\(/.test(shell)
-  || !/agentMcpController\s*=\s*agentProductControllers\.mcp/.test(shell)
-  || !/agentMcpController\.handle\(event\)/.test(shell)
-  || !/useAgentMcpController\s*\(/.test(productControllers)
-  || !/projectAgentMcpReferences\s*\(/.test(mcpController)
-  || !/event\.type === ['"]mcp\.listed['"]/.test(mcpController)) {
-  violations.push('MCP reference discovery escaped the Agent-owned Composer/controller boundary');
-}
-if (!/agentNetworkController\.handle\(event\)/.test(shell)
-  || !/groups=\{agentNetworkController\.groups\}/.test(shell)
-  || !/peerMessagesByAgentId=\{agentNetworkController\.peerMessagesByAgentId\}/.test(shell)
-  || !/onSendPeer=\{agentNetworkController\.sendPeer\}/.test(shell)) {
-  violations.push('Agent Network state or direct handoff escaped the Agent-owned controller boundary');
-}
-if (/from\s+['"](?:\.\.\/)+grok-shell\//.test(agentComposer)) {
-  violations.push('primary Agent Composer implementation still depends on the Grok compatibility shell');
-}
-if (/composerValue=\{composer\}/.test(shell) || /onComposerChange=\{updateComposer\}/.test(shell)) {
-  violations.push('primary Agent Composer leaked back into renderer-global Messenger composer state');
-}
-if (/onDraftRestored\s*:\s*\([^)]*\)\s*=>\s*\{[^}]*setComposer/s.test(shell)) {
-  violations.push('failed Agent submissions copy restored drafts back into Messenger composer state');
-}
-if (!/composerValue=\{agentWorkspaceController\.draftForPeer\(activePeer\.key\)\}/.test(shell)
-  || !/onComposerSubmit=\{\(event\) => sendAgentMessage\(event, activePeer\)\}/.test(shell)) {
-  violations.push('primary Agent Composer is not bound directly to AgentWorkspaceController');
-}
-if (!/composerRichText=\{agentWorkspaceController\.richTextForPeer\(activePeer\.key\)\}/.test(shell)) {
-  violations.push('primary Agent Composer is not bound to Agent rich-text draft state');
-}
-if (!/from\s+['"]@tiptap\/react['"]/.test(agentRichEditor)
-  || !/useEditor\s*\(/.test(agentRichEditor)
-  || !/commands\.setContent\(expected,\s*\{\s*emitUpdate:\s*false\s*\}\)/.test(agentRichEditor)) {
-  violations.push('Agent rich editor no longer uses the Fabu-compatible TipTap document boundary');
-}
-if (/contentEditable=/.test(agentComposer) || /innerText\s*=/.test(agentComposer)) {
-  violations.push('primary Agent Composer regressed to a hand-managed contentEditable surface');
-}
-if (!/AGENT_ATTACHMENT_LIMIT/.test(agentComposer)
-  || !/const stageFiles\s*=/.test(agentComposer)
-  || !/onPasteFiles=\{stageFiles\}/.test(agentComposer)) {
-  violations.push('Agent Composer no longer caps file selection/drop/paste at the Agent attachment boundary');
-}
-if (!/voiceState === ['"]idle['"]/.test(agentComposer)
-  || !/if \(canSend\) formRef\.current\?\.requestSubmit\(\)/.test(agentComposer)) {
-  violations.push('Agent Composer can submit while voice capture/transcription is active');
-}
-if (!/event\.isComposing/.test(agentComposer)
-  || !/editorControlsRef\.current\?\.blur\(\)/.test(agentComposer)
-  || !/editorControlsRef\.current\?\.insertText\(transcript\)/.test(agentComposer)) {
-  violations.push('Agent Composer keyboard/voice editor contract drifted from the frozen Fabu reference');
-}
-if (!/insertText\(value: string\): void/.test(agentRichEditor)
-  || !/editor\.chain\(\)\.focus\(\)\.insertContent/.test(agentRichEditor)) {
-  violations.push('Agent rich editor no longer exposes cursor-preserving text insertion');
+const invokeCapabilitySource = commandArm('InvokeCapability', 'ListPluginCommands');
+requireOrdered(
+  'InvokeCapability must authorize and pass the fail-closed execution gate before creating an execution run',
+  invokeCapabilitySource,
+  ['capability_broker', '.authorize(', 'require_capability_execution_allowed(', 'start_message('],
+);
+requirePattern(
+  'Capability execution gate must explicitly stop NeedsUser before execution',
+  runtimeLib,
+  /fn require_capability_execution_allowed[\s\S]{0,1200}CapabilityPolicyDecision::NeedsUser\s*=>\s*Err\(/,
+);
+requirePattern(
+  'Capability execution gate must explicitly stop Deny before execution',
+  runtimeLib,
+  /fn require_capability_execution_allowed[\s\S]{0,1200}CapabilityPolicyDecision::Deny\s*=>\s*Err\(/,
+);
+requireOrdered(
+  'Local Mini App tools must authorize before executing the tool',
+  commandArm('CallLocalPluginTool', 'McpServers'),
+  ['capability_broker', 'authorize_request(', 'CapabilityPolicyDecision::Allow', '.call_tool('],
+);
+requireOrdered(
+  'Direct MCP tools must authorize before backend execution',
+  commandArm('McpToolCall', 'ConversationHistory'),
+  ['authorize_human_capability(', '.call_mcp_tool('],
+);
+for (const [command, nextCommand] of [
+  ['McpOauthLogin', 'McpOauthLogout'],
+  ['McpOauthLogout', 'McpRemove'],
+  ['McpRemove', 'McpSetCustomInstructions'],
+  ['McpSetCustomInstructions', 'McpSetToolDisabled'],
+  ['McpSetToolDisabled', 'McpRefresh'],
+  ['McpRefresh', 'McpToolCall'],
+]) {
+  requireOrdered(
+    `Runtime ${command} must authorize before backend mutation`,
+    commandArm(command, nextCommand),
+    ['authorize_human_capability(', 'backend'],
+  );
 }
 
-if (!/agentSidebarController\s*=\s*agentProductControllers\.sidebar/.test(shell)
-  || !/useAgentSidebarController\s*\(/.test(productControllers)) {
-  violations.push('Agent sidebar controller escaped the Agent product-controller boundary');
-}
-if (/readAgentSidebarSections(?:Durable)?\s*\(|persistAgentSidebarSections\s*\(|setGrokPinnedOrder\s*\(|setGrokSidebarSections\s*\(|setGrokSelectedAgentKeys\s*\(/.test(shell)) {
-  violations.push('Messenger shell recreated Agent sidebar state or persistence ownership');
-}
-if (/new AgentRuntimeCoordinator\s*\(/.test(shell)) {
-  violations.push('Messenger shell recreated AgentRuntimeCoordinator ownership');
-}
-if (/createAgentSubmissionQueue\s*\(/.test(shell)) {
-  violations.push('Messenger shell recreated Agent submission-queue ownership');
-}
-if (!/submit:\s*submitAgentWorkspace/.test(shell) || !/submitAgentWorkspace\s*\(\s*\{/.test(shell)) {
-  violations.push('primary Agent send path is not routed through Agent workspace runtime submit');
-}
-if (/readAgentWorkspaceDrafts\s*\(|persistAgentWorkspaceDrafts\s*\(/.test(shell)) {
-  violations.push('Messenger shell recreated Agent draft persistence ownership');
-}
-if (!/agentTranscriptStore\.(?:thread|entries)\(activePeer\.key\)/.test(shell)) {
-  violations.push('normal Agent rendering no longer reads directly from AgentTranscriptStore');
-}
-if (/toDisplayAgentMessages\(agentTranscriptStore\.(?:thread|entries)/.test(shell)) {
-  violations.push('normal Agent rendering reintroduced the Messenger DisplayMessage bridge');
-}
-const regenerateStart = shell.indexOf('function regenerateBotMessage');
-const regenerateEnd = shell.indexOf('async function stopAgentOperation', regenerateStart);
-const regenerateSlice = regenerateStart >= 0 && regenerateEnd > regenerateStart
-  ? shell.slice(regenerateStart, regenerateEnd)
-  : '';
-if (!regenerateSlice.includes('agentTranscriptStore.userPromptBefore(activePeer.key, message.id)')) {
-  violations.push('Agent regenerate action no longer resolves its prompt from canonical Agent transcript');
-}
-if (/\bmessages\.(?:findIndex|slice)\b/.test(regenerateSlice)) {
-  violations.push('Agent regenerate action fell back to renderer-global Messenger messages');
-}
-if (!/agentCoordinatorClient\.connect\s*\(/.test(shell)) {
-  violations.push('Host transport lifecycle escaped AgentCoordinatorClient');
-}
-
-if (!/import\s+AgentNetwork\s+from\s+['"](?:\.\.\/)+agent-workspace\/agent-network['"]/.test(shell)
-  || !/<AgentNetwork\b/.test(shell)) {
-  violations.push('primary shell is not mounting the Agent-owned Network surface');
-}
-
-if (!/import\s+AgentCommandPalette\s+from\s+['"](?:\.\.\/)+agent-workspace\/agent-command-palette['"]/.test(shell)
-  || !/<AgentCommandPalette\b/.test(shell)) {
-  violations.push('primary shell is not mounting the Agent-owned command palette boundary');
-}
-
-if (!/agentPaletteController\s*=\s*agentProductControllers\.palette/.test(shell)
-  || !/useAgentCommandPaletteController\s*\(/.test(productControllers)) {
-  violations.push('command palette lifecycle escaped the Agent product-controller boundary');
-}
-if (/setGrokPalette|agentPaletteOpen|agentPaletteQuery/.test(shell)) {
-  violations.push('primary shell recreated command palette runtime state');
-}
-
-if (!/from\s+['"](?:\.\.\/)+agent-workspace\/agent-model['"]/.test(shell)
-  || !/projectAgentSidebarItems\s*\(/.test(shell)
-  || !/projectActiveAgentKey\s*\(/.test(shell)) {
-  violations.push('primary shell is not consuming the Agent-owned navigation projection model');
-}
-if (!/agentNetworkController\s*=\s*agentProductControllers\.network/.test(shell)
-  || !/useAgentNetworkController\s*\(/.test(productControllers)) {
-  violations.push('Agent Network UI/controller state escaped the Agent product-controller boundary');
-}
-if (/from\s+['"][^'"]*use-agent-(?:command-palette|sidebar|network|workflow|mcp|store-sync|directory)-controller['"]/.test(shell)) {
-  violations.push('compatibility shell directly constructs Agent product controllers');
-}
-if (/agentCoordinatorClient\.(?:listGroups|createGroup|updateGroup|deleteGroup|sendGroup|broadcast)\s*\(/.test(shell)) {
-  violations.push('primary shell directly owns Agent collaboration commands');
-}
-for (const method of ['listGroups', 'createGroup', 'updateGroup', 'deleteGroup', 'sendGroup', 'broadcast']) {
-  if (!new RegExp(`client\\.${method}\\s*\\(`).test(networkController)) {
-    violations.push(`Agent Network controller no longer routes ${method} through AgentCoordinatorClient`);
-  }
-}
-
-if (!/agentWorkflowController\s*=\s*agentProductControllers\.workflow/.test(shell)
-  || !/useAgentWorkflowController\s*\(/.test(productControllers)) {
-  violations.push('Agent workflow discovery escaped the Agent product-controller boundary');
-}
-if (/agentWorkflowsById|setAgentWorkflowsById|type:\s*['"]workflow\.list['"]/.test(shell)) {
-  violations.push('primary shell recreated Agent workflow cache or raw workflow.list ownership');
-}
-if (!/client\.listWorkflows\s*\(/.test(workflowController)
-  || !/event\.type === ['"]workflow\.listed['"]/.test(workflowController)
-  || !/event\.type === ['"]workflow\.changed['"]/.test(workflowController)) {
-  violations.push('Agent workflow controller no longer owns workflow list/cache refresh');
-}
-
-if (!/agentStoreSyncController\s*=\s*agentProductControllers\.storeSync/.test(shell)
-  || !/useAgentStoreSyncController\s*\(/.test(productControllers)) {
-  violations.push('Agent memory/automation CAS sync escaped the Agent product-controller boundary');
-}
-if (/type:\s*['"]memory\.list['"]|case\s+['"]memory\.(?:changed|listed)['"]|case\s+['"]automation\.(?:changed|listed)['"]/.test(shell)) {
-  violations.push('primary shell recreated Agent memory/automation runtime sync ownership');
-}
-if (!/client\.listMemory\s*\(/.test(storeSyncController)
-  || !/event\.type === ['"]memory\.changed['"]/.test(storeSyncController)
-  || !/event\.type === ['"]memory\.listed['"]/.test(storeSyncController)
-  || !/event\.type === ['"]automation\.changed['"]/.test(storeSyncController)
-  || !/event\.type === ['"]automation\.listed['"]/.test(storeSyncController)) {
-  violations.push('Agent store sync controller no longer owns memory/automation synchronization');
-}
-
-if (!/useAgentSettingsController\s*\(/.test(shell)) {
-  violations.push('Agent settings mutation/generation state escaped the Agent settings controller');
-}
-if (/function\s+(?:updateActiveAgentProfile|setActiveAgentNotifications)\s*\(/.test(shell)) {
-  violations.push('primary shell recreated Agent settings mutations');
-}
-
-if (!/agentDirectoryController\s*=\s*agentProductControllers\.directory/.test(shell)
-  || !/useAgentDirectoryController\s*\(/.test(productControllers)) {
-  violations.push('Agent directory cache/commands escaped the Agent product-controller boundary');
-}
-if (/type:\s*['"]bot\.(?:list|create|update|clone|delete|setHidden)['"]|case\s+['"]bot\.(?:listed|changed)['"]|setBots\s*\(/.test(shell)) {
-  violations.push('primary shell recreated raw Bot/Agent directory ownership');
-}
-if (/agentCoordinatorClient\.(?:listAgents|createAgent|updateAgent|duplicateAgent|deleteAgent|setAgentHidden)\s*\(/.test(shell)) {
-  violations.push('primary shell bypassed AgentDirectoryController');
-}
-for (const method of ['listAgents', 'createAgent', 'updateAgent', 'duplicateAgent', 'deleteAgent', 'setAgentHidden']) {
-  if (!new RegExp(`client\\.${method}\\s*\\(`).test(directoryController)) {
-    violations.push(`Agent directory controller no longer routes ${method} through AgentCoordinatorClient`);
-  }
-}
-if (!/event\.type === ['"]bot\.listed['"]/.test(directoryController)
-  || !/event\.type === ['"]bot\.changed['"]/.test(directoryController)) {
-  violations.push('Agent directory controller no longer owns Host directory event projection');
-}
-
-if (!/pub enum TurnState/.test(runtimeCore)
-  || !/TurnStateChanged/.test(runtimeCore)
-  || !/struct ConversationActorState/.test(conversationActor)
-  || !/pub struct ConversationActorRegistry/.test(conversationActor)
-  || !/AsyncMutex/.test(conversationActor)
-  || !/pub fn actor\s*\(&self, conversation_id: &ConversationId\)/.test(conversationActor)
-  || !/PRAGMA journal_mode=WAL/.test(runtimeStore)
-  || !/CREATE TABLE IF NOT EXISTS turns/.test(runtimeStore)
-  || !/CREATE TABLE IF NOT EXISTS runs/.test(runtimeStore)
-  || !/CREATE TABLE IF NOT EXISTS workspace_state/.test(runtimeStore)
-  || !/CREATE TABLE IF NOT EXISTS capability_audit/.test(runtimeStore)
-  || !/CREATE TABLE IF NOT EXISTS computer_leases/.test(runtimeStore)
-  || !/pub fn acquire_computer_lease/.test(runtimeStore)
-  || !/pub struct CapabilityBroker/.test(capabilityBroker)
-  || !/pub fn authorize_request\s*\(/.test(capabilityBroker)
-  || !/\.capability_broker[\s\S]{0,160}\.authorize_request\s*\(/.test(runtimeLib)
-  || !/\.actors[\s\S]{0,100}\.actor\(&conversation_id\)/.test(runtimeLib)
-  || !/actor\.gate\.lock\(\)\.await/.test(runtimeLib)
-  || !/transition_turn_state/.test(runtimeLib)) {
-  violations.push('Mahayana Rust runtime lost ConversationActor/Turn/Run/CapabilityBroker/SQLite ownership');
-}
+requirePattern('ConversationActor registry is missing', actor, /pub struct ConversationActorRegistry/);
+requirePattern('ConversationActor per-conversation gate is missing', actor, /AsyncMutex/);
+requirePattern('Runtime no longer resolves a ConversationActor before execution', runtimeLib, /\.actors[\s\S]{0,120}\.actor\(&conversation_id\)/);
+requirePattern('Runtime no longer locks the ConversationActor execution gate', runtimeLib, /actor\.gate\.lock\(\)\.await/);
+requirePattern('Runtime no longer persists LogicalTurn/ExecutionRun state transitions', runtimeLib, /transition_turn_state/);
+requirePattern(
+  'Regenerate must preserve one logical user message id instead of creating a duplicate turn',
+  rootShell,
+  /prepareRetry\([\s\S]{0,500}messageId:\s*prompt\.id[\s\S]{0,240}retryOfMessageId:\s*prompt\.id/,
+);
+requirePattern(
+  'Transcript retry must replace the prior run projection instead of duplicating the user prompt',
+  agentTranscriptStore,
+  /prepareRetry\([\s\S]{0,900}message\.operationId === operationId/,
+);
+requirePattern(
+  'Runtime retry must resolve the next durable ExecutionRun generation',
+  runtimeLib,
+  /retry_of_client_message_id[\s\S]{0,1600}retry_turn_generation/,
+);
+requirePattern(
+  'RuntimeStore must compute retry generation from durable runs',
+  runtimeStore,
+  /pub fn retry_turn_generation[\s\S]{0,1800}MAX\(r\.generation\)/,
+);
+requireOrdered(
+  'RuntimeStore must persist restartable turn execution inputs',
+  runtimeStore,
+  ['CREATE TABLE IF NOT EXISTS turn_requests', 'pub fn record_turn_request'],
+);
+requirePattern(
+  'Runtime must recover interrupted logical turns before durable handoffs',
+  runtimeLib,
+  /recover_interrupted_turns\(\)\?[\s\S]{0,120}recover_pending_handoffs\(\)\?/,
+);
+requirePattern(
+  'Runtime restart recovery must resume one durable logical turn as a retry generation',
+  runtimeLib,
+  /fn recover_interrupted_turns[\s\S]{0,3200}TurnState::Recovering[\s\S]{0,1200}start_message\(/,
+);
+requirePattern(
+  'Rust restart recovery must fail closed for waiting-user turns',
+  runtimeLib,
+  /pending\.state == TurnState::WaitingUser[\s\S]{0,900}TurnState::Failed[\s\S]{0,900}explicit retry is required/,
+);
+requireOrdered(
+  'Renderer recovery must reclaim a Rust recovering run by conversation identity',
+  runtimeCoordinator,
+  [
+    'peerByConversationId',
+    'prepareOperationRecovery',
+    "event.state === 'recovering'",
+    'claimOperation(event.operationId, recoveryPeerKey)',
+  ],
+);
+requirePattern(
+  'Recovering turn state must synthesize the canonical assistant run projection after restart cleanup',
+  agentTranscriptStore,
+  /applyTurnState[\s\S]{0,2200}activeStates[\s\S]{0,700}recovering[\s\S]{0,1800}createAssistantTurn\(event\.operationId, updatedAtMs\)/,
+);
+requirePattern(
+  'Waiting-user restart handling must remain fail-closed',
+  runtimeCoordinator,
+  /turnStateByOperation\.get\(operationId\) === ['"]waiting-user['"][\s\S]{0,1200}operation\.interrupted/,
+);
+requirePattern('CapabilityBroker is missing', broker, /pub struct CapabilityBroker/);
+requirePattern('CapabilityBroker no longer owns authorization decisions', broker, /pub fn authorize_request\s*\(/);
+requirePattern('Runtime InvokeCapability bypasses CapabilityBroker', runtimeLib, /RuntimeCommand::InvokeCapability[\s\S]{0,2800}capability_broker[\s\S]{0,320}\.authorize\s*\(/);
+requirePattern('CapabilityBroker descriptor authorization bypasses request policy and audit', broker, /pub fn authorize[\s\S]{0,900}self\.authorize_request\s*\(/);
+requirePattern(
+  'Kernel operation completion must terminalize outstanding Agent activity steps',
+  kernelConversation,
+  /KernelEvent::OperationCompleted[\s\S]{0,260}finish_active_activities\(RuntimeActivityStatus::Completed\)/,
+);
+requirePattern(
+  'Kernel operation failure must fail outstanding Agent activity steps',
+  kernelConversation,
+  /KernelEvent::OperationFailed[\s\S]{0,320}finish_active_activities\(RuntimeActivityStatus::Failed\)/,
+);
+requirePattern(
+  'Provider approval requests must enter CapabilityBroker as needs-user before execution',
+  runtimeLib,
+  /RuntimeEvent::ApprovalRequested[\s\S]{0,1800}CapabilityBroker::new[\s\S]{0,600}CapabilityAvailability::PermissionRequired/,
+);
+requireOrdered(
+  'Approval resolution must record final CapabilityBroker allow/deny before provider execution',
+  commandArm('ResolveApproval', null),
+  ['capability_broker', 'authorize_request(', 'provider.resolve_approval('],
+);
+requirePattern(
+  'External collaboration must be a first-class durable Runtime handoff',
+  runtimeLib,
+  /RuntimeCommand::ExternalHandoff[\s\S]{0,1600}dispatch_handoff\s*\(/,
+);
+requireOrdered(
+  'Runtime handoff must authorize through CapabilityBroker before enqueue/start',
+  runtimeLib.slice(runtimeLib.indexOf('fn dispatch_handoff'), runtimeLib.indexOf('fn list_conversations')),
+  ['capability_broker', 'authorize_request(', 'require_capability_execution_allowed', 'reserve_handoff_slot', 'enqueue_handoff', 'start_message('],
+);
+requirePattern(
+  'Every dynamic Computer execution must enter CapabilityBroker before provider execution',
+  runtimeLib,
+  /RuntimeEvent::AgentActivity[\s\S]{0,1500}kind == ["']computer["'][\s\S]{0,1800}CapabilityBroker::new[\s\S]{0,900}computer\.input\.control/,
+);
+requireOrdered(
+  'Codex Computer pre-execution activity must propagate Runtime policy failure',
+  codexAgentBackend,
+  [
+    'fn emit_computer_activity',
+    'Result<(), AgentError>',
+    'events.emit(AgentEvent::Activity',
+    'if let Err(error) = self.emit_computer_activity',
+  ],
+);
+requirePattern(
+  'Durable handoff fan-out must consult RuntimeStore',
+  runtimeLib,
+  /reserve_handoff_slot[\s\S]{0,800}count_handoffs_for_run/,
+);
+requirePattern(
+  'Durable handoff dispatch journal is missing',
+  runtimeStore,
+  /CREATE TABLE IF NOT EXISTS handoff_dispatch/,
+);
+requirePattern(
+  'Runtime startup must recover unfinished handoffs after Ready',
+  runtimeLib,
+  /RuntimeEvent::Ready[\s\S]{0,320}recover_pending_handoffs\(\)/,
+);
+requirePattern(
+  'Runtime must persist handoff running state after target dispatch',
+  runtimeLib,
+  /enqueue_handoff[\s\S]{0,1000}start_message[\s\S]{0,500}mark_handoff_started/,
+);
+requirePattern(
+  'Runtime must persist handoff terminal state from target execution',
+  runtimeLib,
+  /mark_handoff_terminal\(intent_id, result\.is_ok\(\), now_millis\(\)\)/,
+);
+requirePattern(
+  'Retry generations must project the canonical recovering state',
+  runtimeLib,
+  /retrying = retry_of_client_message_id\.is_some\(\)[\s\S]{0,2600}TurnState::Recovering/,
+);
+requirePattern(
+  'Recovery must reuse the same logical turn through retryOfClientMessageId',
+  runtimeLib,
+  /fn recover_pending_handoffs[\s\S]{0,5200}retry_message_id[\s\S]{0,1200}start_message/,
+);
+requireOrdered(
+  'Runtime startup must recover interrupted user turns before durable handoffs',
+  runtimeLib.slice(runtimeLib.indexOf('RuntimeEvent::Ready'), runtimeLib.indexOf('pub fn status')),
+  ['RuntimeEvent::Ready', 'recover_interrupted_turns()?', 'recover_pending_handoffs()?'],
+);
+requireOrdered(
+  'Interrupted user-turn recovery must reuse durable request input and retry the same logical turn',
+  runtimeLib.slice(runtimeLib.indexOf('fn recover_interrupted_turns'), runtimeLib.indexOf('fn recover_pending_handoffs')),
+  [
+    'pending.text',
+    'TurnState::Recovering',
+    'self.start_message(',
+    'Some(pending.message_id.to_string())',
+  ],
+);
+requirePattern(
+  'Waiting-user Rust restart handling must fail closed and require explicit retry',
+  runtimeLib,
+  /pending\.state == TurnState::WaitingUser[\s\S]{0,1200}TurnState::Failed[\s\S]{0,1400}explicit retry is required/,
+);
+requirePattern(
+  'Runtime must persist turn execution input before provider execution',
+  runtimeLib,
+  /record_turn\(&turn\)[\s\S]{0,500}record_turn_request\([\s\S]{0,700}record_run\(&run\)/,
+);
+requirePattern(
+  'Recoverable user turns must exclude Agent handoff intents from the ordinary-turn recovery lane',
+  runtimeStore,
+  /pub fn recoverable_turns[\s\S]{0,5000}p\.kind = 'agent-handoff'/,
+);
+requirePattern(
+  'FeatureHost Agent sends must use Runtime handoff rather than hidden SendMessage',
+  featureHost,
+  /fn schedule_agent_handoff[\s\S]{0,2600}RuntimeCommand::Handoff[\s\S]{0,2600}RuntimeCommand::ExternalHandoff/,
+);
+requirePattern(
+  'FeatureHost broadcasts must use external durable handoff batches',
+  featureHost,
+  /FeatureCommand::AgentBroadcast[\s\S]{0,3000}schedule_external_agent_handoff/,
+);
+requirePattern(
+  'FeatureHost group turns must use external durable handoff',
+  featureHost,
+  /fn start_next_group_turn[\s\S]{0,6000}RuntimeCommand::ExternalHandoff/,
+);
+requirePattern('FeatureHost no longer routes privileged commands through RuntimeCommand::AuthorizeCapability', featureHost, /RuntimeCommand::AuthorizeCapability/);
+requirePattern('Capability audit persistence is missing', runtimeStore, /CREATE TABLE IF NOT EXISTS capability_audit/);
+requirePattern('Turn persistence is missing', runtimeStore, /CREATE TABLE IF NOT EXISTS turns/);
+requirePattern('Run persistence is missing', runtimeStore, /CREATE TABLE IF NOT EXISTS runs/);
+requirePattern('Computer lease persistence is missing', runtimeStore, /CREATE TABLE IF NOT EXISTS computer_leases/);
+requirePattern('Physical Computer control lease is missing', computerRuntime, /pub fn execute_with_lease\s*\(/);
 
 if (violations.length) {
-  console.error('Agent workspace boundary regression detected:');
-  for (const violation of violations) console.error(`- ${violation}`);
+  console.error('Agent architecture boundary regression detected:');
+  for (const violation of [...new Set(violations)]) console.error(`- ${violation}`);
   process.exitCode = 1;
 } else {
-  console.log('Agent workspace boundary check passed.');
+  console.log('Agent architecture boundary check passed.');
 }

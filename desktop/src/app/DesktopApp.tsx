@@ -1,14 +1,9 @@
 import React from 'react';
 import AgentRootShell from '../agent-workspace/agent-root-shell';
-import LegacyMessagingAdapter from '../adapters/legacy-messaging/legacy-messaging-shell';
+import DesktopAuthBoundary from './desktop-auth-boundary';
 
-/**
- * Single desktop product entry.
- *
- * AgentRootShell is selected by the app layer. Legacy messaging, contacts,
- * Telegram and MiniApp compatibility can render inside it, but adapters cannot
- * replace the root product boundary.
- */
 export default function DesktopApp() {
-  return <AgentRootShell><LegacyMessagingAdapter /></AgentRootShell>;
+  return <DesktopAuthBoundary>
+    {({ transport, onLogout }) => <AgentRootShell transport={transport} onLogout={onLogout} />}
+  </DesktopAuthBoundary>;
 }

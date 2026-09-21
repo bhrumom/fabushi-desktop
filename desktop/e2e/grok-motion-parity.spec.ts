@@ -19,66 +19,29 @@ async function launchDesktopApp(appDataDir: string) {
   });
 }
 
-test('Grok parity motion layer exposes distinct state choreography', async () => {
-  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-grok-motion-'));
+test('desktop avatar cutover stays low-power and contains no legacy motion runtime', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-avatar-cutover-'));
   const app = await launchDesktopApp(appDataDir);
 
   try {
     const page = await app.firstWindow();
-    await expect.poll(async () => page.evaluate(() =>
-      Array.from(document.styleSheets).some((candidate) =>
-        String(candidate.href ?? '').includes('grok-motion-parity.css'))),
-    { timeout: 10_000 }).toBe(true);
-    const contract = await page.evaluate(() => {
-      const sheet = Array.from(document.styleSheets).find((candidate) =>
-        String(candidate.href ?? '').includes('grok-motion-parity.css'));
-      const cssText = sheet ? Array.from(sheet.cssRules).map((rule) => rule.cssText).join('\n') : '';
+    await expect(page.getByTestId('desktop-shell')).toBeVisible({ timeout: 20_000 });
+    const avatar = page.locator('[data-fab-avatar="true"]').first();
+    await expect(avatar).toBeVisible();
+    await expect(avatar).toHaveAttribute('data-state', /^(idle|thinking|working|waiting|speaking|success|error|offline)$/);
 
-      const wrapper = document.createElement('span');
-      wrapper.dataset.engine = 'fabushi-motion-v3';
-      wrapper.dataset.agentState = 'thinking';
-      const aura = document.createElement('span');
-      aura.className = '_botMarkAura_contract_';
-      wrapper.append(aura);
-      document.body.append(wrapper);
+    const contract = await page.evaluate(() => ({
+      legacyStylesheetLoaded: Array.from(document.styleSheets).some((sheet) =>
+        String(sheet.href ?? '').includes('grok-motion-parity.css')),
+      legacyAvatarNodes: document.querySelectorAll(
+        '[data-fabushi-avatar-runtime], [data-engine="fabushi-motion-v3"], [data-renderer="fabushi-owned-svg-runtime"]',
+      ).length,
+      fabAvatars: document.querySelectorAll('[data-fab-avatar="true"]').length,
+    }));
 
-      const animationFor = (state: string) => {
-        wrapper.dataset.agentState = state;
-        return getComputedStyle(aura).animationName;
-      };
-      const animations = {
-        thinking: animationFor('thinking'),
-        searching: animationFor('searching'),
-        working: animationFor('working'),
-        toolRunning: animationFor('tool-running'),
-        speaking: animationFor('speaking'),
-        result: animationFor('result'),
-        error: animationFor('error'),
-      };
-      wrapper.remove();
-      return {
-        loaded: Boolean(sheet),
-        cssText,
-        animations,
-      };
-    });
-
-    expect(contract.loaded).toBe(true);
-    expect(contract.cssText).toContain('gbfGrokThinkingAura');
-    expect(contract.cssText).toContain('gbfGrokSearchAura');
-    expect(contract.cssText).toContain('gbfGrokWorkAura');
-    expect(contract.cssText).toContain('gbfGrokSpeakingAura');
-    expect(contract.cssText).toContain('gbfGrokResultAura');
-    expect(contract.cssText).toContain('gbfGrokAlertAura');
-    expect(contract.cssText).toContain('prefers-reduced-motion');
-
-    expect(contract.animations.thinking).toContain('gbfGrokThinkingAura');
-    expect(contract.animations.searching).toContain('gbfGrokSearchAura');
-    expect(contract.animations.working).toContain('gbfGrokWorkAura');
-    expect(contract.animations.toolRunning).toContain('gbfGrokWorkAura');
-    expect(contract.animations.speaking).toContain('gbfGrokSpeakingAura');
-    expect(contract.animations.result).toContain('gbfGrokResultAura');
-    expect(contract.animations.error).toContain('gbfGrokAlertAura');
+    expect(contract.legacyStylesheetLoaded).toBe(false);
+    expect(contract.legacyAvatarNodes).toBe(0);
+    expect(contract.fabAvatars).toBeGreaterThan(0);
   } finally {
     await app.close();
     await rm(appDataDir, { recursive: true, force: true });

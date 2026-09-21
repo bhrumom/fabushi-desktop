@@ -48,6 +48,9 @@ export class AgentRuntimeCoordinator {
   private deltaTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   private lastRecoveredGeneration = -1;
   private readonly peerByAgentId = new Map<string, string>();
+  private readonly peerByConversationId = new Map<string, string>();
+  private readonly turnStateByOperation = new Map<string, Extract<RuntimeEvent, { type: 'turn.state' }>['state']>();
+  private readonly recoveryMessageByPeer = new Map<string, string>();
 
   constructor(
     private readonly workspace: AgentWorkspaceController,
@@ -79,14 +82,46 @@ export class AgentRuntimeCoordinator {
     return this.knownRuntimeIds().length > 0;
   }
 
-  bindAgentPeers(bindings: readonly { agentId: string; peerKey: string }[]): void {
+  bindAgentPeers(bindings: readonly { agentId: string; peerKey: string; conversationId?: string }[]): void {
     this.peerByAgentId.clear();
+    this.peerByConversationId.clear();
     for (const binding of bindings) {
       if (binding.agentId.trim() && binding.peerKey.trim()) this.peerByAgentId.set(binding.agentId, binding.peerKey);
+      if (binding.conversationId?.trim() && binding.peerKey.trim()) {
+        this.peerByConversationId.set(binding.conversationId, binding.peerKey);
+      }
     }
   }
 
+  /**
+   * Command bridge context is transport-facing: conversationKey is normally a
+   * Rust conversation id (for example `codex:agent:research`), while the
+   * workspace registry is keyed by the canonical UI peer (for example
+   * `agent:research`). Resolve through the Agent directory bindings before
+   * touching request ownership so one request can never be registered under
+   * both keys.
+   */
+  private peerForCommandBridge(detail: MahayanaCommandBridgeDetail): string | null {
+    const context = detail.context;
+    const agentId = context?.agentId?.trim();
+    if (agentId) {
+      const peerKey = this.peerByAgentId.get(agentId);
+      if (peerKey) return peerKey;
+    }
+
+    const conversationId = context?.conversationId?.trim() || context?.conversationKey?.trim();
+    if (conversationId) {
+      const peerKey = this.peerByConversationId.get(conversationId);
+      if (peerKey) return peerKey;
+    }
+
+    const candidate = context?.conversationKey?.trim();
+    if (!candidate) return null;
+    return [...this.peerByAgentId.values()].includes(candidate) ? candidate : null;
+  }
+
   beginLocalTurn(input: AgentLocalTurn): void {
+    this.recoveryMessageByPeer.delete(input.peerKey);
     this.workspace.beginRequest(input.peerKey, input.requestId);
     this.transcripts.appendUserMessage(input.peerKey, {
       id: input.messageId,
@@ -138,10 +173,29 @@ export class AgentRuntimeCoordinator {
   claimOperation(operationId: string, fallbackPeerKey?: string | null): string | null {
     if (!operationId || this.workspace.isOperationFinished(operationId)) return null;
     const alreadyOwned = this.workspace.peerForOperation(operationId);
-    if (alreadyOwned) return alreadyOwned;
 
+    // When a runtime event carries conversation ownership, that binding is
+    // authoritative. Compatibility events can arrive before command adoption
+    // and may tentatively claim the only pending peer; repair that projection
+    // rather than preserving cross-Agent contamination.
+    if (fallbackPeerKey) {
+      if (alreadyOwned && alreadyOwned !== fallbackPeerKey) {
+        this.transcripts.removeOperation(alreadyOwned, operationId);
+        this.emitTranscript(alreadyOwned);
+      }
+      const requestId = this.workspace.requestForPeer(fallbackPeerKey);
+      if (requestId && requestId !== operationId) {
+        this.transcripts.adoptOperation(fallbackPeerKey, requestId, operationId);
+      }
+      this.workspace.claimOperation(operationId, fallbackPeerKey);
+      this.transcripts.markUserOperationAccepted(fallbackPeerKey, operationId);
+      this.emitTranscript(fallbackPeerKey);
+      this.emitOperation(fallbackPeerKey);
+      return fallbackPeerKey;
+    }
+
+    if (alreadyOwned) return alreadyOwned;
     const fallback = this.workspace.peerForRequest(operationId)
-      ?? fallbackPeerKey
       ?? this.workspace.onlyPendingPeer();
     const requestId = fallback ? this.workspace.requestForPeer(fallback) : null;
     const peerKey = this.workspace.claimRuntimeOperation(operationId, fallback);
@@ -203,6 +257,7 @@ export class AgentRuntimeCoordinator {
     const finishedPeer = this.workspace.finishRuntimeOperation(operationId);
     if (!finishedPeer) return null;
     this.transcripts.finishOperation(finishedPeer, operationId, status);
+    this.turnStateByOperation.delete(operationId);
     this.emitTranscript(finishedPeer);
     this.emitOperation(finishedPeer);
     this.hooks.onOperationTerminal?.(finishedPeer, operationId, status, message);
@@ -218,20 +273,30 @@ export class AgentRuntimeCoordinator {
     const requests = this.workspace.requestSnapshot();
     const touched = new Set<string>();
     for (const [peerKey, operationId] of Object.entries(operations)) {
-      this.transcripts.appendAssistantTurnEvent(peerKey, {
-        type: 'operation.interrupted',
-        timestamp: event.timestamp,
-        operationId,
-      });
-      this.transcripts.finishOperation(peerKey, operationId, 'interrupted');
+      if (this.turnStateByOperation.get(operationId) === 'waiting-user') {
+        this.transcripts.appendAssistantTurnEvent(peerKey, {
+          type: 'operation.interrupted',
+          timestamp: event.timestamp,
+          operationId,
+        });
+        this.transcripts.finishOperation(peerKey, operationId, 'interrupted');
+        this.workspace.finishRuntimeOperation(operationId);
+        this.turnStateByOperation.delete(operationId);
+        touched.add(peerKey);
+        this.hooks.onOperationTerminal?.(
+          peerKey,
+          operationId,
+          'interrupted',
+          event.reason || event.error || 'Agent runtime restarted while waiting for user approval.',
+        );
+        continue;
+      }
+
+      const recoveryMessageId = this.transcripts.prepareOperationRecovery(peerKey, operationId);
+      if (recoveryMessageId) this.recoveryMessageByPeer.set(peerKey, recoveryMessageId);
       this.workspace.finishRuntimeOperation(operationId);
+      this.turnStateByOperation.delete(operationId);
       touched.add(peerKey);
-      this.hooks.onOperationTerminal?.(
-        peerKey,
-        operationId,
-        'interrupted',
-        event.reason || event.error || 'Agent runtime restarted.',
-      );
     }
     for (const [peerKey, requestId] of Object.entries(requests)) {
       this.workspace.cancelRequest(requestId);
@@ -247,7 +312,7 @@ export class AgentRuntimeCoordinator {
 
   handleCommandBridge(detail: MahayanaCommandBridgeDetail): boolean {
     if (detail.command.type !== 'chat.send') return false;
-    const peerKey = detail.context?.conversationKey;
+    const peerKey = this.peerForCommandBridge(detail);
     if (!peerKey) return false;
 
     const requestId = detail.command.requestId;
@@ -351,9 +416,21 @@ export class AgentRuntimeCoordinator {
       }
 
       case 'turn.state': {
-        const peerKey = this.workspace.peerForOperation(event.operationId)
-          ?? this.claimOperation(event.operationId);
+        // Keep recoveryPeerKey as the architecture-guarded name, but resolve it
+        // for every lifecycle state: conversation identity is authoritative for
+        // concurrent Agent ownership, not only during restart recovery.
+        const recoveryPeerKey = this.peerByConversationId.get(event.conversationId);
+        const isRecovering = event.state === 'recovering';
+        const peerKey = this.claimOperation(event.operationId, recoveryPeerKey);
         if (!peerKey) return this.workspace.isOperationFinished(event.operationId);
+        if (isRecovering) {
+          const messageId = this.recoveryMessageByPeer.get(peerKey);
+          if (messageId) {
+            this.transcripts.adoptRecoveredOperation(peerKey, messageId, event.operationId);
+            this.recoveryMessageByPeer.delete(peerKey);
+          }
+        }
+        this.turnStateByOperation.set(event.operationId, event.state);
         this.transcripts.applyTurnState(peerKey, event);
         this.emitTranscript(peerKey);
         if (event.state === 'completed') {
@@ -439,6 +516,8 @@ export class AgentRuntimeCoordinator {
     if (this.deltaTimer !== null) globalThis.clearTimeout(this.deltaTimer);
     this.deltaTimer = null;
     this.pendingDeltas.clear();
+    this.turnStateByOperation.clear();
+    this.recoveryMessageByPeer.clear();
     this.workspace.clearOperations();
   }
 
@@ -446,5 +525,7 @@ export class AgentRuntimeCoordinator {
     if (this.deltaTimer !== null) globalThis.clearTimeout(this.deltaTimer);
     this.deltaTimer = null;
     this.pendingDeltas.clear();
+    this.turnStateByOperation.clear();
+    this.recoveryMessageByPeer.clear();
   }
 }

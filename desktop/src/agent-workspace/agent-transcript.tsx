@@ -1,4 +1,5 @@
 import React, { type ReactNode } from 'react';
+import { FabButton } from '../ui/primitives/fab-primitives';
 import { AppWindow, ArrowDown, Check, Copy, Edit3, FileText, Monitor, RotateCcw } from 'lucide-react';
 import FabAvatar from '../ui/avatar/fab-avatar';
 import { MahayanaAssistantTurnView } from '../mahayana-assistant-turn-view';
@@ -55,8 +56,8 @@ function CodeBlock({ value, language, complete }: { value: string; language: str
   return <div className={styles.codeBlock}>
     <div className={styles.codeToolbar}>
       <span>{language || '代码'}</span>
-      {previewable ? <button type="button" onClick={() => setPreview(!preview)} aria-expanded={preview}>{preview ? '关闭预览' : '预览小程序'}</button> : null}
-      <button type="button" onClick={() => void copy()} aria-label="复制代码">{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? '已复制' : '复制'}</button>
+      {previewable ? <FabButton variant="bare" type="button" onClick={() => setPreview(!preview)} aria-expanded={preview}>{preview ? '关闭预览' : '预览小程序'}</FabButton> : null}
+      <FabButton variant="bare" type="button" onClick={() => void copy()} aria-label="复制代码">{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? '已复制' : '复制'}</FabButton>
     </div>
     {preview && previewable ? <iframe className={styles.generatedPreview} title="生成的小程序预览" sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={'<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; font-src data:; connect-src \'none\'; form-action \'none\'; base-uri \'none\'">' + value} /> : null}
     <pre><code>{value}</code></pre>
@@ -123,9 +124,9 @@ function MessageActions({ entry, onCopyMessage, onRegenerate, onEdit }: {
 }) {
   if (!onCopyMessage && !onRegenerate && !onEdit) return null;
   return <div className={styles.messageActions} role="toolbar" aria-label="消息操作">
-    {onCopyMessage ? <button type="button" onClick={() => onCopyMessage(entry)} aria-label="复制消息" title="复制"><Copy size={15} /></button> : null}
-    {entry.role === 'peer' && onRegenerate ? <button type="button" onClick={() => onRegenerate(entry)} aria-label="重新生成" title="重新生成"><RotateCcw size={15} /></button> : null}
-    {entry.role === 'me' && onEdit ? <button type="button" onClick={() => onEdit(entry)} aria-label="编辑消息" title="编辑并重试"><Edit3 size={15} /></button> : null}
+    {onCopyMessage ? <FabButton variant="bare" type="button" onClick={() => onCopyMessage(entry)} aria-label="复制消息" title="复制"><Copy size={15} /></FabButton> : null}
+    {entry.role === 'peer' && onRegenerate ? <FabButton variant="bare" type="button" onClick={() => onRegenerate(entry)} aria-label="重新生成" title="重新生成"><RotateCcw size={15} /></FabButton> : null}
+    {entry.role === 'me' && onEdit ? <FabButton variant="bare" type="button" onClick={() => onEdit(entry)} aria-label="编辑消息" title="编辑并重试"><Edit3 size={15} /></FabButton> : null}
   </div>;
 }
 
@@ -137,10 +138,10 @@ function ToolGroup({ entries }: { entries: TranscriptEntry[] }) {
   const [expanded, setExpanded] = React.useState<boolean | null>(null);
   const open = expanded ?? running;
   return <section className={styles.stepGroup} aria-label="任务步骤" data-testid="agent-step-group">
-    <button type="button" className={styles.stepSummary} aria-expanded={open} onClick={() => setExpanded(!open)}>
+    <FabButton variant="bare" type="button" className={styles.stepSummary} aria-expanded={open} onClick={() => setExpanded(!open)}>
       <span>{running ? '正在执行' : failed ? '执行失败' : interrupted ? '已停止' : '执行记录'}</span>
       <span>{completed} / {entries.length} 步完成 · {open ? '收起' : '展开'}</span>
-    </button>
+    </FabButton>
     {open ? <ol className={styles.stepList}>{entries.map((entry) => <li key={entry.id} className={styles.actionRow} data-testid="agent-step" data-operation-id={entry.operationId} data-status={entry.status}>
       <span className={styles.actionMarker} aria-hidden="true" />
       <div><strong>{entry.title || '处理任务'}</strong>{entry.detail ? <details><summary>查看详情</summary><pre>{entry.detail}</pre></details> : null}</div>
@@ -189,9 +190,9 @@ function ApprovalCard({ entry, onResolveApproval }: {
     <p>{approval.detail || approval.reason}</p>
     {approval.location ? <small>Location: {approval.location}</small> : null}
     {pending && onResolveApproval ? <div className={styles.approvalActions} role="group" aria-label="Approval actions">
-      <button type="button" onClick={() => onResolveApproval(approval.approvalId, 'allow-once')}>Allow once</button>
-      <button type="button" onClick={() => onResolveApproval(approval.approvalId, 'allow-session')}>Allow for session</button>
-      <button type="button" data-danger="true" onClick={() => onResolveApproval(approval.approvalId, 'deny')}>Deny</button>
+      <FabButton variant="bare" type="button" onClick={() => onResolveApproval(approval.approvalId, 'allow-once')}>Allow once</FabButton>
+      <FabButton variant="bare" type="button" onClick={() => onResolveApproval(approval.approvalId, 'allow-session')}>Allow for session</FabButton>
+      <FabButton variant="bare" type="button" data-danger="true" onClick={() => onResolveApproval(approval.approvalId, 'deny')}>Deny</FabButton>
     </div> : null}
   </section>;
 }
@@ -204,7 +205,7 @@ export default function AgentTranscript({
   return <div className={styles.root}>
     <div ref={messageAreaRef} className={styles.messageArea} data-testid="message-list" data-agent-operation-id={activeOperationId ?? undefined} onScroll={onScroll} aria-label={title + ' 会话'}>
       <div className={styles.botIntro}><FabAvatar identity={botId} state="idle" size={44} label={title} /><div><h2>{title}</h2><p>{description || 'Agent 会在这个独立工作区中持续工作。'}</p></div></div>
-      {hasEarlierMessages && onLoadEarlier ? <button type="button" className={styles.loadEarlier} onClick={onLoadEarlier}>查看更早的消息</button> : null}
+      {hasEarlierMessages && onLoadEarlier ? <FabButton variant="bare" type="button" className={styles.loadEarlier} onClick={onLoadEarlier}>查看更早的消息</FabButton> : null}
       {entries.length === 0 ? <div className={styles.emptyState}><strong>开始一个新会话</strong><span>向 {title} 提问，回复、工具和授权会按一个连续时间线显示。</span></div> : <div className={styles.transcript}>
         {entries.map((entry, index) => {
           if (entry.kind === 'approval' && entry.approval) {
@@ -248,14 +249,14 @@ export default function AgentTranscript({
                   <span><strong>{attachment.name}</strong>{attachment.sizeBytes != null ? <small>{formatAgentAttachmentSize(attachment.sizeBytes)}</small> : null}</span>
                 </span>)}
               </div> : null}
-              {entry.miniAppId && onOpenMiniApp ? <button type="button" className={styles.artifactCard} data-testid="bot-miniapp-result" onClick={() => onOpenMiniApp(entry.miniAppId!)}><AppWindow size={22} /><span><strong>打开小程序</strong><small>查看并使用本次结果</small></span></button> : null}
+              {entry.miniAppId && onOpenMiniApp ? <FabButton variant="bare" type="button" className={styles.artifactCard} data-testid="bot-miniapp-result" onClick={() => onOpenMiniApp(entry.miniAppId!)}><AppWindow size={22} /><span><strong>打开小程序</strong><small>查看并使用本次结果</small></span></FabButton> : null}
               <div className={styles.messageState}>{entry.queued ? '排队中' : entry.optimistic ? '发送中' : null}</div>
             </div>
             <MessageActions entry={entry} onCopyMessage={onCopyMessage} onRegenerate={onRegenerate} onEdit={onEdit} />
           </article>;
         })}
       </div>}
-      {showScrollToLatest && onScrollToLatest ? <button type="button" className={styles.scrollLatest} onClick={onScrollToLatest} aria-label="回到最新消息"><ArrowDown size={16} />回到最新</button> : null}
+      {showScrollToLatest && onScrollToLatest ? <FabButton variant="bare" type="button" className={styles.scrollLatest} onClick={onScrollToLatest} aria-label="回到最新消息"><ArrowDown size={16} />回到最新</FabButton> : null}
     </div>
   </div>;
 }

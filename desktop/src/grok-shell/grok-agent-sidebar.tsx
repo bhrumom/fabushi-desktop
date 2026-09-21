@@ -17,9 +17,14 @@ import {
   Search,
   Settings,
   Trash2,
+  Users,
+  MessageCircle,
+  WalletCards,
+  Phone,
   X,
 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
+import { FabMenu, FabMenuItem, FabPopover, FabButton, FabInput, FabSelect } from '../ui/primitives/fab-primitives';
 import FabAvatar, { type FabAvatarState } from '../ui/avatar/fab-avatar';
 import {
   AGENT_SIDEBAR_UNASSIGNED_ID,
@@ -54,6 +59,10 @@ export type GrokAgentSidebarProps = {
   onOpenNetwork(): void;
   onOpenPlugins(): void;
   onOpenSettings(): void;
+  onOpenContacts?(): void;
+  onOpenTelegram?(): void;
+  onOpenPayments?(): void;
+  onOpenCalls?(): void;
   onToggleSelection?(item: GrokAgentSidebarItem): void;
   onRangeSelection?(item: GrokAgentSidebarItem): void;
   onClearSelection?(): void;
@@ -123,7 +132,7 @@ function AgentRow({
     data-pinned={item.pinned || undefined}
     data-selected={selected || undefined}
   >
-    <button
+    <FabButton variant="bare"
       type="button"
       className={styles.row}
       aria-current={active ? 'page' : undefined}
@@ -204,8 +213,8 @@ function AgentRow({
                   : item.lastMessage?.trim() || item.description || (item.isGroup ? 'Agent group' : 'Agent')
         }</small>
       </span>}
-    </button>
-    {collapsed ? null : <button
+    </FabButton>
+    {collapsed ? null : <FabButton variant="bare"
       type="button"
       className={styles.more}
       aria-label={`${item.name} actions`}
@@ -214,13 +223,13 @@ function AgentRow({
         event.stopPropagation();
         setMenuOpen((value) => !value);
       }}
-    ><MoreHorizontal size={16} /></button>}
+    ><MoreHorizontal size={16} /></FabButton>}
     {!collapsed && menuOpen ? <div className={styles.menu} role="menu" onClick={(event) => event.stopPropagation()}>
-      <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onTogglePin(); }}><Pin size={14} />{item.pinned ? 'Unpin' : 'Pin'}</button>
-      {!item.isGroup ? <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onRename(); }}><Pencil size={14} />Rename</button> : null}
-      {!item.isGroup ? <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onDuplicate(); }}><Copy size={14} />Duplicate</button> : null}
-      {!item.isGroup ? <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onHide(); }}><EyeOff size={14} />Hide</button> : null}
-      {!item.isGroup ? <button type="button" role="menuitem" data-danger="true" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</button> : null}
+      <FabButton variant="bare" type="button" role="menuitem" onClick={() => { setMenuOpen(false); onTogglePin(); }}><Pin size={14} />{item.pinned ? 'Unpin' : 'Pin'}</FabButton>
+      {!item.isGroup ? <FabButton variant="bare" type="button" role="menuitem" onClick={() => { setMenuOpen(false); onRename(); }}><Pencil size={14} />Rename</FabButton> : null}
+      {!item.isGroup ? <FabButton variant="bare" type="button" role="menuitem" onClick={() => { setMenuOpen(false); onDuplicate(); }}><Copy size={14} />Duplicate</FabButton> : null}
+      {!item.isGroup ? <FabButton variant="bare" type="button" role="menuitem" onClick={() => { setMenuOpen(false); onHide(); }}><EyeOff size={14} />Hide</FabButton> : null}
+      {!item.isGroup ? <FabButton variant="bare" type="button" role="menuitem" data-danger="true" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</FabButton> : null}
     </div> : null}
   </div>;
 }
@@ -263,19 +272,20 @@ function SidebarSectionHeader({
       onDropAgent(key);
     }}
   >
-    <button type="button" className={styles.sectionToggle} onClick={onToggle} disabled={!onToggle} aria-expanded={!collapsed}>
+    <FabButton variant="bare" type="button" className={styles.sectionToggle} onClick={onToggle} disabled={!onToggle} aria-expanded={!collapsed}>
       {collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
       <span>{name}</span><small>{count}</small>
-    </button>
+    </FabButton>
     <span className={styles.sectionActions}>
-      {onCreate ? <button type="button" title="New section" aria-label="New section" onClick={onCreate}><FolderPlus size={13} /></button> : null}
-      {!synthetic && onRename ? <button type="button" title="Rename section" aria-label={`Rename ${name}`} onClick={onRename}><Pencil size={12} /></button> : null}
-      {!synthetic && onDelete ? <button type="button" title="Delete section" aria-label={`Delete ${name}`} onClick={onDelete}><Trash2 size={12} /></button> : null}
+      {onCreate ? <FabButton variant="bare" type="button" title="New section" aria-label="New section" onClick={onCreate}><FolderPlus size={13} /></FabButton> : null}
+      {!synthetic && onRename ? <FabButton variant="bare" type="button" title="Rename section" aria-label={`Rename ${name}`} onClick={onRename}><Pencil size={12} /></FabButton> : null}
+      {!synthetic && onDelete ? <FabButton variant="bare" type="button" title="Delete section" aria-label={`Delete ${name}`} onClick={onDelete}><Trash2 size={12} /></FabButton> : null}
     </span>
   </div>;
 }
 
 export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
+  const [compatibilityMenuOpen, setCompatibilityMenuOpen] = useState(false);
   const normalized = props.query.trim().toLocaleLowerCase();
   const visible = useMemo(
     () => props.agents.filter((item) => !item.hidden && (!normalized || `${item.name} ${item.description}`.toLocaleLowerCase().includes(normalized))),
@@ -318,26 +328,26 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
   return <div className={styles.root} data-collapsed={props.collapsed || undefined}>
     <header className={styles.header}>
       <div className={styles.headerActions}>
-        {!props.collapsed ? <button type="button" className={styles.headerIcon} onClick={props.onBroadcast} title="Broadcast to agents" aria-label="Broadcast to agents"><Megaphone size={16} /></button> : null}
-        {!props.collapsed ? <button type="button" className={styles.headerIcon} onClick={props.onOpenNetwork} title="Agent network" aria-label="Agent network"><Network size={16} /></button> : null}
-        <button type="button" className={styles.newButton} onClick={props.onNewAgent} title="New chat" data-testid="grok-new-agent">
+        {!props.collapsed ? <FabButton variant="bare" type="button" className={styles.headerIcon} onClick={props.onBroadcast} title="Broadcast to agents" aria-label="Broadcast to agents"><Megaphone size={16} /></FabButton> : null}
+        {!props.collapsed ? <FabButton variant="bare" type="button" className={styles.headerIcon} onClick={props.onOpenNetwork} title="Agent network" aria-label="Agent network"><Network size={16} /></FabButton> : null}
+        <FabButton variant="bare" type="button" className={styles.newButton} onClick={props.onNewAgent} title="New chat" data-testid="grok-new-agent">
           <Plus size={18} /><span>{props.collapsed ? null : 'New'}</span>
-        </button>
+        </FabButton>
       </div>
-      <button type="button" className={styles.collapseButton} onClick={props.onToggleCollapsed} title={props.collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+      <FabButton variant="bare" type="button" className={styles.collapseButton} onClick={props.onToggleCollapsed} title={props.collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
         {props.collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
-      </button>
+      </FabButton>
     </header>
 
     {props.collapsed ? null : <label className={styles.search}>
       <Search size={15} />
-      <input value={props.query} onChange={(event) => props.onQuery(event.target.value)} placeholder="Search" aria-label="Search agents" />
+      <FabInput variant="bare" value={props.query} onChange={(event) => props.onQuery(event.target.value)} placeholder="Search" aria-label="Search agents" />
     </label>}
 
     {!props.collapsed && selectionEnabled ? <div className={styles.selectionBar} data-testid="agent-selection-bar">
       <strong>{selectedItems.length} selected</strong>
-      <button type="button" onClick={() => props.onCreateSection?.(movableSelected)} disabled={!props.onCreateSection}><FolderPlus size={13} />Section</button>
-      <select
+      <FabButton variant="bare" type="button" onClick={() => props.onCreateSection?.(movableSelected)} disabled={!props.onCreateSection}><FolderPlus size={13} />Section</FabButton>
+      <FabSelect variant="bare"
         aria-label="Move selected agents"
         defaultValue=""
         disabled={!movableSelected.length || !props.onMoveSelectedToSection}
@@ -350,9 +360,9 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
         <option value="">Move…</option>
         {(props.sections ?? []).map((section) => <option key={section.id} value={section.id}>{section.name}</option>)}
         <option value={AGENT_SIDEBAR_UNASSIGNED_ID}>Unassigned</option>
-      </select>
-      <button type="button" data-danger="true" aria-label="Delete selected agents" onClick={() => props.onDeleteSelected?.(selectedItems)} disabled={!props.onDeleteSelected}><Trash2 size={13} /></button>
-      <button type="button" aria-label="Clear selection" onClick={props.onClearSelection}><X size={13} /></button>
+      </FabSelect>
+      <FabButton variant="bare" type="button" data-danger="true" aria-label="Delete selected agents" onClick={() => props.onDeleteSelected?.(selectedItems)} disabled={!props.onDeleteSelected}><Trash2 size={13} /></FabButton>
+      <FabButton variant="bare" type="button" aria-label="Clear selection" onClick={props.onClearSelection}><X size={13} /></FabButton>
     </div> : null}
 
     <div className={styles.list}>
@@ -383,8 +393,25 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
 
     <footer className={styles.footer}>
       {hiddenCount > 0 && !props.collapsed ? <div className={styles.hiddenHint}><EyeOff size={14} /><span>{hiddenCount} hidden bots</span></div> : null}
-      <button type="button" onClick={props.onOpenPlugins} title="Plugins"><Plug size={17} />{props.collapsed ? null : <span>Plugins</span>}</button>
-      <button type="button" onClick={props.onOpenSettings} title="Settings"><Settings size={17} />{props.collapsed ? null : <span>{props.accountLabel}</span>}</button>
+      <FabButton variant="bare" type="button" onClick={props.onOpenPlugins} title="Plugins"><Plug size={17} />{props.collapsed ? null : <span>Plugins</span>}</FabButton>
+      <FabPopover
+        open={compatibilityMenuOpen}
+        align="start"
+        anchor={<FabButton variant="bare"
+          type="button"
+          title="Messaging and compatibility features"
+          aria-expanded={compatibilityMenuOpen}
+          onClick={() => setCompatibilityMenuOpen((open) => !open)}
+        ><MoreHorizontal size={17} />{props.collapsed ? null : <span>More</span>}</FabButton>}
+      >
+        <FabMenu label="Messaging and compatibility features">
+          {props.onOpenContacts ? <FabMenuItem onClick={() => { setCompatibilityMenuOpen(false); props.onOpenContacts?.(); }}><Users size={15} /> Contacts</FabMenuItem> : null}
+          {props.onOpenTelegram ? <FabMenuItem onClick={() => { setCompatibilityMenuOpen(false); props.onOpenTelegram?.(); }}><MessageCircle size={15} /> Telegram / Messaging</FabMenuItem> : null}
+          {props.onOpenPayments ? <FabMenuItem onClick={() => { setCompatibilityMenuOpen(false); props.onOpenPayments?.(); }}><WalletCards size={15} /> Payments</FabMenuItem> : null}
+          {props.onOpenCalls ? <FabMenuItem onClick={() => { setCompatibilityMenuOpen(false); props.onOpenCalls?.(); }}><Phone size={15} /> Calls</FabMenuItem> : null}
+        </FabMenu>
+      </FabPopover>
+      <FabButton variant="bare" type="button" onClick={props.onOpenSettings} title="Settings"><Settings size={17} />{props.collapsed ? null : <span>{props.accountLabel}</span>}</FabButton>
     </footer>
   </div>;
 }

@@ -300,15 +300,20 @@ impl ConversationProvider for KernelConversationProvider {
             metadata: json!({"runtime": "mahayana-kernel"}),
         };
         if !request.hidden {
-            self.state
-                .lock()
-                .map_err(|_| {
-                    ConversationError::Provider("kernel conversation state mutex poisoned".into())
-                })?
-                .history
-                .push(user_message);
-            let history_path = self.current_history_path()?;
-            persist_history(&self.state, history_path.as_deref()).map_err(kernel_error)?;
+            let mut state = self.state.lock().map_err(|_| {
+                ConversationError::Provider("kernel conversation state mutex poisoned".into())
+            })?;
+            let already_recorded = state.history.iter().any(|message| {
+                message.id == user_message.id
+                    && message.conversation_id == user_message.conversation_id
+                    && message.role == MessageRole::User
+            });
+            if !already_recorded {
+                state.history.push(user_message);
+                drop(state);
+                let history_path = self.current_history_path()?;
+                persist_history(&self.state, history_path.as_deref()).map_err(kernel_error)?;
+            }
         }
 
         let kernel_operation_id = KernelOperationId::from_string(request.operation_id.as_str());
@@ -319,6 +324,7 @@ impl ConversationProvider for KernelConversationProvider {
             state: Arc::clone(&self.state),
             history_path: self.current_history_path()?,
             hidden: request.hidden,
+            active_activities: Mutex::new(BTreeMap::new()),
         });
         self.backend
             .run(
@@ -391,6 +397,14 @@ impl ConversationProvider for KernelConversationProvider {
     }
 }
 
+#[derive(Clone)]
+struct ActiveRuntimeActivity {
+    kind: String,
+    title: String,
+    detail: Option<String>,
+    metadata: Option<Value>,
+}
+
 struct RuntimeKernelEventBridge {
     conversation_id: ConversationId,
     operation_id: OperationId,
@@ -398,6 +412,7 @@ struct RuntimeKernelEventBridge {
     state: Arc<Mutex<ConversationState>>,
     history_path: Option<PathBuf>,
     hidden: bool,
+    active_activities: Mutex<BTreeMap<String, ActiveRuntimeActivity>>,
 }
 
 impl RuntimeKernelEventBridge {
@@ -416,6 +431,28 @@ impl RuntimeKernelEventBridge {
         status: RuntimeActivityStatus,
         metadata: Option<Value>,
     ) -> Result<(), KernelError> {
+        {
+            let mut active = self.active_activities.lock().map_err(|_| {
+                KernelError::Backend("kernel activity state mutex poisoned".into())
+            })?;
+            match status {
+                RuntimeActivityStatus::Running => {
+                    active.insert(
+                        step_id.clone(),
+                        ActiveRuntimeActivity {
+                            kind: kind.clone(),
+                            title: title.clone(),
+                            detail: detail.clone(),
+                            metadata: metadata.clone(),
+                        },
+                    );
+                }
+                RuntimeActivityStatus::Completed | RuntimeActivityStatus::Failed => {
+                    active.remove(&step_id);
+                }
+            }
+        }
+
         self.emit_runtime(RuntimeEvent::AgentActivity {
             operation_id: self.operation_id.clone(),
             step_id,
@@ -425,6 +462,28 @@ impl RuntimeKernelEventBridge {
             status,
             metadata,
         })
+    }
+
+    fn finish_active_activities(&self, status: RuntimeActivityStatus) -> Result<(), KernelError> {
+        debug_assert!(status != RuntimeActivityStatus::Running);
+        let active = {
+            let mut activities = self.active_activities.lock().map_err(|_| {
+                KernelError::Backend("kernel activity state mutex poisoned".into())
+            })?;
+            std::mem::take(&mut *activities)
+        };
+        for (step_id, activity) in active {
+            self.emit_runtime(RuntimeEvent::AgentActivity {
+                operation_id: self.operation_id.clone(),
+                step_id,
+                kind: activity.kind,
+                title: activity.title,
+                detail: activity.detail,
+                status,
+                metadata: activity.metadata,
+            })?;
+        }
+        Ok(())
     }
 }
 
@@ -558,17 +617,22 @@ impl KernelEventSink for RuntimeKernelEventBridge {
                 RuntimeActivityStatus::Completed,
                 Some(json!({"checkpointId": checkpoint_id})),
             ),
-            KernelEvent::OperationCompleted { .. } => Ok(()),
+            KernelEvent::OperationCompleted { .. } => {
+                self.finish_active_activities(RuntimeActivityStatus::Completed)
+            }
             KernelEvent::OperationFailed {
                 message, retryable, ..
-            } => self.activity(
-                format!("operation:{}", self.operation_id),
-                "operation".into(),
-                "Operation failed".into(),
-                Some(message),
-                RuntimeActivityStatus::Failed,
-                Some(json!({"retryable": retryable})),
-            ),
+            } => {
+                self.finish_active_activities(RuntimeActivityStatus::Failed)?;
+                self.activity(
+                    format!("operation:{}", self.operation_id),
+                    "operation".into(),
+                    "Operation failed".into(),
+                    Some(message),
+                    RuntimeActivityStatus::Failed,
+                    Some(json!({"retryable": retryable})),
+                )
+            }
         }
     }
 }
@@ -804,6 +868,71 @@ mod tests {
     fn only_explicit_open_history_contract_marks_read() {
         assert!(history_request_marks_read(OPEN_CONVERSATION_HISTORY_LIMIT));
         assert!(!history_request_marks_read(500));
+    }
+
+    #[derive(Default)]
+    struct CollectRuntimeEvents {
+        events: Mutex<Vec<RuntimeEvent>>,
+    }
+
+    impl mahayana_conversation::ConversationEventSink for CollectRuntimeEvents {
+        fn emit(&self, event: RuntimeEvent) -> Result<(), ConversationError> {
+            self.events
+                .lock()
+                .map_err(|_| ConversationError::Provider("test event mutex poisoned".into()))?
+                .push(event);
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn kernel_operation_completion_terminalizes_running_agent_steps() {
+        let sink = Arc::new(CollectRuntimeEvents::default());
+        let bridge = RuntimeKernelEventBridge {
+            conversation_id: conversation("codex:agent:chief"),
+            operation_id: OperationId::generated("run"),
+            events: sink.clone(),
+            state: Arc::new(Mutex::new(ConversationState::new(Vec::new()))),
+            history_path: None,
+            hidden: false,
+            active_activities: Mutex::new(BTreeMap::new()),
+        };
+        let kernel_operation_id = KernelOperationId::from_string("kernel-operation-1");
+
+        bridge
+            .emit(KernelEvent::Activity {
+                operation_id: kernel_operation_id.clone(),
+                kind: "model".into(),
+                title: "Mahayana reasoning turn 1".into(),
+                detail: None,
+                metadata: json!({"stepId": "reasoning-1", "status": "running"}),
+            })
+            .expect("emit running activity");
+        bridge
+            .emit(KernelEvent::OperationCompleted {
+                operation_id: kernel_operation_id,
+            })
+            .expect("complete kernel operation");
+
+        let statuses = sink
+            .events
+            .lock()
+            .expect("test event mutex")
+            .iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::AgentActivity {
+                    step_id, status, ..
+                } if step_id == "reasoning-1" => Some(*status),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            statuses,
+            vec![
+                RuntimeActivityStatus::Running,
+                RuntimeActivityStatus::Completed,
+            ]
+        );
     }
 
     #[test]

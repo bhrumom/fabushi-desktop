@@ -85,46 +85,9 @@ export async function readAgentSidebarSectionsDurable(
       key: storageKey(accountScope),
     });
     const native = parseSectionSnapshot(stored);
-    if (native == null) return fallback;
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(storageKey(accountScope), JSON.stringify({
-        schemaVersion,
-        sections: native,
-      }));
-    }
-    return native;
+    return native ?? fallback;
   } catch {
     return fallback;
-  }
-}
-
-export function persistAgentSidebarSections(
-  accountScope: string | null | undefined,
-  sections: readonly AgentSidebarSection[],
-): void {
-  if (!accountScope) return;
-  const normalized = normalizeAgentSidebarSections(sections);
-  const snapshot = {
-    schemaVersion,
-    sections: normalized,
-  };
-  if (typeof window !== 'undefined') {
-    try {
-      if (normalized.length) window.localStorage.setItem(storageKey(accountScope), JSON.stringify(snapshot));
-      else window.localStorage.removeItem(storageKey(accountScope));
-    } catch {
-      // Native persistence below remains the durable source when localStorage is denied.
-    }
-  }
-  if (normalized.length) {
-    void invokeNativeDesktop<boolean>('writeClientPersistence', {
-      key: storageKey(accountScope),
-      value: snapshot,
-    }).catch(() => {});
-  } else {
-    void invokeNativeDesktop<boolean>('removeClientPersistence', {
-      key: storageKey(accountScope),
-    }).catch(() => {});
   }
 }
 

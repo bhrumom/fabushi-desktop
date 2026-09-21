@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
+import type { AgentCoordinatorClient } from './coordinator-client';
 import {
   assignAgentsToSidebarSection,
   createAgentSidebarSection,
-  persistAgentSidebarSections,
+  normalizeAgentSidebarSections,
   readAgentSidebarSections,
   readAgentSidebarSectionsDurable,
   removeAgentSidebarSection,
@@ -28,21 +30,12 @@ function pinStateManagedKey(accountScope: string): string {
   return 'fabushi.desktop.agent-pin-state-managed.v1.' + encodeURIComponent(accountScope);
 }
 
-function readPinStateManaged(accountScope: string): boolean {
+function readLegacyPinStateManaged(accountScope: string): boolean {
   if (typeof window === 'undefined') return false;
   try {
     return window.localStorage.getItem(pinStateManagedKey(accountScope)) === '1';
   } catch {
     return false;
-  }
-}
-
-function persistPinStateManaged(accountScope: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(pinStateManagedKey(accountScope), '1');
-  } catch {
-    // The account CAS object remains authoritative when localStorage is unavailable.
   }
 }
 
@@ -56,6 +49,7 @@ export interface AgentSidebarController {
   readonly pinnedOrder: readonly string[];
   readonly sections: readonly AgentSidebarSection[];
   readonly selectedKeys: readonly string[];
+  handle(event: RuntimeEvent): boolean;
   adoptLegacyPinnedState(pinnedKeys: readonly string[]): void;
   togglePin(key: string): void;
   reorderPinned(
@@ -80,6 +74,57 @@ function normalizePinnedOrder(value: unknown): string[] {
         typeof entry === 'string' && entry.trim().length > 0,
       ).map((entry) => entry.trim()))]
     : [];
+}
+
+interface SidebarWorkspaceSnapshot {
+  readonly schemaVersion: 1;
+  readonly accountScope: string;
+  readonly pinStateManaged: boolean;
+  readonly pinnedOrder: string[];
+  readonly sections: AgentSidebarSection[];
+}
+
+function sidebarWorkspaceStateKey(accountScope: string): string {
+  return `agent-sidebar:layout:v1.${encodeURIComponent(accountScope)}`;
+}
+
+function sidebarRequestId(prefix: string): string {
+  return `${prefix}:${Date.now().toString(36)}:${crypto.randomUUID()}`;
+}
+
+function parseSidebarWorkspaceSnapshot(
+  value: unknown,
+  accountScope: string,
+): SidebarWorkspaceSnapshot | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const parsed = value as Partial<SidebarWorkspaceSnapshot>;
+  if (parsed.schemaVersion !== 1 || parsed.accountScope !== accountScope) return null;
+  return {
+    schemaVersion: 1,
+    accountScope,
+    pinStateManaged: parsed.pinStateManaged === true,
+    pinnedOrder: normalizePinnedOrder(parsed.pinnedOrder),
+    sections: Array.isArray(parsed.sections)
+      ? normalizeAgentSidebarSections(parsed.sections.filter((entry): entry is AgentSidebarSection =>
+          Boolean(entry) && typeof entry === 'object' && !Array.isArray(entry),
+        ))
+      : [],
+  };
+}
+
+function createSidebarWorkspaceSnapshot(
+  accountScope: string,
+  pinStateManaged: boolean,
+  pinnedOrder: readonly string[],
+  sections: readonly AgentSidebarSection[],
+): SidebarWorkspaceSnapshot {
+  return {
+    schemaVersion: 1,
+    accountScope,
+    pinStateManaged,
+    pinnedOrder: normalizePinnedOrder(pinnedOrder),
+    sections: normalizeAgentSidebarSections(sections),
+  };
 }
 
 function readPinnedOrder(accountScope: string): string[] {
@@ -141,30 +186,16 @@ function cloneSections(sections: readonly AgentSidebarSection[]): AgentSidebarSe
   return sections.map((section) => ({ ...section, agentKeys: [...section.agentKeys] }));
 }
 
-function persistPinnedOrder(accountScope: string, order: readonly string[]): void {
-  const key = pinnedOrderKey(accountScope);
-  const value = normalizePinnedOrder(order);
-  if (typeof window !== 'undefined') {
-    try {
-      window.localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      // Native persistence remains the local durable mirror.
-    }
-  }
-  void invokeNativeDesktop<boolean>('writeClientPersistence', {
-    key,
-    value,
-  }).catch(() => {});
-}
-
 /**
  * Agent-owned sidebar state controller.
  *
  * Pinned ordering and custom sections are one account workspace document.
- * LocalStorage/Native Host are offline mirrors only; authenticated devices
- * converge through the account Agent-store CAS object (etag + revision).
+ * Mahayana RuntimeStore is the local durable source; the account Agent-store
+ * CAS object provides cross-device convergence. Legacy local/native values are
+ * read only once as migration input and are never written by the renderer.
  */
 export function useAgentSidebarController(
+  client: AgentCoordinatorClient,
   accountScope: string | null | undefined,
 ): AgentSidebarController {
   const [pinnedOrder, setPinnedOrderState] = useState<string[]>([]);
@@ -180,6 +211,12 @@ export function useAgentSidebarController(
   const pinnedOrderRef = useRef<string[]>([]);
   const sectionsRef = useRef<AgentSidebarSection[]>([]);
   const activeScopeRef = useRef<string | null>(null);
+  const runtimeHydrationRef = useRef<{
+    scope: string;
+    key: string;
+    resolve: (snapshot: SidebarWorkspaceSnapshot | null) => void;
+  } | null>(null);
+  const runtimeWriteChainRef = useRef<Promise<unknown>>(Promise.resolve());
 
   useEffect(() => {
     pinnedOrderRef.current = [...pinnedOrder];
@@ -188,6 +225,14 @@ export function useAgentSidebarController(
   useEffect(() => {
     sectionsRef.current = cloneSections(sections);
   }, [sections]);
+
+  const handle = useCallback((event: RuntimeEvent): boolean => {
+    const pending = runtimeHydrationRef.current;
+    if (event.type !== 'agent.workspaceState' || !pending || event.key !== pending.key) return false;
+    runtimeHydrationRef.current = null;
+    pending.resolve(parseSidebarWorkspaceSnapshot(event.value, pending.scope));
+    return true;
+  }, []);
 
   const updatePinnedOrder = useCallback((build: (current: readonly string[]) => string[]) => {
     setPinnedOrderState((current) => {
@@ -208,6 +253,13 @@ export function useAgentSidebarController(
     cloudSnapshotRef.current = null;
     pinStateManagedRef.current = false;
     setPinStateManaged(false);
+
+    const previousHydration = runtimeHydrationRef.current;
+    if (previousHydration) {
+      runtimeHydrationRef.current = null;
+      previousHydration.resolve(null);
+    }
+
     if (!accountScope) {
       setPinnedOrderState([]);
       setSections([]);
@@ -215,54 +267,74 @@ export function useAgentSidebarController(
     }
 
     const scope = accountScope;
+    const workspaceKey = sidebarWorkspaceStateKey(scope);
     activeScopeRef.current = scope;
     let cancelled = false;
     const hydrationMutationRevision = layoutMutationRevisionRef.current;
-    const localPinStateManaged = readPinStateManaged(scope);
-    pinStateManagedRef.current = localPinStateManaged;
-    setPinStateManaged(localPinStateManaged);
+    const legacyPinStateManaged = readLegacyPinStateManaged(scope);
+    pinStateManagedRef.current = legacyPinStateManaged;
+    setPinStateManaged(legacyPinStateManaged);
     setPinnedOrderState(readPinnedOrder(scope));
     setSections(readAgentSidebarSections(scope));
+
+    const runtimeState = new Promise<SidebarWorkspaceSnapshot | null>((resolve) => {
+      runtimeHydrationRef.current = { scope, key: workspaceKey, resolve };
+    });
+    void client.readWorkspaceState(
+      sidebarRequestId('agent-sidebar-state-read'),
+      workspaceKey,
+    ).catch(() => {
+      const pending = runtimeHydrationRef.current;
+      if (pending?.key !== workspaceKey) return;
+      runtimeHydrationRef.current = null;
+      pending.resolve(null);
+    });
 
     void Promise.all([
       readPinnedOrderDurable(scope),
       readAgentSidebarSectionsDurable(scope),
       readAccountSidebarLayout(scope).catch(() => null),
-    ]).then(([nativePinnedOrder, nativeSections, cloud]) => {
+      runtimeState,
+    ]).then(([nativePinnedOrder, nativeSections, cloud, runtimeSnapshot]) => {
       if (cancelled || activeScopeRef.current !== scope) return;
       cloudSnapshotRef.current = cloud;
       if (layoutMutationRevisionRef.current === hydrationMutationRevision) {
+        const runtimeManaged = runtimeSnapshot?.pinStateManaged ?? legacyPinStateManaged;
+        const runtimePinnedOrder = runtimeSnapshot?.pinnedOrder ?? nativePinnedOrder;
+        const runtimeSections = runtimeSnapshot?.sections ?? nativeSections;
         if (cloud) {
-          // A managed cloud document is authoritative. For a pre-migration
-          // cloud document, preserve a locally managed pin state so a failed
-          // CAS retry cannot resurrect a legacy Messenger pin on next launch.
-          const managed = cloud.layout.pinStateManaged || localPinStateManaged;
+          const managed = cloud.layout.pinStateManaged || runtimeManaged;
           setPinnedOrderState(
-            cloud.layout.pinStateManaged || !localPinStateManaged
+            cloud.layout.pinStateManaged || !runtimeManaged
               ? cloud.layout.pinnedOrder
-              : nativePinnedOrder,
+              : runtimePinnedOrder,
           );
           setSections(cloud.layout.sections);
           pinStateManagedRef.current = managed;
           setPinStateManaged(managed);
-          if (managed) persistPinStateManaged(scope);
         } else {
-          setPinnedOrderState(nativePinnedOrder);
-          setSections(nativeSections);
-          pinStateManagedRef.current = localPinStateManaged;
-          setPinStateManaged(localPinStateManaged);
+          setPinnedOrderState(runtimePinnedOrder);
+          setSections(runtimeSections);
+          pinStateManagedRef.current = runtimeManaged;
+          setPinStateManaged(runtimeManaged);
         }
       }
-      // Any user mutation that raced hydration stays local and is written via
-      // CAS after scope activation instead of being clobbered by an old device.
+      // Any user mutation that raced hydration stays local and is written to
+      // RuntimeStore + account CAS after scope activation instead of being
+      // clobbered by a stale device snapshot.
       setLayoutScope(scope);
     });
 
     return () => {
       cancelled = true;
       if (activeScopeRef.current === scope) activeScopeRef.current = null;
+      const pending = runtimeHydrationRef.current;
+      if (pending?.key === workspaceKey) {
+        runtimeHydrationRef.current = null;
+        pending.resolve(null);
+      }
     };
-  }, [accountScope]);
+  }, [accountScope, client]);
 
   useEffect(() => {
     if (!accountScope || layoutScope !== accountScope) return;
@@ -289,7 +361,6 @@ export function useAgentSidebarController(
         const managed = remote.layout.pinStateManaged || pinStateManagedRef.current;
         pinStateManagedRef.current = managed;
         setPinStateManaged(managed);
-        if (managed) persistPinStateManaged(scope);
 
         if (!sameStringOrder(pinnedOrderRef.current, merged.pinnedOrder)) {
           setPinnedOrderState(merged.pinnedOrder);
@@ -298,7 +369,7 @@ export function useAgentSidebarController(
           setSections(cloneSections(merged.sections));
         }
       } catch {
-        // Cloud polling is best-effort. Local/native mirrors remain usable offline.
+        // Cross-device convergence is best-effort. Rust RuntimeStore remains usable offline.
       }
     };
 
@@ -324,13 +395,24 @@ export function useAgentSidebarController(
 
   useEffect(() => {
     if (!accountScope || layoutScope !== accountScope || !pinStateManaged) return;
-    persistPinStateManaged(accountScope);
-    persistPinnedOrder(accountScope, pinnedOrder);
-    persistAgentSidebarSections(accountScope, sections);
 
     const scope = accountScope;
     const pinnedSnapshot = [...pinnedOrder];
     const sectionSnapshot = cloneSections(sections);
+    const runtimeSnapshot = createSidebarWorkspaceSnapshot(
+      scope,
+      pinStateManaged,
+      pinnedSnapshot,
+      sectionSnapshot,
+    );
+    runtimeWriteChainRef.current = runtimeWriteChainRef.current
+      .catch(() => undefined)
+      .then(() => client.writeWorkspaceState(
+        sidebarRequestId('agent-sidebar-state-write'),
+        sidebarWorkspaceStateKey(scope),
+        runtimeSnapshot,
+      ))
+      .catch(() => undefined);
     const baseSnapshot = cloudSnapshotRef.current;
     if (baseSnapshot?.layout.pinStateManaged && layoutMatchesSnapshot(pinnedSnapshot, sectionSnapshot, baseSnapshot)) {
       return;
@@ -361,7 +443,7 @@ export function useAgentSidebarController(
         }
       })
       .catch(() => undefined);
-  }, [accountScope, layoutScope, pinStateManaged, pinnedOrder, sections]);
+  }, [accountScope, client, layoutScope, pinStateManaged, pinnedOrder, sections]);
 
   const adoptLegacyPinnedState = useCallback((pinnedKeys: readonly string[]) => {
     if (!accountScope || layoutScope !== accountScope || pinStateManagedRef.current) return;
@@ -369,7 +451,6 @@ export function useAgentSidebarController(
     updatePinnedOrder((current) => current.length ? [...current] : legacyPinned);
     pinStateManagedRef.current = true;
     setPinStateManaged(true);
-    persistPinStateManaged(accountScope);
   }, [accountScope, layoutScope, updatePinnedOrder]);
 
   const togglePin = useCallback((key: string) => {
@@ -378,8 +459,7 @@ export function useAgentSidebarController(
     if (!pinStateManagedRef.current) {
       pinStateManagedRef.current = true;
       setPinStateManaged(true);
-      persistPinStateManaged(accountScope);
-    }
+      }
     updatePinnedOrder((current) => current.includes(normalized)
       ? current.filter((candidate) => candidate !== normalized)
       : [...current, normalized]);
@@ -472,6 +552,7 @@ export function useAgentSidebarController(
     pinnedOrder,
     sections,
     selectedKeys,
+    handle,
     adoptLegacyPinnedState,
     togglePin,
     reorderPinned,

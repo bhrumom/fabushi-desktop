@@ -446,7 +446,6 @@ class MahayanaHostProcess {
         generation,
         resolve: (value) => {
           clearTimeout(timer);
-          if (method === 'feature.receive' && value) this.chromePlatformServer.broadcastEvent(value);
           resolve(value);
         },
         reject: (error) => { clearTimeout(timer); reject(error); },

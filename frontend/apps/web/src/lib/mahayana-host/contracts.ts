@@ -636,6 +636,8 @@ export type RuntimeCommand =
       text: string;
       agentId?: string;
       conversationId?: string;
+      clientMessageId?: string;
+      retryOfMessageId?: string;
       mode?: AgentMode;
       modeStatement?: string;
       model?: string;

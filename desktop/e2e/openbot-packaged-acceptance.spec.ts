@@ -1,105 +1,156 @@
-import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page, type TestInfo } from '@playwright/test';
-import { createHash } from 'node:crypto';
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { _electron as electron, chromium, expect, test, type Browser, type BrowserContext, type ElectronApplication, type Locator, type Page } from '@playwright/test';
+import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const referenceCropSha256 = '0a94bcf48630f4d872bab2e765df8df396026ac08d2b6c3b5fe64b112c1d268d';
-const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || '';
-const referenceScreenshot = process.env.OBF_REFERENCE_SCREENSHOT?.trim() || '';
 const realAcceptance = process.env.OBF_REAL_ACCEPTANCE === '1';
-const sourceSha = (process.env.OBF_SOURCE_SHA || process.env.GITHUB_SHA || '').trim().toLowerCase();
-const canonicalMainSha = (process.env.OBF_CANONICAL_MAIN_SHA || '').trim().toLowerCase();
-const visualThreshold = Number(process.env.OBF_MAX_DIFF_PIXEL_RATIO || '0');
-const pixelThreshold = Number(process.env.OBF_PIXEL_COLOR_THRESHOLD || '0');
+const executable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || '';
+const sourceSha = process.env.OBF_SOURCE_SHA?.trim() || '';
+const expectedSourceSha = process.env.OBF_EXPECTED_SOURCE_SHA?.trim() || sourceSha;
+const evidenceRoot = process.env.OBF_EVIDENCE_DIR?.trim()
+  || path.join(tmpdir(), `fabushi-openbot-acceptance-${sourceSha.slice(0, 12) || 'unknown'}`);
+
+// This file owns tracing so the canonical evidence path is stable.
+// Playwright requires test.use() at file scope because a describe-scoped trace
+// override would force a new worker and fail before packaged acceptance starts.
+test.use({ trace: 'off' });
+
+type LifecycleSample = {
+  readonly at: number;
+  readonly type: 'operation.started' | 'turn.state' | 'chat.delta' | 'chat.message' | 'agent.step' | 'operation.completed' | 'operation.failed';
+  readonly operationId?: string;
+  readonly status: string;
+  readonly text: string;
+};
+
+type RuntimeLog = {
+  readonly at: number;
+  readonly source: string;
+  readonly text: string;
+};
+
+type BackgroundEventSample = {
+  readonly at: number;
+  readonly type: 'agent.backgroundStarted' | 'agent.backgroundFinished';
+  readonly agentId: string;
+  readonly agentName: string;
+  readonly operationId: string;
+  readonly source: string;
+  readonly error?: string;
+};
+
 const coworkers = [
-  ['Chief', 'Chief of staff'],
-  ['Research', 'Research and evidence'],
-  ['Builder', 'Product engineering'],
-  ['Launch', 'Go-to-market'],
+  ['Chief', 'Coordinates decisions and synthesizes final output.'],
+  ['Research', 'Collects source material and facts.'],
+  ['Builder', 'Executes implementation work.'],
+  ['Launch', 'Validates release readiness.'],
 ] as const;
 
-test.skip(!realAcceptance, 'OBF packaged acceptance runs only with OBF_REAL_ACCEPTANCE=1 against a real packaged Fabushi runtime.');
-
-type LifecycleSample = { at: number; status: string; text: string };
-type RuntimeLog = { at: number; source: 'page-console' | 'page-error' | 'app-stdout' | 'app-stderr'; text: string };
-type Box = { x: number; y: number; width: number; height: number };
-type GeometryReport = {
-  viewport: { width: number; height: number; dark: boolean };
-  navigation: Box | null;
-  roster: Box | null;
-  header: Box | null;
-  transcript: Box | null;
-  finalCard: Box | null;
-  table: Box | null;
-  sourceFiles: Box | null;
-  attachmentCard: Box | null;
-  hoverActions: Box | null;
-  composer: Box | null;
-  composerInput: Box | null;
-  peerRows: Record<string, Box | null>;
-  rosterAvatars: Record<string, Box | null>;
-  peerRowGaps: number[];
-};
-
-type RegionDiff = { differingPixels: number; totalPixels: number; differingPixelRatio: number };
-type VisualDiffReport = {
-  width: number;
-  height: number;
-  pixelThreshold: number;
-  maxDiffPixelRatio: number;
-  global: RegionDiff & { zeroDiff: boolean };
-  regions: Record<string, RegionDiff>;
-  residualRegions: Array<{ name: string; differingPixelRatio: number; differingPixels: number; totalPixels: number }>;
-};
-
-function assertProductionEvidenceEnvironment(): void {
-  if (!packagedExecutable) throw new Error('FABUSHI_ELECTRON_EXECUTABLE is required for packaged acceptance');
-  if (!referenceScreenshot) throw new Error('OBF_REFERENCE_SCREENSHOT is required; static or synthetic replacement is forbidden');
-  if (!/^[0-9a-f]{40}$/.test(sourceSha)) throw new Error('OBF_SOURCE_SHA or GITHUB_SHA must provide the exact 40-character source SHA');
-  if (!/^[0-9a-f]{40}$/.test(canonicalMainSha)) throw new Error('OBF_CANONICAL_MAIN_SHA must provide the exact post-merge canonical main SHA');
-  if (sourceSha !== canonicalMainSha) throw new Error(`Packaged source SHA ${sourceSha} does not equal canonical main ${canonicalMainSha}`);
-  if (visualThreshold !== 0) throw new Error('OBF_MAX_DIFF_PIXEL_RATIO must be exactly 0 for literal 1:1 acceptance');
-  if (pixelThreshold !== 0) throw new Error('OBF_PIXEL_COLOR_THRESHOLD must be exactly 0 for literal 1:1 acceptance');
-  const inheritedMode = (process.env.FABUSHI_FEATURE_HOST_MODE || '').trim().toLowerCase();
-  if (['test', 'mock', 'stub'].includes(inheritedMode)) {
-    throw new Error(`Real packaged acceptance refuses FABUSHI_FEATURE_HOST_MODE=${inheritedMode}; mock/test host evidence is inadmissible`);
-  }
-  if (process.env.FABUSHI_E2E === '1') {
-    throw new Error('Real packaged acceptance refuses FABUSHI_E2E=1; the packaged runtime must use production defaults');
+async function withNodeDeadline<T>(label: string, timeoutMs: number, task: Promise<T>): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      task,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} exceeded ${timeoutMs}ms`)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
-async function launchPackaged(appDataDir: string, videoDir: string): Promise<ElectronApplication> {
-  const launchEnv: Record<string, string> = Object.fromEntries(
-    Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
-  );
-  launchEnv.FABUSHI_APP_DATA = appDataDir;
-  delete launchEnv.FABUSHI_FEATURE_HOST_MODE;
-  delete launchEnv.FABUSHI_E2E;
-  delete launchEnv.MAHAYANA_APP_HOST_BIN;
-  return electron.launch({
-    executablePath: packagedExecutable,
-    args: [],
-    env: launchEnv,
-    recordVideo: { dir: videoDir, size: { width: 1671, height: 937 } },
-  });
-}
+async function waitForPackagedRendererBinding(
+  app: ElectronApplication,
+  initialPage: Page,
+  appDataDir: string,
+): Promise<{ page: Page; browser: Browser | null; binding: 'electron' | 'cdp' }> {
+  const deadline = Date.now() + 35_000;
+  let cdpBrowser: Browser | null = null;
+  let lastMainState: { url: string; loading: boolean; title: string } | null = null;
+  let lastPageUrls: string[] = [];
+  let lastCdpError = '';
 
-async function completeLogin(page: Page): Promise<void> {
-  type LoginPhase = 'onboarding' | 'login' | 'ready' | 'waiting';
-  const readPhase = async (): Promise<LoginPhase> => {
-    try {
-      return await page.evaluate(() => {
-        if (document.querySelector('[data-testid="onboarding-gate"]')) return 'onboarding';
-        if (document.querySelector('[data-testid="login-gate"]')) return 'login';
-        const messenger = document.querySelector('[data-testid="messenger-workspace"]');
-        return messenger?.getAttribute('data-initial-host-hydrated') === 'true' ? 'ready' : 'waiting';
-      }) as LoginPhase;
-    } catch {
-      return 'waiting';
+  while (Date.now() < deadline) {
+    lastMainState = await app.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      return win
+        ? {
+            url: win.webContents.getURL(),
+            loading: win.webContents.isLoadingMainFrame(),
+            title: win.getTitle(),
+          }
+        : { url: '', loading: true, title: '' };
+    });
+
+    const electronPages = app.windows();
+    lastPageUrls = electronPages.map((candidate) => candidate.url());
+    const electronBound = electronPages.find((candidate) => candidate.url().startsWith('app://bundle/'));
+    if (electronBound) return { page: electronBound, browser: null, binding: 'electron' };
+    if (initialPage.url().startsWith('app://bundle/')) {
+      return { page: initialPage, browser: null, binding: 'electron' };
     }
+
+    // Playwright's Electron Page wrapper can miss a custom-protocol navigation
+    // that completed before attachment even though BrowserWindow.webContents is
+    // already on app://bundle. _electron.launch enables a Chromium remote
+    // debugging endpoint and writes DevToolsActivePort under userData. Bind the
+    // *same packaged renderer target* over that endpoint instead of reloading,
+    // replacing the URL, or falling back to a test host.
+    if (!cdpBrowser) {
+      try {
+        const activePort = await readFile(path.join(appDataDir, 'DevToolsActivePort'), 'utf8');
+        const [portText] = activePort.trim().split(/\r?\n/u);
+        const port = Number(portText);
+        if (Number.isInteger(port) && port > 0 && port <= 65_535) {
+          cdpBrowser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+        }
+      } catch (cause) {
+        lastCdpError = cause instanceof Error ? cause.message : String(cause);
+      }
+    }
+    if (cdpBrowser) {
+      const cdpPages = cdpBrowser.contexts().flatMap((context) => context.pages());
+      lastPageUrls = [...lastPageUrls, ...cdpPages.map((candidate) => candidate.url())];
+      const cdpBound = cdpPages.find((candidate) => candidate.url().startsWith('app://bundle/'));
+      if (cdpBound) return { page: cdpBound, browser: cdpBrowser, binding: 'cdp' };
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  throw new Error(
+    `Playwright did not bind the packaged BrowserWindow. main=${JSON.stringify(lastMainState)} pages=${JSON.stringify(lastPageUrls)} cdp=${lastCdpError || 'no target'}`,
+  );
+}
+
+function peerByName(page: Page, name: string): Locator {
+  return page
+    .getByTestId('messenger-sidebar')
+    .locator('button[data-agent-id]')
+    .filter({ hasText: name })
+    .first();
+}
+
+async function completeBrowserLogin(page: Page): Promise<void> {
+  type LoginPhase = 'onboarding' | 'login' | 'browser-waiting' | 'ready' | 'waiting';
+  const readPhase = async (): Promise<LoginPhase> => {
+    if (await page.getByTestId('messenger-workspace').count()) {
+      const hydrated = await page.getByTestId('messenger-workspace').getAttribute('data-initial-host-hydrated').catch(() => null);
+      if (hydrated === 'true') return 'ready';
+    }
+    if (await page.getByTestId('onboarding-gate').count()) return 'onboarding';
+    if (await page.getByTestId('browser-login-waiting').count()) return 'browser-waiting';
+    if (await page.getByTestId('login-gate').count()) return 'login';
+    return 'waiting';
   };
+
+  await withNodeDeadline(
+    'Packaged renderer did not mount desktop-shell',
+    35_000,
+    expect(page.getByTestId('desktop-shell')).toBeVisible({ timeout: 30_000 }),
+  );
+
   for (let attempt = 0; attempt < 12; attempt += 1) {
     await expect.poll(readPhase, { timeout: 15_000 }).not.toBe('waiting');
     const phase = await readPhase();
@@ -108,468 +159,544 @@ async function completeLogin(page: Page): Promise<void> {
       continue;
     }
     if (phase === 'login') {
-      await page.getByTestId('browser-login-start').click();
+      const start = page.getByTestId('browser-login-start');
+      await expect(start).toBeVisible();
+      await start.click();
+      continue;
+    }
+    if (phase === 'browser-waiting') {
+      try {
+        await expect.poll(readPhase, { timeout: 45_000 }).not.toBe('browser-waiting');
+      } catch {
+        throw new Error(
+          'Production browser authorization did not complete. Signed candidate acceptance requires a pre-authorized CI account/session; test-mode auth fallback is forbidden.',
+        );
+      }
       continue;
     }
     if (phase === 'ready') return;
   }
-  throw new Error('Packaged Fabushi did not reach Messenger ready state');
-}
-
-async function setReferenceWindow(app: ElectronApplication, page: Page): Promise<void> {
-  await app.evaluate(({ BrowserWindow }) => {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) throw new Error('Fabushi BrowserWindow missing');
-    win.setContentSize(1671, 937, false);
-    win.center();
-  });
-  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
-  await expect(page.getByTestId('messenger-workspace')).toBeVisible();
-  const viewport = await page.evaluate(() => ({
-    width: window.innerWidth,
-    height: window.innerHeight,
-    dark: window.matchMedia('(prefers-color-scheme: dark)').matches,
-  }));
-  expect(viewport).toEqual({ width: 1671, height: 937, dark: true });
-}
-
-function installRuntimeLogCapture(app: ElectronApplication, page: Page, logs: RuntimeLog[]): void {
-  page.on('console', (message) => logs.push({ at: Date.now(), source: 'page-console', text: `${message.type()}: ${message.text()}` }));
-  page.on('pageerror', (error) => logs.push({ at: Date.now(), source: 'page-error', text: error.stack || error.message }));
-  const child = app.process();
-  child.stdout?.on('data', (chunk) => logs.push({ at: Date.now(), source: 'app-stdout', text: String(chunk) }));
-  child.stderr?.on('data', (chunk) => logs.push({ at: Date.now(), source: 'app-stderr', text: String(chunk) }));
+  throw new Error('Packaged Fabushi did not reach the canonical Agent workspace');
 }
 
 async function createCoworker(page: Page, name: string, description: string): Promise<void> {
   await page.evaluate(async ({ botName, botDescription }) => {
-    if (!window.mahayana?.invoke) throw new Error('Mahayana bridge unavailable');
+    const bridge = window.mahayana;
+    if (!bridge?.invoke) throw new Error('Mahayana bridge unavailable');
     const now = Date.now();
-    await window.mahayana.invoke('feature.execute', {
+    await bridge.invoke('feature.execute', {
       command: {
         type: 'bot.create',
-        requestId: `obf-real-bot-create-${botName}-${now}`,
+        requestId: `candidate-bot-create-${botName}-${now}`,
         name: botName,
         description: botDescription,
       },
     });
-    await window.mahayana.invoke('feature.execute', {
-      command: { type: 'bot.list', requestId: `obf-real-bot-list-${botName}-${now}` },
+    await bridge.invoke('feature.execute', {
+      command: {
+        type: 'bot.list',
+        requestId: `candidate-bot-list-${botName}-${now}`,
+      },
     });
   }, { botName: name, botDescription: description });
   await expect(peerByName(page, name)).toBeVisible({ timeout: 20_000 });
 }
 
-function peerByName(page: Page, name: string): Locator {
-  return page.locator('[data-testid^="peer-legacy:bot:"]').filter({ hasText: name }).first();
+async function openAgent(page: Page, name: string): Promise<void> {
+  const peer = peerByName(page, name);
+  await expect(peer).toBeVisible({ timeout: 20_000 });
+  await peer.click();
+  await expect(page.getByTestId('messenger-input')).toBeVisible();
+  await expect(page.getByTestId('grok-agent-header')).toContainText(name);
 }
 
-async function botShape(locator: Locator): Promise<string> {
-  const mark = locator.locator('[data-engine="fabushi-motion-v3"]').first();
-  await expect(mark).toBeVisible();
-  const shape = await mark.getAttribute('data-shape');
-  expect(shape).toBeTruthy();
-  return shape!;
+function completedAssistantTurns(page: Page): Locator {
+  // The Agent-first transcript renders the canonical Rust-owned assistant turn
+  // directly. Count only terminal completed turns: an optimistic/streaming turn
+  // must never satisfy packaged acceptance merely because it is visible.
+  return page.locator('[data-testid="mahayana-assistant-turn"][data-status="completed"]');
 }
 
-async function directBotShape(mark: Locator): Promise<string> {
-  await expect(mark).toBeVisible();
-  const shape = await mark.getAttribute('data-shape');
-  expect(shape).toBeTruthy();
-  return shape!;
+async function submitTurn(page: Page, prompt: string): Promise<number> {
+  const previousAssistantCount = await completedAssistantTurns(page).count();
+  const input = page.getByTestId('messenger-input');
+  await input.fill(prompt);
+  await page.getByTestId('messenger-send').click();
+  await expect(page.locator('[data-agent-message-role="me"]').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 5_000 });
+  return previousAssistantCount;
 }
 
-async function installLifecycleJournal(page: Page): Promise<void> {
+async function waitForCompletedTurn(
+  page: Page,
+  prompt: string,
+  previousAssistantCount: number,
+): Promise<Locator> {
+  await expect(page.locator('[data-agent-message-role="me"]').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 10_000 });
+  const assistantTurns = completedAssistantTurns(page);
+  await expect.poll(
+    async () => assistantTurns.count(),
+    { timeout: 180_000, message: 'A new canonical completed assistant turn must be committed after the submitted turn.' },
+  ).toBeGreaterThan(previousAssistantCount);
+  const turn = assistantTurns.last();
+  await expect(turn).toBeVisible({ timeout: 10_000 });
+  return turn;
+}
+
+async function screenshot(page: Page, name: string): Promise<void> {
+  await page.screenshot({ path: path.join(evidenceRoot, 'screenshots', `${name}.png`), fullPage: true });
+}
+
+async function resetBackgroundCapture(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const scope = window as typeof window & { __obfLifecycle?: LifecycleSample[] };
-    scope.__obfLifecycle = [];
-    const sample = () => {
-      for (const node of document.querySelectorAll<HTMLElement>('[class*="agentThinkingRow"]')) {
-        const text = (node.innerText || '').trim();
-        const seen = scope.__obfLifecycle?.some((entry) => entry.status === 'thinking' && entry.text === text);
-        if (!seen) scope.__obfLifecycle?.push({ at: Date.now(), status: 'thinking', text });
-      }
-      for (const node of document.querySelectorAll<HTMLElement>('[data-testid="agent-step"]')) {
-        const status = node.dataset.status || '';
-        const text = (node.innerText || '').trim();
-        const last = scope.__obfLifecycle?.at(-1);
-        if (!last || last.status !== status || last.text !== text) scope.__obfLifecycle?.push({ at: Date.now(), status, text });
-      }
+    const scope = window as typeof window & {
+      __candidateBackgroundEvents?: BackgroundEventSample[];
+      __candidateBackgroundUnsubscribe?: () => void;
     };
-    sample();
-    const observer = new MutationObserver(sample);
-    observer.observe(document.documentElement, { subtree: true, attributes: true, childList: true, characterData: true });
-    (scope as typeof scope & { __obfObserver?: MutationObserver }).__obfObserver = observer;
+    scope.__candidateBackgroundEvents = [];
+    if (scope.__candidateBackgroundUnsubscribe) return;
+    const bridge = window.mahayana;
+    if (!bridge?.subscribe) throw new Error('Mahayana runtime event subscription is unavailable.');
+    scope.__candidateBackgroundUnsubscribe = bridge.subscribe((event) => {
+      if (event.type !== 'agent.backgroundStarted' && event.type !== 'agent.backgroundFinished') return;
+      scope.__candidateBackgroundEvents?.push({
+        at: Date.now(),
+        type: event.type,
+        agentId: event.agentId,
+        agentName: event.agentName,
+        operationId: event.operationId,
+        source: event.source,
+        ...(event.type === 'agent.backgroundFinished' && event.error ? { error: event.error } : {}),
+      });
+    });
   });
 }
 
-async function sendRealTurn(page: Page, prompt: string): Promise<string> {
-  const before = await page.locator('article[class*="messagePeer"]').count();
-  await page.getByTestId('messenger-input').fill(prompt);
-  await page.getByTestId('messenger-send').click();
-  await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 5_000 });
-  const workbench = page.getByTestId('agent-workbench');
-  await expect(workbench).toBeVisible({ timeout: 30_000 });
-  const run = page.getByTestId('agent-run').last();
-  await expect(run).toHaveAttribute('data-status', 'completed', { timeout: 180_000 });
-  await expect.poll(async () => run.getByTestId('agent-step').count(), { timeout: 30_000 }).toBeGreaterThan(0);
-  await expect.poll(async () => page.locator('article[class*="messagePeer"]').count(), { timeout: 30_000 }).toBeGreaterThan(before);
-  const finalMessage = page.locator('article[class*="messagePeer"]').last();
-  await expect(finalMessage).toBeVisible();
-  return (await finalMessage.innerText()).trim();
+async function readBackgroundEvents(page: Page): Promise<BackgroundEventSample[]> {
+  return page.evaluate(() => {
+    const scope = window as typeof window & { __candidateBackgroundEvents?: BackgroundEventSample[] };
+    return scope.__candidateBackgroundEvents ?? [];
+  });
 }
 
-async function attachFile(page: Page, filePath: string): Promise<void> {
-  await page.getByTitle('附件').click();
-  await page.getByRole('button', { name: '文件' }).click();
-  const fileInput = page.locator('form input[type="file"]:not([accept])');
-  await fileInput.setInputFiles(filePath);
-  await expect(page.getByRole('article').filter({ hasText: path.basename(filePath) }).last()).toBeVisible({ timeout: 20_000 });
-}
-
-async function readBox(locator: Locator): Promise<Box | null> {
-  const box = await locator.boundingBox();
-  if (!box) return null;
-  return { x: box.x, y: box.y, width: box.width, height: box.height };
-}
-
-async function captureGeometry(page: Page, finalArticle: Locator, structured: Locator, table: Locator): Promise<GeometryReport> {
-  const peerRows: Record<string, Box | null> = {};
-  const rosterAvatars: Record<string, Box | null> = {};
-  for (const [name] of coworkers) {
-    const peer = peerByName(page, name);
-    peerRows[name] = await readBox(peer);
-    rosterAvatars[name] = await readBox(peer.locator('[data-engine="fabushi-motion-v3"]').first());
+async function waitForBackgroundFinished(
+  page: Page,
+  agentNames: readonly string[],
+  source: string,
+): Promise<void> {
+  for (const agentName of agentNames) {
+    await expect.poll(async () => {
+      const events = await readBackgroundEvents(page);
+      const started = events.find((event) =>
+        event.type === 'agent.backgroundStarted'
+        && event.agentName.includes(agentName)
+        && event.source.startsWith(source));
+      if (!started) return 'not-started';
+      const finished = events.find((event) =>
+        event.type === 'agent.backgroundFinished'
+        && event.operationId === started.operationId);
+      if (!finished) return 'running';
+      return finished.error ? `error:${finished.error}` : 'completed';
+    }, { timeout: 180_000 }).toBe('completed');
   }
-  const orderedRows = coworkers.map(([name]) => peerRows[name]).filter((box): box is Box => Boolean(box));
-  const peerRowGaps = orderedRows.slice(1).map((box, index) => box.y - (orderedRows[index].y + orderedRows[index].height));
-  const report: GeometryReport = {
-    viewport: await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight, dark: window.matchMedia('(prefers-color-scheme: dark)').matches })),
-    navigation: await readBox(page.locator('[class*="navRail"]').first()),
-    roster: await readBox(page.locator('[class*="chatList"]').first()),
-    header: await readBox(page.locator('[class*="chatHeader"]').first()),
-    transcript: await readBox(page.locator('[class*="messageArea"]').first()),
-    finalCard: await readBox(finalArticle),
-    table: await readBox(table),
-    sourceFiles: await readBox(structured.getByTestId('assistant-source-files')),
-    attachmentCard: await readBox(page.getByRole('article').filter({ hasText: 'launch-brief.md' }).last()),
-    hoverActions: await readBox(finalArticle.getByTestId('message-hover-actions')),
-    composer: await readBox(page.locator('[class*="composer"]').last()),
-    composerInput: await readBox(page.getByTestId('messenger-input')),
-    peerRows,
-    rosterAvatars,
-    peerRowGaps,
-  };
-  expect(report.viewport).toEqual({ width: 1671, height: 937, dark: true });
-  for (const [name, box] of Object.entries(report.rosterAvatars)) {
-    expect(box, `${name} roster avatar geometry missing`).not.toBeNull();
-    expect(box!.width).toBeGreaterThanOrEqual(32);
-    expect(box!.width).toBeLessThanOrEqual(36);
-    expect(box!.height).toBeGreaterThanOrEqual(32);
-    expect(box!.height).toBeLessThanOrEqual(36);
-  }
-  for (const [name, box] of Object.entries({
-    navigation: report.navigation,
-    roster: report.roster,
-    header: report.header,
-    transcript: report.transcript,
-    finalCard: report.finalCard,
-    table: report.table,
-    sourceFiles: report.sourceFiles,
-    attachmentCard: report.attachmentCard,
-    hoverActions: report.hoverActions,
-    composer: report.composer,
-    composerInput: report.composerInput,
-  })) expect(box, `${name} geometry missing`).not.toBeNull();
-  return report;
 }
 
-function geometryRegions(geometry: GeometryReport): Record<string, Box | null> {
-  const regions: Record<string, Box | null> = {
-    'column-navigation': geometry.navigation,
-    'column-roster': geometry.roster,
-    header: geometry.header,
-    transcript: geometry.transcript,
-    'final-message-card': geometry.finalCard,
-    table: geometry.table,
-    'source-files': geometry.sourceFiles,
-    'attachment-card': geometry.attachmentCard,
-    'hover-actions': geometry.hoverActions,
-    composer: geometry.composer,
-  };
-  for (const [name, box] of Object.entries(geometry.rosterAvatars)) regions[`avatar-${name.toLowerCase()}`] = box;
-  return regions;
-}
-
-async function measureVisualDiff(page: Page, referenceBytes: Buffer, actualBytes: Buffer, regions: Record<string, Box | null>): Promise<VisualDiffReport> {
-  const report = await page.evaluate(async ({ referenceBase64, actualBase64, threshold, maxDiffPixelRatio, inputRegions }) => {
-    const load = async (base64: string): Promise<ImageBitmap> => {
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-      return createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+async function installLifecycleCapture(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __candidateLifecycle?: LifecycleSample[];
+      __candidateLifecycleUnsubscribe?: () => void;
     };
-    const [reference, actual] = await Promise.all([load(referenceBase64), load(actualBase64)]);
-    if (reference.width !== actual.width || reference.height !== actual.height) {
-      throw new Error(`Reference/actual dimensions differ: ${reference.width}x${reference.height} vs ${actual.width}x${actual.height}`);
+    scope.__candidateLifecycleUnsubscribe?.();
+    scope.__candidateLifecycle = [];
+
+    const bridge = window.mahayana;
+    if (!bridge?.subscribe) throw new Error('Mahayana runtime event subscription is unavailable.');
+    scope.__candidateLifecycleUnsubscribe = bridge.subscribe((event) => {
+      const at = Date.now();
+      if (event.type === 'operation.started') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: 'running',
+          text: event.label,
+        });
+        return;
+      }
+      if (event.type === 'turn.state') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: event.state,
+          text: `${event.turnId}:${event.runId}:${event.sequence}`,
+        });
+        return;
+      }
+      if (event.type === 'chat.delta') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: 'streaming',
+          text: event.delta,
+        });
+        return;
+      }
+      if (event.type === 'chat.message' && event.operationId) {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: event.role === 'assistant' ? 'streaming' : 'message',
+          text: event.text,
+        });
+        return;
+      }
+      if (event.type === 'agent.step') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: event.status,
+          text: `${event.kind}:${event.title}`,
+        });
+        return;
+      }
+      if (event.type === 'operation.completed') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: 'completed',
+          text: '',
+        });
+        return;
+      }
+      if (event.type === 'operation.failed') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: 'failed',
+          text: `${event.code}:${event.message}`,
+        });
+      }
+    });
+  });
+}
+
+async function performDirectHandoff(page: Page): Promise<void> {
+  await openAgent(page, 'Chief');
+  await page.getByRole('button', { name: 'Agent network' }).click();
+  const network = page.getByTestId('grok-agent-network');
+  await expect(network).toBeVisible();
+
+  await resetBackgroundCapture(page);
+  const research = network.locator('article').filter({ hasText: 'Research' }).first();
+  const researchCheckbox = research.getByRole('checkbox');
+  await expect(researchCheckbox).toBeVisible({ timeout: 10_000 });
+  await researchCheckbox.check({ timeout: 10_000 });
+  await expect(researchCheckbox).toBeChecked();
+  await network.getByRole('textbox').fill('Research: verify the candidate handoff path and report one concise fact.');
+  const handoffButton = network.getByRole('button', { name: /Handoff to Research/ });
+  await expect(handoffButton).toBeVisible({ timeout: 10_000 });
+  await handoffButton.click({ timeout: 10_000 });
+  await expect(network.getByRole('textbox')).toHaveValue('');
+  await expect(network.getByText(/Chief.*Research|Research.*Chief/).first()).toBeVisible({ timeout: 20_000 });
+  await waitForBackgroundFinished(page, ['Research'], 'agent-');
+  await network.getByRole('button', { name: 'Close Agent network' }).click();
+}
+
+async function performBroadcast(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Broadcast to agents' }).click();
+  const network = page.getByTestId('grok-agent-network');
+  await expect(network).toBeVisible();
+  await resetBackgroundCapture(page);
+
+  const selectedTargets = network.getByRole('checkbox', { name: 'Broadcast' });
+  for (let index = 0; index < await selectedTargets.count(); index += 1) {
+    const checkbox = selectedTargets.nth(index);
+    if (await checkbox.isChecked()) await checkbox.uncheck();
+    await expect(checkbox).not.toBeChecked();
+  }
+  for (const targetName of ['Chief', 'Launch']) {
+    const target = network.locator('article').filter({ hasText: targetName }).first();
+    const checkbox = target.getByRole('checkbox', { name: 'Broadcast' });
+    await expect(checkbox).toBeVisible({ timeout: 10_000 });
+    await checkbox.check({ timeout: 10_000 });
+    await expect(checkbox).toBeChecked();
+  }
+
+  await network.getByRole('textbox').fill('Candidate broadcast: acknowledge the signed package acceptance run.');
+  await network.getByRole('button', { name: 'Send to selected' }).click();
+  await expect(network.getByRole('textbox')).toHaveValue('');
+  await waitForBackgroundFinished(page, ['Chief', 'Launch'], 'broadcast');
+  await network.getByRole('button', { name: 'Close Agent network' }).click();
+}
+
+function avatarFor(locator: Locator): Locator {
+  return locator.locator('[data-fab-avatar="true"]').first();
+}
+
+async function stableAvatarShape(locator: Locator): Promise<string> {
+  const avatar = avatarFor(locator);
+  await expect(avatar).toBeVisible();
+  const shape = await avatar.getAttribute('data-shape');
+  expect(shape).toBeTruthy();
+  return shape!;
+}
+
+test.describe('signed candidate packaged acceptance', () => {
+  test.describe.configure({ retries: 0 });
+  test.skip(!realAcceptance, 'Set OBF_REAL_ACCEPTANCE=1 to run signed packaged acceptance.');
+
+  test('exact candidate covers handoff, broadcast, two-Agent isolation and real lifecycle', async () => {
+    test.setTimeout(12 * 60_000);
+    expect(executable, 'FABUSHI_ELECTRON_EXECUTABLE is required').toBeTruthy();
+    expect(sourceSha, 'OBF_SOURCE_SHA must be the exact candidate HEAD').toMatch(/^[0-9a-f]{40}$/);
+    expect(expectedSourceSha, 'OBF_EXPECTED_SOURCE_SHA must be a full SHA').toMatch(/^[0-9a-f]{40}$/);
+    expect(sourceSha, 'candidate executable must be built from the requested exact HEAD').toBe(expectedSourceSha);
+    expect(process.env.FABUSHI_FEATURE_HOST_MODE || '').not.toBe('test');
+    expect(process.env.FABUSHI_E2E || '').not.toBe('1');
+
+    // The workflow starts the fail-closed whole-session recorder before Playwright.
+    // Preserve recorder-owned PID/preflight/session-frames while clearing only
+    // test-owned evidence from an earlier attempt.
+    await mkdir(evidenceRoot, { recursive: true });
+    for (const relativePath of [
+      'screenshots',
+      'video',
+      'app-data',
+      'runtime.log',
+      'startup.json',
+      'failure.json',
+      'candidate.json',
+      'lifecycle.json',
+      'trace.zip',
+    ]) {
+      await rm(path.join(evidenceRoot, relativePath), { recursive: true, force: true });
     }
-    const readPixels = (image: ImageBitmap): Uint8ClampedArray => {
-      const canvas = document.createElement('canvas');
-      canvas.width = image.width;
-      canvas.height = image.height;
-      const context = canvas.getContext('2d', { willReadFrequently: true });
-      if (!context) throw new Error('2D canvas unavailable for visual diff');
-      context.drawImage(image, 0, 0);
-      return context.getImageData(0, 0, image.width, image.height).data;
+    await mkdir(path.join(evidenceRoot, 'screenshots'), { recursive: true });
+
+    const appDataDir = path.join(evidenceRoot, 'app-data');
+    await mkdir(appDataDir, { recursive: true });
+    const runtimeLogs: RuntimeLog[] = [];
+    const runtimeLogPath = path.join(evidenceRoot, 'runtime.log');
+    const captureRuntimeLog = (source: string, text: string) => {
+      const row: RuntimeLog = { at: Date.now(), source, text };
+      runtimeLogs.push(row);
+      void appendFile(runtimeLogPath, `[${new Date(row.at).toISOString()}] ${source}: ${text}\n`).catch(() => undefined);
+      if (source === 'page-error' || source === 'page-crash' || source === 'request-failed' || source === 'app-stderr') {
+        process.stderr.write(`[candidate ${source}] ${text}\n`);
+      }
     };
-    const referencePixels = readPixels(reference);
-    const actualPixels = readPixels(actual);
-    const channelThreshold = Math.round(threshold * 255);
-    const score = (box?: Box | null): RegionDiff => {
-      const x0 = Math.max(0, Math.floor(box?.x ?? 0));
-      const y0 = Math.max(0, Math.floor(box?.y ?? 0));
-      const x1 = Math.min(reference.width, Math.ceil((box?.x ?? 0) + (box?.width ?? reference.width)));
-      const y1 = Math.min(reference.height, Math.ceil((box?.y ?? 0) + (box?.height ?? reference.height)));
-      let differingPixels = 0;
-      let totalPixels = 0;
-      for (let y = y0; y < y1; y += 1) {
-        for (let x = x0; x < x1; x += 1) {
-          const offset = (y * reference.width + x) * 4;
-          const delta = Math.max(
-            Math.abs(referencePixels[offset] - actualPixels[offset]),
-            Math.abs(referencePixels[offset + 1] - actualPixels[offset + 1]),
-            Math.abs(referencePixels[offset + 2] - actualPixels[offset + 2]),
-            Math.abs(referencePixels[offset + 3] - actualPixels[offset + 3]),
-          );
-          if (delta > channelThreshold) differingPixels += 1;
-          totalPixels += 1;
+    let app: ElectronApplication | null = null;
+    let cdpBrowser: Browser | null = null;
+    let pageForTrace: Page | null = null;
+    let traceContext: BrowserContext | null = null;
+    let traceStarted = false;
+    let acceptanceCompleted = false;
+
+    try {
+      app = await electron.launch({
+        executablePath: executable,
+        args: [],
+        env: {
+          ...process.env,
+          FABUSHI_APP_DATA: appDataDir,
+          OBF_SOURCE_SHA: sourceSha,
+        },
+        recordVideo: { dir: path.join(evidenceRoot, 'video'), size: { width: 1671, height: 937 } },
+      });
+      let page = await app.firstWindow();
+      pageForTrace = page;
+      const attachPageDiagnostics = (target: Page) => {
+        target.on('console', (message) => captureRuntimeLog('page-console', `${message.type()}: ${message.text()}`));
+        target.on('pageerror', (error) => captureRuntimeLog('page-error', error.stack || error.message));
+        target.on('crash', () => captureRuntimeLog('page-crash', 'renderer page crashed'));
+        target.on('requestfailed', (request) => captureRuntimeLog(
+          'request-failed',
+          `${request.method()} ${request.url()} :: ${request.failure()?.errorText || 'unknown'}`,
+        ));
+      };
+      attachPageDiagnostics(page);
+      app.process().stdout?.on('data', (chunk) => captureRuntimeLog('app-stdout', String(chunk)));
+      app.process().stderr?.on('data', (chunk) => captureRuntimeLog('app-stderr', String(chunk)));
+
+      const startupWindows = await withNodeDeadline(
+        'Inspect packaged BrowserWindow state',
+        5_000,
+        app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().map((win) => ({
+          title: win.getTitle(),
+          url: win.webContents.getURL(),
+          visible: win.isVisible(),
+          loading: win.webContents.isLoading(),
+        }))),
+      );
+      const initialPageUrl = page.url();
+      const binding = await waitForPackagedRendererBinding(app, page, appDataDir);
+      cdpBrowser = binding.browser;
+      if (binding.page !== page) {
+        page = binding.page;
+        attachPageDiagnostics(page);
+      }
+      pageForTrace = page;
+      traceContext = page.context();
+      await traceContext.tracing.start({
+        screenshots: true,
+        snapshots: true,
+        sources: true,
+      });
+      traceStarted = true;
+      await writeFile(path.join(evidenceRoot, 'startup.json'), JSON.stringify({
+        sourceSha,
+        initialPageUrl,
+        pageUrl: page.url(),
+        binding: binding.binding,
+        windows: startupWindows,
+      }, null, 2));
+
+      await app.evaluate(({ BrowserWindow }) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        if (!win) throw new Error('Fabushi BrowserWindow missing');
+        win.setContentSize(1671, 937, false);
+        win.center();
+      });
+      await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+      await completeBrowserLogin(page);
+      await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-agent-root-shell', 'true');
+      await screenshot(page, '01-canonical-agent-root');
+
+      for (const [name, description] of coworkers) {
+        if (await peerByName(page, name).count()) continue;
+        await createCoworker(page, name, description);
+      }
+      await screenshot(page, '02-multi-agent-roster');
+
+      await performDirectHandoff(page);
+      await screenshot(page, '03-direct-handoff');
+      await performBroadcast(page);
+      await screenshot(page, '04-broadcast');
+
+      await openAgent(page, 'Research');
+      const researchPrompt = 'Two-Agent isolation acceptance for Research. Reply briefly and include marker FABUSHI-RESEARCH-ONLY-7421.';
+      const researchAssistantCount = await submitTurn(page, researchPrompt);
+
+      await openAgent(page, 'Builder');
+      const builderPrompt = 'Two-Agent isolation acceptance for Builder. Reply briefly and include marker FABUSHI-BUILDER-ONLY-5937.';
+      const builderAssistantCount = await submitTurn(page, builderPrompt);
+
+      await openAgent(page, 'Research');
+      const researchTurn = await waitForCompletedTurn(page, researchPrompt, researchAssistantCount);
+      await expect(researchTurn).toContainText('FABUSHI-RESEARCH-ONLY-7421');
+      await expect(page.getByTestId('message-list')).not.toContainText('FABUSHI-BUILDER-ONLY-5937');
+
+      await openAgent(page, 'Builder');
+      const builderTurn = await waitForCompletedTurn(page, builderPrompt, builderAssistantCount);
+      await expect(builderTurn).toContainText('FABUSHI-BUILDER-ONLY-5937');
+      await expect(page.getByTestId('message-list')).not.toContainText('FABUSHI-RESEARCH-ONLY-7421');
+      await screenshot(page, '05-two-agent-isolation');
+
+      await openAgent(page, 'Chief');
+      await installLifecycleCapture(page);
+      const lifecyclePrompt = 'Lifecycle acceptance: analyze the signed candidate and finish with CANDIDATE-LIFECYCLE-OK.';
+      const lifecycleAssistantCount = await submitTurn(page, lifecyclePrompt);
+      const lifecycleTurn = await waitForCompletedTurn(page, lifecyclePrompt, lifecycleAssistantCount);
+      await expect(lifecycleTurn).toContainText('CANDIDATE-LIFECYCLE-OK');
+      const lifecycle = await page.evaluate(() => {
+        const scope = window as typeof window & { __candidateLifecycle?: LifecycleSample[] };
+        return scope.__candidateLifecycle ?? [];
+      });
+      const started = lifecycle.find((sample) => sample.type === 'operation.started');
+      expect(started?.operationId, 'real lifecycle must emit operation.started').toBeTruthy();
+      const operationId = started!.operationId!;
+      const operationLifecycle = lifecycle.filter((sample) => sample.operationId === operationId);
+      expect(
+        operationLifecycle.some((sample) => sample.type === 'turn.state' && ['preparing', 'thinking', 'streaming', 'tool-running'].includes(sample.status)),
+        'real lifecycle must expose an active Rust-owned turn state',
+      ).toBe(true);
+      const streamedResult = operationLifecycle
+        .filter((sample) => sample.type === 'chat.delta' || sample.type === 'chat.message')
+        .map((sample) => sample.text)
+        .join('');
+      expect(
+        streamedResult.includes('CANDIDATE-LIFECYCLE-OK'),
+        'real lifecycle must stream or emit the expected assistant result on the same operation',
+      ).toBe(true);
+      expect(
+        operationLifecycle.some((sample) => sample.type === 'turn.state' && sample.status === 'completed'),
+        'real lifecycle must emit the actor-owned completed turn state',
+      ).toBe(true);
+      expect(
+        operationLifecycle.some((sample) => sample.type === 'operation.completed' && sample.status === 'completed'),
+        'real lifecycle must emit operation.completed for the same operation',
+      ).toBe(true);
+      expect(
+        operationLifecycle.some((sample) => sample.type === 'operation.failed'),
+        'real lifecycle must not fail',
+      ).toBe(false);
+      const toolSteps = operationLifecycle.filter((sample) => sample.type === 'agent.step');
+      if (toolSteps.length > 0) {
+        expect(toolSteps.some((sample) => sample.status === 'completed')).toBe(true);
+      }
+
+      const rosterShape = await stableAvatarShape(peerByName(page, 'Chief'));
+      const headerShape = await stableAvatarShape(page.getByTestId('grok-agent-header'));
+      const transcriptShape = await stableAvatarShape(lifecycleTurn);
+      expect(headerShape).toBe(rosterShape);
+      expect(transcriptShape).toBe(rosterShape);
+      await screenshot(page, '06-real-lifecycle-complete');
+
+      await writeFile(path.join(evidenceRoot, 'lifecycle.json'), JSON.stringify(lifecycle, null, 2));
+      await writeFile(path.join(evidenceRoot, 'runtime.log'), runtimeLogs.map((row) => `[${new Date(row.at).toISOString()}] ${row.source}: ${row.text}`).join('\n'));
+      await writeFile(path.join(evidenceRoot, 'candidate.json'), JSON.stringify({
+        sourceSha,
+        expectedSourceSha,
+        executable,
+        acceptance: {
+          directHandoff: true,
+          broadcast: true,
+          twoAgentIsolation: true,
+          realLifecycle: true,
+          lowPowerAvatarCutover: true,
+        },
+      }, null, 2));
+      acceptanceCompleted = true;
+    } finally {
+      await writeFile(
+        path.join(evidenceRoot, 'runtime.log'),
+        runtimeLogs.map((row) => `[${new Date(row.at).toISOString()}] ${row.source}: ${row.text}`).join('\n'),
+      ).catch(() => undefined);
+      if (!acceptanceCompleted && pageForTrace) {
+        await pageForTrace.screenshot({
+          path: path.join(evidenceRoot, 'screenshots', '00-failure-state.png'),
+          fullPage: true,
+        }).catch(() => undefined);
+        await writeFile(path.join(evidenceRoot, 'failure.json'), JSON.stringify({
+          sourceSha,
+          expectedSourceSha,
+          executable,
+          url: pageForTrace.url(),
+        }, null, 2)).catch(() => undefined);
+      }
+      if (traceStarted && traceContext) {
+        await traceContext.tracing.stop({
+          path: path.join(evidenceRoot, 'trace.zip'),
+        }).catch((error) => {
+          captureRuntimeLog('trace-error', error instanceof Error ? error.stack || error.message : String(error));
+        });
+      }
+      if (app) {
+        try {
+          await withNodeDeadline('Packaged Electron shutdown', 10_000, app.close());
+        } catch {
+          app.process().kill('SIGKILL');
         }
       }
-      return { differingPixels, totalPixels, differingPixelRatio: totalPixels ? differingPixels / totalPixels : 0 };
-    };
-    const globalScore = score();
-    const regionScores: Record<string, RegionDiff> = {};
-    for (const [name, box] of Object.entries(inputRegions)) if (box) regionScores[name] = score(box);
-    const residualRegions = Object.entries(regionScores)
-      .filter(([, value]) => value.differingPixels > 0)
-      .map(([name, value]) => ({ name, ...value }))
-      .sort((left, right) => right.differingPixelRatio - left.differingPixelRatio);
-    return {
-      width: reference.width,
-      height: reference.height,
-      pixelThreshold: threshold,
-      maxDiffPixelRatio,
-      global: { ...globalScore, zeroDiff: globalScore.differingPixels === 0 },
-      regions: regionScores,
-      residualRegions,
-    };
-  }, {
-    referenceBase64: referenceBytes.toString('base64'),
-    actualBase64: actualBytes.toString('base64'),
-    threshold: pixelThreshold,
-    maxDiffPixelRatio: visualThreshold,
-    inputRegions: regions,
-  });
-  return report as VisualDiffReport;
-}
-
-async function saveRuntimeEvidence(
-  page: Page,
-  testInfo: TestInfo,
-  logs: RuntimeLog[],
-  referenceBytes?: Buffer,
-  geometry?: GeometryReport,
-  visualDiff?: VisualDiffReport,
-  identity?: Record<string, unknown>,
-  appVersion?: string,
-): Promise<void> {
-  const evidenceDir = testInfo.outputPath('obf-runtime');
-  await mkdir(evidenceDir, { recursive: true });
-  const lifecycle = await page.evaluate(() => (window as typeof window & { __obfLifecycle?: LifecycleSample[] }).__obfLifecycle || []);
-  await writeFile(path.join(evidenceDir, 'lifecycle.json'), JSON.stringify(lifecycle, null, 2));
-  const agentDrafts = await page.evaluate(() => window.localStorage.getItem('fabushi.agent-workspace.drafts.v1'));
-  await writeFile(path.join(evidenceDir, 'agent-workspace-drafts.json'), agentDrafts || '{}');
-  await writeFile(path.join(evidenceDir, 'runtime.log'), logs.map((entry) => `${new Date(entry.at).toISOString()} [${entry.source}] ${entry.text}`).join('\n'));
-  if (referenceBytes) await writeFile(path.join(evidenceDir, 'openbot-reference.png'), referenceBytes);
-  if (geometry) await writeFile(path.join(evidenceDir, 'geometry.json'), JSON.stringify(geometry, null, 2));
-  if (visualDiff) await writeFile(path.join(evidenceDir, 'visual-diff-report.json'), JSON.stringify(visualDiff, null, 2));
-  if (identity) await writeFile(path.join(evidenceDir, 'identity.json'), JSON.stringify(identity, null, 2));
-  await writeFile(path.join(evidenceDir, 'evidence-manifest.json'), JSON.stringify({
-    canonicalMainSha,
-    sourceSha,
-    appVersion: appVersion || null,
-    referenceCropSha256,
-    referencePathBasename: referenceScreenshot ? path.basename(referenceScreenshot) : null,
-    packagedExecutableBasename: packagedExecutable ? path.basename(packagedExecutable) : null,
-    visualThreshold,
-    pixelThreshold,
-    generatedAt: new Date().toISOString(),
-  }, null, 2));
-}
-
-test('OBF exact-main packaged reference journey is pixel-identical and uses real Mahayana events', async ({}, testInfo) => {
-  test.setTimeout(12 * 60_000);
-  assertProductionEvidenceEnvironment();
-  const referenceBytes = await readFile(referenceScreenshot);
-  if (referenceBytes.length < 10_000) throw new Error('OBF reference screenshot is unexpectedly small');
-  const referenceHash = createHash('sha256').update(referenceBytes).digest('hex');
-  expect(referenceHash).toBe(referenceCropSha256);
-
-  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-obf-real-'));
-  const fixtureDir = await mkdtemp(path.join(tmpdir(), 'fabushi-obf-fixture-'));
-  const csvPath = path.join(fixtureDir, 'launch-metrics.csv');
-  const briefPath = path.join(fixtureDir, 'launch-brief.md');
-  await writeFile(csvPath, 'metric,value\nclaims_verified,7/8\nrollback_ready,true\n');
-  let app: ElectronApplication | null = null;
-  let page: Page | null = null;
-  let tracingActive = false;
-  let appVersion = '';
-  let chiefRosterShape = '';
-  let chiefHeaderShape = '';
-  let chiefTranscriptShape = '';
-  const runtimeLogs: RuntimeLog[] = [];
-  const evidenceDir = testInfo.outputPath('obf-runtime');
-  const tracePath = path.join(evidenceDir, 'trace.zip');
-  const videoDir = path.join(evidenceDir, 'video');
-  await mkdir(videoDir, { recursive: true });
-  try {
-    app = await launchPackaged(appDataDir, videoDir);
-    page = await app.firstWindow();
-    installRuntimeLogCapture(app, page, runtimeLogs);
-    appVersion = await app.evaluate(({ app: electronApp }) => electronApp.getVersion());
-    await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true });
-    tracingActive = true;
-    await completeLogin(page);
-    await setReferenceWindow(app, page);
-    await installLifecycleJournal(page);
-
-    for (const [name, description] of coworkers) await createCoworker(page, name, description);
-    for (const [name] of coworkers) await expect(peerByName(page, name)).toBeVisible();
-
-    chiefRosterShape = await botShape(peerByName(page, 'Chief'));
-
-    await peerByName(page, 'Research').click();
-    const research = await sendRealTurn(page,
-      'Use at least one available read-only browser or research tool to verify a harmless public fact. Return a concise evidence note and clearly state which tool was used.');
-
-    await peerByName(page, 'Builder').click();
-    const builder = await sendRealTurn(page,
-      "Use an available local shell or file tool to perform a harmless readiness check (for example printf 'rollback-ready'). Return a concise rollout note and the observed result.");
-
-    await peerByName(page, 'Launch').click();
-    const launch = await sendRealTurn(page,
-      "Use the file-read tool (not a shell command) to read the exact missing path /tmp/fabushi-obf-intentionally-missing so the tool itself returns an error; then recover and return a concise launch note. Do not create, modify, or delete anything.");
-
-    await writeFile(briefPath, ['# Coworker launch notes', '', `Research: ${research}`, '', `Builder: ${builder}`, '', `Launch: ${launch}`].join('\n'));
-
-    await peerByName(page, 'Chief').click();
-    chiefHeaderShape = await directBotShape(page.locator('[class*="chatIdentity"] [data-engine="fabushi-motion-v3"]').first());
-    expect(chiefHeaderShape).toBe(chiefRosterShape);
-    await attachFile(page, briefPath);
-    await attachFile(page, csvPath);
-
-    const chiefPrompt = [
-      'Synthesize these real coworker outputs into the final launch brief. Do not invent a new runtime or tool result.',
-      `Research note: ${research}`,
-      `Builder note: ${builder}`,
-      `Launch note: ${launch}`,
-      'Your final response MUST contain a heading exactly "Final launch brief", then a Markdown table with exactly the columns Workstream | Owner | Status and exactly three rows for Evidence/Research, Rollout/Builder, Release/Launch.',
-      'After the table include a line exactly beginning "Source files:" and include `launch-brief.md` and `launch-metrics.csv` so Fabushi renders source-file chips.',
-    ].join('\n\n');
-    await sendRealTurn(page, chiefPrompt);
-
-    const structured = page.getByTestId('structured-message-body').last();
-    await expect(structured).toContainText('Final launch brief');
-    const table = structured.getByTestId('assistant-result-table');
-    await expect(table).toBeVisible();
-    await expect(table.locator('th')).toHaveCount(3);
-    await expect(table.locator('th').nth(0)).toHaveText('Workstream');
-    await expect(table.locator('th').nth(1)).toHaveText('Owner');
-    await expect(table.locator('th').nth(2)).toHaveText('Status');
-    await expect(table.locator('tbody tr')).toHaveCount(3);
-    await expect(table.getByTestId('assistant-owner-chip')).toHaveCount(3);
-    await expect(structured.getByTestId('assistant-source-files')).toContainText('launch-brief.md');
-    await expect(structured.getByTestId('assistant-source-files')).toContainText('launch-metrics.csv');
-
-    const finalArticle = structured.locator('xpath=ancestor::article[1]');
-    chiefTranscriptShape = await directBotShape(finalArticle.locator('[data-engine="fabushi-motion-v3"]').first());
-    expect(chiefTranscriptShape).toBe(chiefRosterShape);
-    await finalArticle.hover();
-    await expect(finalArticle.getByTestId('message-hover-actions')).toBeVisible();
-    await expect(page.getByTestId('messenger-input')).toBeVisible();
-
-    const lifecycle = await page.evaluate(() => (window as typeof window & { __obfLifecycle?: LifecycleSample[] }).__obfLifecycle || []);
-    expect(lifecycle.some((sample) => sample.status === 'thinking')).toBeTruthy();
-    expect(lifecycle.some((sample) => sample.status === 'running')).toBeTruthy();
-    expect(lifecycle.some((sample) => sample.status === 'completed')).toBeTruthy();
-    expect(lifecycle.some((sample) => sample.status === 'failed')).toBeTruthy();
-
-    const geometry = await captureGeometry(page, finalArticle, structured, table);
-    const workspace = page.getByTestId('messenger-workspace');
-    const actualBytes = await workspace.screenshot({ animations: 'disabled', caret: 'hide' });
-    await writeFile(path.join(evidenceDir, 'fabushi-openbot-comparison.png'), actualBytes);
-    const visualDiff = await measureVisualDiff(page, referenceBytes, actualBytes, geometryRegions(geometry));
-    expect(visualDiff.global.differingPixels).toBe(0);
-    expect(visualDiff.global.differingPixelRatio).toBe(0);
-    expect(visualDiff.global.zeroDiff).toBeTruthy();
-    expect(visualDiff.residualRegions).toEqual([]);
-
-    const identityBeforeRestart = {
-      Chief: {
-        roster: chiefRosterShape,
-        header: chiefHeaderShape,
-        transcript: chiefTranscriptShape,
-      },
-    };
-    await saveRuntimeEvidence(page, testInfo, runtimeLogs, referenceBytes, geometry, visualDiff, identityBeforeRestart, appVersion);
-    await page.context().tracing.stop({ path: tracePath });
-    tracingActive = false;
-
-    const expectedPath = testInfo.snapshotPath('openbot-reference-app.png');
-    await mkdir(path.dirname(expectedPath), { recursive: true });
-    await copyFile(referenceScreenshot, expectedPath);
-    await expect(workspace).toHaveScreenshot('openbot-reference-app.png', {
-      animations: 'disabled',
-      caret: 'hide',
-      threshold: pixelThreshold,
-      maxDiffPixelRatio: visualThreshold,
-    });
-
-    await app.close();
-    app = null;
-
-    app = await launchPackaged(appDataDir, videoDir);
-    page = await app.firstWindow();
-    installRuntimeLogCapture(app, page, runtimeLogs);
-    await completeLogin(page);
-    await setReferenceWindow(app, page);
-    const restoredChief = peerByName(page, 'Chief');
-    await expect(restoredChief).toBeVisible({ timeout: 30_000 });
-    const restartShape = await botShape(restoredChief);
-    expect(restartShape).toBe(chiefRosterShape);
-    const identity = {
-      Chief: {
-        roster: chiefRosterShape,
-        header: chiefHeaderShape,
-        transcript: chiefTranscriptShape,
-        restart: restartShape,
-        stable: new Set([chiefRosterShape, chiefHeaderShape, chiefTranscriptShape, restartShape]).size === 1,
-      },
-    };
-    expect(identity.Chief.stable).toBeTruthy();
-    await writeFile(path.join(evidenceDir, 'identity.json'), JSON.stringify(identity, null, 2));
-    await writeFile(path.join(evidenceDir, 'runtime.log'), runtimeLogs.map((entry) => `${new Date(entry.at).toISOString()} [${entry.source}] ${entry.text}`).join('\n'));
-  } catch (error) {
-    if (page && tracingActive) await saveRuntimeEvidence(page, testInfo, runtimeLogs, referenceBytes, undefined, undefined, {
-      Chief: { roster: chiefRosterShape || null, header: chiefHeaderShape || null, transcript: chiefTranscriptShape || null },
-    }, appVersion).catch(() => undefined);
-    throw error;
-  } finally {
-    if (tracingActive && page) {
-      await page.context().tracing.stop({ path: tracePath }).catch(() => undefined);
+      if (cdpBrowser) {
+        await cdpBrowser.close().catch(() => undefined);
+      }
     }
-    await app?.close().catch(() => undefined);
-    await rm(appDataDir, { recursive: true, force: true });
-    await rm(fixtureDir, { recursive: true, force: true });
-  }
+  });
 });

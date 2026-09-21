@@ -626,6 +626,11 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
       expect(controller.isBusy('agent:b')).toBe(false);
 
+      coordinator.bindAgentPeers([{
+        agentId: 'agent:restart-runtime',
+        peerKey: 'agent:restart',
+        conversationId: 'codex:agent:restart',
+      }]);
       coordinator.beginLocalTurn({
         peerKey: 'agent:restart',
         requestId: 'request:restart',
@@ -634,6 +639,16 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
         createdAtMs: 6,
       });
       coordinator.adoptOperation('request:restart', 'operation:restart', 'agent:restart');
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(6).toISOString(),
+        operationId: 'operation:restart',
+        turnId: 'turn:restart',
+        runId: 'run:restart:1',
+        conversationId: 'codex:agent:restart',
+        state: 'thinking',
+        sequence: 1,
+      })).toBe(true);
       expect(coordinator.handle({
         type: 'host.lifecycle',
         timestamp: new Date(7).toISOString(),
@@ -646,20 +661,86 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       })).toBe(true);
       expect(controller.isBusy('agent:restart')).toBe(false);
       expect(controller.isOperationFinished('operation:restart')).toBe(true);
-      expect(transcripts.entries('agent:restart').find((entry) => entry.kind === 'assistant-turn')?.assistantTurn?.status).toBe('interrupted');
-      expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
+      expect(transcripts.entries('agent:restart').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(0);
 
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(8).toISOString(),
+        operationId: 'operation:restart:recovered',
+        turnId: 'turn:restart',
+        runId: 'run:restart:2',
+        conversationId: 'codex:agent:restart',
+        state: 'recovering',
+        sequence: 2,
+      })).toBe(true);
+      expect(controller.operationForPeer('agent:restart')).toBe('operation:restart:recovered');
+      expect(transcripts.thread('agent:restart').find((message) => message.id === 'user:restart')?.operationId)
+        .toBe('operation:restart:recovered');
+      expect(transcripts.entries('agent:restart').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
+      expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(9).toISOString(),
+        operationId: 'operation:restart:recovered',
+        turnId: 'turn:restart',
+        runId: 'run:restart:2',
+        conversationId: 'codex:agent:restart',
+        state: 'completed',
+        sequence: 3,
+      })).toBe(true);
+      expect(controller.isBusy('agent:restart')).toBe(false);
+
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:waiting-restart',
+        requestId: 'request:waiting-restart',
+        messageId: 'user:waiting-restart',
+        text: 'needs explicit approval',
+        createdAtMs: 10,
+      });
+      coordinator.adoptOperation(
+        'request:waiting-restart',
+        'operation:waiting-restart',
+        'agent:waiting-restart',
+      );
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(10).toISOString(),
+        operationId: 'operation:waiting-restart',
+        turnId: 'turn:waiting-restart',
+        runId: 'run:waiting-restart',
+        conversationId: 'codex:agent:waiting-restart',
+        state: 'waiting-user',
+        sequence: 1,
+      })).toBe(true);
+      expect(coordinator.handle({
+        type: 'host.lifecycle',
+        timestamp: new Date(11).toISOString(),
+        lifecycle: 'stopped',
+        state: 'stopped',
+        generation: 10,
+        sequence: 21,
+        recoverable: true,
+        error: 'approval channel reset',
+      })).toBe(true);
+      expect(controller.isBusy('agent:waiting-restart')).toBe(false);
+      expect(
+        transcripts.entries('agent:waiting-restart')
+          .find((entry) => entry.kind === 'assistant-turn')
+          ?.assistantTurn?.status,
+      ).toBe('interrupted');
+
+      coordinator.bindAgentPeers([{ agentId: 'c', peerKey: 'agent:c' }]);
       expect(coordinator.handleCommandBridge({
         phase: 'dispatch',
-        command: { type: 'chat.send', requestId: 'request:c', text: 'C' },
-        context: { conversationKey: 'agent:c' },
+        command: { type: 'chat.send', requestId: 'request:c', text: 'C', agentId: 'c' },
+        context: { conversationKey: 'agent:c', agentId: 'c' },
       })).toBe(true);
       expect(controller.requestForPeer('agent:c')).toBe('request:c');
       expect(coordinator.handleCommandBridge({
         phase: 'accepted',
-        command: { type: 'chat.send', requestId: 'request:c', text: 'C' },
+        command: { type: 'chat.send', requestId: 'request:c', text: 'C', agentId: 'c' },
         accepted: { requestId: 'request:c', operationId: 'operation:c' },
-        context: { conversationKey: 'agent:c' },
+        context: { conversationKey: 'agent:c', agentId: 'c' },
       })).toBe(true);
       expect(controller.operationForPeer('agent:c')).toBe('operation:c');
       expect(transcripts.entries('agent:c').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
@@ -683,6 +764,132 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(transcripts.thread('agent:q').filter((message) => message.id === 'queued:q')).toHaveLength(1);
       expect(transcripts.thread('agent:q').find((message) => message.id === 'queued:q')?.queued).toBe(false);
 
+      coordinator.dispose();
+    });
+
+    await test.step('Agent command bridge resolves Rust conversation ids back to canonical peers under concurrent sends', async () => {
+      const controller = new AgentWorkspaceController();
+      const transcripts = new AgentTranscriptStore();
+      const coordinator = new AgentRuntimeCoordinator(controller, transcripts);
+      coordinator.bindAgentPeers([
+        { agentId: 'research', peerKey: 'agent:research', conversationId: 'codex:agent:research' },
+        { agentId: 'builder', peerKey: 'agent:builder', conversationId: 'codex:agent:builder' },
+      ]);
+
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:research',
+        requestId: 'request:research',
+        messageId: 'user:research',
+        text: 'Research',
+        createdAtMs: 20,
+      });
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:builder',
+        requestId: 'request:builder',
+        messageId: 'user:builder',
+        text: 'Builder',
+        createdAtMs: 21,
+      });
+
+      const researchCommand = {
+        type: 'chat.send' as const,
+        requestId: 'request:research',
+        conversationId: 'codex:agent:research',
+        agentId: 'research',
+        text: 'Research',
+      };
+      const builderCommand = {
+        type: 'chat.send' as const,
+        requestId: 'request:builder',
+        conversationId: 'codex:agent:builder',
+        agentId: 'builder',
+        text: 'Builder',
+      };
+
+      expect(coordinator.handleCommandBridge({
+        phase: 'dispatch',
+        command: researchCommand,
+        context: {
+          conversationKey: 'codex:agent:research',
+          conversationId: 'codex:agent:research',
+          agentId: 'research',
+        },
+      })).toBe(true);
+      expect(coordinator.handleCommandBridge({
+        phase: 'dispatch',
+        command: builderCommand,
+        context: {
+          conversationKey: 'codex:agent:builder',
+          conversationId: 'codex:agent:builder',
+          agentId: 'builder',
+        },
+      })).toBe(true);
+
+      expect(controller.requestForPeer('agent:research')).toBe('request:research');
+      expect(controller.requestForPeer('agent:builder')).toBe('request:builder');
+      expect(controller.requestForPeer('codex:agent:research')).toBeNull();
+      expect(controller.requestForPeer('codex:agent:builder')).toBeNull();
+
+      expect(coordinator.handleCommandBridge({
+        phase: 'accepted',
+        command: researchCommand,
+        accepted: { requestId: 'request:research', operationId: 'operation:research' },
+        context: {
+          conversationKey: 'codex:agent:research',
+          conversationId: 'codex:agent:research',
+          agentId: 'research',
+        },
+      })).toBe(true);
+      expect(coordinator.handleCommandBridge({
+        phase: 'accepted',
+        command: builderCommand,
+        accepted: { requestId: 'request:builder', operationId: 'operation:builder' },
+        context: {
+          conversationKey: 'codex:agent:builder',
+          conversationId: 'codex:agent:builder',
+          agentId: 'builder',
+        },
+      })).toBe(true);
+
+      expect(controller.operationForPeer('agent:research')).toBe('operation:research');
+      expect(controller.operationForPeer('agent:builder')).toBe('operation:builder');
+      expect(controller.operationForPeer('codex:agent:research')).toBeNull();
+      expect(controller.operationForPeer('codex:agent:builder')).toBeNull();
+
+      for (const [operationId, conversationId, text] of [
+        ['operation:research', 'codex:agent:research', 'research complete'],
+        ['operation:builder', 'codex:agent:builder', 'builder complete'],
+      ] as const) {
+        expect(coordinator.handle({
+          type: 'chat.message',
+          timestamp: new Date(22).toISOString(),
+          operationId,
+          role: 'assistant',
+          text,
+        })).toBe(true);
+        expect(coordinator.handle({
+          type: 'turn.state',
+          timestamp: new Date(23).toISOString(),
+          operationId,
+          turnId: `turn:${operationId}`,
+          runId: `run:${operationId}`,
+          conversationId,
+          state: 'completed',
+          sequence: 4,
+        })).toBe(true);
+        expect(coordinator.handle({
+          type: 'operation.completed',
+          timestamp: new Date(24).toISOString(),
+          operationId,
+        })).toBe(true);
+      }
+
+      expect(controller.isBusy('agent:research')).toBe(false);
+      expect(controller.isBusy('agent:builder')).toBe(false);
+      expect(transcripts.entries('agent:research').map((entry) => entry.text).join(' ')).toContain('research complete');
+      expect(transcripts.entries('agent:builder').map((entry) => entry.text).join(' ')).toContain('builder complete');
+      expect(transcripts.entries('agent:research').map((entry) => entry.text).join(' ')).not.toContain('builder complete');
+      expect(transcripts.entries('agent:builder').map((entry) => entry.text).join(' ')).not.toContain('research complete');
       coordinator.dispose();
     });
 
@@ -900,6 +1107,15 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await overlays.getByTestId('bot-computer-toggle').click();
       await expect(settings).toHaveCount(0);
       await expect(overlays.getByTestId('bot-computer-panel')).toBeVisible();
+
+      const takeover = overlays.getByTestId('agent-computer-takeover');
+      await expect(takeover.getByRole('button', { name: 'Take Control' })).toBeVisible();
+      await takeover.getByRole('button', { name: 'Take Control' }).click();
+      await expect(takeover).toContainText('You have control');
+      await expect(takeover.getByRole('button', { name: 'Release Control' })).toBeVisible();
+      await takeover.getByRole('button', { name: 'Release Control' }).click();
+      await expect(takeover.getByRole('button', { name: 'Take Control' })).toBeVisible();
+
       await overlays.getByRole('button', { name: 'Close Agent info' }).click();
       await expect(overlays).toHaveCount(0);
     });

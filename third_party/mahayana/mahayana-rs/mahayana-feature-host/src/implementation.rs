@@ -30,6 +30,10 @@ use mahayana_core::MessageRole as RuntimeMessageRole;
 #[cfg(feature = "production")]
 use mahayana_core::OperationId;
 #[cfg(feature = "production")]
+use mahayana_core::RunId;
+#[cfg(feature = "production")]
+use mahayana_core::TurnId;
+#[cfg(feature = "production")]
 use mahayana_core::RuntimeActivityStatus;
 #[cfg(feature = "production")]
 use mahayana_core::RuntimeCommand;
@@ -177,7 +181,7 @@ struct PendingApproval {
     agent_id: Option<String>,
 }
 
-const GROUP_MAX_MEMBER_TURNS: usize = 10;
+const GROUP_MAX_MEMBER_TURNS: usize = 8;
 const GROUP_MAX_ROUNDS: usize = 3;
 const GROUP_PROMPT_HISTORY_LIMIT: usize = 24;
 const REMOTE_DEVICE_SECRET_MAX_ENTRIES: usize = 256;
@@ -1104,6 +1108,30 @@ impl FeatureHostController {
                     json!({"origin": origin, "sessionId": session_id, "target": target}),
                     "control the local computer",
                 ),
+                FeatureCommand::ComputerTakeControl { agent_id, lease_id, target, .. } => (
+                    "computer.input.takeover",
+                    Some(agent_id.clone()),
+                    json!({"leaseId": lease_id, "target": target}),
+                    "let the local user take over computer control",
+                ),
+                FeatureCommand::ComputerReleaseControl { agent_id, lease_id, .. } => (
+                    "computer.input.release",
+                    Some(agent_id.clone()),
+                    json!({"leaseId": lease_id}),
+                    "release local user computer control",
+                ),
+                FeatureCommand::RemoteComputerRegister { device_id, .. } => (
+                    "computer.remote.register",
+                    None,
+                    json!({"deviceId": device_id}),
+                    "register a remote computer endpoint",
+                ),
+                FeatureCommand::RemoteComputerClientRevoke { device_id, client_id, .. } => (
+                    "computer.remote.client.manage",
+                    None,
+                    json!({"deviceId": device_id, "clientId": client_id}),
+                    "revoke a remote computer client",
+                ),
                 FeatureCommand::RemoteComputerSessionActivate { device_id, session_id, .. }
                 | FeatureCommand::RemoteComputerSessionClose { device_id, session_id, .. }
                 | FeatureCommand::RemoteComputerSignal { device_id, session_id, .. }
@@ -1113,11 +1141,66 @@ impl FeatureHostController {
                     json!({"deviceId": device_id, "sessionId": session_id}),
                     "use a remote computer session",
                 ),
+                FeatureCommand::McpOauthLogin { server, .. }
+                | FeatureCommand::McpOauthLogout { server, .. } => (
+                    "mcp.oauth.manage",
+                    None,
+                    json!({"server": server}),
+                    "manage MCP authentication",
+                ),
+                FeatureCommand::McpRemove { server, .. } => (
+                    "mcp.server.manage",
+                    None,
+                    json!({"server": server}),
+                    "remove an MCP server",
+                ),
+                FeatureCommand::McpSetCustomInstructions { server, .. } => (
+                    "mcp.server.configure",
+                    None,
+                    json!({"server": server}),
+                    "change MCP server instructions",
+                ),
+                FeatureCommand::McpSetToolDisabled { server, tool, .. } => (
+                    "mcp.tool.policy",
+                    None,
+                    json!({"server": server, "tool": tool}),
+                    "change MCP tool policy",
+                ),
+                FeatureCommand::McpRefresh { .. } => (
+                    "mcp.refresh",
+                    None,
+                    json!({}),
+                    "refresh MCP server state",
+                ),
                 FeatureCommand::McpToolCall { server, tool, .. } => (
                     "mcp.tool.call",
                     None,
                     json!({"server": server, "tool": tool}),
                     "call an MCP tool",
+                ),
+                FeatureCommand::GroupCreate { member_ids, .. } => (
+                    "agent.group.manage",
+                    None,
+                    json!({"memberIds": member_ids}),
+                    "create an Agent group",
+                ),
+                FeatureCommand::GroupUpdate { id, member_ids, .. } => (
+                    "agent.group.manage",
+                    None,
+                    json!({"groupId": id, "memberIds": member_ids}),
+                    "update an Agent group",
+                ),
+                FeatureCommand::GroupDelete { id, .. } => (
+                    "agent.group.manage",
+                    None,
+                    json!({"groupId": id}),
+                    "delete an Agent group",
+                ),
+                FeatureCommand::GroupSend { id, .. } => (
+                    "agent.group.handoff",
+                    None,
+                    json!({"groupId": id}),
+                    "dispatch durable work to an Agent group",
                 ),
                 FeatureCommand::AgentSend { from_agent_id, target_id, .. } => (
                     "agent.handoff",
@@ -1145,11 +1228,23 @@ impl FeatureHostController {
                     json!({"path": path}),
                     "read an Agent workspace attachment",
                 ),
+                FeatureCommand::MarketplaceInstall { mini_app_id, .. } => (
+                    "miniapp.install",
+                    None,
+                    json!({"miniAppId": mini_app_id}),
+                    "install a Mini App",
+                ),
                 FeatureCommand::MiniAppOpen { mini_app_id, .. } => (
                     "miniapp.open",
                     None,
                     json!({"miniAppId": mini_app_id}),
                     "open a Mini App",
+                ),
+                FeatureCommand::CapabilityRequest { mini_app_id, capability, .. } => (
+                    "miniapp.capability.request",
+                    None,
+                    json!({"miniAppId": mini_app_id, "capability": capability}),
+                    "request a Mini App capability",
                 ),
                 FeatureCommand::ConnectorConnect { connector_id, .. } => (
                     "connector.connect",
@@ -1180,10 +1275,19 @@ impl FeatureHostController {
                     .and_then(|bot| bot.conversation_id.clone())
                     .unwrap_or_else(|| MAHAYANA_AI_CONVERSATION_ID.to_string())
             };
-            let actor = agent_id
-                .as_ref()
-                .map(|id| format!("agent:{id}"))
-                .unwrap_or_else(|| "human".to_string());
+            let human_control = matches!(
+                command,
+                FeatureCommand::ComputerTakeControl { .. }
+                    | FeatureCommand::ComputerReleaseControl { .. }
+            );
+            let actor = if human_control {
+                "human".to_string()
+            } else {
+                agent_id
+                    .as_ref()
+                    .map(|id| format!("agent:{id}"))
+                    .unwrap_or_else(|| "human".to_string())
+            };
             let response = self.runtime()?.execute(RuntimeCommand::AuthorizeCapability {
                 request: CapabilityRequest {
                     actor,
@@ -1636,6 +1740,8 @@ impl FeatureHostController {
                         text,
                         agent_id: Some(target_agent_id.clone()),
                         conversation_id: None,
+                        client_message_id: None,
+                        retry_of_message_id: None,
                         mode: AgentMode::Agent,
                         mode_statement: None,
                         model: None,
@@ -1647,6 +1753,8 @@ impl FeatureHostController {
                             request_id,
                             text,
                             Some(target_agent_id),
+                            None,
+                            None,
                             None,
                             AgentMode::Agent,
                             None,
@@ -2280,6 +2388,7 @@ impl FeatureHostController {
                 conversation_id: ConversationId(conversation_id),
                 text: prompt,
                 client_message_id: Some(format!("teach:{}:{}", bot.id, now_millis())),
+                retry_of_client_message_id: None,
                 inference_provider: agent_inference_provider_key(bot.inference_provider)?,
                 hidden: true,
             })?;
@@ -2584,9 +2693,16 @@ impl FeatureHostController {
                                 "an agent cannot message itself".into(),
                             ));
                         }
+                        let origin_operation_id = state
+                            .operation_agents
+                            .iter()
+                            .find_map(|(operation_id, owner)| {
+                                (owner == &sender_agent_id || owner == &sender.id)
+                                    .then(|| operation_id.clone())
+                            });
                         let peer = AgentPeerMessage {
                             id: next_id(&mut state, "agent-message"),
-                            from_agent_id: sender_agent_id,
+                            from_agent_id: sender_agent_id.clone(),
                             from_agent_name: sender.name.clone(),
                             target_id: target_agent_id,
                             target_name: target.name.clone(),
@@ -2604,7 +2720,7 @@ impl FeatureHostController {
                             timestamp: timestamp(),
                             message: peer,
                         });
-                        Some((sender, target))
+                        Some((sender, target, origin_operation_id))
                     } else if let Some(group_snapshot) = state.groups.get(&target_id).cloned() {
                         if !group_snapshot
                             .member_ids
@@ -2700,9 +2816,10 @@ impl FeatureHostController {
                     });
                 }
 
-                if let Some((sender, target)) = direct_target {
+                if let Some((sender, target, origin_operation_id)) = direct_target {
                     let wake_prompt = build_agent_inbound_wake_prompt(&sender, &text, priority);
-                    self.schedule_background_agent_turn(
+                    self.schedule_agent_handoff(
+                        &sender,
                         &target,
                         if priority {
                             "agent-priority"
@@ -2711,6 +2828,7 @@ impl FeatureHostController {
                         },
                         wake_prompt,
                         format!("peer:{}:{}", sender.id, request_id),
+                        origin_operation_id.as_deref(),
                     )?;
                 }
                 Ok(CommandAccepted {
@@ -2750,11 +2868,13 @@ impl FeatureHostController {
                 for target in targets {
                     let prompt = build_admin_broadcast_wake_prompt(&message);
                     if self
-                        .schedule_background_agent_turn(
+                        .schedule_external_agent_handoff(
                             &target,
                             "broadcast",
                             prompt,
                             format!("broadcast:{}:{}", target.id, request_id),
+                            format!("broadcast-batch:{request_id}"),
+                            None,
                         )
                         .is_ok()
                     {
@@ -2773,6 +2893,136 @@ impl FeatureHostController {
             }
             _ => unreachable!("non-agent-messaging command routed to agent messaging executor"),
         }
+    }
+
+    fn schedule_agent_handoff(
+        &self,
+        sender: &BotSummary,
+        target: &BotSummary,
+        source: &str,
+        prompt: String,
+        correlation_id: String,
+        origin_operation_id: Option<&str>,
+    ) -> Result<Option<String>, FeatureHostError> {
+        if self.config.mode == HostMode::Test {
+            return self.schedule_background_agent_turn(target, source, prompt, correlation_id);
+        }
+
+        #[cfg(feature = "production")]
+        {
+            let target_agent = bot_runtime_agent_id(target).to_string();
+            let target_conversation = target.conversation_id.clone().ok_or_else(|| {
+                FeatureHostError::Contract(format!("bot has no conversation: {}", target.id))
+            })?;
+            let inference_provider = agent_inference_provider_key(target.inference_provider)?;
+            let response = if let Some(operation_id) = origin_operation_id {
+                self.runtime()?.execute(RuntimeCommand::Handoff {
+                    operation_id: OperationId(operation_id.to_string()),
+                    target_agent,
+                    target_conversation_id: Some(ConversationId(target_conversation)),
+                    inference_provider,
+                    task: prompt,
+                    constraints: json!({"source": source}),
+                    expected_output: None,
+                    depth: 0,
+                })?
+            } else {
+                self.runtime()?.execute(RuntimeCommand::ExternalHandoff {
+                    origin_run_id: RunId(format!("external:{correlation_id}")),
+                    origin_turn_id: TurnId(format!("external:{correlation_id}")),
+                    origin_agent: Some(bot_runtime_agent_id(sender).to_string()),
+                    target_agent,
+                    target_conversation_id: Some(ConversationId(target_conversation)),
+                    inference_provider,
+                    task: prompt,
+                    constraints: json!({"source": source}),
+                    expected_output: None,
+                    depth: 0,
+                })?
+            };
+            let operation_id = match response {
+                RuntimeResponse::HandoffQueued { target_operation_id, .. } => {
+                    target_operation_id.to_string()
+                }
+                other => return Err(unexpected_response("agent.handoff", other)),
+            };
+            self.track_background_agent_operation(target, source, &operation_id)?;
+            Ok(Some(operation_id))
+        }
+        #[cfg(not(feature = "production"))]
+        Err(FeatureHostError::ProductionUnavailable)
+    }
+
+    fn schedule_external_agent_handoff(
+        &self,
+        target: &BotSummary,
+        source: &str,
+        prompt: String,
+        correlation_id: String,
+        batch_id: String,
+        origin_agent: Option<String>,
+    ) -> Result<Option<String>, FeatureHostError> {
+        if self.config.mode == HostMode::Test {
+            return self.schedule_background_agent_turn(target, source, prompt, correlation_id);
+        }
+
+        #[cfg(feature = "production")]
+        {
+            let target_agent = bot_runtime_agent_id(target).to_string();
+            let target_conversation = target.conversation_id.clone().ok_or_else(|| {
+                FeatureHostError::Contract(format!("bot has no conversation: {}", target.id))
+            })?;
+            let response = self.runtime()?.execute(RuntimeCommand::ExternalHandoff {
+                origin_run_id: RunId(format!("external:{batch_id}")),
+                origin_turn_id: TurnId(format!("external:{batch_id}")),
+                origin_agent,
+                target_agent,
+                target_conversation_id: Some(ConversationId(target_conversation)),
+                inference_provider: agent_inference_provider_key(target.inference_provider)?,
+                task: prompt,
+                constraints: json!({"source": source}),
+                expected_output: None,
+                depth: 0,
+            })?;
+            let operation_id = match response {
+                RuntimeResponse::HandoffQueued { target_operation_id, .. } => {
+                    target_operation_id.to_string()
+                }
+                other => return Err(unexpected_response("agent.externalHandoff", other)),
+            };
+            self.track_background_agent_operation(target, source, &operation_id)?;
+            Ok(Some(operation_id))
+        }
+        #[cfg(not(feature = "production"))]
+        Err(FeatureHostError::ProductionUnavailable)
+    }
+
+    #[cfg(feature = "production")]
+    fn track_background_agent_operation(
+        &self,
+        target: &BotSummary,
+        source: &str,
+        operation_id: &str,
+    ) -> Result<(), FeatureHostError> {
+        let runtime_agent_id = bot_runtime_agent_id(target).to_string();
+        let mut state = self.state()?;
+        state.background_operations.insert(
+            operation_id.to_string(),
+            BackgroundOperationContext {
+                agent_id: runtime_agent_id.clone(),
+                agent_name: target.name.clone(),
+                source: source.to_string(),
+                teach_artifact: None,
+            },
+        );
+        state.events.push_back(HostEvent::AgentBackgroundStarted {
+            timestamp: timestamp(),
+            agent_id: runtime_agent_id,
+            agent_name: target.name.clone(),
+            operation_id: operation_id.to_string(),
+            source: source.to_string(),
+        });
+        Ok(())
     }
 
     fn schedule_background_agent_turn(
@@ -2821,6 +3071,7 @@ impl FeatureHostController {
                 conversation_id: ConversationId(conversation_id),
                 text: prompt,
                 client_message_id: Some(client_message_id),
+                retry_of_client_message_id: None,
                 inference_provider: agent_inference_provider_key(target.inference_provider)?,
                 hidden: true,
             })?;
@@ -3043,6 +3294,107 @@ impl FeatureHostController {
                         agent_id: attributed_agent_id,
                         result,
                     });
+            }
+            FeatureCommand::ComputerTakeControl {
+                agent_id,
+                lease_id,
+                target,
+                ..
+            } => {
+                let canonical_agent_id = {
+                    let state = self.state()?;
+                    canonical_runtime_agent_id(&state, &agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown computer-control agent: {agent_id}"
+                        ))
+                    })?
+                };
+                if !is_safe_memory_agent_id(&canonical_agent_id) {
+                    return Err(FeatureHostError::Contract(format!(
+                        "unsafe computer-control agent: {canonical_agent_id}"
+                    )));
+                }
+                let controller_id = format!("human:{canonical_agent_id}");
+                let device_id = target
+                    .device_id
+                    .clone()
+                    .unwrap_or_else(|| "local-desktop".to_string());
+                let request = mahayana_computer::ComputerControlLeaseRequest::new(
+                    controller_id,
+                    lease_id.clone(),
+                    device_id,
+                    ComputerControlOrigin::LocalUi,
+                    "human-takeover",
+                );
+                let snapshot = mahayana_computer::acquire_control_lease(&request)
+                    .map_err(|error| FeatureHostError::Contract(error.to_string()))?;
+                let lease = ComputerControlLeaseState {
+                    controller_id: snapshot.controller_id,
+                    run_id: snapshot.run_id,
+                    device_id: snapshot.device_id,
+                    origin: snapshot.origin,
+                    mode: snapshot.mode,
+                    acquired_at_ms: snapshot.acquired_at_ms,
+                    expires_at_ms: snapshot.expires_at_ms,
+                };
+                self.append_action_audit(
+                    &canonical_agent_id,
+                    Some(&lease_id),
+                    json!({
+                        "kind": "computerControlTaken",
+                        "origin": "local-ui",
+                        "leaseId": lease_id,
+                        "deviceId": lease.device_id,
+                        "status": "active",
+                    }),
+                )?;
+                self.state()?.events.push_back(HostEvent::ComputerControlChanged {
+                    timestamp: timestamp(),
+                    request_id: request_id.clone(),
+                    agent_id: canonical_agent_id,
+                    lease_id,
+                    active: true,
+                    lease: Some(lease),
+                });
+            }
+            FeatureCommand::ComputerReleaseControl {
+                agent_id,
+                lease_id,
+                ..
+            } => {
+                let canonical_agent_id = {
+                    let state = self.state()?;
+                    canonical_runtime_agent_id(&state, &agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown computer-control agent: {agent_id}"
+                        ))
+                    })?
+                };
+                if !is_safe_memory_agent_id(&canonical_agent_id) {
+                    return Err(FeatureHostError::Contract(format!(
+                        "unsafe computer-control agent: {canonical_agent_id}"
+                    )));
+                }
+                let controller_id = format!("human:{canonical_agent_id}");
+                let released = mahayana_computer::release_control_lease(&controller_id, &lease_id);
+                self.append_action_audit(
+                    &canonical_agent_id,
+                    Some(&lease_id),
+                    json!({
+                        "kind": "computerControlReleased",
+                        "origin": "local-ui",
+                        "leaseId": lease_id,
+                        "status": if released { "released" } else { "already-inactive" },
+                    }),
+                )?;
+                self.state()?.events.push_back(HostEvent::ComputerControlChanged {
+                    timestamp: timestamp(),
+                    request_id: request_id.clone(),
+                    agent_id: canonical_agent_id,
+                    lease_id,
+                    active: false,
+                    lease: None,
+                });
             }
             _ => unreachable!("non-computer command routed to computer executor"),
         }
@@ -3869,6 +4221,7 @@ impl FeatureHostController {
                                     conversation_id: ConversationId(conversation_id),
                                     text: runtime_text,
                                     client_message_id: Some(request_id.clone()),
+                                    retry_of_client_message_id: None,
                                     inference_provider,
                                     hidden: true,
                                 })?;
@@ -5937,6 +6290,8 @@ impl FeatureHostController {
                         text,
                         agent_id: Some(target_agent_id.clone()),
                         conversation_id: None,
+                        client_message_id: None,
+                        retry_of_message_id: None,
                         mode: AgentMode::Agent,
                         mode_statement: None,
                         model: None,
@@ -5950,6 +6305,8 @@ impl FeatureHostController {
                             request_id,
                             text,
                             Some(target_agent_id),
+                            None,
+                            None,
                             None,
                             AgentMode::Agent,
                             None,
@@ -6526,17 +6883,17 @@ impl FeatureHostController {
             let account_memory_root = self.active_account_root(self.memory_root_path.as_deref());
             let account_workflow_root =
                 self.active_account_root(self.workflow_root_path.as_deref());
-            let member_agent_id = bot_runtime_agent_id(&member);
+            let member_agent_id = bot_runtime_agent_id(&member).to_string();
             let memory_prompt = account_memory_root
                 .as_deref()
-                .map(|root| render_memory_system_prompt(&root.join(member_agent_id).join("memory")))
+                .map(|root| render_memory_system_prompt(&root.join(&member_agent_id).join("memory")))
                 .unwrap_or_default();
             let workflow_catalog = match (
                 account_workflow_root.as_deref(),
                 account_memory_root.as_deref(),
             ) {
                 (Some(workflow_root), Some(agent_root)) => {
-                    render_workflow_catalog(workflow_root, agent_root, member_agent_id)
+                    render_workflow_catalog(workflow_root, agent_root, &member_agent_id)
                 }
                 _ => String::new(),
             };
@@ -6559,25 +6916,30 @@ impl FeatureHostController {
                     member_id: member.id,
                     member_name: member.name,
                 },
+                member_agent_id,
                 conversation_id,
                 runtime_text,
                 agent_inference_provider_key(member.inference_provider)?,
             )
         };
-        let (context, conversation_id, runtime_text, inference_provider) = prepared;
-        let response = self.runtime()?.execute(RuntimeCommand::SendMessage {
-            conversation_id: ConversationId(conversation_id),
-            text: runtime_text,
-            client_message_id: Some(format!(
-                "{}:{}:{}",
-                context.run_id, context.group_id, context.member_id
-            )),
+        let (context, target_agent, conversation_id, runtime_text, inference_provider) = prepared;
+        let response = self.runtime()?.execute(RuntimeCommand::ExternalHandoff {
+            origin_run_id: RunId(format!("group:{}", context.run_id)),
+            origin_turn_id: TurnId(format!("group:{}", context.run_id)),
+            origin_agent: None,
+            target_agent,
+            target_conversation_id: Some(ConversationId(conversation_id)),
             inference_provider,
-            hidden: true,
+            task: runtime_text,
+            constraints: json!({"source": "group", "groupId": context.group_id.clone()}),
+            expected_output: None,
+            depth: 0,
         })?;
         let operation_id = match response {
-            RuntimeResponse::Accepted { operation_id } => operation_id.to_string(),
-            other => return Err(unexpected_response("group.member.turn", other)),
+            RuntimeResponse::HandoffQueued { target_operation_id, .. } => {
+                target_operation_id.to_string()
+            }
+            other => return Err(unexpected_response("group.member.handoff", other)),
         };
         let mut state = self.state()?;
         state.group_operations.insert(operation_id.clone(), context);
@@ -7569,6 +7931,8 @@ impl FeatureHostController {
         text: String,
         agent_id: Option<String>,
         requested_conversation_id: Option<String>,
+        client_message_id: Option<String>,
+        retry_of_message_id: Option<String>,
         mode: AgentMode,
         mode_statement: Option<String>,
         model: Option<String>,
@@ -7700,7 +8064,8 @@ impl FeatureHostController {
         let response = self.runtime()?.execute(RuntimeCommand::SendMessage {
             conversation_id,
             text: runtime_text,
-            client_message_id: Some(request_id.clone()),
+            client_message_id: client_message_id.or_else(|| Some(request_id.clone())),
+            retry_of_client_message_id: retry_of_message_id,
             inference_provider: runtime_inference_provider,
             hidden: false,
         })?;
@@ -7716,11 +8081,15 @@ impl FeatureHostController {
                 .clone()
                 .unwrap_or_else(|| "mahayana-assistant".into()),
         );
+        // The renderer owns optimistic user rows by request id. Once Rust has
+        // accepted the turn, every production chat event must carry the
+        // authoritative runtime operation id so concurrent Agents can never
+        // infer ownership from whichever peer happens to be visible.
         state.events.push_back(HostEvent::ChatMessage {
             timestamp: timestamp(),
             role: MessageRole::User,
             text,
-            operation_id: None,
+            operation_id: Some(operation_id.clone()),
         });
         state.events.push_back(HostEvent::OperationStarted {
             timestamp: timestamp(),
@@ -7924,6 +8293,8 @@ impl FeatureHostController {
                 text,
                 agent_id,
                 conversation_id,
+                client_message_id,
+                retry_of_message_id,
                 mode,
                 mode_statement,
                 model,
@@ -7934,6 +8305,8 @@ impl FeatureHostController {
                 text,
                 agent_id,
                 conversation_id,
+                client_message_id,
+                retry_of_message_id,
                 mode,
                 mode_statement,
                 model,
@@ -12897,6 +13270,57 @@ mod tests {
     }
 
     #[test]
+    fn computer_takeover_acquires_and_releases_a_human_control_lease() {
+        let controller = controller();
+        drain(&controller);
+
+        controller
+            .execute(FeatureCommand::ComputerTakeControl {
+                request_id: "take-control".into(),
+                agent_id: "mahayana-assistant".into(),
+                lease_id: "operation-human-takeover".into(),
+                target: ComputerControlTarget::default(),
+            })
+            .expect("take computer control");
+        let taken = drain(&controller);
+        assert!(taken.iter().any(|event| matches!(
+            event,
+            HostEvent::ComputerControlChanged {
+                agent_id,
+                lease_id,
+                active: true,
+                lease: Some(lease),
+                ..
+            } if agent_id == "mahayana-assistant"
+                && lease_id == "operation-human-takeover"
+                && lease.origin == ComputerControlOrigin::LocalUi
+                && lease.mode == "human-takeover"
+        )));
+        assert!(mahayana_computer::current_control_lease().is_some());
+
+        controller
+            .execute(FeatureCommand::ComputerReleaseControl {
+                request_id: "release-control".into(),
+                agent_id: "mahayana-assistant".into(),
+                lease_id: "operation-human-takeover".into(),
+            })
+            .expect("release computer control");
+        let released = drain(&controller);
+        assert!(released.iter().any(|event| matches!(
+            event,
+            HostEvent::ComputerControlChanged {
+                agent_id,
+                lease_id,
+                active: false,
+                lease: None,
+                ..
+            } if agent_id == "mahayana-assistant"
+                && lease_id == "operation-human-takeover"
+        )));
+        assert!(mahayana_computer::current_control_lease().is_none());
+    }
+
+    #[test]
     fn group_chat_handles_mentions_round_order_and_pass_rules() {
         let bots = BTreeMap::from([
             (
@@ -13663,6 +14087,8 @@ mod tests {
                 text: "验证极速自动化测试".into(),
                 agent_id: None,
                 conversation_id: None,
+                client_message_id: None,
+                retry_of_message_id: None,
                 mode: AgentMode::Agent,
                 mode_statement: None,
                 model: None,
@@ -14463,6 +14889,7 @@ mod tests {
                 conversation_id: assistant.clone(),
                 text: "visible assistant completion".into(),
                 client_message_id: Some("visible-completion".into()),
+                retry_of_client_message_id: None,
                 inference_provider: None,
                 hidden: false,
             })
@@ -14511,6 +14938,7 @@ mod tests {
                 conversation_id: assistant.clone(),
                 text: "hidden background completion".into(),
                 client_message_id: Some("hidden-completion".into()),
+                retry_of_client_message_id: None,
                 inference_provider: None,
                 hidden: true,
             })

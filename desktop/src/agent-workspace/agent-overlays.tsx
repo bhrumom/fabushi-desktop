@@ -1,7 +1,12 @@
 import { Monitor, Pin, Search, Settings, X } from 'lucide-react';
 import React from 'react';
+import { FabButton } from '../ui/primitives/fab-primitives';
 import FabAvatar, { type FabAvatarInputState } from '../ui/avatar/fab-avatar';
-import type { ComputerStatus, InferenceProvider } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type {
+  ComputerControlLeaseState,
+  ComputerStatus,
+  InferenceProvider,
+} from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { RemoteComputerDesktopState } from '../../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
 import AgentSettingsPanel, { type AgentSettingsProfileUpdate, type AgentSettingsProfileValue } from './agent-settings-panel';
 import styles from './agent-overlays.module.css';
@@ -16,11 +21,14 @@ export interface AgentOverlayComputerProps {
   remoteControlEnabled: boolean;
   state: RemoteComputerDesktopState | null;
   capabilityStatus?: ComputerStatus | null;
+  control?: { agentId: string; leaseId: string; lease: ComputerControlLeaseState } | null;
   onToggle(): void;
   onRefreshPairingCode(): void;
   onApproveSession(sessionId: string): void;
   onDenySession(sessionId: string): void;
   onDisconnect(): void;
+  onTakeControl(): void;
+  onReleaseControl(): void;
   onToggleRemoteControl(): void;
   onOpenControlPage(): void;
 }
@@ -64,7 +72,7 @@ export default function AgentOverlays(props: AgentOverlaysProps) {
   return <aside className={styles.root} data-testid="agent-overlays" data-overlay={props.overlay || undefined}>
     <header className={styles.header}>
       <strong>Agent</strong>
-      <button type="button" onClick={props.onClose} aria-label="Close Agent info"><X size={17} /></button>
+      <FabButton variant="bare" type="button" onClick={props.onClose} aria-label="Close Agent info"><X size={17} /></FabButton>
     </header>
 
     <section className={styles.identity}>
@@ -72,10 +80,10 @@ export default function AgentOverlays(props: AgentOverlaysProps) {
       <strong>{props.title}</strong>
       <small>{props.description}</small>
       <div className={styles.quickActions}>
-        <button type="button" onClick={props.onSearch}><Search size={17} /><span>Search</span></button>
-        <button type="button" data-active={props.pinned || undefined} onClick={props.onTogglePin}><Pin size={17} /><span>{props.pinned ? 'Unpin' : 'Pin'}</span></button>
-        <button type="button" data-testid="bot-computer-toggle" data-active={computer.open || undefined} onClick={computer.onToggle}><Monitor size={17} /><span>Computer</span></button>
-        <button type="button" data-testid="agent-settings-toggle" data-active={settings.open || undefined} onClick={settings.onToggle}><Settings size={17} /><span>Settings</span></button>
+        <FabButton variant="bare" type="button" onClick={props.onSearch}><Search size={17} /><span>Search</span></FabButton>
+        <FabButton variant="bare" type="button" data-active={props.pinned || undefined} onClick={props.onTogglePin}><Pin size={17} /><span>{props.pinned ? 'Unpin' : 'Pin'}</span></FabButton>
+        <FabButton variant="bare" type="button" data-testid="bot-computer-toggle" data-active={computer.open || undefined} onClick={computer.onToggle}><Monitor size={17} /><span>Computer</span></FabButton>
+        <FabButton variant="bare" type="button" data-testid="agent-settings-toggle" data-active={settings.open || undefined} onClick={settings.onToggle}><Settings size={17} /><span>Settings</span></FabButton>
       </div>
     </section>
 
@@ -110,23 +118,33 @@ export default function AgentOverlays(props: AgentOverlaysProps) {
       </div> : null}
       <p>The Computer surface belongs to this Agent. Execution is bound to the machine where Fabushi is installed, not a cloud computer.</p>
 
+      <div className={styles.request} data-testid="agent-computer-takeover">
+        <span>
+          <small>Control lease</small>
+          <strong>{computer.control?.agentId === computer.agentId ? 'You have control' : 'Agent control'}</strong>
+        </span>
+        {computer.control?.agentId === computer.agentId
+          ? <FabButton variant="bare" type="button" onClick={computer.onReleaseControl}>Release Control</FabButton>
+          : <FabButton variant="bare" type="button" onClick={computer.onTakeControl}>Take Control</FabButton>}
+      </div>
+
       {computer.remoteControlEnabled && computer.state?.registration?.pairingCode ? <div className={styles.request}>
         <span><small>Pairing code</small><strong>{computer.state.registration.pairingCode}</strong></span>
-        <button type="button" onClick={computer.onRefreshPairingCode}>Refresh</button>
+        <FabButton variant="bare" type="button" onClick={computer.onRefreshPairingCode}>Refresh</FabButton>
       </div> : null}
 
       {pending ? <div className={styles.request} data-testid="remote-session-consent">
         <span><small>Remote request</small><strong>{pending.clientLabel || 'Paired device'}</strong></span>
-        <button type="button" onClick={() => computer.onApproveSession(pending.sessionId)}>Allow once</button>
-        <button type="button" data-danger="true" onClick={() => computer.onDenySession(pending.sessionId)}>Deny</button>
+        <FabButton variant="bare" type="button" onClick={() => computer.onApproveSession(pending.sessionId)}>Allow once</FabButton>
+        <FabButton variant="bare" type="button" data-danger="true" onClick={() => computer.onDenySession(pending.sessionId)}>Deny</FabButton>
       </div> : null}
 
-      {computer.state?.activeSessionId ? <button type="button" className={styles.disconnect} onClick={computer.onDisconnect}>Disconnect active session</button> : null}
+      {computer.state?.activeSessionId ? <FabButton variant="bare" type="button" className={styles.disconnect} onClick={computer.onDisconnect}>Disconnect active session</FabButton> : null}
       <div className={styles.computerActions}>
-        <button type="button" data-enabled={computer.remoteControlEnabled || undefined} onClick={computer.onToggleRemoteControl}>
+        <FabButton variant="bare" type="button" data-enabled={computer.remoteControlEnabled || undefined} onClick={computer.onToggleRemoteControl}>
           {computer.remoteControlEnabled ? 'Disable remote control' : 'Enable remote control'}
-        </button>
-        <button type="button" onClick={computer.onOpenControlPage}>Open Computer</button>
+        </FabButton>
+        <FabButton variant="bare" type="button" onClick={computer.onOpenControlPage}>Open Computer</FabButton>
       </div>
       {computer.state?.error ? <small className={styles.error}>{computer.state.error}</small> : null}
     </section> : null}

@@ -10,6 +10,8 @@ export interface AgentPromptRequest {
   readonly text: string;
   readonly conversationId?: string;
   readonly agentId?: string;
+  readonly clientMessageId?: string;
+  readonly retryOfMessageId?: string;
   readonly attachments?: readonly AttachmentContext[];
   readonly references?: readonly AgentPromptReference[];
   readonly replyTo?: AgentReplyContext;
@@ -170,6 +172,8 @@ export class AgentCoordinatorClient {
       ),
       conversationId: request.conversationId,
       agentId: request.agentId,
+      ...(request.clientMessageId ? { clientMessageId: request.clientMessageId } : {}),
+      ...(request.retryOfMessageId ? { retryOfMessageId: request.retryOfMessageId } : {}),
       ...(request.attachments?.length ? { attachments: [...request.attachments] } : {}),
     } as HostCommand);
   }

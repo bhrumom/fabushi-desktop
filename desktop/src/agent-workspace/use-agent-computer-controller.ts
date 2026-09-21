@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ComputerStatus } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type {
+  ComputerControlLeaseState,
+  ComputerStatus,
+  RuntimeEvent,
+} from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { MahayanaHostTransport } from '../../../frontend/apps/web/src/lib/mahayana-host/transport';
 import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
 import type { RemoteComputerDesktopState } from '../../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
@@ -18,13 +22,21 @@ export interface UseAgentComputerControllerOptions {
   onError(message: string): void;
 }
 
+export interface AgentComputerControlProjection {
+  readonly agentId: string;
+  readonly leaseId: string;
+  readonly lease: ComputerControlLeaseState;
+}
+
 export interface AgentComputerController {
   readonly open: boolean;
   readonly state: RemoteComputerDesktopState | null;
   readonly capabilityStatus: ComputerStatus | null;
+  readonly control: AgentComputerControlProjection | null;
   readonly online: boolean;
   readonly status: string;
   readonly handleCapabilityStatus: (status: ComputerStatus) => void;
+  handleRuntimeEvent(event: RuntimeEvent): boolean;
   refreshCapability(): void;
   openForAgent(agentId: string, source?: string): void;
   toggleForAgent(agentId: string, source?: string): void;
@@ -33,6 +45,8 @@ export interface AgentComputerController {
   approveSession(sessionId: string): void;
   denySession(sessionId: string): void;
   disconnect(): void;
+  takeControl(agentId: string, operationId?: string | null): void;
+  releaseControl(): void;
   openControlPage(agentId: string): void;
 }
 
@@ -75,7 +89,7 @@ function acceptBackgroundState(
  *
  * The renderer may decide when the Computer surface is visible, but it must not
  * own registration, pairing, capability refresh, remote-session authorization
- * or RemoteComputerDesktopController lifetime. Every Agent resolves through the
+ * or any renderer-owned remote-session controller lifetime. Every Agent resolves through the
  * same installed Fabushi machine while retaining its own agentId surface scope.
  */
 export function useAgentComputerController(
@@ -87,6 +101,7 @@ export function useAgentComputerController(
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<RemoteComputerDesktopState | null>(null);
   const [capabilityStatus, setCapabilityStatus] = useState<ComputerStatus | null>(null);
+  const [control, setControl] = useState<AgentComputerControlProjection | null>(null);
   const stateRef = useRef<RemoteComputerDesktopState | null>(null);
   stateRef.current = state;
 
@@ -96,6 +111,14 @@ export function useAgentComputerController(
 
   const handleCapabilityStatus = useCallback((status: ComputerStatus) => {
     setCapabilityStatus(status);
+  }, []);
+
+  const handleRuntimeEvent = useCallback((event: RuntimeEvent): boolean => {
+    if (event.type !== 'computer.controlChanged') return false;
+    setControl(event.active && event.lease
+      ? { agentId: event.agentId, leaseId: event.leaseId, lease: event.lease }
+      : null);
+    return true;
   }, []);
 
   const refreshCapability = useCallback(() => {
@@ -145,6 +168,26 @@ export function useAgentComputerController(
   const denySession = useCallback((_sessionId: string) => {}, []);
   const disconnect = useCallback(() => {}, []);
 
+  const takeControl = useCallback((agentId: string, operationId?: string | null) => {
+    const resolved = optionsRef.current.resolveAgentId(agentId);
+    if (!resolved) {
+      reportError(new Error(`Unknown Agent: ${agentId}`));
+      return;
+    }
+    const leaseId = operationId?.trim() || `human-takeover:${crypto.randomUUID()}`;
+    void optionsRef.current.coordinatorClient
+      .takeComputerControl(nextComputerRequestId(), resolved, leaseId)
+      .catch(reportError);
+  }, [reportError]);
+
+  const releaseControl = useCallback(() => {
+    const current = control;
+    if (!current) return;
+    void optionsRef.current.coordinatorClient
+      .releaseComputerControl(nextComputerRequestId(), current.agentId, current.leaseId)
+      .catch(reportError);
+  }, [control, reportError]);
+
   const openControlPage = useCallback((agentId: string) => {
     void invokeNativeDesktop('openExternal', {
       url: `https://fabushi.ombhrum.com/remote-computer?agentId=${encodeURIComponent(agentId)}`,
@@ -191,9 +234,11 @@ export function useAgentComputerController(
     open,
     state,
     capabilityStatus,
+    control,
     online,
     status,
     handleCapabilityStatus,
+    handleRuntimeEvent,
     refreshCapability,
     openForAgent,
     toggleForAgent,
@@ -202,6 +247,8 @@ export function useAgentComputerController(
     approveSession,
     denySession,
     disconnect,
+    takeControl,
+    releaseControl,
     openControlPage,
   };
 }

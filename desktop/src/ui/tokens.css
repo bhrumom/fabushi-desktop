@@ -7,6 +7,8 @@
   --fab-text-primary: rgba(255,255,255,.94);
   --fab-text-muted: rgba(255,255,255,.62);
   --fab-danger: #ff5b57;
+  --fab-success: #38c979;
+  --fab-warning: #f2b94b;
   --fab-accent: #5f8cff;
   --fab-radius-sm: 8px;
   --fab-radius-md: 12px;
@@ -16,6 +18,7 @@
   --fab-space-3: 12px;
   --fab-space-4: 16px;
   --fab-space-5: 20px;
+  --fab-shadow-surface: 0 10px 32px rgba(0,0,0,.28);
   --fab-shadow-dialog: 0 18px 60px rgba(0,0,0,.45);
 }
 
@@ -28,6 +31,7 @@
     --fab-border-strong: rgba(0,0,0,.18);
     --fab-text-primary: rgba(0,0,0,.88);
     --fab-text-muted: rgba(0,0,0,.56);
+    --fab-shadow-surface: 0 10px 32px rgba(0,0,0,.12);
     --fab-shadow-dialog: 0 18px 60px rgba(0,0,0,.18);
   }
 }

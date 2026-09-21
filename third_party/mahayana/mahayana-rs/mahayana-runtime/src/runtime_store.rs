@@ -1,5 +1,8 @@
 use mahayana_core::capability::{CapabilityAuditRecord, ComputerControlLease};
-use mahayana_core::{AskUserRequest, ExecutionRun, HandoffIntent, LogicalTurn, RunId, TurnId, TurnState};
+use mahayana_core::{
+    AskUserRequest, ConversationId, ExecutionRun, HandoffIntent, LogicalTurn, MessageId, RunId,
+    TurnId, TurnState,
+};
 use serde_json::Value;
 use std::path::Path;
 
@@ -16,6 +19,33 @@ use std::sync::Mutex;
 pub struct RuntimeStore {
     #[cfg(not(target_arch = "wasm32"))]
     connection: Option<Mutex<Connection>>,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct StoredTurnSnapshot {
+    pub turn_id: TurnId,
+    pub state: TurnState,
+    pub last_run_id: Option<RunId>,
+    pub generation: u32,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct RecoverableTurn {
+    pub conversation_id: ConversationId,
+    pub turn_id: TurnId,
+    pub message_id: MessageId,
+    pub state: TurnState,
+    pub last_run_id: RunId,
+    pub generation: u32,
+    pub text: Option<String>,
+    pub inference_provider: Option<String>,
+    pub hidden: Option<bool>,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct RecoverableHandoff {
+    pub origin_turn_id: TurnId,
+    pub intent: HandoffIntent,
 }
 
 impl RuntimeStore {
@@ -72,6 +102,16 @@ impl RuntimeStore {
                     CREATE INDEX IF NOT EXISTS runs_turn_generation_idx
                     ON runs(turn_id, generation);
 
+                    CREATE TABLE IF NOT EXISTS turn_requests (
+                        turn_id TEXT PRIMARY KEY,
+                        message_id TEXT NOT NULL,
+                        text TEXT NOT NULL,
+                        inference_provider TEXT,
+                        hidden INTEGER NOT NULL DEFAULT 0,
+                        updated_at_ms INTEGER NOT NULL,
+                        FOREIGN KEY(turn_id) REFERENCES turns(turn_id)
+                    );
+
                     CREATE TABLE IF NOT EXISTS activities (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         run_id TEXT NOT NULL,
@@ -110,6 +150,16 @@ impl RuntimeStore {
                         payload_json TEXT NOT NULL,
                         created_at_ms INTEGER NOT NULL
                     );
+
+                    CREATE TABLE IF NOT EXISTS handoff_dispatch (
+                        intent_id TEXT PRIMARY KEY,
+                        target_operation_id TEXT,
+                        state TEXT NOT NULL,
+                        updated_at_ms INTEGER NOT NULL,
+                        FOREIGN KEY(intent_id) REFERENCES pending_intents(intent_id)
+                    );
+                    CREATE INDEX IF NOT EXISTS handoff_dispatch_state_idx
+                    ON handoff_dispatch(state, updated_at_ms);
 
                     CREATE TABLE IF NOT EXISTS sync_journal (
                         sequence INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -221,6 +271,115 @@ impl RuntimeStore {
         }
     }
 
+    /// Resolve one terminal logical turn to the next execution generation.
+    ///
+    /// Regenerate/retry is explicit: ordinary duplicate transport requests do
+    /// not select an existing turn. The caller supplies the original stable
+    /// client user-message id and receives the same turn id plus N+1.
+    pub fn record_turn_request(
+        &self,
+        turn_id: &TurnId,
+        message_id: &MessageId,
+        text: &str,
+        inference_provider: Option<&str>,
+        hidden: bool,
+        updated_at_ms: i64,
+    ) -> Result<(), RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (
+                turn_id,
+                message_id,
+                text,
+                inference_provider,
+                hidden,
+                updated_at_ms,
+            );
+            Ok(())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(()); };
+            connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .execute(
+                    "INSERT INTO turn_requests(
+                        turn_id,
+                        message_id,
+                        text,
+                        inference_provider,
+                        hidden,
+                        updated_at_ms
+                     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                     ON CONFLICT(turn_id) DO UPDATE SET
+                       message_id = excluded.message_id,
+                       text = excluded.text,
+                       inference_provider = excluded.inference_provider,
+                       hidden = excluded.hidden,
+                       updated_at_ms = excluded.updated_at_ms",
+                    params![
+                        turn_id.as_str(),
+                        message_id.as_str(),
+                        text,
+                        inference_provider,
+                        if hidden { 1_i64 } else { 0_i64 },
+                        updated_at_ms,
+                    ],
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            Ok(())
+        }
+    }
+
+    pub fn retry_turn_generation(
+        &self,
+        conversation_id: &str,
+        user_message_id: &str,
+    ) -> Result<Option<(TurnId, i64, u32)>, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (conversation_id, user_message_id);
+            Ok(None)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(None); };
+            let row = connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .query_row(
+                    "SELECT t.turn_id, t.created_at_ms, COALESCE(MAX(r.generation), 0)
+                     FROM turns t
+                     LEFT JOIN runs r ON r.turn_id = t.turn_id
+                     WHERE t.conversation_id = ?1
+                       AND t.user_message_id = ?2
+                       AND t.state IN ('completed', 'failed', 'cancelled', 'recovering')
+                     GROUP BY t.turn_id, t.created_at_ms
+                     ORDER BY t.created_at_ms DESC
+                     LIMIT 1",
+                    params![conversation_id, user_message_id],
+                    |row| {
+                        Ok((
+                            row.get::<_, String>(0)?,
+                            row.get::<_, i64>(1)?,
+                            row.get::<_, i64>(2)?,
+                        ))
+                    },
+                )
+                .optional()
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            row.map(|(turn_id, created_at_ms, generation)| {
+                let next = generation
+                    .checked_add(1)
+                    .and_then(|value| u32::try_from(value).ok())
+                    .ok_or_else(|| RuntimeStoreError::Sqlite("run generation overflow".to_string()))?;
+                Ok((TurnId(turn_id), created_at_ms, next))
+            })
+            .transpose()
+        }
+    }
+
     pub fn set_turn_state(
         &self,
         turn_id: &TurnId,
@@ -270,6 +429,146 @@ impl RuntimeStore {
                 )
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
             Ok(())
+        }
+    }
+
+    pub fn find_turn_by_client_message(
+        &self,
+        conversation_id: &ConversationId,
+        message_id: &MessageId,
+    ) -> Result<Option<StoredTurnSnapshot>, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (conversation_id, message_id);
+            Ok(None)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(None); };
+            let row = connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .query_row(
+                    "SELECT t.turn_id, t.state, r.run_id, COALESCE(r.generation, 0)
+                     FROM turns t
+                     LEFT JOIN runs r ON r.turn_id = t.turn_id
+                     WHERE t.conversation_id = ?1 AND t.user_message_id = ?2
+                     ORDER BY r.generation DESC
+                     LIMIT 1",
+                    params![conversation_id.as_str(), message_id.as_str()],
+                    |row| {
+                        Ok((
+                            row.get::<_, String>(0)?,
+                            row.get::<_, String>(1)?,
+                            row.get::<_, Option<String>>(2)?,
+                            row.get::<_, i64>(3)?,
+                        ))
+                    },
+                )
+                .optional()
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            row.map(|(turn_id, state, run_id, generation)| {
+                Ok(StoredTurnSnapshot {
+                    turn_id: TurnId(turn_id),
+                    state: parse_turn_state(&state)?,
+                    last_run_id: run_id.map(RunId),
+                    generation: generation.max(0).min(i64::from(u32::MAX)) as u32,
+                })
+            })
+            .transpose()
+        }
+    }
+
+    pub fn recoverable_turns(&self) -> Result<Vec<RecoverableTurn>, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            Ok(Vec::new())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(Vec::new()); };
+            let connection = connection.lock().map_err(|_| RuntimeStoreError::Poisoned)?;
+            let mut statement = connection
+                .prepare(
+                    "SELECT
+                        t.conversation_id,
+                        t.turn_id,
+                        t.user_message_id,
+                        t.state,
+                        r.run_id,
+                        r.generation,
+                        q.text,
+                        q.inference_provider,
+                        q.hidden
+                     FROM turns t
+                     JOIN runs r ON r.turn_id = t.turn_id
+                     LEFT JOIN turn_requests q ON q.turn_id = t.turn_id
+                     WHERE t.state IN (
+                         'accepted',
+                         'queued',
+                         'preparing',
+                         'thinking',
+                         'tool-running',
+                         'streaming',
+                         'waiting-user',
+                         'recovering'
+                     )
+                       AND t.user_message_id IS NOT NULL
+                       AND r.generation = (
+                           SELECT MAX(latest.generation)
+                           FROM runs latest
+                           WHERE latest.turn_id = t.turn_id
+                       )
+                       AND NOT EXISTS (
+                           SELECT 1
+                           FROM pending_intents p
+                           WHERE p.kind = 'agent-handoff'
+                             AND p.intent_id = t.user_message_id
+                       )
+                     ORDER BY t.created_at_ms ASC",
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            let rows = statement
+                .query_map([], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, String>(4)?,
+                        row.get::<_, i64>(5)?,
+                        row.get::<_, Option<String>>(6)?,
+                        row.get::<_, Option<String>>(7)?,
+                        row.get::<_, Option<i64>>(8)?,
+                    ))
+                })
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            let mut recovered = Vec::new();
+            for row in rows {
+                let (
+                    conversation_id,
+                    turn_id,
+                    message_id,
+                    state,
+                    run_id,
+                    generation,
+                    text,
+                    inference_provider,
+                    hidden,
+                ) = row.map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+                recovered.push(RecoverableTurn {
+                    conversation_id: ConversationId(conversation_id),
+                    turn_id: TurnId(turn_id),
+                    message_id: MessageId(message_id),
+                    state: parse_turn_state(&state)?,
+                    last_run_id: RunId(run_id),
+                    generation: generation.max(0).min(i64::from(u32::MAX)) as u32,
+                    text,
+                    inference_provider,
+                    hidden: hidden.map(|value| value != 0),
+                });
+            }
+            Ok(recovered)
         }
     }
 
@@ -341,6 +640,141 @@ impl RuntimeStore {
                 )
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
             Ok(())
+        }
+    }
+
+    pub fn mark_handoff_started(
+        &self,
+        intent_id: &str,
+        operation_id: &str,
+        updated_at_ms: i64,
+    ) -> Result<(), RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (intent_id, operation_id, updated_at_ms);
+            Ok(())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(()); };
+            connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .execute(
+                    "INSERT INTO handoff_dispatch(intent_id, target_operation_id, state, updated_at_ms)
+                     VALUES (?1, ?2, 'running', ?3)
+                     ON CONFLICT(intent_id) DO UPDATE SET
+                       target_operation_id = CASE
+                         WHEN handoff_dispatch.state IN ('completed', 'failed')
+                           THEN handoff_dispatch.target_operation_id
+                         ELSE excluded.target_operation_id
+                       END,
+                       state = CASE
+                         WHEN handoff_dispatch.state IN ('completed', 'failed')
+                           THEN handoff_dispatch.state
+                         ELSE 'running'
+                       END,
+                       updated_at_ms = excluded.updated_at_ms",
+                    params![intent_id, operation_id, updated_at_ms],
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            Ok(())
+        }
+    }
+
+    pub fn mark_handoff_terminal(
+        &self,
+        intent_id: &str,
+        completed: bool,
+        updated_at_ms: i64,
+    ) -> Result<(), RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (intent_id, completed, updated_at_ms);
+            Ok(())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(()); };
+            let state = if completed { "completed" } else { "failed" };
+            connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .execute(
+                    "INSERT INTO handoff_dispatch(intent_id, target_operation_id, state, updated_at_ms)
+                     SELECT ?1, NULL, ?2, ?3
+                     WHERE EXISTS (
+                       SELECT 1 FROM pending_intents
+                       WHERE intent_id = ?1 AND kind = 'agent-handoff'
+                     )
+                     ON CONFLICT(intent_id) DO UPDATE SET
+                       state = excluded.state,
+                       updated_at_ms = excluded.updated_at_ms",
+                    params![intent_id, state, updated_at_ms],
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            Ok(())
+        }
+    }
+
+    pub fn recoverable_handoffs(&self) -> Result<Vec<RecoverableHandoff>, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            Ok(Vec::new())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(Vec::new()); };
+            let connection = connection.lock().map_err(|_| RuntimeStoreError::Poisoned)?;
+            let mut statement = connection
+                .prepare(
+                    "SELECT p.turn_id, p.payload_json
+                     FROM pending_intents p
+                     LEFT JOIN handoff_dispatch d ON d.intent_id = p.intent_id
+                     WHERE p.kind = 'agent-handoff'
+                       AND (d.state IS NULL OR d.state IN ('queued', 'running'))
+                     ORDER BY p.created_at_ms ASC",
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            let rows = statement
+                .query_map([], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                })
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            let mut recovered = Vec::new();
+            for row in rows {
+                let (turn_id, payload) =
+                    row.map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+                let intent = serde_json::from_str::<HandoffIntent>(&payload)
+                    .map_err(|error| RuntimeStoreError::Serialization(error.to_string()))?;
+                recovered.push(RecoverableHandoff {
+                    origin_turn_id: TurnId(turn_id),
+                    intent,
+                });
+            }
+            Ok(recovered)
+        }
+    }
+
+    pub fn count_handoffs_for_run(&self, run_id: &RunId) -> Result<u64, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = run_id;
+            Ok(0)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(0); };
+            let count = connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .query_row(
+                    "SELECT COUNT(*) FROM pending_intents WHERE kind = 'agent-handoff' AND run_id = ?1",
+                    params![run_id.as_str()],
+                    |row| row.get::<_, i64>(0),
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            Ok(count.max(0) as u64)
         }
     }
 
@@ -498,6 +932,252 @@ impl RuntimeStore {
         }
     }
 
+}
+
+fn parse_turn_state(value: &str) -> Result<TurnState, RuntimeStoreError> {
+    match value {
+        "accepted" => Ok(TurnState::Accepted),
+        "queued" => Ok(TurnState::Queued),
+        "preparing" => Ok(TurnState::Preparing),
+        "thinking" => Ok(TurnState::Thinking),
+        "tool-running" => Ok(TurnState::ToolRunning),
+        "streaming" => Ok(TurnState::Streaming),
+        "waiting-user" => Ok(TurnState::WaitingUser),
+        "completed" => Ok(TurnState::Completed),
+        "failed" => Ok(TurnState::Failed),
+        "cancelled" => Ok(TurnState::Cancelled),
+        "recovering" => Ok(TurnState::Recovering),
+        other => Err(RuntimeStoreError::Serialization(format!(
+            "unknown turn state: {other}"
+        ))),
+    }
+}
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod tests {
+    use super::*;
+    use mahayana_core::IntentId;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_store() -> (std::path::PathBuf, RuntimeStore) {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "mahayana-runtime-store-{}-{nonce}",
+            std::process::id()
+        ));
+        let store = RuntimeStore::open(Some(&path)).expect("open runtime store");
+        (path, store)
+    }
+
+    #[test]
+    fn retry_generation_reuses_one_terminal_logical_turn_and_increments_runs() {
+        let (path, store) = temp_store();
+        let conversation_id = ConversationId("codex:agent:retry".to_string());
+        let message_id = MessageId("message:stable".to_string());
+        let turn_id = TurnId("turn:stable".to_string());
+        let first_run_id = RunId("run:first".to_string());
+
+        store
+            .record_turn(&LogicalTurn {
+                id: turn_id.clone(),
+                conversation_id: conversation_id.clone(),
+                user_message_id: Some(message_id.clone()),
+                created_at_ms: 10,
+                state: TurnState::Completed,
+                active_run_id: None,
+            })
+            .expect("record logical turn");
+        store
+            .record_run(&ExecutionRun {
+                id: first_run_id,
+                turn_id: turn_id.clone(),
+                generation: 1,
+                provider: "codex".to_string(),
+                started_at_ms: 10,
+                finished_at_ms: Some(20),
+                state: TurnState::Completed,
+            })
+            .expect("record first generation");
+
+        let (resolved_turn, created_at_ms, generation) = store
+            .retry_turn_generation(conversation_id.as_str(), message_id.as_str())
+            .expect("resolve retry")
+            .expect("terminal turn should be retryable");
+        assert_eq!(resolved_turn, turn_id);
+        assert_eq!(created_at_ms, 10);
+        assert_eq!(generation, 2);
+
+        store
+            .record_run(&ExecutionRun {
+                id: RunId("run:second".to_string()),
+                turn_id: turn_id.clone(),
+                generation,
+                provider: "codex".to_string(),
+                started_at_ms: 30,
+                finished_at_ms: Some(40),
+                state: TurnState::Completed,
+            })
+            .expect("record second generation");
+
+        assert_eq!(
+            store
+                .retry_turn_generation(conversation_id.as_str(), message_id.as_str())
+                .expect("resolve next retry")
+                .expect("logical turn remains retryable")
+                .2,
+            3,
+        );
+
+        drop(store);
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[test]
+    fn retry_generation_rejects_non_terminal_logical_turns() {
+        let (path, store) = temp_store();
+        let conversation_id = ConversationId("codex:agent:busy".to_string());
+        let message_id = MessageId("message:busy".to_string());
+        let turn_id = TurnId("turn:busy".to_string());
+        let run_id = RunId("run:busy".to_string());
+
+        store
+            .record_turn(&LogicalTurn {
+                id: turn_id.clone(),
+                conversation_id: conversation_id.clone(),
+                user_message_id: Some(message_id.clone()),
+                created_at_ms: 10,
+                state: TurnState::Thinking,
+                active_run_id: Some(run_id.clone()),
+            })
+            .expect("record active turn");
+        store
+            .record_run(&ExecutionRun {
+                id: run_id,
+                turn_id,
+                generation: 1,
+                provider: "codex".to_string(),
+                started_at_ms: 10,
+                finished_at_ms: None,
+                state: TurnState::Thinking,
+            })
+            .expect("record active generation");
+
+        assert!(
+            store
+                .retry_turn_generation(conversation_id.as_str(), message_id.as_str())
+                .expect("query retry target")
+                .is_none(),
+            "an active logical turn must not be forked into a retry generation",
+        );
+
+        drop(store);
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[test]
+    fn recoverable_turns_include_active_and_waiting_user_restart_candidates() {
+        let (path, store) = temp_store();
+        let conversation_id = ConversationId("codex:agent:restart".to_string());
+
+        for (suffix, state) in [
+            ("thinking", TurnState::Thinking),
+            ("waiting", TurnState::WaitingUser),
+        ] {
+            let turn_id = TurnId(format!("turn:{suffix}"));
+            let run_id = RunId(format!("run:{suffix}"));
+            let message_id = MessageId(format!("message:{suffix}"));
+            store
+                .record_turn(&LogicalTurn {
+                    id: turn_id.clone(),
+                    conversation_id: conversation_id.clone(),
+                    user_message_id: Some(message_id),
+                    created_at_ms: if suffix == "thinking" { 10 } else { 20 },
+                    state,
+                    active_run_id: Some(run_id.clone()),
+                })
+                .expect("record turn");
+            store
+                .record_run(&ExecutionRun {
+                    id: run_id,
+                    turn_id,
+                    generation: 1,
+                    provider: "codex".to_string(),
+                    started_at_ms: 10,
+                    finished_at_ms: None,
+                    state,
+                })
+                .expect("record run");
+        }
+
+        store
+            .record_turn_request(
+                &TurnId("turn:thinking".to_string()),
+                &MessageId("message:thinking".to_string()),
+                "resume this prompt",
+                Some("codex"),
+                false,
+                15,
+            )
+            .expect("record recovery input");
+
+        let recoverable = store.recoverable_turns().expect("recover active turns");
+        assert_eq!(recoverable.len(), 2);
+        let thinking = recoverable
+            .iter()
+            .find(|candidate| candidate.message_id.as_str() == "message:thinking")
+            .expect("thinking turn");
+        assert_eq!(thinking.state, TurnState::Thinking);
+        assert_eq!(thinking.generation, 1);
+        assert_eq!(thinking.text.as_deref(), Some("resume this prompt"));
+        assert_eq!(thinking.inference_provider.as_deref(), Some("codex"));
+        assert_eq!(thinking.hidden, Some(false));
+        let waiting = recoverable
+            .iter()
+            .find(|candidate| candidate.message_id.as_str() == "message:waiting")
+            .expect("waiting-user turn");
+        assert_eq!(waiting.state, TurnState::WaitingUser);
+        assert_eq!(waiting.text, None);
+
+        drop(store);
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[test]
+    fn handoff_dispatch_recovers_running_but_not_terminal_work() {
+        let (path, store) = temp_store();
+        let intent = HandoffIntent {
+            id: IntentId("handoff:test".to_string()),
+            target_agent: "research".to_string(),
+            target_conversation_id: Some(ConversationId(
+                "codex:agent:research".to_string(),
+            )),
+            inference_provider: Some("codex".to_string()),
+            task: "summarize".to_string(),
+            constraints: Value::Null,
+            expected_output: None,
+            origin_run: RunId("run:origin".to_string()),
+            depth: 1,
+        };
+        let turn_id = TurnId("turn:origin".to_string());
+        store.enqueue_handoff(&intent, &turn_id, 1).expect("enqueue");
+        assert_eq!(store.recoverable_handoffs().expect("recover").len(), 1);
+
+        store
+            .mark_handoff_started(intent.id.as_str(), "run:target", 2)
+            .expect("mark running");
+        assert_eq!(store.recoverable_handoffs().expect("recover").len(), 1);
+
+        store
+            .mark_handoff_terminal(intent.id.as_str(), true, 3)
+            .expect("mark complete");
+        assert!(store.recoverable_handoffs().expect("recover").is_empty());
+
+        drop(store);
+        let _ = std::fs::remove_dir_all(path);
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
