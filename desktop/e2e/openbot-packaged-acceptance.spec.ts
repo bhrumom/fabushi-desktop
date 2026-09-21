@@ -1,4 +1,4 @@
-import { _electron as electron, chromium, expect, test, type Browser, type ElectronApplication, type Locator, type Page } from '@playwright/test';
+import { _electron as electron, chromium, expect, test, type Browser, type BrowserContext, type ElectronApplication, type Locator, type Page } from '@playwright/test';
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -456,6 +456,7 @@ test.describe('signed candidate packaged acceptance', () => {
       'failure.json',
       'candidate.json',
       'lifecycle.json',
+      'trace.zip',
     ]) {
       await rm(path.join(evidenceRoot, relativePath), { recursive: true, force: true });
     }
@@ -476,6 +477,8 @@ test.describe('signed candidate packaged acceptance', () => {
     let app: ElectronApplication | null = null;
     let cdpBrowser: Browser | null = null;
     let pageForTrace: Page | null = null;
+    let traceContext: BrowserContext | null = null;
+    let traceStarted = false;
     let acceptanceCompleted = false;
 
     try {
@@ -522,6 +525,13 @@ test.describe('signed candidate packaged acceptance', () => {
         attachPageDiagnostics(page);
       }
       pageForTrace = page;
+      traceContext = page.context();
+      await traceContext.tracing.start({
+        screenshots: true,
+        snapshots: true,
+        sources: true,
+      });
+      traceStarted = true;
       await writeFile(path.join(evidenceRoot, 'startup.json'), JSON.stringify({
         sourceSha,
         initialPageUrl,
@@ -652,6 +662,13 @@ test.describe('signed candidate packaged acceptance', () => {
           executable,
           url: pageForTrace.url(),
         }, null, 2)).catch(() => undefined);
+      }
+      if (traceStarted && traceContext) {
+        await traceContext.tracing.stop({
+          path: path.join(evidenceRoot, 'trace.zip'),
+        }).catch((error) => {
+          captureRuntimeLog('trace-error', error instanceof Error ? error.stack || error.message : String(error));
+        });
       }
       if (app) {
         try {
