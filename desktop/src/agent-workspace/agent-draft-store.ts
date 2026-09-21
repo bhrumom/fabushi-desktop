@@ -3,7 +3,8 @@ import { AGENT_ATTACHMENT_LIMIT } from './agent-attachments';
 import type { AgentPromptReference, AgentReplyContext } from './prompt-context';
 import { normalizeAgentRichText } from './agent-rich-text';
 
-const storageKey = 'fabushi.agent-workspace.drafts.v1';
+export const AGENT_WORKSPACE_DRAFT_STORAGE_KEY = 'fabushi.agent-workspace.drafts.v1';
+const storageKey = AGENT_WORKSPACE_DRAFT_STORAGE_KEY;
 
 export interface PersistedAgentDraft {
   text: string;
