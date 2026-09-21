@@ -48,9 +48,7 @@ declare global {
 }
 
 const ELECTRON_EDGE_CONTRACT_VERSION = 1;
-const CONVERSATION_JOURNAL_KEY = "fabushi.desktop.mahayana-conversation-journal.v1";
 const CONVERSATION_JOURNAL_VERSION = 1;
-const CONVERSATION_JOURNAL_LIMIT = 80;
 const CONVERSATION_MESSAGE_LIMIT = 240;
 const CONVERSATION_EQUIVALENCE_WINDOW_MS = 60_000;
 
@@ -159,55 +157,16 @@ function eventTimestampMs(timestamp: string): number {
   return Number.isFinite(parsed) ? parsed : Date.now();
 }
 
-function isConversationJournalMessage(value: unknown): value is ConversationJournalMessage {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const candidate = value as Partial<ConversationJournalMessage>;
-  return (
-    typeof candidate.id === "string" &&
-    (candidate.role === "user" || candidate.role === "assistant") &&
-    typeof candidate.text === "string" &&
-    typeof candidate.createdAtMs === "number" &&
-    Number.isFinite(candidate.createdAtMs) &&
-    (candidate.streaming === undefined || typeof candidate.streaming === "boolean")
-  );
-}
-
 function emptyConversationJournal(): ConversationJournal {
   return { version: CONVERSATION_JOURNAL_VERSION, conversations: {} };
 }
 
-function readConversationJournal(): ConversationJournal {
-  if (typeof window === "undefined") return emptyConversationJournal();
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(CONVERSATION_JOURNAL_KEY) || "null") as unknown;
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return emptyConversationJournal();
-    const candidate = parsed as Partial<ConversationJournal>;
-    if (
-      candidate.version !== CONVERSATION_JOURNAL_VERSION ||
-      !candidate.conversations ||
-      typeof candidate.conversations !== "object" ||
-      Array.isArray(candidate.conversations)
-    ) {
-      return emptyConversationJournal();
-    }
+const transientConversationJournal = emptyConversationJournal();
 
-    const conversations = Object.fromEntries(
-      Object.entries(candidate.conversations)
-        .filter(([conversationId, messages]) => Boolean(conversationId) && Array.isArray(messages))
-        .map(([conversationId, messages]) => [
-          conversationId,
-          (messages as unknown[])
-            .filter(isConversationJournalMessage)
-            .sort((left, right) => left.createdAtMs - right.createdAtMs)
-            .slice(-CONVERSATION_MESSAGE_LIMIT),
-        ])
-        .filter(([, messages]) => (messages as ConversationJournalMessage[]).length > 0)
-        .slice(-CONVERSATION_JOURNAL_LIMIT),
-    );
-    return { version: CONVERSATION_JOURNAL_VERSION, conversations };
-  } catch {
-    return emptyConversationJournal();
-  }
+function readConversationJournal(): ConversationJournal {
+  // Projection cache only. Durable conversation history belongs to the
+  // Mahayana Rust RuntimeStore and is replayed through typed Host events.
+  return transientConversationJournal;
 }
 
 
@@ -215,37 +174,6 @@ export function readCachedConversationMessages(conversationId: string): Conversa
   const id = conversationId.trim();
   if (!id) return [];
   return (readConversationJournal().conversations[id] ?? []).map((message) => ({ ...message }));
-}
-
-function persistConversationJournal(journal: ConversationJournal): void {
-  if (typeof window === "undefined") return;
-  try {
-    const conversations = Object.fromEntries(
-      Object.entries(journal.conversations)
-        .filter(([, messages]) => messages.length > 0)
-        .sort(([, left], [, right]) =>
-          (right.at(-1)?.createdAtMs ?? 0) - (left.at(-1)?.createdAtMs ?? 0),
-        )
-        .slice(0, CONVERSATION_JOURNAL_LIMIT)
-        .map(([conversationId, messages]) => [
-          conversationId,
-          messages
-            .slice(-CONVERSATION_MESSAGE_LIMIT)
-            .map((message) => ({ ...message })),
-        ]),
-    );
-    if (Object.keys(conversations).length === 0) {
-      window.localStorage.removeItem(CONVERSATION_JOURNAL_KEY);
-      return;
-    }
-    window.localStorage.setItem(
-      CONVERSATION_JOURNAL_KEY,
-      JSON.stringify({ version: CONVERSATION_JOURNAL_VERSION, conversations }),
-    );
-  } catch {
-    // Conversation recovery is a local-first cache. Host persistence remains
-    // authoritative and storage pressure must never block a live Agent turn.
-  }
 }
 
 function equivalentConversationMessage(
@@ -320,13 +248,10 @@ export class ElectronMahayanaHostTransport implements MahayanaHostTransport {
   private unsubscribeBridge: (() => void) | null = null;
   private unsubscribeCommandObserver: (() => void) | null = null;
   private unsubscribeAccountSessionReset: (() => void) | null = null;
-  private journalPersistTimer: ReturnType<typeof setTimeout> | null = null;
-  private discardJournalOnClose = false;
 
   constructor() {
     if (typeof window !== "undefined") {
       const onAccountSessionReset = () => {
-        this.discardJournalOnClose = true;
         this.discardConversationJournal();
       };
       window.addEventListener(MAHAYANA_ACCOUNT_SESSION_RESET_EVENT, onAccountSessionReset);
@@ -536,8 +461,6 @@ export class ElectronMahayanaHostTransport implements MahayanaHostTransport {
     this.unsubscribeAccountSessionReset?.();
     this.unsubscribeAccountSessionReset = null;
     this.miniAppConversations.clear();
-    if (this.discardJournalOnClose) this.discardConversationJournal();
-    else this.flushConversationJournal();
   }
 
   private dispatchToListeners(event: RuntimeEvent): void {
@@ -734,42 +657,13 @@ export class ElectronMahayanaHostTransport implements MahayanaHostTransport {
   private setConversationMessages(
     conversationId: string,
     messages: ConversationJournalMessage[],
-    persistImmediately: boolean,
+    _persistImmediately: boolean,
   ): void {
     this.conversationJournal.conversations[conversationId] = messages.slice(-CONVERSATION_MESSAGE_LIMIT);
-    if (persistImmediately) this.flushConversationJournal();
-    else this.scheduleConversationJournalPersist();
-  }
-
-  private scheduleConversationJournalPersist(): void {
-    if (this.journalPersistTimer) return;
-    this.journalPersistTimer = setTimeout(() => {
-      this.journalPersistTimer = null;
-      persistConversationJournal(this.conversationJournal);
-    }, 120);
-  }
-
-  private flushConversationJournal(): void {
-    if (this.journalPersistTimer) {
-      clearTimeout(this.journalPersistTimer);
-      this.journalPersistTimer = null;
-    }
-    persistConversationJournal(this.conversationJournal);
   }
 
   private discardConversationJournal(): void {
-    if (this.journalPersistTimer) {
-      clearTimeout(this.journalPersistTimer);
-      this.journalPersistTimer = null;
-    }
     this.conversationJournal.conversations = {};
-    if (typeof window !== "undefined") {
-      try {
-        window.localStorage.removeItem(CONVERSATION_JOURNAL_KEY);
-      } catch {
-        // Logout/session revocation must still clear in-memory account data.
-      }
-    }
   }
 
   private refreshUnscopedSuppression(): void {
