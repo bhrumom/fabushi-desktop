@@ -789,20 +789,35 @@ function installNativeEdge() {
     },
     async readClientPersistence(params) {
       const key = persistenceKey(params.key);
+      const durable = await host.request('feature.persistence.get', { key });
+      if (durable !== null && durable !== undefined) return durable;
+
+      // One-way lazy migration from the pre-SQLite native-state projection.
       const state = await readNativeState();
-      return state.clientPersistence?.[key] ?? null;
+      const legacy = state.clientPersistence?.[key];
+      if (legacy === undefined) return null;
+      await host.request('feature.persistence.set', { key, value: legacy });
+      await mutateNativeState((current) => {
+        const next = { ...(current.clientPersistence ?? {}) };
+        delete next[key];
+        return { ...current, clientPersistence: next };
+      });
+      return legacy;
     },
     async writeClientPersistence(params) {
       const key = persistenceKey(params.key);
-      const value = params.value;
-      await mutateNativeState((state) => ({
-        ...state,
-        clientPersistence: { ...(state.clientPersistence ?? {}), [key]: value },
-      }));
+      await host.request('feature.persistence.set', { key, value: params.value });
+      await mutateNativeState((state) => {
+        if (!state.clientPersistence || state.clientPersistence[key] === undefined) return state;
+        const next = { ...state.clientPersistence };
+        delete next[key];
+        return { ...state, clientPersistence: next };
+      });
       return true;
     },
     async removeClientPersistence(params) {
       const key = persistenceKey(params.key);
+      await host.request('feature.persistence.remove', { key });
       await mutateNativeState((state) => {
         const next = { ...(state.clientPersistence ?? {}) };
         delete next[key];
@@ -812,8 +827,12 @@ function installNativeEdge() {
     },
     async listClientPersistenceKeys(params) {
       const prefix = params.prefix == null ? '' : String(params.prefix);
+      const durable = await host.request('feature.persistence.list', { prefix });
       const state = await readNativeState();
-      return Object.keys(state.clientPersistence ?? {}).filter((key) => key.startsWith(prefix)).sort();
+      return [...new Set([
+        ...(Array.isArray(durable) ? durable.map(String) : []),
+        ...Object.keys(state.clientPersistence ?? {}).filter((key) => key.startsWith(prefix)),
+      ])].sort();
     },
     requestDiskSaverAudit() {
       return auditUserDataStorage();
