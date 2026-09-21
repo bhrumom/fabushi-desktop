@@ -266,6 +266,17 @@ jobs:
           xcrun stapler validate "$app"
           spctl --assess --type execute --verbose=4 "$app"
 
+      - name: Verify desktop updater metadata
+        shell: bash
+        env:
+          VERSION: ${{ steps.source.outputs.version }}
+        run: |
+          set -euo pipefail
+          metadata="desktop/release/latest-mac.yml"
+          test -s "$metadata"
+          grep -F "fabushi-${VERSION}-macos-arm64.zip" "$metadata"
+          find desktop/release -maxdepth 1 -type f -name '*.blockmap' -size +0c -print -quit | grep -q .
+
       - name: Bind packaged candidate executable
         id: candidate
         shell: bash
@@ -376,6 +387,8 @@ jobs:
           path: |
             desktop/release/*.dmg
             desktop/release/*.zip
+            desktop/release/*.blockmap
+            desktop/release/latest-mac.yml
             desktop/release/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 90
@@ -394,7 +407,7 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release delete "$TAG" --yes --cleanup-tag
           fi
-          gh release create "$TAG"             desktop/release/*.dmg             desktop/release/*.zip             desktop/release/SHA256SUMS.txt             --target "$SOURCE_SHA"             --title "Fabushi macOS $VERSION — ${SOURCE_SHA:0:12}"             --notes "Signed and Apple-notarized macOS arm64 installer built from exact fabushi-desktop commit \`$SOURCE_SHA\`."             --prerelease
+          gh release create "$TAG"             desktop/release/*.dmg             desktop/release/*.zip             desktop/release/*.blockmap             desktop/release/latest-mac.yml             desktop/release/SHA256SUMS.txt             --target "$SOURCE_SHA"             --title "Fabushi macOS $VERSION — ${SOURCE_SHA:0:12}"             --notes "Signed and Apple-notarized macOS arm64 installer built from exact fabushi-desktop commit \`$SOURCE_SHA\`."             --prerelease
           url="$(gh release view "$TAG" --json url -q .url)"
           echo "### Published" >> "$GITHUB_STEP_SUMMARY"
           echo "- Release: $url" >> "$GITHUB_STEP_SUMMARY"
