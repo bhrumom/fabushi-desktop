@@ -217,9 +217,10 @@ export class AgentTranscriptStore {
   ): AgentTranscriptSourceMessage[] {
     return this.update(peerKey, (current) => current.flatMap((message) => {
       if (message.id === messageId && message.role === 'me') {
-        const { operationId: _operationId, ...rest } = message;
+        const retryMessage = { ...message };
+        delete retryMessage.operationId;
         return [{
-          ...rest,
+          ...retryMessage,
           optimistic: false,
           queued: false,
         }];
