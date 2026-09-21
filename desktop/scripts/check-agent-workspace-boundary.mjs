@@ -69,6 +69,42 @@ const broker = read(runtimeRoot, 'capability_broker.rs');
 const runtimeStore = read(runtimeRoot, 'runtime_store.rs');
 const featureHost = read(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-feature-host', 'src', 'implementation.rs');
 const computerRuntime = read(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-computer', 'src', 'lib.rs');
+const codexAgentBackend = read(
+  repoRoot,
+  'third_party',
+  'mahayana',
+  'mahayana-rs',
+  'mahayana-agent-codex',
+  'src',
+  'implementation.rs',
+);
+const codexSendStart = codexAgentBackend.indexOf('async fn send_message(');
+const codexSendEnd = codexSendStart >= 0
+  ? codexAgentBackend.indexOf('async fn interrupt(', codexSendStart)
+  : -1;
+const codexSendMessage = codexSendStart >= 0 && codexSendEnd > codexSendStart
+  ? codexAgentBackend.slice(codexSendStart, codexSendEnd)
+  : '';
+
+requirePattern(
+  'Codex Agent backend must expose the pending-turn match used for pre-response app-server events',
+  codexAgentBackend,
+  /fn operation_turn_matches\([\s\S]{0,500}bound_turn_id\.is_empty\(\)/,
+);
+requireOrdered(
+  'Codex Agent backend must register operation ownership before TurnStart can emit fast completion events',
+  codexSendMessage,
+  [
+    'let (completion, result) = oneshot::channel();',
+    '.operations',
+    '.insert(',
+    'turn_id: String::new()',
+    'request_typed(ClientRequest::TurnStart',
+    'operation.turn_id = turn_id',
+    'result',
+    '.await',
+  ],
+);
 
 const legacyShell = path.join(desktopRoot, 'src', 'adapters', 'legacy-messaging', 'legacy-messaging-shell.tsx');
 const obsoleteShell = path.join(desktopRoot, 'src', 'messaging-shell-v2.tsx');
