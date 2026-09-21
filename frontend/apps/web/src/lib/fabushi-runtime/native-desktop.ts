@@ -20,6 +20,7 @@ export type NativeDesktopEvent =
   | "offline-asr-progress"
   | "open-offline-asr"
   | "remote-desktop-user-presence"
+  | "remote-computer-background-state"
   | "dev-compute-pull-progress"
   | "egress-tunnel-changed"
   | "egress-tunnel-status-changed"
