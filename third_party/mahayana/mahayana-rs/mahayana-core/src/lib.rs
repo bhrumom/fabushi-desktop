@@ -324,6 +324,13 @@ pub enum RuntimeCommand {
     ListConversations,
     #[serde(rename = "mahayana.capability.list")]
     ListCapabilities { query: Option<String> },
+    #[serde(rename = "mahayana.capability.authorize")]
+    AuthorizeCapability {
+        request: capability::CapabilityRequest,
+        availability: capability::CapabilityAvailability,
+        #[serde(rename = "unavailableReason", default, skip_serializing_if = "Option::is_none")]
+        unavailable_reason: Option<String>,
+    },
     #[serde(rename = "mahayana.capability.invoke")]
     InvokeCapability {
         #[serde(rename = "capabilityId")]
@@ -466,6 +473,10 @@ pub enum RuntimeResponse {
     #[serde(rename = "mahayana.capability.list")]
     Capabilities {
         data: Vec<capability::CapabilityDescriptor>,
+    },
+    #[serde(rename = "mahayana.capability.decision")]
+    CapabilityDecision {
+        decision: capability::CapabilityPolicyDecision,
     },
     #[serde(rename = "mahayana.capability.accepted")]
     CapabilityAccepted {
