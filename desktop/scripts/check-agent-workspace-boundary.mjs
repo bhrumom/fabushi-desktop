@@ -69,6 +69,8 @@ const fabAvatar = read(desktopRoot, 'src', 'ui', 'avatar', 'fab-avatar.tsx');
 const primitives = read(desktopRoot, 'src', 'ui', 'primitives', 'fab-primitives.tsx');
 const tokens = read(desktopRoot, 'src', 'ui', 'tokens.css');
 const electronMain = read(desktopRoot, 'electron', 'main.cjs');
+const hostProcess = read(desktopRoot, 'electron', 'host-process.cjs');
+const mahayanaEdge = read(desktopRoot, 'electron', 'mahayana-edge.cjs');
 const electronTransport = read(repoRoot, 'frontend', 'apps', 'web', 'src', 'lib', 'mahayana-host', 'electron-transport.ts');
 const remoteSupervisor = read(desktopRoot, 'electron', 'remote-device-agent-supervisor.cjs');
 
@@ -300,6 +302,8 @@ if (/backgroundThrottling:\s*false/.test(electronMain)
   violations.push('desktop power architecture regressed to unthrottled renderer or Host polling');
 }
 requirePattern('Electron Main no longer receives pushed Host runtime events', electronMain, /host\.onRuntimeEvent\s*\(/);
+forbidPattern('Electron Host bridge must not retain feature.receive RPC compatibility', hostProcess, /feature\.receive/);
+forbidPattern('Electron Mahayana edge must not expose feature.receive polling', mahayanaEdge, /feature\.receive/);
 forbidPattern(
   'Electron renderer transport reintroduced feature.receive polling fallback',
   electronTransport,
