@@ -526,6 +526,7 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
   private bots = new Map(defaultBots().map((bot) => [bot.id, bot]));
   private groups = new Map<string, GroupSummary>();
   private peerMessages: AgentPeerMessage[] = [];
+  private workspaceState = new Map<string, unknown>();
   private memories = new Map<string, MemoryRecord[]>();
   private trays = new ErrorTrayQueue();
   private workflows = new Map<string, WorkflowSummary>();
@@ -770,6 +771,17 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
               : true,
           ),
         });
+        return { requestId: command.requestId };
+      case "agent.workspaceState.get":
+        this.emit({
+          type: "agent.workspaceState",
+          timestamp: now(),
+          key: command.key,
+          value: this.workspaceState.get(command.key),
+        });
+        return { requestId: command.requestId };
+      case "agent.workspaceState.set":
+        this.workspaceState.set(command.key, command.value);
         return { requestId: command.requestId };
       case "automation.list":
         this.emit({
