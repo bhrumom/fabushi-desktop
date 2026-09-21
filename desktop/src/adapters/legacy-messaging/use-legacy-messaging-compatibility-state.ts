@@ -1,6 +1,16 @@
 import { useRef, useState } from 'react';
 import type { InstalledPluginPointer, MarketplacePluginSummary } from '../../../../frontend/apps/web/src/lib/mahayana-host/transport';
 import type { IncomingFabushiCall } from '../../webrtc-call-controller';
+import type {
+  MessagingBotExecution,
+  MessagingBotProfile,
+  MessagingCommunityState,
+  MessagingInvoice,
+  MessagingLedgerEntry,
+  MessagingOrder,
+  MessagingStory,
+  MessagingWalletAccount,
+} from '../../selfhosted-messaging-client-v2';
 import type { CompatibilityPeerItem as PeerItem } from '../../agent-workspace/messenger-compatibility-adapter';
 import type {
   DisplayMessage,
@@ -23,16 +33,16 @@ export function useLegacyMessagingCompatibilityState(
   const [selfActors, setSelfActors] = useState(() => startupProjection?.selfActors ?? []);
   const [selfConversations, setSelfConversations] = useState(() => startupProjection?.selfConversations ?? []);
   const [selfMessages, setSelfMessages] = useState(() => startupProjection?.selfMessages ?? {});
-  const [selfStories, setSelfStories] = useState([]);
-  const [selfCommunities, setSelfCommunities] = useState([]);
-  const [selfBotProfiles, setSelfBotProfiles] = useState([]);
-  const [selfBotExecutions, setSelfBotExecutions] = useState([]);
-  const [activeStory, setActiveStory] = useState<import('../../selfhosted-messaging-client-v2').MessagingStory | null>(null);
+  const [selfStories, setSelfStories] = useState<MessagingStory[]>([]);
+  const [selfCommunities, setSelfCommunities] = useState<MessagingCommunityState[]>([]);
+  const [selfBotProfiles, setSelfBotProfiles] = useState<MessagingBotProfile[]>([]);
+  const [selfBotExecutions, setSelfBotExecutions] = useState<MessagingBotExecution[]>([]);
+  const [activeStory, setActiveStory] = useState<MessagingStory | null>(null);
   const [communityDialogPeer, setCommunityDialogPeer] = useState<PeerItem | null>(null);
-  const [selfInvoices, setSelfInvoices] = useState([]);
-  const [selfOrders, setSelfOrders] = useState([]);
-  const [walletAccount, setWalletAccount] = useState<import('../../selfhosted-messaging-client-v2').MessagingWalletAccount | null>(null);
-  const [walletEntries, setWalletEntries] = useState([]);
+  const [selfInvoices, setSelfInvoices] = useState<MessagingInvoice[]>([]);
+  const [selfOrders, setSelfOrders] = useState<MessagingOrder[]>([]);
+  const [walletAccount, setWalletAccount] = useState<MessagingWalletAccount | null>(null);
+  const [walletEntries, setWalletEntries] = useState<MessagingLedgerEntry[]>([]);
   const [messages, setMessages] = useState<DisplayMessage[]>(() => [...initialMessages]);
   const [composer, setComposer] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
