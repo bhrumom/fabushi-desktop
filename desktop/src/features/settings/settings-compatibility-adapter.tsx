@@ -40,8 +40,8 @@ export default function SettingsCompatibilityAdapter({
   onLogout,
 }: {
   readonly transport: MahayanaHostTransport;
-  readonly onClose(): void;
-  readonly onLogout(): Promise<void>;
+  readonly onClose: () => void;
+  readonly onLogout: () => Promise<void>;
 }) {
   const [settings, setSettings] = useState<ProductHostSettings>(defaults);
   const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system');
