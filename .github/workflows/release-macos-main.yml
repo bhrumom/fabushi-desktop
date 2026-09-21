@@ -222,6 +222,9 @@ jobs:
         env:
           FABUSHI_MACOS_SIGNED: '1'
           FABUSHI_MACOS_NOTARIZE: '1'
+          # This PR job is restricted above to a same-repository architecture branch.
+          # electron-builder otherwise disables signing solely because event=pull_request.
+          CSC_FOR_PULL_REQUEST: ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
           MACOS_CODESIGN_IDENTITY: ${{ env.MACOS_CODESIGN_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ env.APPLE_TEAM_ID_RESOLVED }}
@@ -266,6 +269,7 @@ jobs:
           spctl --assess --type execute --verbose=4 "$app"
 
       - name: Run real signed-candidate packaged acceptance
+        id: candidate_acceptance
         if: ${{ github.event_name == 'pull_request' }}
         working-directory: desktop
         shell: bash
@@ -287,7 +291,7 @@ jobs:
           npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1
 
       - name: Upload signed-candidate acceptance evidence
-        if: ${{ always() && github.event_name == 'pull_request' }}
+        if: ${{ always() && github.event_name == 'pull_request' && steps.candidate_acceptance.outcome != 'skipped' }}
         uses: actions/upload-artifact@v7
         with:
           name: fabushi-signed-candidate-acceptance-${{ steps.source.outputs.short }}
