@@ -29,6 +29,7 @@ function forbidPattern(label, content, pattern) {
 }
 
 const desktopApp = read(desktopRoot, 'src', 'app', 'DesktopApp.tsx');
+const desktopAuthBoundary = read(desktopRoot, 'src', 'app', 'desktop-auth-boundary.tsx');
 const rootShell = read(desktopRoot, 'src', 'agent-workspace', 'agent-root-shell.tsx');
 const rootCss = read(desktopRoot, 'src', 'agent-workspace', 'agent-root-shell.module.css');
 const productControllers = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-product-controllers.ts');
@@ -65,6 +66,9 @@ requirePattern(
   /<DesktopAuthBoundary>[\s\S]*<AgentRootShell\s+transport=\{transport\}\s+onLogout=\{onLogout\}\s*\/>[\s\S]*<\/DesktopAuthBoundary>/,
 );
 forbidPattern('DesktopApp must not import any legacy messaging shell', desktopApp, /legacy-messaging|messaging-shell-v2/);
+forbidPattern('Desktop auth boundary must not import the legacy HostClient product shell', desktopAuthBoundary, /frontend\/apps\/web\/src\/app\/host\/host-client|\bHostClient\b/);
+requirePattern('Desktop auth boundary must use low-power FabAvatar', desktopAuthBoundary, /\bFabAvatar\b/);
+requirePattern('Desktop auth boundary must expose a dedicated login gate', desktopAuthBoundary, /data-testid=[\"']login-gate[\"']/);
 
 for (const required of [
   ['AgentSidebar', /<AgentSidebar\b/],
