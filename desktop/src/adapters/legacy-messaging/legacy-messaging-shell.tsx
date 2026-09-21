@@ -3783,6 +3783,7 @@ async function saveInvoiceDialog() {
   return (
     <div
       className={`${styles.messenger} ${styles.fabushiUnified}`}
+      data-agent-root-shell="true"
       data-agent-product-grid="true"
       data-testid="messenger-workspace"
       data-product-shell="agent"
