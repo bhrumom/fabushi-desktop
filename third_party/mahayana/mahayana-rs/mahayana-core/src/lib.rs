@@ -141,6 +141,7 @@ pub struct HandoffIntent {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AskUserRequest {
+    pub id: IntentId,
     pub turn_id: TurnId,
     pub run_id: RunId,
     pub question: String,
@@ -522,6 +523,8 @@ pub enum RuntimeResponse {
     History { data: Vec<Message> },
     #[serde(rename = "mahayana.agent.waitingUser")]
     WaitingUser {
+        #[serde(rename = "intentId")]
+        intent_id: IntentId,
         #[serde(rename = "operationId")]
         operation_id: OperationId,
     },
