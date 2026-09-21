@@ -322,7 +322,7 @@ jobs:
           rm -rf "$OBF_EVIDENCE_DIR"
           mkdir -p "$OBF_EVIDENCE_DIR"
           recorder="$RUNNER_TEMP/fabushi-support/chatgpt-vps-control/scripts/fcm-010-13-macos-session-recorder.sh"
-          test -x "$recorder"
+          test -f "$recorder"
           bash "$recorder" start "$OBF_EVIDENCE_DIR"
           bash "$recorder" assert-live "$OBF_EVIDENCE_DIR"
           test_status=0
