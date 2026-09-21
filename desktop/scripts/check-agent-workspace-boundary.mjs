@@ -54,6 +54,7 @@ const computerController = read(desktopRoot, 'src', 'agent-workspace', 'use-agen
 const sidebarController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-sidebar-controller.ts');
 const sidebarState = read(desktopRoot, 'src', 'agent-workspace', 'agent-sidebar-state.ts');
 const agentTranscript = read(desktopRoot, 'src', 'agent-workspace', 'agent-transcript.tsx');
+const conversationIdentity = read(desktopRoot, 'src', 'agent-workspace', 'conversation-identity.ts');
 const agentHeader = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-header.tsx');
 const agentSidebar = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-sidebar.tsx');
 const agentOverlays = read(desktopRoot, 'src', 'agent-workspace', 'agent-overlays.tsx');
@@ -123,6 +124,16 @@ if (rootShell.split('\n').length > 1200) {
   violations.push('AgentRootShell regressed into a god shell (>1200 lines)');
 }
 forbidPattern('AgentRootShell must not own durable state in localStorage', rootShell, /\blocalStorage\b/);
+forbidPattern(
+  'Conversation identity must not infer Telegram from string prefixes',
+  conversationIdentity,
+  /startsWith\(['"]telegram:/,
+);
+requirePattern(
+  'Conversation identity must switch on an explicit typed domain kind',
+  conversationIdentity,
+  /switch\s*\(peer\.kind\)[\s\S]{0,1800}case ['"]telegram['"][\s\S]{0,800}case ['"]miniapp-bot['"]/,
+);
 requirePattern('AgentRootShell must consume the shared FabIconButton primitive', rootShell, /\bFabIconButton\b/);
 requirePattern(
   'DesktopApp must boot through DesktopAuthBoundary directly into AgentRootShell',
@@ -365,6 +376,41 @@ requirePattern('CapabilityBroker is missing', broker, /pub struct CapabilityBrok
 requirePattern('CapabilityBroker no longer owns authorization decisions', broker, /pub fn authorize_request\s*\(/);
 requirePattern('Runtime InvokeCapability bypasses CapabilityBroker', runtimeLib, /RuntimeCommand::InvokeCapability[\s\S]{0,2800}capability_broker[\s\S]{0,320}\.authorize\s*\(/);
 requirePattern('CapabilityBroker descriptor authorization bypasses request policy and audit', broker, /pub fn authorize[\s\S]{0,900}self\.authorize_request\s*\(/);
+requirePattern(
+  'Provider approval requests must enter CapabilityBroker as needs-user before execution',
+  runtimeLib,
+  /RuntimeEvent::ApprovalRequested[\s\S]{0,1800}CapabilityBroker::new[\s\S]{0,600}CapabilityAvailability::PermissionRequired/,
+);
+requireOrdered(
+  'Approval resolution must record final CapabilityBroker allow/deny before provider execution',
+  commandArm('ResolveApproval', null),
+  ['capability_broker', 'authorize_request(', 'provider.resolve_approval('],
+);
+requirePattern(
+  'External collaboration must be a first-class durable Runtime handoff',
+  runtimeLib,
+  /RuntimeCommand::ExternalHandoff[\s\S]{0,1600}dispatch_handoff\s*\(/,
+);
+requirePattern(
+  'Durable handoff fan-out must consult RuntimeStore',
+  runtimeLib,
+  /reserve_handoff_slot[\s\S]{0,800}count_handoffs_for_run/,
+);
+requirePattern(
+  'FeatureHost Agent sends must use Runtime handoff rather than hidden SendMessage',
+  featureHost,
+  /fn schedule_agent_handoff[\s\S]{0,2600}RuntimeCommand::Handoff[\s\S]{0,2600}RuntimeCommand::ExternalHandoff/,
+);
+requirePattern(
+  'FeatureHost broadcasts must use external durable handoff batches',
+  featureHost,
+  /FeatureCommand::AgentBroadcast[\s\S]{0,3000}schedule_external_agent_handoff/,
+);
+requirePattern(
+  'FeatureHost group turns must use external durable handoff',
+  featureHost,
+  /fn start_next_group_turn[\s\S]{0,6000}RuntimeCommand::ExternalHandoff/,
+);
 requirePattern('FeatureHost no longer routes privileged commands through RuntimeCommand::AuthorizeCapability', featureHost, /RuntimeCommand::AuthorizeCapability/);
 requirePattern('Capability audit persistence is missing', runtimeStore, /CREATE TABLE IF NOT EXISTS capability_audit/);
 requirePattern('Turn persistence is missing', runtimeStore, /CREATE TABLE IF NOT EXISTS turns/);

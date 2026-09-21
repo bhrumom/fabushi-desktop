@@ -344,6 +344,28 @@ impl RuntimeStore {
         }
     }
 
+    pub fn count_handoffs_for_run(&self, run_id: &RunId) -> Result<u64, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = run_id;
+            Ok(0)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(0); };
+            let count = connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .query_row(
+                    "SELECT COUNT(*) FROM pending_intents WHERE kind = 'agent-handoff' AND run_id = ?1",
+                    params![run_id.as_str()],
+                    |row| row.get::<_, i64>(0),
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            Ok(count.max(0) as u64)
+        }
+    }
+
     pub fn append_audit(&self, record: &CapabilityAuditRecord) -> Result<(), RuntimeStoreError> {
         #[cfg(target_arch = "wasm32")]
         {

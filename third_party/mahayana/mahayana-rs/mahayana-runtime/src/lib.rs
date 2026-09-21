@@ -25,6 +25,7 @@ use mahayana_conversation::ProviderRegistry;
 use mahayana_conversation::ResolveApprovalRequest;
 use mahayana_conversation::SendMessageRequest;
 use mahayana_conversation::SharedConversationEventSink;
+use mahayana_core::ApprovalDecision;
 use mahayana_core::ApprovalId;
 use mahayana_core::CONVERSATION_SCHEMA_VERSION;
 use mahayana_core::Conversation;
@@ -182,6 +183,12 @@ struct RunContext {
     actor: Arc<ConversationActor>,
 }
 
+#[derive(Clone)]
+struct PendingRuntimeApproval {
+    provider_key: String,
+    request: CapabilityRequest,
+}
+
 pub struct MahayanaRuntime {
     config: RuntimeConfig,
     providers: Arc<ProviderRegistry>,
@@ -191,8 +198,8 @@ pub struct MahayanaRuntime {
     event_rx: Receiver<RuntimeEvent>,
     operations: Arc<Mutex<HashMap<OperationId, String>>>,
     run_contexts: Arc<Mutex<HashMap<OperationId, RunContext>>>,
-    handoff_counts: Mutex<HashMap<OperationId, u8>>,
-    approvals: Arc<Mutex<HashMap<ApprovalId, String>>>,
+    handoff_counts: Mutex<HashMap<RunId, u8>>,
+    approvals: Arc<Mutex<HashMap<ApprovalId, PendingRuntimeApproval>>>,
     actors: Arc<ConversationActorRegistry>,
     store: Arc<RuntimeStore>,
     capability_broker: CapabilityBroker,
@@ -756,85 +763,61 @@ impl MahayanaRuntime {
             RuntimeCommand::Handoff {
                 operation_id,
                 target_agent,
+                target_conversation_id,
+                inference_provider,
                 task,
                 constraints,
                 expected_output,
                 depth,
             } => {
-                let target_agent = target_agent.trim().to_string();
-                let task = task.trim().to_string();
-                if target_agent.is_empty() || target_agent.len() > 160 || target_agent.chars().any(char::is_control) {
-                    return Err(RuntimeError::Collaboration("handoff targetAgent is invalid".to_string()));
-                }
-                if task.is_empty() {
-                    return Err(RuntimeError::Collaboration("handoff requires a non-empty task".to_string()));
-                }
-                if depth >= MAX_HANDOFF_DEPTH {
-                    return Err(RuntimeError::Collaboration(format!(
-                        "handoff depth limit exceeded ({MAX_HANDOFF_DEPTH})"
-                    )));
-                }
                 let context = lock(&self.run_contexts)?
                     .get(&operation_id)
                     .cloned()
                     .ok_or_else(|| ConversationError::OperationNotFound(operation_id.clone()))?;
-                let target_conversation = ConversationId(format!("codex:agent:{target_agent}"));
-                if target_conversation == context.conversation_id {
-                    return Err(RuntimeError::Collaboration("an Agent cannot hand off work to itself".to_string()));
-                }
-                {
-                    let mut counts = lock(&self.handoff_counts)?;
-                    let count = counts.entry(operation_id.clone()).or_default();
-                    if *count >= MAX_HANDOFFS_PER_RUN {
-                        return Err(RuntimeError::Collaboration(format!(
-                            "handoff fan-out limit exceeded ({MAX_HANDOFFS_PER_RUN})"
-                        )));
-                    }
-                    *count = count.saturating_add(1);
-                }
-
-                let intent_id = IntentId::generated("handoff");
-                let intent = HandoffIntent {
-                    id: intent_id.clone(),
-                    target_agent: target_agent.clone(),
-                    task: task.clone(),
-                    constraints: constraints.clone(),
-                    expected_output: expected_output.clone(),
-                    origin_run: context.run_id.clone(),
-                    depth: depth.saturating_add(1),
-                };
-                self.store.enqueue_handoff(&intent, &context.turn_id, now_millis())?;
-                let target_prompt = handoff_prompt(&intent);
-                let target_operation_id = self.start_message(
-                    target_conversation,
-                    target_prompt,
-                    Some(intent_id.to_string()),
-                    None,
-                    true,
-                )?;
-                self.event_tx
-                    .send(RuntimeEvent::AgentActivity {
-                        operation_id: operation_id.clone(),
-                        step_id: intent_id.to_string(),
-                        kind: "handoff".to_string(),
-                        title: format!("Handoff → {target_agent}"),
-                        detail: Some(task),
-                        status: mahayana_core::RuntimeActivityStatus::Completed,
-                        metadata: Some(serde_json::json!({
-                            "intentId": intent_id,
-                            "targetAgent": target_agent,
-                            "targetOperationId": target_operation_id,
-                            "depth": intent.depth,
-                        })),
-                    })
-                    .map_err(|_| RuntimeError::EventConsumerClosed)?;
-                Ok(RuntimeResponse::HandoffQueued {
-                    intent_id,
+                self.dispatch_handoff(
                     operation_id,
-                    target_operation_id,
-                })
+                    context.run_id.clone(),
+                    context.turn_id.clone(),
+                    runtime_agent_id_from_conversation(&context.conversation_id),
+                    Some(context.conversation_id),
+                    target_agent,
+                    target_conversation_id,
+                    inference_provider,
+                    task,
+                    constraints,
+                    expected_output,
+                    depth,
+                )
             }
-            RuntimeCommand::Interrupt { operation_id } => {
+            RuntimeCommand::ExternalHandoff {
+                origin_run_id,
+                origin_turn_id,
+                origin_agent,
+                target_agent,
+                target_conversation_id,
+                inference_provider,
+                task,
+                constraints,
+                expected_output,
+                depth,
+            } => {
+                let synthetic_operation_id = OperationId(origin_run_id.to_string());
+                self.dispatch_handoff(
+                    synthetic_operation_id,
+                    origin_run_id,
+                    origin_turn_id,
+                    origin_agent,
+                    None,
+                    target_agent,
+                    target_conversation_id,
+                    inference_provider,
+                    task,
+                    constraints,
+                    expected_output,
+                    depth,
+                )
+            }
+            RuntimeCommand::Interrupt {            RuntimeCommand::Interrupt { operation_id } => {
                 let provider_key = lock(&self.operations)?
                     .get(&operation_id)
                     .cloned()
@@ -860,13 +843,39 @@ impl MahayanaRuntime {
                 decision,
                 payload,
             } => {
-                let provider_key = lock(&self.approvals)?
+                let pending = lock(&self.approvals)?
                     .remove(&approval_id)
                     .ok_or_else(|| ConversationError::ApprovalNotFound(approval_id.clone()))?;
+                let (availability, unavailable_reason, expected_decision) = match decision {
+                    ApprovalDecision::Accept | ApprovalDecision::AcceptForSession => (
+                        CapabilityAvailability::Ready,
+                        None,
+                        CapabilityPolicyDecision::Allow,
+                    ),
+                    ApprovalDecision::Decline | ApprovalDecision::Cancel => (
+                        CapabilityAvailability::Unavailable,
+                        Some("user denied the requested capability".to_string()),
+                        CapabilityPolicyDecision::Deny,
+                    ),
+                };
+                let broker_decision = self
+                    .capability_broker
+                    .authorize_request(
+                        availability,
+                        unavailable_reason,
+                        pending.request.clone(),
+                        now_millis(),
+                    )
+                    .map_err(RuntimeError::CapabilityBroker)?;
+                if broker_decision != expected_decision {
+                    return Err(RuntimeError::CapabilityBroker(
+                        "approval resolution disagreed with capability policy".to_string(),
+                    ));
+                }
                 let provider = self
                     .providers
-                    .get(&provider_key)
-                    .ok_or_else(|| ConversationError::ProviderUnavailable(provider_key.clone()))?;
+                    .get(&pending.provider_key)
+                    .ok_or_else(|| ConversationError::ProviderUnavailable(pending.provider_key.clone()))?;
                 self.async_runtime
                     .block_on(provider.resolve_approval(ResolveApprovalRequest {
                         approval_id: approval_id.clone(),
@@ -876,6 +885,114 @@ impl MahayanaRuntime {
                 Ok(RuntimeResponse::ApprovalResolved { approval_id })
             }
         }
+    }
+
+    fn reserve_handoff_slot(&self, origin_run: &RunId) -> Result<(), RuntimeError> {
+        let persisted = self.store.count_handoffs_for_run(origin_run)?;
+        let mut counts = lock(&self.handoff_counts)?;
+        let count = counts.entry(origin_run.clone()).or_default();
+        let effective = u64::from(*count).max(persisted);
+        if effective >= u64::from(MAX_HANDOFFS_PER_RUN) {
+            return Err(RuntimeError::Collaboration(format!(
+                "handoff fan-out limit exceeded ({MAX_HANDOFFS_PER_RUN})"
+            )));
+        }
+        *count = (effective + 1).min(u64::from(u8::MAX)) as u8;
+        Ok(())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn dispatch_handoff(
+        &self,
+        origin_operation_id: OperationId,
+        origin_run: RunId,
+        origin_turn: TurnId,
+        origin_agent: Option<String>,
+        origin_conversation: Option<ConversationId>,
+        target_agent: String,
+        target_conversation_id: Option<ConversationId>,
+        inference_provider: Option<String>,
+        task: String,
+        constraints: Value,
+        expected_output: Option<String>,
+        depth: u8,
+    ) -> Result<RuntimeResponse, RuntimeError> {
+        let target_agent = target_agent.trim().to_string();
+        let task = task.trim().to_string();
+        if target_agent.is_empty()
+            || target_agent.len() > 160
+            || target_agent.chars().any(char::is_control)
+        {
+            return Err(RuntimeError::Collaboration(
+                "handoff targetAgent is invalid".to_string(),
+            ));
+        }
+        if task.is_empty() {
+            return Err(RuntimeError::Collaboration(
+                "handoff requires a non-empty task".to_string(),
+            ));
+        }
+        if depth >= MAX_HANDOFF_DEPTH {
+            return Err(RuntimeError::Collaboration(format!(
+                "handoff depth limit exceeded ({MAX_HANDOFF_DEPTH})"
+            )));
+        }
+        if origin_agent.as_deref() == Some(target_agent.as_str()) {
+            return Err(RuntimeError::Collaboration(
+                "an Agent cannot hand off work to itself".to_string(),
+            ));
+        }
+
+        let target_conversation = target_conversation_id
+            .unwrap_or_else(|| ConversationId(format!("codex:agent:{target_agent}")));
+        if origin_conversation.as_ref() == Some(&target_conversation) {
+            return Err(RuntimeError::Collaboration(
+                "an Agent cannot hand off work to its own conversation".to_string(),
+            ));
+        }
+
+        self.reserve_handoff_slot(&origin_run)?;
+        let intent_id = IntentId::generated("handoff");
+        let intent = HandoffIntent {
+            id: intent_id.clone(),
+            target_agent: target_agent.clone(),
+            target_conversation_id: Some(target_conversation.clone()),
+            inference_provider: inference_provider.clone(),
+            task: task.clone(),
+            constraints,
+            expected_output,
+            origin_run,
+            depth: depth.saturating_add(1),
+        };
+        self.store.enqueue_handoff(&intent, &origin_turn, now_millis())?;
+        let target_operation_id = self.start_message(
+            target_conversation,
+            handoff_prompt(&intent),
+            Some(intent_id.to_string()),
+            inference_provider,
+            true,
+        )?;
+        self.event_tx
+            .send(RuntimeEvent::AgentActivity {
+                operation_id: origin_operation_id.clone(),
+                step_id: intent_id.to_string(),
+                kind: "handoff".to_string(),
+                title: format!("Handoff → {target_agent}"),
+                detail: Some("Durable Agent work queued".to_string()),
+                status: mahayana_core::RuntimeActivityStatus::Completed,
+                metadata: Some(serde_json::json!({
+                    "intentId": intent_id,
+                    "targetAgent": target_agent,
+                    "targetOperationId": target_operation_id,
+                    "depth": intent.depth,
+                })),
+            })
+            .map_err(|_| RuntimeError::EventConsumerClosed)?;
+        Ok(RuntimeResponse::HandoffQueued {
+            intent_id,
+            operation_id: origin_operation_id,
+            target_operation_id,
+        })
     }
 
     fn list_conversations(&self) -> Result<Vec<Conversation>, RuntimeError> {
@@ -1128,15 +1245,94 @@ impl ConversationEventSink for RuntimeEventSink {
             transition_turn_state(&self.event_tx, &self.store, &self.context, state)
                 .map_err(|error| ConversationError::Provider(error.to_string()))?;
         }
-        if let RuntimeEvent::ApprovalRequested { approval_id, .. } = &event {
+        if let RuntimeEvent::ApprovalRequested {
+            approval_id,
+            title,
+            details,
+            ..
+        } = &event
+        {
+            let request = approval_capability_request(&self.context, title, details);
+            let decision = CapabilityBroker::new(Arc::clone(&self.store))
+                .authorize_request(
+                    CapabilityAvailability::PermissionRequired,
+                    None,
+                    request.clone(),
+                    now_millis(),
+                )
+                .map_err(ConversationError::Provider)?;
+            if decision != CapabilityPolicyDecision::NeedsUser {
+                return Err(ConversationError::Provider(
+                    "privileged provider approval did not enter needs-user policy".to_string(),
+                ));
+            }
             self.approvals
                 .lock()
                 .map_err(|_| ConversationError::Provider("approval map poisoned".to_string()))?
-                .insert(approval_id.clone(), self.provider_key.clone());
+                .insert(
+                    approval_id.clone(),
+                    PendingRuntimeApproval {
+                        provider_key: self.provider_key.clone(),
+                        request,
+                    },
+                );
         }
         self.event_tx
             .send(event)
             .map_err(|_| ConversationError::EventConsumerClosed)
+    }
+}
+
+fn runtime_agent_id_from_conversation(conversation_id: &ConversationId) -> Option<String> {
+    conversation_id
+        .as_str()
+        .strip_prefix("codex:agent:")
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+}
+
+fn approval_capability_request(
+    context: &RunContext,
+    title: &str,
+    details: &Value,
+) -> CapabilityRequest {
+    let explicit = details
+        .get("capability")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let has_network_context = details.get("networkApprovalContext").is_some()
+        || details.get("network_approval_context").is_some();
+    let capability = if explicit == Some("computer.control") {
+        "computer.input.control"
+    } else if has_network_context {
+        "browser.network"
+    } else if title.contains("执行命令") {
+        "shell.execute"
+    } else if title.contains("修改文件") || title.contains("应用补丁") {
+        "filesystem.write"
+    } else if title.contains("扩展权限") {
+        "runtime.permissions.expand"
+    } else {
+        "agent.tool.approval"
+    };
+    let agent_id = runtime_agent_id_from_conversation(&context.conversation_id);
+    CapabilityRequest {
+        actor: agent_id
+            .as_ref()
+            .map(|id| format!("agent:{id}"))
+            .unwrap_or_else(|| "agent-runtime".to_string()),
+        agent_id,
+        conversation_id: context.conversation_id.clone(),
+        run_id: Some(context.run_id.clone()),
+        capability: capability.to_string(),
+        target: serde_json::json!({
+            "kind": details.get("kind").cloned().unwrap_or(Value::Null),
+            "subject": details.get("subject").cloned().unwrap_or(Value::Null),
+            "location": details.get("location").cloned().unwrap_or(Value::Null),
+        }),
+        intent: title.to_string(),
     }
 }
 
@@ -1571,6 +1767,37 @@ mod tests {
                     if capability_id == "capability:test"
             ));
         }
+    }
+
+    #[test]
+    fn provider_approval_audit_is_sanitized_and_capability_typed() {
+        let context = RunContext {
+            turn_id: TurnId::generated("turn"),
+            run_id: RunId::generated("run"),
+            conversation_id: ConversationId("codex:agent:research".to_string()),
+            actor: Arc::new(ConversationActor::new(ConversationId(
+                "codex:agent:research".to_string(),
+            ))),
+        };
+        let request = approval_capability_request(
+            &context,
+            "AI 请求控制这台电脑",
+            &serde_json::json!({
+                "kind": "local-tool",
+                "capability": "computer.control",
+                "subject": "Computer · click",
+                "location": "local",
+                "detail": "password=secret",
+                "reason": "OTP 123456"
+            }),
+        );
+        assert_eq!(request.capability, "computer.input.control");
+        assert_eq!(request.agent_id.as_deref(), Some("research"));
+        let encoded = serde_json::to_string(&request.target).expect("serialize safe target");
+        assert!(!encoded.contains("secret"));
+        assert!(!encoded.contains("123456"));
+        assert!(!encoded.contains("detail"));
+        assert!(!encoded.contains("reason"));
     }
 
     #[test]

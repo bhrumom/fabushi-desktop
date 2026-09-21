@@ -129,6 +129,10 @@ pub struct ExecutionRun {
 pub struct HandoffIntent {
     pub id: IntentId,
     pub target_agent: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_conversation_id: Option<ConversationId>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inference_provider: Option<String>,
     pub task: String,
     #[serde(default)]
     pub constraints: Value,
@@ -425,6 +429,32 @@ pub enum RuntimeCommand {
         operation_id: OperationId,
         #[serde(rename = "targetAgent")]
         target_agent: String,
+        #[serde(rename = "targetConversationId", default, skip_serializing_if = "Option::is_none")]
+        target_conversation_id: Option<ConversationId>,
+        #[serde(rename = "inferenceProvider", default, skip_serializing_if = "Option::is_none")]
+        inference_provider: Option<String>,
+        task: String,
+        #[serde(default)]
+        constraints: Value,
+        #[serde(rename = "expectedOutput", default, skip_serializing_if = "Option::is_none")]
+        expected_output: Option<String>,
+        #[serde(default)]
+        depth: u8,
+    },
+    #[serde(rename = "mahayana.agent.externalHandoff")]
+    ExternalHandoff {
+        #[serde(rename = "originRunId")]
+        origin_run_id: RunId,
+        #[serde(rename = "originTurnId")]
+        origin_turn_id: TurnId,
+        #[serde(rename = "originAgent", default, skip_serializing_if = "Option::is_none")]
+        origin_agent: Option<String>,
+        #[serde(rename = "targetAgent")]
+        target_agent: String,
+        #[serde(rename = "targetConversationId", default, skip_serializing_if = "Option::is_none")]
+        target_conversation_id: Option<ConversationId>,
+        #[serde(rename = "inferenceProvider", default, skip_serializing_if = "Option::is_none")]
+        inference_provider: Option<String>,
         task: String,
         #[serde(default)]
         constraints: Value,

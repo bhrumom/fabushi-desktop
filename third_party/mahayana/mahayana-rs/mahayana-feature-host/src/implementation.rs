@@ -30,6 +30,10 @@ use mahayana_core::MessageRole as RuntimeMessageRole;
 #[cfg(feature = "production")]
 use mahayana_core::OperationId;
 #[cfg(feature = "production")]
+use mahayana_core::RunId;
+#[cfg(feature = "production")]
+use mahayana_core::TurnId;
+#[cfg(feature = "production")]
 use mahayana_core::RuntimeActivityStatus;
 #[cfg(feature = "production")]
 use mahayana_core::RuntimeCommand;
@@ -177,7 +181,7 @@ struct PendingApproval {
     agent_id: Option<String>,
 }
 
-const GROUP_MAX_MEMBER_TURNS: usize = 10;
+const GROUP_MAX_MEMBER_TURNS: usize = 8;
 const GROUP_MAX_ROUNDS: usize = 3;
 const GROUP_PROMPT_HISTORY_LIMIT: usize = 24;
 const REMOTE_DEVICE_SECRET_MAX_ENTRIES: usize = 256;
@@ -1116,6 +1120,18 @@ impl FeatureHostController {
                     json!({"leaseId": lease_id}),
                     "release local user computer control",
                 ),
+                FeatureCommand::RemoteComputerRegister { device_id, .. } => (
+                    "computer.remote.register",
+                    None,
+                    json!({"deviceId": device_id}),
+                    "register a remote computer endpoint",
+                ),
+                FeatureCommand::RemoteComputerClientRevoke { device_id, client_id, .. } => (
+                    "computer.remote.client.manage",
+                    None,
+                    json!({"deviceId": device_id, "clientId": client_id}),
+                    "revoke a remote computer client",
+                ),
                 FeatureCommand::RemoteComputerSessionActivate { device_id, session_id, .. }
                 | FeatureCommand::RemoteComputerSessionClose { device_id, session_id, .. }
                 | FeatureCommand::RemoteComputerSignal { device_id, session_id, .. }
@@ -1125,11 +1141,66 @@ impl FeatureHostController {
                     json!({"deviceId": device_id, "sessionId": session_id}),
                     "use a remote computer session",
                 ),
+                FeatureCommand::McpOauthLogin { server, .. }
+                | FeatureCommand::McpOauthLogout { server, .. } => (
+                    "mcp.oauth.manage",
+                    None,
+                    json!({"server": server}),
+                    "manage MCP authentication",
+                ),
+                FeatureCommand::McpRemove { server, .. } => (
+                    "mcp.server.manage",
+                    None,
+                    json!({"server": server}),
+                    "remove an MCP server",
+                ),
+                FeatureCommand::McpSetCustomInstructions { server, .. } => (
+                    "mcp.server.configure",
+                    None,
+                    json!({"server": server}),
+                    "change MCP server instructions",
+                ),
+                FeatureCommand::McpSetToolDisabled { server, tool, .. } => (
+                    "mcp.tool.policy",
+                    None,
+                    json!({"server": server, "tool": tool}),
+                    "change MCP tool policy",
+                ),
+                FeatureCommand::McpRefresh { .. } => (
+                    "mcp.refresh",
+                    None,
+                    json!({}),
+                    "refresh MCP server state",
+                ),
                 FeatureCommand::McpToolCall { server, tool, .. } => (
                     "mcp.tool.call",
                     None,
                     json!({"server": server, "tool": tool}),
                     "call an MCP tool",
+                ),
+                FeatureCommand::GroupCreate { member_ids, .. } => (
+                    "agent.group.manage",
+                    None,
+                    json!({"memberIds": member_ids}),
+                    "create an Agent group",
+                ),
+                FeatureCommand::GroupUpdate { id, member_ids, .. } => (
+                    "agent.group.manage",
+                    None,
+                    json!({"groupId": id, "memberIds": member_ids}),
+                    "update an Agent group",
+                ),
+                FeatureCommand::GroupDelete { id, .. } => (
+                    "agent.group.manage",
+                    None,
+                    json!({"groupId": id}),
+                    "delete an Agent group",
+                ),
+                FeatureCommand::GroupSend { id, .. } => (
+                    "agent.group.handoff",
+                    None,
+                    json!({"groupId": id}),
+                    "dispatch durable work to an Agent group",
                 ),
                 FeatureCommand::AgentSend { from_agent_id, target_id, .. } => (
                     "agent.handoff",
@@ -1157,11 +1228,23 @@ impl FeatureHostController {
                     json!({"path": path}),
                     "read an Agent workspace attachment",
                 ),
+                FeatureCommand::MarketplaceInstall { mini_app_id, .. } => (
+                    "miniapp.install",
+                    None,
+                    json!({"miniAppId": mini_app_id}),
+                    "install a Mini App",
+                ),
                 FeatureCommand::MiniAppOpen { mini_app_id, .. } => (
                     "miniapp.open",
                     None,
                     json!({"miniAppId": mini_app_id}),
                     "open a Mini App",
+                ),
+                FeatureCommand::CapabilityRequest { mini_app_id, capability, .. } => (
+                    "miniapp.capability.request",
+                    None,
+                    json!({"miniAppId": mini_app_id, "capability": capability}),
+                    "request a Mini App capability",
                 ),
                 FeatureCommand::ConnectorConnect { connector_id, .. } => (
                     "connector.connect",
@@ -2605,9 +2688,16 @@ impl FeatureHostController {
                                 "an agent cannot message itself".into(),
                             ));
                         }
+                        let origin_operation_id = state
+                            .operation_agents
+                            .iter()
+                            .find_map(|(operation_id, owner)| {
+                                (owner == &sender_agent_id || owner == &sender.id)
+                                    .then(|| operation_id.clone())
+                            });
                         let peer = AgentPeerMessage {
                             id: next_id(&mut state, "agent-message"),
-                            from_agent_id: sender_agent_id,
+                            from_agent_id: sender_agent_id.clone(),
                             from_agent_name: sender.name.clone(),
                             target_id: target_agent_id,
                             target_name: target.name.clone(),
@@ -2625,7 +2715,7 @@ impl FeatureHostController {
                             timestamp: timestamp(),
                             message: peer,
                         });
-                        Some((sender, target))
+                        Some((sender, target, origin_operation_id))
                     } else if let Some(group_snapshot) = state.groups.get(&target_id).cloned() {
                         if !group_snapshot
                             .member_ids
@@ -2721,9 +2811,10 @@ impl FeatureHostController {
                     });
                 }
 
-                if let Some((sender, target)) = direct_target {
+                if let Some((sender, target, origin_operation_id)) = direct_target {
                     let wake_prompt = build_agent_inbound_wake_prompt(&sender, &text, priority);
-                    self.schedule_background_agent_turn(
+                    self.schedule_agent_handoff(
+                        &sender,
                         &target,
                         if priority {
                             "agent-priority"
@@ -2732,6 +2823,7 @@ impl FeatureHostController {
                         },
                         wake_prompt,
                         format!("peer:{}:{}", sender.id, request_id),
+                        origin_operation_id.as_deref(),
                     )?;
                 }
                 Ok(CommandAccepted {
@@ -2771,11 +2863,13 @@ impl FeatureHostController {
                 for target in targets {
                     let prompt = build_admin_broadcast_wake_prompt(&message);
                     if self
-                        .schedule_background_agent_turn(
+                        .schedule_external_agent_handoff(
                             &target,
                             "broadcast",
                             prompt,
                             format!("broadcast:{}:{}", target.id, request_id),
+                            format!("broadcast-batch:{request_id}"),
+                            None,
                         )
                         .is_ok()
                     {
@@ -2794,6 +2888,136 @@ impl FeatureHostController {
             }
             _ => unreachable!("non-agent-messaging command routed to agent messaging executor"),
         }
+    }
+
+    fn schedule_agent_handoff(
+        &self,
+        sender: &BotSummary,
+        target: &BotSummary,
+        source: &str,
+        prompt: String,
+        correlation_id: String,
+        origin_operation_id: Option<&str>,
+    ) -> Result<Option<String>, FeatureHostError> {
+        if self.config.mode == HostMode::Test {
+            return self.schedule_background_agent_turn(target, source, prompt, correlation_id);
+        }
+
+        #[cfg(feature = "production")]
+        {
+            let target_agent = bot_runtime_agent_id(target).to_string();
+            let target_conversation = target.conversation_id.clone().ok_or_else(|| {
+                FeatureHostError::Contract(format!("bot has no conversation: {}", target.id))
+            })?;
+            let inference_provider = agent_inference_provider_key(target.inference_provider)?;
+            let response = if let Some(operation_id) = origin_operation_id {
+                self.runtime()?.execute(RuntimeCommand::Handoff {
+                    operation_id: OperationId(operation_id.to_string()),
+                    target_agent,
+                    target_conversation_id: Some(ConversationId(target_conversation)),
+                    inference_provider,
+                    task: prompt,
+                    constraints: json!({"source": source}),
+                    expected_output: None,
+                    depth: 0,
+                })?
+            } else {
+                self.runtime()?.execute(RuntimeCommand::ExternalHandoff {
+                    origin_run_id: RunId(format!("external:{correlation_id}")),
+                    origin_turn_id: TurnId(format!("external:{correlation_id}")),
+                    origin_agent: Some(bot_runtime_agent_id(sender).to_string()),
+                    target_agent,
+                    target_conversation_id: Some(ConversationId(target_conversation)),
+                    inference_provider,
+                    task: prompt,
+                    constraints: json!({"source": source}),
+                    expected_output: None,
+                    depth: 0,
+                })?
+            };
+            let operation_id = match response {
+                RuntimeResponse::HandoffQueued { target_operation_id, .. } => {
+                    target_operation_id.to_string()
+                }
+                other => return Err(unexpected_response("agent.handoff", other)),
+            };
+            self.track_background_agent_operation(target, source, &operation_id)?;
+            Ok(Some(operation_id))
+        }
+        #[cfg(not(feature = "production"))]
+        Err(FeatureHostError::ProductionUnavailable)
+    }
+
+    fn schedule_external_agent_handoff(
+        &self,
+        target: &BotSummary,
+        source: &str,
+        prompt: String,
+        correlation_id: String,
+        batch_id: String,
+        origin_agent: Option<String>,
+    ) -> Result<Option<String>, FeatureHostError> {
+        if self.config.mode == HostMode::Test {
+            return self.schedule_background_agent_turn(target, source, prompt, correlation_id);
+        }
+
+        #[cfg(feature = "production")]
+        {
+            let target_agent = bot_runtime_agent_id(target).to_string();
+            let target_conversation = target.conversation_id.clone().ok_or_else(|| {
+                FeatureHostError::Contract(format!("bot has no conversation: {}", target.id))
+            })?;
+            let response = self.runtime()?.execute(RuntimeCommand::ExternalHandoff {
+                origin_run_id: RunId(format!("external:{batch_id}")),
+                origin_turn_id: TurnId(format!("external:{batch_id}")),
+                origin_agent,
+                target_agent,
+                target_conversation_id: Some(ConversationId(target_conversation)),
+                inference_provider: agent_inference_provider_key(target.inference_provider)?,
+                task: prompt,
+                constraints: json!({"source": source}),
+                expected_output: None,
+                depth: 0,
+            })?;
+            let operation_id = match response {
+                RuntimeResponse::HandoffQueued { target_operation_id, .. } => {
+                    target_operation_id.to_string()
+                }
+                other => return Err(unexpected_response("agent.externalHandoff", other)),
+            };
+            self.track_background_agent_operation(target, source, &operation_id)?;
+            Ok(Some(operation_id))
+        }
+        #[cfg(not(feature = "production"))]
+        Err(FeatureHostError::ProductionUnavailable)
+    }
+
+    #[cfg(feature = "production")]
+    fn track_background_agent_operation(
+        &self,
+        target: &BotSummary,
+        source: &str,
+        operation_id: &str,
+    ) -> Result<(), FeatureHostError> {
+        let runtime_agent_id = bot_runtime_agent_id(target).to_string();
+        let mut state = self.state()?;
+        state.background_operations.insert(
+            operation_id.to_string(),
+            BackgroundOperationContext {
+                agent_id: runtime_agent_id.clone(),
+                agent_name: target.name.clone(),
+                source: source.to_string(),
+                teach_artifact: None,
+            },
+        );
+        state.events.push_back(HostEvent::AgentBackgroundStarted {
+            timestamp: timestamp(),
+            agent_id: runtime_agent_id,
+            agent_name: target.name.clone(),
+            operation_id: operation_id.to_string(),
+            source: source.to_string(),
+        });
+        Ok(())
     }
 
     fn schedule_background_agent_turn(
@@ -6681,25 +6905,30 @@ impl FeatureHostController {
                     member_id: member.id,
                     member_name: member.name,
                 },
+                member_agent_id.to_string(),
                 conversation_id,
                 runtime_text,
                 agent_inference_provider_key(member.inference_provider)?,
             )
         };
-        let (context, conversation_id, runtime_text, inference_provider) = prepared;
-        let response = self.runtime()?.execute(RuntimeCommand::SendMessage {
-            conversation_id: ConversationId(conversation_id),
-            text: runtime_text,
-            client_message_id: Some(format!(
-                "{}:{}:{}",
-                context.run_id, context.group_id, context.member_id
-            )),
+        let (context, target_agent, conversation_id, runtime_text, inference_provider) = prepared;
+        let response = self.runtime()?.execute(RuntimeCommand::ExternalHandoff {
+            origin_run_id: RunId(format!("group:{}", context.run_id)),
+            origin_turn_id: TurnId(format!("group:{}", context.run_id)),
+            origin_agent: None,
+            target_agent,
+            target_conversation_id: Some(ConversationId(conversation_id)),
             inference_provider,
-            hidden: true,
+            task: runtime_text,
+            constraints: json!({"source": "group", "groupId": context.group_id}),
+            expected_output: None,
+            depth: 0,
         })?;
         let operation_id = match response {
-            RuntimeResponse::Accepted { operation_id } => operation_id.to_string(),
-            other => return Err(unexpected_response("group.member.turn", other)),
+            RuntimeResponse::HandoffQueued { target_operation_id, .. } => {
+                target_operation_id.to_string()
+            }
+            other => return Err(unexpected_response("group.member.handoff", other)),
         };
         let mut state = self.state()?;
         state.group_operations.insert(operation_id.clone(), context);

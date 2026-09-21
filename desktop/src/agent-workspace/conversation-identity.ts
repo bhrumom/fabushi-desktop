@@ -30,9 +30,19 @@ export type ConversationIdentity =
   | TelegramIdentity
   | MiniAppBotIdentity;
 
+export type ConversationIdentityKind =
+  | 'agent'
+  | 'bot'
+  | 'group'
+  | 'contact'
+  | 'telegram'
+  | 'miniapp-bot';
+
+export type AgentProjectionKind = Extract<ConversationIdentityKind, 'agent' | 'bot' | 'group'>;
+
 export interface ConversationIdentityProjection {
   readonly id: string;
-  readonly kind: string;
+  readonly kind: ConversationIdentityKind;
   readonly agentId?: string;
   readonly actorId?: string;
   readonly conversationId?: string;
@@ -41,40 +51,46 @@ export interface ConversationIdentityProjection {
 }
 
 /**
- * Legacy peer parsing is isolated here. Product Agent components consume the
- * discriminated union and never inspect source prefixes to decide identity.
+ * Converts an explicitly typed projection into the domain identity consumed by
+ * product surfaces. Adapters must decide the domain kind; this function never
+ * guesses identity from IDs, prefixes, or optional fields.
  */
 export function conversationIdentityOf(peer: ConversationIdentityProjection): ConversationIdentity {
-  if (peer.miniAppId) {
-    return {
-      type: 'miniapp-bot',
-      botId: peer.actorId ?? peer.id,
-      miniAppId: peer.miniAppId,
-      ...(peer.conversationId ? { conversationId: peer.conversationId } : {}),
-    };
+  switch (peer.kind) {
+    case 'agent':
+    case 'bot':
+    case 'group':
+      return {
+        type: 'agent',
+        agentId: peer.agentId ?? peer.actorId ?? peer.id,
+        ...(peer.conversationId ? { conversationId: peer.conversationId } : {}),
+        ...(peer.groupId ? { groupId: peer.groupId } : {}),
+      };
+    case 'telegram':
+      return {
+        type: 'telegram',
+        telegramId: peer.actorId ?? peer.id,
+        ...(peer.conversationId ? { conversationId: peer.conversationId } : {}),
+      };
+    case 'contact':
+      return {
+        type: 'contact',
+        contactId: peer.actorId ?? peer.id,
+        ...(peer.conversationId ? { conversationId: peer.conversationId } : {}),
+      };
+    case 'miniapp-bot':
+      if (!peer.miniAppId) {
+        throw new Error('Mini App Bot identity requires an explicit miniAppId');
+      }
+      return {
+        type: 'miniapp-bot',
+        botId: peer.actorId ?? peer.id,
+        miniAppId: peer.miniAppId,
+        ...(peer.conversationId ? { conversationId: peer.conversationId } : {}),
+      };
   }
-  if (peer.kind === 'bot' || peer.kind === 'group') {
-    return {
-      type: 'agent',
-      agentId: peer.agentId ?? peer.actorId ?? peer.id,
-      ...(peer.conversationId ? { conversationId: peer.conversationId } : {}),
-      ...(peer.groupId ? { groupId: peer.groupId } : {}),
-    };
-  }
-  if (peer.id.startsWith('telegram:') || peer.conversationId?.startsWith('telegram:')) {
-    return {
-      type: 'telegram',
-      telegramId: peer.actorId ?? peer.id,
-      ...(peer.conversationId ? { conversationId: peer.conversationId } : {}),
-    };
-  }
-  return {
-    type: 'contact',
-    contactId: peer.actorId ?? peer.id,
-    ...(peer.conversationId ? { conversationId: peer.conversationId } : {}),
-  };
 }
 
-export function isAgentIdentity(identity: ConversationIdentity): identity is AgentIdentity {
+export function isAgentIdentityexport function isAgentIdentity(identity: ConversationIdentity): identity is AgentIdentity {
   return identity.type === 'agent';
 }

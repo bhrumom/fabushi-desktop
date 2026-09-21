@@ -1,4 +1,8 @@
-import { conversationIdentityOf, isAgentIdentity } from './conversation-identity';
+import {
+  conversationIdentityOf,
+  isAgentIdentity,
+  type AgentProjectionKind,
+} from './conversation-identity';
 
 export interface AgentPeerProjection {
   key: string;
@@ -6,7 +10,7 @@ export interface AgentPeerProjection {
   actorId?: string;
   agentId?: string;
   conversationId?: string;
-  kind: string;
+  kind: AgentProjectionKind;
   hidden?: boolean;
   title: string;
   subtitle: string;
