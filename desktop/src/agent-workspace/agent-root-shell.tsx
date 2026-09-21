@@ -203,7 +203,7 @@ export default function AgentRootShell({
     if (!product.sidebar.ready || !agentItems.length) return;
     const mahayana = agentItems.find((item) => item.agentId === 'mahayana-assistant') ?? agentItems[0];
     if (mahayana) product.sidebar.adoptLegacyPinnedState([mahayana.key]);
-  }, [agentItems, product.sidebar]);
+  }, [agentItems, product.sidebar.adoptLegacyPinnedState, product.sidebar.ready]);
 
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
   const activeAgent = activePeer
@@ -312,7 +312,14 @@ export default function AgentRootShell({
       window.removeEventListener(MAHAYANA_COMMAND_EVENT_NAME, onBridge);
       void connection.dispose();
     };
-  }, [coordinatorClient, product.directory, product.mcp, product.network, runtime.coordinator, transport]);
+  }, [
+    coordinatorClient,
+    product.directory.list,
+    product.mcp.list,
+    product.network.refreshGroups,
+    runtime.coordinator,
+    transport,
+  ]);
 
   useEffect(() => {
     if (activePeerKey || !agentItems.length) return;
@@ -331,16 +338,6 @@ export default function AgentRootShell({
     void product.workflow.list(activePeer.agentId || activePeer.id).catch(() => undefined);
   }, [activePeer?.key, activePeer?.conversationId, hostReady]);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
-        event.preventDefault();
-        product.palette.openPalette();
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [product.palette]);
 
   useEffect(() => {
     if (!activePeer) return;
@@ -355,7 +352,7 @@ export default function AgentRootShell({
     setSurface('agents');
     setActivePeerKey(item.peerKey);
     product.sidebar.clearSelection();
-  }, [product.sidebar]);
+  }, [product.sidebar.clearSelection]);
 
   async function createAgent(): Promise<void> {
     const name = window.prompt('Agent name', 'New Agent')?.trim();
