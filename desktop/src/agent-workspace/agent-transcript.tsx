@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 import { AppWindow, ArrowDown, Check, Copy, Edit3, FileText, Monitor, RotateCcw } from 'lucide-react';
-import { BotMark } from '../../../frontend/apps/web/src/app/host/bot-mark';
+import FabAvatar from '../ui/avatar/fab-avatar';
 import { MahayanaAssistantTurnView } from '../mahayana-assistant-turn-view';
 import type { TranscriptApprovalDecision, TranscriptEntry } from './transcript-model';
 import { formatAgentAttachmentSize } from './agent-attachments';
@@ -203,7 +203,7 @@ export default function AgentTranscript({
 }: AgentTranscriptProps) {
   return <div className={styles.root}>
     <div ref={messageAreaRef} className={styles.messageArea} data-testid="message-list" data-agent-operation-id={activeOperationId ?? undefined} onScroll={onScroll} aria-label={title + ' 会话'}>
-      <div className={styles.botIntro}><BotMark botId={botId} state="idle" size={44} label={title} /><div><h2>{title}</h2><p>{description || 'Agent 会在这个独立工作区中持续工作。'}</p></div></div>
+      <div className={styles.botIntro}><FabAvatar identity={botId} state="idle" size={44} label={title} /><div><h2>{title}</h2><p>{description || 'Agent 会在这个独立工作区中持续工作。'}</p></div></div>
       {hasEarlierMessages && onLoadEarlier ? <button type="button" className={styles.loadEarlier} onClick={onLoadEarlier}>查看更早的消息</button> : null}
       {entries.length === 0 ? <div className={styles.emptyState}><strong>开始一个新会话</strong><span>向 {title} 提问，回复、工具和授权会按一个连续时间线显示。</span></div> : <div className={styles.transcript}>
         {entries.map((entry, index) => {
@@ -215,7 +215,7 @@ export default function AgentTranscript({
           }
           if (entry.kind === 'assistant-turn' && entry.assistantTurn) {
             return <div key={entry.id} data-transcript-entry-id={entry.id}>
-              <MahayanaAssistantTurnView turn={entry.assistantTurn} label={title} avatar={<BotMark botId={botId} state={entry.streaming ? 'writing' : 'idle'} size={28} label={title} />} />
+              <MahayanaAssistantTurnView turn={entry.assistantTurn} label={title} avatar={<FabAvatar identity={botId} state={entry.streaming ? 'working' : 'idle'} size={28} label={title} active={Boolean(entry.streaming)} />} />
             </div>;
           }
           if (entry.kind === 'tool-call') {
@@ -231,14 +231,14 @@ export default function AgentTranscript({
           }
           if (entry.kind === 'thinking') {
             return <div key={entry.id} className={styles.thinkingRow} data-testid="agent-thinking" data-transcript-entry-id={entry.id} data-operation-id={entry.operationId}>
-              <BotMark botId={botId} state="thinking" size={28} label={title} />
+              <FabAvatar identity={botId} state="thinking" size={28} label={title} active />
               <div className={styles.thinkingCopy}><strong>{entry.title || '正在思考'}</strong><span>{entry.detail || '正在整理回复…'}</span></div>
               <span className={styles.thinkingDots} aria-hidden="true"><i /><i /><i /></span>
             </div>;
           }
           const userMessage = entry.role === 'me';
           return <article key={entry.id} className={styles.messageRow + ' ' + (userMessage ? styles.userRow : styles.assistantRow)} data-message-id={entry.id} data-transcript-entry-id={entry.id} data-agent-message-role={entry.role} data-operation-id={entry.operationId} onContextMenu={(event) => onContextMenu?.(event, entry)}>
-            {!userMessage ? <BotMark botId={botId} state={entry.streaming ? 'writing' : 'idle'} size={28} label={title} /> : null}
+            {!userMessage ? <FabAvatar identity={botId} state={entry.streaming ? 'working' : 'idle'} size={28} label={title} active={Boolean(entry.streaming)} /> : null}
             <div className={styles.messageColumn}>
               <div className={styles.messageMeta}><span>{userMessage ? '你' : title}</span><time dateTime={new Date(entry.createdAtMs).toISOString()}>{formatTime(entry.createdAtMs)}</time></div>
               {entry.text || entry.streaming ? <div className={styles.messageBody}><MarkdownContent value={entry.text || ' '} />{entry.streaming ? <span className={styles.streamingCursor} aria-label="正在生成" /> : null}</div> : null}
