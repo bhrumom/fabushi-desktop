@@ -497,12 +497,19 @@ export default function AgentRootShell({
       setError('No user prompt was found for this response.');
       return;
     }
-    runtime.transcriptStore.removeByIds(activePeer.key, [entry.id]);
+    runtime.transcriptStore.prepareRetry(
+      activePeer.key,
+      prompt.id,
+      entry.operationId,
+    );
     runtime.notify();
     runtime.submit({
       peerKey: activePeer.key,
       agentId: activePeer.agentId || activePeer.id,
       ...(activePeer.conversationId ? { conversationId: activePeer.conversationId } : {}),
+      messageId: prompt.id,
+      retryOfMessageId: prompt.id,
+      createdAtMs: prompt.createdAtMs,
       prompt: prompt.text,
       ...(prompt.richText ? { richText: prompt.richText } : {}),
       ...(prompt.attachments?.length ? { attachments: prompt.attachments } : {}),
