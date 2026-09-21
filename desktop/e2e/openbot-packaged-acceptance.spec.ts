@@ -43,6 +43,57 @@ async function withNodeDeadline<T>(label: string, timeoutMs: number, task: Promi
   }
 }
 
+async function waitForPackagedRendererBinding(
+  app: ElectronApplication,
+  initialPage: Page,
+): Promise<Page> {
+  const deadline = Date.now() + 35_000;
+  let reloadIssued = false;
+  let lastMainState: { url: string; loading: boolean; title: string } | null = null;
+  let lastPageUrls: string[] = [];
+
+  while (Date.now() < deadline) {
+    lastMainState = await app.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      return win
+        ? {
+            url: win.webContents.getURL(),
+            loading: win.webContents.isLoadingMainFrame(),
+            title: win.getTitle(),
+          }
+        : { url: '', loading: true, title: '' };
+    });
+    const pages = app.windows();
+    lastPageUrls = pages.map((candidate) => candidate.url());
+    const bound = pages.find((candidate) => candidate.url().startsWith('app://bundle/'));
+    if (bound) return bound;
+
+    // A packaged app can finish its first custom-protocol navigation before
+    // Playwright has attached the BrowserWindow Page. Reload the exact same
+    // signed renderer once, after attachment, so Playwright observes that real
+    // navigation rather than falling back to a test host or alternate URL.
+    if (!reloadIssued && lastMainState.url.startsWith('app://bundle/') && !lastMainState.loading) {
+      reloadIssued = true;
+      await app.evaluate(async ({ BrowserWindow }) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        if (!win) throw new Error('Fabushi BrowserWindow missing while binding Playwright');
+        const currentUrl = win.webContents.getURL();
+        if (!currentUrl.startsWith('app://bundle/')) {
+          throw new Error(`Unexpected packaged renderer URL: ${currentUrl || '<empty>'}`);
+        }
+        await win.loadURL(currentUrl);
+      });
+    }
+
+    if (initialPage.url().startsWith('app://bundle/')) return initialPage;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  throw new Error(
+    `Playwright did not bind the packaged BrowserWindow. main=${JSON.stringify(lastMainState)} pages=${JSON.stringify(lastPageUrls)}`,
+  );
+}
+
 function peerByName(page: Page, name: string): Locator {
   return page
     .getByTestId('messenger-sidebar')
@@ -267,17 +318,20 @@ test.describe('signed candidate packaged acceptance', () => {
         },
         recordVideo: { dir: path.join(evidenceRoot, 'video'), size: { width: 1671, height: 937 } },
       });
-      const page = await app.firstWindow();
+      let page = await app.firstWindow();
       pageForTrace = page;
       await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true });
       traceStarted = true;
-      page.on('console', (message) => captureRuntimeLog('page-console', `${message.type()}: ${message.text()}`));
-      page.on('pageerror', (error) => captureRuntimeLog('page-error', error.stack || error.message));
-      page.on('crash', () => captureRuntimeLog('page-crash', 'renderer page crashed'));
-      page.on('requestfailed', (request) => captureRuntimeLog(
-        'request-failed',
-        `${request.method()} ${request.url()} :: ${request.failure()?.errorText || 'unknown'}`,
-      ));
+      const attachPageDiagnostics = (target: Page) => {
+        target.on('console', (message) => captureRuntimeLog('page-console', `${message.type()}: ${message.text()}`));
+        target.on('pageerror', (error) => captureRuntimeLog('page-error', error.stack || error.message));
+        target.on('crash', () => captureRuntimeLog('page-crash', 'renderer page crashed'));
+        target.on('requestfailed', (request) => captureRuntimeLog(
+          'request-failed',
+          `${request.method()} ${request.url()} :: ${request.failure()?.errorText || 'unknown'}`,
+        ));
+      };
+      attachPageDiagnostics(page);
       app.process().stdout?.on('data', (chunk) => captureRuntimeLog('app-stdout', String(chunk)));
       app.process().stderr?.on('data', (chunk) => captureRuntimeLog('app-stderr', String(chunk)));
 
@@ -291,8 +345,16 @@ test.describe('signed candidate packaged acceptance', () => {
           loading: win.webContents.isLoading(),
         }))),
       );
+      const initialPageUrl = page.url();
+      const boundPage = await waitForPackagedRendererBinding(app, page);
+      if (boundPage !== page) {
+        page = boundPage;
+        pageForTrace = page;
+        attachPageDiagnostics(page);
+      }
       await writeFile(path.join(evidenceRoot, 'startup.json'), JSON.stringify({
         sourceSha,
+        initialPageUrl,
         pageUrl: page.url(),
         windows: startupWindows,
       }, null, 2));

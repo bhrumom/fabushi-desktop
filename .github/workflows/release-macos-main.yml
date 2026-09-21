@@ -274,6 +274,37 @@ jobs:
           echo "executable=$executable" >> "$GITHUB_OUTPUT"
           echo "Candidate executable: $executable" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Provision bounded production CI account session
+        shell: bash
+        env:
+          FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+          FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+          FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
+          DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app
+        run: |
+          set -euo pipefail
+          test -n "$FABUSHI_CI_TEST_USERNAME"
+          test -n "$FABUSHI_CI_TEST_PASSWORD"
+          support="$RUNNER_TEMP/fabushi-support"
+          test -f "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+          test -f "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+          account_dir="$RUNNER_TEMP/fabushi-candidate-account"
+          app_session_dir="$RUNNER_TEMP/fabushi-candidate-app-session"
+          mkdir -p "$account_dir" "$app_session_dir"
+          chmod 700 "$account_dir" "$app_session_dir"
+          export FABUSHI_ACCOUNT_SESSION_FILE="$account_dir/session.json"
+          export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_session_dir/session.json"
+          node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+          node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+          chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not)' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
+          rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
+          {
+            echo "DEVICE_ID=$DEVICE_ID"
+            echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          } >> "$GITHUB_ENV"
+          echo "Bounded refresh-token-free production account session prepared for signed candidate acceptance." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run real signed packaged acceptance
         working-directory: desktop
         shell: bash
