@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { invokeNativeDesktop } from '../../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
+import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
 import {
   assignAgentsToSidebarSection,
   createAgentSidebarSection,
@@ -302,11 +302,23 @@ export function useAgentSidebarController(
       }
     };
 
+    const refreshWhenForegrounded = () => {
+      if (document.visibilityState === 'visible') void refreshRemoteLayout();
+    };
+    const unsubscribeNative = subscribeNativeDesktopEvents({
+      'account-state-changed': () => { void refreshRemoteLayout(); },
+      'window-state': (payload) => {
+        if ((payload as { focused?: boolean } | null)?.focused) void refreshRemoteLayout();
+      },
+    });
+    window.addEventListener('focus', refreshWhenForegrounded);
+    document.addEventListener('visibilitychange', refreshWhenForegrounded);
     void refreshRemoteLayout();
-    const timer = window.setInterval(() => { void refreshRemoteLayout(); }, 5_000);
     return () => {
       cancelled = true;
-      window.clearInterval(timer);
+      unsubscribeNative();
+      window.removeEventListener('focus', refreshWhenForegrounded);
+      document.removeEventListener('visibilitychange', refreshWhenForegrounded);
     };
   }, [accountScope, layoutScope]);
 
