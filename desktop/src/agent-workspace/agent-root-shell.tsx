@@ -536,17 +536,17 @@ export default function AgentRootShell({
   const collapsed = view.sidebarWidth <= 112;
 
   const feature = surface === 'contacts'
-    ? <ContactsCompatibilityAdapter onClose={() => setSurface('agents')} />
+    ? <ContactsCompatibilityAdapter transport={transport} onClose={() => setSurface('agents')} />
     : surface === 'telegram'
-      ? <TelegramCompatibilityAdapter onClose={() => setSurface('agents')} />
+      ? <TelegramCompatibilityAdapter transport={transport} onClose={() => setSurface('agents')} />
       : surface === 'miniapps'
-        ? <MiniAppCompatibilityAdapter onClose={() => setSurface('agents')} />
+        ? <MiniAppCompatibilityAdapter transport={transport} onClose={() => setSurface('agents')} />
         : surface === 'payments'
-          ? <PaymentsCompatibilityAdapter onClose={() => setSurface('agents')} />
+          ? <PaymentsCompatibilityAdapter transport={transport} onClose={() => setSurface('agents')} />
           : surface === 'calls'
-            ? <CallsCompatibilityAdapter onClose={() => setSurface('agents')} />
+            ? <CallsCompatibilityAdapter transport={transport} onClose={() => setSurface('agents')} />
             : surface === 'settings'
-              ? <SettingsCompatibilityAdapter onClose={() => setSurface('agents')} onLogout={onLogout} />
+              ? <SettingsCompatibilityAdapter transport={transport} onClose={() => setSurface('agents')} onLogout={onLogout} />
               : null;
 
   return <main
@@ -614,6 +614,10 @@ export default function AgentRootShell({
           product.network.openNetwork();
         }}
         onOpenPlugins={() => setSurface('miniapps')}
+        onOpenContacts={() => setSurface('contacts')}
+        onOpenTelegram={() => setSurface('telegram')}
+        onOpenPayments={() => setSurface('payments')}
+        onOpenCalls={() => setSurface('calls')}
         onOpenSettings={() => setSurface('settings')}
       />
     </aside>
