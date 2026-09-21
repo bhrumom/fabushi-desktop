@@ -8,7 +8,7 @@ import type {
   InferenceRouterStatus,
   SettingsCategory,
   UsageSummary,
-} from '../legacy-messaging/legacy-messaging-model';
+} from '../compatibility/compatibility-model';
 import { FabAvatar, FabIconButton, FabSurface } from '../../ui/primitives/fab-primitives';
 import styles from '../../messaging-shell.module.css';
 
