@@ -10,7 +10,7 @@ export default function CallsCompatibilityAdapter({
   onClose,
 }: {
   readonly transport: MahayanaHostTransport;
-  readonly onClose(): void;
+  readonly onClose: () => void;
 }) {
   const runtime = useCompatibilityMessagingRuntime(transport);
   const callCapable = useMemo(
