@@ -13,10 +13,11 @@ use mahayana_plugin_runtime::{
 };
 use mahayana_product::MahayanaProductClient;
 use serde::{Deserialize, Serialize};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppHostFeatureMode {
@@ -285,6 +286,10 @@ impl AppHost {
                 .map_err(|error| AppHostError::Operation(error.to_string())),
             "feature.execute" => self.feature_execute(params),
             "feature.receive" => self.feature_receive(params),
+            "feature.persistence.get" => self.feature_persistence_get(params),
+            "feature.persistence.set" => self.feature_persistence_set(params),
+            "feature.persistence.remove" => self.feature_persistence_remove(params),
+            "feature.persistence.list" => self.feature_persistence_list(params),
             "feature.approval.resolve" => self.feature_resolve_approval(params),
             "feature.interrupt" => self.feature_interrupt(params),
             "feature.auth.status" => self
@@ -356,6 +361,102 @@ impl AppHost {
             .receive_with_timeout(Duration::from_millis(timeout_ms))
             .map_err(|error| AppHostError::Operation(error.to_string()))?;
         serde_json::to_value(event).map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn runtime_state_connection(&self) -> Result<Connection, AppHostError> {
+        let runtime_dir = feature_host_root(&self.app_data_dir).join("runtime");
+        std::fs::create_dir_all(&runtime_dir)
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        let connection = Connection::open(runtime_dir.join("runtime.sqlite3"))
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        connection
+            .execute_batch(
+                r#"
+                PRAGMA journal_mode=WAL;
+                PRAGMA synchronous=NORMAL;
+                PRAGMA busy_timeout=5000;
+                CREATE TABLE IF NOT EXISTS ui_state (
+                    key TEXT PRIMARY KEY,
+                    value_json TEXT NOT NULL,
+                    updated_at_ms INTEGER NOT NULL
+                );
+                "#,
+            )
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        Ok(connection)
+    }
+
+    fn feature_persistence_get(&self, params: Value) -> Result<Value, AppHostError> {
+        let key = client_persistence_key(&params)?;
+        let connection = self.runtime_state_connection()?;
+        let value = connection
+            .query_row(
+                "SELECT value_json FROM ui_state WHERE key = ?1",
+                params![key],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        value
+            .map(|encoded| {
+                serde_json::from_str(&encoded)
+                    .map_err(|error| AppHostError::Operation(error.to_string()))
+            })
+            .transpose()
+            .map(|value| value.unwrap_or(Value::Null))
+    }
+
+    fn feature_persistence_set(&self, params_value: Value) -> Result<Value, AppHostError> {
+        let key = client_persistence_key(&params_value)?;
+        let value = params_value.get("value").cloned().unwrap_or(Value::Null);
+        let encoded = serde_json::to_string(&value)
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        self.runtime_state_connection()?
+            .execute(
+                "INSERT INTO ui_state(key, value_json, updated_at_ms) VALUES (?1, ?2, ?3)
+                 ON CONFLICT(key) DO UPDATE SET
+                   value_json = excluded.value_json,
+                   updated_at_ms = excluded.updated_at_ms",
+                params![key, encoded, app_host_now_millis()],
+            )
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        Ok(Value::Bool(true))
+    }
+
+    fn feature_persistence_remove(&self, params_value: Value) -> Result<Value, AppHostError> {
+        let key = client_persistence_key(&params_value)?;
+        self.runtime_state_connection()?
+            .execute("DELETE FROM ui_state WHERE key = ?1", params![key])
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        Ok(Value::Bool(true))
+    }
+
+    fn feature_persistence_list(&self, params_value: Value) -> Result<Value, AppHostError> {
+        let prefix = params_value
+            .get("prefix")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        if prefix.len() > 512 || prefix.chars().any(|character| character == '\0') {
+            return Err(AppHostError::InvalidRequest(
+                "client persistence prefix is invalid".to_string(),
+            ));
+        }
+        let connection = self.runtime_state_connection()?;
+        let mut statement = connection
+            .prepare("SELECT key FROM ui_state ORDER BY key")
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        let rows = statement
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        let mut keys = Vec::new();
+        for row in rows {
+            let key = row.map_err(|error| AppHostError::Operation(error.to_string()))?;
+            if key.starts_with(&prefix) {
+                keys.push(Value::String(key));
+            }
+        }
+        Ok(Value::Array(keys))
     }
 
     fn feature_resolve_approval(&self, params: Value) -> Result<Value, AppHostError> {
@@ -1070,6 +1171,30 @@ fn configured_feature_host_mode() -> Result<AppHostFeatureMode, AppHostError> {
             "invalid FABUSHI_FEATURE_HOST_MODE: {error}"
         ))),
     }
+}
+
+fn client_persistence_key(params: &Value) -> Result<String, AppHostError> {
+    let key = params
+        .get("key")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim();
+    if key.is_empty()
+        || key.len() > 512
+        || key.chars().any(|character| character == '\0' || character.is_control())
+    {
+        return Err(AppHostError::InvalidRequest(
+            "client persistence key is invalid".to_string(),
+        ));
+    }
+    Ok(key.to_string())
+}
+
+fn app_host_now_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(i64::MAX as u128) as i64)
+        .unwrap_or_default()
 }
 
 fn feature_host_root(app_data_dir: &Path) -> PathBuf {
