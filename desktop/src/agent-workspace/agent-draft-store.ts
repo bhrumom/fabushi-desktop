@@ -46,70 +46,33 @@ function validReplyContext(value: unknown): value is AgentReplyContext {
     && typeof reply.text === 'string';
 }
 
-export function readAgentWorkspaceDrafts(): PersistedAgentDrafts {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== 'object') return {};
-    const result: PersistedAgentDrafts = {};
-    for (const [peerKey, value] of Object.entries(parsed as Record<string, unknown>)) {
-      if (!value || typeof value !== 'object') continue;
-      const draft = value as { text?: unknown; richText?: unknown; attachments?: unknown; references?: unknown; replyTo?: unknown };
-      const text = typeof draft.text === 'string' ? draft.text : '';
-      const attachments = Array.isArray(draft.attachments)
-        ? draft.attachments.filter(validAttachment).slice(0, AGENT_ATTACHMENT_LIMIT)
-        : [];
-      const references = Array.isArray(draft.references)
-        ? draft.references.filter(validPromptReference).slice(0, 32)
-        : [];
-      const replyTo = validReplyContext(draft.replyTo) ? draft.replyTo : undefined;
-      const richText = normalizeAgentRichText(
-        typeof draft.richText === 'string' ? draft.richText : undefined,
-        text,
-        references,
-      );
-      if (text || attachments.length || references.length || replyTo) {
-        result[peerKey] = {
-          text,
-          ...(richText ? { richText } : {}),
-          attachments,
-          ...(references.length ? { references } : {}),
-          ...(replyTo ? { replyTo } : {}),
-        };
-      }
-    }
-    return result;
-  } catch {
-    return {};
-  }
-}
-
-export function persistAgentWorkspaceDrafts(
-  textByPeer: Readonly<Record<string, string>>,
-  attachmentsByPeer: Readonly<Record<string, readonly AttachmentContext[]>>,
-  replyByPeer: Readonly<Record<string, AgentReplyContext>> = {},
-  referencesByPeer: Readonly<Record<string, readonly AgentPromptReference[]>> = {},
-  richTextByPeer: Readonly<Record<string, string>> = {},
-): void {
-  if (typeof window === 'undefined') return;
-  const peerKeys = new Set([
-    ...Object.keys(textByPeer),
-    ...Object.keys(attachmentsByPeer),
-    ...Object.keys(replyByPeer),
-    ...Object.keys(referencesByPeer),
-    ...Object.keys(richTextByPeer),
-  ]);
-  const snapshot: PersistedAgentDrafts = {};
-  for (const peerKey of peerKeys) {
-    const text = textByPeer[peerKey] ?? '';
-    const attachments = [...(attachmentsByPeer[peerKey] ?? [])].slice(0, AGENT_ATTACHMENT_LIMIT);
-    const replyTo = replyByPeer[peerKey];
-    const references = [...(referencesByPeer[peerKey] ?? [])].slice(0, 32);
-    const richText = normalizeAgentRichText(richTextByPeer[peerKey], text, references);
+export function normalizePersistedAgentDrafts(value: unknown): PersistedAgentDrafts {
+  if (!value || typeof value !== 'object') return {};
+  const result: PersistedAgentDrafts = {};
+  for (const [peerKey, candidate] of Object.entries(value as Record<string, unknown>)) {
+    if (!peerKey || !candidate || typeof candidate !== 'object') continue;
+    const draft = candidate as {
+      text?: unknown;
+      richText?: unknown;
+      attachments?: unknown;
+      references?: unknown;
+      replyTo?: unknown;
+    };
+    const text = typeof draft.text === 'string' ? draft.text : '';
+    const attachments = Array.isArray(draft.attachments)
+      ? draft.attachments.filter(validAttachment).slice(0, AGENT_ATTACHMENT_LIMIT)
+      : [];
+    const references = Array.isArray(draft.references)
+      ? draft.references.filter(validPromptReference).slice(0, 32)
+      : [];
+    const replyTo = validReplyContext(draft.replyTo) ? draft.replyTo : undefined;
+    const richText = normalizeAgentRichText(
+      typeof draft.richText === 'string' ? draft.richText : undefined,
+      text,
+      references,
+    );
     if (text || attachments.length || references.length || replyTo) {
-      snapshot[peerKey] = {
+      result[peerKey] = {
         text,
         ...(richText ? { richText } : {}),
         attachments,
@@ -118,13 +81,28 @@ export function persistAgentWorkspaceDrafts(
       };
     }
   }
+  return result;
+}
+
+/**
+ * One-time migration only. New Agent draft writes are owned by Mahayana Rust
+ * RuntimeStore (SQLite); renderer localStorage is no longer authoritative.
+ */
+export function readLegacyAgentWorkspaceDrafts(): PersistedAgentDrafts {
+  if (typeof window === 'undefined') return {};
   try {
-    if (Object.keys(snapshot).length) {
-      window.localStorage.setItem(storageKey, JSON.stringify(snapshot));
-    } else {
-      window.localStorage.removeItem(storageKey);
-    }
+    const raw = window.localStorage.getItem(storageKey);
+    return raw ? normalizePersistedAgentDrafts(JSON.parse(raw) as unknown) : {};
   } catch {
-    // Draft recovery is best effort when local storage is unavailable.
+    return {};
+  }
+}
+
+export function clearLegacyAgentWorkspaceDrafts(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(storageKey);
+  } catch {
+    // Migration cleanup is best effort.
   }
 }
