@@ -94,6 +94,7 @@ export class AgentRuntimeCoordinator {
   }
 
   beginLocalTurn(input: AgentLocalTurn): void {
+    this.recoveryMessageByPeer.delete(input.peerKey);
     this.workspace.beginRequest(input.peerKey, input.requestId);
     this.transcripts.appendUserMessage(input.peerKey, {
       id: input.messageId,
@@ -468,6 +469,8 @@ export class AgentRuntimeCoordinator {
     if (this.deltaTimer !== null) globalThis.clearTimeout(this.deltaTimer);
     this.deltaTimer = null;
     this.pendingDeltas.clear();
+    this.turnStateByOperation.clear();
+    this.recoveryMessageByPeer.clear();
     this.workspace.clearOperations();
   }
 
@@ -475,5 +478,7 @@ export class AgentRuntimeCoordinator {
     if (this.deltaTimer !== null) globalThis.clearTimeout(this.deltaTimer);
     this.deltaTimer = null;
     this.pendingDeltas.clear();
+    this.turnStateByOperation.clear();
+    this.recoveryMessageByPeer.clear();
   }
 }
