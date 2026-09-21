@@ -281,6 +281,7 @@ export class AgentRuntimeCoordinator {
       || event.type === 'agent.step'
       || event.type === 'approval.requested'
       || event.type === 'approval.resolved'
+      || event.type === 'turn.state'
       || event.type === 'operation.completed'
       || event.type === 'operation.failed'
       || event.type === 'operation.interrupted'
@@ -340,6 +341,27 @@ export class AgentRuntimeCoordinator {
         const peerKey = this.claimOperation(operationId);
         if (!peerKey) return this.hasAgentWork();
         this.queueDelta({ ...event, operationId });
+        return true;
+      }
+
+      case 'turn.state': {
+        const peerKey = this.workspace.peerForOperation(event.operationId)
+          ?? this.claimOperation(event.operationId);
+        if (!peerKey) return this.workspace.isOperationFinished(event.operationId);
+        this.transcripts.applyTurnState(peerKey, event);
+        this.emitTranscript(peerKey);
+        if (event.state === 'completed') {
+          return Boolean(this.finishOperation(event.operationId, 'completed'));
+        }
+        if (event.state === 'failed') {
+          return Boolean(this.finishOperation(event.operationId, 'failed'));
+        }
+        if (event.state === 'cancelled') {
+          return Boolean(this.finishOperation(event.operationId, 'interrupted'));
+        }
+        if (event.state === 'preparing') {
+          this.hooks.onOperationStarted?.(peerKey, event.operationId);
+        }
         return true;
       }
 
