@@ -1,13 +1,18 @@
 :root {
   --fab-bg-primary: #151519;
   --fab-bg-raised: #1b1b20;
+  --fab-bg-overlay: #27272e;
   --fab-bg-hover: rgba(255,255,255,.065);
+  --fab-bg-active: rgba(255,255,255,.105);
   --fab-border-subtle: rgba(255,255,255,.10);
   --fab-border-strong: rgba(255,255,255,.18);
   --fab-text-primary: rgba(255,255,255,.94);
   --fab-text-muted: rgba(255,255,255,.62);
   --fab-danger: #ff5b57;
+  --fab-success: #43c982;
+  --fab-warning: #f3b63f;
   --fab-accent: #5f8cff;
+  --fab-radius-xs: 6px;
   --fab-radius-sm: 8px;
   --fab-radius-md: 12px;
   --fab-radius-lg: 16px;
@@ -16,18 +21,30 @@
   --fab-space-3: 12px;
   --fab-space-4: 16px;
   --fab-space-5: 20px;
+  --fab-space-6: 24px;
+  --fab-scrim: rgba(0,0,0,.54);
+  --fab-shadow-raised: 0 8px 26px rgba(0,0,0,.20);
+  --fab-shadow-popover: 0 12px 34px rgba(0,0,0,.32);
   --fab-shadow-dialog: 0 18px 60px rgba(0,0,0,.45);
+  --fab-z-popover: 900;
+  --fab-z-dialog: 1200;
+  --fab-z-tooltip: 1400;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
     --fab-bg-primary: #f5f5f7;
     --fab-bg-raised: #ffffff;
+    --fab-bg-overlay: #242428;
     --fab-bg-hover: rgba(0,0,0,.055);
+    --fab-bg-active: rgba(0,0,0,.095);
     --fab-border-subtle: rgba(0,0,0,.10);
     --fab-border-strong: rgba(0,0,0,.18);
     --fab-text-primary: rgba(0,0,0,.88);
     --fab-text-muted: rgba(0,0,0,.56);
+    --fab-scrim: rgba(0,0,0,.34);
+    --fab-shadow-raised: 0 8px 26px rgba(0,0,0,.10);
+    --fab-shadow-popover: 0 12px 34px rgba(0,0,0,.14);
     --fab-shadow-dialog: 0 18px 60px rgba(0,0,0,.18);
   }
 }
