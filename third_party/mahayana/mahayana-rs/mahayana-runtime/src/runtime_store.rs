@@ -96,6 +96,12 @@ impl RuntimeStore {
                         updated_at_ms INTEGER NOT NULL
                     );
 
+                    CREATE TABLE IF NOT EXISTS workspace_state (
+                        key TEXT PRIMARY KEY,
+                        value_json TEXT NOT NULL,
+                        updated_at_ms INTEGER NOT NULL
+                    );
+
                     CREATE TABLE IF NOT EXISTS pending_intents (
                         intent_id TEXT PRIMARY KEY,
                         turn_id TEXT NOT NULL,
@@ -433,7 +439,7 @@ impl RuntimeStore {
     }
     /// Read renderer projection state that is owned durably by the Rust runtime.
     /// UI code may keep an in-memory mirror, but SQLite remains authoritative.
-    pub fn read_ui_state(&self, key: &str) -> Result<Option<Value>, RuntimeStoreError> {
+    pub fn read_workspace_state(&self, key: &str) -> Result<Option<Value>, RuntimeStoreError> {
         #[cfg(target_arch = "wasm32")]
         {
             let _ = key;
@@ -446,7 +452,7 @@ impl RuntimeStore {
                 .lock()
                 .map_err(|_| RuntimeStoreError::Poisoned)?
                 .query_row(
-                    "SELECT value_json FROM ui_state WHERE key = ?1",
+                    "SELECT value_json FROM workspace_state WHERE key = ?1",
                     params![key],
                     |row| row.get(0),
                 )
@@ -461,7 +467,7 @@ impl RuntimeStore {
         }
     }
 
-    pub fn write_ui_state(
+    pub fn write_workspace_state(
         &self,
         key: &str,
         value: &Value,
@@ -481,7 +487,7 @@ impl RuntimeStore {
                 .lock()
                 .map_err(|_| RuntimeStoreError::Poisoned)?
                 .execute(
-                    "INSERT INTO ui_state(key, value_json, updated_at_ms) VALUES (?1, ?2, ?3)
+                    "INSERT INTO workspace_state(key, value_json, updated_at_ms) VALUES (?1, ?2, ?3)
                      ON CONFLICT(key) DO UPDATE SET
                        value_json = excluded.value_json,
                        updated_at_ms = excluded.updated_at_ms",
