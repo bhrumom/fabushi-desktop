@@ -221,6 +221,59 @@ impl RuntimeStore {
         }
     }
 
+    /// Resolve one terminal logical turn to the next execution generation.
+    ///
+    /// Regenerate/retry is explicit: ordinary duplicate transport requests do
+    /// not select an existing turn. The caller supplies the original stable
+    /// client user-message id and receives the same turn id plus N+1.
+    pub fn retry_turn_generation(
+        &self,
+        conversation_id: &str,
+        user_message_id: &str,
+    ) -> Result<Option<(TurnId, i64, u32)>, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (conversation_id, user_message_id);
+            Ok(None)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(None); };
+            let row = connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .query_row(
+                    "SELECT t.turn_id, t.created_at_ms, COALESCE(MAX(r.generation), 0)
+                     FROM turns t
+                     LEFT JOIN runs r ON r.turn_id = t.turn_id
+                     WHERE t.conversation_id = ?1
+                       AND t.user_message_id = ?2
+                       AND t.state IN ('completed', 'failed', 'cancelled', 'recovering')
+                     GROUP BY t.turn_id, t.created_at_ms
+                     ORDER BY t.created_at_ms DESC
+                     LIMIT 1",
+                    params![conversation_id, user_message_id],
+                    |row| {
+                        Ok((
+                            row.get::<_, String>(0)?,
+                            row.get::<_, i64>(1)?,
+                            row.get::<_, i64>(2)?,
+                        ))
+                    },
+                )
+                .optional()
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            row.map(|(turn_id, created_at_ms, generation)| {
+                let next = generation
+                    .checked_add(1)
+                    .and_then(|value| u32::try_from(value).ok())
+                    .ok_or_else(|| RuntimeStoreError::Sqlite("run generation overflow".to_string()))?;
+                Ok((TurnId(turn_id), created_at_ms, next))
+            })
+            .transpose()
+        }
+    }
+
     pub fn set_turn_state(
         &self,
         turn_id: &TurnId,
