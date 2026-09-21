@@ -99,7 +99,7 @@ import { executeDesktopMiniAppBotInput, prepareDesktopMiniAppWebMcpDocument } fr
 import BotConversationView from '../bot-conversation-view';
 import type { BotTranscriptMessage } from '../bot-conversation-view';
 import AgentWorkspace from './agent-workspace';
-import { CompatibilitySurface, buildCompatibilityPeers, compatibilityMessagingEnvelope, type CompatibilityPeerItem as PeerItem, type CompatibilityPeerKind as PeerKind, type CompatibilityPeerSource as PeerSource, type CompatibilitySection as MessengerSection } from './messenger-compatibility-adapter';
+import { CompatibilitySurface, buildCompatibilityPeers, compatibilityMessagingEnvelope, type CompatibilityPeerItem as PeerItem, type CompatibilityPeerKind as PeerKind, type CompatibilityPeerSource as PeerSource, type CompatibilitySection as MessengerSection } from '../adapters/compatibility/messenger-compatibility-adapter';
 import type {
   DesktopMessengerPreferences,
   DisplayMessage,
