@@ -690,6 +690,45 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       })).toBe(true);
       expect(controller.isBusy('agent:restart')).toBe(false);
 
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:waiting-restart',
+        requestId: 'request:waiting-restart',
+        messageId: 'user:waiting-restart',
+        text: 'needs explicit approval',
+        createdAtMs: 10,
+      });
+      coordinator.adoptOperation(
+        'request:waiting-restart',
+        'operation:waiting-restart',
+        'agent:waiting-restart',
+      );
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(10).toISOString(),
+        operationId: 'operation:waiting-restart',
+        turnId: 'turn:waiting-restart',
+        runId: 'run:waiting-restart',
+        conversationId: 'codex:agent:waiting-restart',
+        state: 'waiting-user',
+        sequence: 1,
+      })).toBe(true);
+      expect(coordinator.handle({
+        type: 'host.lifecycle',
+        timestamp: new Date(11).toISOString(),
+        lifecycle: 'stopped',
+        state: 'stopped',
+        generation: 10,
+        sequence: 21,
+        recoverable: true,
+        error: 'approval channel reset',
+      })).toBe(true);
+      expect(controller.isBusy('agent:waiting-restart')).toBe(false);
+      expect(
+        transcripts.entries('agent:waiting-restart')
+          .find((entry) => entry.kind === 'assistant-turn')
+          ?.assistantTurn?.status,
+      ).toBe('interrupted');
+
       expect(coordinator.handleCommandBridge({
         phase: 'dispatch',
         command: { type: 'chat.send', requestId: 'request:c', text: 'C' },
