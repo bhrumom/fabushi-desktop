@@ -452,6 +452,36 @@ requirePattern(
   /reserve_handoff_slot[\s\S]{0,800}count_handoffs_for_run/,
 );
 requirePattern(
+  'Durable handoff dispatch journal is missing',
+  runtimeStore,
+  /CREATE TABLE IF NOT EXISTS handoff_dispatch/,
+);
+requirePattern(
+  'Runtime startup must recover unfinished handoffs after Ready',
+  runtimeLib,
+  /RuntimeEvent::Ready[\s\S]{0,320}recover_pending_handoffs\(\)/,
+);
+requirePattern(
+  'Runtime must persist handoff running state after target dispatch',
+  runtimeLib,
+  /enqueue_handoff[\s\S]{0,1000}start_message[\s\S]{0,500}mark_handoff_started/,
+);
+requirePattern(
+  'Runtime must persist handoff terminal state from target execution',
+  runtimeLib,
+  /mark_handoff_terminal\(intent_id, result\.is_ok\(\), now_millis\(\)\)/,
+);
+requirePattern(
+  'Retry generations must project the canonical recovering state',
+  runtimeLib,
+  /retrying = retry_of_client_message_id\.is_some\(\)[\s\S]{0,2600}TurnState::Recovering/,
+);
+requirePattern(
+  'Recovery must reuse the same logical turn through retryOfClientMessageId',
+  runtimeLib,
+  /fn recover_pending_handoffs[\s\S]{0,5200}retry_message_id[\s\S]{0,1200}start_message/,
+);
+requirePattern(
   'FeatureHost Agent sends must use Runtime handoff rather than hidden SendMessage',
   featureHost,
   /fn schedule_agent_handoff[\s\S]{0,2600}RuntimeCommand::Handoff[\s\S]{0,2600}RuntimeCommand::ExternalHandoff/,

@@ -264,6 +264,7 @@ impl MahayanaRuntime {
                 status: runtime.status(),
             })
             .map_err(|_| RuntimeError::EventConsumerClosed)?;
+        runtime.recover_pending_handoffs()?;
         Ok(runtime)
     }
 
@@ -1054,6 +1055,11 @@ impl MahayanaRuntime {
             inference_provider,
             true,
         )?;
+        self.store.mark_handoff_started(
+            intent_id.as_str(),
+            target_operation_id.as_str(),
+            now_millis(),
+        )?;
         self.event_tx
             .send(RuntimeEvent::AgentActivity {
                 operation_id: origin_operation_id.clone(),
@@ -1075,6 +1081,121 @@ impl MahayanaRuntime {
             operation_id: origin_operation_id,
             target_operation_id,
         })
+    }
+
+    fn recover_pending_handoffs(&self) -> Result<(), RuntimeError> {
+        for pending in self.store.recoverable_handoffs()? {
+            let target_conversation = pending
+                .intent
+                .target_conversation_id
+                .clone()
+                .unwrap_or_else(|| {
+                    ConversationId(format!("codex:agent:{}", pending.intent.target_agent))
+                });
+            let message_id = MessageId::new(pending.intent.id.to_string())
+                .map_err(|error| RuntimeError::Collaboration(error.to_string()))?;
+            let existing = self
+                .store
+                .find_turn_by_client_message(&target_conversation, &message_id)?;
+
+            if let Some(snapshot) = existing.as_ref() {
+                if snapshot.state == TurnState::Completed {
+                    self.store.mark_handoff_terminal(
+                        pending.intent.id.as_str(),
+                        true,
+                        now_millis(),
+                    )?;
+                    continue;
+                }
+                if matches!(snapshot.state, TurnState::Failed | TurnState::Cancelled) {
+                    self.store.mark_handoff_terminal(
+                        pending.intent.id.as_str(),
+                        false,
+                        now_millis(),
+                    )?;
+                    continue;
+                }
+            }
+
+            let decision = self
+                .capability_broker
+                .authorize_request(
+                    CapabilityAvailability::Ready,
+                    None,
+                    CapabilityRequest {
+                        actor: "runtime-recovery".to_string(),
+                        agent_id: None,
+                        conversation_id: ConversationId(
+                            MAHAYANA_AI_CONVERSATION_ID.to_string(),
+                        ),
+                        run_id: Some(pending.intent.origin_run.clone()),
+                        capability: "agent.handoff".to_string(),
+                        target: serde_json::json!({
+                            "targetAgent": pending.intent.target_agent,
+                            "targetConversationId": target_conversation,
+                            "depth": pending.intent.depth,
+                        }),
+                        intent: "recover durable Agent handoff after runtime restart".to_string(),
+                    },
+                    now_millis(),
+                )
+                .map_err(RuntimeError::CapabilityBroker)?;
+            if let Err(error) = require_capability_execution_allowed("agent.handoff", decision) {
+                self.store.mark_handoff_terminal(
+                    pending.intent.id.as_str(),
+                    false,
+                    now_millis(),
+                )?;
+                let _ = self.event_tx.send(RuntimeEvent::ProviderDegraded {
+                    provider: "handoff-recovery".to_string(),
+                    message: error.to_string(),
+                });
+                continue;
+            }
+
+            let retry_message_id = if let Some(snapshot) = existing.as_ref() {
+                if let Some(run_id) = snapshot.last_run_id.as_ref() {
+                    self.store
+                        .set_run_state(run_id, TurnState::Failed, Some(now_millis()))?;
+                }
+                self.store
+                    .set_turn_state(&snapshot.turn_id, TurnState::Recovering, None)?;
+                Some(pending.intent.id.to_string())
+            } else {
+                None
+            };
+            let client_message_id = retry_message_id
+                .as_ref()
+                .map(|_| None)
+                .unwrap_or_else(|| Some(pending.intent.id.to_string()));
+
+            match self.start_message(
+                target_conversation,
+                handoff_prompt(&pending.intent),
+                client_message_id,
+                retry_message_id,
+                pending.intent.inference_provider.clone(),
+                true,
+            ) {
+                Ok(operation_id) => {
+                    self.store.mark_handoff_started(
+                        pending.intent.id.as_str(),
+                        operation_id.as_str(),
+                        now_millis(),
+                    )?;
+                }
+                Err(error) => {
+                    let _ = self.event_tx.send(RuntimeEvent::ProviderDegraded {
+                        provider: "handoff-recovery".to_string(),
+                        message: format!(
+                            "could not recover handoff {} from turn {}: {error}",
+                            pending.intent.id, pending.origin_turn_id
+                        ),
+                    });
+                }
+            }
+        }
+        Ok(())
     }
 
     fn list_conversations(&self) -> Result<Vec<Conversation>, RuntimeError> {
@@ -1127,6 +1248,7 @@ impl MahayanaRuntime {
         // runtime ownership now belongs to ExecutionRun.
         let operation_id = OperationId(run_id.0.clone());
         let run_started_at_ms = now_millis();
+        let retrying = retry_of_client_message_id.is_some();
         let (
             turn_id,
             user_message_id,
@@ -1168,13 +1290,26 @@ impl MahayanaRuntime {
         let (queued, accepted_sequence) = actor
             .register(turn_id.clone())
             .map_err(RuntimeError::Synchronization)?;
+        let initial_state = if retrying {
+            TurnState::Recovering
+        } else {
+            TurnState::Accepted
+        };
+        let initial_sequence = if retrying {
+            actor
+                .set_state(&turn_id, TurnState::Recovering)
+                .map_err(RuntimeError::Synchronization)?
+                .unwrap_or(accepted_sequence)
+        } else {
+            accepted_sequence
+        };
 
         let turn = LogicalTurn {
             id: turn_id.clone(),
             conversation_id: conversation_id.clone(),
             user_message_id,
             created_at_ms: turn_created_at_ms,
-            state: TurnState::Accepted,
+            state: initial_state,
             active_run_id: Some(run_id.clone()),
         };
         let run = ExecutionRun {
@@ -1184,7 +1319,7 @@ impl MahayanaRuntime {
             provider: provider_key.clone(),
             started_at_ms: run_started_at_ms,
             finished_at_ms: None,
-            state: TurnState::Accepted,
+            state: initial_state,
         };
         self.store.record_turn(&turn)?;
         self.store.record_run(&run)?;
@@ -1204,14 +1339,15 @@ impl MahayanaRuntime {
                 turn_id: turn_id.clone(),
                 run_id: run_id.clone(),
                 conversation_id: conversation_id.clone(),
-                state: TurnState::Accepted,
-                sequence: accepted_sequence,
+                state: initial_state,
+                sequence: initial_sequence,
             })
             .map_err(|_| RuntimeError::EventConsumerClosed)?;
         if queued {
             transition_turn_state(&self.event_tx, &self.store, &context, TurnState::Queued)?;
         }
 
+        let durable_intent_id = provider_client_message_id.clone();
         let request = SendMessageRequest {
             conversation_id: conversation_id.clone(),
             operation_id: operation_id.clone(),
@@ -1251,6 +1387,9 @@ impl MahayanaRuntime {
                 TurnState::Failed
             };
             let _ = transition_turn_state(&event_tx, &store, &context, terminal_state);
+            if let Some(intent_id) = durable_intent_id.as_deref() {
+                let _ = store.mark_handoff_terminal(intent_id, result.is_ok(), now_millis());
+            }
             let event = match result {
                 Ok(()) => RuntimeEvent::OperationCompleted {
                     operation_id: task_operation_id.clone(),
