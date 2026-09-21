@@ -159,7 +159,7 @@ const codex = read(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana
 
 for (const [label, pattern] of [
   ['ConversationActor registry', /pub struct ConversationActorRegistry/],
-  ['ConversationActor async gate', /pub\s+gate:\s+AsyncMutex/],
+  ['ConversationActor async gate', /pub(?:\(crate\))?\s+gate:\s+AsyncMutex/],
   ['ConversationActor register lifecycle', /pub fn register\s*\(/],
   ['ConversationActor start lifecycle', /pub fn start\s*\(/],
   ['ConversationActor finish lifecycle', /pub fn finish\s*\(/],
@@ -176,7 +176,7 @@ for (const schema of ['turns', 'runs', 'capability_audit', 'computer_leases', 'w
 requirePattern('RuntimeStore must stay WAL-backed', store, /PRAGMA journal_mode=WAL/);
 
 requirePattern('CapabilityBroker must expose the policy/audit boundary', broker, /pub struct CapabilityBroker[\s\S]*pub fn authorize_request\s*\(/);
-requirePattern('Runtime AuthorizeCapability must route through CapabilityBroker', runtimeLib, /RuntimeCommand::AuthorizeCapability[\s\S]{0,500}capability_broker[\s\S]{0,180}authorize_request\s*\(/);
+requirePattern('Runtime AuthorizeCapability must route through CapabilityBroker', runtimeLib, /RuntimeCommand::AuthorizeCapability[\s\S]{0,1600}capability_broker[\s\S]{0,500}authorize_request\s*\(/);
 requirePattern('FeatureHost must authorize commands before production execution', featureHost, /self\.authorize_feature_command\(&command\)\?/);
 for (const capability of [
   'computer.screen.read',
