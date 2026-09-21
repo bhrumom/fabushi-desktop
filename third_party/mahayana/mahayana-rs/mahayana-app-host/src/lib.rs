@@ -219,6 +219,26 @@ impl AppHost {
         })
     }
 
+    /// Receive the next feature event directly from the long-lived Rust runtime.
+    ///
+    /// Desktop uses this to drive an unsolicited event frame on the child-process
+    /// protocol. Renderer/Main no longer need to poll `feature.receive`.
+    pub fn receive_feature_event(
+        &self,
+        timeout: Duration,
+    ) -> Result<Option<Value>, AppHostError> {
+        let event = self
+            .feature
+            .receive_with_timeout(timeout)
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        event
+            .map(|event| {
+                serde_json::to_value(event)
+                    .map_err(|error| AppHostError::Operation(error.to_string()))
+            })
+            .transpose()
+    }
+
     pub fn dispatch(&self, request: HostRequest) -> HostResponse {
         let id = request.id.clone();
         match self.handle(&request.method, request.params) {
