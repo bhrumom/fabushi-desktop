@@ -57,8 +57,10 @@ const computerRuntime = read(repoRoot, 'third_party', 'mahayana', 'mahayana-rs',
 
 const legacyShell = path.join(desktopRoot, 'src', 'adapters', 'legacy-messaging', 'legacy-messaging-shell.tsx');
 const obsoleteShell = path.join(desktopRoot, 'src', 'messaging-shell-v2.tsx');
+const legacyMotionCss = path.join(desktopRoot, 'public', 'grok-motion-parity.css');
 if (fs.existsSync(legacyShell)) violations.push('legacy-messaging-shell.tsx still exists; the cutover must delete it instead of renaming it');
 if (fs.existsSync(obsoleteShell)) violations.push('messaging-shell-v2.tsx returned');
+if (fs.existsSync(legacyMotionCss)) violations.push('legacy grok-motion-parity.css returned');
 
 requirePattern(
   'DesktopApp must boot through DesktopAuthBoundary directly into AgentRootShell',
