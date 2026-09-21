@@ -6886,7 +6886,7 @@ impl FeatureHostController {
             let member_agent_id = bot_runtime_agent_id(&member).to_string();
             let memory_prompt = account_memory_root
                 .as_deref()
-                .map(|root| render_memory_system_prompt(&root.join(member_agent_id).join("memory")))
+                .map(|root| render_memory_system_prompt(&root.join(&member_agent_id).join("memory")))
                 .unwrap_or_default();
             let workflow_catalog = match (
                 account_workflow_root.as_deref(),
