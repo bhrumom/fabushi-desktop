@@ -1,4 +1,0 @@
-[data-agent-rendered-text]::before {
-  content: attr(data-agent-rendered-text);
-  white-space: pre-wrap;
-}
