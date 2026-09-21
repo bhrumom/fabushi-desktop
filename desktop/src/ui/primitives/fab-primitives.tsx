@@ -141,15 +141,17 @@ export function FabDialog({
   onClose,
   onSubmit,
   children,
+  surfaceClassName,
 }: {
   readonly label: string;
   readonly onClose: () => void;
   readonly onSubmit?: React.FormEventHandler<HTMLFormElement>;
   readonly children: React.ReactNode;
+  readonly surfaceClassName?: string;
 }) {
   const surface = onSubmit
-    ? <form className={styles.dialogSurface} onSubmit={onSubmit}>{children}</form>
-    : <div className={styles.dialogSurface}>{children}</div>;
+    ? <form className={classes(styles.dialogSurface, surfaceClassName)} onSubmit={onSubmit}>{children}</form>
+    : <div className={classes(styles.dialogSurface, surfaceClassName)}>{children}</div>;
   return <div
     role="dialog"
     aria-modal="true"
