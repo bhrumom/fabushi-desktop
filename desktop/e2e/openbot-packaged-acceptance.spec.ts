@@ -318,7 +318,6 @@ test.describe('signed candidate packaged acceptance', () => {
     let app: ElectronApplication | null = null;
     let cdpBrowser: Browser | null = null;
     let pageForTrace: Page | null = null;
-    let traceStarted = false;
     let acceptanceCompleted = false;
 
     try {
@@ -365,8 +364,6 @@ test.describe('signed candidate packaged acceptance', () => {
         attachPageDiagnostics(page);
       }
       pageForTrace = page;
-      await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true });
-      traceStarted = true;
       await writeFile(path.join(evidenceRoot, 'startup.json'), JSON.stringify({
         sourceSha,
         initialPageUrl,
@@ -469,11 +466,6 @@ test.describe('signed candidate packaged acceptance', () => {
           executable,
           url: pageForTrace.url(),
         }, null, 2)).catch(() => undefined);
-      }
-      if (traceStarted && pageForTrace) {
-        await pageForTrace.context().tracing.stop({
-          path: path.join(evidenceRoot, 'trace.zip'),
-        }).catch(() => undefined);
       }
       if (app) {
         try {
