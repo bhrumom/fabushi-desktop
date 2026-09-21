@@ -1,5 +1,6 @@
 import React from 'react';
 import CompatibilityFeatureFrame from '../compatibility/compatibility-feature-frame';
+import frameStyles from '../compatibility/compatibility-feature-frame.module.css';
 import { FabButton, FabSurface } from '../../ui/primitives/fab-primitives';
 
 export default function SettingsCompatibilityAdapter({
@@ -14,12 +15,10 @@ export default function SettingsCompatibilityAdapter({
     description="Account/product settings are isolated from per-Agent runtime ownership."
     onClose={onClose}
   >
-    <FabSurface elevated>
-      <div style={{ padding: 16, display: 'grid', gap: 12 }}>
+    <FabSurface elevated className={frameStyles.stack}>
         <strong>Account</strong>
         <p>Signing out clears the authenticated desktop session without mutating Agent controller ownership.</p>
-        <div><FabButton type="button" variant="danger" onClick={() => void onLogout()}>Sign out</FabButton></div>
-      </div>
+        <div className={frameStyles.actions}><FabButton type="button" variant="danger" onClick={() => void onLogout()}>Sign out</FabButton></div>
     </FabSurface>
   </CompatibilityFeatureFrame>;
 }
