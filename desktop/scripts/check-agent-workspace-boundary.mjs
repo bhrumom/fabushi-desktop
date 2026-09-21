@@ -62,7 +62,7 @@ if (fs.existsSync(obsoleteShell)) violations.push('messaging-shell-v2.tsx return
 requirePattern(
   'DesktopApp must boot through DesktopAuthBoundary directly into AgentRootShell',
   desktopApp,
-  /<DesktopAuthBoundary>[\s\S]*<AgentRootShell\s+onLogout=\{onLogout\}\s*\/>[\s\S]*<\/DesktopAuthBoundary>/,
+  /<DesktopAuthBoundary>[\s\S]*<AgentRootShell\s+transport=\{transport\}\s+onLogout=\{onLogout\}\s*\/>[\s\S]*<\/DesktopAuthBoundary>/,
 );
 forbidPattern('DesktopApp must not import any legacy messaging shell', desktopApp, /legacy-messaging|messaging-shell-v2/);
 
