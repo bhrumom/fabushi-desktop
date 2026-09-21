@@ -11,7 +11,7 @@ import type {
   MessagingStory,
   MessagingWalletAccount,
 } from '../../selfhosted-messaging-client-v2';
-import type { CompatibilityPeerItem as PeerItem } from '../../agent-workspace/messenger-compatibility-adapter';
+import type { CompatibilityPeerItem as PeerItem } from './messaging-compatibility-adapter';
 import type {
   DisplayMessage,
   EditDialogState,
@@ -22,9 +22,9 @@ import type {
   MessengerProjection,
   MiniAppCallSession,
   NewDialog,
-} from './legacy-messaging-model';
+} from './compatibility-model';
 
-export function useLegacyMessagingCompatibilityState(
+export function useCompatibilityState(
   startupProjection: MessengerProjection | null | undefined,
   initialMessages: readonly DisplayMessage[],
 ) {

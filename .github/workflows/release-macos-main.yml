@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   publish:
-    name: Build, notarize, and publish macOS arm64
+    name: Build, notarize, accept, and optionally publish macOS arm64
     runs-on: macos-15
     timeout-minutes: 180
     env:
@@ -251,6 +251,49 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$app"
           xcrun stapler validate "$app"
           spctl --assess --type execute --verbose=4 "$app"
+
+      - name: Locate packaged application executable
+        id: packaged
+        if: ${{ github.event_name == 'workflow_dispatch' && !inputs.publish_release }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$(find desktop/release -maxdepth 4 -type d -name '*.app' -print -quit)"
+          test -n "$app"
+          executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          spctl --assess --type execute --verbose=4 "$app"
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "executable=$executable" >> "$GITHUB_OUTPUT"
+
+      - name: Run signed packaged real acceptance
+        if: ${{ github.event_name == 'workflow_dispatch' && !inputs.publish_release }}
+        working-directory: desktop
+        shell: bash
+        env:
+          OBF_REAL_ACCEPTANCE: '1'
+          OBF_ACCEPTANCE_MODE: candidate
+          OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_CANONICAL_MAIN_SHA: ''
+          OBF_REQUIRE_VISUAL_REFERENCE: '0'
+          OBF_MAX_DIFF_PIXEL_RATIO: '0'
+          OBF_PIXEL_COLOR_THRESHOLD: '0'
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ github.workspace }}/${{ steps.packaged.outputs.executable }}
+        run: npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1
+
+      - name: Upload signed candidate acceptance evidence
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && !inputs.publish_release }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-macos-candidate-acceptance-${{ steps.source.outputs.short }}
+          path: |
+            desktop/playwright-report
+            desktop/test-results
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
 
       - name: Write checksums
         shell: bash

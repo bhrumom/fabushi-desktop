@@ -1,21 +1,32 @@
 :root {
   --fab-bg-primary: #151519;
   --fab-bg-raised: #1b1b20;
+  --fab-bg-floating: #202027;
   --fab-bg-hover: rgba(255,255,255,.065);
+  --fab-bg-hover-strong: rgba(255,255,255,.095);
+  --fab-bg-selected: rgba(95,140,255,.14);
   --fab-border-subtle: rgba(255,255,255,.10);
   --fab-border-strong: rgba(255,255,255,.18);
   --fab-text-primary: rgba(255,255,255,.94);
   --fab-text-muted: rgba(255,255,255,.62);
   --fab-danger: #ff5b57;
+  --fab-success: #4fc780;
+  --fab-warning: #f0b84b;
   --fab-accent: #5f8cff;
+  --fab-focus-ring: color-mix(in srgb, var(--fab-accent), transparent 18%);
+  --fab-disabled-opacity: .42;
+  --fab-radius-xs: 6px;
   --fab-radius-sm: 8px;
   --fab-radius-md: 12px;
   --fab-radius-lg: 16px;
+  --fab-radius-xl: 22px;
   --fab-space-1: 4px;
   --fab-space-2: 8px;
   --fab-space-3: 12px;
   --fab-space-4: 16px;
   --fab-space-5: 20px;
+  --fab-space-6: 24px;
+  --fab-shadow-floating: 0 10px 30px rgba(0,0,0,.32);
   --fab-shadow-dialog: 0 18px 60px rgba(0,0,0,.45);
 }
 
@@ -23,11 +34,15 @@
   :root {
     --fab-bg-primary: #f5f5f7;
     --fab-bg-raised: #ffffff;
+    --fab-bg-floating: #ffffff;
     --fab-bg-hover: rgba(0,0,0,.055);
+    --fab-bg-hover-strong: rgba(0,0,0,.085);
+    --fab-bg-selected: rgba(55,105,235,.10);
     --fab-border-subtle: rgba(0,0,0,.10);
     --fab-border-strong: rgba(0,0,0,.18);
     --fab-text-primary: rgba(0,0,0,.88);
     --fab-text-muted: rgba(0,0,0,.56);
+    --fab-shadow-floating: 0 10px 30px rgba(0,0,0,.14);
     --fab-shadow-dialog: 0 18px 60px rgba(0,0,0,.18);
   }
 }

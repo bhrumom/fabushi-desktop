@@ -10,6 +10,9 @@ const referenceScreenshot = process.env.OBF_REFERENCE_SCREENSHOT?.trim() || '';
 const realAcceptance = process.env.OBF_REAL_ACCEPTANCE === '1';
 const sourceSha = (process.env.OBF_SOURCE_SHA || process.env.GITHUB_SHA || '').trim().toLowerCase();
 const canonicalMainSha = (process.env.OBF_CANONICAL_MAIN_SHA || '').trim().toLowerCase();
+const expectedSourceSha = (process.env.OBF_EXPECTED_SOURCE_SHA || '').trim().toLowerCase();
+const acceptanceMode = (process.env.OBF_ACCEPTANCE_MODE || 'postmerge').trim().toLowerCase();
+const requireVisualReference = process.env.OBF_REQUIRE_VISUAL_REFERENCE === '1' || acceptanceMode === 'postmerge';
 const visualThreshold = Number(process.env.OBF_MAX_DIFF_PIXEL_RATIO || '0');
 const pixelThreshold = Number(process.env.OBF_PIXEL_COLOR_THRESHOLD || '0');
 const coworkers = [
@@ -55,12 +58,19 @@ type VisualDiffReport = {
 
 function assertProductionEvidenceEnvironment(): void {
   if (!packagedExecutable) throw new Error('FABUSHI_ELECTRON_EXECUTABLE is required for packaged acceptance');
-  if (!referenceScreenshot) throw new Error('OBF_REFERENCE_SCREENSHOT is required; static or synthetic replacement is forbidden');
+  if (!['candidate', 'postmerge'].includes(acceptanceMode)) throw new Error(`Unsupported OBF_ACCEPTANCE_MODE=${acceptanceMode}`);
   if (!/^[0-9a-f]{40}$/.test(sourceSha)) throw new Error('OBF_SOURCE_SHA or GITHUB_SHA must provide the exact 40-character source SHA');
-  if (!/^[0-9a-f]{40}$/.test(canonicalMainSha)) throw new Error('OBF_CANONICAL_MAIN_SHA must provide the exact post-merge canonical main SHA');
-  if (sourceSha !== canonicalMainSha) throw new Error(`Packaged source SHA ${sourceSha} does not equal canonical main ${canonicalMainSha}`);
-  if (visualThreshold !== 0) throw new Error('OBF_MAX_DIFF_PIXEL_RATIO must be exactly 0 for literal 1:1 acceptance');
-  if (pixelThreshold !== 0) throw new Error('OBF_PIXEL_COLOR_THRESHOLD must be exactly 0 for literal 1:1 acceptance');
+  if (!/^[0-9a-f]{40}$/.test(expectedSourceSha)) throw new Error('OBF_EXPECTED_SOURCE_SHA must provide the exact source SHA requested by the gate');
+  if (sourceSha !== expectedSourceSha) throw new Error(`Packaged source SHA ${sourceSha} does not equal expected exact source ${expectedSourceSha}`);
+  if (acceptanceMode === 'postmerge') {
+    if (!/^[0-9a-f]{40}$/.test(canonicalMainSha)) throw new Error('postmerge acceptance requires the exact canonical main SHA');
+    if (sourceSha !== canonicalMainSha) throw new Error(`Packaged source SHA ${sourceSha} does not equal canonical main ${canonicalMainSha}`);
+  } else if (canonicalMainSha && !/^[0-9a-f]{40}$/.test(canonicalMainSha)) {
+    throw new Error('candidate canonical base SHA, when provided, must be a 40-character SHA');
+  }
+  if (requireVisualReference && !referenceScreenshot) throw new Error('OBF_REFERENCE_SCREENSHOT is required for postmerge visual acceptance');
+  if (referenceScreenshot && visualThreshold !== 0) throw new Error('OBF_MAX_DIFF_PIXEL_RATIO must be exactly 0 when a visual reference is supplied');
+  if (referenceScreenshot && pixelThreshold !== 0) throw new Error('OBF_PIXEL_COLOR_THRESHOLD must be exactly 0 when a visual reference is supplied');
   const inheritedMode = (process.env.FABUSHI_FEATURE_HOST_MODE || '').trim().toLowerCase();
   if (['test', 'mock', 'stub'].includes(inheritedMode)) {
     throw new Error(`Real packaged acceptance refuses FABUSHI_FEATURE_HOST_MODE=${inheritedMode}; mock/test host evidence is inadmissible`);
@@ -164,17 +174,106 @@ function peerByName(page: Page, name: string): Locator {
   return page.locator('[data-testid^="peer-legacy:bot:"]').filter({ hasText: name }).first();
 }
 
+async function agentIdByName(page: Page, name: string): Promise<string> {
+  const peer = peerByName(page, name);
+  await expect(peer).toBeVisible();
+  const agentId = await peer.getAttribute('data-agent-id');
+  if (!agentId) throw new Error(`Agent row ${name} did not expose data-agent-id`);
+  return agentId;
+}
+
+type CollaborationEvidence = {
+  directToken: string;
+  broadcastToken: string;
+  directAccepted: boolean;
+  broadcastAccepted: boolean;
+  peerMessageObserved: boolean;
+  broadcastObserved: boolean;
+  broadcastScheduled: number;
+};
+
+async function exerciseRealCollaboration(page: Page): Promise<CollaborationEvidence> {
+  const chiefId = await agentIdByName(page, 'Chief');
+  const researchId = await agentIdByName(page, 'Research');
+  const builderId = await agentIdByName(page, 'Builder');
+  const launchId = await agentIdByName(page, 'Launch');
+  const directToken = `OBF-DIRECT-HANDOFF-${Date.now()}`;
+  const broadcastToken = `OBF-BROADCAST-${Date.now()}`;
+
+  await page.evaluate(() => {
+    const scope = window as typeof window & { __obfCollaborationEvents?: unknown[]; __obfCollaborationListener?: EventListener };
+    scope.__obfCollaborationEvents = [];
+    if (scope.__obfCollaborationListener) window.removeEventListener('fabushi:mahayana-runtime-event', scope.__obfCollaborationListener);
+    const listener: EventListener = (event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail && typeof detail === 'object') scope.__obfCollaborationEvents?.push(detail);
+    };
+    scope.__obfCollaborationListener = listener;
+    window.addEventListener('fabushi:mahayana-runtime-event', listener);
+  });
+
+  const results = await page.evaluate(async ({ chief, research, builder, launch, directText, broadcastText }) => {
+    if (!window.mahayana?.invoke) throw new Error('Mahayana bridge unavailable');
+    const now = Date.now();
+    const direct = await window.mahayana.invoke('feature.execute', {
+      command: {
+        type: 'agent.send',
+        requestId: `obf-direct-${now}`,
+        fromAgentId: chief,
+        targetId: research,
+        text: directText,
+        priority: true,
+      },
+    });
+    const broadcast = await window.mahayana.invoke('feature.execute', {
+      command: {
+        type: 'agent.broadcast',
+        requestId: `obf-broadcast-${now}`,
+        targetIds: [builder, launch],
+        message: broadcastText,
+      },
+    });
+    return { direct: Boolean(direct), broadcast: Boolean(broadcast) };
+  }, { chief: chiefId, research: researchId, builder: builderId, launch: launchId, directText: directToken, broadcastText: broadcastToken });
+
+  await expect.poll(async () => page.evaluate(() => {
+    const events = (window as typeof window & { __obfCollaborationEvents?: Array<{ type?: string }> }).__obfCollaborationEvents || [];
+    return events.some((event) => event.type === 'agent.peerMessage');
+  }), { timeout: 30_000 }).toBeTruthy();
+  await expect.poll(async () => page.evaluate(() => {
+    const events = (window as typeof window & { __obfCollaborationEvents?: Array<{ type?: string }> }).__obfCollaborationEvents || [];
+    return events.some((event) => event.type === 'agent.broadcasted');
+  }), { timeout: 30_000 }).toBeTruthy();
+
+  const eventSummary = await page.evaluate(() => {
+    const events = (window as typeof window & { __obfCollaborationEvents?: Array<{ type?: string; result?: { scheduled?: number } }> }).__obfCollaborationEvents || [];
+    return {
+      peerMessageObserved: events.some((event) => event.type === 'agent.peerMessage'),
+      broadcastObserved: events.some((event) => event.type === 'agent.broadcasted'),
+      broadcastScheduled: events.find((event) => event.type === 'agent.broadcasted')?.result?.scheduled ?? 0,
+    };
+  });
+  expect(eventSummary.broadcastScheduled).toBeGreaterThanOrEqual(2);
+  return {
+    directToken,
+    broadcastToken,
+    directAccepted: results.direct,
+    broadcastAccepted: results.broadcast,
+    ...eventSummary,
+  };
+}
+
 async function botShape(locator: Locator): Promise<string> {
-  const mark = locator.locator('[data-engine="fabushi-motion-v3"]').first();
+  const mark = locator.locator('[data-avatar-engine="fab-avatar-v1"]').first();
   await expect(mark).toBeVisible();
-  const shape = await mark.getAttribute('data-shape');
+  const shape = await mark.getAttribute('data-avatar-identity');
   expect(shape).toBeTruthy();
   return shape!;
 }
 
 async function directBotShape(mark: Locator): Promise<string> {
   await expect(mark).toBeVisible();
-  const shape = await mark.getAttribute('data-shape');
+  const shape = await mark.getAttribute('data-avatar-identity');
   expect(shape).toBeTruthy();
   return shape!;
 }
@@ -239,7 +338,7 @@ async function captureGeometry(page: Page, finalArticle: Locator, structured: Lo
   for (const [name] of coworkers) {
     const peer = peerByName(page, name);
     peerRows[name] = await readBox(peer);
-    rosterAvatars[name] = await readBox(peer.locator('[data-engine="fabushi-motion-v3"]').first());
+    rosterAvatars[name] = await readBox(peer.locator('[data-avatar-engine="fab-avatar-v1"]').first());
   }
   const orderedRows = coworkers.map(([name]) => peerRows[name]).filter((box): box is Box => Boolean(box));
   const peerRowGaps = orderedRows.slice(1).map((box, index) => box.y - (orderedRows[index].y + orderedRows[index].height));
@@ -395,7 +494,9 @@ async function saveRuntimeEvidence(
   if (visualDiff) await writeFile(path.join(evidenceDir, 'visual-diff-report.json'), JSON.stringify(visualDiff, null, 2));
   if (identity) await writeFile(path.join(evidenceDir, 'identity.json'), JSON.stringify(identity, null, 2));
   await writeFile(path.join(evidenceDir, 'evidence-manifest.json'), JSON.stringify({
-    canonicalMainSha,
+    acceptanceMode,
+    canonicalMainSha: canonicalMainSha || null,
+    expectedSourceSha,
     sourceSha,
     appVersion: appVersion || null,
     referenceCropSha256,
@@ -407,13 +508,15 @@ async function saveRuntimeEvidence(
   }, null, 2));
 }
 
-test('OBF exact-main packaged reference journey is pixel-identical and uses real Mahayana events', async ({}, testInfo) => {
+test('OBF packaged real-runtime acceptance covers Agent lifecycle, isolation and collaboration', async ({}, testInfo) => {
   test.setTimeout(12 * 60_000);
   assertProductionEvidenceEnvironment();
-  const referenceBytes = await readFile(referenceScreenshot);
-  if (referenceBytes.length < 10_000) throw new Error('OBF reference screenshot is unexpectedly small');
-  const referenceHash = createHash('sha256').update(referenceBytes).digest('hex');
-  expect(referenceHash).toBe(referenceCropSha256);
+  const referenceBytes = referenceScreenshot ? await readFile(referenceScreenshot) : undefined;
+  if (referenceBytes) {
+    if (referenceBytes.length < 10_000) throw new Error('OBF reference screenshot is unexpectedly small');
+    const referenceHash = createHash('sha256').update(referenceBytes).digest('hex');
+    expect(referenceHash).toBe(referenceCropSha256);
+  }
 
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-obf-real-'));
   const fixtureDir = await mkdtemp(path.join(tmpdir(), 'fabushi-obf-fixture-'));
@@ -447,14 +550,30 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     for (const [name] of coworkers) await expect(peerByName(page, name)).toBeVisible();
 
     chiefRosterShape = await botShape(peerByName(page, 'Chief'));
+    const collaboration = await exerciseRealCollaboration(page);
+    await writeFile(path.join(evidenceDir, 'collaboration.json'), JSON.stringify(collaboration, null, 2));
+    expect(collaboration.directAccepted).toBeTruthy();
+    expect(collaboration.broadcastAccepted).toBeTruthy();
+    expect(collaboration.peerMessageObserved).toBeTruthy();
+    expect(collaboration.broadcastObserved).toBeTruthy();
 
     await peerByName(page, 'Research').click();
     const research = await sendRealTurn(page,
-      'Use at least one available read-only browser or research tool to verify a harmless public fact. Return a concise evidence note and clearly state which tool was used.');
+      'Use at least one available read-only browser or research tool to verify a harmless public fact. Return a concise evidence note and clearly state which tool was used. End your response with the exact token OBF-RESEARCH-ISOLATION.');
+    expect(research).toContain('OBF-RESEARCH-ISOLATION');
 
     await peerByName(page, 'Builder').click();
     const builder = await sendRealTurn(page,
-      "Use an available local shell or file tool to perform a harmless readiness check (for example printf 'rollback-ready'). Return a concise rollout note and the observed result.");
+      "Use an available local shell or file tool to perform a harmless readiness check (for example printf 'rollback-ready'). Return a concise rollout note and the observed result. End your response with the exact token OBF-BUILDER-ISOLATION.");
+    expect(builder).toContain('OBF-BUILDER-ISOLATION');
+
+    const transcriptMessages = () => page.locator('article[class*="messagePeer"]');
+    await peerByName(page, 'Research').click();
+    await expect(transcriptMessages().filter({ hasText: 'OBF-RESEARCH-ISOLATION' }).last()).toBeVisible();
+    await expect(transcriptMessages().filter({ hasText: 'OBF-BUILDER-ISOLATION' })).toHaveCount(0);
+    await peerByName(page, 'Builder').click();
+    await expect(transcriptMessages().filter({ hasText: 'OBF-BUILDER-ISOLATION' }).last()).toBeVisible();
+    await expect(transcriptMessages().filter({ hasText: 'OBF-RESEARCH-ISOLATION' })).toHaveCount(0);
 
     await peerByName(page, 'Launch').click();
     const launch = await sendRealTurn(page,
@@ -463,7 +582,7 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     await writeFile(briefPath, ['# Coworker launch notes', '', `Research: ${research}`, '', `Builder: ${builder}`, '', `Launch: ${launch}`].join('\n'));
 
     await peerByName(page, 'Chief').click();
-    chiefHeaderShape = await directBotShape(page.locator('[class*="chatIdentity"] [data-engine="fabushi-motion-v3"]').first());
+    chiefHeaderShape = await directBotShape(page.locator('[class*="chatIdentity"] [data-avatar-engine="fab-avatar-v1"]').first());
     expect(chiefHeaderShape).toBe(chiefRosterShape);
     await attachFile(page, briefPath);
     await attachFile(page, csvPath);
@@ -492,7 +611,7 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     await expect(structured.getByTestId('assistant-source-files')).toContainText('launch-metrics.csv');
 
     const finalArticle = structured.locator('xpath=ancestor::article[1]');
-    chiefTranscriptShape = await directBotShape(finalArticle.locator('[data-engine="fabushi-motion-v3"]').first());
+    chiefTranscriptShape = await directBotShape(finalArticle.locator('[data-avatar-engine="fab-avatar-v1"]').first());
     expect(chiefTranscriptShape).toBe(chiefRosterShape);
     await finalArticle.hover();
     await expect(finalArticle.getByTestId('message-hover-actions')).toBeVisible();
@@ -508,11 +627,15 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     const workspace = page.getByTestId('messenger-workspace');
     const actualBytes = await workspace.screenshot({ animations: 'disabled', caret: 'hide' });
     await writeFile(path.join(evidenceDir, 'fabushi-openbot-comparison.png'), actualBytes);
-    const visualDiff = await measureVisualDiff(page, referenceBytes, actualBytes, geometryRegions(geometry));
-    expect(visualDiff.global.differingPixels).toBe(0);
-    expect(visualDiff.global.differingPixelRatio).toBe(0);
-    expect(visualDiff.global.zeroDiff).toBeTruthy();
-    expect(visualDiff.residualRegions).toEqual([]);
+    const visualDiff = referenceBytes
+      ? await measureVisualDiff(page, referenceBytes, actualBytes, geometryRegions(geometry))
+      : undefined;
+    if (visualDiff) {
+      expect(visualDiff.global.differingPixels).toBe(0);
+      expect(visualDiff.global.differingPixelRatio).toBe(0);
+      expect(visualDiff.global.zeroDiff).toBeTruthy();
+      expect(visualDiff.residualRegions).toEqual([]);
+    }
 
     const identityBeforeRestart = {
       Chief: {
@@ -525,15 +648,17 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     await page.context().tracing.stop({ path: tracePath });
     tracingActive = false;
 
-    const expectedPath = testInfo.snapshotPath('openbot-reference-app.png');
-    await mkdir(path.dirname(expectedPath), { recursive: true });
-    await copyFile(referenceScreenshot, expectedPath);
-    await expect(workspace).toHaveScreenshot('openbot-reference-app.png', {
-      animations: 'disabled',
-      caret: 'hide',
-      threshold: pixelThreshold,
-      maxDiffPixelRatio: visualThreshold,
-    });
+    if (referenceBytes) {
+      const expectedPath = testInfo.snapshotPath('openbot-reference-app.png');
+      await mkdir(path.dirname(expectedPath), { recursive: true });
+      await copyFile(referenceScreenshot, expectedPath);
+      await expect(workspace).toHaveScreenshot('openbot-reference-app.png', {
+        animations: 'disabled',
+        caret: 'hide',
+        threshold: pixelThreshold,
+        maxDiffPixelRatio: visualThreshold,
+      });
+    }
 
     await app.close();
     app = null;

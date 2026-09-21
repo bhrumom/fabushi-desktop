@@ -381,6 +381,23 @@ impl RuntimeStore {
         }
     }
 
+    #[cfg(test)]
+    pub(crate) fn capability_audit_count(&self) -> Result<u64, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            Ok(0)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(0); };
+            connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .query_row("SELECT COUNT(*) FROM capability_audit", [], |row| row.get::<_, u64>(0))
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))
+        }
+    }
+
     pub fn acquire_computer_lease(
         &self,
         lease: &ComputerControlLease,

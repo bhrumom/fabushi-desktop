@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import FabAvatar, { type FabAvatarState } from '../ui/avatar/fab-avatar';
+import { FabIconButton, FabInput, FabSelect } from '../ui/primitives/fab-primitives';
 import {
   AGENT_SIDEBAR_UNASSIGNED_ID,
   projectAgentSidebarSections,
@@ -318,8 +319,8 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
   return <div className={styles.root} data-collapsed={props.collapsed || undefined}>
     <header className={styles.header}>
       <div className={styles.headerActions}>
-        {!props.collapsed ? <button type="button" className={styles.headerIcon} onClick={props.onBroadcast} title="Broadcast to agents" aria-label="Broadcast to agents"><Megaphone size={16} /></button> : null}
-        {!props.collapsed ? <button type="button" className={styles.headerIcon} onClick={props.onOpenNetwork} title="Agent network" aria-label="Agent network"><Network size={16} /></button> : null}
+        {!props.collapsed ? <FabIconButton label="Broadcast to agents" className={styles.headerIcon} onClick={props.onBroadcast}><Megaphone size={16} /></FabIconButton> : null}
+        {!props.collapsed ? <FabIconButton label="Agent network" className={styles.headerIcon} onClick={props.onOpenNetwork}><Network size={16} /></FabIconButton> : null}
         <button type="button" className={styles.newButton} onClick={props.onNewAgent} title="New chat" data-testid="grok-new-agent">
           <Plus size={18} /><span>{props.collapsed ? null : 'New'}</span>
         </button>
@@ -331,13 +332,13 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
 
     {props.collapsed ? null : <label className={styles.search}>
       <Search size={15} />
-      <input value={props.query} onChange={(event) => props.onQuery(event.target.value)} placeholder="Search" aria-label="Search agents" />
+      <FabInput value={props.query} onChange={(event) => props.onQuery(event.target.value)} placeholder="Search" aria-label="Search agents" />
     </label>}
 
     {!props.collapsed && selectionEnabled ? <div className={styles.selectionBar} data-testid="agent-selection-bar">
       <strong>{selectedItems.length} selected</strong>
       <button type="button" onClick={() => props.onCreateSection?.(movableSelected)} disabled={!props.onCreateSection}><FolderPlus size={13} />Section</button>
-      <select
+      <FabSelect
         aria-label="Move selected agents"
         defaultValue=""
         disabled={!movableSelected.length || !props.onMoveSelectedToSection}
@@ -350,7 +351,7 @@ export default function GrokAgentSidebar(props: GrokAgentSidebarProps) {
         <option value="">Move…</option>
         {(props.sections ?? []).map((section) => <option key={section.id} value={section.id}>{section.name}</option>)}
         <option value={AGENT_SIDEBAR_UNASSIGNED_ID}>Unassigned</option>
-      </select>
+      </FabSelect>
       <button type="button" data-danger="true" aria-label="Delete selected agents" onClick={() => props.onDeleteSelected?.(selectedItems)} disabled={!props.onDeleteSelected}><Trash2 size={13} /></button>
       <button type="button" aria-label="Clear selection" onClick={props.onClearSelection}><X size={13} /></button>
     </div> : null}

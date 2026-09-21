@@ -38,6 +38,9 @@ impl ConversationActor {
 
     pub fn register(&self, turn_id: TurnId) -> Result<(bool, u64), String> {
         let mut state = self.state.lock().map_err(|_| "conversation actor mutex poisoned")?;
+        if state.states.contains_key(&turn_id) || state.queue.iter().any(|candidate| candidate == &turn_id) {
+            return Err(format!("turn {} is already registered", turn_id));
+        }
         let queued = state.active_run.is_some() || !state.queue.is_empty();
         state.queue.push_back(turn_id.clone());
         state.states.insert(turn_id, TurnState::Accepted);
@@ -47,9 +50,16 @@ impl ConversationActor {
 
     pub fn start(&self, turn_id: &TurnId, run_id: RunId) -> Result<u64, String> {
         let mut state = self.state.lock().map_err(|_| "conversation actor mutex poisoned")?;
-        if let Some(index) = state.queue.iter().position(|candidate| candidate == turn_id) {
-            state.queue.remove(index);
+        if state.active_run.is_some() {
+            return Err("conversation actor already has an active run".to_string());
         }
+        if !state.states.contains_key(turn_id) {
+            return Err(format!("turn {} was not registered with this conversation", turn_id));
+        }
+        let Some(index) = state.queue.iter().position(|candidate| candidate == turn_id) else {
+            return Err(format!("turn {} is not queued for execution", turn_id));
+        };
+        state.queue.remove(index);
         state.active_turn = Some(turn_id.clone());
         state.active_run = Some(run_id);
         state.sequence = state.sequence.saturating_add(1);
@@ -58,18 +68,28 @@ impl ConversationActor {
 
     pub fn finish(&self, run_id: &RunId) -> Result<u64, String> {
         let mut state = self.state.lock().map_err(|_| "conversation actor mutex poisoned")?;
-        if state.active_run.as_ref() == Some(run_id) {
-            state.active_run = None;
-            state.active_turn = None;
+        if state.active_run.as_ref() != Some(run_id) {
+            return Err(format!("run {} does not own the active conversation lane", run_id));
         }
+        state.active_run = None;
+        state.active_turn = None;
         state.sequence = state.sequence.saturating_add(1);
         Ok(state.sequence)
     }
 
     pub fn set_state(&self, turn_id: &TurnId, next: TurnState) -> Result<Option<u64>, String> {
         let mut state = self.state.lock().map_err(|_| "conversation actor mutex poisoned")?;
-        if state.states.get(turn_id).copied() == Some(next) {
+        let Some(current) = state.states.get(turn_id).copied() else {
+            return Err(format!("turn {} was not registered with this conversation", turn_id));
+        };
+        if current == next {
             return Ok(None);
+        }
+        if current.terminal() {
+            return Err(format!("terminal turn {} cannot transition from {} to {}", turn_id, current.as_str(), next.as_str()));
+        }
+        if next == TurnState::Accepted {
+            return Err(format!("turn {} cannot transition back to accepted", turn_id));
         }
         state.states.insert(turn_id.clone(), next);
         state.sequence = state.sequence.saturating_add(1);
@@ -104,6 +124,44 @@ impl ConversationActorRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn registry_returns_the_same_actor_for_one_conversation_and_isolates_others() {
+        let registry = ConversationActorRegistry::default();
+        let first_id = ConversationId::new("conversation:first").unwrap();
+        let second_id = ConversationId::new("conversation:second").unwrap();
+        let first_a = registry.actor(&first_id).unwrap();
+        let first_b = registry.actor(&first_id).unwrap();
+        let second = registry.actor(&second_id).unwrap();
+        assert!(Arc::ptr_eq(&first_a, &first_b));
+        assert!(!Arc::ptr_eq(&first_a, &second));
+    }
+
+    #[test]
+    fn actor_rejects_duplicate_unregistered_and_wrong_run_lifecycle_calls() {
+        let conversation = ConversationId::new("conversation:guarded").unwrap();
+        let actor = ConversationActor::new(conversation);
+        let turn = TurnId::new("turn:guarded").unwrap();
+        let run = RunId::new("run:guarded").unwrap();
+        assert!(actor.start(&turn, run.clone()).is_err());
+        actor.register(turn.clone()).unwrap();
+        assert!(actor.register(turn.clone()).is_err());
+        actor.start(&turn, run.clone()).unwrap();
+        assert!(actor.start(&turn, RunId::new("run:other").unwrap()).is_err());
+        assert!(actor.finish(&RunId::new("run:wrong").unwrap()).is_err());
+        actor.finish(&run).unwrap();
+    }
+
+    #[test]
+    fn terminal_turn_cannot_reenter_execution_lifecycle() {
+        let conversation = ConversationId::new("conversation:terminal").unwrap();
+        let actor = ConversationActor::new(conversation);
+        let turn = TurnId::new("turn:terminal").unwrap();
+        actor.register(turn.clone()).unwrap();
+        actor.set_state(&turn, TurnState::Completed).unwrap();
+        assert!(actor.set_state(&turn, TurnState::Thinking).is_err());
+        assert!(actor.set_state(&turn, TurnState::Accepted).is_err());
+    }
 
     #[test]
     fn second_turn_is_queued_until_first_run_finishes() {

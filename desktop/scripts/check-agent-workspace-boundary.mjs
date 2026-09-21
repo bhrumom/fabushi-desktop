@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.resolve(scriptDir, '..');
 const obsoleteShellPath = path.join(desktopRoot, 'src', 'messaging-shell-v2.tsx');
-const shellPath = path.join(desktopRoot, 'src', 'adapters', 'legacy-messaging', 'legacy-messaging-shell.tsx');
+const legacyShellPath = path.join(desktopRoot, 'src', 'adapters', 'legacy-messaging', 'legacy-messaging-shell.tsx');
+const shellPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agent-root-shell.tsx');
 const shell = fs.readFileSync(shellPath, 'utf8');
 const repoRoot = path.resolve(desktopRoot, '..');
 const desktopApp = fs.readFileSync(path.join(desktopRoot, 'src', 'app', 'DesktopApp.tsx'), 'utf8');
@@ -30,7 +31,7 @@ const agentComposerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agen
 const agentComposer = fs.readFileSync(agentComposerPath, 'utf8');
 const agentRichEditorPath = path.join(desktopRoot, 'src', 'agent-workspace', 'agent-rich-text-editor.tsx');
 const agentRichEditor = fs.readFileSync(agentRichEditorPath, 'utf8');
-const compatibilityAdapterPath = path.join(desktopRoot, 'src', 'agent-workspace', 'messenger-compatibility-adapter.tsx');
+const compatibilityAdapterPath = path.join(desktopRoot, 'src', 'adapters', 'compatibility', 'messaging-compatibility-adapter.tsx');
 const compatibilityAdapter = fs.readFileSync(compatibilityAdapterPath, 'utf8');
 const accountSidebarLayout = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'account-sidebar-layout.ts'), 'utf8');
 const sidebarController = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-sidebar-controller.ts'), 'utf8');
@@ -87,6 +88,48 @@ const violations = forbidden
   .filter(([, pattern]) => pattern.test(shell))
   .map(([label]) => label);
 
+function sourceFilesUnder(root) {
+  if (!fs.existsSync(root)) return [];
+  return fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(root, entry.name);
+    if (entry.isDirectory()) return sourceFilesUnder(full);
+    return /\.(?:ts|tsx|js|mjs)$/.test(entry.name) ? [full] : [];
+  });
+}
+
+const compatibilityRoots = [
+  path.join(desktopRoot, 'src', 'adapters', 'compatibility'),
+  path.join(desktopRoot, 'src', 'features', 'contacts'),
+  path.join(desktopRoot, 'src', 'features', 'telegram'),
+  path.join(desktopRoot, 'src', 'features', 'miniapps'),
+  path.join(desktopRoot, 'src', 'features', 'payments'),
+  path.join(desktopRoot, 'src', 'features', 'calls'),
+  path.join(desktopRoot, 'src', 'features', 'settings'),
+];
+for (const file of compatibilityRoots.flatMap(sourceFilesUnder)) {
+  const source = fs.readFileSync(file, 'utf8');
+  if (/\b(?:AgentSidebar|AgentHeader|AgentNetwork|AgentWorkspace|useAgentWorkspaceRuntime|useAgentProductControllers|useAgentComputerController|AgentRuntimeCoordinator|AgentWorkspaceController)\b/.test(source)) {
+    violations.push(`compatibility adapter imports or owns Agent runtime/UI: ${path.relative(desktopRoot, file)}`);
+  }
+}
+
+for (const file of sourceFilesUnder(path.join(desktopRoot, 'src'))) {
+  const source = fs.readFileSync(file, 'utf8');
+  if (/\bBotMark\b|FabushiAvatarRuntime|fabushi-avatar-runtime|FabushiBotMarkEngine|from\s+['"][^'"]*bot-mark['"]/.test(source)) {
+    violations.push(`desktop bundle still references the legacy avatar runtime: ${path.relative(desktopRoot, file)}`);
+  }
+}
+
+const primitiveSource = fs.readFileSync(path.join(desktopRoot, 'src', 'ui', 'primitives', 'fab-primitives.tsx'), 'utf8');
+for (const primitive of ['FabButton','FabIconButton','FabMenu','FabPopover','FabDialog','FabTooltip','FabSelect','FabBadge','FabAvatar','FabSpinner','FabInput','FabSurface']) {
+  if (!new RegExp(`export (?:function|const) ${primitive}\b`).test(primitiveSource)) {
+    violations.push(`unified UI primitive missing: ${primitive}`);
+  }
+}
+if (shell.split('\n').length > 4000) {
+  violations.push('AgentRootShell grew beyond the architecture budget (4000 lines)');
+}
+
 if (!/messenger-compatibility-adapter/.test(shell)
   || !/buildCompatibilityPeers\s*\(/.test(shell)
   || !/compatibilityMessagingEnvelope\s*\(/.test(shell)
@@ -139,25 +182,52 @@ if (!/readLegacyAgentWorkspaceDrafts/.test(agentDraftStore)
   violations.push('Agent drafts are not Rust RuntimeStore-owned with migration-only localStorage fallback');
 }
 if (!/import\s+AgentRootShell\s+from\s+['"]\.\.\/agent-workspace\/agent-root-shell['"]/.test(desktopApp)
-  || !/import\s+LegacyMessagingAdapter\s+from\s+['"]\.\.\/adapters\/legacy-messaging\/legacy-messaging-shell['"]/.test(desktopApp)
-  || !/<AgentRootShell>\s*<LegacyMessagingAdapter\s*\/>\s*<\/AgentRootShell>/.test(desktopApp)
+  || !/<AgentRootShell\s*\/>/.test(desktopApp)
+  || /LegacyMessagingAdapter|legacy-messaging-shell/.test(desktopApp)
   || !/import\s+DesktopApp\s+from\s+['"]\.\/app\/DesktopApp['"]/.test(mainEntry)
   || !/<DesktopApp\s*\/>/.test(mainEntry)
   || /messaging-shell-v2/.test(mainEntry)
-  || /import\s+AgentRootShell/.test(shell)
-  || /\bRootShell\b/.test(shell)
   || /<div\s+hidden\b|hidden\s+aria-hidden=['"]true['"]/.test(shell)) {
   violations.push('DesktopApp/AgentRootShell is not the sole visible product root or hidden legacy navigation returned');
 }
+if (fs.existsSync(legacyShellPath)) {
+  violations.push('legacy-messaging-shell.tsx still exists instead of being deleted');
+}
+if (!/useAgentWorkspaceRuntime\s*\(/.test(shell)
+  || !/useAgentProductControllers\s*\(/.test(shell)
+  || !/useAgentComputerController\s*\(/.test(shell)
+  || !/<AgentSidebar/.test(shell)
+  || !/<AgentWorkspace/.test(shell)
+  || !/<AgentNetwork/.test(shell)) {
+  violations.push('AgentRootShell no longer directly owns the Agent controllers and three-column Agent product composition');
+}
 
 if (!/pub fn authorize_request\s*\(/.test(capabilityBroker)
+  || !/append_audit\s*\(/.test(capabilityBroker)
   || !/RuntimeCommand::AuthorizeCapability/.test(runtimeLib)
+  || !/capability_broker\s*\.authorize_request\s*\(/.test(runtimeLib)
+  || !/!matches!\(decision, CapabilityPolicyDecision::Allow\)/.test(runtimeLib)
   || !/fn authorize_feature_command\s*\(/.test(featureHost)
+  || !/self\.authorize_feature_command\(&command\)\?/.test(featureHost)
+  || !/CapabilityAvailability::PermissionRequired/.test(featureHost)
+  || !/LocalToolPermission::Ask/.test(featureHost)
   || !/computer\.input\.control/.test(featureHost)
   || !/mcp\.tool\.call/.test(featureHost)
   || !/filesystem\.agent\.(?:read|write)/.test(featureHost)
   || !/agent\.handoff/.test(featureHost)) {
-  violations.push('privileged FeatureHost operations bypass the Rust CapabilityBroker');
+  violations.push('privileged FeatureHost operations bypass the Rust CapabilityBroker or fail-open on user approval');
+}
+if (!/actor\s*\.register\s*\(/.test(runtimeLib)
+  || !/actor\.gate\.lock\(\)\.await/.test(runtimeLib)
+  || !/actor\s*\.start\s*\(/.test(runtimeLib)
+  || !/context\s*\.actor\s*\.set_state\s*\(/.test(runtimeLib)
+  || !/actor\s*\.finish\s*\(/.test(runtimeLib)
+  || !/turn .* is already registered/.test(conversationActor)
+  || !/already has an active run/.test(conversationActor)
+  || !/terminal turn .* cannot transition/.test(conversationActor)
+  || !/registry_returns_the_same_actor_for_one_conversation_and_isolates_others/.test(conversationActor)
+  || !/broker_maps_availability_to_policy_and_audits_every_decision/.test(capabilityBroker)) {
+  violations.push('ConversationActor/CapabilityBroker are present as types but their lifecycle and policy execution paths are not structurally enforced');
 }
 
 if (!/pub struct ComputerControlLeaseRequest/.test(computerExecutor)

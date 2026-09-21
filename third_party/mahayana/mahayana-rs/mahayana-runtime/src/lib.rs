@@ -415,10 +415,19 @@ impl MahayanaRuntime {
                         now_millis(),
                     )
                     .map_err(RuntimeError::CapabilityBroker)?;
-                if matches!(decision, CapabilityPolicyDecision::Deny) {
+                if !matches!(decision, CapabilityPolicyDecision::Allow) {
+                    let reason = match decision {
+                        CapabilityPolicyDecision::NeedsUser => {
+                            "capability requires explicit user approval"
+                        }
+                        CapabilityPolicyDecision::Deny => {
+                            "capability policy denied this request"
+                        }
+                        CapabilityPolicyDecision::Allow => unreachable!(),
+                    };
                     return Err(RuntimeError::CapabilityUnavailable {
                         capability_id: capability.id,
-                        reason: "capability policy denied this request".to_string(),
+                        reason: reason.to_string(),
                     });
                 }
                 let operation_id =

@@ -1,6 +1,5 @@
 import React from 'react';
 import AgentRootShell from '../agent-workspace/agent-root-shell';
-import LegacyMessagingAdapter from '../adapters/legacy-messaging/legacy-messaging-shell';
 
 /**
  * Single desktop product entry.
@@ -10,5 +9,5 @@ import LegacyMessagingAdapter from '../adapters/legacy-messaging/legacy-messagin
  * replace the root product boundary.
  */
 export default function DesktopApp() {
-  return <AgentRootShell><LegacyMessagingAdapter /></AgentRootShell>;
+  return <AgentRootShell />;
 }

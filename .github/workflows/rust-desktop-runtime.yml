@@ -35,7 +35,18 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout exact pull-request head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact source SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "$expected"
+          echo "Exact source: $expected" >> "$GITHUB_STEP_SUMMARY"
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
@@ -54,12 +65,26 @@ jobs:
       - name: Check desktop Mahayana host
         shell: bash
         run: cargo check --profile ci -p mahayana-app-host-desktop --bin mahayana-app-host --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml
+      - name: Test Mahayana runtime lifecycle and capability policy
+        shell: bash
+        run: cargo test --profile ci -p mahayana-runtime --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml
 
   platform-worker:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout exact pull-request head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact source SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "$expected"
+          echo "Exact source: $expected" >> "$GITHUB_STEP_SUMMARY"
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
@@ -76,7 +101,18 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout exact pull-request head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact source SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "$expected"
+          echo "Exact source: $expected" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-node@v6
         with:
           node-version: 24

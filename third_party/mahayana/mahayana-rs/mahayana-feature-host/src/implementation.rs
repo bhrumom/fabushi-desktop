@@ -1184,6 +1184,36 @@ impl FeatureHostController {
                 .as_ref()
                 .map(|id| format!("agent:{id}"))
                 .unwrap_or_else(|| "human".to_string());
+            let (availability, unavailable_reason) = {
+                let state = self.state()?;
+                match capability {
+                    "computer.screen.read" | "computer.input.control" => {
+                        if !state.settings.local_execution || !state.settings.ai_computer_control_enabled {
+                            (
+                                CapabilityAvailability::Unavailable,
+                                Some("AI computer control is disabled in settings".to_string()),
+                            )
+                        } else {
+                            match state.settings.local_tool_permission {
+                                LocalToolPermission::Always => (CapabilityAvailability::Ready, None),
+                                LocalToolPermission::Ask => (
+                                    CapabilityAvailability::PermissionRequired,
+                                    Some("AI computer control requires explicit user approval".to_string()),
+                                ),
+                                LocalToolPermission::Never => (
+                                    CapabilityAvailability::Unavailable,
+                                    Some("AI local-tool permission is set to Never".to_string()),
+                                ),
+                            }
+                        }
+                    }
+                    "computer.remote.session" if !state.settings.remote_control_enabled => (
+                        CapabilityAvailability::Unavailable,
+                        Some("remote computer control is disabled in settings".to_string()),
+                    ),
+                    _ => (CapabilityAvailability::Ready, None),
+                }
+            };
             let response = self.runtime()?.execute(RuntimeCommand::AuthorizeCapability {
                 request: CapabilityRequest {
                     actor,
@@ -1194,8 +1224,8 @@ impl FeatureHostController {
                     target,
                     intent: intent.to_string(),
                 },
-                availability: CapabilityAvailability::Ready,
-                unavailable_reason: None,
+                availability,
+                unavailable_reason,
             })?;
             match response {
                 RuntimeResponse::CapabilityDecision {

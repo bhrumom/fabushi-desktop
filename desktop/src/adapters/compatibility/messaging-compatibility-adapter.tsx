@@ -3,12 +3,12 @@ import type {
   BotSummary,
   ConversationSummary,
   GroupSummary,
-} from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
-import type { InstalledPluginPointer, MarketplacePluginSummary } from '../../../frontend/apps/web/src/lib/mahayana-host/transport';
-import type { AccountBotMembership } from '../account-sync-client';
-import { installedMiniAppBotProjections, type MiniAppBotCallPrograms, type MiniAppBotCommand } from '../miniapp-bot-projection';
-import { asMessagingHostEvent, type MessagingActor, type MessagingConversation } from '../selfhosted-messaging-client-v2';
-import type { RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+} from '../../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { InstalledPluginPointer, MarketplacePluginSummary } from '../../../../frontend/apps/web/src/lib/mahayana-host/transport';
+import type { AccountBotMembership } from '../../account-sync-client';
+import { installedMiniAppBotProjections, type MiniAppBotCallPrograms, type MiniAppBotCommand } from '../../miniapp-bot-projection';
+import { asMessagingHostEvent, type MessagingActor, type MessagingConversation } from '../../selfhosted-messaging-client-v2';
+import type { RuntimeEvent } from '../../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 
 export type CompatibilityPeerKind = 'conversation' | 'contact' | 'bot' | 'group' | 'channel' | 'saved';
 export type CompatibilityPeerSource = 'legacy' | 'selfhosted';

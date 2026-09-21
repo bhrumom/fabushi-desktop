@@ -1,3 +1,12 @@
+.button,
+.iconButton,
+.menuItem,
+.input,
+.select {
+  font: inherit;
+  color: var(--fab-text-primary);
+}
+
 .button {
   appearance: none;
   min-height: 32px;
@@ -5,25 +14,32 @@
   border: 1px solid var(--fab-border-subtle);
   border-radius: var(--fab-radius-sm);
   background: var(--fab-bg-hover);
-  color: var(--fab-text-primary);
-  font: inherit;
   cursor: pointer;
 }
 
-.button:hover:not(:disabled) {
+.button:hover:not(:disabled),
+.iconButton:hover:not(:disabled),
+.menuItem:hover:not(:disabled) {
   border-color: var(--fab-border-strong);
-  background: color-mix(in srgb, var(--fab-bg-hover), white 4%);
+  background: var(--fab-bg-hover-strong);
 }
 
 .button:focus-visible,
-.input:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--fab-accent), transparent 18%);
+.iconButton:focus-visible,
+.menuItem:focus-visible,
+.input:focus-visible,
+.select:focus-visible {
+  outline: 2px solid var(--fab-focus-ring);
   outline-offset: 2px;
 }
 
-.button:disabled {
+.button:disabled,
+.iconButton:disabled,
+.menuItem:disabled,
+.input:disabled,
+.select:disabled {
   cursor: default;
-  opacity: .42;
+  opacity: var(--fab-disabled-opacity);
 }
 
 .button[data-variant="primary"] {
@@ -32,8 +48,9 @@
   color: white;
 }
 
-.button[data-variant="danger"] {
-  border-color: color-mix(in srgb, var(--fab-danger), transparent 20%);
+.button[data-variant="danger"],
+.menuItem[data-danger="true"] {
+  border-color: color-mix(in srgb, var(--fab-danger), transparent 55%);
   color: var(--fab-danger);
 }
 
@@ -42,32 +59,138 @@
   background: transparent;
 }
 
-.input {
+.iconButton {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--fab-radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+.iconButton[data-size="sm"] { width: 28px; height: 28px; }
+.iconButton[data-size="lg"] { width: 40px; height: 40px; }
+.iconButton[data-active="true"],
+.iconButton[aria-pressed="true"] { background: var(--fab-bg-selected); border-color: var(--fab-border-subtle); }
+
+.input,
+.select {
   width: 100%;
   box-sizing: border-box;
   min-height: 36px;
   border: 1px solid var(--fab-border-subtle);
   border-radius: var(--fab-radius-sm);
   background: var(--fab-bg-hover);
-  color: var(--fab-text-primary);
   padding: 8px 10px;
-  font: inherit;
+}
+
+.select { appearance: auto; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 1px 7px;
+  border: 1px solid var(--fab-border-subtle);
+  border-radius: 999px;
+  background: var(--fab-bg-hover);
+  color: var(--fab-text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.badge[data-tone="accent"] { color: var(--fab-accent); border-color: color-mix(in srgb, var(--fab-accent), transparent 55%); }
+.badge[data-tone="success"] { color: var(--fab-success); border-color: color-mix(in srgb, var(--fab-success), transparent 55%); }
+.badge[data-tone="warning"] { color: var(--fab-warning); border-color: color-mix(in srgb, var(--fab-warning), transparent 55%); }
+.badge[data-tone="danger"] { color: var(--fab-danger); border-color: color-mix(in srgb, var(--fab-danger), transparent 55%); }
+
+.spinner {
+  --fab-spinner-size: 16px;
+  display: inline-block;
+  width: var(--fab-spinner-size);
+  height: var(--fab-spinner-size);
+  border: 2px solid var(--fab-border-strong);
+  border-top-color: var(--fab-accent);
+  border-radius: 50%;
+  animation: fab-spinner 900ms linear infinite;
+}
+@keyframes fab-spinner { to { transform: rotate(1turn); } }
+
+.surface {
+  border: 1px solid var(--fab-border-subtle);
+  border-radius: var(--fab-radius-md);
+  background: var(--fab-bg-raised);
+  color: var(--fab-text-primary);
+}
+.surface[data-level="primary"] { background: var(--fab-bg-primary); }
+.surface[data-level="floating"] { box-shadow: var(--fab-shadow-floating); }
+
+.tooltip { position: relative; display: inline-flex; }
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 1500;
+  max-width: 240px;
+  padding: 5px 7px;
+  border: 1px solid var(--fab-border-subtle);
+  border-radius: var(--fab-radius-sm);
+  background: var(--fab-bg-floating);
+  color: var(--fab-text-primary);
+  box-shadow: var(--fab-shadow-floating);
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 2px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.tooltip:hover::after,
+.tooltip:focus-within::after { opacity: 1; transform: translate(-50%, 0); }
+
+.popover,
+.menu {
+  z-index: 1300;
+  border: 1px solid var(--fab-border-subtle);
+  border-radius: var(--fab-radius-md);
+  background: var(--fab-bg-floating);
+  color: var(--fab-text-primary);
+  box-shadow: var(--fab-shadow-floating);
+}
+.popover { padding: var(--fab-space-2); }
+.menu { display: grid; min-width: 160px; padding: var(--fab-space-1); gap: 2px; }
+.menuItem {
+  appearance: none;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--fab-space-2);
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--fab-radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
 
 .dialogOverlay {
   position: fixed;
   inset: 0;
-  z-index: 1200;
+  z-index: 1400;
   display: grid;
   place-items: center;
+  padding: var(--fab-space-4);
   background: rgba(0,0,0,.54);
 }
-
 .dialogSurface {
-  width: min(360px, calc(100vw - 40px));
+  width: min(420px, calc(100vw - 40px));
   display: grid;
   gap: var(--fab-space-3);
-  padding: 18px;
+  padding: var(--fab-space-4);
   box-sizing: border-box;
   border: 1px solid var(--fab-border-subtle);
   border-radius: var(--fab-radius-lg);
@@ -75,9 +198,9 @@
   color: var(--fab-text-primary);
   box-shadow: var(--fab-shadow-dialog);
 }
+.dialogActions { display: flex; justify-content: flex-end; gap: var(--fab-space-2); }
 
-.dialogActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--fab-space-2);
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 1.8s; }
+  .tooltip::after { transition: none; }
 }
