@@ -236,3 +236,20 @@ Required repair before rerunning any gate:
 No acceptance assertion is weakened. The same packaged test remains the release
 gate and must pass on the next immutable HEAD before merge or publication.
 
+## 2026-09-22 packaged lifecycle terminalization repair
+
+The next immutable-head signed candidate gate for
+`90885001eee8f942009aeb8cd5c9d98fefa8175c` passed the previously failing
+Research/Builder two-Agent isolation journey and reached the final lifecycle
+assertion. The captured browser lifecycle showed two Rust-owned
+`agent.step=running` events (`model:Mahayana reasoning turn 1` and
+`context:Mahayana context projected`), followed by a completed turn and
+`operation.completed`, but no terminal activity event.
+
+The kernel bridge must therefore own activity termination as part of operation
+lifecycle. Running activities are tracked per operation; explicit terminal
+activity/tool events remove them; `KernelEvent::OperationCompleted` completes
+any remaining activities and `KernelEvent::OperationFailed` fails them. A Rust
+regression test and architecture guard enforce this invariant. The packaged
+acceptance assertion remains unchanged.
+

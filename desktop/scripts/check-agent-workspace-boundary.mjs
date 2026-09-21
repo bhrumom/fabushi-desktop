@@ -479,6 +479,16 @@ requirePattern('CapabilityBroker no longer owns authorization decisions', broker
 requirePattern('Runtime InvokeCapability bypasses CapabilityBroker', runtimeLib, /RuntimeCommand::InvokeCapability[\s\S]{0,2800}capability_broker[\s\S]{0,320}\.authorize\s*\(/);
 requirePattern('CapabilityBroker descriptor authorization bypasses request policy and audit', broker, /pub fn authorize[\s\S]{0,900}self\.authorize_request\s*\(/);
 requirePattern(
+  'Kernel operation completion must terminalize outstanding Agent activity steps',
+  kernelConversation,
+  /KernelEvent::OperationCompleted[\s\S]{0,260}finish_active_activities\(RuntimeActivityStatus::Completed\)/,
+);
+requirePattern(
+  'Kernel operation failure must fail outstanding Agent activity steps',
+  kernelConversation,
+  /KernelEvent::OperationFailed[\s\S]{0,320}finish_active_activities\(RuntimeActivityStatus::Failed\)/,
+);
+requirePattern(
   'Provider approval requests must enter CapabilityBroker as needs-user before execution',
   runtimeLib,
   /RuntimeEvent::ApprovalRequested[\s\S]{0,1800}CapabilityBroker::new[\s\S]{0,600}CapabilityAvailability::PermissionRequired/,
