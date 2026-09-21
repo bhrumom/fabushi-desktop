@@ -497,6 +497,16 @@ impl RuntimeStore {
             Ok(())
         }
     }
+    #[cfg(all(test, not(target_arch = "wasm32")))]
+    pub fn capability_audit_count(&self) -> Result<i64, RuntimeStoreError> {
+        let Some(connection) = &self.connection else { return Ok(0); };
+        connection
+            .lock()
+            .map_err(|_| RuntimeStoreError::Poisoned)?
+            .query_row("SELECT COUNT(*) FROM capability_audit", [], |row| row.get(0))
+            .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))
+    }
+
 
 }
 
