@@ -82,9 +82,10 @@ async function completeBrowserLogin(page: Page): Promise<void> {
 
 async function createCoworker(page: Page, name: string, description: string): Promise<void> {
   await page.evaluate(async ({ botName, botDescription }) => {
-    if (!window.mahayana?.invoke) throw new Error('Mahayana bridge unavailable');
+    const bridge = window.mahayana;
+    if (!bridge?.invoke) throw new Error('Mahayana bridge unavailable');
     const now = Date.now();
-    await window.mahayana.invoke('feature.execute', {
+    await bridge.invoke('feature.execute', {
       command: {
         type: 'bot.create',
         requestId: `candidate-bot-create-${botName}-${now}`,
@@ -92,7 +93,7 @@ async function createCoworker(page: Page, name: string, description: string): Pr
         description: botDescription,
       },
     });
-    await window.mahayana.invoke('feature.execute', {
+    await bridge.invoke('feature.execute', {
       command: {
         type: 'bot.list',
         requestId: `candidate-bot-list-${botName}-${now}`,
