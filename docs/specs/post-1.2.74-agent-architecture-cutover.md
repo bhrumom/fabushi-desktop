@@ -209,3 +209,30 @@ Retain:
 | AC-8 | pending | All required exact-head PR Actions must pass on one immutable head. |
 | AC-9 | in progress | Source compliance is recorded here; CI/merge/release outcomes will be appended after execution. |
 | AC-10–AC-12 | pending | Depend on successful exact-head Actions, protected merge, monotonic version bump and signed/notarized release. |
+
+## 2026-09-22 signed packaged acceptance repair
+
+The first immutable-head macOS gate for `29e35390f74db7e7067ae21a4522fa245ce40545`
+passed renderer/Rust/build/sign/notarize/updater binding and then failed only in
+the real signed packaged acceptance at the two-Agent isolation step
+(run `35633280986`, job `106444967318`).
+
+The captured RuntimeStore, per-Agent session files, and
+`_runtime-transcript.json` prove that both Research and Builder Rust runs
+completed with the correct isolated conversation ids and marker outputs. The
+failure screenshot/trace instead showed Builder rendering a Research user row
+and flattening Builder's completed answer into a legacy message row after an
+Agent switch.
+
+Required repair before rerunning any gate:
+
+- production `chat.send` user events carry the accepted runtime operation id;
+- normal `turn.state.conversationId` is authoritative for operation-to-Agent
+  ownership, including repair of an earlier tentative compatibility claim;
+- a repaired operation is removed from the wrongly projected peer transcript;
+- `conversation.opened` is cold hydration only and may not replace an existing
+  live/canonical transcript on Agent switch.
+
+No acceptance assertion is weakened. The same packaged test remains the release
+gate and must pass on the next immutable HEAD before merge or publication.
+

@@ -261,7 +261,11 @@ export default function AgentRootShell({
 
     if (event.type === 'conversation.opened') {
       const peer = peersRef.current.find((candidate) => candidate.conversationId === event.conversationId);
-      if (!peer || runtime.controller.operationForPeer(peer.key)) return;
+      // conversation.opened is a cold-start history snapshot. Once a peer has
+      // live Agent-owned transcript state (including an optimistic request),
+      // replacing it would erase typed assistant-turn lifecycle metadata and
+      // can leak stale switch-time history into another Agent surface.
+      if (!peer || runtime.controller.isBusy(peer.key) || runtime.transcriptStore.has(peer.key)) return;
       runtime.transcriptStore.replace(peer.key, transcriptSources(event));
       runtime.notify();
       return;
@@ -344,13 +348,13 @@ export default function AgentRootShell({
 
   useEffect(() => {
     if (!hostReady || !activePeer) return;
-    if (activePeer.conversationId) {
+    if (activePeer.conversationId && !runtime.transcriptStore.has(activePeer.key)) {
       void runtime.openConversation(activePeer.key, activePeer.conversationId).catch((cause) => {
         setError(cause instanceof Error ? cause.message : String(cause));
       });
     }
     void product.workflow.list(activePeer.agentId || activePeer.id).catch(() => undefined);
-  }, [activePeer?.key, activePeer?.conversationId, hostReady]);
+  }, [activePeer?.key, activePeer?.conversationId, hostReady, runtime.transcriptStore]);
 
 
   useEffect(() => {

@@ -8081,11 +8081,15 @@ impl FeatureHostController {
                 .clone()
                 .unwrap_or_else(|| "mahayana-assistant".into()),
         );
+        // The renderer owns optimistic user rows by request id. Once Rust has
+        // accepted the turn, every production chat event must carry the
+        // authoritative runtime operation id so concurrent Agents can never
+        // infer ownership from whichever peer happens to be visible.
         state.events.push_back(HostEvent::ChatMessage {
             timestamp: timestamp(),
             role: MessageRole::User,
             text,
-            operation_id: None,
+            operation_id: Some(operation_id.clone()),
         });
         state.events.push_back(HostEvent::OperationStarted {
             timestamp: timestamp(),

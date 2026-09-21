@@ -210,6 +210,14 @@ export class AgentTranscriptStore {
     return this.update(peerKey, (current) => current.filter((message) => !removed.has(message.id)));
   }
 
+  removeOperation(peerKey: string, operationId: string): AgentTranscriptSourceMessage[] {
+    if (!operationId) return this.thread(peerKey);
+    return this.update(
+      peerKey,
+      (current) => current.filter((message) => message.operationId !== operationId),
+    );
+  }
+
   prepareRetry(
     peerKey: string,
     messageId: string,

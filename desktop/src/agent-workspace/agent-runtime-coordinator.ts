@@ -173,10 +173,29 @@ export class AgentRuntimeCoordinator {
   claimOperation(operationId: string, fallbackPeerKey?: string | null): string | null {
     if (!operationId || this.workspace.isOperationFinished(operationId)) return null;
     const alreadyOwned = this.workspace.peerForOperation(operationId);
-    if (alreadyOwned) return alreadyOwned;
 
+    // When a runtime event carries conversation ownership, that binding is
+    // authoritative. Compatibility events can arrive before command adoption
+    // and may tentatively claim the only pending peer; repair that projection
+    // rather than preserving cross-Agent contamination.
+    if (fallbackPeerKey) {
+      if (alreadyOwned && alreadyOwned !== fallbackPeerKey) {
+        this.transcripts.removeOperation(alreadyOwned, operationId);
+        this.emitTranscript(alreadyOwned);
+      }
+      const requestId = this.workspace.requestForPeer(fallbackPeerKey);
+      if (requestId && requestId !== operationId) {
+        this.transcripts.adoptOperation(fallbackPeerKey, requestId, operationId);
+      }
+      this.workspace.claimOperation(operationId, fallbackPeerKey);
+      this.transcripts.markUserOperationAccepted(fallbackPeerKey, operationId);
+      this.emitTranscript(fallbackPeerKey);
+      this.emitOperation(fallbackPeerKey);
+      return fallbackPeerKey;
+    }
+
+    if (alreadyOwned) return alreadyOwned;
     const fallback = this.workspace.peerForRequest(operationId)
-      ?? fallbackPeerKey
       ?? this.workspace.onlyPendingPeer();
     const requestId = fallback ? this.workspace.requestForPeer(fallback) : null;
     const peerKey = this.workspace.claimRuntimeOperation(operationId, fallback);
@@ -397,11 +416,8 @@ export class AgentRuntimeCoordinator {
       }
 
       case 'turn.state': {
-        const recoveryPeerKey = event.state === 'recovering'
-          ? this.peerByConversationId.get(event.conversationId)
-          : undefined;
-        const peerKey = this.workspace.peerForOperation(event.operationId)
-          ?? this.claimOperation(event.operationId, recoveryPeerKey);
+        const conversationPeerKey = this.peerByConversationId.get(event.conversationId);
+        const peerKey = this.claimOperation(event.operationId, conversationPeerKey);
         if (!peerKey) return this.workspace.isOperationFinished(event.operationId);
         if (event.state === 'recovering') {
           const messageId = this.recoveryMessageByPeer.get(peerKey);

@@ -35,6 +35,19 @@ export class AgentOperationRegistry {
       ?? null;
     if (!peerKey) return null;
     if (requestId) this.cancelRequest(requestId);
+
+    // A normal turn.state event carries the authoritative conversation id.
+    // If an earlier compatibility event tentatively claimed this operation
+    // for a different peer, repair both directions before rebinding it.
+    const previousPeer = this.peerByOperation.get(operationId);
+    if (
+      previousPeer
+      && previousPeer !== peerKey
+      && this.operationByPeer.get(previousPeer) === operationId
+    ) {
+      this.operationByPeer.delete(previousPeer);
+    }
+
     const previousOperation = this.operationByPeer.get(peerKey);
     if (previousOperation && previousOperation !== operationId) {
       this.peerByOperation.delete(previousOperation);
