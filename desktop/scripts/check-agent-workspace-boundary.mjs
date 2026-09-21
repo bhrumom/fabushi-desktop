@@ -77,6 +77,7 @@ const remoteSupervisor = read(desktopRoot, 'electron', 'remote-device-agent-supe
 
 const runtimeRoot = path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-runtime', 'src');
 const runtimeLib = read(runtimeRoot, 'lib.rs');
+const kernelConversation = read(runtimeRoot, 'kernel_conversation.rs');
 const actor = read(runtimeRoot, 'conversation_actor.rs');
 const broker = read(runtimeRoot, 'capability_broker.rs');
 const runtimeStore = read(runtimeRoot, 'runtime_store.rs');
