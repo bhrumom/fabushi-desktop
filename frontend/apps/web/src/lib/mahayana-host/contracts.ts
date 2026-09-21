@@ -899,6 +899,19 @@ interface EventBase {
   timestamp: string;
 }
 
+export type TurnLifecycleState =
+  | "accepted"
+  | "queued"
+  | "preparing"
+  | "thinking"
+  | "tool-running"
+  | "streaming"
+  | "waiting-user"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "recovering";
+
 export type RuntimeEvent =
   | (EventBase & { type: "host.ready"; info: HostInfo })
   | (EventBase & {
@@ -1102,6 +1115,15 @@ export type RuntimeEvent =
       operationId?: string;
       agentId?: string;
       decision: "allow-once" | "allow-session" | "deny";
+    })
+  | (EventBase & {
+      type: "turn.state";
+      operationId: string;
+      turnId: string;
+      runId: string;
+      conversationId: string;
+      state: TurnLifecycleState;
+      sequence: number;
     })
   | (EventBase & {
       type: "operation.started";
