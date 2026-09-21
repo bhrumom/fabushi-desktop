@@ -55,6 +55,95 @@ string_id!(MessageId);
 string_id!(OperationId);
 string_id!(ApprovalId);
 string_id!(AgentThreadId);
+string_id!(TurnId);
+string_id!(RunId);
+
+/// Canonical lifecycle for one user-visible logical turn.
+///
+/// UI surfaces project this state; they must not infer thinking/tool/streaming
+/// from DOM shape, arbitrary strings, or a generic busy flag.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TurnState {
+    Accepted,
+    Queued,
+    Preparing,
+    Thinking,
+    ToolRunning,
+    Streaming,
+    WaitingUser,
+    Completed,
+    Failed,
+    Cancelled,
+    Recovering,
+}
+
+impl TurnState {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Accepted => "accepted",
+            Self::Queued => "queued",
+            Self::Preparing => "preparing",
+            Self::Thinking => "thinking",
+            Self::ToolRunning => "tool-running",
+            Self::Streaming => "streaming",
+            Self::WaitingUser => "waiting-user",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+            Self::Cancelled => "cancelled",
+            Self::Recovering => "recovering",
+        }
+    }
+
+    pub const fn terminal(self) -> bool {
+        matches!(self, Self::Completed | Self::Failed | Self::Cancelled)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LogicalTurn {
+    pub id: TurnId,
+    pub conversation_id: ConversationId,
+    pub user_message_id: Option<MessageId>,
+    pub created_at_ms: i64,
+    pub state: TurnState,
+    pub active_run_id: Option<RunId>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExecutionRun {
+    pub id: RunId,
+    pub turn_id: TurnId,
+    pub generation: u32,
+    pub provider: String,
+    pub started_at_ms: i64,
+    pub finished_at_ms: Option<i64>,
+    pub state: TurnState,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HandoffIntent {
+    pub target_agent: String,
+    pub task: String,
+    #[serde(default)]
+    pub constraints: Value,
+    #[serde(default)]
+    pub expected_output: Option<String>,
+    pub origin_run: RunId,
+    pub depth: u8,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AskUserRequest {
+    pub turn_id: TurnId,
+    pub run_id: RunId,
+    pub question: String,
+}
+
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -476,6 +565,19 @@ pub enum RuntimeActivityStatus {
 pub enum RuntimeEvent {
     #[serde(rename = "mahayana.runtime.ready")]
     Ready { status: RuntimeStatus },
+    #[serde(rename = "mahayana.turn.state")]
+    TurnStateChanged {
+        #[serde(rename = "operationId")]
+        operation_id: OperationId,
+        #[serde(rename = "turnId")]
+        turn_id: TurnId,
+        #[serde(rename = "runId")]
+        run_id: RunId,
+        #[serde(rename = "conversationId")]
+        conversation_id: ConversationId,
+        state: TurnState,
+        sequence: u64,
+    },
     #[serde(rename = "mahayana.message.delta")]
     MessageDelta {
         #[serde(rename = "operationId")]
@@ -560,6 +662,17 @@ pub enum ContractError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn turn_state_wire_contract_is_explicit_and_stable() {
+        assert_eq!(
+            serde_json::to_value(TurnState::WaitingUser).expect("serialize"),
+            serde_json::Value::String("waiting-user".into())
+        );
+        assert_eq!(TurnState::ToolRunning.as_str(), "tool-running");
+        assert!(TurnState::Completed.terminal());
+        assert!(!TurnState::Streaming.terminal());
+    }
 
     #[test]
     fn default_config_is_first_party_deepseek_without_remote_agent() {
