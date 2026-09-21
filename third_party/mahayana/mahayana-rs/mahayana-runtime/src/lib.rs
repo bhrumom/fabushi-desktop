@@ -334,17 +334,17 @@ impl MahayanaRuntime {
     pub fn execute(&self, command: RuntimeCommand) -> Result<RuntimeResponse, RuntimeError> {
         match command {
             RuntimeCommand::Status => Ok(RuntimeResponse::Status(self.status())),
-            RuntimeCommand::UiStateGet { key } => {
+            RuntimeCommand::WorkspaceStateGet { key } => {
                 validate_runtime_state_key(&key)?;
-                Ok(RuntimeResponse::RuntimeUiState {
-                    value: self.store.read_ui_state(&key)?,
+                Ok(RuntimeResponse::RuntimeWorkspaceState {
+                    value: self.store.read_workspace_state(&key)?,
                     key,
                 })
             }
-            RuntimeCommand::UiStateSet { key, value } => {
+            RuntimeCommand::WorkspaceStateSet { key, value } => {
                 validate_runtime_state_key(&key)?;
-                self.store.write_ui_state(&key, &value, now_millis())?;
-                Ok(RuntimeResponse::RuntimeUiState {
+                self.store.write_workspace_state(&key, &value, now_millis())?;
+                Ok(RuntimeResponse::RuntimeWorkspaceState {
                     key,
                     value: Some(value),
                 })
