@@ -1745,7 +1745,8 @@ mod tests {
                 conversation_id: ConversationId(CODEX_ASSISTANT_CONVERSATION_ID.to_string()),
                 text: "你好".to_string(),
                 client_message_id: None,
-                                inference_provider: None,
+                retry_of_client_message_id: None,
+                inference_provider: None,
                 hidden: false,
             })
             .expect("send message");
@@ -1871,7 +1872,8 @@ mod tests {
                 conversation_id,
                 text: "first visible prompt".to_string(),
                 client_message_id: Some("first-visible-prompt".to_string()),
-                                inference_provider: None,
+                retry_of_client_message_id: None,
+                inference_provider: None,
                 hidden: false,
             })
             .expect("send first message");
