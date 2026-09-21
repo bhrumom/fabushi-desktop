@@ -4,8 +4,13 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.resolve(scriptDir, '..');
-const shellPath = path.join(desktopRoot, 'src', 'messaging-shell-v2.tsx');
+const obsoleteShellPath = path.join(desktopRoot, 'src', 'messaging-shell-v2.tsx');
+const shellPath = path.join(desktopRoot, 'src', 'adapters', 'legacy-messaging', 'legacy-messaging-shell.tsx');
 const shell = fs.readFileSync(shellPath, 'utf8');
+const desktopApp = fs.readFileSync(path.join(desktopRoot, 'src', 'app', 'DesktopApp.tsx'), 'utf8');
+const mainEntry = fs.readFileSync(path.join(desktopRoot, 'src', 'main.tsx'), 'utf8');
+const computerController = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-computer-controller.ts'), 'utf8');
+const electronMain = fs.readFileSync(path.join(desktopRoot, 'electron', 'main.cjs'), 'utf8');
 const networkControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-network-controller.ts');
 const networkController = fs.readFileSync(networkControllerPath, 'utf8');
 const workflowControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-workflow-controller.ts');
@@ -27,6 +32,11 @@ const hostProtocol = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayan
 const runtimeCore = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-core', 'src', 'lib.rs'), 'utf8');
 const kernelConversation = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-runtime', 'src', 'kernel_conversation.rs'), 'utf8');
 const providerRouter = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-host', 'src', 'provider_router.rs'), 'utf8');
+const runtimeRoot = path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-runtime', 'src');
+const runtimeLib = fs.readFileSync(path.join(runtimeRoot, 'lib.rs'), 'utf8');
+const conversationActor = fs.readFileSync(path.join(runtimeRoot, 'conversation_actor.rs'), 'utf8');
+const runtimeStore = fs.readFileSync(path.join(runtimeRoot, 'runtime_store.rs'), 'utf8');
+const capabilityBroker = fs.readFileSync(path.join(runtimeRoot, 'capability_broker.rs'), 'utf8');
 
 const forbidden = [
   ['renderer-global Agent operation pointer', /\bagentOperationId\b/],
@@ -41,7 +51,7 @@ const forbidden = [
   ['Agent transcript copy-back through renderer messages', /setMessages\(toDisplayAgentMessages/],
   ['legacy Grok Agent Network mounted by primary shell', /import\s+GrokAgentNetwork\s+from\s+['"]\.\/grok-shell\/grok-agent-network['"]/],
   ['legacy Grok Command Palette mounted by primary shell', /import\s+GrokCommandPalette\s+from\s+['"]\.\/grok-shell\/grok-command-palette['"]/],
-  ['primary Agent shell directly imports Grok implementation layers', /from\s+['"]\.\/grok-(?:shell|runtime)\//],
+  ['primary Agent shell directly imports Grok implementation layers', /from\s+['"](?:\.\.\/)+grok-(?:shell|runtime)\//],
   ['Grok-named runtime state leaked back into primary Agent shell', /\bgrok(?:Palette|Network|Pinned|Sidebar|Selected|Activity|Busy|Agent)[A-Z]\w*/],
   ['renderer owns RemoteComputerDesktopController', /\bRemoteComputerDesktopController\b|\bremoteComputerControllerRef\b/],
   ['renderer owns Computer capability state', /setComputerCapabilityStatus\b|setRemoteComputerState\b/],
@@ -72,8 +82,19 @@ if (!/export function buildCompatibilityPeers/.test(compatibilityAdapter)
   || !/export function CompatibilitySurface/.test(compatibilityAdapter)) {
   violations.push('compatibility adapter no longer owns peer, event-envelope and secondary-surface routing');
 }
-if (!/<AgentRootShell\b/.test(shell) || /<div\s+hidden\b|hidden\s+aria-hidden=['"]true['"]/.test(shell)) {
-  violations.push('AgentRootShell is not the sole visible product root or hidden legacy navigation returned');
+if (fs.existsSync(obsoleteShellPath)) {
+  violations.push('obsolete messaging-shell-v2.tsx still exists');
+}
+if (!/import\s+AgentRootShell\s+from\s+['"]\.\.\/agent-workspace\/agent-root-shell['"]/.test(desktopApp)
+  || !/import\s+LegacyMessagingAdapter\s+from\s+['"]\.\.\/adapters\/legacy-messaging\/legacy-messaging-shell['"]/.test(desktopApp)
+  || !/<LegacyMessagingAdapter\s+RootShell=\{AgentRootShell\}/.test(desktopApp)
+  || !/import\s+DesktopApp\s+from\s+['"]\.\/app\/DesktopApp['"]/.test(mainEntry)
+  || !/<DesktopApp\s*\/>/.test(mainEntry)
+  || /messaging-shell-v2/.test(mainEntry)
+  || /import\s+AgentRootShell/.test(shell)
+  || !/<RootShell\b/.test(shell)
+  || /<div\s+hidden\b|hidden\s+aria-hidden=['"]true['"]/.test(shell)) {
+  violations.push('DesktopApp/AgentRootShell is not the sole visible product root or hidden legacy navigation returned');
 }
 
 if (!/inference_provider:\s*Option<InferenceProvider>/.test(hostProtocol)
@@ -97,7 +118,9 @@ if (!/revision:\s*number/.test(accountSidebarLayout)
   || !/cloudSnapshotRef/.test(sidebarController)
   || !/mergeAccountSidebarLayoutState\s*\(/.test(sidebarController)
   || !/readAccountSidebarLayout\(scope\)/.test(sidebarController)
-  || !/setInterval\s*\(/.test(sidebarController)
+  || /setInterval\s*\(/.test(sidebarController)
+  || !/subscribeNativeDesktopEvents\s*\(/.test(sidebarController)
+  || !/['"]account-state-changed['"]/.test(sidebarController)
   || !/\{ base: currentBase \}/.test(sidebarController)) {
   violations.push('Agent sidebar sections/pinned order lost cross-device CAS/revision merge convergence');
 }
@@ -112,6 +135,17 @@ if (!/openConversation:\s*openAgentConversation/.test(shell)
 }
 if (!/useAgentComputerController\s*\(/.test(shell)) {
   violations.push('Agent Computer lifecycle controller is not mounted by the desktop Agent shell');
+}
+if (/RemoteComputerDesktopController|RTCPeerConnection|SIGNAL_POLL_MS|SESSION_POLL_MS|HEARTBEAT_MS/.test(computerController)
+  || !/getRemoteComputerBackgroundState/.test(computerController)
+  || !/remote-computer-background-state/.test(computerController)) {
+  violations.push('Agent Computer lifecycle regressed into the React renderer instead of Main');
+}
+if (/backgroundThrottling:\s*false/.test(electronMain)
+  || /HOST_EVENT_LONG_POLL_MS/.test(electronMain)
+  || /feature\.receive/.test(electronMain)
+  || !/host\.onRuntimeEvent\s*\(/.test(electronMain)) {
+  violations.push('desktop power/event architecture regressed to unthrottled renderer or Host polling');
 }
 if (!/const initialAgentWorkspaceHydrated = hostReady/.test(shell)
   || /hydrated:\s*initialLegacyHydrated/.test(shell)
@@ -130,7 +164,7 @@ if (!/agentNetworkController\.handle\(event\)/.test(shell)
   || !/onSendPeer=\{agentNetworkController\.sendPeer\}/.test(shell)) {
   violations.push('Agent Network state or direct handoff escaped the Agent-owned controller boundary');
 }
-if (/from\s+['"]\.\.\/grok-shell\//.test(agentComposer)) {
+if (/from\s+['"](?:\.\.\/)+grok-shell\//.test(agentComposer)) {
   violations.push('primary Agent Composer implementation still depends on the Grok compatibility shell');
 }
 if (/composerValue=\{composer\}/.test(shell) || /onComposerChange=\{updateComposer\}/.test(shell)) {
@@ -212,12 +246,12 @@ if (!/agentCoordinatorClient\.connect\s*\(/.test(shell)) {
   violations.push('Host transport lifecycle escaped AgentCoordinatorClient');
 }
 
-if (!/import\s+AgentNetwork\s+from\s+['"]\.\/agent-workspace\/agent-network['"]/.test(shell)
+if (!/import\s+AgentNetwork\s+from\s+['"](?:\.\.\/)+agent-workspace\/agent-network['"]/.test(shell)
   || !/<AgentNetwork\b/.test(shell)) {
   violations.push('primary shell is not mounting the Agent-owned Network surface');
 }
 
-if (!/import\s+AgentCommandPalette\s+from\s+['"]\.\/agent-workspace\/agent-command-palette['"]/.test(shell)
+if (!/import\s+AgentCommandPalette\s+from\s+['"](?:\.\.\/)+agent-workspace\/agent-command-palette['"]/.test(shell)
   || !/<AgentCommandPalette\b/.test(shell)) {
   violations.push('primary shell is not mounting the Agent-owned command palette boundary');
 }
@@ -229,7 +263,7 @@ if (/setGrokPalette|agentPaletteOpen|agentPaletteQuery/.test(shell)) {
   violations.push('primary shell recreated command palette runtime state');
 }
 
-if (!/from\s+['"]\.\/agent-workspace\/agent-model['"]/.test(shell)
+if (!/from\s+['"](?:\.\.\/)+agent-workspace\/agent-model['"]/.test(shell)
   || !/projectAgentSidebarItems\s*\(/.test(shell)
   || !/projectActiveAgentKey\s*\(/.test(shell)) {
   violations.push('primary shell is not consuming the Agent-owned navigation projection model');
@@ -296,6 +330,23 @@ for (const method of ['listAgents', 'createAgent', 'updateAgent', 'duplicateAgen
 if (!/event\.type === ['"]bot\.listed['"]/.test(directoryController)
   || !/event\.type === ['"]bot\.changed['"]/.test(directoryController)) {
   violations.push('Agent directory controller no longer owns Host directory event projection');
+}
+
+if (!/pub enum TurnState/.test(runtimeCore)
+  || !/TurnStateChanged/.test(runtimeCore)
+  || !/struct ConversationActorState/.test(conversationActor)
+  || !/pub struct ConversationActorRegistry/.test(conversationActor)
+  || !/AsyncMutex/.test(conversationActor)
+  || !/PRAGMA journal_mode=WAL/.test(runtimeStore)
+  || !/CREATE TABLE IF NOT EXISTS turns/.test(runtimeStore)
+  || !/CREATE TABLE IF NOT EXISTS runs/.test(runtimeStore)
+  || !/CREATE TABLE IF NOT EXISTS capability_audit/.test(runtimeStore)
+  || !/CREATE TABLE IF NOT EXISTS computer_leases/.test(runtimeStore)
+  || !/pub struct CapabilityBroker/.test(capabilityBroker)
+  || !/capability_broker\.authorize/.test(runtimeLib)
+  || !/actors\.actor\(&conversation_id\)/.test(runtimeLib)
+  || !/transition_turn_state/.test(runtimeLib)) {
+  violations.push('Mahayana Rust runtime lost ConversationActor/Turn/Run/CapabilityBroker/SQLite ownership');
 }
 
 if (violations.length) {
