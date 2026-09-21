@@ -430,6 +430,24 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  takeComputerControl(requestId: string, agentId: string, leaseId: string) {
+    return this.transport.execute({
+      type: 'computer.takeControl',
+      requestId,
+      agentId,
+      leaseId,
+    } as HostCommand);
+  }
+
+  releaseComputerControl(requestId: string, agentId: string, leaseId: string) {
+    return this.transport.execute({
+      type: 'computer.releaseControl',
+      requestId,
+      agentId,
+      leaseId,
+    } as HostCommand);
+  }
+
   async uploadAttachment(input: AgentAttachmentUpload, timeoutMs = 20_000): Promise<AttachmentContext> {
     let cancelWait = () => {};
     const stored = new Promise<AttachmentContext>((resolve, reject) => {
