@@ -5,7 +5,11 @@ import {
   type AgentSubmission,
   type AgentSubmissionQueue,
 } from '../fabu-runtime/submission-queue';
-import { readAgentWorkspaceDrafts, persistAgentWorkspaceDrafts } from './agent-draft-store';
+import {
+  clearLegacyAgentWorkspaceDrafts,
+  normalizePersistedAgentDrafts,
+  readLegacyAgentWorkspaceDrafts,
+} from './agent-draft-store';
 import { AgentCoordinatorClient, type AgentAttachmentUpload } from './coordinator-client';
 import { AgentRuntimeCoordinator } from './agent-runtime-coordinator';
 import {
@@ -48,6 +52,9 @@ export interface AgentWorkspaceRuntimeFacade {
   notify(): void;
 }
 
+const AGENT_WORKSPACE_DURABLE_DRAFT_KEY = 'agent-workspace:drafts:v2';
+const AGENT_WORKSPACE_DRAFT_WRITE_DEBOUNCE_MS = 250;
+
 let runtimeSubmissionSequence = 0;
 
 function nextRuntimeSubmissionId(prefix: string): string {
@@ -78,9 +85,11 @@ export function useAgentWorkspaceRuntime(
     setRevision((value) => value + 1);
   }, []);
 
+  const durableDraftsHydratedRef = useRef(false);
+  const durableDraftReadRequestedRef = useRef(false);
   const controllerRef = useRef<AgentWorkspaceController | null>(null);
   if (!controllerRef.current) {
-    controllerRef.current = new AgentWorkspaceController(readAgentWorkspaceDrafts());
+    controllerRef.current = new AgentWorkspaceController(readLegacyAgentWorkspaceDrafts());
   }
   const controller = controllerRef.current;
 
@@ -179,6 +188,20 @@ export function useAgentWorkspaceRuntime(
         onTranscriptChanged: () => notify(),
         onOperationChanged: () => notify(),
         onComputerStatus: (status) => optionsRef.current.onComputerStatus?.(status),
+        onWorkspaceState: (key, value) => {
+          if (key !== AGENT_WORKSPACE_DURABLE_DRAFT_KEY) return;
+          const runtimeDrafts = normalizePersistedAgentDrafts(value);
+          const localDrafts = controller.persistedDraftSnapshot();
+          // A renderer edit that happened while the Host was connecting wins
+          // over the older durable snapshot. Everything is then written back
+          // through Rust so localStorage is migration-only.
+          controller.hydratePersistedDrafts({
+            ...runtimeDrafts,
+            ...localDrafts,
+          });
+          durableDraftsHydratedRef.current = true;
+          notify();
+        },
         onOperationStarted: (peerKey, operationId) => {
           optionsRef.current.onOperationStarted?.(peerKey, operationId);
         },
@@ -246,14 +269,33 @@ export function useAgentWorkspaceRuntime(
   }, [controller]);
 
   useEffect(() => {
-    persistAgentWorkspaceDrafts(
-      controller.draftSnapshot(),
-      controller.attachmentSnapshot(),
-      controller.replySnapshot(),
-      controller.referenceSnapshot(),
-      controller.richTextSnapshot(),
-    );
-  }, [controller, revision]);
+    if (!options.hostReady || durableDraftReadRequestedRef.current) return;
+    durableDraftReadRequestedRef.current = true;
+    void optionsRef.current.coordinatorClient.readWorkspaceState(
+      nextRuntimeSubmissionId('agent-workspace-state-read'),
+      AGENT_WORKSPACE_DURABLE_DRAFT_KEY,
+    ).catch((cause) => {
+      durableDraftReadRequestedRef.current = false;
+      optionsRef.current.onError?.('agent-workspace', errorMessage(cause));
+    });
+  }, [options.hostReady]);
+
+  useEffect(() => {
+    if (!options.hostReady || !durableDraftsHydratedRef.current) return;
+    const timer = globalThis.setTimeout(() => {
+      const snapshot = controller.persistedDraftSnapshot();
+      void optionsRef.current.coordinatorClient.writeWorkspaceState(
+        nextRuntimeSubmissionId('agent-workspace-state-write'),
+        AGENT_WORKSPACE_DURABLE_DRAFT_KEY,
+        snapshot,
+      ).then(() => {
+        clearLegacyAgentWorkspaceDrafts();
+      }).catch((cause) => {
+        optionsRef.current.onError?.('agent-workspace', errorMessage(cause));
+      });
+    }, AGENT_WORKSPACE_DRAFT_WRITE_DEBOUNCE_MS);
+    return () => globalThis.clearTimeout(timer);
+  }, [controller, options.hostReady, revision]);
 
   useEffect(() => {
     if (options.hostReady) submissionQueue.flush();
