@@ -1,0 +1,83 @@
+.button {
+  appearance: none;
+  min-height: 32px;
+  padding: 6px 11px;
+  border: 1px solid var(--fab-border-subtle);
+  border-radius: var(--fab-radius-sm);
+  background: var(--fab-bg-hover);
+  color: var(--fab-text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  border-color: var(--fab-border-strong);
+  background: color-mix(in srgb, var(--fab-bg-hover), white 4%);
+}
+
+.button:focus-visible,
+.input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--fab-accent), transparent 18%);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: .42;
+}
+
+.button[data-variant="primary"] {
+  border-color: color-mix(in srgb, var(--fab-accent), transparent 20%);
+  background: var(--fab-accent);
+  color: white;
+}
+
+.button[data-variant="danger"] {
+  border-color: color-mix(in srgb, var(--fab-danger), transparent 20%);
+  color: var(--fab-danger);
+}
+
+.button[data-variant="ghost"] {
+  border-color: transparent;
+  background: transparent;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 36px;
+  border: 1px solid var(--fab-border-subtle);
+  border-radius: var(--fab-radius-sm);
+  background: var(--fab-bg-hover);
+  color: var(--fab-text-primary);
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.dialogOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,.54);
+}
+
+.dialogSurface {
+  width: min(360px, calc(100vw - 40px));
+  display: grid;
+  gap: var(--fab-space-3);
+  padding: 18px;
+  box-sizing: border-box;
+  border: 1px solid var(--fab-border-subtle);
+  border-radius: var(--fab-radius-lg);
+  background: var(--fab-bg-raised);
+  color: var(--fab-text-primary);
+  box-shadow: var(--fab-shadow-dialog);
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--fab-space-2);
+}
