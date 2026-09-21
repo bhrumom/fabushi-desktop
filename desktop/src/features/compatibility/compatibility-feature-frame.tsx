@@ -10,7 +10,7 @@ export default function CompatibilityFeatureFrame({
 }: {
   readonly title: string;
   readonly description: string;
-  readonly onClose(): void;
+  readonly onClose: () => void;
   readonly children?: React.ReactNode;
 }) {
   return <section className={styles.root} data-compatibility-feature="true">
