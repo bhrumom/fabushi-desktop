@@ -30,6 +30,18 @@ function forbidPattern(label, content, pattern) {
   if (pattern.test(content)) violations.push(label);
 }
 
+function requireOrdered(label, content, markers) {
+  let cursor = 0;
+  for (const marker of markers) {
+    const next = content.indexOf(marker, cursor);
+    if (next < 0) {
+      violations.push(`${label}: missing or out of order: ${marker}`);
+      return;
+    }
+    cursor = next + marker.length;
+  }
+}
+
 const desktopApp = read(desktopRoot, 'src', 'app', 'DesktopApp.tsx');
 const desktopAuthBoundary = read(desktopRoot, 'src', 'app', 'desktop-auth-boundary.tsx');
 const rootShell = read(desktopRoot, 'src', 'agent-workspace', 'agent-root-shell.tsx');
@@ -64,6 +76,11 @@ if (fs.existsSync(legacyShell)) violations.push('legacy-messaging-shell.tsx stil
 if (fs.existsSync(obsoleteShell)) violations.push('messaging-shell-v2.tsx returned');
 if (fs.existsSync(legacyMotionCss)) violations.push('legacy grok-motion-parity.css returned');
 
+if (rootShell.split('\n').length > 1200) {
+  violations.push('AgentRootShell regressed into a god shell (>1200 lines)');
+}
+forbidPattern('AgentRootShell must not own durable state in localStorage', rootShell, /\blocalStorage\b/);
+requirePattern('AgentRootShell must consume the shared FabIconButton primitive', rootShell, /\bFabIconButton\b/);
 requirePattern(
   'DesktopApp must boot through DesktopAuthBoundary directly into AgentRootShell',
   desktopApp,
@@ -179,6 +196,37 @@ if (/backgroundThrottling:\s*false/.test(electronMain)
 requirePattern('Electron Main no longer receives pushed Host runtime events', electronMain, /host\.onRuntimeEvent\s*\(/);
 forbidPattern('Renderer Computer controller reintroduced WebRTC/polling ownership', computerController, /RemoteComputerDesktopController|RTCPeerConnection|SIGNAL_POLL_MS|SESSION_POLL_MS|HEARTBEAT_MS/);
 requirePattern('Remote-device Main supervisor lost adaptive refresh scheduling', remoteSupervisor, /sessionRefreshDelay\s*\(/);
+
+// Execution-order checks prevent actor/broker types from existing while real calls bypass them.
+const startMessageIndex = runtimeLib.indexOf('fn start_message');
+const startMessageSource = startMessageIndex >= 0 ? runtimeLib.slice(startMessageIndex) : '';
+requireOrdered(
+  'Conversation execution must register its actor before provider execution',
+  startMessageSource,
+  ['.actors', '.actor(&conversation_id)', '.register(turn_id.clone())', 'record_turn(&turn)', 'record_run(&run)', 'actor.gate.lock().await', 'provider.send_message(request, sink).await'],
+);
+
+function commandArm(name, nextName) {
+  const start = runtimeLib.indexOf(`RuntimeCommand::${name}`);
+  const end = nextName ? runtimeLib.indexOf(`RuntimeCommand::${nextName}`, start + 1) : -1;
+  if (start < 0) return '';
+  return runtimeLib.slice(start, end > start ? end : undefined);
+}
+requireOrdered(
+  'InvokeCapability must authorize before creating an execution run',
+  commandArm('InvokeCapability', 'ListPluginCommands'),
+  ['capability_broker', '.authorize(', 'CapabilityPolicyDecision::Deny', 'start_message('],
+);
+requireOrdered(
+  'Local Mini App tools must authorize before executing the tool',
+  commandArm('CallLocalPluginTool', 'McpServers'),
+  ['capability_broker', 'authorize_request(', 'CapabilityPolicyDecision::Allow', '.call_tool('],
+);
+requireOrdered(
+  'Direct MCP tools must authorize before backend execution',
+  commandArm('McpToolCall', 'ConversationHistory'),
+  ['capability_broker', 'authorize_request(', 'CapabilityPolicyDecision::Allow', '.call_mcp_tool('],
+);
 
 requirePattern('ConversationActor registry is missing', actor, /pub struct ConversationActorRegistry/);
 requirePattern('ConversationActor per-conversation gate is missing', actor, /AsyncMutex/);
