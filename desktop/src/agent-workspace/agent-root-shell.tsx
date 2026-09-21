@@ -115,8 +115,8 @@ import type {
   NewDialog,
   SettingsCategory,
   UsageSummary,
-} from '../adapters/legacy-messaging/legacy-messaging-model';
-import { useLegacyMessagingCompatibilityState } from '../adapters/legacy-messaging/use-legacy-messaging-compatibility-state';
+} from '../adapters/compatibility/compatibility-model';
+import { useCompatibilityMessagingState } from '../adapters/compatibility/use-compatibility-messaging-state';
 import { ContactsCompatibilityWorkspace } from '../adapters/contacts/contacts-compatibility-adapter';
 import { TelegramCompatibilityWorkspace } from '../adapters/telegram/telegram-compatibility-adapter';
 import {
@@ -854,7 +854,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const newAgentRequestPendingRef = useRef(false);
   const [pendingOpenAgentId, setPendingOpenAgentId] = useState<string | null>(null);
   const [activePeerKey, setActivePeerKey] = useState<string | null>(startupProjection?.activePeerKey ?? null);
-  const legacyCompatibility = useLegacyMessagingCompatibilityState(
+  const legacyCompatibility = useCompatibilityMessagingState(
     startupProjection,
     startupLegacyConversation ? cachedLegacyDisplayMessages(startupLegacyConversation) : [],
   );
