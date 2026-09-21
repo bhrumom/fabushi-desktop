@@ -197,6 +197,28 @@ async function executeFeatureCommand(page: Page, command: Record<string, unknown
   }, command);
 }
 
+async function installRuntimeEventJournal(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __obfRuntimeEvents?: unknown[];
+      __obfRuntimeUnsubscribe?: () => void;
+    };
+    scope.__obfRuntimeUnsubscribe?.();
+    scope.__obfRuntimeEvents = [];
+    scope.__obfRuntimeUnsubscribe = window.mahayana.subscribe((event) => {
+      scope.__obfRuntimeEvents?.push(event);
+      if ((scope.__obfRuntimeEvents?.length ?? 0) > 4000) scope.__obfRuntimeEvents?.splice(0, 500);
+    });
+  });
+}
+
+async function runtimeEvents(page: Page): Promise<Array<Record<string, unknown>>> {
+  return page.evaluate(() => {
+    const scope = window as typeof window & { __obfRuntimeEvents?: Array<Record<string, unknown>> };
+    return scope.__obfRuntimeEvents ?? [];
+  });
+}
+
 async function installLifecycleJournal(page: Page): Promise<void> {
   await page.evaluate(() => {
     const scope = window as typeof window & { __obfLifecycle?: LifecycleSample[] };
@@ -404,7 +426,9 @@ async function saveRuntimeEvidence(
   const evidenceDir = testInfo.outputPath('obf-runtime');
   await mkdir(evidenceDir, { recursive: true });
   const lifecycle = await page.evaluate(() => (window as typeof window & { __obfLifecycle?: LifecycleSample[] }).__obfLifecycle || []);
+  const events = await runtimeEvents(page);
   await writeFile(path.join(evidenceDir, 'lifecycle.json'), JSON.stringify(lifecycle, null, 2));
+  await writeFile(path.join(evidenceDir, 'runtime-events.json'), JSON.stringify(events, null, 2));
   const agentDrafts = await page.evaluate(() => window.localStorage.getItem('fabushi.agent-workspace.drafts.v1'));
   await writeFile(path.join(evidenceDir, 'agent-workspace-drafts.json'), agentDrafts || '{}');
   await writeFile(path.join(evidenceDir, 'runtime.log'), logs.map((entry) => `${new Date(entry.at).toISOString()} [${entry.source}] ${entry.text}`).join('\n'));
@@ -462,6 +486,7 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     await completeLogin(page);
     await setReferenceWindow(app, page);
     await installLifecycleJournal(page);
+    await installRuntimeEventJournal(page);
 
     for (const [name, description] of coworkers) await createCoworker(page, name, description);
     for (const [name] of coworkers) await expect(peerByName(page, name)).toBeVisible();
@@ -480,6 +505,15 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
       text: handoffMarker,
       priority: true,
     });
+    await expect.poll(async () => {
+      const events = await runtimeEvents(page);
+      return events.some((event) =>
+        event.type === 'agent.peerMessage'
+        && (event.message as { text?: unknown; fromAgentId?: unknown; targetId?: unknown } | undefined)?.text === handoffMarker
+        && (event.message as { fromAgentId?: unknown } | undefined)?.fromAgentId === chiefAgentId
+        && (event.message as { targetId?: unknown } | undefined)?.targetId === researchAgentId);
+    }, { timeout: 20_000 }).toBeTruthy();
+
     await page.getByRole('button', { name: 'Agent network' }).click();
     const network = page.getByTestId('grok-agent-network');
     await expect(network).toBeVisible();
@@ -493,11 +527,22 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
       targetIds: [builderAgentId, launchAgentId],
       message: broadcastMarker,
     });
-    await page.getByRole('button', { name: 'Agent network' }).click();
-    await expect(network).toBeVisible();
-    await expect.poll(async () => network.locator('[data-testid="agent-coordination-feed"]').innerText().catch(() => ''), { timeout: 30_000 })
-      .toContain(broadcastMarker);
-    await network.getByRole('button', { name: 'Close Agent network' }).click();
+    await expect.poll(async () => {
+      const events = await runtimeEvents(page);
+      return events.some((event) =>
+        event.type === 'agent.broadcasted'
+        && Number((event.result as { total?: unknown } | undefined)?.total) === 2
+        && Number((event.result as { scheduled?: unknown } | undefined)?.scheduled) === 2);
+    }, { timeout: 30_000 }).toBeTruthy();
+    for (const targetId of [builderAgentId, launchAgentId]) {
+      await expect.poll(async () => {
+        const events = await runtimeEvents(page);
+        return events.some((event) =>
+          event.type === 'agent.backgroundStarted'
+          && event.agentId === targetId
+          && event.source === 'broadcast');
+      }, { timeout: 30_000 }).toBeTruthy();
+    }
 
     const isolationA = `OBF-ISOLATION-RESEARCH-${Date.now()}`;
     const isolationB = `OBF-ISOLATION-BUILDER-${Date.now()}`;
