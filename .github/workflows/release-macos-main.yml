@@ -263,7 +263,7 @@ jobs:
           executable="$app/Contents/MacOS/$executable_name"
           test -x "$executable"
           echo "executable=$executable" >> "$GITHUB_OUTPUT"
-          echo "Candidate executable: `$executable`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Candidate executable: $executable" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run real signed packaged acceptance
         working-directory: desktop
