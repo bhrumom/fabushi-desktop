@@ -7,6 +7,7 @@ const desktopRoot = path.resolve(scriptDir, '..');
 const repoRoot = path.resolve(desktopRoot, '..');
 const violations = [];
 // This checker is part of the exact-PR-head gate; merge-ref success is supplemental only.
+// Signed candidates are permitted only for trusted same-repository PR heads.
 
 const read = (...parts) => fs.readFileSync(path.join(...parts), 'utf8');
 const exists = (...parts) => fs.existsSync(path.join(...parts));
