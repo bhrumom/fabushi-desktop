@@ -563,11 +563,17 @@ test.describe('signed candidate packaged acceptance', () => {
         operationLifecycle.some((sample) => sample.type === 'turn.state' && ['preparing', 'thinking', 'streaming', 'tool-running'].includes(sample.status)),
         'real lifecycle must expose an active Rust-owned turn state',
       ).toBe(true);
+      const streamedResult = operationLifecycle
+        .filter((sample) => sample.type === 'chat.delta' || sample.type === 'chat.message')
+        .map((sample) => sample.text)
+        .join('');
       expect(
-        operationLifecycle.some((sample) =>
-          (sample.type === 'chat.delta' || sample.type === 'chat.message')
-          && sample.text.includes('CANDIDATE-LIFECYCLE-OK')),
+        streamedResult.includes('CANDIDATE-LIFECYCLE-OK'),
         'real lifecycle must stream or emit the expected assistant result on the same operation',
+      ).toBe(true);
+      expect(
+        operationLifecycle.some((sample) => sample.type === 'turn.state' && sample.status === 'completed'),
+        'real lifecycle must emit the actor-owned completed turn state',
       ).toBe(true);
       expect(
         operationLifecycle.some((sample) => sample.type === 'operation.completed' && sample.status === 'completed'),
