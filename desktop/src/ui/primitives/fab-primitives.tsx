@@ -37,26 +37,34 @@ export function FabIconButton({
   >{children}</button>;
 }
 
-export function FabInput({
+export const FabInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & {
+  readonly variant?: 'default' | 'bare';
+}>(function FabInput({
   variant = 'default',
   className,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & {
-  readonly variant?: 'default' | 'bare';
-}) {
-  return <input {...props} className={classes(variant === 'bare' ? styles.bareInput : styles.input, className)} />;
-}
+}, ref) {
+  return <input
+    {...props}
+    ref={ref}
+    className={classes(variant === 'bare' ? styles.bareInput : styles.input, className)}
+  />;
+});
 
-export function FabSelect({
+export const FabSelect = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement> & {
+  readonly variant?: 'default' | 'bare';
+}>(function FabSelect({
   variant = 'default',
   className,
   children,
   ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement> & {
-  readonly variant?: 'default' | 'bare';
-}) {
-  return <select {...props} className={classes(variant === 'bare' ? styles.bareSelect : styles.select, className)}>{children}</select>;
-}
+}, ref) {
+  return <select
+    {...props}
+    ref={ref}
+    className={classes(variant === 'bare' ? styles.bareSelect : styles.select, className)}
+  >{children}</select>;
+});
 
 export function FabSwitch({
   className,
