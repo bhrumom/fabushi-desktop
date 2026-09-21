@@ -28,8 +28,11 @@ use mahayana_conversation::SharedConversationEventSink;
 use mahayana_core::ApprovalId;
 use mahayana_core::CONVERSATION_SCHEMA_VERSION;
 use mahayana_core::Conversation;
+use mahayana_core::AskUserRequest;
 use mahayana_core::ConversationId;
 use mahayana_core::ExecutionRun;
+use mahayana_core::HandoffIntent;
+use mahayana_core::IntentId;
 use mahayana_core::LogicalTurn;
 use mahayana_core::MessageId;
 use mahayana_core::MODEL_RUNTIME_VERSION;
@@ -56,6 +59,9 @@ use std::future::Future;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+const MAX_HANDOFF_DEPTH: u8 = 4;
+const MAX_HANDOFFS_PER_RUN: u8 = 8;
 
 pub struct RuntimeBuilder {
     config: RuntimeConfig,
@@ -184,6 +190,7 @@ pub struct MahayanaRuntime {
     event_rx: Receiver<RuntimeEvent>,
     operations: Arc<Mutex<HashMap<OperationId, String>>>,
     run_contexts: Arc<Mutex<HashMap<OperationId, RunContext>>>,
+    handoff_counts: Mutex<HashMap<OperationId, u8>>,
     approvals: Arc<Mutex<HashMap<ApprovalId, String>>>,
     actors: Arc<ConversationActorRegistry>,
     store: Arc<RuntimeStore>,
@@ -235,6 +242,7 @@ impl MahayanaRuntime {
             event_rx,
             operations: Arc::new(Mutex::new(HashMap::new())),
             run_contexts: Arc::new(Mutex::new(HashMap::new())),
+            handoff_counts: Mutex::new(HashMap::new()),
             approvals: Arc::new(Mutex::new(HashMap::new())),
             actors,
             store,
@@ -292,6 +300,7 @@ impl MahayanaRuntime {
         }
         lock(&self.operations)?.clear();
         lock(&self.run_contexts)?.clear();
+        lock(&self.handoff_counts)?.clear();
         lock(&self.approvals)?.clear();
         self.actors.clear().map_err(RuntimeError::Synchronization)?;
         while self.event_rx.try_recv().is_ok() {}
@@ -315,6 +324,7 @@ impl MahayanaRuntime {
         }
         lock(&self.operations)?.clear();
         lock(&self.run_contexts)?.clear();
+        lock(&self.handoff_counts)?.clear();
         lock(&self.approvals)?.clear();
         self.actors.clear().map_err(RuntimeError::Synchronization)?;
         while self.event_rx.try_recv().is_ok() {}
@@ -625,6 +635,129 @@ impl MahayanaRuntime {
                     hidden,
                 )?,
             }),
+            RuntimeCommand::AskUser {
+                operation_id,
+                question,
+            } => {
+                let question = question.trim().to_string();
+                if question.is_empty() {
+                    return Err(RuntimeError::Collaboration("ask_user requires a non-empty question".to_string()));
+                }
+                let context = lock(&self.run_contexts)?
+                    .get(&operation_id)
+                    .cloned()
+                    .ok_or_else(|| ConversationError::OperationNotFound(operation_id.clone()))?;
+                let intent_id = IntentId::generated("ask-user");
+                let request = AskUserRequest {
+                    id: intent_id.clone(),
+                    turn_id: context.turn_id.clone(),
+                    run_id: context.run_id.clone(),
+                    question: question.clone(),
+                };
+                self.store.enqueue_ask_user(&request, now_millis())?;
+                transition_turn_state(
+                    &self.event_tx,
+                    &self.store,
+                    &context,
+                    TurnState::WaitingUser,
+                )?;
+                self.event_tx
+                    .send(RuntimeEvent::AgentActivity {
+                        operation_id: operation_id.clone(),
+                        step_id: intent_id.to_string(),
+                        kind: "ask_user".to_string(),
+                        title: question,
+                        detail: None,
+                        status: mahayana_core::RuntimeActivityStatus::Running,
+                        metadata: Some(serde_json::json!({ "intentId": intent_id })),
+                    })
+                    .map_err(|_| RuntimeError::EventConsumerClosed)?;
+                Ok(RuntimeResponse::WaitingUser {
+                    intent_id,
+                    operation_id,
+                })
+            }
+            RuntimeCommand::Handoff {
+                operation_id,
+                target_agent,
+                task,
+                constraints,
+                expected_output,
+                depth,
+            } => {
+                let target_agent = target_agent.trim().to_string();
+                let task = task.trim().to_string();
+                if target_agent.is_empty() || target_agent.len() > 160 || target_agent.chars().any(char::is_control) {
+                    return Err(RuntimeError::Collaboration("handoff targetAgent is invalid".to_string()));
+                }
+                if task.is_empty() {
+                    return Err(RuntimeError::Collaboration("handoff requires a non-empty task".to_string()));
+                }
+                if depth >= MAX_HANDOFF_DEPTH {
+                    return Err(RuntimeError::Collaboration(format!(
+                        "handoff depth limit exceeded ({MAX_HANDOFF_DEPTH})"
+                    )));
+                }
+                let context = lock(&self.run_contexts)?
+                    .get(&operation_id)
+                    .cloned()
+                    .ok_or_else(|| ConversationError::OperationNotFound(operation_id.clone()))?;
+                let target_conversation = ConversationId(format!("codex:agent:{target_agent}"));
+                if target_conversation == context.conversation_id {
+                    return Err(RuntimeError::Collaboration("an Agent cannot hand off work to itself".to_string()));
+                }
+                {
+                    let mut counts = lock(&self.handoff_counts)?;
+                    let count = counts.entry(operation_id.clone()).or_default();
+                    if *count >= MAX_HANDOFFS_PER_RUN {
+                        return Err(RuntimeError::Collaboration(format!(
+                            "handoff fan-out limit exceeded ({MAX_HANDOFFS_PER_RUN})"
+                        )));
+                    }
+                    *count = count.saturating_add(1);
+                }
+
+                let intent_id = IntentId::generated("handoff");
+                let intent = HandoffIntent {
+                    id: intent_id.clone(),
+                    target_agent: target_agent.clone(),
+                    task: task.clone(),
+                    constraints: constraints.clone(),
+                    expected_output: expected_output.clone(),
+                    origin_run: context.run_id.clone(),
+                    depth: depth.saturating_add(1),
+                };
+                self.store.enqueue_handoff(&intent, &context.turn_id, now_millis())?;
+                let target_prompt = handoff_prompt(&intent);
+                let target_operation_id = self.start_message(
+                    target_conversation,
+                    target_prompt,
+                    Some(intent_id.to_string()),
+                    None,
+                    true,
+                )?;
+                self.event_tx
+                    .send(RuntimeEvent::AgentActivity {
+                        operation_id: operation_id.clone(),
+                        step_id: intent_id.to_string(),
+                        kind: "handoff".to_string(),
+                        title: format!("Handoff → {target_agent}"),
+                        detail: Some(task),
+                        status: mahayana_core::RuntimeActivityStatus::Completed,
+                        metadata: Some(serde_json::json!({
+                            "intentId": intent_id,
+                            "targetAgent": target_agent,
+                            "targetOperationId": target_operation_id,
+                            "depth": intent.depth,
+                        })),
+                    })
+                    .map_err(|_| RuntimeError::EventConsumerClosed)?;
+                Ok(RuntimeResponse::HandoffQueued {
+                    intent_id,
+                    operation_id,
+                    target_operation_id,
+                })
+            }
             RuntimeCommand::Interrupt { operation_id } => {
                 let provider_key = lock(&self.operations)?
                     .get(&operation_id)
@@ -963,6 +1096,27 @@ fn transition_turn_state(
         .map_err(|_| RuntimeError::EventConsumerClosed)
 }
 
+fn handoff_prompt(intent: &HandoffIntent) -> String {
+    let constraints = if intent.constraints.is_null() {
+        String::new()
+    } else {
+        format!(
+            "\nConstraints: {}",
+            serde_json::to_string(&intent.constraints).unwrap_or_else(|_| "{}".to_string())
+        )
+    };
+    let expected = intent
+        .expected_output
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+        .map(|value| format!("\nExpected output: {}", value.trim()))
+        .unwrap_or_default();
+    format!(
+        "Agent handoff (depth {}):\nTask: {}{}{}",
+        intent.depth, intent.task, constraints, expected
+    )
+}
+
 fn now_millis() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -998,6 +1152,8 @@ pub enum RuntimeError {
     RuntimeStore(#[from] RuntimeStoreError),
     #[error("capability broker failed: {0}")]
     CapabilityBroker(String),
+    #[error("Agent collaboration failed: {0}")]
+    Collaboration(String),
     #[error("capability not found: {0}")]
     CapabilityNotFound(String),
     #[error("capability unavailable: {capability_id}: {reason}")]
