@@ -48,6 +48,9 @@ export class AgentRuntimeCoordinator {
   private deltaTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
   private lastRecoveredGeneration = -1;
   private readonly peerByAgentId = new Map<string, string>();
+  private readonly peerByConversationId = new Map<string, string>();
+  private readonly turnStateByOperation = new Map<string, Extract<RuntimeEvent, { type: 'turn.state' }>['state']>();
+  private readonly recoveryMessageByPeer = new Map<string, string>();
 
   constructor(
     private readonly workspace: AgentWorkspaceController,
@@ -79,10 +82,14 @@ export class AgentRuntimeCoordinator {
     return this.knownRuntimeIds().length > 0;
   }
 
-  bindAgentPeers(bindings: readonly { agentId: string; peerKey: string }[]): void {
+  bindAgentPeers(bindings: readonly { agentId: string; peerKey: string; conversationId?: string }[]): void {
     this.peerByAgentId.clear();
+    this.peerByConversationId.clear();
     for (const binding of bindings) {
       if (binding.agentId.trim() && binding.peerKey.trim()) this.peerByAgentId.set(binding.agentId, binding.peerKey);
+      if (binding.conversationId?.trim() && binding.peerKey.trim()) {
+        this.peerByConversationId.set(binding.conversationId, binding.peerKey);
+      }
     }
   }
 
@@ -203,6 +210,7 @@ export class AgentRuntimeCoordinator {
     const finishedPeer = this.workspace.finishRuntimeOperation(operationId);
     if (!finishedPeer) return null;
     this.transcripts.finishOperation(finishedPeer, operationId, status);
+    this.turnStateByOperation.delete(operationId);
     this.emitTranscript(finishedPeer);
     this.emitOperation(finishedPeer);
     this.hooks.onOperationTerminal?.(finishedPeer, operationId, status, message);
@@ -218,20 +226,30 @@ export class AgentRuntimeCoordinator {
     const requests = this.workspace.requestSnapshot();
     const touched = new Set<string>();
     for (const [peerKey, operationId] of Object.entries(operations)) {
-      this.transcripts.appendAssistantTurnEvent(peerKey, {
-        type: 'operation.interrupted',
-        timestamp: event.timestamp,
-        operationId,
-      });
-      this.transcripts.finishOperation(peerKey, operationId, 'interrupted');
+      if (this.turnStateByOperation.get(operationId) === 'waiting-user') {
+        this.transcripts.appendAssistantTurnEvent(peerKey, {
+          type: 'operation.interrupted',
+          timestamp: event.timestamp,
+          operationId,
+        });
+        this.transcripts.finishOperation(peerKey, operationId, 'interrupted');
+        this.workspace.finishRuntimeOperation(operationId);
+        this.turnStateByOperation.delete(operationId);
+        touched.add(peerKey);
+        this.hooks.onOperationTerminal?.(
+          peerKey,
+          operationId,
+          'interrupted',
+          event.reason || event.error || 'Agent runtime restarted while waiting for user approval.',
+        );
+        continue;
+      }
+
+      const recoveryMessageId = this.transcripts.prepareOperationRecovery(peerKey, operationId);
+      if (recoveryMessageId) this.recoveryMessageByPeer.set(peerKey, recoveryMessageId);
       this.workspace.finishRuntimeOperation(operationId);
+      this.turnStateByOperation.delete(operationId);
       touched.add(peerKey);
-      this.hooks.onOperationTerminal?.(
-        peerKey,
-        operationId,
-        'interrupted',
-        event.reason || event.error || 'Agent runtime restarted.',
-      );
     }
     for (const [peerKey, requestId] of Object.entries(requests)) {
       this.workspace.cancelRequest(requestId);
@@ -351,9 +369,20 @@ export class AgentRuntimeCoordinator {
       }
 
       case 'turn.state': {
+        const recoveryPeerKey = event.state === 'recovering'
+          ? this.peerByConversationId.get(event.conversationId)
+          : undefined;
         const peerKey = this.workspace.peerForOperation(event.operationId)
-          ?? this.claimOperation(event.operationId);
+          ?? this.claimOperation(event.operationId, recoveryPeerKey);
         if (!peerKey) return this.workspace.isOperationFinished(event.operationId);
+        if (event.state === 'recovering') {
+          const messageId = this.recoveryMessageByPeer.get(peerKey);
+          if (messageId) {
+            this.transcripts.adoptRecoveredOperation(peerKey, messageId, event.operationId);
+            this.recoveryMessageByPeer.delete(peerKey);
+          }
+        }
+        this.turnStateByOperation.set(event.operationId, event.state);
         this.transcripts.applyTurnState(peerKey, event);
         this.emitTranscript(peerKey);
         if (event.state === 'completed') {
