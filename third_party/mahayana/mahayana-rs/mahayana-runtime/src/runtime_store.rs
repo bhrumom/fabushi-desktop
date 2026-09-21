@@ -36,6 +36,9 @@ pub(crate) struct RecoverableTurn {
     pub message_id: MessageId,
     pub last_run_id: RunId,
     pub generation: u32,
+    pub text: Option<String>,
+    pub inference_provider: Option<String>,
+    pub hidden: Option<bool>,
 }
 
 #[derive(Debug, Clone)]
@@ -97,6 +100,16 @@ impl RuntimeStore {
                     );
                     CREATE INDEX IF NOT EXISTS runs_turn_generation_idx
                     ON runs(turn_id, generation);
+
+                    CREATE TABLE IF NOT EXISTS turn_requests (
+                        turn_id TEXT PRIMARY KEY,
+                        message_id TEXT NOT NULL,
+                        text TEXT NOT NULL,
+                        inference_provider TEXT,
+                        hidden INTEGER NOT NULL DEFAULT 0,
+                        updated_at_ms INTEGER NOT NULL,
+                        FOREIGN KEY(turn_id) REFERENCES turns(turn_id)
+                    );
 
                     CREATE TABLE IF NOT EXISTS activities (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -262,6 +275,62 @@ impl RuntimeStore {
     /// Regenerate/retry is explicit: ordinary duplicate transport requests do
     /// not select an existing turn. The caller supplies the original stable
     /// client user-message id and receives the same turn id plus N+1.
+    pub fn record_turn_request(
+        &self,
+        turn_id: &TurnId,
+        message_id: &MessageId,
+        text: &str,
+        inference_provider: Option<&str>,
+        hidden: bool,
+        updated_at_ms: i64,
+    ) -> Result<(), RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (
+                turn_id,
+                message_id,
+                text,
+                inference_provider,
+                hidden,
+                updated_at_ms,
+            );
+            Ok(())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(()); };
+            connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .execute(
+                    "INSERT INTO turn_requests(
+                        turn_id,
+                        message_id,
+                        text,
+                        inference_provider,
+                        hidden,
+                        updated_at_ms
+                     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                     ON CONFLICT(turn_id) DO UPDATE SET
+                       message_id = excluded.message_id,
+                       text = excluded.text,
+                       inference_provider = excluded.inference_provider,
+                       hidden = excluded.hidden,
+                       updated_at_ms = excluded.updated_at_ms",
+                    params![
+                        turn_id.as_str(),
+                        message_id.as_str(),
+                        text,
+                        inference_provider,
+                        i64::from(hidden),
+                        updated_at_ms,
+                    ],
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            Ok(())
+        }
+    }
+
     pub fn retry_turn_generation(
         &self,
         conversation_id: &str,
@@ -425,9 +494,13 @@ impl RuntimeStore {
                         t.turn_id,
                         t.user_message_id,
                         r.run_id,
-                        r.generation
+                        r.generation,
+                        q.text,
+                        q.inference_provider,
+                        q.hidden
                      FROM turns t
                      JOIN runs r ON r.turn_id = t.turn_id
+                     LEFT JOIN turn_requests q ON q.turn_id = t.turn_id
                      WHERE t.state IN (
                          'accepted',
                          'queued',
@@ -460,19 +533,33 @@ impl RuntimeStore {
                         row.get::<_, String>(2)?,
                         row.get::<_, String>(3)?,
                         row.get::<_, i64>(4)?,
+                        row.get::<_, Option<String>>(5)?,
+                        row.get::<_, Option<String>>(6)?,
+                        row.get::<_, Option<i64>>(7)?,
                     ))
                 })
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
             let mut recovered = Vec::new();
             for row in rows {
-                let (conversation_id, turn_id, message_id, run_id, generation) =
-                    row.map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+                let (
+                    conversation_id,
+                    turn_id,
+                    message_id,
+                    run_id,
+                    generation,
+                    text,
+                    inference_provider,
+                    hidden,
+                ) = row.map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
                 recovered.push(RecoverableTurn {
                     conversation_id: ConversationId(conversation_id),
                     turn_id: TurnId(turn_id),
                     message_id: MessageId(message_id),
                     last_run_id: RunId(run_id),
                     generation: generation.max(0).min(i64::from(u32::MAX)) as u32,
+                    text,
+                    inference_provider,
+                    hidden: hidden.map(|value| value != 0),
                 });
             }
             Ok(recovered)
@@ -1019,10 +1106,24 @@ mod tests {
                 .expect("record run");
         }
 
+        store
+            .record_turn_request(
+                &TurnId("turn:thinking".to_string()),
+                &MessageId("message:thinking".to_string()),
+                "resume this prompt",
+                Some("codex"),
+                false,
+                15,
+            )
+            .expect("record recovery input");
+
         let recoverable = store.recoverable_turns().expect("recover active turns");
         assert_eq!(recoverable.len(), 1);
         assert_eq!(recoverable[0].message_id.as_str(), "message:thinking");
         assert_eq!(recoverable[0].generation, 1);
+        assert_eq!(recoverable[0].text.as_deref(), Some("resume this prompt"));
+        assert_eq!(recoverable[0].inference_provider.as_deref(), Some("codex"));
+        assert_eq!(recoverable[0].hidden, Some(false));
 
         drop(store);
         let _ = std::fs::remove_dir_all(path);
