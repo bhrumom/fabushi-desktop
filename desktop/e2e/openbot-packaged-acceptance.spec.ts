@@ -273,8 +273,8 @@ async function performBroadcast(page: Page): Promise<void> {
   for (let index = 0; index < await selectedTargets.count(); index += 1) {
     const checkbox = selectedTargets.nth(index);
     if (await checkbox.isChecked()) await checkbox.uncheck();
+    await expect(checkbox).not.toBeChecked();
   }
-  await expect(selectedTargets).not.toBeChecked();
   await network.getByRole('textbox').fill('Candidate broadcast: acknowledge the signed package acceptance run.');
   await network.getByRole('button', { name: /Broadcast to all/ }).click();
   await expect(network.getByRole('textbox')).toHaveValue('');
