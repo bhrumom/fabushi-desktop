@@ -398,11 +398,6 @@ export default function AgentRootShell({
     runtime.controller.setDraftDocument(peerKey, value, richText);
     runtime.controller.pruneReferences(peerKey, value);
     runtime.notify();
-    if (product.pullRequests.query(value)) {
-      void product.pullRequests.search(value).catch(() => undefined);
-    } else {
-      product.pullRequests.clear();
-    }
   }
 
   function enqueueAgentPrompt(
