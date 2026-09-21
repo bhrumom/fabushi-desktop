@@ -179,6 +179,115 @@ async function directBotShape(mark: Locator): Promise<string> {
   return shape!;
 }
 
+
+async function runtimeAgentId(page: Page, name: string): Promise<string> {
+  const peer = peerByName(page, name);
+  const explicit = await peer.getAttribute('data-agent-id');
+  if (explicit) return explicit;
+  const testId = await peer.getAttribute('data-testid');
+  expect(testId).toBeTruthy();
+  return testId!.replace(/^peer-legacy:bot:/, '');
+}
+
+async function verifyDirectHandoffIsolation(
+  page: Page,
+  fromAgentId: string,
+  targetAgentId: string,
+  isolatedAgentId: string,
+): Promise<void> {
+  const marker = `obf-direct-handoff-${Date.now()}`;
+  const result = await page.evaluate(async ({ fromAgentId: fromId, targetAgentId: targetId, isolatedAgentId: isolatedId, marker: text }) => {
+    if (!window.mahayana?.invoke) throw new Error('Mahayana bridge unavailable');
+    const waitFor = <T,>(predicate: (detail: any) => T | undefined, timeoutMs = 20_000) => new Promise<T>((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        window.removeEventListener('fabushi:mahayana-runtime-event', handler as EventListener);
+        reject(new Error('Timed out waiting for Mahayana collaboration event'));
+      }, timeoutMs);
+      const handler = (event: Event) => {
+        const value = predicate((event as CustomEvent).detail);
+        if (value === undefined) return;
+        window.clearTimeout(timer);
+        window.removeEventListener('fabushi:mahayana-runtime-event', handler as EventListener);
+        resolve(value);
+      };
+      window.addEventListener('fabushi:mahayana-runtime-event', handler as EventListener);
+    });
+    const directEvent = waitFor((detail) =>
+      detail?.type === 'agent.peerMessage'
+        && detail.message?.fromAgentId === fromId
+        && detail.message?.targetId === targetId
+        && detail.message?.text === text
+        ? detail.message
+        : undefined);
+    await window.mahayana.invoke('feature.execute', {
+      command: {
+        type: 'agent.send',
+        requestId: `obf-direct-${Date.now()}`,
+        fromAgentId: fromId,
+        targetId,
+        text,
+        priority: true,
+      },
+    });
+    await directEvent;
+
+    const loadHistory = async (agentId: string) => {
+      const historyEvent = waitFor((detail) =>
+        detail?.type === 'agent.peerHistory' && detail.agentId === agentId
+          ? detail.messages
+          : undefined);
+      await window.mahayana!.invoke('feature.execute', {
+        command: {
+          type: 'agent.peerHistory',
+          requestId: `obf-history-${agentId}-${Date.now()}`,
+          agentId,
+          limit: 100,
+        },
+      });
+      return await historyEvent as Array<{ text?: string }>;
+    };
+    const targetHistory = await loadHistory(targetId);
+    const isolatedHistory = await loadHistory(isolatedId);
+    return {
+      targetHasMarker: targetHistory.some((message) => message.text === text),
+      isolatedHasMarker: isolatedHistory.some((message) => message.text === text),
+    };
+  }, { fromAgentId, targetAgentId, isolatedAgentId, marker });
+  expect(result.targetHasMarker).toBeTruthy();
+  expect(result.isolatedHasMarker).toBeFalsy();
+}
+
+async function verifyTargetedBroadcast(page: Page, targetIds: string[]): Promise<void> {
+  const result = await page.evaluate(async ({ targetIds }) => {
+    if (!window.mahayana?.invoke) throw new Error('Mahayana bridge unavailable');
+    const event = new Promise<{ total: number; scheduled: number }>((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        window.removeEventListener('fabushi:mahayana-runtime-event', handler as EventListener);
+        reject(new Error('Timed out waiting for agent.broadcasted'));
+      }, 20_000);
+      const handler = (runtimeEvent: Event) => {
+        const detail = (runtimeEvent as CustomEvent).detail;
+        if (detail?.type !== 'agent.broadcasted') return;
+        window.clearTimeout(timer);
+        window.removeEventListener('fabushi:mahayana-runtime-event', handler as EventListener);
+        resolve(detail.result);
+      };
+      window.addEventListener('fabushi:mahayana-runtime-event', handler as EventListener);
+    });
+    await window.mahayana.invoke('feature.execute', {
+      command: {
+        type: 'agent.broadcast',
+        requestId: `obf-broadcast-${Date.now()}`,
+        targetIds,
+        message: `OBF signed-candidate broadcast ${Date.now()}`,
+      },
+    });
+    return await event;
+  }, { targetIds });
+  expect(result.total).toBe(targetIds.length);
+  expect(result.scheduled).toBe(result.total);
+}
+
 async function installLifecycleJournal(page: Page): Promise<void> {
   await page.evaluate(() => {
     const scope = window as typeof window & { __obfLifecycle?: LifecycleSample[] };
@@ -445,6 +554,12 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
 
     for (const [name, description] of coworkers) await createCoworker(page, name, description);
     for (const [name] of coworkers) await expect(peerByName(page, name)).toBeVisible();
+
+    const researchAgentId = await runtimeAgentId(page, 'Research');
+    const builderAgentId = await runtimeAgentId(page, 'Builder');
+    const launchAgentId = await runtimeAgentId(page, 'Launch');
+    await verifyDirectHandoffIsolation(page, researchAgentId, builderAgentId, launchAgentId);
+    await verifyTargetedBroadcast(page, [researchAgentId, launchAgentId]);
 
     chiefRosterShape = await botShape(peerByName(page, 'Chief'));
 
