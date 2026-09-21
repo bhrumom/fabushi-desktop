@@ -1087,6 +1087,24 @@ impl MahayanaRuntime {
 
     fn recover_interrupted_turns(&self) -> Result<(), RuntimeError> {
         for pending in self.store.recoverable_turns()? {
+            if pending.state == TurnState::WaitingUser {
+                self.store.set_run_state(
+                    &pending.last_run_id,
+                    TurnState::Failed,
+                    Some(now_millis()),
+                )?;
+                self.store
+                    .set_turn_state(&pending.turn_id, TurnState::Failed, None)?;
+                let _ = self.event_tx.send(RuntimeEvent::ProviderDegraded {
+                    provider: "turn-recovery".to_string(),
+                    message: format!(
+                        "logical turn {} was waiting for user input when the runtime restarted; explicit retry is required",
+                        pending.turn_id
+                    ),
+                });
+                continue;
+            }
+
             let provider = self.providers.for_conversation(&pending.conversation_id)?;
             let recovered_text = if let Some(text) = pending.text.clone() {
                 Some(text)
