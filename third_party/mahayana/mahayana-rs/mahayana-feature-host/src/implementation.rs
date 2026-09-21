@@ -117,6 +117,7 @@ use mahayana_host_protocol::TeachEntryPoint;
 use mahayana_host_protocol::TeachRecordingResult;
 use mahayana_host_protocol::TeachRecordingStatus;
 use mahayana_host_protocol::TranscriptCard;
+use mahayana_host_protocol::TurnLifecycleState;
 use mahayana_host_protocol::UpdateState;
 use mahayana_host_protocol::WorkflowSource;
 use mahayana_host_protocol::WorkflowSummary;
@@ -6340,6 +6341,34 @@ impl FeatureHostController {
     ) -> Result<Option<HostEvent>, FeatureHostError> {
         let event = match event {
             RuntimeEvent::Ready { .. } => None,
+            RuntimeEvent::TurnStateChanged {
+                operation_id,
+                turn_id,
+                run_id,
+                conversation_id,
+                state,
+                sequence,
+            } => Some(HostEvent::TurnStateChanged {
+                timestamp: timestamp(),
+                operation_id: operation_id.to_string(),
+                turn_id: turn_id.to_string(),
+                run_id: run_id.to_string(),
+                conversation_id: conversation_id.to_string(),
+                state: match state {
+                    mahayana_core::TurnState::Accepted => TurnLifecycleState::Accepted,
+                    mahayana_core::TurnState::Queued => TurnLifecycleState::Queued,
+                    mahayana_core::TurnState::Preparing => TurnLifecycleState::Preparing,
+                    mahayana_core::TurnState::Thinking => TurnLifecycleState::Thinking,
+                    mahayana_core::TurnState::ToolRunning => TurnLifecycleState::ToolRunning,
+                    mahayana_core::TurnState::Streaming => TurnLifecycleState::Streaming,
+                    mahayana_core::TurnState::WaitingUser => TurnLifecycleState::WaitingUser,
+                    mahayana_core::TurnState::Completed => TurnLifecycleState::Completed,
+                    mahayana_core::TurnState::Failed => TurnLifecycleState::Failed,
+                    mahayana_core::TurnState::Cancelled => TurnLifecycleState::Cancelled,
+                    mahayana_core::TurnState::Recovering => TurnLifecycleState::Recovering,
+                },
+                sequence,
+            }),
             RuntimeEvent::MessageDelta {
                 operation_id,
                 delta,
