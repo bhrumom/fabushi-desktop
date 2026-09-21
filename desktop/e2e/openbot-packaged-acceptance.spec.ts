@@ -191,9 +191,15 @@ async function agentIdByName(page: Page, name: string): Promise<string> {
   return agentId!;
 }
 
-async function executeFeatureCommand(page: Page, command: Record<string, unknown>): Promise<void> {
-  await page.evaluate(async (payload) => {
-    await window.mahayana.invoke('feature.execute', { command: payload });
+async function executeFeatureCommand(
+  page: Page,
+  command: Record<string, unknown>,
+): Promise<{ requestId?: string; operationId?: string }> {
+  return page.evaluate(async (payload) => {
+    return await window.mahayana.invoke('feature.execute', { command: payload }) as {
+      requestId?: string;
+      operationId?: string;
+    };
   }, command);
 }
 
@@ -546,7 +552,7 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
 
     const isolationA = `OBF-ISOLATION-RESEARCH-${Date.now()}`;
     const isolationB = `OBF-ISOLATION-BUILDER-${Date.now()}`;
-    await Promise.all([
+    const [researchAccepted, builderAccepted] = await Promise.all([
       executeFeatureCommand(page, {
         type: 'chat.send',
         requestId: `obf-isolation-research-${Date.now()}`,
@@ -560,12 +566,34 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
         text: `Reply with exactly ${isolationB}`,
       }),
     ]);
+    expect(researchAccepted.operationId).toBeTruthy();
+    expect(builderAccepted.operationId).toBeTruthy();
+    expect(researchAccepted.operationId).not.toBe(builderAccepted.operationId);
+
+    await expect.poll(async () => {
+      const events = await runtimeEvents(page);
+      return [researchAccepted.operationId, builderAccepted.operationId].every((operationId) =>
+        events.some((event) =>
+          event.type === 'turn.state'
+          && event.operationId === operationId
+          && event.state === 'completed'));
+    }, { timeout: 180_000 }).toBeTruthy();
+
+    const completedIsolationTurns = (await runtimeEvents(page)).filter((event) =>
+      event.type === 'turn.state'
+      && event.state === 'completed'
+      && [researchAccepted.operationId, builderAccepted.operationId].includes(String(event.operationId)));
+    const isolationConversations = new Map(
+      completedIsolationTurns.map((event) => [String(event.operationId), String(event.conversationId)]),
+    );
+    expect(isolationConversations.size).toBe(2);
+    expect(new Set(isolationConversations.values()).size).toBe(2);
 
     await peerByName(page, 'Research').click();
-    await expect(page.getByText(isolationA, { exact: false }).last()).toBeVisible({ timeout: 180_000 });
+    await expect(page.getByText(isolationA, { exact: false }).last()).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText(isolationB, { exact: false })).toHaveCount(0);
     await peerByName(page, 'Builder').click();
-    await expect(page.getByText(isolationB, { exact: false }).last()).toBeVisible({ timeout: 180_000 });
+    await expect(page.getByText(isolationB, { exact: false }).last()).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText(isolationA, { exact: false })).toHaveCount(0);
 
     chiefRosterShape = await avatarIdentity(peerByName(page, 'Chief'));
