@@ -443,7 +443,7 @@ requirePattern(
 );
 requirePattern(
   'Codex Computer pre-execution activity must propagate Runtime policy failure',
-  agentCodex,
+  codexAgentBackend,
   /fn emit_computer_activity[\s\S]{0,1200}Result<\(\), AgentError>[\s\S]{0,1200}events\.emit[\s\S]{0,1200}if let Err\(error\) = self\.emit_computer_activity/,
 );
 requirePattern(
