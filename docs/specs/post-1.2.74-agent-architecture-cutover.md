@@ -53,7 +53,7 @@ Verified on 2026-09-21 before implementation:
 - PR #7 is closed/unmerged at `4771410a79ae750ce5be6337cce09f0d42c629bf` and is not the active implementation branch;
 - PR #9 merged the first Agent-first Rust runtime architecture into main at `a6d6a56fdc836135e16c126a559ed51ce94e4de1`;
 - active continuation PR #14 is `refactor/post-1.2.74-architecture-cutover-20260921`;
-- source compliance was re-reviewed on PR #14 head `13291953867a16a043470a7a494f847cccd003b8`: deleted legacy shells remain absent; `DesktopApp` mounts `AgentRootShell`; Rust owns `ConversationActor`, LogicalTurn/ExecutionRun lifecycle, SQLite RuntimeStore, CapabilityBroker, ComputerControlLease, ordinary-turn recovery, and durable handoff recovery;
+- source compliance was re-reviewed through code head `8112ebdcd375a5571846a9a9f3755bb5d750f369`: deleted legacy shells remain absent; `DesktopApp` mounts `AgentRootShell`; Rust owns `ConversationActor`, LogicalTurn/ExecutionRun lifecycle, SQLite RuntimeStore, CapabilityBroker, ComputerControlLease, ordinary-turn recovery, and durable handoff recovery; the duplicate `isAgentIdentity` declaration was repaired; Agent/Section create/rename/delete confirmation moved from browser-native prompt/confirm into the `AgentSidebar` FabDialog boundary; Electron removed the renderer-visible `feature.receive` RPC/Host compatibility path and the architecture checker now forbids both regressions;
 - desktop version remains `1.2.74`;
 - `projects/grok-fabu-parity/PARITY.md` is the detailed parity inventory but explicitly is not, by itself, a completion claim.
 
@@ -173,10 +173,10 @@ Retain:
 | R5 | source-review PASS | Runtime/FeatureHost privileged entries use `CapabilityBroker`; provider escalation approvals are brokered/audited; dynamic Computer actions are brokered before lease execution; MCP management and Agent handoff are brokered in Runtime. |
 | R6 | source-review PASS | Computer actions use `ComputerControlLease`; human take/release lifecycle and `waiting-user` projection are explicit. |
 | R7 | source-review PASS | AgentSend/Broadcast/Group use durable handoff intents with depth/fan-out limits; `ask_user` is first-class; handoff dispatch is journaled and restart-recovered. |
-| R8 | source-review PASS | Renderer permanent account/sidebar/remote polling and Host receive polling are removed; Electron background throttling is enabled and Host events are pushed. |
+| R8 | source-review PASS | Renderer permanent account/sidebar/remote polling and Host receive polling are removed; the Electron edge no longer exposes `feature.receive`; `backgroundThrottling: true` is explicit and Host events are pushed. |
 | R9 | source-review PASS | Desktop uses low-power `FabAvatar`; old BotMark/avatar runtime, per-avatar rAF and DOM MutationObserver inference are guarded against. |
-| R10 | source-review PASS | Shared Fabushi primitives/tokens are required across primary Agent UI and guarded against raw feature-local controls. |
-| R11 | implemented; CI pending | Architecture checker now guards root ownership, typed identity, durable state/recovery, broker/lease paths, collaboration, power, avatar and design-system boundaries. |
+| R10 | source-review PASS | Shared Fabushi primitives/tokens are required across primary Agent UI and guarded against raw feature-local controls; Agent/Section naming and destructive confirmation now use `FabDialog` rather than browser-native prompt/confirm. |
+| R11 | source-review PASS; CI pending | Architecture checker guards root ownership, typed identity, durable state/recovery, broker/lease paths, collaboration, power, avatar/design-system boundaries, browser-native Agent dialogs, and any re-exposed desktop `feature.receive` RPC. |
 | R12 | PASS | Product-affecting implementation was completed and source-reviewed before starting the final acceptance cycle. |
 | R13 | pending | Requires a fresh GitHub Actions cycle that asserts the exact immutable PR head SHA. |
 | R14 | pending | PR #14 must remain unmerged until all R13 gates are green on the same head. |
