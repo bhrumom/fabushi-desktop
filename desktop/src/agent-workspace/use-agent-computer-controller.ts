@@ -75,7 +75,7 @@ function acceptBackgroundState(
  *
  * The renderer may decide when the Computer surface is visible, but it must not
  * own registration, pairing, capability refresh, remote-session authorization
- * or RemoteComputerDesktopController lifetime. Every Agent resolves through the
+ * or any renderer-owned remote-session controller lifetime. Every Agent resolves through the
  * same installed Fabushi machine while retaining its own agentId surface scope.
  */
 export function useAgentComputerController(
