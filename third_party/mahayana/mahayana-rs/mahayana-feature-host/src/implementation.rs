@@ -2439,8 +2439,9 @@ impl FeatureHostController {
                     HostMode::Production => {
                         #[cfg(feature = "production")]
                         {
+                            let runtime_key = self.runtime_workspace_state_key(&key)?;
                             match self.runtime()?.execute(RuntimeCommand::UiStateGet {
-                                key: key.clone(),
+                                key: runtime_key,
                             })? {
                                 RuntimeResponse::RuntimeUiState { value, .. } => value,
                                 other => {
@@ -2465,8 +2466,9 @@ impl FeatureHostController {
                     HostMode::Production => {
                         #[cfg(feature = "production")]
                         {
+                            let runtime_key = self.runtime_workspace_state_key(&key)?;
                             match self.runtime()?.execute(RuntimeCommand::UiStateSet {
-                                key: key.clone(),
+                                key: runtime_key,
                                 value: value.clone(),
                             })? {
                                 RuntimeResponse::RuntimeUiState { .. } => {}
@@ -6072,6 +6074,36 @@ impl FeatureHostController {
             return Ok(());
         };
         persist_peer_messages(&path, messages)
+    }
+
+    fn runtime_workspace_state_key(&self, key: &str) -> Result<String, FeatureHostError> {
+        let key = required(key.to_string(), "workspace state key")?;
+        if self.config.mode == HostMode::Test {
+            return Ok(key);
+        }
+        #[cfg(feature = "production")]
+        {
+            let account_id = self
+                .active_account_id
+                .lock()
+                .map_err(|_| FeatureHostError::StatePoisoned)?
+                .clone()
+                .ok_or_else(|| {
+                    FeatureHostError::Contract(
+                        "workspace state requires an authenticated account boundary".into(),
+                    )
+                })?;
+            let digest = Sha256::digest(account_id.as_bytes());
+            let fingerprint = digest[..16]
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>();
+            Ok(format!("account:{fingerprint}:{key}"))
+        }
+        #[cfg(not(feature = "production"))]
+        {
+            Ok(key)
+        }
     }
 
     fn active_account_root(&self, base: Option<&Path>) -> Option<PathBuf> {
