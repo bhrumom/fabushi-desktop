@@ -30,6 +30,15 @@ pub(crate) struct StoredTurnSnapshot {
 }
 
 #[derive(Debug, Clone)]
+pub(crate) struct RecoverableTurn {
+    pub conversation_id: ConversationId,
+    pub turn_id: TurnId,
+    pub message_id: MessageId,
+    pub last_run_id: RunId,
+    pub generation: u32,
+}
+
+#[derive(Debug, Clone)]
 pub(crate) struct RecoverableHandoff {
     pub origin_turn_id: TurnId,
     pub intent: HandoffIntent,
@@ -397,6 +406,76 @@ impl RuntimeStore {
                 })
             })
             .transpose()
+        }
+    }
+
+    pub fn recoverable_turns(&self) -> Result<Vec<RecoverableTurn>, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            Ok(Vec::new())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(Vec::new()); };
+            let connection = connection.lock().map_err(|_| RuntimeStoreError::Poisoned)?;
+            let mut statement = connection
+                .prepare(
+                    "SELECT
+                        t.conversation_id,
+                        t.turn_id,
+                        t.user_message_id,
+                        r.run_id,
+                        r.generation
+                     FROM turns t
+                     JOIN runs r ON r.turn_id = t.turn_id
+                     WHERE t.state IN (
+                         'accepted',
+                         'queued',
+                         'preparing',
+                         'thinking',
+                         'tool-running',
+                         'streaming',
+                         'recovering'
+                     )
+                       AND t.user_message_id IS NOT NULL
+                       AND r.generation = (
+                           SELECT MAX(latest.generation)
+                           FROM runs latest
+                           WHERE latest.turn_id = t.turn_id
+                       )
+                       AND NOT EXISTS (
+                           SELECT 1
+                           FROM pending_intents p
+                           WHERE p.kind = 'agent-handoff'
+                             AND p.intent_id = t.user_message_id
+                       )
+                     ORDER BY t.created_at_ms ASC",
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            let rows = statement
+                .query_map([], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, i64>(4)?,
+                    ))
+                })
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            let mut recovered = Vec::new();
+            for row in rows {
+                let (conversation_id, turn_id, message_id, run_id, generation) =
+                    row.map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+                recovered.push(RecoverableTurn {
+                    conversation_id: ConversationId(conversation_id),
+                    turn_id: TurnId(turn_id),
+                    message_id: MessageId(message_id),
+                    last_run_id: RunId(run_id),
+                    generation: generation.max(0).min(i64::from(u32::MAX)) as u32,
+                });
+            }
+            Ok(recovered)
         }
     }
 
@@ -900,6 +979,50 @@ mod tests {
                 .is_none(),
             "an active logical turn must not be forked into a retry generation",
         );
+
+        drop(store);
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[test]
+    fn recoverable_turns_include_active_user_work_but_exclude_waiting_user() {
+        let (path, store) = temp_store();
+        let conversation_id = ConversationId("codex:agent:restart".to_string());
+
+        for (suffix, state) in [
+            ("thinking", TurnState::Thinking),
+            ("waiting", TurnState::WaitingUser),
+        ] {
+            let turn_id = TurnId(format!("turn:{suffix}"));
+            let run_id = RunId(format!("run:{suffix}"));
+            let message_id = MessageId(format!("message:{suffix}"));
+            store
+                .record_turn(&LogicalTurn {
+                    id: turn_id.clone(),
+                    conversation_id: conversation_id.clone(),
+                    user_message_id: Some(message_id),
+                    created_at_ms: if suffix == "thinking" { 10 } else { 20 },
+                    state,
+                    active_run_id: Some(run_id.clone()),
+                })
+                .expect("record turn");
+            store
+                .record_run(&ExecutionRun {
+                    id: run_id,
+                    turn_id,
+                    generation: 1,
+                    provider: "codex".to_string(),
+                    started_at_ms: 10,
+                    finished_at_ms: None,
+                    state,
+                })
+                .expect("record run");
+        }
+
+        let recoverable = store.recoverable_turns().expect("recover active turns");
+        assert_eq!(recoverable.len(), 1);
+        assert_eq!(recoverable[0].message_id.as_str(), "message:thinking");
+        assert_eq!(recoverable[0].generation, 1);
 
         drop(store);
         let _ = std::fs::remove_dir_all(path);
