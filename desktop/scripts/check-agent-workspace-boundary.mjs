@@ -59,6 +59,7 @@ const fabAvatar = read(desktopRoot, 'src', 'ui', 'avatar', 'fab-avatar.tsx');
 const primitives = read(desktopRoot, 'src', 'ui', 'primitives', 'fab-primitives.tsx');
 const tokens = read(desktopRoot, 'src', 'ui', 'tokens.css');
 const electronMain = read(desktopRoot, 'electron', 'main.cjs');
+const electronTransport = read(repoRoot, 'frontend', 'apps', 'web', 'src', 'lib', 'mahayana-host', 'electron-transport.ts');
 const remoteSupervisor = read(desktopRoot, 'electron', 'remote-device-agent-supervisor.cjs');
 
 const runtimeRoot = path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-runtime', 'src');
@@ -194,6 +195,16 @@ if (/backgroundThrottling:\s*false/.test(electronMain)
   violations.push('desktop power architecture regressed to unthrottled renderer or Host polling');
 }
 requirePattern('Electron Main no longer receives pushed Host runtime events', electronMain, /host\.onRuntimeEvent\s*\(/);
+forbidPattern(
+  'Electron renderer transport reintroduced feature.receive polling fallback',
+  electronTransport,
+  /feature\.receive|startEventPump|pumpEvents/,
+);
+requirePattern(
+  'Electron renderer transport must require pushed runtime events',
+  electronTransport,
+  /typeof window\.mahayana\.subscribe === ['"]function['"]/,
+);
 forbidPattern('Renderer Computer controller reintroduced WebRTC/polling ownership', computerController, /RemoteComputerDesktopController|RTCPeerConnection|SIGNAL_POLL_MS|SESSION_POLL_MS|HEARTBEAT_MS/);
 requirePattern('Remote-device Main supervisor lost adaptive refresh scheduling', remoteSupervisor, /sessionRefreshDelay\s*\(/);
 
