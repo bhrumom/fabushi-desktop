@@ -1088,6 +1088,19 @@ pub enum FeatureCommand {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         query: Option<String>,
     },
+    #[serde(rename = "agent.workspaceState.get")]
+    AgentWorkspaceStateGet {
+        #[serde(rename = "requestId")]
+        request_id: String,
+        key: String,
+    },
+    #[serde(rename = "agent.workspaceState.set")]
+    AgentWorkspaceStateSet {
+        #[serde(rename = "requestId")]
+        request_id: String,
+        key: String,
+        value: Value,
+    },
     #[serde(rename = "automation.list")]
     AutomationList {
         #[serde(rename = "requestId")]
@@ -1926,6 +1939,8 @@ impl FeatureCommand {
             | Self::ConversationList { request_id, .. }
             | Self::ConversationOpen { request_id, .. }
             | Self::CapabilityList { request_id, .. }
+            | Self::AgentWorkspaceStateGet { request_id, .. }
+            | Self::AgentWorkspaceStateSet { request_id, .. }
             | Self::AutomationList { request_id, .. }
             | Self::AutomationUpsert { request_id, .. }
             | Self::AutomationSetEnabled { request_id, .. }
@@ -2303,6 +2318,13 @@ pub enum HostEvent {
         #[serde(rename = "operationId")]
         operation_id: String,
         delta: String,
+    },
+    #[serde(rename = "agent.workspaceState")]
+    AgentWorkspaceState {
+        timestamp: String,
+        key: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        value: Option<Value>,
     },
     #[serde(rename = "agent.peerMessage")]
     AgentPeerMessageChanged {
@@ -2764,6 +2786,7 @@ impl HostEvent {
             Self::GroupListed { .. } => "group.listed",
             Self::GroupChanged { .. } => "group.changed",
             Self::GroupDelta { .. } => "group.delta",
+            Self::AgentWorkspaceState { .. } => "agent.workspaceState",
             Self::AgentPeerMessageChanged { .. } => "agent.peerMessage",
             Self::AgentPeerHistoryListed { .. } => "agent.peerHistory",
             Self::AgentBroadcasted { .. } => "agent.broadcasted",
@@ -2932,6 +2955,18 @@ mod tests {
         let value = serde_json::to_value(event).expect("encode event");
         assert_eq!(value["type"], "operation.started");
         assert_eq!(value["operationId"], "operation-1");
+    }
+
+    #[test]
+    fn agent_workspace_state_command_wire_contract() {
+        let command = FeatureCommand::AgentWorkspaceStateSet {
+            request_id: "state-1".into(),
+            key: "agent-workspace:drafts:v2".into(),
+            value: serde_json::json!({"peer": {"text": "hello"}}),
+        };
+        let value = serde_json::to_value(command).expect("serialize workspace state command");
+        assert_eq!(value["type"], "agent.workspaceState.set");
+        assert_eq!(value["requestId"], "state-1");
     }
 
     #[test]
