@@ -678,6 +678,17 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
         .toBe('operation:restart:recovered');
       expect(transcripts.entries('agent:restart').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
       expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(9).toISOString(),
+        operationId: 'operation:restart:recovered',
+        turnId: 'turn:restart',
+        runId: 'run:restart:2',
+        conversationId: 'codex:agent:restart',
+        state: 'completed',
+        sequence: 3,
+      })).toBe(true);
+      expect(controller.isBusy('agent:restart')).toBe(false);
 
       expect(coordinator.handleCommandBridge({
         phase: 'dispatch',
