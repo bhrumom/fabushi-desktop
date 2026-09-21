@@ -230,6 +230,34 @@ export class AgentTranscriptStore {
     }));
   }
 
+  prepareOperationRecovery(peerKey: string, operationId: string): string | undefined {
+    const message = [...this.thread(peerKey)].reverse().find((candidate) =>
+      candidate.role === 'me'
+      && candidate.kind === 'message'
+      && candidate.operationId === operationId,
+    );
+    if (!message) return undefined;
+    this.prepareRetry(peerKey, message.id, operationId);
+    return message.id;
+  }
+
+  adoptRecoveredOperation(
+    peerKey: string,
+    messageId: string,
+    operationId: string,
+  ): AgentTranscriptSourceMessage[] {
+    return this.update(peerKey, (current) => current.map((message) =>
+      message.id === messageId && message.role === 'me' && message.kind === 'message'
+        ? {
+            ...message,
+            operationId,
+            optimistic: false,
+            queued: false,
+          }
+        : message,
+    ));
+  }
+
   removeQueuedUserMessage(peerKey: string, messageId: string): AgentTranscriptSourceMessage[] {
     return this.update(peerKey, (current) => current.filter((message) =>
       message.id !== messageId || message.role !== 'me' || message.queued !== true,
