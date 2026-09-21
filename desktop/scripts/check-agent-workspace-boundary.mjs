@@ -55,6 +55,10 @@ const agentTranscript = read(desktopRoot, 'src', 'agent-workspace', 'agent-trans
 const agentHeader = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-header.tsx');
 const agentSidebar = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-sidebar.tsx');
 const agentOverlays = read(desktopRoot, 'src', 'agent-workspace', 'agent-overlays.tsx');
+const agentComposer = read(desktopRoot, 'src', 'agent-workspace', 'agent-composer.tsx');
+const agentSearch = read(desktopRoot, 'src', 'agent-workspace', 'agent-search.tsx');
+const agentNetwork = read(desktopRoot, 'src', 'agent-workspace', 'agent-network.tsx');
+const agentSettingsPanel = read(desktopRoot, 'src', 'agent-workspace', 'agent-settings-panel.tsx');
 const fabAvatar = read(desktopRoot, 'src', 'ui', 'avatar', 'fab-avatar.tsx');
 const primitives = read(desktopRoot, 'src', 'ui', 'primitives', 'fab-primitives.tsx');
 const tokens = read(desktopRoot, 'src', 'ui', 'tokens.css');
@@ -224,6 +228,41 @@ for (const token of ['--fab-bg-primary', '--fab-bg-raised', '--fab-border-subtle
   if (!tokens.includes(token)) violations.push(`Fabushi design token missing: ${token}`);
 }
 requirePattern('Agent root layout no longer exposes the three-column Agent grid', rootCss, /grid-template-columns:[\s\S]*minmax\(420px,\s*1fr\)/);
+
+const primaryAgentUi = [
+  ['Agent sidebar', agentSidebar],
+  ['Agent header', agentHeader],
+  ['Agent transcript', agentTranscript],
+  ['Agent composer', agentComposer],
+  ['Agent search', agentSearch],
+  ['Agent overlays', agentOverlays],
+  ['Agent network', agentNetwork],
+  ['Agent settings panel', agentSettingsPanel],
+];
+for (const [name, source] of primaryAgentUi) {
+  forbidPattern(`${name} bypasses FabButton with a raw button element`, source, /<button\b/);
+  forbidPattern(`${name} bypasses FabInput with a raw input element`, source, /<input\b/);
+  forbidPattern(`${name} bypasses FabSelect with a raw select element`, source, /<select\b/);
+}
+for (const [name, source] of [
+  ['Agent sidebar', agentSidebar],
+  ['Agent header', agentHeader],
+  ['Agent transcript', agentTranscript],
+  ['Agent composer', agentComposer],
+  ['Agent search', agentSearch],
+  ['Agent overlays', agentOverlays],
+  ['Agent network', agentNetwork],
+  ['Agent settings panel', agentSettingsPanel],
+]) requirePattern(`${name} no longer consumes FabButton`, source, /\bFabButton\b/);
+for (const [name, source] of [
+  ['Agent sidebar', agentSidebar],
+  ['Agent composer', agentComposer],
+  ['Agent search', agentSearch],
+  ['Agent network', agentNetwork],
+  ['Agent settings panel', agentSettingsPanel],
+]) requirePattern(`${name} no longer consumes FabInput`, source, /\bFabInput\b/);
+requirePattern('Agent sidebar no longer consumes FabSelect', agentSidebar, /\bFabSelect\b/);
+requirePattern('Agent settings panel no longer consumes FabSelect', agentSettingsPanel, /\bFabSelect\b/);
 
 if (/backgroundThrottling:\s*false/.test(electronMain)
   || /HOST_EVENT_LONG_POLL_MS/.test(electronMain)
