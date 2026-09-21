@@ -1,5 +1,6 @@
 use mahayana_core::capability::{CapabilityAuditRecord, ComputerControlLease};
 use mahayana_core::{AskUserRequest, ExecutionRun, HandoffIntent, LogicalTurn, RunId, TurnId, TurnState};
+use serde_json::Value;
 use std::path::Path;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -430,6 +431,67 @@ impl RuntimeStore {
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))
         }
     }
+    /// Read renderer projection state that is owned durably by the Rust runtime.
+    /// UI code may keep an in-memory mirror, but SQLite remains authoritative.
+    pub fn read_ui_state(&self, key: &str) -> Result<Option<Value>, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = key;
+            Ok(None)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(None); };
+            let encoded: Option<String> = connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .query_row(
+                    "SELECT value_json FROM ui_state WHERE key = ?1",
+                    params![key],
+                    |row| row.get(0),
+                )
+                .optional()
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            encoded
+                .map(|value| {
+                    serde_json::from_str(&value)
+                        .map_err(|error| RuntimeStoreError::Serialization(error.to_string()))
+                })
+                .transpose()
+        }
+    }
+
+    pub fn write_ui_state(
+        &self,
+        key: &str,
+        value: &Value,
+        updated_at_ms: i64,
+    ) -> Result<(), RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (key, value, updated_at_ms);
+            Ok(())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(()); };
+            let encoded = serde_json::to_string(value)
+                .map_err(|error| RuntimeStoreError::Serialization(error.to_string()))?;
+            connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .execute(
+                    "INSERT INTO ui_state(key, value_json, updated_at_ms) VALUES (?1, ?2, ?3)
+                     ON CONFLICT(key) DO UPDATE SET
+                       value_json = excluded.value_json,
+                       updated_at_ms = excluded.updated_at_ms",
+                    params![key, encoded, updated_at_ms],
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            Ok(())
+        }
+    }
+
 }
 
 #[derive(Debug, thiserror::Error)]
