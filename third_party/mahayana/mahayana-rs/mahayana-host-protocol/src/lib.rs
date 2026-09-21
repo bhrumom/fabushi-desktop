@@ -2135,6 +2135,22 @@ pub enum AgentStepStatus {
     Failed,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TurnLifecycleState {
+    Accepted,
+    Queued,
+    Preparing,
+    Thinking,
+    ToolRunning,
+    Streaming,
+    WaitingUser,
+    Completed,
+    Failed,
+    Cancelled,
+    Recovering,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum HostEvent {
@@ -2675,6 +2691,20 @@ pub enum HostEvent {
         agent_id: Option<String>,
         decision: ApprovalDecision,
     },
+    #[serde(rename = "turn.state")]
+    TurnStateChanged {
+        timestamp: String,
+        #[serde(rename = "operationId")]
+        operation_id: String,
+        #[serde(rename = "turnId")]
+        turn_id: String,
+        #[serde(rename = "runId")]
+        run_id: String,
+        #[serde(rename = "conversationId")]
+        conversation_id: String,
+        state: TurnLifecycleState,
+        sequence: u64,
+    },
     #[serde(rename = "operation.started")]
     OperationStarted {
         timestamp: String,
@@ -2779,6 +2809,7 @@ impl HostEvent {
             Self::MiniAppOpened { .. } => "miniapp.opened",
             Self::ApprovalRequested { .. } => "approval.requested",
             Self::ApprovalResolved { .. } => "approval.resolved",
+            Self::TurnStateChanged { .. } => "turn.state",
             Self::OperationStarted { .. } => "operation.started",
             Self::OperationInterrupted { .. } => "operation.interrupted",
             Self::OperationCompleted { .. } => "operation.completed",
