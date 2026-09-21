@@ -46,6 +46,7 @@ const codexAgent = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana'
 const featureHost = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-feature-host', 'src', 'implementation.rs'), 'utf8');
 const durableAgentState = fs.readFileSync(path.join(desktopRoot, 'src', 'durable-agent-state.ts'), 'utf8');
 const agentDraftStore = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'agent-draft-store.ts'), 'utf8');
+const agentWorkspaceRuntime = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-workspace-runtime.ts'), 'utf8');
 const removedMigrationRuntimePaths = [
   'grok-chat-parity-runtime.tsx',
   'mahayana-agent-workbench.tsx',
@@ -123,12 +124,17 @@ if (!/if \(isElectronMahayanaHostAvailable\(\)\)/.test(hostClient)
   || !/remoteDeviceAgentSupervisor\?\.sync\(\)/.test(electronMain)) {
   violations.push('Electron remote computer ownership regressed to Renderer or fixed session polling');
 }
-if (!/AGENT_WORKSPACE_DRAFT_STORAGE_KEY/.test(agentDraftStore)
-  || !/AGENT_WORKSPACE_DRAFT_STORAGE_KEY/.test(durableAgentState)
-  || /AGENT_WORKBENCH_STORAGE_KEY/.test(durableAgentState)
-  || !/readNativeValue\(key\)/.test(durableAgentState)
-  || !/window\.localStorage\.setItem\(key, JSON\.stringify\(nativeValue\)\)/.test(durableAgentState)) {
-  violations.push('Agent drafts are not restored through native durable persistence before renderer cache use');
+if (!/readLegacyAgentWorkspaceDrafts/.test(agentDraftStore)
+  || !/clearLegacyAgentWorkspaceDrafts/.test(agentDraftStore)
+  || /localStorage\.setItem/.test(agentDraftStore)
+  || /AGENT_WORKSPACE_DRAFT_STORAGE_KEY/.test(durableAgentState)
+  || !/AGENT_WORKSPACE_DURABLE_DRAFT_KEY/.test(agentWorkspaceRuntime)
+  || !/readWorkspaceState\s*\(/.test(agentWorkspaceRuntime)
+  || !/writeWorkspaceState\s*\(/.test(agentWorkspaceRuntime)
+  || !/normalizePersistedAgentDrafts/.test(agentWorkspaceRuntime)
+  || !/read_ui_state\s*\(/.test(runtimeStore)
+  || !/write_ui_state\s*\(/.test(runtimeStore)) {
+  violations.push('Agent drafts are not Rust RuntimeStore-owned with migration-only localStorage fallback');
 }
 if (!/import\s+AgentRootShell\s+from\s+['"]\.\.\/agent-workspace\/agent-root-shell['"]/.test(desktopApp)
   || !/import\s+LegacyMessagingAdapter\s+from\s+['"]\.\.\/adapters\/legacy-messaging\/legacy-messaging-shell['"]/.test(desktopApp)
@@ -140,6 +146,16 @@ if (!/import\s+AgentRootShell\s+from\s+['"]\.\.\/agent-workspace\/agent-root-she
   || !/<RootShell\b/.test(shell)
   || /<div\s+hidden\b|hidden\s+aria-hidden=['"]true['"]/.test(shell)) {
   violations.push('DesktopApp/AgentRootShell is not the sole visible product root or hidden legacy navigation returned');
+}
+
+if (!/pub fn authorize_request\s*\(/.test(capabilityBroker)
+  || !/RuntimeCommand::AuthorizeCapability/.test(runtimeLib)
+  || !/fn authorize_feature_command\s*\(/.test(featureHost)
+  || !/computer\.input\.control/.test(featureHost)
+  || !/mcp\.tool\.call/.test(featureHost)
+  || !/filesystem\.agent\.(?:read|write)/.test(featureHost)
+  || !/agent\.handoff/.test(featureHost)) {
+  violations.push('privileged FeatureHost operations bypass the Rust CapabilityBroker');
 }
 
 if (!/pub struct ComputerControlLeaseRequest/.test(computerExecutor)
