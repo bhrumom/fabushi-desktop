@@ -221,6 +221,7 @@ const NATIVE_EDGE = defineEdge('native-desktop', methods, [
   'widget-gallery',
   'force-onboarding',
   'account-auth-changed',
+  'account-state-changed',
   'experiments-changed',
   'window-state',
   'zoom-factor-changed',
