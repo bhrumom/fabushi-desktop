@@ -172,6 +172,7 @@ export default function AgentRootShell({
     runtime.coordinator.bindAgentPeers(peers.map((peer) => ({
       agentId: peer.agentId || peer.id,
       peerKey: peer.key,
+      ...(peer.conversationId ? { conversationId: peer.conversationId } : {}),
     })));
   }, [peers, runtime.coordinator]);
 
