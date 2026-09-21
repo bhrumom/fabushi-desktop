@@ -31,6 +31,7 @@ const NATIVE_EVENTS = new Set([
   'offline-asr-progress',
   'open-offline-asr',
   'remote-desktop-user-presence',
+  'remote-computer-background-state',
   'rustdesk-sidecar-event',
   'rustdesk-sidecar-exit',
   'dev-compute-pull-progress',
