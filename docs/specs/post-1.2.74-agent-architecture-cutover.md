@@ -4,7 +4,7 @@ Status: active
 Owner: Fabushi desktop architecture  
 Last updated: 2026-09-21  
 Related project: `projects/grok-fabu-parity`  
-Related task / PR: PR #14, latest user task `[Fabushi:a2b8eaac-aea0-475c-9d22-9caac119af04]`
+Related task / PR: PR #14; active tasks `[Fabushi:a2b8eaac-aea0-475c-9d22-9caac119af04]` and `[Fabushi:7ce9e325-b10e-4cba-9290-c5577b154d92]`
 
 ## 1. Context / problem
 
@@ -53,7 +53,7 @@ Verified on 2026-09-21 before implementation:
 - PR #7 is closed/unmerged at `4771410a79ae750ce5be6337cce09f0d42c629bf` and is not the active implementation branch;
 - PR #9 merged the first Agent-first Rust runtime architecture into main at `a6d6a56fdc836135e16c126a559ed51ce94e4de1`;
 - active continuation PR #14 is `refactor/post-1.2.74-architecture-cutover-20260921`;
-- at inspected PR #14 head `6eade8baa11f8571ead7957583c4d38318183251`, `legacy-messaging-shell.tsx` is absent, `DesktopApp` mounts `AgentRootShell`, and Rust contains `ConversationActor` and `CapabilityBroker`;
+- source compliance was re-reviewed on PR #14 head `13291953867a16a043470a7a494f847cccd003b8`: deleted legacy shells remain absent; `DesktopApp` mounts `AgentRootShell`; Rust owns `ConversationActor`, LogicalTurn/ExecutionRun lifecycle, SQLite RuntimeStore, CapabilityBroker, ComputerControlLease, ordinary-turn recovery, and durable handoff recovery;
 - desktop version remains `1.2.74`;
 - `projects/grok-fabu-parity/PARITY.md` is the detailed parity inventory but explicitly is not, by itself, a completion claim.
 
@@ -156,7 +156,7 @@ Retain:
 
 ## 16. References / provenance
 
-- Latest explicit user requirement in task `[Fabushi:a2b8eaac-aea0-475c-9d22-9caac119af04]`.
+- Explicit user requirements in tasks `[Fabushi:a2b8eaac-aea0-475c-9d22-9caac119af04]` and `[Fabushi:7ce9e325-b10e-4cba-9290-c5577b154d92]`.
 - `AGENTS.md` and `docs/specs/spec-first-ai-development.md` on canonical main.
 - `projects/grok-fabu-parity/PARITY.md`.
 - PR #9 architecture merge; PR #14 active continuation.
@@ -166,5 +166,22 @@ Retain:
 
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| R1-R15 | pending | Complete after final implementation/verification. |
-| AC-1-AC-12 | pending | Complete after final implementation/verification. |
+| R1 | source-review PASS | `DesktopApp -> AgentRootShell`; both legacy messaging shells are absent; compatibility features remain adapters. |
+| R2 | source-review PASS | Conversation identity switches on explicit typed `peer.kind`; Agent root does not infer Telegram/contact identity from string prefixes. |
+| R3 | source-review PASS | Rust owns per-conversation `ConversationActor`, LogicalTurn/ExecutionRun generations, canonical TurnState, explicit retry/recovering semantics, persisted request input, and interrupted-turn startup recovery. |
+| R4 | source-review PASS | RuntimeStore/SQLite WAL owns turns, runs, workspace state, pending intents, capability audit, computer leases, turn requests and handoff dispatch; renderer storage is migration/cosmetic only. |
+| R5 | source-review PASS | Runtime/FeatureHost privileged entries use `CapabilityBroker`; provider escalation approvals are brokered/audited; dynamic Computer actions are brokered before lease execution; MCP management and Agent handoff are brokered in Runtime. |
+| R6 | source-review PASS | Computer actions use `ComputerControlLease`; human take/release lifecycle and `waiting-user` projection are explicit. |
+| R7 | source-review PASS | AgentSend/Broadcast/Group use durable handoff intents with depth/fan-out limits; `ask_user` is first-class; handoff dispatch is journaled and restart-recovered. |
+| R8 | source-review PASS | Renderer permanent account/sidebar/remote polling and Host receive polling are removed; Electron background throttling is enabled and Host events are pushed. |
+| R9 | source-review PASS | Desktop uses low-power `FabAvatar`; old BotMark/avatar runtime, per-avatar rAF and DOM MutationObserver inference are guarded against. |
+| R10 | source-review PASS | Shared Fabushi primitives/tokens are required across primary Agent UI and guarded against raw feature-local controls. |
+| R11 | implemented; CI pending | Architecture checker now guards root ownership, typed identity, durable state/recovery, broker/lease paths, collaboration, power, avatar and design-system boundaries. |
+| R12 | PASS | Product-affecting implementation was completed and source-reviewed before starting the final acceptance cycle. |
+| R13 | pending | Requires a fresh GitHub Actions cycle that asserts the exact immutable PR head SHA. |
+| R14 | pending | PR #14 must remain unmerged until all R13 gates are green on the same head. |
+| R15 | pending | After merge, bump above 1.2.74 and publish only after exact-source signed/notarized macOS release verification. |
+| AC-1–AC-7 | source-review PASS; CI confirmation pending | Static/source evidence satisfies the architecture definition; final checker/build/runtime execution remains to be proven by Actions. |
+| AC-8 | pending | All required exact-head PR Actions must pass on one immutable head. |
+| AC-9 | in progress | Source compliance is recorded here; CI/merge/release outcomes will be appended after execution. |
+| AC-10–AC-12 | pending | Depend on successful exact-head Actions, protected merge, monotonic version bump and signed/notarized release. |

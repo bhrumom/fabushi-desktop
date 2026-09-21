@@ -375,7 +375,7 @@ requireOrdered(
 for (const [command, nextCommand] of [
   ['McpOauthLogin', 'McpOauthLogout'],
   ['McpOauthLogout', 'McpRemove'],
-  ['McpRemove', 'McpCustomInstructions'],
+  ['McpRemove', 'McpSetCustomInstructions'],
   ['McpSetCustomInstructions', 'McpSetToolDisabled'],
   ['McpSetToolDisabled', 'McpRefresh'],
   ['McpRefresh', 'McpToolCall'],
@@ -480,6 +480,26 @@ requirePattern(
   'Recovery must reuse the same logical turn through retryOfClientMessageId',
   runtimeLib,
   /fn recover_pending_handoffs[\s\S]{0,5200}retry_message_id[\s\S]{0,1200}start_message/,
+);
+requireOrdered(
+  'Runtime startup must recover interrupted user turns before durable handoffs',
+  runtimeLib.slice(runtimeLib.indexOf('RuntimeEvent::Ready'), runtimeLib.indexOf('pub fn status')),
+  ['RuntimeEvent::Ready', 'recover_interrupted_turns()?', 'recover_pending_handoffs()?'],
+);
+requirePattern(
+  'Interrupted user-turn recovery must reuse durable request input and retry the same logical turn',
+  runtimeLib,
+  /fn recover_interrupted_turns[\s\S]{0,5200}pending\.text[\s\S]{0,2200}TurnState::Recovering[\s\S]{0,1400}Some\(pending\.message_id\.to_string\(\)\)[\s\S]{0,1000}start_message/,
+);
+requirePattern(
+  'Runtime must persist turn execution input before provider execution',
+  runtimeLib,
+  /record_turn\(&turn\)[\s\S]{0,500}record_turn_request\([\s\S]{0,700}record_run\(&run\)/,
+);
+requirePattern(
+  'Recoverable user turns must exclude waiting-user and Agent handoff intents',
+  runtimeStore,
+  /pub fn recoverable_turns[\s\S]{0,3200}WHERE t\.state IN[\s\S]{0,900}recovering[\s\S]{0,1700}p\.kind = 'agent-handoff'/,
 );
 requirePattern(
   'FeatureHost Agent sends must use Runtime handoff rather than hidden SendMessage',
