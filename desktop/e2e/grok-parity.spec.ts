@@ -626,6 +626,11 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
       expect(controller.isBusy('agent:b')).toBe(false);
 
+      coordinator.bindAgentPeers([{
+        agentId: 'agent:restart-runtime',
+        peerKey: 'agent:restart',
+        conversationId: 'codex:agent:restart',
+      }]);
       coordinator.beginLocalTurn({
         peerKey: 'agent:restart',
         requestId: 'request:restart',
@@ -634,6 +639,16 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
         createdAtMs: 6,
       });
       coordinator.adoptOperation('request:restart', 'operation:restart', 'agent:restart');
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(6).toISOString(),
+        operationId: 'operation:restart',
+        turnId: 'turn:restart',
+        runId: 'run:restart:1',
+        conversationId: 'codex:agent:restart',
+        state: 'thinking',
+        sequence: 1,
+      })).toBe(true);
       expect(coordinator.handle({
         type: 'host.lifecycle',
         timestamp: new Date(7).toISOString(),
@@ -646,7 +661,22 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       })).toBe(true);
       expect(controller.isBusy('agent:restart')).toBe(false);
       expect(controller.isOperationFinished('operation:restart')).toBe(true);
-      expect(transcripts.entries('agent:restart').find((entry) => entry.kind === 'assistant-turn')?.assistantTurn?.status).toBe('interrupted');
+      expect(transcripts.entries('agent:restart').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(0);
+
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(8).toISOString(),
+        operationId: 'operation:restart:recovered',
+        turnId: 'turn:restart',
+        runId: 'run:restart:2',
+        conversationId: 'codex:agent:restart',
+        state: 'recovering',
+        sequence: 2,
+      })).toBe(true);
+      expect(controller.operationForPeer('agent:restart')).toBe('operation:restart:recovered');
+      expect(transcripts.thread('agent:restart').find((message) => message.id === 'user:restart')?.operationId)
+        .toBe('operation:restart:recovered');
+      expect(transcripts.entries('agent:restart').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
       expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
 
       expect(coordinator.handleCommandBridge({
