@@ -1,3 +1,5 @@
+import { conversationIdentityOf, isAgentIdentity } from './conversation-identity';
+
 export interface AgentPeerProjection {
   key: string;
   id: string;
@@ -45,9 +47,13 @@ export interface AgentSidebarItem {
 }
 
 export function agentWorkspaceKey(peer: AgentPeerProjection): string {
+  const identity = conversationIdentityOf(peer);
+  if (!isAgentIdentity(identity)) {
+    throw new Error(`Agent workspace received non-Agent identity: ${identity.type}`);
+  }
   return peer.kind === 'group'
     ? `group:${peer.id}`
-    : `agent:${peer.agentId ?? peer.actorId ?? peer.id}`;
+    : `agent:${identity.agentId}`;
 }
 
 export function agentMatchesGroupMember(agent: AgentSidebarItem, memberId: string): boolean {
@@ -102,7 +108,7 @@ export function projectAgentSidebarItems(
   activityByPeer: Readonly<Record<string, AgentActivityProjection>> = {},
   pinnedOrder: readonly string[] = [],
 ): AgentSidebarItem[] {
-  const visiblePeers = peers.filter((peer) => peer.kind === 'bot' || peer.kind === 'group');
+  const visiblePeers = peers.filter((peer) => isAgentIdentity(conversationIdentityOf(peer)));
   const peerByKey = new Map(visiblePeers.map((peer) => [peer.key, peer] as const));
   const items = new Map<string, AgentSidebarItem>();
 
@@ -159,7 +165,7 @@ export function projectAgentSidebarItems(
 export function projectActiveAgentKey(
   peer: AgentPeerProjection | null | undefined,
 ): string | null {
-  return peer && (peer.kind === 'bot' || peer.kind === 'group')
+  return peer && isAgentIdentity(conversationIdentityOf(peer))
     ? agentWorkspaceKey(peer)
     : null;
 }
