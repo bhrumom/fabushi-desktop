@@ -30,7 +30,7 @@ import type {
   DisplayMessage,
   MessageMenu,
   NewDialog,
-} from '../legacy-messaging/legacy-messaging-model';
+} from '../compatibility/compatibility-model';
 import type { CompatibilityPeerItem as PeerItem } from '../compatibility/messenger-compatibility-adapter';
 import { FabAvatar } from '../../ui/primitives/fab-primitives';
 import styles from '../../messaging-shell.module.css';
