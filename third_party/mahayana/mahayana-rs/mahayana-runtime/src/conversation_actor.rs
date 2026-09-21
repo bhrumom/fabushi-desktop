@@ -117,4 +117,39 @@ mod tests {
         assert!(actor.register(second).unwrap().0);
         actor.finish(&RunId::new("run:first").unwrap()).unwrap();
     }
+
+    #[test]
+    fn registry_returns_one_actor_per_conversation_and_never_globalizes_the_lane() {
+        let registry = ConversationActorRegistry::default();
+        let conversation_a = ConversationId::new("mahayana-ai:agent:a").unwrap();
+        let conversation_b = ConversationId::new("mahayana-ai:agent:b").unwrap();
+        let actor_a1 = registry.actor(&conversation_a).unwrap();
+        let actor_a2 = registry.actor(&conversation_a).unwrap();
+        let actor_b = registry.actor(&conversation_b).unwrap();
+
+        assert!(Arc::ptr_eq(&actor_a1, &actor_a2));
+        assert!(!Arc::ptr_eq(&actor_a1, &actor_b));
+        assert_eq!(actor_a1.conversation_id(), &conversation_a);
+        assert_eq!(actor_b.conversation_id(), &conversation_b);
+    }
+
+    #[test]
+    fn lifecycle_sequence_advances_only_through_actor_owned_transitions() {
+        let registry = ConversationActorRegistry::default();
+        let conversation = ConversationId::new("mahayana-ai:agent:lifecycle").unwrap();
+        let actor = registry.actor(&conversation).unwrap();
+        let turn = TurnId::new("turn:lifecycle").unwrap();
+        let run = RunId::new("run:lifecycle").unwrap();
+
+        let (_, registered_sequence) = actor.register(turn.clone()).unwrap();
+        let started_sequence = actor.start(&turn, run.clone()).unwrap();
+        let state_sequence = actor.set_state(&turn, TurnState::Thinking).unwrap().unwrap();
+        let duplicate_state_sequence = actor.set_state(&turn, TurnState::Thinking).unwrap();
+        let finished_sequence = actor.finish(&run).unwrap();
+
+        assert!(registered_sequence < started_sequence);
+        assert!(started_sequence < state_sequence);
+        assert_eq!(duplicate_state_sequence, None);
+        assert!(state_sequence < finished_sequence);
+    }
 }
