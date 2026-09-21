@@ -37,6 +37,7 @@ export type AgentWorkspaceSubmissionInput = Omit<
   'nonce' | 'messageId' | 'createdAtMs'
 > & {
   readonly messageId?: string;
+  readonly createdAtMs?: number;
 };
 
 export interface AgentWorkspaceRuntimeFacade {
@@ -124,6 +125,8 @@ export function useAgentWorkspaceRuntime(
             text: input.prompt,
             conversationId: input.conversationId,
             agentId: input.agentId,
+            clientMessageId: input.messageId,
+            retryOfMessageId: input.retryOfMessageId,
             attachments: input.attachments,
             replyTo: input.replyTo,
             references: input.references,
@@ -227,7 +230,7 @@ export function useAgentWorkspaceRuntime(
       ...input,
       nonce: nextRuntimeSubmissionId('agent-submission'),
       messageId: input.messageId ?? nextRuntimeSubmissionId('agent-message'),
-      createdAtMs: Date.now(),
+      createdAtMs: input.createdAtMs ?? Date.now(),
     });
   }, [submissionQueue]);
 
