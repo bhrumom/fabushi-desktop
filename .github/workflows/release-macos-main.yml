@@ -84,6 +84,10 @@ jobs:
           APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
         run: |
           set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            test "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}"
+            echo "CSC_FOR_PULL_REQUEST=true" >> "$GITHUB_ENV"
+          fi
           test -n "$MACOS_CERTIFICATE_P12_BASE64"
           test -n "$MACOS_CERTIFICATE_PASSWORD"
           if { [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_SPECIFIC_PASSWORD" ]; } &&              { [ -z "$APP_STORE_CONNECT_API_KEY_ID" ] || [ -z "$APP_STORE_CONNECT_API_ISSUER_ID" ] || [ -z "$APP_STORE_CONNECT_API_KEY_BASE64" ]; }; then
