@@ -1,0 +1,34 @@
+.root {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--fab-space-3);
+  padding: 18px;
+  box-sizing: border-box;
+  background: var(--fab-bg-primary);
+}
+
+.root > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--fab-space-3);
+}
+
+.root > header strong {
+  display: block;
+  font-size: 18px;
+}
+
+.root > header p {
+  margin: 3px 0 0;
+  color: var(--fab-text-muted);
+  font-size: 12px;
+}
+
+.body {
+  min-height: 0;
+  overflow: auto;
+  padding: 18px;
+}
