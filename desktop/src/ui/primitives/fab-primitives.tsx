@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import FabAvatarImpl from '../avatar/fab-avatar';
 import type { FabAvatarProps } from '../avatar/fab-avatar';
 import styles from './fab-primitives.module.css';
@@ -145,7 +146,7 @@ export function FabDialog({
   const surface = onSubmit
     ? <form className={cx(styles.dialogSurface, className)} onSubmit={onSubmit}>{children}</form>
     : <div className={cx(styles.dialogSurface, className)}>{children}</div>;
-  return <div
+  const dialog = <div
     role="dialog"
     aria-modal="true"
     aria-label={label}
@@ -156,6 +157,9 @@ export function FabDialog({
   >
     {surface}
   </div>;
+  // Dialogs must escape Sidebar/Workspace stacking contexts so the overlay
+  // is also the top-most hit-test surface, not merely visually present.
+  return typeof document === 'undefined' ? dialog : createPortal(dialog, document.body);
 }
 
 export function FabDialogActions({ children, className }: { readonly children: React.ReactNode; readonly className?: string }) {
