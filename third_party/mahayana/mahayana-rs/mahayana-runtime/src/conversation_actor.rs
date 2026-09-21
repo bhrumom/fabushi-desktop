@@ -1,4 +1,4 @@
-use mahayana_core::{ConversationId, RunId, TurnId};
+use mahayana_core::{ConversationId, RunId, TurnId, TurnState};
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use tokio::sync::Mutex as AsyncMutex;
@@ -6,7 +6,9 @@ use tokio::sync::Mutex as AsyncMutex;
 #[derive(Debug, Default)]
 struct ConversationActorState {
     queue: VecDeque<TurnId>,
+    active_turn: Option<TurnId>,
     active_run: Option<RunId>,
+    states: HashMap<TurnId, TurnState>,
     sequence: u64,
 }
 
@@ -37,7 +39,8 @@ impl ConversationActor {
     pub fn register(&self, turn_id: TurnId) -> Result<(bool, u64), String> {
         let mut state = self.state.lock().map_err(|_| "conversation actor mutex poisoned")?;
         let queued = state.active_run.is_some() || !state.queue.is_empty();
-        state.queue.push_back(turn_id);
+        state.queue.push_back(turn_id.clone());
+        state.states.insert(turn_id, TurnState::Accepted);
         state.sequence = state.sequence.saturating_add(1);
         Ok((queued, state.sequence))
     }
@@ -47,6 +50,7 @@ impl ConversationActor {
         if let Some(index) = state.queue.iter().position(|candidate| candidate == turn_id) {
             state.queue.remove(index);
         }
+        state.active_turn = Some(turn_id.clone());
         state.active_run = Some(run_id);
         state.sequence = state.sequence.saturating_add(1);
         Ok(state.sequence)
@@ -56,9 +60,20 @@ impl ConversationActor {
         let mut state = self.state.lock().map_err(|_| "conversation actor mutex poisoned")?;
         if state.active_run.as_ref() == Some(run_id) {
             state.active_run = None;
+            state.active_turn = None;
         }
         state.sequence = state.sequence.saturating_add(1);
         Ok(state.sequence)
+    }
+
+    pub fn set_state(&self, turn_id: &TurnId, next: TurnState) -> Result<Option<u64>, String> {
+        let mut state = self.state.lock().map_err(|_| "conversation actor mutex poisoned")?;
+        if state.states.get(turn_id).copied() == Some(next) {
+            return Ok(None);
+        }
+        state.states.insert(turn_id.clone(), next);
+        state.sequence = state.sequence.saturating_add(1);
+        Ok(Some(state.sequence))
     }
 }
 
@@ -75,6 +90,14 @@ impl ConversationActorRegistry {
                 .entry(conversation_id.to_string())
                 .or_insert_with(|| Arc::new(ConversationActor::new(conversation_id.clone()))),
         ))
+    }
+
+    pub fn clear(&self) -> Result<(), String> {
+        self.actors
+            .lock()
+            .map_err(|_| "conversation actor registry mutex poisoned")?
+            .clear();
+        Ok(())
     }
 }
 
