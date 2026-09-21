@@ -2285,7 +2285,7 @@ impl FeatureHostController {
         command: FeatureCommand,
     ) -> Result<CommandAccepted, FeatureHostError> {
         let request_id = command.request_id().to_string();
-        let (key, value) = match command {
+        let (key, value, emit_snapshot) = match command {
             FeatureCommand::AgentWorkspaceStateGet { key, .. } => {
                 let value = match self.config.mode {
                     HostMode::Test => self.state()?.workspace_state.get(&key).cloned(),
@@ -2308,7 +2308,7 @@ impl FeatureHostController {
                         return Err(FeatureHostError::ProductionUnavailable);
                     }
                 };
-                (key, value)
+                (key, value, true)
             }
             FeatureCommand::AgentWorkspaceStateSet { key, value, .. } => {
                 match self.config.mode {
@@ -2335,15 +2335,17 @@ impl FeatureHostController {
                         return Err(FeatureHostError::ProductionUnavailable);
                     }
                 }
-                (key, Some(value))
+                (key, Some(value), false)
             }
             _ => unreachable!("non-workspace-state command routed to workspace state"),
         };
-        self.state()?.events.push_back(HostEvent::AgentWorkspaceState {
-            timestamp: timestamp(),
-            key,
-            value,
-        });
+        if emit_snapshot {
+            self.state()?.events.push_back(HostEvent::AgentWorkspaceState {
+                timestamp: timestamp(),
+                key,
+                value,
+            });
+        }
         Ok(CommandAccepted {
             request_id,
             operation_id: None,
@@ -6198,82 +6200,3 @@ impl FeatureHostController {
                     let decision = match resolution.decision {
                         ApprovalDecision::AllowOnce => RuntimeApprovalDecision::Accept,
                         ApprovalDecision::AllowSession => RuntimeApprovalDecision::AcceptForSession,
-                        ApprovalDecision::Deny => RuntimeApprovalDecision::Decline,
-                    };
-                    self.runtime()?.resolve_approval(
-                        ApprovalId(runtime_approval_id.clone()),
-                        decision,
-                        json!({
-                            "miniAppId": pending.mini_app_id.clone(),
-                            "capability": pending.capability.clone(),
-                        }),
-                    )?;
-                }
-            }
-            #[cfg(not(feature = "production"))]
-            {
-                return Err(FeatureHostError::ProductionUnavailable);
-            }
-        }
-
-        self.state()?.events.push_back(HostEvent::ApprovalResolved {
-            timestamp: timestamp(),
-            approval_id: resolution.approval_id,
-            operation_id: pending.operation_id,
-            agent_id: pending.agent_id,
-            decision: resolution.decision,
-        });
-        Ok(())
-    }
-
-    pub fn interrupt(&self, operation_id: &str) -> Result<(), FeatureHostError> {
-        {
-            let state = self.state()?;
-            ensure_open(&state)?;
-            if !state.operations.contains(operation_id) {
-                return Err(FeatureHostError::Contract(format!(
-                    "unknown operation: {operation_id}"
-                )));
-            }
-        }
-
-        if self.config.mode == HostMode::Production {
-            #[cfg(feature = "production")]
-            if !operation_id.starts_with("host-task-") {
-                self.runtime()?
-                    .interrupt(OperationId(operation_id.to_string()))?;
-            }
-            #[cfg(not(feature = "production"))]
-            return Err(FeatureHostError::ProductionUnavailable);
-        }
-
-        let mut state = self.state()?;
-        state.operations.remove(operation_id);
-        state.operation_agents.remove(operation_id);
-        state.events.push_back(HostEvent::OperationInterrupted {
-            timestamp: timestamp(),
-            operation_id: operation_id.to_string(),
-        });
-        Ok(())
-    }
-
-    pub fn close(&self) -> Result<(), FeatureHostError> {
-        let mut state = self.state()?;
-        if state.closed {
-            return Ok(());
-        }
-        state.closed = true;
-        state.events.push_back(HostEvent::HostClosed {
-            timestamp: timestamp(),
-        });
-        Ok(())
-    }
-
-    #[cfg(feature = "production")]
-    fn runtime(&self) -> Result<&MahayanaHost, FeatureHostError> {
-        self.runtime
-            .as_ref()
-            .ok_or(FeatureHostError::ProductionUnavailable)
-    }
-
-    #[cfg(feature = "production")]
