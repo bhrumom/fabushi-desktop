@@ -313,10 +313,10 @@ pub struct PluginCommandDescriptor {
 pub enum RuntimeCommand {
     #[serde(rename = "mahayana.runtime.status")]
     Status,
-    #[serde(rename = "mahayana.runtime.uiState.get")]
-    UiStateGet { key: String },
-    #[serde(rename = "mahayana.runtime.uiState.set")]
-    UiStateSet {
+    #[serde(rename = "mahayana.runtime.workspaceState.get")]
+    WorkspaceStateGet { key: String },
+    #[serde(rename = "mahayana.runtime.workspaceState.set")]
+    WorkspaceStateSet {
         key: String,
         value: Value,
     },
@@ -462,8 +462,8 @@ pub enum ApprovalDecision {
 pub enum RuntimeResponse {
     #[serde(rename = "mahayana.runtime.status")]
     Status(RuntimeStatus),
-    #[serde(rename = "mahayana.runtime.uiState")]
-    RuntimeUiState {
+    #[serde(rename = "mahayana.runtime.workspaceState")]
+    RuntimeWorkspaceState {
         key: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         value: Option<Value>,
@@ -738,13 +738,13 @@ mod tests {
     }
 
     #[test]
-    fn runtime_ui_state_wire_contract_is_explicit() {
-        let command = RuntimeCommand::UiStateSet {
+    fn runtime_workspace_state_wire_contract_is_explicit() {
+        let command = RuntimeCommand::WorkspaceStateSet {
             key: "agent-workspace:drafts:v2".into(),
             value: serde_json::json!({"agent:a": {"text": "hello"}}),
         };
-        let json = serde_json::to_value(command).expect("serialize ui state command");
-        assert_eq!(json["@type"], "mahayana.runtime.uiState.set");
+        let json = serde_json::to_value(command).expect("serialize workspace state command");
+        assert_eq!(json["@type"], "mahayana.runtime.workspaceState.set");
         assert_eq!(json["key"], "agent-workspace:drafts:v2");
     }
 
