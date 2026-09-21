@@ -1,5 +1,6 @@
 import { Search, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef } from 'react';
+import { FabButton, FabInput } from '../ui/primitives/fab-primitives';
 import type { TranscriptEntry } from './transcript-model';
 import styles from './agent-search.module.css';
 
@@ -30,17 +31,17 @@ export default function AgentSearch({ entries, query, onQuery, onClose, onSelect
   return <section className={styles.root} data-testid="agent-search" aria-label="Search this Agent">
     <label>
       <Search size={15} />
-      <input
+      <FabInput variant="bare"
         ref={inputRef}
         value={query}
         onChange={(event) => onQuery(event.target.value)}
         placeholder="Search this Agent"
         aria-label="Search this Agent"
       />
-      <button type="button" onClick={onClose} aria-label="Close search"><X size={14} /></button>
+      <FabButton variant="bare" type="button" onClick={onClose} aria-label="Close search"><X size={14} /></FabButton>
     </label>
     <div className={styles.results}>
-      {results.length ? results.map((entry) => <button
+      {results.length ? results.map((entry) => <FabButton variant="bare"
         type="button"
         key={entry.id}
         onClick={() => onSelect(entry.id)}
@@ -48,7 +49,7 @@ export default function AgentSearch({ entries, query, onQuery, onClose, onSelect
       >
         <span><strong>{entry.role === 'me' ? 'You' : entry.title || 'Agent'}</strong><small>{entry.kind}</small></span>
         <p>{entry.text || entry.detail || entry.title || 'Timeline event'}</p>
-      </button>) : <p className={styles.empty}>No matching messages in the loaded transcript.</p>}
+      </FabButton>) : <p className={styles.empty}>No matching messages in the loaded transcript.</p>}
     </div>
   </section>;
 }
