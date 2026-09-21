@@ -9,6 +9,12 @@ import type { AccountBotMembership } from '../account-sync-client';
 import { installedMiniAppBotProjections, type MiniAppBotCallPrograms, type MiniAppBotCommand } from '../miniapp-bot-projection';
 import { asMessagingHostEvent, type MessagingActor, type MessagingConversation } from '../selfhosted-messaging-client-v2';
 import type { RuntimeEvent } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import { isLegacyContactConversation, isSelfHostedContactConversation } from '../adapters/contacts/contact-compatibility-adapter';
+import { isTelegramCompatibilityConversation } from '../adapters/telegram/telegram-compatibility-adapter';
+import MiniAppCompatibilityAdapter from '../adapters/miniapps/miniapp-compatibility-adapter';
+import PaymentCompatibilityAdapter from '../adapters/payments/payment-compatibility-adapter';
+import CallCompatibilityAdapter from '../adapters/calls/call-compatibility-adapter';
+import SettingsCompatibilityAdapter from '../adapters/settings/settings-compatibility-adapter';
 
 export type CompatibilityPeerKind = 'conversation' | 'contact' | 'bot' | 'group' | 'channel' | 'saved';
 export type CompatibilityPeerSource = 'legacy' | 'selfhosted';
@@ -40,7 +46,7 @@ export interface CompatibilityPeerItem {
 function legacyKind(conversation: ConversationSummary): CompatibilityPeerKind {
   const id = conversation.id.toLowerCase();
   const kind = conversation.kind.toLowerCase();
-  if (id.startsWith('mahayana:contact:') || id.startsWith('telegram:user:') || kind.includes('direct') || kind.includes('contact')) return 'contact';
+  if (isTelegramCompatibilityConversation(conversation) || isLegacyContactConversation(conversation)) return 'contact';
   if (id.startsWith('mahayana-ai:') || id.startsWith('codex:') || kind.includes('agent') || kind.includes('bot') || kind.includes('assistant')) return 'bot';
   if (kind.includes('saved')) return 'saved';
   if (kind.includes('channel')) return 'channel';
@@ -52,9 +58,7 @@ function selfKind(conversation: MessagingConversation, counterparty?: MessagingA
   if (conversation.kind === 'group') return 'group';
   if (conversation.kind === 'savedMessages') return 'saved';
   if (conversation.kind === 'direct' || conversation.kind === 'secret') {
-    return counterparty && ['assistant', 'bot', 'service'].includes(counterparty.kind)
-      ? 'bot'
-      : 'contact';
+    return isSelfHostedContactConversation(conversation, counterparty) ? 'contact' : 'bot';
   }
   return 'conversation';
 }
@@ -259,9 +263,12 @@ export function CompatibilitySurface(props: {
   settings: ReactNode;
   fallback: ReactNode;
 }) {
-  if (props.section === 'miniapps') return <>{props.miniApps}</>;
-  if (props.section === 'payments') return <>{props.payments}</>;
-  if (props.section === 'calls') return <>{props.calls}</>;
-  if (props.section === 'settings') return <>{props.settings}</>;
-  return <>{props.fallback}</>;
+  const featureSection = ['miniapps', 'payments', 'calls', 'settings'].includes(props.section);
+  return <>
+    <MiniAppCompatibilityAdapter section={props.section}>{props.miniApps}</MiniAppCompatibilityAdapter>
+    <PaymentCompatibilityAdapter section={props.section}>{props.payments}</PaymentCompatibilityAdapter>
+    <CallCompatibilityAdapter section={props.section}>{props.calls}</CallCompatibilityAdapter>
+    <SettingsCompatibilityAdapter section={props.section}>{props.settings}</SettingsCompatibilityAdapter>
+    {featureSection ? null : props.fallback}
+  </>;
 }
