@@ -210,6 +210,25 @@ export class AgentTranscriptStore {
     return this.update(peerKey, (current) => current.filter((message) => !removed.has(message.id)));
   }
 
+  prepareRetry(
+    peerKey: string,
+    messageId: string,
+    operationId?: string,
+  ): AgentTranscriptSourceMessage[] {
+    return this.update(peerKey, (current) => current.flatMap((message) => {
+      if (message.id === messageId && message.role === 'me') {
+        const { operationId: _operationId, ...rest } = message;
+        return [{
+          ...rest,
+          optimistic: false,
+          queued: false,
+        }];
+      }
+      if (operationId && message.operationId === operationId) return [];
+      return [message];
+    }));
+  }
+
   removeQueuedUserMessage(peerKey: string, messageId: string): AgentTranscriptSourceMessage[] {
     return this.update(peerKey, (current) => current.filter((message) =>
       message.id !== messageId || message.role !== 'me' || message.queued !== true,
