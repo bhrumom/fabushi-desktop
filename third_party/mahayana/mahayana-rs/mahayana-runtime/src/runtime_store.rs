@@ -801,6 +801,111 @@ mod tests {
     }
 
     #[test]
+    fn retry_generation_reuses_one_terminal_logical_turn_and_increments_runs() {
+        let (path, store) = temp_store();
+        let conversation_id = ConversationId("codex:agent:retry".to_string());
+        let message_id = MessageId("message:stable".to_string());
+        let turn_id = TurnId("turn:stable".to_string());
+        let first_run_id = RunId("run:first".to_string());
+
+        store
+            .record_turn(&LogicalTurn {
+                id: turn_id.clone(),
+                conversation_id: conversation_id.clone(),
+                user_message_id: Some(message_id.clone()),
+                created_at_ms: 10,
+                state: TurnState::Completed,
+                active_run_id: None,
+            })
+            .expect("record logical turn");
+        store
+            .record_run(&ExecutionRun {
+                id: first_run_id,
+                turn_id: turn_id.clone(),
+                generation: 1,
+                provider: "codex".to_string(),
+                started_at_ms: 10,
+                finished_at_ms: Some(20),
+                state: TurnState::Completed,
+            })
+            .expect("record first generation");
+
+        let (resolved_turn, created_at_ms, generation) = store
+            .retry_turn_generation(conversation_id.as_str(), message_id.as_str())
+            .expect("resolve retry")
+            .expect("terminal turn should be retryable");
+        assert_eq!(resolved_turn, turn_id);
+        assert_eq!(created_at_ms, 10);
+        assert_eq!(generation, 2);
+
+        store
+            .record_run(&ExecutionRun {
+                id: RunId("run:second".to_string()),
+                turn_id: turn_id.clone(),
+                generation,
+                provider: "codex".to_string(),
+                started_at_ms: 30,
+                finished_at_ms: Some(40),
+                state: TurnState::Completed,
+            })
+            .expect("record second generation");
+
+        assert_eq!(
+            store
+                .retry_turn_generation(conversation_id.as_str(), message_id.as_str())
+                .expect("resolve next retry")
+                .expect("logical turn remains retryable")
+                .2,
+            3,
+        );
+
+        drop(store);
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[test]
+    fn retry_generation_rejects_non_terminal_logical_turns() {
+        let (path, store) = temp_store();
+        let conversation_id = ConversationId("codex:agent:busy".to_string());
+        let message_id = MessageId("message:busy".to_string());
+        let turn_id = TurnId("turn:busy".to_string());
+        let run_id = RunId("run:busy".to_string());
+
+        store
+            .record_turn(&LogicalTurn {
+                id: turn_id.clone(),
+                conversation_id: conversation_id.clone(),
+                user_message_id: Some(message_id.clone()),
+                created_at_ms: 10,
+                state: TurnState::Thinking,
+                active_run_id: Some(run_id.clone()),
+            })
+            .expect("record active turn");
+        store
+            .record_run(&ExecutionRun {
+                id: run_id,
+                turn_id,
+                generation: 1,
+                provider: "codex".to_string(),
+                started_at_ms: 10,
+                finished_at_ms: None,
+                state: TurnState::Thinking,
+            })
+            .expect("record active generation");
+
+        assert!(
+            store
+                .retry_turn_generation(conversation_id.as_str(), message_id.as_str())
+                .expect("query retry target")
+                .is_none(),
+            "an active logical turn must not be forked into a retry generation",
+        );
+
+        drop(store);
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[test]
     fn handoff_dispatch_recovers_running_but_not_terminal_work() {
         let (path, store) = temp_store();
         let intent = HandoffIntent {
