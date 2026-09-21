@@ -412,6 +412,12 @@ pub enum RuntimeCommand {
         text: String,
         #[serde(rename = "clientMessageId")]
         client_message_id: Option<String>,
+        #[serde(
+            rename = "retryOfClientMessageId",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        retry_of_client_message_id: Option<String>,
         #[serde(rename = "inferenceProvider", default, skip_serializing_if = "Option::is_none")]
         inference_provider: Option<String>,
         #[serde(default)]
