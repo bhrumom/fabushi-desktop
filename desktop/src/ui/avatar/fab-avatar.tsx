@@ -92,6 +92,8 @@ export default function FabAvatar({
     style={style}
     role="img"
     aria-label={`${label} · ${normalized}`}
+    data-fab-avatar="true"
+    data-avatar-identity={identity}
     data-state={normalized}
     data-active={active || undefined}
     title={label}
