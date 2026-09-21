@@ -1,6 +1,6 @@
 import { Bot, Megaphone, Network, Plus, Trash2, Users, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FabButton, FabInput } from '../ui/primitives/fab-primitives';
+import { FabButton, FabDialog, FabDialogActions, FabInput } from '../ui/primitives/fab-primitives';
 import type { AgentPeerMessage, GroupSummary } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import { agentMatchesGroupMember, indexAgentsByRuntimeOrSurfaceId, type AgentSidebarItem } from './agent-model';
 import styles from './agent-network.module.css';
@@ -63,6 +63,12 @@ export default function AgentNetwork({
   const [priority, setPriority] = useState(false);
   const [groupBusy, setGroupBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [groupDialog, setGroupDialog] = useState<
+    | { readonly kind: 'create'; readonly name: string }
+    | { readonly kind: 'rename'; readonly group: GroupSummary; readonly name: string }
+    | { readonly kind: 'delete'; readonly group: GroupSummary }
+    | null
+  >(null);
   const refreshGroupsRef = useRef(onRefreshGroups);
   refreshGroupsRef.current = onRefreshGroups;
 
@@ -142,50 +148,63 @@ export default function AgentNetwork({
     });
   };
 
-  const createGroup = async () => {
+  const openCreateGroup = () => {
     if (selectedAgentIds.length < 2 || groupBusy) return;
-    const suggested = selectedAgentIds.map((id) => agentByMemberId.get(id)?.name).filter(Boolean).slice(0, 3).join(' + ');
-    const name = window.prompt('Group name', suggested || 'Agent group')?.trim();
-    if (!name) return;
-    setGroupBusy(true);
-    setError(null);
-    try {
-      await onCreateGroup(name, selectedAgentIds);
-      await onRefreshGroups();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setGroupBusy(false);
-    }
+    const suggested = selectedAgentIds
+      .map((id) => agentByMemberId.get(id)?.name)
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(' + ');
+    setGroupDialog({ kind: 'create', name: suggested || 'Agent group' });
   };
 
-  const renameGroup = async (group: GroupSummary) => {
+  const openRenameGroup = (group: GroupSummary) => {
     if (groupBusy) return;
-    const name = window.prompt('Rename Agent group', group.name)?.trim();
-    if (!name || name === group.name) return;
-    setGroupBusy(true);
-    setError(null);
-    try {
-      await onUpdateGroup(group.id, { name });
-      await onRefreshGroups();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setGroupBusy(false);
-    }
+    setGroupDialog({ kind: 'rename', group, name: group.name });
   };
 
-  const deleteGroup = async (group: GroupSummary) => {
-    if (groupBusy || !window.confirm(`Delete Agent group “${group.name}”? Agents and their histories will not be deleted.`)) return;
+  const openDeleteGroup = (group: GroupSummary) => {
+    if (groupBusy) return;
+    setGroupDialog({ kind: 'delete', group });
+  };
+
+  const closeGroupDialog = () => {
+    if (!groupBusy) setGroupDialog(null);
+  };
+
+  const updateGroupDialogName = (name: string) => {
+    setGroupDialog((current) => {
+      if (!current || current.kind === 'delete') return current;
+      return { ...current, name };
+    });
+  };
+
+  const submitGroupDialog = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!groupDialog || groupBusy) return;
+    const name = groupDialog.kind === 'delete' ? '' : groupDialog.name.trim();
+    if (groupDialog.kind !== 'delete' && !name) return;
+    if (groupDialog.kind === 'rename' && name === groupDialog.group.name) {
+      setGroupDialog(null);
+      return;
+    }
+
     setGroupBusy(true);
     setError(null);
     try {
-      await onDeleteGroup(group.id);
-      if (selectedGroupId === group.id) {
-        setSelectedGroupId(null);
-        setSelected(new Set());
+      if (groupDialog.kind === 'create') {
+        await onCreateGroup(name, selectedAgentIds);
+      } else if (groupDialog.kind === 'rename') {
+        await onUpdateGroup(groupDialog.group.id, { name });
+      } else {
+        await onDeleteGroup(groupDialog.group.id);
+        if (selectedGroupId === groupDialog.group.id) {
+          setSelectedGroupId(null);
+          setSelected(new Set());
+        }
       }
       await onRefreshGroups();
+      setGroupDialog(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -285,7 +304,7 @@ export default function AgentNetwork({
 
         <div className={styles.sectionHeading}>
           <Users size={15} /><span>Groups</span>
-          <FabButton variant="bare" type="button" className={styles.sectionAction} disabled={selectedAgentIds.length < 2 || groupBusy} onClick={() => void createGroup()}>
+          <FabButton variant="bare" type="button" className={styles.sectionAction} disabled={selectedAgentIds.length < 2 || groupBusy} onClick={openCreateGroup}>
             <Plus size={13} />Create from selected
           </FabButton>
         </div>
@@ -298,8 +317,8 @@ export default function AgentNetwork({
                 <span><strong>{group.name}</strong><small>{group.memberIds.length} agents{memberNames ? ` · ${memberNames}` : ''}</small></span>
               </FabButton>
               <div className={styles.groupActions}>
-                <FabButton variant="bare" type="button" onClick={() => void renameGroup(group)}>Rename</FabButton>
-                <FabButton variant="bare" type="button" aria-label={`Delete ${group.name}`} onClick={() => void deleteGroup(group)}><Trash2 size={13} /></FabButton>
+                <FabButton variant="bare" type="button" onClick={() => openRenameGroup(group)}>Rename</FabButton>
+                <FabButton variant="bare" type="button" aria-label={`Delete ${group.name}`} onClick={() => openDeleteGroup(group)}><Trash2 size={13} /></FabButton>
               </div>
             </article>;
           })}
@@ -331,5 +350,34 @@ export default function AgentNetwork({
         </FabButton>
       </aside>
     </div>
+    {groupDialog ? <FabDialog
+      label={groupDialog.kind === 'create' ? 'Create Agent group' : groupDialog.kind === 'rename' ? 'Rename Agent group' : 'Delete Agent group'}
+      onClose={closeGroupDialog}
+      onSubmit={(event) => void submitGroupDialog(event)}
+    >
+      <strong>{groupDialog.kind === 'create' ? 'Create Agent group' : groupDialog.kind === 'rename' ? 'Rename Agent group' : 'Delete Agent group'}</strong>
+      {groupDialog.kind === 'delete'
+        ? <p>{`Delete Agent group “${groupDialog.group.name}”? Agents and their histories will not be deleted.`}</p>
+        : <FabInput
+            autoFocus
+            aria-label="Group name"
+            value={groupDialog.name}
+            onChange={(event) => updateGroupDialogName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                closeGroupDialog();
+              }
+            }}
+          />}
+      <FabDialogActions>
+        <FabButton type="button" variant="ghost" disabled={groupBusy} onClick={closeGroupDialog}>Cancel</FabButton>
+        <FabButton
+          type="submit"
+          variant={groupDialog.kind === 'delete' ? 'danger' : 'primary'}
+          disabled={groupBusy || (groupDialog.kind !== 'delete' && !groupDialog.name.trim())}
+        >{groupBusy ? 'Working…' : groupDialog.kind === 'create' ? 'Create' : groupDialog.kind === 'rename' ? 'Rename' : 'Delete'}</FabButton>
+      </FabDialogActions>
+    </FabDialog> : null}
   </section>;
 }
