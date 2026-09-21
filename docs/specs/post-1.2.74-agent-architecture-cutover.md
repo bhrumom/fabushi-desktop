@@ -54,6 +54,7 @@ Verified on 2026-09-21 before implementation:
 - PR #9 merged the first Agent-first Rust runtime architecture into main at `a6d6a56fdc836135e16c126a559ed51ce94e4de1`;
 - active continuation PR #14 is `refactor/post-1.2.74-architecture-cutover-20260921`;
 - source compliance was re-reviewed through code head `8112ebdcd375a5571846a9a9f3755bb5d750f369`: deleted legacy shells remain absent; `DesktopApp` mounts `AgentRootShell`; Rust owns `ConversationActor`, LogicalTurn/ExecutionRun lifecycle, SQLite RuntimeStore, CapabilityBroker, ComputerControlLease, ordinary-turn recovery, and durable handoff recovery; the duplicate `isAgentIdentity` declaration was repaired; Agent/Section create/rename/delete confirmation moved from browser-native prompt/confirm into the `AgentSidebar` FabDialog boundary; Electron removed the renderer-visible `feature.receive` RPC/Host compatibility path and the architecture checker now forbids both regressions;
+- a final concurrent TypeScript narrowing cleanup in `AgentSidebar` makes the delete-section dialog fallback explicit; it preserves the reviewed FabDialog behavior and introduces no new runtime ownership;
 - desktop version remains `1.2.74`;
 - `projects/grok-fabu-parity/PARITY.md` is the detailed parity inventory but explicitly is not, by itself, a completion claim.
 
