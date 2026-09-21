@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 import { AppWindow, ArrowDown, Check, Copy, Edit3, RotateCcw } from 'lucide-react';
-import { BotMark } from '../../frontend/apps/web/src/app/host/bot-mark';
+import FabAvatar from './ui/avatar/fab-avatar';
 import { MahayanaAssistantTurnView } from './mahayana-assistant-turn-view';
 import type { AssistantTurn } from './mahayana-assistant-turn';
 import styles from './bot-conversation-view.module.css';
@@ -262,7 +262,7 @@ export function BotConversationView({
         aria-label={title + ' 会话'}
       >
         <div className={styles.botIntro}>
-          <BotMark botId={botId} state="idle" size={44} label={title} />
+          <FabAvatar identity={botId} state="idle" size={44} label={title} />
           <div>
             <h2>{title}</h2>
             <p>{description || 'Bot 会在这个独立会话中回复你。'}</p>
@@ -287,7 +287,7 @@ export function BotConversationView({
                     key={message.id}
                     turn={message.assistantTurn}
                     label={title}
-                    avatar={<BotMark botId={botId} state={message.streaming ? 'writing' : 'idle'} size={28} label={title} />}
+                    avatar={<FabAvatar identity={botId} state={message.streaming ? 'working' : 'idle'} size={28} label={title} />}
                   />
                 );
               }
@@ -305,7 +305,7 @@ export function BotConversationView({
               if (message.kind === 'thinking') {
                 return (
                   <div key={message.id} className={styles.thinkingRow} data-testid="agent-thinking" data-operation-id={message.operationId}>
-                    <BotMark botId={botId} state="thinking" size={28} label={title} />
+                    <FabAvatar identity={botId} state="thinking" size={28} label={title} />
                     <div className={styles.thinkingCopy}>
                       <strong>{message.actionTitle || '正在思考'}</strong>
                       <span>{message.actionDetail || '正在整理回复…'}</span>
@@ -324,7 +324,7 @@ export function BotConversationView({
                   data-operation-id={message.operationId}
                   onContextMenu={(event) => onContextMenu?.(event, message)}
                 >
-                  {!userMessage ? <BotMark botId={botId} state={message.streaming ? 'writing' : 'idle'} size={28} label={title} /> : null}
+                  {!userMessage ? <FabAvatar identity={botId} state={message.streaming ? 'working' : 'idle'} size={28} label={title} /> : null}
                   <div className={styles.messageColumn}>
                     <div className={styles.messageMeta}>
                       <span>{userMessage ? '你' : title}</span>
