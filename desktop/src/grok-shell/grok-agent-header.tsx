@@ -1,6 +1,7 @@
 import { AppWindow, Monitor, MoreVertical, Pin, Search } from 'lucide-react';
 import React from 'react';
 import FabAvatar, { type FabAvatarInputState } from '../ui/avatar/fab-avatar';
+import { FabIconButton } from '../ui/primitives/fab-primitives';
 import styles from './grok-agent-header.module.css';
 
 export default function GrokAgentHeader({
@@ -45,11 +46,11 @@ export default function GrokAgentHeader({
       </div>
     </div>
     <div className={styles.actions}>
-      {onOpenMiniApp ? <button type="button" data-testid="miniapp-bot-open" title={miniAppTitle ?? 'Open app'} onClick={onOpenMiniApp}><AppWindow size={17} /></button> : null}
-      <button type="button" title="Search conversation" data-active={searchActive || undefined} onClick={onToggleSearch}><Search size={17} /></button>
-      <button type="button" title="Computer" data-active={computerActive || undefined} onClick={onToggleComputer}><Monitor size={17} /></button>
-      <button type="button" title={pinned ? 'Unpin' : 'Pin'} data-active={pinned || undefined} onClick={onTogglePin}><Pin size={17} /></button>
-      <button type="button" title="Agent info" data-testid="conversation-info-toggle" data-active={infoActive || undefined} onClick={onToggleInfo}><MoreVertical size={17} /></button>
+      {onOpenMiniApp ? <FabIconButton label={miniAppTitle ?? 'Open app'} data-testid="miniapp-bot-open" onClick={onOpenMiniApp}><AppWindow size={17} /></FabIconButton> : null}
+      <FabIconButton label="Search conversation" data-active={searchActive || undefined} onClick={onToggleSearch}><Search size={17} /></FabIconButton>
+      <FabIconButton label="Computer" data-active={computerActive || undefined} onClick={onToggleComputer}><Monitor size={17} /></FabIconButton>
+      <FabIconButton label={pinned ? 'Unpin' : 'Pin'} data-active={pinned || undefined} onClick={onTogglePin}><Pin size={17} /></FabIconButton>
+      <FabIconButton label="Agent info" data-testid="conversation-info-toggle" data-active={infoActive || undefined} onClick={onToggleInfo}><MoreVertical size={17} /></FabIconButton>
     </div>
   </header>;
 }
