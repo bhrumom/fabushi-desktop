@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ComputerStatus } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { MahayanaHostTransport } from '../../../frontend/apps/web/src/lib/mahayana-host/transport';
-import { invokeNativeDesktop } from '../../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
-import {
-  RemoteComputerDesktopController,
-  type RemoteComputerDesktopState,
-} from '../../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
+import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
+import type { RemoteComputerDesktopState } from '../../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
 import { AgentCoordinatorClient } from './coordinator-client';
 
 export interface UseAgentComputerControllerOptions {
@@ -67,7 +64,6 @@ export function useAgentComputerController(
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<RemoteComputerDesktopState | null>(null);
   const [capabilityStatus, setCapabilityStatus] = useState<ComputerStatus | null>(null);
-  const controllerRef = useRef<RemoteComputerDesktopController | null>(null);
   const stateRef = useRef<RemoteComputerDesktopState | null>(null);
   stateRef.current = state;
 
@@ -114,20 +110,17 @@ export function useAgentComputerController(
   const close = useCallback(() => setOpen(false), []);
 
   const refreshPairingCode = useCallback(() => {
-    void controllerRef.current?.refreshPairingCode().catch(reportError);
+    void invokeNativeDesktop('refreshRemoteComputerBackground')
+      .then((payload) => acceptBackgroundState(payload, optionsRef.current.remoteControlEnabled, setState))
+      .catch(reportError);
   }, [reportError]);
 
-  const approveSession = useCallback((sessionId: string) => {
-    void controllerRef.current?.approvePendingSession(sessionId).catch(reportError);
-  }, [reportError]);
-
-  const denySession = useCallback((sessionId: string) => {
-    void controllerRef.current?.denyPendingSession(sessionId).catch(reportError);
-  }, [reportError]);
-
-  const disconnect = useCallback(() => {
-    void controllerRef.current?.disconnectActive().catch(reportError);
-  }, [reportError]);
+  // Session authorization moved out of React/WebRTC. App-owned remote-device
+  // agents perform the gateway lifecycle in Main; no renderer session should
+  // ever reach these compatibility callbacks.
+  const approveSession = useCallback((_sessionId: string) => {}, []);
+  const denySession = useCallback((_sessionId: string) => {}, []);
+  const disconnect = useCallback(() => {}, []);
 
   const openControlPage = useCallback((agentId: string) => {
     void invokeNativeDesktop('openExternal', {
@@ -137,45 +130,20 @@ export function useAgentComputerController(
 
   useEffect(() => {
     if (!options.hostReady || !options.accountScope || !options.hydrated) return;
-
     let disposed = false;
-    const controller = new RemoteComputerDesktopController({
-      transport: options.transport,
-      label: options.label,
-      identityScope: options.accountScope,
-      controlEnabled: options.remoteControlEnabled,
-      resolveAgentId: (requestedAgentId) => optionsRef.current.resolveAgentId(requestedAgentId),
-      onState: (nextState) => {
-        if (!disposed) setState(nextState);
-      },
+    const accept = (payload: unknown) => {
+      if (disposed) return;
+      acceptBackgroundState(payload, optionsRef.current.remoteControlEnabled, setState);
+    };
+    const unsubscribe = subscribeNativeDesktopEvents({
+      'remote-computer-background-state': accept,
     });
-
-    controllerRef.current = controller;
-    const snapshot = controller.snapshot();
-    stateRef.current = snapshot;
-    setState(snapshot);
-    void controller.start().catch(reportError);
-
+    void invokeNativeDesktop('getRemoteComputerBackgroundState').then(accept).catch(reportError);
     return () => {
       disposed = true;
-      if (controllerRef.current === controller) controllerRef.current = null;
-      void controller.stop();
+      unsubscribe();
     };
-  }, [
-    options.hostReady,
-    options.hydrated,
-    options.accountScope,
-    options.transport,
-    options.label,
-    reportError,
-  ]);
-
-  useEffect(() => {
-    if (!options.hostReady) return;
-    const controller = controllerRef.current;
-    if (!controller) return;
-    void controller.setControlEnabled(options.remoteControlEnabled).catch(reportError);
-  }, [options.hostReady, options.remoteControlEnabled, reportError]);
+  }, [options.hostReady, options.hydrated, options.accountScope, reportError]);
 
   useEffect(() => {
     if (options.hostReady) refreshCapability();
@@ -185,7 +153,7 @@ export function useAgentComputerController(
     setOpen(false);
   }, [options.activePeerKey]);
 
-  const online = Boolean(state?.running && state.registration);
+  const online = Boolean(state?.running);
   const status = capabilityStatus && !capabilityStatus.available
     ? '本机控制不可用'
     : capabilityStatus && (!capabilityStatus.accessibilityGranted || !capabilityStatus.screenRecordingGranted)
