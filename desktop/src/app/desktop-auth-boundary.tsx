@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import HostClient from '../../../frontend/apps/web/src/app/host/host-client';
 import type { AuthState } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { MahayanaHostTransport } from '../../../frontend/apps/web/src/lib/mahayana-host/transport';
 import { isTerminalAuthSessionFailure } from '../auth-session';
 import { createDesktopAgentTransport } from '../bridge/agent-host';
 import FabAvatar from '../ui/avatar/fab-avatar';
