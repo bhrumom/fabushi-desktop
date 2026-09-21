@@ -13,7 +13,11 @@ export function FabButton({
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   readonly variant?: 'default' | 'primary' | 'danger' | 'ghost' | 'bare';
 }) {
-  return <button {...props} className={classes(styles.button, className)} data-variant={variant} />;
+  return <button
+    {...props}
+    className={classes(variant === 'bare' ? styles.bareButton : styles.button, className)}
+    data-variant={variant}
+  />;
 }
 
 export function FabIconButton({
@@ -34,18 +38,24 @@ export function FabIconButton({
 }
 
 export function FabInput({
+  variant = 'default',
   className,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={classes(styles.input, className)} />;
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  readonly variant?: 'default' | 'bare';
+}) {
+  return <input {...props} className={classes(variant === 'bare' ? styles.bareInput : styles.input, className)} />;
 }
 
 export function FabSelect({
+  variant = 'default',
   className,
   children,
   ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={classes(styles.select, className)}>{children}</select>;
+}: React.SelectHTMLAttributes<HTMLSelectElement> & {
+  readonly variant?: 'default' | 'bare';
+}) {
+  return <select {...props} className={classes(variant === 'bare' ? styles.bareSelect : styles.select, className)}>{children}</select>;
 }
 
 export function FabSwitch({
