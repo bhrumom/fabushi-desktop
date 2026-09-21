@@ -20,7 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
-import { BotMark, type BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
+import FabAvatar, { type FabAvatarState } from '../ui/avatar/fab-avatar';
 import {
   AGENT_SIDEBAR_UNASSIGNED_ID,
   projectAgentSidebarSections,
@@ -66,10 +66,11 @@ export type GrokAgentSidebarProps = {
   onMoveToSection?(item: GrokAgentSidebarItem, sectionId: string): void;
 };
 
-function activityState(item: GrokAgentSidebarItem, hostReady: boolean): BotMarkState {
+function activityState(item: GrokAgentSidebarItem, hostReady: boolean): FabAvatarState {
   if (item.busy) return 'working';
-  if (item.unread > 0) return 'notifying';
-  return hostReady ? 'idle' : 'waking';
+  if (item.waitingReason) return 'waiting';
+  if (item.unread > 0) return 'waiting';
+  return hostReady ? 'idle' : 'offline';
 }
 
 function relativeTime(updatedAtMs: number): string {
@@ -175,11 +176,12 @@ function AgentRow({
       }}
     >
       <span className={styles.avatar}>
-        <BotMark
-          botId={`grok-agent:${item.agentId}`}
+        <FabAvatar
+          identity={`agent:${item.agentId}`}
           state={activityState(item, hostReady)}
           size={collapsed ? 36 : 38}
           label={item.name}
+          active={active && item.busy}
         />
         {item.busy ? <i className={styles.workingDot} title="Working" /> : item.unread ? <i className={styles.unreadDot} title="Unread activity" /> : null}
       </span>
