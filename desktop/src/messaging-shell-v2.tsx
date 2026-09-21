@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import HostClient from '../../frontend/apps/web/src/app/host/host-client';
-import { BotMark, type BotMarkState } from '../../frontend/apps/web/src/app/host/bot-mark';
+import { BotMark } from '../../frontend/apps/web/src/app/host/bot-mark';
 import type { FabAvatarInputState } from './ui/avatar/fab-avatar';
 import type {
   AttachmentContext,
