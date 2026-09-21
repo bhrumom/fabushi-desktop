@@ -321,8 +321,9 @@ jobs:
           set -euo pipefail
           rm -rf "$OBF_EVIDENCE_DIR"
           mkdir -p "$OBF_EVIDENCE_DIR"
-          recorder="$RUNNER_TEMP/fabushi-support/chatgpt-vps-control/scripts/fcm-010-13-macos-session-recorder.sh"
+          recorder="$GITHUB_WORKSPACE/desktop/scripts/macos-session-recorder.sh"
           test -f "$recorder"
+          test -s "$GITHUB_WORKSPACE/desktop/scripts/macos-session-video.swift"
           bash "$recorder" start "$OBF_EVIDENCE_DIR"
           bash "$recorder" assert-live "$OBF_EVIDENCE_DIR"
           test_status=0
