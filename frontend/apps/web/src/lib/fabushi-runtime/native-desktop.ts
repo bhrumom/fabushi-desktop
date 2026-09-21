@@ -12,6 +12,7 @@ export type NativeDesktopEvent =
   | "widget-gallery"
   | "force-onboarding"
   | "account-auth-changed"
+  | "account-state-changed"
   | "experiments-changed"
   | "window-state"
   | "zoom-factor-changed"
