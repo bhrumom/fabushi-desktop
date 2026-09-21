@@ -122,7 +122,7 @@ for (const file of sourceFilesUnder(path.join(desktopRoot, 'src'))) {
 
 const primitiveSource = fs.readFileSync(path.join(desktopRoot, 'src', 'ui', 'primitives', 'fab-primitives.tsx'), 'utf8');
 for (const primitive of ['FabButton','FabIconButton','FabMenu','FabPopover','FabDialog','FabTooltip','FabSelect','FabBadge','FabAvatar','FabSpinner','FabInput','FabSurface']) {
-  if (!new RegExp(`export (?:function|const) ${primitive}\b`).test(primitiveSource)) {
+  if (!primitiveSource.includes(`export function ${primitive}`) && !primitiveSource.includes(`export const ${primitive}`)) {
     violations.push(`unified UI primitive missing: ${primitive}`);
   }
 }
@@ -130,7 +130,7 @@ if (shell.split('\n').length > 4000) {
   violations.push('AgentRootShell grew beyond the architecture budget (4000 lines)');
 }
 
-if (!/messenger-compatibility-adapter/.test(shell)
+if (!/messaging-compatibility-adapter/.test(shell)
   || !/buildCompatibilityPeers\s*\(/.test(shell)
   || !/compatibilityMessagingEnvelope\s*\(/.test(shell)
   || !/CompatibilitySurface/.test(shell)) {
@@ -399,12 +399,12 @@ if (!/agentCoordinatorClient\.connect\s*\(/.test(shell)) {
   violations.push('Host transport lifecycle escaped AgentCoordinatorClient');
 }
 
-if (!/import\s+AgentNetwork\s+from\s+['"](?:\.\.\/)+agent-workspace\/agent-network['"]/.test(shell)
+if (!/import\s+AgentNetwork\s+from\s+['"]\.\/agent-network['"]/.test(shell)
   || !/<AgentNetwork\b/.test(shell)) {
   violations.push('primary shell is not mounting the Agent-owned Network surface');
 }
 
-if (!/import\s+AgentCommandPalette\s+from\s+['"](?:\.\.\/)+agent-workspace\/agent-command-palette['"]/.test(shell)
+if (!/import\s+AgentCommandPalette\s+from\s+['"]\.\/agent-command-palette['"]/.test(shell)
   || !/<AgentCommandPalette\b/.test(shell)) {
   violations.push('primary shell is not mounting the Agent-owned command palette boundary');
 }
@@ -417,7 +417,7 @@ if (/setGrokPalette|agentPaletteOpen|agentPaletteQuery/.test(shell)) {
   violations.push('primary shell recreated command palette runtime state');
 }
 
-if (!/from\s+['"](?:\.\.\/)+agent-workspace\/agent-model['"]/.test(shell)
+if (!/from\s+['"]\.\/agent-model['"]/.test(shell)
   || !/projectAgentSidebarItems\s*\(/.test(shell)
   || !/projectActiveAgentKey\s*\(/.test(shell)) {
   violations.push('primary shell is not consuming the Agent-owned navigation projection model');

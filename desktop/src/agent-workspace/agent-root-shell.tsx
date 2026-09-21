@@ -3896,7 +3896,6 @@ async function saveInvoiceDialog() {
           <div className={styles.infoContent}>{infoTab === 'media' ? <><Image size={30} /><strong>共享媒体</strong><p>图片、视频和动画按消息索引展示。</p></> : null}{infoTab === 'files' ? <><FileText size={30} /><strong>共享文件</strong><p>文档、音频和附件由 Rust 媒体层管理。</p></> : null}{infoTab === 'links' ? <><Link2 size={30} /><strong>共享链接</strong><p>富文本 URL 建立可搜索索引。</p></> : null}</div>
         </aside>
         )
-        )
       ) : null}
 
       {messageMenu ? <TelegramMessageContextMenu menu={messageMenu} onAction={(action) => void handleMessageAction(action)} /> : null}

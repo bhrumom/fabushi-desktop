@@ -382,7 +382,7 @@ impl RuntimeStore {
     }
 
     #[cfg(test)]
-    pub(crate) fn capability_audit_count(&self) -> Result<u64, RuntimeStoreError> {
+    pub(crate) fn capability_audit_count(&self) -> Result<i64, RuntimeStoreError> {
         #[cfg(target_arch = "wasm32")]
         {
             Ok(0)
@@ -393,7 +393,7 @@ impl RuntimeStore {
             connection
                 .lock()
                 .map_err(|_| RuntimeStoreError::Poisoned)?
-                .query_row("SELECT COUNT(*) FROM capability_audit", [], |row| row.get::<_, u64>(0))
+                .query_row("SELECT COUNT(*) FROM capability_audit", [], |row| row.get::<_, i64>(0))
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))
         }
     }
