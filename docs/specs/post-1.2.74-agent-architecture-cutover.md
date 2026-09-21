@@ -163,6 +163,13 @@ Retain:
 - PR #9 architecture merge; PR #14 active continuation.
 - Reference design intent: Grok Bot desktop organization + OpenBot capability governance + Mahayana Rust execution.
 
+## 16.1 Acceptance-cycle findings
+
+- Exact-head candidate run `35622265942` on `561852378d30164cb11abb79c507b01d1c3bb39e` passed signing, notarization, renderer/bundle binding and CI-account setup, then failed the real packaged acceptance at the direct Agent handoff stage after the 12-minute test timeout. Uploaded evidence stopped after `02-multi-agent-roster.png`; the Agent Network still exposed the owner-broadcast action instead of the expected direct handoff after selecting Research.
+- The direct handoff Runtime path remains Rust-owned; the failure was in the shared UI input primitive. `FabInput` had routed checkbox inputs through the bare text-input style. Checkbox inputs now use a dedicated native `styles.checkbox` path, and the architecture checker verifies that live path rather than an unused CSS fallback.
+- Packaged acceptance now asserts that the Research checkbox is visibly checked and that `Handoff to Research` appears within 10 seconds, so this class of UI-state regression fails locally at the handoff boundary instead of consuming the whole 12-minute acceptance timeout.
+- This finding does not satisfy R13/AC-8. A new immutable PR head must pass all exact-head workflows before merge.
+
 ## 17. Spec compliance record
 
 | Requirement / AC | Status | Evidence / reason |
@@ -173,7 +180,7 @@ Retain:
 | R4 | source-review PASS | RuntimeStore/SQLite WAL owns turns, runs, workspace state, pending intents, capability audit, computer leases, turn requests and handoff dispatch; renderer storage is migration/cosmetic only. |
 | R5 | source-review PASS | Runtime/FeatureHost privileged entries use `CapabilityBroker`; provider escalation approvals are brokered/audited; dynamic Computer actions are brokered before lease execution; MCP management and Agent handoff are brokered in Runtime. |
 | R6 | source-review PASS | Computer actions use `ComputerControlLease`; human take/release lifecycle and `waiting-user` projection are explicit. |
-| R7 | source-review PASS | AgentSend/Broadcast/Group use durable handoff intents with depth/fan-out limits; `ask_user` is first-class; handoff dispatch is journaled and restart-recovered. |
+| R7 | source-review PASS; packaged re-verification pending | AgentSend/Broadcast/Group use durable handoff intents with depth/fan-out limits; `ask_user` is first-class; handoff dispatch is journaled and restart-recovered. The first signed candidate exposed a UI checkbox-selection regression before the Runtime handoff was invoked; the shared input primitive and packaged handoff assertion were repaired and require a fresh exact-head pass. |
 | R8 | source-review PASS | Renderer permanent account/sidebar/remote polling and Host receive polling are removed; the Electron edge no longer exposes `feature.receive`; `backgroundThrottling: true` is explicit and Host events are pushed. |
 | R9 | source-review PASS | Desktop uses low-power `FabAvatar`; old BotMark/avatar runtime, per-avatar rAF and DOM MutationObserver inference are guarded against. |
 | R10 | source-review PASS | Shared Fabushi primitives/tokens are required across primary Agent UI and guarded against raw feature-local controls; Agent/Section naming and destructive confirmation now use `FabDialog` rather than browser-native prompt/confirm. |
