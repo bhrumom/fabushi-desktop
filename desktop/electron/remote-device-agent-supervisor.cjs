@@ -7,7 +7,9 @@ const path = require('node:path');
 const { embeddedComputerControlEnvironment } = require('./host-process.cjs');
 
 const OFFICIAL_DEVICE_GATEWAY_URL = 'wss://fabushi-mcp.ombhrum.com/agent';
-const SESSION_POLL_MS = 30_000;
+const SESSION_REFRESH_FALLBACK_MS = 30 * 60_000;
+const SESSION_REFRESH_SKEW_MS = 5 * 60_000;
+const SESSION_REFRESH_MIN_MS = 30_000;
 const RETRY_MS = 5_000;
 
 function remoteDeviceGatewayUrl(app, env = process.env) {
@@ -93,6 +95,18 @@ function validAgentSession(value) {
   };
 }
 
+function sessionExpirationMs(value) {
+  const raw = Number(value || 0);
+  if (!Number.isFinite(raw) || raw <= 0) return 0;
+  return raw < 1_000_000_000_000 ? raw * 1_000 : raw;
+}
+
+function sessionRefreshDelay(expiresAt, nowMs = Date.now()) {
+  const expiresAtMs = sessionExpirationMs(expiresAt);
+  if (!expiresAtMs) return SESSION_REFRESH_FALLBACK_MS;
+  return Math.max(SESSION_REFRESH_MIN_MS, expiresAtMs - nowMs - SESSION_REFRESH_SKEW_MS);
+}
+
 function writePrivateToken(fsImpl, destination, token) {
   const directory = path.dirname(destination);
   fsImpl.mkdirSync(directory, { recursive: true, mode: 0o700 });
@@ -148,7 +162,7 @@ class RemoteDeviceAgentSupervisor {
     this.schedule(0);
   }
 
-  schedule(delay = SESSION_POLL_MS) {
+  schedule(delay = SESSION_REFRESH_FALLBACK_MS) {
     if (this.closed || this.timer) return;
     this.timer = setTimeout(() => {
       this.timer = null;
@@ -169,6 +183,7 @@ class RemoteDeviceAgentSupervisor {
   async sync() {
     if (this.closed || this.syncing) return;
     this.syncing = true;
+    let nextSyncDelay = null;
     try {
       const gatewayUrl = remoteDeviceGatewayUrl(this.app, this.env);
       const childExecPath = gatewayUrl ? inheritedNodeExecPath({
@@ -194,6 +209,7 @@ class RemoteDeviceAgentSupervisor {
 
       const session = validAgentSession(await this.host.request('feature.auth.deviceAgentSession', {}, 30_000));
       if (!session) throw new Error('Fabushi account did not return a valid remote-device session.');
+      nextSyncDelay = sessionRefreshDelay(session.expiresAt);
       this.emitState({
         deviceId: session.deviceId,
         sessionId: session.sessionId,
@@ -251,6 +267,8 @@ class RemoteDeviceAgentSupervisor {
         try { this.fs.rmSync(this.tokenFile, { force: true }); } catch {}
         if (!this.closed) {
           console.error(`[fabushi-remote-device] agent exited (${code ?? 'null'}, ${signal ?? 'none'})`);
+          if (this.timer) clearTimeout(this.timer);
+          this.timer = null;
           this.schedule(RETRY_MS);
         }
       });
@@ -260,10 +278,11 @@ class RemoteDeviceAgentSupervisor {
       this.emitState({ running: false, error: message, lastSyncAtMs: Date.now() });
       if (!/not logged in|notloggedin|missing account|session expired/iu.test(message)) {
         console.error('[fabushi-remote-device] session sync failed', error);
+        nextSyncDelay = RETRY_MS;
       }
     } finally {
       this.syncing = false;
-      this.schedule();
+      if (nextSyncDelay != null) this.schedule(nextSyncDelay);
     }
   }
 
@@ -281,5 +300,7 @@ module.exports = {
   inheritedNodeExecPath,
   remoteDeviceGatewayUrl,
   remoteDeviceRuntime,
+  sessionExpirationMs,
+  sessionRefreshDelay,
   validAgentSession,
 };
