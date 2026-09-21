@@ -140,12 +140,12 @@ if (!/readLegacyAgentWorkspaceDrafts/.test(agentDraftStore)
 }
 if (!/import\s+AgentRootShell\s+from\s+['"]\.\.\/agent-workspace\/agent-root-shell['"]/.test(desktopApp)
   || !/import\s+LegacyMessagingAdapter\s+from\s+['"]\.\.\/adapters\/legacy-messaging\/legacy-messaging-shell['"]/.test(desktopApp)
-  || !/<LegacyMessagingAdapter\s+RootShell=\{AgentRootShell\}/.test(desktopApp)
+  || !/<AgentRootShell>\s*<LegacyMessagingAdapter\s*\/>\s*<\/AgentRootShell>/.test(desktopApp)
   || !/import\s+DesktopApp\s+from\s+['"]\.\/app\/DesktopApp['"]/.test(mainEntry)
   || !/<DesktopApp\s*\/>/.test(mainEntry)
   || /messaging-shell-v2/.test(mainEntry)
   || /import\s+AgentRootShell/.test(shell)
-  || !/<RootShell\b/.test(shell)
+  || /\bRootShell\b/.test(shell)
   || /<div\s+hidden\b|hidden\s+aria-hidden=['"]true['"]/.test(shell)) {
   violations.push('DesktopApp/AgentRootShell is not the sole visible product root or hidden legacy navigation returned');
 }
@@ -212,9 +212,12 @@ if (!/openConversation:\s*openAgentConversation/.test(shell)
 if (!/useAgentComputerController\s*\(/.test(shell)) {
   violations.push('Agent Computer lifecycle controller is not mounted by the desktop Agent shell');
 }
-if (/RemoteComputerDesktopController|RTCPeerConnection|SIGNAL_POLL_MS|SESSION_POLL_MS|HEARTBEAT_MS/.test(computerController)
+if (/\bnew\s+RemoteComputerDesktopController\b|\bRTCPeerConnection\b|\bSIGNAL_POLL_MS\b|\bSESSION_POLL_MS\b|\bHEARTBEAT_MS\b/.test(computerController)
+  || /import\s*\{[^}]*\bRemoteComputerDesktopController\b[^}]*\}\s*from/.test(computerController)
   || !/getRemoteComputerBackgroundState/.test(computerController)
-  || !/remote-computer-background-state/.test(computerController)) {
+  || !/remote-computer-background-state/.test(computerController)
+  || !/class RemoteDeviceAgentSupervisor/.test(remoteDeviceSupervisor)
+  || !/sessionRefreshDelay\s*\(/.test(remoteDeviceSupervisor)) {
   violations.push('Agent Computer lifecycle regressed into the React renderer instead of Main');
 }
 if (/backgroundThrottling:\s*false/.test(electronMain)
