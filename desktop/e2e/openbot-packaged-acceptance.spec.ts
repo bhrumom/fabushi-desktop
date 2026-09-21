@@ -1,5 +1,5 @@
-import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
-import { appendFile, mkdir, rm, writeFile } from 'node:fs/promises';
+import { _electron as electron, chromium, expect, test, type Browser, type ElectronApplication, type Locator, type Page } from '@playwright/test';
+import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -46,11 +46,13 @@ async function withNodeDeadline<T>(label: string, timeoutMs: number, task: Promi
 async function waitForPackagedRendererBinding(
   app: ElectronApplication,
   initialPage: Page,
-): Promise<Page> {
+  appDataDir: string,
+): Promise<{ page: Page; browser: Browser | null; binding: 'electron' | 'cdp' }> {
   const deadline = Date.now() + 35_000;
-  let reloadIssued = false;
+  let cdpBrowser: Browser | null = null;
   let lastMainState: { url: string; loading: boolean; title: string } | null = null;
   let lastPageUrls: string[] = [];
+  let lastCdpError = '';
 
   while (Date.now() < deadline) {
     lastMainState = await app.evaluate(({ BrowserWindow }) => {
@@ -63,34 +65,45 @@ async function waitForPackagedRendererBinding(
           }
         : { url: '', loading: true, title: '' };
     });
-    const pages = app.windows();
-    lastPageUrls = pages.map((candidate) => candidate.url());
-    const bound = pages.find((candidate) => candidate.url().startsWith('app://bundle/'));
-    if (bound) return bound;
 
-    // A packaged app can finish its first custom-protocol navigation before
-    // Playwright has attached the BrowserWindow Page. Reload the exact same
-    // signed renderer once, after attachment, so Playwright observes that real
-    // navigation rather than falling back to a test host or alternate URL.
-    if (!reloadIssued && lastMainState.url.startsWith('app://bundle/') && !lastMainState.loading) {
-      reloadIssued = true;
-      await app.evaluate(async ({ BrowserWindow }) => {
-        const win = BrowserWindow.getAllWindows()[0];
-        if (!win) throw new Error('Fabushi BrowserWindow missing while binding Playwright');
-        const currentUrl = win.webContents.getURL();
-        if (!currentUrl.startsWith('app://bundle/')) {
-          throw new Error(`Unexpected packaged renderer URL: ${currentUrl || '<empty>'}`);
-        }
-        await win.loadURL(currentUrl);
-      });
+    const electronPages = app.windows();
+    lastPageUrls = electronPages.map((candidate) => candidate.url());
+    const electronBound = electronPages.find((candidate) => candidate.url().startsWith('app://bundle/'));
+    if (electronBound) return { page: electronBound, browser: null, binding: 'electron' };
+    if (initialPage.url().startsWith('app://bundle/')) {
+      return { page: initialPage, browser: null, binding: 'electron' };
     }
 
-    if (initialPage.url().startsWith('app://bundle/')) return initialPage;
+    // Playwright's Electron Page wrapper can miss a custom-protocol navigation
+    // that completed before attachment even though BrowserWindow.webContents is
+    // already on app://bundle. _electron.launch enables a Chromium remote
+    // debugging endpoint and writes DevToolsActivePort under userData. Bind the
+    // *same packaged renderer target* over that endpoint instead of reloading,
+    // replacing the URL, or falling back to a test host.
+    if (!cdpBrowser) {
+      try {
+        const activePort = await readFile(path.join(appDataDir, 'DevToolsActivePort'), 'utf8');
+        const [portText] = activePort.trim().split(/\r?\n/u);
+        const port = Number(portText);
+        if (Number.isInteger(port) && port > 0 && port <= 65_535) {
+          cdpBrowser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+        }
+      } catch (cause) {
+        lastCdpError = cause instanceof Error ? cause.message : String(cause);
+      }
+    }
+    if (cdpBrowser) {
+      const cdpPages = cdpBrowser.contexts().flatMap((context) => context.pages());
+      lastPageUrls = [...lastPageUrls, ...cdpPages.map((candidate) => candidate.url())];
+      const cdpBound = cdpPages.find((candidate) => candidate.url().startsWith('app://bundle/'));
+      if (cdpBound) return { page: cdpBound, browser: cdpBrowser, binding: 'cdp' };
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
 
   throw new Error(
-    `Playwright did not bind the packaged BrowserWindow. main=${JSON.stringify(lastMainState)} pages=${JSON.stringify(lastPageUrls)}`,
+    `Playwright did not bind the packaged BrowserWindow. main=${JSON.stringify(lastMainState)} pages=${JSON.stringify(lastPageUrls)} cdp=${lastCdpError || 'no target'}`,
   );
 }
 
@@ -303,6 +316,7 @@ test.describe('signed candidate packaged acceptance', () => {
       }
     };
     let app: ElectronApplication | null = null;
+    let cdpBrowser: Browser | null = null;
     let pageForTrace: Page | null = null;
     let traceStarted = false;
     let acceptanceCompleted = false;
@@ -320,8 +334,6 @@ test.describe('signed candidate packaged acceptance', () => {
       });
       let page = await app.firstWindow();
       pageForTrace = page;
-      await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true });
-      traceStarted = true;
       const attachPageDiagnostics = (target: Page) => {
         target.on('console', (message) => captureRuntimeLog('page-console', `${message.type()}: ${message.text()}`));
         target.on('pageerror', (error) => captureRuntimeLog('page-error', error.stack || error.message));
@@ -346,16 +358,20 @@ test.describe('signed candidate packaged acceptance', () => {
         }))),
       );
       const initialPageUrl = page.url();
-      const boundPage = await waitForPackagedRendererBinding(app, page);
-      if (boundPage !== page) {
-        page = boundPage;
-        pageForTrace = page;
+      const binding = await waitForPackagedRendererBinding(app, page, appDataDir);
+      cdpBrowser = binding.browser;
+      if (binding.page !== page) {
+        page = binding.page;
         attachPageDiagnostics(page);
       }
+      pageForTrace = page;
+      await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true });
+      traceStarted = true;
       await writeFile(path.join(evidenceRoot, 'startup.json'), JSON.stringify({
         sourceSha,
         initialPageUrl,
         pageUrl: page.url(),
+        binding: binding.binding,
         windows: startupWindows,
       }, null, 2));
 
@@ -465,6 +481,9 @@ test.describe('signed candidate packaged acceptance', () => {
         } catch {
           app.process().kill('SIGKILL');
         }
+      }
+      if (cdpBrowser) {
+        await cdpBrowser.close().catch(() => undefined);
       }
     }
   });

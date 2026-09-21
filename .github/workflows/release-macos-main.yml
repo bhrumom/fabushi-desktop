@@ -321,7 +321,19 @@ jobs:
           set -euo pipefail
           rm -rf "$OBF_EVIDENCE_DIR"
           mkdir -p "$OBF_EVIDENCE_DIR"
-          npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1
+          recorder="$RUNNER_TEMP/fabushi-support/chatgpt-vps-control/scripts/fcm-010-13-macos-session-recorder.sh"
+          test -x "$recorder"
+          bash "$recorder" start "$OBF_EVIDENCE_DIR"
+          bash "$recorder" assert-live "$OBF_EVIDENCE_DIR"
+          test_status=0
+          npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1 || test_status=$?
+          stop_status=0
+          bash "$recorder" stop "$OBF_EVIDENCE_DIR" || stop_status=$?
+          verify_status=0
+          bash "$recorder" verify "$OBF_EVIDENCE_DIR" || verify_status=$?
+          test "$test_status" -eq 0
+          test "$stop_status" -eq 0
+          test "$verify_status" -eq 0
 
       - name: Upload packaged acceptance evidence
         if: always()
