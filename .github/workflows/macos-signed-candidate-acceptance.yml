@@ -1,0 +1,316 @@
+name: macOS signed candidate acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact pre-merge branch HEAD to build and accept.
+        required: true
+        type: string
+      reference_run_id:
+        description: Workflow run containing the frozen OpenBot reference screenshot artifact.
+        required: true
+        type: string
+      reference_artifact_name:
+        description: Artifact name containing the frozen OpenBot reference screenshot.
+        required: true
+        default: openbot-reference-evidence
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: macos-candidate-${{ inputs.source_sha }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build, notarize, and accept macOS arm64
+    runs-on: macos-15
+    timeout-minutes: 180
+    env:
+      SUPPORT_REPO: bhrumom/fabushi
+      SUPPORT_SHA: 5d75920308fa17f5000308df1a0153309eb8e9ab
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind exact candidate source
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          requested="${{ inputs.source_sha }}"
+          test "$sha" = "$requested"
+          test -n "$sha"
+          version="$(node -p "require('./desktop/package.json').version")"
+          short="${sha:0:12}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "short=$short" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Signed candidate acceptance"
+            echo "- Exact source: `$sha`"
+            echo "- Version: `$version`"
+            echo "- Publish: `never`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Require Apple signing secrets
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          test -n "$MACOS_CERTIFICATE_P12_BASE64"
+          test -n "$MACOS_CERTIFICATE_PASSWORD"
+          if { [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_SPECIFIC_PASSWORD" ]; } &&              { [ -z "$APP_STORE_CONNECT_API_KEY_ID" ] || [ -z "$APP_STORE_CONNECT_API_ISSUER_ID" ] || [ -z "$APP_STORE_CONNECT_API_KEY_BASE64" ]; }; then
+            echo "::error::Apple notarization credentials are not configured."
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+
+      - name: Confirm Apple Silicon runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "arm64"
+
+      - name: Install desktop dependencies
+        shell: bash
+        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+
+      - name: Restore Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: third_party/mahayana/mahayana-rs -> target
+          shared-key: fabushi-desktop-macos-release-rust-1.97.1
+
+      - name: Install Developer ID identity
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          CONFIGURED_IDENTITY: ${{ secrets.MACOS_CODESIGN_IDENTITY }}
+        run: |
+          set -euo pipefail
+          cert="$RUNNER_TEMP/fabushi-developer-id.p12"
+          keychain="$RUNNER_TEMP/fabushi-developer-id.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          printf '%s' "$MACOS_CERTIFICATE_P12_BASE64" | base64 --decode > "$cert"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$cert" -k "$keychain" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain"
+          security default-keychain -d user -s "$keychain"
+          identity="$CONFIGURED_IDENTITY"
+          if [ -z "$identity" ]; then
+            identity="$(security find-identity -v -p codesigning "$keychain" | awk -F '"' '/Developer ID Application/ {print $2; exit}')"
+          fi
+          case "$identity" in *'Developer ID Application:'*) ;; *) echo "::error::Developer ID Application identity was not found."; exit 1 ;; esac
+          echo "MACOS_CODESIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
+          echo "CSC_IDENTITY_AUTO_DISCOVERY=true" >> "$GITHUB_ENV"
+          probe="$RUNNER_TEMP/fabushi-team-probe"
+          cp /usr/bin/true "$probe"
+          codesign --force --options runtime --timestamp --sign "$identity" "$probe"
+          team_id="$(codesign -dv --verbose=4 "$probe" 2>&1 | awk -F= '/^TeamIdentifier=/{print $2; exit}')"
+          test -n "$team_id"
+          echo "APPLE_TEAM_ID_RESOLVED=$team_id" >> "$GITHUB_ENV"
+          security find-identity -v -p codesigning "$keychain"
+
+      - name: Build and stage Mahayana desktop host
+        working-directory: desktop
+        shell: bash
+        run: npm run build:host
+
+      - name: Build pinned offline ASR engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest="desktop/electron/offline-asr-engine.json"
+          repo="$(node -p "require('./' + process.argv[1]).whisperCpp.repository" "$manifest")"
+          commit="$(node -p "require('./' + process.argv[1]).whisperCpp.commit" "$manifest")"
+          src="$RUNNER_TEMP/whisper-cpp"
+          build="$RUNNER_TEMP/whisper-build"
+          rm -rf "$src" "$build"
+          git clone --filter=blob:none --no-checkout "$repo" "$src"
+          git -C "$src" checkout --detach "$commit"
+          cmake -S "$src" -B "$build"             -DWHISPER_BUILD_TESTS=OFF             -DWHISPER_BUILD_EXAMPLES=ON             -DWHISPER_BUILD_SERVER=OFF             -DBUILD_SHARED_LIBS=OFF             -DGGML_NATIVE=OFF
+          cmake --build "$build" --config Release --parallel 2
+          binary="$(find "$build" -type f -name whisper-cli -perm -111 -print -quit)"
+          test -n "$binary"
+          out="desktop/resources/asr/darwin-arm64"
+          rm -rf "$out"
+          mkdir -p "$out"
+          cp "$binary" "$out/whisper-cli"
+          chmod 755 "$out/whisper-cli"
+          cp "$src/LICENSE" "$out/LICENSE.whisper.cpp"
+          printf '{"repository":"%s","commit":"%s","platform":"darwin","arch":"arm64"}\n' "$repo" "$commit" > "$out/build.json"
+
+      - name: Stage bundled Computer Use runtime
+        shell: bash
+        env:
+          CHATGPT_COMPUTER_CODESIGN_IDENTITY: ${{ env.MACOS_CODESIGN_IDENTITY }}
+          CHATGPT_COMPUTER_TEAM_ID: ${{ env.APPLE_TEAM_ID_RESOLVED }}
+        run: |
+          set -euo pipefail
+          support="$RUNNER_TEMP/fabushi-support"
+          git clone --filter=blob:none --no-checkout "https://github.com/$SUPPORT_REPO.git" "$support"
+          git -C "$support" sparse-checkout init --cone
+          git -C "$support" sparse-checkout set chatgpt-vps-control
+          git -C "$support" checkout "$SUPPORT_SHA"
+          npm --prefix "$support/chatgpt-vps-control" ci --ignore-scripts --prefer-offline --no-audit --no-fund
+          mkdir -p "$support/desktop/resources"
+          export CHATGPT_COMPUTER_HOME="$support/desktop/resources/computer-control"
+          node "$support/chatgpt-vps-control/bin/prepare-fabushi-bundle.js"
+          rm -rf desktop/resources/computer-control
+          mkdir -p desktop/resources/computer-control
+          rsync -a "$support/desktop/resources/computer-control/" desktop/resources/computer-control/
+          test -f desktop/resources/computer-control/active-runtime.json
+
+      - name: Build Electron renderer
+        working-directory: desktop
+        shell: bash
+        run: npm run build:renderer
+
+      - name: Package signed and notarized macOS installer
+        working-directory: desktop
+        shell: bash
+        env:
+          FABUSHI_MACOS_SIGNED: '1'
+          FABUSHI_MACOS_NOTARIZE: '1'
+          MACOS_CODESIGN_IDENTITY: ${{ env.MACOS_CODESIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ env.APPLE_TEAM_ID_RESOLVED }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: npx electron-builder --mac --arm64 --publish never
+
+      - name: Notarize and staple DMG
+        shell: bash
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ env.APPLE_TEAM_ID_RESOLVED }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          dmg="$(find desktop/release -maxdepth 1 -type f -name '*.dmg' -print -quit)"
+          app="$(find desktop/release -maxdepth 3 -type d -name '*.app' -print -quit)"
+          test -n "$dmg"
+          test -n "$app"
+          args=()
+          if [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" ]; then
+            args=(--apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD")
+          else
+            key_dir="$RUNNER_TEMP/private_keys"
+            mkdir -p "$key_dir"
+            key="$key_dir/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+            printf '%s' "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > "$key"
+            chmod 600 "$key"
+            args=(--key "$key" --key-id "$APP_STORE_CONNECT_API_KEY_ID" --issuer "$APP_STORE_CONNECT_API_ISSUER_ID")
+          fi
+          xcrun notarytool submit "$dmg" "${args[@]}" --wait --output-format json > "$RUNNER_TEMP/dmg-notary.json"
+          node -e "const r=require(process.argv[1]); if(r.status!=='Accepted') { console.error(r); process.exit(1) }" "$RUNNER_TEMP/dmg-notary.json"
+          xcrun stapler staple "$dmg"
+          xcrun stapler validate "$dmg"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          xcrun stapler validate "$app"
+          spctl --assess --type execute --verbose=4 "$app"
+
+      - name: Download frozen OpenBot reference evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REFERENCE_RUN_ID: ${{ inputs.reference_run_id }}
+          REFERENCE_ARTIFACT_NAME: ${{ inputs.reference_artifact_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/openbot-reference"
+          gh run download "$REFERENCE_RUN_ID" --repo "${{ github.repository }}" --name "$REFERENCE_ARTIFACT_NAME" --dir "$RUNNER_TEMP/openbot-reference"
+          reference="$(find "$RUNNER_TEMP/openbot-reference" -type f -name '*.png' -print -quit)"
+          test -n "$reference"
+          echo "OBF_REFERENCE_SCREENSHOT=$reference" >> "$GITHUB_ENV"
+          shasum -a 256 "$reference"
+
+      - name: Run real packaged OpenBot/Grok/Mahayana acceptance
+        working-directory: desktop
+        shell: bash
+        env:
+          OBF_REAL_ACCEPTANCE: '1'
+          OBF_ACCEPTANCE_PHASE: candidate
+          OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EXPECTED_SOURCE_SHA: ${{ inputs.source_sha }}
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ github.workspace }}/desktop/release/mac-arm64/Fabushi.app/Contents/MacOS/fabushi
+          OBF_MAX_DIFF_PIXEL_RATIO: '0'
+          OBF_PIXEL_COLOR_THRESHOLD: '0'
+        run: |
+          set -euo pipefail
+          test -x "$FABUSHI_ELECTRON_EXECUTABLE"
+          test -f "$OBF_REFERENCE_SCREENSHOT"
+          npx playwright test e2e/openbot-packaged-acceptance.spec.ts --trace on --video on --screenshot on
+
+      - name: Upload signed candidate acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-macos-candidate-acceptance-${{ steps.source.outputs.short }}
+          path: |
+            desktop/test-results
+            desktop/playwright-report
+            desktop/release/*.dmg
+            desktop/release/*.zip
+            ${{ runner.temp }}/dmg-notary.json
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 0
+
+      - name: Write checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd desktop/release
+          find . -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-macos-candidate-${{ steps.source.outputs.short }}
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+            desktop/release/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
