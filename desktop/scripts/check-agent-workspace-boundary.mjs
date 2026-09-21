@@ -452,6 +452,11 @@ requireOrdered(
   ],
 );
 requirePattern(
+  'Recovering turn state must synthesize the canonical assistant run projection after restart cleanup',
+  agentTranscriptStore,
+  /applyTurnState[\s\S]{0,2200}activeStates[\s\S]{0,700}recovering[\s\S]{0,1800}createAssistantTurn\(event\.operationId, updatedAtMs\)/,
+);
+requirePattern(
   'Waiting-user restart handling must remain fail-closed',
   runtimeCoordinator,
   /turnStateByOperation\.get\(operationId\) === ['"]waiting-user['"][\s\S]{0,1200}operation\.interrupted/,
