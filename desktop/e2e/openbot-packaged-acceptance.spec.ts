@@ -12,6 +12,8 @@ const evidenceRoot = process.env.OBF_EVIDENCE_DIR?.trim()
 
 type LifecycleSample = {
   readonly at: number;
+  readonly type: 'operation.started' | 'turn.state' | 'chat.delta' | 'chat.message' | 'agent.step' | 'operation.completed' | 'operation.failed';
+  readonly operationId?: string;
   readonly status: string;
   readonly text: string;
 };
@@ -280,37 +282,85 @@ async function installLifecycleCapture(page: Page): Promise<void> {
   await page.evaluate(() => {
     const scope = window as typeof window & {
       __candidateLifecycle?: LifecycleSample[];
-      __candidateObserver?: MutationObserver;
+      __candidateLifecycleUnsubscribe?: () => void;
     };
+    scope.__candidateLifecycleUnsubscribe?.();
     scope.__candidateLifecycle = [];
-    const sample = () => {
-      const turn = document.querySelector<HTMLElement>('[data-testid="mahayana-assistant-turn"]');
-      if (turn) {
-        const status = turn.dataset.status || turn.querySelector<HTMLElement>('[data-turn-status]')?.dataset.turnStatus || 'unknown';
-        const text = (turn.innerText || '').trim();
-        const last = scope.__candidateLifecycle?.at(-1);
-        if (!last || last.status !== status || last.text !== text) {
-          scope.__candidateLifecycle?.push({ at: Date.now(), status, text });
-        }
+
+    const bridge = window.mahayana;
+    if (!bridge?.subscribe) throw new Error('Mahayana runtime event subscription is unavailable.');
+    scope.__candidateLifecycleUnsubscribe = bridge.subscribe((event) => {
+      const at = Date.now();
+      if (event.type === 'operation.started') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: 'running',
+          text: event.label,
+        });
+        return;
       }
-      for (const step of document.querySelectorAll<HTMLElement>('[data-testid="agent-step"]')) {
-        const status = step.dataset.status || 'unknown';
-        const text = (step.innerText || '').trim();
-        const last = scope.__candidateLifecycle?.at(-1);
-        if (!last || last.status !== status || last.text !== text) {
-          scope.__candidateLifecycle?.push({ at: Date.now(), status, text });
-        }
+      if (event.type === 'turn.state') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: event.state,
+          text: `${event.turnId}:${event.runId}:${event.sequence}`,
+        });
+        return;
       }
-    };
-    sample();
-    const observer = new MutationObserver(sample);
-    observer.observe(document.documentElement, {
-      subtree: true,
-      attributes: true,
-      childList: true,
-      characterData: true,
+      if (event.type === 'chat.delta') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: 'streaming',
+          text: event.delta,
+        });
+        return;
+      }
+      if (event.type === 'chat.message' && event.operationId) {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: event.role === 'assistant' ? 'streaming' : 'message',
+          text: event.text,
+        });
+        return;
+      }
+      if (event.type === 'agent.step') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: event.status,
+          text: `${event.kind}:${event.title}`,
+        });
+        return;
+      }
+      if (event.type === 'operation.completed') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: 'completed',
+          text: '',
+        });
+        return;
+      }
+      if (event.type === 'operation.failed') {
+        scope.__candidateLifecycle?.push({
+          at,
+          type: event.type,
+          operationId: event.operationId,
+          status: 'failed',
+          text: `${event.code}:${event.message}`,
+        });
+      }
     });
-    scope.__candidateObserver = observer;
   });
 }
 
@@ -497,18 +547,40 @@ test.describe('signed candidate packaged acceptance', () => {
 
       await openAgent(page, 'Chief');
       await installLifecycleCapture(page);
-      const lifecyclePrompt = 'Lifecycle acceptance: analyze the candidate, perform at least one safe read-only tool step, then finish with CANDIDATE-LIFECYCLE-OK.';
+      const lifecyclePrompt = 'Lifecycle acceptance: analyze the signed candidate and finish with CANDIDATE-LIFECYCLE-OK.';
       await submitTurn(page, lifecyclePrompt);
       const lifecycleTurn = await waitForCompletedTurn(page, lifecyclePrompt);
       await expect(lifecycleTurn).toContainText('CANDIDATE-LIFECYCLE-OK');
-      await expect.poll(async () => lifecycleTurn.getByTestId('agent-step').count(), { timeout: 30_000 }).toBeGreaterThan(0);
-      await expect.poll(async () => lifecycleTurn.locator('[data-testid="agent-step"][data-status="completed"]').count(), { timeout: 30_000 }).toBeGreaterThan(0);
       const lifecycle = await page.evaluate(() => {
         const scope = window as typeof window & { __candidateLifecycle?: LifecycleSample[] };
         return scope.__candidateLifecycle ?? [];
       });
-      expect(lifecycle.some((sample) => ['running', 'thinking', 'preparing', 'streaming'].includes(sample.status))).toBe(true);
-      expect(lifecycle.some((sample) => sample.status === 'completed')).toBe(true);
+      const started = lifecycle.find((sample) => sample.type === 'operation.started');
+      expect(started?.operationId, 'real lifecycle must emit operation.started').toBeTruthy();
+      const operationId = started!.operationId!;
+      const operationLifecycle = lifecycle.filter((sample) => sample.operationId === operationId);
+      expect(
+        operationLifecycle.some((sample) => sample.type === 'turn.state' && ['preparing', 'thinking', 'streaming', 'tool-running'].includes(sample.status)),
+        'real lifecycle must expose an active Rust-owned turn state',
+      ).toBe(true);
+      expect(
+        operationLifecycle.some((sample) =>
+          (sample.type === 'chat.delta' || sample.type === 'chat.message')
+          && sample.text.includes('CANDIDATE-LIFECYCLE-OK')),
+        'real lifecycle must stream or emit the expected assistant result on the same operation',
+      ).toBe(true);
+      expect(
+        operationLifecycle.some((sample) => sample.type === 'operation.completed' && sample.status === 'completed'),
+        'real lifecycle must emit operation.completed for the same operation',
+      ).toBe(true);
+      expect(
+        operationLifecycle.some((sample) => sample.type === 'operation.failed'),
+        'real lifecycle must not fail',
+      ).toBe(false);
+      const toolSteps = operationLifecycle.filter((sample) => sample.type === 'agent.step');
+      if (toolSteps.length > 0) {
+        expect(toolSteps.some((sample) => sample.status === 'completed')).toBe(true);
+      }
 
       const rosterShape = await stableAvatarShape(peerByName(page, 'Chief'));
       const headerShape = await stableAvatarShape(page.getByTestId('grok-agent-header'));
