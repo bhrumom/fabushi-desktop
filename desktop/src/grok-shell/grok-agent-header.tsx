@@ -1,5 +1,6 @@
 import { AppWindow, Monitor, MoreVertical, Pin, Search } from 'lucide-react';
 import React from 'react';
+import { FabButton } from '../ui/primitives/fab-primitives';
 import FabAvatar, { type FabAvatarInputState } from '../ui/avatar/fab-avatar';
 import styles from './grok-agent-header.module.css';
 
@@ -45,11 +46,11 @@ export default function GrokAgentHeader({
       </div>
     </div>
     <div className={styles.actions}>
-      {onOpenMiniApp ? <button type="button" data-testid="miniapp-bot-open" title={miniAppTitle ?? 'Open app'} onClick={onOpenMiniApp}><AppWindow size={17} /></button> : null}
-      <button type="button" title="Search conversation" data-active={searchActive || undefined} onClick={onToggleSearch}><Search size={17} /></button>
-      <button type="button" title="Computer" data-active={computerActive || undefined} onClick={onToggleComputer}><Monitor size={17} /></button>
-      <button type="button" title={pinned ? 'Unpin' : 'Pin'} data-active={pinned || undefined} onClick={onTogglePin}><Pin size={17} /></button>
-      <button type="button" title="Agent info" data-testid="conversation-info-toggle" data-active={infoActive || undefined} onClick={onToggleInfo}><MoreVertical size={17} /></button>
+      {onOpenMiniApp ? <FabButton variant="bare" type="button" data-testid="miniapp-bot-open" title={miniAppTitle ?? 'Open app'} onClick={onOpenMiniApp}><AppWindow size={17} /></FabButton> : null}
+      <FabButton variant="bare" type="button" title="Search conversation" data-active={searchActive || undefined} onClick={onToggleSearch}><Search size={17} /></FabButton>
+      <FabButton variant="bare" type="button" title="Computer" data-active={computerActive || undefined} onClick={onToggleComputer}><Monitor size={17} /></FabButton>
+      <FabButton variant="bare" type="button" title={pinned ? 'Unpin' : 'Pin'} data-active={pinned || undefined} onClick={onTogglePin}><Pin size={17} /></FabButton>
+      <FabButton variant="bare" type="button" title="Agent info" data-testid="conversation-info-toggle" data-active={infoActive || undefined} onClick={onToggleInfo}><MoreVertical size={17} /></FabButton>
     </div>
   </header>;
 }
