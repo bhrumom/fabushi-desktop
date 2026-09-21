@@ -4,6 +4,6 @@ import DesktopAuthBoundary from './desktop-auth-boundary';
 
 export default function DesktopApp() {
   return <DesktopAuthBoundary>
-    {({ onLogout }) => <AgentRootShell onLogout={onLogout} />}
+    {({ transport, onLogout }) => <AgentRootShell transport={transport} onLogout={onLogout} />}
   </DesktopAuthBoundary>;
 }
