@@ -157,7 +157,7 @@ Retain:
 
 ## 16. References / provenance
 
-- Explicit user requirements in tasks `[Fabushi:a2b8eaac-aea0-475c-9d22-9caac119af04]` and `[Fabushi:7ce9e325-b10e-4cba-9290-c5577b154d92]`.
+- Explicit user requirements in tasks `[Fabushi:a2b8eaac-aea0-475c-9d22-9caac119af04]`, `[Fabushi:7ce9e325-b10e-4cba-9290-c5577b154d92]`, and `[Fabushi:5fc4d16a-4172-4c99-89d5-08f24b7c435a]`.
 - `AGENTS.md` and `docs/specs/spec-first-ai-development.md` on canonical main.
 - `projects/grok-fabu-parity/PARITY.md`.
 - PR #9 architecture merge; PR #14 active continuation.
@@ -177,6 +177,14 @@ Retain:
 - Root cause was a transport/UI identity mismatch in the command bridge. Agent workspace ownership is keyed by `agent:<agentId>`, but the bridge exposed `conversationKey=codex:agent:<agentId>`. The same request id was therefore registered under a second ghost peer, overwriting request-to-peer ownership and leaving the canonical peer's pending request uncleared after the Rust run completed.
 - `AgentRuntimeCoordinator` now resolves bridge context through its bound `agentId -> peerKey` / `conversationId -> peerKey` maps and ignores unbound compatibility chat commands. A deterministic concurrent Research/Builder regression test verifies that no `codex:*` ghost peer is created, both operations finalize, both canonical peers clear busy state, and transcripts remain isolated.
 - This finding still does not satisfy R13/AC-8 until a fresh immutable head passes Desktop Chat Parity, Rust desktop runtime and the signed/notarized packaged acceptance.
+
+## 16.3 Canonical completed-turn acceptance finding
+
+- Exact-head run `35629200067` attempt 1 on `53fc3b4a5f18a0dce20b6286881ca60cab14460f` reached a runner-native Local Network permission dialog before the packaged renderer could bind; signing and notarization had already passed. The same exact-head failed-job retry started the packaged renderer normally, proving that first failure was not a reproducible BrowserWindow/protocol regression.
+- Attempt 2 reached direct handoff, broadcast and concurrent Research/Builder execution. Rust persistence and provider-session evidence showed both turns completed with isolated final assistant text, including `FABUSHI-RESEARCH-ONLY-7421` and `FABUSHI-BUILDER-ONLY-5937`.
+- Playwright trace showed the Research canonical `mahayana-assistant-turn` already at `data-status="completed"` with the correct final text, but the packaged acceptance helper was still counting the obsolete Messenger-era selector `[data-agent-message-role="peer"]`. The resulting 180-second timeout was therefore an acceptance-contract mismatch, not a missing Rust completion or cross-Agent leak.
+- Packaged acceptance now counts only `[data-testid="mahayana-assistant-turn"][data-status="completed"]`. This is stricter than the legacy selector: optimistic/streaming turns cannot satisfy the gate, and the test is bound directly to the Agent-first canonical transcript contract.
+- Because the acceptance harness changed, R13/AC-8 still require a completely fresh exact-head Actions cycle. No prior successful workflow may be reused for the new head.
 
 ## 17. Spec compliance record
 
