@@ -313,6 +313,13 @@ pub struct PluginCommandDescriptor {
 pub enum RuntimeCommand {
     #[serde(rename = "mahayana.runtime.status")]
     Status,
+    #[serde(rename = "mahayana.runtime.uiState.get")]
+    UiStateGet { key: String },
+    #[serde(rename = "mahayana.runtime.uiState.set")]
+    UiStateSet {
+        key: String,
+        value: Value,
+    },
     #[serde(rename = "mahayana.conversation.list")]
     ListConversations,
     #[serde(rename = "mahayana.capability.list")]
@@ -448,6 +455,12 @@ pub enum ApprovalDecision {
 pub enum RuntimeResponse {
     #[serde(rename = "mahayana.runtime.status")]
     Status(RuntimeStatus),
+    #[serde(rename = "mahayana.runtime.uiState")]
+    RuntimeUiState {
+        key: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        value: Option<Value>,
+    },
     #[serde(rename = "mahayana.conversation.list")]
     Conversations { data: Vec<Conversation> },
     #[serde(rename = "mahayana.capability.list")]
@@ -711,6 +724,17 @@ mod tests {
         assert_eq!(TurnState::ToolRunning.as_str(), "tool-running");
         assert!(TurnState::Completed.terminal());
         assert!(!TurnState::Streaming.terminal());
+    }
+
+    #[test]
+    fn runtime_ui_state_wire_contract_is_explicit() {
+        let command = RuntimeCommand::UiStateSet {
+            key: "agent-workspace:drafts:v2".into(),
+            value: serde_json::json!({"agent:a": {"text": "hello"}}),
+        };
+        let json = serde_json::to_value(command).expect("serialize ui state command");
+        assert_eq!(json["@type"], "mahayana.runtime.uiState.set");
+        assert_eq!(json["key"], "agent-workspace:drafts:v2");
     }
 
     #[test]
