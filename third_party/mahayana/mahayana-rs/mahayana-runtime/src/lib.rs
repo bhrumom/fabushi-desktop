@@ -36,6 +36,7 @@ use mahayana_core::HandoffIntent;
 use mahayana_core::IntentId;
 use mahayana_core::LogicalTurn;
 use mahayana_core::MessageId;
+use mahayana_core::MessageRole;
 use mahayana_core::MODEL_RUNTIME_VERSION;
 use mahayana_core::MAHAYANA_AI_CONVERSATION_ID;
 use mahayana_core::OperationId;
@@ -264,6 +265,7 @@ impl MahayanaRuntime {
                 status: runtime.status(),
             })
             .map_err(|_| RuntimeError::EventConsumerClosed)?;
+        runtime.recover_interrupted_turns()?;
         runtime.recover_pending_handoffs()?;
         Ok(runtime)
     }
@@ -1083,6 +1085,78 @@ impl MahayanaRuntime {
         })
     }
 
+    fn recover_interrupted_turns(&self) -> Result<(), RuntimeError> {
+        for pending in self.store.recoverable_turns()? {
+            let provider = self.providers.for_conversation(&pending.conversation_id)?;
+            let recovered_text = if let Some(text) = pending.text.clone() {
+                Some(text)
+            } else {
+                // Compatibility fallback for turns created before turn_requests
+                // existed. New work never depends on provider history for restart
+                // recovery because RuntimeStore persists the execution input.
+                self.async_runtime
+                    .block_on(provider.history(&pending.conversation_id, 500))
+                    .ok()
+                    .and_then(|history| {
+                        history
+                            .into_iter()
+                            .rev()
+                            .find(|message| {
+                                message.id == pending.message_id
+                                    && message.role == MessageRole::User
+                            })
+                            .map(|message| message.text)
+                    })
+            };
+
+            let Some(text) = recovered_text else {
+                self.store.set_run_state(
+                    &pending.last_run_id,
+                    TurnState::Failed,
+                    Some(now_millis()),
+                )?;
+                self.store
+                    .set_turn_state(&pending.turn_id, TurnState::Failed, None)?;
+                let _ = self.event_tx.send(RuntimeEvent::ProviderDegraded {
+                    provider: "turn-recovery".to_string(),
+                    message: format!(
+                        "could not recover logical turn {} generation {}: durable input unavailable",
+                        pending.turn_id, pending.generation
+                    ),
+                });
+                continue;
+            };
+
+            self.store.set_run_state(
+                &pending.last_run_id,
+                TurnState::Failed,
+                Some(now_millis()),
+            )?;
+            self.store
+                .set_turn_state(&pending.turn_id, TurnState::Recovering, None)?;
+
+            if let Err(error) = self.start_message(
+                pending.conversation_id.clone(),
+                text,
+                None,
+                Some(pending.message_id.to_string()),
+                pending.inference_provider.clone(),
+                pending.hidden.unwrap_or(false),
+            ) {
+                self.store
+                    .set_turn_state(&pending.turn_id, TurnState::Failed, None)?;
+                let _ = self.event_tx.send(RuntimeEvent::ProviderDegraded {
+                    provider: "turn-recovery".to_string(),
+                    message: format!(
+                        "could not restart logical turn {} after runtime recovery: {error}",
+                        pending.turn_id
+                    ),
+                });
+            }
+        }
+        Ok(())
+    }
+
     fn recover_pending_handoffs(&self) -> Result<(), RuntimeError> {
         for pending in self.store.recoverable_handoffs()? {
             let target_conversation = pending
@@ -1323,6 +1397,16 @@ impl MahayanaRuntime {
             state: initial_state,
         };
         self.store.record_turn(&turn)?;
+        if let Some(message_id) = turn.user_message_id.as_ref() {
+            self.store.record_turn_request(
+                &turn_id,
+                message_id,
+                &text,
+                inference_provider.as_deref(),
+                hidden,
+                run_started_at_ms,
+            )?;
+        }
         self.store.record_run(&run)?;
 
         let context = RunContext {
