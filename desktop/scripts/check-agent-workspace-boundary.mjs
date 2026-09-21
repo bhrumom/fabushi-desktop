@@ -67,6 +67,7 @@ const agentNetwork = read(desktopRoot, 'src', 'agent-workspace', 'agent-network.
 const agentSettingsPanel = read(desktopRoot, 'src', 'agent-workspace', 'agent-settings-panel.tsx');
 const fabAvatar = read(desktopRoot, 'src', 'ui', 'avatar', 'fab-avatar.tsx');
 const primitives = read(desktopRoot, 'src', 'ui', 'primitives', 'fab-primitives.tsx');
+const primitiveStyles = read(desktopRoot, 'src', 'ui', 'primitives', 'fab-primitives.module.css');
 const tokens = read(desktopRoot, 'src', 'ui', 'tokens.css');
 const electronMain = read(desktopRoot, 'electron', 'main.cjs');
 const hostProcess = read(desktopRoot, 'electron', 'host-process.cjs');
@@ -132,6 +133,13 @@ forbidPattern('AgentRootShell must not own durable state in localStorage', rootS
 forbidPattern('AgentRootShell must not use browser-native prompt/confirm dialogs', rootShell, /window\.(?:prompt|confirm)\s*\(/);
 forbidPattern('Agent Sidebar boundary must use FabDialog instead of browser-native prompt/confirm', agentSidebarBoundary, /window\.(?:prompt|confirm)\s*\(/);
 requirePattern('Agent Sidebar boundary must own FabDialog management flows', agentSidebarBoundary, /\bFabDialog\b/);
+forbidPattern('Agent Network must use FabDialog instead of browser-native prompt/confirm', agentNetwork, /window\.(?:prompt|confirm)\s*\(/);
+requirePattern('Agent Network must own FabDialog group management flows', agentNetwork, /\bFabDialog\b/);
+requirePattern(
+  'Bare Fab checkboxes must remain actionable and non-zero-sized',
+  primitiveStyles,
+  /\.bareInput\[type=['"]checkbox['"]\][\s\S]{0,300}width:\s*14px[\s\S]{0,200}height:\s*14px/,
+);
 forbidPattern(
   'Conversation identity must not infer Telegram from string prefixes',
   conversationIdentity,
