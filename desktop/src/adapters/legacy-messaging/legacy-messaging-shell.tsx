@@ -115,15 +115,8 @@ import {
 } from '../../agent-workspace/agent-attachments';
 import type { AgentPromptReference, AgentReplyContext } from '../../agent-workspace/prompt-context';
 import type { AgentSidebarSection } from '../../agent-workspace/agent-sidebar-state';
-import { useAgentSidebarController } from '../../agent-workspace/use-agent-sidebar-controller';
-import { useAgentNetworkController } from '../../agent-workspace/use-agent-network-controller';
-import { useAgentCommandPaletteController } from '../../agent-workspace/use-agent-command-palette-controller';
-import { useAgentWorkflowController } from '../../agent-workspace/use-agent-workflow-controller';
-import { useAgentMcpController } from '../../agent-workspace/use-agent-mcp-controller';
-import { useAgentPrSuggestionController } from '../../agent-workspace/use-agent-pr-suggestion-controller';
-import { useAgentStoreSyncController } from '../../agent-workspace/use-agent-store-sync-controller';
-import { useAgentDirectoryController } from '../../agent-workspace/use-agent-directory-controller';
 import { useAgentSettingsController } from '../../agent-workspace/use-agent-settings-controller';
+import { useAgentProductControllers } from '../../agent-workspace/use-agent-product-controllers';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -940,11 +933,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [silentSend, setSilentSend] = useState(false);
   const [scheduledAtMs, setScheduledAtMs] = useState<number | undefined>();
   const [search, setSearch] = useState('');
-  const agentPaletteController = useAgentCommandPaletteController();
-  const agentSidebarController = useAgentSidebarController(remoteAccountScope);
-  const agentPinnedOrder = agentSidebarController.pinnedOrder;
-  const agentSidebarSections = agentSidebarController.sections;
-  const agentSelectedKeys = agentSidebarController.selectedKeys;
   const [sidebarWidth, setSidebarWidth] = useState(330);
   const [conversationSearchOpen, setConversationSearchOpen] = useState(false);
   const [agentConversationSearch, setAgentConversationSearch] = useState('');
