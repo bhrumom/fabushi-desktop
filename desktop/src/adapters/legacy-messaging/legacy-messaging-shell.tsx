@@ -1496,19 +1496,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [agentCoordinatorClient, selfHosted, startupProjection]);
 
   useEffect(() => {
-    if (!hostReady || initialLegacyHydrated) return;
-    let attempts = 0;
-    const retryMissing = () => {
-      if (initialLegacyHydrationMaskRef.current === 0b111 || attempts >= 8) return;
-      attempts += 1;
-      refreshLegacy(initialLegacyHydrationMaskRef.current);
-    };
-    const timer = window.setInterval(retryMissing, 650);
-    retryMissing();
-    return () => window.clearInterval(timer);
-  }, [hostReady, initialLegacyHydrated]);
-
-  useEffect(() => {
     if (!initialAgentWorkspaceHydrated) return;
     // MCP discovery belongs to the Agent Composer. Start it after the Agent
     // surface is usable, independently of compatibility conversation/group
