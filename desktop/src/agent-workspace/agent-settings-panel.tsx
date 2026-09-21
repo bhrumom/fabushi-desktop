@@ -1,4 +1,5 @@
 import React, { useEffect, useState, type KeyboardEvent } from 'react';
+import { FabButton, FabInput, FabSelect } from '../ui/primitives/fab-primitives';
 import type { InferenceProvider } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { AgentSettingsPending, AgentSettingsProfileUpdate, AgentSettingsProfileValue } from './agent-settings-controller';
 export type { AgentSettingsProfileUpdate, AgentSettingsProfileValue } from './agent-settings-controller';
@@ -69,7 +70,7 @@ function EditableField({
     onKeyDown,
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(event.currentTarget.value),
   };
-  return multiline ? <textarea {...common} rows={4} /> : <input {...common} type="text" />;
+  return multiline ? <textarea {...common} rows={4} /> : <FabInput variant="bare" {...common} type="text" />;
 }
 
 /**
@@ -106,7 +107,7 @@ export default function AgentSettingsPanel(props: AgentSettingsPanelProps) {
     <label><span>Avatar color</span><EditableField label="Agent avatar color" value={props.value.avatarColor} disabled={props.pending != null} placeholder="#7c3aed" onCommit={(value) => void updateProfile('avatarColor', value)} /></label>
     <label>
       <span>Inference provider</span>
-      <select
+      <FabSelect variant="bare"
         aria-label="Agent inference provider"
         value={props.value.inferenceProvider}
         disabled={props.pending != null}
@@ -117,14 +118,14 @@ export default function AgentSettingsPanel(props: AgentSettingsPanelProps) {
         <option value="codex">Codex</option>
         <option value="openrouter">OpenRouter</option>
         <option value="claude-code">Claude Code</option>
-      </select>
+      </FabSelect>
       <small>This setting belongs to this Agent and is persisted with its Mahayana session.</small>
     </label>
     <div className={styles.row}>
       <span><strong>Notifications</strong><small>Get notified when this Agent finishes or needs input</small></span>
-      <button type="button" role="switch" aria-checked={props.value.notifyOnUpdatesEnabled} disabled={props.pending != null} onClick={toggleNotifications}>
+      <FabButton variant="bare" type="button" role="switch" aria-checked={props.value.notifyOnUpdatesEnabled} disabled={props.pending != null} onClick={toggleNotifications}>
         {props.value.notifyOnUpdatesEnabled ? 'On' : 'Off'}
-      </button>
+      </FabButton>
     </div>
     {props.error ? <div className={styles.error} role="status" aria-live="polite">{props.error}</div> : null}
   </section>;
