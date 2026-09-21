@@ -420,9 +420,10 @@ export class AgentRuntimeCoordinator {
         // for every lifecycle state: conversation identity is authoritative for
         // concurrent Agent ownership, not only during restart recovery.
         const recoveryPeerKey = this.peerByConversationId.get(event.conversationId);
+        const isRecovering = event.state === 'recovering';
         const peerKey = this.claimOperation(event.operationId, recoveryPeerKey);
         if (!peerKey) return this.workspace.isOperationFinished(event.operationId);
-        if (event.state === 'recovering') {
+        if (isRecovering) {
           const messageId = this.recoveryMessageByPeer.get(peerKey);
           if (messageId) {
             this.transcripts.adoptRecoveredOperation(peerKey, messageId, event.operationId);
