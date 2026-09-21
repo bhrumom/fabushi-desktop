@@ -48,6 +48,7 @@ const rootShell = read(desktopRoot, 'src', 'agent-workspace', 'agent-root-shell.
 const rootCss = read(desktopRoot, 'src', 'agent-workspace', 'agent-root-shell.module.css');
 const productControllers = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-product-controllers.ts');
 const runtimeFacade = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-workspace-runtime.ts');
+const runtimeCoordinator = read(desktopRoot, 'src', 'agent-workspace', 'agent-runtime-coordinator.ts');
 const directoryController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-directory-controller.ts');
 const networkController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-network-controller.ts');
 const computerController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-computer-controller.ts');
@@ -411,6 +412,31 @@ requirePattern(
   'RuntimeStore must compute retry generation from durable runs',
   runtimeStore,
   /pub fn retry_turn_generation[\s\S]{0,1800}MAX\(r\.generation\)/,
+);
+requirePattern(
+  'RuntimeStore must persist restartable turn execution inputs',
+  runtimeStore,
+  /CREATE TABLE IF NOT EXISTS turn_requests[\s\S]{0,1200}pub fn record_turn_request/,
+);
+requirePattern(
+  'Runtime must recover interrupted logical turns before durable handoffs',
+  runtimeLib,
+  /recover_interrupted_turns\(\)\?[\s\S]{0,120}recover_pending_handoffs\(\)\?/,
+);
+requirePattern(
+  'Runtime restart recovery must resume one durable logical turn as a retry generation',
+  runtimeLib,
+  /fn recover_interrupted_turns[\s\S]{0,3200}TurnState::Recovering[\s\S]{0,1200}start_message\(/,
+);
+requirePattern(
+  'Renderer recovery must reclaim a Rust recovering run by conversation identity',
+  runtimeCoordinator,
+  /peerByConversationId[\s\S]{0,2600}prepareOperationRecovery[\s\S]{0,5200}event\.state === ['"]recovering['"][\s\S]{0,1000}claimOperation\(event\.operationId, recoveryPeerKey\)/,
+);
+requirePattern(
+  'Waiting-user restart handling must remain fail-closed',
+  runtimeCoordinator,
+  /turnStateByOperation\.get\(operationId\) === ['"]waiting-user['"][\s\S]{0,1200}operation\.interrupted/,
 );
 requirePattern('CapabilityBroker is missing', broker, /pub struct CapabilityBroker/);
 requirePattern('CapabilityBroker no longer owns authorization decisions', broker, /pub fn authorize_request\s*\(/);
