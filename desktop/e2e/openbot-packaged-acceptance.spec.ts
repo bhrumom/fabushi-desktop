@@ -388,9 +388,14 @@ async function performDirectHandoff(page: Page): Promise<void> {
 
   await resetBackgroundCapture(page);
   const research = network.locator('article').filter({ hasText: 'Research' }).first();
-  await research.getByRole('checkbox').check();
+  const researchCheckbox = research.getByRole('checkbox');
+  await expect(researchCheckbox).toBeVisible({ timeout: 10_000 });
+  await researchCheckbox.check({ timeout: 10_000 });
+  await expect(researchCheckbox).toBeChecked();
   await network.getByRole('textbox').fill('Research: verify the candidate handoff path and report one concise fact.');
-  await network.getByRole('button', { name: /Handoff to Research/ }).click();
+  const handoffButton = network.getByRole('button', { name: /Handoff to Research/ });
+  await expect(handoffButton).toBeVisible({ timeout: 10_000 });
+  await handoffButton.click({ timeout: 10_000 });
   await expect(network.getByRole('textbox')).toHaveValue('');
   await expect(network.getByText(/Chief.*Research|Research.*Chief/).first()).toBeVisible({ timeout: 20_000 });
   await waitForBackgroundFinished(page, ['Research'], 'agent-');
@@ -412,7 +417,8 @@ async function performBroadcast(page: Page): Promise<void> {
   for (const targetName of ['Chief', 'Launch']) {
     const target = network.locator('article').filter({ hasText: targetName }).first();
     const checkbox = target.getByRole('checkbox', { name: 'Broadcast' });
-    await checkbox.check();
+    await expect(checkbox).toBeVisible({ timeout: 10_000 });
+    await checkbox.check({ timeout: 10_000 });
     await expect(checkbox).toBeChecked();
   }
 
