@@ -277,6 +277,7 @@ jobs:
       - name: Run real signed packaged acceptance
         working-directory: desktop
         shell: bash
+        timeout-minutes: 15
         env:
           OBF_REAL_ACCEPTANCE: '1'
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
