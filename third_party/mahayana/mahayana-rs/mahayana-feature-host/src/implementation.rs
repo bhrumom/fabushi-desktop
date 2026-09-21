@@ -2752,8 +2752,43 @@ impl FeatureHostController {
                         snapshot: test_computer_snapshot(),
                     }
                 } else {
-                    mahayana_computer::execute(&actions, origin)
-                        .map_err(|error| FeatureHostError::Contract(error.to_string()))?
+                    match origin {
+                        ComputerControlOrigin::LocalUi => mahayana_computer::execute(&actions, origin),
+                        ComputerControlOrigin::RemoteMobile => {
+                            let remote_session = session_id.clone().ok_or_else(|| {
+                                FeatureHostError::Contract(
+                                    "remote computer action requires a sessionId".into(),
+                                )
+                            })?;
+                            let lease = mahayana_computer::ComputerControlLeaseRequest::new(
+                                format!("remote:{remote_session}"),
+                                remote_session,
+                                target
+                                    .device_id
+                                    .clone()
+                                    .unwrap_or_else(|| "local-desktop".to_string()),
+                                origin,
+                                "remote-human",
+                            );
+                            mahayana_computer::execute_with_lease(&actions, origin, &lease)
+                        }
+                        ComputerControlOrigin::Ai => {
+                            let lease = mahayana_computer::ComputerControlLeaseRequest::new(
+                                format!("agent:{audit_agent_id}"),
+                                session_id
+                                    .clone()
+                                    .unwrap_or_else(|| audit_agent_id.clone()),
+                                target
+                                    .device_id
+                                    .clone()
+                                    .unwrap_or_else(|| "local-desktop".to_string()),
+                                origin,
+                                "agent",
+                            );
+                            mahayana_computer::execute_with_lease(&actions, origin, &lease)
+                        }
+                    }
+                    .map_err(|error| FeatureHostError::Contract(error.to_string()))?
                 };
                 let serialized_actions = serde_json::to_value(&actions).unwrap_or(Value::Null);
                 self.append_action_audit(
@@ -2887,6 +2922,10 @@ impl FeatureHostController {
                 session_id,
                 ..
             } => {
+                mahayana_computer::release_control_lease(
+                    &format!("remote:{session_id}"),
+                    &session_id,
+                );
                 let device_secret = self.remote_device_secret(&device_id, false)?;
                 (
                     "mahayana.remote.computer.session.close",
