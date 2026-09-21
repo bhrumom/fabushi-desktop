@@ -91,6 +91,6 @@ export function conversationIdentityOf(peer: ConversationIdentityProjection): Co
   }
 }
 
-export function isAgentIdentityexport function isAgentIdentity(identity: ConversationIdentity): identity is AgentIdentity {
+export function isAgentIdentity(identity: ConversationIdentity): identity is AgentIdentity {
   return identity.type === 'agent';
 }
