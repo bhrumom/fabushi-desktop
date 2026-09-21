@@ -59,6 +59,7 @@ const agentTranscriptStore = read(desktopRoot, 'src', 'agent-workspace', 'agent-
 const conversationIdentity = read(desktopRoot, 'src', 'agent-workspace', 'conversation-identity.ts');
 const agentHeader = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-header.tsx');
 const agentSidebar = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-sidebar.tsx');
+const agentSidebarBoundary = read(desktopRoot, 'src', 'agent-workspace', 'agent-sidebar.tsx');
 const agentOverlays = read(desktopRoot, 'src', 'agent-workspace', 'agent-overlays.tsx');
 const agentComposer = read(desktopRoot, 'src', 'agent-workspace', 'agent-composer.tsx');
 const agentSearch = read(desktopRoot, 'src', 'agent-workspace', 'agent-search.tsx');
@@ -126,6 +127,9 @@ if (rootShell.split('\n').length > 1200) {
   violations.push('AgentRootShell regressed into a god shell (>1200 lines)');
 }
 forbidPattern('AgentRootShell must not own durable state in localStorage', rootShell, /\blocalStorage\b/);
+forbidPattern('AgentRootShell must not use browser-native prompt/confirm dialogs', rootShell, /window\.(?:prompt|confirm)\s*\(/);
+forbidPattern('Agent Sidebar boundary must use FabDialog instead of browser-native prompt/confirm', agentSidebarBoundary, /window\.(?:prompt|confirm)\s*\(/);
+requirePattern('Agent Sidebar boundary must own FabDialog management flows', agentSidebarBoundary, /\bFabDialog\b/);
 forbidPattern(
   'Conversation identity must not infer Telegram from string prefixes',
   conversationIdentity,
