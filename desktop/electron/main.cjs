@@ -684,6 +684,21 @@ function installNativeEdge() {
     getRustDeskStatus() {
       return { available: Boolean(rustDeskSidecar.executablePath()), ready: rustDeskSidecar.ready, sessions: rustDeskSidecar.sessions.size };
     },
+    getRemoteComputerBackgroundState() {
+      return remoteDeviceAgentSupervisor?.snapshot() ?? {
+        running: false,
+        deviceId: '',
+        sessionId: '',
+        username: '',
+        lastSyncAtMs: 0,
+        error: null,
+      };
+    },
+    async refreshRemoteComputerBackground() {
+      if (!remoteDeviceAgentSupervisor) throw new Error('Remote computer background service is unavailable.');
+      await remoteDeviceAgentSupervisor.sync();
+      return remoteDeviceAgentSupervisor.snapshot();
+    },
     openRustDeskSession(params) {
       return rustDeskSidecar.open(params);
     },
@@ -1354,7 +1369,11 @@ app.whenReady().then(async () => {
     console.error('[app-agent-surface] failed to start', error);
   });
   host.start();
-  remoteDeviceAgentSupervisor = new RemoteDeviceAgentSupervisor({ host, app });
+  remoteDeviceAgentSupervisor = new RemoteDeviceAgentSupervisor({
+    host,
+    app,
+    onState: (state) => broadcastNativeEvent('remote-computer-background-state', state),
+  });
   remoteDeviceAgentSupervisor.start();
   installBackgroundTray();
   createWindow();
