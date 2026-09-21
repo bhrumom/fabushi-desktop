@@ -23,18 +23,27 @@ if (!root) {
   throw new Error('Fabushi desktop root element is missing');
 }
 
-async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
-  installDesktopAccountSessionSync();
-  // Restore native persisted projections before Agent/runtime reducers read
-  // their first-frame local cache. This makes localStorage a projection;
-  // canonical cloud/Rust authority is verified separately by GBF-601/602.
-  await restoreDurableAgentState();
-  installFabAvatarIdentityAliases();
-  installDesktopMiniAppDiscoveryAliases();
-  installDurableAgentState();
-  installDesktopMiniAppWebMcpHost();
-  installDesktopAppAgentSurface();
+function installOptionalBridge(name: string, install: () => unknown): void {
+  try {
+    install();
+  } catch (error) {
+    console.error(`Fabushi desktop ${name} bridge failed to install`, error);
+  }
+}
 
+async function hydrateCompatibilityProjection(): Promise<void> {
+  try {
+    await restoreDurableAgentState();
+  } catch (error) {
+    console.error('Fabushi desktop compatibility projection restore failed', error);
+  }
+  installOptionalBridge('durable Agent state', installDurableAgentState);
+}
+
+function bootstrapDesktop(rootElement: HTMLDivElement): void {
+  // Product shell first: compatibility hydration, Mini Apps, and auxiliary
+  // bridges must never be able to leave a packaged build on a blank first
+  // frame. Runtime/Auth readiness is rendered explicitly by DesktopAuthBoundary.
   createRoot(rootElement).render(
     <StrictMode>
       <DesktopApp />
@@ -42,10 +51,17 @@ async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
     </StrictMode>,
   );
 
-  installMiniAppComposerOpenBridge(rootElement);
-  installSelfHostedMahayanaInvocationBridge();
+  installOptionalBridge('account session sync', installDesktopAccountSessionSync);
+  installOptionalBridge('FabAvatar identity alias', installFabAvatarIdentityAliases);
+  installOptionalBridge('Mini App discovery alias', installDesktopMiniAppDiscoveryAliases);
+  installOptionalBridge('Mini App WebMCP host', installDesktopMiniAppWebMcpHost);
+  installOptionalBridge('Agent surface', installDesktopAppAgentSurface);
+  installOptionalBridge('Mini App composer', () => installMiniAppComposerOpenBridge(rootElement));
+  installOptionalBridge('self-hosted Mahayana invocation', installSelfHostedMahayanaInvocationBridge);
+
+  // Compatibility-only local projections restore after the shell mounts.
+  // Rust RuntimeStore remains authoritative for Agent-owned durable state.
+  void hydrateCompatibilityProjection();
 }
 
-void bootstrapDesktop(root).catch((error: unknown) => {
-  console.error('Fabushi desktop bootstrap failed', error);
-});
+bootstrapDesktop(root);
