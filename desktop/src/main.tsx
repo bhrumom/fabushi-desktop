@@ -6,7 +6,7 @@ import { installBotIdentityAliases } from './agent-identity-aliases';
 import CredentialVault from './credential-vault';
 import { installDurableAgentState, restoreDurableAgentState } from './durable-agent-state';
 import { GrokChatParityRuntime, prepareGrokChatParityRuntime } from './grok-chat-parity-runtime';
-import DesktopShellV2 from './messaging-shell-v2';
+import DesktopApp from './app/DesktopApp';
 import MahayanaAgentWorkbench from './mahayana-agent-workbench';
 import { installMiniAppComposerOpenBridge } from './miniapp-composer-open-bridge';
 import { installDesktopMiniAppDiscoveryAliases } from './miniapp-discovery-aliases';
@@ -41,7 +41,7 @@ async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
 
   createRoot(rootElement).render(
     <StrictMode>
-      <DesktopShellV2 />
+      <DesktopApp />
       <GrokChatParityRuntime />
       <MahayanaAgentWorkbench />
       <CredentialVault />
