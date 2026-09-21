@@ -48,6 +48,18 @@ export function FabSelect({
   return <select {...props} className={classes(styles.select, className)}>{children}</select>;
 }
 
+export function FabSwitch({
+  className,
+  ...props
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'role'>) {
+  return <input
+    {...props}
+    type="checkbox"
+    role="switch"
+    className={classes(styles.switch, className)}
+  />;
+}
+
 export function FabSurface({
   className,
   elevated = false,
