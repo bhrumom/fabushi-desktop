@@ -212,6 +212,11 @@ jobs:
         shell: bash
         run: npm run build:renderer
 
+      - name: Enforce built desktop bundle boundary
+        working-directory: desktop
+        shell: bash
+        run: node scripts/check-desktop-bundle.mjs
+
       - name: Package signed and notarized macOS installer
         working-directory: desktop
         shell: bash
