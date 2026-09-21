@@ -11,7 +11,7 @@ export default function TelegramCompatibilityAdapter({
   onClose,
 }: {
   readonly transport: MahayanaHostTransport;
-  readonly onClose(): void;
+  readonly onClose: () => void;
 }) {
   const runtime = useCompatibilityMessagingRuntime(transport);
   const [selectedId, setSelectedId] = useState<string | null>(null);
