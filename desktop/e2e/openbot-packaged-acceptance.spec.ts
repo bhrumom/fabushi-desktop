@@ -567,7 +567,7 @@ test('OBF packaged real-runtime acceptance covers Agent lifecycle, isolation and
       "Use an available local shell or file tool to perform a harmless readiness check (for example printf 'rollback-ready'). Return a concise rollout note and the observed result. End your response with the exact token OBF-BUILDER-ISOLATION.");
     expect(builder).toContain('OBF-BUILDER-ISOLATION');
 
-    const transcriptMessages = () => page.locator('article[class*="messagePeer"]');
+    const transcriptMessages = () => page!.locator('article[class*="messagePeer"]');
     await peerByName(page, 'Research').click();
     await expect(transcriptMessages().filter({ hasText: 'OBF-RESEARCH-ISOLATION' }).last()).toBeVisible();
     await expect(transcriptMessages().filter({ hasText: 'OBF-BUILDER-ISOLATION' })).toHaveCount(0);

@@ -3462,7 +3462,7 @@ async function saveInvoiceDialog() {
               <AgentWorkspace
                 title={activePeer.title}
                 description={activePeer.subtitle}
-                identity={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+                botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
                 botState={botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)}
                 status={activeTypingActors.length
                   ? 'Typing…'
@@ -3592,7 +3592,7 @@ async function saveInvoiceDialog() {
               <AgentHeader
                 title={activePeer.title}
                 description={activePeer.subtitle}
-                identity={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+                botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
                 botState={botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)}
                 status={activeTypingActors.length
                   ? 'Typing…'
@@ -3779,7 +3779,7 @@ async function saveInvoiceDialog() {
           <AgentOverlays
             title={activePeer.title}
             description={activePeer.subtitle}
-            identity={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+            botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
             botState={botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)}
             pinned={activeAgentPinned}
             overlay={!wideInfoLayout}

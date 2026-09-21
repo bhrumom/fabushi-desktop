@@ -21,7 +21,7 @@ export const backgroundSyncLimit = 100;
 export const projectionConversationLimit = 80;
 export const projectionMessageLimit = 80;
 
-const defaultDesktopMessengerPreferences: DesktopMessengerPreferences = {
+export const defaultDesktopMessengerPreferences: DesktopMessengerPreferences = {
   showInfoPanel: true,
   messagePreview: true,
   autoPlayMedia: false,
@@ -29,7 +29,7 @@ const defaultDesktopMessengerPreferences: DesktopMessengerPreferences = {
   reducedMotion: false,
 };
 
-const defaultProductHostSettings: ProductHostSettings = {
+export const defaultProductHostSettings: ProductHostSettings = {
   notifications: true,
   autoUpdateWhenIdle: true,
   localExecution: true,
@@ -66,7 +66,7 @@ export function readMessengerProjection(): MessengerProjection | null {
   }
 }
 
-async export function readDurableMessengerProjection(): Promise<MessengerProjection | null> {
+export async function readDurableMessengerProjection(): Promise<MessengerProjection | null> {
   const local = readMessengerProjection();
   if (local) return local;
   try {
@@ -135,7 +135,7 @@ export function persistAccountSyncCursor(cursor: string | null): void {
   }
 }
 
-async export function clearAccountScopedDesktopCaches(): Promise<void> {
+export async function clearAccountScopedDesktopCaches(): Promise<void> {
   if (typeof window !== 'undefined') {
     // Tell every live Mahayana renderer transport to discard its in-memory
     // account journal before React unmount cleanup can flush it back to disk.
@@ -271,7 +271,7 @@ export function defaultCommunityState(conversationId: string, actorId: string): 
   };
 }
 
-function upsertById<T extends { id: string }>(items: T[], item: T): T[] {
+export function upsertById<T extends { id: string }>(items: T[], item: T): T[] {
   return [...items.filter((current) => current.id !== item.id), item];
 }
 

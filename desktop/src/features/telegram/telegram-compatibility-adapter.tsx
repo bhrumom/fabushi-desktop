@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, Copy, Edit3, FileText, Forward, Image, MapPin, Pin, Plus, Reply, Smile, Trash2, WalletCards, X } from 'lucide-react';
+import { Check, Copy, Edit3, FileText, Forward, Image, MapPin, Pin, Plus, Reply, Smile, SquarePen, Trash2, UserPlus, WalletCards, X } from 'lucide-react';
 import type { BotSummary } from '../../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import type { MessagingActor, MessagingCommunityMember, MessagingCommunityState, MessagingForumTopic, MessagingStory } from '../../selfhosted-messaging-client-v2';
 import type { DisplayMessage, MessageMenu, NewDialog } from '../../adapters/compatibility/compatibility-model';
@@ -7,6 +7,7 @@ import type { CompatibilityPeerItem as PeerItem } from '../../adapters/compatibi
 import FabAvatar from '../../ui/avatar/fab-avatar';
 import styles from '../../messaging-shell.module.css';
 import extra from '../../adapters/compatibility/compatibility.module.css';
+import { blobMediaUrl } from '../../adapters/compatibility/compatibility-runtime';
 
 export function TelegramAttachmentMenu({ onMedia, onFile, onPoll, onLocation, onSchedule }: { onMedia: () => void; onFile: () => void; onPoll: () => void; onLocation: () => void; onSchedule: () => void }) {
   return <div className={extra.popover} onClick={(event) => event.stopPropagation()}>

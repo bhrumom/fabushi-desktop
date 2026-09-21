@@ -1345,7 +1345,10 @@ mod tests {
         let mut saw_delta = false;
         let mut saw_message = false;
         let mut saw_complete = false;
-        for _ in 0..5 {
+        // Turn lifecycle events (accepted/preparing/thinking/completed) share
+        // the stream with provider message events. Keep reading until the
+        // operation completes instead of assuming a fixed event count.
+        for _ in 0..10 {
             let event = runtime
                 .receive(Duration::from_secs(1))
                 .expect("receive event")
