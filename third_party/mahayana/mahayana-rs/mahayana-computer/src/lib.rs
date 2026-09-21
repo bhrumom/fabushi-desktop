@@ -889,3 +889,406 @@ mod macos {
     }
 
     pub(super) fn execute_action(action: &ComputerAction) -> Result<(), ComputerError> {
+        if action.action != ComputerActionKind::Screenshot
+            && action.action != ComputerActionKind::Wait
+            && !accessibility_granted()
+        {
+            return Err(ComputerError::Permission(
+                "Accessibility permission is required in System Settings > Privacy & Security"
+                    .into(),
+            ));
+        }
+        match action.action {
+            ComputerActionKind::Screenshot => Ok(()),
+            ComputerActionKind::Click => click(action),
+            ComputerActionKind::Move => move_pointer(action),
+            ComputerActionKind::Drag => drag(action),
+            ComputerActionKind::Type => type_text(action.text.as_deref().unwrap_or_default()),
+            ComputerActionKind::Key => press_key(action.key.as_deref().unwrap_or_default()),
+            ComputerActionKind::Scroll => scroll(action),
+            ComputerActionKind::Wait => {
+                std::thread::sleep(Duration::from_millis(action.wait_ms.unwrap_or(1_000)));
+                Ok(())
+            }
+        }
+    }
+
+    fn cursor_position() -> Result<CGPoint, ComputerError> {
+        CGEvent::new(event_source()?)
+            .map(|event| event.location())
+            .map_err(|_| ComputerError::Input("could not read cursor location".into()))
+    }
+
+    fn action_position(action: &ComputerAction) -> Result<CGPoint, ComputerError> {
+        match (action.x, action.y) {
+            (Some(x), Some(y)) => Ok(CGPoint::new(x as f64, y as f64)),
+            (None, None) => cursor_position(),
+            _ => Err(ComputerError::InvalidAction(
+                "x/y coordinates must be provided together".into(),
+            )),
+        }
+    }
+
+    fn button(value: Option<ComputerMouseButton>) -> CGMouseButton {
+        match value.unwrap_or(ComputerMouseButton::Left) {
+            ComputerMouseButton::Left => CGMouseButton::Left,
+            ComputerMouseButton::Right => CGMouseButton::Right,
+            ComputerMouseButton::Middle => CGMouseButton::Center,
+        }
+    }
+
+    fn mouse_types(button: CGMouseButton) -> (CGEventType, CGEventType, CGEventType) {
+        match button {
+            CGMouseButton::Left => (
+                CGEventType::LeftMouseDown,
+                CGEventType::LeftMouseDragged,
+                CGEventType::LeftMouseUp,
+            ),
+            CGMouseButton::Right => (
+                CGEventType::RightMouseDown,
+                CGEventType::RightMouseDragged,
+                CGEventType::RightMouseUp,
+            ),
+            CGMouseButton::Center => (
+                CGEventType::OtherMouseDown,
+                CGEventType::OtherMouseDragged,
+                CGEventType::OtherMouseUp,
+            ),
+        }
+    }
+
+    fn post_mouse(
+        event_type: CGEventType,
+        position: CGPoint,
+        mouse_button: CGMouseButton,
+        click_count: Option<u8>,
+    ) -> Result<(), ComputerError> {
+        let event = CGEvent::new_mouse_event(event_source()?, event_type, position, mouse_button)
+            .map_err(|_| ComputerError::Input("could not create mouse event".into()))?;
+        if let Some(count) = click_count {
+            event.set_integer_value_field(EventField::MOUSE_EVENT_CLICK_STATE, i64::from(count));
+        }
+        event.post(CGEventTapLocation::HID);
+        Ok(())
+    }
+
+    fn move_to(position: CGPoint, dragged: Option<CGMouseButton>) -> Result<(), ComputerError> {
+        let event_type = dragged.map_or(CGEventType::MouseMoved, |button| mouse_types(button).1);
+        post_mouse(
+            event_type,
+            position,
+            dragged.unwrap_or(CGMouseButton::Left),
+            None,
+        )
+    }
+
+    fn move_pointer(action: &ComputerAction) -> Result<(), ComputerError> {
+        let position = action_position(action)?;
+        move_to(position, None)
+    }
+
+    fn click(action: &ComputerAction) -> Result<(), ComputerError> {
+        let position = action_position(action)?;
+        let mouse_button = button(action.button);
+        let (down, _, up) = mouse_types(mouse_button);
+        let count = action.click_count.unwrap_or(1).clamp(1, 3);
+        move_to(position, None)?;
+        for click_number in 1..=count {
+            post_mouse(down, position, mouse_button, Some(click_number))?;
+            post_mouse(up, position, mouse_button, Some(click_number))?;
+            if click_number < count {
+                std::thread::sleep(Duration::from_millis(60));
+            }
+        }
+        Ok(())
+    }
+
+    fn drag_points(action: &ComputerAction) -> Result<Vec<ComputerPoint>, ComputerError> {
+        if let Some(path) = action.path.as_ref().filter(|path| path.len() >= 2) {
+            return Ok(path.clone());
+        }
+        match (action.x, action.y, action.x2, action.y2) {
+            (Some(x), Some(y), Some(x2), Some(y2)) => {
+                Ok(vec![ComputerPoint { x, y }, ComputerPoint { x: x2, y: y2 }])
+            }
+            _ => Err(ComputerError::InvalidAction(
+                "drag requires path or x/y/x2/y2".into(),
+            )),
+        }
+    }
+
+    fn drag(action: &ComputerAction) -> Result<(), ComputerError> {
+        let points = drag_points(action)?;
+        let mouse_button = button(action.button);
+        let (down, _, up) = mouse_types(mouse_button);
+        let first = CGPoint::new(points[0].x as f64, points[0].y as f64);
+        move_to(first, None)?;
+        post_mouse(down, first, mouse_button, Some(1))?;
+        std::thread::sleep(Duration::from_millis(20));
+        for point in points.iter().skip(1) {
+            move_to(
+                CGPoint::new(point.x as f64, point.y as f64),
+                Some(mouse_button),
+            )?;
+            std::thread::sleep(Duration::from_millis(12));
+        }
+        let last = points.last().expect("validated drag points");
+        post_mouse(
+            up,
+            CGPoint::new(last.x as f64, last.y as f64),
+            mouse_button,
+            Some(1),
+        )
+    }
+
+    fn type_text(text: &str) -> Result<(), ComputerError> {
+        if text.is_empty() {
+            return Ok(());
+        }
+        // CoreGraphics Unicode keyboard events preserve arbitrary user text and
+        // avoid clipboard mutation, so remote/mobile typing has the same semantics
+        // as AI typing without exposing the user's clipboard.
+        for chunk in unicode_chunks(text, 20) {
+            let down = CGEvent::new_keyboard_event(event_source()?, 0, true)
+                .map_err(|_| ComputerError::Input("could not create keyboard event".into()))?;
+            down.set_string(&chunk);
+            down.post(CGEventTapLocation::HID);
+            let up = CGEvent::new_keyboard_event(event_source()?, 0, false)
+                .map_err(|_| ComputerError::Input("could not create keyboard event".into()))?;
+            up.post(CGEventTapLocation::HID);
+        }
+        Ok(())
+    }
+
+    fn unicode_chunks(text: &str, max_utf16: usize) -> Vec<String> {
+        let mut chunks = Vec::new();
+        let mut current = String::new();
+        let mut units = 0usize;
+        for ch in text.chars() {
+            let next = ch.len_utf16();
+            if !current.is_empty() && units + next > max_utf16 {
+                chunks.push(std::mem::take(&mut current));
+                units = 0;
+            }
+            current.push(ch);
+            units += next;
+        }
+        if !current.is_empty() {
+            chunks.push(current);
+        }
+        chunks
+    }
+
+    fn press_key(chord: &str) -> Result<(), ComputerError> {
+        let parts = chord
+            .split('+')
+            .map(str::trim)
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>();
+        let Some(raw_key) = parts.last() else {
+            return Err(ComputerError::InvalidAction("empty key chord".into()));
+        };
+        let mut flags = CGEventFlags::empty();
+        for modifier in &parts[..parts.len().saturating_sub(1)] {
+            match modifier.to_ascii_lowercase().as_str() {
+                "ctrl" | "control" => flags |= CGEventFlags::CGEventFlagControl,
+                "alt" | "option" => flags |= CGEventFlags::CGEventFlagAlternate,
+                "shift" => flags |= CGEventFlags::CGEventFlagShift,
+                "cmd" | "command" | "meta" | "super" | "primary" => {
+                    flags |= CGEventFlags::CGEventFlagCommand
+                }
+                other => {
+                    return Err(ComputerError::InvalidAction(format!(
+                        "unsupported modifier: {other}"
+                    )));
+                }
+            }
+        }
+        let keycode = key_code(raw_key)
+            .ok_or_else(|| ComputerError::InvalidAction(format!("unsupported key: {raw_key}")))?;
+        let down = CGEvent::new_keyboard_event(event_source()?, keycode, true)
+            .map_err(|_| ComputerError::Input("could not create key-down event".into()))?;
+        down.set_flags(flags);
+        down.post(CGEventTapLocation::HID);
+        let up = CGEvent::new_keyboard_event(event_source()?, keycode, false)
+            .map_err(|_| ComputerError::Input("could not create key-up event".into()))?;
+        up.set_flags(flags);
+        up.post(CGEventTapLocation::HID);
+        Ok(())
+    }
+
+    fn key_code(raw: &str) -> Option<u16> {
+        let key = raw.to_ascii_lowercase();
+        Some(match key.as_str() {
+            "a" => KeyCode::ANSI_A,
+            "b" => KeyCode::ANSI_B,
+            "c" => KeyCode::ANSI_C,
+            "d" => KeyCode::ANSI_D,
+            "e" => KeyCode::ANSI_E,
+            "f" => KeyCode::ANSI_F,
+            "g" => KeyCode::ANSI_G,
+            "h" => KeyCode::ANSI_H,
+            "i" => KeyCode::ANSI_I,
+            "j" => KeyCode::ANSI_J,
+            "k" => KeyCode::ANSI_K,
+            "l" => KeyCode::ANSI_L,
+            "m" => KeyCode::ANSI_M,
+            "n" => KeyCode::ANSI_N,
+            "o" => KeyCode::ANSI_O,
+            "p" => KeyCode::ANSI_P,
+            "q" => KeyCode::ANSI_Q,
+            "r" => KeyCode::ANSI_R,
+            "s" => KeyCode::ANSI_S,
+            "t" => KeyCode::ANSI_T,
+            "u" => KeyCode::ANSI_U,
+            "v" => KeyCode::ANSI_V,
+            "w" => KeyCode::ANSI_W,
+            "x" => KeyCode::ANSI_X,
+            "y" => KeyCode::ANSI_Y,
+            "z" => KeyCode::ANSI_Z,
+            "0" => KeyCode::ANSI_0,
+            "1" => KeyCode::ANSI_1,
+            "2" => KeyCode::ANSI_2,
+            "3" => KeyCode::ANSI_3,
+            "4" => KeyCode::ANSI_4,
+            "5" => KeyCode::ANSI_5,
+            "6" => KeyCode::ANSI_6,
+            "7" => KeyCode::ANSI_7,
+            "8" => KeyCode::ANSI_8,
+            "9" => KeyCode::ANSI_9,
+            "return" | "enter" => KeyCode::RETURN,
+            "tab" => KeyCode::TAB,
+            "space" | "spacebar" => KeyCode::SPACE,
+            "backspace" => KeyCode::DELETE,
+            "delete" | "forwarddelete" => KeyCode::FORWARD_DELETE,
+            "escape" | "esc" => KeyCode::ESCAPE,
+            "left" | "arrowleft" => KeyCode::LEFT_ARROW,
+            "right" | "arrowright" => KeyCode::RIGHT_ARROW,
+            "up" | "arrowup" => KeyCode::UP_ARROW,
+            "down" | "arrowdown" => KeyCode::DOWN_ARROW,
+            "home" => KeyCode::HOME,
+            "end" => KeyCode::END,
+            "pageup" => KeyCode::PAGE_UP,
+            "pagedown" => KeyCode::PAGE_DOWN,
+            "f1" => KeyCode::F1,
+            "f2" => KeyCode::F2,
+            "f3" => KeyCode::F3,
+            "f4" => KeyCode::F4,
+            "f5" => KeyCode::F5,
+            "f6" => KeyCode::F6,
+            "f7" => KeyCode::F7,
+            "f8" => KeyCode::F8,
+            "f9" => KeyCode::F9,
+            "f10" => KeyCode::F10,
+            "f11" => KeyCode::F11,
+            "f12" => KeyCode::F12,
+            "-" | "minus" => KeyCode::ANSI_MINUS,
+            "=" | "equal" => KeyCode::ANSI_EQUAL,
+            "," | "comma" => KeyCode::ANSI_COMMA,
+            "." | "period" => KeyCode::ANSI_PERIOD,
+            "/" | "slash" => KeyCode::ANSI_SLASH,
+            ";" | "semicolon" => KeyCode::ANSI_SEMICOLON,
+            "'" | "quote" => KeyCode::ANSI_QUOTE,
+            "[" | "leftbracket" => KeyCode::ANSI_LEFT_BRACKET,
+            "]" | "rightbracket" => KeyCode::ANSI_RIGHT_BRACKET,
+            "\\" | "backslash" => KeyCode::ANSI_BACKSLASH,
+            "`" | "grave" => KeyCode::ANSI_GRAVE,
+            _ => return None,
+        })
+    }
+
+    fn scroll(action: &ComputerAction) -> Result<(), ComputerError> {
+        if action.x.is_some() {
+            move_to(action_position(action)?, None)?;
+        }
+        let amount = action.amount.unwrap_or(3).abs().max(1);
+        let (vertical, horizontal) = match action.direction.unwrap_or(ComputerScrollDirection::Down)
+        {
+            ComputerScrollDirection::Up => (amount, 0),
+            ComputerScrollDirection::Down => (-amount, 0),
+            ComputerScrollDirection::Left => (0, amount),
+            ComputerScrollDirection::Right => (0, -amount),
+        };
+        let event = CGEvent::new_scroll_event(
+            event_source()?,
+            ScrollEventUnit::LINE,
+            2,
+            vertical,
+            horizontal,
+            0,
+        )
+        .map_err(|_| ComputerError::Input("could not create scroll event".into()))?;
+        event.post(CGEventTapLocation::HID);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mahayana_host_protocol::ComputerActionKind;
+
+    fn action(kind: ComputerActionKind) -> ComputerAction {
+        ComputerAction {
+            action: kind,
+            x: None,
+            y: None,
+            x2: None,
+            y2: None,
+            path: None,
+            text: None,
+            key: None,
+            button: None,
+            click_count: None,
+            direction: None,
+            amount: None,
+            wait_ms: None,
+            description: None,
+        }
+    }
+
+    #[test]
+    fn action_limits_are_enforced_without_touching_the_desktop() {
+        let mut wait = action(ComputerActionKind::Wait);
+        wait.wait_ms = Some(COMPUTER_MAX_WAIT_MS + 1);
+        assert!(validate_action(&wait).is_err());
+
+        let mut drag = action(ComputerActionKind::Drag);
+        drag.x = Some(10);
+        drag.y = Some(20);
+        assert!(validate_action(&drag).is_err());
+
+        let mut click = action(ComputerActionKind::Click);
+        click.click_count = Some(4);
+        assert!(validate_action(&click).is_err());
+    }
+
+    #[test]
+    fn follow_up_sequence_rejects_screenshot_before_touching_the_desktop() {
+        let primary = action(ComputerActionKind::Click);
+        let follow_up = action(ComputerActionKind::Screenshot);
+        let error = execute(&[primary, follow_up], ComputerControlOrigin::LocalUi)
+            .expect_err("follow-up screenshot must be rejected before desktop execution");
+        assert!(error.to_string().contains("primary action"));
+    }
+
+    #[test]
+    fn human_override_epoch_preempts_ai_without_touching_the_desktop() {
+        let epoch = USER_OVERRIDE_EPOCH.load(Ordering::SeqCst);
+        USER_OVERRIDE_EPOCH.fetch_add(1, Ordering::SeqCst);
+        assert!(matches!(
+            ensure_ai_not_preempted(epoch),
+            Err(ComputerError::Preempted)
+        ));
+    }
+
+    #[test]
+    fn png_dimensions_reads_ihdr_without_image_dependencies() {
+        let mut bytes = vec![0u8; 24];
+        bytes[..8].copy_from_slice(b"\x89PNG\r\n\x1a\n");
+        bytes[12..16].copy_from_slice(b"IHDR");
+        bytes[16..20].copy_from_slice(&1440u32.to_be_bytes());
+        bytes[20..24].copy_from_slice(&900u32.to_be_bytes());
+        assert_eq!(png_dimensions(&bytes), (Some(1440), Some(900)));
+    }
+}
