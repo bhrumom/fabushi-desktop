@@ -47,7 +47,7 @@ use mahayana_core::RuntimeResponse;
 use mahayana_core::RuntimeStatus;
 use mahayana_core::TurnId;
 use mahayana_core::TurnState;
-use mahayana_core::capability::{CapabilityPolicyDecision, CapabilityRegistry, CapabilityRequest};
+use mahayana_core::capability::{CapabilityAvailability, CapabilityPolicyDecision, CapabilityRegistry, CapabilityRequest};
 use mahayana_kernel::BackendDescriptor;
 use mahayana_kernel::Capability;
 use mahayana_kernel::CapabilitySet;
@@ -491,10 +491,34 @@ impl MahayanaRuntime {
                     .pointer("/annotations/readOnlyHint")
                     .and_then(Value::as_bool)
                     == Some(true);
-                if !read_only
-                    && !lock(&self.approved_local_plugin_tools)?
-                        .contains(&(plugin_id.clone(), tool.clone()))
-                {
+                let explicitly_approved = read_only
+                    || lock(&self.approved_local_plugin_tools)?
+                        .contains(&(plugin_id.clone(), tool.clone()));
+                let decision = self
+                    .capability_broker
+                    .authorize_request(
+                        if explicitly_approved {
+                            CapabilityAvailability::Ready
+                        } else {
+                            CapabilityAvailability::PermissionRequired
+                        },
+                        None,
+                        CapabilityRequest {
+                            actor: "human".to_string(),
+                            agent_id: None,
+                            conversation_id: ConversationId(format!("miniapp:{plugin_id}")),
+                            run_id: None,
+                            capability: format!("miniapp.{plugin_id}.tool.{tool}"),
+                            target: serde_json::json!({
+                                "pluginId": plugin_id.clone(),
+                                "tool": tool.clone(),
+                            }),
+                            intent: format!("invoke local Mini App tool {plugin_id}/{tool}"),
+                        },
+                        now_millis(),
+                    )
+                    .map_err(RuntimeError::CapabilityBroker)?;
+                if !matches!(decision, CapabilityPolicyDecision::Allow) {
                     return Err(RuntimeError::LocalPlugin(format!(
                         "host approval is required for {plugin_id}/{tool}"
                     )));
@@ -628,6 +652,31 @@ impl MahayanaRuntime {
                 tool,
                 arguments,
             } => {
+                let decision = self
+                    .capability_broker
+                    .authorize_request(
+                        CapabilityAvailability::Ready,
+                        None,
+                        CapabilityRequest {
+                            actor: "human".to_string(),
+                            agent_id: None,
+                            conversation_id: ConversationId(MAHAYANA_AI_CONVERSATION_ID.to_string()),
+                            run_id: None,
+                            capability: "mcp.tool.call".to_string(),
+                            target: serde_json::json!({
+                                "server": server.clone(),
+                                "tool": tool.clone(),
+                            }),
+                            intent: format!("invoke MCP tool {server}/{tool}"),
+                        },
+                        now_millis(),
+                    )
+                    .map_err(RuntimeError::CapabilityBroker)?;
+                if !matches!(decision, CapabilityPolicyDecision::Allow) {
+                    return Err(RuntimeError::CapabilityBroker(
+                        "MCP tool call requires user permission".to_string(),
+                    ));
+                }
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
