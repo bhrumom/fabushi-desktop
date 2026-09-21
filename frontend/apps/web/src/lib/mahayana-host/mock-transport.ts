@@ -1919,6 +1919,8 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
         this.emit({ type: "session.cleared", timestamp: now() });
         return { requestId: command.requestId };
     }
+
+    throw new Error(`Unsupported mock runtime command: ${command.type}`);
   }
 
   async authStatus(): Promise<AuthState> {
