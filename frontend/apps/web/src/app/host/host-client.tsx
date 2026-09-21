@@ -619,6 +619,7 @@ export default function HostClient({ onAuthStateChange }: HostClientProps) {
   const [ruleDraft, setRuleDraft] = useState("");
   const [ruleBehavior, setRuleBehavior] = useState<"allow" | "ask">("allow");
   const [activeAgentId, setActiveAgentId] = useState("mahayana-assistant");
+  const activeBotMarkId = activeAgentId || "mahayana-assistant";
 
   useEffect(() => {
     if (!networkOpen || networkView !== "workspace") return;
@@ -945,6 +946,15 @@ export default function HostClient({ onAuthStateChange }: HostClientProps) {
 
   useEffect(() => {
     const existing = remoteDesktopControllerRef.current;
+    // Electron desktop owns remote presence/control in Main. Never start the
+    // legacy renderer polling controller in the desktop shell, including the
+    // short authenticated transition while the login HostClient unmounts.
+    if (isElectronMahayanaHostAvailable()) {
+      remoteDesktopControllerRef.current = null;
+      if (existing) void existing.stop();
+      setRemoteDesktopState(null);
+      return;
+    }
     if (
       !hostSettingsHydrated ||
       hostStatus !== "ready" ||
@@ -1083,6 +1093,7 @@ export default function HostClient({ onAuthStateChange }: HostClientProps) {
           type: "computer.screenshot",
           requestId: `computer-snapshot-${Date.now()}`,
           origin: "local-ui",
+          agentId: activeBotMarkId,
         });
       } catch (cause) {
         if (!stopped) setError(cause instanceof Error ? cause.message : String(cause));
@@ -1097,7 +1108,7 @@ export default function HostClient({ onAuthStateChange }: HostClientProps) {
       stopped = true;
       window.clearInterval(timer);
     };
-  }, [computerOpen, computerStatus?.captureSupported, computerStatus?.screenRecordingGranted, transport]);
+  }, [activeBotMarkId, computerOpen, computerStatus?.captureSupported, computerStatus?.screenRecordingGranted, transport]);
 
   useEffect(() => {
     if (!settingsOpen || settingsSection !== "mcp") return;
@@ -2538,7 +2549,6 @@ export default function HostClient({ onAuthStateChange }: HostClientProps) {
       : operationState === "failed" || operationState === "interrupted"
       ? "waking"
       : "idle";
-  const activeBotMarkId = activeAgentId || "mahayana-assistant";
   const activeBotProfile = bots.find((bot) => bot.id === activeBotMarkId);
   const primaryBotProfile = bots.find((bot) => bot.id === "mahayana-assistant");
   const activeBotShape = activeBotProfile?.avatarShape as BotMarkShape | undefined;

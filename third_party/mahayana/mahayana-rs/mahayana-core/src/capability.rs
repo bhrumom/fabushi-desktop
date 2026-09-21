@@ -2,8 +2,10 @@ use crate::BuildProfile;
 use crate::Conversation;
 use crate::ConversationId;
 use crate::PeerKind;
+use crate::RunId;
 use serde::Deserialize;
 use serde::Serialize;
+use serde_json::Value;
 use std::collections::BTreeMap;
 
 pub const MAHAYANA_AGENT_CAPABILITY_ID: &str = "agent.mahayana";
@@ -33,6 +35,51 @@ pub enum CapabilityAvailability {
     Ready,
     PermissionRequired,
     Unavailable,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum CapabilityPolicyDecision {
+    Allow,
+    Deny,
+    NeedsUser,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CapabilityRequest {
+    /// Stable actor identity such as `human`, `agent:<id>`, or `system`.
+    pub actor: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    pub conversation_id: ConversationId,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<RunId>,
+    pub capability: String,
+    #[serde(default)]
+    pub target: Value,
+    pub intent: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CapabilityAuditRecord {
+    pub request: CapabilityRequest,
+    pub decision: CapabilityPolicyDecision,
+    pub decided_at_ms: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComputerControlLease {
+    pub agent_id: String,
+    pub run_id: RunId,
+    pub device_id: String,
+    pub mode: String,
+    pub acquired_at_ms: i64,
+    pub expires_at_ms: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

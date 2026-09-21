@@ -9,7 +9,6 @@ import {
   Copy,
   Edit3,
   FileText,
-  Folder,
   Forward,
   Image,
   Link2,
@@ -39,9 +38,11 @@ import {
   X,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import HostClient from '../../frontend/apps/web/src/app/host/host-client';
-import { BotMark, type BotMarkState } from '../../frontend/apps/web/src/app/host/bot-mark';
+import HostClient from '../../../../frontend/apps/web/src/app/host/host-client';
+import { BotMark, type BotMarkState } from '../../../../frontend/apps/web/src/app/host/bot-mark';
+import type { FabAvatarInputState } from '../../ui/avatar/fab-avatar';
 import type {
+  AttachmentContext,
   AuthState,
   BotSummary,
   ConversationSummary,
@@ -51,7 +52,7 @@ import type {
   RuntimeEvent,
   SandboxRuntime,
   UpdateState,
-} from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
+} from '../../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import {
   ElectronMahayanaHostTransport,
   isElectronMahayanaHostAvailable,
@@ -59,18 +60,13 @@ import {
   MAHAYANA_COMMAND_EVENT_NAME,
   readCachedConversationMessages,
   type MahayanaCommandBridgeDetail,
-} from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
-import { MockMahayanaHostTransport } from '../../frontend/apps/web/src/lib/mahayana-host/mock-transport';
-import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
-import type { InstalledPluginPointer, MahayanaHostTransport, MarketplacePluginSummary } from '../../frontend/apps/web/src/lib/mahayana-host/transport';
-import { marketplaceInstallAction, marketplaceInstallActionLabel } from '../../frontend/apps/web/src/lib/marketplace-install-contract';
-import {
-  RemoteComputerDesktopController,
-  type RemoteComputerDesktopState,
-} from '../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
+} from '../../../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
+import { MockMahayanaHostTransport } from '../../../../frontend/apps/web/src/lib/mahayana-host/mock-transport';
+import { invokeNativeDesktop, subscribeNativeDesktopEvents } from '../../../../frontend/apps/web/src/lib/fabushi-runtime/native-desktop';
+import type { InstalledPluginPointer, MahayanaHostTransport, MarketplacePluginSummary } from '../../../../frontend/apps/web/src/lib/mahayana-host/transport';
+import { marketplaceInstallAction, marketplaceInstallActionLabel } from '../../../../frontend/apps/web/src/lib/marketplace-install-contract';
 import {
   SelfHostedMessagingClientV2,
-  asMessagingHostEvent,
   messagingText,
   type MessagingActor,
   type MessagingBotExecution,
@@ -86,51 +82,94 @@ import {
   type MessagingOrder,
   type MessagingStory,
   type MessagingWalletAccount,
-} from './selfhosted-messaging-client-v2';
-import styles from './messaging-shell.module.css';
-import extra from './messaging-shell-v2.module.css';
+} from '../../selfhosted-messaging-client-v2';
+import styles from '../../messaging-shell.module.css';
+import extra from './legacy-messaging-shell.module.css';
 import {
   FabushiWebRtcController,
   type IncomingFabushiCall,
   type WebRtcCallStatus,
-} from './webrtc-call-controller';
-import { isTerminalAuthSessionFailure } from './auth-session';
+} from '../../webrtc-call-controller';
+import { isTerminalAuthSessionFailure } from '../../auth-session';
 import {
-  installedMiniAppBotProjections,
   miniAppBotResponseText,
   type MiniAppBotCallProgram,
-  type MiniAppBotCallPrograms,
-  type MiniAppBotCommand,
-} from './miniapp-bot-projection';
-import { MiniAppCallDialog } from './miniapp-call-dialog';
-import { executeDesktopMiniAppBotInput, prepareDesktopMiniAppWebMcpDocument } from './miniapp-webmcp-host';
-import BotConversationView from './bot-conversation-view';
-import type { BotTranscriptMessage } from './bot-conversation-view';
+} from '../../miniapp-bot-projection';
+import { MiniAppCallDialog } from '../../miniapp-call-dialog';
+import { executeDesktopMiniAppBotInput, prepareDesktopMiniAppWebMcpDocument } from '../../miniapp-webmcp-host';
+import BotConversationView from '../../bot-conversation-view';
+import type { BotTranscriptMessage } from '../../bot-conversation-view';
+import AgentWorkspace from '../../agent-workspace/agent-workspace';
+import { CompatibilitySurface, buildCompatibilityPeers, compatibilityMessagingEnvelope, type CompatibilityPeerItem as PeerItem, type CompatibilityPeerKind as PeerKind, type CompatibilityPeerSource as PeerSource, type CompatibilitySection as MessengerSection } from '../../agent-workspace/messenger-compatibility-adapter';
+import type {
+  DesktopMessengerPreferences,
+  DisplayMessage,
+  EditDialogState,
+  ForwardDialogState,
+  InfoTab,
+  InferenceRouterStatus,
+  InvoiceDialogState,
+  LocalCall,
+  MessageMenu,
+  MessengerProjection,
+  MiniAppCallSession,
+  NewDialog,
+  SettingsCategory,
+  UsageSummary,
+} from './legacy-messaging-model';
+import { useLegacyMessagingCompatibilityState } from './use-legacy-messaging-compatibility-state';
+import AgentOverlays from '../../agent-workspace/agent-overlays';
+import { AgentCoordinatorClient } from '../../agent-workspace/coordinator-client';
+import type { AgentTranscriptSourceMessage } from '../../agent-workspace/agent-transcript-store';
+import { useAgentWorkspaceRuntime } from '../../agent-workspace/use-agent-workspace-runtime';
+import { useAgentComputerController } from '../../agent-workspace/use-agent-computer-controller';
+import { projectTranscriptEntries, type TranscriptEntry } from '../../agent-workspace/transcript-model';
+import {
+  AGENT_ATTACHMENT_LIMIT,
+  agentFileToBase64,
+  enrichAgentAttachmentPreview,
+  validateAgentAttachment,
+} from '../../agent-workspace/agent-attachments';
+import type { AgentPromptReference, AgentReplyContext } from '../../agent-workspace/prompt-context';
+import type { AgentSidebarSection } from '../../agent-workspace/agent-sidebar-state';
+import { useAgentSettingsController } from '../../agent-workspace/use-agent-settings-controller';
+import { useAgentProductControllers } from '../../agent-workspace/use-agent-product-controllers';
+import { useAgentShellViewState } from '../../agent-workspace/use-agent-shell-view-state';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
+  deleteAccountAgentStoreObject,
+  deleteMiniAppCloudStorage,
+  listAccountAgentStore,
+  readAccountAgentStoreObject,
   readAccountBots,
   readAccountMiniApps,
   readAccountSync,
   readMiniAppBotMessages,
   readMiniAppCloudStorage,
   reconcileAccountMiniApps,
+  upsertAccountAgent,
+  writeAccountAgentStoreObject,
   writeMiniAppCloudStorage,
-  deleteMiniAppCloudStorage,
   type AccountBotMembership,
-} from './account-sync-client';
+} from '../../account-sync-client';
+import { projectFabuAgentProfile, projectFabuAgentSettings, projectFabuBotIdentity } from '../../fabu-runtime/agent-domain';
 import {
-  SidebarContactGroupManager,
-  projectSidebarContactGroups,
-  useSidebarContactGroups,
-} from './sidebar-contact-groups';
-import { MahayanaAssistantTurnView } from './mahayana-assistant-turn-view';
-import {
-  assistantTurnPlainText,
-  createAssistantTurn,
-  reduceAssistantTurn,
-  type AssistantTurn,
-} from './mahayana-assistant-turn';
+  FABU_AGENT_ATTACHMENT_INDEX_PATH,
+  FABU_AGENT_RUNTIME_CHECKPOINT_PATH,
+  FABU_AGENT_WORKFLOW_INDEX_PATH,
+  FabuAgentStore,
+  fabuAgentConversationTranscriptPath,
+} from '../../fabu-runtime/agent-store';
+import { restoreAgentStoreWorkspace } from '../../agent-workspace/agent-store-recovery';
+import AgentSidebar from '../../agent-workspace/agent-sidebar';
+import { agentWorkspaceKey, projectActiveAgentKey, projectAgentSidebarItems, type AgentSidebarItem } from '../../agent-workspace/agent-model';
+import AgentSearch from '../../agent-workspace/agent-search';
+import AgentHeader from '../../agent-workspace/agent-header';
+import AgentNetwork from '../../agent-workspace/agent-network';
+import AgentCommandPalette from '../../agent-workspace/agent-command-palette';
+import { MahayanaAssistantTurnView } from '../../mahayana-assistant-turn-view';
+import type { AssistantTurn } from '../../mahayana-assistant-turn';
 
 function miniAppMarketplaceAction(
   app: MarketplacePluginSummary,
@@ -155,45 +194,6 @@ function miniAppReleaseLabel(app: MarketplacePluginSummary): string {
   return sourceRef ? `GitHub · ${sourceRef}` : 'GitHub 来源待确认';
 }
 
-type MessengerSection =
-  | 'chats'
-  | 'contacts'
-  | 'bots'
-  | 'groups'
-  | 'channels'
-  | 'calls'
-  | 'saved'
-  | 'archive'
-  | 'folders'
-  | 'miniapps'
-  | 'payments'
-  | 'settings';
-type PeerKind = 'conversation' | 'contact' | 'bot' | 'group' | 'channel' | 'saved';
-type PeerSource = 'legacy' | 'selfhosted';
-
-type PeerItem = {
-  key: string;
-  id: string;
-  source: PeerSource;
-  conversationId?: string;
-  actorId?: string;
-  /** Explicit runtime Agent identity. Never infer Agent-ness from a title/id string. */
-  agentId?: string;
-  groupId?: string;
-  kind: PeerKind;
-  title: string;
-  subtitle: string;
-  unread: number;
-  pinned: boolean;
-  archived: boolean;
-  updatedAtMs: number;
-  avatar?: string;
-  miniAppId?: string;
-  miniAppCommands?: MiniAppBotCommand[];
-  miniAppMenuButtonText?: string;
-  miniAppCalls?: MiniAppBotCallPrograms;
-};
-
 type GeneratedMiniAppPreview = {
   id: string;
   title: string;
@@ -216,112 +216,11 @@ function generatedMiniAppPreview(text: string, stableId: string): GeneratedMiniA
   return { id: `generated-${suffix}`.slice(0, 64), title, html, complete: close >= 0 };
 }
 
-type DisplayMessage = {
-  id: string;
-  source: PeerSource;
-  role: 'me' | 'peer';
-  text: string;
-  createdAtMs: number;
-  kind?: 'message' | 'assistant-turn' | 'action' | 'thinking';
-  operationId?: string;
-  streaming?: boolean;
-  optimistic?: boolean;
-  queued?: boolean;
-  actionTitle?: string;
-  actionDetail?: string;
-  actionStatus?: 'running' | 'completed' | 'failed' | 'interrupted';
-  assistantTurn?: AssistantTurn;
-  miniAppId?: string;
-  pinned?: boolean;
-  reactions?: string[];
-  invoiceId?: string;
-  media?: MessagingMediaRef;
-  mediaType?: 'photo' | 'video' | 'document';
-};
-
-type NewDialog =
-  | { type: 'group'; name: string; selectedBotIds: Set<string> }
-  | { type: 'channel'; name: string; description: string }
-  | null;
-
-type LocalCall = {
-  kind: 'voice' | 'video';
-  title: string;
-  status: WebRtcCallStatus;
-  incoming: boolean;
-  muted: boolean;
-  videoEnabled: boolean;
-  error?: string;
-};
-
-type MiniAppCallSession = {
-  callId: string;
-  miniAppId: string;
-  title: string;
-  kind: 'voice' | 'video';
-  program: MiniAppBotCallProgram;
-  html?: string;
-};
-
-type MessageMenu = { message: DisplayMessage; x: number; y: number } | null;
-type ForwardDialogState = { sourceConversationId: string; message: DisplayMessage } | null;
-type EditDialogState = { conversationId: string; messageId: string; originalText: string; text: string } | null;
-type InvoiceDialogState = { conversationId: string; title: string; amount: string } | null;
-type InfoTab = 'media' | 'files' | 'links';
-type SearchCategory = 'chats' | 'channels' | 'apps' | 'posts' | 'images' | 'videos' | 'downloads' | 'links' | 'files' | 'music' | 'audio';
-type SettingsCategory = 'account' | 'router' | 'usage' | 'updates' | 'notifications' | 'privacy' | 'data' | 'chat' | 'folders' | 'devices' | 'calls' | 'language' | 'advanced' | 'fabushi';
-
-type InferenceRouterStatus = {
-  schemaVersion: 1;
-  providers: Array<{ id: InferenceProvider; label: string; available: boolean; authenticated: boolean; installed?: boolean; source: string }>;
-  sandboxes: Array<{ id: SandboxRuntime; label: string; available: boolean; source: string }>;
-};
-
-type ProviderUsageSummary = { provider: string; requests: number; inputTokens: number; cachedInputTokens: number; outputTokens: number; reasoningTokens: number; totalTokens: number; lifetimeTokens: number; lastUsedAtMs: number | null };
-type UsageSummary = { totalTokens: number; lifetimeTokens?: number; events: number; source: string; updatedAtMs?: number | null; byProvider?: ProviderUsageSummary[] };
-
-type DesktopMessengerPreferences = {
-  showInfoPanel: boolean;
-  messagePreview: boolean;
-  autoPlayMedia: boolean;
-  enterToSend: boolean;
-  reducedMotion: boolean;
-};
-
-type MessengerProjection = {
-  version: 1;
-  savedAtMs: number;
-  actorId?: string;
-  cursor?: string | null;
-  activePeerKey?: string | null;
-  // The complete lightweight left-rail model is persisted for first-frame paint.
-  // Rust/Host remains authoritative and reconciles these display-only summaries in background.
-  legacyConversations?: ConversationSummary[];
-  legacyBots?: BotSummary[];
-  legacyGroups?: GroupSummary[];
-  // Account-installed Bot/Mini App identities are also lightweight first-frame
-  // summaries. Persist them so bots such as 全球法布施 do not disappear until
-  // a slower account sync finishes after every launch.
-  accountBots?: AccountBotMembership[];
-  miniAppIdentityCatalog?: MarketplacePluginSummary[];
-  selfActors: MessagingActor[];
-  selfConversations: MessagingConversation[];
-  selfMessages: Record<string, MessagingMessage[]>;
-};
-
-const searchCategories: ReadonlyArray<{ id: SearchCategory; label: string }> = [
-  { id: 'chats', label: '聊天' },
-  { id: 'channels', label: '频道' },
-  { id: 'apps', label: '应用' },
-  { id: 'posts', label: '贴文' },
-  { id: 'images', label: '图片' },
-  { id: 'videos', label: '视频' },
-  { id: 'downloads', label: '下载' },
-  { id: 'links', label: '链接' },
-  { id: 'files', label: '文件' },
-  { id: 'music', label: '音乐' },
-  { id: 'audio', label: '声音' },
-];
+function toAgentTranscriptSources(
+  messages: readonly DisplayMessage[],
+): AgentTranscriptSourceMessage[] {
+  return messages.map((message) => ({ ...message, source: 'legacy' as const }));
+}
 
 const messengerSettingsKey = 'fabushi.desktop.messenger-settings.v2';
 const messengerDraftsKey = 'fabushi.desktop.messenger-drafts.v2';
@@ -331,7 +230,6 @@ const accountSyncCursorKey = 'fabushi.desktop.account-sync-cursor.v1';
 const messengerConversationJournalKey = 'fabushi.desktop.mahayana-conversation-journal.v1';
 const miniAppExecutionPersistencePrefix = 'fabushi.desktop.miniapp-execution.v1:';
 const messengerPreferencesKey = 'fabushi.desktop.telegram-settings.v1';
-const initialPeerRenderCount = 120;
 const initialMessageRenderCount = 240;
 const initialSyncLimit = 20;
 const backgroundSyncLimit = 100;
@@ -523,20 +421,33 @@ function botMarkStateForPeer(
   executions: MessagingBotExecution[],
   busy: boolean,
   hostReady: boolean,
-): BotMarkState {
-  if (busy) return 'sending';
+): FabAvatarInputState {
+  if (busy) return 'thinking';
   const identities = [peer.id, peer.actorId].filter((value): value is string => Boolean(value));
   const execution = [...executions]
     .sort((left, right) => (right.startedAtMs ?? 0) - (left.startedAtMs ?? 0))
     .find((candidate) => identities.includes(candidate.botId));
-  if (!execution) return hostReady ? 'idle' : 'waking';
+  if (!execution) return hostReady ? 'idle' : 'offline';
   switch (execution.state) {
-    case 'queued': return 'waking';
+    case 'queued': return 'thinking';
     case 'running': return 'working';
-    case 'waitingForApproval': return 'alerting';
+    case 'waitingForApproval': return 'waiting';
     case 'failed': return 'error';
-    case 'cancelled': return 'sleeping';
-    case 'completed': return 'result';
+    case 'cancelled': return 'offline';
+    case 'completed': return 'success';
+  }
+}
+
+function legacyBotMarkState(state: FabAvatarInputState): BotMarkState {
+  switch (state) {
+    case 'waiting':
+      return 'alerting';
+    case 'success':
+      return 'result';
+    case 'offline':
+      return 'sleeping';
+    default:
+      return state;
   }
 }
 
@@ -547,28 +458,6 @@ function formatTime(timestamp: number): string {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
   return date.toLocaleDateString([], { month: 'numeric', day: 'numeric' });
-}
-
-function legacyKind(conversation: ConversationSummary): PeerKind {
-  const id = conversation.id.toLowerCase();
-  const kind = conversation.kind.toLowerCase();
-  if (id.startsWith('mahayana:contact:') || id.startsWith('telegram:user:') || kind.includes('direct') || kind.includes('contact')) return 'contact';
-  if (id.startsWith('mahayana-ai:') || id.startsWith('codex:') || kind.includes('agent') || kind.includes('bot') || kind.includes('assistant')) return 'bot';
-  if (kind.includes('saved')) return 'saved';
-  if (kind.includes('channel')) return 'channel';
-  return 'conversation';
-}
-
-function selfKind(conversation: MessagingConversation, counterparty?: MessagingActor): PeerKind {
-  if (conversation.kind === 'channel') return 'channel';
-  if (conversation.kind === 'group') return 'group';
-  if (conversation.kind === 'savedMessages') return 'saved';
-  if (conversation.kind === 'direct' || conversation.kind === 'secret') {
-    return counterparty && ['assistant', 'bot', 'service'].includes(counterparty.kind)
-      ? 'bot'
-      : 'contact';
-  }
-  return 'conversation';
 }
 
 function sectionTitle(section: MessengerSection): string {
@@ -780,7 +669,7 @@ function startupLegacyConversationId(projection: MessengerProjection | null | un
   return null;
 }
 
-export default function DesktopShellV2() {
+export default function LegacyMessagingAdapter() {
   const authTransport = useMemo(() => createTransport(), []);
   const localProjection = useMemo(() => readMessengerProjection(), []);
   const [startupProjection, setStartupProjection] = useState<MessengerProjection | null>(localProjection);
@@ -880,36 +769,58 @@ export default function DesktopShellV2() {
 }
 
 function DesktopFastStartBootstrap() {
+  const bootstrapAgent: AgentSidebarItem = {
+    key: 'agent:mahayana-assistant',
+    peerKey: 'bootstrap:mahayana-assistant',
+    id: 'mahayana-assistant',
+    agentId: 'mahayana-assistant',
+    name: 'Mahayana',
+    description: 'Connecting to local Agent…',
+    pinned: true,
+    hidden: false,
+    unread: 0,
+    busy: false,
+    isGroup: false,
+    updatedAtMs: Date.now(),
+  };
+  const noop = () => {};
   return (
     <main
-      className={`${styles.messenger} ${styles.fabushiUnified}`}
+      className={`${styles.messenger} ${styles.fabushiUnified} ${styles.grokParity}`}
       data-testid="desktop-fast-start-bootstrap"
       aria-busy="true"
-      aria-label="Fabushi 正在连接"
-      style={{ gridTemplateColumns: '330px minmax(420px,1fr)' }}
+      aria-label="Fabushi is connecting"
+      style={{ gridTemplateColumns: '300px minmax(420px,1fr)' }}
     >
       <aside className={styles.chatList}>
-        <header className={styles.listHeader}>
-          <span className={styles.sidebarBrand} title="Fabushi"><BotMark botId="fabushi:bootstrap" state="idle" size={30} paused label="Fabushi" /></span>
-          <strong>聊天</strong>
-        </header>
-        <label className={styles.searchBox}>
-          <Search size={16} />
-          <input disabled placeholder="搜索" aria-label="搜索" />
-        </label>
-        <div className={styles.peerList} aria-hidden="true" />
-        <div className={styles.sidebarFooter}>
-          <button type="button" className={styles.profileNavigationTrigger} disabled>
-            <BotMark botId="fabushi:bootstrap:self" state="idle" size={38} paused label="我的头像" />
-            <span><strong>我</strong><small>正在连接</small></span>
-          </button>
-        </div>
+        <AgentSidebar
+          agents={[bootstrapAgent]}
+          activeKey={bootstrapAgent.key}
+          query=""
+          collapsed={false}
+          hostReady={false}
+          accountLabel="Connecting…"
+          onQuery={noop}
+          onOpen={noop}
+          onNewAgent={noop}
+          onToggleCollapsed={noop}
+          onTogglePin={noop}
+          onRename={noop}
+          onHide={noop}
+          onDuplicate={noop}
+          onDelete={noop}
+          onReorderPinned={noop}
+          onBroadcast={noop}
+          onOpenNetwork={noop}
+          onOpenPlugins={noop}
+          onOpenSettings={noop}
+        />
       </aside>
       <section className={styles.chatWorkspace}>
         <div className={styles.chatEmpty}>
-          <BotMark botId="fabushi:bootstrap:workspace" state="idle" size={72} paused label="Fabushi" />
-          <strong>Fabushi</strong>
-          <p>界面已经就绪，正在后台连接本机服务。</p>
+          <BotMark botId="fabushi:bootstrap:workspace" state="waking" size={72} paused label="Fabushi" />
+          <strong>Mahayana</strong>
+          <p>The Agent workspace is ready. Connecting to the local runtime…</p>
         </div>
       </section>
     </main>
@@ -918,6 +829,7 @@ function DesktopFastStartBootstrap() {
 
 function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection?: MessengerProjection | null; onLogout: () => Promise<void> }) {
   const transport = useMemo(() => createTransport(), []);
+  const agentCoordinatorClient = useMemo(() => new AgentCoordinatorClient(transport), [transport]);
   const startupProjection = useMemo(() => initialProjection ?? readMessengerProjection(), [initialProjection]);
   const startupLegacyConversation = useMemo(() => startupLegacyConversationId(startupProjection), [startupProjection]);
   const selfHosted = useMemo(() => new SelfHostedMessagingClientV2(transport, { actorId: startupProjection?.actorId }), [transport, startupProjection]);
@@ -926,85 +838,155 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const [initialLegacyHydrationMask, setInitialLegacyHydrationMask] = useState(0);
   const initialLegacyHydrationMaskRef = useRef(0);
   const initialLegacyHydrated = initialLegacyHydrationMask === 0b111;
-  const [section, setSection] = useState<MessengerSection>('chats');
-  const [conversations, setConversations] = useState<ConversationSummary[]>(startupProjection?.legacyConversations ?? []);
-  const [bots, setBots] = useState<BotSummary[]>(startupProjection?.legacyBots ?? []);
-  const [groups, setGroups] = useState<GroupSummary[]>(startupProjection?.legacyGroups ?? []);
-  const [selfActors, setSelfActors] = useState<MessagingActor[]>(startupProjection?.selfActors ?? []);
-  const [selfConversations, setSelfConversations] = useState<MessagingConversation[]>(startupProjection?.selfConversations ?? []);
-  const [selfMessages, setSelfMessages] = useState<Record<string, MessagingMessage[]>>(startupProjection?.selfMessages ?? {});
-  const [selfStories, setSelfStories] = useState<MessagingStory[]>([]);
-  const [selfCommunities, setSelfCommunities] = useState<MessagingCommunityState[]>([]);
-  const [selfBotProfiles, setSelfBotProfiles] = useState<MessagingBotProfile[]>([]);
-  const [selfBotExecutions, setSelfBotExecutions] = useState<MessagingBotExecution[]>([]);
-  const [activeStory, setActiveStory] = useState<MessagingStory | null>(null);
-  const [communityDialogPeer, setCommunityDialogPeer] = useState<PeerItem | null>(null);
-  const [selfInvoices, setSelfInvoices] = useState<MessagingInvoice[]>([]);
-  const [selfOrders, setSelfOrders] = useState<MessagingOrder[]>([]);
-  const [walletAccount, setWalletAccount] = useState<MessagingWalletAccount | null>(null);
-  const [walletEntries, setWalletEntries] = useState<MessagingLedgerEntry[]>([]);
+  // Grok/Fabu parity: the primary desktop shell is Agent-first. Messenger,
+  // Contacts, Channels, Calls and Payments remain backend capabilities but no
+  // longer own top-level navigation.
+  const [section, setSection] = useState<MessengerSection>('bots');
+  const newAgentRequestPendingRef = useRef(false);
+  const [pendingOpenAgentId, setPendingOpenAgentId] = useState<string | null>(null);
   const [activePeerKey, setActivePeerKey] = useState<string | null>(startupProjection?.activePeerKey ?? null);
-  const [messages, setMessages] = useState<DisplayMessage[]>(() =>
+  const legacyCompatibility = useLegacyMessagingCompatibilityState(
+    startupProjection,
     startupLegacyConversation ? cachedLegacyDisplayMessages(startupLegacyConversation) : [],
   );
-  const [composer, setComposer] = useState('');
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [replyTo, setReplyTo] = useState<DisplayMessage | null>(null);
-  const [silentSend, setSilentSend] = useState(false);
-  const [scheduledAtMs, setScheduledAtMs] = useState<number | undefined>();
-  const [search, setSearch] = useState('');
-  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
-  const [globalSearchCategory, setGlobalSearchCategory] = useState<SearchCategory>('chats');
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [createMenuOpen, setCreateMenuOpen] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(330);
-  const [conversationSearchOpen, setConversationSearchOpen] = useState(false);
+  const {
+    conversations, setConversations,
+    groups, setGroups,
+    selfActors, setSelfActors,
+    selfConversations, setSelfConversations,
+    selfMessages, setSelfMessages,
+    selfStories, setSelfStories,
+    selfCommunities, setSelfCommunities,
+    selfBotProfiles, setSelfBotProfiles,
+    selfBotExecutions, setSelfBotExecutions,
+    activeStory, setActiveStory,
+    communityDialogPeer, setCommunityDialogPeer,
+    selfInvoices, setSelfInvoices,
+    selfOrders, setSelfOrders,
+    walletAccount, setWalletAccount,
+    walletEntries, setWalletEntries,
+    messages, setMessages,
+    composer, setComposer,
+    drafts, setDrafts,
+    legacyReplyTo, setLegacyReplyTo,
+    silentSend, setSilentSend,
+    scheduledAtMs, setScheduledAtMs,
+    typingByConversation, setTypingByConversation,
+    typingExpiryTimersRef,
+    newDialog, setNewDialog,
+    messageMenu, setMessageMenu,
+    forwardDialog, setForwardDialog,
+    editDialog, setEditDialog,
+    invoiceDialog, setInvoiceDialog,
+    attachmentMenuOpen, setAttachmentMenuOpen,
+    attachmentProgress, setAttachmentProgress,
+    localCall, setLocalCall,
+    incomingCall, setIncomingCall,
+    miniApp, setMiniApp,
+    miniAppCall, setMiniAppCall,
+    miniAppBotThreadsRef,
+    accountBots, setAccountBots,
+    marketplaceApps, setMarketplaceApps,
+    miniAppIdentityCatalog, setMiniAppIdentityCatalog,
+    installedMiniApps, setInstalledMiniApps,
+    miniAppQuery, setMiniAppQuery,
+    miniAppLoading, setMiniAppLoading,
+    miniAppBusy, setMiniAppBusy,
+  } = legacyCompatibility;
+  const shellView = useAgentShellViewState({
+    initialMessageRenderCount,
+    initialInfoOpen: readDesktopMessengerPreferences().showInfoPanel,
+  });
+  const {
+    search, setSearch,
+    sidebarWidth, setSidebarWidth,
+    conversationSearchOpen, setConversationSearchOpen,
+    agentConversationSearch, setAgentConversationSearch,
+    messageRenderCount, setMessageRenderCount,
+    infoOpen, setInfoOpen,
+    narrowInfoOpen, setNarrowInfoOpen,
+    wideInfoLayout,
+    agentSettingsOpen, setAgentSettingsOpen,
+    showScrollToLatest, setShowScrollToLatest,
+  } = shellView;
   const [desktopUpdateState, setDesktopUpdateState] = useState<UpdateState | null>(null);
   const [desktopUpdateBusy, setDesktopUpdateBusy] = useState(false);
-  const [peerRenderCount, setPeerRenderCount] = useState(initialPeerRenderCount);
-  const [messageRenderCount, setMessageRenderCount] = useState(initialMessageRenderCount);
   const [desktopPreferences, setDesktopPreferences] = useState<DesktopMessengerPreferences>(() => readDesktopMessengerPreferences());
   const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>('account');
   const settingsReturnSectionRef = useRef<MessengerSection>('chats');
   const [hostSettings, setHostSettings] = useState<ProductHostSettings>(defaultProductHostSettings);
   const [routerStatus, setRouterStatus] = useState<InferenceRouterStatus | null>(null);
   const [usageSummary, setUsageSummary] = useState<UsageSummary | null>(null);
-  const [infoOpen, setInfoOpen] = useState(() => readDesktopMessengerPreferences().showInfoPanel);
-  const [narrowInfoOpen, setNarrowInfoOpen] = useState(false);
-  const [wideInfoLayout, setWideInfoLayout] = useState(() => typeof window === 'undefined' ? true : window.innerWidth > 1280);
   const [infoTab, setInfoTab] = useState<InfoTab>('media');
-  const [computerProfileOpen, setComputerProfileOpen] = useState(false);
-  const [remoteComputerState, setRemoteComputerState] = useState<RemoteComputerDesktopState | null>(null);
-  const [pendingSend, setPendingSend] = useState(false);
-  const [agentOperationId, setAgentOperationId] = useState<string | null>(null);
-  const [showScrollToLatest, setShowScrollToLatest] = useState(false);
-  const [queuedAgentPrompts, setQueuedAgentPrompts] = useState<Record<string, DisplayMessage[]>>({});
-  const [typingByConversation, setTypingByConversation] = useState<Record<string, Record<string, number>>>({});
-  const [newDialog, setNewDialog] = useState<NewDialog>(null);
-  const [messageMenu, setMessageMenu] = useState<MessageMenu>(null);
-  const [forwardDialog, setForwardDialog] = useState<ForwardDialogState>(null);
-  const [editDialog, setEditDialog] = useState<EditDialogState>(null);
-  const [invoiceDialog, setInvoiceDialog] = useState<InvoiceDialogState>(null);
-  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
-  const [attachmentProgress, setAttachmentProgress] = useState<string | null>(null);
-  const [localCall, setLocalCall] = useState<LocalCall | null>(null);
-  const [incomingCall, setIncomingCall] = useState<IncomingFabushiCall | null>(null);
-  const [miniApp, setMiniApp] = useState<{ id: string; title: string; url: string } | null>(null);
-  const [miniAppCall, setMiniAppCall] = useState<MiniAppCallSession | null>(null);
-  const miniAppBotThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
-  const botThreadsRef = useRef<Record<string, DisplayMessage[]>>({});
-  const [accountBots, setAccountBots] = useState<AccountBotMembership[]>(startupProjection?.accountBots ?? []);
-  const [marketplaceApps, setMarketplaceApps] = useState<MarketplacePluginSummary[]>([]);
-  const [miniAppIdentityCatalog, setMiniAppIdentityCatalog] = useState<MarketplacePluginSummary[]>(startupProjection?.miniAppIdentityCatalog ?? []);
-  const [installedMiniApps, setInstalledMiniApps] = useState<Record<string, InstalledPluginPointer>>({});
-  const [miniAppQuery, setMiniAppQuery] = useState('');
-  const [miniAppLoading, setMiniAppLoading] = useState(false);
-  const [miniAppBusy, setMiniAppBusy] = useState<Set<string>>(() => new Set());
+  // Compatibility Messenger/Mini App sends retain transport pending state.
+  // Agent request/operation ownership is exclusively per-peer in the workspace controller.
+  const [legacySendPending, setLegacySendPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const agentProductControllers = useAgentProductControllers({
+    client: agentCoordinatorClient,
+    accountScope: remoteAccountScope,
+    initialAgents: startupProjection?.legacyBots ?? [],
+    onError: setError,
+    workflow: {
+      onListed: (agentId, workflows) => {
+        void mirrorAgentCloudSnapshot(agentId, FABU_AGENT_WORKFLOW_INDEX_PATH, {
+          version: 1,
+          workflows,
+        });
+      },
+      onError: (_agentId, message) => setError(message),
+    },
+    mcp: { onError: setError },
+    storeSync: {
+      mirror: (agentId, objectPath, value) => mirrorAgentCloudSnapshot(agentId, objectPath, value),
+      remove: (agentId, objectPath) => removeAgentCloudObject(agentId, objectPath),
+      onError: (_agentId, message) => setError(message),
+    },
+    directory: {
+      onListed: (agents) => {
+        initialLegacyHydrationMaskRef.current |= 0b010;
+        setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
+        for (const agent of agents) {
+          void mirrorBotAgentCloud(agent).catch(() => {});
+        }
+      },
+      onChanged: (action, agent) => {
+        if (action === 'created' && newAgentRequestPendingRef.current) {
+          newAgentRequestPendingRef.current = false;
+          setPendingOpenAgentId(agent.agentId ?? agent.id);
+        }
+        if (action === 'deleted') {
+          void invokeNativeDesktop('removeBotFromAccount', { botId: agent.id }).catch(() => {});
+        } else {
+          void mirrorBotAgentCloud(agent).catch(() => {});
+        }
+      },
+      onError: setError,
+    },
+  });
+  const agentPaletteController = agentProductControllers.palette;
+  const agentSidebarController = agentProductControllers.sidebar;
+  const agentNetworkController = agentProductControllers.network;
+  const agentWorkflowController = agentProductControllers.workflow;
+  const agentMcpController = agentProductControllers.mcp;
+  const agentPrSuggestionController = agentProductControllers.pullRequests;
+  const agentStoreSyncController = agentProductControllers.storeSync;
+  const agentDirectoryController = agentProductControllers.directory;
+  const agentPinnedOrder = agentSidebarController.pinnedOrder;
+  const agentSidebarSections = agentSidebarController.sections;
+  const agentSelectedKeys = agentSidebarController.selectedKeys;
+  const bots = agentDirectoryController.agents;
+  // AgentRootShell first-frame readiness is owned by the Agent domain, not by
+  // legacy conversations/groups. A durable Agent projection is enough to render
+  // and recover immediately while the authoritative directory refreshes in the
+  // background; fresh accounts wait for the first Agent directory response.
+  const initialAgentWorkspaceHydrated = hostReady
+    && ((initialLegacyHydrationMask & 0b010) !== 0
+      || bots.length > 0
+      || Boolean(startupProjection?.legacyBots?.length));
   const [mutedPeerKeys, setMutedPeerKeys] = useState<Set<string>>(() => new Set());
   const [pinnedPeerKeys, setPinnedPeerKeys] = useState<Set<string>>(() => new Set());
   const [archivedPeerKeys, setArchivedPeerKeys] = useState<Set<string>>(() => new Set());
-  const contactGroups = useSidebarContactGroups();
   const activePeerKeyRef = useRef<string | null>(null);
   const messagingCursorRef = useRef<string | null>(startupProjection?.cursor ?? null);
   const accountSyncCursorRef = useRef<string | null>(readAccountSyncCursor());
@@ -1013,49 +995,65 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   const typingStopTimerRef = useRef<number | null>(null);
   const peersRef = useRef<PeerItem[]>([]);
   const webRtcRef = useRef<FabushiWebRtcController | null>(null);
-  const remoteComputerControllerRef = useRef<RemoteComputerDesktopController | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const sessionResetInFlightRef = useRef(false);
-  const agentOperationIdRef = useRef<string | null>(null);
-  const agentRequestPendingRef = useRef(false);
-  const agentRequestPeerRef = useRef<string | null>(null);
-  const agentRequestIdRef = useRef<string | null>(null);
-  const pendingAgentDeltaRef = useRef(new Map<string, Extract<RuntimeEvent, { type: 'chat.delta' }>>());
-  const agentDeltaFrameRef = useRef<number | null>(null);
-  const finishedAgentOperationsRef = useRef(new Set<string>());
-  const agentPeerKeyRef = useRef<Record<string, string>>({});
   const messageAreaRef = useRef<HTMLDivElement | null>(null);
   const stickToLatestRef = useRef(true);
-  const remoteControlEnabledRef = useRef(hostSettings.remoteControlEnabled);
-  remoteControlEnabledRef.current = hostSettings.remoteControlEnabled;
+  const agentStoresRef = useRef(new Map<string, FabuAgentStore>());
+  const agentComputer = useAgentComputerController({
+    hostReady,
+    hydrated: initialAgentWorkspaceHydrated,
+    accountScope: remoteAccountScope,
+    activePeerKey,
+    transport,
+    coordinatorClient: agentCoordinatorClient,
+    label: localComputerLabel(),
+    remoteControlEnabled: hostSettings.remoteControlEnabled,
+    resolveAgentId: (requestedAgentId) => requestedAgentId === 'mahayana-assistant'
+      || peersRef.current.some((peer) => isAgentPeer(peer)
+        && (peer.agentId ?? peer.actorId ?? peer.id) === requestedAgentId)
+      ? requestedAgentId
+      : null,
+    onError: setError,
+  });
+
+  const {
+    controller: agentWorkspaceController,
+    transcriptStore: agentTranscriptStore,
+    coordinator: agentRuntimeCoordinator,
+    submit: submitAgentWorkspace,
+    openConversation: openAgentConversation,
+    uploadAttachment: uploadAgentAttachment,
+    resolveApproval: resolveAgentApproval,
+    interrupt: interruptAgentWorkspace,
+    revision: agentWorkspaceRevision,
+    notify: notifyAgentWorkspaceState,
+  } = useAgentWorkspaceRuntime({
+    hostReady,
+    coordinatorClient: agentCoordinatorClient,
+    onError: (peerKey, message) => {
+      if (peerKey === activePeerKeyRef.current) setError(message);
+    },
+    onComputerStatus: agentComputer.handleCapabilityStatus,
+    onOperationStarted: (peerKey, operationId) => {
+      mirrorAgentRuntimeCheckpoint(peerKey, 'running', operationId);
+    },
+    onOperationTerminal: (peerKey, operationId, status, message) => {
+      mirrorAgentRuntimeCheckpoint(peerKey, status, operationId, message);
+      mirrorAgentConversationSnapshot(peerKey);
+      if (status === 'failed' && message && peerKey === activePeerKeyRef.current) {
+        setError(message);
+      }
+    },
+  });
 
   useEffect(() => {
     activePeerKeyRef.current = activePeerKey;
   }, [activePeerKey]);
-
-  useEffect(() => () => {
-    if (agentDeltaFrameRef.current !== null) {
-      window.cancelAnimationFrame(agentDeltaFrameRef.current);
-      agentDeltaFrameRef.current = null;
-    }
-    pendingAgentDeltaRef.current.clear();
-  }, []);
-
-  useEffect(() => {
-    const onResize = () => {
-      const nextWide = window.innerWidth > 1280;
-      setWideInfoLayout(nextWide);
-      if (nextWide) setNarrowInfoOpen(false);
-    };
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
 
   useEffect(() => {
     if (!error || !isTerminalAuthSessionFailure(error) || sessionResetInFlightRef.current) return;
@@ -1213,10 +1211,21 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   useEffect(() => {
     if (!activePeerKey) return;
-    setComposer(drafts[activePeerKey] ?? '');
+    const peer = peersRef.current.find((candidate) => candidate.key === activePeerKey);
+    const isWorkspaceAgent = Boolean(
+      peer
+      && peer.source === 'legacy'
+      && peer.kind !== 'group'
+      && !peer.miniAppId
+      && isAgentPeer(peer)
+    );
+    // Compatibility Messenger owns the renderer-global composer string.
+    // Normal Agents render directly from AgentWorkspaceController and must
+    // never copy their draft into this global state.
+    if (!isWorkspaceAgent) setComposer(drafts[activePeerKey] ?? '');
     setSearch('');
-    setGlobalSearchOpen(false);
     setConversationSearchOpen(false);
+    setAgentConversationSearch('');
     setMessageRenderCount(initialMessageRenderCount);
   }, [activePeerKey]);
 
@@ -1306,38 +1315,37 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   useEffect(() => {
     let closed = false;
-    const unsubscribe = transport.subscribe((event) => {
-      if (!closed) handleRuntimeEvent(event);
+    const connection = agentCoordinatorClient.connect({
+      config: { profileId: 'desktop-messenger-v2', mode: 'production' },
+      onEvent: (event) => {
+        if (!closed) handleRuntimeEvent(event);
+      },
+      onState: (state) => {
+        if (closed) return;
+        setHostReady(state.phase === 'ready');
+        if (state.phase !== 'ready' || !state.recovered) return;
+        void execute({ type: 'settings.get', requestId: nextRequestId('settings-recover') }).catch(() => {});
+        refreshLegacy();
+        const activeKey = activePeerKeyRef.current;
+        const active = peersRef.current.find((peer) => peer.key === activeKey);
+        if (active?.conversationId) {
+          if (isAgentPeer(active) && !active.miniAppId) {
+            void openAgentConversation(active.key, active.conversationId).catch(() => {});
+          } else {
+            void agentCoordinatorClient.openConversation(
+              nextRequestId('conversation-recover'),
+              active.conversationId,
+            ).catch(() => {});
+          }
+        }
+      },
     });
     const onCommandBridge = (event: Event) => {
       const detail = (event as CustomEvent<MahayanaCommandBridgeDetail>).detail;
-      if (!detail || detail.command.type !== 'chat.send') return;
-      const conversationKey = detail.context?.conversationKey;
-      if (!conversationKey || activePeerKeyRef.current !== conversationKey) return;
-
-      if (detail.phase === 'dispatch') {
-        agentRequestPendingRef.current = true;
-        setPendingSend(true);
-        return;
-      }
-      if (detail.phase === 'accepted') {
-        const operationId = detail.accepted.operationId;
-        if (!operationId || !claimAgentOperation(operationId)) return;
-        appendAssistantTurnEvent({
-          type: 'operation.started',
-          timestamp: new Date().toISOString(),
-          operationId,
-          label: '正在思考',
-          interruptible: true,
-        });
-        return;
-      }
-      agentRequestPendingRef.current = false;
-      setPendingSend(false);
-      setError(detail.error);
+      if (detail) agentRuntimeCoordinator.handleCommandBridge(detail);
     };
     window.addEventListener(MAHAYANA_COMMAND_EVENT_NAME, onCommandBridge);
-    void transport.initialize({ profileId: 'desktop-messenger-v2', mode: 'production' })
+    void connection.ready
       .then(async () => {
         if (closed) return;
         setHostReady(true);
@@ -1378,7 +1386,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           });
         }
         try {
-          const account = await transport.authStatus().catch(() => null);
+          const account = await agentCoordinatorClient.authStatus().catch(() => null);
           const cachedActor = startupProjection?.selfActors.find((actor) => actor.id === selfHosted.actorId);
           const username = account?.user?.username?.trim() || cachedActor?.username;
           const displayName = account?.user?.nickname?.trim()
@@ -1391,10 +1399,17 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
             throw new Error('当前账号缺少电脑注册身份，无法启动后台在线状态');
           }
           setRemoteAccountScope(String(identityScope));
-          await selfHosted.ensureCurrentActor(displayName, username);
-          await selfHosted.sync(initialSyncLimit, messagingCursorRef.current);
-          await synchronizeAccountState();
-          void webRtcRef.current?.connect().catch(() => {});
+          // Contacts/Telegram/account-cursor reconciliation are compatibility
+          // capabilities. They must never hold AgentRootShell, Agent Computer or
+          // the Composer behind a legacy bootstrap round trip.
+          void (async () => {
+            await selfHosted.ensureCurrentActor(displayName, username);
+            await selfHosted.sync(initialSyncLimit, messagingCursorRef.current);
+            await synchronizeAccountState();
+            void webRtcRef.current?.connect().catch(() => {});
+          })().catch((cause: unknown) => {
+            if (!closed) setError(cause instanceof Error ? cause.message : String(cause));
+          });
         } catch (cause) {
           setError(cause instanceof Error ? cause.message : String(cause));
         }
@@ -1402,71 +1417,21 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
     return () => {
       closed = true;
-      unsubscribe();
       window.removeEventListener(MAHAYANA_COMMAND_EVENT_NAME, onCommandBridge);
-      const remoteComputer = remoteComputerControllerRef.current;
-      if (remoteComputer) void remoteComputer.stop().finally(() => transport.close());
-      else void transport.close();
+      void connection.dispose();
     };
-  }, [transport, selfHosted, startupProjection]);
+  }, [agentCoordinatorClient, selfHosted, startupProjection]);
 
   useEffect(() => {
-    if (!hostReady || initialLegacyHydrated) return;
-    let attempts = 0;
-    const retryMissing = () => {
-      if (initialLegacyHydrationMaskRef.current === 0b111 || attempts >= 8) return;
-      attempts += 1;
-      refreshLegacy(initialLegacyHydrationMaskRef.current);
-    };
-    const timer = window.setInterval(retryMissing, 650);
-    retryMissing();
-    return () => window.clearInterval(timer);
-  }, [hostReady, initialLegacyHydrated]);
-
-  useEffect(() => {
-    // Remote presence shares the Host request path with Messenger bootstrap.
-    // Keep background registration off that path until all core legacy lists
-    // have produced their first authoritative projection.
-    if (!hostReady || !remoteAccountScope) return;
-    if (!initialLegacyHydrated) return;
-    let disposed = false;
-    const controller = new RemoteComputerDesktopController({
-      transport,
-      label: localComputerLabel(),
-      identityScope: remoteAccountScope,
-      // Presence begins automatically after login. The controller receives the
-      // persisted opt-in before any remote session polling is allowed.
-      controlEnabled: remoteControlEnabledRef.current,
-      resolveAgentId: (requestedAgentId) => requestedAgentId === 'mahayana-assistant'
-        || peersRef.current.some((peer) => isAgentPeer(peer) && (peer.actorId ?? peer.id) === requestedAgentId)
-        ? requestedAgentId
-        : null,
-      onState: (state) => {
-        if (!disposed) setRemoteComputerState(state);
-      },
-    });
-    remoteComputerControllerRef.current = controller;
-    setRemoteComputerState(controller.snapshot());
-    void controller.start();
-    return () => {
-      disposed = true;
-      if (remoteComputerControllerRef.current === controller) remoteComputerControllerRef.current = null;
-      void controller.stop();
-    };
-  }, [hostReady, initialLegacyHydrated, remoteAccountScope, transport]);
-
-  useEffect(() => {
-    if (!hostReady) return;
-    const controller = remoteComputerControllerRef.current;
-    if (!controller) return;
-    void controller.setControlEnabled(hostSettings.remoteControlEnabled).catch((cause: unknown) => {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    });
-  }, [hostReady, hostSettings.remoteControlEnabled]);
-
-  useEffect(() => {
-    setComputerProfileOpen(false);
-  }, [activePeerKey]);
+    if (!initialAgentWorkspaceHydrated) return;
+    // MCP discovery belongs to the Agent Composer. Start it after the Agent
+    // surface is usable, independently of compatibility conversation/group
+    // hydration, and yield one frame so it cannot delay the first paint.
+    const timer = window.setTimeout(() => {
+      void agentMcpController.list().catch(() => {});
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [initialAgentWorkspaceHydrated, agentMcpController.list]);
 
   useEffect(() => {
     if (!hostReady || section !== 'settings' || !['router', 'usage'].includes(settingsCategory)) return;
@@ -1520,32 +1485,42 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }, [hostReady, section, miniAppQuery]);
 
   useEffect(() => {
-    if (!hostReady || !globalSearchOpen || globalSearchCategory !== 'apps') return;
-    const timer = window.setTimeout(() => { void refreshMiniApps(search); }, 250);
-    return () => window.clearTimeout(timer);
-  }, [hostReady, globalSearchOpen, globalSearchCategory, search]);
-
-  useEffect(() => {
     if (!hostReady) return;
-    const timer = window.setInterval(() => {
-      const now = Date.now();
-      setTypingByConversation((current) => {
-        const next: Record<string, Record<string, number>> = {};
-        for (const [conversationId, actors] of Object.entries(current)) {
-          const active = Object.fromEntries(Object.entries(actors).filter(([, expiresAt]) => expiresAt > now));
-          if (Object.keys(active).length) next[conversationId] = active;
-        }
-        return next;
-      });
+    let disposed = false;
+    const synchronizeCompatibility = () => {
+      if (disposed) return;
       void synchronizeAccountState();
       if (syncInFlightRef.current) return;
       syncInFlightRef.current = true;
       void selfHosted.sync(backgroundSyncLimit, messagingCursorRef.current)
         .catch(() => {})
         .finally(() => { syncInFlightRef.current = false; });
-    }, 2_000);
-    return () => window.clearInterval(timer);
+    };
+    const refreshWhenForegrounded = () => {
+      if (document.visibilityState === 'visible') synchronizeCompatibility();
+    };
+    const unsubscribeNative = subscribeNativeDesktopEvents({
+      'account-state-changed': synchronizeCompatibility,
+      'window-state': (payload) => {
+        if ((payload as { focused?: boolean } | null)?.focused) synchronizeCompatibility();
+      },
+    });
+    window.addEventListener('focus', refreshWhenForegrounded);
+    window.addEventListener('online', synchronizeCompatibility);
+    document.addEventListener('visibilitychange', refreshWhenForegrounded);
+    return () => {
+      disposed = true;
+      unsubscribeNative();
+      window.removeEventListener('focus', refreshWhenForegrounded);
+      window.removeEventListener('online', synchronizeCompatibility);
+      document.removeEventListener('visibilitychange', refreshWhenForegrounded);
+    };
   }, [hostReady, selfHosted]);
+
+  useEffect(() => () => {
+    for (const timer of typingExpiryTimersRef.current.values()) window.clearTimeout(timer);
+    typingExpiryTimersRef.current.clear();
+  }, []);
 
   function nextRequestId(prefix: string): string {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1560,7 +1535,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   function refreshLegacy(mask = 0) {
     const requests: Array<Promise<unknown>> = [];
     if ((mask & 0b001) === 0) requests.push(execute({ type: 'conversation.list', requestId: nextRequestId('conversation-list') }));
-    if ((mask & 0b010) === 0) requests.push(execute({ type: 'bot.list', requestId: nextRequestId('bot-list') }));
+    if ((mask & 0b010) === 0) requests.push(agentDirectoryController.list());
     if ((mask & 0b100) === 0) requests.push(execute({ type: 'group.list', requestId: nextRequestId('group-list') }));
     void Promise.all(requests).catch(() => {});
   }
@@ -1586,207 +1561,157 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     };
   }
 
-  function rememberAgentPeer(operationId: string, peerKey: string | null | undefined) {
-    if (peerKey) agentPeerKeyRef.current[operationId] = peerKey;
-  }
-
-  function flushPendingAgentDelta(operationId?: string) {
-    const pending = pendingAgentDeltaRef.current;
-    const operationIds = operationId ? [operationId] : [...pending.keys()];
-    for (const id of operationIds) {
-      const event = pending.get(id);
-      if (!event) continue;
-      pending.delete(id);
-      appendAssistantTurnEvent(event);
-    }
-    if (pending.size === 0 && agentDeltaFrameRef.current !== null) {
-      window.cancelAnimationFrame(agentDeltaFrameRef.current);
-      agentDeltaFrameRef.current = null;
-    }
-  }
-
-  function queueAgentDelta(event: Extract<RuntimeEvent, { type: 'chat.delta' }> & { operationId: string }) {
-    const current = pendingAgentDeltaRef.current.get(event.operationId);
-    pendingAgentDeltaRef.current.set(event.operationId, current
-      ? { ...event, delta: `${current.delta}${event.delta}` }
-      : event);
-    if (agentDeltaFrameRef.current !== null) return;
-    agentDeltaFrameRef.current = window.requestAnimationFrame(() => {
-      agentDeltaFrameRef.current = null;
-      flushPendingAgentDelta();
+  function agentStoreFor(agentId: string): FabuAgentStore {
+    const existing = agentStoresRef.current.get(agentId);
+    if (existing) return existing;
+    const store = new FabuAgentStore(agentId, {
+      list: (id, prefix) => listAccountAgentStore(id, prefix),
+      read: (id, path) => readAccountAgentStoreObject(id, path),
+      write: (id, path, dataBase64, options) => writeAccountAgentStoreObject(id, path, dataBase64, options),
+      delete: (id, path, baseEtag) => deleteAccountAgentStoreObject(id, path, baseEtag),
     });
+    agentStoresRef.current.set(agentId, store);
+    return store;
   }
 
-  function updateAgentThread(operationId: string | undefined, update: (current: DisplayMessage[]) => DisplayMessage[]) {
-    const peerKey = operationId ? agentPeerKeyRef.current[operationId] : undefined;
-    if (peerKey && peerKey !== activePeerKeyRef.current) {
-      botThreadsRef.current[peerKey] = update(botThreadsRef.current[peerKey] ?? []);
-      return;
+  async function mirrorAgentCloudSnapshot(
+    agentId: string,
+    path: string,
+    value: unknown,
+  ): Promise<void> {
+    if (!agentId.trim()) return;
+    const store = agentStoreFor(agentId);
+    try {
+      await store.writeJson(path, value);
+      await store.checkpointRoot();
+    } catch {
+      // The local Host remains authoritative while offline or during an
+      // etag conflict. The content-addressed backend preserves conflicting
+      // writes instead of silently overwriting another device.
     }
-    setMessages(update);
   }
 
-  function rekeyAssistantTurn(turn: AssistantTurn, operationId: string): AssistantTurn {
-    if (turn.operationId === operationId) return turn;
-    const previousPrefix = `${turn.operationId}:`;
-    const nextPrefix = `${operationId}:`;
-    return {
-      ...turn,
-      id: `assistant-turn:${operationId}`,
-      operationId,
-      parts: turn.parts.map((part) => ({
-        ...part,
-        id: part.id.startsWith(previousPrefix)
-          ? `${nextPrefix}${part.id.slice(previousPrefix.length)}`
-          : part.id,
-      })),
-    };
+  async function removeAgentCloudObject(agentId: string, path: string): Promise<void> {
+    if (!agentId.trim()) return;
+    try {
+      const store = agentStoreFor(agentId);
+      await store.delete(path);
+      await store.checkpointRoot();
+    } catch {
+      // Deletion is best-effort; account sync/reconciliation can retry.
+    }
   }
 
-  function adoptAgentRequestOperation(requestId: string | null, operationId: string, peerKey?: string | null) {
-    if (!requestId || requestId === operationId) return;
-    rememberAgentPeer(operationId, peerKey ?? agentPeerKeyRef.current[requestId] ?? agentRequestPeerRef.current);
-    updateAgentThread(requestId, (current) => {
-      const alreadyAuthoritative = current.some((message) =>
-        message.kind === 'assistant-turn' && message.operationId === operationId,
-      );
-      return current.flatMap((message) => {
-        if (message.operationId !== requestId) return [message];
-        if (message.kind === 'assistant-turn' && message.assistantTurn) {
-          if (alreadyAuthoritative) return [];
-          const assistantTurn = rekeyAssistantTurn(message.assistantTurn, operationId);
-          return [{
-            ...message,
-            id: `${operationId}:assistant-turn`,
-            operationId,
-            text: assistantTurnPlainText(assistantTurn),
-            assistantTurn,
-          }];
-        }
-        return [{ ...message, operationId }];
-      });
-    });
-    delete agentPeerKeyRef.current[requestId];
-  }
-
-  function rememberActiveBotThread() {
-    const peerKey = activePeerKeyRef.current;
+  function agentPeerForRuntimeKey(peerKey: string | null | undefined): PeerItem | undefined {
+    if (!peerKey) return undefined;
     const peer = peersRef.current.find((candidate) => candidate.key === peerKey);
-    if (!peerKey || !peer || !isAgentPeer(peer) || peer.miniAppId) return;
-    botThreadsRef.current[peerKey] = messages;
+    return peer && isAgentPeer(peer) && !peer.miniAppId ? peer : undefined;
   }
 
-  function claimAgentOperation(operationId?: string): boolean {
-    if (!operationId || finishedAgentOperationsRef.current.has(operationId)) return false;
-    if (agentOperationIdRef.current === operationId) {
-      rememberAgentPeer(operationId, agentPeerKeyRef.current[operationId] ?? agentRequestPeerRef.current);
-      return true;
+  function mirrorAgentRuntimeCheckpoint(
+    peerKey: string | null | undefined,
+    status: 'running' | 'completed' | 'failed' | 'interrupted',
+    operationId: string,
+    message?: string,
+  ): void {
+    const peer = agentPeerForRuntimeKey(peerKey);
+    if (!peer) return;
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    void mirrorAgentCloudSnapshot(agentId, FABU_AGENT_RUNTIME_CHECKPOINT_PATH, {
+      schemaVersion: 1,
+      agentId,
+      conversationId: peer.conversationId,
+      operationId,
+      status,
+      updatedAtMs: Date.now(),
+      ...(message ? { message } : {}),
+    });
+  }
+
+  function mirrorAgentConversationSnapshot(peerKey: string | null | undefined): void {
+    const peer = agentPeerForRuntimeKey(peerKey);
+    if (!peer?.conversationId) return;
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    window.setTimeout(() => {
+      void mirrorAgentCloudSnapshot(agentId, fabuAgentConversationTranscriptPath(peer.conversationId!), {
+        schemaVersion: 1,
+        agentId,
+        conversationId: peer.conversationId,
+        entries: agentTranscriptStore.entries(peer.key),
+        updatedAtMs: Date.now(),
+      });
+    }, 0);
+  }
+
+  async function restoreAgentConversationFromCloud(peer: PeerItem): Promise<boolean> {
+    if (!isAgentPeer(peer) || peer.miniAppId || !peer.conversationId) return false;
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    try {
+      const recovered = await restoreAgentStoreWorkspace(agentStoreFor(agentId), peer.conversationId);
+      const controller = agentWorkspaceController;
+      let changed = false;
+
+      if (
+        recovered.entries.length
+        && !controller.operationForPeer(peer.key)
+        && agentTranscriptStore.entries(peer.key).length === 0
+      ) {
+        agentTranscriptStore.hydrateEntries(peer.key, recovered.entries);
+        changed = true;
+      }
+
+      if (recovered.attachments.length && controller.attachmentsForPeer(peer.key).length === 0) {
+        controller.setAttachments(peer.key, recovered.attachments);
+        changed = true;
+      }
+
+      if (changed) notifyAgentWorkspaceState();
+      return recovered.entries.length > 0;
+    } catch {
+      return false;
     }
-    if (!agentRequestPendingRef.current) return false;
-    const requestId = agentRequestIdRef.current;
-    rememberAgentPeer(operationId, agentPeerKeyRef.current[operationId] ?? agentRequestPeerRef.current);
-    adoptAgentRequestOperation(requestId, operationId, agentRequestPeerRef.current);
-    agentRequestIdRef.current = null;
-    agentRequestPendingRef.current = false;
-    agentOperationIdRef.current = operationId;
-    setAgentOperationId(operationId);
-    return true;
   }
 
-  function clearAgentOperation(operationId: string, terminalStatus: 'completed' | 'failed' | 'interrupted' = 'completed') {
-    if (agentOperationIdRef.current !== operationId) return false;
-    finishedAgentOperationsRef.current.add(operationId);
-    if (finishedAgentOperationsRef.current.size > 500) {
-      finishedAgentOperationsRef.current.delete(finishedAgentOperationsRef.current.values().next().value!);
-    }
-    agentOperationIdRef.current = null;
-    setAgentOperationId(null);
-    agentRequestPendingRef.current = false;
-    agentRequestIdRef.current = null;
-    updateAgentThread(operationId, (current) => current
-      .filter((message) => !(message.kind === 'thinking' && message.operationId === operationId))
-      .map((message) => {
-        if (message.kind === 'action' &&
-          message.operationId === operationId &&
-          message.actionStatus === 'running') {
-          return { ...message, actionStatus: terminalStatus };
-        }
-        if (message.kind === 'message' && message.operationId === operationId && message.streaming) {
-          return { ...message, streaming: false, optimistic: false };
-        }
-        return message;
-      }));
-    return true;
-  }
-
-  function appendAgentThinking(operationId: string, label: string) {
-    updateAgentThread(operationId, (current) => [
-      ...current.filter((message) => !(message.kind === 'thinking' && message.operationId === operationId)),
-      {
-        id: `${operationId}:thinking`,
-        source: 'legacy',
-        role: 'peer',
-        text: '',
-        createdAtMs: Date.now(),
-        kind: 'thinking',
-        operationId,
-        actionTitle: label || '正在思考',
-        actionStatus: 'running',
+  async function mirrorBotAgentCloud(bot: BotSummary): Promise<void> {
+    const identity = projectFabuBotIdentity(bot);
+    const profile = projectFabuAgentProfile({
+      id: bot.id,
+      agentId: bot.agentId,
+      conversationId: bot.conversationId,
+      name: bot.name,
+      description: bot.description,
+      title: bot.title,
+      avatarShape: bot.avatarShape,
+      avatarColor: bot.avatarColor,
+      hidden: bot.hidden,
+      notificationsEnabled: bot.notificationsEnabled,
+      notifyOnUpdates: bot.notifyOnUpdates,
+    });
+    const settings = projectFabuAgentSettings({
+      id: bot.id,
+      hidden: bot.hidden,
+      notificationsEnabled: bot.notificationsEnabled,
+      notifyOnUpdates: bot.notifyOnUpdates,
+    });
+    await invokeNativeDesktop('addBotToAccount', {
+      botId: identity.botId,
+      bot: {
+        ...bot,
+        agentId: identity.agentId,
+        displayName: bot.name,
       },
+    });
+    await upsertAccountAgent(identity.agentId, profile, {
+      agentId: identity.agentId,
+      name: profile.name,
+      mode: 'default',
+    });
+    const store = agentStoreFor(identity.agentId);
+    await Promise.all([
+      store.writeProfile(profile),
+      store.writeSettings(settings),
     ]);
-  }
-
-  function upsertAgentAction(input: {
-    id: string;
-    operationId: string;
-    title: string;
-    detail?: string;
-    status: 'running' | 'completed' | 'failed';
-  }) {
-    updateAgentThread(input.operationId, (current) => {
-      const next: DisplayMessage = {
-        id: input.id,
-        source: 'legacy',
-        role: 'peer',
-        text: '',
-        createdAtMs: Date.now(),
-        kind: 'action',
-        operationId: input.operationId,
-        actionTitle: input.title,
-        actionDetail: input.detail,
-        actionStatus: input.status,
-      };
-      const index = current.findIndex((message) => message.kind === 'action' && message.id === input.id);
-      if (index < 0) return [...current, next];
-      return current.map((message, messageIndex) => messageIndex === index ? { ...message, ...next, createdAtMs: message.createdAtMs } : message);
-    });
-  }
-
-  function appendAssistantTurnEvent(event: RuntimeEvent) {
-    const operationId = 'operationId' in event && typeof event.operationId === 'string'
-      ? event.operationId
-      : undefined;
-    if (!operationId) return;
-    updateAgentThread(operationId, (current) => {
-      const index = current.findIndex((message) =>
-        message.kind === 'assistant-turn' && message.operationId === operationId,
-      );
-      const existingTurn = index >= 0 ? current[index]?.assistantTurn : undefined;
-      const assistantTurn = reduceAssistantTurn(existingTurn ?? createAssistantTurn(operationId), event);
-      const next: DisplayMessage = {
-        id: `${operationId}:assistant-turn`,
-        source: 'legacy',
-        role: 'peer',
-        text: assistantTurnPlainText(assistantTurn),
-        createdAtMs: assistantTurn.createdAtMs,
-        kind: 'assistant-turn',
-        operationId,
-        streaming: assistantTurn.status === 'running',
-        assistantTurn,
-      };
-      if (index < 0) return [...current, next];
-      return current.map((message, messageIndex) => messageIndex === index ? { ...message, ...next, createdAtMs: message.createdAtMs } : message);
-    });
+    await store.checkpointRoot();
   }
 
   function showSelfConversation(conversationId: string) {
@@ -1794,11 +1719,11 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   }
 
   function handleSelfHostedEvent(runtimeEvent: RuntimeEvent): boolean {
-    const hostEvent = asMessagingHostEvent(runtimeEvent);
-    if (!hostEvent) return false;
+    const envelope = compatibilityMessagingEnvelope(runtimeEvent);
+    if (!envelope) return false;
     const previousCursor = messagingCursorRef.current;
-    if (hostEvent.envelope.cursor) messagingCursorRef.current = hostEvent.envelope.cursor;
-    const event = hostEvent.envelope.event;
+    if (envelope.cursor) messagingCursorRef.current = envelope.cursor;
+    const event = envelope.event;
     switch (event.type) {
       case 'syncBatch': {
         const payload = event as unknown as {
@@ -1884,7 +1809,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
             void selfHosted.markRead(message.conversationId, message.id).catch(() => {});
           }
         }
-        setPendingSend(false);
+        setLegacySendPending(false);
         break;
       }
       case 'readChanged': {
@@ -1920,15 +1845,38 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       case 'typingChanged': {
         const payload = event as unknown as { conversationId: string; actorId: string; action?: string | null; expiresAtMs?: number | null };
         if (payload.actorId === selfHosted.actorId) break;
+        const timerKey = `${payload.conversationId}\0${payload.actorId}`;
+        const previousTimer = typingExpiryTimersRef.current.get(timerKey);
+        if (previousTimer !== undefined) {
+          window.clearTimeout(previousTimer);
+          typingExpiryTimersRef.current.delete(timerKey);
+        }
+        const expiresAtMs = payload.expiresAtMs ?? 0;
+        const active = Boolean(payload.action) && expiresAtMs > Date.now();
         setTypingByConversation((current) => {
           const actors = { ...(current[payload.conversationId] ?? {}) };
-          if (payload.action && (payload.expiresAtMs ?? 0) > Date.now()) actors[payload.actorId] = payload.expiresAtMs!;
+          if (active) actors[payload.actorId] = expiresAtMs;
           else delete actors[payload.actorId];
           const next = { ...current };
           if (Object.keys(actors).length) next[payload.conversationId] = actors;
           else delete next[payload.conversationId];
           return next;
         });
+        if (active) {
+          const timer = window.setTimeout(() => {
+            typingExpiryTimersRef.current.delete(timerKey);
+            setTypingByConversation((current) => {
+              const actors = { ...(current[payload.conversationId] ?? {}) };
+              if ((actors[payload.actorId] ?? 0) > Date.now()) return current;
+              delete actors[payload.actorId];
+              const next = { ...current };
+              if (Object.keys(actors).length) next[payload.conversationId] = actors;
+              else delete next[payload.conversationId];
+              return next;
+            });
+          }, Math.max(0, expiresAtMs - Date.now()) + 25);
+          typingExpiryTimersRef.current.set(timerKey, timer);
+        }
         break;
       }
       case 'storyChanged': {
@@ -1979,23 +1927,15 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   function handleRuntimeEvent(event: RuntimeEvent) {
     if (handleSelfHostedEvent(event)) return;
-
-    // Keep stream ordering deterministic while avoiding one React update per
-    // token. Grok App uses the same backpressure idea: high-frequency deltas
-    // are coalesced, but we flush them before any ordered step/final/terminal
-    // event so tools and the final answer never overtake visible text.
-    if (
-      event.type === 'chat.message'
-      || event.type === 'agent.step'
-      || event.type === 'operation.completed'
-      || event.type === 'operation.failed'
-      || event.type === 'operation.interrupted'
-    ) {
-      const operationId = ('operationId' in event && typeof event.operationId === 'string'
-        ? event.operationId
-        : agentOperationIdRef.current ?? agentRequestIdRef.current) ?? undefined;
-      if (operationId) flushPendingAgentDelta(operationId);
-    }
+    if (agentDirectoryController.handle(event)) return;
+    if (agentNetworkController.handle(event)) return;
+    if (agentStoreSyncController.handle(event)) return;
+    if (agentWorkflowController.handle(event)) return;
+    if (agentMcpController.handle(event)) return;
+    // Normal Agent chat/operation events are owned by AgentRuntimeCoordinator.
+    // The switch below remains only as a compatibility fallback for legacy
+    // Messenger/Host event shapes that cannot be attributed to an Agent.
+    if (agentRuntimeCoordinator.handle(event)) return;
 
     switch (event.type) {
       case 'host.ready':
@@ -2012,48 +1952,49 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           void execute({ type: 'conversation.open', requestId: nextRequestId('conversation-open'), conversationId: conversation.id });
         }
         break;
-      case 'conversation.opened':
-        if (agentOperationIdRef.current
-          && agentPeerKeyRef.current[agentOperationIdRef.current] === activePeerKeyRef.current) break;
+      case 'conversation.opened': {
+        const ownerPeer = peersRef.current.find((peer) =>
+          peer.conversationId === event.conversationId && isAgentPeer(peer) && !peer.miniAppId,
+        );
+        const openedMessages: DisplayMessage[] = event.messages.map((message) => ({
+          id: message.id,
+          source: 'legacy',
+          role: message.role === 'user' ? 'me' : 'peer',
+          text: message.text,
+          createdAtMs: message.createdAtMs,
+          kind: 'message',
+        }));
+        if (ownerPeer) {
+          const agentId = ownerPeer.agentId ?? ownerPeer.actorId ?? ownerPeer.id;
+          void mirrorAgentCloudSnapshot(agentId, fabuAgentConversationTranscriptPath(event.conversationId), {
+            schemaVersion: 1,
+            agentId,
+            conversationId: event.conversationId,
+            entries: projectTranscriptEntries(openedMessages),
+            updatedAtMs: Date.now(),
+          });
+          // Hydration is owned by the Agent whose conversation was opened.
+          // A different visible Agent being busy must never suppress this
+          // history, and an owner that is actively streaming must never be
+          // overwritten by a late conversation.opened response.
+          if (!agentWorkspaceController.operationForPeer(ownerPeer.key)) {
+            const currentEntries = agentTranscriptStore.entries(ownerPeer.key);
+            if (openedMessages.length || currentEntries.length === 0) {
+              agentTranscriptStore.replace(ownerPeer.key, toAgentTranscriptSources(openedMessages));
+              notifyAgentWorkspaceState();
+            }
+          }
+          break;
+        }
+        if (agentWorkspaceController.operationForPeer(activePeerKeyRef.current)) break;
         if (activePeerKeyRef.current === `legacy:conversation:${event.conversationId}`
           || peersRef.current.some((peer) => peer.key === activePeerKeyRef.current
             && peer.source === 'legacy'
             && peer.conversationId === event.conversationId)) {
-          setMessages(event.messages.map((message) => ({
-            id: message.id,
-            source: 'legacy',
-            role: message.role === 'user' ? 'me' : 'peer',
-            text: message.text,
-            createdAtMs: message.createdAtMs,
-          })));
+          setMessages(openedMessages);
         }
         break;
-      case 'bot.listed':
-        initialLegacyHydrationMaskRef.current |= 0b010;
-        setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
-        setBots(event.bots);
-        break;
-      case 'bot.changed':
-        setBots((current) => event.action === 'deleted'
-          ? current.filter((bot) => bot.id !== event.bot.id)
-          : upsertById(current, event.bot));
-        // Local Host profile remains usable offline, while the account service
-        // mirrors the complete Bot profile and its explicit Agent binding.
-        // Deleting a Bot membership intentionally leaves the Agent store intact,
-        // matching the Grok-style separation between surface and Agent state.
-        if (event.action === 'deleted') {
-          void invokeNativeDesktop('removeBotFromAccount', { botId: event.bot.id }).catch(() => {});
-        } else {
-          void invokeNativeDesktop('addBotToAccount', {
-            botId: event.bot.id,
-            bot: {
-              ...event.bot,
-              agentId: event.bot.agentId ?? event.bot.id,
-              displayName: event.bot.name,
-            },
-          }).catch(() => {});
-        }
-        break;
+      }
       case 'group.listed':
         initialLegacyHydrationMaskRef.current |= 0b100;
         setInitialLegacyHydrationMask(initialLegacyHydrationMaskRef.current);
@@ -2071,33 +2012,16 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
             text: message.content,
             createdAtMs: message.createdAtMs,
           })));
-          setPendingSend(false);
+          setLegacySendPending(false);
         }
         break;
       case 'settings.changed':
         setHostSettings(event.settings);
         break;
       case 'chat.message':
-        if (event.role === 'assistant') {
-          // Some legacy adapters omit operationId on the assistant body even
-          // though the active send already owns a provisional/authoritative turn.
-          // Bind that body to the current turn instead of painting a second
-          // peer message beside the AssistantTurn.
-          const assistantOperationId = event.operationId
-            ?? agentOperationIdRef.current
-            ?? agentRequestIdRef.current
-            ?? undefined;
-          if (assistantOperationId) {
-            const ownedOperation = claimAgentOperation(assistantOperationId)
-              || Boolean(agentPeerKeyRef.current[assistantOperationId]);
-            if (ownedOperation) {
-              appendAssistantTurnEvent({ ...event, operationId: assistantOperationId });
-              break;
-            }
-            if (finishedAgentOperationsRef.current.has(assistantOperationId)) break;
-          }
-        }
-        updateAgentThread(event.operationId, (current) => {
+        // Agent-owned chat is consumed above by AgentRuntimeCoordinator.
+        // What reaches this branch belongs to compatibility Messenger surfaces.
+        setMessages((current) => {
           if (event.role === 'user') {
             const optimisticIndex = current.findIndex((message) =>
               message.role === 'me' && message.optimistic === true && message.text === event.text,
@@ -2107,9 +2031,18 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
                 ? { ...message, optimistic: false, operationId: event.operationId ?? message.operationId }
                 : message);
             }
-            if (current.some((message) =>
-              message.role === 'me' && message.text === event.text &&
-              (!event.operationId || message.operationId === event.operationId))) return current;
+          } else if (event.operationId) {
+            const streamingIndex = current.findIndex((message) =>
+              message.role === 'peer'
+              && message.kind === 'message'
+              && message.operationId === event.operationId
+              && message.streaming === true,
+            );
+            if (streamingIndex >= 0) {
+              return current.map((message, messageIndex) => messageIndex === streamingIndex
+                ? { ...message, text: event.text, streaming: false }
+                : message);
+            }
           }
           return [...current, {
             id: nextRequestId('message'),
@@ -2123,45 +2056,35 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
           }];
         });
         break;
-      case 'chat.delta': {
-        const deltaOperationId = event.operationId
-          ?? agentOperationIdRef.current
-          ?? agentRequestIdRef.current
-          ?? undefined;
-        if (deltaOperationId && finishedAgentOperationsRef.current.has(deltaOperationId)) break;
-        if (deltaOperationId && (
-          claimAgentOperation(deltaOperationId)
-          || Boolean(agentPeerKeyRef.current[deltaOperationId])
-        )) {
-          queueAgentDelta({ ...event, operationId: deltaOperationId });
-          break;
-        }
-        updateAgentThread(deltaOperationId, (current) => {
-          const index = current.findIndex((message) => message.kind === 'message' && message.operationId === deltaOperationId && message.streaming);
-          if (index < 0) return [...current, { id: `${deltaOperationId ?? 'legacy'}:stream`, source: 'legacy', role: 'peer', text: event.delta, createdAtMs: Date.now(), kind: 'message', operationId: deltaOperationId, streaming: true }];
-          return current.map((message, messageIndex) => messageIndex === index ? { ...message, text: `${message.text}${event.delta}`, kind: 'message', streaming: true } : message);
+      case 'chat.delta':
+        setMessages((current) => {
+          const operationId = event.operationId;
+          const index = current.findIndex((message) =>
+            message.kind === 'message'
+            && message.role === 'peer'
+            && message.operationId === operationId
+            && message.streaming === true,
+          );
+          if (index < 0) return [...current, {
+            id: `${operationId ?? 'legacy'}:stream`,
+            source: 'legacy',
+            role: 'peer',
+            text: event.delta,
+            createdAtMs: Date.now(),
+            kind: 'message',
+            operationId,
+            streaming: true,
+          }];
+          return current.map((message, messageIndex) => messageIndex === index
+            ? { ...message, text: `${message.text}${event.delta}`, streaming: true }
+            : message);
         });
         break;
-      }
       case 'operation.started':
-        if (claimAgentOperation(event.operationId)) {
-          setPendingSend(true);
-          appendAssistantTurnEvent(event);
-        }
-        break;
       case 'model.routed':
-        if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
-        break;
       case 'agent.step':
-        if (claimAgentOperation(event.operationId)) appendAssistantTurnEvent(event);
-        break;
       case 'operation.interrupted':
-        if (agentOperationIdRef.current === event.operationId) appendAssistantTurnEvent(event);
-        if (clearAgentOperation(event.operationId, 'interrupted')) setPendingSend(false);
-        break;
       case 'operation.completed':
-        if (agentOperationIdRef.current === event.operationId) appendAssistantTurnEvent(event);
-        if (clearAgentOperation(event.operationId)) setPendingSend(false);
         break;
       case 'miniapp.opened':
         if (event.html) {
@@ -2172,13 +2095,13 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }
         break;
       case 'operation.failed':
-        if (agentOperationIdRef.current === event.operationId) appendAssistantTurnEvent(event);
-        if (clearAgentOperation(event.operationId, 'failed')) {
-          setPendingSend(false);
-          setError(event.message);
-        }
+        // Agent failures are consumed by AgentRuntimeCoordinator. Preserve the
+        // legacy error banner only for compatibility operations.
+        setError(event.message);
         break;
       case 'host.closed':
+        agentRuntimeCoordinator.resetOperations();
+        notifyAgentWorkspaceState();
         setHostReady(false);
         break;
       default:
@@ -2197,220 +2120,375 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     .filter((story) => story.ownerId !== selfHosted.actorId && (story.pinnedToProfile || story.expiresAtMs > Date.now()))
     .sort((left, right) => right.createdAtMs - left.createdAtMs), [selfStories, selfHosted]);
 
-  const peers = useMemo<PeerItem[]>(() => {
-    const botByConversationId = new Map(
-      bots
-        .filter((bot) => Boolean(bot.conversationId))
-        .map((bot) => [bot.conversationId!, bot] as const),
-    );
-    const legacyConversations = conversations.map((conversation): PeerItem => {
-      const bot = botByConversationId.get(conversation.id);
-      const kind = bot ? 'bot' : legacyKind(conversation);
-      return {
-      key: `legacy:conversation:${conversation.id}`,
-      id: conversation.id,
-      source: 'legacy',
-      conversationId: conversation.id,
-      actorId: bot?.id,
-      agentId: bot?.agentId ?? bot?.id,
-      kind,
-      title: conversation.title,
-      subtitle: kind === 'bot' ? bot?.description || bot?.title || 'AI Bot' : conversation.kind,
-      unread: conversation.unreadCount,
-      pinned: conversation.pinned || pinnedPeerKeys.has(`legacy:conversation:${conversation.id}`),
-      archived: archivedPeerKeys.has(`legacy:conversation:${conversation.id}`),
-      updatedAtMs: conversation.updatedAtMs,
-      };
-    });
-    const miniAppBotProjections = installedMiniAppBotProjections(miniAppIdentityCatalog, installedMiniApps);
-    const miniAppByBotId = new Map(miniAppBotProjections.map((projection) => [projection.id, projection]));
-    const conversationIds = new Set(conversations.map((conversation) => conversation.id));
-    const botPeers = bots
-      .filter((bot) => !bot.conversationId || !conversationIds.has(bot.conversationId))
-      .map((bot): PeerItem => ({
-        key: `legacy:bot:${bot.id}`,
-        id: bot.id,
-        source: 'legacy',
-        actorId: bot.id,
-        agentId: bot.agentId ?? bot.id,
-        conversationId: bot.conversationId,
-        kind: 'bot',
-        title: bot.name,
-        subtitle: bot.description || bot.title || 'AI Bot',
-        unread: bot.unread ? 1 : 0,
-        pinned: pinnedPeerKeys.has(`legacy:bot:${bot.id}`),
-        archived: archivedPeerKeys.has(`legacy:bot:${bot.id}`),
-        updatedAtMs: 0,
-        avatar: bot.avatar,
-        miniAppId: miniAppByBotId.get(bot.id)?.miniAppId,
-        miniAppCommands: miniAppByBotId.get(bot.id)?.commands,
-        miniAppMenuButtonText: miniAppByBotId.get(bot.id)?.menuButtonText,
-        miniAppCalls: miniAppByBotId.get(bot.id)?.calls,
-      }));
-    const existingBotIds = new Set(botPeers.map((peer) => peer.actorId ?? peer.id));
-    const accountBotPeers = accountBots
-      .filter((entry) => entry?.bot?.id && !existingBotIds.has(entry.bot.id))
-      .map((entry): PeerItem => {
-        const miniAppSource = entry.sources.find((source) => source.source === 'miniapp');
-        const projection = miniAppSource
-          ? miniAppBotProjections.find((candidate) => candidate.miniAppId === miniAppSource.sourceId)
-          : miniAppByBotId.get(entry.bot.id);
-        return {
-          // A Mini App-backed account Bot must keep the same peer identity before and
-          // after the asynchronous account-membership projection arrives. Otherwise
-          // activePeerKey points at the retired synthetic peer and the composer vanishes.
-          key: miniAppSource ? `miniapp:bot:${miniAppSource.sourceId}` : `account:bot:${entry.bot.id}`,
-          id: entry.bot.id,
-          source: 'legacy',
-          kind: 'bot',
-          title: entry.bot.displayName ?? entry.bot.username ?? entry.bot.id,
-          subtitle: entry.bot.username ? `@${entry.bot.username}` : entry.bot.description ?? 'Bot',
-          actorId: entry.bot.id,
-          agentId: entry.bot.agentId ?? entry.bot.id,
-          conversationId: entry.bot.conversationId,
-          unread: 0,
-          pinned: pinnedPeerKeys.has(miniAppSource ? `miniapp:bot:${miniAppSource.sourceId}` : `account:bot:${entry.bot.id}`),
-          archived: archivedPeerKeys.has(miniAppSource ? `miniapp:bot:${miniAppSource.sourceId}` : `account:bot:${entry.bot.id}`),
-          updatedAtMs: entry.updatedAtMs ?? 0,
-          miniAppId: miniAppSource?.sourceId,
-          miniAppCommands: projection?.commands,
-          miniAppMenuButtonText: projection?.menuButtonText ?? (miniAppSource ? '打开小程序' : undefined),
-          miniAppCalls: projection?.calls,
-        };
-      });
-    for (const peer of accountBotPeers) existingBotIds.add(peer.actorId ?? peer.id);
-    const miniAppBotPeers = miniAppBotProjections
-      .filter((projection) => !existingBotIds.has(projection.id))
-      .map((projection): PeerItem => ({
-        key: `miniapp:bot:${projection.miniAppId}`,
-        id: projection.id,
-        source: 'legacy',
-        actorId: projection.id,
-        agentId: projection.id,
-        conversationId: projection.conversationId,
-        kind: 'bot',
-        title: projection.displayName,
-        subtitle: projection.username ? `@${projection.username} · ${projection.description}` : projection.description,
-        unread: 0,
-        pinned: pinnedPeerKeys.has(`miniapp:bot:${projection.miniAppId}`),
-        archived: archivedPeerKeys.has(`miniapp:bot:${projection.miniAppId}`),
-        updatedAtMs: 0,
-        miniAppId: projection.miniAppId,
-        miniAppCommands: projection.commands,
-        miniAppMenuButtonText: projection.menuButtonText,
-        miniAppCalls: projection.calls,
-      }));
-    const legacyGroups = groups.map((group): PeerItem => ({
-      key: `legacy:group:${group.id}`,
-      id: group.id,
-      source: 'legacy',
-      groupId: group.id,
-      kind: 'group',
-      title: group.name,
-      subtitle: `${group.memberIds.length} 个 AI / 成员`,
-      unread: 0,
-      pinned: pinnedPeerKeys.has(`legacy:group:${group.id}`),
-      archived: archivedPeerKeys.has(`legacy:group:${group.id}`),
-      updatedAtMs: group.updatedAtMs,
-    }));
-    const actorById = new Map(selfActors.map((actor) => [actor.id, actor] as const));
-    const nativePeers = selfConversations.map((conversation): PeerItem => {
-      const actorId = conversation.participants.length === 2
-        ? conversation.participants.find((participant) => participant.actorId !== selfHosted.actorId)?.actorId
-        : undefined;
-      const actor = actorId ? actorById.get(actorId) : undefined;
-      const kind = selfKind(conversation, actor);
-      return {
-        key: `selfhosted:${conversation.id}`,
-        id: conversation.id,
-        source: 'selfhosted',
-        conversationId: conversation.id,
-        actorId,
-        agentId: kind === 'bot' ? actorId : undefined,
-        kind,
-        title: conversation.title,
-        subtitle: conversation.description || ({
-          channel: '频道',
-          group: '群组',
-          saved: '收藏消息',
-          conversation: '会话',
-          contact: '联系人',
-          bot: 'AI Bot',
-        } as const)[kind],
-        unread: conversation.unreadCount,
-        pinned: conversation.pinned,
-        archived: conversation.archived,
-        updatedAtMs: conversation.updatedAtMs,
-        avatar: conversation.avatarUrl,
-      };
-    });
-    return [...legacyConversations, ...botPeers, ...accountBotPeers, ...miniAppBotPeers, ...legacyGroups, ...nativePeers].sort((left, right) => {
-      if (left.pinned !== right.pinned) return left.pinned ? -1 : 1;
-      return right.updatedAtMs - left.updatedAtMs;
-    });
-  }, [conversations, bots, accountBots, groups, selfActors, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps, selfHosted.actorId]);
+  const peers = useMemo<PeerItem[]>(() => buildCompatibilityPeers({
+    conversations,
+    bots,
+    accountBots,
+    groups,
+    selfActors,
+    selfConversations,
+    pinnedPeerKeys,
+    archivedPeerKeys,
+    miniAppIdentityCatalog,
+    installedMiniApps,
+    selfActorId: selfHosted.actorId,
+  }), [conversations, bots, accountBots, groups, selfActors, selfConversations, pinnedPeerKeys, archivedPeerKeys, miniAppIdentityCatalog, installedMiniApps, selfHosted.actorId]);
 
   peersRef.current = peers;
+  useEffect(() => {
+    agentRuntimeCoordinator.bindAgentPeers(peers.flatMap((peer) => {
+      if (!isAgentPeer(peer) || peer.miniAppId) return [];
+      const agentId = peer.agentId ?? peer.actorId;
+      return agentId ? [{ agentId, peerKey: peer.key }] : [];
+    }));
+  }, [agentRuntimeCoordinator, peers]);
+  const agentActivityByPeer = Object.fromEntries(peers.map((peer) => {
+    const thread = isAgentPeer(peer) && !peer.miniAppId
+      ? agentTranscriptStore.thread(peer.key)
+      : peer.key === activePeerKey
+        ? messages
+        : peer.miniAppId
+          ? miniAppBotThreadsRef.current[peer.miniAppId] ?? []
+          : [];
+    const lastMessage = [...thread]
+      .reverse()
+      .find((message) => message.kind === 'message' && Boolean(message.text.trim()));
+    const runningTurn = [...thread]
+      .reverse()
+      .find((message) => message.kind === 'assistant-turn' && message.assistantTurn?.status === 'running')
+      ?.assistantTurn;
+    const runningActivity = runningTurn
+      ? [...runningTurn.parts].reverse().find((part) =>
+        (part.kind === 'tool' || part.kind === 'activity') && part.status === 'running',
+      )
+      : undefined;
+    const waitingActivity = runningTurn
+      ? [...runningTurn.parts].reverse().find((part) =>
+        part.kind === 'activity'
+        && part.status === 'running'
+        && (part.title === '等待授权' || part.title === '需要补充信息'),
+      )
+      : undefined;
+    const isComposingMessage = peer.source === 'selfhosted'
+      && Boolean(peer.conversationId)
+      && Object.keys(typingByConversation[peer.conversationId!] ?? {}).length > 0;
+    return [peer.key, {
+      draftPrompt: peer.source === 'legacy' && peer.kind !== 'group' && !peer.miniAppId
+        ? agentWorkspaceController.draftForPeer(peer.key)
+        : drafts[peer.key],
+      lastMessage: lastMessage?.text.trim().slice(0, 180),
+      waitingReason: waitingActivity?.kind === 'activity'
+        ? (waitingActivity.detail?.trim() || waitingActivity.title)
+        : undefined,
+      currentActivity: runningActivity && (runningActivity.kind === 'tool' || runningActivity.kind === 'activity')
+        ? (runningActivity.detail?.trim() || runningActivity.title)
+        : undefined,
+      isComposingMessage,
+    }] as const;
+  }));
+  const agentOperationSnapshot = useMemo(
+    () => agentWorkspaceController.snapshot(),
+    [agentWorkspaceRevision],
+  );
+  const agentRequestSnapshot = useMemo(
+    () => agentWorkspaceController.requestSnapshot(),
+    [agentWorkspaceRevision],
+  );
+  const agentBusyByPeer = Object.fromEntries(peers.flatMap((peer) => {
+    const activityId = agentOperationSnapshot[peer.key] ?? agentRequestSnapshot[peer.key];
+    return activityId ? [[peer.key, activityId] as const] : [];
+  }));
+  const legacyPinnedAgentKeys = [...new Set(peers
+    .filter((peer) => peer.pinned && (peer.kind === 'bot' || peer.kind === 'group'))
+    .map((peer) => agentWorkspaceKey(peer)))];
+  const legacyPinnedAgentSignature = legacyPinnedAgentKeys.join('\u001f');
+  const agentItems: AgentSidebarItem[] = projectAgentSidebarItems(
+    peers,
+    agentBusyByPeer,
+    agentActivityByPeer,
+    agentPinnedOrder,
+  );
   const activePeer = peers.find((peer) => peer.key === activePeerKey) ?? null;
+  const activeAgentBot: BotSummary | null = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
+    ? bots.find((bot) => bot.id === (activePeer.actorId ?? activePeer.id))
+      ?? (() => {
+        const membership = accountBots.find((entry) => entry.bot.id === (activePeer.actorId ?? activePeer.id));
+        if (!membership) return null;
+        const bot = membership.bot;
+        return {
+          id: bot.id,
+          agentId: bot.agentId ?? activePeer.agentId ?? bot.id,
+          name: bot.displayName ?? bot.username ?? activePeer.title,
+          description: bot.description ?? '',
+          title: bot.title ?? '',
+          hidden: bot.hidden === true,
+          ...(bot.avatar ? { avatar: bot.avatar } : {}),
+          ...(bot.avatarShape ? { avatarShape: bot.avatarShape } : {}),
+          ...(bot.avatarColor ? { avatarColor: bot.avatarColor } : {}),
+          notificationsEnabled: bot.notificationsEnabled ?? true,
+          notifyOnUpdates: bot.notifyOnUpdates ?? bot.notificationsEnabled ?? true,
+          unread: bot.unread === true,
+          ...(bot.conversationId ? { conversationId: bot.conversationId } : {}),
+        } satisfies BotSummary;
+      })()
+      ?? {
+        id: activePeer.actorId ?? activePeer.id,
+        agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
+        name: activePeer.title,
+        description: activePeer.subtitle,
+        title: '',
+        hidden: activePeer.hidden === true,
+        notificationsEnabled: true,
+        notifyOnUpdates: true,
+        unread: activePeer.unread > 0,
+        ...(activePeer.conversationId ? { conversationId: activePeer.conversationId } : {}),
+      }
+    : null;
+  const activeAgentReply = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
+    ? agentWorkspaceController.replyForPeer(activePeer.key)
+    : undefined;
+  const {
+    controller: agentSettingsController,
+    snapshot: agentSettingsSnapshot,
+  } = useAgentSettingsController(agentDirectoryController, activeAgentBot);
+  const activeAgentKey = projectActiveAgentKey(activePeer);
+  const activeAgentItem = activeAgentKey
+    ? agentItems.find((item) => item.key === activeAgentKey) ?? null
+    : null;
+  const activeAgentPinned = activeAgentItem?.pinned === true;
+
+  useEffect(() => {
+    if (!initialAgentWorkspaceHydrated || !agentSidebarController.ready) return;
+    agentSidebarController.adoptLegacyPinnedState(legacyPinnedAgentKeys);
+  }, [
+    initialAgentWorkspaceHydrated,
+    agentSidebarController.ready,
+    agentSidebarController.adoptLegacyPinnedState,
+    legacyPinnedAgentSignature,
+  ]);
+
+  useEffect(() => {
+    if (!pendingOpenAgentId) return;
+    const peer = peers.find((candidate) =>
+      candidate.kind === 'bot'
+      && (candidate.agentId ?? candidate.actorId ?? candidate.id) === pendingOpenAgentId,
+    );
+    if (!peer) return;
+    setPendingOpenAgentId(null);
+    setSection('bots');
+    void openPeer(peer);
+  }, [pendingOpenAgentId, peers]);
+
   const activeTypingActors = activePeer?.source === 'selfhosted' && activePeer.conversationId
     ? Object.keys(typingByConversation[activePeer.conversationId] ?? {})
     : [];
-  const visiblePeers = peers.filter((peer) => {
-    if (['chats', 'contacts', 'bots', 'groups', 'channels', 'saved', 'archive'].includes(section) && !matchesSection(peer, section)) return false;
-    const query = search.trim().toLowerCase();
-    return !query || `${peer.title} ${peer.subtitle}`.toLowerCase().includes(query);
-  });
   const sectionIsPeerList = ['chats', 'contacts', 'bots', 'groups', 'channels', 'saved', 'archive'].includes(section);
   const layoutInfoOpen = wideInfoLayout ? infoOpen : narrowInfoOpen;
   const infoPanelVisible = Boolean(layoutInfoOpen && activePeer && sectionIsPeerList);
   const infoPanelDocked = Boolean(infoPanelVisible && wideInfoLayout);
   const currentActor = selfActors.find((actor) => actor.id === selfHosted.actorId);
-  const localComputerOnline = Boolean(remoteComputerState?.running && remoteComputerState.registration);
-  const localComputerStatus = remoteComputerState?.channelOpen
-    ? '正在远程控制'
-    : localComputerOnline
-      ? hostSettings.remoteControlEnabled ? '在线，等待连接' : '在线，仅可发现'
-      : remoteComputerState?.running ? '正在注册' : '离线';
-  const renderedPeers = visiblePeers.slice(0, peerRenderCount);
-  const renderedContactGroups = ['chats', 'contacts'].includes(section) && contactGroups.groups.length
-    ? projectSidebarContactGroups(renderedPeers, contactGroups.groups, Boolean(search.trim()))
-    : [];
+  const localComputerOnline = agentComputer.online;
+  const localComputerStatus = agentComputer.status;
+  const pendingRemoteAuthorization = agentComputer.state?.pendingAuthorization ?? null;
+  // Normal Agent timelines render directly from AgentTranscriptStore. The
+  // renderer-global messages array is now compatibility-only for Messenger,
+  // groups and Mini Apps.
   const matchingMessages = messages;
   const renderedMessages = matchingMessages.slice(Math.max(0, matchingMessages.length - messageRenderCount));
-  const botTranscriptMessages: BotTranscriptMessage[] = activePeer && isAgentPeer(activePeer)
-    ? [...renderedMessages, ...(queuedAgentPrompts[activePeer.key] ?? [])]
-    : renderedMessages;
-  const activeAgentOperationId = activePeer && agentOperationId
-    && agentPeerKeyRef.current[agentOperationId] === activePeer.key
-    ? agentOperationId
+  const botTranscriptMessages = renderedMessages;
+  const allAgentTranscriptEntries: TranscriptEntry[] = activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId
+    ? agentTranscriptStore.entries(activePeer.key)
+    : [];
+  const agentTranscriptEntries: TranscriptEntry[] = allAgentTranscriptEntries.length || (activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId)
+    ? allAgentTranscriptEntries.slice(Math.max(0, allAgentTranscriptEntries.length - messageRenderCount))
+    : activePeer && isAgentPeer(activePeer)
+      ? projectTranscriptEntries(botTranscriptMessages)
+      : [];
+  const agentHasEarlierEntries = allAgentTranscriptEntries.length > agentTranscriptEntries.length;
+  const activeAgentOperationId = activePeer
+    ? agentOperationSnapshot[activePeer.key] ?? null
     : null;
-  const activePeerBusy = Boolean(activePeer && (agentOperationId ? activeAgentOperationId : pendingSend));
+  const activePeerBusy = Boolean(activePeer && (
+    activeAgentOperationId
+    || agentRequestSnapshot[activePeer.key]
+  ));
 
-  function renderPeerRow(peer: PeerItem) {
-    const peerBusy = peer.key === activePeerKey && (agentOperationId
-      ? agentPeerKeyRef.current[agentOperationId] === peer.key
-      : pendingSend);
-    return <button data-testid={`peer-${peer.key}`} key={peer.key} type="button" className={peer.key === activePeerKey ? styles.peerActive : styles.peer} onClick={() => void openPeer(peer)}>
-      <BotMark
-        botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`}
-        state={isAgentPeer(peer) ? botMarkStateForPeer(peer, selfBotExecutions, peerBusy, hostReady) : peer.unread ? 'notifying' : 'idle'}
-        size={48}
-        className={styles.agentAvatarMark}
-        label={peer.title}
-      />
-      <span className={styles.peerCopy}>
-        <span><strong>{peer.title}</strong><time>{formatTime(peer.updatedAtMs)}</time></span>
-        <small>{desktopPreferences.messagePreview ? peer.subtitle : peer.unread ? '有新消息' : '消息预览已关闭'}</small>
-      </span>
-      <span className={styles.peerMeta}>{peer.pinned ? <Pin size={12} /> : null}{mutedPeerKeys.has(peer.key) ? <BellOff size={12} /> : null}{peer.unread ? <b>{peer.unread}</b> : null}</span>
-    </button>;
+  async function createAgent(): Promise<void> {
+    setSection('bots');
+    setSearch('');
+    newAgentRequestPendingRef.current = true;
+    let accepted: unknown;
+    try {
+      accepted = await agentDirectoryController.create({ name: 'New chat', description: '' });
+    } catch {
+      newAgentRequestPendingRef.current = false;
+      return;
+    }
+    if (!accepted) newAgentRequestPendingRef.current = false;
   }
 
-  useEffect(() => {
-    setPeerRenderCount(initialPeerRenderCount);
-  }, [section, search]);
+  function peerForAgent(item: AgentSidebarItem): PeerItem | undefined {
+    return peersRef.current.find((peer) => peer.key === item.peerKey)
+      ?? peersRef.current.find((peer) =>
+        (peer.kind === 'bot' || peer.kind === 'group') && agentWorkspaceKey(peer) === item.key,
+      );
+  }
+
+  async function renameAgent(item: AgentSidebarItem): Promise<void> {
+    const peer = peerForAgent(item);
+    if (!peer || peer.kind !== 'bot' || !peer.key.startsWith('legacy:bot:') && !peer.key.startsWith('legacy:conversation:')) {
+      setError('Only locally managed Agents can be renamed from this shell.');
+      return;
+    }
+    const name = window.prompt('Rename Agent', peer.title)?.trim();
+    if (!name || name === peer.title) return;
+    try {
+      await agentDirectoryController.update(peer.actorId ?? peer.id, { name });
+    } catch {
+      return;
+    }
+  }
+
+  async function duplicateAgent(item: AgentSidebarItem): Promise<void> {
+    const peer = peerForAgent(item);
+    const botId = peer?.source === 'legacy' && peer.kind === 'bot'
+      ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
+      : undefined;
+    if (!peer || !botId) {
+      setError('Only locally managed Agents can be duplicated from this shell.');
+      return;
+    }
+    try {
+      await agentDirectoryController.duplicate(botId);
+    } catch {
+      return;
+    }
+  }
+
+  async function deleteAgent(item: AgentSidebarItem, confirmDelete = true): Promise<void> {
+    const peer = peerForAgent(item);
+    const botId = peer?.source === 'legacy' && peer.kind === 'bot'
+      ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
+      : undefined;
+    if (!peer || !botId) {
+      setError('Only locally managed Agents can be deleted from this shell.');
+      return;
+    }
+    if (confirmDelete && !window.confirm(`Delete “${peer.title}”? The Agent store is retained for recovery.`)) return;
+    agentWorkspaceController.clearPeer(peer.key);
+    notifyAgentWorkspaceState();
+    try {
+      await agentDirectoryController.delete(botId);
+    } catch {
+      return;
+    }
+    if (peer.key === activePeerKeyRef.current) {
+      activePeerKeyRef.current = null;
+      setActivePeerKey(null);
+      setMessages([]);
+    }
+  }
+
+  async function hideAgent(item: AgentSidebarItem): Promise<void> {
+    const peer = peerForAgent(item);
+    const botId = peer?.source === 'legacy' && peer.kind === 'bot'
+      ? peer.actorId ?? (peer.key.startsWith('legacy:bot:') ? peer.id : undefined)
+      : undefined;
+    if (!peer || !botId) {
+      setError('Only locally managed Agents can be hidden from this shell.');
+      return;
+    }
+    try {
+      await agentDirectoryController.setHidden(botId, true);
+    } catch {
+      return;
+    }
+    if (peer.key === activePeerKeyRef.current) {
+      setActivePeerKey(null);
+      setMessages([]);
+    }
+  }
+
+  function reorderPinnedAgents(
+    moved: AgentSidebarItem,
+    target: AgentSidebarItem,
+    position: 'before' | 'after',
+  ): void {
+    agentSidebarController.reorderPinned(
+      moved.key,
+      target.key,
+      position,
+      agentItems.filter((item) => item.pinned).map((item) => item.key),
+    );
+  }
+
+  function toggleAgentSelection(item: AgentSidebarItem): void {
+    agentSidebarController.toggleSelection(item.key);
+  }
+
+  function rangeSelectAgent(item: AgentSidebarItem): void {
+    const query = search.trim().toLocaleLowerCase();
+    const orderedKeys = agentItems
+      .filter((candidate) =>
+        !candidate.hidden
+        && (!query || `${candidate.name} ${candidate.description}`.toLocaleLowerCase().includes(query)),
+      )
+      .map((candidate) => candidate.key);
+    agentSidebarController.rangeSelect(item.key, orderedKeys);
+  }
+
+  function clearAgentSelection(): void {
+    agentSidebarController.clearSelection();
+  }
+
+  function createAgentSidebarSection(name: string, items: readonly AgentSidebarItem[]): void {
+    agentSidebarController.createSection(name, items);
+  }
+
+  function moveAgentsToSection(items: readonly AgentSidebarItem[], sectionId: string): void {
+    agentSidebarController.moveToSection(items, sectionId);
+  }
+
+  function moveAgentToSection(item: AgentSidebarItem, sectionId: string): void {
+    agentSidebarController.moveToSection([item], sectionId);
+  }
+
+  function renameAgentSidebarSection(section: AgentSidebarSection): void {
+    const name = window.prompt('Rename section', section.name)?.trim();
+    if (!name || name === section.name) return;
+    agentSidebarController.renameSection(section.id, name);
+  }
+
+  function deleteAgentSidebarSection(section: AgentSidebarSection): void {
+    if (!window.confirm(`Delete “${section.name}”? Its Agents move to Unassigned.`)) return;
+    agentSidebarController.removeSection(section.id);
+  }
+
+  async function deleteSelectedAgents(items: readonly AgentSidebarItem[]): Promise<void> {
+    const deletable = items.filter((item) => !item.isGroup);
+    if (!deletable.length) return;
+    if (!window.confirm(`Delete ${deletable.length} selected Agent${deletable.length === 1 ? '' : 's'}? Agent stores are retained for recovery.`)) return;
+    for (const item of deletable) {
+      await deleteAgent(item, false);
+    }
+    clearAgentSelection();
+  }
+
+  function openAgent(item: AgentSidebarItem): void {
+    const peer = peerForAgent(item);
+    if (!peer) return;
+    agentNetworkController.close();
+    setSection('bots');
+    void openPeer(peer);
+  }
+
+  function updateAgentComposer(peerKey: string, value: string, richText?: string) {
+    agentWorkspaceController.setDraftDocument(peerKey, value, richText);
+    notifyAgentWorkspaceState();
+  }
 
   function updateComposer(value: string) {
+    // Compatibility-only composer state for Messenger, Mini Apps and groups.
     setComposer(value);
     const activeKey = activePeerKeyRef.current;
     if (!activeKey) return;
@@ -2428,8 +2506,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     setDrafts((current) => {
       const next = { ...current };
-      if (value) next[activePeerKeyRef.current!] = value;
-      else delete next[activePeerKeyRef.current!];
+      if (value) next[activeKey] = value;
+      else delete next[activeKey];
       return next;
     });
   }
@@ -2450,6 +2528,14 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' });
   }
 
+  function scrollToTranscriptEntry(entryId: string) {
+    const root = messageAreaRef.current;
+    if (!root) return;
+    const target = Array.from(root.querySelectorAll<HTMLElement>('[data-transcript-entry-id]'))
+      .find((element) => element.dataset.transcriptEntryId === entryId);
+    target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   async function copyBotMessage(message: BotTranscriptMessage): Promise<void> {
     try {
       await navigator.clipboard?.writeText(message.text);
@@ -2458,102 +2544,95 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
-  function editBotMessage(message: BotTranscriptMessage) {
-    updateComposer(message.text);
-    setReplyTo(null);
+  function clearAgentReply(peerKey: string): void {
+    agentWorkspaceController.clearReply(peerKey);
+    notifyAgentWorkspaceState();
   }
 
-  async function dispatchAgentPrompt(peer: PeerItem, text: string, existingMessageId?: string): Promise<void> {
-    if (agentOperationIdRef.current || agentRequestPendingRef.current) return;
-    const requestId = nextRequestId('chat-send');
-    rememberAgentPeer(requestId, peer.key);
-    const optimisticId = existingMessageId ?? 'optimistic:' + requestId;
-    updateAgentThread(requestId, (current) => {
-      const nextMessage: DisplayMessage = {
-        id: optimisticId,
-        source: 'legacy',
-        role: 'me',
-        text,
-        createdAtMs: Date.now(),
-        kind: 'message',
-        operationId: requestId,
-        optimistic: true,
-        queued: false,
-      };
-      const existingIndex = current.findIndex((message) => message.id === optimisticId);
-      if (existingIndex < 0) return [...current, nextMessage];
-      return current.map((message, index) => index === existingIndex
-        ? { ...message, ...nextMessage }
-        : message);
-    });
-    // Paint the assistant turn locally in the same renderer tick as the user
-    // bubble. The Host operation id is adopted later without creating a second
-    // "thinking" row, so slow process wake-up never leaves the chat visually idle.
-    appendAssistantTurnEvent({
-      type: 'operation.started',
-      timestamp: new Date().toISOString(),
-      operationId: requestId,
-      label: '正在思考',
-      interruptible: true,
-    });
-    setPendingSend(true);
-    agentRequestPendingRef.current = true;
-    agentRequestPeerRef.current = peer.key;
-    agentRequestIdRef.current = requestId;
-    try {
-      const accepted = await execute({
-        type: 'chat.send',
-        requestId,
-        text,
-        conversationId: peer.conversationId,
-        agentId: peer.agentId ?? peer.actorId,
+  function setReplyTarget(message: DisplayMessage): void {
+    const peer = activePeer;
+    if (peer && isAgentPeer(peer) && !peer.miniAppId) {
+      agentWorkspaceController.setReply(peer.key, {
+        id: message.id,
+        role: message.role,
+        text: message.text,
       });
-      if (!accepted) {
-        updateAgentThread(requestId, (current) => current.filter((message) => message.id !== optimisticId));
-        return;
-      }
-      const operationId = accepted.operationId ?? requestId;
-      rememberAgentPeer(operationId, peer.key);
-      if (finishedAgentOperationsRef.current.has(operationId)) return;
-      adoptAgentRequestOperation(agentRequestIdRef.current, operationId, peer.key);
-      agentRequestIdRef.current = null;
-      updateAgentThread(operationId, (current) => current.map((message) => message.id === optimisticId
-        ? { ...message, operationId, optimistic: false, queued: false }
-        : message));
-      claimAgentOperation(operationId);
-    } catch (cause) {
-      updateAgentThread(requestId, (current) => current.filter((message) =>
-        message.id !== optimisticId && message.operationId !== requestId,
-      ));
-      agentRequestIdRef.current = null;
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      agentRequestPendingRef.current = false;
-      if (!agentOperationIdRef.current) {
-        agentRequestIdRef.current = null;
-        setPendingSend(false);
-      }
+      notifyAgentWorkspaceState();
+      return;
     }
+    setLegacyReplyTo(message);
   }
 
-  function regenerateBotMessage(message: BotTranscriptMessage) {
-    if (!activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId || pendingSend) return;
-    const index = messages.findIndex((candidate) => candidate.id === message.id);
-    if (index < 0) return;
-    const prompt = [...messages.slice(0, index)].reverse().find((candidate) => candidate.role === 'me' && !candidate.queued);
+  function editBotMessage(message: BotTranscriptMessage | TranscriptEntry) {
+    if (activePeer && isAgentPeer(activePeer) && !activePeer.miniAppId) {
+      agentWorkspaceController.setDraftDocument(activePeer.key, message.text, 'richText' in message ? message.richText : undefined);
+      notifyAgentWorkspaceState();
+      clearAgentReply(activePeer.key);
+      return;
+    }
+    updateComposer(message.text);
+  }
+
+  function enqueueAgentPrompt(
+    peer: PeerItem,
+    text: string,
+    existingMessageId?: string,
+    attachments: readonly AttachmentContext[] = [],
+    replyContext?: AgentReplyContext,
+    references: readonly AgentPromptReference[] = [],
+    richText?: string,
+  ) {    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    submitAgentWorkspace({
+      ...(existingMessageId ? { messageId: existingMessageId } : {}),
+      peerKey: peer.key,
+      agentId,
+      ...(peer.conversationId ? { conversationId: peer.conversationId } : {}),
+      prompt: text,
+      ...(richText ? { richText } : {}),
+      ...(attachments.length ? { attachments: [...attachments] } : {}),
+      ...(replyContext ? { replyTo: replyContext } : {}),
+      ...(references.length ? { references: [...references] } : {}),
+    });
+  }
+
+  function sendAgentMessage(event: FormEvent, peer: PeerItem): void {
+    event.preventDefault();
+    if (!isAgentPeer(peer) || peer.miniAppId || peer.kind === 'group') return;
+    const text = agentWorkspaceController.draftForPeer(peer.key).trim();
+    const attachments = agentWorkspaceController.attachmentsForPeer(peer.key);
+    if (!text && !attachments.length) return;
+
+    // Take the complete Agent-owned draft atomically. A failed/queued send is
+    // restored by useAgentWorkspaceRuntime without overwriting a newer draft.
+    const submittedDraft = agentWorkspaceController.takeDraft(peer.key);
+    notifyAgentWorkspaceState();
+    enqueueAgentPrompt(
+      peer,
+      submittedDraft.text.trim(),
+      undefined,
+      submittedDraft.attachments,
+      submittedDraft.replyTo,
+      submittedDraft.references ?? [],
+      submittedDraft.richText,
+    );
+    setScheduledAtMs(undefined);
+  }
+
+  function regenerateBotMessage(message: BotTranscriptMessage | TranscriptEntry) {
+    if (!activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId) return;
+    const prompt = agentTranscriptStore.userPromptBefore(activePeer.key, message.id);
     if (!prompt) {
       setError('找不到这条回复对应的用户消息。');
       return;
     }
-    setMessages((current) => current.filter((candidate) => candidate.id !== message.id));
-    void dispatchAgentPrompt(activePeer, prompt.text);
+    agentTranscriptStore.removeByIds(activePeer.key, [message.id]);
+    notifyAgentWorkspaceState();
+    enqueueAgentPrompt(activePeer, prompt.text, undefined, prompt.attachments ?? [], undefined, [], prompt.richText);
   }
 
   async function stopAgentOperation(): Promise<void> {
-    const operationId = agentOperationIdRef.current;
-    if (!operationId) return;
     try {
-      await transport.interrupt(operationId);
+      await interruptAgentWorkspace(activePeerKeyRef.current);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -2566,21 +2645,25 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       if (node) node.scrollTop = node.scrollHeight;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [activePeerKey, messages, pendingSend, queuedAgentPrompts]);
+  }, [activePeerKey, messages, agentWorkspaceRevision]);
 
   async function openPeer(peer: PeerItem) {
-    rememberActiveBotThread();
     activePeerKeyRef.current = peer.key;
     setActivePeerKey(peer.key);
+    if (!isAgentPeer(peer)) setLegacySendPending(false);
     stickToLatestRef.current = true;
     setShowScrollToLatest(false);
-    setComposer(drafts[peer.key] ?? '');
+    const isWorkspaceAgent = peer.source === 'legacy'
+      && peer.kind !== 'group'
+      && !peer.miniAppId
+      && isAgentPeer(peer);
+    if (!isWorkspaceAgent) setComposer(drafts[peer.key] ?? '');
     setSearch('');
-    setGlobalSearchOpen(false);
     setMessageRenderCount(initialMessageRenderCount);
-    setReplyTo(null);
+    setLegacyReplyTo(null);
     setError(null);
     setConversationSearchOpen(false);
+    setAgentConversationSearch('');
     if (peer.miniAppId) {
       setMessages(miniAppBotThreadsRef.current[peer.miniAppId] ?? []);
       void loadMiniAppBotThread(peer.miniAppId).catch(() => {});
@@ -2594,13 +2677,21 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       return;
     }
     if (isAgentPeer(peer)) {
-      const remembered = botThreadsRef.current[peer.key];
-      if (remembered) setMessages(remembered);
-      else if (peer.conversationId) setMessages(cachedLegacyDisplayMessages(peer.conversationId));
-      else setMessages([]);
-      if (peer.conversationId) {
-        await execute({ type: 'conversation.open', requestId: nextRequestId('conversation-open'), conversationId: peer.conversationId });
+      if (!agentTranscriptStore.has(peer.key) && peer.conversationId) {
+        const cached = cachedLegacyDisplayMessages(peer.conversationId);
+        if (cached.length) {
+          agentTranscriptStore.replace(peer.key, toAgentTranscriptSources(cached));
+        } else if (!(await restoreAgentConversationFromCloud(peer))) {
+          agentTranscriptStore.replace(peer.key, []);
+        }
+      } else if (!agentTranscriptStore.has(peer.key)) {
+        agentTranscriptStore.replace(peer.key, []);
       }
+      notifyAgentWorkspaceState();
+      if (peer.conversationId) {
+        await openAgentConversation(peer.key, peer.conversationId).catch(() => {});
+      }
+      void agentWorkflowController.list(peer.agentId ?? peer.actorId ?? peer.id).catch(() => {});
       return;
     }
     if (peer.kind === 'group' && peer.groupId) {
@@ -2616,7 +2707,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
     if (peer.conversationId) {
       setMessages(cachedLegacyDisplayMessages(peer.conversationId));
-      await execute({ type: 'conversation.open', requestId: nextRequestId('conversation-open'), conversationId: peer.conversationId });
+      await agentCoordinatorClient.openConversation(nextRequestId('conversation-open'), peer.conversationId).catch((cause: unknown) => {
+          setError(cause instanceof Error ? cause.message : String(cause));
+        });
       return;
     }
     setMessages([]);
@@ -2624,45 +2717,18 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
 
   async function sendMessage(event: FormEvent) {
     event.preventDefault();
-    const text = composer.trim();
-    if (!text || !activePeer) return;
+    if (!activePeer) return;
     const agentRequest = activePeer.source === 'legacy'
       && activePeer.kind !== 'group'
       && !activePeer.miniAppId
       && isAgentPeer(activePeer);
-    if (pendingSend) {
-      if (!agentRequest) return;
-      const queuedMessage: DisplayMessage = {
-        id: nextRequestId('queued-chat-send'),
-        source: 'legacy',
-        role: 'me',
-        text,
-        createdAtMs: Date.now(),
-        kind: 'message',
-        optimistic: true,
-        queued: true,
-      };
-      setQueuedAgentPrompts((current) => ({
-        ...current,
-        [activePeer.key]: [...(current[activePeer.key] ?? []), queuedMessage],
-      }));
-      updateComposer('');
-      setReplyTo(null);
-      return;
-    }
     if (agentRequest) {
-      updateComposer('');
-      try {
-        await dispatchAgentPrompt(activePeer, text);
-        setReplyTo(null);
-        setScheduledAtMs(undefined);
-      } catch (cause) {
-        updateComposer(text);
-        setError(cause instanceof Error ? cause.message : String(cause));
-      }
+      sendAgentMessage(event, activePeer);
       return;
     }
-    setPendingSend(true);
+    const text = composer.trim();
+    if (!text || legacySendPending) return;
+    setLegacySendPending(true);
     updateComposer('');
     try {
       if (activePeer.miniAppId) {
@@ -2721,7 +2787,7 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
         }]);
       } else if (activePeer.source === 'selfhosted' && activePeer.conversationId) {
         await selfHosted.sendText(activePeer.conversationId, text, {
-          replyToMessageId: replyTo?.id,
+          replyToMessageId: legacyReplyTo?.id,
           scheduledAtMs,
           silent: silentSend,
         });
@@ -2757,11 +2823,8 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
             ? { ...message, operationId: accepted.operationId, optimistic: false, queued: false }
             : message));
         }
-        if (agentRequest && accepted.operationId && claimAgentOperation(accepted.operationId)) {
-          appendAssistantTurnEvent({ type: 'operation.started', timestamp: new Date().toISOString(), operationId: accepted.operationId, label: '正在思考', interruptible: true });
-        }
       }
-      setReplyTo(null);
+      setLegacyReplyTo(null);
       setScheduledAtMs(undefined);
     } catch (cause) {
       if (activePeer.miniAppId) {
@@ -2773,25 +2836,9 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
       updateComposer(text);
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
-      setPendingSend(false);
+      setLegacySendPending(false);
     }
   }
-
-  useEffect(() => {
-    if (pendingSend || !activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId) return;
-    const next = queuedAgentPrompts[activePeer.key]?.[0];
-    if (!next) return;
-    setQueuedAgentPrompts((current) => {
-      const pending = current[activePeer.key] ?? [];
-      if (pending[0]?.id !== next.id) return current;
-      const remaining = pending.slice(1);
-      const updated = { ...current };
-      if (remaining.length) updated[activePeer.key] = remaining;
-      else delete updated[activePeer.key];
-      return updated;
-    });
-    void dispatchAgentPrompt(activePeer, next.text, next.id);
-  }, [activePeerKey, pendingSend, queuedAgentPrompts]);
 
   async function saveNewDialog() {
     if (!newDialog || !newDialog.name.trim()) return;
@@ -2872,27 +2919,138 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     }
   }
 
+  async function transcribeAgentVoice(peer: PeerItem, file: File): Promise<string> {
+    if (!isAgentPeer(peer) || peer.miniAppId) throw new Error('Voice dictation is only available for Agents.');
+    const validationError = validateAgentAttachment(file);
+    if (validationError) throw new Error(validationError);
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    const stored = await uploadAgentAttachment(peer.key, {
+      agentId,
+      filename: file.name,
+      mimeType: file.type || 'audio/webm',
+      bytesBase64: await agentFileToBase64(file),
+    });
+    if (!stored.path) throw new Error('Voice recording was stored without a local path.');
+    const result = await invokeNativeDesktop<Record<string, unknown>>('transcribeAudio', {
+      path: stored.path,
+      language: 'auto',
+    });
+    const nested = result?.result && typeof result.result === 'object'
+      ? result.result as Record<string, unknown>
+      : null;
+    const text = typeof result?.text === 'string'
+      ? result.text
+      : typeof result?.transcript === 'string'
+        ? result.transcript
+        : typeof nested?.text === 'string'
+          ? nested.text
+          : '';
+    if (text.trim()) return text.trim();
+    if (result?.available === false) {
+      throw new Error('Voice transcription is unavailable. Install the offline ASR model or enable a runtime transcription tool.');
+    }
+    throw new Error('Voice transcription returned no text.');
+  }
+
+  async function stageAgentFiles(peer: PeerItem, files: readonly File[]): Promise<void> {
+    if (!isAgentPeer(peer) || peer.miniAppId || files.length === 0) return;
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    const controller = agentWorkspaceController;
+    const alreadyStaged = controller.attachmentsForPeer(peer.key);
+    const availableSlots = Math.max(0, AGENT_ATTACHMENT_LIMIT - alreadyStaged.length);
+    if (availableSlots === 0) {
+      setError(`You can attach up to ${AGENT_ATTACHMENT_LIMIT} files to one Agent draft.`);
+      return;
+    }
+
+    controller.setUploading(peer.key, true);
+    notifyAgentWorkspaceState();
+    const staged: AttachmentContext[] = [];
+    try {
+      for (const file of files.slice(0, availableSlots)) {
+        const validationError = validateAgentAttachment(file);
+        if (validationError) {
+          setError(validationError);
+          continue;
+        }
+        try {
+          const stored = await uploadAgentAttachment(peer.key, {
+            agentId,
+            filename: file.name,
+            mimeType: file.type || undefined,
+            bytesBase64: await agentFileToBase64(file),
+          });
+          staged.push(await enrichAgentAttachmentPreview(stored, file));
+        } catch (cause) {
+          setError(cause instanceof Error ? cause.message : String(cause));
+        }
+      }
+      if (staged.length) {
+        controller.appendAttachments(peer.key, staged);
+        notifyAgentWorkspaceState();
+        const nextAttachments = controller.attachmentsForPeer(peer.key);
+        void mirrorAgentCloudSnapshot(agentId, FABU_AGENT_ATTACHMENT_INDEX_PATH, {
+          schemaVersion: 1,
+          agentId,
+          attachments: nextAttachments.map((attachment) => ({
+            id: attachment.id,
+            name: attachment.name,
+            path: attachment.path,
+            mimeType: attachment.mimeType,
+            sizeBytes: attachment.sizeBytes,
+          })),
+          updatedAtMs: Date.now(),
+        });
+      }
+    } finally {
+      controller.setUploading(peer.key, false);
+      notifyAgentWorkspaceState();
+    }
+  }
+
+  function removeAgentAttachment(peerKey: string, attachmentId: string): void {
+    const controller = agentWorkspaceController;
+    controller.removeAttachment(peerKey, attachmentId);
+    notifyAgentWorkspaceState();
+    const remaining = controller.attachmentsForPeer(peerKey);
+    const peer = agentPeerForRuntimeKey(peerKey);
+    if (!peer) return;
+    const agentId = peer.agentId ?? peer.actorId ?? peer.id;
+    void mirrorAgentCloudSnapshot(agentId, FABU_AGENT_ATTACHMENT_INDEX_PATH, {
+      schemaVersion: 1,
+      agentId,
+      attachments: remaining.map((attachment) => ({
+        id: attachment.id,
+        name: attachment.name,
+        path: attachment.path,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+      })),
+      updatedAtMs: Date.now(),
+    });
+  }
+
   async function sendAttachmentFile(file: File) {
     if (!activePeer?.conversationId || activePeer.source !== 'selfhosted') {
       setError('附件需要发送到 Fabushi 自建会话。');
       return;
     }
     setAttachmentMenuOpen(false);
-    setPendingSend(true);
+    setLegacySendPending(true);
     setAttachmentProgress(`正在上传 ${file.name}…`);
     try {
       await selfHosted.sendAttachment(
         activePeer.conversationId,
         file,
-        { replyToMessageId: replyTo?.id, scheduledAtMs, silent: silentSend },
+        { replyToMessageId: legacyReplyTo?.id, scheduledAtMs, silent: silentSend },
         (uploaded, total) => setAttachmentProgress(`正在上传 ${file.name} · ${Math.round((uploaded / total) * 100)}%`),
       );
-      setReplyTo(null);
+      setLegacyReplyTo(null);
       setScheduledAtMs(undefined);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
-      setPendingSend(false);
+      setLegacySendPending(false);
       setAttachmentProgress(null);
     }
   }
@@ -2976,7 +3134,7 @@ async function saveInvoiceDialog() {
       return;
     }
     if (action === 'reply') {
-      setReplyTo(target);
+      setReplyTarget(target);
       return;
     }
     if (action === 'forward') {
@@ -3618,157 +3776,68 @@ async function saveInvoiceDialog() {
     window.addEventListener('pointerup', onUp);
   }
 
-  function navigateFromProfile(next: MessengerSection) {
-    setProfileMenuOpen(false);
-    setGlobalSearchOpen(false);
-    if (next === 'saved') {
-      void ensureSavedMessages();
-      return;
-    }
-    if (next === 'settings' && section !== 'settings') settingsReturnSectionRef.current = section;
-    setSection(next);
-  }
-
   function closeSettings() {
-    setSection(settingsReturnSectionRef.current === 'settings' ? 'chats' : settingsReturnSectionRef.current);
+    setSection(settingsReturnSectionRef.current === 'settings' ? 'bots' : settingsReturnSectionRef.current);
   }
 
   return (
-    <main
+    <div
       className={`${styles.messenger} ${styles.fabushiUnified}`}
+      data-agent-root-shell="true"
+      data-agent-product-grid="true"
       data-testid="messenger-workspace"
-      data-initial-host-hydrated={initialLegacyHydrated ? 'true' : undefined}
+      data-product-shell="agent"
+      data-initial-host-hydrated={initialAgentWorkspaceHydrated ? 'true' : undefined}
+      data-legacy-compatibility-hydrated={initialLegacyHydrated ? 'true' : undefined}
       data-sidebar-collapsed={sidebarWidth <= 112 || undefined}
       data-reduce-motion={desktopPreferences.reducedMotion || undefined}
       data-testid-ready-projection={startupProjection ? 'true' : undefined}
       style={{ gridTemplateColumns: infoPanelDocked ? `${sidebarWidth}px minmax(420px,1fr) 286px` : `${sidebarWidth}px minmax(420px,1fr)` }}
-      onClick={() => { setMessageMenu(null); setProfileMenuOpen(false); setCreateMenuOpen(false); }}
+      onClick={() => { setMessageMenu(null); }}
     >
       <aside className={styles.chatList} data-testid="messenger-sidebar" data-collapsed={sidebarWidth <= 112 || undefined} onClick={(event) => event.stopPropagation()}>
-        <header className={styles.listHeader}>
-          <span className={styles.sidebarBrand} title="Fabushi"><BotMark botId="fabushi:brand" state="idle" size={30} label="Fabushi" /></span>
-          <strong>{sectionTitle(section)}</strong>
-          <div className={styles.createMenuWrap}>
-            <button type="button" className={styles.iconButton} aria-label="新建" data-active={createMenuOpen} onClick={(event) => { event.stopPropagation(); setCreateMenuOpen((value) => !value); }}><SquarePen size={18} /></button>
-            {createMenuOpen ? <div className={styles.createMenu} onClick={(event) => event.stopPropagation()}>
-              <button type="button" onClick={() => { setCreateMenuOpen(false); setNewDialog({ type: 'group', name: '', selectedBotIds: new Set() }); }}><Users size={16} /><span>新建群组</span></button>
-              <button type="button" onClick={() => { setCreateMenuOpen(false); setNewDialog({ type: 'channel', name: '', description: '' }); }}><Radio size={16} /><span>新建频道</span></button>
-              {['chats', 'contacts'].includes(section) ? <button type="button" data-testid="open-contact-groups" onClick={() => { setCreateMenuOpen(false); contactGroups.openManager(); }}><Folder size={16} /><span>联系人分组</span></button> : null}
-            </div> : null}
-          </div>
-        </header>
-        <label className={styles.searchBox} data-testid="global-search-trigger" onClick={() => { if (sidebarWidth <= 112) setSidebarWidth(330); setGlobalSearchOpen(true); }}>
-          <Search size={16} />
-          <input
-            ref={searchInputRef}
-            data-testid="global-search-input"
-            value={search}
-            onFocus={() => { if (sidebarWidth <= 112) setSidebarWidth(330); setGlobalSearchOpen(true); }}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={conversationSearchOpen && activePeer ? `搜索 ${activePeer.title}` : '搜索'}
-          />
-          {search ? <button type="button" aria-label="清除搜索" onClick={(event) => { event.stopPropagation(); setSearch(''); searchInputRef.current?.focus(); }}><X size={14} /></button> : globalSearchOpen && !conversationSearchOpen ? <button type="button" aria-label="关闭搜索" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setGlobalSearchOpen(false); setGlobalSearchCategory('chats'); }}><X size={14} /></button> : null}
-        </label>
-        {conversationSearchOpen && activePeer ? <div className={styles.searchScope} data-testid="conversation-search-scope">
-          <span>此聊天</span><strong>{activePeer.title}</strong>
-          <button type="button" aria-label="退出当前会话搜索" onClick={() => { setConversationSearchOpen(false); setGlobalSearchCategory('chats'); setSearch(''); searchInputRef.current?.focus(); }}><X size={13} /></button>
-        </div> : null}
-        {['chats', 'contacts'].includes(section) && sidebarWidth > 112 && visibleStories.length ? <div className={extra.storyStrip}>
-          {visibleStories.map((story) => {
-            const actor = selfActors.find((item) => item.id === story.ownerId);
-            const name = actor?.displayName ?? (story.ownerId === selfHosted.actorId ? '我' : story.ownerId);
-            return <button type="button" className={extra.storyItem} key={story.id} onClick={() => void openStory(story)} title={name}>
-              <span className={extra.storyRing}><BotMark botId={`story:${story.ownerId}`} state="idle" size={40} animated={false} label={name} /></span><small>{name}</small>
-            </button>;
-          })}
-        </div> : null}
-        {globalSearchOpen ? (
-          <GlobalSearchWorkspace
-            query={search}
-            category={globalSearchCategory}
-            onCategory={setGlobalSearchCategory}
-            scopePeer={conversationSearchOpen ? activePeer : null}
-            peers={peers}
-            messages={messages}
-            miniApps={marketplaceApps}
-            installedMiniApps={installedMiniApps}
-            miniAppBusy={miniAppBusy}
-            miniAppLoading={miniAppLoading}
-            onOpenPeer={(peer) => { setGlobalSearchOpen(false); setConversationSearchOpen(false); setSearch(''); setSection(peer.kind === 'channel' ? 'channels' : 'chats'); void openPeer(peer); }}
-            onOpenMiniApp={openMiniApp}
-            onInstallMiniApp={installMiniApp}
-            onUninstallMiniApp={uninstallMiniApp}
-          />
-        ) : sectionIsPeerList ? (
-          <div className={styles.peerList}>
-            {renderedContactGroups.length ? renderedContactGroups.map((group) => (
-              <section className="fabushi-contact-group" data-testid={`contact-group-${group.id}`} key={group.id}>
-                <button
-                  type="button"
-                  className="fabushi-contact-group__header"
-                  data-collapsed={group.isCollapsed}
-                  data-synthetic={group.isSynthetic}
-                  aria-expanded={!group.isCollapsed}
-                  onClick={() => { if (!group.isSynthetic) contactGroups.toggleCollapsed(group.id); }}
-                >
-                  <span>›</span><strong>{group.name}</strong><em>{group.peers.length}</em>
-                </button>
-                {!group.isCollapsed ? group.peers.map(renderPeerRow) : null}
-              </section>
-            )) : renderedPeers.map(renderPeerRow)}
-            {visiblePeers.length > renderedPeers.length ? <button type="button" data-testid="peer-list-load-more" onClick={() => setPeerRenderCount((count) => count + initialPeerRenderCount)}>显示更多会话</button> : null}
-            {!visiblePeers.length ? <EmptyList section={section} /> : null}
-          </div>
-        ) : (
-          <SectionPanel section={section} onOpenMiniApp={openMiniApp} onInstallMiniApp={installMiniApp} onUninstallMiniApp={uninstallMiniApp} miniApps={marketplaceApps} installedMiniApps={installedMiniApps} miniAppQuery={miniAppQuery} onMiniAppQuery={setMiniAppQuery} miniAppLoading={miniAppLoading} miniAppBusy={miniAppBusy} onInvoice={() => void createInvoiceForActivePeer()} payment={{ account: walletAccount, entries: walletEntries, orders: selfOrders, invoices: selfInvoices, actorId: selfHosted.actorId }} onRefund={(orderId) => void refundOrder(orderId)} settings={{ category: settingsCategory, onCategory: setSettingsCategory }} />
-        )}
-        <div className={styles.sidebarFooter}>
-          {profileMenuOpen ? <ProfileNavigationMenu section={section} onNavigate={navigateFromProfile} /> : null}
-          {isActionableDesktopUpdateState(desktopUpdateState) ? <button
-            type="button"
-            className={styles.updateCloudButton}
-            data-testid="desktop-update-cloud"
-            data-state={desktopUpdateState.type}
-            disabled={desktopUpdateBusy}
-            title={desktopUpdateState.type === 'ready' ? '更新已下载，点击后立即安装并重启' : '点击一次即可下载、安装并自动重启'}
-            onClick={() => void installDesktopUpdate(desktopUpdateState)}
-          >
-            <CloudDownload size={18} />
-            <span>{desktopUpdateState.type === 'ready'
-              ? '重启并更新'
-              : desktopUpdateState.type === 'downloading'
-                ? `下载更新 ${Math.max(0, Math.min(100, Math.round(desktopUpdateState.progress ?? 0)))}%`
-                : desktopUpdateState.type === 'staging'
-                  ? '正在安装并重启…'
-                  : `更新 ${desktopUpdateState.version}`}</span>
-            {desktopUpdateState.type === 'downloading' || desktopUpdateState.type === 'staging' ? (
-              <span
-                className={styles.updateProgressTrack}
-                data-testid="desktop-update-progress"
-                data-indeterminate={desktopUpdateState.type === 'staging' || undefined}
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={desktopUpdateState.type === 'downloading' ? Math.max(0, Math.min(100, Math.round(desktopUpdateState.progress ?? 0))) : undefined}
-              >
-                <i
-                  className={styles.updateProgressFill}
-                  style={desktopUpdateState.type === 'downloading' ? { width: `${Math.max(0, Math.min(100, desktopUpdateState.progress ?? 0))}%` } : undefined}
-                />
-              </span>
-            ) : null}
-          </button> : null}
-          <button
-            type="button"
-            className={styles.profileNavigationTrigger}
-            data-testid="profile-navigation-trigger"
-            title="个人与导航"
-            onClick={(event) => { event.stopPropagation(); setProfileMenuOpen((value) => !value); }}
-          >
-            <BotMark botId={`self:${selfHosted.actorId || 'local'}`} state="idle" size={38} label="我的头像" />
-            <span><strong>我</strong><small>导航与设置</small></span>
-          </button>
-        </div>
+        <AgentSidebar
+          agents={agentItems}
+          activeKey={activeAgentKey}
+          query={search}
+          collapsed={sidebarWidth <= 112}
+          hostReady={hostReady}
+          accountLabel={currentActor?.displayName ?? 'Account'}
+          sections={agentSidebarSections}
+          selectedKeys={agentSelectedKeys}
+          onQuery={setSearch}
+          onOpen={openAgent}
+          onNewAgent={() => void createAgent()}
+          onToggleCollapsed={() => setSidebarWidth((width) => width <= 112 ? 300 : 88)}
+          onTogglePin={(item) => {
+            agentSidebarController.togglePin(item.key);
+          }}
+          onRename={(item) => void renameAgent(item)}
+          onHide={(item) => void hideAgent(item)}
+          onDuplicate={(item) => void duplicateAgent(item)}
+          onDelete={(item) => void deleteAgent(item)}
+          onReorderPinned={reorderPinnedAgents}
+          onToggleSelection={toggleAgentSelection}
+          onRangeSelection={rangeSelectAgent}
+          onClearSelection={clearAgentSelection}
+          onDeleteSelected={(items) => void deleteSelectedAgents(items)}
+          onMoveSelectedToSection={moveAgentsToSection}
+          onCreateSection={createAgentSidebarSection}
+          onToggleSection={(section) => agentSidebarController.toggleSection(section.id)}
+          onRenameSection={renameAgentSidebarSection}
+          onDeleteSection={deleteAgentSidebarSection}
+          onMoveToSection={moveAgentToSection}
+          onBroadcast={agentNetworkController.openBroadcast}
+          onOpenNetwork={agentNetworkController.openNetwork}
+          onOpenPlugins={() => {
+            setSearch('');
+            setSection('miniapps');
+          }}
+          onOpenSettings={() => {
+            settingsReturnSectionRef.current = 'bots';
+            setSection('settings');
+          }}
+        />
         <div
           className={styles.sidebarResizer}
           data-testid="sidebar-resizer"
@@ -3780,38 +3849,245 @@ async function saveInvoiceDialog() {
         />
       </aside>
 
+      <AgentCommandPalette
+        open={agentPaletteController.open}
+        agents={agentItems}
+        query={agentPaletteController.query}
+        onQuery={agentPaletteController.setQuery}
+        onClose={agentPaletteController.close}
+        onOpenAgent={openAgent}
+        onNewAgent={() => void createAgent()}
+        onNetwork={agentNetworkController.openNetwork}
+        onBroadcast={agentNetworkController.openBroadcast}
+        onPlugins={() => {
+          setSearch('');
+          setSection('miniapps');
+        }}
+        onSettings={() => {
+          settingsReturnSectionRef.current = 'bots';
+          setSection('settings');
+        }}
+        entries={allAgentTranscriptEntries}
+        onOpenTranscriptEntry={scrollToTranscriptEntry}
+        onConversationSearch={() => {
+          setConversationSearchOpen(true);
+          setAgentConversationSearch('');
+        }}
+        onComputer={() => {
+          if (!activePeer || !isAgentPeer(activePeer) || activePeer.miniAppId) return;
+          setAgentSettingsOpen(false);
+          agentComputer.openForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'command-palette');
+          if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
+        }}
+      />
+
       <section className={styles.chatWorkspace}>
-        {activePeer && sectionIsPeerList ? (
+        <AgentNetwork
+          open={agentNetworkController.open}
+          agents={agentItems}
+          groups={agentNetworkController.groups}
+          peerMessagesByAgentId={agentNetworkController.peerMessagesByAgentId}
+          activeKey={activeAgentKey}
+          broadcastMode={agentNetworkController.broadcastMode}
+          onClose={agentNetworkController.close}
+          onOpenAgent={openAgent}
+          onRefreshGroups={agentNetworkController.refreshGroups}
+          onRefreshPeerHistory={agentNetworkController.refreshPeerHistory}
+          onCreateGroup={agentNetworkController.createGroup}
+          onUpdateGroup={agentNetworkController.updateGroup}
+          onDeleteGroup={agentNetworkController.deleteGroup}
+          onSendGroup={agentNetworkController.sendGroup}
+          onSendPeer={agentNetworkController.sendPeer}
+          onBroadcast={agentNetworkController.broadcast}
+        />
+        {agentNetworkController.open ? null : activePeer && sectionIsPeerList ? (
           <>
-            <header className={styles.chatHeader}>
-              <div className={styles.chatIdentity}>
-                <BotMark
-                  botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
-                  state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady) : 'idle'}
-                  size={40}
-                  className={styles.agentAvatarMark}
-                  label={activePeer.title}
-                />
-                <div><strong>{activePeer.title}</strong><small data-testid="conversation-status">{activeTypingActors.length ? '正在输入…' : `${activePeer.subtitle}${hostReady ? ' · 在线' : ' · 正在连接'}`}</small></div>
-              </div>
-              <div className={styles.headerActions}>
-                {activePeer.miniAppId ? <button type="button" data-testid="miniapp-bot-open" title={activePeer.miniAppMenuButtonText ?? '打开小程序'} onClick={() => void openMiniApp(activePeer.miniAppId!)}><AppWindow size={18} /></button> : null}
-                <button type="button" title="语音通话" onClick={() => void startCall('voice')}><PhoneCall size={18} /></button>
-                <button type="button" title="视频通话" onClick={() => void startCall('video')}><Video size={18} /></button>
-                {activePeer.source === 'selfhosted' ? <button type="button" title="发送账单" onClick={() => void createInvoiceForActivePeer()}><WalletCards size={18} /></button> : null}
-                <button type="button" title="搜索当前会话" data-active={conversationSearchOpen} onClick={() => {
+            {isAgentPeer(activePeer) && !activePeer.miniAppId ? (
+              <AgentWorkspace
+                title={activePeer.title}
+                description={activePeer.subtitle}
+                botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+                botState={botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)}
+                status={activeTypingActors.length
+                  ? 'Typing…'
+                  : activePeerBusy
+                    ? 'Working…'
+                    : `${activePeer.subtitle}${hostReady ? ' · Online' : ' · Connecting'}`}
+                pinned={activeAgentPinned}
+                searchActive={conversationSearchOpen}
+                searchQuery={agentConversationSearch}
+                computerActive={agentComputer.open}
+                infoActive={layoutInfoOpen}
+                onToggleSearch={() => {
                   const next = !conversationSearchOpen;
                   setConversationSearchOpen(next);
-                  setGlobalSearchOpen(next);
-                  setGlobalSearchCategory(next ? 'posts' : 'chats');
-                  setSearch('');
-                  window.setTimeout(() => searchInputRef.current?.focus(), 0);
-                }}><Search size={18} /></button>
-                <button type="button" title={activePeer.pinned ? '取消置顶' : '置顶'} onClick={() => void togglePinConversation(activePeer)}><Pin size={18} /></button>
-                <button type="button" title={mutedPeerKeys.has(activePeer.key) ? '开启通知' : '静音'} onClick={() => void toggleMuteConversation(activePeer)}><BellOff size={18} /></button>
-                <button type="button" title="资料" data-testid="conversation-info-toggle" data-active={layoutInfoOpen} onClick={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}><MoreVertical size={18} /></button>
-              </div>
-            </header>
+                  if (!next) setAgentConversationSearch('');
+                }}
+                onSearchQuery={setAgentConversationSearch}
+                onSelectSearchResult={scrollToTranscriptEntry}
+                onToggleComputer={() => {
+                  setAgentSettingsOpen(false);
+                  agentComputer.toggleForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'agent-header');
+                  if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
+                }}
+                onTogglePin={() => {
+                  if (activeAgentKey) agentSidebarController.togglePin(activeAgentKey);
+                }}
+                onToggleInfo={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}
+                entries={agentTranscriptEntries}
+                activeOperationId={activeAgentOperationId}
+                hasEarlierMessages={agentHasEarlierEntries}
+                messageAreaRef={messageAreaRef}
+                showScrollToLatest={showScrollToLatest}
+                onLoadEarlier={() => setMessageRenderCount((count) => count + initialMessageRenderCount)}
+                onOpenMiniApp={(id) => void openMiniApp(id)}
+                onScroll={handleMessageAreaScroll}
+                onScrollToLatest={scrollToLatest}
+                onCopyMessage={(entry) => void copyBotMessage(entry as BotTranscriptMessage)}
+                onRegenerate={(entry) => regenerateBotMessage(entry as BotTranscriptMessage)}
+                onEdit={(entry) => editBotMessage(entry)}
+                onResolveApproval={(approvalId, decision) => {
+                  void resolveAgentApproval({ approvalId, decision }).catch((cause: unknown) => {
+                    setError(cause instanceof Error ? cause.message : String(cause));
+                  });
+                }}
+                onContextMenu={(event, entry) => {
+                  if (entry.kind !== 'message' && entry.kind !== 'assistant-turn') return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setMessageMenu({
+                    message: {
+                      id: entry.id,
+                      source: 'legacy',
+                      role: entry.role,
+                      text: entry.text,
+                      createdAtMs: entry.createdAtMs,
+                      kind: entry.kind,
+                      ...(entry.operationId ? { operationId: entry.operationId } : {}),
+                      ...(entry.streaming ? { streaming: true } : {}),
+                      ...(entry.optimistic ? { optimistic: true } : {}),
+                      ...(entry.queued ? { queued: true } : {}),
+                      ...(entry.assistantTurn ? { assistantTurn: entry.assistantTurn } : {}),
+                      ...(entry.attachments?.length ? { attachments: entry.attachments } : {}),
+                    },
+                    x: event.clientX,
+                    y: event.clientY,
+                  });
+                }}
+                notice={error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
+                composerReplyTarget={activeAgentReply ? { id: activeAgentReply.id, label: '回复', text: activeAgentReply.text } : undefined}
+                onClearComposerReply={() => clearAgentReply(activePeer.key)}
+                composerAccessory={agentWorkspaceController.isUploading(activePeer.key)
+                  ? <span className={extra.uploadProgress}>Uploading attachments…</span>
+                  : null}
+                composerValue={agentWorkspaceController.draftForPeer(activePeer.key)}
+                composerRichText={agentWorkspaceController.richTextForPeer(activePeer.key)}
+                composerReady={hostReady}
+                composerBusy={Boolean(activeAgentOperationId)}
+                composerUploading={agentWorkspaceController.isUploading(activePeer.key)}
+                composerAttachments={agentWorkspaceController.attachmentsForPeer(activePeer.key)}
+                composerMentionCandidates={[
+                  ...agentItems
+                    .filter((item) => item.key !== activePeer.key)
+                    .map((item) => ({
+                      id: item.agentId || item.key,
+                      name: item.name,
+                      description: item.description,
+                      kind: 'agent' as const,
+                    })),
+                  ...agentMcpController.references.map((reference) => ({
+                    id: reference.id,
+                    name: reference.name,
+                    description: reference.description,
+                    kind: 'mcp' as const,
+                  })),
+                ]}
+                composerWorkflowCandidates={(agentWorkflowController.workflowsByAgentId[activePeer.agentId ?? activePeer.actorId ?? activePeer.id] ?? [])
+                  .filter((workflow) => workflow.isEnabledForAgent)
+                  .map((workflow) => ({ id: workflow.id, name: workflow.name, description: workflow.description }))}
+                composerPullRequestCandidates={agentPrSuggestionController.candidates}
+                enterToSend={desktopPreferences.enterToSend}
+                onComposerChange={(value, richText) => updateAgentComposer(activePeer.key, value, richText)}
+                onComposerMention={(candidate) => {
+                  agentWorkspaceController.upsertReference(activePeer.key, {
+                    kind: candidate.kind === 'mcp' ? 'mcp' : 'agent',
+                    id: candidate.id,
+                    label: candidate.name,
+                  });
+                  notifyAgentWorkspaceState();
+                }}
+                onComposerWorkflowReference={(candidate) => {
+                  agentWorkspaceController.upsertReference(activePeer.key, {
+                    kind: 'workflow',
+                    id: candidate.id,
+                    label: candidate.name,
+                  });
+                  notifyAgentWorkspaceState();
+                }}
+                onComposerSubmit={(event) => sendAgentMessage(event, activePeer)}
+                onComposerFiles={(files) => void stageAgentFiles(activePeer, files)}
+                onRemoveComposerAttachment={(attachmentId) => removeAgentAttachment(activePeer.key, attachmentId)}
+                onTranscribeVoice={(file) => transcribeAgentVoice(activePeer, file)}
+                onStop={() => void stopAgentOperation()}
+              />
+            ) : (
+              <>
+            {isAgentPeer(activePeer) ? (
+              <AgentHeader
+                title={activePeer.title}
+                description={activePeer.subtitle}
+                botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+                botState={botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)}
+                status={activeTypingActors.length
+                  ? 'Typing…'
+                  : activePeerBusy
+                    ? 'Working…'
+                    : `${activePeer.subtitle}${hostReady ? ' · Online' : ' · Connecting'}`}
+                pinned={activePeer.pinned}
+                searchActive={conversationSearchOpen}
+                computerActive={agentComputer.open}
+                infoActive={layoutInfoOpen}
+                miniAppTitle={activePeer.miniAppMenuButtonText}
+                onOpenMiniApp={activePeer.miniAppId ? () => void openMiniApp(activePeer.miniAppId!) : undefined}
+                onToggleSearch={() => {
+                  const next = !conversationSearchOpen;
+                  setConversationSearchOpen(next);
+                  if (!next) setAgentConversationSearch('');
+                  }}
+                onToggleComputer={() => {
+                  agentComputer.toggleForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'compatibility-agent-header');
+                  if (wideInfoLayout) setInfoOpen(true); else setNarrowInfoOpen(true);
+                }}
+                onTogglePin={() => void togglePinConversation(activePeer)}
+                onToggleInfo={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}
+              />
+            ) : (
+              <header className={styles.chatHeader}>
+                <div className={styles.chatIdentity}>
+                  <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state="idle" size={40} className={styles.agentAvatarMark} label={activePeer.title} />
+                  <div><strong>{activePeer.title}</strong><small data-testid="conversation-status">{activeTypingActors.length ? '正在输入…' : `${activePeer.subtitle}${hostReady ? ' · 在线' : ' · 正在连接'}`}</small></div>
+                </div>
+                <div className={styles.headerActions}>
+                  <button type="button" title="搜索当前会话" data-active={conversationSearchOpen} onClick={() => {
+                    const next = !conversationSearchOpen;
+                    setConversationSearchOpen(next);
+                    setSearch('');
+                    }}><Search size={18} /></button>
+                  <button type="button" title={activePeer.pinned ? '取消置顶' : '置顶'} onClick={() => void togglePinConversation(activePeer)}><Pin size={18} /></button>
+                  <button type="button" title="资料" data-testid="conversation-info-toggle" data-active={layoutInfoOpen} onClick={() => wideInfoLayout ? setInfoOpen((value) => !value) : setNarrowInfoOpen((value) => !value)}><MoreVertical size={18} /></button>
+                </div>
+              </header>
+            )}
+            {conversationSearchOpen ? <AgentSearch
+              entries={isAgentPeer(activePeer) ? agentTranscriptEntries : projectTranscriptEntries(renderedMessages)}
+              query={agentConversationSearch}
+              onQuery={setAgentConversationSearch}
+              onClose={() => {
+                setConversationSearchOpen(false);
+                setAgentConversationSearch('');
+              }}
+              onSelect={scrollToTranscriptEntry}
+            /> : null}
             {error ? <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={() => setError(null)}><X size={14} /></button></div> : null}
             {isAgentPeer(activePeer) ? (
               <BotConversationView
@@ -3837,7 +4113,7 @@ async function saveInvoiceDialog() {
                 }}
               />
             ) : (
-            <div className={styles.messageArea} data-testid="message-list" data-agent-operation-id={agentOperationId ?? undefined}>
+            <div className={styles.messageArea} data-testid="message-list" data-agent-operation-id={activeAgentOperationId ?? undefined}>
               <div className={styles.dayDivider}>今天</div>
               {matchingMessages.length > renderedMessages.length ? <button type="button" data-testid="message-list-load-earlier" onClick={() => setMessageRenderCount((count) => count + initialMessageRenderCount)}>加载更早消息</button> : null}
               {renderedMessages.map((message) => message.kind === 'assistant-turn' && message.assistantTurn ? (
@@ -3893,7 +4169,7 @@ async function saveInvoiceDialog() {
                     {generatedPreview.complete ? <button type="button" data-testid="generated-miniapp-open" onClick={() => void showMiniAppDocument(generatedPreview.id, generatedPreview.title, generatedPreview.html)}>打开小程序</button> : null}
                   </div> : <StructuredMessageBody text={message.text} peers={peers} />}
                   <div className={extra.messageHoverActions} data-testid="message-hover-actions">
-                    <button type="button" title="回复" aria-label="回复" onClick={() => setReplyTo(message)}><span aria-hidden="true">↩</span></button>
+                    <button type="button" title="回复" aria-label="回复" onClick={() => setReplyTarget(message)}><span aria-hidden="true">↩</span></button>
                     <button type="button" title="复制" aria-label="复制" onClick={() => void navigator.clipboard.writeText(message.text)}><span aria-hidden="true">⧉</span></button>
                     <button type="button" title="更多" aria-label="更多" onClick={(event) => {
                       const rect = event.currentTarget.getBoundingClientRect();
@@ -3904,37 +4180,35 @@ async function saveInvoiceDialog() {
                   <small>{formatTime(message.createdAtMs)} {message.role === 'me' ? <Check size={12} /> : null}</small>
                 </article>;
               })())}
-              {!matchingMessages.length ? <div className={styles.chatEmpty} data-testid="message-search-empty"><BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, false, hostReady) : 'idle'} size={78} className={styles.agentAvatarMark} label={activePeer.title} /><strong>{activePeer.title}</strong><p>联系人、AI Bot、群组和频道使用同一个 Fabushi 消息产品层。</p></div> : null}
+              {!matchingMessages.length ? <div className={styles.chatEmpty} data-testid="message-search-empty"><BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? legacyBotMarkState(botMarkStateForPeer(activePeer, selfBotExecutions, false, hostReady)) : 'idle'} size={78} className={styles.agentAvatarMark} label={activePeer.title} /><strong>{activePeer.title}</strong><p>联系人、AI Bot、群组和频道使用同一个 Fabushi 消息产品层。</p></div> : null}
             </div>
             )}
-            {replyTo ? <div className={extra.composerBanner} data-testid="reply-message-banner"><Reply size={15} /><div><strong>回复</strong><span>{replyTo.text}</span></div><button type="button" data-testid="reply-message-cancel" onClick={() => setReplyTo(null)}><X size={14} /></button></div> : null}
+            {legacyReplyTo ? <div className={extra.composerBanner} data-testid="reply-message-banner"><Reply size={15} /><div><strong>回复</strong><span>{legacyReplyTo.text}</span></div><button type="button" data-testid="reply-message-cancel" onClick={() => setLegacyReplyTo(null)}><X size={14} /></button></div> : null}
             {scheduledAtMs ? <div className={extra.composerBanner}><span>⏱</span><div><strong>定时发送</strong><span>{new Date(scheduledAtMs).toLocaleString()}</span></div><button type="button" onClick={() => setScheduledAtMs(undefined)}><X size={14} /></button></div> : null}
             {activePeer.miniAppId && composer.trimStart().startsWith('/') && activePeer.miniAppCommands?.length ? <div className={extra.composerBanner} data-testid="miniapp-bot-commands"><AppWindow size={15} /><div><strong>小程序命令</strong><span>{activePeer.miniAppCommands.map((command) => `/${command.name}`).join(' · ')}</span></div>{activePeer.miniAppCommands.slice(0, 4).map((command) => <button key={command.name} type="button" title={command.description} onClick={() => updateComposer(command.usage)}>{`/${command.name}`}</button>)}</div> : null}
-            <form className={styles.composer} onSubmit={(event) => void sendMessage(event)}>
-              <div className={extra.attachmentAnchor}>
-                <button type="button" title="附件" onClick={() => setAttachmentMenuOpen((value) => !value)}><Paperclip size={20} /></button>
-                {attachmentMenuOpen ? <AttachmentMenu onMedia={() => mediaInputRef.current?.click()} onFile={() => fileInputRef.current?.click()} onPoll={() => void sendPoll()} onLocation={() => void sendLocation()} onSchedule={() => {
-                  const minutes = Number(window.prompt('多少分钟后发送？', '10'));
-                  if (Number.isFinite(minutes) && minutes > 0) setScheduledAtMs(Date.now() + minutes * 60_000);
-                  setAttachmentMenuOpen(false);
-                }} /> : null}
-              </div>
-              <input ref={mediaInputRef} type="file" accept="image/*,video/*" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
-              <input ref={fileInputRef} type="file" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
-              {attachmentProgress ? <span className={extra.uploadProgress}>{attachmentProgress}</span> : null}
-              <textarea data-testid="messenger-input" value={composer} onChange={(event) => updateComposer(event.target.value)} onKeyDown={(event) => {
-                const submitWithEnter = desktopPreferences.enterToSend && event.key === 'Enter' && !event.shiftKey;
-                const submitWithShortcut = !desktopPreferences.enterToSend && event.key === 'Enter' && (event.metaKey || event.ctrlKey);
-                if (submitWithEnter || submitWithShortcut) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); }
-              }} placeholder="消息" rows={1} />
-              <button type="button" title="表情"><Smile size={20} /></button>
-              <button type="button" data-active={silentSend} title={silentSend ? '关闭静默发送' : '静默发送'} onClick={() => setSilentSend((value) => !value)}><BellOff size={19} /></button>
-              {composer.trim()
-                ? <button data-testid="messenger-send" className={styles.sendButton} type="submit" disabled={!hostReady || (pendingSend && (!isAgentPeer(activePeer) || Boolean(activePeer.miniAppId)))}><Send size={19} /></button>
-                : activeAgentOperationId && isAgentPeer(activePeer) && !activePeer.miniAppId
-                  ? <button data-testid="messenger-stop" className={styles.sendButton} type="button" title="停止生成" aria-label="停止生成" onClick={() => void stopAgentOperation()}><X size={19} /></button>
-                  : <button type="button" title="语音消息"><Mic size={20} /></button>}
-            </form>
+              <form className={styles.composer} onSubmit={(event) => void sendMessage(event)}>
+                <div className={extra.attachmentAnchor}>
+                  <button type="button" title="附件" onClick={() => setAttachmentMenuOpen((value) => !value)}><Paperclip size={20} /></button>
+                  {attachmentMenuOpen ? <AttachmentMenu onMedia={() => mediaInputRef.current?.click()} onFile={() => fileInputRef.current?.click()} onPoll={() => void sendPoll()} onLocation={() => void sendLocation()} onSchedule={() => {
+                    const minutes = Number(window.prompt('多少分钟后发送？', '10'));
+                    if (Number.isFinite(minutes) && minutes > 0) setScheduledAtMs(Date.now() + minutes * 60_000);
+                    setAttachmentMenuOpen(false);
+                  }} /> : null}
+                </div>
+                <input ref={mediaInputRef} type="file" accept="image/*,video/*" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
+                <input ref={fileInputRef} type="file" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void sendAttachmentFile(file); }} />
+                {attachmentProgress ? <span className={extra.uploadProgress}>{attachmentProgress}</span> : null}
+                <textarea data-testid="messenger-input" value={composer} onChange={(event) => updateComposer(event.target.value)} onKeyDown={(event) => {
+                  const submitWithEnter = desktopPreferences.enterToSend && event.key === 'Enter' && !event.shiftKey;
+                  const submitWithShortcut = !desktopPreferences.enterToSend && event.key === 'Enter' && (event.metaKey || event.ctrlKey);
+                  if (submitWithEnter || submitWithShortcut) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); }
+                }} placeholder="消息" rows={1} />
+                {composer.trim()
+                  ? <button data-testid="messenger-send" className={styles.sendButton} type="submit" disabled={!hostReady || legacySendPending}><Send size={19} /></button>
+                  : null}
+              </form>
+              </>
+            )}
           </>
         ) : (
           <>
@@ -3945,18 +4219,74 @@ async function saveInvoiceDialog() {
       </section>
 
       {infoPanelVisible && activePeer ? (
+        isAgentPeer(activePeer) && !activePeer.miniAppId ? (
+          <AgentOverlays
+            title={activePeer.title}
+            description={activePeer.subtitle}
+            botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+            botState={botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)}
+            pinned={activeAgentPinned}
+            overlay={!wideInfoLayout}
+            onClose={() => wideInfoLayout ? setInfoOpen(false) : setNarrowInfoOpen(false)}
+            onSearch={() => {
+              setConversationSearchOpen(true);
+              setAgentConversationSearch('');
+            }}
+            onTogglePin={() => {
+              if (activeAgentKey) agentSidebarController.togglePin(activeAgentKey);
+            }}
+            computer={{
+              agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
+              open: agentComputer.open,
+              label: localComputerLabel(),
+              status: localComputerStatus,
+              online: localComputerOnline,
+              aiControlEnabled: hostSettings.aiComputerControlEnabled,
+              remoteControlEnabled: hostSettings.remoteControlEnabled,
+              state: agentComputer.state,
+              capabilityStatus: agentComputer.capabilityStatus,
+              onToggle: () => {
+                setAgentSettingsOpen(false);
+                agentComputer.toggleForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'agent-overlay');
+              },
+              onRefreshPairingCode: agentComputer.refreshPairingCode,
+              onApproveSession: agentComputer.approveSession,
+              onDenySession: agentComputer.denySession,
+              onDisconnect: agentComputer.disconnect,
+              onToggleRemoteControl: () => updateHostSetting('remoteControlEnabled', !hostSettings.remoteControlEnabled),
+              onOpenControlPage: () => agentComputer.openControlPage(activePeer.agentId ?? activePeer.actorId ?? activePeer.id),
+            }}
+            settings={{
+              agentId: activePeer.agentId ?? activePeer.actorId ?? activePeer.id,
+              open: agentSettingsOpen,
+              value: agentSettingsSnapshot.value ?? {
+                name: activePeer.title,
+                title: '',
+                description: activePeer.subtitle,
+                avatarShape: activeAgentBot?.avatarShape ?? '',
+                avatarColor: activeAgentBot?.avatarColor ?? '',
+                notifyOnUpdatesEnabled: true,
+                inferenceProvider: activeAgentBot?.inferenceProvider ?? 'account-default',
+              },
+              pending: agentSettingsSnapshot.pending,
+              error: agentSettingsSnapshot.error,
+              onToggle: () => {
+                agentComputer.close();
+                setAgentSettingsOpen((value) => !value);
+              },
+              onUpdateProfile: (profile) => agentSettingsController.updateProfile(profile),
+              onSetNotifications: (enabled) => agentSettingsController.setNotifications(enabled),
+              onSetInferenceProvider: (provider) => agentSettingsController.setInferenceProvider(provider),
+            }}
+          />
+        ) : (
         <aside className={styles.infoPanel} data-testid="messenger-info-panel" data-overlay={!wideInfoLayout || undefined}>
           <header><strong>资料</strong><button type="button" onClick={() => wideInfoLayout ? setInfoOpen(false) : setNarrowInfoOpen(false)}><X size={17} /></button></header>
           <div className={styles.profileCard}>
-            <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady) : 'idle'} size={92} className={styles.agentProfileMark} label={activePeer.title} />
+            <BotMark botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? legacyBotMarkState(botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)) : 'idle'} size={92} className={styles.agentProfileMark} label={activePeer.title} />
             <strong>{activePeer.title}</strong><small>{activePeer.subtitle}</small>
-            <div className={styles.profileQuickActions} data-columns={isAgentPeer(activePeer) ? '4' : '3'}><button type="button" onClick={() => void startCall('voice')}><PhoneCall size={18} /><span>通话</span></button><button type="button" onClick={() => void startCall('video')}><Video size={18} /><span>视频</span></button><button type="button" onClick={() => { setConversationSearchOpen(true); setGlobalSearchOpen(true); setGlobalSearchCategory('posts'); setSearch(''); window.setTimeout(() => searchInputRef.current?.focus(), 0); }}><Search size={18} /><span>搜索</span></button>{isAgentPeer(activePeer) ? <button type="button" data-testid="bot-computer-toggle" data-active={computerProfileOpen} onClick={() => {
-              setComputerProfileOpen((value) => !value);
-              void invokeNativeDesktop('reportOpenComputer', {
-                source: 'bot-profile',
-                agentId: activePeer.actorId ?? activePeer.id,
-                connected: remoteComputerState?.channelOpen === true,
-              }).catch(() => {});
+            <div className={styles.profileQuickActions} data-columns={isAgentPeer(activePeer) ? '4' : '3'}><button type="button" onClick={() => void startCall('voice')}><PhoneCall size={18} /><span>通话</span></button><button type="button" onClick={() => void startCall('video')}><Video size={18} /><span>视频</span></button><button type="button" onClick={() => { setConversationSearchOpen(true); setAgentConversationSearch(''); }}><Search size={18} /><span>搜索</span></button>{isAgentPeer(activePeer) ? <button type="button" data-testid="bot-computer-toggle" data-active={agentComputer.open} onClick={() => {
+              agentComputer.toggleForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'bot-profile');
             }}><Monitor size={18} /><span>电脑</span></button> : null}</div>
           </div>
           <div className={styles.profileActions}>
@@ -3965,48 +4295,40 @@ async function saveInvoiceDialog() {
             <button type="button" onClick={() => { void toggleArchiveConversation(activePeer); setSection('archive'); }}><Archive size={17} /><span>{activePeer.archived ? '移出归档' : '归档会话'}</span></button>
             {activePeer.source === 'selfhosted' && ['group', 'channel'].includes(activePeer.kind) ? <button type="button" onClick={() => void openCommunityAdmin(activePeer)}><Settings size={17} /><span>管理群组/频道</span></button> : null}
           </div>
-          {isAgentPeer(activePeer) && computerProfileOpen ? <section className={styles.computerProfile} data-testid="bot-computer-panel">
+          {isAgentPeer(activePeer) && agentComputer.open ? <section className={styles.computerProfile} data-testid="bot-computer-panel">
             <header>
               <span className={styles.computerProfileIcon}><Monitor size={18} /></span>
               <span><strong>这台电脑</strong><small>{localComputerLabel()}</small></span>
-              <i data-live={remoteComputerState?.channelOpen ? 'active' : localComputerOnline ? 'online' : 'offline'} />
+              <i data-live={agentComputer.state?.channelOpen ? 'active' : localComputerOnline ? 'online' : 'offline'} />
             </header>
             <div className={styles.computerProfileStatus}>
               <span><small>设备状态</small><strong>{localComputerStatus}</strong></span>
-              <span><small>已授权客户端</small><strong>{remoteComputerState?.clients.length ?? 0}</strong></span>
+              <span><small>已授权客户端</small><strong>{agentComputer.state?.clients.length ?? 0}</strong></span>
               <span><small>AI 操控</small><strong>{hostSettings.aiComputerControlEnabled ? '已允许' : '已关闭'}</strong></span>
             </div>
             <p>Fabushi 登录后会在后台保持设备在线；远控关闭时只能被同账号发现，不能读取画面或发送输入。</p>
-            {hostSettings.remoteControlEnabled && remoteComputerState?.registration?.pairingCode ? <div className={styles.computerPairingCode}>
-              <span><small>配对码</small><strong>{remoteComputerState.registration.pairingCode}</strong></span>
-              <button type="button" onClick={() => void remoteComputerControllerRef.current?.refreshPairingCode().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))}>刷新</button>
+            {hostSettings.remoteControlEnabled && agentComputer.state?.registration?.pairingCode ? <div className={styles.computerPairingCode}>
+              <span><small>配对码</small><strong>{agentComputer.state.registration.pairingCode}</strong></span>
+              <button type="button" onClick={() => agentComputer.refreshPairingCode()}>刷新</button>
             </div> : null}
-            {remoteComputerState?.pendingAuthorization ? <div className={styles.computerPairingCode} data-testid="remote-session-consent">
-              <span><small>远控请求</small><strong>{remoteComputerState.pendingAuthorization.clientLabel || '已配对设备'}</strong></span>
-              <button type="button" onClick={() => void remoteComputerControllerRef.current?.approvePendingSession(remoteComputerState.pendingAuthorization!.sessionId).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))}>允许本次连接</button>
-              <button type="button" className={styles.computerDangerButton} onClick={() => void remoteComputerControllerRef.current?.denyPendingSession(remoteComputerState.pendingAuthorization!.sessionId).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))}>拒绝</button>
+            {pendingRemoteAuthorization ? <div className={styles.computerPairingCode} data-testid="remote-session-consent">
+              <span><small>远控请求</small><strong>{pendingRemoteAuthorization.clientLabel || '已配对设备'}</strong></span>
+              <button type="button" onClick={() => agentComputer.approveSession(pendingRemoteAuthorization.sessionId)}>允许本次连接</button>
+              <button type="button" className={styles.computerDangerButton} onClick={() => agentComputer.denySession(pendingRemoteAuthorization.sessionId)}>拒绝</button>
             </div> : null}
-            {remoteComputerState?.activeSessionId ? <button type="button" className={styles.computerDangerButton} onClick={() => void remoteComputerControllerRef.current?.disconnectActive()}>断开当前远控</button> : null}
+            {agentComputer.state?.activeSessionId ? <button type="button" className={styles.computerDangerButton} onClick={() => agentComputer.disconnect()}>断开当前远控</button> : null}
             <div className={styles.computerProfileButtons}>
               <button type="button" data-enabled={hostSettings.remoteControlEnabled} onClick={() => updateHostSetting('remoteControlEnabled', !hostSettings.remoteControlEnabled)}>{hostSettings.remoteControlEnabled ? '关闭远程控制' : '开启远程控制'}</button>
-              <button type="button" onClick={() => void invokeNativeDesktop('openExternal', { url: `https://fabushi.ombhrum.com/remote-computer?agentId=${encodeURIComponent(activePeer.actorId ?? activePeer.id)}` }).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)))}>打开控制页面</button>
+              <button type="button" onClick={() => agentComputer.openControlPage(activePeer.agentId ?? activePeer.actorId ?? activePeer.id)}>打开控制页面</button>
             </div>
-            {remoteComputerState?.error ? <small className={styles.computerProfileError}>{remoteComputerState.error}</small> : null}
+            {agentComputer.state?.error ? <small className={styles.computerProfileError}>{agentComputer.state.error}</small> : null}
           </section> : null}
           <nav className={styles.infoTabs}><button type="button" data-active={infoTab === 'media'} onClick={() => setInfoTab('media')}>媒体</button><button type="button" data-active={infoTab === 'files'} onClick={() => setInfoTab('files')}>文件</button><button type="button" data-active={infoTab === 'links'} onClick={() => setInfoTab('links')}>链接</button></nav>
           <div className={styles.infoContent}>{infoTab === 'media' ? <><Image size={30} /><strong>共享媒体</strong><p>图片、视频和动画按消息索引展示。</p></> : null}{infoTab === 'files' ? <><FileText size={30} /><strong>共享文件</strong><p>文档、音频和附件由 Rust 媒体层管理。</p></> : null}{infoTab === 'links' ? <><Link2 size={30} /><strong>共享链接</strong><p>富文本 URL 建立可搜索索引。</p></> : null}</div>
         </aside>
+        )
       ) : null}
 
-      {contactGroups.managerOpen ? <SidebarContactGroupManager
-        peers={peers.filter((peer) => !peer.archived && peer.kind === 'contact').map((peer) => ({ key: peer.key, title: peer.title, subtitle: peer.subtitle, pinned: peer.pinned }))}
-        groups={contactGroups.groups}
-        onCreate={contactGroups.create}
-        onUpdate={contactGroups.update}
-        onRemove={contactGroups.remove}
-        onMove={contactGroups.move}
-        onClose={contactGroups.closeManager}
-      /> : null}
       {messageMenu ? <MessageContextMenu menu={messageMenu} onAction={(action) => void handleMessageAction(action)} /> : null}
       {forwardDialog ? <ForwardMessageDialog message={forwardDialog.message} peers={peers.filter((peer) => peer.source === 'selfhosted' && Boolean(peer.conversationId) && peer.conversationId !== forwardDialog.sourceConversationId)} onClose={() => setForwardDialog(null)} onSelect={(peer) => void forwardToPeer(peer)} /> : null}
       {editDialog ? <EditMessageDialog value={editDialog.text} onChange={(text) => setEditDialog((current) => current ? { ...current, text } : current)} onClose={() => setEditDialog(null)} onSave={() => void saveEditedMessage()} /> : null}
@@ -4043,96 +4365,8 @@ async function saveInvoiceDialog() {
           </div>
         </section>
       </div> : null}
-    </main>
-  );
-}
-
-function ProfileNavigationMenu({ section, onNavigate }: { section: MessengerSection; onNavigate: (section: MessengerSection) => void }) {
-  const items: Array<{ section: MessengerSection; label: string; icon: React.ReactNode }> = [
-    { section: 'chats', label: '聊天', icon: <MessageCircle size={17} /> },
-    { section: 'contacts', label: '联系人', icon: <Users size={17} /> },
-    { section: 'bots', label: 'Bots', icon: <Bot size={17} /> },
-    { section: 'groups', label: '群组', icon: <Users size={17} /> },
-    { section: 'channels', label: '频道', icon: <Radio size={17} /> },
-    { section: 'calls', label: '通话', icon: <Phone size={17} /> },
-    { section: 'saved', label: '收藏', icon: <Bookmark size={17} /> },
-    { section: 'archive', label: '归档', icon: <Archive size={17} /> },
-    { section: 'folders', label: '文件夹', icon: <Folder size={17} /> },
-    { section: 'miniapps', label: 'Mini Apps', icon: <AppWindow size={17} /> },
-    { section: 'payments', label: '支付', icon: <WalletCards size={17} /> },
-    { section: 'settings', label: '设置', icon: <Settings size={17} /> },
-  ];
-  return <div className={styles.profileNavigationMenu} data-testid="profile-navigation-menu" onClick={(event) => event.stopPropagation()}>
-    <header><BotMark botId="fabushi:navigation" state="idle" size={34} label="Fabushi" /><div><strong>Fabushi</strong><small>统一导航</small></div></header>
-    <div>{items.map((item) => <button key={item.section} type="button" title={item.label} data-testid={"profile-navigation-" + item.section} data-active={section === item.section} onClick={() => onNavigate(item.section)}>{item.icon}<span>{item.label}</span></button>)}</div>
-  </div>;
-}
-
-type GlobalSearchWorkspaceProps = {
-  query: string;
-  category: SearchCategory;
-  onCategory: (value: SearchCategory) => void;
-  scopePeer?: PeerItem | null;
-  peers: PeerItem[];
-  messages: DisplayMessage[];
-  miniApps: MarketplacePluginSummary[];
-  installedMiniApps: Record<string, InstalledPluginPointer>;
-  miniAppBusy: Set<string>;
-  miniAppLoading: boolean;
-  onOpenPeer: (peer: PeerItem) => void;
-  onOpenMiniApp: (id: string) => Promise<void>;
-  onInstallMiniApp: (app: MarketplacePluginSummary) => Promise<void>;
-  onUninstallMiniApp: (id: string) => Promise<void>;
-};
-
-function GlobalSearchWorkspace(props: GlobalSearchWorkspaceProps) {
-  const normalized = props.query.trim().toLocaleLowerCase();
-  const matches = (value: string) => !normalized || value.toLocaleLowerCase().includes(normalized);
-  const peerResults = props.peers.filter((peer) => matches(`${peer.title} ${peer.subtitle}`));
-  const messageResults = props.messages.filter((message) => matches(message.text));
-  const mediaResults = messageResults.filter((message) => {
-    if (props.category === 'images') return message.mediaType === 'photo';
-    if (props.category === 'videos') return message.mediaType === 'video';
-    if (props.category === 'files' || props.category === 'downloads') return message.mediaType === 'document';
-    if (props.category === 'links') return /https?:\/\//iu.test(message.text);
-    return props.category === 'posts';
-  });
-  const appResults = props.miniApps.filter((app) => matches(`${app.displayName} ${app.description} ${app.pluginId}`));
-  const unsupportedMediaCategory = props.category === 'music' || props.category === 'audio';
-  const categories = props.scopePeer
-    ? searchCategories.filter((item) => ['posts', 'images', 'videos', 'downloads', 'links', 'files', 'music', 'audio'].includes(item.id))
-    : searchCategories;
-
-  return <div className={styles.globalSearch} data-testid="global-search-surface" data-scoped={props.scopePeer ? 'true' : undefined}>
-    <nav className={styles.globalSearchTabs} aria-label={props.scopePeer ? '当前会话搜索分类' : '搜索分类'}>
-      {categories.map((item) => <button key={item.id} type="button" data-testid={`global-search-tab-${item.id}`} data-active={props.category === item.id} onClick={() => props.onCategory(item.id)}>{props.scopePeer && item.id === 'posts' ? '消息' : item.label}</button>)}
-    </nav>
-    <div className={styles.globalSearchResults}>
-      {!props.scopePeer && props.category === 'chats' ? peerResults.filter((peer) => peer.kind !== 'channel').map((peer) => <button key={peer.key} type="button" className={styles.searchResultRow} onClick={() => props.onOpenPeer(peer)}><BotMark botId={`peer:${peer.kind}:${peer.actorId ?? peer.id}`} state="idle" size={46} animated={false} label={peer.title} /><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><time>{formatTime(peer.updatedAtMs)}</time></button>) : null}
-      {!props.scopePeer && props.category === 'channels' ? peerResults.filter((peer) => peer.kind === 'channel').map((peer) => <button key={peer.key} type="button" className={styles.searchResultRow} onClick={() => props.onOpenPeer(peer)}><BotMark botId={`peer:channel:${peer.id}`} state="idle" size={46} animated={false} label={peer.title} /><span><strong>{peer.title}</strong><small>{peer.subtitle}</small></span><time>{formatTime(peer.updatedAtMs)}</time></button>) : null}
-      {!props.scopePeer && props.category === 'apps' ? <div className={styles.searchAppResults}>{props.miniAppLoading ? <div className={styles.marketplaceStatus}>正在搜索在线应用市场…</div> : appResults.map((app) => {
-        const installed = props.installedMiniApps[app.pluginId];
-        const busy = props.miniAppBusy.has(app.pluginId);
-        const action = miniAppMarketplaceAction(app, installed);
-        const needsInstall = action === 'install' || action === 'update' || action === 'reinstall';
-        return <article key={app.pluginId} className={styles.searchAppCard} data-testid={`global-search-app-${app.pluginId}`}><BotMark botId={`miniapp:${app.pluginId}`} state={installed ? 'idle' : 'sleeping'} size={52} animated={false} label={app.displayName} /><div><strong>{app.displayName}</strong><small>{app.description}</small><em>{installed ? `已安装 ${installed.version}` : `在线 · ${app.latestVersion}`} · {miniAppReleaseLabel(app)}</em></div><aside>{installed ? <button type="button" disabled={busy} onClick={() => void props.onOpenMiniApp(app.pluginId)}>打开</button> : null}{needsInstall ? <button type="button" disabled={busy} onClick={() => void props.onInstallMiniApp(app)}>{busy ? '处理中' : marketplaceInstallActionLabel(action)}</button> : action === 'blocked' ? <button type="button" disabled>阻止降级</button> : null}{installed ? <button type="button" disabled={busy} onClick={() => void props.onUninstallMiniApp(app.pluginId)}>卸载</button> : null}</aside></article>;
-      })}</div> : null}
-      {['posts', 'images', 'videos', 'downloads', 'links', 'files'].includes(props.category) ? mediaResults.map((message) => <article key={message.id} className={styles.searchMessageResult}><BotMark botId={`search-message:${message.id}`} state="idle" size={38} animated={false} label="消息" /><div><p>{message.text || (message.mediaType === 'photo' ? '图片' : message.mediaType === 'video' ? '视频' : '文件')}</p><small>{new Date(message.createdAtMs).toLocaleString()}</small></div></article>) : null}
-      {unsupportedMediaCategory ? <SearchEmptyState label="当前会话尚无可搜索的音频索引" /> : null}
-      {!props.scopePeer && props.category === 'chats' && !peerResults.filter((peer) => peer.kind !== 'channel').length ? <SearchEmptyState label={normalized ? '没有匹配的聊天' : '最近搜索结果将显示在此处'} /> : null}
-      {!props.scopePeer && props.category === 'channels' && !peerResults.filter((peer) => peer.kind === 'channel').length ? <SearchEmptyState label={normalized ? '没有匹配的频道' : '最近搜索结果将显示在此处'} /> : null}
-      {!props.scopePeer && props.category === 'apps' && !props.miniAppLoading && !appResults.length ? <SearchEmptyState label="没有匹配的在线应用" /> : null}
-      {['posts', 'images', 'videos', 'downloads', 'links', 'files'].includes(props.category) && !mediaResults.length ? <SearchEmptyState label={normalized ? '当前已加载内容中没有匹配结果' : '最近搜索结果将显示在此处'} /> : null}
     </div>
-  </div>;
-}
-
-function SearchEmptyState({ label }: { label: string }) {
-  return <div className={styles.globalSearchEmpty}><Search size={44} /><strong>{label}</strong><small>在左侧搜索框输入关键词，或切换分类继续搜索。</small></div>;
-}
-
-function EmptyList({ section }: { section: MessengerSection }) {
-  return <div className={styles.emptyList}><MessageCircle size={27} /><strong>暂无{sectionTitle(section)}</strong><p>新建会话后会显示在这里。</p></div>;
+  );
 }
 
 function AttachmentMenu({ onMedia, onFile, onPoll, onLocation, onSchedule }: { onMedia: () => void; onFile: () => void; onPoll: () => void; onLocation: () => void; onSchedule: () => void }) {
@@ -4741,19 +4975,13 @@ function SettingsWorkspace({ category, preferences, onPreference, actor, actorId
   </div>;
 }
 
-function SectionPanel({ section, onInvoice, payment, onRefund, settings: _settings, ...miniAppProps }: { section: MessengerSection; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void; settings: SettingsNavigationProps } & MiniAppMarketplaceProps) {
-  if (section === 'miniapps') return <MiniAppMarketplaceList {...miniAppProps} />;
-  if (section === 'payments') return <div className={styles.sectionList}><PaymentOverview payment={payment} onInvoice={onInvoice} onRefund={onRefund} compact /></div>;
-  if (section === 'folders') return <div className={styles.sectionList}><div className={styles.panelHint}><Folder size={24} /><strong>聊天文件夹</strong><p>按联系人、Bot、群组、频道、未读和静音状态组织。</p></div></div>;
-  if (section === 'calls') return <div className={styles.sectionList}><div className={styles.panelHint}><Phone size={24} /><strong>最近通话</strong><p>从会话顶部发起语音/视频。</p></div></div>;
-  if (section === 'settings') return <div className={styles.sectionList} aria-hidden="true" />;
-  return <div className={styles.sectionList}><div className={styles.panelHint}><Settings size={24} /><strong>{sectionTitle(section)}</strong><p>该功能入口已合并进统一 Messenger。</p></div></div>;
-}
-
 function FeatureWorkspace({ section, onInvoice, payment, onRefund, settings: _settings, ...miniAppProps }: { section: MessengerSection; onInvoice: () => void; payment: PaymentUiState; onRefund: (orderId: string) => void; settings: SettingsWorkspaceProps } & MiniAppMarketplaceProps) {
-  if (section === 'miniapps') return <MiniAppMarketplaceWorkspace {...miniAppProps} />;
-  if (section === 'payments') return <div className={styles.featureWorkspace}><WalletCards size={54} /><h2>Fabushi Pay</h2><p>自建余额、Invoice、Order、退款与外部 settlement 都由 Rust 账本结算。</p><PaymentOverview payment={payment} onInvoice={onInvoice} onRefund={onRefund} /></div>;
-  if (section === 'calls') return <div className={styles.featureWorkspace}><Phone size={54} /><h2>通话</h2><p>本机媒体已接通，Rust realtime 已具备一对一/群组通话信令状态。</p></div>;
-  if (section === 'settings') return <div className={styles.featureWorkspace} aria-hidden="true" />;
-  return <div className={styles.featureWorkspace}><MessageCircle size={54} /><h2>{sectionTitle(section)}</h2><p>联系人、Bot、群组和频道正在统一到同一个 Fabushi Actor/Conversation 模型。</p></div>;
+  return <CompatibilitySurface
+    section={section}
+    miniApps={<MiniAppMarketplaceWorkspace {...miniAppProps} />}
+    payments={<div className={styles.featureWorkspace}><WalletCards size={54} /><h2>Fabushi Pay</h2><p>自建余额、Invoice、Order、退款与外部 settlement 都由 Rust 账本结算。</p><PaymentOverview payment={payment} onInvoice={onInvoice} onRefund={onRefund} /></div>}
+    calls={<div className={styles.featureWorkspace}><Phone size={54} /><h2>通话</h2><p>本机媒体已接通，Rust realtime 已具备一对一/群组通话信令状态。</p></div>}
+    settings={<div className={styles.featureWorkspace} aria-hidden="true" />}
+    fallback={<div className={styles.featureWorkspace}><MessageCircle size={54} /><h2>{sectionTitle(section)}</h2><p>联系人、Bot、群组和频道正在统一到同一个 Fabushi Actor/Conversation 模型。</p></div>}
+  />;
 }

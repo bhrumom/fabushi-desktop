@@ -271,6 +271,9 @@ pub struct BotSummary {
     pub unread: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub conversation_id: Option<String>,
+    /// Agent-scoped inference route. None preserves the account/default route.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inference_provider: Option<InferenceProvider>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -594,6 +597,18 @@ pub struct ComputerStatus {
     pub route_egress_locally: bool,
     pub remote_control_enabled: bool,
     pub ai_control_enabled: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComputerControlLeaseState {
+    pub controller_id: String,
+    pub run_id: String,
+    pub device_id: String,
+    pub origin: ComputerControlOrigin,
+    pub mode: String,
+    pub acquired_at_ms: i64,
+    pub expires_at_ms: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1085,6 +1100,19 @@ pub enum FeatureCommand {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         query: Option<String>,
     },
+    #[serde(rename = "agent.workspaceState.get")]
+    AgentWorkspaceStateGet {
+        #[serde(rename = "requestId")]
+        request_id: String,
+        key: String,
+    },
+    #[serde(rename = "agent.workspaceState.set")]
+    AgentWorkspaceStateSet {
+        #[serde(rename = "requestId")]
+        request_id: String,
+        key: String,
+        value: Value,
+    },
     #[serde(rename = "automation.list")]
     AutomationList {
         #[serde(rename = "requestId")]
@@ -1288,6 +1316,12 @@ pub enum FeatureCommand {
             skip_serializing_if = "Option::is_none"
         )]
         avatar_color: Option<String>,
+        #[serde(
+            rename = "inferenceProvider",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        inference_provider: Option<InferenceProvider>,
     },
     #[serde(rename = "bot.update")]
     BotUpdate {
@@ -1326,8 +1360,16 @@ pub enum FeatureCommand {
             skip_serializing_if = "Option::is_none"
         )]
         notify_on_updates: Option<bool>,
+        #[serde(
+            rename = "inferenceProvider",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        inference_provider: Option<InferenceProvider>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         unread: Option<bool>,
+        #[serde(rename = "clearInferenceProvider", default)]
+        clear_inference_provider: bool,
     },
     #[serde(rename = "bot.clone")]
     BotClone {
@@ -1464,6 +1506,8 @@ pub enum FeatureCommand {
         request_id: String,
         #[serde(default)]
         origin: ComputerControlOrigin,
+        #[serde(rename = "agentId", default, skip_serializing_if = "Option::is_none")]
+        agent_id: Option<String>,
         #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
         session_id: Option<String>,
         #[serde(default)]
@@ -1484,6 +1528,26 @@ pub enum FeatureCommand {
         action: ComputerAction,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         then: Vec<ComputerAction>,
+    },
+    #[serde(rename = "computer.takeControl")]
+    ComputerTakeControl {
+        #[serde(rename = "requestId")]
+        request_id: String,
+        #[serde(rename = "agentId")]
+        agent_id: String,
+        #[serde(rename = "leaseId")]
+        lease_id: String,
+        #[serde(default)]
+        target: ComputerControlTarget,
+    },
+    #[serde(rename = "computer.releaseControl")]
+    ComputerReleaseControl {
+        #[serde(rename = "requestId")]
+        request_id: String,
+        #[serde(rename = "agentId")]
+        agent_id: String,
+        #[serde(rename = "leaseId")]
+        lease_id: String,
     },
     #[serde(rename = "remoteComputer.register")]
     RemoteComputerRegister {
@@ -1907,6 +1971,8 @@ impl FeatureCommand {
             | Self::ConversationList { request_id, .. }
             | Self::ConversationOpen { request_id, .. }
             | Self::CapabilityList { request_id, .. }
+            | Self::AgentWorkspaceStateGet { request_id, .. }
+            | Self::AgentWorkspaceStateSet { request_id, .. }
             | Self::AutomationList { request_id, .. }
             | Self::AutomationUpsert { request_id, .. }
             | Self::AutomationSetEnabled { request_id, .. }
@@ -1949,6 +2015,8 @@ impl FeatureCommand {
             | Self::ComputerStatus { request_id }
             | Self::ComputerScreenshot { request_id, .. }
             | Self::ComputerAction { request_id, .. }
+            | Self::ComputerTakeControl { request_id, .. }
+            | Self::ComputerReleaseControl { request_id, .. }
             | Self::RemoteComputerRegister { request_id, .. }
             | Self::RemoteComputerHeartbeat { request_id, .. }
             | Self::RemoteComputerClients { request_id, .. }
@@ -2116,6 +2184,22 @@ pub enum AgentStepStatus {
     Failed,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TurnLifecycleState {
+    Accepted,
+    Queued,
+    Preparing,
+    Thinking,
+    ToolRunning,
+    Streaming,
+    WaitingUser,
+    Completed,
+    Failed,
+    Cancelled,
+    Recovering,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum HostEvent {
@@ -2269,6 +2353,13 @@ pub enum HostEvent {
         operation_id: String,
         delta: String,
     },
+    #[serde(rename = "agent.workspaceState")]
+    AgentWorkspaceState {
+        timestamp: String,
+        key: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        value: Option<Value>,
+    },
     #[serde(rename = "agent.peerMessage")]
     AgentPeerMessageChanged {
         timestamp: String,
@@ -2379,6 +2470,8 @@ pub enum HostEvent {
         timestamp: String,
         #[serde(rename = "requestId")]
         request_id: String,
+        #[serde(rename = "agentId", default, skip_serializing_if = "Option::is_none")]
+        agent_id: Option<String>,
         origin: ComputerControlOrigin,
         snapshot: ComputerSnapshot,
     },
@@ -2387,7 +2480,22 @@ pub enum HostEvent {
         timestamp: String,
         #[serde(rename = "requestId")]
         request_id: String,
+        #[serde(rename = "agentId", default, skip_serializing_if = "Option::is_none")]
+        agent_id: Option<String>,
         result: ComputerActionResult,
+    },
+    #[serde(rename = "computer.controlChanged")]
+    ComputerControlChanged {
+        timestamp: String,
+        #[serde(rename = "requestId")]
+        request_id: String,
+        #[serde(rename = "agentId")]
+        agent_id: String,
+        #[serde(rename = "leaseId")]
+        lease_id: String,
+        active: bool,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        lease: Option<ComputerControlLeaseState>,
     },
     #[serde(rename = "remoteComputer.changed")]
     RemoteComputerChanged {
@@ -2505,6 +2613,8 @@ pub enum HostEvent {
     #[serde(rename = "mcp.toolResult")]
     McpToolResult {
         timestamp: String,
+        #[serde(rename = "requestId")]
+        request_id: String,
         server: String,
         tool: String,
         result: Value,
@@ -2608,6 +2718,14 @@ pub enum HostEvent {
         timestamp: String,
         #[serde(rename = "approvalId")]
         approval_id: String,
+        #[serde(
+            rename = "operationId",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        operation_id: Option<String>,
+        #[serde(rename = "agentId", default, skip_serializing_if = "Option::is_none")]
+        agent_id: Option<String>,
         #[serde(rename = "miniAppId")]
         mini_app_id: String,
         capability: String,
@@ -2632,7 +2750,29 @@ pub enum HostEvent {
         timestamp: String,
         #[serde(rename = "approvalId")]
         approval_id: String,
+        #[serde(
+            rename = "operationId",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        operation_id: Option<String>,
+        #[serde(rename = "agentId", default, skip_serializing_if = "Option::is_none")]
+        agent_id: Option<String>,
         decision: ApprovalDecision,
+    },
+    #[serde(rename = "turn.state")]
+    TurnStateChanged {
+        timestamp: String,
+        #[serde(rename = "operationId")]
+        operation_id: String,
+        #[serde(rename = "turnId")]
+        turn_id: String,
+        #[serde(rename = "runId")]
+        run_id: String,
+        #[serde(rename = "conversationId")]
+        conversation_id: String,
+        state: TurnLifecycleState,
+        sequence: u64,
     },
     #[serde(rename = "operation.started")]
     OperationStarted {
@@ -2693,6 +2833,7 @@ impl HostEvent {
             Self::GroupListed { .. } => "group.listed",
             Self::GroupChanged { .. } => "group.changed",
             Self::GroupDelta { .. } => "group.delta",
+            Self::AgentWorkspaceState { .. } => "agent.workspaceState",
             Self::AgentPeerMessageChanged { .. } => "agent.peerMessage",
             Self::AgentPeerHistoryListed { .. } => "agent.peerHistory",
             Self::AgentBroadcasted { .. } => "agent.broadcasted",
@@ -2708,6 +2849,7 @@ impl HostEvent {
             Self::ComputerStatusChanged { .. } => "computer.status",
             Self::ComputerSnapshotCaptured { .. } => "computer.snapshot",
             Self::ComputerActionCompleted { .. } => "computer.result",
+            Self::ComputerControlChanged { .. } => "computer.controlChanged",
             Self::RemoteComputerChanged { .. } => "remoteComputer.changed",
             Self::MemoryListed { .. } => "memory.listed",
             Self::MemoryChanged { .. } => "memory.changed",
@@ -2738,6 +2880,7 @@ impl HostEvent {
             Self::MiniAppOpened { .. } => "miniapp.opened",
             Self::ApprovalRequested { .. } => "approval.requested",
             Self::ApprovalResolved { .. } => "approval.resolved",
+            Self::TurnStateChanged { .. } => "turn.state",
             Self::OperationStarted { .. } => "operation.started",
             Self::OperationInterrupted { .. } => "operation.interrupted",
             Self::OperationCompleted { .. } => "operation.completed",
@@ -2860,6 +3003,18 @@ mod tests {
         let value = serde_json::to_value(event).expect("encode event");
         assert_eq!(value["type"], "operation.started");
         assert_eq!(value["operationId"], "operation-1");
+    }
+
+    #[test]
+    fn agent_workspace_state_command_wire_contract() {
+        let command = FeatureCommand::AgentWorkspaceStateSet {
+            request_id: "state-1".into(),
+            key: "agent-workspace:drafts:v2".into(),
+            value: serde_json::json!({"peer": {"text": "hello"}}),
+        };
+        let value = serde_json::to_value(command).expect("serialize workspace state command");
+        assert_eq!(value["type"], "agent.workspaceState.set");
+        assert_eq!(value["requestId"], "state-1");
     }
 
     #[test]

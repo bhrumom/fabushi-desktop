@@ -55,6 +55,98 @@ string_id!(MessageId);
 string_id!(OperationId);
 string_id!(ApprovalId);
 string_id!(AgentThreadId);
+string_id!(TurnId);
+string_id!(RunId);
+string_id!(IntentId);
+
+/// Canonical lifecycle for one user-visible logical turn.
+///
+/// UI surfaces project this state; they must not infer thinking/tool/streaming
+/// from DOM shape, arbitrary strings, or a generic busy flag.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TurnState {
+    Accepted,
+    Queued,
+    Preparing,
+    Thinking,
+    ToolRunning,
+    Streaming,
+    WaitingUser,
+    Completed,
+    Failed,
+    Cancelled,
+    Recovering,
+}
+
+impl TurnState {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Accepted => "accepted",
+            Self::Queued => "queued",
+            Self::Preparing => "preparing",
+            Self::Thinking => "thinking",
+            Self::ToolRunning => "tool-running",
+            Self::Streaming => "streaming",
+            Self::WaitingUser => "waiting-user",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+            Self::Cancelled => "cancelled",
+            Self::Recovering => "recovering",
+        }
+    }
+
+    pub const fn terminal(self) -> bool {
+        matches!(self, Self::Completed | Self::Failed | Self::Cancelled)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LogicalTurn {
+    pub id: TurnId,
+    pub conversation_id: ConversationId,
+    pub user_message_id: Option<MessageId>,
+    pub created_at_ms: i64,
+    pub state: TurnState,
+    pub active_run_id: Option<RunId>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExecutionRun {
+    pub id: RunId,
+    pub turn_id: TurnId,
+    pub generation: u32,
+    pub provider: String,
+    pub started_at_ms: i64,
+    pub finished_at_ms: Option<i64>,
+    pub state: TurnState,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HandoffIntent {
+    pub id: IntentId,
+    pub target_agent: String,
+    pub task: String,
+    #[serde(default)]
+    pub constraints: Value,
+    #[serde(default)]
+    pub expected_output: Option<String>,
+    pub origin_run: RunId,
+    pub depth: u8,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AskUserRequest {
+    pub id: IntentId,
+    pub turn_id: TurnId,
+    pub run_id: RunId,
+    pub question: String,
+}
+
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -221,10 +313,24 @@ pub struct PluginCommandDescriptor {
 pub enum RuntimeCommand {
     #[serde(rename = "mahayana.runtime.status")]
     Status,
+    #[serde(rename = "mahayana.runtime.workspaceState.get")]
+    WorkspaceStateGet { key: String },
+    #[serde(rename = "mahayana.runtime.workspaceState.set")]
+    WorkspaceStateSet {
+        key: String,
+        value: Value,
+    },
     #[serde(rename = "mahayana.conversation.list")]
     ListConversations,
     #[serde(rename = "mahayana.capability.list")]
     ListCapabilities { query: Option<String> },
+    #[serde(rename = "mahayana.capability.authorize")]
+    AuthorizeCapability {
+        request: capability::CapabilityRequest,
+        availability: capability::CapabilityAvailability,
+        #[serde(rename = "unavailableReason", default, skip_serializing_if = "Option::is_none")]
+        unavailable_reason: Option<String>,
+    },
     #[serde(rename = "mahayana.capability.invoke")]
     InvokeCapability {
         #[serde(rename = "capabilityId")]
@@ -302,8 +408,30 @@ pub enum RuntimeCommand {
         text: String,
         #[serde(rename = "clientMessageId")]
         client_message_id: Option<String>,
+        #[serde(rename = "inferenceProvider", default, skip_serializing_if = "Option::is_none")]
+        inference_provider: Option<String>,
         #[serde(default)]
         hidden: bool,
+    },
+    #[serde(rename = "mahayana.agent.askUser")]
+    AskUser {
+        #[serde(rename = "operationId")]
+        operation_id: OperationId,
+        question: String,
+    },
+    #[serde(rename = "mahayana.agent.handoff")]
+    Handoff {
+        #[serde(rename = "operationId")]
+        operation_id: OperationId,
+        #[serde(rename = "targetAgent")]
+        target_agent: String,
+        task: String,
+        #[serde(default)]
+        constraints: Value,
+        #[serde(rename = "expectedOutput", default, skip_serializing_if = "Option::is_none")]
+        expected_output: Option<String>,
+        #[serde(default)]
+        depth: u8,
     },
     #[serde(rename = "mahayana.operation.interrupt")]
     Interrupt {
@@ -334,11 +462,21 @@ pub enum ApprovalDecision {
 pub enum RuntimeResponse {
     #[serde(rename = "mahayana.runtime.status")]
     Status(RuntimeStatus),
+    #[serde(rename = "mahayana.runtime.workspaceState")]
+    RuntimeWorkspaceState {
+        key: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        value: Option<Value>,
+    },
     #[serde(rename = "mahayana.conversation.list")]
     Conversations { data: Vec<Conversation> },
     #[serde(rename = "mahayana.capability.list")]
     Capabilities {
         data: Vec<capability::CapabilityDescriptor>,
+    },
+    #[serde(rename = "mahayana.capability.decision")]
+    CapabilityDecision {
+        decision: capability::CapabilityPolicyDecision,
     },
     #[serde(rename = "mahayana.capability.accepted")]
     CapabilityAccepted {
@@ -407,6 +545,22 @@ pub enum RuntimeResponse {
     },
     #[serde(rename = "mahayana.conversation.history")]
     History { data: Vec<Message> },
+    #[serde(rename = "mahayana.agent.waitingUser")]
+    WaitingUser {
+        #[serde(rename = "intentId")]
+        intent_id: IntentId,
+        #[serde(rename = "operationId")]
+        operation_id: OperationId,
+    },
+    #[serde(rename = "mahayana.agent.handoffQueued")]
+    HandoffQueued {
+        #[serde(rename = "intentId")]
+        intent_id: IntentId,
+        #[serde(rename = "operationId")]
+        operation_id: OperationId,
+        #[serde(rename = "targetOperationId")]
+        target_operation_id: OperationId,
+    },
     #[serde(rename = "mahayana.operation.accepted")]
     Accepted {
         #[serde(rename = "operationId")]
@@ -474,6 +628,19 @@ pub enum RuntimeActivityStatus {
 pub enum RuntimeEvent {
     #[serde(rename = "mahayana.runtime.ready")]
     Ready { status: RuntimeStatus },
+    #[serde(rename = "mahayana.turn.state")]
+    TurnStateChanged {
+        #[serde(rename = "operationId")]
+        operation_id: OperationId,
+        #[serde(rename = "turnId")]
+        turn_id: TurnId,
+        #[serde(rename = "runId")]
+        run_id: RunId,
+        #[serde(rename = "conversationId")]
+        conversation_id: ConversationId,
+        state: TurnState,
+        sequence: u64,
+    },
     #[serde(rename = "mahayana.message.delta")]
     MessageDelta {
         #[serde(rename = "operationId")]
@@ -560,6 +727,28 @@ mod tests {
     use super::*;
 
     #[test]
+    fn turn_state_wire_contract_is_explicit_and_stable() {
+        assert_eq!(
+            serde_json::to_value(TurnState::WaitingUser).expect("serialize"),
+            serde_json::Value::String("waiting-user".into())
+        );
+        assert_eq!(TurnState::ToolRunning.as_str(), "tool-running");
+        assert!(TurnState::Completed.terminal());
+        assert!(!TurnState::Streaming.terminal());
+    }
+
+    #[test]
+    fn runtime_workspace_state_wire_contract_is_explicit() {
+        let command = RuntimeCommand::WorkspaceStateSet {
+            key: "agent-workspace:drafts:v2".into(),
+            value: serde_json::json!({"agent:a": {"text": "hello"}}),
+        };
+        let json = serde_json::to_value(command).expect("serialize workspace state command");
+        assert_eq!(json["@type"], "mahayana.runtime.workspaceState.set");
+        assert_eq!(json["key"], "agent-workspace:drafts:v2");
+    }
+
+    #[test]
     fn default_config_is_first_party_deepseek_without_remote_agent() {
         let config = RuntimeConfig::default();
         assert_eq!(config.model.provider, ModelProviderMode::FirstPartyDacheng);
@@ -574,6 +763,7 @@ mod tests {
             conversation_id: ConversationId(CODEX_ASSISTANT_CONVERSATION_ID.to_string()),
             text: "你好".to_string(),
             client_message_id: Some("client-1".to_string()),
+                            inference_provider: None,
             hidden: false,
         };
         let json = serde_json::to_value(command).expect("serialize command");

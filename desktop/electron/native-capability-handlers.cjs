@@ -239,6 +239,19 @@ function createNativeCapabilityHandlers(deps) {
       const detail = response?.data?.message ?? response?.bodyText ?? `HTTP ${response?.statusCode ?? 'unknown'}`;
       throw new Error(`Fabushi platform request failed: ${String(detail).slice(0, 1000)}`);
     }
+    if (method !== 'GET' && (
+      requestPath.startsWith('/v1/account/')
+      || requestPath.startsWith('/v1/miniapps/')
+      || requestPath.startsWith('/api/miniapps/')
+      || requestPath.startsWith('/v1/marketplace/')
+    )) {
+      broadcastNativeEvent?.('account-state-changed', {
+        source: 'local-mutation',
+        method,
+        path: requestPath,
+        atMs: Date.now(),
+      });
+    }
     return response.data ?? null;
   }
 

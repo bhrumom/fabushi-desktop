@@ -1,6 +1,9 @@
 //! Long-lived local conversation runtime used by all Mahayana frontends.
 
+mod capability_broker;
+mod conversation_actor;
 mod kernel_conversation;
+mod runtime_store;
 
 use crossbeam_channel::Receiver;
 use crossbeam_channel::RecvTimeoutError;
@@ -8,7 +11,10 @@ use crossbeam_channel::Sender;
 use fabushi_official_miniapps::OfficialMiniAppEngine;
 use fabushi_official_miniapps::app_definition;
 use fabushi_official_miniapps::home_html;
+use capability_broker::CapabilityBroker;
+use conversation_actor::{ConversationActor, ConversationActorRegistry};
 use kernel_conversation::KernelConversationProvider;
+use runtime_store::{RuntimeStore, RuntimeStoreError};
 use mahayana_agent::AgentBackend;
 use mahayana_agent::AgentError;
 use mahayana_agent_kernel_bridge::LegacyAgentKernelBridge;
@@ -22,9 +28,16 @@ use mahayana_conversation::SharedConversationEventSink;
 use mahayana_core::ApprovalId;
 use mahayana_core::CONVERSATION_SCHEMA_VERSION;
 use mahayana_core::Conversation;
+use mahayana_core::AskUserRequest;
 use mahayana_core::ConversationId;
+use mahayana_core::ExecutionRun;
+use mahayana_core::HandoffIntent;
+use mahayana_core::IntentId;
+use mahayana_core::LogicalTurn;
+use mahayana_core::MessageId;
 use mahayana_core::MODEL_RUNTIME_VERSION;
 use mahayana_core::OperationId;
+use mahayana_core::RunId;
 use mahayana_core::PluginCommandDescriptor;
 use mahayana_core::RUNTIME_ABI_VERSION;
 use mahayana_core::RuntimeCommand;
@@ -32,7 +45,9 @@ use mahayana_core::RuntimeConfig;
 use mahayana_core::RuntimeEvent;
 use mahayana_core::RuntimeResponse;
 use mahayana_core::RuntimeStatus;
-use mahayana_core::capability::CapabilityRegistry;
+use mahayana_core::TurnId;
+use mahayana_core::TurnState;
+use mahayana_core::capability::{CapabilityPolicyDecision, CapabilityRegistry, CapabilityRequest};
 use mahayana_kernel::BackendDescriptor;
 use mahayana_kernel::Capability;
 use mahayana_kernel::CapabilitySet;
@@ -43,7 +58,10 @@ use std::collections::HashSet;
 use std::future::Future;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+const MAX_HANDOFF_DEPTH: u8 = 4;
+const MAX_HANDOFFS_PER_RUN: u8 = 8;
 
 pub struct RuntimeBuilder {
     config: RuntimeConfig,
@@ -78,9 +96,8 @@ impl RuntimeBuilder {
             .first()
             .map(|path| path.to_string_lossy().to_string());
         let model = Some(self.config.model.model.clone());
-        let history_path = self
-            .config
-            .data_dir
+        let data_root = self.config.data_dir.clone();
+        let history_path = data_root
             .as_ref()
             .map(|root| root.join("provider-neutral-assistant-transcript.json"));
         self.providers
@@ -90,6 +107,7 @@ impl RuntimeBuilder {
                 workspace_root,
                 model,
                 history_path,
+                data_root,
             )))?;
         Ok(self)
     }
@@ -155,6 +173,14 @@ impl RuntimeBuilder {
     }
 }
 
+#[derive(Clone)]
+struct RunContext {
+    turn_id: TurnId,
+    run_id: RunId,
+    conversation_id: ConversationId,
+    actor: Arc<ConversationActor>,
+}
+
 pub struct MahayanaRuntime {
     config: RuntimeConfig,
     providers: Arc<ProviderRegistry>,
@@ -163,7 +189,12 @@ pub struct MahayanaRuntime {
     event_tx: Sender<RuntimeEvent>,
     event_rx: Receiver<RuntimeEvent>,
     operations: Arc<Mutex<HashMap<OperationId, String>>>,
+    run_contexts: Arc<Mutex<HashMap<OperationId, RunContext>>>,
+    handoff_counts: Mutex<HashMap<OperationId, u8>>,
     approvals: Arc<Mutex<HashMap<ApprovalId, String>>>,
+    actors: Arc<ConversationActorRegistry>,
+    store: Arc<RuntimeStore>,
+    capability_broker: CapabilityBroker,
     official_miniapps: Mutex<OfficialMiniAppEngine>,
     approved_local_plugin_tools: Mutex<HashSet<(String, String)>>,
 }
@@ -199,6 +230,9 @@ impl MahayanaRuntime {
         }
 
         let (event_tx, event_rx) = crossbeam_channel::bounded(1024);
+        let store = Arc::new(RuntimeStore::open(config.data_dir.as_deref())?);
+        let actors = Arc::new(ConversationActorRegistry::default());
+        let capability_broker = CapabilityBroker::new(Arc::clone(&store));
         let runtime = Self {
             config,
             providers: Arc::new(providers),
@@ -207,7 +241,12 @@ impl MahayanaRuntime {
             event_tx,
             event_rx,
             operations: Arc::new(Mutex::new(HashMap::new())),
+            run_contexts: Arc::new(Mutex::new(HashMap::new())),
+            handoff_counts: Mutex::new(HashMap::new()),
             approvals: Arc::new(Mutex::new(HashMap::new())),
+            actors,
+            store,
+            capability_broker,
             official_miniapps: Mutex::new(OfficialMiniAppEngine::default()),
             approved_local_plugin_tools: Mutex::new(HashSet::new()),
         };
@@ -260,7 +299,34 @@ impl MahayanaRuntime {
             self.async_runtime.block_on(provider.reset_session())?;
         }
         lock(&self.operations)?.clear();
+        lock(&self.run_contexts)?.clear();
+        lock(&self.handoff_counts)?.clear();
         lock(&self.approvals)?.clear();
+        self.actors.clear().map_err(RuntimeError::Synchronization)?;
+        while self.event_rx.try_recv().is_ok() {}
+        Ok(())
+    }
+
+    /// Switch long-lived local providers to an account-scoped transcript path
+    /// without deleting the previous account's durable Agent state.
+    pub fn switch_conversation_history(
+        &self,
+        path: Option<std::path::PathBuf>,
+    ) -> Result<(), RuntimeError> {
+        if let Some(backend) = self.agent_backend.as_ref() {
+            backend
+                .reset_session()
+                .map_err(|error| RuntimeError::AgentBackend(error.to_string()))?;
+        }
+        for provider in self.providers.providers() {
+            self.async_runtime
+                .block_on(provider.set_history_path(path.clone()))?;
+        }
+        lock(&self.operations)?.clear();
+        lock(&self.run_contexts)?.clear();
+        lock(&self.handoff_counts)?.clear();
+        lock(&self.approvals)?.clear();
+        self.actors.clear().map_err(RuntimeError::Synchronization)?;
         while self.event_rx.try_recv().is_ok() {}
         Ok(())
     }
@@ -268,9 +334,40 @@ impl MahayanaRuntime {
     pub fn execute(&self, command: RuntimeCommand) -> Result<RuntimeResponse, RuntimeError> {
         match command {
             RuntimeCommand::Status => Ok(RuntimeResponse::Status(self.status())),
+            RuntimeCommand::WorkspaceStateGet { key } => {
+                validate_runtime_state_key(&key)?;
+                Ok(RuntimeResponse::RuntimeWorkspaceState {
+                    value: self.store.read_workspace_state(&key)?,
+                    key,
+                })
+            }
+            RuntimeCommand::WorkspaceStateSet { key, value } => {
+                validate_runtime_state_key(&key)?;
+                self.store.write_workspace_state(&key, &value, now_millis())?;
+                Ok(RuntimeResponse::RuntimeWorkspaceState {
+                    key,
+                    value: Some(value),
+                })
+            }
             RuntimeCommand::ListConversations => Ok(RuntimeResponse::Conversations {
                 data: self.list_conversations()?,
             }),
+            RuntimeCommand::AuthorizeCapability {
+                request,
+                availability,
+                unavailable_reason,
+            } => {
+                let decision = self
+                    .capability_broker
+                    .authorize_request(
+                        availability,
+                        unavailable_reason,
+                        request,
+                        now_millis(),
+                    )
+                    .map_err(RuntimeError::CapabilityBroker)?;
+                Ok(RuntimeResponse::CapabilityDecision { decision })
+            }
             RuntimeCommand::ListCapabilities { query } => {
                 let registry = CapabilityRegistry::from_conversations(
                     self.list_conversations()?,
@@ -301,9 +398,31 @@ impl MahayanaRuntime {
                             .unwrap_or_else(|| "当前平台不可用".to_string()),
                     });
                 }
-                let conversation_id = capability.conversation_id;
+                let conversation_id = capability.conversation_id.clone();
+                let decision = self
+                    .capability_broker
+                    .authorize(
+                        &capability,
+                        CapabilityRequest {
+                            actor: "human".to_string(),
+                            agent_id: None,
+                            conversation_id: conversation_id.clone(),
+                            run_id: None,
+                            capability: capability.id.clone(),
+                            target: Value::Null,
+                            intent: text.clone(),
+                        },
+                        now_millis(),
+                    )
+                    .map_err(RuntimeError::CapabilityBroker)?;
+                if matches!(decision, CapabilityPolicyDecision::Deny) {
+                    return Err(RuntimeError::CapabilityUnavailable {
+                        capability_id: capability.id,
+                        reason: "capability policy denied this request".to_string(),
+                    });
+                }
                 let operation_id =
-                    self.start_message(conversation_id.clone(), text, client_message_id, false)?;
+                    self.start_message(conversation_id.clone(), text, client_message_id, None, false)?;
                 Ok(RuntimeResponse::CapabilityAccepted {
                     capability_id: capability.id,
                     conversation_id,
@@ -536,15 +655,140 @@ impl MahayanaRuntime {
                 conversation_id,
                 text,
                 client_message_id,
+                inference_provider,
                 hidden,
             } => Ok(RuntimeResponse::Accepted {
                 operation_id: self.start_message(
                     conversation_id,
                     text,
                     client_message_id,
+                    inference_provider,
                     hidden,
                 )?,
             }),
+            RuntimeCommand::AskUser {
+                operation_id,
+                question,
+            } => {
+                let question = question.trim().to_string();
+                if question.is_empty() {
+                    return Err(RuntimeError::Collaboration("ask_user requires a non-empty question".to_string()));
+                }
+                let context = lock(&self.run_contexts)?
+                    .get(&operation_id)
+                    .cloned()
+                    .ok_or_else(|| ConversationError::OperationNotFound(operation_id.clone()))?;
+                let intent_id = IntentId::generated("ask-user");
+                let request = AskUserRequest {
+                    id: intent_id.clone(),
+                    turn_id: context.turn_id.clone(),
+                    run_id: context.run_id.clone(),
+                    question: question.clone(),
+                };
+                self.store.enqueue_ask_user(&request, now_millis())?;
+                transition_turn_state(
+                    &self.event_tx,
+                    &self.store,
+                    &context,
+                    TurnState::WaitingUser,
+                )?;
+                self.event_tx
+                    .send(RuntimeEvent::AgentActivity {
+                        operation_id: operation_id.clone(),
+                        step_id: intent_id.to_string(),
+                        kind: "ask_user".to_string(),
+                        title: question,
+                        detail: None,
+                        status: mahayana_core::RuntimeActivityStatus::Running,
+                        metadata: Some(serde_json::json!({ "intentId": intent_id })),
+                    })
+                    .map_err(|_| RuntimeError::EventConsumerClosed)?;
+                Ok(RuntimeResponse::WaitingUser {
+                    intent_id,
+                    operation_id,
+                })
+            }
+            RuntimeCommand::Handoff {
+                operation_id,
+                target_agent,
+                task,
+                constraints,
+                expected_output,
+                depth,
+            } => {
+                let target_agent = target_agent.trim().to_string();
+                let task = task.trim().to_string();
+                if target_agent.is_empty() || target_agent.len() > 160 || target_agent.chars().any(char::is_control) {
+                    return Err(RuntimeError::Collaboration("handoff targetAgent is invalid".to_string()));
+                }
+                if task.is_empty() {
+                    return Err(RuntimeError::Collaboration("handoff requires a non-empty task".to_string()));
+                }
+                if depth >= MAX_HANDOFF_DEPTH {
+                    return Err(RuntimeError::Collaboration(format!(
+                        "handoff depth limit exceeded ({MAX_HANDOFF_DEPTH})"
+                    )));
+                }
+                let context = lock(&self.run_contexts)?
+                    .get(&operation_id)
+                    .cloned()
+                    .ok_or_else(|| ConversationError::OperationNotFound(operation_id.clone()))?;
+                let target_conversation = ConversationId(format!("codex:agent:{target_agent}"));
+                if target_conversation == context.conversation_id {
+                    return Err(RuntimeError::Collaboration("an Agent cannot hand off work to itself".to_string()));
+                }
+                {
+                    let mut counts = lock(&self.handoff_counts)?;
+                    let count = counts.entry(operation_id.clone()).or_default();
+                    if *count >= MAX_HANDOFFS_PER_RUN {
+                        return Err(RuntimeError::Collaboration(format!(
+                            "handoff fan-out limit exceeded ({MAX_HANDOFFS_PER_RUN})"
+                        )));
+                    }
+                    *count = count.saturating_add(1);
+                }
+
+                let intent_id = IntentId::generated("handoff");
+                let intent = HandoffIntent {
+                    id: intent_id.clone(),
+                    target_agent: target_agent.clone(),
+                    task: task.clone(),
+                    constraints: constraints.clone(),
+                    expected_output: expected_output.clone(),
+                    origin_run: context.run_id.clone(),
+                    depth: depth.saturating_add(1),
+                };
+                self.store.enqueue_handoff(&intent, &context.turn_id, now_millis())?;
+                let target_prompt = handoff_prompt(&intent);
+                let target_operation_id = self.start_message(
+                    target_conversation,
+                    target_prompt,
+                    Some(intent_id.to_string()),
+                    None,
+                    true,
+                )?;
+                self.event_tx
+                    .send(RuntimeEvent::AgentActivity {
+                        operation_id: operation_id.clone(),
+                        step_id: intent_id.to_string(),
+                        kind: "handoff".to_string(),
+                        title: format!("Handoff → {target_agent}"),
+                        detail: Some(task),
+                        status: mahayana_core::RuntimeActivityStatus::Completed,
+                        metadata: Some(serde_json::json!({
+                            "intentId": intent_id,
+                            "targetAgent": target_agent,
+                            "targetOperationId": target_operation_id,
+                            "depth": intent.depth,
+                        })),
+                    })
+                    .map_err(|_| RuntimeError::EventConsumerClosed)?;
+                Ok(RuntimeResponse::HandoffQueued {
+                    intent_id,
+                    operation_id,
+                    target_operation_id,
+                })
+            }
             RuntimeCommand::Interrupt { operation_id } => {
                 let provider_key = lock(&self.operations)?
                     .get(&operation_id)
@@ -556,6 +800,14 @@ impl MahayanaRuntime {
                     .ok_or_else(|| ConversationError::ProviderUnavailable(provider_key.clone()))?;
                 self.async_runtime
                     .block_on(provider.interrupt(&operation_id))?;
+                if let Some(context) = lock(&self.run_contexts)?.get(&operation_id).cloned() {
+                    let _ = transition_turn_state(
+                        &self.event_tx,
+                        &self.store,
+                        &context,
+                        TurnState::Cancelled,
+                    );
+                }
                 Ok(RuntimeResponse::Interrupted { operation_id })
             }
             RuntimeCommand::ResolveApproval {
@@ -616,32 +868,115 @@ impl MahayanaRuntime {
         conversation_id: ConversationId,
         text: String,
         client_message_id: Option<String>,
+        inference_provider: Option<String>,
         hidden: bool,
     ) -> Result<OperationId, RuntimeError> {
         if text.trim().is_empty() {
             return Err(RuntimeError::EmptyMessage);
         }
+
         let provider = self.providers.for_conversation(&conversation_id)?;
         let provider_key = provider.key().to_string();
-        let operation_id = OperationId::generated("operation");
+        let run_id = RunId::generated("run");
+        // operationId remains the backwards-compatible wire key. Canonical
+        // runtime ownership now belongs to ExecutionRun.
+        let operation_id = OperationId(run_id.0.clone());
+        let turn_id = TurnId::generated("turn");
+        let created_at_ms = now_millis();
+        let user_message_id = client_message_id
+            .as_ref()
+            .and_then(|value| MessageId::new(value.clone()).ok())
+            .or_else(|| Some(MessageId::generated("message")));
+        let actor = self
+            .actors
+            .actor(&conversation_id)
+            .map_err(RuntimeError::Synchronization)?;
+        let (queued, accepted_sequence) = actor
+            .register(turn_id.clone())
+            .map_err(RuntimeError::Synchronization)?;
+
+        let turn = LogicalTurn {
+            id: turn_id.clone(),
+            conversation_id: conversation_id.clone(),
+            user_message_id,
+            created_at_ms,
+            state: TurnState::Accepted,
+            active_run_id: Some(run_id.clone()),
+        };
+        let run = ExecutionRun {
+            id: run_id.clone(),
+            turn_id: turn_id.clone(),
+            generation: 1,
+            provider: provider_key.clone(),
+            started_at_ms: created_at_ms,
+            finished_at_ms: None,
+            state: TurnState::Accepted,
+        };
+        self.store.record_turn(&turn)?;
+        self.store.record_run(&run)?;
+
+        let context = RunContext {
+            turn_id: turn_id.clone(),
+            run_id: run_id.clone(),
+            conversation_id: conversation_id.clone(),
+            actor: Arc::clone(&actor),
+        };
         lock(&self.operations)?.insert(operation_id.clone(), provider_key.clone());
+        lock(&self.run_contexts)?.insert(operation_id.clone(), context.clone());
+
+        self.event_tx
+            .send(RuntimeEvent::TurnStateChanged {
+                operation_id: operation_id.clone(),
+                turn_id: turn_id.clone(),
+                run_id: run_id.clone(),
+                conversation_id: conversation_id.clone(),
+                state: TurnState::Accepted,
+                sequence: accepted_sequence,
+            })
+            .map_err(|_| RuntimeError::EventConsumerClosed)?;
+        if queued {
+            transition_turn_state(&self.event_tx, &self.store, &context, TurnState::Queued)?;
+        }
+
         let request = SendMessageRequest {
-            conversation_id,
+            conversation_id: conversation_id.clone(),
             operation_id: operation_id.clone(),
             text,
             client_message_id,
+            inference_provider,
             hidden,
         };
         let sink: SharedConversationEventSink = Arc::new(RuntimeEventSink {
             provider_key,
             event_tx: self.event_tx.clone(),
             approvals: Arc::clone(&self.approvals),
+            context: context.clone(),
+            store: Arc::clone(&self.store),
         });
+
         let event_tx = self.event_tx.clone();
         let operations = Arc::clone(&self.operations);
+        let run_contexts = Arc::clone(&self.run_contexts);
+        let store = Arc::clone(&self.store);
         let task_operation_id = operation_id.clone();
         self.async_runtime.spawn(async move {
+            let _gate = actor.gate.lock().await;
+            if actor
+                .start(&turn_id, run_id.clone())
+                .map_err(RuntimeError::Synchronization)
+                .is_ok()
+            {
+                let _ = transition_turn_state(&event_tx, &store, &context, TurnState::Preparing);
+                let _ = transition_turn_state(&event_tx, &store, &context, TurnState::Thinking);
+            }
+
             let result = provider.send_message(request, sink).await;
+            let terminal_state = if result.is_ok() {
+                TurnState::Completed
+            } else {
+                TurnState::Failed
+            };
+            let _ = transition_turn_state(&event_tx, &store, &context, terminal_state);
             let event = match result {
                 Ok(()) => RuntimeEvent::OperationCompleted {
                     operation_id: task_operation_id.clone(),
@@ -658,8 +993,12 @@ impl MahayanaRuntime {
                 },
             };
             let _ = event_tx.send(event);
+            let _ = actor.finish(&run_id);
             if let Ok(mut operations) = operations.lock() {
                 operations.remove(&task_operation_id);
+            }
+            if let Ok(mut contexts) = run_contexts.lock() {
+                contexts.remove(&task_operation_id);
             }
         });
         Ok(operation_id)
@@ -719,10 +1058,31 @@ struct RuntimeEventSink {
     provider_key: String,
     event_tx: Sender<RuntimeEvent>,
     approvals: Arc<Mutex<HashMap<ApprovalId, String>>>,
+    context: RunContext,
+    store: Arc<RuntimeStore>,
 }
 
 impl ConversationEventSink for RuntimeEventSink {
     fn emit(&self, event: RuntimeEvent) -> Result<(), ConversationError> {
+        let projected_state = match &event {
+            RuntimeEvent::MessageDelta { .. } => Some(TurnState::Streaming),
+            RuntimeEvent::ApprovalRequested { .. } => Some(TurnState::WaitingUser),
+            RuntimeEvent::AgentActivity { status, .. }
+                if matches!(status, mahayana_core::RuntimeActivityStatus::Running) =>
+            {
+                Some(TurnState::ToolRunning)
+            }
+            RuntimeEvent::PluginProgress { progress, total, .. }
+                if *total == 0 || progress < total =>
+            {
+                Some(TurnState::ToolRunning)
+            }
+            _ => None,
+        };
+        if let Some(state) = projected_state {
+            transition_turn_state(&self.event_tx, &self.store, &self.context, state)
+                .map_err(|error| ConversationError::Provider(error.to_string()))?;
+        }
         if let RuntimeEvent::ApprovalRequested { approval_id, .. } = &event {
             self.approvals
                 .lock()
@@ -733,6 +1093,77 @@ impl ConversationEventSink for RuntimeEventSink {
             .send(event)
             .map_err(|_| ConversationError::EventConsumerClosed)
     }
+}
+
+fn transition_turn_state(
+    event_tx: &Sender<RuntimeEvent>,
+    store: &RuntimeStore,
+    context: &RunContext,
+    state: TurnState,
+) -> Result<(), RuntimeError> {
+    let Some(sequence) = context
+        .actor
+        .set_state(&context.turn_id, state)
+        .map_err(RuntimeError::Synchronization)?
+    else {
+        return Ok(());
+    };
+    let active_run = (!state.terminal()).then_some(&context.run_id);
+    store.set_turn_state(&context.turn_id, state, active_run)?;
+    store.set_run_state(
+        &context.run_id,
+        state,
+        state.terminal().then_some(now_millis()),
+    )?;
+    event_tx
+        .send(RuntimeEvent::TurnStateChanged {
+            operation_id: OperationId(context.run_id.0.clone()),
+            turn_id: context.turn_id.clone(),
+            run_id: context.run_id.clone(),
+            conversation_id: context.conversation_id.clone(),
+            state,
+            sequence,
+        })
+        .map_err(|_| RuntimeError::EventConsumerClosed)
+}
+
+fn handoff_prompt(intent: &HandoffIntent) -> String {
+    let constraints = if intent.constraints.is_null() {
+        String::new()
+    } else {
+        format!(
+            "\nConstraints: {}",
+            serde_json::to_string(&intent.constraints).unwrap_or_else(|_| "{}".to_string())
+        )
+    };
+    let expected = intent
+        .expected_output
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+        .map(|value| format!("\nExpected output: {}", value.trim()))
+        .unwrap_or_default();
+    format!(
+        "Agent handoff (depth {}):\nTask: {}{}{}",
+        intent.depth, intent.task, constraints, expected
+    )
+}
+
+fn validate_runtime_state_key(key: &str) -> Result<(), RuntimeError> {
+    let key = key.trim();
+    if key.is_empty() || key.len() > 240 || key.chars().any(char::is_control) {
+        return Err(RuntimeError::Collaboration(
+            "runtime state key must be non-empty, <= 240 bytes, and contain no control characters"
+                .to_string(),
+        ));
+    }
+    Ok(())
+}
+
+fn now_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(i64::MAX as u128) as i64)
+        .unwrap_or_default()
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -759,6 +1190,12 @@ pub enum RuntimeError {
     Synchronization(String),
     #[error("local Mini App runtime failed: {0}")]
     LocalPlugin(String),
+    #[error("runtime store failed: {0}")]
+    RuntimeStore(#[from] RuntimeStoreError),
+    #[error("capability broker failed: {0}")]
+    CapabilityBroker(String),
+    #[error("Agent collaboration failed: {0}")]
+    Collaboration(String),
     #[error("capability not found: {0}")]
     CapabilityNotFound(String),
     #[error("capability unavailable: {capability_id}: {reason}")]
@@ -888,6 +1325,7 @@ mod tests {
                 conversation_id: ConversationId(CODEX_ASSISTANT_CONVERSATION_ID.to_string()),
                 text: "你好".to_string(),
                 client_message_id: None,
+                                inference_provider: None,
                 hidden: false,
             })
             .expect("send message");
@@ -1002,6 +1440,7 @@ mod tests {
                 conversation_id,
                 text: "first visible prompt".to_string(),
                 client_message_id: Some("first-visible-prompt".to_string()),
+                                inference_provider: None,
                 hidden: false,
             })
             .expect("send first message");

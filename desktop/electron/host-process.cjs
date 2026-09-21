@@ -191,6 +191,7 @@ class MahayanaHostProcess {
     this.env = options.env ?? process.env;
     this.platform = options.platform ?? process.platform;
     this.resourcesPath = options.resourcesPath ?? process.resourcesPath;
+    this.electronDir = options.electronDir ?? __dirname;
     this.now = options.now ?? Date.now;
     this.fs = options.fs ?? fs;
     this.providerEnvironment = options.providerEnvironment ?? (() => ({}));
@@ -222,12 +223,29 @@ class MahayanaHostProcess {
   }
 
   executablePath() {
-    if (!this.app.isPackaged && this.env.MAHAYANA_APP_HOST_BIN) {
-      return this.env.MAHAYANA_APP_HOST_BIN;
-    }
     const name = this.platform === 'win32' ? 'mahayana-app-host.exe' : 'mahayana-app-host';
     if (this.app.isPackaged) return path.join(this.resourcesPath, 'bin', name);
-    return path.resolve(__dirname, '..', '..', 'third_party', 'mahayana', 'mahayana-rs', 'target', 'release', name);
+
+    const explicit = String(this.env.MAHAYANA_APP_HOST_BIN || '').trim();
+    if (explicit) return explicit;
+
+    // CI and development builds stage the exact Host generation that should
+    // accompany the renderer into desktop/resources/bin. Prefer that staged
+    // executable before falling back to a local release-profile Cargo build.
+    const staged = path.resolve(this.electronDir, '..', 'resources', 'bin', name);
+    if (safeIsFileSync(this.fs, staged)) return staged;
+
+    return path.resolve(
+      this.electronDir,
+      '..',
+      '..',
+      'third_party',
+      'mahayana',
+      'mahayana-rs',
+      'target',
+      'release',
+      name,
+    );
   }
 
   health() {
@@ -251,6 +269,12 @@ class MahayanaHostProcess {
     if (typeof listener !== 'function') throw new TypeError('Mahayana host lifecycle listener must be a function.');
     this.events.on('lifecycle', listener);
     return () => this.events.off('lifecycle', listener);
+  }
+
+  onRuntimeEvent(listener) {
+    if (typeof listener !== 'function') throw new TypeError('Mahayana runtime event listener must be a function.');
+    this.events.on('runtime-event', listener);
+    return () => this.events.off('runtime-event', listener);
   }
 
   emitLifecycle(type, detail = {}) {
@@ -299,6 +323,8 @@ class MahayanaHostProcess {
           ANTHROPIC_API_KEY: '',
           OPENROUTER_API_KEY: '',
           MAHAYANA_MODEL_BEARER_TOKEN: '',
+          MAHAYANA_OPENROUTER_API_KEY: '',
+          MAHAYANA_CLAUDE_API_KEY: '',
           MAHAYANA_API_BASE_URL: productApiBaseUrl(this.app, this.env),
           MAHAYANA_AUTH_STORAGE_NAMESPACE: this.env.MAHAYANA_AUTH_STORAGE_NAMESPACE || 'fabushi-desktop-v2',
           FABUSHI_APP_DATA: this.app.getPath('userData'),
@@ -346,6 +372,11 @@ class MahayanaHostProcess {
       } catch (error) {
         this.rejectGeneration(generation, new Error(`Invalid Mahayana host response: ${error}`));
         this.emitLifecycle('protocol-error', { error: error instanceof Error ? error.message : String(error) });
+        return;
+      }
+      if (!Object.prototype.hasOwnProperty.call(message, 'id') && message.event && typeof message.event === 'object') {
+        this.chromePlatformServer.broadcastEvent(message.event);
+        this.events.emit('runtime-event', message.event);
         return;
       }
       const key = String(message.id ?? '');

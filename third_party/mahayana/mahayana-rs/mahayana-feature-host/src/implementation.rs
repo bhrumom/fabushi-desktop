@@ -38,9 +38,15 @@ use mahayana_core::RuntimeEvent;
 #[cfg(feature = "production")]
 use mahayana_core::RuntimeResponse;
 #[cfg(feature = "production")]
+use mahayana_core::TurnState as RuntimeTurnState;
+#[cfg(feature = "production")]
 use mahayana_core::capability::CapabilityAvailability;
 #[cfg(feature = "production")]
 use mahayana_core::capability::CapabilityKind;
+#[cfg(feature = "production")]
+use mahayana_core::capability::CapabilityPolicyDecision;
+#[cfg(feature = "production")]
+use mahayana_core::capability::CapabilityRequest;
 #[cfg(feature = "production")]
 use mahayana_host::HostCreateConfig;
 #[cfg(feature = "production")]
@@ -69,6 +75,7 @@ use mahayana_host_protocol::COMPUTER_CONTROL_PROTOCOL_VERSION;
 use mahayana_host_protocol::CapabilitySummary;
 use mahayana_host_protocol::CommandAccepted;
 use mahayana_host_protocol::ComputerActionResult;
+use mahayana_host_protocol::ComputerControlLeaseState;
 use mahayana_host_protocol::ComputerControlOrigin;
 use mahayana_host_protocol::ComputerControlTarget;
 use mahayana_host_protocol::ComputerSnapshot;
@@ -94,6 +101,7 @@ use mahayana_host_protocol::HostConfig;
 use mahayana_host_protocol::HostEvent;
 use mahayana_host_protocol::HostInfo;
 use mahayana_host_protocol::HostMode;
+use mahayana_host_protocol::InferenceProvider;
 use mahayana_host_protocol::ListenerIntegrationSummary;
 use mahayana_host_protocol::ListenerPlatform;
 use mahayana_host_protocol::LocalToolPermission;
@@ -116,6 +124,7 @@ use mahayana_host_protocol::TeachEntryPoint;
 use mahayana_host_protocol::TeachRecordingResult;
 use mahayana_host_protocol::TeachRecordingStatus;
 use mahayana_host_protocol::TranscriptCard;
+use mahayana_host_protocol::TurnLifecycleState;
 use mahayana_host_protocol::UpdateState;
 use mahayana_host_protocol::WorkflowSource;
 use mahayana_host_protocol::WorkflowSummary;
@@ -164,6 +173,8 @@ struct PendingApproval {
     mini_app_id: String,
     capability: String,
     runtime_approval_id: Option<String>,
+    operation_id: Option<String>,
+    agent_id: Option<String>,
 }
 
 const GROUP_MAX_MEMBER_TURNS: usize = 10;
@@ -236,6 +247,7 @@ struct FeatureState {
     subagents: BTreeMap<String, SubagentSummary>,
     async_tasks: BTreeMap<String, AsyncTaskSummary>,
     peer_messages: Vec<AgentPeerMessage>,
+    workspace_state: BTreeMap<String, Value>,
     settings: ProductHostSettings,
     trays: Vec<ErrorTray>,
     sequence: u64,
@@ -267,6 +279,7 @@ impl Default for FeatureState {
             subagents: BTreeMap::new(),
             async_tasks: BTreeMap::new(),
             peer_messages: Vec::new(),
+            workspace_state: BTreeMap::new(),
             settings: ProductHostSettings::default(),
             trays: Vec::new(),
             sequence: 0,
@@ -909,6 +922,7 @@ impl FeatureHostController {
         {
             return self.execute_messaging(request_id.clone(), envelope.clone());
         }
+        self.authorize_feature_command(&command)?;
         if matches!(
             &command,
             FeatureCommand::AutomationList { .. }
@@ -949,6 +963,13 @@ impl FeatureHostController {
         }
         if matches!(
             &command,
+            FeatureCommand::AgentWorkspaceStateGet { .. }
+                | FeatureCommand::AgentWorkspaceStateSet { .. }
+        ) {
+            return self.execute_agent_workspace_state(command);
+        }
+        if matches!(
+            &command,
             FeatureCommand::SubagentList { .. } | FeatureCommand::AsyncTaskList { .. }
         ) {
             return self.execute_subagent_observation(command);
@@ -966,6 +987,8 @@ impl FeatureHostController {
             FeatureCommand::ComputerStatus { .. }
                 | FeatureCommand::ComputerScreenshot { .. }
                 | FeatureCommand::ComputerAction { .. }
+                | FeatureCommand::ComputerTakeControl { .. }
+                | FeatureCommand::ComputerReleaseControl { .. }
         ) {
             return self.execute_computer(command);
         }
@@ -1059,6 +1082,145 @@ impl FeatureHostController {
         }
     }
 
+    fn authorize_feature_command(
+        &self,
+        command: &FeatureCommand,
+    ) -> Result<(), FeatureHostError> {
+        if self.config.mode != HostMode::Production {
+            return Ok(());
+        }
+        #[cfg(feature = "production")]
+        {
+            let (capability, agent_id, target, intent) = match command {
+                FeatureCommand::ComputerScreenshot { agent_id, origin, session_id, target, .. } => (
+                    "computer.screen.read",
+                    agent_id.clone(),
+                    json!({"origin": origin, "sessionId": session_id, "target": target}),
+                    "capture the local computer screen",
+                ),
+                FeatureCommand::ComputerAction { agent_id, origin, session_id, target, .. } => (
+                    "computer.input.control",
+                    agent_id.clone(),
+                    json!({"origin": origin, "sessionId": session_id, "target": target}),
+                    "control the local computer",
+                ),
+                FeatureCommand::RemoteComputerSessionActivate { device_id, session_id, .. }
+                | FeatureCommand::RemoteComputerSessionClose { device_id, session_id, .. }
+                | FeatureCommand::RemoteComputerSignal { device_id, session_id, .. }
+                | FeatureCommand::RemoteComputerSignalDrain { device_id, session_id, .. } => (
+                    "computer.remote.session",
+                    None,
+                    json!({"deviceId": device_id, "sessionId": session_id}),
+                    "use a remote computer session",
+                ),
+                FeatureCommand::McpToolCall { server, tool, .. } => (
+                    "mcp.tool.call",
+                    None,
+                    json!({"server": server, "tool": tool}),
+                    "call an MCP tool",
+                ),
+                FeatureCommand::AgentSend { from_agent_id, target_id, .. } => (
+                    "agent.handoff",
+                    Some(from_agent_id.clone()),
+                    json!({"targetAgent": target_id}),
+                    "send durable work to another Agent",
+                ),
+                FeatureCommand::AgentBroadcast { target_ids, .. } => (
+                    "agent.handoff.broadcast",
+                    None,
+                    json!({"targetAgents": target_ids}),
+                    "broadcast durable work to Agents",
+                ),
+                FeatureCommand::AttachmentUpload { agent_id, filename, .. } => (
+                    "filesystem.agent.write",
+                    Some(agent_id.clone()),
+                    json!({"filename": filename}),
+                    "write an Agent workspace attachment",
+                ),
+                FeatureCommand::AttachmentReadText { agent_id, path, .. }
+                | FeatureCommand::AttachmentReadChunk { agent_id, path, .. }
+                | FeatureCommand::AttachmentReadImage { agent_id, path, .. } => (
+                    "filesystem.agent.read",
+                    Some(agent_id.clone()),
+                    json!({"path": path}),
+                    "read an Agent workspace attachment",
+                ),
+                FeatureCommand::MiniAppOpen { mini_app_id, .. } => (
+                    "miniapp.open",
+                    None,
+                    json!({"miniAppId": mini_app_id}),
+                    "open a Mini App",
+                ),
+                FeatureCommand::ConnectorConnect { connector_id, .. } => (
+                    "connector.connect",
+                    None,
+                    json!({"connectorId": connector_id}),
+                    "connect an external service",
+                ),
+                FeatureCommand::ConnectorRenameAccount { connector_id, account_id, .. }
+                | FeatureCommand::ConnectorRemoveAccount { connector_id, account_id, .. } => (
+                    "connector.account.manage",
+                    None,
+                    json!({"connectorId": connector_id, "accountId": account_id}),
+                    "manage a connected external account",
+                ),
+                FeatureCommand::ConnectorSetToolEnabled { connector_id, tool_id, .. } => (
+                    "connector.tool.manage",
+                    None,
+                    json!({"connectorId": connector_id, "toolId": tool_id}),
+                    "change a connector tool policy",
+                ),
+                _ => return Ok(()),
+            };
+            let conversation_id = {
+                let state = self.state()?;
+                agent_id
+                    .as_deref()
+                    .and_then(|id| find_bot_by_runtime_or_surface_id(&state, id))
+                    .and_then(|bot| bot.conversation_id.clone())
+                    .unwrap_or_else(|| MAHAYANA_AI_CONVERSATION_ID.to_string())
+            };
+            let actor = agent_id
+                .as_ref()
+                .map(|id| format!("agent:{id}"))
+                .unwrap_or_else(|| "human".to_string());
+            let response = self.runtime()?.execute(RuntimeCommand::AuthorizeCapability {
+                request: CapabilityRequest {
+                    actor,
+                    agent_id,
+                    conversation_id: ConversationId(conversation_id),
+                    run_id: None,
+                    capability: capability.to_string(),
+                    target,
+                    intent: intent.to_string(),
+                },
+                availability: CapabilityAvailability::Ready,
+                unavailable_reason: None,
+            })?;
+            match response {
+                RuntimeResponse::CapabilityDecision {
+                    decision: CapabilityPolicyDecision::Allow,
+                } => Ok(()),
+                RuntimeResponse::CapabilityDecision {
+                    decision: CapabilityPolicyDecision::NeedsUser,
+                } => Err(FeatureHostError::Contract(format!(
+                    "{capability} requires explicit user approval"
+                ))),
+                RuntimeResponse::CapabilityDecision {
+                    decision: CapabilityPolicyDecision::Deny,
+                } => Err(FeatureHostError::Contract(format!(
+                    "{capability} was denied by capability policy"
+                ))),
+                other => Err(unexpected_response("mahayana.capability.authorize", other)),
+            }
+        }
+        #[cfg(not(feature = "production"))]
+        {
+            let _ = command;
+            Ok(())
+        }
+    }
+
     fn execute_messaging(
         &self,
         request_id: String,
@@ -1147,13 +1309,23 @@ impl FeatureHostController {
         let request_id = command.request_id().to_string();
         match command {
             FeatureCommand::AutomationList { agent_id, .. } => {
+                let owner = if let Some(requested) = agent_id.as_deref() {
+                    let state = self.state()?;
+                    Some(canonical_runtime_agent_id(&state, requested).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown automation agent: {requested}"
+                        ))
+                    })?)
+                } else {
+                    None
+                };
                 let mut automations = self
                     .state()?
                     .automations
                     .values()
                     .filter(|automation| {
-                        agent_id.as_ref().is_none_or(|agent_id| {
-                            automation.agent_id.as_deref() == Some(agent_id.as_str())
+                        owner.as_ref().is_none_or(|agent_id| {
+                            fabu_automation_owner(automation) == agent_id
                         })
                     })
                     .cloned()
@@ -1212,25 +1384,33 @@ impl FeatureHostController {
                         state.sequence += 1;
                         format!("routine-{}-{}", now, state.sequence)
                     });
-                let previous = state.automations.get(&id).cloned();
                 let requested_agent_id = match agent_id {
-                    Some(agent_id) => Some(required(agent_id, "automation agent id")?),
+                    Some(agent_id) => {
+                        let requested = required(agent_id, "automation agent id")?;
+                        Some(canonical_runtime_agent_id(&state, &requested).ok_or_else(|| {
+                            FeatureHostError::Contract(format!(
+                                "unknown automation agent: {requested}"
+                            ))
+                        })?)
+                    }
                     None => None,
                 };
-                if let Some(agent_id) = requested_agent_id.as_deref() {
-                    if !state.bots.contains_key(agent_id) {
-                        return Err(FeatureHostError::Contract(format!(
-                            "unknown automation agent: {agent_id}"
-                        )));
-                    }
-                }
+                let previous_key =
+                    find_automation_state_key(&state.automations, &id, requested_agent_id.as_deref());
+                let previous = previous_key
+                    .as_ref()
+                    .and_then(|key| state.automations.get(key))
+                    .cloned();
                 if let (Some(previous), Some(agent_id)) =
                     (previous.as_ref(), requested_agent_id.as_deref())
                 {
                     ensure_automation_agent_scope(previous, Some(agent_id))?;
                 }
-                let resolved_agent_id = requested_agent_id
-                    .or_else(|| previous.as_ref().and_then(|item| item.agent_id.clone()));
+                let resolved_agent_id = Some(
+                    requested_agent_id
+                        .or_else(|| previous.as_ref().and_then(|item| item.agent_id.clone()))
+                        .unwrap_or_else(|| "mahayana-assistant".into()),
+                );
                 let action = if previous.is_some() {
                     "updated"
                 } else {
@@ -1248,7 +1428,14 @@ impl FeatureHostController {
                     last_run_at_ms: previous.as_ref().and_then(|item| item.last_run_at_ms),
                     next_run_at_ms: automation_next_run(&trigger, &schedule, enabled, now),
                 };
-                state.automations.insert(id, automation.clone());
+                if let Some(previous_key) = previous_key {
+                    state.automations.remove(&previous_key);
+                }
+                let state_key = automation_state_key(
+                    fabu_automation_owner(&automation),
+                    &automation.id,
+                );
+                state.automations.insert(state_key, automation.clone());
                 self.persist_automations(&state.automations)?;
                 state.events.push_back(HostEvent::AutomationChanged {
                     timestamp: timestamp(),
@@ -1267,10 +1454,28 @@ impl FeatureHostController {
                 ..
             } => {
                 let mut state = self.state()?;
-                let automation = state.automations.get_mut(&id).ok_or_else(|| {
+                let requested_owner = agent_id
+                    .as_deref()
+                    .map(|requested| {
+                        canonical_runtime_agent_id(&state, requested).ok_or_else(|| {
+                            FeatureHostError::Contract(format!(
+                                "unknown automation agent: {requested}"
+                            ))
+                        })
+                    })
+                    .transpose()?;
+                let key = find_automation_state_key(
+                    &state.automations,
+                    &id,
+                    requested_owner.as_deref(),
+                )
+                .ok_or_else(|| {
                     FeatureHostError::Contract(format!("unknown automation: {id}"))
                 })?;
-                ensure_automation_agent_scope(automation, agent_id.as_deref())?;
+                let automation = state.automations.get_mut(&key).ok_or_else(|| {
+                    FeatureHostError::Contract(format!("unknown automation: {id}"))
+                })?;
+                ensure_automation_agent_scope(automation, requested_owner.as_deref())?;
                 automation.enabled = enabled;
                 let trigger =
                     automation
@@ -1295,13 +1500,31 @@ impl FeatureHostController {
             }
             FeatureCommand::AutomationDelete { id, agent_id, .. } => {
                 let mut state = self.state()?;
-                let existing = state.automations.get(&id).ok_or_else(|| {
+                let requested_owner = agent_id
+                    .as_deref()
+                    .map(|requested| {
+                        canonical_runtime_agent_id(&state, requested).ok_or_else(|| {
+                            FeatureHostError::Contract(format!(
+                                "unknown automation agent: {requested}"
+                            ))
+                        })
+                    })
+                    .transpose()?;
+                let key = find_automation_state_key(
+                    &state.automations,
+                    &id,
+                    requested_owner.as_deref(),
+                )
+                .ok_or_else(|| {
                     FeatureHostError::Contract(format!("unknown automation: {id}"))
                 })?;
-                ensure_automation_agent_scope(existing, agent_id.as_deref())?;
+                let existing = state.automations.get(&key).ok_or_else(|| {
+                    FeatureHostError::Contract(format!("unknown automation: {id}"))
+                })?;
+                ensure_automation_agent_scope(existing, requested_owner.as_deref())?;
                 let automation = state
                     .automations
-                    .remove(&id)
+                    .remove(&key)
                     .expect("automation checked above");
                 self.persist_automations(&state.automations)?;
                 state.events.push_back(HostEvent::AutomationChanged {
@@ -1318,10 +1541,28 @@ impl FeatureHostController {
                 let automation =
                     {
                         let mut state = self.state()?;
-                        let automation = state.automations.get_mut(&id).ok_or_else(|| {
+                        let requested_owner = agent_id
+                            .as_deref()
+                            .map(|requested| {
+                                canonical_runtime_agent_id(&state, requested).ok_or_else(|| {
+                                    FeatureHostError::Contract(format!(
+                                        "unknown automation agent: {requested}"
+                                    ))
+                                })
+                            })
+                            .transpose()?;
+                        let key = find_automation_state_key(
+                            &state.automations,
+                            &id,
+                            requested_owner.as_deref(),
+                        )
+                        .ok_or_else(|| {
                             FeatureHostError::Contract(format!("unknown automation: {id}"))
                         })?;
-                        ensure_automation_agent_scope(automation, agent_id.as_deref())?;
+                        let automation = state.automations.get_mut(&key).ok_or_else(|| {
+                            FeatureHostError::Contract(format!("unknown automation: {id}"))
+                        })?;
+                        ensure_automation_agent_scope(automation, requested_owner.as_deref())?;
                         let now = now_millis();
                         automation.last_run_at_ms = Some(now);
                         let trigger = automation.trigger.clone().unwrap_or_else(|| {
@@ -1436,6 +1677,7 @@ impl FeatureHostController {
                 avatar,
                 avatar_shape,
                 avatar_color,
+                inference_provider,
                 ..
             } => {
                 let name = clamp_line(&name, 72);
@@ -1444,6 +1686,7 @@ impl FeatureHostController {
                         "bot name must not be empty".into(),
                     ));
                 }
+                agent_inference_provider_key(inference_provider)?;
                 let id = next_id(&mut state, "agent");
                 let bot = BotSummary {
                     id: id.clone(),
@@ -1459,6 +1702,7 @@ impl FeatureHostController {
                     notify_on_updates: true,
                     unread: false,
                     conversation_id: Some(format!("codex:agent:{id}")),
+                    inference_provider,
                 };
                 state.bots.insert(id, bot.clone());
                 ("created", bot)
@@ -1473,7 +1717,9 @@ impl FeatureHostController {
                 avatar_color,
                 notifications_enabled,
                 notify_on_updates,
+                inference_provider,
                 unread,
+                clear_inference_provider,
                 ..
             } => {
                 let bot = state
@@ -1513,6 +1759,17 @@ impl FeatureHostController {
                 if let Some(unread) = unread {
                     bot.unread = unread;
                 }
+                if clear_inference_provider && inference_provider.is_some() {
+                    return Err(FeatureHostError::Contract(
+                        "bot.update cannot set and clear inferenceProvider in the same request".into(),
+                    ));
+                }
+                if clear_inference_provider {
+                    bot.inference_provider = None;
+                } else if let Some(provider) = inference_provider {
+                    agent_inference_provider_key(Some(provider))?;
+                    bot.inference_provider = Some(provider);
+                }
                 ("updated", bot.clone())
             }
             FeatureCommand::BotClone { id, .. } => {
@@ -1522,6 +1779,7 @@ impl FeatureHostController {
                     .cloned()
                     .ok_or_else(|| FeatureHostError::Contract(format!("unknown bot: {id}")))?;
                 let new_id = next_id(&mut state, "agent");
+                let source_agent_id = bot_runtime_agent_id(&source).to_string();
                 let clone_name = clone_agent_display_name(&source.name);
                 let bot = BotSummary {
                     id: new_id.clone(),
@@ -1537,7 +1795,12 @@ impl FeatureHostController {
                     notify_on_updates: source.notify_on_updates,
                     unread: false,
                     conversation_id: Some(format!("codex:agent:{new_id}")),
+                    inference_provider: source.inference_provider,
                 };
+                // Match Fabu clone semantics: copy reusable Agent-owned state
+                // (memory, automations, workflow enablement) but never transcript
+                // history, audits, attachments, or teach recordings.
+                self.clone_agent_local_state(&source_agent_id, &new_id)?;
                 state.bots.insert(new_id, bot.clone());
                 ("cloned", bot)
             }
@@ -1564,6 +1827,12 @@ impl FeatureHostController {
             _ => unreachable!("non-bot-profile command routed to bot executor"),
         };
         self.persist_bots(&state.bots)?;
+        // Fabu keeps the Bot surface and Agent runtime as separate identities.
+        // A Bot mutation mirrors presentation/settings into the Agent's own
+        // directory, while deleting the Bot deliberately retains Agent state.
+        if action != "deleted" {
+            self.persist_agent_manifest(&bot)?;
+        }
         state.events.push_back(HostEvent::BotChanged {
             timestamp: timestamp(),
             action: action.into(),
@@ -1768,11 +2037,18 @@ impl FeatureHostController {
                 entry_point,
                 ..
             } => {
-                if !is_safe_memory_agent_id(&agent_id)
-                    || !self.state()?.bots.contains_key(&agent_id)
-                {
+                let requested_agent_id = agent_id;
+                let agent_id = {
+                    let state = self.state()?;
+                    canonical_runtime_agent_id(&state, &requested_agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown teach agent: {requested_agent_id}"
+                        ))
+                    })?
+                };
+                if !is_safe_memory_agent_id(&agent_id) {
                     return Err(FeatureHostError::Contract(format!(
-                        "unknown teach agent: {agent_id}"
+                        "unsafe teach agent id: {agent_id}"
                     )));
                 }
                 let mut guard = self
@@ -1980,9 +2256,14 @@ impl FeatureHostController {
         video_path: &str,
         session_dir: &Path,
     ) -> Result<Option<String>, FeatureHostError> {
-        let bot = self.state()?.bots.get(agent_id).cloned().ok_or_else(|| {
-            FeatureHostError::Contract(format!("unknown teach agent: {agent_id}"))
-        })?;
+        let bot = {
+            let state = self.state()?;
+            find_bot_by_runtime_or_surface_id(&state, agent_id)
+                .cloned()
+                .ok_or_else(|| {
+                    FeatureHostError::Contract(format!("unknown teach agent: {agent_id}"))
+                })?
+        };
         let frames_dir = session_dir.join("frames").to_string_lossy().to_string();
         let prompt = format!(
             "[teach-recording] The user just demonstrated a repeatable task for you.\nRecording: {video_path}\nExtracted frames (when present): {frames_dir}\n\nStudy the demonstration carefully. Infer the intent, ordered steps, important UI landmarks, decision points, and safety checks. Return a reusable Markdown workflow/skill only: start with a concise # heading, then instructions another future run can follow. Do not merely summarize the recording and do not mention this hidden teach prompt."
@@ -1999,17 +2280,19 @@ impl FeatureHostController {
                 conversation_id: ConversationId(conversation_id),
                 text: prompt,
                 client_message_id: Some(format!("teach:{}:{}", bot.id, now_millis())),
+                inference_provider: agent_inference_provider_key(bot.inference_provider)?,
                 hidden: true,
             })?;
             let operation_id = match response {
                 RuntimeResponse::Accepted { operation_id } => operation_id.to_string(),
                 other => return Err(unexpected_response("teach.learn", other)),
             };
+            let runtime_agent_id = bot_runtime_agent_id(&bot).to_string();
             let mut state = self.state()?;
             state.background_operations.insert(
                 operation_id.clone(),
                 BackgroundOperationContext {
-                    agent_id: bot.id.clone(),
+                    agent_id: runtime_agent_id.clone(),
                     agent_name: bot.name.clone(),
                     source: "teach-recording".into(),
                     teach_artifact: Some(video_path.to_string()),
@@ -2017,7 +2300,7 @@ impl FeatureHostController {
             );
             state.events.push_back(HostEvent::AgentBackgroundStarted {
                 timestamp: timestamp(),
-                agent_id: bot.id,
+                agent_id: runtime_agent_id,
                 agent_name: bot.name,
                 operation_id: operation_id.clone(),
                 source: "teach-recording".into(),
@@ -2035,8 +2318,7 @@ impl FeatureHostController {
         markdown: &str,
     ) -> Result<WorkflowSummary, FeatureHostError> {
         let workflow_root = self
-            .workflow_root_path
-            .as_deref()
+            .active_account_root(self.workflow_root_path.as_deref())
             .ok_or_else(|| FeatureHostError::Contract("workflow storage is unavailable".into()))?;
         let body = clamp_block(markdown, 100_000);
         if body.is_empty() {
@@ -2147,6 +2429,80 @@ impl FeatureHostController {
         })
     }
 
+    fn execute_agent_workspace_state(
+        &self,
+        command: FeatureCommand,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        let request_id = command.request_id().to_string();
+        let (key, value, emit_snapshot) = match command {
+            FeatureCommand::AgentWorkspaceStateGet { key, .. } => {
+                let value = match self.config.mode {
+                    HostMode::Test => self.state()?.workspace_state.get(&key).cloned(),
+                    HostMode::Production => {
+                        #[cfg(feature = "production")]
+                        {
+                            let runtime_key = self.runtime_workspace_state_key(&key)?;
+                            match self.runtime()?.execute(RuntimeCommand::WorkspaceStateGet {
+                                key: runtime_key,
+                            })? {
+                                RuntimeResponse::RuntimeWorkspaceState { value, .. } => value,
+                                other => {
+                                    return Err(unexpected_response(
+                                        "agent.workspaceState.get",
+                                        other,
+                                    ));
+                                }
+                            }
+                        }
+                        #[cfg(not(feature = "production"))]
+                        return Err(FeatureHostError::ProductionUnavailable);
+                    }
+                };
+                (key, value, true)
+            }
+            FeatureCommand::AgentWorkspaceStateSet { key, value, .. } => {
+                match self.config.mode {
+                    HostMode::Test => {
+                        self.state()?.workspace_state.insert(key.clone(), value.clone());
+                    }
+                    HostMode::Production => {
+                        #[cfg(feature = "production")]
+                        {
+                            let runtime_key = self.runtime_workspace_state_key(&key)?;
+                            match self.runtime()?.execute(RuntimeCommand::WorkspaceStateSet {
+                                key: runtime_key,
+                                value: value.clone(),
+                            })? {
+                                RuntimeResponse::RuntimeWorkspaceState { .. } => {}
+                                other => {
+                                    return Err(unexpected_response(
+                                        "agent.workspaceState.set",
+                                        other,
+                                    ));
+                                }
+                            }
+                        }
+                        #[cfg(not(feature = "production"))]
+                        return Err(FeatureHostError::ProductionUnavailable);
+                    }
+                }
+                (key, Some(value), false)
+            }
+            _ => unreachable!("non-workspace-state command routed to workspace state"),
+        };
+        if emit_snapshot {
+            self.state()?.events.push_back(HostEvent::AgentWorkspaceState {
+                timestamp: timestamp(),
+                key,
+                value,
+            });
+        }
+        Ok(CommandAccepted {
+            request_id,
+            operation_id: None,
+        })
+    }
+
     fn execute_agent_messaging(
         &self,
         command: FeatureCommand,
@@ -2158,16 +2514,21 @@ impl FeatureHostController {
             } => {
                 let state = self.state()?;
                 ensure_open(&state)?;
-                if !state.bots.contains_key(&agent_id) {
-                    return Err(FeatureHostError::Contract(format!(
-                        "unknown bot: {agent_id}"
-                    )));
-                }
+                let bot = find_bot_by_runtime_or_surface_id(&state, &agent_id)
+                    .cloned()
+                    .ok_or_else(|| {
+                        FeatureHostError::Contract(format!("unknown bot: {agent_id}"))
+                    })?;
+                let surface_id = bot.id.clone();
+                let agent_id = bot_runtime_agent_id(&bot).to_string();
                 let mut messages = state
                     .peer_messages
                     .iter()
                     .filter(|message| {
-                        message.from_agent_id == agent_id || message.target_id == agent_id
+                        message.from_agent_id == agent_id
+                            || message.from_agent_id == surface_id
+                            || message.target_id == agent_id
+                            || message.target_id == surface_id
                     })
                     .cloned()
                     .collect::<Vec<_>>();
@@ -2202,25 +2563,32 @@ impl FeatureHostController {
                         "agent message must not be empty".into(),
                     ));
                 }
-                if from_agent_id == target_id {
-                    return Err(FeatureHostError::Contract(
-                        "an agent cannot message itself".into(),
-                    ));
-                }
-
                 let mut kick_group: Option<String> = None;
                 let direct_target = {
                     let mut state = self.state()?;
                     ensure_open(&state)?;
-                    let sender = state.bots.get(&from_agent_id).cloned().ok_or_else(|| {
-                        FeatureHostError::Contract(format!("unknown sender bot: {from_agent_id}"))
-                    })?;
-                    if let Some(target) = state.bots.get(&target_id).cloned() {
+                    let sender = find_bot_by_runtime_or_surface_id(&state, &from_agent_id)
+                        .cloned()
+                        .ok_or_else(|| {
+                            FeatureHostError::Contract(format!(
+                                "unknown sender bot: {from_agent_id}"
+                            ))
+                        })?;
+                    if let Some(target) =
+                        find_bot_by_runtime_or_surface_id(&state, &target_id).cloned()
+                    {
+                        let sender_agent_id = bot_runtime_agent_id(&sender).to_string();
+                        let target_agent_id = bot_runtime_agent_id(&target).to_string();
+                        if sender_agent_id == target_agent_id {
+                            return Err(FeatureHostError::Contract(
+                                "an agent cannot message itself".into(),
+                            ));
+                        }
                         let peer = AgentPeerMessage {
                             id: next_id(&mut state, "agent-message"),
-                            from_agent_id: sender.id.clone(),
+                            from_agent_id: sender_agent_id,
                             from_agent_name: sender.name.clone(),
-                            target_id: target.id.clone(),
+                            target_id: target_agent_id,
                             target_name: target.name.clone(),
                             text: text.clone(),
                             priority,
@@ -2241,10 +2609,11 @@ impl FeatureHostController {
                         if !group_snapshot
                             .member_ids
                             .iter()
-                            .any(|id| id == &from_agent_id)
+                            .any(|id| id == &sender.id)
                         {
                             return Err(FeatureHostError::Contract(format!(
-                                "agent {from_agent_id} is not a member of group {target_id}"
+                                "agent {} is not a member of group {target_id}",
+                                bot_runtime_agent_id(&sender)
                             )));
                         }
                         let now = now_millis();
@@ -2271,7 +2640,7 @@ impl FeatureHostController {
                         let mut responders = group
                             .member_ids
                             .iter()
-                            .filter(|id| *id != &from_agent_id)
+                            .filter(|id| *id != &sender.id)
                             .cloned()
                             .collect::<Vec<_>>();
                         let lower = text.to_lowercase();
@@ -2368,7 +2737,9 @@ impl FeatureHostController {
                             let unique = ids.into_iter().collect::<BTreeSet<_>>();
                             unique
                                 .into_iter()
-                                .filter_map(|id| state.bots.get(&id).cloned())
+                                .filter_map(|id| {
+                                    find_bot_by_runtime_or_surface_id(&state, &id).cloned()
+                                })
                                 .collect::<Vec<_>>()
                         }
                         None => state.bots.values().cloned().collect::<Vec<_>>(),
@@ -2412,18 +2783,19 @@ impl FeatureHostController {
         client_message_id: String,
     ) -> Result<Option<String>, FeatureHostError> {
         if self.config.mode == HostMode::Test {
-            let operation_id = format!("background-test-{}-{}", target.id, now_millis());
+            let runtime_agent_id = bot_runtime_agent_id(target).to_string();
+            let operation_id = format!("background-test-{}-{}", runtime_agent_id, now_millis());
             let mut state = self.state()?;
             state.events.push_back(HostEvent::AgentBackgroundStarted {
                 timestamp: timestamp(),
-                agent_id: target.id.clone(),
+                agent_id: runtime_agent_id.clone(),
                 agent_name: target.name.clone(),
                 operation_id: operation_id.clone(),
                 source: source.to_string(),
             });
             state.events.push_back(HostEvent::AgentBackgroundMessage {
                 timestamp: timestamp(),
-                agent_id: target.id.clone(),
+                agent_id: runtime_agent_id.clone(),
                 agent_name: target.name.clone(),
                 operation_id: operation_id.clone(),
                 source: source.to_string(),
@@ -2431,7 +2803,7 @@ impl FeatureHostController {
             });
             state.events.push_back(HostEvent::AgentBackgroundFinished {
                 timestamp: timestamp(),
-                agent_id: target.id.clone(),
+                agent_id: runtime_agent_id,
                 agent_name: target.name.clone(),
                 operation_id: operation_id.clone(),
                 source: source.to_string(),
@@ -2449,17 +2821,19 @@ impl FeatureHostController {
                 conversation_id: ConversationId(conversation_id),
                 text: prompt,
                 client_message_id: Some(client_message_id),
+                inference_provider: agent_inference_provider_key(target.inference_provider)?,
                 hidden: true,
             })?;
             let operation_id = match response {
                 RuntimeResponse::Accepted { operation_id } => operation_id.to_string(),
                 other => return Err(unexpected_response("agent.background", other)),
             };
+            let runtime_agent_id = bot_runtime_agent_id(target).to_string();
             let mut state = self.state()?;
             state.background_operations.insert(
                 operation_id.clone(),
                 BackgroundOperationContext {
-                    agent_id: target.id.clone(),
+                    agent_id: runtime_agent_id.clone(),
                     agent_name: target.name.clone(),
                     source: source.to_string(),
                     teach_artifact: None,
@@ -2467,7 +2841,7 @@ impl FeatureHostController {
             );
             state.events.push_back(HostEvent::AgentBackgroundStarted {
                 timestamp: timestamp(),
-                agent_id: target.id.clone(),
+                agent_id: runtime_agent_id,
                 agent_name: target.name.clone(),
                 operation_id: operation_id.clone(),
                 source: source.to_string(),
@@ -2502,6 +2876,7 @@ impl FeatureHostController {
             }
             FeatureCommand::ComputerScreenshot {
                 origin,
+                agent_id,
                 session_id,
                 target,
                 ..
@@ -2512,6 +2887,24 @@ impl FeatureHostController {
                     &target,
                     &settings,
                 )?;
+                let attributed_agent_id = if let Some(requested_agent_id) = agent_id.as_deref() {
+                    let state = self.state()?;
+                    Some(canonical_runtime_agent_id(&state, requested_agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown computer-control agent: {requested_agent_id}"
+                        ))
+                    })?)
+                } else {
+                    None
+                };
+                let audit_agent_id = attributed_agent_id
+                    .clone()
+                    .unwrap_or_else(|| "mahayana-assistant".to_string());
+                if !is_safe_memory_agent_id(&audit_agent_id) {
+                    return Err(FeatureHostError::Contract(format!(
+                        "unsafe computer-control agent: {audit_agent_id}"
+                    )));
+                }
                 let snapshot = if self.config.mode == HostMode::Test {
                     test_computer_snapshot()
                 } else {
@@ -2519,7 +2912,7 @@ impl FeatureHostController {
                         .map_err(|error| FeatureHostError::Contract(error.to_string()))?
                 };
                 let _ = self.append_action_audit(
-                    "mahayana-assistant",
+                    &audit_agent_id,
                     session_id.as_deref(),
                     json!({
                         "kind": "computerScreenshot",
@@ -2533,6 +2926,7 @@ impl FeatureHostController {
                     .push_back(HostEvent::ComputerSnapshotCaptured {
                         timestamp: timestamp(),
                         request_id: request_id.clone(),
+                        agent_id: attributed_agent_id,
                         origin,
                         snapshot,
                     });
@@ -2552,16 +2946,23 @@ impl FeatureHostController {
                     &target,
                     &settings,
                 )?;
-                let audit_agent_id = agent_id
-                    .as_deref()
-                    .filter(|id| is_safe_memory_agent_id(id))
-                    .unwrap_or("mahayana-assistant");
-                if let Some(agent_id) = agent_id.as_deref() {
-                    if !self.state()?.bots.contains_key(agent_id) {
-                        return Err(FeatureHostError::Contract(format!(
-                            "unknown computer-control agent: {agent_id}"
-                        )));
-                    }
+                let attributed_agent_id = if let Some(requested_agent_id) = agent_id.as_deref() {
+                    let state = self.state()?;
+                    Some(canonical_runtime_agent_id(&state, requested_agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown computer-control agent: {requested_agent_id}"
+                        ))
+                    })?)
+                } else {
+                    None
+                };
+                let audit_agent_id = attributed_agent_id
+                    .clone()
+                    .unwrap_or_else(|| "mahayana-assistant".to_string());
+                if !is_safe_memory_agent_id(&audit_agent_id) {
+                    return Err(FeatureHostError::Contract(format!(
+                        "unsafe computer-control agent: {audit_agent_id}"
+                    )));
                 }
                 let mut actions = Vec::with_capacity(1 + then.len());
                 actions.push(action);
@@ -2583,12 +2984,47 @@ impl FeatureHostController {
                         snapshot: test_computer_snapshot(),
                     }
                 } else {
-                    mahayana_computer::execute(&actions, origin)
-                        .map_err(|error| FeatureHostError::Contract(error.to_string()))?
+                    match origin {
+                        ComputerControlOrigin::LocalUi => mahayana_computer::execute(&actions, origin),
+                        ComputerControlOrigin::RemoteMobile => {
+                            let remote_session = session_id.clone().ok_or_else(|| {
+                                FeatureHostError::Contract(
+                                    "remote computer action requires a sessionId".into(),
+                                )
+                            })?;
+                            let lease = mahayana_computer::ComputerControlLeaseRequest::new(
+                                format!("remote:{remote_session}"),
+                                remote_session,
+                                target
+                                    .device_id
+                                    .clone()
+                                    .unwrap_or_else(|| "local-desktop".to_string()),
+                                origin,
+                                "remote-human",
+                            );
+                            mahayana_computer::execute_with_lease(&actions, origin, &lease)
+                        }
+                        ComputerControlOrigin::Ai => {
+                            let lease = mahayana_computer::ComputerControlLeaseRequest::new(
+                                format!("agent:{audit_agent_id}"),
+                                session_id
+                                    .clone()
+                                    .unwrap_or_else(|| audit_agent_id.clone()),
+                                target
+                                    .device_id
+                                    .clone()
+                                    .unwrap_or_else(|| "local-desktop".to_string()),
+                                origin,
+                                "agent",
+                            );
+                            mahayana_computer::execute_with_lease(&actions, origin, &lease)
+                        }
+                    }
+                    .map_err(|error| FeatureHostError::Contract(error.to_string()))?
                 };
                 let serialized_actions = serde_json::to_value(&actions).unwrap_or(Value::Null);
                 self.append_action_audit(
-                    audit_agent_id,
+                    &audit_agent_id,
                     session_id.as_deref(),
                     json!({
                         "kind": "computerUse",
@@ -2604,6 +3040,7 @@ impl FeatureHostController {
                     .push_back(HostEvent::ComputerActionCompleted {
                         timestamp: timestamp(),
                         request_id: request_id.clone(),
+                        agent_id: attributed_agent_id,
                         result,
                     });
             }
@@ -2717,6 +3154,10 @@ impl FeatureHostController {
                 session_id,
                 ..
             } => {
+                mahayana_computer::release_control_lease(
+                    &format!("remote:{session_id}"),
+                    &session_id,
+                );
                 let device_secret = self.remote_device_secret(&device_id, false)?;
                 (
                     "mahayana.remote.computer.session.close",
@@ -2995,23 +3436,21 @@ impl FeatureHostController {
             FeatureCommand::MemoryClear { agent_id, .. } => (agent_id, MemoryAction::Clear),
             _ => unreachable!("non-memory command routed to memory executor"),
         };
-        {
+        let requested_agent_id = agent_id;
+        let agent_id = {
             let state = self.state()?;
             ensure_open(&state)?;
-            if !state.bots.contains_key(&agent_id) {
-                return Err(FeatureHostError::Contract(format!(
-                    "unknown bot: {agent_id}"
-                )));
-            }
-        }
+            canonical_runtime_agent_id(&state, &requested_agent_id).ok_or_else(|| {
+                FeatureHostError::Contract(format!("unknown bot: {requested_agent_id}"))
+            })?
+        };
         if !is_safe_memory_agent_id(&agent_id) {
             return Err(FeatureHostError::Contract(format!(
                 "unsafe memory agent id: {agent_id}"
             )));
         }
         let root = self
-            .memory_root_path
-            .as_deref()
+            .active_account_root(self.memory_root_path.as_deref())
             .ok_or_else(|| FeatureHostError::Contract("memory storage is unavailable".into()))?;
         let memory_dir = root.join(&agent_id).join("memory");
         match action {
@@ -3134,14 +3573,14 @@ impl FeatureHostController {
         command: FeatureCommand,
     ) -> Result<CommandAccepted, FeatureHostError> {
         let request_id = command.request_id().to_string();
-        let workflow_root = self
-            .workflow_root_path
-            .as_deref()
+        let workflow_root_buf = self
+            .active_account_root(self.workflow_root_path.as_deref())
             .ok_or_else(|| FeatureHostError::Contract("workflow storage is unavailable".into()))?;
-        let agent_root = self
-            .memory_root_path
-            .as_deref()
+        let agent_root_buf = self
+            .active_account_root(self.memory_root_path.as_deref())
             .ok_or_else(|| FeatureHostError::Contract("agent storage is unavailable".into()))?;
+        let workflow_root = workflow_root_buf.as_path();
+        let agent_root = agent_root_buf.as_path();
         let agent_id = match &command {
             FeatureCommand::WorkflowList { agent_id, .. }
             | FeatureCommand::WorkflowUpsert { agent_id, .. }
@@ -3152,15 +3591,14 @@ impl FeatureHostController {
             | FeatureCommand::WorkflowImportLiveSource { agent_id, .. } => agent_id.clone(),
             _ => unreachable!("non-workflow command routed to workflow executor"),
         };
-        {
+        let requested_agent_id = agent_id;
+        let agent_id = {
             let state = self.state()?;
             ensure_open(&state)?;
-            if !state.bots.contains_key(&agent_id) {
-                return Err(FeatureHostError::Contract(format!(
-                    "unknown bot: {agent_id}"
-                )));
-            }
-        }
+            canonical_runtime_agent_id(&state, &requested_agent_id).ok_or_else(|| {
+                FeatureHostError::Contract(format!("unknown bot: {requested_agent_id}"))
+            })?
+        };
         if !is_safe_memory_agent_id(&agent_id) {
             return Err(FeatureHostError::Contract(format!(
                 "unsafe workflow agent id: {agent_id}"
@@ -3207,14 +3645,16 @@ impl FeatureHostController {
                     let automation_id = id.clone().unwrap_or_else(|| slugify_workflow_name(&name));
                     let automation = {
                         let mut state = self.state()?;
+                        let automation_key =
+                            automation_state_key(&agent_id, &automation_id);
                         let created_at_ms = state
                             .automations
-                            .get(&automation_id)
+                            .get(&automation_key)
                             .map(|automation| automation.created_at_ms)
                             .unwrap_or(now);
                         let last_run_at_ms = state
                             .automations
-                            .get(&automation_id)
+                            .get(&automation_key)
                             .and_then(|automation| automation.last_run_at_ms);
                         let automation = AutomationSummary {
                             id: automation_id.clone(),
@@ -3235,7 +3675,7 @@ impl FeatureHostController {
                         };
                         state
                             .automations
-                            .insert(automation_id.clone(), automation.clone());
+                            .insert(automation_key, automation.clone());
                         self.persist_automations(&state.automations)?;
                         automation
                     };
@@ -3255,10 +3695,12 @@ impl FeatureHostController {
                     if let Some(existing_id) = id.as_deref() {
                         let removed_automation = {
                             let mut state = self.state()?;
-                            if let Some(existing) = state.automations.get(existing_id) {
+                            let automation_key =
+                                automation_state_key(&agent_id, existing_id);
+                            if let Some(existing) = state.automations.get(&automation_key) {
                                 ensure_automation_agent_scope(existing, Some(agent_id.as_str()))?;
                             }
-                            let removed = state.automations.remove(existing_id).is_some();
+                            let removed = state.automations.remove(&automation_key).is_some();
                             if removed {
                                 self.persist_automations(&state.automations)?;
                             }
@@ -3291,7 +3733,8 @@ impl FeatureHostController {
             FeatureCommand::WorkflowSetEnabled { id, enabled, .. } => {
                 let automation = {
                     let mut state = self.state()?;
-                    if let Some(automation) = state.automations.get_mut(&id) {
+                    let automation_key = automation_state_key(&agent_id, &id);
+                    if let Some(automation) = state.automations.get_mut(&automation_key) {
                         ensure_automation_agent_scope(automation, Some(agent_id.as_str()))?;
                         automation.enabled = enabled;
                         automation.next_run_at_ms = if enabled {
@@ -3323,10 +3766,11 @@ impl FeatureHostController {
             FeatureCommand::WorkflowDelete { id, .. } => {
                 let removed_automation = {
                     let mut state = self.state()?;
-                    if let Some(existing) = state.automations.get(&id) {
+                    let automation_key = automation_state_key(&agent_id, &id);
+                    if let Some(existing) = state.automations.get(&automation_key) {
                         ensure_automation_agent_scope(existing, Some(agent_id.as_str()))?;
                     }
-                    let removed = state.automations.remove(&id).is_some();
+                    let removed = state.automations.remove(&automation_key).is_some();
                     if removed {
                         self.persist_automations(&state.automations)?;
                     }
@@ -3350,7 +3794,11 @@ impl FeatureHostController {
                 });
             }
             FeatureCommand::WorkflowRun { id, .. } => {
-                if self.state()?.automations.contains_key(&id) {
+                if self
+                    .state()?
+                    .automations
+                    .contains_key(&automation_state_key(&agent_id, &id))
+                {
                     return self.execute_automation(FeatureCommand::AutomationRun {
                         request_id,
                         id,
@@ -3393,16 +3841,19 @@ impl FeatureHostController {
                     HostMode::Production => {
                         #[cfg(feature = "production")]
                         {
-                            let conversation_id = self
-                                .state()?
-                                .bots
-                                .get(&agent_id)
-                                .and_then(|bot| bot.conversation_id.clone())
-                                .ok_or_else(|| {
+                            let (conversation_id, inference_provider) = {
+                                let state = self.state()?;
+                                let bot = find_bot_by_runtime_or_surface_id(&state, &agent_id)
+                                    .ok_or_else(|| FeatureHostError::Contract(format!(
+                                        "unknown bot: {agent_id}"
+                                    )))?;
+                                let conversation_id = bot.conversation_id.clone().ok_or_else(|| {
                                     FeatureHostError::Contract(format!(
                                         "bot has no conversation: {agent_id}"
                                     ))
                                 })?;
+                                (conversation_id, agent_inference_provider_key(bot.inference_provider)?)
+                            };
                             let (provider, model) = match self
                                 .runtime()?
                                 .execute(RuntimeCommand::Status)?
@@ -3418,6 +3869,7 @@ impl FeatureHostController {
                                     conversation_id: ConversationId(conversation_id),
                                     text: runtime_text,
                                     client_message_id: Some(request_id.clone()),
+                                    inference_provider,
                                     hidden: true,
                                 })?;
                             let operation_id = match response {
@@ -3503,7 +3955,10 @@ impl FeatureHostController {
                     };
                     {
                         let mut state = self.state()?;
-                        state.automations.insert(id, automation.clone());
+                        state.automations.insert(
+                            automation_state_key(&agent_id, &id),
+                            automation.clone(),
+                        );
                         self.persist_automations(&state.automations)?;
                     }
                     workflow_from_automation(&automation)
@@ -3590,11 +4045,18 @@ impl FeatureHostController {
                 bytes_base64,
                 ..
             } => {
-                if !is_safe_memory_agent_id(&agent_id)
-                    || !self.state()?.bots.contains_key(&agent_id)
-                {
+                let requested_agent_id = agent_id;
+                let agent_id = {
+                    let state = self.state()?;
+                    canonical_runtime_agent_id(&state, &requested_agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown attachment owner: {requested_agent_id}"
+                        ))
+                    })?
+                };
+                if !is_safe_memory_agent_id(&agent_id) {
                     return Err(FeatureHostError::Contract(format!(
-                        "unknown attachment owner: {agent_id}"
+                        "unsafe attachment owner: {agent_id}"
                     )));
                 }
                 let filename = filename.trim();
@@ -4116,6 +4578,7 @@ impl FeatureHostController {
                 );
                 self.state()?.events.push_back(HostEvent::McpToolResult {
                     timestamp: timestamp(),
+                    request_id: request_id.clone(),
                     server,
                     tool,
                     result,
@@ -4164,16 +4627,22 @@ impl FeatureHostController {
             FeatureCommand::AuditList {
                 agent_id, limit, ..
             } => {
-                if !is_safe_memory_agent_id(&agent_id)
-                    || !self.state()?.bots.contains_key(&agent_id)
-                {
+                let requested_agent_id = agent_id;
+                let agent_id = {
+                    let state = self.state()?;
+                    canonical_runtime_agent_id(&state, &requested_agent_id).ok_or_else(|| {
+                        FeatureHostError::Contract(format!(
+                            "unknown audit agent: {requested_agent_id}"
+                        ))
+                    })?
+                };
+                if !is_safe_memory_agent_id(&agent_id) {
                     return Err(FeatureHostError::Contract(format!(
-                        "unknown audit agent: {agent_id}"
+                        "unsafe audit agent: {agent_id}"
                     )));
                 }
                 let records = self
-                    .memory_root_path
-                    .as_deref()
+                    .active_account_root(self.memory_root_path.as_deref())
                     .map(|root| {
                         read_action_audit(
                             &root.join(&agent_id).join("audit.jsonl"),
@@ -5395,14 +5864,22 @@ impl FeatureHostController {
                                 .contains(&filter.to_ascii_lowercase())
                         })
                 })
-                .map(|automation| automation.id.clone())
+                .map(|automation| {
+                    (
+                        automation_state_key(
+                            fabu_automation_owner(automation),
+                            &automation.id,
+                        ),
+                        automation.id.clone(),
+                    )
+                })
                 .collect::<Vec<_>>()
         };
 
-        for id in &matching_ids {
+        for (state_key, id) in &matching_ids {
             let automation = {
                 let mut state = self.state()?;
-                let automation = state.automations.get_mut(id).ok_or_else(|| {
+                let automation = state.automations.get_mut(state_key).ok_or_else(|| {
                     FeatureHostError::Contract(format!("unknown automation: {id}"))
                 })?;
                 automation.last_run_at_ms = Some(event.occurred_at_ms.unwrap_or_else(now_millis));
@@ -5515,7 +5992,12 @@ impl FeatureHostController {
             .find(|automation| {
                 automation.enabled && automation.next_run_at_ms.is_some_and(|next| next <= now)
             })
-            .map(|automation| (automation.id.clone(), automation.agent_id.clone()));
+            .map(|automation| {
+                (
+                    automation.id.clone(),
+                    Some(fabu_automation_owner(automation).to_string()),
+                )
+            });
         if let Some((id, agent_id)) = due {
             let _ = self.execute_automation(FeatureCommand::AutomationRun {
                 request_id: format!("scheduled-{id}-{now}"),
@@ -5537,10 +6019,10 @@ impl FeatureHostController {
         &self,
         automations: &BTreeMap<String, AutomationSummary>,
     ) -> Result<(), FeatureHostError> {
-        let Some(path) = self.active_account_root(self.automation_path.as_deref()) else {
+        let Some(agent_root) = self.active_account_root(self.memory_root_path.as_deref()) else {
             return Ok(());
         };
-        persist_automations(&path, automations)
+        persist_fabu_agent_automations(&agent_root, automations)
     }
 
     fn persist_bots(&self, bots: &BTreeMap<String, BotSummary>) -> Result<(), FeatureHostError> {
@@ -5548,6 +6030,35 @@ impl FeatureHostController {
             return Ok(());
         };
         persist_bots(&path, bots)
+    }
+
+    fn persist_agent_manifest(&self, bot: &BotSummary) -> Result<(), FeatureHostError> {
+        let agent_id = bot.agent_id.as_deref().unwrap_or(bot.id.as_str());
+        if !is_safe_memory_agent_id(agent_id) {
+            return Ok(());
+        }
+        let Some(root) = self.active_account_root(self.memory_root_path.as_deref()) else {
+            return Ok(());
+        };
+        persist_fabu_agent_manifest(&root.join(agent_id), bot)
+    }
+
+    fn clone_agent_local_state(
+        &self,
+        source_agent_id: &str,
+        target_agent_id: &str,
+    ) -> Result<(), FeatureHostError> {
+        if !is_safe_memory_agent_id(source_agent_id)
+            || !is_safe_memory_agent_id(target_agent_id)
+        {
+            return Err(FeatureHostError::Contract(
+                "unsafe Agent id for clone".into(),
+            ));
+        }
+        let Some(root) = self.active_account_root(self.memory_root_path.as_deref()) else {
+            return Ok(());
+        };
+        clone_fabu_agent_local_state(&root, source_agent_id, target_agent_id)
     }
 
     fn persist_groups(
@@ -5565,6 +6076,36 @@ impl FeatureHostController {
             return Ok(());
         };
         persist_peer_messages(&path, messages)
+    }
+
+    fn runtime_workspace_state_key(&self, key: &str) -> Result<String, FeatureHostError> {
+        let key = required(key.to_string(), "workspace state key")?;
+        if self.config.mode == HostMode::Test {
+            return Ok(key);
+        }
+        #[cfg(feature = "production")]
+        {
+            let account_id = self
+                .active_account_id
+                .lock()
+                .map_err(|_| FeatureHostError::StatePoisoned)?
+                .clone()
+                .ok_or_else(|| {
+                    FeatureHostError::Contract(
+                        "workspace state requires an authenticated account boundary".into(),
+                    )
+                })?;
+            let digest = Sha256::digest(account_id.as_bytes());
+            let fingerprint = digest[..16]
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>();
+            Ok(format!("account:{fingerprint}:{key}"))
+        }
+        #[cfg(not(feature = "production"))]
+        {
+            Ok(key)
+        }
     }
 
     fn active_account_root(&self, base: Option<&Path>) -> Option<PathBuf> {
@@ -5644,17 +6185,41 @@ impl FeatureHostController {
             *active != next_account_id
         };
         if changed {
-            self.runtime()?.reset_session()?;
             let account_id = next_account_id.as_deref();
-            let automations = self
-                .automation_path
-                .as_deref()
-                .map(|path| {
-                    account_id
-                        .map(|id| load_automations(&account_scoped_path(path, id)))
-                        .unwrap_or_default()
-                })
-                .unwrap_or_default();
+            let history_path = match (self.memory_root_path.as_deref(), account_id) {
+                (Some(root), Some(id)) => Some(
+                    account_scoped_path(root, id).join("_runtime-transcript.json"),
+                ),
+                _ => None,
+            };
+            self.runtime()?.switch_conversation_history(history_path)?;
+            let mut automations = match (self.memory_root_path.as_deref(), account_id) {
+                (Some(root), Some(id)) => {
+                    load_fabu_agent_automations(&account_scoped_path(root, id))
+                }
+                _ => BTreeMap::new(),
+            };
+            // One-time backward-compatible migration from the pre-Fabu
+            // account-wide automations.json into per-Agent automation roots.
+            if let (Some(path), Some(id)) = (self.automation_path.as_deref(), account_id) {
+                for (legacy_id, mut automation) in
+                    load_automations(&account_scoped_path(path, id))
+                {
+                    if automation.agent_id.is_none() {
+                        automation.agent_id = Some("mahayana-assistant".into());
+                    }
+                    let owner = fabu_automation_owner(&automation).to_string();
+                    automations
+                        .entry(automation_state_key(&owner, &legacy_id))
+                        .or_insert(automation);
+                }
+            }
+            if let (Some(root), Some(id)) = (self.memory_root_path.as_deref(), account_id) {
+                persist_fabu_agent_automations(
+                    &account_scoped_path(root, id),
+                    &automations,
+                )?;
+            }
             let mut bots = default_bots();
             if let (Some(path), Some(account_id)) = (self.bot_state_path.as_deref(), account_id) {
                 bots.extend(load_bots(&account_scoped_path(path, account_id)));
@@ -5709,6 +6274,21 @@ impl FeatureHostController {
                 .active_account_id
                 .lock()
                 .map_err(|_| FeatureHostError::StatePoisoned)? = next_account_id.clone();
+
+            // Materialize Fabu-compatible per-Agent profile/settings files after
+            // the account scope becomes authoritative. This also migrates older
+            // bots.json-only profiles without deleting any existing Agent data.
+            if logged_in {
+                let bots = self
+                    .state()?
+                    .bots
+                    .values()
+                    .cloned()
+                    .collect::<Vec<_>>();
+                for bot in bots {
+                    self.persist_agent_manifest(&bot)?;
+                }
+            }
         }
         {
             let mut state = self.state()?;
@@ -5797,18 +6377,18 @@ impl FeatureHostController {
         if self.config.mode == HostMode::Production {
             #[cfg(feature = "production")]
             {
-                if let Some(runtime_approval_id) = pending.runtime_approval_id {
+                if let Some(runtime_approval_id) = pending.runtime_approval_id.as_ref() {
                     let decision = match resolution.decision {
                         ApprovalDecision::AllowOnce => RuntimeApprovalDecision::Accept,
                         ApprovalDecision::AllowSession => RuntimeApprovalDecision::AcceptForSession,
                         ApprovalDecision::Deny => RuntimeApprovalDecision::Decline,
                     };
                     self.runtime()?.resolve_approval(
-                        ApprovalId(runtime_approval_id),
+                        ApprovalId(runtime_approval_id.clone()),
                         decision,
                         json!({
-                            "miniAppId": pending.mini_app_id,
-                            "capability": pending.capability,
+                            "miniAppId": pending.mini_app_id.clone(),
+                            "capability": pending.capability.clone(),
                         }),
                     )?;
                 }
@@ -5822,6 +6402,8 @@ impl FeatureHostController {
         self.state()?.events.push_back(HostEvent::ApprovalResolved {
             timestamp: timestamp(),
             approval_id: resolution.approval_id,
+            operation_id: pending.operation_id,
+            agent_id: pending.agent_id,
             decision: resolution.decision,
         });
         Ok(())
@@ -5944,16 +6526,17 @@ impl FeatureHostController {
             let account_memory_root = self.active_account_root(self.memory_root_path.as_deref());
             let account_workflow_root =
                 self.active_account_root(self.workflow_root_path.as_deref());
+            let member_agent_id = bot_runtime_agent_id(&member);
             let memory_prompt = account_memory_root
                 .as_deref()
-                .map(|root| render_memory_system_prompt(&root.join(&member.id).join("memory")))
+                .map(|root| render_memory_system_prompt(&root.join(member_agent_id).join("memory")))
                 .unwrap_or_default();
             let workflow_catalog = match (
                 account_workflow_root.as_deref(),
                 account_memory_root.as_deref(),
             ) {
                 (Some(workflow_root), Some(agent_root)) => {
-                    render_workflow_catalog(workflow_root, agent_root, &member.id)
+                    render_workflow_catalog(workflow_root, agent_root, member_agent_id)
                 }
                 _ => String::new(),
             };
@@ -5978,9 +6561,10 @@ impl FeatureHostController {
                 },
                 conversation_id,
                 runtime_text,
+                agent_inference_provider_key(member.inference_provider)?,
             )
         };
-        let (context, conversation_id, runtime_text) = prepared;
+        let (context, conversation_id, runtime_text, inference_provider) = prepared;
         let response = self.runtime()?.execute(RuntimeCommand::SendMessage {
             conversation_id: ConversationId(conversation_id),
             text: runtime_text,
@@ -5988,6 +6572,7 @@ impl FeatureHostController {
                 "{}:{}:{}",
                 context.run_id, context.group_id, context.member_id
             )),
+            inference_provider,
             hidden: true,
         })?;
         let operation_id = match response {
@@ -6057,6 +6642,34 @@ impl FeatureHostController {
     ) -> Result<Option<HostEvent>, FeatureHostError> {
         let event = match event {
             RuntimeEvent::Ready { .. } => None,
+            RuntimeEvent::TurnStateChanged {
+                operation_id,
+                turn_id,
+                run_id,
+                conversation_id,
+                state,
+                sequence,
+            } => Some(HostEvent::TurnStateChanged {
+                timestamp: timestamp(),
+                operation_id: operation_id.to_string(),
+                turn_id: turn_id.to_string(),
+                run_id: run_id.to_string(),
+                conversation_id: conversation_id.to_string(),
+                state: match state {
+                    RuntimeTurnState::Accepted => TurnLifecycleState::Accepted,
+                    RuntimeTurnState::Queued => TurnLifecycleState::Queued,
+                    RuntimeTurnState::Preparing => TurnLifecycleState::Preparing,
+                    RuntimeTurnState::Thinking => TurnLifecycleState::Thinking,
+                    RuntimeTurnState::ToolRunning => TurnLifecycleState::ToolRunning,
+                    RuntimeTurnState::Streaming => TurnLifecycleState::Streaming,
+                    RuntimeTurnState::WaitingUser => TurnLifecycleState::WaitingUser,
+                    RuntimeTurnState::Completed => TurnLifecycleState::Completed,
+                    RuntimeTurnState::Failed => TurnLifecycleState::Failed,
+                    RuntimeTurnState::Cancelled => TurnLifecycleState::Cancelled,
+                    RuntimeTurnState::Recovering => TurnLifecycleState::Recovering,
+                },
+                sequence,
+            }),
             RuntimeEvent::MessageDelta {
                 operation_id,
                 delta,
@@ -6246,11 +6859,11 @@ impl FeatureHostController {
                 }
             }
             RuntimeEvent::ApprovalRequested {
+                operation_id,
                 approval_id,
                 title,
                 details,
-                ..
-            } => Some(self.translate_runtime_approval(approval_id, title, details)?),
+            } => Some(self.translate_runtime_approval(operation_id, approval_id, title, details)?),
             RuntimeEvent::OperationCompleted { operation_id } => {
                 let operation_id = operation_id.to_string();
                 let group_context = self.state()?.group_operations.remove(&operation_id);
@@ -6572,11 +7185,17 @@ impl FeatureHostController {
     #[cfg(feature = "production")]
     fn translate_runtime_approval(
         &self,
+        operation_id: OperationId,
         approval_id: ApprovalId,
         title: String,
         details: serde_json::Value,
     ) -> Result<HostEvent, FeatureHostError> {
         let approval_key = approval_id.to_string();
+        let operation_key = operation_id.to_string();
+        let agent_id = {
+            let state = self.state()?;
+            activity_parent_agent_id(&state, &operation_key)
+        };
         let mini_app_id = details
             .get("pluginId")
             .and_then(serde_json::Value::as_str)
@@ -6638,12 +7257,8 @@ impl FeatureHostController {
                     "reason": reason,
                 }),
             )?;
-            let agent_id = details
-                .get("agentId")
-                .and_then(Value::as_str)
-                .unwrap_or("mahayana-assistant");
             let _ = self.append_action_audit(
-                agent_id,
+                &agent_id,
                 None,
                 json!({
                     "kind": "autoReview",
@@ -6659,7 +7274,7 @@ impl FeatureHostController {
             );
             self.state()?.events.push_back(HostEvent::AgentStep {
                 timestamp: timestamp(),
-                operation_id: None,
+                operation_id: Some(operation_key.clone()),
                 step_id: format!("auto-review:{approval_key}"),
                 kind: "auto-review".into(),
                 title: match decision {
@@ -6675,6 +7290,8 @@ impl FeatureHostController {
             return Ok(HostEvent::ApprovalResolved {
                 timestamp: timestamp(),
                 approval_id: approval_key,
+                operation_id: Some(operation_key),
+                agent_id: Some(agent_id),
                 decision,
             });
         }
@@ -6685,11 +7302,15 @@ impl FeatureHostController {
                 mini_app_id: mini_app_id.clone(),
                 capability: capability.clone(),
                 runtime_approval_id: Some(approval_id.to_string()),
+                operation_id: Some(operation_key.clone()),
+                agent_id: Some(agent_id.clone()),
             },
         );
         Ok(HostEvent::ApprovalRequested {
             timestamp: timestamp(),
             approval_id: approval_key,
+            operation_id: Some(operation_key),
+            agent_id: Some(agent_id),
             mini_app_id,
             capability,
             reason,
@@ -6840,11 +7461,15 @@ impl FeatureHostController {
                 mini_app_id: mini_app_id.clone(),
                 capability: capability.clone(),
                 runtime_approval_id: None,
+                operation_id: None,
+                agent_id: None,
             },
         );
         state.events.push_back(HostEvent::ApprovalRequested {
             timestamp: timestamp(),
             approval_id,
+            operation_id: None,
+            agent_id: None,
             mini_app_id,
             capability,
             reason,
@@ -6951,8 +7576,9 @@ impl FeatureHostController {
     ) -> Result<CommandAccepted, FeatureHostError> {
         self.require_authenticated_account()?;
         let text = required(text, "chat text")?;
-        let bot_binding = if let Some(bot_id) = agent_id.as_deref() {
-            self.state()?.bots.get(bot_id).cloned()
+        let bot_binding = if let Some(requested_agent_id) = agent_id.as_deref() {
+            let state = self.state()?;
+            find_bot_by_runtime_or_surface_id(&state, requested_agent_id).cloned()
         } else {
             None
         };
@@ -6963,6 +7589,9 @@ impl FeatureHostController {
             .as_ref()
             .and_then(|bot| bot.agent_id.clone())
             .or_else(|| agent_id.clone());
+        let runtime_inference_provider = agent_inference_provider_key(
+            bot_binding.as_ref().and_then(|bot| bot.inference_provider),
+        )?;
         if let Some(mini_app_id) = agent_id
             .as_deref()
             .filter(|id| *id != "mahayana-assistant" && bot_conversation_id.is_none())
@@ -7021,39 +7650,50 @@ impl FeatureHostController {
             ),
             other => return Err(unexpected_response("runtime.status", other)),
         };
-        let mut runtime_text =
-            compose_agent_input(&text, mode, mode_statement.as_deref(), &attachments);
-        if let Some(mcp_context) = self.mcp_instruction_context()? {
-            runtime_text = format!(
-                "{mcp_context}
+        // Fabu's turn owner keeps acknowledgement/submission separate from
+        // expensive Agent context assembly. A lightweight conversational turn
+        // must not enumerate MCP servers, scan durable memory, render workflow
+        // catalogs, or wrap the user's text before the low-latency model lane.
+        let lightweight_conversation =
+            attachments.is_empty() && is_lightweight_conversation_text(&text);
+        let mut runtime_text = if lightweight_conversation {
+            text.clone()
+        } else {
+            compose_agent_input(&text, mode, mode_statement.as_deref(), &attachments)
+        };
+        if !lightweight_conversation {
+            if let Some(mcp_context) = self.mcp_instruction_context()? {
+                runtime_text = format!(
+                    "{mcp_context}
 
 [Current turn]
 {runtime_text}"
-            );
-        }
-        let memory_agent_id = runtime_agent_id.as_deref().unwrap_or("mahayana-assistant");
-        if is_safe_memory_agent_id(memory_agent_id) {
-            if let Some(root) = self.active_account_root(self.memory_root_path.as_deref()) {
-                let memory_dir = root.join(memory_agent_id).join("memory");
-                let memory_prompt = render_memory_system_prompt(&memory_dir);
-                if !memory_prompt.is_empty() {
-                    runtime_text = format!(
-                        "[Persistent agent memory]\n{memory_prompt}\n\n[Current turn]\n{runtime_text}"
-                    );
-                }
+                );
             }
-            let account_workflow_root =
-                self.active_account_root(self.workflow_root_path.as_deref());
-            let account_memory_root = self.active_account_root(self.memory_root_path.as_deref());
-            if let (Some(workflow_root), Some(agent_root)) = (
-                account_workflow_root.as_deref(),
-                account_memory_root.as_deref(),
-            ) {
-                let workflow_catalog =
-                    render_workflow_catalog(workflow_root, agent_root, memory_agent_id);
-                if !workflow_catalog.is_empty() {
-                    runtime_text =
-                        format!("[Available workflows]\n{workflow_catalog}\n\n{runtime_text}");
+            let memory_agent_id = runtime_agent_id.as_deref().unwrap_or("mahayana-assistant");
+            if is_safe_memory_agent_id(memory_agent_id) {
+                if let Some(root) = self.active_account_root(self.memory_root_path.as_deref()) {
+                    let memory_dir = root.join(memory_agent_id).join("memory");
+                    let memory_prompt = render_memory_system_prompt(&memory_dir);
+                    if !memory_prompt.is_empty() {
+                        runtime_text = format!(
+                            "[Persistent agent memory]\n{memory_prompt}\n\n[Current turn]\n{runtime_text}"
+                        );
+                    }
+                }
+                let account_workflow_root =
+                    self.active_account_root(self.workflow_root_path.as_deref());
+                let account_memory_root = self.active_account_root(self.memory_root_path.as_deref());
+                if let (Some(workflow_root), Some(agent_root)) = (
+                    account_workflow_root.as_deref(),
+                    account_memory_root.as_deref(),
+                ) {
+                    let workflow_catalog =
+                        render_workflow_catalog(workflow_root, agent_root, memory_agent_id);
+                    if !workflow_catalog.is_empty() {
+                        runtime_text =
+                            format!("[Available workflows]\n{workflow_catalog}\n\n{runtime_text}");
+                    }
                 }
             }
         }
@@ -7061,6 +7701,7 @@ impl FeatureHostController {
             conversation_id,
             text: runtime_text,
             client_message_id: Some(request_id.clone()),
+            inference_provider: runtime_inference_provider,
             hidden: false,
         })?;
         let operation_id = match response {
@@ -7541,11 +8182,15 @@ impl FeatureHostController {
                         mini_app_id: mini_app_id.clone(),
                         capability: capability.clone(),
                         runtime_approval_id: None,
+                        operation_id: None,
+                        agent_id: None,
                     },
                 );
                 state.events.push_back(HostEvent::ApprovalRequested {
                     timestamp: timestamp(),
                     approval_id,
+                    operation_id: None,
+                    agent_id: None,
                     mini_app_id,
                     capability,
                     reason,
@@ -8377,6 +9022,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             notify_on_updates: true,
             unread: false,
             conversation_id: Some(MAHAYANA_AI_CONVERSATION_ID.into()),
+            inference_provider: None,
         },
         BotSummary {
             id: "research-bot".into(),
@@ -8392,6 +9038,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             notify_on_updates: true,
             unread: false,
             conversation_id: Some("codex:agent:research".into()),
+            inference_provider: None,
         },
         BotSummary {
             id: "incident-bot".into(),
@@ -8407,6 +9054,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             notify_on_updates: true,
             unread: false,
             conversation_id: Some("codex:agent:incident".into()),
+            inference_provider: None,
         },
     ]
     .into_iter()
@@ -9048,6 +9696,37 @@ fn clone_agent_display_name(name: &str) -> String {
     }
 }
 
+fn is_lightweight_conversation_text(text: &str) -> bool {
+    let value = text.trim();
+    if value.is_empty() || value.chars().count() > 48 || value.contains('\n') {
+        return false;
+    }
+    let normalized = value
+        .trim_matches(|ch: char| ch.is_ascii_punctuation() || ch.is_whitespace())
+        .to_lowercase();
+    matches!(
+        normalized.as_str(),
+        "你好"
+            | "您好"
+            | "嗨"
+            | "哈喽"
+            | "在吗"
+            | "早上好"
+            | "下午好"
+            | "晚上好"
+            | "谢谢"
+            | "谢谢你"
+            | "hi"
+            | "hello"
+            | "hey"
+            | "thanks"
+            | "thank you"
+            | "good morning"
+            | "good afternoon"
+            | "good evening"
+    )
+}
+
 fn compose_agent_input(
     text: &str,
     mode: AgentMode,
@@ -9189,6 +9868,40 @@ struct ParsedMemoryFact {
     path: PathBuf,
     line_index: usize,
     order: usize,
+}
+
+fn bot_runtime_agent_id(bot: &BotSummary) -> &str {
+    bot.agent_id.as_deref().unwrap_or(bot.id.as_str())
+}
+
+fn agent_inference_provider_key(
+    provider: Option<InferenceProvider>,
+) -> Result<Option<String>, FeatureHostError> {
+    match provider {
+        None => Ok(None),
+        Some(InferenceProvider::Fabushi) => Ok(Some("fabushi".to_string())),
+        Some(InferenceProvider::ClaudeCode) => Ok(Some("claude-code".to_string())),
+        Some(InferenceProvider::OpenRouter) => Ok(Some("openrouter".to_string())),
+        Some(InferenceProvider::Codex) => Ok(Some("codex".to_string())),
+    }
+}
+
+fn find_bot_by_runtime_or_surface_id<'a>(
+    state: &'a FeatureState,
+    id: &str,
+) -> Option<&'a BotSummary> {
+    state.bots.get(id).or_else(|| {
+        state
+            .bots
+            .values()
+            .find(|bot| bot.agent_id.as_deref() == Some(id))
+    })
+}
+
+fn canonical_runtime_agent_id(state: &FeatureState, id: &str) -> Option<String> {
+    find_bot_by_runtime_or_surface_id(state, id)
+        .map(bot_runtime_agent_id)
+        .map(str::to_owned)
 }
 
 fn is_safe_memory_agent_id(agent_id: &str) -> bool {
@@ -10456,12 +11169,12 @@ fn validate_group_members(
                 "a group chat can only contain individual agents, not other group chats".into(),
             ));
         }
-        if !state.bots.contains_key(&id) {
+        let Some(bot) = find_bot_by_runtime_or_surface_id(state, &id) else {
             return Err(FeatureHostError::Contract(format!(
                 "unknown group member: {id}"
             )));
-        }
-        members.push(id);
+        };
+        members.push(bot.id.clone());
     }
     if members.is_empty() {
         return Err(FeatureHostError::Contract(
@@ -11340,6 +12053,363 @@ fn persist_bots(path: &Path, bots: &BTreeMap<String, BotSummary>) -> Result<(), 
     Ok(())
 }
 
+fn persist_json_atomic(path: &Path, value: &Value, label: &str) -> Result<(), FeatureHostError> {
+    let parent = path.parent().ok_or_else(|| {
+        FeatureHostError::Contract(format!("{label} path has no parent"))
+    })?;
+    std::fs::create_dir_all(parent).map_err(|error| {
+        FeatureHostError::Contract(format!("create {label} directory: {error}"))
+    })?;
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("state.json");
+    let temp = parent.join(format!(
+        ".{file_name}.{}.{}.tmp",
+        std::process::id(),
+        now_millis()
+    ));
+    let mut data = serde_json::to_vec_pretty(value)
+        .map_err(|error| FeatureHostError::Contract(format!("serialize {label}: {error}")))?;
+    data.push(b'\n');
+    std::fs::write(&temp, data)
+        .map_err(|error| FeatureHostError::Contract(format!("write {label}: {error}")))?;
+    std::fs::rename(&temp, path)
+        .map_err(|error| FeatureHostError::Contract(format!("commit {label}: {error}")))?;
+    Ok(())
+}
+
+fn copy_agent_state_tree(source: &Path, target: &Path) -> Result<(), FeatureHostError> {
+    if !source.exists() {
+        return Ok(());
+    }
+    std::fs::create_dir_all(target).map_err(|error| {
+        FeatureHostError::Contract(format!("create cloned Agent directory: {error}"))
+    })?;
+    for entry in std::fs::read_dir(source).map_err(|error| {
+        FeatureHostError::Contract(format!("read Agent clone source: {error}"))
+    })? {
+        let entry = entry.map_err(|error| {
+            FeatureHostError::Contract(format!("read Agent clone entry: {error}"))
+        })?;
+        let file_type = entry.file_type().map_err(|error| {
+            FeatureHostError::Contract(format!("inspect Agent clone entry: {error}"))
+        })?;
+        let destination = target.join(entry.file_name());
+        if file_type.is_symlink() {
+            continue;
+        }
+        if file_type.is_dir() {
+            copy_agent_state_tree(&entry.path(), &destination)?;
+        } else if file_type.is_file() {
+            std::fs::copy(entry.path(), &destination).map_err(|error| {
+                FeatureHostError::Contract(format!("copy Agent clone file: {error}"))
+            })?;
+        }
+    }
+    Ok(())
+}
+
+fn clone_fabu_agent_local_state(
+    agent_root: &Path,
+    source_agent_id: &str,
+    target_agent_id: &str,
+) -> Result<(), FeatureHostError> {
+    let source = agent_root.join(source_agent_id);
+    if !source.exists() {
+        return Ok(());
+    }
+    let target = agent_root.join(target_agent_id);
+    if target.exists() {
+        return Err(FeatureHostError::Contract(format!(
+            "Agent clone target already exists: {target_agent_id}"
+        )));
+    }
+    std::fs::create_dir_all(&target).map_err(|error| {
+        FeatureHostError::Contract(format!("create Agent clone target: {error}"))
+    })?;
+    let result = (|| {
+        copy_agent_state_tree(&source.join("memory"), &target.join("memory"))?;
+        copy_agent_state_tree(&source.join("automations"), &target.join("automations"))?;
+        let workflow_enablement = source.join(WORKFLOW_ENABLEMENT_FILENAME);
+        if workflow_enablement.is_file() {
+            std::fs::copy(
+                &workflow_enablement,
+                target.join(WORKFLOW_ENABLEMENT_FILENAME),
+            )
+            .map_err(|error| {
+                FeatureHostError::Contract(format!(
+                    "copy Agent workflow enablement: {error}"
+                ))
+            })?;
+        }
+        Ok::<(), FeatureHostError>(())
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_dir_all(&target);
+    }
+    result
+}
+
+fn persist_fabu_agent_manifest(agent_dir: &Path, bot: &BotSummary) -> Result<(), FeatureHostError> {
+    let profile = json!({
+        "name": bot.name,
+        "description": bot.description,
+        "title": bot.title.trim(),
+        "avatarShape": bot.avatar_shape.clone().unwrap_or_default(),
+        "avatarColor": bot.avatar_color.clone().unwrap_or_default(),
+    });
+    let mut settings = json!({
+        "notifyOnAgentUpdates": bot.notify_on_updates,
+        "hiddenFromSidebar": bot.hidden,
+    });
+    if let Some(provider) = bot.inference_provider {
+        settings["inferenceProvider"] = json!(provider);
+    }
+    persist_json_atomic(&agent_dir.join("profile.json"), &profile, "Agent profile")?;
+    persist_json_atomic(&agent_dir.join("settings.json"), &settings, "Agent settings")
+}
+
+const FABU_AUTOMATIONS_DIRNAME: &str = "automations";
+const FABU_AUTOMATION_CONFIG_FILENAME: &str = "automation.json";
+
+fn automation_state_key(agent_id: &str, automation_id: &str) -> String {
+    format!("{agent_id}\u{1f}{automation_id}")
+}
+
+fn find_automation_state_key(
+    automations: &BTreeMap<String, AutomationSummary>,
+    automation_id: &str,
+    agent_id: Option<&str>,
+) -> Option<String> {
+    if let Some(agent_id) = agent_id {
+        let key = automation_state_key(agent_id, automation_id);
+        return automations.contains_key(&key).then_some(key);
+    }
+    let main_key = automation_state_key("mahayana-assistant", automation_id);
+    if automations.contains_key(&main_key) {
+        return Some(main_key);
+    }
+    let mut matches = automations
+        .iter()
+        .filter(|(_, automation)| automation.id == automation_id)
+        .map(|(key, _)| key.clone());
+    let first = matches.next()?;
+    matches.next().is_none().then_some(first)
+}
+
+fn fabu_automation_owner(automation: &AutomationSummary) -> &str {
+    automation
+        .agent_id
+        .as_deref()
+        .unwrap_or("mahayana-assistant")
+}
+
+fn fabu_automation_payload(automation: &AutomationSummary) -> Value {
+    json!({
+        // These top-level fields intentionally follow Fabu's automation.json
+        // contract so scheduled routines remain readable by that store.
+        "name": automation.name,
+        "prompt": automation.prompt,
+        "schedule": automation.schedule,
+        "enabled": automation.enabled,
+        "createdAt": automation.created_at_ms,
+        "lastRunAt": automation.last_run_at_ms,
+        // Mahayana keeps the richer trigger/runtime metadata in a namespaced
+        // extension without changing Fabu's stable file shape.
+        "_mahayana": {
+            "id": automation.id,
+            "agentId": fabu_automation_owner(automation),
+            "trigger": automation.trigger,
+            "nextRunAt": automation.next_run_at_ms,
+        }
+    })
+}
+
+fn load_fabu_agent_automations(agent_root: &Path) -> BTreeMap<String, AutomationSummary> {
+    let mut automations = BTreeMap::new();
+    let Ok(agent_entries) = std::fs::read_dir(agent_root) else {
+        return automations;
+    };
+    let now = now_millis();
+    for agent_entry in agent_entries.flatten() {
+        let Ok(file_type) = agent_entry.file_type() else {
+            continue;
+        };
+        if !file_type.is_dir() {
+            continue;
+        }
+        let agent_id = agent_entry.file_name().to_string_lossy().to_string();
+        if !is_safe_memory_agent_id(&agent_id) {
+            continue;
+        }
+        let automation_root = agent_entry.path().join(FABU_AUTOMATIONS_DIRNAME);
+        let Ok(entries) = std::fs::read_dir(&automation_root) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let Ok(entry_type) = entry.file_type() else {
+                continue;
+            };
+            if !entry_type.is_dir() {
+                continue;
+            }
+            let folder_id = entry.file_name().to_string_lossy().to_string();
+            if !is_safe_automation_id(&folder_id) {
+                continue;
+            }
+            let Ok(bytes) = std::fs::read(entry.path().join(FABU_AUTOMATION_CONFIG_FILENAME))
+            else {
+                continue;
+            };
+            let Ok(value) = serde_json::from_slice::<Value>(&bytes) else {
+                continue;
+            };
+            let extension = value.get("_mahayana").filter(|value| value.is_object());
+            let id = extension
+                .and_then(|value| value.get("id"))
+                .and_then(Value::as_str)
+                .filter(|id| is_safe_automation_id(id))
+                .unwrap_or(folder_id.as_str())
+                .to_string();
+            let owner = extension
+                .and_then(|value| value.get("agentId"))
+                .and_then(Value::as_str)
+                .filter(|id| is_safe_memory_agent_id(id))
+                .unwrap_or(agent_id.as_str())
+                .to_string();
+            let name = value
+                .get("name")
+                .and_then(Value::as_str)
+                .map(|value| value.trim().to_string())
+                .unwrap_or_default();
+            let prompt = value
+                .get("prompt")
+                .and_then(Value::as_str)
+                .map(|value| value.trim().to_string())
+                .unwrap_or_default();
+            let schedule = value
+                .get("schedule")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            if name.is_empty() || prompt.is_empty() {
+                continue;
+            }
+            let trigger = extension
+                .and_then(|value| value.get("trigger"))
+                .cloned()
+                .and_then(|value| serde_json::from_value::<AutomationTrigger>(value).ok())
+                .or_else(|| {
+                    normalize_automation_schedule(&schedule)
+                        .ok()
+                        .map(|schedule| AutomationTrigger::Schedule { schedule })
+                });
+            let Some(trigger) = trigger else {
+                continue;
+            };
+            let enabled = value
+                .get("enabled")
+                .and_then(Value::as_bool)
+                .unwrap_or(true);
+            let created_at_ms = value
+                .get("createdAt")
+                .and_then(Value::as_i64)
+                .unwrap_or(now);
+            let last_run_at_ms = value.get("lastRunAt").and_then(Value::as_i64);
+            let next_run_at_ms = extension
+                .and_then(|value| value.get("nextRunAt"))
+                .and_then(Value::as_i64)
+                .filter(|next| *next > now)
+                .or_else(|| automation_next_run(&trigger, &schedule, enabled, now));
+            let state_key = automation_state_key(&owner, &id);
+            automations.insert(
+                state_key,
+                AutomationSummary {
+                    id,
+                    agent_id: Some(owner),
+                    name,
+                    prompt,
+                    schedule,
+                    trigger: Some(trigger),
+                    enabled,
+                    created_at_ms,
+                    last_run_at_ms,
+                    next_run_at_ms,
+                },
+            );
+        }
+    }
+    automations
+}
+
+fn persist_fabu_agent_automations(
+    agent_root: &Path,
+    automations: &BTreeMap<String, AutomationSummary>,
+) -> Result<(), FeatureHostError> {
+    std::fs::create_dir_all(agent_root).map_err(|error| {
+        FeatureHostError::Contract(format!("create Agent automation root: {error}"))
+    })?;
+
+    let desired = automations
+        .values()
+        .filter(|automation| {
+            is_safe_automation_id(&automation.id)
+                && is_safe_memory_agent_id(fabu_automation_owner(automation))
+        })
+        .map(|automation| {
+            (
+                (
+                    fabu_automation_owner(automation).to_string(),
+                    automation.id.clone(),
+                ),
+                automation,
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+
+    // Remove only directories that contain our automation.json marker and are
+    // no longer represented in state. Other Agent-owned files are untouched.
+    if let Ok(agent_entries) = std::fs::read_dir(agent_root) {
+        for agent_entry in agent_entries.flatten() {
+            if !agent_entry.file_type().is_ok_and(|kind| kind.is_dir()) {
+                continue;
+            }
+            let agent_id = agent_entry.file_name().to_string_lossy().to_string();
+            let automation_root = agent_entry.path().join(FABU_AUTOMATIONS_DIRNAME);
+            let Ok(entries) = std::fs::read_dir(&automation_root) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                if !entry.file_type().is_ok_and(|kind| kind.is_dir()) {
+                    continue;
+                }
+                let automation_id = entry.file_name().to_string_lossy().to_string();
+                if !entry.path().join(FABU_AUTOMATION_CONFIG_FILENAME).is_file() {
+                    continue;
+                }
+                if !desired.contains_key(&(agent_id.clone(), automation_id)) {
+                    std::fs::remove_dir_all(entry.path()).map_err(|error| {
+                        FeatureHostError::Contract(format!(
+                            "remove stale Agent automation: {error}"
+                        ))
+                    })?;
+                }
+            }
+        }
+    }
+
+    for ((agent_id, automation_id), automation) in desired {
+        let path = agent_root
+            .join(agent_id)
+            .join(FABU_AUTOMATIONS_DIRNAME)
+            .join(automation_id)
+            .join(FABU_AUTOMATION_CONFIG_FILENAME);
+        persist_json_atomic(&path, &fabu_automation_payload(automation), "Agent automation")?;
+    }
+    Ok(())
+}
+
 fn load_automations(path: &Path) -> BTreeMap<String, AutomationSummary> {
     let Ok(bytes) = std::fs::read(path) else {
         return BTreeMap::new();
@@ -11674,6 +12744,109 @@ mod tests {
     }
 
     #[test]
+    fn fabu_automation_store_namespaces_same_id_per_agent() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-fabu-automation-store-{}-{}",
+            std::process::id(),
+            now_millis()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        let make = |agent_id: &str| AutomationSummary {
+            id: "daily-brief".into(),
+            agent_id: Some(agent_id.into()),
+            name: format!("{agent_id} brief"),
+            prompt: "Summarize the day.".into(),
+            schedule: "@daily".into(),
+            trigger: Some(AutomationTrigger::Schedule {
+                schedule: "@daily".into(),
+            }),
+            enabled: true,
+            created_at_ms: 1,
+            last_run_at_ms: None,
+            next_run_at_ms: None,
+        };
+        let research = make("research");
+        let incident = make("incident");
+        let automations = BTreeMap::from([
+            (
+                automation_state_key("research", "daily-brief"),
+                research.clone(),
+            ),
+            (
+                automation_state_key("incident", "daily-brief"),
+                incident.clone(),
+            ),
+        ]);
+        persist_fabu_agent_automations(&root, &automations)
+            .expect("persist Fabu Agent automations");
+        assert!(root
+            .join("research/automations/daily-brief/automation.json")
+            .is_file());
+        assert!(root
+            .join("incident/automations/daily-brief/automation.json")
+            .is_file());
+
+        let restored = load_fabu_agent_automations(&root);
+        assert_eq!(restored.len(), 2);
+        assert_eq!(
+            restored
+                .get(&automation_state_key("research", "daily-brief"))
+                .and_then(|automation| automation.agent_id.as_deref()),
+            Some("research")
+        );
+        assert_eq!(
+            restored
+                .get(&automation_state_key("incident", "daily-brief"))
+                .and_then(|automation| automation.agent_id.as_deref()),
+            Some("incident")
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn fabu_agent_clone_keeps_reusable_state_but_not_history_or_audit() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-fabu-agent-clone-{}-{}",
+            std::process::id(),
+            now_millis()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        let source = root.join("research");
+        std::fs::create_dir_all(source.join("memory")).expect("create memory");
+        std::fs::create_dir_all(source.join("automations/routine-a"))
+            .expect("create automation");
+        std::fs::create_dir_all(source.join("attachments")).expect("create attachments");
+        std::fs::write(source.join("memory/profile.json"), b"{}")
+            .expect("write memory");
+        std::fs::write(
+            source.join("automations/routine-a/automation.json"),
+            b"{}",
+        )
+        .expect("write automation");
+        std::fs::write(source.join(WORKFLOW_ENABLEMENT_FILENAME), b"[]")
+            .expect("write workflow enablement");
+        std::fs::write(source.join("audit.jsonl"), b"secret audit")
+            .expect("write audit");
+        std::fs::write(source.join("attachments/file.txt"), b"private attachment")
+            .expect("write attachment");
+        std::fs::write(source.join("conversation.json"), b"chat history")
+            .expect("write conversation");
+
+        clone_fabu_agent_local_state(&root, "research", "research-copy")
+            .expect("clone Fabu Agent state");
+        let target = root.join("research-copy");
+        assert!(target.join("memory/profile.json").is_file());
+        assert!(target
+            .join("automations/routine-a/automation.json")
+            .is_file());
+        assert!(target.join(WORKFLOW_ENABLEMENT_FILENAME).is_file());
+        assert!(!target.join("audit.jsonl").exists());
+        assert!(!target.join("attachments").exists());
+        assert!(!target.join("conversation.json").exists());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn remote_computer_target_rejects_stale_generation_and_wrong_device() {
         let controller = controller();
         {
@@ -11742,6 +12915,7 @@ mod tests {
                     notify_on_updates: true,
                     unread: false,
                     conversation_id: Some("codex:agent:research".into()),
+                    inference_provider: None,
                 },
             ),
             (
@@ -11760,6 +12934,7 @@ mod tests {
                     notify_on_updates: true,
                     unread: false,
                     conversation_id: Some("codex:agent:incident".into()),
+                    inference_provider: None,
                 },
             ),
         ]);
@@ -12898,6 +14073,7 @@ mod tests {
                 avatar: None,
                 avatar_shape: None,
                 avatar_color: None,
+                inference_provider: None,
             })
             .expect("create peer bot");
         let peer = drain(&controller)
@@ -13287,6 +14463,7 @@ mod tests {
                 conversation_id: assistant.clone(),
                 text: "visible assistant completion".into(),
                 client_message_id: Some("visible-completion".into()),
+                inference_provider: None,
                 hidden: false,
             })
             .expect("visible production runtime send");
@@ -13334,6 +14511,7 @@ mod tests {
                 conversation_id: assistant.clone(),
                 text: "hidden background completion".into(),
                 client_message_id: Some("hidden-completion".into()),
+                inference_provider: None,
                 hidden: true,
             })
             .expect("hidden production runtime send");

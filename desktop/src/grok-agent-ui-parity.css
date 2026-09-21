@@ -99,23 +99,6 @@
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.26);
 }
 
-#mahayana-agent-header-avatar,
-#mahayana-agent-peer-avatar,
-#mahayana-agent-info-avatar {
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 auto;
-}
-
-#mahayana-agent-info-avatar {
-  margin: 0 auto;
-}
-
-#mahayana-agent-workbench-portal {
-  width: 100%;
-  display: block;
-}
-
 @media (max-width: 760px) {
   [data-testid='messenger-workspace'] [class*='messageArea'] {
     padding-inline: 10px;

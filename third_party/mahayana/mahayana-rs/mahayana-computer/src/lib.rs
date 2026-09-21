@@ -25,6 +25,49 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 const FINAL_SCREEN_SETTLE_MS: u64 = 250;
+pub const DEFAULT_CONTROL_LEASE_MS: i64 = 120_000;
+const MIN_CONTROL_LEASE_MS: i64 = 5_000;
+const MAX_CONTROL_LEASE_MS: i64 = 10 * 60_000;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ComputerControlLeaseRequest {
+    pub controller_id: String,
+    pub run_id: String,
+    pub device_id: String,
+    pub origin: ComputerControlOrigin,
+    pub mode: String,
+    pub ttl_ms: i64,
+}
+
+impl ComputerControlLeaseRequest {
+    pub fn new(
+        controller_id: impl Into<String>,
+        run_id: impl Into<String>,
+        device_id: impl Into<String>,
+        origin: ComputerControlOrigin,
+        mode: impl Into<String>,
+    ) -> Self {
+        Self {
+            controller_id: controller_id.into(),
+            run_id: run_id.into(),
+            device_id: device_id.into(),
+            origin,
+            mode: mode.into(),
+            ttl_ms: DEFAULT_CONTROL_LEASE_MS,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ComputerControlLeaseSnapshot {
+    pub controller_id: String,
+    pub run_id: String,
+    pub device_id: String,
+    pub origin: ComputerControlOrigin,
+    pub mode: String,
+    pub acquired_at_ms: i64,
+    pub expires_at_ms: i64,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ComputerControlPolicy {
@@ -48,6 +91,8 @@ impl Default for ComputerControlPolicy {
 static CONTROL_POLICY: LazyLock<RwLock<ComputerControlPolicy>> =
     LazyLock::new(|| RwLock::new(ComputerControlPolicy::default()));
 static EXECUTION_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+static CONTROL_LEASE: LazyLock<Mutex<Option<ComputerControlLeaseSnapshot>>> =
+    LazyLock::new(|| Mutex::new(None));
 /// Increments as soon as a human-origin action is requested, even before that
 /// action acquires the desktop mutex. AI batches check this between actions (and
 /// during waits), so the user can always take the real computer back promptly.
@@ -80,6 +125,14 @@ pub enum ComputerError {
     Input(String),
     #[error("AI computer control was preempted by the user")]
     Preempted,
+    #[error("computer control requires an active controller lease")]
+    LeaseRequired,
+    #[error("computer {device_id} is controlled by {controller_id} until {expires_at_ms}")]
+    LeaseBusy {
+        device_id: String,
+        controller_id: String,
+        expires_at_ms: i64,
+    },
     #[error("computer I/O failed: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -148,6 +201,131 @@ pub fn status(
     }
 }
 
+fn now_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .ok()
+        .and_then(|duration| i64::try_from(duration.as_millis()).ok())
+        .unwrap_or_default()
+}
+
+fn normalized_lease_ttl(ttl_ms: i64) -> i64 {
+    if ttl_ms <= 0 {
+        DEFAULT_CONTROL_LEASE_MS
+    } else {
+        ttl_ms.clamp(MIN_CONTROL_LEASE_MS, MAX_CONTROL_LEASE_MS)
+    }
+}
+
+fn validate_lease_request(request: &ComputerControlLeaseRequest) -> Result<(), ComputerError> {
+    for (label, value) in [
+        ("controller_id", request.controller_id.as_str()),
+        ("run_id", request.run_id.as_str()),
+        ("device_id", request.device_id.as_str()),
+        ("mode", request.mode.as_str()),
+    ] {
+        if value.trim().is_empty() || value.len() > 240 || value.chars().any(char::is_control) {
+            return Err(ComputerError::InvalidAction(format!(
+                "computer control lease {label} is invalid"
+            )));
+        }
+    }
+    Ok(())
+}
+
+pub fn acquire_control_lease(
+    request: &ComputerControlLeaseRequest,
+) -> Result<ComputerControlLeaseSnapshot, ComputerError> {
+    acquire_control_lease_at(request, now_millis())
+}
+
+fn acquire_control_lease_at(
+    request: &ComputerControlLeaseRequest,
+    now_ms: i64,
+) -> Result<ComputerControlLeaseSnapshot, ComputerError> {
+    validate_lease_request(request)?;
+    let ttl_ms = normalized_lease_ttl(request.ttl_ms);
+    let mut lease = CONTROL_LEASE
+        .lock()
+        .map_err(|_| ComputerError::Input("computer control lease is poisoned".into()))?;
+    if lease
+        .as_ref()
+        .is_some_and(|current| current.expires_at_ms <= now_ms)
+    {
+        *lease = None;
+    }
+
+    if let Some(current) = lease.as_mut() {
+        let same_owner = current.controller_id == request.controller_id
+            && current.run_id == request.run_id
+            && current.device_id == request.device_id;
+        if same_owner {
+            current.expires_at_ms = now_ms.saturating_add(ttl_ms);
+            current.mode = request.mode.clone();
+            current.origin = request.origin;
+            return Ok(current.clone());
+        }
+
+        let human_preempts = request.origin == ComputerControlOrigin::LocalUi
+            || (request.origin == ComputerControlOrigin::RemoteMobile
+                && current.origin == ComputerControlOrigin::Ai);
+        if !human_preempts {
+            return Err(ComputerError::LeaseBusy {
+                device_id: current.device_id.clone(),
+                controller_id: current.controller_id.clone(),
+                expires_at_ms: current.expires_at_ms,
+            });
+        }
+    }
+
+    if request.origin != ComputerControlOrigin::Ai {
+        // Signal before waiting on the I/O mutex so an in-flight AI batch stops
+        // at the next preemption checkpoint and the human can take over quickly.
+        USER_OVERRIDE_EPOCH.fetch_add(1, Ordering::SeqCst);
+    }
+    let snapshot = ComputerControlLeaseSnapshot {
+        controller_id: request.controller_id.clone(),
+        run_id: request.run_id.clone(),
+        device_id: request.device_id.clone(),
+        origin: request.origin,
+        mode: request.mode.clone(),
+        acquired_at_ms: now_ms,
+        expires_at_ms: now_ms.saturating_add(ttl_ms),
+    };
+    *lease = Some(snapshot.clone());
+    Ok(snapshot)
+}
+
+pub fn release_control_lease(controller_id: &str, run_id: &str) -> bool {
+    let Ok(mut lease) = CONTROL_LEASE.lock() else {
+        return false;
+    };
+    if lease.as_ref().is_some_and(|current| {
+        current.controller_id == controller_id && current.run_id == run_id
+    }) {
+        *lease = None;
+        return true;
+    }
+    false
+}
+
+pub fn current_control_lease() -> Option<ComputerControlLeaseSnapshot> {
+    current_control_lease_at(now_millis())
+}
+
+fn current_control_lease_at(now_ms: i64) -> Option<ComputerControlLeaseSnapshot> {
+    let Ok(mut lease) = CONTROL_LEASE.lock() else {
+        return None;
+    };
+    if lease
+        .as_ref()
+        .is_some_and(|current| current.expires_at_ms <= now_ms)
+    {
+        *lease = None;
+    }
+    lease.clone()
+}
+
 pub fn capture_screen() -> Result<ComputerSnapshot, ComputerError> {
     let _lease = EXECUTION_LOCK
         .lock()
@@ -160,10 +338,7 @@ pub fn capture_screen() -> Result<ComputerSnapshot, ComputerError> {
     Err(ComputerError::Unavailable)
 }
 
-pub fn execute(
-    actions: &[ComputerAction],
-    origin: ComputerControlOrigin,
-) -> Result<ComputerActionResult, ComputerError> {
+fn validate_action_batch(actions: &[ComputerAction]) -> Result<(), ComputerError> {
     if actions.is_empty() {
         return Err(ComputerError::InvalidAction(
             "at least one action is required".into(),
@@ -182,7 +357,39 @@ pub fn execute(
             ));
         }
     }
+    Ok(())
+}
 
+pub fn execute(
+    actions: &[ComputerAction],
+    origin: ComputerControlOrigin,
+) -> Result<ComputerActionResult, ComputerError> {
+    validate_action_batch(actions)?;
+    if origin == ComputerControlOrigin::Ai {
+        return Err(ComputerError::LeaseRequired);
+    }
+    execute_authorized(actions, origin)
+}
+
+pub fn execute_with_lease(
+    actions: &[ComputerAction],
+    origin: ComputerControlOrigin,
+    lease: &ComputerControlLeaseRequest,
+) -> Result<ComputerActionResult, ComputerError> {
+    validate_action_batch(actions)?;
+    if lease.origin != origin {
+        return Err(ComputerError::InvalidAction(
+            "computer control lease origin does not match action origin".into(),
+        ));
+    }
+    acquire_control_lease(lease)?;
+    execute_authorized(actions, origin)
+}
+
+fn execute_authorized(
+    actions: &[ComputerAction],
+    origin: ComputerControlOrigin,
+) -> Result<ComputerActionResult, ComputerError> {
     #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
     {
         let ai_epoch = USER_OVERRIDE_EPOCH.load(Ordering::SeqCst);
@@ -313,15 +520,6 @@ pub fn validate_action(action: &ComputerAction) -> Result<(), ComputerError> {
         }
     }
     Ok(())
-}
-
-fn now_millis() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis()
-        .try_into()
-        .unwrap_or(i64::MAX)
 }
 
 #[cfg(test)]

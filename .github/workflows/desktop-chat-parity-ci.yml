@@ -32,6 +32,8 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - name: Enforce Agent workspace architecture boundary
+        run: node scripts/check-agent-workspace-boundary.mjs
       - run: npm run typecheck
       - run: npm run build:renderer
 
@@ -59,10 +61,11 @@ jobs:
       - name: Build deterministic Mahayana test host
         run: npm run build:host:ci
       - run: npm run build:renderer
-      - name: Run Mahayana chat regression
+      - name: Run Grok Agent shell and Mahayana chat regression
         env:
           FABUSHI_FEATURE_HOST_MODE: test
-        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "Mahayana renders one Hermes-style assistant turn"
+          MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts e2e/grok-parity.spec.ts --grep "Mahayana renders one Hermes-style assistant turn|desktop uses the Fabushi-owned Grok parity surface"
       - name: Upload Playwright evidence
         if: always()
         uses: actions/upload-artifact@v4

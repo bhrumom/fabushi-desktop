@@ -176,6 +176,10 @@ class FakeChild extends EventEmitter {
     this.stdout.write(`${JSON.stringify({ id, ok: true, result })}\n`);
   }
 
+  emitRuntimeEvent(event) {
+    this.stdout.write(`${JSON.stringify({ event })}\n`);
+  }
+
   fail(id, error) {
     this.stdout.write(`${JSON.stringify({ id, ok: false, error })}\n`);
   }
@@ -233,6 +237,40 @@ function harness(options = {}) {
   });
   return { host, children };
 }
+
+test('development Host prefers the staged desktop binary before a release-profile fallback', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fabushi-staged-host-'));
+  try {
+    const electronDir = path.join(root, 'desktop', 'electron');
+    const staged = path.join(root, 'desktop', 'resources', 'bin', 'mahayana-app-host');
+    fs.mkdirSync(electronDir, { recursive: true });
+    fs.mkdirSync(path.dirname(staged), { recursive: true });
+    fs.writeFileSync(staged, '#!/bin/sh\n');
+    fs.chmodSync(staged, 0o755);
+
+    const stagedHost = new MahayanaHostProcess({
+      app: defaultApp,
+      env: {},
+      platform: 'linux',
+      electronDir,
+      fs,
+    });
+    assert.equal(stagedHost.executablePath(), staged);
+
+    const explicit = path.join(root, 'explicit-mahayana-app-host');
+    fs.writeFileSync(explicit, '#!/bin/sh\n');
+    const explicitHost = new MahayanaHostProcess({
+      app: defaultApp,
+      env: { MAHAYANA_APP_HOST_BIN: explicit },
+      platform: 'linux',
+      electronDir,
+      fs,
+    });
+    assert.equal(explicitHost.executablePath(), explicit);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test('product API overrides are development-only and reject unsafe development origins', () => {
   assert.equal(productApiBaseUrl({ isPackaged: false }, {}), DEVELOPMENT_PRODUCT_API_BASE_URL);
@@ -317,6 +355,36 @@ test('unselected provider credentials are scrubbed from the Host environment', (
   host.close();
 });
 
+test('unsolicited Rust runtime event frames are pushed without a receive request', async () => {
+  const { host, children } = harness();
+  const events = [];
+  const unsubscribe = host.onRuntimeEvent((event) => events.push(event));
+  host.start();
+  assert.equal(children[0].writes.length, 0);
+  children[0].emitRuntimeEvent({
+    type: 'turn.state',
+    operationId: 'run:1',
+    turnId: 'turn:1',
+    runId: 'run:1',
+    conversationId: 'mahayana-ai:agent:test',
+    state: 'thinking',
+    sequence: 3,
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(events, [{
+    type: 'turn.state',
+    operationId: 'run:1',
+    turnId: 'turn:1',
+    runId: 'run:1',
+    conversationId: 'mahayana-ai:agent:test',
+    state: 'thinking',
+    sequence: 3,
+  }]);
+  assert.equal(children[0].writes.length, 0);
+  unsubscribe();
+  host.close();
+});
+
 test('host resolves structured requests and reports health for the active generation', async () => {
   const { host, children } = harness();
   const pending = host.request('feature.info', { hello: 'world' });
@@ -340,7 +408,7 @@ test('lifecycle stream exposes start, crash recovery generation, restart, and te
   const events = [];
   const unsubscribe = host.onLifecycle((event) => events.push(event));
 
-  const first = host.request('feature.receive', {});
+  const first = host.request('feature.info', {});
   assert.deepEqual(events.slice(0, 2).map((event) => event.type), ['starting', 'running']);
   assert.equal(events[1].generation, 1);
   children[0].emit('error', new Error('crash'));
@@ -368,7 +436,7 @@ test('lifecycle stream exposes start, crash recovery generation, restart, and te
 
 test('stale process termination cannot reject requests from a newer generation', async () => {
   const { host, children } = harness();
-  const first = host.request('feature.receive', {});
+  const first = host.request('feature.info', {});
   const old = children[0];
   old.emit('error', new Error('old generation failed'));
   await assert.rejects(first, /old generation failed/);
@@ -393,7 +461,7 @@ test('stale process termination cannot reject requests from a newer generation',
 
 test('restart rejects only the active generation and immediately creates a fresh process', async () => {
   const { host, children } = harness();
-  const pending = host.request('feature.receive', {});
+  const pending = host.request('feature.info', {});
   const previous = children[0];
   const fresh = host.restart('fault injection');
   await assert.rejects(pending, /restarted: fault injection/);
@@ -406,7 +474,7 @@ test('restart rejects only the active generation and immediately creates a fresh
 
 test('close rejects pending work and makes shutdown terminal', async () => {
   const { host } = harness();
-  const pending = host.request('feature.receive', {});
+  const pending = host.request('feature.info', {});
   host.close();
   await assert.rejects(pending, /host closed/);
   assert.equal(host.health().state, 'closed');

@@ -1,7 +1,7 @@
 use base64::Engine as _;
 use mahayana_core::{ModelProviderMode, RuntimeConfig};
 use mahayana_feature_host::FeatureHostController;
-use mahayana_host::HostCreateConfig;
+use mahayana_host::{HostCreateConfig, ModelRouteConfig};
 use mahayana_host_protocol::{
     ApprovalResolution, FeatureCommand, HostConfig, HostMode, SurfacePlatform,
 };
@@ -13,10 +13,11 @@ use mahayana_plugin_runtime::{
 };
 use mahayana_product::MahayanaProductClient;
 use serde::{Deserialize, Serialize};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
-use std::time::Duration;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppHostFeatureMode {
@@ -85,7 +86,105 @@ pub struct AppHost {
     feature_mode: AppHostFeatureMode,
     product: MahayanaProductClient,
     js: Mutex<DeepSeekJsHost>,
-    feature: FeatureHostController,
+    feature: Arc<FeatureHostController>,
+}
+
+/// Send-safe event lane for desktop PUSH delivery. It intentionally owns only
+/// the FeatureHost controller and never captures the QuickJS-backed AppHost.
+#[derive(Clone)]
+pub struct FeatureEventSource {
+    feature: Arc<FeatureHostController>,
+}
+
+impl FeatureEventSource {
+    pub fn receive(&self, timeout: Duration) -> Result<Option<Value>, AppHostError> {
+        let event = self
+            .feature
+            .receive_with_timeout(timeout)
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        event
+            .map(|event| {
+                serde_json::to_value(event)
+                    .map_err(|error| AppHostError::Operation(error.to_string()))
+            })
+            .transpose()
+    }
+}
+
+/// Lightweight platform-only request lane used by desktop. Network-backed
+/// account sync must never block the FeatureHost event/command lane; this
+/// helper intentionally owns only the shared Rust product client and no JS or
+/// Agent runtime state.
+#[derive(Clone)]
+pub struct PlatformRequestHost {
+    product: MahayanaProductClient,
+}
+
+impl PlatformRequestHost {
+    pub fn new(app_data_dir: impl Into<PathBuf>) -> Result<Self, AppHostError> {
+        let app_data_dir = app_data_dir.into();
+        std::fs::create_dir_all(&app_data_dir)
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        let root = feature_host_root(&app_data_dir);
+        std::fs::create_dir_all(&root)
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        let product = MahayanaProductClient::new_with_default_api_base_url(
+            root.join("account-session.json"),
+            root.join("product-surface.json"),
+        );
+        product.bootstrap_ci_test_account_session().map_err(|error| {
+            AppHostError::Operation(format!(
+                "GitHub Actions test-account bootstrap failed: {error}"
+            ))
+        })?;
+        Ok(Self { product })
+    }
+
+    pub fn dispatch_json(&self, input: &str) -> String {
+        let response = match serde_json::from_str::<HostRequest>(input) {
+            Ok(request) if request.method == "platform.request" => {
+                let id = request.id;
+                match self.product.execute("mahayana.platform.request", &request.params) {
+                    Ok(result) => HostResponse {
+                        id,
+                        ok: true,
+                        result: Some(result),
+                        error: None,
+                    },
+                    Err(error) => HostResponse {
+                        id,
+                        ok: false,
+                        result: None,
+                        error: Some(AppHostError::Operation(error.to_string()).to_string()),
+                    },
+                }
+            }
+            Ok(request) => HostResponse {
+                id: request.id,
+                ok: false,
+                result: None,
+                error: Some(format!(
+                    "invalid request: platform lane cannot execute {}",
+                    request.method
+                )),
+            },
+            Err(error) => HostResponse {
+                id: None,
+                ok: false,
+                result: None,
+                error: Some(format!("invalid JSON request: {error}")),
+            },
+        };
+        serde_json::to_string(&response).unwrap_or_else(|error| {
+            format!("{{\"ok\":false,\"error\":\"serialization failed: {error}\"}}")
+        })
+    }
+}
+
+pub fn is_platform_request_json(input: &str) -> bool {
+    serde_json::from_str::<HostRequest>(input)
+        .map(|request| request.method == "platform.request")
+        .unwrap_or(false)
 }
 
 impl AppHost {
@@ -110,7 +209,11 @@ impl AppHost {
         std::fs::create_dir_all(&app_data_dir)
             .map_err(|error| AppHostError::Operation(error.to_string()))?;
         let feature_root = feature_host_root(&app_data_dir);
-        let feature = create_feature_host(&app_data_dir, feature_mode, storage_passphrase.clone())?;
+        let feature = Arc::new(create_feature_host(
+            &app_data_dir,
+            feature_mode,
+            storage_passphrase.clone(),
+        )?);
         let product = match storage_passphrase {
             Some(passphrase) => {
                 MahayanaProductClient::new_with_default_api_base_url_and_storage_passphrase(
@@ -141,6 +244,23 @@ impl AppHost {
             ),
             feature,
         })
+    }
+
+    /// Receive the next feature event directly from the long-lived Rust runtime.
+    ///
+    /// Desktop uses this to drive an unsolicited event frame on the child-process
+    /// protocol. Renderer/Main no longer need to poll `feature.receive`.
+    pub fn feature_event_source(&self) -> FeatureEventSource {
+        FeatureEventSource {
+            feature: Arc::clone(&self.feature),
+        }
+    }
+
+    pub fn receive_feature_event(
+        &self,
+        timeout: Duration,
+    ) -> Result<Option<Value>, AppHostError> {
+        self.feature_event_source().receive(timeout)
     }
 
     pub fn dispatch(&self, request: HostRequest) -> HostResponse {
@@ -189,6 +309,10 @@ impl AppHost {
                 .map_err(|error| AppHostError::Operation(error.to_string())),
             "feature.execute" => self.feature_execute(params),
             "feature.receive" => self.feature_receive(params),
+            "feature.persistence.get" => self.feature_persistence_get(params),
+            "feature.persistence.set" => self.feature_persistence_set(params),
+            "feature.persistence.remove" => self.feature_persistence_remove(params),
+            "feature.persistence.list" => self.feature_persistence_list(params),
             "feature.approval.resolve" => self.feature_resolve_approval(params),
             "feature.interrupt" => self.feature_interrupt(params),
             "feature.auth.status" => self
@@ -260,6 +384,102 @@ impl AppHost {
             .receive_with_timeout(Duration::from_millis(timeout_ms))
             .map_err(|error| AppHostError::Operation(error.to_string()))?;
         serde_json::to_value(event).map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
+    fn runtime_state_connection(&self) -> Result<Connection, AppHostError> {
+        let runtime_dir = feature_host_root(&self.app_data_dir).join("runtime");
+        std::fs::create_dir_all(&runtime_dir)
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        let connection = Connection::open(runtime_dir.join("runtime.sqlite3"))
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        connection
+            .execute_batch(
+                r#"
+                PRAGMA journal_mode=WAL;
+                PRAGMA synchronous=NORMAL;
+                PRAGMA busy_timeout=5000;
+                CREATE TABLE IF NOT EXISTS ui_state (
+                    key TEXT PRIMARY KEY,
+                    value_json TEXT NOT NULL,
+                    updated_at_ms INTEGER NOT NULL
+                );
+                "#,
+            )
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        Ok(connection)
+    }
+
+    fn feature_persistence_get(&self, params: Value) -> Result<Value, AppHostError> {
+        let key = client_persistence_key(&params)?;
+        let connection = self.runtime_state_connection()?;
+        let value = connection
+            .query_row(
+                "SELECT value_json FROM ui_state WHERE key = ?1",
+                params![key],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        value
+            .map(|encoded| {
+                serde_json::from_str(&encoded)
+                    .map_err(|error| AppHostError::Operation(error.to_string()))
+            })
+            .transpose()
+            .map(|value| value.unwrap_or(Value::Null))
+    }
+
+    fn feature_persistence_set(&self, params_value: Value) -> Result<Value, AppHostError> {
+        let key = client_persistence_key(&params_value)?;
+        let value = params_value.get("value").cloned().unwrap_or(Value::Null);
+        let encoded = serde_json::to_string(&value)
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        self.runtime_state_connection()?
+            .execute(
+                "INSERT INTO ui_state(key, value_json, updated_at_ms) VALUES (?1, ?2, ?3)
+                 ON CONFLICT(key) DO UPDATE SET
+                   value_json = excluded.value_json,
+                   updated_at_ms = excluded.updated_at_ms",
+                params![key, encoded, app_host_now_millis()],
+            )
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        Ok(Value::Bool(true))
+    }
+
+    fn feature_persistence_remove(&self, params_value: Value) -> Result<Value, AppHostError> {
+        let key = client_persistence_key(&params_value)?;
+        self.runtime_state_connection()?
+            .execute("DELETE FROM ui_state WHERE key = ?1", params![key])
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        Ok(Value::Bool(true))
+    }
+
+    fn feature_persistence_list(&self, params_value: Value) -> Result<Value, AppHostError> {
+        let prefix = params_value
+            .get("prefix")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        if prefix.len() > 512 || prefix.chars().any(|character| character == '\0') {
+            return Err(AppHostError::InvalidRequest(
+                "client persistence prefix is invalid".to_string(),
+            ));
+        }
+        let connection = self.runtime_state_connection()?;
+        let mut statement = connection
+            .prepare("SELECT key FROM ui_state ORDER BY key")
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        let rows = statement
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        let mut keys = Vec::new();
+        for row in rows {
+            let key = row.map_err(|error| AppHostError::Operation(error.to_string()))?;
+            if key.starts_with(&prefix) {
+                keys.push(Value::String(key));
+            }
+        }
+        Ok(Value::Array(keys))
     }
 
     fn feature_resolve_approval(&self, params: Value) -> Result<Value, AppHostError> {
@@ -976,6 +1196,30 @@ fn configured_feature_host_mode() -> Result<AppHostFeatureMode, AppHostError> {
     }
 }
 
+fn client_persistence_key(params: &Value) -> Result<String, AppHostError> {
+    let key = params
+        .get("key")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim();
+    if key.is_empty()
+        || key.len() > 512
+        || key.chars().any(|character| character == '\0' || character.is_control())
+    {
+        return Err(AppHostError::InvalidRequest(
+            "client persistence key is invalid".to_string(),
+        ));
+    }
+    Ok(key.to_string())
+}
+
+fn app_host_now_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(i64::MAX as u128) as i64)
+        .unwrap_or_default()
+}
+
 fn feature_host_root(app_data_dir: &Path) -> PathBuf {
     app_data_dir.join("feature-host")
 }
@@ -989,23 +1233,40 @@ fn create_feature_host(
     std::fs::create_dir_all(&root).map_err(|error| AppHostError::Operation(error.to_string()))?;
     let provider =
         std::env::var("MAHAYANA_INFERENCE_PROVIDER").unwrap_or_else(|_| "fabushi".into());
-    let mut runtime = RuntimeConfig {
+    // Keep the base Runtime on Fabushi. Agent-scoped provider overrides are
+    // routed inside Mahayana rather than by restarting the entire Host.
+    let runtime = RuntimeConfig {
         data_dir: Some(root.join("runtime")),
         ..RuntimeConfig::default()
     };
-    if provider == "openrouter" {
-        runtime.model.provider = ModelProviderMode::UserConfiguredRemote;
-        runtime.model.base_url = Some("https://openrouter.ai/api/v1".into());
-        runtime.model.model =
-            std::env::var("MAHAYANA_OPENROUTER_MODEL").unwrap_or_else(|_| "openai/gpt-5.2".into());
-        runtime.model.credential_key = Some("inference/openrouter/api-key".into());
-    } else if provider == "claude-code" {
-        runtime.model.provider = ModelProviderMode::UserConfiguredRemote;
-        runtime.model.base_url = Some("https://api.anthropic.com/v1".into());
-        runtime.model.model =
-            std::env::var("MAHAYANA_CLAUDE_MODEL").unwrap_or_else(|_| "claude-sonnet-4-6".into());
-        runtime.model.credential_key = Some("inference/claude/api-key".into());
-    }
+    let openrouter_token = std::env::var("MAHAYANA_OPENROUTER_API_KEY")
+        .ok()
+        .filter(|value| !value.trim().is_empty());
+    let claude_token = std::env::var("MAHAYANA_CLAUDE_API_KEY")
+        .ok()
+        .filter(|value| !value.trim().is_empty());
+    let model_routes = vec![
+        ModelRouteConfig {
+            key: "openrouter".into(),
+            base_url: "https://openrouter.ai/api/v1".into(),
+            default_model: std::env::var("MAHAYANA_OPENROUTER_MODEL")
+                .unwrap_or_else(|_| "openai/gpt-5.2".into()),
+            bearer_token: openrouter_token,
+            provider_mode: ModelProviderMode::UserConfiguredRemote,
+            wire_api: mahayana_model::responses::ResponsesWireApi::ChatCompletions,
+            use_product_session_token: false,
+        },
+        ModelRouteConfig {
+            key: "claude-code".into(),
+            base_url: "https://api.anthropic.com/v1".into(),
+            default_model: std::env::var("MAHAYANA_CLAUDE_MODEL")
+                .unwrap_or_else(|_| "claude-sonnet-4-6".into()),
+            bearer_token: claude_token,
+            provider_mode: ModelProviderMode::UserConfiguredRemote,
+            wire_api: mahayana_model::responses::ResponsesWireApi::AnthropicMessages,
+            use_product_session_token: false,
+        },
+    ];
     let host_config = HostCreateConfig {
         runtime,
         product_session_path: Some(root.join("account-session.json")),
@@ -1014,14 +1275,15 @@ fn create_feature_host(
         use_codex_account: std::env::var("MAHAYANA_USE_CODEX_ACCOUNT").as_deref() == Ok("1"),
         codex_home: std::env::var_os("MAHAYANA_CODEX_HOME").map(PathBuf::from),
         product_storage_passphrase: storage_passphrase,
-        model_bearer_token: std::env::var("MAHAYANA_MODEL_BEARER_TOKEN")
-            .ok()
-            .filter(|value| !value.is_empty()),
-        model_wire_api: match provider.as_str() {
-            "openrouter" => mahayana_model::responses::ResponsesWireApi::ChatCompletions,
-            "claude-code" => mahayana_model::responses::ResponsesWireApi::AnthropicMessages,
-            _ => mahayana_model::responses::ResponsesWireApi::Responses,
-        },
+        model_bearer_token: None,
+        model_wire_api: mahayana_model::responses::ResponsesWireApi::Responses,
+        model_routes,
+        model_route_default: Some(match provider.as_str() {
+            "openrouter" => "openrouter",
+            "claude-code" => "claude-code",
+            "codex" => "codex",
+            _ => "fabushi",
+        }.to_string()),
         inherit_installed_plugins: Some(false),
         process_execution: if std::env::var("MAHAYANA_SANDBOX_RUNTIME").as_deref()
             == Ok("local-docker")

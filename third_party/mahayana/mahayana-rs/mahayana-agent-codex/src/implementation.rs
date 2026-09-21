@@ -899,8 +899,19 @@ impl CodexAgentInner {
             Some(params.arguments.to_string()),
         );
         let execute_actions = actions.clone();
+        let control_lease = mahayana_computer::ComputerControlLeaseRequest::new(
+            params.thread_id.clone(),
+            params.turn_id.clone(),
+            "local-desktop",
+            ComputerControlOrigin::Ai,
+            "agent",
+        );
         let result = match tokio::task::spawn_blocking(move || {
-            mahayana_computer::execute(&execute_actions, ComputerControlOrigin::Ai)
+            mahayana_computer::execute_with_lease(
+                &execute_actions,
+                ComputerControlOrigin::Ai,
+                &control_lease,
+            )
         })
         .await
         {
@@ -1286,6 +1297,7 @@ impl CodexAgentInner {
         let Some(operation) = self.take_operation(thread_id, turn_id)? else {
             return Ok(());
         };
+        mahayana_computer::release_control_lease(thread_id, turn_id);
         let result = match status {
             TurnStatus::Completed => operation
                 .events
@@ -1323,6 +1335,7 @@ impl CodexAgentInner {
         error: AgentError,
     ) -> Result<(), AgentError> {
         if let Some(operation) = self.take_operation(thread_id, turn_id)? {
+            mahayana_computer::release_control_lease(thread_id, turn_id);
             let _ = operation.completion.send(Err(error));
         }
         Ok(())
@@ -1331,6 +1344,7 @@ impl CodexAgentInner {
     fn fail_all(&self, message: &str) {
         if let Ok(mut operations) = self.operations.lock() {
             for (_, operation) in operations.drain() {
+                mahayana_computer::release_control_lease(&operation.thread_id, &operation.turn_id);
                 let _ = operation
                     .completion
                     .send(Err(AgentError::Backend(message.to_string())));

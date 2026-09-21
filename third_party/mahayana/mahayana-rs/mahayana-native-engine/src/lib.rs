@@ -67,6 +67,9 @@ pub struct NativeEngineConfig {
     pub approval_timeout_ms: u64,
     pub process_execution: ProcessExecution,
     pub session_state_path: Option<PathBuf>,
+    /// Root used for account/Agent-scoped session snapshots. Callers may
+    /// request only validated relative paths beneath this root.
+    pub session_state_root: Option<PathBuf>,
 }
 
 impl NativeEngineConfig {
@@ -79,6 +82,7 @@ impl NativeEngineConfig {
             approval_timeout_ms: DEFAULT_APPROVAL_TIMEOUT_MS,
             process_execution: ProcessExecution::Host,
             session_state_path: None,
+            session_state_root: None,
         }
     }
 
@@ -91,6 +95,7 @@ impl NativeEngineConfig {
             approval_timeout_ms: DEFAULT_APPROVAL_TIMEOUT_MS,
             process_execution: ProcessExecution::Host,
             session_state_path: None,
+            session_state_root: None,
         }
     }
 
@@ -157,6 +162,12 @@ struct NativeSession {
     permissions: PermissionLedger,
     #[serde(default)]
     approvals: ApprovalLedger,
+    /// Fabu-style Agent-owned durable state. Memory/workflows belong to the
+    /// conversation Agent session, never to the process-global engine.
+    #[serde(default)]
+    memory: MemoryStore,
+    #[serde(default)]
+    workflows: HashMap<String, Workflow>,
     #[serde(default)]
     loop_state: LoopState,
     #[serde(default)]
@@ -191,8 +202,6 @@ pub struct NativeEngine {
     sessions: Mutex<HashMap<String, Arc<AsyncMutex<NativeSession>>>>,
     active_operations: Mutex<HashMap<String, Arc<OperationControl>>>,
     approvals: Mutex<HashMap<String, ApprovalWaiter>>,
-    memory: Mutex<MemoryStore>,
-    workflows: Mutex<HashMap<String, Workflow>>,
     subagents: Mutex<SubagentScheduler>,
     hooks: Mutex<HookRegistry>,
     telemetry: Arc<RuntimeTelemetry>,
@@ -222,8 +231,6 @@ impl NativeEngine {
             sessions: Mutex::new(HashMap::new()),
             active_operations: Mutex::new(HashMap::new()),
             approvals: Mutex::new(HashMap::new()),
-            memory: Mutex::new(MemoryStore::default()),
-            workflows: Mutex::new(HashMap::new()),
             subagents: Mutex::new(
                 SubagentScheduler::new(4)
                     .map_err(|error| KernelError::Backend(error.to_string()))?,
@@ -268,15 +275,6 @@ impl NativeEngine {
         self.persisted_sessions
             .lock()
             .map_err(|_| KernelError::Backend("persisted session registry poisoned".into()))?
-            .clear();
-        *self
-            .memory
-            .lock()
-            .map_err(|_| KernelError::Backend("memory store poisoned".into()))? =
-            MemoryStore::default();
-        self.workflows
-            .lock()
-            .map_err(|_| KernelError::Backend("workflow store poisoned".into()))?
             .clear();
         *self
             .subagents
@@ -534,12 +532,27 @@ impl NativeEngine {
                 model_metadata["reasoning"] = json!({ "effort": "low" });
                 model_metadata["max_output_tokens"] = json!(512);
             }
+            let context_projection =
+                project_model_history(&session.history, conversational_fast_path && turn == 0);
+            events.emit(KernelEvent::Activity {
+                operation_id: operation_id.clone(),
+                kind: "context".into(),
+                title: "Mahayana context projected".into(),
+                detail: None,
+                metadata: json!({
+                    "historyItems": session.history.len(),
+                    "projectedItems": context_projection.items.len(),
+                    "projectedChars": context_projection.serialized_chars,
+                    "omittedItems": context_projection.omitted_items,
+                    "fastConversation": conversational_fast_path && turn == 0,
+                }),
+            })?;
             let inference = self
                 .model
                 .infer(
                     ModelRequest {
                         model: self.config.model.clone(),
-                        input: Value::Array(session.history.clone()),
+                        input: Value::Array(context_projection.items),
                         metadata: model_metadata,
                     },
                     sink,
@@ -931,10 +944,8 @@ impl NativeEngine {
                         .filter_map(Value::as_str)
                         .map(str::to_owned)
                         .collect::<Vec<_>>();
-                    let record = self
+                    let record = session
                         .memory
-                        .lock()
-                        .map_err(|_| KernelError::Backend("memory store poisoned".into()))?
                         .upsert(namespace, key, value, tags, None)
                         .map_err(|error| KernelError::Backend(error.to_string()))?;
                     serde_json::to_value(record)
@@ -943,11 +954,7 @@ impl NativeEngine {
                 "memory_get" => {
                     let namespace = string_arg(&call.arguments, "namespace")?;
                     let key = string_arg(&call.arguments, "key")?;
-                    let record = self
-                        .memory
-                        .lock()
-                        .map_err(|_| KernelError::Backend("memory store poisoned".into()))?
-                        .get(namespace, key);
+                    let record = session.memory.get(namespace, key);
                     Ok(json!({"record": record}))
                 }
                 "memory_search" => {
@@ -962,11 +969,7 @@ impl NativeEngine {
                         .filter_map(Value::as_str)
                         .map(str::to_owned)
                         .collect::<Vec<_>>();
-                    let records = self
-                        .memory
-                        .lock()
-                        .map_err(|_| KernelError::Backend("memory store poisoned".into()))?
-                        .search(namespace, query, &tags, 50);
+                    let records = session.memory.search(namespace, query, &tags, 50);
                     Ok(json!({"records": records}))
                 }
                 "workflow_create" => {
@@ -996,19 +999,13 @@ impl NativeEngine {
                     let id = workflow.id.clone();
                     let snapshot = serde_json::to_value(&workflow)
                         .map_err(|error| KernelError::Backend(error.to_string()))?;
-                    self.workflows
-                        .lock()
-                        .map_err(|_| KernelError::Backend("workflow store poisoned".into()))?
-                        .insert(id.clone(), workflow);
+                    session.workflows.insert(id.clone(), workflow);
                     Ok(json!({"workflow_id": id, "workflow": snapshot}))
                 }
                 "workflow_status" => {
                     let id = string_arg(&call.arguments, "workflow_id")?;
-                    let workflows = self
+                    let workflow = session
                         .workflows
-                        .lock()
-                        .map_err(|_| KernelError::Backend("workflow store poisoned".into()))?;
-                    let workflow = workflows
                         .get(id)
                         .ok_or_else(|| KernelError::Backend(format!("workflow not found: {id}")))?;
                     serde_json::to_value(workflow)
@@ -1444,12 +1441,35 @@ impl EngineBackend for NativeEngine {
     }
 
     async fn open_session(&self, request: OpenSessionRequest) -> Result<SessionId, KernelError> {
-        let persisted_path = request
+        let persisted_path = if let Some(relative) = request
             .metadata
-            .get("conversationId")
+            .get("sessionStateRelativePath")
             .and_then(Value::as_str)
-            .filter(|conversation_id| *conversation_id == MAIN_ASSISTANT_CONVERSATION_ID)
-            .and(self.config.session_state_path.clone());
+        {
+            let root = self.config.session_state_root.as_deref().ok_or_else(|| {
+                KernelError::Backend(
+                    "sessionStateRelativePath requires a configured session state root".into(),
+                )
+            })?;
+            let relative = Path::new(relative);
+            if relative.is_absolute()
+                || relative.components().any(|component| {
+                    !matches!(component, Component::Normal(_) | Component::CurDir)
+                })
+            {
+                return Err(KernelError::PolicyDenied(
+                    "Agent session persistence path must stay beneath the configured root".into(),
+                ));
+            }
+            Some(root.join(relative))
+        } else {
+            request
+                .metadata
+                .get("conversationId")
+                .and_then(Value::as_str)
+                .filter(|conversation_id| *conversation_id == MAIN_ASSISTANT_CONVERSATION_ID)
+                .and(self.config.session_state_path.clone())
+        };
         if let Some(path) = persisted_path.as_ref()
             && let Ok(bytes) = std::fs::read(path)
             && let Ok(snapshot) = serde_json::from_slice::<KernelSessionSnapshot>(&bytes)
@@ -1506,6 +1526,8 @@ impl EngineBackend for NativeEngine {
                     active_prompt: None,
                     permissions: PermissionLedger::default(),
                     approvals: ApprovalLedger::default(),
+                    memory: MemoryStore::default(),
+                    workflows: HashMap::new(),
                     loop_state: LoopState::default(),
                     attempts: Vec::new(),
                     updated_at_ms: request
@@ -1627,17 +1649,9 @@ impl EngineBackend for NativeEngine {
         let session = session.lock().await.clone();
         let updated_at_ms = session.updated_at_ms;
         let state = NativeSnapshotState {
+            memory: session.memory.clone(),
+            workflows: session.workflows.clone(),
             session,
-            memory: self
-                .memory
-                .lock()
-                .map_err(|_| KernelError::Backend("memory store poisoned".into()))?
-                .clone(),
-            workflows: self
-                .workflows
-                .lock()
-                .map_err(|_| KernelError::Backend("workflow store poisoned".into()))?
-                .clone(),
             subagents: self
                 .subagents
                 .lock()
@@ -1668,16 +1682,12 @@ impl EngineBackend for NativeEngine {
                 snapshot.backend_id
             )));
         }
-        let state: NativeSnapshotState = serde_json::from_value(snapshot.state)
+        let mut state: NativeSnapshotState = serde_json::from_value(snapshot.state)
             .map_err(|error| KernelError::Backend(format!("invalid native snapshot: {error}")))?;
-        *self
-            .memory
-            .lock()
-            .map_err(|_| KernelError::Backend("memory store poisoned".into()))? = state.memory;
-        *self
-            .workflows
-            .lock()
-            .map_err(|_| KernelError::Backend("workflow store poisoned".into()))? = state.workflows;
+        // Outer fields keep backward compatibility with 1.2.73 snapshots;
+        // live ownership is now the Agent session itself.
+        state.session.memory = state.memory.clone();
+        state.session.workflows = state.workflows.clone();
         *self
             .subagents
             .lock()
@@ -2030,6 +2040,168 @@ impl ModelEventSink for ModelCollector {
             }
         }
         Ok(())
+    }
+}
+
+const MODEL_CONTEXT_HISTORY_CHAR_BUDGET: usize = 96_000;
+const MODEL_CONTEXT_RECENT_MESSAGE_LIMIT: usize = 12;
+const MODEL_CONTEXT_ENTRY_CHAR_LIMIT: usize = 16_000;
+const LIGHTWEIGHT_CONTEXT_CHAR_LIMIT: usize = 4_000;
+
+#[derive(Debug)]
+struct ModelContextProjection {
+    items: Vec<Value>,
+    omitted_items: usize,
+    serialized_chars: usize,
+}
+
+fn json_serialized_chars(value: &Value) -> usize {
+    serde_json::to_string(value)
+        .map(|value| value.chars().count())
+        .unwrap_or_default()
+}
+
+fn truncate_model_string(value: &str, max_chars: usize) -> String {
+    let length = value.chars().count();
+    if length <= max_chars {
+        return value.to_string();
+    }
+    if max_chars < 64 {
+        return value.chars().take(max_chars).collect();
+    }
+    let marker = format!("\n...[{} chars omitted from model context]...\n", length - max_chars);
+    let marker_len = marker.chars().count();
+    let usable = max_chars.saturating_sub(marker_len);
+    let head_len = usable.saturating_mul(3) / 4;
+    let tail_len = usable.saturating_sub(head_len);
+    let head = value.chars().take(head_len).collect::<String>();
+    let tail = value
+        .chars()
+        .rev()
+        .take(tail_len)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect::<String>();
+    format!("{head}{marker}{tail}")
+}
+
+fn truncate_model_item(value: &Value, max_string_chars: usize) -> Value {
+    match value {
+        Value::String(text) => Value::String(truncate_model_string(text, max_string_chars)),
+        Value::Array(values) => Value::Array(
+            values
+                .iter()
+                .map(|value| truncate_model_item(value, max_string_chars))
+                .collect(),
+        ),
+        Value::Object(values) => Value::Object(
+            values
+                .iter()
+                .map(|(key, value)| {
+                    (
+                        key.clone(),
+                        if matches!(key.as_str(), "content" | "text" | "output" | "arguments") {
+                            truncate_model_item(value, max_string_chars)
+                        } else {
+                            value.clone()
+                        },
+                    )
+                })
+                .collect(),
+        ),
+        _ => value.clone(),
+    }
+}
+
+fn model_message_role(value: &Value) -> Option<&str> {
+    value.get("role").and_then(Value::as_str)
+}
+
+fn project_model_history(history: &[Value], lightweight: bool) -> ModelContextProjection {
+    if history.is_empty() {
+        return ModelContextProjection {
+            items: Vec::new(),
+            omitted_items: 0,
+            serialized_chars: 0,
+        };
+    }
+
+    let last_user = history
+        .iter()
+        .rposition(|item| model_message_role(item) == Some("user"));
+
+    if lightweight {
+        let items = last_user
+            .and_then(|index| history.get(index))
+            .map(|item| vec![truncate_model_item(item, LIGHTWEIGHT_CONTEXT_CHAR_LIMIT)])
+            .unwrap_or_else(|| {
+                vec![truncate_model_item(
+                    history.last().expect("history is non-empty"),
+                    LIGHTWEIGHT_CONTEXT_CHAR_LIMIT,
+                )]
+            });
+        let serialized_chars = items.iter().map(json_serialized_chars).sum();
+        return ModelContextProjection {
+            omitted_items: history.len().saturating_sub(items.len()),
+            items,
+            serialized_chars,
+        };
+    }
+
+    let turn_start = last_user.unwrap_or(history.len().saturating_sub(1));
+    // Fabu keeps the active turn lossless enough for tool-call continuity.
+    // Only large strings inside an entry are trimmed; the durable transcript
+    // remains untouched and continues to own the full data.
+    let active_turn = history[turn_start..]
+        .iter()
+        .map(|item| truncate_model_item(item, MODEL_CONTEXT_ENTRY_CHAR_LIMIT))
+        .collect::<Vec<_>>();
+    let active_chars = active_turn.iter().map(json_serialized_chars).sum::<usize>();
+
+    let mut previous = Vec::new();
+    let mut previous_chars = 0usize;
+    for item in history[..turn_start].iter().rev() {
+        if previous.len() >= MODEL_CONTEXT_RECENT_MESSAGE_LIMIT {
+            break;
+        }
+        if !matches!(model_message_role(item), Some("user" | "assistant")) {
+            continue;
+        }
+        let projected = truncate_model_item(item, MODEL_CONTEXT_ENTRY_CHAR_LIMIT);
+        let item_chars = json_serialized_chars(&projected);
+        if active_chars
+            .saturating_add(previous_chars)
+            .saturating_add(item_chars)
+            > MODEL_CONTEXT_HISTORY_CHAR_BUDGET
+        {
+            break;
+        }
+        previous_chars = previous_chars.saturating_add(item_chars);
+        previous.push(projected);
+    }
+    previous.reverse();
+
+    let selected_count = previous.len().saturating_add(active_turn.len());
+    let omitted_items = history.len().saturating_sub(selected_count);
+    let mut items = Vec::with_capacity(selected_count + usize::from(omitted_items > 0));
+    if omitted_items > 0 {
+        items.push(json!({
+            "role": "system",
+            "content": format!(
+                "[{} earlier transcript item(s) omitted from this inference context. The full durable transcript remains stored by the Agent.]",
+                omitted_items
+            ),
+        }));
+    }
+    items.extend(previous);
+    items.extend(active_turn);
+    let serialized_chars = items.iter().map(json_serialized_chars).sum();
+
+    ModelContextProjection {
+        items,
+        omitted_items,
+        serialized_chars,
     }
 }
 
@@ -3120,5 +3292,85 @@ mod tests {
         );
         assert!(snapshot.state.to_string().contains("first provider reply"));
         std::fs::remove_dir_all(root).expect("cleanup");
+    }
+
+    #[test]
+    fn lightweight_context_projects_only_the_current_user_turn() {
+        let huge = "x".repeat(180_000);
+        let history = vec![
+            json!({"role":"user","content":"previous task"}),
+            json!({"role":"assistant","content":huge}),
+            json!({"role":"user","content":"你好"}),
+        ];
+        let projected = project_model_history(&history, true);
+        assert_eq!(projected.items.len(), 1);
+        assert_eq!(projected.items[0]["role"], "user");
+        assert_eq!(projected.items[0]["content"], "你好");
+        assert_eq!(projected.omitted_items, 2);
+        assert!(projected.serialized_chars < 256);
+    }
+
+    #[test]
+    fn normal_context_keeps_latest_turn_and_bounds_prior_transcript() {
+        let mut history = Vec::new();
+        for index in 0..40 {
+            history.push(json!({"role":"user","content":format!("old user {index} {}", "u".repeat(10_000))}));
+            history.push(json!({"role":"assistant","content":format!("old assistant {index} {}", "a".repeat(10_000))}));
+        }
+        history.push(json!({"role":"user","content":"current task must survive"}));
+        let projected = project_model_history(&history, false);
+        assert!(projected.omitted_items > 0);
+        assert!(projected.serialized_chars <= MODEL_CONTEXT_HISTORY_CHAR_BUDGET + 512);
+        assert!(
+            projected
+                .items
+                .iter()
+                .any(|item| item.to_string().contains("current task must survive"))
+        );
+    }
+
+    #[tokio::test]
+    async fn agent_memory_and_workflows_are_isolated_per_session() {
+        let model = Arc::new(FakeModel {
+            outputs: Mutex::new(VecDeque::new()),
+        });
+        let engine = NativeEngine::new(model, NativeEngineConfig::embedded("model"))
+            .expect("create engine");
+        let left = engine
+            .open_session(OpenSessionRequest {
+                profile: mahayana_kernel::RuntimeProfile::Headless,
+                workspace_root: None,
+                model: None,
+                metadata: json!({"conversationId":"agent:left"}),
+            })
+            .await
+            .expect("open left");
+        let right = engine
+            .open_session(OpenSessionRequest {
+                profile: mahayana_kernel::RuntimeProfile::Headless,
+                workspace_root: None,
+                model: None,
+                metadata: json!({"conversationId":"agent:right"}),
+            })
+            .await
+            .expect("open right");
+
+        {
+            let left_session = engine.session(&left).expect("left session");
+            let mut left_session = left_session.lock().await;
+            left_session
+                .memory
+                .upsert("profile", "name", json!("left-only"), Vec::new(), None)
+                .expect("write left memory");
+            let workflow = Workflow::new("left workflow").expect("workflow");
+            left_session
+                .workflows
+                .insert(workflow.id.clone(), workflow);
+        }
+
+        let right_session = engine.session(&right).expect("right session");
+        let right_session = right_session.lock().await;
+        assert!(right_session.memory.get("profile", "name").is_none());
+        assert!(right_session.workflows.is_empty());
     }
 }

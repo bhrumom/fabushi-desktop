@@ -212,6 +212,7 @@ export interface BotSummary {
   notifyOnUpdates: boolean;
   unread: boolean;
   conversationId?: string;
+  inferenceProvider?: InferenceProvider;
 }
 
 export type GroupSpeaker =
@@ -341,6 +342,15 @@ export interface ComputerStatus {
   routeEgressLocally: boolean;
   remoteControlEnabled: boolean;
   aiControlEnabled: boolean;
+}
+export interface ComputerControlLeaseState {
+  controllerId: string;
+  runId: string;
+  deviceId: string;
+  origin: ComputerControlOrigin;
+  mode: string;
+  acquiredAtMs: number;
+  expiresAtMs: number;
 }
 export interface ComputerSnapshot {
   capturedAtMs: number;
@@ -634,6 +644,8 @@ export type RuntimeCommand =
   | (CommandBase & { type: "conversation.list"; query?: string })
   | (CommandBase & { type: "conversation.open"; conversationId: string })
   | (CommandBase & { type: "capability.list"; query?: string })
+  | (CommandBase & { type: "agent.workspaceState.get"; key: string })
+  | (CommandBase & { type: "agent.workspaceState.set"; key: string; value: unknown })
   | (CommandBase & { type: "automation.list"; agentId?: string })
   | (CommandBase & {
       type: "automation.upsert";
@@ -702,6 +714,7 @@ export type RuntimeCommand =
       avatar?: string;
       avatarShape?: string;
       avatarColor?: string;
+      inferenceProvider?: InferenceProvider;
     })
   | (CommandBase & {
       type: "bot.update";
@@ -714,7 +727,9 @@ export type RuntimeCommand =
       avatarColor?: string;
       notificationsEnabled?: boolean;
       notifyOnUpdates?: boolean;
+      inferenceProvider?: InferenceProvider;
       unread?: boolean;
+      clearInferenceProvider?: boolean;
     })
   | (CommandBase & { type: "bot.clone"; id: string })
   | (CommandBase & { type: "bot.delete"; id: string })
@@ -744,8 +759,10 @@ export type RuntimeCommand =
   | (CommandBase & { type: "teach.start"; agentId: string; entryPoint: TeachEntryPoint })
   | (CommandBase & { type: "teach.stop"; agentId: string; save: boolean })
   | (CommandBase & { type: "computer.status" })
-  | (CommandBase & { type: "computer.screenshot"; origin?: ComputerControlOrigin; sessionId?: string; target?: ComputerControlTarget })
+  | (CommandBase & { type: "computer.screenshot"; origin?: ComputerControlOrigin; agentId?: string; sessionId?: string; target?: ComputerControlTarget })
   | (CommandBase & { type: "computer.action"; origin?: ComputerControlOrigin; agentId?: string; sessionId?: string; target?: ComputerControlTarget; action: ComputerAction; then?: ComputerAction[] })
+  | (CommandBase & { type: "computer.takeControl"; agentId: string; leaseId: string; target?: ComputerControlTarget })
+  | (CommandBase & { type: "computer.releaseControl"; agentId: string; leaseId: string })
   | (CommandBase & {
       type: "remoteComputer.register";
       deviceId: string;
@@ -895,8 +912,31 @@ interface EventBase {
   timestamp: string;
 }
 
+export type TurnLifecycleState =
+  | "accepted"
+  | "queued"
+  | "preparing"
+  | "thinking"
+  | "tool-running"
+  | "streaming"
+  | "waiting-user"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "recovering";
+
 export type RuntimeEvent =
   | (EventBase & { type: "host.ready"; info: HostInfo })
+  | (EventBase & {
+      type: "host.lifecycle";
+      lifecycle: string;
+      state: string;
+      generation: number;
+      sequence: number;
+      recoverable?: boolean;
+      reason?: string;
+      error?: string;
+    })
   | (EventBase & {
       type: "chat.message";
       role: "user" | "assistant";
@@ -990,6 +1030,7 @@ export type RuntimeEvent =
       operationId: string;
       delta: string;
     })
+  | (EventBase & { type: "agent.workspaceState"; key: string; value?: unknown })
   | (EventBase & { type: "agent.peerMessage"; message: AgentPeerMessage })
   | (EventBase & { type: "agent.peerHistory"; agentId: string; messages: AgentPeerMessage[] })
   | (EventBase & { type: "agent.broadcasted"; result: AgentBroadcastResult })
@@ -1003,8 +1044,9 @@ export type RuntimeEvent =
   | (EventBase & { type: "asyncTask.changed"; agentId: string; tasks: AsyncTaskSummary[] })
   | (EventBase & { type: "teach.changed"; status: TeachRecordingStatus; result?: TeachRecordingResult })
   | (EventBase & { type: "computer.status"; requestId: string; status: ComputerStatus })
-  | (EventBase & { type: "computer.snapshot"; requestId: string; origin: ComputerControlOrigin; snapshot: ComputerSnapshot })
-  | (EventBase & { type: "computer.result"; requestId: string; result: ComputerActionResult })
+  | (EventBase & { type: "computer.snapshot"; requestId: string; agentId?: string; origin: ComputerControlOrigin; snapshot: ComputerSnapshot })
+  | (EventBase & { type: "computer.result"; requestId: string; agentId?: string; result: ComputerActionResult })
+  | (EventBase & { type: "computer.controlChanged"; requestId: string; agentId: string; leaseId: string; active: boolean; lease?: ComputerControlLeaseState })
   | (EventBase & { type: "remoteComputer.changed"; requestId: string; action: string; data: unknown })
   | (EventBase & { type: "memory.listed"; agentId: string; memories: MemoryRecord[]; count: number; location?: string })
   | (EventBase & { type: "memory.changed"; agentId: string; action: string; memory?: MemoryRecord })
@@ -1022,7 +1064,7 @@ export type RuntimeEvent =
   | (EventBase & { type: "mcp.apps"; apps: unknown[] })
   | (EventBase & { type: "mcp.oauth"; server: string; authorizationUrl?: string; removed: boolean })
   | (EventBase & { type: "mcp.refreshed" })
-  | (EventBase & { type: "mcp.toolResult"; server: string; tool: string; result: unknown })
+  | (EventBase & { type: "mcp.toolResult"; requestId: string; server: string; tool: string; result: unknown })
   | (EventBase & { type: "settings.changed"; settings: ProductHostSettings })
   | (EventBase & { type: "audit.listed"; agentId: string; records: unknown[] })
   | (EventBase & {
@@ -1071,6 +1113,8 @@ export type RuntimeEvent =
   | (EventBase & {
       type: "approval.requested";
       approvalId: string;
+      operationId?: string;
+      agentId?: string;
       miniAppId: string;
       capability: string;
       reason: string;
@@ -1083,7 +1127,18 @@ export type RuntimeEvent =
   | (EventBase & {
       type: "approval.resolved";
       approvalId: string;
+      operationId?: string;
+      agentId?: string;
       decision: "allow-once" | "allow-session" | "deny";
+    })
+  | (EventBase & {
+      type: "turn.state";
+      operationId: string;
+      turnId: string;
+      runId: string;
+      conversationId: string;
+      state: TurnLifecycleState;
+      sequence: number;
     })
   | (EventBase & {
       type: "operation.started";

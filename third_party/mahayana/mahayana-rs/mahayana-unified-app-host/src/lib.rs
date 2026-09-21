@@ -10,6 +10,7 @@
 use mahayana_app_host::{
     AppHost, AppHostError, AppHostFeatureMode, HostRequest, HostResponse, default_app_data_dir,
 };
+pub use mahayana_app_host::{FeatureEventSource, PlatformRequestHost, is_platform_request_json};
 use mahayana_core::BuildProfile;
 use mahayana_harness_protocol::HarnessApi;
 use serde::{Deserialize, Serialize};
@@ -19,7 +20,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const JOURNAL_VERSION: u32 = 1;
 
@@ -193,6 +194,19 @@ impl UnifiedAppHost {
             harness,
             journal: Mutex::new(journal),
         })
+    }
+
+    /// Receive a product feature event without routing it through a JSON-RPC
+    /// request. Native desktop hosts use this as the source for PUSH event frames.
+    pub fn feature_event_source(&self) -> FeatureEventSource {
+        self.app.feature_event_source()
+    }
+
+    pub fn receive_feature_event(
+        &self,
+        timeout: Duration,
+    ) -> Result<Option<Value>, AppHostError> {
+        self.app.receive_feature_event(timeout)
     }
 
     pub fn dispatch(&self, request: HostRequest) -> HostResponse {

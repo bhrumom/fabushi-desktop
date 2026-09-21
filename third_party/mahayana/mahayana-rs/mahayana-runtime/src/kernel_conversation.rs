@@ -14,7 +14,7 @@ use mahayana_kernel::{
     RuntimeProfile, SessionId, SharedKernelEventSink,
 };
 use serde_json::{Value, json};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -95,9 +95,11 @@ pub struct KernelConversationProvider {
     profile: BuildProfile,
     workspace_root: Option<String>,
     model: Option<String>,
-    session_id: AsyncMutex<Option<SessionId>>,
+    session_ids: AsyncMutex<HashMap<String, SessionId>>,
+    session_providers: AsyncMutex<HashMap<String, String>>,
     state: Arc<Mutex<ConversationState>>,
-    history_path: Option<PathBuf>,
+    history_path: Mutex<Option<PathBuf>>,
+    data_root: Option<PathBuf>,
 }
 
 impl KernelConversationProvider {
@@ -107,6 +109,7 @@ impl KernelConversationProvider {
         workspace_root: Option<String>,
         model: Option<String>,
         history_path: Option<PathBuf>,
+        data_root: Option<PathBuf>,
     ) -> Self {
         let history = history_path
             .as_deref()
@@ -117,19 +120,71 @@ impl KernelConversationProvider {
             profile,
             workspace_root,
             model,
-            session_id: AsyncMutex::new(None),
+            session_ids: AsyncMutex::new(HashMap::new()),
+            session_providers: AsyncMutex::new(HashMap::new()),
             state: Arc::new(Mutex::new(ConversationState::new(history))),
-            history_path,
+            history_path: Mutex::new(history_path),
+            data_root,
         }
+    }
+
+    fn current_history_path(&self) -> Result<Option<PathBuf>, ConversationError> {
+        self.history_path
+            .lock()
+            .map_err(|_| {
+                ConversationError::Provider(
+                    "kernel conversation history path mutex poisoned".into(),
+                )
+            })
+            .map(|path| path.clone())
+    }
+
+    fn session_state_relative_path(
+        &self,
+        conversation_id: &ConversationId,
+    ) -> Result<Option<String>, ConversationError> {
+        let Some(history_path) = self.current_history_path()? else {
+            return Ok(None);
+        };
+        let Some(account_agent_root) = history_path.parent() else {
+            return Ok(None);
+        };
+        let Some(data_root) = self.data_root.as_deref() else {
+            return Ok(None);
+        };
+        let agent_id = agent_storage_id(conversation_id.as_str());
+        let absolute = account_agent_root
+            .join(agent_id)
+            .join("conversation")
+            .join("session.json");
+        let Ok(relative) = absolute.strip_prefix(data_root) else {
+            return Ok(None);
+        };
+        Ok(Some(relative.to_string_lossy().replace('\\', "/")))
     }
 
     async fn session_id(
         &self,
         conversation_id: &ConversationId,
+        inference_provider: Option<&str>,
     ) -> Result<SessionId, ConversationError> {
-        let mut session_id = self.session_id.lock().await;
-        if let Some(session_id) = session_id.as_ref() {
-            return Ok(session_id.clone());
+        // Fabu/Grok parity: every Bot/Agent conversation owns an isolated
+        // inference session. Provider identity is part of that session key so
+        // changing one Agent never restarts or mutates another Agent.
+        let provider = inference_provider
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or("__account_default__")
+            .to_string();
+        let key = conversation_id.as_str().to_string();
+        {
+            let session_ids = self.session_ids.lock().await;
+            let session_providers = self.session_providers.lock().await;
+            if let Some(session_id) = session_ids.get(&key)
+                && session_providers.get(&key) == Some(&provider)
+            {
+                return Ok(session_id.clone());
+            }
         }
         let history = self
             .state
@@ -150,23 +205,31 @@ impl KernelConversationProvider {
             .and_then(|message| message.get("createdAtMs"))
             .and_then(Value::as_i64)
             .unwrap_or(0);
+        let session_state_relative_path = self.session_state_relative_path(conversation_id)?;
+        let mut metadata = json!({
+            "conversationId": conversation_id.as_str(),
+            "bootstrapHistory": history,
+            "transcriptUpdatedAtMs": transcript_updated_at_ms,
+            "sessionStateRelativePath": session_state_relative_path,
+        });
+        if provider != "__account_default__" {
+            metadata["inferenceProvider"] = Value::String(provider.clone());
+        }
         let created = self
             .backend
             .open_session(OpenSessionRequest {
                 profile: runtime_profile(self.profile),
                 workspace_root: self.workspace_root.clone(),
                 model: self.model.clone(),
-                metadata: json!({
-                    "conversationId": conversation_id.as_str(),
-                    "bootstrapHistory": history,
-                    "transcriptUpdatedAtMs": transcript_updated_at_ms,
-                }),
+                metadata,
             })
             .await
             .map_err(kernel_error)?;
-        *session_id = Some(created.clone());
+        self.session_ids.lock().await.insert(key.clone(), created.clone());
+        self.session_providers.lock().await.insert(key, provider);
         Ok(created)
     }
+
 }
 
 #[async_trait]
@@ -213,7 +276,7 @@ impl ConversationProvider for KernelConversationProvider {
     }
 
     async fn warmup(&self, conversation_id: &ConversationId) -> Result<(), ConversationError> {
-        self.session_id(conversation_id).await.map(|_| ())
+        self.session_id(conversation_id, None).await.map(|_| ())
     }
 
     async fn send_message(
@@ -221,7 +284,9 @@ impl ConversationProvider for KernelConversationProvider {
         request: SendMessageRequest,
         events: SharedConversationEventSink,
     ) -> Result<(), ConversationError> {
-        let session_id = self.session_id(&request.conversation_id).await?;
+        let session_id = self
+            .session_id(&request.conversation_id, request.inference_provider.as_deref())
+            .await?;
         let user_message = Message {
             id: request
                 .client_message_id
@@ -242,7 +307,8 @@ impl ConversationProvider for KernelConversationProvider {
                 })?
                 .history
                 .push(user_message);
-            persist_history(&self.state, self.history_path.as_deref()).map_err(kernel_error)?;
+            let history_path = self.current_history_path()?;
+            persist_history(&self.state, history_path.as_deref()).map_err(kernel_error)?;
         }
 
         let kernel_operation_id = KernelOperationId::from_string(request.operation_id.as_str());
@@ -251,7 +317,7 @@ impl ConversationProvider for KernelConversationProvider {
             operation_id: request.operation_id,
             events,
             state: Arc::clone(&self.state),
-            history_path: self.history_path.clone(),
+            history_path: self.current_history_path()?,
             hidden: request.hidden,
         });
         self.backend
@@ -279,14 +345,32 @@ impl ConversationProvider for KernelConversationProvider {
 
     async fn reset_session(&self) -> Result<(), ConversationError> {
         self.backend.reset_session().map_err(kernel_error)?;
-        *self.session_id.lock().await = None;
+        self.session_ids.lock().await.clear();
+        self.session_providers.lock().await.clear();
+        let mut state = self.state.lock().map_err(|_| {
+            ConversationError::Provider("kernel conversation state mutex poisoned".into())
+        })?;
+        state.clear();
+        // Fabu keeps Agent-owned state on disk when the active account changes.
+        // Reset drops the in-memory session only; switching history paths loads
+        // the target account's durable transcript without erasing the source.
+        Ok(())
+    }
+
+    async fn set_history_path(&self, path: Option<PathBuf>) -> Result<(), ConversationError> {
+        self.session_ids.lock().await.clear();
+        self.session_providers.lock().await.clear();
+        let history = path.as_deref().map(load_history).unwrap_or_default();
         {
             let mut state = self.state.lock().map_err(|_| {
                 ConversationError::Provider("kernel conversation state mutex poisoned".into())
             })?;
-            state.clear();
+            *state = ConversationState::new(history);
         }
-        persist_history(&self.state, self.history_path.as_deref()).map_err(kernel_error)
+        *self.history_path.lock().map_err(|_| {
+            ConversationError::Provider("kernel conversation history path mutex poisoned".into())
+        })? = path;
+        Ok(())
     }
 
     async fn resolve_approval(
@@ -487,6 +571,39 @@ impl KernelEventSink for RuntimeKernelEventBridge {
             ),
         }
     }
+}
+
+fn safe_storage_segment(value: &str) -> String {
+    if !value.is_empty()
+        && value
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
+    {
+        return value.to_string();
+    }
+    let mut encoded = String::from("conversation-");
+    for byte in value.as_bytes() {
+        use std::fmt::Write as _;
+        let _ = write!(&mut encoded, "{byte:02x}");
+    }
+    encoded
+}
+
+fn agent_storage_id(conversation_id: &str) -> String {
+    if conversation_id == mahayana_core::MAHAYANA_AI_CONVERSATION_ID {
+        return "mahayana-assistant".into();
+    }
+    for prefix in ["mahayana-ai:agent:", "codex:agent:"] {
+        if let Some(agent_id) = conversation_id.strip_prefix(prefix) {
+            return safe_storage_segment(agent_id);
+        }
+    }
+    safe_storage_segment(
+        conversation_id
+            .rsplit(':')
+            .next()
+            .unwrap_or(conversation_id),
+    )
 }
 
 fn runtime_profile(profile: BuildProfile) -> RuntimeProfile {

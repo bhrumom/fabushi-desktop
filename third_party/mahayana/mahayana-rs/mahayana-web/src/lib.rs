@@ -231,6 +231,7 @@ impl MahayanaWebRuntime {
                     conversation_id: conversation_id.clone(),
                     text,
                     client_message_id,
+                    inference_provider: None,
                     hidden: false,
                 };
                 let send_command = serde_json::to_string(&send_command).map_err(js_error)?;
@@ -373,6 +374,7 @@ impl MahayanaWebRuntime {
                 conversation_id,
                 text,
                 client_message_id,
+                inference_provider: _,
                 hidden,
             } => {
                 ensure_browser_conversation(&self.state.borrow().plugins, &conversation_id)?;

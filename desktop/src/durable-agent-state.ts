@@ -5,12 +5,10 @@ import {
   MAHAYANA_RUNTIME_EVENT_NAME,
 } from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
 
-export const AGENT_WORKBENCH_STORAGE_KEY = 'fabushi.desktop.mahayana-agent-workbench.v1';
 export const CONVERSATION_JOURNAL_STORAGE_KEY = 'fabushi.desktop.mahayana-conversation-journal.v1';
 export const SELFHOSTED_INVOCATION_CLAIMS_KEY = 'fabushi.desktop.selfhosted-mahayana-invocations.v1';
 
 export const DURABLE_AGENT_STATE_KEYS = [
-  AGENT_WORKBENCH_STORAGE_KEY,
   CONVERSATION_JOURNAL_STORAGE_KEY,
   SELFHOSTED_INVOCATION_CLAIMS_KEY,
 ] as const;
@@ -41,15 +39,14 @@ async function readNativeValue(key: DurableAgentStateKey): Promise<unknown> {
 }
 
 /**
- * Restore renderer projections from the native client-persistence store before
- * React constructs transport/workbench state. localStorage remains a first-frame
- * cache only; when it is absent, the native store supplies the restart-safe copy.
+ * Restore compatibility renderer projections from native client persistence.
+ * Agent workspace drafts are intentionally excluded: Mahayana RuntimeStore
+ * (SQLite) owns them and localStorage is migration-only.
  */
 export async function restoreDurableAgentState(): Promise<void> {
   if (typeof window === 'undefined') return;
   await Promise.all(DURABLE_AGENT_STATE_KEYS.map(async (key) => {
     try {
-      if (window.localStorage.getItem(key) !== null) return;
       const nativeValue = await readNativeValue(key);
       if (nativeValue === null || nativeValue === undefined) return;
       window.localStorage.setItem(key, JSON.stringify(nativeValue));
@@ -62,11 +59,11 @@ export async function restoreDurableAgentState(): Promise<void> {
 }
 
 /**
- * Mirror the three account-scoped Mahayana projections to native persistence.
- * The existing renderer owners continue to update their in-memory/local cache;
+ * Mirror compatibility renderer projections to native persistence.
+ * Agent workspace drafts never enter this bridge; the existing compatibility
+ * owners continue to update their in-memory/local cache;
  * this bridge observes those projections and makes Rust/native persistence the
- * restart boundary. Values are deduplicated so the idle poll performs no disk
- * writes when state has not changed.
+ * restart boundary. Persistence is event-driven; there is no idle polling loop.
  */
 export function installDurableAgentState(): () => void {
   if (typeof window === 'undefined') return () => {};
@@ -92,7 +89,7 @@ export function installDurableAgentState(): () => void {
       await invokeNativeDesktop<boolean>('writeClientPersistence', { key, value });
       lastSerialized.set(key, serialized);
     } catch {
-      // Keep lastSerialized unchanged so a later runtime event or idle poll
+      // Keep lastSerialized unchanged so a later runtime or lifecycle event
       // retries after a temporarily unavailable native edge.
     } finally {
       inFlight.delete(key);
@@ -130,18 +127,25 @@ export function installDurableAgentState(): () => void {
     });
   };
 
+  const flushWhenHidden = () => {
+    if (document.visibilityState === 'hidden') flushAll();
+  };
+  const flushOnPageHide = () => flushAll();
+
   window.addEventListener(MAHAYANA_COMMAND_EVENT_NAME, scheduleFlush);
   window.addEventListener(MAHAYANA_RUNTIME_EVENT_NAME, scheduleFlush);
   window.addEventListener(MAHAYANA_ACCOUNT_SESSION_RESET_EVENT, clearAccountState);
-  const interval = window.setInterval(flushAll, 1_000);
+  document.addEventListener('visibilitychange', flushWhenHidden);
+  window.addEventListener('pagehide', flushOnPageHide);
   flushAll();
 
   return () => {
     disposed = true;
     if (scheduledTimer !== null) window.clearTimeout(scheduledTimer);
-    window.clearInterval(interval);
     window.removeEventListener(MAHAYANA_COMMAND_EVENT_NAME, scheduleFlush);
     window.removeEventListener(MAHAYANA_RUNTIME_EVENT_NAME, scheduleFlush);
     window.removeEventListener(MAHAYANA_ACCOUNT_SESSION_RESET_EVENT, clearAccountState);
+    document.removeEventListener('visibilitychange', flushWhenHidden);
+    window.removeEventListener('pagehide', flushOnPageHide);
   };
 }

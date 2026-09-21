@@ -27,6 +27,8 @@ const {
   inheritedNodeExecPath,
   remoteDeviceGatewayUrl,
   remoteDeviceRuntime,
+  sessionExpirationMs,
+  sessionRefreshDelay,
   validAgentSession,
 } = require('./remote-device-agent-supervisor.cjs');
 Module._load = originalLoad;
@@ -132,6 +134,15 @@ test('logout stops the app-owned device and removes its access credential', asyn
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('remote session refresh is expiry-driven instead of fixed interval polling', () => {
+  const nowMs = 2_000_000_000_000;
+  const expiryMs = nowMs + 60 * 60_000;
+  assert.equal(sessionExpirationMs(expiryMs), expiryMs);
+  assert.equal(sessionExpirationMs(Math.floor(expiryMs / 1_000)), Math.floor(expiryMs / 1_000) * 1_000);
+  assert.equal(sessionRefreshDelay(expiryMs, nowMs), 55 * 60_000);
+  assert.equal(sessionRefreshDelay(0, nowMs), 30 * 60_000);
 });
 
 test('device agent receives a bounded access session identity', () => {

@@ -23,6 +23,7 @@ const NATIVE_EVENTS = new Set([
   'widget-gallery',
   'force-onboarding',
   'account-auth-changed',
+  'account-state-changed',
   'experiments-changed',
   'window-state',
   'zoom-factor-changed',
@@ -30,6 +31,7 @@ const NATIVE_EVENTS = new Set([
   'offline-asr-progress',
   'open-offline-asr',
   'remote-desktop-user-presence',
+  'remote-computer-background-state',
   'rustdesk-sidecar-event',
   'rustdesk-sidecar-exit',
   'dev-compute-pull-progress',
@@ -82,6 +84,7 @@ function subscribeEdge(edge, eventName, listener) {
 // transient deltas remain live-only and account boundaries clear the snapshots.
 const MAHAYANA_REPLAYABLE_EVENTS = new Set([
   'host.ready',
+  'host.lifecycle',
   'conversation.listed',
   'bot.listed',
   'group.listed',

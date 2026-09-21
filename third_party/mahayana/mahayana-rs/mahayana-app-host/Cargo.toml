@@ -19,6 +19,7 @@ mahayana-plugin-runtime.workspace = true
 mahayana-product.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+rusqlite.workspace = true
 thiserror.workspace = true
 
 [target.'cfg(any(target_os = "ios", target_os = "android"))'.dependencies]

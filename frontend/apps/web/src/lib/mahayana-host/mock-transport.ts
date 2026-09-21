@@ -526,12 +526,14 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
   private bots = new Map(defaultBots().map((bot) => [bot.id, bot]));
   private groups = new Map<string, GroupSummary>();
   private peerMessages: AgentPeerMessage[] = [];
+  private workspaceState = new Map<string, unknown>();
   private memories = new Map<string, MemoryRecord[]>();
   private trays = new ErrorTrayQueue();
   private workflows = new Map<string, WorkflowSummary>();
   private disabledWorkflows = new Map<string, Set<string>>();
   private attachmentData = new Map<string, { agentId: string; name: string; mimeType?: string; bytesBase64: string }>();
   private teachRecording: { agentId: string; startedAtMs: number } | null = null;
+  private computerControlLease: { agentId: string; leaseId: string; acquiredAtMs: number } | null = null;
   private hostSettings: ProductHostSettings = {
     notifications: true,
     autoUpdateWhenIdle: true,
@@ -770,6 +772,17 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
               : true,
           ),
         });
+        return { requestId: command.requestId };
+      case "agent.workspaceState.get":
+        this.emit({
+          type: "agent.workspaceState",
+          timestamp: now(),
+          key: command.key,
+          value: this.workspaceState.get(command.key),
+        });
+        return { requestId: command.requestId };
+      case "agent.workspaceState.set":
+        this.workspaceState.set(command.key, command.value);
         return { requestId: command.requestId };
       case "automation.list":
         this.emit({
@@ -1415,7 +1428,7 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
         return { requestId: command.requestId };
       case "computer.screenshot": {
         const snapshot = mockComputerSnapshot();
-        this.emit({ type: "computer.snapshot", timestamp: now(), requestId: command.requestId, origin: command.origin ?? "local-ui", snapshot });
+        this.emit({ type: "computer.snapshot", timestamp: now(), requestId: command.requestId, agentId: command.agentId, origin: command.origin ?? "local-ui", snapshot });
         return { requestId: command.requestId };
       }
       case "computer.action": {
@@ -1423,7 +1436,48 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
         const actions = [command.action, ...(command.then ?? [])];
         if (actions.length > 10) throw new Error("At most 10 computer actions can be batched");
         const snapshot = mockComputerSnapshot();
-        this.emit({ type: "computer.result", timestamp: now(), requestId: command.requestId, result: { origin, actionsExecuted: actions.length, snapshot } });
+        this.emit({ type: "computer.result", timestamp: now(), requestId: command.requestId, agentId: command.agentId, result: { origin, actionsExecuted: actions.length, snapshot } });
+        return { requestId: command.requestId };
+      }
+      case "computer.takeControl": {
+        const acquiredAtMs = Date.now();
+        this.computerControlLease = {
+          agentId: command.agentId,
+          leaseId: command.leaseId,
+          acquiredAtMs,
+        };
+        this.emit({
+          type: "computer.controlChanged",
+          timestamp: now(),
+          requestId: command.requestId,
+          agentId: command.agentId,
+          leaseId: command.leaseId,
+          active: true,
+          lease: {
+            controllerId: command.agentId,
+            runId: command.leaseId,
+            deviceId: command.target?.deviceId ?? "mock-local-device",
+            origin: "local-ui",
+            mode: command.target?.kind ?? "physical",
+            acquiredAtMs,
+            expiresAtMs: acquiredAtMs + 5 * 60_000,
+          },
+        });
+        return { requestId: command.requestId };
+      }
+      case "computer.releaseControl": {
+        const active =
+          this.computerControlLease?.agentId === command.agentId &&
+          this.computerControlLease.leaseId === command.leaseId;
+        if (active) this.computerControlLease = null;
+        this.emit({
+          type: "computer.controlChanged",
+          timestamp: now(),
+          requestId: command.requestId,
+          agentId: command.agentId,
+          leaseId: command.leaseId,
+          active: false,
+        });
         return { requestId: command.requestId };
       }
       case "remoteComputer.register":
@@ -1765,7 +1819,7 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
         this.emit({ type: "mcp.refreshed", timestamp: now() });
         return { requestId: command.requestId };
       case "mcp.toolCall":
-        this.emit({ type: "mcp.toolResult", timestamp: now(), server: command.server, tool: command.tool, result: { ok: true, arguments: command.arguments ?? null } });
+        this.emit({ type: "mcp.toolResult", timestamp: now(), requestId: command.requestId, server: command.server, tool: command.tool, result: { ok: true, arguments: command.arguments ?? null } });
         return { requestId: command.requestId };
       case "settings.get":
         this.emit({ type: "settings.changed", timestamp: now(), settings: this.hostSettings });
@@ -1907,6 +1961,10 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
         this.emit({ type: "session.cleared", timestamp: now() });
         return { requestId: command.requestId };
     }
+
+    throw new Error(
+      `Unsupported mock runtime command: ${(command as RuntimeCommand).type}`,
+    );
   }
 
   async authStatus(): Promise<AuthState> {

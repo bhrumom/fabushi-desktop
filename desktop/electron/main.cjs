@@ -38,7 +38,6 @@ protocol.registerSchemesAsPrivileged([
 const miniAppDocuments = new Map();
 const MINIAPP_DOCUMENT_TTL_MS = 10 * 60 * 1000;
 const MINIAPP_DOCUMENT_MAX_BYTES = 5 * 1024 * 1024;
-const HOST_EVENT_LONG_POLL_MS = 500;
 
 function pruneMiniAppDocuments(now = Date.now()) {
   for (const [token, entry] of miniAppDocuments) {
@@ -97,25 +96,20 @@ function encryptedProviderSecret(name) {
 }
 
 function providerEnvironment(inferenceProvider) {
-  if (inferenceProvider === 'openrouter') {
-    const value = encryptedProviderSecret('inference/openrouter/api-key');
-    if (!value) return {};
-    return {
-      MAHAYANA_MODEL_BEARER_TOKEN: value,
-      MAHAYANA_OPENROUTER_MODEL: process.env.MAHAYANA_OPENROUTER_MODEL || 'openai/gpt-5.2',
-    };
+  const result = {};
+  const openrouter = encryptedProviderSecret('inference/openrouter/api-key');
+  if (openrouter && !/[\r\n]/.test(openrouter)) {
+    result.MAHAYANA_OPENROUTER_API_KEY = openrouter;
+    result.MAHAYANA_OPENROUTER_MODEL = process.env.MAHAYANA_OPENROUTER_MODEL || 'openai/gpt-5.2';
+    if (inferenceProvider === 'openrouter') result.MAHAYANA_MODEL_BEARER_TOKEN = openrouter;
   }
-  if (inferenceProvider === 'claude-code') {
-    const value = encryptedProviderSecret('inference/claude/api-key') || process.env.ANTHROPIC_API_KEY?.trim();
-    if (!value || /[\r\n]/.test(value)) return {};
-    return {
-      MAHAYANA_MODEL_BEARER_TOKEN: value,
-      MAHAYANA_CLAUDE_MODEL: process.env.MAHAYANA_CLAUDE_MODEL || 'claude-sonnet-4-6',
-    };
+  const claude = encryptedProviderSecret('inference/claude/api-key') || process.env.ANTHROPIC_API_KEY?.trim();
+  if (claude && !/[\r\n]/.test(claude)) {
+    result.MAHAYANA_CLAUDE_API_KEY = claude;
+    result.MAHAYANA_CLAUDE_MODEL = process.env.MAHAYANA_CLAUDE_MODEL || 'claude-sonnet-4-6';
+    if (inferenceProvider === 'claude-code') result.MAHAYANA_MODEL_BEARER_TOKEN = claude;
   }
-  return {
-    // Never forward provider credentials to the Fabushi/Codex Host generation.
-  };
+  return result;
 }
 
 const host = new MahayanaHostProcess({ providerEnvironment });
@@ -126,8 +120,6 @@ let appAgentSurfaceServer = null;
 let remoteDeviceAgentSupervisor = null;
 let appAgentSurfaceShutdownPending = false;
 let appAgentSurfaceShutdownComplete = false;
-let hostEventPumpStopped = false;
-let hostEventPump = null;
 const messagingAccessCache = new Map();
 let messagingSignalingClient = null;
 let availableDesktopUpdateVersion = null;
@@ -620,6 +612,13 @@ function describeTheme() {
 }
 
 function broadcastNativeEvent(eventName, payload) {
+  if (eventName === 'account-state-changed' && remoteDeviceAgentSupervisor) {
+    setImmediate(() => {
+      void remoteDeviceAgentSupervisor?.sync().catch((error) => {
+        console.warn('[fabushi-remote-device] account-triggered sync failed', error instanceof Error ? error.message : String(error));
+      });
+    });
+  }
   if (!nativeEdgeServer) return;
   for (const win of BrowserWindow.getAllWindows()) {
     if (win.isDestroyed() || win.webContents.isDestroyed()) continue;
@@ -691,6 +690,21 @@ function installNativeEdge() {
     },
     getRustDeskStatus() {
       return { available: Boolean(rustDeskSidecar.executablePath()), ready: rustDeskSidecar.ready, sessions: rustDeskSidecar.sessions.size };
+    },
+    getRemoteComputerBackgroundState() {
+      return remoteDeviceAgentSupervisor?.snapshot() ?? {
+        running: false,
+        deviceId: '',
+        sessionId: '',
+        username: '',
+        lastSyncAtMs: 0,
+        error: null,
+      };
+    },
+    async refreshRemoteComputerBackground() {
+      if (!remoteDeviceAgentSupervisor) throw new Error('Remote computer background service is unavailable.');
+      await remoteDeviceAgentSupervisor.sync();
+      return remoteDeviceAgentSupervisor.snapshot();
     },
     openRustDeskSession(params) {
       return rustDeskSidecar.open(params);
@@ -782,20 +796,35 @@ function installNativeEdge() {
     },
     async readClientPersistence(params) {
       const key = persistenceKey(params.key);
+      const durable = await host.request('feature.persistence.get', { key });
+      if (durable !== null && durable !== undefined) return durable;
+
+      // One-way lazy migration from the pre-SQLite native-state projection.
       const state = await readNativeState();
-      return state.clientPersistence?.[key] ?? null;
+      const legacy = state.clientPersistence?.[key];
+      if (legacy === undefined) return null;
+      await host.request('feature.persistence.set', { key, value: legacy });
+      await mutateNativeState((current) => {
+        const next = { ...(current.clientPersistence ?? {}) };
+        delete next[key];
+        return { ...current, clientPersistence: next };
+      });
+      return legacy;
     },
     async writeClientPersistence(params) {
       const key = persistenceKey(params.key);
-      const value = params.value;
-      await mutateNativeState((state) => ({
-        ...state,
-        clientPersistence: { ...(state.clientPersistence ?? {}), [key]: value },
-      }));
+      await host.request('feature.persistence.set', { key, value: params.value });
+      await mutateNativeState((state) => {
+        if (!state.clientPersistence || state.clientPersistence[key] === undefined) return state;
+        const next = { ...state.clientPersistence };
+        delete next[key];
+        return { ...state, clientPersistence: next };
+      });
       return true;
     },
     async removeClientPersistence(params) {
       const key = persistenceKey(params.key);
+      await host.request('feature.persistence.remove', { key });
       await mutateNativeState((state) => {
         const next = { ...(state.clientPersistence ?? {}) };
         delete next[key];
@@ -805,8 +834,12 @@ function installNativeEdge() {
     },
     async listClientPersistenceKeys(params) {
       const prefix = params.prefix == null ? '' : String(params.prefix);
+      const durable = await host.request('feature.persistence.list', { prefix });
       const state = await readNativeState();
-      return Object.keys(state.clientPersistence ?? {}).filter((key) => key.startsWith(prefix)).sort();
+      return [...new Set([
+        ...(Array.isArray(durable) ? durable.map(String) : []),
+        ...Object.keys(state.clientPersistence ?? {}).filter((key) => key.startsWith(prefix)),
+      ])].sort();
     },
     requestDiskSaverAudit() {
       return auditUserDataStorage();
@@ -928,30 +961,24 @@ function broadcastMahayanaEvent(event) {
   }
 }
 
-function startHostEventPump() {
-  if (hostEventPump) return;
-  hostEventPumpStopped = false;
-  hostEventPump = (async () => {
-    while (!hostEventPumpStopped) {
-      try {
-        const event = await host.request('feature.receive', { timeoutMs: HOST_EVENT_LONG_POLL_MS });
-        if (event) broadcastMahayanaEvent(event);
-        // The Rust channel wakes immediately when an event arrives. Keep this
-        // timeout bounded because the app-host request channel is serial: a very
-        // long receive would save wakeups by making auth/settings IPC stall.
-        // Yield one main-loop turn before the next receive so renderer IPC can
-        // enter the serial Host request queue.
-        await new Promise((resolve) => setImmediate(resolve));
-      } catch (error) {
-        if (hostEventPumpStopped) break;
-        console.error('[mahayana-edge] runtime event pump failed', error);
-        await sleep(100);
-      }
-    }
-  })().finally(() => {
-    hostEventPump = null;
+host.onLifecycle((lifecycle) => {
+  const at = Number(lifecycle?.at);
+  broadcastMahayanaEvent({
+    type: 'host.lifecycle',
+    timestamp: new Date(Number.isFinite(at) ? at : Date.now()).toISOString(),
+    lifecycle: String(lifecycle?.type || 'unknown'),
+    state: String(lifecycle?.state || 'unknown'),
+    generation: Number(lifecycle?.generation || 0),
+    sequence: Number(lifecycle?.sequence || 0),
+    ...(lifecycle?.recoverable !== undefined ? { recoverable: Boolean(lifecycle.recoverable) } : {}),
+    ...(lifecycle?.reason ? { reason: String(lifecycle.reason) } : {}),
+    ...(lifecycle?.error ? { error: String(lifecycle.error) } : {}),
   });
-}
+});
+
+host.onRuntimeEvent((event) => {
+  broadcastMahayanaEvent(event);
+});
 
 function installIpcHandlers() {
   installMahayanaEdge();
@@ -1025,9 +1052,10 @@ function createWindow() {
       sandbox: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
-      // Remote presence, WebRTC signaling, and semantic computer-use polling
-      // must continue when the user closes (hides) the desktop window.
-      backgroundThrottling: false,
+      // The renderer is presentation-only. Background Agent, sync and computer
+      // services live in Main/Rust, so hidden windows may use Electron's normal
+      // background throttling instead of keeping every React timer at full rate.
+      backgroundThrottling: true,
     },
   });
   mainWindow = win;
@@ -1338,6 +1366,19 @@ function installAppProtocol() {
   protocol.handle('fabushi-miniapp', handleMiniAppDocumentRequest);
 }
 
+function trustedRendererAudioPermission(webContents, permission, details = {}) {
+  if (permission !== 'media' || !webContents || webContents.isDestroyed()) return false;
+  let url;
+  try { url = new URL(webContents.getURL()); } catch { return false; }
+  if (url.protocol !== 'app:' || url.hostname !== 'bundle') return false;
+  const mediaTypes = Array.isArray(details.mediaTypes)
+    ? details.mediaTypes
+    : details.mediaType
+      ? [details.mediaType]
+      : [];
+  return mediaTypes.includes('audio') && !mediaTypes.includes('video');
+}
+
 applyStartupNativePreferences();
 
 app.whenReady().then(async () => {
@@ -1345,17 +1386,23 @@ app.whenReady().then(async () => {
   installApplicationMenu();
   installAutoUpdaterEvents();
   if (primaryInstance && app.isPackaged) app.setAsDefaultProtocolClient('fabushi');
-  session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
+  session.defaultSession.setPermissionCheckHandler((webContents, permission, _origin, details) =>
+    trustedRendererAudioPermission(webContents, permission, details));
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) =>
+    callback(trustedRendererAudioPermission(webContents, permission, details)));
   installIpcHandlers();
   await startAppAgentSurfaceServer().catch((error) => {
     console.error('[app-agent-surface] failed to start', error);
   });
   host.start();
-  remoteDeviceAgentSupervisor = new RemoteDeviceAgentSupervisor({ host, app });
+  remoteDeviceAgentSupervisor = new RemoteDeviceAgentSupervisor({
+    host,
+    app,
+    onState: (state) => broadcastNativeEvent('remote-computer-background-state', state),
+  });
   remoteDeviceAgentSupervisor.start();
   installBackgroundTray();
   createWindow();
-  startHostEventPump();
   installAutomaticDesktopUpdateChecks();
   app.on('activate', () => {
     focusMainWindow();
@@ -1374,7 +1421,6 @@ app.on('before-quit', (event) => {
   quitting = true;
   if (automaticDesktopUpdateCheckTimer) clearInterval(automaticDesktopUpdateCheckTimer);
   automaticDesktopUpdateCheckTimer = null;
-  hostEventPumpStopped = true;
   mahayanaEdgeServer?.dispose();
   mahayanaEdgeServer = null;
   nativeEdgeServer?.dispose();

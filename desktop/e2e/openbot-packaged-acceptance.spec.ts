@@ -387,8 +387,8 @@ async function saveRuntimeEvidence(
   await mkdir(evidenceDir, { recursive: true });
   const lifecycle = await page.evaluate(() => (window as typeof window & { __obfLifecycle?: LifecycleSample[] }).__obfLifecycle || []);
   await writeFile(path.join(evidenceDir, 'lifecycle.json'), JSON.stringify(lifecycle, null, 2));
-  const workbench = await page.evaluate(() => window.localStorage.getItem('fabushi.desktop.mahayana-agent-workbench.v1'));
-  await writeFile(path.join(evidenceDir, 'mahayana-agent-workbench.json'), workbench || '{}');
+  const agentDrafts = await page.evaluate(() => window.localStorage.getItem('fabushi.agent-workspace.drafts.v1'));
+  await writeFile(path.join(evidenceDir, 'agent-workspace-drafts.json'), agentDrafts || '{}');
   await writeFile(path.join(evidenceDir, 'runtime.log'), logs.map((entry) => `${new Date(entry.at).toISOString()} [${entry.source}] ${entry.text}`).join('\n'));
   if (referenceBytes) await writeFile(path.join(evidenceDir, 'openbot-reference.png'), referenceBytes);
   if (geometry) await writeFile(path.join(evidenceDir, 'geometry.json'), JSON.stringify(geometry, null, 2));

@@ -138,6 +138,7 @@ rpassword = "7"
 ratatui = "0.29.0"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "multipart", "rustls-tls"] }
 rquickjs = { version = "0.12.2", default-features = false, features = ["std", "loader"] }
+rusqlite = "0.39"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
