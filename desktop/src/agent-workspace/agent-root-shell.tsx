@@ -437,7 +437,7 @@ function botMarkStateForPeer(
   }
 }
 
-function legacyBotMarkState(state: FabAvatarInputState): FabAvatarInputState {
+function normalizeCompatibilityAvatarState(state: FabAvatarInputState): FabAvatarInputState {
   switch (state) {
     case 'waiting':
       return 'alerting';
@@ -4120,8 +4120,8 @@ async function saveInvoiceDialog() {
                   key={`${message.source}:${message.id}`}
                   turn={message.assistantTurn}
                   label={activePeer.title}
-                  avatar={<BotMark
-                    botId={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
+                  avatar={<FabAvatar
+                    identity={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`}
                     state={message.assistantTurn.status === 'running' ? 'thinking' : message.assistantTurn.status === 'failed' ? 'error' : 'result'}
                     size={30}
                     className={styles.agentStreamAvatar}
@@ -4179,7 +4179,7 @@ async function saveInvoiceDialog() {
                   <small>{formatTime(message.createdAtMs)} {message.role === 'me' ? <Check size={12} /> : null}</small>
                 </article>;
               })())}
-              {!matchingMessages.length ? <div className={styles.chatEmpty} data-testid="message-search-empty"><FabAvatar identity={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? legacyBotMarkState(botMarkStateForPeer(activePeer, selfBotExecutions, false, hostReady)) : 'idle'} size={78} className={styles.agentAvatarMark} label={activePeer.title} /><strong>{activePeer.title}</strong><p>联系人、AI Bot、群组和频道使用同一个 Fabushi 消息产品层。</p></div> : null}
+              {!matchingMessages.length ? <div className={styles.chatEmpty} data-testid="message-search-empty"><FabAvatar identity={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? normalizeCompatibilityAvatarState(botMarkStateForPeer(activePeer, selfBotExecutions, false, hostReady)) : 'idle'} size={78} className={styles.agentAvatarMark} label={activePeer.title} /><strong>{activePeer.title}</strong><p>联系人、AI Bot、群组和频道使用同一个 Fabushi 消息产品层。</p></div> : null}
             </div>
             )}
             {legacyReplyTo ? <div className={extra.composerBanner} data-testid="reply-message-banner"><Reply size={15} /><div><strong>回复</strong><span>{legacyReplyTo.text}</span></div><button type="button" data-testid="reply-message-cancel" onClick={() => setLegacyReplyTo(null)}><X size={14} /></button></div> : null}
@@ -4282,7 +4282,7 @@ async function saveInvoiceDialog() {
         <aside className={styles.infoPanel} data-testid="messenger-info-panel" data-overlay={!wideInfoLayout || undefined}>
           <header><strong>资料</strong><button type="button" onClick={() => wideInfoLayout ? setInfoOpen(false) : setNarrowInfoOpen(false)}><X size={17} /></button></header>
           <div className={styles.profileCard}>
-            <FabAvatar identity={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? legacyBotMarkState(botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)) : 'idle'} size={92} className={styles.agentProfileMark} label={activePeer.title} />
+            <FabAvatar identity={`peer:${activePeer.kind}:${activePeer.actorId ?? activePeer.id}`} state={isAgentPeer(activePeer) ? normalizeCompatibilityAvatarState(botMarkStateForPeer(activePeer, selfBotExecutions, activePeerBusy, hostReady)) : 'idle'} size={92} className={styles.agentProfileMark} label={activePeer.title} />
             <strong>{activePeer.title}</strong><small>{activePeer.subtitle}</small>
             <div className={styles.profileQuickActions} data-columns={isAgentPeer(activePeer) ? '4' : '3'}><button type="button" onClick={() => void startCall('voice')}><PhoneCall size={18} /><span>通话</span></button><button type="button" onClick={() => void startCall('video')}><Video size={18} /><span>视频</span></button><button type="button" onClick={() => { setConversationSearchOpen(true); setAgentConversationSearch(''); }}><Search size={18} /><span>搜索</span></button>{isAgentPeer(activePeer) ? <button type="button" data-testid="bot-computer-toggle" data-active={agentComputer.open} onClick={() => {
               agentComputer.toggleForAgent(activePeer.agentId ?? activePeer.actorId ?? activePeer.id, 'bot-profile');
