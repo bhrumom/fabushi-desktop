@@ -88,6 +88,20 @@
   font: inherit;
 }
 
+.bareInput[type='checkbox'] {
+  appearance: auto;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  cursor: pointer;
+  accent-color: var(--fab-accent);
+}
+
+.bareInput[type='checkbox']:disabled {
+  cursor: default;
+  opacity: .42;
+}
+
 .input,
 .select {
   width: 100%;
