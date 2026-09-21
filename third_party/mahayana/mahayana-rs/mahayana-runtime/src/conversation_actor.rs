@@ -105,6 +105,50 @@ impl ConversationActorRegistry {
 mod tests {
     use super::*;
 
+    #[tokio::test]
+    async fn registry_reuses_actor_and_gates_only_the_same_conversation() {
+        let registry = ConversationActorRegistry::default();
+        let first_id = ConversationId::new("mahayana-ai:agent:first").unwrap();
+        let second_id = ConversationId::new("mahayana-ai:agent:second").unwrap();
+        let first = registry.actor(&first_id).unwrap();
+        let first_again = registry.actor(&first_id).unwrap();
+        let second = registry.actor(&second_id).unwrap();
+
+        assert!(Arc::ptr_eq(&first, &first_again));
+        assert!(!Arc::ptr_eq(&first, &second));
+
+        let first_guard = first.gate.lock().await;
+        assert!(first.gate.try_lock().is_err(), "same conversation must serialize");
+        assert!(second.gate.try_lock().is_ok(), "other conversations must remain independently runnable");
+        drop(first_guard);
+        assert!(first.gate.try_lock().is_ok());
+    }
+
+    #[test]
+    fn actor_owns_turn_state_sequence_and_active_run_lifecycle() {
+        let registry = ConversationActorRegistry::default();
+        let conversation = ConversationId::new("mahayana-ai:agent:lifecycle").unwrap();
+        let actor = registry.actor(&conversation).unwrap();
+        let turn = TurnId::new("turn:lifecycle").unwrap();
+        let run = RunId::new("run:lifecycle").unwrap();
+
+        let (_, accepted_sequence) = actor.register(turn.clone()).unwrap();
+        let started_sequence = actor.start(&turn, run.clone()).unwrap();
+        let thinking_sequence = actor.set_state(&turn, TurnState::Thinking).unwrap().unwrap();
+        let duplicate = actor.set_state(&turn, TurnState::Thinking).unwrap();
+        let finished_sequence = actor.finish(&run).unwrap();
+
+        assert!(accepted_sequence < started_sequence);
+        assert!(started_sequence < thinking_sequence);
+        assert!(thinking_sequence < finished_sequence);
+        assert!(duplicate.is_none(), "identical lifecycle state must not emit a new sequence");
+
+        let state = actor.state.lock().unwrap();
+        assert_eq!(state.states.get(&turn), Some(&TurnState::Thinking));
+        assert!(state.active_run.is_none());
+        assert!(state.active_turn.is_none());
+    }
+
     #[test]
     fn second_turn_is_queued_until_first_run_finishes() {
         let registry = ConversationActorRegistry::default();
