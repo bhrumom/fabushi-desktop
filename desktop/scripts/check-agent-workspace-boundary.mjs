@@ -136,9 +136,14 @@ requirePattern('Agent Sidebar boundary must own FabDialog management flows', age
 forbidPattern('Agent Network must use FabDialog instead of browser-native prompt/confirm', agentNetwork, /window\.(?:prompt|confirm)\s*\(/);
 requirePattern('Agent Network must own FabDialog group management flows', agentNetwork, /\bFabDialog\b/);
 requirePattern(
-  'Bare Fab checkboxes must remain actionable and non-zero-sized',
+  'FabInput must route checkboxes through the dedicated checkbox primitive',
+  primitives,
+  /props\.type === ['"]checkbox['"][\s\S]{0,180}styles\.checkbox/,
+);
+requirePattern(
+  'Fab checkboxes must remain native, actionable and non-zero-sized',
   primitiveStyles,
-  /\.bareInput\[type=['"]checkbox['"]\][\s\S]{0,300}width:\s*14px[\s\S]{0,200}height:\s*14px/,
+  /\.checkbox\s*\{[\s\S]{0,240}appearance:\s*auto[\s\S]{0,240}width:\s*14px[\s\S]{0,160}height:\s*14px/,
 );
 forbidPattern(
   'Conversation identity must not infer Telegram from string prefixes',
