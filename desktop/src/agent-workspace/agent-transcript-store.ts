@@ -377,25 +377,75 @@ export class AgentTranscriptStore {
     peerKey: string,
     event: Extract<RuntimeEvent, { type: 'turn.state' }>,
   ): AgentTranscriptSourceMessage[] {
-    return this.update(peerKey, (current) => current.map((message) => {
-      if (message.operationId !== event.operationId) return message;
-      if (message.kind === 'assistant-turn') {
-        return {
-          ...message,
-          status: event.state,
-          streaming: event.state === 'streaming',
-          queued: event.state === 'queued',
-        };
-      }
-      if (message.role === 'me' && message.kind === 'message') {
-        return {
-          ...message,
-          optimistic: event.state === 'accepted' || event.state === 'queued',
-          queued: event.state === 'queued',
-        };
-      }
-      return message;
-    }));
+    const activeStates = new Set([
+      'preparing',
+      'thinking',
+      'tool-running',
+      'streaming',
+      'waiting-user',
+      'recovering',
+    ]);
+    const parsedTimestamp = Date.parse(event.timestamp);
+    const updatedAtMs = Number.isFinite(parsedTimestamp) ? parsedTimestamp : Date.now();
+    const assistantStatus = event.state === 'completed'
+      ? 'completed'
+      : event.state === 'failed'
+        ? 'failed'
+        : event.state === 'cancelled'
+          ? 'interrupted'
+          : 'running';
+
+    return this.update(peerKey, (current) => {
+      const hasAssistantTurn = current.some((message) =>
+        message.kind === 'assistant-turn' && message.operationId === event.operationId,
+      );
+      const withRunProjection = hasAssistantTurn || !activeStates.has(event.state)
+        ? current
+        : [
+            ...current,
+            {
+              id: `${event.operationId}:assistant-turn`,
+              source: 'legacy' as const,
+              role: 'peer' as const,
+              text: '',
+              createdAtMs: updatedAtMs,
+              kind: 'assistant-turn' as const,
+              operationId: event.operationId,
+              streaming: event.state === 'streaming',
+              status: event.state,
+              assistantTurn: createAssistantTurn(event.operationId, updatedAtMs),
+            },
+          ];
+
+      return withRunProjection.map((message) => {
+        if (message.operationId !== event.operationId) return message;
+        if (message.kind === 'assistant-turn') {
+          return {
+            ...message,
+            status: event.state,
+            streaming: event.state === 'streaming',
+            queued: event.state === 'queued',
+            ...(message.assistantTurn
+              ? {
+                  assistantTurn: {
+                    ...message.assistantTurn,
+                    updatedAtMs,
+                    status: assistantStatus,
+                  },
+                }
+              : {}),
+          };
+        }
+        if (message.role === 'me' && message.kind === 'message') {
+          return {
+            ...message,
+            optimistic: event.state === 'accepted' || event.state === 'queued',
+            queued: event.state === 'queued',
+          };
+        }
+        return message;
+      });
+    });
   }
 
   appendComputerHandoff(
