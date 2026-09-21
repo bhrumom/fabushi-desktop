@@ -38,7 +38,6 @@ protocol.registerSchemesAsPrivileged([
 const miniAppDocuments = new Map();
 const MINIAPP_DOCUMENT_TTL_MS = 10 * 60 * 1000;
 const MINIAPP_DOCUMENT_MAX_BYTES = 5 * 1024 * 1024;
-const HOST_EVENT_LONG_POLL_MS = 500;
 
 function pruneMiniAppDocuments(now = Date.now()) {
   for (const [token, entry] of miniAppDocuments) {
@@ -121,8 +120,6 @@ let appAgentSurfaceServer = null;
 let remoteDeviceAgentSupervisor = null;
 let appAgentSurfaceShutdownPending = false;
 let appAgentSurfaceShutdownComplete = false;
-let hostEventPumpStopped = false;
-let hostEventPump = null;
 const messagingAccessCache = new Map();
 let messagingSignalingClient = null;
 let availableDesktopUpdateVersion = null;
@@ -938,30 +935,9 @@ host.onLifecycle((lifecycle) => {
   });
 });
 
-function startHostEventPump() {
-  if (hostEventPump) return;
-  hostEventPumpStopped = false;
-  hostEventPump = (async () => {
-    while (!hostEventPumpStopped) {
-      try {
-        const event = await host.request('feature.receive', { timeoutMs: HOST_EVENT_LONG_POLL_MS });
-        if (event) broadcastMahayanaEvent(event);
-        // The Rust channel wakes immediately when an event arrives. Keep this
-        // timeout bounded because the app-host request channel is serial: a very
-        // long receive would save wakeups by making auth/settings IPC stall.
-        // Yield one main-loop turn before the next receive so renderer IPC can
-        // enter the serial Host request queue.
-        await new Promise((resolve) => setImmediate(resolve));
-      } catch (error) {
-        if (hostEventPumpStopped) break;
-        console.error('[mahayana-edge] runtime event pump failed', error);
-        await sleep(100);
-      }
-    }
-  })().finally(() => {
-    hostEventPump = null;
-  });
-}
+host.onRuntimeEvent((event) => {
+  broadcastMahayanaEvent(event);
+});
 
 function installIpcHandlers() {
   installMahayanaEdge();
@@ -1035,9 +1011,10 @@ function createWindow() {
       sandbox: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
-      // Remote presence, WebRTC signaling, and semantic computer-use polling
-      // must continue when the user closes (hides) the desktop window.
-      backgroundThrottling: false,
+      // The renderer is presentation-only. Background Agent, sync and computer
+      // services live in Main/Rust, so hidden windows may use Electron's normal
+      // background throttling instead of keeping every React timer at full rate.
+      backgroundThrottling: true,
     },
   });
   mainWindow = win;
@@ -1381,7 +1358,6 @@ app.whenReady().then(async () => {
   remoteDeviceAgentSupervisor.start();
   installBackgroundTray();
   createWindow();
-  startHostEventPump();
   installAutomaticDesktopUpdateChecks();
   app.on('activate', () => {
     focusMainWindow();
@@ -1400,7 +1376,6 @@ app.on('before-quit', (event) => {
   quitting = true;
   if (automaticDesktopUpdateCheckTimer) clearInterval(automaticDesktopUpdateCheckTimer);
   automaticDesktopUpdateCheckTimer = null;
-  hostEventPumpStopped = true;
   mahayanaEdgeServer?.dispose();
   mahayanaEdgeServer = null;
   nativeEdgeServer?.dispose();
