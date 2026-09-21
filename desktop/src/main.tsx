@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { installDesktopAccountSessionSync } from './account-session-sync';
 import { installDesktopAppAgentSurface } from './app-agent-surface';
-import { installBotIdentityAliases } from './agent-identity-aliases';
+import { installFabAvatarIdentityAliases } from './agent-identity-aliases';
 import CredentialVault from './credential-vault';
 import { installDurableAgentState, restoreDurableAgentState } from './durable-agent-state';
 import DesktopApp from './app/DesktopApp';
@@ -29,7 +29,7 @@ async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
   // their first-frame local cache. This makes localStorage a projection;
   // canonical cloud/Rust authority is verified separately by GBF-601/602.
   await restoreDurableAgentState();
-  installBotIdentityAliases();
+  installFabAvatarIdentityAliases();
   installDesktopMiniAppDiscoveryAliases();
   installDurableAgentState();
   installDesktopMiniAppWebMcpHost();
