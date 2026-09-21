@@ -55,6 +55,12 @@ jobs:
             test "$(git rev-parse --abbrev-ref HEAD)" = "main"
           fi
           version="$(node -p "require('./desktop/package.json').version")"
+          node -e "const v=process.argv[1].split('.').map(Number), floor=[1,2,75]; if(v.length!==3 || v.some(Number.isNaN) || v[0]<floor[0] || (v[0]===floor[0] && v[1]<floor[1]) || (v[0]===floor[0] && v[1]===floor[1] && v[2]<floor[2])) { console.error('Release version must be >= 1.2.75'); process.exit(1) }" "$version"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          canonical="$(git rev-parse refs/remotes/origin/main)"
+          if [ "${{ inputs.publish_release }}" = "true" ] || [ "${{ github.event_name }}" = "push" ]; then
+            test "$sha" = "$canonical" || { echo "::error::Published macOS package source $sha is not canonical main $canonical"; exit 1; }
+          fi
           short="${sha:0:12}"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
