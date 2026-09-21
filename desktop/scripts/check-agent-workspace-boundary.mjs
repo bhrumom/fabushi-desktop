@@ -175,7 +175,8 @@ requirePattern('Runtime no longer locks the ConversationActor execution gate', r
 requirePattern('Runtime no longer persists LogicalTurn/ExecutionRun state transitions', runtimeLib, /transition_turn_state/);
 requirePattern('CapabilityBroker is missing', broker, /pub struct CapabilityBroker/);
 requirePattern('CapabilityBroker no longer owns authorization decisions', broker, /pub fn authorize_request\s*\(/);
-requirePattern('Runtime InvokeCapability bypasses CapabilityBroker', runtimeLib, /RuntimeCommand::InvokeCapability[\s\S]{0,2400}capability_broker[\s\S]{0,240}authorize_request/);
+requirePattern('Runtime InvokeCapability bypasses CapabilityBroker', runtimeLib, /RuntimeCommand::InvokeCapability[\s\S]{0,2800}capability_broker[\s\S]{0,320}\.authorize\s*\(/);
+requirePattern('CapabilityBroker descriptor authorization bypasses request policy and audit', broker, /pub fn authorize[\s\S]{0,900}self\.authorize_request\s*\(/);
 requirePattern('FeatureHost no longer routes privileged commands through RuntimeCommand::AuthorizeCapability', featureHost, /RuntimeCommand::AuthorizeCapability/);
 requirePattern('Capability audit persistence is missing', runtimeStore, /CREATE TABLE IF NOT EXISTS capability_audit/);
 requirePattern('Turn persistence is missing', runtimeStore, /CREATE TABLE IF NOT EXISTS turns/);
