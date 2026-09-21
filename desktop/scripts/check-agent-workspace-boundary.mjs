@@ -7,10 +7,15 @@ const desktopRoot = path.resolve(scriptDir, '..');
 const obsoleteShellPath = path.join(desktopRoot, 'src', 'messaging-shell-v2.tsx');
 const shellPath = path.join(desktopRoot, 'src', 'adapters', 'legacy-messaging', 'legacy-messaging-shell.tsx');
 const shell = fs.readFileSync(shellPath, 'utf8');
+const repoRoot = path.resolve(desktopRoot, '..');
 const desktopApp = fs.readFileSync(path.join(desktopRoot, 'src', 'app', 'DesktopApp.tsx'), 'utf8');
 const mainEntry = fs.readFileSync(path.join(desktopRoot, 'src', 'main.tsx'), 'utf8');
 const computerController = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-computer-controller.ts'), 'utf8');
 const electronMain = fs.readFileSync(path.join(desktopRoot, 'electron', 'main.cjs'), 'utf8');
+const remoteDeviceSupervisor = fs.readFileSync(path.join(desktopRoot, 'electron', 'remote-device-agent-supervisor.cjs'), 'utf8');
+const hostClient = fs.readFileSync(path.join(repoRoot, 'frontend', 'apps', 'web', 'src', 'app', 'host', 'host-client.tsx'), 'utf8');
+const agentTranscript = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'agent-transcript.tsx'), 'utf8');
+const agentOverlays = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'agent-overlays.tsx'), 'utf8');
 const networkControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-network-controller.ts');
 const networkController = fs.readFileSync(networkControllerPath, 'utf8');
 const workflowControllerPath = path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-workflow-controller.ts');
@@ -25,7 +30,6 @@ const agentRichEditorPath = path.join(desktopRoot, 'src', 'agent-workspace', 'ag
 const agentRichEditor = fs.readFileSync(agentRichEditorPath, 'utf8');
 const compatibilityAdapterPath = path.join(desktopRoot, 'src', 'agent-workspace', 'messenger-compatibility-adapter.tsx');
 const compatibilityAdapter = fs.readFileSync(compatibilityAdapterPath, 'utf8');
-const repoRoot = path.resolve(desktopRoot, '..');
 const accountSidebarLayout = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'account-sidebar-layout.ts'), 'utf8');
 const sidebarController = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'use-agent-sidebar-controller.ts'), 'utf8');
 const hostProtocol = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-host-protocol', 'src', 'lib.rs'), 'utf8');
@@ -105,6 +109,16 @@ if (/GrokChatParityRuntime|prepareGrokChatParityRuntime|MahayanaAgentWorkbench/.
 }
 if (/setInterval\s*\(/.test(shell)) {
   violations.push('legacy compatibility adapter reintroduced interval polling');
+}
+if (/\bBotMark\b/.test(agentTranscript) || /\bBotMark\b/.test(agentOverlays)) {
+  violations.push('Agent-owned transcript or overlays regressed to the legacy animated BotMark engine');
+}
+if (!/if \(isElectronMahayanaHostAvailable\(\)\)/.test(hostClient)
+  || /SESSION_POLL_MS/.test(remoteDeviceSupervisor)
+  || !/sessionRefreshDelay\s*\(/.test(remoteDeviceSupervisor)
+  || !/eventName === ['"]account-state-changed['"]/.test(electronMain)
+  || !/remoteDeviceAgentSupervisor\?\.sync\(\)/.test(electronMain)) {
+  violations.push('Electron remote computer ownership regressed to Renderer or fixed session polling');
 }
 if (!/AGENT_WORKSPACE_DRAFT_STORAGE_KEY/.test(agentDraftStore)
   || !/AGENT_WORKSPACE_DRAFT_STORAGE_KEY/.test(durableAgentState)
