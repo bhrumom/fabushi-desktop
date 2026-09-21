@@ -368,7 +368,7 @@ export default function AgentRootShell({
     product.sidebar.clearSelection();
   }, [product.sidebar.clearSelection]);
 
-  async function createAgent(name: string): Promise<void> {
+  async function createAgent(name: string = 'New Agent'): Promise<void> {
     const normalized = name.trim();
     if (!normalized) return;
     await product.directory.create({ name: normalized, description: '' });
