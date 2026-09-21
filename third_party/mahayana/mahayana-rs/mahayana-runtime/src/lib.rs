@@ -36,6 +36,7 @@ use mahayana_core::IntentId;
 use mahayana_core::LogicalTurn;
 use mahayana_core::MessageId;
 use mahayana_core::MODEL_RUNTIME_VERSION;
+use mahayana_core::MAHAYANA_AI_CONVERSATION_ID;
 use mahayana_core::OperationId;
 use mahayana_core::RunId;
 use mahayana_core::PluginCommandDescriptor;
