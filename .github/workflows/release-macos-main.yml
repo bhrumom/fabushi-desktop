@@ -1,6 +1,9 @@
 name: Package macOS installer from exact source
 
 on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
     inputs:
       source_sha:
@@ -20,7 +23,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: package-macos-${{ github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
+  group: package-macos-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -35,7 +38,7 @@ jobs:
       - name: Checkout exact source
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'push' && github.sha || inputs.source_sha || 'main' }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event_name == 'push' && github.sha || inputs.source_sha || 'main' }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -46,7 +49,9 @@ jobs:
           set -euo pipefail
           sha="$(git rev-parse HEAD)"
           requested="${{ inputs.source_sha }}"
-          if [ -n "$requested" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            test "$sha" = "${{ github.event.pull_request.head.sha }}"
+          elif [ -n "$requested" ]; then
             test "$sha" = "$requested"
           elif [ "${{ github.event_name }}" = "push" ]; then
             test "$sha" = "${{ github.sha }}"
@@ -317,7 +322,7 @@ jobs:
           compression-level: 0
 
       - name: Publish GitHub prerelease
-        if: ${{ github.event_name == 'push' || inputs.publish_release }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
