@@ -1,9 +1,9 @@
-import { registerBotIdentityAliases } from '../../frontend/apps/web/src/app/host/bot-mark';
+import { registerFabAvatarIdentityAliases } from './ui/avatar/fab-avatar-identity';
 import { MAHAYANA_RUNTIME_EVENT_NAME } from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
 
-export type BotIdentityAlias = { alias: string; canonical: string };
+export type FabAvatarIdentityAlias = { alias: string; canonical: string };
 
-const PRIMARY_MAHAYANA_IDENTITY_ALIASES: readonly BotIdentityAlias[] = [
+const PRIMARY_MAHAYANA_IDENTITY_ALIASES: readonly FabAvatarIdentityAlias[] = [
   { alias: 'peer:conversation:mahayana-ai:agent:assistant', canonical: 'bot:mahayana-assistant' },
   { alias: 'peer:conversation:mahayana-assistant', canonical: 'bot:mahayana-assistant' },
 ];
@@ -20,8 +20,8 @@ function asString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
-function appendBotAliases(
-  output: BotIdentityAlias[],
+function appendAvatarAliases(
+  output: FabAvatarIdentityAlias[],
   botId: string | null,
   conversationId?: string | null,
 ): void {
@@ -44,21 +44,21 @@ function appendBotAliases(
   }
 }
 
-function aliasesFromLegacyBotEvent(detail: UnknownRecord, output: BotIdentityAlias[]): void {
+function aliasesFromLegacyBotEvent(detail: UnknownRecord, output: FabAvatarIdentityAlias[]): void {
   if (detail.type === 'bot.listed' && Array.isArray(detail.bots)) {
     detail.bots.forEach((value) => {
       const bot = asRecord(value);
-      appendBotAliases(output, asString(bot?.id), asString(bot?.conversationId));
+      appendAvatarAliases(output, asString(bot?.id), asString(bot?.conversationId));
     });
     return;
   }
   if (detail.type === 'bot.changed') {
     const bot = asRecord(detail.bot);
-    appendBotAliases(output, asString(bot?.id), asString(bot?.conversationId));
+    appendAvatarAliases(output, asString(bot?.id), asString(bot?.conversationId));
   }
 }
 
-function aliasesFromSelfHostedEvent(detail: UnknownRecord, output: BotIdentityAlias[]): void {
+function aliasesFromSelfHostedEvent(detail: UnknownRecord, output: FabAvatarIdentityAlias[]): void {
   if (detail.type !== 'messaging.event') return;
   const envelope = asRecord(detail.envelope);
   const event = asRecord(envelope?.event);
@@ -67,20 +67,20 @@ function aliasesFromSelfHostedEvent(detail: UnknownRecord, output: BotIdentityAl
   if (event.type === 'syncBatch' && Array.isArray(event.bots)) {
     event.bots.forEach((value) => {
       const profile = asRecord(value);
-      appendBotAliases(output, asString(profile?.actorId));
+      appendAvatarAliases(output, asString(profile?.actorId));
     });
     return;
   }
 
   if (event.type === 'botChanged') {
     const profile = asRecord(event.profile);
-    appendBotAliases(output, asString(profile?.actorId));
+    appendAvatarAliases(output, asString(profile?.actorId));
     return;
   }
 
   if (event.type === 'botInvocationRequested') {
     const invocation = asRecord(event.invocation);
-    appendBotAliases(
+    appendAvatarAliases(
       output,
       asString(invocation?.botId),
       // This alias is harmless for direct Bot conversations and also gives a
@@ -96,32 +96,32 @@ function aliasesFromSelfHostedEvent(detail: UnknownRecord, output: BotIdentityAl
  * runtime-data -> identity mapping here prevents request/operation/conversation
  * seeds from accidentally becoming long-lived Bot visual identity.
  */
-export function botIdentityAliasesFromRuntimeDetail(detail: unknown): BotIdentityAlias[] {
+export function fabAvatarIdentityAliasesFromRuntimeDetail(detail: unknown): FabAvatarIdentityAlias[] {
   const record = asRecord(detail);
   if (!record) return [];
-  const aliases: BotIdentityAlias[] = [];
+  const aliases: FabAvatarIdentityAlias[] = [];
   aliasesFromLegacyBotEvent(record, aliases);
   aliasesFromSelfHostedEvent(record, aliases);
-  const unique = new Map<string, BotIdentityAlias>();
+  const unique = new Map<string, FabAvatarIdentityAlias>();
   aliases.forEach((entry) => unique.set(entry.alias, entry));
   return Array.from(unique.values());
 }
 
 /**
- * Subscribe to the single Mahayana runtime event stream and teach BotMark which
- * UI aliases point at the same canonical Bot. BotMark owns the reactive store,
+ * Subscribe to the single Mahayana runtime event stream and teach FabAvatar which
+ * UI aliases point at the same canonical Bot. FabAvatar owns the reactive store,
  * so already-mounted avatars immediately redraw when authoritative identity
  * metadata arrives.
  */
-export function installBotIdentityAliases(): () => void {
+export function installFabAvatarIdentityAliases(): () => void {
   if (typeof window === 'undefined') return () => {};
   // The primary Mahayana conversation has a stable built-in Bot identity even
   // before the first Host bot.listed event arrives. Register it synchronously
   // before React renders so list/header/empty-state and Workbench use one seed.
-  registerBotIdentityAliases(PRIMARY_MAHAYANA_IDENTITY_ALIASES);
+  registerFabAvatarIdentityAliases(PRIMARY_MAHAYANA_IDENTITY_ALIASES);
   const onRuntimeEvent = (event: Event) => {
-    const aliases = botIdentityAliasesFromRuntimeDetail((event as CustomEvent<unknown>).detail);
-    if (aliases.length) registerBotIdentityAliases(aliases);
+    const aliases = fabAvatarIdentityAliasesFromRuntimeDetail((event as CustomEvent<unknown>).detail);
+    if (aliases.length) registerFabAvatarIdentityAliases(aliases);
   };
   window.addEventListener(MAHAYANA_RUNTIME_EVENT_NAME, onRuntimeEvent);
   return () => window.removeEventListener(MAHAYANA_RUNTIME_EVENT_NAME, onRuntimeEvent);
