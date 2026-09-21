@@ -132,8 +132,8 @@ if (!/readLegacyAgentWorkspaceDrafts/.test(agentDraftStore)
   || !/readWorkspaceState\s*\(/.test(agentWorkspaceRuntime)
   || !/writeWorkspaceState\s*\(/.test(agentWorkspaceRuntime)
   || !/normalizePersistedAgentDrafts/.test(agentWorkspaceRuntime)
-  || !/read_ui_state\s*\(/.test(runtimeStore)
-  || !/write_ui_state\s*\(/.test(runtimeStore)) {
+  || !/read_workspace_state\s*\(/.test(runtimeStore)
+  || !/write_workspace_state\s*\(/.test(runtimeStore)) {
   violations.push('Agent drafts are not Rust RuntimeStore-owned with migration-only localStorage fallback');
 }
 if (!/import\s+AgentRootShell\s+from\s+['"]\.\.\/agent-workspace\/agent-root-shell['"]/.test(desktopApp)
