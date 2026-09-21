@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VIDEO_TOOL="$SCRIPT_DIR/fcm-010-13-macos-session-video.swift"
+VIDEO_TOOL="$SCRIPT_DIR/macos-session-video.swift"
 M2_SCALER_DRIVER='AppleM2ScalerParavirtDriver'
 CURRENT_PARAVIRT_DISPLAY='AppleParavirtDisplay'
 CAPTURE_INTERVAL_SECONDS="${FCM_MACOS_RECORDING_INTERVAL_SECONDS:-1}"
