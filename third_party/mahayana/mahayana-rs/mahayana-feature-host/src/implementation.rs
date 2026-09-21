@@ -38,6 +38,8 @@ use mahayana_core::RuntimeEvent;
 #[cfg(feature = "production")]
 use mahayana_core::RuntimeResponse;
 #[cfg(feature = "production")]
+use mahayana_core::TurnState as RuntimeTurnState;
+#[cfg(feature = "production")]
 use mahayana_core::capability::CapabilityAvailability;
 #[cfg(feature = "production")]
 use mahayana_core::capability::CapabilityKind;
@@ -6640,6 +6642,34 @@ impl FeatureHostController {
     ) -> Result<Option<HostEvent>, FeatureHostError> {
         let event = match event {
             RuntimeEvent::Ready { .. } => None,
+            RuntimeEvent::TurnStateChanged {
+                operation_id,
+                turn_id,
+                run_id,
+                conversation_id,
+                state,
+                sequence,
+            } => Some(HostEvent::TurnStateChanged {
+                timestamp: timestamp(),
+                operation_id: operation_id.to_string(),
+                turn_id: turn_id.to_string(),
+                run_id: run_id.to_string(),
+                conversation_id: conversation_id.to_string(),
+                state: match state {
+                    RuntimeTurnState::Accepted => TurnLifecycleState::Accepted,
+                    RuntimeTurnState::Queued => TurnLifecycleState::Queued,
+                    RuntimeTurnState::Preparing => TurnLifecycleState::Preparing,
+                    RuntimeTurnState::Thinking => TurnLifecycleState::Thinking,
+                    RuntimeTurnState::ToolRunning => TurnLifecycleState::ToolRunning,
+                    RuntimeTurnState::Streaming => TurnLifecycleState::Streaming,
+                    RuntimeTurnState::WaitingUser => TurnLifecycleState::WaitingUser,
+                    RuntimeTurnState::Completed => TurnLifecycleState::Completed,
+                    RuntimeTurnState::Failed => TurnLifecycleState::Failed,
+                    RuntimeTurnState::Cancelled => TurnLifecycleState::Cancelled,
+                    RuntimeTurnState::Recovering => TurnLifecycleState::Recovering,
+                },
+                sequence,
+            }),
             RuntimeEvent::MessageDelta {
                 operation_id,
                 delta,
