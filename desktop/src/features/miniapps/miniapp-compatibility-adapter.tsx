@@ -50,7 +50,7 @@ function MiniAppDialog({
   onClose,
 }: {
   readonly app: { readonly id: string; readonly title: string; readonly url: string };
-  readonly onClose(): void;
+  readonly onClose: () => void;
 }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   useEffect(() => {
@@ -106,7 +106,7 @@ export default function MiniAppCompatibilityAdapter({
   onClose,
 }: {
   readonly transport: MahayanaHostTransport;
-  readonly onClose(): void;
+  readonly onClose: () => void;
 }) {
   const [query, setQuery] = useState('');
   const [apps, setApps] = useState<MarketplacePluginSummary[]>([]);
