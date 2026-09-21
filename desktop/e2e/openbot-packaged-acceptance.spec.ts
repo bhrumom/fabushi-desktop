@@ -22,6 +22,16 @@ type RuntimeLog = {
   readonly text: string;
 };
 
+type BackgroundEventSample = {
+  readonly at: number;
+  readonly type: 'agent.backgroundStarted' | 'agent.backgroundFinished';
+  readonly agentId: string;
+  readonly agentName: string;
+  readonly operationId: string;
+  readonly source: string;
+  readonly error?: string;
+};
+
 const coworkers = [
   ['Chief', 'Coordinates decisions and synthesizes final output.'],
   ['Research', 'Collects source material and facts.'],
@@ -212,6 +222,60 @@ async function screenshot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: path.join(evidenceRoot, 'screenshots', `${name}.png`), fullPage: true });
 }
 
+async function resetBackgroundCapture(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __candidateBackgroundEvents?: BackgroundEventSample[];
+      __candidateBackgroundUnsubscribe?: () => void;
+    };
+    scope.__candidateBackgroundEvents = [];
+    if (scope.__candidateBackgroundUnsubscribe) return;
+    const bridge = window.mahayana;
+    if (!bridge?.subscribe) throw new Error('Mahayana runtime event subscription is unavailable.');
+    scope.__candidateBackgroundUnsubscribe = bridge.subscribe((event) => {
+      if (event.type !== 'agent.backgroundStarted' && event.type !== 'agent.backgroundFinished') return;
+      scope.__candidateBackgroundEvents?.push({
+        at: Date.now(),
+        type: event.type,
+        agentId: event.agentId,
+        agentName: event.agentName,
+        operationId: event.operationId,
+        source: event.source,
+        ...(event.type === 'agent.backgroundFinished' && event.error ? { error: event.error } : {}),
+      });
+    });
+  });
+}
+
+async function readBackgroundEvents(page: Page): Promise<BackgroundEventSample[]> {
+  return page.evaluate(() => {
+    const scope = window as typeof window & { __candidateBackgroundEvents?: BackgroundEventSample[] };
+    return scope.__candidateBackgroundEvents ?? [];
+  });
+}
+
+async function waitForBackgroundFinished(
+  page: Page,
+  agentNames: readonly string[],
+  source: string,
+): Promise<void> {
+  for (const agentName of agentNames) {
+    await expect.poll(async () => {
+      const events = await readBackgroundEvents(page);
+      const started = events.find((event) =>
+        event.type === 'agent.backgroundStarted'
+        && event.agentName.includes(agentName)
+        && event.source.startsWith(source));
+      if (!started) return 'not-started';
+      const finished = events.find((event) =>
+        event.type === 'agent.backgroundFinished'
+        && event.operationId === started.operationId);
+      if (!finished) return 'running';
+      return finished.error ? `error:${finished.error}` : 'completed';
+    }, { timeout: 180_000 }).toBe('completed');
+  }
+}
+
 async function installLifecycleCapture(page: Page): Promise<void> {
   await page.evaluate(() => {
     const scope = window as typeof window & {
@@ -256,12 +320,14 @@ async function performDirectHandoff(page: Page): Promise<void> {
   const network = page.getByTestId('grok-agent-network');
   await expect(network).toBeVisible();
 
+  await resetBackgroundCapture(page);
   const research = network.locator('article').filter({ hasText: 'Research' }).first();
   await research.getByRole('checkbox').check();
   await network.getByRole('textbox').fill('Research: verify the candidate handoff path and report one concise fact.');
   await network.getByRole('button', { name: /Handoff to Research/ }).click();
   await expect(network.getByRole('textbox')).toHaveValue('');
   await expect(network.getByText(/Chief.*Research|Research.*Chief/).first()).toBeVisible({ timeout: 20_000 });
+  await waitForBackgroundFinished(page, ['Research'], 'agent-');
   await network.getByRole('button', { name: 'Close Agent network' }).click();
 }
 
@@ -269,15 +335,25 @@ async function performBroadcast(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Broadcast to agents' }).click();
   const network = page.getByTestId('grok-agent-network');
   await expect(network).toBeVisible();
+  await resetBackgroundCapture(page);
+
   const selectedTargets = network.getByRole('checkbox', { name: 'Broadcast' });
   for (let index = 0; index < await selectedTargets.count(); index += 1) {
     const checkbox = selectedTargets.nth(index);
     if (await checkbox.isChecked()) await checkbox.uncheck();
     await expect(checkbox).not.toBeChecked();
   }
+  for (const targetName of ['Chief', 'Launch']) {
+    const target = network.locator('article').filter({ hasText: targetName }).first();
+    const checkbox = target.getByRole('checkbox', { name: 'Broadcast' });
+    await checkbox.check();
+    await expect(checkbox).toBeChecked();
+  }
+
   await network.getByRole('textbox').fill('Candidate broadcast: acknowledge the signed package acceptance run.');
-  await network.getByRole('button', { name: /Broadcast to all/ }).click();
+  await network.getByRole('button', { name: 'Send to selected' }).click();
   await expect(network.getByRole('textbox')).toHaveValue('');
+  await waitForBackgroundFinished(page, ['Chief', 'Launch'], 'broadcast');
   await network.getByRole('button', { name: 'Close Agent network' }).click();
 }
 
