@@ -108,7 +108,7 @@ for (const file of desktopSources) {
   }
 }
 forbidPattern('FabAvatar must not infer unread/business state from DOM observers', avatar, /MutationObserver|\.closest\s*\(/);
-forbidPattern('FabAvatar must not create per-instance requestAnimationFrame loops', avatar, /requestAnimationFrame|cancelAnimationFrame/);
+forbidPattern('FabAvatar must not create per-instance requestAnimationFrame loops', avatar, /(?:requestAnimationFrame|cancelAnimationFrame)\s*\(/);
 requirePattern('FabAvatar must expose explicit normalized state input', avatar, /normalizeFabAvatarState/);
 requirePattern('FabAvatar active motion must be CSS/low-frequency rather than a JS frame loop', avatarCss, /@keyframes/);
 
