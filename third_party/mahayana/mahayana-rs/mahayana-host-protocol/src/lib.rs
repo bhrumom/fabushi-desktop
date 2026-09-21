@@ -1066,6 +1066,18 @@ pub enum FeatureCommand {
             skip_serializing_if = "Option::is_none"
         )]
         conversation_id: Option<String>,
+        #[serde(
+            rename = "clientMessageId",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        client_message_id: Option<String>,
+        #[serde(
+            rename = "retryOfMessageId",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        retry_of_message_id: Option<String>,
         #[serde(default)]
         mode: AgentMode,
         #[serde(
