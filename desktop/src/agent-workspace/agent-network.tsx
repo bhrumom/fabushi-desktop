@@ -1,5 +1,6 @@
 import { Bot, Megaphone, Network, Plus, Trash2, Users, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { FabButton, FabInput } from '../ui/primitives/fab-primitives';
 import type { AgentPeerMessage, GroupSummary } from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import { agentMatchesGroupMember, indexAgentsByRuntimeOrSurfaceId, type AgentSidebarItem } from './agent-model';
 import styles from './agent-network.module.css';
@@ -216,7 +217,7 @@ export default function AgentNetwork({
         <Network size={18} />
         <span><strong>Agent Network</strong><small>{directAgents.length} agents · {groups.length} groups</small></span>
       </div>
-      <button type="button" onClick={onClose} aria-label="Close Agent network"><X size={17} /></button>
+      <FabButton variant="bare" type="button" onClick={onClose} aria-label="Close Agent network"><X size={17} /></FabButton>
     </header>
 
     <div className={styles.body}>
@@ -234,25 +235,25 @@ export default function AgentNetwork({
               <span><strong>{activeAgent?.name ?? 'Agent Network'}</strong><small>{activeAgent ? 'Current coordination hub' : 'Select an Agent to coordinate'}</small></span>
             </div>
             <div className={styles.orgEdges} aria-label="Organization relationships">
-              {organizationEdges.slice(0, 18).map((edge) => <button
+              {organizationEdges.slice(0, 18).map((edge) => <FabButton variant="bare"
                 type="button"
                 className={styles.orgEdge}
                 key={edge.id}
                 onClick={() => edge.agent && onOpenAgent(edge.agent)}
               >
                 <span>{edge.groupName}</span><b aria-hidden="true">→</b><strong>{edge.agent?.name}</strong>
-              </button>)}
+              </FabButton>)}
               {!organizationEdges.length ? <span className={styles.orgEmpty}>Create a group to map durable Agent relationships.</span> : null}
             </div>
           </div>
           {recentNetworkMessages.length ? <div className={styles.coordinationFeed} data-testid="agent-coordination-feed">
-            {recentNetworkMessages.slice(0, 6).map((item) => <button type="button" key={item.id} onClick={() => {
+            {recentNetworkMessages.slice(0, 6).map((item) => <FabButton variant="bare" type="button" key={item.id} onClick={() => {
               const target = agentByMemberId.get(item.targetId);
               if (target) onOpenAgent(target);
             }}>
               <span><strong>{item.fromAgentName}</strong><b aria-hidden="true">→</b><strong>{item.targetName}</strong>{item.priority ? <em>Priority</em> : null}</span>
               <small>{item.text}</small>
-            </button>)}
+            </FabButton>)}
           </div> : null}
         </section>
 
@@ -265,12 +266,12 @@ export default function AgentNetwork({
             data-waiting={Boolean(agent.waitingReason) || undefined}
             key={agent.key}
           >
-            <button type="button" className={styles.openNode} onClick={() => onOpenAgent(agent)}>
+            <FabButton variant="bare" type="button" className={styles.openNode} onClick={() => onOpenAgent(agent)}>
               <span className={styles.nodeMark}><Bot size={17} /></span>
               <span><strong>{agent.name}</strong><small>{statusLabel(agent)}</small></span>
-            </button>
+            </FabButton>
             <label className={styles.select}>
-              <input
+              <FabInput variant="bare"
                 type="checkbox"
                 checked={selected.has(agent.key)}
                 disabled={!broadcastMode && agent.key === activeKey}
@@ -284,21 +285,21 @@ export default function AgentNetwork({
 
         <div className={styles.sectionHeading}>
           <Users size={15} /><span>Groups</span>
-          <button type="button" className={styles.sectionAction} disabled={selectedAgentIds.length < 2 || groupBusy} onClick={() => void createGroup()}>
+          <FabButton variant="bare" type="button" className={styles.sectionAction} disabled={selectedAgentIds.length < 2 || groupBusy} onClick={() => void createGroup()}>
             <Plus size={13} />Create from selected
-          </button>
+          </FabButton>
         </div>
         <div className={styles.nodes}>
           {groups.map((group) => {
             const memberNames = group.memberIds.map((id) => agentByMemberId.get(id)?.name ?? id).join(', ');
             return <article className={styles.node} data-active={selectedGroupId === group.id || undefined} key={group.id}>
-              <button type="button" className={styles.openNode} onClick={() => chooseGroup(group)}>
+              <FabButton variant="bare" type="button" className={styles.openNode} onClick={() => chooseGroup(group)}>
                 <span className={styles.nodeMark}><Users size={17} /></span>
                 <span><strong>{group.name}</strong><small>{group.memberIds.length} agents{memberNames ? ` · ${memberNames}` : ''}</small></span>
-              </button>
+              </FabButton>
               <div className={styles.groupActions}>
-                <button type="button" onClick={() => void renameGroup(group)}>Rename</button>
-                <button type="button" aria-label={`Delete ${group.name}`} onClick={() => void deleteGroup(group)}><Trash2 size={13} /></button>
+                <FabButton variant="bare" type="button" onClick={() => void renameGroup(group)}>Rename</FabButton>
+                <FabButton variant="bare" type="button" aria-label={`Delete ${group.name}`} onClick={() => void deleteGroup(group)}><Trash2 size={13} /></FabButton>
               </div>
             </article>;
           })}
@@ -320,14 +321,14 @@ export default function AgentNetwork({
           placeholder="Tell your agents what changed or what to do next…"
           rows={7}
         />
-        {directTarget ? <label className={styles.select}><input type="checkbox" checked={priority} onChange={(event) => setPriority(event.target.checked)} /><span>Priority handoff</span></label> : null}
+        {directTarget ? <label className={styles.select}><FabInput variant="bare" type="checkbox" checked={priority} onChange={(event) => setPriority(event.target.checked)} /><span>Priority handoff</span></label> : null}
         {visiblePeerMessages.length ? <div className={styles.nodes} aria-label="Recent Agent handoffs">
           {visiblePeerMessages.map((item) => <div className={styles.empty} key={item.id}><strong>{item.fromAgentName} → {item.targetName}</strong><span>{item.text}</span></div>)}
         </div> : null}
         {error ? <div className={styles.error} role="alert">{error}</div> : null}
-        <button type="button" className={styles.send} disabled={!message.trim() || sending || directAgents.length === 0} onClick={() => void submit()}>
+        <FabButton variant="bare" type="button" className={styles.send} disabled={!message.trim() || sending || directAgents.length === 0} onClick={() => void submit()}>
           <Megaphone size={15} />{sending ? 'Sending…' : selectedGroup ? 'Send to group' : directTarget ? `Handoff to ${directTarget.name}` : selectedAgentIds.length ? 'Send to selected' : 'Broadcast to all'}
-        </button>
+        </FabButton>
       </aside>
     </div>
   </section>;
