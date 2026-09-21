@@ -299,6 +299,11 @@ forbidPattern(
   electronTransport,
   /feature\.receive|startEventPump|pumpEvents/,
 );
+forbidPattern(
+  'Electron renderer transport must not persist conversation history in localStorage',
+  electronTransport,
+  /\blocalStorage\b|CONVERSATION_JOURNAL_KEY|persistConversationJournal/,
+);
 requirePattern(
   'Electron renderer transport must require pushed runtime events',
   electronTransport,
