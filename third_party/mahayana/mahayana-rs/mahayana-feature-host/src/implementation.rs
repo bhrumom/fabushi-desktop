@@ -42,6 +42,10 @@ use mahayana_core::capability::CapabilityAvailability;
 #[cfg(feature = "production")]
 use mahayana_core::capability::CapabilityKind;
 #[cfg(feature = "production")]
+use mahayana_core::capability::CapabilityPolicyDecision;
+#[cfg(feature = "production")]
+use mahayana_core::capability::CapabilityRequest;
+#[cfg(feature = "production")]
 use mahayana_host::HostCreateConfig;
 #[cfg(feature = "production")]
 use mahayana_host::MahayanaHost;
@@ -915,6 +919,7 @@ impl FeatureHostController {
         {
             return self.execute_messaging(request_id.clone(), envelope.clone());
         }
+        self.authorize_feature_command(&command)?;
         if matches!(
             &command,
             FeatureCommand::AutomationList { .. }
@@ -1069,6 +1074,145 @@ impl FeatureHostController {
         match self.config.mode {
             HostMode::Test => self.execute_test(command),
             HostMode::Production => self.execute_production(command),
+        }
+    }
+
+    fn authorize_feature_command(
+        &self,
+        command: &FeatureCommand,
+    ) -> Result<(), FeatureHostError> {
+        if self.config.mode != HostMode::Production {
+            return Ok(());
+        }
+        #[cfg(feature = "production")]
+        {
+            let (capability, agent_id, target, intent) = match command {
+                FeatureCommand::ComputerScreenshot { agent_id, origin, session_id, target, .. } => (
+                    "computer.screen.read",
+                    agent_id.clone(),
+                    json!({"origin": origin, "sessionId": session_id, "target": target}),
+                    "capture the local computer screen",
+                ),
+                FeatureCommand::ComputerAction { agent_id, origin, session_id, target, .. } => (
+                    "computer.input.control",
+                    agent_id.clone(),
+                    json!({"origin": origin, "sessionId": session_id, "target": target}),
+                    "control the local computer",
+                ),
+                FeatureCommand::RemoteComputerSessionActivate { device_id, session_id, .. }
+                | FeatureCommand::RemoteComputerSessionClose { device_id, session_id, .. }
+                | FeatureCommand::RemoteComputerSignal { device_id, session_id, .. }
+                | FeatureCommand::RemoteComputerSignalDrain { device_id, session_id, .. } => (
+                    "computer.remote.session",
+                    None,
+                    json!({"deviceId": device_id, "sessionId": session_id}),
+                    "use a remote computer session",
+                ),
+                FeatureCommand::McpToolCall { server, tool, .. } => (
+                    "mcp.tool.call",
+                    None,
+                    json!({"server": server, "tool": tool}),
+                    "call an MCP tool",
+                ),
+                FeatureCommand::AgentSend { from_agent_id, target_id, .. } => (
+                    "agent.handoff",
+                    Some(from_agent_id.clone()),
+                    json!({"targetAgent": target_id}),
+                    "send durable work to another Agent",
+                ),
+                FeatureCommand::AgentBroadcast { target_ids, .. } => (
+                    "agent.handoff.broadcast",
+                    None,
+                    json!({"targetAgents": target_ids}),
+                    "broadcast durable work to Agents",
+                ),
+                FeatureCommand::AttachmentUpload { agent_id, filename, .. } => (
+                    "filesystem.agent.write",
+                    Some(agent_id.clone()),
+                    json!({"filename": filename}),
+                    "write an Agent workspace attachment",
+                ),
+                FeatureCommand::AttachmentReadText { agent_id, path, .. }
+                | FeatureCommand::AttachmentReadChunk { agent_id, path, .. }
+                | FeatureCommand::AttachmentReadImage { agent_id, path, .. } => (
+                    "filesystem.agent.read",
+                    Some(agent_id.clone()),
+                    json!({"path": path}),
+                    "read an Agent workspace attachment",
+                ),
+                FeatureCommand::MiniAppOpen { mini_app_id, .. } => (
+                    "miniapp.open",
+                    None,
+                    json!({"miniAppId": mini_app_id}),
+                    "open a Mini App",
+                ),
+                FeatureCommand::ConnectorConnect { connector_id, .. } => (
+                    "connector.connect",
+                    None,
+                    json!({"connectorId": connector_id}),
+                    "connect an external service",
+                ),
+                FeatureCommand::ConnectorRenameAccount { connector_id, account_id, .. }
+                | FeatureCommand::ConnectorRemoveAccount { connector_id, account_id, .. } => (
+                    "connector.account.manage",
+                    None,
+                    json!({"connectorId": connector_id, "accountId": account_id}),
+                    "manage a connected external account",
+                ),
+                FeatureCommand::ConnectorSetToolEnabled { connector_id, tool_id, .. } => (
+                    "connector.tool.manage",
+                    None,
+                    json!({"connectorId": connector_id, "toolId": tool_id}),
+                    "change a connector tool policy",
+                ),
+                _ => return Ok(()),
+            };
+            let conversation_id = {
+                let state = self.state()?;
+                agent_id
+                    .as_deref()
+                    .and_then(|id| find_bot_by_runtime_or_surface_id(&state, id))
+                    .and_then(|bot| bot.conversation_id.clone())
+                    .unwrap_or_else(|| MAHAYANA_AI_CONVERSATION_ID.to_string())
+            };
+            let actor = agent_id
+                .as_ref()
+                .map(|id| format!("agent:{id}"))
+                .unwrap_or_else(|| "human".to_string());
+            let response = self.runtime()?.execute(RuntimeCommand::AuthorizeCapability {
+                request: CapabilityRequest {
+                    actor,
+                    agent_id,
+                    conversation_id: ConversationId(conversation_id),
+                    run_id: None,
+                    capability: capability.to_string(),
+                    target,
+                    intent: intent.to_string(),
+                },
+                availability: CapabilityAvailability::Ready,
+                unavailable_reason: None,
+            })?;
+            match response {
+                RuntimeResponse::CapabilityDecision {
+                    decision: CapabilityPolicyDecision::Allow,
+                } => Ok(()),
+                RuntimeResponse::CapabilityDecision {
+                    decision: CapabilityPolicyDecision::NeedsUser,
+                } => Err(FeatureHostError::Contract(format!(
+                    "{capability} requires explicit user approval"
+                ))),
+                RuntimeResponse::CapabilityDecision {
+                    decision: CapabilityPolicyDecision::Deny,
+                } => Err(FeatureHostError::Contract(format!(
+                    "{capability} was denied by capability policy"
+                ))),
+                other => Err(unexpected_response("mahayana.capability.authorize", other)),
+            }
+        }
+        #[cfg(not(feature = "production"))]
+        {
+            let _ = command;
+            Ok(())
         }
     }
 
