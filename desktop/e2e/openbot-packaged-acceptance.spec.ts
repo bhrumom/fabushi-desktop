@@ -165,7 +165,7 @@ function peerByName(page: Page, name: string): Locator {
 }
 
 async function botShape(locator: Locator): Promise<string> {
-  const mark = locator.locator('[data-engine="fabushi-motion-v3"]').first();
+  const mark = locator.locator('[data-engine="fab-avatar"]').first();
   await expect(mark).toBeVisible();
   const shape = await mark.getAttribute('data-shape');
   expect(shape).toBeTruthy();
@@ -239,7 +239,7 @@ async function captureGeometry(page: Page, finalArticle: Locator, structured: Lo
   for (const [name] of coworkers) {
     const peer = peerByName(page, name);
     peerRows[name] = await readBox(peer);
-    rosterAvatars[name] = await readBox(peer.locator('[data-engine="fabushi-motion-v3"]').first());
+    rosterAvatars[name] = await readBox(peer.locator('[data-engine="fab-avatar"]').first());
   }
   const orderedRows = coworkers.map(([name]) => peerRows[name]).filter((box): box is Box => Boolean(box));
   const peerRowGaps = orderedRows.slice(1).map((box, index) => box.y - (orderedRows[index].y + orderedRows[index].height));
@@ -463,7 +463,7 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     await writeFile(briefPath, ['# Coworker launch notes', '', `Research: ${research}`, '', `Builder: ${builder}`, '', `Launch: ${launch}`].join('\n'));
 
     await peerByName(page, 'Chief').click();
-    chiefHeaderShape = await directBotShape(page.locator('[class*="chatIdentity"] [data-engine="fabushi-motion-v3"]').first());
+    chiefHeaderShape = await directBotShape(page.locator('[class*="chatIdentity"] [data-engine="fab-avatar"]').first());
     expect(chiefHeaderShape).toBe(chiefRosterShape);
     await attachFile(page, briefPath);
     await attachFile(page, csvPath);
@@ -492,7 +492,7 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     await expect(structured.getByTestId('assistant-source-files')).toContainText('launch-metrics.csv');
 
     const finalArticle = structured.locator('xpath=ancestor::article[1]');
-    chiefTranscriptShape = await directBotShape(finalArticle.locator('[data-engine="fabushi-motion-v3"]').first());
+    chiefTranscriptShape = await directBotShape(finalArticle.locator('[data-engine="fab-avatar"]').first());
     expect(chiefTranscriptShape).toBe(chiefRosterShape);
     await finalArticle.hover();
     await expect(finalArticle.getByTestId('message-hover-actions')).toBeVisible();
