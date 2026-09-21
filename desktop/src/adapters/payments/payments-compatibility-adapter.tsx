@@ -3,7 +3,7 @@ import { ShoppingBag, WalletCards } from 'lucide-react';
 import type { MessagingInvoice, MessagingLedgerEntry, MessagingOrder, MessagingWalletAccount } from '../../selfhosted-messaging-client-v2';
 import { FabButton, FabDialog, FabDialogActions, FabIconButton, FabInput, FabSurface } from '../../ui/primitives/fab-primitives';
 import styles from '../../messaging-shell.module.css';
-import type { InvoiceDialogState } from '../legacy-messaging/legacy-messaging-model';
+import type { InvoiceDialogState } from '../compatibility/compatibility-model';
 import { X } from 'lucide-react';
 import extra from '../../agent-workspace/agent-root-shell.module.css';
 
