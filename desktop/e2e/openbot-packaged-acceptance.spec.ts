@@ -10,6 +10,7 @@ const referenceScreenshot = process.env.OBF_REFERENCE_SCREENSHOT?.trim() || '';
 const realAcceptance = process.env.OBF_REAL_ACCEPTANCE === '1';
 const sourceSha = (process.env.OBF_SOURCE_SHA || process.env.GITHUB_SHA || '').trim().toLowerCase();
 const canonicalMainSha = (process.env.OBF_CANONICAL_MAIN_SHA || '').trim().toLowerCase();
+const acceptanceKind = (process.env.OBF_ACCEPTANCE_KIND || 'canonical').trim().toLowerCase();
 const visualThreshold = Number(process.env.OBF_MAX_DIFF_PIXEL_RATIO || '0');
 const pixelThreshold = Number(process.env.OBF_PIXEL_COLOR_THRESHOLD || '0');
 const coworkers = [
@@ -55,10 +56,12 @@ type VisualDiffReport = {
 
 function assertProductionEvidenceEnvironment(): void {
   if (!packagedExecutable) throw new Error('FABUSHI_ELECTRON_EXECUTABLE is required for packaged acceptance');
-  if (!referenceScreenshot) throw new Error('OBF_REFERENCE_SCREENSHOT is required; static or synthetic replacement is forbidden');
+  if (!['candidate', 'canonical'].includes(acceptanceKind)) throw new Error(`Unsupported OBF_ACCEPTANCE_KIND=${acceptanceKind}`);
+  if (acceptanceKind === 'canonical' && !referenceScreenshot) throw new Error('OBF_REFERENCE_SCREENSHOT is required for canonical visual acceptance; static or synthetic replacement is forbidden');
   if (!/^[0-9a-f]{40}$/.test(sourceSha)) throw new Error('OBF_SOURCE_SHA or GITHUB_SHA must provide the exact 40-character source SHA');
-  if (!/^[0-9a-f]{40}$/.test(canonicalMainSha)) throw new Error('OBF_CANONICAL_MAIN_SHA must provide the exact post-merge canonical main SHA');
-  if (sourceSha !== canonicalMainSha) throw new Error(`Packaged source SHA ${sourceSha} does not equal canonical main ${canonicalMainSha}`);
+  if (!/^[0-9a-f]{40}$/.test(canonicalMainSha)) throw new Error('OBF_CANONICAL_MAIN_SHA must provide the exact canonical/base main SHA');
+  if (acceptanceKind === 'canonical' && sourceSha !== canonicalMainSha) throw new Error(`Packaged source SHA ${sourceSha} does not equal canonical main ${canonicalMainSha}`);
+  if (acceptanceKind === 'candidate' && sourceSha === canonicalMainSha) throw new Error('Candidate acceptance requires a distinct pre-merge source SHA');
   if (visualThreshold !== 0) throw new Error('OBF_MAX_DIFF_PIXEL_RATIO must be exactly 0 for literal 1:1 acceptance');
   if (pixelThreshold !== 0) throw new Error('OBF_PIXEL_COLOR_THRESHOLD must be exactly 0 for literal 1:1 acceptance');
   const inheritedMode = (process.env.FABUSHI_FEATURE_HOST_MODE || '').trim().toLowerCase();
@@ -504,6 +507,7 @@ async function saveRuntimeEvidence(
   if (visualDiff) await writeFile(path.join(evidenceDir, 'visual-diff-report.json'), JSON.stringify(visualDiff, null, 2));
   if (identity) await writeFile(path.join(evidenceDir, 'identity.json'), JSON.stringify(identity, null, 2));
   await writeFile(path.join(evidenceDir, 'evidence-manifest.json'), JSON.stringify({
+    acceptanceKind,
     canonicalMainSha,
     sourceSha,
     appVersion: appVersion || null,
@@ -519,10 +523,12 @@ async function saveRuntimeEvidence(
 test('OBF exact-main packaged reference journey is pixel-identical and uses real Mahayana events', async ({}, testInfo) => {
   test.setTimeout(12 * 60_000);
   assertProductionEvidenceEnvironment();
-  const referenceBytes = await readFile(referenceScreenshot);
-  if (referenceBytes.length < 10_000) throw new Error('OBF reference screenshot is unexpectedly small');
-  const referenceHash = createHash('sha256').update(referenceBytes).digest('hex');
-  expect(referenceHash).toBe(referenceCropSha256);
+  const referenceBytes = referenceScreenshot ? await readFile(referenceScreenshot) : undefined;
+  if (referenceBytes) {
+    if (referenceBytes.length < 10_000) throw new Error('OBF reference screenshot is unexpectedly small');
+    const referenceHash = createHash('sha256').update(referenceBytes).digest('hex');
+    expect(referenceHash).toBe(referenceCropSha256);
+  }
 
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-obf-real-'));
   const fixtureDir = await mkdtemp(path.join(tmpdir(), 'fabushi-obf-fixture-'));
@@ -623,11 +629,15 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     const workspace = page.getByTestId('messenger-workspace');
     const actualBytes = await workspace.screenshot({ animations: 'disabled', caret: 'hide' });
     await writeFile(path.join(evidenceDir, 'fabushi-openbot-comparison.png'), actualBytes);
-    const visualDiff = await measureVisualDiff(page, referenceBytes, actualBytes, geometryRegions(geometry));
-    expect(visualDiff.global.differingPixels).toBe(0);
-    expect(visualDiff.global.differingPixelRatio).toBe(0);
-    expect(visualDiff.global.zeroDiff).toBeTruthy();
-    expect(visualDiff.residualRegions).toEqual([]);
+    const visualDiff = referenceBytes
+      ? await measureVisualDiff(page, referenceBytes, actualBytes, geometryRegions(geometry))
+      : undefined;
+    if (visualDiff) {
+      expect(visualDiff.global.differingPixels).toBe(0);
+      expect(visualDiff.global.differingPixelRatio).toBe(0);
+      expect(visualDiff.global.zeroDiff).toBeTruthy();
+      expect(visualDiff.residualRegions).toEqual([]);
+    }
 
     const identityBeforeRestart = {
       Chief: {
@@ -640,15 +650,17 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     await page.context().tracing.stop({ path: tracePath });
     tracingActive = false;
 
-    const expectedPath = testInfo.snapshotPath('openbot-reference-app.png');
-    await mkdir(path.dirname(expectedPath), { recursive: true });
-    await copyFile(referenceScreenshot, expectedPath);
-    await expect(workspace).toHaveScreenshot('openbot-reference-app.png', {
-      animations: 'disabled',
-      caret: 'hide',
-      threshold: pixelThreshold,
-      maxDiffPixelRatio: visualThreshold,
-    });
+    if (referenceBytes) {
+      const expectedPath = testInfo.snapshotPath('openbot-reference-app.png');
+      await mkdir(path.dirname(expectedPath), { recursive: true });
+      await copyFile(referenceScreenshot, expectedPath);
+      await expect(workspace).toHaveScreenshot('openbot-reference-app.png', {
+        animations: 'disabled',
+        caret: 'hide',
+        threshold: pixelThreshold,
+        maxDiffPixelRatio: visualThreshold,
+      });
+    }
 
     await app.close();
     app = null;
