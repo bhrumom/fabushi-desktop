@@ -88,6 +88,27 @@
   font: inherit;
 }
 
+.checkbox {
+  appearance: auto;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--fab-accent);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.checkbox:disabled {
+  cursor: default;
+  opacity: .42;
+}
+
+.checkbox:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--fab-accent), transparent 18%);
+  outline-offset: 2px;
+}
+
 .bareInput[type='checkbox'] {
   appearance: auto;
   width: 14px;
