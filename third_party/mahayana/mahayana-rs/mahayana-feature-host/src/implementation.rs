@@ -6920,7 +6920,7 @@ impl FeatureHostController {
             target_conversation_id: Some(ConversationId(conversation_id)),
             inference_provider,
             task: runtime_text,
-            constraints: json!({"source": "group", "groupId": context.group_id}),
+            constraints: json!({"source": "group", "groupId": context.group_id.clone()}),
             expected_output: None,
             depth: 0,
         })?;

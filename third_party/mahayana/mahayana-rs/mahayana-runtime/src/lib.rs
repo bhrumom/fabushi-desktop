@@ -25,7 +25,7 @@ use mahayana_conversation::ProviderRegistry;
 use mahayana_conversation::ResolveApprovalRequest;
 use mahayana_conversation::SendMessageRequest;
 use mahayana_conversation::SharedConversationEventSink;
-use mahayana_core::ApprovalDecision;
+use mahayana_core::ApprovalDecision as RuntimeApprovalDecision;
 use mahayana_core::ApprovalId;
 use mahayana_core::CONVERSATION_SCHEMA_VERSION;
 use mahayana_core::Conversation;
@@ -817,7 +817,7 @@ impl MahayanaRuntime {
                     depth,
                 )
             }
-            RuntimeCommand::Interrupt {            RuntimeCommand::Interrupt { operation_id } => {
+            RuntimeCommand::Interrupt { operation_id } => {
                 let provider_key = lock(&self.operations)?
                     .get(&operation_id)
                     .cloned()
@@ -847,12 +847,12 @@ impl MahayanaRuntime {
                     .remove(&approval_id)
                     .ok_or_else(|| ConversationError::ApprovalNotFound(approval_id.clone()))?;
                 let (availability, unavailable_reason, expected_decision) = match decision {
-                    ApprovalDecision::Accept | ApprovalDecision::AcceptForSession => (
+                    RuntimeApprovalDecision::Accept | RuntimeApprovalDecision::AcceptForSession => (
                         CapabilityAvailability::Ready,
                         None,
                         CapabilityPolicyDecision::Allow,
                     ),
-                    ApprovalDecision::Decline | ApprovalDecision::Cancel => (
+                    RuntimeApprovalDecision::Decline | RuntimeApprovalDecision::Cancel => (
                         CapabilityAvailability::Unavailable,
                         Some("user denied the requested capability".to_string()),
                         CapabilityPolicyDecision::Deny,
@@ -1219,7 +1219,7 @@ fn lock<T>(mutex: &Mutex<T>) -> Result<std::sync::MutexGuard<'_, T>, RuntimeErro
 struct RuntimeEventSink {
     provider_key: String,
     event_tx: Sender<RuntimeEvent>,
-    approvals: Arc<Mutex<HashMap<ApprovalId, String>>>,
+    approvals: Arc<Mutex<HashMap<ApprovalId, PendingRuntimeApproval>>>,
     context: RunContext,
     store: Arc<RuntimeStore>,
 }
@@ -1771,13 +1771,15 @@ mod tests {
 
     #[test]
     fn provider_approval_audit_is_sanitized_and_capability_typed() {
+        let conversation_id = ConversationId("codex:agent:research".to_string());
+        let actor = ConversationActorRegistry::default()
+            .actor(&conversation_id)
+            .expect("create conversation actor");
         let context = RunContext {
             turn_id: TurnId::generated("turn"),
             run_id: RunId::generated("run"),
-            conversation_id: ConversationId("codex:agent:research".to_string()),
-            actor: Arc::new(ConversationActor::new(ConversationId(
-                "codex:agent:research".to_string(),
-            ))),
+            conversation_id,
+            actor,
         };
         let request = approval_capability_request(
             &context,
@@ -1803,7 +1805,7 @@ mod tests {
     #[test]
     fn approval_decision_wire_values_remain_stable() {
         assert_eq!(
-            serde_json::to_value(ApprovalDecision::AcceptForSession).expect("serialize decision"),
+            serde_json::to_value(RuntimeApprovalDecision::AcceptForSession).expect("serialize decision"),
             "acceptForSession"
         );
     }
