@@ -56,7 +56,13 @@ jobs:
             test "$sha" = "$requested"
           elif [ "${{ github.event_name }}" = "push" ]; then
             test "$sha" = "${{ github.sha }}"
-            case "${{ github.ref_name }}" in package-macos-*) ;; *) exit 1 ;; esac
+            case "${{ github.ref }}" in
+              refs/tags/package-macos-*) ;;
+              refs/heads/main)
+                case "${{ github.event.head_commit.message }}" in release:*) ;; *) exit 1 ;; esac
+                ;;
+              *) exit 1 ;;
+            esac
           else
             test "$(git rev-parse --abbrev-ref HEAD)" = "main"
           fi
