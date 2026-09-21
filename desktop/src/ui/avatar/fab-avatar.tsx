@@ -1,5 +1,10 @@
-import React from 'react';
+import React, { useSyncExternalStore } from 'react';
 import styles from './fab-avatar.module.css';
+import {
+  canonicalFabAvatarIdentity,
+  fabAvatarIdentityRevision,
+  subscribeFabAvatarIdentity,
+} from './fab-avatar-identity';
 
 export type FabAvatarState =
   | 'idle'
@@ -83,9 +88,12 @@ export default function FabAvatar({
   className,
 }: FabAvatarProps) {
   const normalized = normalizeFabAvatarState(state);
+  useSyncExternalStore(subscribeFabAvatarIdentity, fabAvatarIdentityRevision, fabAvatarIdentityRevision);
+  const canonicalIdentity = canonicalFabAvatarIdentity(identity);
+  const hue = identityHue(canonicalIdentity);
   const style = {
     '--fab-avatar-size': `${Math.max(16, Math.round(size))}px`,
-    '--fab-avatar-hue': String(identityHue(identity)),
+    '--fab-avatar-hue': String(hue),
   } as React.CSSProperties;
   return <span
     className={[styles.root, className].filter(Boolean).join(' ')}
@@ -93,7 +101,7 @@ export default function FabAvatar({
     role="img"
     aria-label={`${label} · ${normalized}`}
     data-engine="fab-avatar"
-    data-shape={`hue-${identityHue(identity)}`}
+    data-shape={`hue-${hue}`}
     data-state={normalized}
     data-active={active || undefined}
     title={label}
