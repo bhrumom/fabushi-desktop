@@ -210,9 +210,15 @@ async function openAgent(page: Page, name: string): Promise<void> {
   await expect(page.getByTestId('grok-agent-header')).toContainText(name);
 }
 
+function completedAssistantTurns(page: Page): Locator {
+  // The Agent-first transcript renders the canonical Rust-owned assistant turn
+  // directly. Count only terminal completed turns: an optimistic/streaming turn
+  // must never satisfy packaged acceptance merely because it is visible.
+  return page.locator('[data-testid="mahayana-assistant-turn"][data-status="completed"]');
+}
+
 async function submitTurn(page: Page, prompt: string): Promise<number> {
-  const peerMessages = page.locator('[data-agent-message-role="peer"]');
-  const previousAssistantCount = await peerMessages.count();
+  const previousAssistantCount = await completedAssistantTurns(page).count();
   const input = page.getByTestId('messenger-input');
   await input.fill(prompt);
   await page.getByTestId('messenger-send').click();
@@ -226,12 +232,12 @@ async function waitForCompletedTurn(
   previousAssistantCount: number,
 ): Promise<Locator> {
   await expect(page.locator('[data-agent-message-role="me"]').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 10_000 });
-  const peerMessages = page.locator('[data-agent-message-role="peer"]');
+  const assistantTurns = completedAssistantTurns(page);
   await expect.poll(
-    async () => peerMessages.count(),
-    { timeout: 180_000, message: 'A new final assistant message must be committed after the submitted turn.' },
+    async () => assistantTurns.count(),
+    { timeout: 180_000, message: 'A new canonical completed assistant turn must be committed after the submitted turn.' },
   ).toBeGreaterThan(previousAssistantCount);
-  const turn = peerMessages.last();
+  const turn = assistantTurns.last();
   await expect(turn).toBeVisible({ timeout: 10_000 });
   return turn;
 }
