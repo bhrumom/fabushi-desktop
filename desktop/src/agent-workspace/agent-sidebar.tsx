@@ -162,7 +162,9 @@ export default function AgentSidebar({
         ? <p>{dialog.items.length === 1
           ? `Delete Agent “${dialog.items[0]?.name ?? ''}”?`
           : `Delete ${dialog.items.length} selected Agents?`}</p>
-        : <p>{`Delete section “${dialog.section.name}”?`}</p>}
+        : dialog.kind === 'delete-section'
+          ? <p>{`Delete section “${dialog.section.name}”?`}</p>
+          : null}
       <FabDialogActions>
         <FabButton type="button" variant="ghost" onClick={closeDialog}>Cancel</FabButton>
         <FabButton
