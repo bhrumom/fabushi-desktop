@@ -23,6 +23,7 @@ export interface AgentRuntimeCoordinatorHooks {
   onTranscriptChanged?(peerKey: string, thread: readonly AgentTranscriptSourceMessage[]): void;
   onOperationChanged?(peerKey: string): void;
   onComputerStatus?(status: ComputerStatus): void;
+  onWorkspaceState?(key: string, value: unknown): void;
   onOperationStarted?(peerKey: string, operationId: string): void;
   onRequestFailed?(peerKey: string, requestId: string, message: string): void;
   onOperationTerminal?(
@@ -297,6 +298,11 @@ export class AgentRuntimeCoordinator {
         if (['restarting', 'stopped', 'spawn-failed', 'protocol-error'].includes(event.lifecycle)) {
           this.recoverInterruptedOperations(event);
         }
+        return true;
+      }
+
+      case 'agent.workspaceState': {
+        this.hooks.onWorkspaceState?.(event.key, event.value);
         return true;
       }
 
