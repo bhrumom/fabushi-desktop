@@ -755,7 +755,7 @@ export default function AgentRootShell() {
   return (
     <div className={styles.desktopRoot} data-testid="desktop-shell" data-local-first={showMessenger && authenticated !== true ? 'true' : undefined}>
       {showMessenger
-        ? <MessengerWorkspace initialProjection={startupProjection} onLogout={() => resetToLogin(true)} />
+        ? <AgentDesktopWorkspace initialProjection={startupProjection} onLogout={() => resetToLogin(true)} />
         : showLogin
           ? <HostClient onAuthStateChange={handleHostAuthStateChange} />
           : <DesktopFastStartBootstrap />}
@@ -822,7 +822,7 @@ function DesktopFastStartBootstrap() {
   );
 }
 
-function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection?: MessengerProjection | null; onLogout: () => Promise<void> }) {
+function AgentDesktopWorkspace({ initialProjection, onLogout }: { initialProjection?: MessengerProjection | null; onLogout: () => Promise<void> }) {
   const transport = useMemo(() => createTransport(), []);
   const agentCoordinatorClient = useMemo(() => new AgentCoordinatorClient(transport), [transport]);
   const startupProjection = useMemo(() => initialProjection ?? readMessengerProjection(), [initialProjection]);
