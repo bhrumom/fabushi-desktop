@@ -212,9 +212,19 @@ requirePattern('Remote-device Main supervisor lost adaptive refresh scheduling',
 const startMessageIndex = runtimeLib.indexOf('fn start_message');
 const startMessageSource = startMessageIndex >= 0 ? runtimeLib.slice(startMessageIndex) : '';
 requireOrdered(
-  'Conversation execution must register its actor before provider execution',
+  'Conversation execution must register its actor, serialize provider execution, persist the terminal state, and release the actor run',
   startMessageSource,
-  ['.actors', '.actor(&conversation_id)', '.register(turn_id.clone())', 'record_turn(&turn)', 'record_run(&run)', 'actor.gate.lock().await', 'provider.send_message(request, sink).await'],
+  [
+    '.actors',
+    '.actor(&conversation_id)',
+    '.register(turn_id.clone())',
+    'record_turn(&turn)',
+    'record_run(&run)',
+    'actor.gate.lock().await',
+    'provider.send_message(request, sink).await',
+    'transition_turn_state(&event_tx, &store, &context, terminal_state)',
+    'actor.finish(&run_id)',
+  ],
 );
 
 function commandArm(name, nextName) {
@@ -223,10 +233,21 @@ function commandArm(name, nextName) {
   if (start < 0) return '';
   return runtimeLib.slice(start, end > start ? end : undefined);
 }
+const invokeCapabilitySource = commandArm('InvokeCapability', 'ListPluginCommands');
 requireOrdered(
-  'InvokeCapability must authorize before creating an execution run',
-  commandArm('InvokeCapability', 'ListPluginCommands'),
-  ['capability_broker', '.authorize(', 'CapabilityPolicyDecision::Deny', 'start_message('],
+  'InvokeCapability must authorize and pass the fail-closed execution gate before creating an execution run',
+  invokeCapabilitySource,
+  ['capability_broker', '.authorize(', 'require_capability_execution_allowed(', 'start_message('],
+);
+requirePattern(
+  'Capability execution gate must explicitly stop NeedsUser before execution',
+  runtimeLib,
+  /fn require_capability_execution_allowed[\s\S]{0,1200}CapabilityPolicyDecision::NeedsUser\s*=>\s*Err\(/,
+);
+requirePattern(
+  'Capability execution gate must explicitly stop Deny before execution',
+  runtimeLib,
+  /fn require_capability_execution_allowed[\s\S]{0,1200}CapabilityPolicyDecision::Deny\s*=>\s*Err\(/,
 );
 requireOrdered(
   'Local Mini App tools must authorize before executing the tool',
