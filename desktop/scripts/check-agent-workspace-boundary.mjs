@@ -118,6 +118,9 @@ for (const [name, file] of compatibilityAdapters) {
   if (/Agent(?:Sidebar|Header|Network|Workspace)|useAgent(?:WorkspaceRuntime|ProductControllers|ComputerController|SidebarController|DirectoryController)|AgentRuntimeCoordinator/.test(body)) {
     violations.push(`${name} compatibility adapter illegally owns or renders Agent runtime state`);
   }
+  if (name === 'settings' && /<input\b[^>]*role=['"]switch['"]/.test(body)) {
+    violations.push('settings compatibility adapter bypasses FabSwitch');
+  }
 }
 
 const desktopSourceFiles = walk(path.join(desktopRoot, 'src')).filter((file) => /\.(?:ts|tsx|js|mjs|cjs)$/.test(file));
@@ -153,6 +156,7 @@ for (const primitive of [
   'FabSpinner',
   'FabInput',
   'FabSurface',
+  'FabSwitch',
 ]) requirePattern(`Fabushi UI primitive missing: ${primitive}`, primitives, new RegExp(`(?:function|\\{)\\s*${primitive}\\b|export\\s+\\{[^}]*\\b${primitive}\\b`));
 for (const token of ['--fab-bg-primary', '--fab-bg-raised', '--fab-border-subtle', '--fab-text-primary', '--fab-text-muted', '--fab-radius-sm', '--fab-radius-md', '--fab-space-1']) {
   if (!tokens.includes(token)) violations.push(`Fabushi design token missing: ${token}`);
