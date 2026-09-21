@@ -550,11 +550,20 @@ fn responses_endpoint_is_secure(endpoint: &str) -> bool {
 
 struct ActiveOperation {
     thread_id: String,
+    // Empty until the TurnStart RPC returns. In-process app-server events can
+    // arrive before that response, so pending operations must already be
+    // discoverable by thread and accept the first concrete turn id.
     turn_id: String,
     conversation_id: mahayana_core::ConversationId,
     events: SharedAgentEventSink,
     assistant_text: String,
     completion: oneshot::Sender<Result<(), AgentError>>,
+}
+
+fn operation_turn_matches(bound_turn_id: &str, candidate_turn_id: Option<&str>) -> bool {
+    candidate_turn_id.is_none_or(|candidate| {
+        bound_turn_id.is_empty() || bound_turn_id == candidate
+    })
 }
 
 struct PendingApproval {
@@ -618,7 +627,7 @@ impl CodexAgentInner {
             .values()
             .find(|operation| {
                 operation.thread_id == thread_id
-                    && turn_id.is_none_or(|turn_id| operation.turn_id == turn_id)
+                    && operation_turn_matches(&operation.turn_id, turn_id)
             })
             .map(|operation| Arc::clone(&operation.events)))
     }
@@ -1194,7 +1203,10 @@ impl CodexAgentInner {
                 .map_err(|_| AgentError::Backend("operation mutex poisoned".into()))?;
             let Some(operation) = operations
                 .values_mut()
-                .find(|operation| operation.thread_id == thread_id && operation.turn_id == turn_id)
+                .find(|operation| {
+                    operation.thread_id == thread_id
+                        && operation_turn_matches(&operation.turn_id, Some(turn_id))
+                })
             else {
                 return Ok(());
             };
@@ -1261,7 +1273,10 @@ impl CodexAgentInner {
             .lock()
             .map_err(|_| AgentError::Backend("operation mutex poisoned".into()))?
             .values_mut()
-            .find(|operation| operation.thread_id == thread_id && operation.turn_id == turn_id)
+            .find(|operation| {
+                    operation.thread_id == thread_id
+                        && operation_turn_matches(&operation.turn_id, Some(turn_id))
+                })
         {
             merge_completed_agent_text(&mut operation.assistant_text, text);
         }
@@ -1278,7 +1293,8 @@ impl CodexAgentInner {
             .lock()
             .map_err(|_| AgentError::Backend("operation mutex poisoned".into()))?;
         let operation_id = operations.iter().find_map(|(operation_id, operation)| {
-            (operation.thread_id == thread_id && operation.turn_id == turn_id)
+            (operation.thread_id == thread_id
+                && operation_turn_matches(&operation.turn_id, Some(turn_id)))
                 .then(|| operation_id.clone())
         });
         Ok(operation_id.and_then(|operation_id| operations.remove(&operation_id)))
@@ -1344,7 +1360,9 @@ impl CodexAgentInner {
     fn fail_all(&self, message: &str) {
         if let Ok(mut operations) = self.operations.lock() {
             for (_, operation) in operations.drain() {
-                mahayana_computer::release_control_lease(&operation.thread_id, &operation.turn_id);
+                if !operation.turn_id.is_empty() {
+                    mahayana_computer::release_control_lease(&operation.thread_id, &operation.turn_id);
+                }
                 let _ = operation
                     .completion
                     .send(Err(AgentError::Backend(message.to_string())));
@@ -1854,7 +1872,30 @@ impl AgentBackend for CodexAgentBackend {
         events: SharedAgentEventSink,
     ) -> Result<(), AgentError> {
         let thread_id = request.thread_id.to_string();
-        let response: TurnStartResponse = self
+        let operation_id = request.operation_id.clone();
+        let (completion, result) = oneshot::channel();
+
+        // Register ownership before TurnStart. The in-process app-server can
+        // emit deltas/items/TurnCompleted before request_typed() returns its
+        // TurnStartResponse. Registering afterwards loses a fast completion
+        // event and leaves the caller waiting forever.
+        self.inner
+            .operations
+            .lock()
+            .map_err(|_| AgentError::Backend("operation mutex poisoned".into()))?
+            .insert(
+                operation_id.clone(),
+                ActiveOperation {
+                    thread_id: thread_id.clone(),
+                    turn_id: String::new(),
+                    conversation_id: request.conversation_id,
+                    events,
+                    assistant_text: String::new(),
+                    completion,
+                },
+            );
+
+        let response: TurnStartResponse = match self
             .inner
             .requests
             .request_typed(ClientRequest::TurnStart {
@@ -1872,38 +1913,57 @@ impl AgentBackend for CodexAgentBackend {
                 },
             })
             .await
-            .map_err(|error| AgentError::Backend(error.to_string()))?;
+        {
+            Ok(response) => response,
+            Err(error) => {
+                self.inner
+                    .operations
+                    .lock()
+                    .map_err(|_| AgentError::Backend("operation mutex poisoned".into()))?
+                    .remove(&operation_id);
+                return Err(AgentError::Backend(error.to_string()));
+            }
+        };
+
         let turn_id = response.turn.id;
-        let (completion, result) = oneshot::channel();
-        self.inner
+        if let Some(operation) = self
+            .inner
             .operations
             .lock()
             .map_err(|_| AgentError::Backend("operation mutex poisoned".into()))?
-            .insert(
-                request.operation_id,
-                ActiveOperation {
-                    thread_id,
-                    turn_id,
-                    conversation_id: request.conversation_id,
-                    events,
-                    assistant_text: String::new(),
-                    completion,
-                },
-            );
+            .get_mut(&operation_id)
+        {
+            if !operation.turn_id.is_empty() && operation.turn_id != turn_id {
+                return Err(AgentError::Backend(format!(
+                    "Codex turn id changed while binding operation {}: {} -> {}",
+                    operation_id, operation.turn_id, turn_id
+                )));
+            }
+            operation.turn_id = turn_id;
+        }
+
         result
             .await
             .map_err(|_| AgentError::Backend("Codex turn dispatcher stopped".into()))?
     }
 
     async fn interrupt(&self, operation_id: &OperationId) -> Result<(), AgentError> {
-        let operation = self
-            .inner
-            .operations
-            .lock()
-            .map_err(|_| AgentError::Backend("operation mutex poisoned".into()))?
-            .get(operation_id)
-            .map(|operation| (operation.thread_id.clone(), operation.turn_id.clone()))
-            .ok_or_else(|| AgentError::OperationNotFound(operation_id.clone()))?;
+        let operation = {
+            let operations = self
+                .inner
+                .operations
+                .lock()
+                .map_err(|_| AgentError::Backend("operation mutex poisoned".into()))?;
+            let operation = operations
+                .get(operation_id)
+                .ok_or_else(|| AgentError::OperationNotFound(operation_id.clone()))?;
+            if operation.turn_id.is_empty() {
+                return Err(AgentError::Backend(
+                    "Codex turn is still starting; interrupt can be retried after TurnStart binds".into(),
+                ));
+            }
+            (operation.thread_id.clone(), operation.turn_id.clone())
+        };
         let _: TurnInterruptResponse = self
             .inner
             .requests
@@ -3051,6 +3111,14 @@ mod tests {
             "mahayana-assistant",
             "bot-father"
         ));
+    }
+
+    #[test]
+    fn pending_operation_accepts_first_turn_event_before_turn_start_response() {
+        assert!(operation_turn_matches("", Some("turn:fast")));
+        assert!(operation_turn_matches("turn:fast", Some("turn:fast")));
+        assert!(operation_turn_matches("turn:fast", None));
+        assert!(!operation_turn_matches("turn:first", Some("turn:other")));
     }
 
     #[test]
