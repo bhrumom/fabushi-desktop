@@ -10,5 +10,5 @@ import LegacyMessagingAdapter from '../adapters/legacy-messaging/legacy-messagin
  * replace the root product boundary.
  */
 export default function DesktopApp() {
-  return <LegacyMessagingAdapter RootShell={AgentRootShell} />;
+  return <AgentRootShell><LegacyMessagingAdapter /></AgentRootShell>;
 }
