@@ -4,7 +4,7 @@ Status: active
 Owner: Fabushi desktop architecture  
 Last updated: 2026-09-21  
 Related project: `projects/grok-fabu-parity`  
-Related task / PR: PR #14, user task `[Fabushi:76d588cf-3096-4cea-8685-2ca518f3c7c6]`
+Related task / PR: PR #14, latest user task `[Fabushi:7ce9e325-b10e-4cba-9290-c5577b154d92]`
 
 ## 1. Context / problem
 
@@ -53,7 +53,7 @@ Verified on 2026-09-21 before implementation:
 - PR #7 is closed/unmerged at `4771410a79ae750ce5be6337cce09f0d42c629bf` and is not the active implementation branch;
 - PR #9 merged the first Agent-first Rust runtime architecture into main at `a6d6a56fdc836135e16c126a559ed51ce94e4de1`;
 - active continuation PR #14 is `refactor/post-1.2.74-architecture-cutover-20260921`;
-- at inspected PR #14 head `13bbcd2ece31a74fc9252822db2a422641deefaa`, `legacy-messaging-shell.tsx` is absent, `DesktopApp` mounts `AgentRootShell`, and Rust contains `ConversationActor` and `CapabilityBroker`;
+- at inspected PR #14 head `e1f20ad6aa06f58afc0017840df91d501de5e7e6`, `legacy-messaging-shell.tsx` is absent, `DesktopApp` mounts `AgentRootShell`, and Rust contains `ConversationActor` and `CapabilityBroker`;
 - desktop version remains `1.2.74`;
 - `projects/grok-fabu-parity/PARITY.md` is the detailed parity inventory but explicitly is not, by itself, a completion claim.
 
@@ -156,7 +156,7 @@ Retain:
 
 ## 16. References / provenance
 
-- Latest explicit user requirement in task `[Fabushi:76d588cf-3096-4cea-8685-2ca518f3c7c6]`.
+- Latest explicit user requirement in task `[Fabushi:7ce9e325-b10e-4cba-9290-c5577b154d92]`.
 - `AGENTS.md` and `docs/specs/spec-first-ai-development.md` on canonical main.
 - `projects/grok-fabu-parity/PARITY.md`.
 - PR #9 architecture merge; PR #14 active continuation.
