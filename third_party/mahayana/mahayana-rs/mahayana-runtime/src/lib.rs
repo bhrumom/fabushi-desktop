@@ -961,14 +961,23 @@ impl MahayanaRuntime {
         let task_operation_id = operation_id.clone();
         self.async_runtime.spawn(async move {
             let _gate = actor.gate.lock().await;
-            if actor
-                .start(&turn_id, run_id.clone())
-                .map_err(RuntimeError::Synchronization)
-                .is_ok()
-            {
-                let _ = transition_turn_state(&event_tx, &store, &context, TurnState::Preparing);
-                let _ = transition_turn_state(&event_tx, &store, &context, TurnState::Thinking);
+            if let Err(message) = actor.start(&turn_id, run_id.clone()) {
+                let _ = transition_turn_state(&event_tx, &store, &context, TurnState::Failed);
+                let _ = event_tx.send(RuntimeEvent::OperationFailed {
+                    operation_id: task_operation_id.clone(),
+                    code: "conversation_actor_lifecycle".to_string(),
+                    message,
+                });
+                if let Ok(mut operations) = operations.lock() {
+                    operations.remove(&task_operation_id);
+                }
+                if let Ok(mut contexts) = run_contexts.lock() {
+                    contexts.remove(&task_operation_id);
+                }
+                return;
             }
+            let _ = transition_turn_state(&event_tx, &store, &context, TurnState::Preparing);
+            let _ = transition_turn_state(&event_tx, &store, &context, TurnState::Thinking);
 
             let result = provider.send_message(request, sink).await;
             let terminal_state = if result.is_ok() {
