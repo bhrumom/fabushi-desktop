@@ -900,6 +900,15 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await overlays.getByTestId('bot-computer-toggle').click();
       await expect(settings).toHaveCount(0);
       await expect(overlays.getByTestId('bot-computer-panel')).toBeVisible();
+
+      const takeover = overlays.getByTestId('agent-computer-takeover');
+      await expect(takeover.getByRole('button', { name: 'Take Control' })).toBeVisible();
+      await takeover.getByRole('button', { name: 'Take Control' }).click();
+      await expect(takeover).toContainText('You have control');
+      await expect(takeover.getByRole('button', { name: 'Release Control' })).toBeVisible();
+      await takeover.getByRole('button', { name: 'Release Control' }).click();
+      await expect(takeover.getByRole('button', { name: 'Take Control' })).toBeVisible();
+
       await overlays.getByRole('button', { name: 'Close Agent info' }).click();
       await expect(overlays).toHaveCount(0);
     });
