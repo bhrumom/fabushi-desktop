@@ -1,5 +1,5 @@
 import React, { type FormEvent, type ReactNode } from 'react';
-import type { BotMarkState } from '../../../frontend/apps/web/src/app/host/bot-mark';
+import type { FabAvatarInputState } from '../ui/avatar/fab-avatar';
 import AgentHeader from './agent-header';
 import AgentComposer from './agent-composer';
 import type { AgentPullRequestSuggestion } from './agent-composer-suggestion-provider';
@@ -10,7 +10,7 @@ export interface AgentWorkspaceProps extends Omit<AgentTranscriptProps, 'title' 
   title: string;
   description: string;
   botId: string;
-  botState: BotMarkState;
+  botState: FabAvatarInputState;
   status: string;
   pinned: boolean;
   searchActive: boolean;
