@@ -73,6 +73,7 @@ use mahayana_host_protocol::COMPUTER_CONTROL_PROTOCOL_VERSION;
 use mahayana_host_protocol::CapabilitySummary;
 use mahayana_host_protocol::CommandAccepted;
 use mahayana_host_protocol::ComputerActionResult;
+use mahayana_host_protocol::ComputerControlLeaseState;
 use mahayana_host_protocol::ComputerControlOrigin;
 use mahayana_host_protocol::ComputerControlTarget;
 use mahayana_host_protocol::ComputerSnapshot;
@@ -984,6 +985,8 @@ impl FeatureHostController {
             FeatureCommand::ComputerStatus { .. }
                 | FeatureCommand::ComputerScreenshot { .. }
                 | FeatureCommand::ComputerAction { .. }
+                | FeatureCommand::ComputerTakeControl { .. }
+                | FeatureCommand::ComputerReleaseControl { .. }
         ) {
             return self.execute_computer(command);
         }
