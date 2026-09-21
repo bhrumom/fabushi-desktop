@@ -1,0 +1,158 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--fab-space-2);
+  margin-bottom: var(--fab-space-3);
+}
+
+.toolbar > :first-child {
+  flex: 1;
+}
+
+.status {
+  color: var(--fab-text-muted);
+  font-size: 12px;
+}
+
+.error {
+  color: var(--fab-danger);
+  font-size: 12px;
+}
+
+.list {
+  display: grid;
+  gap: var(--fab-space-2);
+}
+
+.row {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--fab-space-2);
+  padding: 10px;
+}
+
+.copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.copy strong,
+.copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy small {
+  color: var(--fab-text-muted);
+}
+
+.meta {
+  color: var(--fab-text-muted);
+  font-size: 11px;
+}
+
+.split {
+  height: 100%;
+  min-height: 420px;
+  display: grid;
+  grid-template-columns: minmax(220px, 34%) minmax(0, 1fr);
+  gap: var(--fab-space-3);
+}
+
+.pane {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.messages {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--fab-space-2);
+}
+
+.messageList {
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.message {
+  max-width: 78%;
+  padding: 8px 10px;
+  border-radius: var(--fab-radius-md);
+  border: 1px solid var(--fab-border-subtle);
+  background: var(--fab-bg-hover);
+}
+
+.message[data-own="true"] {
+  align-self: flex-end;
+  background: color-mix(in srgb, var(--fab-accent), transparent 86%);
+}
+
+.composer {
+  display: flex;
+  gap: var(--fab-space-2);
+}
+
+.balanceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--fab-space-2);
+  margin-bottom: var(--fab-space-3);
+}
+
+.balance {
+  padding: 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.balance small {
+  color: var(--fab-text-muted);
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--fab-space-3);
+}
+
+.card {
+  padding: 14px;
+  display: grid;
+  gap: var(--fab-space-2);
+  align-content: start;
+}
+
+.cardActions {
+  display: flex;
+  gap: var(--fab-space-2);
+  flex-wrap: wrap;
+}
+
+.miniAppFrame {
+  width: min(920px, 90vw);
+  height: min(720px, 82vh);
+  border: 0;
+  border-radius: var(--fab-radius-md);
+  background: white;
+}
+
+.dialogBody {
+  width: min(960px, 94vw);
+}
+
+@media (max-width: 800px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+}
