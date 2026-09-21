@@ -41,6 +41,9 @@ const runtimeLib = fs.readFileSync(path.join(runtimeRoot, 'lib.rs'), 'utf8');
 const conversationActor = fs.readFileSync(path.join(runtimeRoot, 'conversation_actor.rs'), 'utf8');
 const runtimeStore = fs.readFileSync(path.join(runtimeRoot, 'runtime_store.rs'), 'utf8');
 const capabilityBroker = fs.readFileSync(path.join(runtimeRoot, 'capability_broker.rs'), 'utf8');
+const computerExecutor = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-computer', 'src', 'lib.rs'), 'utf8');
+const codexAgent = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-agent-codex', 'src', 'implementation.rs'), 'utf8');
+const featureHost = fs.readFileSync(path.join(repoRoot, 'third_party', 'mahayana', 'mahayana-rs', 'mahayana-feature-host', 'src', 'implementation.rs'), 'utf8');
 const durableAgentState = fs.readFileSync(path.join(desktopRoot, 'src', 'durable-agent-state.ts'), 'utf8');
 const agentDraftStore = fs.readFileSync(path.join(desktopRoot, 'src', 'agent-workspace', 'agent-draft-store.ts'), 'utf8');
 const removedMigrationRuntimePaths = [
@@ -137,6 +140,19 @@ if (!/import\s+AgentRootShell\s+from\s+['"]\.\.\/agent-workspace\/agent-root-she
   || !/<RootShell\b/.test(shell)
   || /<div\s+hidden\b|hidden\s+aria-hidden=['"]true['"]/.test(shell)) {
   violations.push('DesktopApp/AgentRootShell is not the sole visible product root or hidden legacy navigation returned');
+}
+
+if (!/pub struct ComputerControlLeaseRequest/.test(computerExecutor)
+  || !/pub fn execute_with_lease\s*\(/.test(computerExecutor)
+  || !/ComputerError::LeaseRequired/.test(computerExecutor)
+  || !/ComputerError::LeaseBusy/.test(computerExecutor)
+  || !/USER_OVERRIDE_EPOCH\.fetch_add/.test(computerExecutor)
+  || !/mahayana_computer::execute_with_lease\s*\(/.test(codexAgent)
+  || !/mahayana_computer::release_control_lease\(thread_id, turn_id\)/.test(codexAgent)
+  || !/ComputerControlOrigin::RemoteMobile[\s\S]{0,1800}execute_with_lease/.test(featureHost)
+  || !/ComputerControlOrigin::Ai[\s\S]{0,1800}execute_with_lease/.test(featureHost)
+  || /mahayana_computer::execute\([^\n]*ComputerControlOrigin::Ai/.test(codexAgent)) {
+  violations.push('physical Computer control is not enforced by a single controller lease across AI/remote execution paths');
 }
 
 if (!/inference_provider:\s*Option<InferenceProvider>/.test(hostProtocol)
@@ -384,6 +400,7 @@ if (!/pub enum TurnState/.test(runtimeCore)
   || !/CREATE TABLE IF NOT EXISTS runs/.test(runtimeStore)
   || !/CREATE TABLE IF NOT EXISTS capability_audit/.test(runtimeStore)
   || !/CREATE TABLE IF NOT EXISTS computer_leases/.test(runtimeStore)
+  || !/pub fn acquire_computer_lease/.test(runtimeStore)
   || !/pub struct CapabilityBroker/.test(capabilityBroker)
   || !/capability_broker\.authorize/.test(runtimeLib)
   || !/actors\.actor\(&conversation_id\)/.test(runtimeLib)
