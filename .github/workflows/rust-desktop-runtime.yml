@@ -138,3 +138,5 @@ jobs:
         run: node desktop/scripts/check-agent-workspace-boundary.mjs
       - name: Typecheck and build renderer
         run: npm --prefix desktop run build:renderer
+      - name: Enforce built desktop bundle boundary
+        run: node desktop/scripts/check-desktop-bundle.mjs
