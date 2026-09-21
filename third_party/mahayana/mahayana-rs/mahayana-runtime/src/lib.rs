@@ -1336,12 +1336,16 @@ mod tests {
         let mut saw_delta = false;
         let mut saw_message = false;
         let mut saw_complete = false;
-        for _ in 0..5 {
+        let mut lifecycle = Vec::new();
+        for _ in 0..12 {
             let event = runtime
                 .receive(Duration::from_secs(1))
                 .expect("receive event")
                 .expect("event before timeout");
             match event {
+                RuntimeEvent::TurnStateChanged { state, .. } => {
+                    lifecycle.push(state);
+                }
                 RuntimeEvent::MessageDelta {
                     operation_id: event_operation,
                     delta,
@@ -1355,7 +1359,10 @@ mod tests {
                     assert_eq!(message.text, "大乘：你好");
                     saw_message = true;
                 }
-                RuntimeEvent::OperationCompleted { .. } => {
+                RuntimeEvent::OperationCompleted {
+                    operation_id: event_operation,
+                } => {
+                    assert_eq!(event_operation, operation_id);
                     saw_complete = true;
                     break;
                 }
@@ -1363,6 +1370,10 @@ mod tests {
             }
         }
         assert!(saw_delta && saw_message && saw_complete);
+        assert!(lifecycle.contains(&TurnState::Accepted));
+        assert!(lifecycle.contains(&TurnState::Preparing));
+        assert!(lifecycle.contains(&TurnState::Thinking));
+        assert!(lifecycle.contains(&TurnState::Completed));
     }
 
     struct CountingAgent {
