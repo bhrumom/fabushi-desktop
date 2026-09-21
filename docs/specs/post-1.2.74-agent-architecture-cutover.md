@@ -196,19 +196,21 @@ Retain:
 | R4 | source-review PASS | RuntimeStore/SQLite WAL owns turns, runs, workspace state, pending intents, capability audit, computer leases, turn requests and handoff dispatch; renderer storage is migration/cosmetic only. |
 | R5 | source-review PASS | Runtime/FeatureHost privileged entries use `CapabilityBroker`; provider escalation approvals are brokered/audited; dynamic Computer actions are brokered before lease execution; MCP management and Agent handoff are brokered in Runtime. |
 | R6 | source-review PASS | Computer actions use `ComputerControlLease`; human take/release lifecycle and `waiting-user` projection are explicit. |
-| R7 | source-review PASS; packaged re-verification pending | AgentSend/Broadcast/Group use durable handoff intents with depth/fan-out limits; `ask_user` is first-class; handoff dispatch is journaled and restart-recovered. The first signed candidate exposed a UI checkbox-selection regression before the Runtime handoff was invoked; the shared input primitive and packaged handoff assertion were repaired and require a fresh exact-head pass. |
+| R7 | passed | AgentSend/Broadcast/Group use durable handoff intents with depth/fan-out limits; `ask_user` is first-class; handoff dispatch is journaled and restart-recovered. The first signed candidate exposed a UI checkbox-selection regression before the Runtime handoff was invoked; the shared input primitive and packaged handoff assertion were repaired and require a fresh exact-head pass. |
 | R8 | source-review PASS | Renderer permanent account/sidebar/remote polling and Host receive polling are removed; the Electron edge no longer exposes `feature.receive`; `backgroundThrottling: true` is explicit and Host events are pushed. |
 | R9 | source-review PASS | Desktop uses low-power `FabAvatar`; old BotMark/avatar runtime, per-avatar rAF and DOM MutationObserver inference are guarded against. |
 | R10 | source-review PASS | Shared Fabushi primitives/tokens are required across primary Agent UI and guarded against raw feature-local controls; Agent/Section naming and destructive confirmation now use `FabDialog` rather than browser-native prompt/confirm. |
-| R11 | source-review PASS; CI pending | Architecture checker guards root ownership, typed identity, durable state/recovery, broker/lease paths, collaboration, power, avatar/design-system boundaries, browser-native Agent dialogs, and any re-exposed desktop `feature.receive` RPC. |
+| R11 | passed | Architecture checker guards root ownership, typed identity, durable state/recovery, broker/lease paths, collaboration, power, avatar/design-system boundaries, browser-native Agent dialogs, and any re-exposed desktop `feature.receive` RPC. |
 | R12 | PASS | Product-affecting implementation was completed and source-reviewed before starting the final acceptance cycle. |
-| R13 | pending | Requires a fresh GitHub Actions cycle that asserts the exact immutable PR head SHA. |
-| R14 | pending | PR #14 must remain unmerged until all R13 gates are green on the same head. |
-| R15 | pending | After merge, bump above 1.2.74 and publish only after exact-source signed/notarized macOS release verification. |
-| AC-1–AC-7 | source-review PASS; CI confirmation pending | Static/source evidence satisfies the architecture definition; final checker/build/runtime execution remains to be proven by Actions. |
-| AC-8 | pending | All required exact-head PR Actions must pass on one immutable head. |
-| AC-9 | in progress | Source compliance is recorded here; CI/merge/release outcomes will be appended after execution. |
-| AC-10–AC-12 | pending | Depend on successful exact-head Actions, protected merge, monotonic version bump and signed/notarized release. |
+| R13 | passed | Exact-head runs 35638961340, 35638961446 and 35638961502 all succeeded on `25b2477aa182c3bac9e105e92a4829ebb209a74d`. |
+| R14 | passed | PR #14 was squash-merged only after all exact-head gates passed; architecture merge SHA is `bc6c3b5de85cc367cfe38f70ad9b499e9f2afe85`. |
+| R15 | in progress | Architecture merged at `bc6c3b5de85cc367cfe38f70ad9b499e9f2afe85`; release branch bumps desktop to 1.2.75 and must pass exact-source signed/notarized verification before publication. |
+| AC-1–AC-7 | passed | Source review plus architecture guard, renderer build, Rust runtime tests and packaged acceptance all passed on the immutable architecture head. |
+| AC-8 | passed | All three required workflows succeeded on `25b2477aa182c3bac9e105e92a4829ebb209a74d`; packaged evidence artifacts 10657169658 and 10657119945 were uploaded. |
+| AC-9 | passed | Architecture source/CI/merge compliance is recorded; release closure remains under AC-11/AC-12. |
+| AC-10 | passed | PR #14 merged as `bc6c3b5de85cc367cfe38f70ad9b499e9f2afe85` after AC-8. |
+| AC-11 | in progress | Release branch sets desktop/package + lockfile to 1.2.75. |
+| AC-12 | pending | Requires signed/notarized 1.2.75 installer publication from the exact accepted release SHA. |
 
 ## 2026-09-22 signed packaged acceptance repair
 
