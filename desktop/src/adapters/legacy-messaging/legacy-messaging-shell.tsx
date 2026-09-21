@@ -738,9 +738,7 @@ function startupLegacyConversationId(projection: MessengerProjection | null | un
   return null;
 }
 
-export type LegacyMessagingRoot = React.ComponentType<React.ComponentPropsWithoutRef<'main'>>;
-
-export default function LegacyMessagingAdapter({ RootShell }: { readonly RootShell: LegacyMessagingRoot }) {
+export default function LegacyMessagingAdapter() {
   const authTransport = useMemo(() => createTransport(), []);
   const localProjection = useMemo(() => readMessengerProjection(), []);
   const [startupProjection, setStartupProjection] = useState<MessengerProjection | null>(localProjection);
@@ -3854,8 +3852,9 @@ async function saveInvoiceDialog() {
   }
 
   return (
-    <RootShell
+    <div
       className={`${styles.messenger} ${styles.fabushiUnified}`}
+      data-agent-product-grid="true"
       data-testid="messenger-workspace"
       data-product-shell="agent"
       data-initial-host-hydrated={initialAgentWorkspaceHydrated ? 'true' : undefined}
@@ -4436,7 +4435,7 @@ async function saveInvoiceDialog() {
           </div>
         </section>
       </div> : null}
-    </RootShell>
+    </div>
   );
 }
 
