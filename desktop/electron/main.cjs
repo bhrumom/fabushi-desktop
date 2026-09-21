@@ -1060,6 +1060,24 @@ function createWindow() {
   });
   mainWindow = win;
 
+  win.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    if (!isMainFrame) return;
+    console.error('[renderer-load] did-fail-load', {
+      errorCode,
+      errorDescription,
+      url: validatedURL,
+    });
+  });
+  win.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[renderer-load] render-process-gone', {
+      reason: details.reason,
+      exitCode: details.exitCode,
+    });
+  });
+  win.webContents.on('did-finish-load', () => {
+    console.info('[renderer-load] did-finish-load', win.webContents.getURL());
+  });
+
   win.webContents.setWindowOpenHandler(({ url }) => {
     try { void shell.openExternal(safeHttpsUrl(url)); } catch {}
     return { action: 'deny' };
