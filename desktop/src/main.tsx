@@ -13,7 +13,6 @@ import { installSelfHostedMahayanaInvocationBridge } from './selfhosted-mahayana
 import './messenger-layout-regressions.css';
 import './grok-agent-ui-parity.css';
 import './openbot-ui-parity.css';
-import './mahayana-agent-transcript-semantics.css';
 import './mahayana-assistant-turn.css';
 import './credential-vault.css';
 import './sidebar-contact-groups.css';
@@ -26,8 +25,8 @@ if (!root) {
 
 async function bootstrapDesktop(rootElement: HTMLDivElement): Promise<void> {
   installDesktopAccountSessionSync();
-  // Restore native persisted projections before transport/workbench reducers
-  // read their first-frame local cache. This makes localStorage a projection;
+  // Restore native persisted projections before Agent/runtime reducers read
+  // their first-frame local cache. This makes localStorage a projection;
   // canonical cloud/Rust authority is verified separately by GBF-601/602.
   await restoreDurableAgentState();
   installBotIdentityAliases();
