@@ -368,19 +368,18 @@ export default function AgentRootShell({
     product.sidebar.clearSelection();
   }, [product.sidebar.clearSelection]);
 
-  async function createAgent(): Promise<void> {
-    const name = window.prompt('Agent name', 'New Agent')?.trim();
-    if (!name) return;
-    await product.directory.create({ name, description: '' });
+  async function createAgent(name: string): Promise<void> {
+    const normalized = name.trim();
+    if (!normalized) return;
+    await product.directory.create({ name: normalized, description: '' });
     await product.directory.list();
   }
 
-  async function renameAgent(item: AgentSidebarItem): Promise<void> {
+  async function renameAgent(item: AgentSidebarItem, name: string): Promise<void> {
     const bot = product.directory.agents.find((candidate) => (candidate.agentId || candidate.id) === item.agentId);
-    if (!bot) return;
-    const name = window.prompt('Rename Agent', bot.name)?.trim();
-    if (!name || name === bot.name) return;
-    await product.directory.update(bot.id, { name });
+    const normalized = name.trim();
+    if (!bot || !normalized || normalized === bot.name) return;
+    await product.directory.update(bot.id, { name: normalized });
   }
 
   async function duplicateAgent(item: AgentSidebarItem): Promise<void> {
@@ -390,14 +389,18 @@ export default function AgentRootShell({
     await product.directory.list();
   }
 
-  async function deleteAgent(item: AgentSidebarItem): Promise<void> {
-    const bot = product.directory.agents.find((candidate) => (candidate.agentId || candidate.id) === item.agentId);
-    if (!bot || !window.confirm(`Delete Agent “${item.name}”?`)) return;
-    runtime.controller.clearPeer(item.peerKey);
-    runtime.transcriptStore.clear(item.peerKey);
+  async function deleteAgents(items: readonly AgentSidebarItem[]): Promise<void> {
+    const deleting = new Set(items.map((item) => item.peerKey));
+    for (const item of items) {
+      const bot = product.directory.agents.find((candidate) => (candidate.agentId || candidate.id) === item.agentId);
+      if (!bot) continue;
+      await product.directory.delete(bot.id);
+      runtime.controller.clearPeer(item.peerKey);
+      runtime.transcriptStore.clear(item.peerKey);
+    }
     runtime.notify();
-    await product.directory.delete(bot.id);
-    if (activePeerKey === item.peerKey) setActivePeerKey(null);
+    product.sidebar.clearSelection();
+    if (activePeerKey && deleting.has(activePeerKey)) setActivePeerKey(null);
   }
 
   async function hideAgent(item: AgentSidebarItem): Promise<void> {
@@ -592,13 +595,19 @@ export default function AgentRootShell({
         selectedKeys={product.sidebar.selectedKeys}
         onQuery={view.setSearch}
         onOpen={openAgent}
-        onNewAgent={() => void createAgent()}
+        onCreateAgent={(name) => void createAgent(name).catch((cause) => {
+          setError(cause instanceof Error ? cause.message : String(cause));
+        })}
         onToggleCollapsed={() => view.setSidebarWidth((width) => width <= 112 ? 300 : 88)}
         onTogglePin={(item) => product.sidebar.togglePin(item.key)}
-        onRename={(item) => void renameAgent(item)}
+        onRenameAgent={(item, name) => void renameAgent(item, name).catch((cause) => {
+          setError(cause instanceof Error ? cause.message : String(cause));
+        })}
         onHide={(item) => void hideAgent(item)}
         onDuplicate={(item) => void duplicateAgent(item)}
-        onDelete={(item) => void deleteAgent(item)}
+        onDeleteAgents={(items) => void deleteAgents(items).catch((cause) => {
+          setError(cause instanceof Error ? cause.message : String(cause));
+        })}
         onReorderPinned={(moved, target, position) => product.sidebar.reorderPinned(
           moved.key,
           target.key,
@@ -608,7 +617,6 @@ export default function AgentRootShell({
         onToggleSelection={(item) => product.sidebar.toggleSelection(item.key)}
         onRangeSelection={(item) => product.sidebar.rangeSelect(item.key, agentItems.map((candidate) => candidate.key))}
         onClearSelection={product.sidebar.clearSelection}
-        onDeleteSelected={(items) => void Promise.all(items.map((item) => deleteAgent(item))).then(() => product.sidebar.clearSelection())}
         onMoveSelectedToSection={(items, sectionId) => {
           product.sidebar.moveToSection(items.map((item) => ({ key: item.key, pinned: item.pinned })), sectionId);
           product.sidebar.clearSelection();
@@ -618,13 +626,8 @@ export default function AgentRootShell({
           product.sidebar.clearSelection();
         }}
         onToggleSection={(section) => product.sidebar.toggleSection(section.id)}
-        onRenameSection={(section: AgentSidebarSection) => {
-          const name = window.prompt('Rename section', section.name)?.trim();
-          if (name) product.sidebar.renameSection(section.id, name);
-        }}
-        onDeleteSection={(section: AgentSidebarSection) => {
-          if (window.confirm(`Delete section “${section.name}”?`)) product.sidebar.removeSection(section.id);
-        }}
+        onRenameSection={(section: AgentSidebarSection, name) => product.sidebar.renameSection(section.id, name)}
+        onDeleteSection={(section: AgentSidebarSection) => product.sidebar.removeSection(section.id)}
         onMoveToSection={(item, sectionId) => product.sidebar.moveToSection([{ key: item.key, pinned: item.pinned }], sectionId)}
         onBroadcast={() => {
           setSurface('agents');
