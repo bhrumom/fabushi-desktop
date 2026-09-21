@@ -47,9 +47,16 @@ impl ConversationActor {
 
     pub fn start(&self, turn_id: &TurnId, run_id: RunId) -> Result<u64, String> {
         let mut state = self.state.lock().map_err(|_| "conversation actor mutex poisoned")?;
-        if let Some(index) = state.queue.iter().position(|candidate| candidate == turn_id) {
-            state.queue.remove(index);
+        if let Some(active) = &state.active_run {
+            return Err(format!("conversation already has active run {active}"));
         }
+        let Some(next_turn) = state.queue.front() else {
+            return Err(format!("turn {turn_id} was not registered"));
+        };
+        if next_turn != turn_id {
+            return Err(format!("turn {turn_id} is not next in the conversation queue"));
+        }
+        state.queue.pop_front();
         state.active_turn = Some(turn_id.clone());
         state.active_run = Some(run_id);
         state.sequence = state.sequence.saturating_add(1);
@@ -58,10 +65,11 @@ impl ConversationActor {
 
     pub fn finish(&self, run_id: &RunId) -> Result<u64, String> {
         let mut state = self.state.lock().map_err(|_| "conversation actor mutex poisoned")?;
-        if state.active_run.as_ref() == Some(run_id) {
-            state.active_run = None;
-            state.active_turn = None;
+        if state.active_run.as_ref() != Some(run_id) {
+            return Err(format!("run {run_id} does not own the conversation actor"));
         }
+        state.active_run = None;
+        state.active_turn = None;
         state.sequence = state.sequence.saturating_add(1);
         Ok(state.sequence)
     }
@@ -116,5 +124,45 @@ mod tests {
         actor.start(&first, RunId::new("run:first").unwrap()).unwrap();
         assert!(actor.register(second).unwrap().0);
         actor.finish(&RunId::new("run:first").unwrap()).unwrap();
+    }
+
+    #[test]
+    fn actor_rejects_out_of_order_start_and_wrong_run_finish() {
+        let registry = ConversationActorRegistry::default();
+        let conversation = ConversationId::new("mahayana-ai:agent:fifo").unwrap();
+        let actor = registry.actor(&conversation).unwrap();
+        let first = TurnId::new("turn:first").unwrap();
+        let second = TurnId::new("turn:second").unwrap();
+        let first_run = RunId::new("run:first").unwrap();
+        let wrong_run = RunId::new("run:wrong").unwrap();
+
+        actor.register(first.clone()).unwrap();
+        actor.register(second.clone()).unwrap();
+        assert!(actor.start(&second, RunId::new("run:second").unwrap()).is_err());
+        actor.start(&first, first_run.clone()).unwrap();
+        assert!(actor.finish(&wrong_run).is_err());
+        actor.finish(&first_run).unwrap();
+        actor.start(&second, RunId::new("run:second").unwrap()).unwrap();
+    }
+
+    #[test]
+    fn registry_isolates_conversation_lifecycles() {
+        let registry = ConversationActorRegistry::default();
+        let alpha_id = ConversationId::new("mahayana-ai:agent:alpha").unwrap();
+        let beta_id = ConversationId::new("mahayana-ai:agent:beta").unwrap();
+        let alpha = registry.actor(&alpha_id).unwrap();
+        let alpha_again = registry.actor(&alpha_id).unwrap();
+        let beta = registry.actor(&beta_id).unwrap();
+
+        assert!(Arc::ptr_eq(&alpha, &alpha_again));
+        assert!(!Arc::ptr_eq(&alpha, &beta));
+
+        let alpha_turn = TurnId::new("turn:alpha").unwrap();
+        alpha.register(alpha_turn.clone()).unwrap();
+        alpha.start(&alpha_turn, RunId::new("run:alpha").unwrap()).unwrap();
+
+        let beta_turn = TurnId::new("turn:beta").unwrap();
+        assert!(!beta.register(beta_turn.clone()).unwrap().0);
+        beta.start(&beta_turn, RunId::new("run:beta").unwrap()).unwrap();
     }
 }
