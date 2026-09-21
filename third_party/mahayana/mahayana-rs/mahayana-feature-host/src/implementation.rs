@@ -6379,3 +6379,2922 @@ impl FeatureHostController {
                     let decision = match resolution.decision {
                         ApprovalDecision::AllowOnce => RuntimeApprovalDecision::Accept,
                         ApprovalDecision::AllowSession => RuntimeApprovalDecision::AcceptForSession,
+                        ApprovalDecision::Deny => RuntimeApprovalDecision::Decline,
+                    };
+                    self.runtime()?.resolve_approval(
+                        ApprovalId(runtime_approval_id.clone()),
+                        decision,
+                        json!({
+                            "miniAppId": pending.mini_app_id.clone(),
+                            "capability": pending.capability.clone(),
+                        }),
+                    )?;
+                }
+            }
+            #[cfg(not(feature = "production"))]
+            {
+                return Err(FeatureHostError::ProductionUnavailable);
+            }
+        }
+
+        self.state()?.events.push_back(HostEvent::ApprovalResolved {
+            timestamp: timestamp(),
+            approval_id: resolution.approval_id,
+            operation_id: pending.operation_id,
+            agent_id: pending.agent_id,
+            decision: resolution.decision,
+        });
+        Ok(())
+    }
+
+    pub fn interrupt(&self, operation_id: &str) -> Result<(), FeatureHostError> {
+        {
+            let state = self.state()?;
+            ensure_open(&state)?;
+            if !state.operations.contains(operation_id) {
+                return Err(FeatureHostError::Contract(format!(
+                    "unknown operation: {operation_id}"
+                )));
+            }
+        }
+
+        if self.config.mode == HostMode::Production {
+            #[cfg(feature = "production")]
+            if !operation_id.starts_with("host-task-") {
+                self.runtime()?
+                    .interrupt(OperationId(operation_id.to_string()))?;
+            }
+            #[cfg(not(feature = "production"))]
+            return Err(FeatureHostError::ProductionUnavailable);
+        }
+
+        let mut state = self.state()?;
+        state.operations.remove(operation_id);
+        state.operation_agents.remove(operation_id);
+        state.events.push_back(HostEvent::OperationInterrupted {
+            timestamp: timestamp(),
+            operation_id: operation_id.to_string(),
+        });
+        Ok(())
+    }
+
+    pub fn close(&self) -> Result<(), FeatureHostError> {
+        let mut state = self.state()?;
+        if state.closed {
+            return Ok(());
+        }
+        state.closed = true;
+        state.events.push_back(HostEvent::HostClosed {
+            timestamp: timestamp(),
+        });
+        Ok(())
+    }
+
+    #[cfg(feature = "production")]
+    fn runtime(&self) -> Result<&MahayanaHost, FeatureHostError> {
+        self.runtime
+            .as_ref()
+            .ok_or(FeatureHostError::ProductionUnavailable)
+    }
+
+    #[cfg(feature = "production")]
+    fn require_authenticated_account(&self) -> Result<(), FeatureHostError> {
+        let auth_status = self.auth_status()?;
+        let auth = auth_payload(&auth_status);
+        if auth.get("loggedIn").and_then(Value::as_bool) != Some(true) {
+            return Err(FeatureHostError::Contract(
+                "this operation requires an authenticated Fabushi account session".into(),
+            ));
+        }
+        if auth_account_id(auth).is_none() {
+            return Err(FeatureHostError::Contract(
+                "authenticated account has no stable user id".into(),
+            ));
+        }
+        Ok(())
+    }
+
+    #[cfg(not(feature = "production"))]
+    fn execute_production(
+        &self,
+        _command: FeatureCommand,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        Err(FeatureHostError::ProductionUnavailable)
+    }
+
+    #[cfg(not(feature = "production"))]
+    fn receive_production(
+        &self,
+        _timeout: Duration,
+    ) -> Result<Option<HostEvent>, FeatureHostError> {
+        Err(FeatureHostError::ProductionUnavailable)
+    }
+
+    #[cfg(feature = "production")]
+    fn start_next_group_turn(&self, group_id: &str) -> Result<Option<String>, FeatureHostError> {
+        let prepared = {
+            let state = self.state()?;
+            let Some(run) = state.group_runs.get(group_id).cloned() else {
+                return Ok(None);
+            };
+            let Some(member_id) = run.speaker_order.get(run.speaker_index).cloned() else {
+                return Ok(None);
+            };
+            let Some(group) = state.groups.get(group_id).cloned() else {
+                return Ok(None);
+            };
+            let Some(member) = state.bots.get(&member_id).cloned() else {
+                return Ok(None);
+            };
+            let Some(conversation_id) = member.conversation_id.clone() else {
+                return Err(FeatureHostError::Contract(format!(
+                    "group member {} has no conversation id",
+                    member.id
+                )));
+            };
+            let peers = group
+                .member_ids
+                .iter()
+                .filter(|id| **id != member.id)
+                .filter_map(|id| state.bots.get(id).cloned())
+                .collect::<Vec<_>>();
+            let new_messages = group_messages_since_member_last_spoke(&group.messages, &member.id);
+            let system_prompt = build_group_member_system_prompt(&member, &group, &peers);
+            let turn_prompt = build_group_turn_prompt(&member, &group, &peers, new_messages);
+            let account_memory_root = self.active_account_root(self.memory_root_path.as_deref());
+            let account_workflow_root =
+                self.active_account_root(self.workflow_root_path.as_deref());
+            let member_agent_id = bot_runtime_agent_id(&member);
+            let memory_prompt = account_memory_root
+                .as_deref()
+                .map(|root| render_memory_system_prompt(&root.join(member_agent_id).join("memory")))
+                .unwrap_or_default();
+            let workflow_catalog = match (
+                account_workflow_root.as_deref(),
+                account_memory_root.as_deref(),
+            ) {
+                (Some(workflow_root), Some(agent_root)) => {
+                    render_workflow_catalog(workflow_root, agent_root, member_agent_id)
+                }
+                _ => String::new(),
+            };
+            let mut context_sections = vec![system_prompt];
+            if !memory_prompt.is_empty() {
+                context_sections.push(format!("[Persistent agent memory]\n{memory_prompt}"));
+            }
+            if !workflow_catalog.is_empty() {
+                context_sections.push(format!("[Available workflows]\n{workflow_catalog}"));
+            }
+            context_sections.push(turn_prompt);
+            let runtime_text = format!(
+                "[MAHAYANA_HIDDEN_CONTEXT]\n{}",
+                context_sections.join("\n\n")
+            );
+            (
+                GroupOperationContext {
+                    run_id: run.run_id,
+                    group_id: group.id,
+                    member_id: member.id,
+                    member_name: member.name,
+                },
+                conversation_id,
+                runtime_text,
+                agent_inference_provider_key(member.inference_provider)?,
+            )
+        };
+        let (context, conversation_id, runtime_text, inference_provider) = prepared;
+        let response = self.runtime()?.execute(RuntimeCommand::SendMessage {
+            conversation_id: ConversationId(conversation_id),
+            text: runtime_text,
+            client_message_id: Some(format!(
+                "{}:{}:{}",
+                context.run_id, context.group_id, context.member_id
+            )),
+            inference_provider,
+            hidden: true,
+        })?;
+        let operation_id = match response {
+            RuntimeResponse::Accepted { operation_id } => operation_id.to_string(),
+            other => return Err(unexpected_response("group.member.turn", other)),
+        };
+        let mut state = self.state()?;
+        state.group_operations.insert(operation_id.clone(), context);
+        Ok(Some(operation_id))
+    }
+
+    #[cfg(feature = "production")]
+    fn advance_group_run_after_turn(
+        &self,
+        context: &GroupOperationContext,
+    ) -> Result<Option<String>, FeatureHostError> {
+        let should_continue = {
+            let mut state = self.state()?;
+            let Some(snapshot) = state.group_runs.get(&context.group_id).cloned() else {
+                return Ok(None);
+            };
+            if snapshot.run_id != context.run_id {
+                return Ok(None);
+            }
+            let mut next = snapshot;
+            next.speaker_index += 1;
+            let mut done = next.total_messages >= GROUP_MAX_MEMBER_TURNS;
+            if !done && next.speaker_index >= next.speaker_order.len() {
+                if next.messages_this_round == 0 {
+                    done = true;
+                } else {
+                    next.round += 1;
+                    if next.round >= GROUP_MAX_ROUNDS {
+                        done = true;
+                    } else if let Some(group) = state.groups.get(&context.group_id) {
+                        let responders = resolve_group_responders(group, &state.bots);
+                        next.speaker_order = order_round_speakers(&responders, next.round);
+                        next.speaker_index = 0;
+                        next.messages_this_round = 0;
+                        if next.speaker_order.is_empty() {
+                            done = true;
+                        }
+                    } else {
+                        done = true;
+                    }
+                }
+            }
+            if done {
+                state.group_runs.remove(&context.group_id);
+                false
+            } else {
+                state.group_runs.insert(context.group_id.clone(), next);
+                true
+            }
+        };
+        if should_continue {
+            self.start_next_group_turn(&context.group_id)
+        } else {
+            Ok(None)
+        }
+    }
+
+    #[cfg(feature = "production")]
+    fn translate_runtime_event(
+        &self,
+        event: RuntimeEvent,
+    ) -> Result<Option<HostEvent>, FeatureHostError> {
+        let event = match event {
+            RuntimeEvent::Ready { .. } => None,
+            RuntimeEvent::MessageDelta {
+                operation_id,
+                delta,
+                ..
+            } => {
+                let operation_id = operation_id.to_string();
+                let group_context = self.state()?.group_operations.get(&operation_id).cloned();
+                if let Some(context) = group_context {
+                    Some(HostEvent::GroupDelta {
+                        timestamp: timestamp(),
+                        group_id: context.group_id,
+                        member_id: context.member_id,
+                        member_name: context.member_name,
+                        operation_id,
+                        delta,
+                    })
+                } else if let Some(context) = self
+                    .state()?
+                    .background_operations
+                    .get(&operation_id)
+                    .cloned()
+                {
+                    Some(HostEvent::AgentBackgroundDelta {
+                        timestamp: timestamp(),
+                        agent_id: context.agent_id,
+                        agent_name: context.agent_name,
+                        operation_id,
+                        source: context.source,
+                        delta,
+                    })
+                } else {
+                    Some(HostEvent::ChatDelta {
+                        timestamp: timestamp(),
+                        operation_id,
+                        delta,
+                    })
+                }
+            }
+            RuntimeEvent::MessageCompleted {
+                operation_id,
+                message,
+                ..
+            } => {
+                let operation_id = operation_id.to_string();
+                let group_context = self.state()?.group_operations.get(&operation_id).cloned();
+                if let Some(context) = group_context {
+                    if message.role != RuntimeMessageRole::Assistant {
+                        None
+                    } else {
+                        let content = message.text.trim();
+                        if is_group_pass_content(content) {
+                            None
+                        } else {
+                            let mut state = self.state()?;
+                            let message_id = next_id(&mut state, "group-message");
+                            let now = now_millis();
+                            let Some(group) = state.groups.get_mut(&context.group_id) else {
+                                return Ok(None);
+                            };
+                            group.messages.push(GroupMessage {
+                                id: message_id,
+                                speaker: GroupSpeaker::Member {
+                                    id: context.member_id.clone(),
+                                    name: context.member_name.clone(),
+                                },
+                                content: content.to_string(),
+                                created_at_ms: now,
+                            });
+                            if group.messages.len() > 500 {
+                                let overflow = group.messages.len() - 500;
+                                group.messages.drain(0..overflow);
+                            }
+                            group.updated_at_ms = now;
+                            let group = group.clone();
+                            if let Some(run) = state.group_runs.get_mut(&context.group_id) {
+                                if run.run_id == context.run_id
+                                    && run.total_messages < GROUP_MAX_MEMBER_TURNS
+                                {
+                                    run.total_messages += 1;
+                                    run.messages_this_round += 1;
+                                }
+                            }
+                            self.persist_groups(&state.groups)?;
+                            Some(HostEvent::GroupChanged {
+                                timestamp: timestamp(),
+                                action: "message".into(),
+                                group,
+                            })
+                        }
+                    }
+                } else if let Some(context) = self
+                    .state()?
+                    .background_operations
+                    .get(&operation_id)
+                    .cloned()
+                {
+                    if message.role == RuntimeMessageRole::Assistant {
+                        if let Some(artifact) = context.teach_artifact.as_deref() {
+                            if !message.text.trim().is_empty() {
+                                match self.persist_teach_workflow(
+                                    &context.agent_id,
+                                    artifact,
+                                    &message.text,
+                                ) {
+                                    Ok(workflow) => {
+                                        self.state()?.events.push_back(
+                                            HostEvent::WorkflowChanged {
+                                                timestamp: timestamp(),
+                                                agent_id: context.agent_id.clone(),
+                                                action: "learned".into(),
+                                                workflow: Some(workflow),
+                                                id: None,
+                                            },
+                                        );
+                                    }
+                                    Err(error) => {
+                                        let mut state = self.state()?;
+                                        push_error_tray(
+                                            &mut state,
+                                            context.agent_id.clone(),
+                                            "Teach workflow could not be saved".into(),
+                                            Some(error.to_string()),
+                                            Some(operation_id.clone()),
+                                            Some(format!("teach-workflow:{}", context.agent_id)),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                        Some(HostEvent::AgentBackgroundMessage {
+                            timestamp: timestamp(),
+                            agent_id: context.agent_id,
+                            agent_name: context.agent_name,
+                            operation_id,
+                            source: context.source,
+                            text: message.text,
+                        })
+                    } else {
+                        None
+                    }
+                } else {
+                    let mut cards = transcript_cards_from_metadata(&message.metadata);
+                    let message_id = message.id.to_string();
+                    if message.text.trim().is_empty() && !cards.is_empty() {
+                        let first = cards.remove(0);
+                        let mut state = self.state()?;
+                        for (index, card) in cards.into_iter().enumerate() {
+                            state.events.push_back(HostEvent::TranscriptCard {
+                                timestamp: timestamp(),
+                                entry_id: format!("{message_id}-card-{}", index + 1),
+                                operation_id: Some(operation_id.clone()),
+                                card,
+                            });
+                        }
+                        Some(HostEvent::TranscriptCard {
+                            timestamp: timestamp(),
+                            entry_id: format!("{message_id}-card-0"),
+                            operation_id: Some(operation_id),
+                            card: first,
+                        })
+                    } else {
+                        if !cards.is_empty() {
+                            let mut state = self.state()?;
+                            for (index, card) in cards.into_iter().enumerate() {
+                                state.events.push_back(HostEvent::TranscriptCard {
+                                    timestamp: timestamp(),
+                                    entry_id: format!("{message_id}-card-{index}"),
+                                    operation_id: Some(operation_id.clone()),
+                                    card,
+                                });
+                            }
+                        }
+                        let role = match message.role {
+                            RuntimeMessageRole::User => MessageRole::User,
+                            RuntimeMessageRole::Assistant
+                            | RuntimeMessageRole::Contact
+                            | RuntimeMessageRole::MiniApp
+                            | RuntimeMessageRole::System => MessageRole::Assistant,
+                        };
+                        Some(HostEvent::ChatMessage {
+                            timestamp: timestamp(),
+                            role,
+                            text: message.text,
+                            operation_id: Some(operation_id),
+                        })
+                    }
+                }
+            }
+            RuntimeEvent::ApprovalRequested {
+                operation_id,
+                approval_id,
+                title,
+                details,
+            } => Some(self.translate_runtime_approval(operation_id, approval_id, title, details)?),
+            RuntimeEvent::OperationCompleted { operation_id } => {
+                let operation_id = operation_id.to_string();
+                let group_context = self.state()?.group_operations.remove(&operation_id);
+                if let Some(context) = group_context {
+                    let _ = self.advance_group_run_after_turn(&context)?;
+                    None
+                } else if let Some(context) =
+                    self.state()?.background_operations.remove(&operation_id)
+                {
+                    Some(HostEvent::AgentBackgroundFinished {
+                        timestamp: timestamp(),
+                        agent_id: context.agent_id,
+                        agent_name: context.agent_name,
+                        operation_id,
+                        source: context.source,
+                        error: None,
+                    })
+                } else {
+                    let mut state = self.state()?;
+                    state.operations.remove(&operation_id);
+                    state.operation_agents.remove(&operation_id);
+                    Some(HostEvent::OperationCompleted {
+                        timestamp: timestamp(),
+                        operation_id,
+                    })
+                }
+            }
+            RuntimeEvent::OperationFailed {
+                operation_id,
+                code,
+                message,
+            } => {
+                let operation_id = operation_id.to_string();
+                let group_context = self.state()?.group_operations.remove(&operation_id);
+                if let Some(context) = group_context {
+                    let group = {
+                        let mut state = self.state()?;
+                        let group = state.groups.get(&context.group_id).cloned();
+                        push_error_tray(
+                            &mut state,
+                            context.member_id.clone(),
+                            format!("{} failed in {}", context.member_name, context.group_id),
+                            Some(message.clone()),
+                            Some(operation_id.clone()),
+                            Some(format!("group:{}:{}", context.group_id, code)),
+                        );
+                        group
+                    };
+                    let _ = self.advance_group_run_after_turn(&context)?;
+                    group.map(|group| HostEvent::GroupChanged {
+                        timestamp: timestamp(),
+                        action: format!("turnFailed:{code}:{message}"),
+                        group,
+                    })
+                } else if let Some(context) =
+                    self.state()?.background_operations.remove(&operation_id)
+                {
+                    let mut state = self.state()?;
+                    push_error_tray(
+                        &mut state,
+                        context.agent_id.clone(),
+                        format!("{} background task failed", context.agent_name),
+                        Some(message.clone()),
+                        Some(operation_id.clone()),
+                        Some(format!("background:{}:{code}", context.agent_id)),
+                    );
+                    Some(HostEvent::AgentBackgroundFinished {
+                        timestamp: timestamp(),
+                        agent_id: context.agent_id,
+                        agent_name: context.agent_name,
+                        operation_id,
+                        source: context.source,
+                        error: Some(message),
+                    })
+                } else {
+                    let mut state = self.state()?;
+                    state.operations.remove(&operation_id);
+                    let agent_id = state
+                        .operation_agents
+                        .remove(&operation_id)
+                        .unwrap_or_else(|| "mahayana-assistant".into());
+                    let agent_name = state
+                        .bots
+                        .get(&agent_id)
+                        .map(|bot| bot.name.clone())
+                        .unwrap_or_else(|| "Agent".into());
+                    push_error_tray(
+                        &mut state,
+                        agent_id.clone(),
+                        format!("{agent_name} task failed"),
+                        Some(message.clone()),
+                        Some(operation_id.clone()),
+                        Some(format!("agent-run:{agent_id}:{code}")),
+                    );
+                    Some(HostEvent::OperationFailed {
+                        timestamp: timestamp(),
+                        operation_id,
+                        code,
+                        message,
+                    })
+                }
+            }
+            RuntimeEvent::ModelUsageUpdated {
+                operation_id,
+                usage,
+            } => {
+                let tokens = usage.total.unwrap_or_else(|| usage.last.clone());
+                Some(HostEvent::UsageUpdated {
+                    timestamp: timestamp(),
+                    operation_id: operation_id.to_string(),
+                    input_tokens: tokens.input_tokens,
+                    cached_input_tokens: tokens.cached_input_tokens,
+                    output_tokens: tokens.output_tokens,
+                    reasoning_tokens: tokens.reasoning_output_tokens,
+                    total_tokens: tokens.total_tokens,
+                    context_window: usage.model_context_window,
+                })
+            }
+            RuntimeEvent::PluginProgress {
+                operation_id,
+                plugin_id,
+                tool,
+                progress,
+                total,
+                message,
+            } => Some(HostEvent::AgentStep {
+                timestamp: timestamp(),
+                operation_id: Some(operation_id.to_string()),
+                step_id: format!("{plugin_id}:{tool}"),
+                kind: "tool".into(),
+                title: tool,
+                detail: Some(message),
+                status: if total > 0 && progress >= total {
+                    AgentStepStatus::Completed
+                } else {
+                    AgentStepStatus::Running
+                },
+                progress: Some(progress),
+                total: Some(total),
+            }),
+            RuntimeEvent::AgentActivity {
+                operation_id,
+                step_id,
+                kind,
+                title,
+                detail,
+                status,
+                metadata,
+            } => {
+                let operation_id = operation_id.to_string();
+                let agent_id = {
+                    let state = self.state()?;
+                    activity_parent_agent_id(&state, &operation_id)
+                };
+                if kind == "subagent" {
+                    let mut state = self.state()?;
+                    let changed = update_subagents_from_activity(
+                        &mut state,
+                        &agent_id,
+                        &operation_id,
+                        &title,
+                        detail.as_deref(),
+                        status,
+                        metadata.as_ref(),
+                    );
+                    for subagent in changed {
+                        state.events.push_back(HostEvent::SubagentChanged {
+                            timestamp: timestamp(),
+                            subagent,
+                        });
+                    }
+                    let mut tasks = state
+                        .async_tasks
+                        .values()
+                        .filter(|task| task.parent_agent_id == agent_id)
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    tasks.sort_by_key(|task| task.started_at_ms);
+                    state.events.push_back(HostEvent::AsyncTaskChanged {
+                        timestamp: timestamp(),
+                        agent_id: agent_id.clone(),
+                        tasks,
+                    });
+                }
+                if matches!(
+                    kind.as_str(),
+                    "shell" | "command" | "local-exec" | "exec" | "cloud-agent" | "cloud_agent"
+                ) {
+                    let task_id = format!("{operation_id}:{step_id}");
+                    let task_kind = if matches!(kind.as_str(), "cloud-agent" | "cloud_agent") {
+                        AsyncTaskKind::CloudAgent
+                    } else {
+                        AsyncTaskKind::Shell
+                    };
+                    let resource_id = if task_kind == AsyncTaskKind::CloudAgent {
+                        cloud_task_resource_id(metadata.as_ref())
+                    } else {
+                        None
+                    };
+                    let mut state = self.state()?;
+                    if status == RuntimeActivityStatus::Running {
+                        state.async_tasks.insert(
+                            task_id.clone(),
+                            AsyncTaskSummary {
+                                kind: task_kind,
+                                id: task_id.clone(),
+                                parent_agent_id: agent_id.clone(),
+                                label: title.clone(),
+                                status: AsyncTaskStatus::Running,
+                                started_at_ms: now_millis(),
+                                detail: detail.clone(),
+                                subagent_type: None,
+                                resource_id: resource_id.clone(),
+                            },
+                        );
+                    } else {
+                        state.async_tasks.remove(&task_id);
+                    }
+                    let mut tasks = state
+                        .async_tasks
+                        .values()
+                        .filter(|task| task.parent_agent_id == agent_id)
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    tasks.sort_by_key(|task| task.started_at_ms);
+                    state.events.push_back(HostEvent::AsyncTaskChanged {
+                        timestamp: timestamp(),
+                        agent_id: agent_id.clone(),
+                        tasks,
+                    });
+                }
+                if matches!(kind.as_str(), "shell" | "command" | "local-exec" | "exec")
+                    && status != RuntimeActivityStatus::Running
+                {
+                    let _ = self.append_action_audit(
+                        &agent_id,
+                        Some(&operation_id),
+                        json!({
+                            "kind": "shellCommand",
+                            "command": detail.clone().unwrap_or_else(|| title.clone()),
+                            "shellKind": kind,
+                            "target": "runtime",
+                            "status": match status {
+                                RuntimeActivityStatus::Completed => "completed",
+                                RuntimeActivityStatus::Failed => "failed",
+                                RuntimeActivityStatus::Running => "running",
+                            },
+                        }),
+                    );
+                }
+                if kind == "computer" && status != RuntimeActivityStatus::Running {
+                    let computer_metadata = metadata
+                        .as_ref()
+                        .and_then(Value::as_object)
+                        .cloned()
+                        .unwrap_or_default();
+                    let _ = self.append_action_audit(
+                        &agent_id,
+                        Some(&operation_id),
+                        json!({
+                            "kind": "computerUse",
+                            "origin": computer_metadata
+                                .get("origin")
+                                .and_then(Value::as_str)
+                                .unwrap_or("ai"),
+                            "actions": computer_metadata.get("arguments").cloned().unwrap_or(Value::Null),
+                            "detail": detail.clone(),
+                            "title": title.clone(),
+                            "status": match status {
+                                RuntimeActivityStatus::Completed => "completed",
+                                RuntimeActivityStatus::Failed => "failed",
+                                RuntimeActivityStatus::Running => "running",
+                            },
+                        }),
+                    );
+                }
+                Some(HostEvent::AgentStep {
+                    timestamp: timestamp(),
+                    operation_id: Some(operation_id),
+                    step_id,
+                    kind,
+                    title,
+                    detail,
+                    status: match status {
+                        RuntimeActivityStatus::Running => AgentStepStatus::Running,
+                        RuntimeActivityStatus::Completed => AgentStepStatus::Completed,
+                        RuntimeActivityStatus::Failed => AgentStepStatus::Failed,
+                    },
+                    progress: None,
+                    total: None,
+                })
+            }
+            RuntimeEvent::ProviderDegraded { provider, message } => Some(HostEvent::AgentStep {
+                timestamp: timestamp(),
+                operation_id: None,
+                step_id: format!("provider:{provider}"),
+                kind: "provider".into(),
+                title: format!("{provider} 服务降级"),
+                detail: Some(message),
+                status: AgentStepStatus::Failed,
+                progress: None,
+                total: None,
+            }),
+            RuntimeEvent::Lagged { skipped } => Some(HostEvent::AgentStep {
+                timestamp: timestamp(),
+                operation_id: None,
+                step_id: "runtime:event-lag".into(),
+                kind: "runtime".into(),
+                title: "事件流正在追赶".into(),
+                detail: Some(format!("跳过 {skipped} 个过期事件")),
+                status: AgentStepStatus::Failed,
+                progress: None,
+                total: None,
+            }),
+        };
+        Ok(event)
+    }
+
+    #[cfg(feature = "production")]
+    fn translate_runtime_approval(
+        &self,
+        operation_id: OperationId,
+        approval_id: ApprovalId,
+        title: String,
+        details: serde_json::Value,
+    ) -> Result<HostEvent, FeatureHostError> {
+        let approval_key = approval_id.to_string();
+        let operation_key = operation_id.to_string();
+        let agent_id = {
+            let state = self.state()?;
+            activity_parent_agent_id(&state, &operation_key)
+        };
+        let mini_app_id = details
+            .get("pluginId")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("runtime")
+            .to_string();
+        let capability = details
+            .get("capability")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or(title.as_str())
+            .to_string();
+        let reason = details
+            .get("reason")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_string)
+            .unwrap_or_else(|| details.to_string());
+
+        let settings = self.state()?.settings.clone();
+        let is_local_tool_request = details.get("command").is_some()
+            || details
+                .get("kind")
+                .and_then(Value::as_str)
+                .is_some_and(|kind| matches!(kind, "command" | "local-tool" | "local_tool"));
+        let has_ask_match = settings.auto_review_rules.iter().any(|rule| {
+            rule.behavior == AutoReviewBehavior::Ask
+                && auto_review_rule_matches(rule, &title, &details)
+        });
+        let has_allow_match = !has_ask_match
+            && settings.auto_review_rules.iter().any(|rule| {
+                rule.behavior == AutoReviewBehavior::Allow
+                    && auto_review_rule_matches(rule, &title, &details)
+            });
+        let auto_decision = if is_local_tool_request
+            && (!settings.local_execution
+                || settings.local_tool_permission == LocalToolPermission::Never)
+        {
+            Some(ApprovalDecision::Deny)
+        } else if is_local_tool_request
+            && settings.local_tool_permission == LocalToolPermission::Always
+            && !has_ask_match
+        {
+            Some(ApprovalDecision::AllowSession)
+        } else if has_allow_match {
+            Some(ApprovalDecision::AllowOnce)
+        } else {
+            None
+        };
+        if let Some(decision) = auto_decision {
+            let runtime_decision = match decision {
+                ApprovalDecision::AllowOnce => RuntimeApprovalDecision::Accept,
+                ApprovalDecision::AllowSession => RuntimeApprovalDecision::AcceptForSession,
+                ApprovalDecision::Deny => RuntimeApprovalDecision::Decline,
+            };
+            self.runtime()?.resolve_approval(
+                ApprovalId(approval_key.clone()),
+                runtime_decision,
+                json!({
+                    "source": "fabushi-auto-review",
+                    "capability": capability,
+                    "reason": reason,
+                }),
+            )?;
+            let _ = self.append_action_audit(
+                &agent_id,
+                None,
+                json!({
+                    "kind": "autoReview",
+                    "approvalId": approval_key,
+                    "decision": match decision {
+                        ApprovalDecision::AllowOnce => "allow-once",
+                        ApprovalDecision::AllowSession => "allow-session",
+                        ApprovalDecision::Deny => "deny",
+                    },
+                    "title": title,
+                    "capability": capability,
+                }),
+            );
+            self.state()?.events.push_back(HostEvent::AgentStep {
+                timestamp: timestamp(),
+                operation_id: Some(operation_key.clone()),
+                step_id: format!("auto-review:{approval_key}"),
+                kind: "auto-review".into(),
+                title: match decision {
+                    ApprovalDecision::AllowOnce => "自动审批：本次允许".into(),
+                    ApprovalDecision::AllowSession => "自动审批：按本机权限允许".into(),
+                    ApprovalDecision::Deny => "自动审批：已拒绝".into(),
+                },
+                detail: Some(title),
+                status: AgentStepStatus::Completed,
+                progress: None,
+                total: None,
+            });
+            return Ok(HostEvent::ApprovalResolved {
+                timestamp: timestamp(),
+                approval_id: approval_key,
+                operation_id: Some(operation_key),
+                agent_id: Some(agent_id),
+                decision,
+            });
+        }
+
+        self.state()?.pending_approvals.insert(
+            approval_key.clone(),
+            PendingApproval {
+                mini_app_id: mini_app_id.clone(),
+                capability: capability.clone(),
+                runtime_approval_id: Some(approval_id.to_string()),
+                operation_id: Some(operation_key.clone()),
+                agent_id: Some(agent_id.clone()),
+            },
+        );
+        Ok(HostEvent::ApprovalRequested {
+            timestamp: timestamp(),
+            approval_id: approval_key,
+            operation_id: Some(operation_key),
+            agent_id: Some(agent_id),
+            mini_app_id,
+            capability,
+            reason,
+            kind: details
+                .get("kind")
+                .and_then(Value::as_str)
+                .map(str::to_string),
+            subject: details
+                .get("subject")
+                .or_else(|| details.get("command"))
+                .and_then(Value::as_str)
+                .map(str::to_string),
+            detail: details
+                .get("detail")
+                .and_then(Value::as_str)
+                .map(str::to_string),
+            proposed_rule: details
+                .get("proposedRule")
+                .and_then(Value::as_str)
+                .map(str::to_string),
+            location: details
+                .get("location")
+                .and_then(Value::as_str)
+                .map(str::to_string),
+        })
+    }
+
+    #[cfg(feature = "production")]
+    fn receive_production(&self, timeout: Duration) -> Result<Option<HostEvent>, FeatureHostError> {
+        let mut pending_chat_delta: Option<HostEvent> = None;
+        for index in 0..16 {
+            // Block only for the first runtime event. Once awakened, drain an
+            // already-queued burst without adding latency between streamed
+            // events. Consecutive chat deltas for the same operation are
+            // coalesced before they cross the desktop process boundary.
+            let receive_timeout = if index == 0 { timeout } else { Duration::ZERO };
+            let Some(event) = self.runtime()?.receive(receive_timeout)? else {
+                return Ok(pending_chat_delta);
+            };
+            let Some(event) = self.translate_runtime_event(event)? else {
+                continue;
+            };
+
+            match event {
+                HostEvent::ChatDelta {
+                    timestamp,
+                    operation_id,
+                    delta,
+                } => {
+                    if let Some(HostEvent::ChatDelta {
+                        operation_id: pending_operation_id,
+                        delta: pending_delta,
+                        ..
+                    }) = pending_chat_delta.as_mut()
+                    {
+                        if *pending_operation_id == operation_id {
+                            pending_delta.push_str(&delta);
+                            continue;
+                        }
+                    }
+
+                    let next_delta = HostEvent::ChatDelta {
+                        timestamp,
+                        operation_id,
+                        delta,
+                    };
+                    if let Some(pending) = pending_chat_delta.take() {
+                        self.state()?.events.push_front(next_delta);
+                        return Ok(Some(pending));
+                    }
+                    pending_chat_delta = Some(next_delta);
+                }
+                ordered_event => {
+                    if let Some(pending) = pending_chat_delta.take() {
+                        // Preserve tool/final/terminal ordering. The already
+                        // translated non-delta event is served first on the next
+                        // feature.receive call after the coalesced text chunk.
+                        self.state()?.events.push_front(ordered_event);
+                        return Ok(Some(pending));
+                    }
+                    return Ok(Some(ordered_event));
+                }
+            }
+        }
+        Ok(pending_chat_delta)
+    }
+
+    #[cfg(feature = "production")]
+    fn production_long_task(
+        &self,
+        request_id: String,
+        label: String,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        let label = required(label, "operation label")?;
+        let mut state = self.state()?;
+        let operation_id = next_id(&mut state, "host-task");
+        state.operations.insert(operation_id.clone());
+        state.events.push_back(HostEvent::OperationStarted {
+            timestamp: timestamp(),
+            operation_id: operation_id.clone(),
+            label,
+            interruptible: true,
+        });
+        Ok(CommandAccepted {
+            request_id,
+            operation_id: Some(operation_id),
+        })
+    }
+
+    #[cfg(feature = "production")]
+    fn production_clear_session(
+        &self,
+        request_id: String,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        self.runtime()?.clear_session()?;
+        let mut state = self.state()?;
+        state.session_active = false;
+        state.events.push_back(HostEvent::SessionCleared {
+            timestamp: timestamp(),
+        });
+        Ok(CommandAccepted {
+            request_id,
+            operation_id: None,
+        })
+    }
+
+    #[cfg(feature = "production")]
+    fn production_capability_request(
+        &self,
+        request_id: String,
+        mini_app_id: String,
+        capability: String,
+        reason: String,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        let mini_app_id = required(mini_app_id, "miniAppId")?;
+        let capability = required(capability, "capability")?;
+        let reason = required(reason, "reason")?;
+        let mut state = self.state()?;
+        if !state.installed.contains_key(&mini_app_id) {
+            return Err(FeatureHostError::Contract(format!(
+                "MiniApp is not installed: {mini_app_id}"
+            )));
+        }
+        let approval_id = next_id(&mut state, "approval");
+        state.pending_approvals.insert(
+            approval_id.clone(),
+            PendingApproval {
+                mini_app_id: mini_app_id.clone(),
+                capability: capability.clone(),
+                runtime_approval_id: None,
+                operation_id: None,
+                agent_id: None,
+            },
+        );
+        state.events.push_back(HostEvent::ApprovalRequested {
+            timestamp: timestamp(),
+            approval_id,
+            operation_id: None,
+            agent_id: None,
+            mini_app_id,
+            capability,
+            reason,
+            kind: Some("capability".into()),
+            subject: None,
+            detail: None,
+            proposed_rule: None,
+            location: None,
+        });
+        Ok(CommandAccepted {
+            request_id,
+            operation_id: None,
+        })
+    }
+
+    #[cfg(feature = "production")]
+    fn production_open(
+        &self,
+        request_id: String,
+        mini_app_id: String,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        let mini_app_id = required(mini_app_id, "miniAppId")?;
+        if !self.state()?.installed.contains_key(&mini_app_id) {
+            return Err(FeatureHostError::Contract(format!(
+                "MiniApp is not installed: {mini_app_id}"
+            )));
+        }
+        let html = match self.runtime()?.execute(RuntimeCommand::PluginUi {
+            plugin_id: mini_app_id.clone(),
+        })? {
+            RuntimeResponse::PluginUi { html, .. } => html,
+            other => return Err(unexpected_response("miniapp.open", other)),
+        };
+        self.state()?.events.push_back(HostEvent::MiniAppOpened {
+            timestamp: timestamp(),
+            mini_app_id,
+            html: Some(html),
+        });
+        Ok(CommandAccepted {
+            request_id,
+            operation_id: None,
+        })
+    }
+
+    #[cfg(feature = "production")]
+    fn production_install(
+        &self,
+        request_id: String,
+        mini_app_id: String,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        let mini_app_id = required(mini_app_id, "miniAppId")?;
+        let response = self.runtime()?.execute(RuntimeCommand::ListCapabilities {
+            query: Some(format!("miniapp.{mini_app_id}")),
+        })?;
+        let available = match response {
+            RuntimeResponse::Capabilities { data } => data.into_iter().any(|capability| {
+                capability.plugin_id.as_deref() == Some(mini_app_id.as_str())
+                    && capability.is_invokable()
+            }),
+            other => return Err(unexpected_response("marketplace.install", other)),
+        };
+        if !available {
+            return Err(FeatureHostError::Contract(format!(
+                "MiniApp is unavailable in the production Runtime: {mini_app_id}"
+            )));
+        }
+        let version = "bundled".to_string();
+        let mut state = self.state()?;
+        state.installed.insert(mini_app_id.clone(), version.clone());
+        state.events.push_back(HostEvent::MarketplaceInstalled {
+            timestamp: timestamp(),
+            mini_app_id,
+            version,
+        });
+        Ok(CommandAccepted {
+            request_id,
+            operation_id: None,
+        })
+    }
+
+    #[cfg(feature = "production")]
+    fn mcp_instruction_context(&self) -> Result<Option<String>, FeatureHostError> {
+        let instructions = match self
+            .runtime()?
+            .execute(RuntimeCommand::McpCustomInstructions)?
+        {
+            RuntimeResponse::McpCustomInstructions { instructions } => instructions,
+            other => return Err(unexpected_response("mcp.customInstructions", other)),
+        };
+        Ok(render_mcp_instruction_context(&instructions))
+    }
+
+    #[cfg(feature = "production")]
+    fn production_chat(
+        &self,
+        request_id: String,
+        text: String,
+        agent_id: Option<String>,
+        requested_conversation_id: Option<String>,
+        mode: AgentMode,
+        mode_statement: Option<String>,
+        model: Option<String>,
+        attachments: Vec<AttachmentContext>,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        self.require_authenticated_account()?;
+        let text = required(text, "chat text")?;
+        let bot_binding = if let Some(requested_agent_id) = agent_id.as_deref() {
+            let state = self.state()?;
+            find_bot_by_runtime_or_surface_id(&state, requested_agent_id).cloned()
+        } else {
+            None
+        };
+        let bot_conversation_id = bot_binding
+            .as_ref()
+            .and_then(|bot| bot.conversation_id.clone());
+        let runtime_agent_id = bot_binding
+            .as_ref()
+            .and_then(|bot| bot.agent_id.clone())
+            .or_else(|| agent_id.clone());
+        let runtime_inference_provider = agent_inference_provider_key(
+            bot_binding.as_ref().and_then(|bot| bot.inference_provider),
+        )?;
+        if let Some(mini_app_id) = agent_id
+            .as_deref()
+            .filter(|id| *id != "mahayana-assistant" && bot_conversation_id.is_none())
+        {
+            match self
+                .runtime()?
+                .execute(RuntimeCommand::ApproveLocalPluginTool {
+                    plugin_id: mini_app_id.to_string(),
+                    tool: "chat".to_string(),
+                })? {
+                RuntimeResponse::LocalPluginToolApproved { .. } => {}
+                other => return Err(unexpected_response("miniapp.chat.approve", other)),
+            }
+            let response = self
+                .runtime()?
+                .execute(RuntimeCommand::CallLocalPluginTool {
+                    plugin_id: mini_app_id.to_string(),
+                    tool: "chat".to_string(),
+                    arguments: json!({"message": text}),
+                })?;
+            let reply = match response {
+                RuntimeResponse::LocalPluginToolResult { result, .. } => result
+                    .pointer("/content/0/text")
+                    .and_then(Value::as_str)
+                    .filter(|reply| !reply.is_empty())
+                    .unwrap_or("已收到。请选择应用内的快捷操作继续。")
+                    .to_string(),
+                other => return Err(unexpected_response("miniapp.chat", other)),
+            };
+            let mut state = self.state()?;
+            state.events.push_back(HostEvent::ChatMessage {
+                timestamp: timestamp(),
+                role: MessageRole::User,
+                text,
+                operation_id: None,
+            });
+            state.events.push_back(HostEvent::ChatMessage {
+                timestamp: timestamp(),
+                role: MessageRole::Assistant,
+                text: reply,
+                operation_id: None,
+            });
+            return Ok(CommandAccepted {
+                request_id,
+                operation_id: None,
+            });
+        }
+        let conversation_id = requested_conversation_id
+            .map(ConversationId)
+            .or_else(|| bot_conversation_id.map(ConversationId))
+            .unwrap_or_else(|| ConversationId(MAHAYANA_AI_CONVERSATION_ID.to_string()));
+        let (provider, routed_model) = match self.runtime()?.execute(RuntimeCommand::Status)? {
+            RuntimeResponse::Status(status) => (
+                format!("{:?}", status.model_provider).to_lowercase(),
+                status.model,
+            ),
+            other => return Err(unexpected_response("runtime.status", other)),
+        };
+        // Fabu's turn owner keeps acknowledgement/submission separate from
+        // expensive Agent context assembly. A lightweight conversational turn
+        // must not enumerate MCP servers, scan durable memory, render workflow
+        // catalogs, or wrap the user's text before the low-latency model lane.
+        let lightweight_conversation =
+            attachments.is_empty() && is_lightweight_conversation_text(&text);
+        let mut runtime_text = if lightweight_conversation {
+            text.clone()
+        } else {
+            compose_agent_input(&text, mode, mode_statement.as_deref(), &attachments)
+        };
+        if !lightweight_conversation {
+            if let Some(mcp_context) = self.mcp_instruction_context()? {
+                runtime_text = format!(
+                    "{mcp_context}
+
+[Current turn]
+{runtime_text}"
+                );
+            }
+            let memory_agent_id = runtime_agent_id.as_deref().unwrap_or("mahayana-assistant");
+            if is_safe_memory_agent_id(memory_agent_id) {
+                if let Some(root) = self.active_account_root(self.memory_root_path.as_deref()) {
+                    let memory_dir = root.join(memory_agent_id).join("memory");
+                    let memory_prompt = render_memory_system_prompt(&memory_dir);
+                    if !memory_prompt.is_empty() {
+                        runtime_text = format!(
+                            "[Persistent agent memory]\n{memory_prompt}\n\n[Current turn]\n{runtime_text}"
+                        );
+                    }
+                }
+                let account_workflow_root =
+                    self.active_account_root(self.workflow_root_path.as_deref());
+                let account_memory_root = self.active_account_root(self.memory_root_path.as_deref());
+                if let (Some(workflow_root), Some(agent_root)) = (
+                    account_workflow_root.as_deref(),
+                    account_memory_root.as_deref(),
+                ) {
+                    let workflow_catalog =
+                        render_workflow_catalog(workflow_root, agent_root, memory_agent_id);
+                    if !workflow_catalog.is_empty() {
+                        runtime_text =
+                            format!("[Available workflows]\n{workflow_catalog}\n\n{runtime_text}");
+                    }
+                }
+            }
+        }
+        let response = self.runtime()?.execute(RuntimeCommand::SendMessage {
+            conversation_id,
+            text: runtime_text,
+            client_message_id: Some(request_id.clone()),
+            inference_provider: runtime_inference_provider,
+            hidden: false,
+        })?;
+        let operation_id = match response {
+            RuntimeResponse::Accepted { operation_id } => operation_id.to_string(),
+            other => return Err(unexpected_response("chat.send", other)),
+        };
+        let mut state = self.state()?;
+        state.operations.insert(operation_id.clone());
+        state.operation_agents.insert(
+            operation_id.clone(),
+            runtime_agent_id
+                .clone()
+                .unwrap_or_else(|| "mahayana-assistant".into()),
+        );
+        state.events.push_back(HostEvent::ChatMessage {
+            timestamp: timestamp(),
+            role: MessageRole::User,
+            text,
+            operation_id: None,
+        });
+        state.events.push_back(HostEvent::OperationStarted {
+            timestamp: timestamp(),
+            operation_id: operation_id.clone(),
+            label: "chat-response".into(),
+            interruptible: true,
+        });
+        state.events.push_back(HostEvent::ModelRouted {
+            timestamp: timestamp(),
+            operation_id: operation_id.clone(),
+            provider,
+            model: routed_model.clone(),
+            mode,
+        });
+        if let Some(preferred_model) = model.filter(|preferred| preferred != &routed_model) {
+            state.events.push_back(HostEvent::AgentStep {
+                timestamp: timestamp(),
+                operation_id: Some(operation_id.clone()),
+                step_id: format!("{operation_id}:model-preference"),
+                kind: "model".into(),
+                title: format!("使用已配置模型 {routed_model}"),
+                detail: Some(format!(
+                    "本次偏好 {preferred_model}；当前 Runtime 不支持会话中热切换"
+                )),
+                status: AgentStepStatus::Completed,
+                progress: None,
+                total: None,
+            });
+        }
+        Ok(CommandAccepted {
+            request_id,
+            operation_id: Some(operation_id),
+        })
+    }
+
+    #[cfg(feature = "production")]
+    fn production_list_conversations(
+        &self,
+        request_id: String,
+        query: Option<String>,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        self.require_authenticated_account()?;
+        self.production_list_conversations_from_runtime(request_id, query)
+    }
+
+    #[cfg(feature = "production")]
+    fn production_list_conversations_from_runtime(
+        &self,
+        request_id: String,
+        query: Option<String>,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        let conversations = match self.runtime()?.execute(RuntimeCommand::ListConversations)? {
+            RuntimeResponse::Conversations { data } => data,
+            other => return Err(unexpected_response("conversation.list", other)),
+        };
+        let query = query.map(|query| query.to_lowercase());
+        let conversations = conversations
+            .into_iter()
+            .filter(|conversation| {
+                query.as_ref().is_none_or(|query| {
+                    conversation.title.to_lowercase().contains(query)
+                        || conversation.id.0.to_lowercase().contains(query)
+                })
+            })
+            .map(|conversation| ConversationSummary {
+                id: conversation.id.0,
+                title: conversation.title,
+                kind: conversation.peer.provider_key().into(),
+                pinned: conversation.pinned,
+                unread_count: conversation.unread_count,
+                updated_at_ms: conversation.updated_at_ms,
+            })
+            .collect();
+        self.state()?
+            .events
+            .push_back(HostEvent::ConversationListed {
+                timestamp: timestamp(),
+                conversations,
+            });
+        Ok(CommandAccepted {
+            request_id,
+            operation_id: None,
+        })
+    }
+
+    #[cfg(feature = "production")]
+    fn production_open_conversation(
+        &self,
+        request_id: String,
+        conversation_id: String,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        self.require_authenticated_account()?;
+        self.production_open_conversation_from_runtime(request_id, conversation_id)
+    }
+
+    #[cfg(feature = "production")]
+    fn production_open_conversation_from_runtime(
+        &self,
+        request_id: String,
+        conversation_id: String,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        let conversation_id = required(conversation_id, "conversationId")?;
+        let messages = match self
+            .runtime()?
+            .execute(RuntimeCommand::ConversationHistory {
+                conversation_id: ConversationId(conversation_id.clone()),
+                limit: Some(200),
+            })? {
+            RuntimeResponse::History { data } => data,
+            other => return Err(unexpected_response("conversation.open", other)),
+        };
+        let messages = messages
+            .into_iter()
+            .map(|message| ConversationMessage {
+                id: message.id.0,
+                role: match message.role {
+                    RuntimeMessageRole::User => MessageRole::User,
+                    _ => MessageRole::Assistant,
+                },
+                text: message.text,
+                created_at_ms: message.created_at_ms,
+            })
+            .collect();
+        self.state()?
+            .events
+            .push_back(HostEvent::ConversationOpened {
+                timestamp: timestamp(),
+                conversation_id,
+                messages,
+            });
+        Ok(CommandAccepted {
+            request_id,
+            operation_id: None,
+        })
+    }
+
+    #[cfg(feature = "production")]
+    fn production_list_capabilities(
+        &self,
+        request_id: String,
+        query: Option<String>,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        let response = self
+            .runtime()?
+            .execute(RuntimeCommand::ListCapabilities { query })?;
+        let data = match response {
+            RuntimeResponse::Capabilities { data } => data,
+            other => return Err(unexpected_response("capability.list", other)),
+        };
+        let capabilities = data
+            .into_iter()
+            .map(|capability| CapabilitySummary {
+                id: capability.id,
+                title: capability.title,
+                kind: match capability.kind {
+                    CapabilityKind::Agent => "agent",
+                    CapabilityKind::Bot => "bot",
+                    CapabilityKind::Plugin => "plugin",
+                    CapabilityKind::MiniApp => "miniApp",
+                    CapabilityKind::Application => "application",
+                    CapabilityKind::Contact => "contact",
+                }
+                .into(),
+                mention: capability.mention,
+                conversation_id: capability.conversation_id.to_string(),
+                provider: capability.provider,
+                plugin_id: capability.plugin_id,
+                description: capability.description,
+                required_permissions: capability.required_permissions,
+                availability: match capability.availability {
+                    CapabilityAvailability::Ready => "ready",
+                    CapabilityAvailability::PermissionRequired => "permissionRequired",
+                    CapabilityAvailability::Unavailable => "unavailable",
+                }
+                .into(),
+                unavailable_reason: capability.unavailable_reason,
+            })
+            .collect();
+        self.state()?.events.push_back(HostEvent::CapabilityListed {
+            timestamp: timestamp(),
+            capabilities,
+        });
+        Ok(CommandAccepted {
+            request_id,
+            operation_id: None,
+        })
+    }
+
+    #[cfg(feature = "production")]
+    fn execute_production(
+        &self,
+        command: FeatureCommand,
+    ) -> Result<CommandAccepted, FeatureHostError> {
+        let request_id = command.request_id().to_string();
+        {
+            let state = self.state()?;
+            ensure_open(&state)?;
+        }
+        match command {
+            FeatureCommand::ChatSend {
+                text,
+                agent_id,
+                conversation_id,
+                mode,
+                mode_statement,
+                model,
+                attachments,
+                ..
+            } => self.production_chat(
+                request_id,
+                text,
+                agent_id,
+                conversation_id,
+                mode,
+                mode_statement,
+                model,
+                attachments,
+            ),
+            FeatureCommand::ConversationList { query, .. } => {
+                self.production_list_conversations(request_id, query)
+            }
+            FeatureCommand::ConversationOpen {
+                conversation_id, ..
+            } => self.production_open_conversation(request_id, conversation_id),
+            FeatureCommand::CapabilityList { query, .. } => {
+                self.production_list_capabilities(request_id, query)
+            }
+            FeatureCommand::MarketplaceInstall { mini_app_id, .. } => {
+                self.production_install(request_id, mini_app_id)
+            }
+            FeatureCommand::MiniAppOpen { mini_app_id, .. } => {
+                self.production_open(request_id, mini_app_id)
+            }
+            FeatureCommand::CapabilityRequest {
+                mini_app_id,
+                capability,
+                reason,
+                ..
+            } => self.production_capability_request(request_id, mini_app_id, capability, reason),
+            FeatureCommand::RuntimeLongTask { label, .. } => {
+                self.production_long_task(request_id, label)
+            }
+            FeatureCommand::SessionClear { .. } => self.production_clear_session(request_id),
+            _ => unreachable!(
+                "automation and product-surface commands are intercepted before production dispatch"
+            ),
+        }
+    }
+
+    fn execute_test(&self, command: FeatureCommand) -> Result<CommandAccepted, FeatureHostError> {
+        let request_id = command.request_id().to_string();
+        let mut state = self.state()?;
+        ensure_open(&state)?;
+        match command {
+            FeatureCommand::ChatSend {
+                text,
+                agent_id,
+                mode,
+                model,
+                attachments,
+                ..
+            } => {
+                let text = required(text, "chat text")?;
+                let operation_id = next_id(&mut state, "chat");
+                state.events.push_back(HostEvent::ChatMessage {
+                    timestamp: timestamp(),
+                    role: MessageRole::User,
+                    text: text.clone(),
+                    operation_id: None,
+                });
+                state.events.push_back(HostEvent::OperationStarted {
+                    timestamp: timestamp(),
+                    operation_id: operation_id.clone(),
+                    label: "chat-response".into(),
+                    interruptible: false,
+                });
+                state.events.push_back(HostEvent::ModelRouted {
+                    timestamp: timestamp(),
+                    operation_id: operation_id.clone(),
+                    provider: "mahayana-test".into(),
+                    model: model.unwrap_or_else(|| "auto".into()),
+                    mode,
+                });
+                state.events.push_back(HostEvent::AgentStep {
+                    timestamp: timestamp(),
+                    operation_id: Some(operation_id.clone()),
+                    step_id: format!("{operation_id}:context"),
+                    kind: "context".into(),
+                    title: if attachments.is_empty() {
+                        "分析请求".into()
+                    } else {
+                        format!("读取 {} 个附件", attachments.len())
+                    },
+                    detail: None,
+                    status: AgentStepStatus::Completed,
+                    progress: Some(1),
+                    total: Some(1),
+                });
+                let response_text = agent_id
+                    .filter(|id| id != "mahayana-assistant")
+                    .map(|id| format!("{id}机器人收到：{text}"))
+                    .unwrap_or_else(|| format!("收到：{text}"));
+                // Exercise the real CJK streaming shape in the deterministic
+                // desktop Host: one visible character can arrive per delta.
+                // The renderer must coalesce these without producing one line
+                // per character or a second final reply.
+                for delta in response_text.chars() {
+                    state.events.push_back(HostEvent::ChatDelta {
+                        timestamp: timestamp(),
+                        operation_id: operation_id.clone(),
+                        delta: delta.to_string(),
+                    });
+                }
+                state.events.push_back(HostEvent::ChatMessage {
+                    timestamp: timestamp(),
+                    role: MessageRole::Assistant,
+                    text: response_text,
+                    operation_id: Some(operation_id.clone()),
+                });
+                state.events.push_back(HostEvent::UsageUpdated {
+                    timestamp: timestamp(),
+                    operation_id: operation_id.clone(),
+                    input_tokens: text.chars().count() as i64,
+                    cached_input_tokens: 0,
+                    output_tokens: 8,
+                    reasoning_tokens: 0,
+                    total_tokens: text.chars().count() as i64 + 8,
+                    context_window: Some(128_000),
+                });
+                Ok(CommandAccepted {
+                    request_id,
+                    operation_id: Some(operation_id),
+                })
+            }
+            FeatureCommand::ConversationList { query, .. } => {
+                let mut conversations = vec![ConversationSummary {
+                    id: MAHAYANA_AI_CONVERSATION_ID.into(),
+                    title: "大乘助手".into(),
+                    kind: "codex".into(),
+                    pinned: true,
+                    unread_count: 0,
+                    updated_at_ms: 0,
+                }];
+                if let Some(query) = query {
+                    conversations.retain(|item| item.title.contains(&query));
+                }
+                state.events.push_back(HostEvent::ConversationListed {
+                    timestamp: timestamp(),
+                    conversations,
+                });
+                Ok(CommandAccepted {
+                    request_id,
+                    operation_id: None,
+                })
+            }
+            FeatureCommand::ConversationOpen {
+                conversation_id, ..
+            } => {
+                state.events.push_back(HostEvent::ConversationOpened {
+                    timestamp: timestamp(),
+                    conversation_id,
+                    messages: Vec::new(),
+                });
+                Ok(CommandAccepted {
+                    request_id,
+                    operation_id: None,
+                })
+            }
+            FeatureCommand::CapabilityList { query, .. } => {
+                let mut capabilities = vec![CapabilitySummary {
+                    id: "agent.mahayana".into(),
+                    title: "大乘助手".into(),
+                    kind: "agent".into(),
+                    mention: "@agent.mahayana".into(),
+                    conversation_id: MAHAYANA_AI_CONVERSATION_ID.into(),
+                    provider: "codex".into(),
+                    plugin_id: None,
+                    description: "大乘共享智能代理".into(),
+                    required_permissions: Vec::new(),
+                    availability: "ready".into(),
+                    unavailable_reason: None,
+                }];
+                capabilities.extend(state.installed.keys().map(|plugin_id| CapabilitySummary {
+                    id: format!("miniapp.{plugin_id}"),
+                    title: plugin_id.clone(),
+                    kind: "miniApp".into(),
+                    mention: format!("@miniapp.{plugin_id}"),
+                    conversation_id: format!("miniapp:{plugin_id}"),
+                    provider: "miniapp".into(),
+                    plugin_id: Some(plugin_id.clone()),
+                    description: "大乘共享插件、小程序、应用或机器人能力".into(),
+                    required_permissions: Vec::new(),
+                    availability: "ready".into(),
+                    unavailable_reason: None,
+                }));
+                if let Some(query) = query {
+                    let query = query.to_lowercase();
+                    capabilities.retain(|item| {
+                        item.id.to_lowercase().contains(&query)
+                            || item.title.to_lowercase().contains(&query)
+                            || item.description.to_lowercase().contains(&query)
+                    });
+                }
+                state.events.push_back(HostEvent::CapabilityListed {
+                    timestamp: timestamp(),
+                    capabilities,
+                });
+                Ok(CommandAccepted {
+                    request_id,
+                    operation_id: None,
+                })
+            }
+            FeatureCommand::MarketplaceInstall { mini_app_id, .. } => {
+                let mini_app_id = required(mini_app_id, "miniAppId")?;
+                let version = "1.0.0".to_string();
+                state.installed.insert(mini_app_id.clone(), version.clone());
+                state.events.push_back(HostEvent::MarketplaceInstalled {
+                    timestamp: timestamp(),
+                    mini_app_id,
+                    version,
+                });
+                Ok(CommandAccepted {
+                    request_id,
+                    operation_id: None,
+                })
+            }
+            FeatureCommand::MiniAppOpen { mini_app_id, .. } => {
+                let mini_app_id = required(mini_app_id, "miniAppId")?;
+                if !state.installed.contains_key(&mini_app_id) {
+                    return Err(FeatureHostError::Contract(format!(
+                        "MiniApp is not installed: {mini_app_id}"
+                    )));
+                }
+                state.events.push_back(HostEvent::MiniAppOpened {
+                    timestamp: timestamp(),
+                    mini_app_id,
+                    html: Some(
+                        "<!doctype html><html><body><h1>测试 MiniApp</h1></body></html>".into(),
+                    ),
+                });
+                Ok(CommandAccepted {
+                    request_id,
+                    operation_id: None,
+                })
+            }
+            FeatureCommand::CapabilityRequest {
+                mini_app_id,
+                capability,
+                reason,
+                ..
+            } => {
+                let mini_app_id = required(mini_app_id, "miniAppId")?;
+                let capability = required(capability, "capability")?;
+                let reason = required(reason, "reason")?;
+                let approval_id = next_id(&mut state, "approval");
+                state.pending_approvals.insert(
+                    approval_id.clone(),
+                    PendingApproval {
+                        mini_app_id: mini_app_id.clone(),
+                        capability: capability.clone(),
+                        runtime_approval_id: None,
+                        operation_id: None,
+                        agent_id: None,
+                    },
+                );
+                state.events.push_back(HostEvent::ApprovalRequested {
+                    timestamp: timestamp(),
+                    approval_id,
+                    operation_id: None,
+                    agent_id: None,
+                    mini_app_id,
+                    capability,
+                    reason,
+                    kind: Some("capability".into()),
+                    subject: None,
+                    detail: None,
+                    proposed_rule: None,
+                    location: None,
+                });
+                Ok(CommandAccepted {
+                    request_id,
+                    operation_id: None,
+                })
+            }
+            FeatureCommand::RuntimeLongTask { label, .. } => {
+                let label = required(label, "operation label")?;
+                let operation_id = next_id(&mut state, "operation");
+                state.operations.insert(operation_id.clone());
+                state.events.push_back(HostEvent::OperationStarted {
+                    timestamp: timestamp(),
+                    operation_id: operation_id.clone(),
+                    label,
+                    interruptible: true,
+                });
+                Ok(CommandAccepted {
+                    request_id,
+                    operation_id: Some(operation_id),
+                })
+            }
+            FeatureCommand::SessionClear { .. } => {
+                state.session_active = false;
+                state.events.push_back(HostEvent::SessionCleared {
+                    timestamp: timestamp(),
+                });
+                Ok(CommandAccepted {
+                    request_id,
+                    operation_id: None,
+                })
+            }
+            _ => unreachable!(
+                "automation and product-surface commands are intercepted before test dispatch"
+            ),
+        }
+    }
+
+    fn state(&self) -> Result<MutexGuard<'_, FeatureState>, FeatureHostError> {
+        self.state
+            .lock()
+            .map_err(|_| FeatureHostError::StatePoisoned)
+    }
+}
+
+fn transcript_cards_from_metadata(metadata: &Value) -> Vec<TranscriptCard> {
+    if let Some(cards) = metadata.get("cards").and_then(Value::as_array) {
+        return cards.iter().filter_map(decode_transcript_card).collect();
+    }
+    for field in ["transcriptCard", "card", "artifact"] {
+        if let Some(card) = metadata.get(field).and_then(decode_transcript_card) {
+            return vec![card];
+        }
+    }
+    decode_transcript_card(metadata).into_iter().collect()
+}
+
+fn decode_transcript_card(value: &Value) -> Option<TranscriptCard> {
+    let mut value = value.clone();
+    let object = value.as_object_mut()?;
+    if !object.contains_key("kind") {
+        let kind = object.get("type").cloned()?;
+        object.insert("kind".into(), kind);
+    }
+    serde_json::from_value(value).ok()
+}
+
+fn is_product_surface_command(command: &FeatureCommand) -> bool {
+    matches!(
+        command,
+        FeatureCommand::ConnectorList { .. }
+            | FeatureCommand::ConnectorConnect { .. }
+            | FeatureCommand::ConnectorRenameAccount { .. }
+            | FeatureCommand::ConnectorRemoveAccount { .. }
+            | FeatureCommand::ConnectorSetToolEnabled { .. }
+            | FeatureCommand::SkillList { .. }
+            | FeatureCommand::SkillUpsert { .. }
+            | FeatureCommand::SkillDelete { .. }
+            | FeatureCommand::SkillPublish { .. }
+            | FeatureCommand::SkillUnpublish { .. }
+            | FeatureCommand::SkillSync { .. }
+            | FeatureCommand::BotList { .. }
+            | FeatureCommand::BotSetHidden { .. }
+            | FeatureCommand::DraftResolve { .. }
+            | FeatureCommand::SecretProvide { .. }
+            | FeatureCommand::ListenerList { .. }
+            | FeatureCommand::ListenerConnect { .. }
+            | FeatureCommand::ListenerDisconnect { .. }
+            | FeatureCommand::UpdateStatus { .. }
+            | FeatureCommand::UpdateCheck { .. }
+            | FeatureCommand::UpdateInstall { .. }
+    )
+}
+
+#[cfg(feature = "production")]
+#[derive(Debug, Clone, Default)]
+struct LiveConnectorProjection {
+    server_name: Option<String>,
+    connector_id: Option<String>,
+    install_url: Option<String>,
+    status: Option<ConnectorStatus>,
+    accounts: BTreeMap<String, ConnectorAccountSummary>,
+    tools: BTreeMap<String, ConnectorToolSummary>,
+    tool_schemas: BTreeMap<String, Value>,
+}
+
+#[cfg(feature = "production")]
+fn connector_key_from_name(value: &str) -> Option<&'static str> {
+    let normalized = value
+        .chars()
+        .filter(|character| character.is_ascii_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect::<String>();
+    if normalized.contains("gmail") || normalized.contains("googlemail") {
+        Some("gmail")
+    } else if normalized.contains("github") {
+        Some("github")
+    } else if normalized.contains("slack") {
+        Some("slack")
+    } else if normalized.contains("microsoftteams") || normalized == "teams" {
+        Some("teams")
+    } else if normalized.contains("linear") {
+        Some("linear")
+    } else if normalized.contains("sentry") {
+        Some("sentry")
+    } else if normalized.contains("pagerduty") {
+        Some("pagerduty")
+    } else if normalized == "git" {
+        Some("git")
+    } else {
+        None
+    }
+}
+
+#[cfg(feature = "production")]
+fn connector_slug(name: &str) -> String {
+    let mut slug = String::new();
+    let mut needs_dash = false;
+    for character in name.chars() {
+        if character.is_ascii_alphanumeric() {
+            if needs_dash && !slug.is_empty() {
+                slug.push('-');
+            }
+            needs_dash = false;
+            slug.push(character.to_ascii_lowercase());
+        } else {
+            needs_dash = true;
+        }
+    }
+    if slug.is_empty() { "app".into() } else { slug }
+}
+
+#[cfg(feature = "production")]
+fn connector_status_from_auth(auth_status: Option<&str>, has_tools: bool) -> ConnectorStatus {
+    match auth_status.unwrap_or_default() {
+        "notLoggedIn" => ConnectorStatus::AuthRequired,
+        "oAuth" | "bearerToken" => ConnectorStatus::Connected,
+        "unsupported" if has_tools => ConnectorStatus::Connected,
+        "unknown" if has_tools => ConnectorStatus::Connected,
+        _ if has_tools => ConnectorStatus::Connected,
+        _ => ConnectorStatus::Disconnected,
+    }
+}
+
+#[cfg(feature = "production")]
+fn live_connector_projections(
+    servers: &[Value],
+    apps: &[Value],
+) -> BTreeMap<String, LiveConnectorProjection> {
+    let mut live = BTreeMap::<String, LiveConnectorProjection>::new();
+    for app in apps {
+        let name = app.get("name").and_then(Value::as_str).unwrap_or_default();
+        let id = app.get("id").and_then(Value::as_str).unwrap_or_default();
+        let Some(key) = connector_key_from_name(name).or_else(|| connector_key_from_name(id))
+        else {
+            continue;
+        };
+        let entry = live.entry(key.to_string()).or_default();
+        entry.connector_id = (!id.is_empty()).then(|| id.to_string());
+        entry.install_url = app
+            .get("installUrl")
+            .and_then(Value::as_str)
+            .map(str::to_string);
+        if app.get("isAccessible").and_then(Value::as_bool) == Some(true) {
+            entry.status = Some(ConnectorStatus::Connected);
+        }
+    }
+    for server in servers {
+        let server_name = server
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let auth_status = server.get("authStatus").and_then(Value::as_str);
+        let tools = server
+            .get("tools")
+            .and_then(Value::as_object)
+            .cloned()
+            .unwrap_or_default();
+        let direct_key = connector_key_from_name(server_name);
+        if let Some(key) = direct_key {
+            let entry = live.entry(key.to_string()).or_default();
+            entry.server_name = Some(server_name.to_string());
+            entry.status = Some(connector_status_from_auth(auth_status, !tools.is_empty()));
+        }
+        for (wire_name, tool) in tools {
+            let meta = tool.get("_meta").and_then(Value::as_object);
+            let connector_name = meta
+                .and_then(|meta| meta.get("connector_name"))
+                .and_then(Value::as_str);
+            let connector_id = meta
+                .and_then(|meta| meta.get("connector_id"))
+                .and_then(Value::as_str);
+            let Some(key) = connector_name
+                .and_then(connector_key_from_name)
+                .or_else(|| connector_id.and_then(connector_key_from_name))
+                .or(direct_key)
+            else {
+                continue;
+            };
+            let entry = live.entry(key.to_string()).or_default();
+            entry.server_name = Some(server_name.to_string());
+            entry.status = Some(ConnectorStatus::Connected);
+            if let Some(connector_id) = connector_id {
+                entry.connector_id = Some(connector_id.to_string());
+                if entry.install_url.is_none() {
+                    let display = connector_name.unwrap_or(key);
+                    entry.install_url = Some(format!(
+                        "https://chatgpt.com/apps/{}/{}",
+                        connector_slug(display),
+                        connector_id
+                    ));
+                }
+            }
+            let tool_id = tool
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or(wire_name.as_str())
+                .to_string();
+            let description = tool
+                .get("description")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let read_only = tool
+                .pointer("/annotations/readOnlyHint")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            if let Some(schema) = tool
+                .get("inputSchema")
+                .or_else(|| tool.get("input_schema"))
+                .cloned()
+            {
+                entry.tool_schemas.insert(tool_id.clone(), schema);
+            }
+            entry.tools.insert(
+                tool_id.clone(),
+                ConnectorToolSummary {
+                    id: tool_id.clone(),
+                    name: tool
+                        .get("title")
+                        .and_then(Value::as_str)
+                        .filter(|title| !title.trim().is_empty())
+                        .unwrap_or(tool_id.as_str())
+                        .to_string(),
+                    description,
+                    enabled: true,
+                    requires_approval: Some(!read_only),
+                },
+            );
+            let link_id = meta
+                .and_then(|meta| meta.get("link_id"))
+                .and_then(Value::as_str);
+            let owner = meta
+                .and_then(|meta| meta.get("link_owner_profile"))
+                .and_then(Value::as_object);
+            if link_id.is_some() || owner.is_some() {
+                let account_id = link_id
+                    .map(|link_id| format!("mcp:{key}:{link_id}"))
+                    .unwrap_or_else(|| format!("mcp:{key}"));
+                let email = owner
+                    .and_then(|owner| owner.get("email"))
+                    .and_then(Value::as_str)
+                    .map(str::to_string);
+                let label = owner
+                    .and_then(|owner| {
+                        owner
+                            .get("name")
+                            .or_else(|| owner.get("nickname"))
+                            .and_then(Value::as_str)
+                    })
+                    .map(str::to_string)
+                    .or_else(|| email.clone())
+                    .or_else(|| connector_name.map(str::to_string))
+                    .unwrap_or_else(|| key.to_string());
+                entry.accounts.insert(
+                    account_id.clone(),
+                    ConnectorAccountSummary {
+                        id: account_id,
+                        label,
+                        status: ConnectorStatus::Connected,
+                        email,
+                        team_managed: Some(false),
+                        error: None,
+                    },
+                );
+            }
+        }
+    }
+    live
+}
+
+#[cfg(feature = "production")]
+fn projection_send_tool<'a>(
+    projection: &'a LiveConnectorProjection,
+    connector_id: &str,
+) -> Option<(&'a str, Option<&'a Value>)> {
+    let preferred: &[&str] = match connector_id {
+        "gmail" => &[
+            "gmail.send_email",
+            "send_email",
+            "gmail.send_draft",
+            "send_draft",
+        ],
+        "slack" => &[
+            "slack.send_message",
+            "slack.post_message",
+            "send_message",
+            "post_message",
+        ],
+        _ => &[],
+    };
+    for candidate in preferred {
+        if let Some((tool_id, _)) = projection
+            .tools
+            .iter()
+            .find(|(tool_id, _)| tool_id.as_str() == *candidate || tool_id.ends_with(candidate))
+        {
+            return Some((tool_id.as_str(), projection.tool_schemas.get(tool_id)));
+        }
+    }
+    None
+}
+
+#[cfg(feature = "production")]
+fn schema_property_is_array(schema: Option<&Value>, name: &str) -> bool {
+    schema
+        .and_then(|schema| schema.pointer(&format!("/properties/{name}/type")))
+        .and_then(Value::as_str)
+        == Some("array")
+}
+
+#[cfg(feature = "production")]
+fn draft_tool_arguments(
+    draft: &MessageDraft,
+    schema: Option<&Value>,
+) -> Result<Value, FeatureHostError> {
+    let properties = schema
+        .and_then(|schema| schema.get("properties"))
+        .and_then(Value::as_object);
+    match draft {
+        MessageDraft::Email {
+            from,
+            to,
+            cc,
+            subject,
+            body,
+            ..
+        } => {
+            if to.is_empty() {
+                return Err(FeatureHostError::Contract(
+                    "email draft requires at least one recipient".into(),
+                ));
+            }
+            let mut arguments = serde_json::Map::new();
+            if schema_property_is_array(schema, "to") {
+                arguments.insert("to".into(), json!(to));
+            } else {
+                arguments.insert("to".into(), Value::String(to.join(", ")));
+            }
+            arguments.insert("subject".into(), Value::String(subject.clone()));
+            if properties.is_some_and(|properties| properties.contains_key("payload")) {
+                arguments.insert(
+                    "payload".into(),
+                    json!({
+                        "mime_type": "text/plain",
+                        "charset": "UTF-8",
+                        "body": {"content": body}
+                    }),
+                );
+            } else if properties.is_some_and(|properties| properties.contains_key("message")) {
+                arguments.insert("message".into(), Value::String(body.clone()));
+            } else {
+                arguments.insert("body".into(), Value::String(body.clone()));
+            }
+            if let Some(cc) = cc.as_ref().filter(|cc| !cc.is_empty()) {
+                if schema_property_is_array(schema, "cc") {
+                    arguments.insert("cc".into(), json!(cc));
+                } else {
+                    arguments.insert("cc".into(), Value::String(cc.join(", ")));
+                }
+            }
+            if let Some(from) = from.as_ref().filter(|from| !from.trim().is_empty()) {
+                let key = if properties
+                    .is_some_and(|properties| properties.contains_key("from_address"))
+                {
+                    "from_address"
+                } else {
+                    "from"
+                };
+                if properties.is_none_or(|properties| properties.contains_key(key)) {
+                    arguments.insert(key.into(), Value::String(from.clone()));
+                }
+            }
+            Ok(Value::Object(arguments))
+        }
+        MessageDraft::Slack {
+            target,
+            thread,
+            body,
+            ..
+        } => {
+            if target.trim().is_empty() || body.trim().is_empty() {
+                return Err(FeatureHostError::Contract(
+                    "Slack draft requires a target and message".into(),
+                ));
+            }
+            let properties = properties.ok_or_else(|| {
+                FeatureHostError::Contract(
+                    "Slack connector did not expose an input schema for its send tool".into(),
+                )
+            })?;
+            let target_key = [
+                "channel",
+                "channel_id",
+                "target",
+                "conversation",
+                "conversation_id",
+            ]
+            .into_iter()
+            .find(|key| properties.contains_key(*key))
+            .ok_or_else(|| {
+                FeatureHostError::Contract(
+                    "Slack send tool has no supported channel/target parameter".into(),
+                )
+            })?;
+            let body_key = ["text", "message", "body"]
+                .into_iter()
+                .find(|key| properties.contains_key(*key))
+                .ok_or_else(|| {
+                    FeatureHostError::Contract(
+                        "Slack send tool has no supported message parameter".into(),
+                    )
+                })?;
+            let mut arguments = serde_json::Map::new();
+            arguments.insert(target_key.into(), Value::String(target.clone()));
+            arguments.insert(body_key.into(), Value::String(body.clone()));
+            if let Some(thread) = thread.as_ref().filter(|thread| !thread.trim().is_empty())
+                && let Some(thread_key) = ["thread_ts", "thread", "thread_id"]
+                    .into_iter()
+                    .find(|key| properties.contains_key(*key))
+            {
+                arguments.insert(thread_key.into(), Value::String(thread.clone()));
+            }
+            Ok(Value::Object(arguments))
+        }
+    }
+}
+
+#[cfg(feature = "production")]
+fn merge_live_connectors(
+    mut connectors: Vec<ConnectorSummary>,
+    live: &BTreeMap<String, LiveConnectorProjection>,
+) -> Vec<ConnectorSummary> {
+    for connector in &mut connectors {
+        let Some(projection) = live.get(&connector.id) else {
+            if connector.id == "git" {
+                connector.status = ConnectorStatus::Connected;
+                connector.can_add_account = false;
+            }
+            continue;
+        };
+        if let Some(status) = projection.status {
+            connector.status = status;
+        }
+        connector.can_add_account = projection.install_url.is_some()
+            || projection
+                .server_name
+                .as_deref()
+                .is_some_and(|name| name != "codex_apps");
+        if let Some(source) = projection
+            .connector_id
+            .as_ref()
+            .or(projection.server_name.as_ref())
+        {
+            connector.source = Some(source.clone());
+        }
+        let enabled_preferences = connector
+            .tools
+            .iter()
+            .map(|tool| (tool.id.clone(), tool.enabled))
+            .collect::<BTreeMap<_, _>>();
+        if !projection.tools.is_empty() {
+            connector.tools = projection
+                .tools
+                .values()
+                .cloned()
+                .map(|mut tool| {
+                    if let Some(enabled) = enabled_preferences.get(&tool.id) {
+                        tool.enabled = *enabled;
+                    }
+                    tool
+                })
+                .collect();
+        }
+        if !projection.accounts.is_empty() {
+            let labels = connector
+                .accounts
+                .iter()
+                .map(|account| (account.id.clone(), account.label.clone()))
+                .collect::<BTreeMap<_, _>>();
+            connector.accounts = projection
+                .accounts
+                .values()
+                .cloned()
+                .map(|mut account| {
+                    if let Some(label) = labels.get(&account.id) {
+                        account.label = label.clone();
+                    }
+                    account
+                })
+                .collect();
+        } else if connector.status == ConnectorStatus::Connected
+            && connector.accounts.is_empty()
+            && projection.server_name.as_deref() != Some("codex_apps")
+        {
+            connector.accounts.push(ConnectorAccountSummary {
+                id: format!("mcp:{}", connector.id),
+                label: projection
+                    .server_name
+                    .clone()
+                    .unwrap_or_else(|| connector.display_name.clone()),
+                status: ConnectorStatus::Connected,
+                email: None,
+                team_managed: Some(false),
+                error: None,
+            });
+        }
+    }
+    connectors.sort_by(|left, right| left.display_name.cmp(&right.display_name));
+    connectors
+}
+
+fn listener_platform_slug(platform: ListenerPlatform) -> &'static str {
+    match platform {
+        ListenerPlatform::Slack => "slack",
+        ListenerPlatform::Github => "github",
+        ListenerPlatform::Git => "git",
+        ListenerPlatform::Teams => "teams",
+        ListenerPlatform::Linear => "linear",
+        ListenerPlatform::Sentry => "sentry",
+        ListenerPlatform::Pagerduty => "pagerduty",
+    }
+}
+
+fn listener_platform_display(platform: ListenerPlatform) -> &'static str {
+    match platform {
+        ListenerPlatform::Slack => "Slack",
+        ListenerPlatform::Github => "GitHub",
+        ListenerPlatform::Git => "Git",
+        ListenerPlatform::Teams => "Microsoft Teams",
+        ListenerPlatform::Linear => "Linear",
+        ListenerPlatform::Sentry => "Sentry",
+        ListenerPlatform::Pagerduty => "PagerDuty",
+    }
+}
+
+fn automation_next_run(
+    trigger: &AutomationTrigger,
+    schedule: &str,
+    enabled: bool,
+    after_ms: i64,
+) -> Option<i64> {
+    if !enabled || matches!(trigger, AutomationTrigger::Event { .. }) {
+        None
+    } else {
+        next_automation_run(schedule, after_ms)
+    }
+}
+
+fn connector_tool(id: &str, name: &str, description: &str) -> ConnectorToolSummary {
+    ConnectorToolSummary {
+        id: id.into(),
+        name: name.into(),
+        description: description.into(),
+        enabled: true,
+        requires_approval: Some(true),
+    }
+}
+
+fn connector_summary(
+    id: &str,
+    display_name: &str,
+    description: &str,
+    transport: ConnectorTransport,
+    tools: Vec<ConnectorToolSummary>,
+) -> ConnectorSummary {
+    ConnectorSummary {
+        id: id.into(),
+        display_name: display_name.into(),
+        description: description.into(),
+        status: ConnectorStatus::Disconnected,
+        is_team: false,
+        can_add_account: true,
+        transport,
+        source: Some("Built in".into()),
+        teammate_count: None,
+        accounts: Vec::new(),
+        tools,
+    }
+}
+
+fn default_connectors() -> BTreeMap<String, ConnectorSummary> {
+    [
+        connector_summary(
+            "github",
+            "GitHub",
+            "Repositories, pull requests, issues, comments and CI.",
+            ConnectorTransport::Http,
+            vec![
+                connector_tool(
+                    "read_repository",
+                    "Read repository",
+                    "Read repository files and metadata.",
+                ),
+                connector_tool(
+                    "create_issue",
+                    "Create issue",
+                    "Create and update GitHub issues.",
+                ),
+                connector_tool(
+                    "comment_pull_request",
+                    "Comment on pull request",
+                    "Post review comments on pull requests.",
+                ),
+            ],
+        ),
+        connector_summary(
+            "slack",
+            "Slack",
+            "Messages, mentions, reactions and approved drafts.",
+            ConnectorTransport::Http,
+            vec![
+                connector_tool(
+                    "search_messages",
+                    "Search messages",
+                    "Search workspace messages and threads.",
+                ),
+                connector_tool(
+                    "post_message",
+                    "Post message",
+                    "Send an approved message or thread reply.",
+                ),
+                connector_tool(
+                    "add_reaction",
+                    "Add reaction",
+                    "Add a reaction to a message.",
+                ),
+            ],
+        ),
+        connector_summary(
+            "teams",
+            "Microsoft Teams",
+            "Teams messages, mentions, channels and approved drafts.",
+            ConnectorTransport::Http,
+            vec![
+                connector_tool(
+                    "search_messages",
+                    "Search messages",
+                    "Search Teams channels and chats.",
+                ),
+                connector_tool(
+                    "post_message",
+                    "Post message",
+                    "Send an approved Teams message.",
+                ),
+            ],
+        ),
+        connector_summary(
+            "linear",
+            "Linear",
+            "Issues, comments, status changes and projects.",
+            ConnectorTransport::Http,
+            vec![
+                connector_tool(
+                    "read_issues",
+                    "Read issues",
+                    "Read Linear issues and projects.",
+                ),
+                connector_tool(
+                    "update_issue",
+                    "Update issue",
+                    "Update issue state, assignee and fields.",
+                ),
+            ],
+        ),
+        connector_summary(
+            "sentry",
+            "Sentry",
+            "Errors, regressions, releases and issue ownership.",
+            ConnectorTransport::Http,
+            vec![
+                connector_tool(
+                    "read_issues",
+                    "Read issues",
+                    "Read Sentry issues and events.",
+                ),
+                connector_tool(
+                    "resolve_issue",
+                    "Resolve issue",
+                    "Resolve or assign a Sentry issue.",
+                ),
+            ],
+        ),
+        connector_summary(
+            "pagerduty",
+            "PagerDuty",
+            "Incidents, acknowledgements, responders and escalation.",
+            ConnectorTransport::Http,
+            vec![
+                connector_tool(
+                    "read_incidents",
+                    "Read incidents",
+                    "Read incident details and timelines.",
+                ),
+                connector_tool(
+                    "acknowledge_incident",
+                    "Acknowledge incident",
+                    "Acknowledge an incident after approval.",
+                ),
+            ],
+        ),
+        connector_summary(
+            "git",
+            "Git",
+            "Local commits, branches and repository state.",
+            ConnectorTransport::Command,
+            vec![
+                connector_tool(
+                    "read_status",
+                    "Read status",
+                    "Read local repository status.",
+                ),
+                connector_tool(
+                    "read_history",
+                    "Read history",
+                    "Read commit and branch history.",
+                ),
+            ],
+        ),
+    ]
+    .into_iter()
+    .map(|connector| (connector.id.clone(), connector))
+    .collect()
+}
+
+fn default_skill_teams() -> Vec<SkillTeamSummary> {
+    vec![SkillTeamSummary {
+        id: "team-mahayana".into(),
+        name: "Mahayana Team".into(),
+    }]
+}
+
+fn default_skills() -> BTreeMap<String, SkillSummary> {
+    [
+        SkillSummary {
+            id: "skill-research-brief".into(),
+            name: "Research brief".into(),
+            description: "Turn verified sources into a concise research brief.".into(),
+            use_when: "Use when a task needs sourced research and a decision-ready summary.".into(),
+            instructions: "Verify sources, distinguish facts from inference, and end with actionable conclusions.".into(),
+            source: SkillSource::Private,
+            publish_state: SkillPublishState::Local,
+            owner_agent_id: Some("mahayana-assistant".into()),
+            team_id: None,
+            team_name: None,
+            read_only: Some(false),
+            updated_at_ms: 0,
+        },
+        SkillSummary {
+            id: "skill-incident-response".into(),
+            name: "Incident response".into(),
+            description: "Coordinate incident triage across monitoring and communication tools.".into(),
+            use_when: "Use when an alert or incident needs coordinated triage.".into(),
+            instructions: "Establish severity, collect evidence, propose actions, and request approval before external changes.".into(),
+            source: SkillSource::Team,
+            publish_state: SkillPublishState::Managed,
+            owner_agent_id: None,
+            team_id: Some("team-mahayana".into()),
+            team_name: Some("Mahayana Team".into()),
+            read_only: Some(true),
+            updated_at_ms: 0,
+        },
+    ]
+    .into_iter()
+    .map(|skill| (skill.id.clone(), skill))
+    .collect()
+}
+
+fn default_bots() -> BTreeMap<String, BotSummary> {
+    [
+        BotSummary {
+            id: "mahayana-assistant".into(),
+            agent_id: Some("mahayana-assistant".into()),
+            name: "大乘助手".into(),
+            description: "General-purpose Mahayana assistant.".into(),
+            title: String::new(),
+            hidden: false,
+            avatar: None,
+            avatar_shape: None,
+            avatar_color: None,
+            notifications_enabled: true,
+            notify_on_updates: true,
+            unread: false,
+            conversation_id: Some(MAHAYANA_AI_CONVERSATION_ID.into()),
+            inference_provider: None,
+        },
+        BotSummary {
+            id: "research-bot".into(),
+            agent_id: Some("research".into()),
+            name: "Research Bot".into(),
+            description: "Source verification and research synthesis.".into(),
+            title: String::new(),
+            hidden: false,
+            avatar: None,
+            avatar_shape: None,
+            avatar_color: None,
+            notifications_enabled: true,
+            notify_on_updates: true,
+            unread: false,
+            conversation_id: Some("codex:agent:research".into()),
+            inference_provider: None,
+        },
+        BotSummary {
+            id: "incident-bot".into(),
+            agent_id: Some("incident".into()),
+            name: "Incident Bot".into(),
+            description: "Incident triage and operational coordination.".into(),
+            title: String::new(),
+            hidden: true,
+            avatar: None,
+            avatar_shape: None,
+            avatar_color: None,
+            notifications_enabled: true,
+            notify_on_updates: true,
+            unread: false,
+            conversation_id: Some("codex:agent:incident".into()),
+            inference_provider: None,
+        },
+    ]
+    .into_iter()
+    .map(|bot| (bot.id.clone(), bot))
+    .collect()
+}
+
+fn listener_summary(
+    platform: ListenerPlatform,
+    display_name: &str,
+    blurb: &str,
+) -> ListenerIntegrationSummary {
+    ListenerIntegrationSummary {
+        platform,
+        display_name: display_name.into(),
+        blurb: blurb.into(),
+        is_connected: false,
+        account_label: None,
+        error: None,
+    }
+}
+
+fn default_listeners() -> BTreeMap<ListenerPlatform, ListenerIntegrationSummary> {
+    [
+        listener_summary(
+            ListenerPlatform::Github,
+            "GitHub",
+            "Let automations watch a repo's PRs, comments, issues, and CI.",
+        ),
+        listener_summary(
+            ListenerPlatform::Git,
+            "Git",
+            "Wake automations on local commits, branches, tags, and repository changes.",
+        ),
+        listener_summary(
+            ListenerPlatform::Slack,
+            "Slack",
+            "Wake automations on Slack messages, mentions, and reactions.",
+        ),
+        listener_summary(
+            ListenerPlatform::Teams,
+            "Microsoft Teams",
+            "Wake automations on Teams messages, mentions, and reactions.",
+        ),
+        listener_summary(
+            ListenerPlatform::Linear,
+            "Linear",
+            "Wake automations on issues, comments, status changes, and assignments.",
+        ),
+        listener_summary(
+            ListenerPlatform::Sentry,
+            "Sentry",
+            "Wake automations on new, regressed, assigned, and resolved issues.",
+        ),
+        listener_summary(
+            ListenerPlatform::Pagerduty,
+            "PagerDuty",
+            "Wake automations when incidents are triggered, acknowledged, escalated, or resolved.",
+        ),
+    ]
+    .into_iter()
+    .map(|integration| (integration.platform, integration))
+    .collect()
+}
+
+fn listener_platform_for_connector(connector_id: &str) -> Option<ListenerPlatform> {
+    match connector_id {
+        "github" => Some(ListenerPlatform::Github),
+        "git" => Some(ListenerPlatform::Git),
+        "slack" => Some(ListenerPlatform::Slack),
+        "teams" => Some(ListenerPlatform::Teams),
+        "linear" => Some(ListenerPlatform::Linear),
+        "sentry" => Some(ListenerPlatform::Sentry),
+        "pagerduty" => Some(ListenerPlatform::Pagerduty),
+        _ => None,
+    }
+}
+
+fn connector_for_listener_platform(platform: ListenerPlatform) -> Option<&'static str> {
+    match platform {
+        ListenerPlatform::Github => Some("github"),
+        ListenerPlatform::Git => Some("git"),
+        ListenerPlatform::Slack => Some("slack"),
+        ListenerPlatform::Teams => Some("teams"),
+        ListenerPlatform::Linear => Some("linear"),
+        ListenerPlatform::Sentry => Some("sentry"),
+        ListenerPlatform::Pagerduty => Some("pagerduty"),
+    }
+}
+
+fn validate_draft(draft: &MessageDraft) -> Result<(), FeatureHostError> {
+    match draft {
+        MessageDraft::Email {
+            to, subject, body, ..
+        } => {
+            if to.is_empty()
+                || to
+                    .iter()
+                    .any(|recipient| !recipient.contains('@') || recipient.trim().is_empty())
+            {
+                return Err(FeatureHostError::Contract(
+                    "email draft requires valid recipients".into(),
+                ));
+            }
+            required(subject.clone(), "email subject")?;
+            required(body.clone(), "email body")?;
+        }
+        MessageDraft::Slack { target, body, .. } => {
+            required(target.clone(), "Slack target")?;
+            required(body.clone(), "Slack body")?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "production")]
+fn product_surface_method(command: &FeatureCommand) -> &'static str {
+    match command {
+        FeatureCommand::ConnectorList { .. } => "mahayana.connector.list",
+        FeatureCommand::ConnectorConnect { .. } => "mahayana.connector.connect",
+        FeatureCommand::ConnectorRenameAccount { .. } => "mahayana.connector.account.rename",
+        FeatureCommand::ConnectorRemoveAccount { .. } => "mahayana.connector.account.remove",
+        FeatureCommand::ConnectorSetToolEnabled { .. } => "mahayana.connector.tool.setEnabled",
+        FeatureCommand::SkillList { .. } => "mahayana.skill.list",
+        FeatureCommand::SkillUpsert { .. } => "mahayana.skill.upsert",
+        FeatureCommand::SkillDelete { .. } => "mahayana.skill.delete",
+        FeatureCommand::SkillPublish { .. } => "mahayana.skill.publish",
+        FeatureCommand::SkillUnpublish { .. } => "mahayana.skill.unpublish",
+        FeatureCommand::SkillSync { .. } => "mahayana.skill.sync",
+        FeatureCommand::BotList { .. } => "mahayana.bot.list",
+        FeatureCommand::BotSetHidden { .. } => "mahayana.bot.setHidden",
+        FeatureCommand::DraftResolve { .. } => "mahayana.draft.resolve",
+        FeatureCommand::SecretProvide { .. } => "mahayana.secret.provide",
+        FeatureCommand::ListenerList { .. } => "mahayana.listener.list",
+        FeatureCommand::ListenerConnect { .. } => "mahayana.listener.connect",
+        FeatureCommand::ListenerDisconnect { .. } => "mahayana.listener.disconnect",
+        FeatureCommand::UpdateStatus { .. } => "mahayana.update.status",
+        FeatureCommand::UpdateCheck { .. } => "mahayana.update.check",
+        FeatureCommand::UpdateInstall { .. } => "mahayana.update.install",
+        _ => unreachable!("non-product command has no product method"),
+    }
+}
+
+#[cfg(feature = "production")]
+fn decode_product_value<T: DeserializeOwned>(
+    value: Value,
+    method: &str,
+) -> Result<T, FeatureHostError> {
+    serde_json::from_value(value)
+        .map_err(|error| FeatureHostError::Contract(format!("decode {method} response: {error}")))
+}
+
+#[cfg(feature = "production")]
+fn decode_product_field<T: DeserializeOwned>(
+    value: Value,
+    field: &str,
+    method: &str,
+) -> Result<T, FeatureHostError> {
+    let value = value.get(field).cloned().unwrap_or(value);
+    decode_product_value(value, method)
+}
+
+fn ensure_open(state: &FeatureState) -> Result<(), FeatureHostError> {
+    if state.closed {
+        Err(FeatureHostError::Closed)
+    } else {
+        Ok(())
+    }
+}
+
+fn next_id(state: &mut FeatureState, prefix: &str) -> String {
+    state.sequence += 1;
+    format!("{prefix}-{}", state.sequence)
+}
+
+const MAX_TRAYS: usize = 20;
+
+fn push_error_tray(
+    state: &mut FeatureState,
+    agent_id: String,
+    title: String,
+    detail: Option<String>,
+    request_id: Option<String>,
+    dedupe_key: Option<String>,
+) -> ErrorTray {
+    let now = now_millis();
+    if let Some(key) = dedupe_key.as_deref() {
+        if let Some(index) = state
+            .trays
+            .iter()
+            .position(|tray| tray.kind == "error" && tray.dedupe_key.as_deref() == Some(key))
+        {
+            let mut updated = state.trays[index].clone();
+            updated.agent_id = agent_id;
+            updated.title = title;
+            updated.detail = detail;
+            updated.request_id = request_id;
+            updated.count = Some(updated.count.unwrap_or(1).saturating_add(1));
+            updated.created_at = now;
+            updated.error_kind = None;
+            updated.raw_detail = None;
+            updated.actions = None;
+            state.trays[index] = updated.clone();
+            state.events.push_back(HostEvent::TrayChanged {
+                timestamp: timestamp(),
+                action: "pushed".into(),
+                tray: Some(updated.clone()),
+                id: None,
+            });
+            return updated;
+        }
+    }
+    let tray = ErrorTray {
+        kind: "error".into(),
+        id: next_id(state, "tray"),
+        agent_id,
+        title,
+        detail,
+        request_id,
+        created_at: now,
+        error_kind: None,
+        raw_detail: None,
+        actions: None,
+        dedupe_key,
+        count: None,
+    };
+    let mut tray = tray;
+    if tray.dedupe_key.is_some() {
+        tray.count = Some(1);
+    }
+    state.trays.push(tray.clone());
+    state.events.push_back(HostEvent::TrayChanged {
+        timestamp: timestamp(),
+        action: "pushed".into(),
+        tray: Some(tray.clone()),
+        id: None,
+    });
+    if state.trays.len() > MAX_TRAYS {
+        let overflow = state.trays.len() - MAX_TRAYS;
+        let dropped = state.trays.drain(0..overflow).collect::<Vec<_>>();
+        for dropped in dropped {
+            state.events.push_back(HostEvent::TrayChanged {
+                timestamp: timestamp(),
+                action: "dismissed".into(),
+                tray: None,
+                id: Some(dropped.id),
+            });
+        }
+    }
+    tray
+}
+
+fn validate_config(config: &HostConfig) -> Result<(), FeatureHostError> {
+    if config.profile_id.trim().is_empty() {
+        Err(FeatureHostError::Contract(
+            "profileId must not be empty".into(),
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+#[cfg(feature = "production")]
+fn unexpected_response(command: &str, response: RuntimeResponse) -> FeatureHostError {
+    FeatureHostError::Contract(format!(
+        "unexpected Runtime response for {command}: {response:?}"
+    ))
+}
+
+fn required(value: String, name: &str) -> Result<String, FeatureHostError> {
+    let value = value.trim();
+    if value.is_empty() {
+        Err(FeatureHostError::Contract(format!(
