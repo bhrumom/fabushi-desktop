@@ -416,12 +416,7 @@ impl MahayanaRuntime {
                         now_millis(),
                     )
                     .map_err(RuntimeError::CapabilityBroker)?;
-                if matches!(decision, CapabilityPolicyDecision::Deny) {
-                    return Err(RuntimeError::CapabilityUnavailable {
-                        capability_id: capability.id,
-                        reason: "capability policy denied this request".to_string(),
-                    });
-                }
+                require_capability_execution_allowed(&capability.id, decision)?;
                 let operation_id =
                     self.start_message(conversation_id.clone(), text, client_message_id, None, false)?;
                 Ok(RuntimeResponse::CapabilityAccepted {
@@ -1209,6 +1204,23 @@ fn validate_runtime_state_key(key: &str) -> Result<(), RuntimeError> {
     Ok(())
 }
 
+fn require_capability_execution_allowed(
+    capability_id: &str,
+    decision: CapabilityPolicyDecision,
+) -> Result<(), RuntimeError> {
+    match decision {
+        CapabilityPolicyDecision::Allow => Ok(()),
+        CapabilityPolicyDecision::NeedsUser => Err(RuntimeError::CapabilityUnavailable {
+            capability_id: capability_id.to_string(),
+            reason: "capability requires explicit user permission before execution".to_string(),
+        }),
+        CapabilityPolicyDecision::Deny => Err(RuntimeError::CapabilityUnavailable {
+            capability_id: capability_id.to_string(),
+            reason: "capability policy denied this request".to_string(),
+        }),
+    }
+}
+
 fn now_millis() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -1538,6 +1550,27 @@ mod tests {
             .expect("register agent")
             .build();
         assert!(matches!(result, Err(RuntimeError::RemoteAgentForbidden)));
+    }
+
+    #[test]
+    fn capability_execution_gate_is_fail_closed_for_needs_user_and_deny() {
+        assert!(require_capability_execution_allowed(
+            "capability:test",
+            CapabilityPolicyDecision::Allow,
+        ).is_ok());
+
+        for decision in [
+            CapabilityPolicyDecision::NeedsUser,
+            CapabilityPolicyDecision::Deny,
+        ] {
+            let error = require_capability_execution_allowed("capability:test", decision)
+                .expect_err("non-Allow decisions must never start an execution run");
+            assert!(matches!(
+                error,
+                RuntimeError::CapabilityUnavailable { capability_id, .. }
+                    if capability_id == "capability:test"
+            ));
+        }
     }
 
     #[test]
