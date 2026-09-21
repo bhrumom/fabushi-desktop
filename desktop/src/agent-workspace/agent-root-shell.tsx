@@ -98,8 +98,8 @@ import { MiniAppCallDialog } from '../miniapp-call-dialog';
 import { executeDesktopMiniAppBotInput, prepareDesktopMiniAppWebMcpDocument } from '../miniapp-webmcp-host';
 import BotConversationView from '../bot-conversation-view';
 import type { BotTranscriptMessage } from '../bot-conversation-view';
-import AgentWorkspace from '../agent-workspace/agent-workspace';
-import { CompatibilitySurface, buildCompatibilityPeers, compatibilityMessagingEnvelope, type CompatibilityPeerItem as PeerItem, type CompatibilityPeerKind as PeerKind, type CompatibilityPeerSource as PeerSource, type CompatibilitySection as MessengerSection } from '../agent-workspace/messenger-compatibility-adapter';
+import AgentWorkspace from './agent-workspace';
+import { CompatibilitySurface, buildCompatibilityPeers, compatibilityMessagingEnvelope, type CompatibilityPeerItem as PeerItem, type CompatibilityPeerKind as PeerKind, type CompatibilityPeerSource as PeerSource, type CompatibilitySection as MessengerSection } from './messenger-compatibility-adapter';
 import type {
   DesktopMessengerPreferences,
   DisplayMessage,
@@ -115,25 +115,25 @@ import type {
   NewDialog,
   SettingsCategory,
   UsageSummary,
-} from './legacy-messaging-model';
+} from '../adapters/legacy-messaging/legacy-messaging-model';
 import { useLegacyMessagingCompatibilityState } from '../adapters/legacy-messaging/use-legacy-messaging-compatibility-state';
-import AgentOverlays from '../agent-workspace/agent-overlays';
-import { AgentCoordinatorClient } from '../agent-workspace/coordinator-client';
-import type { AgentTranscriptSourceMessage } from '../agent-workspace/agent-transcript-store';
-import { useAgentWorkspaceRuntime } from '../agent-workspace/use-agent-workspace-runtime';
-import { useAgentComputerController } from '../agent-workspace/use-agent-computer-controller';
-import { projectTranscriptEntries, type TranscriptEntry } from '../agent-workspace/transcript-model';
+import AgentOverlays from './agent-overlays';
+import { AgentCoordinatorClient } from './coordinator-client';
+import type { AgentTranscriptSourceMessage } from './agent-transcript-store';
+import { useAgentWorkspaceRuntime } from './use-agent-workspace-runtime';
+import { useAgentComputerController } from './use-agent-computer-controller';
+import { projectTranscriptEntries, type TranscriptEntry } from './transcript-model';
 import {
   AGENT_ATTACHMENT_LIMIT,
   agentFileToBase64,
   enrichAgentAttachmentPreview,
   validateAgentAttachment,
-} from '../agent-workspace/agent-attachments';
-import type { AgentPromptReference, AgentReplyContext } from '../agent-workspace/prompt-context';
-import type { AgentSidebarSection } from '../agent-workspace/agent-sidebar-state';
-import { useAgentSettingsController } from '../agent-workspace/use-agent-settings-controller';
-import { useAgentProductControllers } from '../agent-workspace/use-agent-product-controllers';
-import { useAgentShellViewState } from '../agent-workspace/use-agent-shell-view-state';
+} from './agent-attachments';
+import type { AgentPromptReference, AgentReplyContext } from './prompt-context';
+import type { AgentSidebarSection } from './agent-sidebar-state';
+import { useAgentSettingsController } from './use-agent-settings-controller';
+import { useAgentProductControllers } from './use-agent-product-controllers';
+import { useAgentShellViewState } from './use-agent-shell-view-state';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -160,13 +160,13 @@ import {
   FabuAgentStore,
   fabuAgentConversationTranscriptPath,
 } from '../fabu-runtime/agent-store';
-import { restoreAgentStoreWorkspace } from '../agent-workspace/agent-store-recovery';
-import AgentSidebar from '../agent-workspace/agent-sidebar';
-import { agentWorkspaceKey, projectActiveAgentKey, projectAgentSidebarItems, type AgentSidebarItem } from '../agent-workspace/agent-model';
-import AgentSearch from '../agent-workspace/agent-search';
-import AgentHeader from '../agent-workspace/agent-header';
-import AgentNetwork from '../agent-workspace/agent-network';
-import AgentCommandPalette from '../agent-workspace/agent-command-palette';
+import { restoreAgentStoreWorkspace } from './agent-store-recovery';
+import AgentSidebar from './agent-sidebar';
+import { agentWorkspaceKey, projectActiveAgentKey, projectAgentSidebarItems, type AgentSidebarItem } from './agent-model';
+import AgentSearch from './agent-search';
+import AgentHeader from './agent-header';
+import AgentNetwork from './agent-network';
+import AgentCommandPalette from './agent-command-palette';
 import { MahayanaAssistantTurnView } from '../mahayana-assistant-turn-view';
 import type { AssistantTurn } from '../mahayana-assistant-turn';
 
