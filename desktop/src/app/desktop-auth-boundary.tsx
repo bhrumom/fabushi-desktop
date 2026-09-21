@@ -8,6 +8,7 @@ import { FabSpinner, FabSurface } from '../ui/primitives/fab-primitives';
 import styles from './desktop-auth-boundary.module.css';
 
 export interface DesktopAuthSession {
+  readonly transport: MahayanaHostTransport;
   readonly onLogout: () => Promise<void>;
 }
 
@@ -82,6 +83,6 @@ export default function DesktopAuthBoundary({
   }
 
   return <div className={styles.root} data-testid="desktop-shell">
-    {children({ onLogout: () => resetToLogin(true) })}
+    {children({ transport, onLogout: () => resetToLogin(true) })}
   </div>;
 }
