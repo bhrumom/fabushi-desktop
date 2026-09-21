@@ -533,6 +533,7 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
   private disabledWorkflows = new Map<string, Set<string>>();
   private attachmentData = new Map<string, { agentId: string; name: string; mimeType?: string; bytesBase64: string }>();
   private teachRecording: { agentId: string; startedAtMs: number } | null = null;
+  private computerControlLease: { agentId: string; leaseId: string; acquiredAtMs: number } | null = null;
   private hostSettings: ProductHostSettings = {
     notifications: true,
     autoUpdateWhenIdle: true,
@@ -1436,6 +1437,47 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
         if (actions.length > 10) throw new Error("At most 10 computer actions can be batched");
         const snapshot = mockComputerSnapshot();
         this.emit({ type: "computer.result", timestamp: now(), requestId: command.requestId, agentId: command.agentId, result: { origin, actionsExecuted: actions.length, snapshot } });
+        return { requestId: command.requestId };
+      }
+      case "computer.takeControl": {
+        const acquiredAtMs = Date.now();
+        this.computerControlLease = {
+          agentId: command.agentId,
+          leaseId: command.leaseId,
+          acquiredAtMs,
+        };
+        this.emit({
+          type: "computer.controlChanged",
+          timestamp: now(),
+          requestId: command.requestId,
+          agentId: command.agentId,
+          leaseId: command.leaseId,
+          active: true,
+          lease: {
+            controllerId: command.agentId,
+            runId: command.leaseId,
+            deviceId: command.target?.deviceId ?? "mock-local-device",
+            origin: "human",
+            mode: command.target?.kind ?? "physical",
+            acquiredAtMs,
+            expiresAtMs: acquiredAtMs + 5 * 60_000,
+          },
+        });
+        return { requestId: command.requestId };
+      }
+      case "computer.releaseControl": {
+        const active =
+          this.computerControlLease?.agentId === command.agentId &&
+          this.computerControlLease.leaseId === command.leaseId;
+        if (active) this.computerControlLease = null;
+        this.emit({
+          type: "computer.controlChanged",
+          timestamp: now(),
+          requestId: command.requestId,
+          agentId: command.agentId,
+          leaseId: command.leaseId,
+          active: false,
+        });
         return { requestId: command.requestId };
       }
       case "remoteComputer.register":
