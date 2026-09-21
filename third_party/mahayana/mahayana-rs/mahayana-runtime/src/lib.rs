@@ -562,6 +562,11 @@ impl MahayanaRuntime {
                 Ok(RuntimeResponse::McpApps { data })
             }
             RuntimeCommand::McpOauthLogin { server } => {
+                self.authorize_human_capability(
+                    "mcp.oauth.manage",
+                    serde_json::json!({"server": server.clone()}),
+                    "start MCP OAuth login",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -576,6 +581,11 @@ impl MahayanaRuntime {
                 })
             }
             RuntimeCommand::McpOauthLogout { server } => {
+                self.authorize_human_capability(
+                    "mcp.oauth.manage",
+                    serde_json::json!({"server": server.clone()}),
+                    "remove MCP OAuth credentials",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -593,6 +603,11 @@ impl MahayanaRuntime {
                 })
             }
             RuntimeCommand::McpRemove { server } => {
+                self.authorize_human_capability(
+                    "mcp.server.manage",
+                    serde_json::json!({"server": server.clone()}),
+                    "remove an MCP server",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -616,6 +631,11 @@ impl MahayanaRuntime {
                 server,
                 instructions,
             } => {
+                self.authorize_human_capability(
+                    "mcp.server.configure",
+                    serde_json::json!({"server": server.clone()}),
+                    "change MCP server instructions",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -629,6 +649,15 @@ impl MahayanaRuntime {
                 tool,
                 disabled,
             } => {
+                self.authorize_human_capability(
+                    "mcp.tool.policy",
+                    serde_json::json!({
+                        "server": server.clone(),
+                        "tool": tool.clone(),
+                        "disabled": disabled,
+                    }),
+                    "change MCP tool policy",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -642,6 +671,11 @@ impl MahayanaRuntime {
                 })
             }
             RuntimeCommand::McpRefresh => {
+                self.authorize_human_capability(
+                    "mcp.refresh",
+                    serde_json::json!({}),
+                    "refresh MCP server state",
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -655,31 +689,14 @@ impl MahayanaRuntime {
                 tool,
                 arguments,
             } => {
-                let decision = self
-                    .capability_broker
-                    .authorize_request(
-                        CapabilityAvailability::Ready,
-                        None,
-                        CapabilityRequest {
-                            actor: "human".to_string(),
-                            agent_id: None,
-                            conversation_id: ConversationId(MAHAYANA_AI_CONVERSATION_ID.to_string()),
-                            run_id: None,
-                            capability: "mcp.tool.call".to_string(),
-                            target: serde_json::json!({
-                                "server": server.clone(),
-                                "tool": tool.clone(),
-                            }),
-                            intent: format!("invoke MCP tool {server}/{tool}"),
-                        },
-                        now_millis(),
-                    )
-                    .map_err(RuntimeError::CapabilityBroker)?;
-                if !matches!(decision, CapabilityPolicyDecision::Allow) {
-                    return Err(RuntimeError::CapabilityBroker(
-                        "MCP tool call requires user permission".to_string(),
-                    ));
-                }
+                self.authorize_human_capability(
+                    "mcp.tool.call",
+                    serde_json::json!({
+                        "server": server.clone(),
+                        "tool": tool.clone(),
+                    }),
+                    &format!("invoke MCP tool {server}/{tool}"),
+                )?;
                 let backend = self.agent_backend.as_ref().ok_or_else(|| {
                     RuntimeError::AgentBackend("no agent backend is available".into())
                 })?;
@@ -885,6 +902,32 @@ impl MahayanaRuntime {
                 Ok(RuntimeResponse::ApprovalResolved { approval_id })
             }
         }
+    }
+
+    fn authorize_human_capability(
+        &self,
+        capability: &str,
+        target: Value,
+        intent: &str,
+    ) -> Result<(), RuntimeError> {
+        let decision = self
+            .capability_broker
+            .authorize_request(
+                CapabilityAvailability::Ready,
+                None,
+                CapabilityRequest {
+                    actor: "human".to_string(),
+                    agent_id: None,
+                    conversation_id: ConversationId(MAHAYANA_AI_CONVERSATION_ID.to_string()),
+                    run_id: None,
+                    capability: capability.to_string(),
+                    target,
+                    intent: intent.to_string(),
+                },
+                now_millis(),
+            )
+            .map_err(RuntimeError::CapabilityBroker)?;
+        require_capability_execution_allowed(capability, decision)
     }
 
     fn reserve_handoff_slot(&self, origin_run: &RunId) -> Result<(), RuntimeError> {

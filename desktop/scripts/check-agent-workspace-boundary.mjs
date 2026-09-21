@@ -369,8 +369,22 @@ requireOrdered(
 requireOrdered(
   'Direct MCP tools must authorize before backend execution',
   commandArm('McpToolCall', 'ConversationHistory'),
-  ['capability_broker', 'authorize_request(', 'CapabilityPolicyDecision::Allow', '.call_mcp_tool('],
+  ['authorize_human_capability(', '.call_mcp_tool('],
 );
+for (const [command, nextCommand] of [
+  ['McpOauthLogin', 'McpOauthLogout'],
+  ['McpOauthLogout', 'McpRemove'],
+  ['McpRemove', 'McpCustomInstructions'],
+  ['McpSetCustomInstructions', 'McpSetToolDisabled'],
+  ['McpSetToolDisabled', 'McpRefresh'],
+  ['McpRefresh', 'McpToolCall'],
+]) {
+  requireOrdered(
+    `Runtime ${command} must authorize before backend mutation`,
+    commandArm(command, nextCommand),
+    ['authorize_human_capability(', 'backend'],
+  );
+}
 
 requirePattern('ConversationActor registry is missing', actor, /pub struct ConversationActorRegistry/);
 requirePattern('ConversationActor per-conversation gate is missing', actor, /AsyncMutex/);
