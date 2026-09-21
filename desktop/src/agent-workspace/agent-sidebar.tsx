@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FabButton, FabDialog, FabDialogActions, FabInput } from '../ui/primitives/fab-primitives';
 import GrokAgentSidebar, {
   type GrokAgentSidebarItem,
   type GrokAgentSidebarProps,
@@ -44,65 +45,30 @@ export default function AgentSidebar({ onCreateSection, ...props }: AgentSidebar
         ? (items) => setSectionDraft({ items: [...items], name: 'New section' })
         : undefined}
     />
-    {sectionDraft ? <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Create section"
-      data-testid="agent-section-dialog"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1200,
-        display: 'grid',
-        placeItems: 'center',
-        background: 'rgba(0, 0, 0, 0.54)',
-      }}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) closeSectionDialog();
-      }}
+    {sectionDraft ? <FabDialog
+      label="Create section"
+      onClose={closeSectionDialog}
+      onSubmit={submitSectionDialog}
     >
-      <form
-        onSubmit={submitSectionDialog}
-        style={{
-          width: 'min(360px, calc(100vw - 40px))',
-          display: 'grid',
-          gap: 12,
-          padding: 18,
-          borderRadius: 14,
-          border: '1px solid rgba(255,255,255,.10)',
-          background: '#1b1b20',
-          boxShadow: '0 18px 60px rgba(0,0,0,.45)',
+      <strong>Create section</strong>
+      <FabInput
+        autoFocus
+        aria-label="Section name"
+        value={sectionDraft.name}
+        onChange={(event) => setSectionDraft((current) => current
+          ? { ...current, name: event.target.value }
+          : current)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            closeSectionDialog();
+          }
         }}
-      >
-        <strong>Create section</strong>
-        <input
-          autoFocus
-          aria-label="Section name"
-          value={sectionDraft.name}
-          onChange={(event) => setSectionDraft((current) => current
-            ? { ...current, name: event.target.value }
-            : current)}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') {
-              event.preventDefault();
-              closeSectionDialog();
-            }
-          }}
-          style={{
-            width: '100%',
-            boxSizing: 'border-box',
-            borderRadius: 10,
-            border: '1px solid rgba(255,255,255,.12)',
-            background: 'rgba(255,255,255,.05)',
-            color: 'inherit',
-            padding: '9px 11px',
-          }}
-        />
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button type="button" onClick={closeSectionDialog}>Cancel</button>
-          <button type="submit" disabled={!sectionDraft.name.trim()}>Create</button>
-        </div>
-      </form>
-    </div> : null}
+      />
+      <FabDialogActions>
+        <FabButton type="button" variant="ghost" onClick={closeSectionDialog}>Cancel</FabButton>
+        <FabButton type="submit" variant="primary" disabled={!sectionDraft.name.trim()}>Create</FabButton>
+      </FabDialogActions>
+    </FabDialog> : null}
   </>;
 }
