@@ -2440,10 +2440,10 @@ impl FeatureHostController {
                         #[cfg(feature = "production")]
                         {
                             let runtime_key = self.runtime_workspace_state_key(&key)?;
-                            match self.runtime()?.execute(RuntimeCommand::UiStateGet {
+                            match self.runtime()?.execute(RuntimeCommand::WorkspaceStateGet {
                                 key: runtime_key,
                             })? {
-                                RuntimeResponse::RuntimeUiState { value, .. } => value,
+                                RuntimeResponse::RuntimeWorkspaceState { value, .. } => value,
                                 other => {
                                     return Err(unexpected_response(
                                         "agent.workspaceState.get",
@@ -2467,11 +2467,11 @@ impl FeatureHostController {
                         #[cfg(feature = "production")]
                         {
                             let runtime_key = self.runtime_workspace_state_key(&key)?;
-                            match self.runtime()?.execute(RuntimeCommand::UiStateSet {
+                            match self.runtime()?.execute(RuntimeCommand::WorkspaceStateSet {
                                 key: runtime_key,
                                 value: value.clone(),
                             })? {
-                                RuntimeResponse::RuntimeUiState { .. } => {}
+                                RuntimeResponse::RuntimeWorkspaceState { .. } => {}
                                 other => {
                                     return Err(unexpected_response(
                                         "agent.workspaceState.set",
