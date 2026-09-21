@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -29,6 +29,20 @@ const coworkers = [
   ['Launch', 'Validates release readiness.'],
 ] as const;
 
+async function withNodeDeadline<T>(label: string, timeoutMs: number, task: Promise<T>): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      task,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} exceeded ${timeoutMs}ms`)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function peerByName(page: Page, name: string): Locator {
   return page
     .getByTestId('messenger-sidebar')
@@ -50,7 +64,11 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     return 'waiting';
   };
 
-  await expect(page.getByTestId('desktop-shell')).toBeVisible({ timeout: 30_000 });
+  await withNodeDeadline(
+    'Packaged renderer did not mount desktop-shell',
+    35_000,
+    expect(page.getByTestId('desktop-shell')).toBeVisible({ timeout: 30_000 }),
+  );
 
   for (let attempt = 0; attempt < 12; attempt += 1) {
     await expect.poll(readPhase, { timeout: 15_000 }).not.toBe('waiting');
@@ -206,6 +224,7 @@ async function stableAvatarShape(locator: Locator): Promise<string> {
 }
 
 test.describe('signed candidate packaged acceptance', () => {
+  test.describe.configure({ retries: 0 });
   test.skip(!realAcceptance, 'Set OBF_REAL_ACCEPTANCE=1 to run signed packaged acceptance.');
 
   test('exact candidate covers handoff, broadcast, two-Agent isolation and real lifecycle', async () => {
@@ -223,6 +242,15 @@ test.describe('signed candidate packaged acceptance', () => {
     const appDataDir = path.join(evidenceRoot, 'app-data');
     await mkdir(appDataDir, { recursive: true });
     const runtimeLogs: RuntimeLog[] = [];
+    const runtimeLogPath = path.join(evidenceRoot, 'runtime.log');
+    const captureRuntimeLog = (source: string, text: string) => {
+      const row: RuntimeLog = { at: Date.now(), source, text };
+      runtimeLogs.push(row);
+      void appendFile(runtimeLogPath, `[${new Date(row.at).toISOString()}] ${source}: ${text}\n`).catch(() => undefined);
+      if (source === 'page-error' || source === 'page-crash' || source === 'request-failed' || source === 'app-stderr') {
+        process.stderr.write(`[candidate ${source}] ${text}\n`);
+      }
+    };
     let app: ElectronApplication | null = null;
     let pageForTrace: Page | null = null;
     let traceStarted = false;
@@ -243,10 +271,31 @@ test.describe('signed candidate packaged acceptance', () => {
       pageForTrace = page;
       await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true });
       traceStarted = true;
-      page.on('console', (message) => runtimeLogs.push({ at: Date.now(), source: 'page-console', text: `${message.type()}: ${message.text()}` }));
-      page.on('pageerror', (error) => runtimeLogs.push({ at: Date.now(), source: 'page-error', text: error.stack || error.message }));
-      app.process().stdout?.on('data', (chunk) => runtimeLogs.push({ at: Date.now(), source: 'app-stdout', text: String(chunk) }));
-      app.process().stderr?.on('data', (chunk) => runtimeLogs.push({ at: Date.now(), source: 'app-stderr', text: String(chunk) }));
+      page.on('console', (message) => captureRuntimeLog('page-console', `${message.type()}: ${message.text()}`));
+      page.on('pageerror', (error) => captureRuntimeLog('page-error', error.stack || error.message));
+      page.on('crash', () => captureRuntimeLog('page-crash', 'renderer page crashed'));
+      page.on('requestfailed', (request) => captureRuntimeLog(
+        'request-failed',
+        `${request.method()} ${request.url()} :: ${request.failure()?.errorText || 'unknown'}`,
+      ));
+      app.process().stdout?.on('data', (chunk) => captureRuntimeLog('app-stdout', String(chunk)));
+      app.process().stderr?.on('data', (chunk) => captureRuntimeLog('app-stderr', String(chunk)));
+
+      const startupWindows = await withNodeDeadline(
+        'Inspect packaged BrowserWindow state',
+        5_000,
+        app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().map((win) => ({
+          title: win.getTitle(),
+          url: win.webContents.getURL(),
+          visible: win.isVisible(),
+          loading: win.webContents.isLoading(),
+        }))),
+      );
+      await writeFile(path.join(evidenceRoot, 'startup.json'), JSON.stringify({
+        sourceSha,
+        pageUrl: page.url(),
+        windows: startupWindows,
+      }, null, 2));
 
       await app.evaluate(({ BrowserWindow }) => {
         const win = BrowserWindow.getAllWindows()[0];
@@ -348,7 +397,13 @@ test.describe('signed candidate packaged acceptance', () => {
           path: path.join(evidenceRoot, 'trace.zip'),
         }).catch(() => undefined);
       }
-      await app?.close().catch(() => undefined);
+      if (app) {
+        try {
+          await withNodeDeadline('Packaged Electron shutdown', 10_000, app.close());
+        } catch {
+          app.process().kill('SIGKILL');
+        }
+      }
     }
   });
 });
