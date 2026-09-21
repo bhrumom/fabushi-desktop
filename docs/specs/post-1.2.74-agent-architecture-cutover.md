@@ -170,6 +170,14 @@ Retain:
 - Packaged acceptance now asserts that the Research checkbox is visibly checked and that `Handoff to Research` appears within 10 seconds, so this class of UI-state regression fails locally at the handoff boundary instead of consuming the whole 12-minute acceptance timeout.
 - This finding does not satisfy R13/AC-8. A new immutable PR head must pass all exact-head workflows before merge.
 
+## 16.2 Concurrent Agent completion projection finding
+
+- Exact-head candidate run `35625738317` on `fa165aaf312fc02b389c6d7c6679e26a5f204023` proved the first UI repair: real signed-package direct handoff and broadcast both completed, producing `03-direct-handoff.png` and `04-broadcast.png`.
+- The same run then failed two-Agent isolation after Research and Builder both completed in the Rust runtime. Candidate evidence showed distinct native session ids, `runs.state=completed`, `turns.state=completed`, and final assistant messages persisted for both conversations, while the renderer still showed the canonical Agent as Working.
+- Root cause was a transport/UI identity mismatch in the command bridge. Agent workspace ownership is keyed by `agent:<agentId>`, but the bridge exposed `conversationKey=codex:agent:<agentId>`. The same request id was therefore registered under a second ghost peer, overwriting request-to-peer ownership and leaving the canonical peer's pending request uncleared after the Rust run completed.
+- `AgentRuntimeCoordinator` now resolves bridge context through its bound `agentId -> peerKey` / `conversationId -> peerKey` maps and ignores unbound compatibility chat commands. A deterministic concurrent Research/Builder regression test verifies that no `codex:*` ghost peer is created, both operations finalize, both canonical peers clear busy state, and transcripts remain isolated.
+- This finding still does not satisfy R13/AC-8 until a fresh immutable head passes Desktop Chat Parity, Rust desktop runtime and the signed/notarized packaged acceptance.
+
 ## 17. Spec compliance record
 
 | Requirement / AC | Status | Evidence / reason |
