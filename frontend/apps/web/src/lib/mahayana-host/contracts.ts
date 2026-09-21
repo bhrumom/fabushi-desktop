@@ -343,6 +343,15 @@ export interface ComputerStatus {
   remoteControlEnabled: boolean;
   aiControlEnabled: boolean;
 }
+export interface ComputerControlLeaseState {
+  controllerId: string;
+  runId: string;
+  deviceId: string;
+  origin: ComputerControlOrigin;
+  mode: string;
+  acquiredAtMs: number;
+  expiresAtMs: number;
+}
 export interface ComputerSnapshot {
   capturedAtMs: number;
   dataUrl: string;
@@ -752,6 +761,8 @@ export type RuntimeCommand =
   | (CommandBase & { type: "computer.status" })
   | (CommandBase & { type: "computer.screenshot"; origin?: ComputerControlOrigin; agentId?: string; sessionId?: string; target?: ComputerControlTarget })
   | (CommandBase & { type: "computer.action"; origin?: ComputerControlOrigin; agentId?: string; sessionId?: string; target?: ComputerControlTarget; action: ComputerAction; then?: ComputerAction[] })
+  | (CommandBase & { type: "computer.takeControl"; agentId: string; leaseId: string; target?: ComputerControlTarget })
+  | (CommandBase & { type: "computer.releaseControl"; agentId: string; leaseId: string })
   | (CommandBase & {
       type: "remoteComputer.register";
       deviceId: string;
@@ -1035,6 +1046,7 @@ export type RuntimeEvent =
   | (EventBase & { type: "computer.status"; requestId: string; status: ComputerStatus })
   | (EventBase & { type: "computer.snapshot"; requestId: string; agentId?: string; origin: ComputerControlOrigin; snapshot: ComputerSnapshot })
   | (EventBase & { type: "computer.result"; requestId: string; agentId?: string; result: ComputerActionResult })
+  | (EventBase & { type: "computer.controlChanged"; requestId: string; agentId: string; leaseId: string; active: boolean; lease?: ComputerControlLeaseState })
   | (EventBase & { type: "remoteComputer.changed"; requestId: string; action: string; data: unknown })
   | (EventBase & { type: "memory.listed"; agentId: string; memories: MemoryRecord[]; count: number; location?: string })
   | (EventBase & { type: "memory.changed"; agentId: string; action: string; memory?: MemoryRecord })
