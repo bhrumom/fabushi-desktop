@@ -1131,8 +1131,8 @@ impl MahayanaRuntime {
                         run_id: Some(pending.intent.origin_run.clone()),
                         capability: "agent.handoff".to_string(),
                         target: serde_json::json!({
-                            "targetAgent": pending.intent.target_agent,
-                            "targetConversationId": target_conversation,
+                            "targetAgent": pending.intent.target_agent.clone(),
+                            "targetConversationId": target_conversation.clone(),
                             "depth": pending.intent.depth,
                         }),
                         intent: "recover durable Agent handoff after runtime restart".to_string(),
@@ -1164,10 +1164,11 @@ impl MahayanaRuntime {
             } else {
                 None
             };
-            let client_message_id = retry_message_id
-                .as_ref()
-                .map(|_| None)
-                .unwrap_or_else(|| Some(pending.intent.id.to_string()));
+            let client_message_id = if retry_message_id.is_some() {
+                None
+            } else {
+                Some(pending.intent.id.to_string())
+            };
 
             match self.start_message(
                 target_conversation,
