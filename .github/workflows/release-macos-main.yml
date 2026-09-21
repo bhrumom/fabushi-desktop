@@ -8,9 +8,9 @@ on:
         required: false
         type: string
       publish_release:
-        description: Publish the signed artifact as a GitHub prerelease.
+        description: Publish the signed artifact as a GitHub prerelease only after packaged acceptance passes.
         required: true
-        default: true
+        default: false
         type: boolean
   push:
     tags:
@@ -252,6 +252,49 @@ jobs:
           xcrun stapler validate "$app"
           spctl --assess --type execute --verbose=4 "$app"
 
+      - name: Bind packaged candidate executable
+        id: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$(find desktop/release -maxdepth 4 -type d -name '*.app' -print -quit)"
+          test -n "$app"
+          executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")"
+          executable="$app/Contents/MacOS/$executable_name"
+          test -x "$executable"
+          echo "executable=$executable" >> "$GITHUB_OUTPUT"
+          echo "Candidate executable: `$executable`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run real signed packaged acceptance
+        working-directory: desktop
+        shell: bash
+        env:
+          OBF_REAL_ACCEPTANCE: '1'
+          OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-candidate-acceptance
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ github.workspace }}/${{ steps.candidate.outputs.executable }}
+          FABUSHI_FEATURE_HOST_MODE: production
+          FABUSHI_E2E: '0'
+        run: |
+          set -euo pipefail
+          rm -rf "$OBF_EVIDENCE_DIR"
+          mkdir -p "$OBF_EVIDENCE_DIR"
+          npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1
+
+      - name: Upload packaged acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-candidate-acceptance-${{ steps.source.outputs.short }}
+          path: |
+            ${{ runner.temp }}/fabushi-candidate-acceptance
+            desktop/playwright-report
+            desktop/test-results
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 0
+
       - name: Write checksums
         shell: bash
         run: |
@@ -261,6 +304,7 @@ jobs:
           cat SHA256SUMS.txt
 
       - name: Upload workflow artifacts
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: fabushi-macos-${{ steps.source.outputs.short }}
