@@ -9,7 +9,9 @@ const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || ''
 const referenceScreenshot = process.env.OBF_REFERENCE_SCREENSHOT?.trim() || '';
 const realAcceptance = process.env.OBF_REAL_ACCEPTANCE === '1';
 const sourceSha = (process.env.OBF_SOURCE_SHA || process.env.GITHUB_SHA || '').trim().toLowerCase();
+const expectedSourceSha = (process.env.OBF_EXPECTED_SOURCE_SHA || process.env.OBF_CANONICAL_MAIN_SHA || '').trim().toLowerCase();
 const canonicalMainSha = (process.env.OBF_CANONICAL_MAIN_SHA || '').trim().toLowerCase();
+const acceptancePhase = (process.env.OBF_ACCEPTANCE_PHASE || 'candidate').trim().toLowerCase();
 const visualThreshold = Number(process.env.OBF_MAX_DIFF_PIXEL_RATIO || '0');
 const pixelThreshold = Number(process.env.OBF_PIXEL_COLOR_THRESHOLD || '0');
 const coworkers = [
@@ -57,8 +59,12 @@ function assertProductionEvidenceEnvironment(): void {
   if (!packagedExecutable) throw new Error('FABUSHI_ELECTRON_EXECUTABLE is required for packaged acceptance');
   if (!referenceScreenshot) throw new Error('OBF_REFERENCE_SCREENSHOT is required; static or synthetic replacement is forbidden');
   if (!/^[0-9a-f]{40}$/.test(sourceSha)) throw new Error('OBF_SOURCE_SHA or GITHUB_SHA must provide the exact 40-character source SHA');
-  if (!/^[0-9a-f]{40}$/.test(canonicalMainSha)) throw new Error('OBF_CANONICAL_MAIN_SHA must provide the exact post-merge canonical main SHA');
-  if (sourceSha !== canonicalMainSha) throw new Error(`Packaged source SHA ${sourceSha} does not equal canonical main ${canonicalMainSha}`);
+  if (!/^[0-9a-f]{40}$/.test(expectedSourceSha)) throw new Error('OBF_EXPECTED_SOURCE_SHA must provide the exact packaged source SHA');
+  if (sourceSha !== expectedSourceSha) throw new Error(`Packaged source SHA ${sourceSha} does not equal expected exact source ${expectedSourceSha}`);
+  if (acceptancePhase === 'release') {
+    if (!/^[0-9a-f]{40}$/.test(canonicalMainSha)) throw new Error('release acceptance requires OBF_CANONICAL_MAIN_SHA');
+    if (sourceSha !== canonicalMainSha) throw new Error(`Release source SHA ${sourceSha} does not equal canonical main ${canonicalMainSha}`);
+  }
   if (visualThreshold !== 0) throw new Error('OBF_MAX_DIFF_PIXEL_RATIO must be exactly 0 for literal 1:1 acceptance');
   if (pixelThreshold !== 0) throw new Error('OBF_PIXEL_COLOR_THRESHOLD must be exactly 0 for literal 1:1 acceptance');
   const inheritedMode = (process.env.FABUSHI_FEATURE_HOST_MODE || '').trim().toLowerCase();
@@ -164,19 +170,31 @@ function peerByName(page: Page, name: string): Locator {
   return page.locator('[data-testid^="peer-legacy:bot:"]').filter({ hasText: name }).first();
 }
 
-async function botShape(locator: Locator): Promise<string> {
-  const mark = locator.locator('[data-engine="fabushi-motion-v3"]').first();
-  await expect(mark).toBeVisible();
-  const shape = await mark.getAttribute('data-shape');
-  expect(shape).toBeTruthy();
-  return shape!;
+async function avatarIdentity(locator: Locator): Promise<string> {
+  const avatar = locator.locator('[data-fab-avatar="true"]').first();
+  await expect(avatar).toBeVisible();
+  const identity = await avatar.getAttribute('data-identity');
+  expect(identity).toBeTruthy();
+  return identity!;
 }
 
-async function directBotShape(mark: Locator): Promise<string> {
-  await expect(mark).toBeVisible();
-  const shape = await mark.getAttribute('data-shape');
-  expect(shape).toBeTruthy();
-  return shape!;
+async function directAvatarIdentity(avatar: Locator): Promise<string> {
+  await expect(avatar).toBeVisible();
+  const identity = await avatar.getAttribute('data-identity');
+  expect(identity).toBeTruthy();
+  return identity!;
+}
+
+async function agentIdByName(page: Page, name: string): Promise<string> {
+  const agentId = await peerByName(page, name).getAttribute('data-agent-id');
+  expect(agentId, `${name} runtime Agent id missing`).toBeTruthy();
+  return agentId!;
+}
+
+async function executeFeatureCommand(page: Page, command: Record<string, unknown>): Promise<void> {
+  await page.evaluate(async (payload) => {
+    await window.mahayana.invoke('feature.execute', { command: payload });
+  }, command);
 }
 
 async function installLifecycleJournal(page: Page): Promise<void> {
@@ -239,7 +257,7 @@ async function captureGeometry(page: Page, finalArticle: Locator, structured: Lo
   for (const [name] of coworkers) {
     const peer = peerByName(page, name);
     peerRows[name] = await readBox(peer);
-    rosterAvatars[name] = await readBox(peer.locator('[data-engine="fabushi-motion-v3"]').first());
+    rosterAvatars[name] = await readBox(peer.locator('[data-fab-avatar="true"]').first());
   }
   const orderedRows = coworkers.map(([name]) => peerRows[name]).filter((box): box is Box => Boolean(box));
   const peerRowGaps = orderedRows.slice(1).map((box, index) => box.y - (orderedRows[index].y + orderedRows[index].height));
@@ -395,7 +413,9 @@ async function saveRuntimeEvidence(
   if (visualDiff) await writeFile(path.join(evidenceDir, 'visual-diff-report.json'), JSON.stringify(visualDiff, null, 2));
   if (identity) await writeFile(path.join(evidenceDir, 'identity.json'), JSON.stringify(identity, null, 2));
   await writeFile(path.join(evidenceDir, 'evidence-manifest.json'), JSON.stringify({
-    canonicalMainSha,
+    acceptancePhase,
+    canonicalMainSha: canonicalMainSha || null,
+    expectedSourceSha,
     sourceSha,
     appVersion: appVersion || null,
     referenceCropSha256,
@@ -446,7 +466,64 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     for (const [name, description] of coworkers) await createCoworker(page, name, description);
     for (const [name] of coworkers) await expect(peerByName(page, name)).toBeVisible();
 
-    chiefRosterShape = await botShape(peerByName(page, 'Chief'));
+    const chiefAgentId = await agentIdByName(page, 'Chief');
+    const researchAgentId = await agentIdByName(page, 'Research');
+    const builderAgentId = await agentIdByName(page, 'Builder');
+    const launchAgentId = await agentIdByName(page, 'Launch');
+
+    const handoffMarker = `OBF-DIRECT-HANDOFF-${Date.now()}`;
+    await executeFeatureCommand(page, {
+      type: 'agent.send',
+      requestId: `obf-direct-${Date.now()}`,
+      fromAgentId: chiefAgentId,
+      targetId: researchAgentId,
+      text: handoffMarker,
+      priority: true,
+    });
+    await page.getByRole('button', { name: 'Agent network' }).click();
+    const network = page.getByTestId('grok-agent-network');
+    await expect(network).toBeVisible();
+    await expect(network.getByText(handoffMarker, { exact: false })).toBeVisible({ timeout: 20_000 });
+    await network.getByRole('button', { name: 'Close Agent network' }).click();
+
+    const broadcastMarker = `OBF-BROADCAST-${Date.now()}`;
+    await executeFeatureCommand(page, {
+      type: 'agent.broadcast',
+      requestId: `obf-broadcast-${Date.now()}`,
+      targetIds: [builderAgentId, launchAgentId],
+      message: broadcastMarker,
+    });
+    await page.getByRole('button', { name: 'Agent network' }).click();
+    await expect(network).toBeVisible();
+    await expect.poll(async () => network.locator('[data-testid="agent-coordination-feed"]').innerText().catch(() => ''), { timeout: 30_000 })
+      .toContain(broadcastMarker);
+    await network.getByRole('button', { name: 'Close Agent network' }).click();
+
+    const isolationA = `OBF-ISOLATION-RESEARCH-${Date.now()}`;
+    const isolationB = `OBF-ISOLATION-BUILDER-${Date.now()}`;
+    await Promise.all([
+      executeFeatureCommand(page, {
+        type: 'chat.send',
+        requestId: `obf-isolation-research-${Date.now()}`,
+        agentId: researchAgentId,
+        text: `Reply with exactly ${isolationA}`,
+      }),
+      executeFeatureCommand(page, {
+        type: 'chat.send',
+        requestId: `obf-isolation-builder-${Date.now()}`,
+        agentId: builderAgentId,
+        text: `Reply with exactly ${isolationB}`,
+      }),
+    ]);
+
+    await peerByName(page, 'Research').click();
+    await expect(page.getByText(isolationA, { exact: false }).last()).toBeVisible({ timeout: 180_000 });
+    await expect(page.getByText(isolationB, { exact: false })).toHaveCount(0);
+    await peerByName(page, 'Builder').click();
+    await expect(page.getByText(isolationB, { exact: false }).last()).toBeVisible({ timeout: 180_000 });
+    await expect(page.getByText(isolationA, { exact: false })).toHaveCount(0);
+
+    chiefRosterShape = await avatarIdentity(peerByName(page, 'Chief'));
 
     await peerByName(page, 'Research').click();
     const research = await sendRealTurn(page,
@@ -463,7 +540,7 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     await writeFile(briefPath, ['# Coworker launch notes', '', `Research: ${research}`, '', `Builder: ${builder}`, '', `Launch: ${launch}`].join('\n'));
 
     await peerByName(page, 'Chief').click();
-    chiefHeaderShape = await directBotShape(page.locator('[class*="chatIdentity"] [data-engine="fabushi-motion-v3"]').first());
+    chiefHeaderShape = await directAvatarIdentity(page.locator('[class*="chatIdentity"] [data-fab-avatar="true"]').first());
     expect(chiefHeaderShape).toBe(chiefRosterShape);
     await attachFile(page, briefPath);
     await attachFile(page, csvPath);
@@ -492,7 +569,7 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     await expect(structured.getByTestId('assistant-source-files')).toContainText('launch-metrics.csv');
 
     const finalArticle = structured.locator('xpath=ancestor::article[1]');
-    chiefTranscriptShape = await directBotShape(finalArticle.locator('[data-engine="fabushi-motion-v3"]').first());
+    chiefTranscriptShape = await directAvatarIdentity(finalArticle.locator('[data-fab-avatar="true"]').first());
     expect(chiefTranscriptShape).toBe(chiefRosterShape);
     await finalArticle.hover();
     await expect(finalArticle.getByTestId('message-hover-actions')).toBeVisible();
@@ -545,7 +622,7 @@ test('OBF exact-main packaged reference journey is pixel-identical and uses real
     await setReferenceWindow(app, page);
     const restoredChief = peerByName(page, 'Chief');
     await expect(restoredChief).toBeVisible({ timeout: 30_000 });
-    const restartShape = await botShape(restoredChief);
+    const restartShape = await avatarIdentity(restoredChief);
     expect(restartShape).toBe(chiefRosterShape);
     const identity = {
       Chief: {
