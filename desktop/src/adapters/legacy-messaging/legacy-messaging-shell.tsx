@@ -134,6 +134,7 @@ import type { AgentPromptReference, AgentReplyContext } from '../../agent-worksp
 import type { AgentSidebarSection } from '../../agent-workspace/agent-sidebar-state';
 import { useAgentSettingsController } from '../../agent-workspace/use-agent-settings-controller';
 import { useAgentProductControllers } from '../../agent-workspace/use-agent-product-controllers';
+import { useAgentShellViewState } from '../../agent-workspace/use-agent-shell-view-state';
 import {
   accountMiniAppsAsMarketplaceSummaries,
   appendMiniAppBotMessages,
@@ -879,28 +880,34 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
     miniAppLoading, setMiniAppLoading,
     miniAppBusy, setMiniAppBusy,
   } = legacyCompatibility;
-  const [search, setSearch] = useState('');
-  const [sidebarWidth, setSidebarWidth] = useState(330);
-  const [conversationSearchOpen, setConversationSearchOpen] = useState(false);
-  const [agentConversationSearch, setAgentConversationSearch] = useState('');
+  const shellView = useAgentShellViewState({
+    initialMessageRenderCount,
+    initialInfoOpen: readDesktopMessengerPreferences().showInfoPanel,
+  });
+  const {
+    search, setSearch,
+    sidebarWidth, setSidebarWidth,
+    conversationSearchOpen, setConversationSearchOpen,
+    agentConversationSearch, setAgentConversationSearch,
+    messageRenderCount, setMessageRenderCount,
+    infoOpen, setInfoOpen,
+    narrowInfoOpen, setNarrowInfoOpen,
+    wideInfoLayout,
+    agentSettingsOpen, setAgentSettingsOpen,
+    showScrollToLatest, setShowScrollToLatest,
+  } = shellView;
   const [desktopUpdateState, setDesktopUpdateState] = useState<UpdateState | null>(null);
   const [desktopUpdateBusy, setDesktopUpdateBusy] = useState(false);
-  const [messageRenderCount, setMessageRenderCount] = useState(initialMessageRenderCount);
   const [desktopPreferences, setDesktopPreferences] = useState<DesktopMessengerPreferences>(() => readDesktopMessengerPreferences());
   const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>('account');
   const settingsReturnSectionRef = useRef<MessengerSection>('chats');
   const [hostSettings, setHostSettings] = useState<ProductHostSettings>(defaultProductHostSettings);
   const [routerStatus, setRouterStatus] = useState<InferenceRouterStatus | null>(null);
   const [usageSummary, setUsageSummary] = useState<UsageSummary | null>(null);
-  const [infoOpen, setInfoOpen] = useState(() => readDesktopMessengerPreferences().showInfoPanel);
-  const [narrowInfoOpen, setNarrowInfoOpen] = useState(false);
-  const [wideInfoLayout, setWideInfoLayout] = useState(() => typeof window === 'undefined' ? true : window.innerWidth > 1280);
   const [infoTab, setInfoTab] = useState<InfoTab>('media');
-  const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
   // Compatibility Messenger/Mini App sends retain transport pending state.
   // Agent request/operation ownership is exclusively per-peer in the workspace controller.
   const [legacySendPending, setLegacySendPending] = useState(false);
-  const [showScrollToLatest, setShowScrollToLatest] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const agentProductControllers = useAgentProductControllers({
     client: agentCoordinatorClient,
@@ -1034,17 +1041,6 @@ function MessengerWorkspace({ initialProjection, onLogout }: { initialProjection
   useEffect(() => {
     activePeerKeyRef.current = activePeerKey;
   }, [activePeerKey]);
-
-  useEffect(() => {
-    const onResize = () => {
-      const nextWide = window.innerWidth > 1280;
-      setWideInfoLayout(nextWide);
-      if (nextWide) setNarrowInfoOpen(false);
-    };
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
 
   useEffect(() => {
     if (!error || !isTerminalAuthSessionFailure(error) || sessionResetInFlightRef.current) return;
