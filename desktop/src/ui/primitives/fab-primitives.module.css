@@ -35,6 +35,7 @@
 .iconButton:focus-visible,
 .input:focus-visible,
 .select:focus-visible,
+.switch:focus-visible,
 .menuItem:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--fab-accent), transparent 18%);
   outline-offset: 2px;
@@ -78,6 +79,46 @@
 
 .select {
   padding-right: 30px;
+}
+
+.switch {
+  appearance: none;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  padding: 2px;
+  box-sizing: border-box;
+  border: 1px solid var(--fab-border-strong);
+  border-radius: 999px;
+  background: var(--fab-bg-hover);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.switch::before {
+  content: '';
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--fab-text-muted);
+  transform: translateX(0);
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.switch:checked {
+  border-color: var(--fab-accent);
+  background: color-mix(in srgb, var(--fab-accent), transparent 58%);
+}
+
+.switch:checked::before {
+  background: white;
+  transform: translateX(16px);
+}
+
+.switch:disabled {
+  cursor: default;
+  opacity: .42;
 }
 
 .surface {
@@ -220,4 +261,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 1.8s; }
+  .switch,
+  .switch::before { transition: none; }
 }
