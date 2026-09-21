@@ -710,12 +710,72 @@ impl MahayanaRuntime {
         if text.trim().is_empty() {
             return Err(RuntimeError::EmptyMessage);
         }
+
         let provider = self.providers.for_conversation(&conversation_id)?;
         let provider_key = provider.key().to_string();
-        let operation_id = OperationId::generated("operation");
+        let run_id = RunId::generated("run");
+        // operationId remains the backwards-compatible wire key. Canonical
+        // runtime ownership now belongs to ExecutionRun.
+        let operation_id = OperationId(run_id.0.clone());
+        let turn_id = TurnId::generated("turn");
+        let created_at_ms = now_millis();
+        let user_message_id = client_message_id
+            .as_ref()
+            .and_then(|value| MessageId::new(value.clone()).ok())
+            .or_else(|| Some(MessageId::generated("message")));
+        let actor = self
+            .actors
+            .actor(&conversation_id)
+            .map_err(RuntimeError::Synchronization)?;
+        let (queued, accepted_sequence) = actor
+            .register(turn_id.clone())
+            .map_err(RuntimeError::Synchronization)?;
+
+        let turn = LogicalTurn {
+            id: turn_id.clone(),
+            conversation_id: conversation_id.clone(),
+            user_message_id,
+            created_at_ms,
+            state: TurnState::Accepted,
+            active_run_id: Some(run_id.clone()),
+        };
+        let run = ExecutionRun {
+            id: run_id.clone(),
+            turn_id: turn_id.clone(),
+            generation: 1,
+            provider: provider_key.clone(),
+            started_at_ms: created_at_ms,
+            finished_at_ms: None,
+            state: TurnState::Accepted,
+        };
+        self.store.record_turn(&turn)?;
+        self.store.record_run(&run)?;
+
+        let context = RunContext {
+            turn_id: turn_id.clone(),
+            run_id: run_id.clone(),
+            conversation_id: conversation_id.clone(),
+            actor: Arc::clone(&actor),
+        };
         lock(&self.operations)?.insert(operation_id.clone(), provider_key.clone());
+        lock(&self.run_contexts)?.insert(operation_id.clone(), context.clone());
+
+        self.event_tx
+            .send(RuntimeEvent::TurnStateChanged {
+                operation_id: operation_id.clone(),
+                turn_id: turn_id.clone(),
+                run_id: run_id.clone(),
+                conversation_id: conversation_id.clone(),
+                state: TurnState::Accepted,
+                sequence: accepted_sequence,
+            })
+            .map_err(|_| RuntimeError::EventConsumerClosed)?;
+        if queued {
+            transition_turn_state(&self.event_tx, &self.store, &context, TurnState::Queued)?;
+        }
+
         let request = SendMessageRequest {
-            conversation_id,
+            conversation_id: conversation_id.clone(),
             operation_id: operation_id.clone(),
             text,
             client_message_id,
@@ -726,12 +786,33 @@ impl MahayanaRuntime {
             provider_key,
             event_tx: self.event_tx.clone(),
             approvals: Arc::clone(&self.approvals),
+            context: context.clone(),
+            store: Arc::clone(&self.store),
         });
+
         let event_tx = self.event_tx.clone();
         let operations = Arc::clone(&self.operations);
+        let run_contexts = Arc::clone(&self.run_contexts);
+        let store = Arc::clone(&self.store);
         let task_operation_id = operation_id.clone();
         self.async_runtime.spawn(async move {
+            let _gate = actor.gate.lock().await;
+            if actor
+                .start(&turn_id, run_id.clone())
+                .map_err(RuntimeError::Synchronization)
+                .is_ok()
+            {
+                let _ = transition_turn_state(&event_tx, &store, &context, TurnState::Preparing);
+                let _ = transition_turn_state(&event_tx, &store, &context, TurnState::Thinking);
+            }
+
             let result = provider.send_message(request, sink).await;
+            let terminal_state = if result.is_ok() {
+                TurnState::Completed
+            } else {
+                TurnState::Failed
+            };
+            let _ = transition_turn_state(&event_tx, &store, &context, terminal_state);
             let event = match result {
                 Ok(()) => RuntimeEvent::OperationCompleted {
                     operation_id: task_operation_id.clone(),
@@ -748,8 +829,12 @@ impl MahayanaRuntime {
                 },
             };
             let _ = event_tx.send(event);
+            let _ = actor.finish(&run_id);
             if let Ok(mut operations) = operations.lock() {
                 operations.remove(&task_operation_id);
+            }
+            if let Ok(mut contexts) = run_contexts.lock() {
+                contexts.remove(&task_operation_id);
             }
         });
         Ok(operation_id)
@@ -809,10 +894,31 @@ struct RuntimeEventSink {
     provider_key: String,
     event_tx: Sender<RuntimeEvent>,
     approvals: Arc<Mutex<HashMap<ApprovalId, String>>>,
+    context: RunContext,
+    store: Arc<RuntimeStore>,
 }
 
 impl ConversationEventSink for RuntimeEventSink {
     fn emit(&self, event: RuntimeEvent) -> Result<(), ConversationError> {
+        let projected_state = match &event {
+            RuntimeEvent::MessageDelta { .. } => Some(TurnState::Streaming),
+            RuntimeEvent::ApprovalRequested { .. } => Some(TurnState::WaitingUser),
+            RuntimeEvent::AgentActivity { status, .. }
+                if matches!(status, mahayana_core::RuntimeActivityStatus::Running) =>
+            {
+                Some(TurnState::ToolRunning)
+            }
+            RuntimeEvent::PluginProgress { progress, total, .. }
+                if *total == 0 || progress < total =>
+            {
+                Some(TurnState::ToolRunning)
+            }
+            _ => None,
+        };
+        if let Some(state) = projected_state {
+            transition_turn_state(&self.event_tx, &self.store, &self.context, state)
+                .map_err(|error| ConversationError::Provider(error.to_string()))?;
+        }
         if let RuntimeEvent::ApprovalRequested { approval_id, .. } = &event {
             self.approvals
                 .lock()
@@ -823,6 +929,45 @@ impl ConversationEventSink for RuntimeEventSink {
             .send(event)
             .map_err(|_| ConversationError::EventConsumerClosed)
     }
+}
+
+fn transition_turn_state(
+    event_tx: &Sender<RuntimeEvent>,
+    store: &RuntimeStore,
+    context: &RunContext,
+    state: TurnState,
+) -> Result<(), RuntimeError> {
+    let Some(sequence) = context
+        .actor
+        .set_state(&context.turn_id, state)
+        .map_err(RuntimeError::Synchronization)?
+    else {
+        return Ok(());
+    };
+    let active_run = (!state.terminal()).then_some(&context.run_id);
+    store.set_turn_state(&context.turn_id, state, active_run)?;
+    store.set_run_state(
+        &context.run_id,
+        state,
+        state.terminal().then_some(now_millis()),
+    )?;
+    event_tx
+        .send(RuntimeEvent::TurnStateChanged {
+            operation_id: OperationId(context.run_id.0.clone()),
+            turn_id: context.turn_id.clone(),
+            run_id: context.run_id.clone(),
+            conversation_id: context.conversation_id.clone(),
+            state,
+            sequence,
+        })
+        .map_err(|_| RuntimeError::EventConsumerClosed)
+}
+
+fn now_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(i64::MAX as u128) as i64)
+        .unwrap_or_default()
 }
 
 #[derive(Debug, thiserror::Error)]
