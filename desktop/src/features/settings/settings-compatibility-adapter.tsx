@@ -10,6 +10,7 @@ import {
   FabInput,
   FabSelect,
   FabSurface,
+  FabSwitch,
 } from '../../ui/primitives/fab-primitives';
 import CompatibilityFeatureFrame from '../compatibility/compatibility-feature-frame';
 import dataStyles from '../compatibility/compatibility-data.module.css';
@@ -150,12 +151,12 @@ export default function SettingsCompatibilityAdapter({
         <label className={dataStyles.row}>
           <span className={dataStyles.copy}><strong>AI computer control</strong><small>Allows capability-gated local computer execution.</small></span>
           <span />
-          <input type="checkbox" role="switch" checked={settings.aiComputerControlEnabled} onChange={(event) => void updateSetting('aiComputerControlEnabled', event.target.checked)} />
+          <FabSwitch aria-label="AI computer control" checked={settings.aiComputerControlEnabled} onChange={(event) => void updateSetting('aiComputerControlEnabled', event.target.checked)} />
         </label>
         <label className={dataStyles.row}>
           <span className={dataStyles.copy}><strong>Remote computer control</strong><small>Enables the background remote-control service without moving it into React.</small></span>
           <span />
-          <input type="checkbox" role="switch" checked={settings.remoteControlEnabled} onChange={(event) => void updateSetting('remoteControlEnabled', event.target.checked)} />
+          <FabSwitch aria-label="Remote computer control" checked={settings.remoteControlEnabled} onChange={(event) => void updateSetting('remoteControlEnabled', event.target.checked)} />
         </label>
       </FabSurface>
 
