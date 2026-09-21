@@ -1,5 +1,5 @@
 use mahayana_core::capability::{CapabilityAuditRecord, ComputerControlLease};
-use mahayana_core::{ExecutionRun, HandoffIntent, LogicalTurn, RunId, TurnId, TurnState};
+use mahayana_core::{AskUserRequest, ExecutionRun, HandoffIntent, LogicalTurn, RunId, TurnId, TurnState};
 use std::path::Path;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -254,6 +254,41 @@ impl RuntimeStore {
                 .execute(
                     "UPDATE runs SET state = ?2, finished_at_ms = COALESCE(?3, finished_at_ms) WHERE run_id = ?1",
                     params![run_id.as_str(), state.as_str(), finished_at_ms],
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            Ok(())
+        }
+    }
+
+    pub fn enqueue_ask_user(
+        &self,
+        request: &AskUserRequest,
+        created_at_ms: i64,
+    ) -> Result<(), RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (request, created_at_ms);
+            Ok(())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(()); };
+            let payload = serde_json::to_string(request)
+                .map_err(|error| RuntimeStoreError::Serialization(error.to_string()))?;
+            connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .execute(
+                    "INSERT INTO pending_intents(intent_id, turn_id, run_id, kind, payload_json, created_at_ms)
+                     VALUES (?1, ?2, ?3, 'ask-user', ?4, ?5)
+                     ON CONFLICT(intent_id) DO NOTHING",
+                    params![
+                        request.id.as_str(),
+                        request.turn_id.as_str(),
+                        request.run_id.as_str(),
+                        payload,
+                        created_at_ms,
+                    ],
                 )
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
             Ok(())
