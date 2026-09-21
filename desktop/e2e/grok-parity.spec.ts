@@ -729,17 +729,18 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
           ?.assistantTurn?.status,
       ).toBe('interrupted');
 
+      coordinator.bindAgentPeers([{ agentId: 'c', peerKey: 'agent:c' }]);
       expect(coordinator.handleCommandBridge({
         phase: 'dispatch',
-        command: { type: 'chat.send', requestId: 'request:c', text: 'C' },
-        context: { conversationKey: 'agent:c' },
+        command: { type: 'chat.send', requestId: 'request:c', text: 'C', agentId: 'c' },
+        context: { conversationKey: 'agent:c', agentId: 'c' },
       })).toBe(true);
       expect(controller.requestForPeer('agent:c')).toBe('request:c');
       expect(coordinator.handleCommandBridge({
         phase: 'accepted',
-        command: { type: 'chat.send', requestId: 'request:c', text: 'C' },
+        command: { type: 'chat.send', requestId: 'request:c', text: 'C', agentId: 'c' },
         accepted: { requestId: 'request:c', operationId: 'operation:c' },
-        context: { conversationKey: 'agent:c' },
+        context: { conversationKey: 'agent:c', agentId: 'c' },
       })).toBe(true);
       expect(controller.operationForPeer('agent:c')).toBe('operation:c');
       expect(transcripts.entries('agent:c').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
