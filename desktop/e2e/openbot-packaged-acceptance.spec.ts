@@ -10,6 +10,11 @@ const expectedSourceSha = process.env.OBF_EXPECTED_SOURCE_SHA?.trim() || sourceS
 const evidenceRoot = process.env.OBF_EVIDENCE_DIR?.trim()
   || path.join(tmpdir(), `fabushi-openbot-acceptance-${sourceSha.slice(0, 12) || 'unknown'}`);
 
+// This file owns tracing so the canonical evidence path is stable.
+// Playwright requires test.use() at file scope because a describe-scoped trace
+// override would force a new worker and fail before packaged acceptance starts.
+test.use({ trace: 'off' });
+
 type LifecycleSample = {
   readonly at: number;
   readonly type: 'operation.started' | 'turn.state' | 'chat.delta' | 'chat.message' | 'agent.step' | 'operation.completed' | 'operation.failed';
@@ -432,9 +437,6 @@ async function stableAvatarShape(locator: Locator): Promise<string> {
 
 test.describe('signed candidate packaged acceptance', () => {
   test.describe.configure({ retries: 0 });
-  // This packaged test owns tracing so the canonical evidence path is stable.
-  // Disable the runner trace to avoid starting two traces on the same Electron context.
-  test.use({ trace: 'off' });
   test.skip(!realAcceptance, 'Set OBF_REAL_ACCEPTANCE=1 to run signed packaged acceptance.');
 
   test('exact candidate covers handoff, broadcast, two-Agent isolation and real lifecycle', async () => {
