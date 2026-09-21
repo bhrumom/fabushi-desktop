@@ -32,3 +32,30 @@
   overflow: auto;
   padding: 18px;
 }
+
+.card {
+  padding: 16px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.stack {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.stack p,
+.row p {
+  margin: 3px 0 0;
+  color: var(--fab-text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: var(--fab-space-2);
+}
