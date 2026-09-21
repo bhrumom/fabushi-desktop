@@ -10,7 +10,7 @@
 use mahayana_app_host::{
     AppHost, AppHostError, AppHostFeatureMode, HostRequest, HostResponse, default_app_data_dir,
 };
-pub use mahayana_app_host::{PlatformRequestHost, is_platform_request_json};
+pub use mahayana_app_host::{FeatureEventSource, PlatformRequestHost, is_platform_request_json};
 use mahayana_core::BuildProfile;
 use mahayana_harness_protocol::HarnessApi;
 use serde::{Deserialize, Serialize};
@@ -198,6 +198,10 @@ impl UnifiedAppHost {
 
     /// Receive a product feature event without routing it through a JSON-RPC
     /// request. Native desktop hosts use this as the source for PUSH event frames.
+    pub fn feature_event_source(&self) -> FeatureEventSource {
+        self.app.feature_event_source()
+    }
+
     pub fn receive_feature_event(
         &self,
         timeout: Duration,

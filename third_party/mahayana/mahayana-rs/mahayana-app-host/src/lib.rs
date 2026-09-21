@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -86,7 +86,29 @@ pub struct AppHost {
     feature_mode: AppHostFeatureMode,
     product: MahayanaProductClient,
     js: Mutex<DeepSeekJsHost>,
-    feature: FeatureHostController,
+    feature: Arc<FeatureHostController>,
+}
+
+/// Send-safe event lane for desktop PUSH delivery. It intentionally owns only
+/// the FeatureHost controller and never captures the QuickJS-backed AppHost.
+#[derive(Clone)]
+pub struct FeatureEventSource {
+    feature: Arc<FeatureHostController>,
+}
+
+impl FeatureEventSource {
+    pub fn receive(&self, timeout: Duration) -> Result<Option<Value>, AppHostError> {
+        let event = self
+            .feature
+            .receive_with_timeout(timeout)
+            .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        event
+            .map(|event| {
+                serde_json::to_value(event)
+                    .map_err(|error| AppHostError::Operation(error.to_string()))
+            })
+            .transpose()
+    }
 }
 
 /// Lightweight platform-only request lane used by desktop. Network-backed
@@ -187,7 +209,11 @@ impl AppHost {
         std::fs::create_dir_all(&app_data_dir)
             .map_err(|error| AppHostError::Operation(error.to_string()))?;
         let feature_root = feature_host_root(&app_data_dir);
-        let feature = create_feature_host(&app_data_dir, feature_mode, storage_passphrase.clone())?;
+        let feature = Arc::new(create_feature_host(
+            &app_data_dir,
+            feature_mode,
+            storage_passphrase.clone(),
+        )?);
         let product = match storage_passphrase {
             Some(passphrase) => {
                 MahayanaProductClient::new_with_default_api_base_url_and_storage_passphrase(
@@ -224,20 +250,17 @@ impl AppHost {
     ///
     /// Desktop uses this to drive an unsolicited event frame on the child-process
     /// protocol. Renderer/Main no longer need to poll `feature.receive`.
+    pub fn feature_event_source(&self) -> FeatureEventSource {
+        FeatureEventSource {
+            feature: Arc::clone(&self.feature),
+        }
+    }
+
     pub fn receive_feature_event(
         &self,
         timeout: Duration,
     ) -> Result<Option<Value>, AppHostError> {
-        let event = self
-            .feature
-            .receive_with_timeout(timeout)
-            .map_err(|error| AppHostError::Operation(error.to_string()))?;
-        event
-            .map(|event| {
-                serde_json::to_value(event)
-                    .map_err(|error| AppHostError::Operation(error.to_string()))
-            })
-            .transpose()
+        self.feature_event_source().receive(timeout)
     }
 
     pub fn dispatch(&self, request: HostRequest) -> HostResponse {

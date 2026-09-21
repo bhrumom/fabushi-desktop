@@ -86,10 +86,10 @@ fn main() {
     // in Rust instead of issuing 500 ms JSON-RPC receive requests from Electron.
     // Test mode has a non-blocking deterministic backend, so a small sleep keeps
     // that lane from spinning while CI is idle.
-    let event_host = Arc::clone(&host);
+    let event_source = host.feature_event_source();
     let event_stdout = Arc::clone(&stdout);
     let _event_worker = thread::spawn(move || loop {
-        match event_host.receive_feature_event(Duration::from_secs(30)) {
+        match event_source.receive(Duration::from_secs(30)) {
             Ok(Some(event)) => {
                 if write_runtime_event(&event_stdout, event).is_err() {
                     break;

@@ -1457,7 +1457,7 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
             controllerId: command.agentId,
             runId: command.leaseId,
             deviceId: command.target?.deviceId ?? "mock-local-device",
-            origin: "human",
+            origin: "local-ui",
             mode: command.target?.kind ?? "physical",
             acquiredAtMs,
             expiresAtMs: acquiredAtMs + 5 * 60_000,
@@ -1962,7 +1962,9 @@ export class MockMahayanaHostTransport implements MahayanaHostTransport {
         return { requestId: command.requestId };
     }
 
-    throw new Error(`Unsupported mock runtime command: ${command.type}`);
+    throw new Error(
+      `Unsupported mock runtime command: ${(command as RuntimeCommand).type}`,
+    );
   }
 
   async authStatus(): Promise<AuthState> {
