@@ -1,5 +1,8 @@
 use mahayana_core::capability::{CapabilityAuditRecord, ComputerControlLease};
-use mahayana_core::{AskUserRequest, ExecutionRun, HandoffIntent, LogicalTurn, RunId, TurnId, TurnState};
+use mahayana_core::{
+    AskUserRequest, ConversationId, ExecutionRun, HandoffIntent, LogicalTurn, MessageId, RunId,
+    TurnId, TurnState,
+};
 use serde_json::Value;
 use std::path::Path;
 
@@ -16,6 +19,20 @@ use std::sync::Mutex;
 pub struct RuntimeStore {
     #[cfg(not(target_arch = "wasm32"))]
     connection: Option<Mutex<Connection>>,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct StoredTurnSnapshot {
+    pub turn_id: TurnId,
+    pub state: TurnState,
+    pub last_run_id: Option<RunId>,
+    pub generation: u32,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct RecoverableHandoff {
+    pub origin_turn_id: TurnId,
+    pub intent: HandoffIntent,
 }
 
 impl RuntimeStore {
@@ -110,6 +127,16 @@ impl RuntimeStore {
                         payload_json TEXT NOT NULL,
                         created_at_ms INTEGER NOT NULL
                     );
+
+                    CREATE TABLE IF NOT EXISTS handoff_dispatch (
+                        intent_id TEXT PRIMARY KEY,
+                        target_operation_id TEXT,
+                        state TEXT NOT NULL,
+                        updated_at_ms INTEGER NOT NULL,
+                        FOREIGN KEY(intent_id) REFERENCES pending_intents(intent_id)
+                    );
+                    CREATE INDEX IF NOT EXISTS handoff_dispatch_state_idx
+                    ON handoff_dispatch(state, updated_at_ms);
 
                     CREATE TABLE IF NOT EXISTS sync_journal (
                         sequence INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -326,6 +353,53 @@ impl RuntimeStore {
         }
     }
 
+    pub fn find_turn_by_client_message(
+        &self,
+        conversation_id: &ConversationId,
+        message_id: &MessageId,
+    ) -> Result<Option<StoredTurnSnapshot>, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (conversation_id, message_id);
+            Ok(None)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(None); };
+            let row = connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .query_row(
+                    "SELECT t.turn_id, t.state, r.run_id, COALESCE(r.generation, 0)
+                     FROM turns t
+                     LEFT JOIN runs r ON r.turn_id = t.turn_id
+                     WHERE t.conversation_id = ?1 AND t.user_message_id = ?2
+                     ORDER BY r.generation DESC
+                     LIMIT 1",
+                    params![conversation_id.as_str(), message_id.as_str()],
+                    |row| {
+                        Ok((
+                            row.get::<_, String>(0)?,
+                            row.get::<_, String>(1)?,
+                            row.get::<_, Option<String>>(2)?,
+                            row.get::<_, i64>(3)?,
+                        ))
+                    },
+                )
+                .optional()
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            row.map(|(turn_id, state, run_id, generation)| {
+                Ok(StoredTurnSnapshot {
+                    turn_id: TurnId(turn_id),
+                    state: parse_turn_state(&state)?,
+                    last_run_id: run_id.map(RunId),
+                    generation: generation.max(0).min(i64::from(u32::MAX)) as u32,
+                })
+            })
+            .transpose()
+        }
+    }
+
     pub fn enqueue_ask_user(
         &self,
         request: &AskUserRequest,
@@ -394,6 +468,119 @@ impl RuntimeStore {
                 )
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
             Ok(())
+        }
+    }
+
+    pub fn mark_handoff_started(
+        &self,
+        intent_id: &str,
+        operation_id: &str,
+        updated_at_ms: i64,
+    ) -> Result<(), RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (intent_id, operation_id, updated_at_ms);
+            Ok(())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(()); };
+            connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .execute(
+                    "INSERT INTO handoff_dispatch(intent_id, target_operation_id, state, updated_at_ms)
+                     VALUES (?1, ?2, 'running', ?3)
+                     ON CONFLICT(intent_id) DO UPDATE SET
+                       target_operation_id = CASE
+                         WHEN handoff_dispatch.state IN ('completed', 'failed')
+                           THEN handoff_dispatch.target_operation_id
+                         ELSE excluded.target_operation_id
+                       END,
+                       state = CASE
+                         WHEN handoff_dispatch.state IN ('completed', 'failed')
+                           THEN handoff_dispatch.state
+                         ELSE 'running'
+                       END,
+                       updated_at_ms = excluded.updated_at_ms",
+                    params![intent_id, operation_id, updated_at_ms],
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            Ok(())
+        }
+    }
+
+    pub fn mark_handoff_terminal(
+        &self,
+        intent_id: &str,
+        completed: bool,
+        updated_at_ms: i64,
+    ) -> Result<(), RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (intent_id, completed, updated_at_ms);
+            Ok(())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(()); };
+            let state = if completed { "completed" } else { "failed" };
+            connection
+                .lock()
+                .map_err(|_| RuntimeStoreError::Poisoned)?
+                .execute(
+                    "INSERT INTO handoff_dispatch(intent_id, target_operation_id, state, updated_at_ms)
+                     SELECT ?1, NULL, ?2, ?3
+                     WHERE EXISTS (
+                       SELECT 1 FROM pending_intents
+                       WHERE intent_id = ?1 AND kind = 'agent-handoff'
+                     )
+                     ON CONFLICT(intent_id) DO UPDATE SET
+                       state = excluded.state,
+                       updated_at_ms = excluded.updated_at_ms",
+                    params![intent_id, state, updated_at_ms],
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            Ok(())
+        }
+    }
+
+    pub fn recoverable_handoffs(&self) -> Result<Vec<RecoverableHandoff>, RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            Ok(Vec::new())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(Vec::new()); };
+            let connection = connection.lock().map_err(|_| RuntimeStoreError::Poisoned)?;
+            let mut statement = connection
+                .prepare(
+                    "SELECT p.turn_id, p.payload_json
+                     FROM pending_intents p
+                     LEFT JOIN handoff_dispatch d ON d.intent_id = p.intent_id
+                     WHERE p.kind = 'agent-handoff'
+                       AND (d.state IS NULL OR d.state IN ('queued', 'running'))
+                     ORDER BY p.created_at_ms ASC",
+                )
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            let rows = statement
+                .query_map([], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                })
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            let mut recovered = Vec::new();
+            for row in rows {
+                let (turn_id, payload) =
+                    row.map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+                let intent = serde_json::from_str::<HandoffIntent>(&payload)
+                    .map_err(|error| RuntimeStoreError::Serialization(error.to_string()))?;
+                recovered.push(RecoverableHandoff {
+                    origin_turn_id: TurnId(turn_id),
+                    intent,
+                });
+            }
+            Ok(recovered)
         }
     }
 
@@ -573,6 +760,79 @@ impl RuntimeStore {
         }
     }
 
+}
+
+fn parse_turn_state(value: &str) -> Result<TurnState, RuntimeStoreError> {
+    match value {
+        "accepted" => Ok(TurnState::Accepted),
+        "queued" => Ok(TurnState::Queued),
+        "preparing" => Ok(TurnState::Preparing),
+        "thinking" => Ok(TurnState::Thinking),
+        "tool-running" => Ok(TurnState::ToolRunning),
+        "streaming" => Ok(TurnState::Streaming),
+        "waiting-user" => Ok(TurnState::WaitingUser),
+        "completed" => Ok(TurnState::Completed),
+        "failed" => Ok(TurnState::Failed),
+        "cancelled" => Ok(TurnState::Cancelled),
+        "recovering" => Ok(TurnState::Recovering),
+        other => Err(RuntimeStoreError::Serialization(format!(
+            "unknown turn state: {other}"
+        ))),
+    }
+}
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod tests {
+    use super::*;
+    use mahayana_core::IntentId;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_store() -> (std::path::PathBuf, RuntimeStore) {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "mahayana-runtime-store-{}-{nonce}",
+            std::process::id()
+        ));
+        let store = RuntimeStore::open(Some(&path)).expect("open runtime store");
+        (path, store)
+    }
+
+    #[test]
+    fn handoff_dispatch_recovers_running_but_not_terminal_work() {
+        let (path, store) = temp_store();
+        let intent = HandoffIntent {
+            id: IntentId("handoff:test".to_string()),
+            target_agent: "research".to_string(),
+            target_conversation_id: Some(ConversationId(
+                "codex:agent:research".to_string(),
+            )),
+            inference_provider: Some("codex".to_string()),
+            task: "summarize".to_string(),
+            constraints: Value::Null,
+            expected_output: None,
+            origin_run: RunId("run:origin".to_string()),
+            depth: 1,
+        };
+        let turn_id = TurnId("turn:origin".to_string());
+        store.enqueue_handoff(&intent, &turn_id, 1).expect("enqueue");
+        assert_eq!(store.recoverable_handoffs().expect("recover").len(), 1);
+
+        store
+            .mark_handoff_started(intent.id.as_str(), "run:target", 2)
+            .expect("mark running");
+        assert_eq!(store.recoverable_handoffs().expect("recover").len(), 1);
+
+        store
+            .mark_handoff_terminal(intent.id.as_str(), true, 3)
+            .expect("mark complete");
+        assert!(store.recoverable_handoffs().expect("recover").is_empty());
+
+        drop(store);
+        let _ = std::fs::remove_dir_all(path);
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
