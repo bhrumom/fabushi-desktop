@@ -6883,7 +6883,7 @@ impl FeatureHostController {
             let account_memory_root = self.active_account_root(self.memory_root_path.as_deref());
             let account_workflow_root =
                 self.active_account_root(self.workflow_root_path.as_deref());
-            let member_agent_id = bot_runtime_agent_id(&member);
+            let member_agent_id = bot_runtime_agent_id(&member).to_string();
             let memory_prompt = account_memory_root
                 .as_deref()
                 .map(|root| render_memory_system_prompt(&root.join(member_agent_id).join("memory")))
@@ -6916,7 +6916,7 @@ impl FeatureHostController {
                     member_id: member.id,
                     member_name: member.name,
                 },
-                member_agent_id.to_string(),
+                member_agent_id,
                 conversation_id,
                 runtime_text,
                 agent_inference_provider_key(member.inference_provider)?,
