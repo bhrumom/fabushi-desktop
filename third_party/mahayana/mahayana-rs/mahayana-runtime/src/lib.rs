@@ -1,6 +1,9 @@
 //! Long-lived local conversation runtime used by all Mahayana frontends.
 
+mod capability_broker;
+mod conversation_actor;
 mod kernel_conversation;
+mod runtime_store;
 
 use crossbeam_channel::Receiver;
 use crossbeam_channel::RecvTimeoutError;
@@ -8,7 +11,10 @@ use crossbeam_channel::Sender;
 use fabushi_official_miniapps::OfficialMiniAppEngine;
 use fabushi_official_miniapps::app_definition;
 use fabushi_official_miniapps::home_html;
+use capability_broker::CapabilityBroker;
+use conversation_actor::{ConversationActor, ConversationActorRegistry};
 use kernel_conversation::KernelConversationProvider;
+use runtime_store::{RuntimeStore, RuntimeStoreError};
 use mahayana_agent::AgentBackend;
 use mahayana_agent::AgentError;
 use mahayana_agent_kernel_bridge::LegacyAgentKernelBridge;
@@ -23,8 +29,12 @@ use mahayana_core::ApprovalId;
 use mahayana_core::CONVERSATION_SCHEMA_VERSION;
 use mahayana_core::Conversation;
 use mahayana_core::ConversationId;
+use mahayana_core::ExecutionRun;
+use mahayana_core::LogicalTurn;
+use mahayana_core::MessageId;
 use mahayana_core::MODEL_RUNTIME_VERSION;
 use mahayana_core::OperationId;
+use mahayana_core::RunId;
 use mahayana_core::PluginCommandDescriptor;
 use mahayana_core::RUNTIME_ABI_VERSION;
 use mahayana_core::RuntimeCommand;
@@ -32,7 +42,9 @@ use mahayana_core::RuntimeConfig;
 use mahayana_core::RuntimeEvent;
 use mahayana_core::RuntimeResponse;
 use mahayana_core::RuntimeStatus;
-use mahayana_core::capability::CapabilityRegistry;
+use mahayana_core::TurnId;
+use mahayana_core::TurnState;
+use mahayana_core::capability::{CapabilityPolicyDecision, CapabilityRegistry, CapabilityRequest};
 use mahayana_kernel::BackendDescriptor;
 use mahayana_kernel::Capability;
 use mahayana_kernel::CapabilitySet;
@@ -43,7 +55,7 @@ use std::collections::HashSet;
 use std::future::Future;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub struct RuntimeBuilder {
     config: RuntimeConfig,
@@ -155,6 +167,14 @@ impl RuntimeBuilder {
     }
 }
 
+#[derive(Clone)]
+struct RunContext {
+    turn_id: TurnId,
+    run_id: RunId,
+    conversation_id: ConversationId,
+    actor: Arc<ConversationActor>,
+}
+
 pub struct MahayanaRuntime {
     config: RuntimeConfig,
     providers: Arc<ProviderRegistry>,
@@ -163,7 +183,11 @@ pub struct MahayanaRuntime {
     event_tx: Sender<RuntimeEvent>,
     event_rx: Receiver<RuntimeEvent>,
     operations: Arc<Mutex<HashMap<OperationId, String>>>,
+    run_contexts: Arc<Mutex<HashMap<OperationId, RunContext>>>,
     approvals: Arc<Mutex<HashMap<ApprovalId, String>>>,
+    actors: Arc<ConversationActorRegistry>,
+    store: Arc<RuntimeStore>,
+    capability_broker: CapabilityBroker,
     official_miniapps: Mutex<OfficialMiniAppEngine>,
     approved_local_plugin_tools: Mutex<HashSet<(String, String)>>,
 }
@@ -199,6 +223,9 @@ impl MahayanaRuntime {
         }
 
         let (event_tx, event_rx) = crossbeam_channel::bounded(1024);
+        let store = Arc::new(RuntimeStore::open(config.data_dir.as_deref())?);
+        let actors = Arc::new(ConversationActorRegistry::default());
+        let capability_broker = CapabilityBroker::new(Arc::clone(&store));
         let runtime = Self {
             config,
             providers: Arc::new(providers),
@@ -207,7 +234,11 @@ impl MahayanaRuntime {
             event_tx,
             event_rx,
             operations: Arc::new(Mutex::new(HashMap::new())),
+            run_contexts: Arc::new(Mutex::new(HashMap::new())),
             approvals: Arc::new(Mutex::new(HashMap::new())),
+            actors,
+            store,
+            capability_broker,
             official_miniapps: Mutex::new(OfficialMiniAppEngine::default()),
             approved_local_plugin_tools: Mutex::new(HashSet::new()),
         };
@@ -260,7 +291,9 @@ impl MahayanaRuntime {
             self.async_runtime.block_on(provider.reset_session())?;
         }
         lock(&self.operations)?.clear();
+        lock(&self.run_contexts)?.clear();
         lock(&self.approvals)?.clear();
+        self.actors.clear().map_err(RuntimeError::Synchronization)?;
         while self.event_rx.try_recv().is_ok() {}
         Ok(())
     }
@@ -281,7 +314,9 @@ impl MahayanaRuntime {
                 .block_on(provider.set_history_path(path.clone()))?;
         }
         lock(&self.operations)?.clear();
+        lock(&self.run_contexts)?.clear();
         lock(&self.approvals)?.clear();
+        self.actors.clear().map_err(RuntimeError::Synchronization)?;
         while self.event_rx.try_recv().is_ok() {}
         Ok(())
     }
@@ -322,7 +357,29 @@ impl MahayanaRuntime {
                             .unwrap_or_else(|| "当前平台不可用".to_string()),
                     });
                 }
-                let conversation_id = capability.conversation_id;
+                let conversation_id = capability.conversation_id.clone();
+                let decision = self
+                    .capability_broker
+                    .authorize(
+                        &capability,
+                        CapabilityRequest {
+                            actor: "human".to_string(),
+                            agent_id: None,
+                            conversation_id: conversation_id.clone(),
+                            run_id: None,
+                            capability: capability.id.clone(),
+                            target: Value::Null,
+                            intent: text.clone(),
+                        },
+                        now_millis(),
+                    )
+                    .map_err(RuntimeError::CapabilityBroker)?;
+                if matches!(decision, CapabilityPolicyDecision::Deny) {
+                    return Err(RuntimeError::CapabilityUnavailable {
+                        capability_id: capability.id,
+                        reason: "capability policy denied this request".to_string(),
+                    });
+                }
                 let operation_id =
                     self.start_message(conversation_id.clone(), text, client_message_id, None, false)?;
                 Ok(RuntimeResponse::CapabilityAccepted {
@@ -579,6 +636,14 @@ impl MahayanaRuntime {
                     .ok_or_else(|| ConversationError::ProviderUnavailable(provider_key.clone()))?;
                 self.async_runtime
                     .block_on(provider.interrupt(&operation_id))?;
+                if let Some(context) = lock(&self.run_contexts)?.get(&operation_id).cloned() {
+                    let _ = transition_turn_state(
+                        &self.event_tx,
+                        &self.store,
+                        &context,
+                        TurnState::Cancelled,
+                    );
+                }
                 Ok(RuntimeResponse::Interrupted { operation_id })
             }
             RuntimeCommand::ResolveApproval {
@@ -784,6 +849,10 @@ pub enum RuntimeError {
     Synchronization(String),
     #[error("local Mini App runtime failed: {0}")]
     LocalPlugin(String),
+    #[error("runtime store failed: {0}")]
+    RuntimeStore(#[from] RuntimeStoreError),
+    #[error("capability broker failed: {0}")]
+    CapabilityBroker(String),
     #[error("capability not found: {0}")]
     CapabilityNotFound(String),
     #[error("capability unavailable: {capability_id}: {reason}")]
