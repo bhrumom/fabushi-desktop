@@ -9298,3 +9298,5216 @@ fn required(value: String, name: &str) -> Result<String, FeatureHostError> {
     let value = value.trim();
     if value.is_empty() {
         Err(FeatureHostError::Contract(format!(
+            "{name} must not be empty"
+        )))
+    } else {
+        Ok(value.to_string())
+    }
+}
+
+// Shared Fabushi text-shaping and profile semantics.
+fn clamp_line(raw: &str, max_length: usize) -> String {
+    raw.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .chars()
+        .take(max_length)
+        .collect()
+}
+
+fn clamp_block(raw: &str, max_length: usize) -> String {
+    raw.trim().chars().take(max_length).collect()
+}
+
+fn attachment_byte_limit_for_name(name: &str) -> u64 {
+    let extension = Path::new(name)
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if matches!(
+        extension.as_str(),
+        "mp4" | "mov" | "m4v" | "webm" | "mkv" | "avi" | "mpg" | "mpeg"
+    ) {
+        VIDEO_BYTE_LIMIT
+    } else {
+        ATTACHMENT_BYTE_LIMIT
+    }
+}
+
+fn resolve_agent_attachment_path(
+    agent_root: &Path,
+    agent_id: &str,
+    raw_path: &str,
+) -> Result<PathBuf, FeatureHostError> {
+    if !is_safe_memory_agent_id(agent_id) {
+        return Err(FeatureHostError::Contract(
+            "invalid attachment owner".into(),
+        ));
+    }
+    let base = agent_root.join(agent_id).join("attachments");
+    let base = std::fs::canonicalize(&base).map_err(|error| {
+        FeatureHostError::Contract(format!("attachment directory unavailable: {error}"))
+    })?;
+    let candidate = {
+        let path = PathBuf::from(raw_path);
+        if path.is_absolute() {
+            path
+        } else {
+            base.join(path)
+        }
+    };
+    let candidate = std::fs::canonicalize(&candidate).map_err(|error| {
+        FeatureHostError::Contract(format!("attachment path unavailable: {error}"))
+    })?;
+    if !candidate.starts_with(&base) {
+        return Err(FeatureHostError::Contract(
+            "attachment path escapes the agent attachment directory".into(),
+        ));
+    }
+    Ok(candidate)
+}
+
+fn read_file_prefix(path: &Path, max_bytes: usize) -> Result<Vec<u8>, FeatureHostError> {
+    let mut file = std::fs::File::open(path)
+        .map_err(|error| FeatureHostError::Contract(format!("open attachment: {error}")))?;
+    let mut buffer = vec![0u8; max_bytes];
+    let bytes_read = file
+        .read(&mut buffer)
+        .map_err(|error| FeatureHostError::Contract(format!("read attachment: {error}")))?;
+    buffer.truncate(bytes_read);
+    Ok(buffer)
+}
+
+fn read_file_range(path: &Path, offset: u64, length: usize) -> Result<Vec<u8>, FeatureHostError> {
+    if length == 0 {
+        return Ok(Vec::new());
+    }
+    let mut file = std::fs::File::open(path)
+        .map_err(|error| FeatureHostError::Contract(format!("open attachment: {error}")))?;
+    file.seek(SeekFrom::Start(offset))
+        .map_err(|error| FeatureHostError::Contract(format!("seek attachment: {error}")))?;
+    let mut buffer = vec![0u8; length];
+    let bytes_read = file
+        .read(&mut buffer)
+        .map_err(|error| FeatureHostError::Contract(format!("read attachment range: {error}")))?;
+    buffer.truncate(bytes_read);
+    Ok(buffer)
+}
+
+fn is_text_previewable_name(path: &Path) -> bool {
+    let extension = path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    matches!(
+        extension.as_str(),
+        "txt"
+            | "md"
+            | "markdown"
+            | "mdc"
+            | "csv"
+            | "tsv"
+            | "json"
+            | "jsonl"
+            | "yaml"
+            | "yml"
+            | "toml"
+            | "xml"
+            | "html"
+            | "htm"
+            | "css"
+            | "js"
+            | "jsx"
+            | "ts"
+            | "tsx"
+            | "py"
+            | "rs"
+            | "go"
+            | "java"
+            | "kt"
+            | "swift"
+            | "c"
+            | "h"
+            | "cpp"
+            | "hpp"
+            | "sh"
+            | "bash"
+            | "zsh"
+            | "fish"
+            | "log"
+            | "sql"
+            | "ini"
+            | "conf"
+    )
+}
+
+fn looks_like_binary(bytes: &[u8]) -> bool {
+    if bytes.is_empty() {
+        return false;
+    }
+    if bytes.contains(&0) {
+        return true;
+    }
+    let control = bytes
+        .iter()
+        .filter(|byte| **byte < 0x09 || (**byte > 0x0d && **byte < 0x20))
+        .count();
+    control * 100 / bytes.len() > 5
+}
+
+fn image_dimensions(bytes: &[u8], mime: &str) -> (Option<u32>, Option<u32>) {
+    if mime == "image/png" && bytes.len() >= 24 && &bytes[..8] == b"\x89PNG\r\n\x1a\n" {
+        let width = u32::from_be_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]);
+        let height = u32::from_be_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]);
+        return (Some(width), Some(height));
+    }
+    if mime == "image/gif"
+        && bytes.len() >= 10
+        && (&bytes[..6] == b"GIF87a" || &bytes[..6] == b"GIF89a")
+    {
+        let width = u16::from_le_bytes([bytes[6], bytes[7]]) as u32;
+        let height = u16::from_le_bytes([bytes[8], bytes[9]]) as u32;
+        return (Some(width), Some(height));
+    }
+    if mime == "image/jpeg" && bytes.len() > 4 && bytes[0] == 0xff && bytes[1] == 0xd8 {
+        let mut index = 2usize;
+        while index + 8 < bytes.len() {
+            if bytes[index] != 0xff {
+                index += 1;
+                continue;
+            }
+            let marker = bytes[index + 1];
+            index += 2;
+            if marker == 0xd8 || marker == 0xd9 || marker == 0x01 || (0xd0..=0xd7).contains(&marker)
+            {
+                continue;
+            }
+            if index + 2 > bytes.len() {
+                break;
+            }
+            let segment_length = u16::from_be_bytes([bytes[index], bytes[index + 1]]) as usize;
+            if segment_length < 2 || index + segment_length > bytes.len() {
+                break;
+            }
+            if matches!(
+                marker,
+                0xc0 | 0xc1
+                    | 0xc2
+                    | 0xc3
+                    | 0xc5
+                    | 0xc6
+                    | 0xc7
+                    | 0xc9
+                    | 0xca
+                    | 0xcb
+                    | 0xcd
+                    | 0xce
+                    | 0xcf
+            ) && segment_length >= 7
+            {
+                let height = u16::from_be_bytes([bytes[index + 3], bytes[index + 4]]) as u32;
+                let width = u16::from_be_bytes([bytes[index + 5], bytes[index + 6]]) as u32;
+                return (Some(width), Some(height));
+            }
+            index += segment_length;
+        }
+    }
+    (None, None)
+}
+
+fn build_content_snippet(text: &str, normalized_query: &str) -> Option<String> {
+    if normalized_query.is_empty() {
+        return None;
+    }
+    let flat = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let lower = flat.to_ascii_lowercase();
+    let query = normalized_query.to_ascii_lowercase();
+    let byte_index = lower.find(&query)?;
+    let match_start = flat[..byte_index].chars().count();
+    let match_len = flat[byte_index..byte_index + query.len()].chars().count();
+    let chars = flat.chars().collect::<Vec<_>>();
+    let start = match_start.saturating_sub(SEARCH_SNIPPET_LEAD);
+    let end = (match_start + match_len + SEARCH_SNIPPET_TRAIL).min(chars.len());
+    let core = chars[start..end].iter().collect::<String>();
+    Some(format!(
+        "{}{}{}",
+        if start > 0 { "…" } else { "" },
+        core,
+        if end < chars.len() { "…" } else { "" }
+    ))
+}
+
+fn collect_agent_media_matches(
+    root: &Path,
+    agent_id: &str,
+    agent_name: &str,
+    normalized_query: &str,
+    out: &mut Vec<SearchMediaMatch>,
+) {
+    let mut stack = vec![(root.to_path_buf(), 0usize)];
+    while let Some((dir, depth)) = stack.pop() {
+        if depth > 3 {
+            continue;
+        }
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let Ok(file_type) = entry.file_type() else {
+                continue;
+            };
+            if file_type.is_dir() {
+                stack.push((path, depth + 1));
+                continue;
+            }
+            if !file_type.is_file() {
+                continue;
+            }
+            let name = entry.file_name().to_string_lossy().to_string();
+            if !normalized_query.is_empty() && !name.to_ascii_lowercase().contains(normalized_query)
+            {
+                continue;
+            }
+            let Ok(metadata) = entry.metadata() else {
+                continue;
+            };
+            let timestamp_ms = metadata
+                .modified()
+                .ok()
+                .and_then(|modified| modified.duration_since(UNIX_EPOCH).ok())
+                .map(|duration| duration.as_millis() as i64)
+                .unwrap_or(0);
+            out.push(SearchMediaMatch {
+                agent_id: agent_id.to_string(),
+                agent_name: agent_name.to_string(),
+                path: path.to_string_lossy().to_string(),
+                mime_type: media_mime_type(&name).map(str::to_string),
+                name,
+                size_bytes: metadata.len(),
+                timestamp_ms,
+            });
+        }
+    }
+}
+
+fn media_mime_type(name: &str) -> Option<&'static str> {
+    let extension = Path::new(name)
+        .extension()?
+        .to_string_lossy()
+        .to_ascii_lowercase();
+    match extension.as_str() {
+        "png" => Some("image/png"),
+        "jpg" | "jpeg" => Some("image/jpeg"),
+        "gif" => Some("image/gif"),
+        "webp" => Some("image/webp"),
+        "svg" => Some("image/svg+xml"),
+        "pdf" => Some("application/pdf"),
+        "txt" | "md" | "markdown" | "log" => Some("text/plain"),
+        "json" => Some("application/json"),
+        "csv" => Some("text/csv"),
+        "mp3" => Some("audio/mpeg"),
+        "wav" => Some("audio/wav"),
+        "mp4" => Some("video/mp4"),
+        "mov" => Some("video/quicktime"),
+        _ => None,
+    }
+}
+
+fn clean_optional_string(value: Option<String>) -> Option<String> {
+    value.and_then(|value| {
+        let value = value.trim().to_string();
+        (!value.is_empty()).then_some(value)
+    })
+}
+
+fn sanitize_avatar_data_url(value: Option<String>) -> Result<Option<String>, FeatureHostError> {
+    const MAX_AVATAR_BYTES: usize = 2 * 1024 * 1024;
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let value = value.trim();
+    if value.is_empty() {
+        return Ok(None);
+    }
+    let (header, payload) = value.split_once(',').ok_or_else(|| {
+        FeatureHostError::Contract("avatar must be a base64 image data URL".into())
+    })?;
+    if !matches!(
+        header,
+        "data:image/png;base64"
+            | "data:image/jpeg;base64"
+            | "data:image/webp;base64"
+            | "data:image/gif;base64"
+    ) {
+        return Err(FeatureHostError::Contract(
+            "avatar format must be PNG, JPEG, WebP, or GIF".into(),
+        ));
+    }
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(payload)
+        .map_err(|_| FeatureHostError::Contract("avatar base64 payload is invalid".into()))?;
+    if bytes.is_empty() || bytes.len() > MAX_AVATAR_BYTES {
+        return Err(FeatureHostError::Contract(format!(
+            "avatar must be between 1 byte and {MAX_AVATAR_BYTES} bytes"
+        )));
+    }
+    Ok(Some(value.to_string()))
+}
+
+fn clone_agent_display_name(name: &str) -> String {
+    let trimmed = name.trim();
+    if trimmed.is_empty() {
+        "copy".into()
+    } else {
+        format!("{trimmed} copy")
+    }
+}
+
+fn is_lightweight_conversation_text(text: &str) -> bool {
+    let value = text.trim();
+    if value.is_empty() || value.chars().count() > 48 || value.contains('\n') {
+        return false;
+    }
+    let normalized = value
+        .trim_matches(|ch: char| ch.is_ascii_punctuation() || ch.is_whitespace())
+        .to_lowercase();
+    matches!(
+        normalized.as_str(),
+        "你好"
+            | "您好"
+            | "嗨"
+            | "哈喽"
+            | "在吗"
+            | "早上好"
+            | "下午好"
+            | "晚上好"
+            | "谢谢"
+            | "谢谢你"
+            | "hi"
+            | "hello"
+            | "hey"
+            | "thanks"
+            | "thank you"
+            | "good morning"
+            | "good afternoon"
+            | "good evening"
+    )
+}
+
+fn compose_agent_input(
+    text: &str,
+    mode: AgentMode,
+    mode_statement: Option<&str>,
+    attachments: &[AttachmentContext],
+) -> String {
+    if mode == AgentMode::Agent && attachments.is_empty() {
+        return text.to_string();
+    }
+    let mode_instruction = match mode {
+        AgentMode::Agent => "请自主使用可用工具完成任务，并明确报告结果。",
+        AgentMode::Ask => {
+            "请只分析并回答问题；未经用户明确要求，不要修改文件或执行有副作用的操作。"
+        }
+        AgentMode::Plan => "请先形成可执行计划，列出依赖、风险和验证方式；暂不执行有副作用的操作。",
+    };
+    let mut input = format!(
+        "[Agent 模式]\n{}\n{mode_instruction}\n\n[用户请求]\n{text}",
+        mode_statement.unwrap_or("")
+    );
+    for attachment in attachments {
+        input.push_str("\n\n[附件: ");
+        input.push_str(&attachment.name);
+        input.push_str("]\n");
+        if let Some(path) = attachment.path.as_deref() {
+            input.push_str("持久文件路径：");
+            input.push_str(path);
+            if let Some(size_bytes) = attachment.size_bytes {
+                input.push_str(&format!("\n文件大小：{size_bytes} bytes"));
+            }
+            if let Some(mime_type) = attachment.mime_type.as_deref() {
+                input.push_str("\nMIME：");
+                input.push_str(mime_type);
+            }
+            input.push_str("\n需要完整内容时，请直接读取上述本地文件路径。\n");
+        }
+        if let Some(text) = attachment.text.as_deref() {
+            input.push_str("文本预览（最多 64 KiB）：\n");
+            input.push_str(text);
+        } else if attachment.path.is_none() {
+            input.push_str("（仅提供文件元数据）");
+        }
+    }
+    input
+}
+
+fn is_safe_automation_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 96
+        && id
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+}
+
+fn render_mcp_instruction_context(
+    instructions: &std::collections::HashMap<String, String>,
+) -> Option<String> {
+    let mut entries = instructions
+        .iter()
+        .filter_map(|(server, instruction)| {
+            let server = clamp_line(server, 200);
+            let instruction = clamp_block(instruction, 4_000);
+            (!server.is_empty() && !instruction.is_empty()).then_some((server, instruction))
+        })
+        .collect::<Vec<_>>();
+    entries.sort_by(|left, right| left.0.cmp(&right.0));
+    entries.truncate(16);
+    if entries.is_empty() {
+        return None;
+    }
+    let mut context = String::from(
+        "[MCP connector operating instructions]
+These are user-configured rules for the named connector. Apply them whenever using tools from that connector. They are runtime context, not user message text.
+",
+    );
+    for (server, instruction) in entries {
+        let remaining = 14_000usize.saturating_sub(context.chars().count());
+        if remaining == 0 {
+            break;
+        }
+        let block = format!(
+            "
+Connector: {server}
+{instruction}
+"
+        );
+        context.push_str(&clamp_block(&block, remaining));
+    }
+    Some(context)
+}
+
+fn cloud_task_resource_id(metadata: Option<&Value>) -> Option<String> {
+    let object = metadata?.as_object()?;
+    for key in ["bcId", "runId", "run_id", "cloudRunId", "cloud_run_id"] {
+        if let Some(value) = object.get(key).and_then(Value::as_str) {
+            let value = value.trim();
+            if !value.is_empty() && value.len() <= 240 {
+                return Some(value.to_string());
+            }
+        }
+    }
+    for key in ["run", "cloud", "metadata"] {
+        if let Some(nested) = object.get(key) {
+            if let Some(value) = cloud_task_resource_id(Some(nested)) {
+                return Some(value);
+            }
+        }
+    }
+    None
+}
+
+fn ensure_automation_agent_scope(
+    automation: &AutomationSummary,
+    agent_id: Option<&str>,
+) -> Result<(), FeatureHostError> {
+    let Some(agent_id) = agent_id else {
+        return Ok(());
+    };
+    if automation.agent_id.as_deref() == Some(agent_id) {
+        return Ok(());
+    }
+    Err(FeatureHostError::Contract(format!(
+        "automation {} does not belong to agent {agent_id}",
+        automation.id
+    )))
+}
+
+const MEMORY_PROFILE_HEADER: &str = "# About the user\n\n<!-- Enduring facts: who the user is, how to address them, lasting preferences.\n     Kept in mind every turn. Safe to read, grep, and edit.\n     One fact per line, as \"- (YYYY-MM-DD) <fact>\". -->\n";
+const MEMORY_LOG_HEADER: &str = "# Memory log\n\n<!-- Dated facts, one per line as \"- (YYYY-MM-DD) <fact>\". Safe to read, grep, and edit. -->\n";
+const MEMORY_MAX_CONTENT_LENGTH: usize = 500;
+const MEMORY_PROFILE_PROMPT_LIMIT: usize = 100;
+const MEMORY_RECENT_PROMPT_LIMIT: usize = 30;
+const MEMORY_RECENT_PROMPT_CHAR_BUDGET: usize = 4000;
+const MEMORY_DECAY_HALF_LIFE_DAYS: f64 = 30.0;
+
+#[derive(Clone)]
+struct ParsedMemoryFact {
+    record: MemoryRecord,
+    path: PathBuf,
+    line_index: usize,
+    order: usize,
+}
+
+fn bot_runtime_agent_id(bot: &BotSummary) -> &str {
+    bot.agent_id.as_deref().unwrap_or(bot.id.as_str())
+}
+
+fn agent_inference_provider_key(
+    provider: Option<InferenceProvider>,
+) -> Result<Option<String>, FeatureHostError> {
+    match provider {
+        None => Ok(None),
+        Some(InferenceProvider::Fabushi) => Ok(Some("fabushi".to_string())),
+        Some(InferenceProvider::ClaudeCode) => Ok(Some("claude-code".to_string())),
+        Some(InferenceProvider::OpenRouter) => Ok(Some("openrouter".to_string())),
+        Some(InferenceProvider::Codex) => Ok(Some("codex".to_string())),
+    }
+}
+
+fn find_bot_by_runtime_or_surface_id<'a>(
+    state: &'a FeatureState,
+    id: &str,
+) -> Option<&'a BotSummary> {
+    state.bots.get(id).or_else(|| {
+        state
+            .bots
+            .values()
+            .find(|bot| bot.agent_id.as_deref() == Some(id))
+    })
+}
+
+fn canonical_runtime_agent_id(state: &FeatureState, id: &str) -> Option<String> {
+    find_bot_by_runtime_or_surface_id(state, id)
+        .map(bot_runtime_agent_id)
+        .map(str::to_owned)
+}
+
+fn is_safe_memory_agent_id(agent_id: &str) -> bool {
+    !agent_id.is_empty()
+        && agent_id
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
+}
+
+fn sha1_digest(input: &[u8]) -> [u8; 20] {
+    let mut h0: u32 = 0x67452301;
+    let mut h1: u32 = 0xefcdab89;
+    let mut h2: u32 = 0x98badcfe;
+    let mut h3: u32 = 0x10325476;
+    let mut h4: u32 = 0xc3d2e1f0;
+    let bit_len = (input.len() as u64) * 8;
+    let mut padded = input.to_vec();
+    padded.push(0x80);
+    while padded.len() % 64 != 56 {
+        padded.push(0);
+    }
+    padded.extend_from_slice(&bit_len.to_be_bytes());
+    for chunk in padded.as_chunks::<64>().0 {
+        let mut words = [0u32; 80];
+        for (index, word) in words[..16].iter_mut().enumerate() {
+            let offset = index * 4;
+            *word = u32::from_be_bytes([
+                chunk[offset],
+                chunk[offset + 1],
+                chunk[offset + 2],
+                chunk[offset + 3],
+            ]);
+        }
+        for index in 16..80 {
+            words[index] =
+                (words[index - 3] ^ words[index - 8] ^ words[index - 14] ^ words[index - 16])
+                    .rotate_left(1);
+        }
+        let mut a = h0;
+        let mut b = h1;
+        let mut c = h2;
+        let mut d = h3;
+        let mut e = h4;
+        for (index, word) in words.iter().enumerate() {
+            let (f, k) = match index {
+                0..=19 => ((b & c) | ((!b) & d), 0x5a827999),
+                20..=39 => (b ^ c ^ d, 0x6ed9eba1),
+                40..=59 => ((b & c) | (b & d) | (c & d), 0x8f1bbcdc),
+                _ => (b ^ c ^ d, 0xca62c1d6),
+            };
+            let temp = a
+                .rotate_left(5)
+                .wrapping_add(f)
+                .wrapping_add(e)
+                .wrapping_add(k)
+                .wrapping_add(*word);
+            e = d;
+            d = c;
+            c = b.rotate_left(30);
+            b = a;
+            a = temp;
+        }
+        h0 = h0.wrapping_add(a);
+        h1 = h1.wrapping_add(b);
+        h2 = h2.wrapping_add(c);
+        h3 = h3.wrapping_add(d);
+        h4 = h4.wrapping_add(e);
+    }
+    let mut output = [0u8; 20];
+    for (index, word) in [h0, h1, h2, h3, h4].into_iter().enumerate() {
+        output[index * 4..index * 4 + 4].copy_from_slice(&word.to_be_bytes());
+    }
+    output
+}
+
+fn normalize_memory_content(raw: &str) -> String {
+    clamp_line(raw, MEMORY_MAX_CONTENT_LENGTH)
+}
+
+fn memory_dedupe_key(content: &str) -> String {
+    normalize_memory_content(content).to_lowercase()
+}
+
+fn memory_id_for(content: &str) -> String {
+    sha1_digest(memory_dedupe_key(content).as_bytes())
+        .iter()
+        .take(8)
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+fn format_memory_date(created_at_ms: i64) -> String {
+    if created_at_ms <= 0 {
+        return "unknown date".into();
+    }
+    Utc.timestamp_millis_opt(created_at_ms)
+        .single()
+        .map(|date| date.format("%Y-%m-%d").to_string())
+        .unwrap_or_else(|| "unknown date".into())
+}
+
+fn memory_log_files(memory_dir: &Path) -> Vec<PathBuf> {
+    let log_dir = memory_dir.join("log");
+    let Ok(entries) = std::fs::read_dir(log_dir) else {
+        return Vec::new();
+    };
+    let mut paths = entries
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| path.extension().is_some_and(|extension| extension == "md"))
+        .collect::<Vec<_>>();
+    paths.sort();
+    paths
+}
+
+fn read_memory_text(path: &Path) -> String {
+    std::fs::read_to_string(path).unwrap_or_default()
+}
+
+fn write_memory_atomic(path: &Path, content: &str) -> Result<(), FeatureHostError> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            FeatureHostError::Contract(format!("create memory directory: {error}"))
+        })?;
+    }
+    let temp = path.with_extension("md.tmp");
+    std::fs::write(&temp, content)
+        .map_err(|error| FeatureHostError::Contract(format!("write memory: {error}")))?;
+    std::fs::rename(&temp, path)
+        .map_err(|error| FeatureHostError::Contract(format!("commit memory: {error}")))?;
+    Ok(())
+}
+
+fn parse_memory_facts(
+    raw: &str,
+    kind: MemoryKind,
+    base: usize,
+    path: &Path,
+) -> Vec<ParsedMemoryFact> {
+    let mut facts = Vec::new();
+    let mut order = base;
+    for (line_index, line) in raw.lines().enumerate() {
+        let line = line.trim_end();
+        if !line.starts_with("- (") {
+            continue;
+        }
+        let Some(close) = line[3..].find(')') else {
+            continue;
+        };
+        let close = close + 3;
+        let date = &line[3..close];
+        if date.len() != 10 || !line[close + 1..].starts_with(' ') {
+            continue;
+        }
+        let content = normalize_memory_content(line[close + 2..].trim());
+        if content.is_empty() {
+            continue;
+        }
+        let created_at = NaiveDate::parse_from_str(date, "%Y-%m-%d")
+            .ok()
+            .and_then(|date| date.and_hms_opt(0, 0, 0))
+            .map(|date| date.and_utc().timestamp_millis())
+            .unwrap_or(0);
+        facts.push(ParsedMemoryFact {
+            record: MemoryRecord {
+                id: memory_id_for(&content),
+                content,
+                created_at,
+                kind,
+            },
+            path: path.to_path_buf(),
+            line_index,
+            order,
+        });
+        order += 1;
+    }
+    facts
+}
+
+fn all_memory_facts(memory_dir: &Path) -> Vec<ParsedMemoryFact> {
+    let profile = memory_dir.join("profile.md");
+    let mut facts = parse_memory_facts(
+        &read_memory_text(&profile),
+        MemoryKind::Profile,
+        0,
+        &profile,
+    );
+    for path in memory_log_files(memory_dir) {
+        let base = facts.len();
+        facts.extend(parse_memory_facts(
+            &read_memory_text(&path),
+            MemoryKind::Log,
+            base,
+            &path,
+        ));
+    }
+    facts
+}
+
+fn sort_memories_most_recent(facts: &mut [ParsedMemoryFact]) {
+    facts.sort_by(|a, b| {
+        b.record
+            .created_at
+            .cmp(&a.record.created_at)
+            .then_with(|| b.order.cmp(&a.order))
+    });
+}
+
+fn list_memories(memory_dir: &Path, limit: usize) -> Result<Vec<MemoryRecord>, FeatureHostError> {
+    if limit == 0 {
+        return Ok(Vec::new());
+    }
+    let mut profile = all_memory_facts(memory_dir)
+        .into_iter()
+        .filter(|fact| fact.record.kind == MemoryKind::Profile)
+        .collect::<Vec<_>>();
+    let mut logs = all_memory_facts(memory_dir)
+        .into_iter()
+        .filter(|fact| fact.record.kind == MemoryKind::Log)
+        .collect::<Vec<_>>();
+    sort_memories_most_recent(&mut profile);
+    sort_memories_most_recent(&mut logs);
+    Ok(profile
+        .into_iter()
+        .chain(logs)
+        .take(limit)
+        .map(|fact| fact.record)
+        .collect())
+}
+
+fn count_memories(memory_dir: &Path) -> Result<usize, FeatureHostError> {
+    Ok(all_memory_facts(memory_dir).len())
+}
+
+fn add_memory(
+    memory_dir: &Path,
+    content: &str,
+    created_at: i64,
+    kind: MemoryKind,
+) -> Result<Option<MemoryRecord>, FeatureHostError> {
+    let content = normalize_memory_content(content);
+    if content.is_empty() {
+        return Ok(None);
+    }
+    let key = memory_dedupe_key(&content);
+    if all_memory_facts(memory_dir)
+        .iter()
+        .any(|fact| memory_dedupe_key(&fact.record.content) == key)
+    {
+        return Ok(None);
+    }
+    let path = match kind {
+        MemoryKind::Profile => memory_dir.join("profile.md"),
+        MemoryKind::Log => {
+            let bucket = format_memory_date(created_at)
+                .chars()
+                .take(7)
+                .collect::<String>();
+            memory_dir.join("log").join(format!("{bucket}.md"))
+        }
+    };
+    let header = match kind {
+        MemoryKind::Profile => MEMORY_PROFILE_HEADER,
+        MemoryKind::Log => MEMORY_LOG_HEADER,
+    };
+    let raw = read_memory_text(&path);
+    let base = if raw.is_empty() {
+        header.to_string()
+    } else {
+        raw
+    };
+    let separator = if base.ends_with('\n') || base.is_empty() {
+        ""
+    } else {
+        "\n"
+    };
+    let line = format!("- ({}) {}", format_memory_date(created_at), content);
+    write_memory_atomic(&path, &format!("{base}{separator}{line}\n"))?;
+    Ok(Some(MemoryRecord {
+        id: memory_id_for(&content),
+        content,
+        created_at,
+        kind,
+    }))
+}
+
+fn remove_memory(memory_dir: &Path, id: &str) -> Result<bool, FeatureHostError> {
+    let mut paths = vec![memory_dir.join("profile.md")];
+    paths.extend(memory_log_files(memory_dir));
+    for path in paths {
+        let raw = read_memory_text(&path);
+        if raw.is_empty() {
+            continue;
+        }
+        let kind = if path.file_name().is_some_and(|name| name == "profile.md") {
+            MemoryKind::Profile
+        } else {
+            MemoryKind::Log
+        };
+        let Some(fact) = parse_memory_facts(&raw, kind, 0, &path)
+            .into_iter()
+            .find(|fact| fact.record.id == id)
+        else {
+            continue;
+        };
+        let mut lines = raw.split('\n').map(str::to_string).collect::<Vec<_>>();
+        if fact.line_index < lines.len() {
+            lines.remove(fact.line_index);
+            write_memory_atomic(&fact.path, &lines.join("\n"))?;
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn memory_importance(content: &str) -> f64 {
+    if content.starts_with("[episode] ") {
+        1.5
+    } else if content.starts_with("[note] ") {
+        0.5
+    } else {
+        1.0
+    }
+}
+
+fn memory_recall_rank(memory: &MemoryRecord) -> f64 {
+    memory_importance(&memory.content).log2()
+        + memory.created_at as f64 / (MEMORY_DECAY_HALF_LIFE_DAYS * 86_400_000.0)
+}
+
+fn render_memory_system_prompt(memory_dir: &Path) -> String {
+    let facts = all_memory_facts(memory_dir);
+    let mut profile = facts
+        .iter()
+        .filter(|fact| fact.record.kind == MemoryKind::Profile)
+        .cloned()
+        .collect::<Vec<_>>();
+    sort_memories_most_recent(&mut profile);
+    profile.truncate(MEMORY_PROFILE_PROMPT_LIMIT);
+    let mut recent = facts
+        .into_iter()
+        .filter(|fact| fact.record.kind == MemoryKind::Log)
+        .collect::<Vec<_>>();
+    recent.sort_by(|a, b| {
+        memory_recall_rank(&b.record)
+            .partial_cmp(&memory_recall_rank(&a.record))
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| b.record.created_at.cmp(&a.record.created_at))
+            .then_with(|| b.order.cmp(&a.order))
+    });
+    recent.truncate(MEMORY_RECENT_PROMPT_LIMIT);
+    if profile.is_empty() && recent.is_empty() {
+        return String::new();
+    }
+    let mut lines = vec![
+        "Memory: durable facts you have learned about the user and their world.".to_string(),
+        "These persist across every conversation with this agent, even after the chat is cleared. Rely on them so you stay consistent and avoid re-asking what you already know.".to_string(),
+        format!(
+            "Your memory lives in a folder at {}: profile.md holds who the user is and log/ holds dated history.",
+            memory_dir.to_string_lossy()
+        ),
+    ];
+    if !profile.is_empty() {
+        lines.push("About the user:".into());
+        for fact in profile {
+            lines.push(format!(
+                "- (learned {}) {}",
+                format_memory_date(fact.record.created_at),
+                fact.record.content
+            ));
+        }
+    }
+    if !recent.is_empty() {
+        lines.push("Recently:".into());
+        let mut budget = MEMORY_RECENT_PROMPT_CHAR_BUDGET;
+        for fact in recent {
+            let line = format!(
+                "- (learned {}) {}",
+                format_memory_date(fact.record.created_at),
+                fact.record.content
+            );
+            if line.len() > budget {
+                break;
+            }
+            budget -= line.len();
+            lines.push(line);
+        }
+    }
+    lines.join("\n")
+}
+
+const WORKFLOW_FILENAME: &str = "SKILL.md";
+const LEGACY_WORKFLOW_FILENAME: &str = "workflow.md";
+const WORKFLOW_MAX_NAME_LENGTH: usize = 80;
+const WORKFLOW_MAX_DESCRIPTION_LENGTH: usize = 1536;
+const WORKFLOW_MAX_BODY_LENGTH: usize = 100_000;
+const WORKFLOW_UI_LIMIT: usize = 100;
+const WORKFLOW_INJECTED_BODY_LIMIT: usize = 8_000;
+const ATTACHMENT_BYTE_LIMIT: u64 = 25 * 1024 * 1024;
+const VIDEO_BYTE_LIMIT: u64 = 200 * 1024 * 1024;
+const ATTACHMENT_CHUNK_MAX_BYTES: usize = 8 * 1024 * 1024;
+const ATTACHMENT_TEXT_PREVIEW_BYTE_CAP: usize = 64 * 1024;
+const AGENT_CONTENT_SEARCH_MAX_MATCHES_PER_AGENT: usize = 5;
+const AGENT_CONTENT_SEARCH_MAX_RESULTS: usize = 50;
+const SEARCH_SNIPPET_LEAD: usize = 30;
+const SEARCH_SNIPPET_TRAIL: usize = 60;
+const WORKFLOW_MAX_PER_AGENT: usize = 100;
+const WORKFLOW_ENABLEMENT_FILENAME: &str = "enabled-workflows.json";
+
+#[derive(Clone)]
+struct ParsedWorkflowFile {
+    name: String,
+    description: String,
+    trigger: Option<WorkflowTrigger>,
+    body: String,
+    source_ref: Option<String>,
+    data: serde_yaml::Mapping,
+}
+
+#[derive(Default, serde::Serialize, serde::Deserialize)]
+struct WorkflowEnablementFile {
+    #[serde(default)]
+    disabled: Vec<String>,
+    #[serde(default)]
+    enabled: Vec<String>,
+}
+
+fn clamp_workflow_name(name: &str) -> String {
+    clamp_line(name, WORKFLOW_MAX_NAME_LENGTH)
+}
+
+fn clamp_workflow_description(description: &str) -> String {
+    clamp_line(description, WORKFLOW_MAX_DESCRIPTION_LENGTH)
+}
+
+fn clamp_workflow_body(body: &str) -> String {
+    clamp_block(body, WORKFLOW_MAX_BODY_LENGTH)
+}
+
+fn slugify_workflow_name(name: &str) -> String {
+    let mut out = String::new();
+    let mut pending_dash = false;
+    for character in name.to_lowercase().chars() {
+        if character.is_ascii_alphanumeric() {
+            if pending_dash && !out.is_empty() {
+                out.push('-');
+            }
+            pending_dash = false;
+            if out.len() < 48 {
+                out.push(character);
+            }
+        } else {
+            pending_dash = true;
+        }
+        if out.len() >= 48 {
+            break;
+        }
+    }
+    while out.ends_with('-') {
+        out.pop();
+    }
+    if out.is_empty() {
+        format!("workflow-{}", now_millis())
+    } else {
+        out
+    }
+}
+
+fn yaml_key(name: &str) -> serde_yaml::Value {
+    serde_yaml::Value::String(name.to_string())
+}
+
+fn yaml_string(data: &serde_yaml::Mapping, name: &str) -> Option<String> {
+    data.get(yaml_key(name))
+        .and_then(serde_yaml::Value::as_str)
+        .map(str::to_string)
+}
+
+fn read_workflow_trigger(data: &serde_yaml::Mapping) -> Option<WorkflowTrigger> {
+    let trigger = data.get(yaml_key("trigger"))?.as_mapping()?;
+    let raw_schedule = trigger.get(yaml_key("schedule"))?.as_str()?;
+    let schedule = normalize_automation_schedule(raw_schedule).ok()?;
+    if schedule.is_empty() {
+        return None;
+    }
+    let is_enabled = trigger
+        .get(yaml_key("enabled"))
+        .and_then(serde_yaml::Value::as_bool)
+        .unwrap_or(true);
+    Some(WorkflowTrigger {
+        schedule,
+        is_enabled,
+    })
+}
+
+fn read_workflow_source_ref(data: &serde_yaml::Mapping) -> Option<String> {
+    let nested = data
+        .get(yaml_key("metadata"))
+        .and_then(serde_yaml::Value::as_mapping)
+        .and_then(|metadata| metadata.get(yaml_key("source")))
+        .and_then(serde_yaml::Value::as_str);
+    let raw = nested.or_else(|| {
+        data.get(yaml_key("source"))
+            .and_then(serde_yaml::Value::as_str)
+    })?;
+    let trimmed = raw.trim();
+    (!trimmed.is_empty()).then(|| trimmed.to_string())
+}
+
+fn split_workflow_frontmatter(raw: &str) -> (serde_yaml::Mapping, String) {
+    if let Some(rest) = raw.strip_prefix("---\n") {
+        if let Some(end) = rest.find("\n---") {
+            let frontmatter = &rest[..end];
+            let after = &rest[end + 4..];
+            let content = after.strip_prefix('\n').unwrap_or(after).to_string();
+            if let Ok(serde_yaml::Value::Mapping(mapping)) =
+                serde_yaml::from_str::<serde_yaml::Value>(frontmatter)
+            {
+                return (mapping, content);
+            }
+        }
+    }
+    (serde_yaml::Mapping::new(), raw.to_string())
+}
+
+fn parse_workflow_file(raw: &str) -> Option<ParsedWorkflowFile> {
+    let (data, content) = split_workflow_frontmatter(raw);
+    let body = clamp_workflow_body(&content);
+    if body.is_empty() && data.is_empty() {
+        return None;
+    }
+    Some(ParsedWorkflowFile {
+        name: clamp_workflow_name(&yaml_string(&data, "name").unwrap_or_default()),
+        description: clamp_workflow_description(
+            &yaml_string(&data, "description").unwrap_or_default(),
+        ),
+        trigger: read_workflow_trigger(&data),
+        body,
+        source_ref: read_workflow_source_ref(&data),
+        data,
+    })
+}
+
+fn serialize_workflow_file(
+    name: &str,
+    description: &str,
+    body: &str,
+    trigger: Option<&WorkflowTrigger>,
+    source_ref: Option<&str>,
+    existing_data: Option<&serde_yaml::Mapping>,
+) -> Result<String, FeatureHostError> {
+    let mut data = existing_data.cloned().unwrap_or_default();
+    data.insert(
+        yaml_key("name"),
+        serde_yaml::Value::String(name.to_string()),
+    );
+    if description.is_empty() {
+        data.remove(yaml_key("description"));
+    } else {
+        data.insert(
+            yaml_key("description"),
+            serde_yaml::Value::String(description.to_string()),
+        );
+    }
+    let legacy_source = data.remove(yaml_key("source"));
+    let mut metadata = data
+        .get(yaml_key("metadata"))
+        .and_then(serde_yaml::Value::as_mapping)
+        .cloned()
+        .unwrap_or_default();
+    let next_source = source_ref
+        .map(str::to_string)
+        .or_else(|| {
+            metadata
+                .get(yaml_key("source"))
+                .and_then(serde_yaml::Value::as_str)
+                .map(str::to_string)
+        })
+        .or_else(|| legacy_source.and_then(|value| value.as_str().map(str::to_string)));
+    if let Some(source) = next_source.filter(|source| !source.is_empty()) {
+        metadata.insert(yaml_key("source"), serde_yaml::Value::String(source));
+    } else {
+        metadata.remove(yaml_key("source"));
+    }
+    if metadata.is_empty() {
+        data.remove(yaml_key("metadata"));
+    } else {
+        data.insert(yaml_key("metadata"), serde_yaml::Value::Mapping(metadata));
+    }
+    if let Some(trigger) = trigger {
+        let mut trigger_data = serde_yaml::Mapping::new();
+        trigger_data.insert(
+            yaml_key("schedule"),
+            serde_yaml::Value::String(trigger.schedule.clone()),
+        );
+        trigger_data.insert(
+            yaml_key("enabled"),
+            serde_yaml::Value::Bool(trigger.is_enabled),
+        );
+        data.insert(
+            yaml_key("trigger"),
+            serde_yaml::Value::Mapping(trigger_data),
+        );
+    }
+    let mut yaml = serde_yaml::to_string(&data).map_err(|error| {
+        FeatureHostError::Contract(format!("serialize workflow frontmatter: {error}"))
+    })?;
+    if let Some(stripped) = yaml.strip_prefix("---\n") {
+        yaml = stripped.to_string();
+    }
+    Ok(format!("---\n{}---\n{}\n", yaml.trim_end(), body.trim()))
+}
+
+fn derive_workflow_name_from_markdown(body: &str) -> Option<String> {
+    for raw in body.lines() {
+        let line = raw.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let text = if let Some(index) = line.find(char::is_whitespace) {
+            if line[..index].chars().all(|character| character == '#') {
+                &line[index..]
+            } else {
+                line
+            }
+        } else {
+            line
+        };
+        let cleaned = text
+            .chars()
+            .filter(|character| !matches!(character, '*' | '_' | '`' | '#' | '>'))
+            .collect::<String>();
+        let cleaned = cleaned.trim();
+        if !cleaned.is_empty() {
+            return Some(clamp_workflow_name(cleaned));
+        }
+    }
+    None
+}
+
+fn derive_workflow_name_from_source(source: &str) -> String {
+    let raw = source
+        .split('/')
+        .rfind(|segment| !segment.is_empty())
+        .unwrap_or("Imported skill");
+    let raw = [".markdown", ".mdc", ".md", ".txt"]
+        .iter()
+        .find_map(|suffix| raw.strip_suffix(suffix))
+        .unwrap_or(raw);
+    let name = raw.replace(['-', '_'], " ");
+    let name = clamp_workflow_name(name.trim());
+    if name.is_empty() {
+        "Imported skill".into()
+    } else {
+        name
+    }
+}
+
+fn build_live_source_pointer_body(source: &str) -> String {
+    format!(
+        "This workflow is a live reference to the skill at `{source}`.\nRead that source now with your file or fetch tools and follow it as written. Do not assume its contents from this note; the source is the source of truth and may have changed since this workflow was created."
+    )
+}
+
+fn build_live_source_description(name: &str, source: &str) -> String {
+    clamp_workflow_description(&format!(
+        "Use when the \"{name}\" skill applies; it is a live reference to {source}."
+    ))
+}
+
+fn workflow_enablement_path(agent_root: &Path, agent_id: &str) -> PathBuf {
+    agent_root.join(agent_id).join(WORKFLOW_ENABLEMENT_FILENAME)
+}
+
+fn read_workflow_enablement(agent_root: &Path, agent_id: &str) -> WorkflowEnablementFile {
+    let path = workflow_enablement_path(agent_root, agent_id);
+    std::fs::read(&path)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<WorkflowEnablementFile>(&bytes).ok())
+        .unwrap_or_default()
+}
+
+fn is_workflow_enabled(agent_root: &Path, agent_id: &str, id: &str) -> bool {
+    !read_workflow_enablement(agent_root, agent_id)
+        .disabled
+        .iter()
+        .any(|disabled| disabled == id)
+}
+
+fn write_workflow_enablement(
+    agent_root: &Path,
+    agent_id: &str,
+    mut file: WorkflowEnablementFile,
+) -> Result<(), FeatureHostError> {
+    file.disabled.sort();
+    file.disabled.dedup();
+    file.enabled.sort();
+    file.enabled.dedup();
+    let path = workflow_enablement_path(agent_root, agent_id);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            FeatureHostError::Contract(format!("create workflow enablement directory: {error}"))
+        })?;
+    }
+    let temp = path.with_extension("json.tmp");
+    let body = serde_json::to_vec_pretty(&file).map_err(|error| {
+        FeatureHostError::Contract(format!("serialize workflow enablement: {error}"))
+    })?;
+    std::fs::write(&temp, [body.as_slice(), b"\n"].concat()).map_err(|error| {
+        FeatureHostError::Contract(format!("write workflow enablement: {error}"))
+    })?;
+    std::fs::rename(&temp, &path).map_err(|error| {
+        FeatureHostError::Contract(format!("commit workflow enablement: {error}"))
+    })?;
+    Ok(())
+}
+
+fn set_workflow_enabled(
+    agent_root: &Path,
+    agent_id: &str,
+    id: &str,
+    enabled: bool,
+) -> Result<(), FeatureHostError> {
+    let mut file = read_workflow_enablement(agent_root, agent_id);
+    let had = file.disabled.iter().any(|item| item == id);
+    if enabled {
+        if !had {
+            return Ok(());
+        }
+        file.disabled.retain(|item| item != id);
+    } else {
+        if had {
+            return Ok(());
+        }
+        file.disabled.push(id.to_string());
+    }
+    write_workflow_enablement(agent_root, agent_id, file)
+}
+
+fn forget_workflow_enablement(
+    agent_root: &Path,
+    agent_id: &str,
+    id: &str,
+) -> Result<(), FeatureHostError> {
+    let mut file = read_workflow_enablement(agent_root, agent_id);
+    let before = file.disabled.len();
+    file.disabled.retain(|item| item != id);
+    if before == file.disabled.len() {
+        return Ok(());
+    }
+    write_workflow_enablement(agent_root, agent_id, file)
+}
+
+fn workflow_helper_scripts(dir: &Path) -> Vec<String> {
+    fn walk(root: &Path, current: &Path, out: &mut Vec<String>) {
+        let Ok(entries) = std::fs::read_dir(current) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                walk(root, &path, out);
+            } else if path.is_file() {
+                let relative = path.strip_prefix(root).unwrap_or(&path);
+                let name = relative.to_string_lossy();
+                if name != WORKFLOW_FILENAME
+                    && name != LEGACY_WORKFLOW_FILENAME
+                    && name != "runs.json"
+                {
+                    out.push(path.to_string_lossy().into_owned());
+                }
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(dir, dir, &mut out);
+    out.sort();
+    out
+}
+
+fn workflow_created_at(path: &Path) -> i64 {
+    std::fs::metadata(path)
+        .ok()
+        .and_then(|metadata| metadata.created().or_else(|_| metadata.modified()).ok())
+        .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+        .map(|duration| duration.as_millis() as i64)
+        .unwrap_or_else(now_millis)
+}
+
+fn load_workflow_summary(
+    workflow_root: &Path,
+    agent_root: &Path,
+    agent_id: &str,
+    id: &str,
+) -> Option<WorkflowSummary> {
+    let dir = workflow_root.join(id);
+    let file_path = dir.join(WORKFLOW_FILENAME);
+    let legacy_path = dir.join(LEGACY_WORKFLOW_FILENAME);
+    if !file_path.exists() && legacy_path.exists() {
+        let _ = std::fs::rename(&legacy_path, &file_path);
+    }
+    let raw = std::fs::read_to_string(&file_path).ok()?;
+    let parsed = parse_workflow_file(&raw)?;
+    let name = if parsed.name.is_empty() {
+        clamp_workflow_name(id)
+    } else {
+        parsed.name
+    };
+    let disable_model_invocation = parsed
+        .data
+        .get(yaml_key("disable-model-invocation"))
+        .and_then(serde_yaml::Value::as_bool);
+    let next_run_at = parsed
+        .trigger
+        .as_ref()
+        .filter(|trigger| trigger.is_enabled)
+        .and_then(|trigger| next_automation_run(&trigger.schedule, now_millis()));
+    Some(WorkflowSummary {
+        id: id.to_string(),
+        name,
+        description: parsed.description,
+        body: parsed.body,
+        trigger: parsed.trigger.clone(),
+        source_ref: parsed.source_ref,
+        source: WorkflowSource::Workflow,
+        plugin_id: None,
+        published_by_current_user: false,
+        is_enabled_for_agent: is_workflow_enabled(agent_root, agent_id, id),
+        disable_model_invocation,
+        schedule_description: parsed
+            .trigger
+            .as_ref()
+            .map(|trigger| trigger.schedule.clone()),
+        created_at: workflow_created_at(&file_path),
+        last_run_at: None,
+        next_run_at,
+        helper_scripts: workflow_helper_scripts(&dir),
+        file_path: file_path.to_string_lossy().into_owned(),
+    })
+}
+
+fn list_workflow_summaries(
+    workflow_root: &Path,
+    agent_root: &Path,
+    agent_id: &str,
+) -> Vec<WorkflowSummary> {
+    let Ok(entries) = std::fs::read_dir(workflow_root) else {
+        return Vec::new();
+    };
+    let mut workflows = entries
+        .flatten()
+        .filter(|entry| entry.path().is_dir())
+        .filter_map(|entry| {
+            let id = entry.file_name().to_string_lossy().to_string();
+            load_workflow_summary(workflow_root, agent_root, agent_id, &id)
+        })
+        .collect::<Vec<_>>();
+    workflows.sort_by(|a, b| {
+        b.created_at
+            .cmp(&a.created_at)
+            .then_with(|| a.id.cmp(&b.id))
+    });
+    workflows.truncate(WORKFLOW_UI_LIMIT);
+    workflows
+}
+
+fn write_workflow(
+    workflow_root: &Path,
+    agent_root: &Path,
+    agent_id: &str,
+    id: Option<&str>,
+    name: &str,
+    description: &str,
+    body: &str,
+    trigger: Option<&WorkflowTrigger>,
+    source_ref: Option<&str>,
+) -> Result<WorkflowSummary, FeatureHostError> {
+    let name = clamp_workflow_name(name);
+    let description = clamp_workflow_description(description);
+    let body = clamp_workflow_body(body);
+    if name.is_empty() || body.is_empty() {
+        return Err(FeatureHostError::Contract(
+            "workflow name and body must not be empty".into(),
+        ));
+    }
+    std::fs::create_dir_all(workflow_root)
+        .map_err(|error| FeatureHostError::Contract(format!("create workflow root: {error}")))?;
+    let id = id
+        .map(str::to_string)
+        .unwrap_or_else(|| slugify_workflow_name(&name));
+    if !is_safe_memory_agent_id(&id) {
+        return Err(FeatureHostError::Contract(format!(
+            "unsafe workflow id: {id}"
+        )));
+    }
+    let existing_count = std::fs::read_dir(workflow_root)
+        .map(|entries| {
+            entries
+                .flatten()
+                .filter(|entry| entry.path().is_dir())
+                .count()
+        })
+        .unwrap_or(0);
+    if !workflow_root.join(&id).exists() && existing_count >= WORKFLOW_MAX_PER_AGENT {
+        return Err(FeatureHostError::Contract(format!(
+            "workflow library is limited to {WORKFLOW_MAX_PER_AGENT} user workflows"
+        )));
+    }
+    let dir = workflow_root.join(&id);
+    let path = dir.join(WORKFLOW_FILENAME);
+    let existing_data = std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|raw| parse_workflow_file(&raw))
+        .map(|parsed| parsed.data);
+    let raw = serialize_workflow_file(
+        &name,
+        &description,
+        &body,
+        trigger,
+        source_ref,
+        existing_data.as_ref(),
+    )?;
+    std::fs::create_dir_all(&dir).map_err(|error| {
+        FeatureHostError::Contract(format!("create workflow directory: {error}"))
+    })?;
+    let temp = path.with_extension("md.tmp");
+    std::fs::write(&temp, raw)
+        .map_err(|error| FeatureHostError::Contract(format!("write workflow: {error}")))?;
+    std::fs::rename(&temp, &path)
+        .map_err(|error| FeatureHostError::Contract(format!("commit workflow: {error}")))?;
+    load_workflow_summary(workflow_root, agent_root, agent_id, &id)
+        .ok_or_else(|| FeatureHostError::Contract("workflow could not be reloaded".into()))
+}
+
+fn workflow_from_automation(automation: &AutomationSummary) -> WorkflowSummary {
+    WorkflowSummary {
+        id: automation.id.clone(),
+        name: automation.name.clone(),
+        description: String::new(),
+        body: automation.prompt.clone(),
+        trigger: Some(WorkflowTrigger {
+            schedule: automation.schedule.clone(),
+            is_enabled: automation.enabled,
+        }),
+        source_ref: None,
+        source: WorkflowSource::Automation,
+        plugin_id: None,
+        published_by_current_user: false,
+        is_enabled_for_agent: true,
+        disable_model_invocation: None,
+        schedule_description: Some(automation.schedule.clone()),
+        created_at: automation.created_at_ms,
+        last_run_at: automation.last_run_at_ms,
+        next_run_at: automation.next_run_at_ms,
+        helper_scripts: Vec::new(),
+        file_path: String::new(),
+    }
+}
+
+fn render_workflow_catalog(workflow_root: &Path, agent_root: &Path, agent_id: &str) -> String {
+    let workflows = list_workflow_summaries(workflow_root, agent_root, agent_id)
+        .into_iter()
+        .filter(|workflow| workflow.trigger.is_none())
+        .filter(|workflow| workflow.is_enabled_for_agent)
+        .filter(|workflow| workflow.disable_model_invocation != Some(true))
+        .collect::<Vec<_>>();
+    if workflows.is_empty() {
+        return String::new();
+    }
+    let mut lines = vec![
+        "Workflows: reusable recipes available to this agent. Read the referenced SKILL.md when one applies, then follow it as written.".to_string(),
+    ];
+    for workflow in workflows {
+        lines.push(format!(
+            "- {} — {} (file: {})",
+            workflow.name,
+            if workflow.description.is_empty() {
+                "No description"
+            } else {
+                workflow.description.as_str()
+            },
+            workflow.file_path
+        ));
+    }
+    lines.join("\n")
+}
+
+fn group_member_handles(name: &str) -> Vec<String> {
+    let lower = name.trim().to_lowercase();
+    if lower.is_empty() {
+        return Vec::new();
+    }
+    let mut handles = Vec::new();
+    handles.push(lower.clone());
+    let compact = lower.split_whitespace().collect::<String>();
+    if !compact.is_empty() && compact != lower {
+        handles.push(compact);
+    }
+    if let Some(first) = lower.split_whitespace().next() {
+        if !first.is_empty() && !handles.iter().any(|handle| handle == first) {
+            handles.push(first.to_string());
+        }
+    }
+    handles
+}
+
+fn is_group_word_char(character: Option<char>) -> bool {
+    character.is_some_and(|character| character.is_ascii_lowercase() || character.is_ascii_digit())
+}
+
+fn has_group_mention_at(lower: &str, handle: &str) -> bool {
+    let needle = format!("@{handle}");
+    let mut search_from = 0usize;
+    while let Some(relative) = lower[search_from..].find(&needle) {
+        let index = search_from + relative;
+        let before = lower[..index].chars().next_back();
+        let after_index = index + needle.len();
+        let after = lower[after_index..].chars().next();
+        if !is_group_word_char(before) && !is_group_word_char(after) {
+            return true;
+        }
+        search_from = index + 1;
+        if search_from >= lower.len() {
+            break;
+        }
+    }
+    false
+}
+
+fn has_everyone_group_mention(lower: &str) -> bool {
+    has_group_mention_at(lower, "everyone") || has_group_mention_at(lower, "all")
+}
+
+fn resolve_group_responders(
+    group: &GroupSummary,
+    bots: &BTreeMap<String, BotSummary>,
+) -> Vec<String> {
+    let members = group
+        .member_ids
+        .iter()
+        .filter_map(|id| bots.get(id).map(|bot| (id.clone(), bot.name.clone())))
+        .collect::<Vec<_>>();
+    if members.is_empty() {
+        return Vec::new();
+    }
+    let start = group
+        .messages
+        .iter()
+        .rposition(|message| matches!(message.speaker, GroupSpeaker::User { .. }))
+        .unwrap_or(0);
+    let mut is_everyone = false;
+    let mut mentioned = BTreeSet::new();
+    for message in group.messages.iter().skip(start) {
+        let lower = message.content.to_lowercase();
+        if has_everyone_group_mention(&lower) {
+            is_everyone = true;
+        }
+        for (id, name) in &members {
+            if mentioned.contains(id) {
+                continue;
+            }
+            if group_member_handles(name)
+                .iter()
+                .any(|handle| has_group_mention_at(&lower, handle))
+            {
+                mentioned.insert(id.clone());
+            }
+        }
+    }
+    if is_everyone || mentioned.is_empty() {
+        return members.into_iter().map(|(id, _)| id).collect();
+    }
+    members
+        .into_iter()
+        .filter_map(|(id, _)| mentioned.contains(&id).then_some(id))
+        .collect()
+}
+
+fn order_round_speakers(member_ids: &[String], round: usize) -> Vec<String> {
+    if member_ids.is_empty() {
+        return Vec::new();
+    }
+    let offset = round % member_ids.len();
+    member_ids[offset..]
+        .iter()
+        .chain(member_ids[..offset].iter())
+        .cloned()
+        .collect()
+}
+
+fn is_group_pass_content(content: &str) -> bool {
+    let trimmed = content.trim();
+    if trimmed.is_empty() {
+        return true;
+    }
+    let mut normalized = trimmed.to_ascii_lowercase();
+    if normalized.ends_with('.') {
+        normalized.pop();
+    }
+    let normalized = normalized.trim();
+    let normalized = normalized
+        .strip_prefix('(')
+        .and_then(|value| value.strip_suffix(')'))
+        .unwrap_or(normalized)
+        .trim();
+    normalized.eq_ignore_ascii_case("pass")
+}
+
+fn group_messages_since_member_last_spoke<'a>(
+    history: &'a [GroupMessage],
+    member_id: &str,
+) -> &'a [GroupMessage] {
+    if let Some(index) = history.iter().rposition(
+        |message| matches!(&message.speaker, GroupSpeaker::Member { id, .. } if id == member_id),
+    ) {
+        &history[index + 1..]
+    } else {
+        history
+    }
+}
+
+fn format_group_message_line(message: &GroupMessage, viewer_id: &str) -> String {
+    match &message.speaker {
+        GroupSpeaker::User { name } => name
+            .as_ref()
+            .filter(|name| !name.is_empty())
+            .map(|name| format!("{name} (user): {}", message.content))
+            .unwrap_or_else(|| format!("User: {}", message.content)),
+        GroupSpeaker::Member { id, name } => {
+            let suffix = if id == viewer_id { " (you)" } else { "" };
+            format!("{name}{suffix}: {}", message.content)
+        }
+    }
+}
+
+fn format_group_history(history: &[GroupMessage], viewer_id: &str) -> String {
+    let start = history.len().saturating_sub(GROUP_PROMPT_HISTORY_LIMIT);
+    let recent = &history[start..];
+    if recent.is_empty() {
+        return "(no messages yet)".into();
+    }
+    recent
+        .iter()
+        .map(|message| format_group_message_line(message, viewer_id))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn group_display_name(group: &GroupSummary) -> &str {
+    let name = group.name.trim();
+    if name.is_empty() { "the group" } else { name }
+}
+
+fn build_group_member_system_prompt(
+    member: &BotSummary,
+    group: &GroupSummary,
+    peers: &[BotSummary],
+) -> String {
+    let description = group.description.trim();
+    let group_label = if description.is_empty() {
+        format!("\"{}\"", group_display_name(group))
+    } else {
+        format!("\"{}\" — {description}", group_display_name(group))
+    };
+    let mut lines = vec![format!(
+        "You are {}, one participant in a group chat ({}).",
+        member.name, group_label
+    )];
+    if !member.description.trim().is_empty() {
+        lines.push(format!("Your persona: {}", member.description.trim()));
+    }
+    if !peers.is_empty() {
+        lines.push(String::new());
+        lines.push("Other participants in the room:".into());
+        for peer in peers {
+            let peer_description = if peer.description.trim().is_empty() {
+                String::new()
+            } else {
+                format!(" ({})", peer.description.trim())
+            };
+            lines.push(format!("- {}{peer_description}", peer.name));
+        }
+    }
+    lines.push(String::new());
+    lines.push(if peers.is_empty() {
+        "Right now you are speaking in this group chat.".into()
+    } else {
+        format!(
+            "Right now you are speaking in this group chat, with {}.",
+            peers
+                .iter()
+                .map(|peer| peer.name.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    });
+    lines.extend([
+        String::new(),
+        "Several distinct participants share this room. Stay fully in character as yourself. Never speak or write as another participant or as the user, and never narrate the conversation from the outside.".into(),
+        String::new(),
+        "How you talk in the room:".into(),
+        "- Keep each message short and conversational — usually one to three sentences, the way people actually chat. Do not monologue or summarize the whole thread.".into(),
+        "- React to what was just said: build on it, agree, disagree, or ask a pointed question. Address others by name when it helps.".into(),
+        "- Mentions: write @Name to direct your message at a specific teammate, or @everyone for the whole room. If you are @-mentioned you are being asked to weigh in, so respond; to pull a specific teammate into the conversation, @-mention them.".into(),
+        "- Do not repeat points already made, and do not restate other people's messages back to them.".into(),
+        "- If you have nothing new worth adding right now, send exactly \"(pass)\". Staying quiet is good — it lets the conversation settle instead of spinning forever.".into(),
+        "- Say your piece in one turn, then stop. Never role-play other participants' replies.".into(),
+        String::new(),
+        "Conversations are private to the people in them: what you and the user discuss in your one-on-one chat stays there. Never quote, summarize, or reveal it in this room.".into(),
+    ]);
+    lines.join("\n")
+}
+
+fn build_group_turn_prompt(
+    member: &BotSummary,
+    group: &GroupSummary,
+    peers: &[BotSummary],
+    new_messages: &[GroupMessage],
+) -> String {
+    let with_clause = if peers.is_empty() {
+        String::new()
+    } else {
+        format!(
+            " - with {}",
+            peers
+                .iter()
+                .map(|peer| peer.name.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    };
+    let mut lines = vec![format!(
+        "[Group chat: \"{}\"{with_clause}]",
+        group_display_name(group)
+    )];
+    if new_messages.is_empty() {
+        lines.push("No new messages in the room since your last turn.".into());
+    } else {
+        lines.push("New messages in the room (oldest first):".into());
+        lines.push(format_group_history(new_messages, &member.id));
+    }
+    lines.extend([
+        String::new(),
+        format!(
+            "It's your turn, {}. Reply in character with one short room message if you have something worth adding, or reply exactly \"(pass)\" if you don't.",
+            member.name
+        ),
+    ]);
+    lines.join("\n")
+}
+
+fn validate_group_members(
+    state: &FeatureState,
+    member_ids: Vec<String>,
+) -> Result<Vec<String>, FeatureHostError> {
+    let mut seen = BTreeSet::new();
+    let mut members = Vec::new();
+    for id in member_ids {
+        let id = id.trim().to_string();
+        if id.is_empty() || !seen.insert(id.clone()) {
+            continue;
+        }
+        if state.groups.contains_key(&id) {
+            return Err(FeatureHostError::Contract(
+                "a group chat can only contain individual agents, not other group chats".into(),
+            ));
+        }
+        let Some(bot) = find_bot_by_runtime_or_surface_id(state, &id) else {
+            return Err(FeatureHostError::Contract(format!(
+                "unknown group member: {id}"
+            )));
+        };
+        members.push(bot.id.clone());
+    }
+    if members.is_empty() {
+        return Err(FeatureHostError::Contract(
+            "group chat must contain at least one agent".into(),
+        ));
+    }
+    Ok(members)
+}
+
+fn build_agent_inbound_wake_prompt(sender: &BotSummary, text: &str, priority: bool) -> String {
+    let priority_line = if priority {
+        "This is a priority instruction from another assistant. It may supersede non-user background work."
+    } else {
+        "This is another assistant reaching out asynchronously, not the user typing in this chat."
+    };
+    format!(
+        "[agent] A message arrived from {} (id: {}).\n{}\n\n{}: {}\n\nHandle any useful request or action. If a reply is needed, send it back asynchronously through the agent messaging capability; do not create acknowledgement loops.",
+        sender.name,
+        sender.id,
+        priority_line,
+        sender.name,
+        clamp_block(text, 8000)
+    )
+}
+
+fn build_admin_broadcast_wake_prompt(message: &str) -> String {
+    format!(
+        "[broadcast] A direct message from the user who owns and runs this agent was broadcast to their agents.\nTreat it as a user directive, not as another agent or a scheduled routine.\n\nThe user says: {}\n\nAct on it as appropriate. Do not rebroadcast it to other agents; the user already reached them separately.",
+        clamp_block(message, 8000)
+    )
+}
+
+#[cfg(feature = "production")]
+fn activity_parent_agent_id(state: &FeatureState, operation_id: &str) -> String {
+    state
+        .group_operations
+        .get(operation_id)
+        .map(|context| context.member_id.clone())
+        .or_else(|| {
+            state
+                .background_operations
+                .get(operation_id)
+                .map(|context| context.agent_id.clone())
+        })
+        .or_else(|| state.operation_agents.get(operation_id).cloned())
+        .unwrap_or_else(|| "mahayana-assistant".into())
+}
+
+#[cfg(feature = "production")]
+fn subagent_title(prompt: Option<&str>, fallback: &str) -> String {
+    prompt
+        .map(str::trim)
+        .filter(|prompt| !prompt.is_empty())
+        .and_then(|prompt| prompt.lines().find(|line| !line.trim().is_empty()))
+        .map(|line| clamp_line(line, 120))
+        .filter(|line| !line.is_empty())
+        .unwrap_or_else(|| clamp_line(fallback, 120))
+}
+
+#[cfg(feature = "production")]
+fn subagent_status_from_agent_state(value: Option<&Value>) -> Option<SubagentStatus> {
+    let status = value?.get("status").and_then(Value::as_str).unwrap_or("");
+    match status {
+        "pendingInit" | "running" => Some(SubagentStatus::Running),
+        "completed" | "shutdown" => Some(SubagentStatus::Done),
+        "errored" | "notFound" => Some(SubagentStatus::Error),
+        "interrupted" => Some(SubagentStatus::Aborted),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "production")]
+fn update_subagents_from_activity(
+    state: &mut FeatureState,
+    parent_agent_id: &str,
+    operation_id: &str,
+    title: &str,
+    detail: Option<&str>,
+    runtime_status: RuntimeActivityStatus,
+    metadata: Option<&Value>,
+) -> Vec<SubagentSummary> {
+    let Some(metadata) = metadata else {
+        return Vec::new();
+    };
+    let event_type = metadata.get("type").and_then(Value::as_str).unwrap_or("");
+    let now = now_millis();
+    let mut changed = Vec::new();
+
+    if event_type == "collabAgentToolCall" {
+        let tool = metadata.get("tool").and_then(Value::as_str).unwrap_or("");
+        let prompt = metadata.get("prompt").and_then(Value::as_str);
+        let model = metadata
+            .get("model")
+            .and_then(Value::as_str)
+            .filter(|model| !model.trim().is_empty());
+        let receivers = metadata
+            .get("receiverThreadIds")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .filter(|id| !id.trim().is_empty())
+            .collect::<Vec<_>>();
+        let agent_states = metadata.get("agentsStates").and_then(Value::as_object);
+        for receiver in receivers {
+            let existing = state.subagents.get(receiver).cloned();
+            let state_value = agent_states.and_then(|states| states.get(receiver));
+            let inferred_status =
+                subagent_status_from_agent_state(state_value).unwrap_or_else(|| {
+                    if runtime_status == RuntimeActivityStatus::Failed {
+                        SubagentStatus::Error
+                    } else if tool == "closeAgent"
+                        && runtime_status == RuntimeActivityStatus::Completed
+                    {
+                        SubagentStatus::Done
+                    } else {
+                        existing
+                            .as_ref()
+                            .map(|subagent| subagent.status)
+                            .unwrap_or(SubagentStatus::Running)
+                    }
+                });
+            let state_message = state_value
+                .and_then(|state| state.get("message"))
+                .and_then(Value::as_str)
+                .map(str::to_string);
+            let subagent = SubagentSummary {
+                id: receiver.to_string(),
+                parent_agent_id: parent_agent_id.to_string(),
+                subagent_type: model
+                    .map(str::to_string)
+                    .or_else(|| {
+                        existing
+                            .as_ref()
+                            .map(|subagent| subagent.subagent_type.clone())
+                    })
+                    .unwrap_or_else(|| "codex".into()),
+                title: subagent_title(
+                    prompt,
+                    existing
+                        .as_ref()
+                        .map(|subagent| subagent.title.as_str())
+                        .unwrap_or(title),
+                ),
+                status: inferred_status,
+                started_at_ms: existing
+                    .as_ref()
+                    .map(|subagent| subagent.started_at_ms)
+                    .unwrap_or(now),
+                updated_at_ms: now,
+                detail: state_message
+                    .or_else(|| detail.map(str::to_string))
+                    .or_else(|| prompt.map(|prompt| clamp_block(prompt, 1000))),
+            };
+            state
+                .subagents
+                .insert(receiver.to_string(), subagent.clone());
+            changed.push(subagent);
+        }
+    } else if event_type == "subAgentActivity" {
+        let Some(receiver) = metadata
+            .get("agentThreadId")
+            .and_then(Value::as_str)
+            .filter(|id| !id.trim().is_empty())
+        else {
+            return Vec::new();
+        };
+        let activity_kind = metadata.get("kind").and_then(Value::as_str).unwrap_or("");
+        let path = metadata
+            .get("agentPath")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        let existing = state.subagents.get(receiver).cloned();
+        let status = match activity_kind {
+            "interrupted" => SubagentStatus::Aborted,
+            "started" | "interacted" => SubagentStatus::Running,
+            _ if runtime_status == RuntimeActivityStatus::Failed => SubagentStatus::Error,
+            _ => existing
+                .as_ref()
+                .map(|subagent| subagent.status)
+                .unwrap_or(SubagentStatus::Running),
+        };
+        let fallback_title = path
+            .rsplit('/')
+            .find(|part| !part.trim().is_empty())
+            .unwrap_or(title);
+        let subagent = SubagentSummary {
+            id: receiver.to_string(),
+            parent_agent_id: parent_agent_id.to_string(),
+            subagent_type: existing
+                .as_ref()
+                .map(|subagent| subagent.subagent_type.clone())
+                .unwrap_or_else(|| "codex".into()),
+            title: existing
+                .as_ref()
+                .map(|subagent| subagent.title.clone())
+                .unwrap_or_else(|| subagent_title(None, fallback_title)),
+            status,
+            started_at_ms: existing
+                .as_ref()
+                .map(|subagent| subagent.started_at_ms)
+                .unwrap_or(now),
+            updated_at_ms: now,
+            detail: detail
+                .map(str::to_string)
+                .or_else(|| (!path.is_empty()).then(|| path.to_string())),
+        };
+        state
+            .subagents
+            .insert(receiver.to_string(), subagent.clone());
+        changed.push(subagent);
+    }
+
+    for subagent in &changed {
+        if subagent.status == SubagentStatus::Running {
+            state.async_tasks.insert(
+                subagent.id.clone(),
+                AsyncTaskSummary {
+                    kind: AsyncTaskKind::Subagent,
+                    id: subagent.id.clone(),
+                    parent_agent_id: subagent.parent_agent_id.clone(),
+                    label: subagent.title.clone(),
+                    status: AsyncTaskStatus::Running,
+                    started_at_ms: subagent.started_at_ms,
+                    detail: subagent.detail.clone(),
+                    subagent_type: Some(subagent.subagent_type.clone()),
+                    resource_id: None,
+                },
+            );
+        } else {
+            state.async_tasks.remove(&subagent.id);
+        }
+    }
+
+    // A generic provider may report a subagent activity without a receiver id.
+    // Do not fabricate a durable identity from the operation id; the agent roster
+    // only contains actual subagent ids.
+    let _ = operation_id;
+    changed
+}
+
+fn derive_teach_workflow_name(markdown: &str) -> String {
+    for raw in markdown.lines() {
+        let line = raw.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let line = line.trim_start_matches('#').trim();
+        let cleaned = line
+            .chars()
+            .filter(|character| !matches!(character, '*' | '_' | '`' | '>' | '[' | ']'))
+            .collect::<String>();
+        let name = clamp_line(&cleaned, 80);
+        if !name.is_empty() {
+            return name;
+        }
+    }
+    "Taught workflow".into()
+}
+
+fn slugify_teach_workflow_name(name: &str) -> String {
+    let mut slug = String::new();
+    let mut pending_dash = false;
+    for character in name.to_lowercase().chars() {
+        if character.is_ascii_alphanumeric() {
+            if pending_dash && !slug.is_empty() {
+                slug.push('-');
+            }
+            pending_dash = false;
+            slug.push(character);
+        } else if !slug.is_empty() {
+            pending_dash = true;
+        }
+        if slug.len() >= 60 {
+            break;
+        }
+    }
+    let slug = slug.trim_matches('-');
+    if slug.is_empty() {
+        format!("taught-workflow-{}", now_millis())
+    } else {
+        slug.to_string()
+    }
+}
+
+fn teach_recording_status(active: Option<&TeachCaptureProcess>) -> TeachRecordingStatus {
+    match active {
+        Some(active) => TeachRecordingStatus {
+            state: "recording".into(),
+            agent_id: Some(active.agent_id.clone()),
+            started_at_ms: Some(active.started_at_ms),
+            max_duration_ms: TEACH_MAX_DURATION_MS,
+        },
+        None => TeachRecordingStatus::default(),
+    }
+}
+
+fn find_ffmpeg_binary() -> Result<PathBuf, FeatureHostError> {
+    for candidate in [
+        "/opt/homebrew/bin/ffmpeg",
+        "/usr/local/bin/ffmpeg",
+        "ffmpeg",
+    ] {
+        let ok = std::process::Command::new(candidate)
+            .arg("-version")
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .is_ok_and(|status| status.success());
+        if ok {
+            return Ok(PathBuf::from(candidate));
+        }
+    }
+    Err(FeatureHostError::Contract(
+        "Teach Recording requires ffmpeg on this computer".into(),
+    ))
+}
+
+#[cfg(target_os = "macos")]
+fn avfoundation_screen_index(ffmpeg: &Path) -> Result<String, FeatureHostError> {
+    let output = std::process::Command::new(ffmpeg)
+        .args([
+            "-hide_banner",
+            "-f",
+            "avfoundation",
+            "-list_devices",
+            "true",
+            "-i",
+            "",
+        ])
+        .output()
+        .map_err(|error| {
+            FeatureHostError::Contract(format!("list screen capture devices: {error}"))
+        })?;
+    let text = String::from_utf8_lossy(&output.stderr);
+    for line in text.lines() {
+        if !line.contains("Capture screen") {
+            continue;
+        }
+        let Some(open) = line.rfind('[') else {
+            continue;
+        };
+        let Some(close_rel) = line[open + 1..].find(']') else {
+            continue;
+        };
+        let index = &line[open + 1..open + 1 + close_rel];
+        if !index.is_empty() && index.chars().all(|character| character.is_ascii_digit()) {
+            return Ok(index.to_string());
+        }
+    }
+    Err(FeatureHostError::Contract(
+        "ffmpeg could not find a macOS screen capture device; grant Screen Recording permission and retry".into(),
+    ))
+}
+
+fn spawn_teach_capture(video_path: &Path) -> Result<std::process::Child, FeatureHostError> {
+    let ffmpeg = find_ffmpeg_binary()?;
+    let mut command = std::process::Command::new(&ffmpeg);
+    command
+        .args(["-hide_banner", "-loglevel", "error", "-y"])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null());
+
+    #[cfg(target_os = "macos")]
+    {
+        let screen = avfoundation_screen_index(&ffmpeg)?;
+        command.args([
+            "-f",
+            "avfoundation",
+            "-framerate",
+            "15",
+            "-capture_cursor",
+            "1",
+            "-i",
+            &format!("{screen}:none"),
+        ]);
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let display = std::env::var("DISPLAY").unwrap_or_else(|_| ":0.0".into());
+        command.args(["-f", "x11grab", "-framerate", "15", "-i", &display]);
+    }
+    #[cfg(target_os = "windows")]
+    {
+        command.args(["-f", "gdigrab", "-framerate", "15", "-i", "desktop"]);
+    }
+
+    command.args([
+        "-t",
+        "600",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "ultrafast",
+        "-pix_fmt",
+        "yuv420p",
+        video_path.to_string_lossy().as_ref(),
+    ]);
+    command
+        .spawn()
+        .map_err(|error| FeatureHostError::Contract(format!("start teach recording: {error}")))
+}
+
+fn stop_teach_capture(child: &mut std::process::Child) -> Result<(), FeatureHostError> {
+    if child
+        .try_wait()
+        .map_err(|error| FeatureHostError::Contract(format!("poll teach recorder: {error}")))?
+        .is_some()
+    {
+        return Ok(());
+    }
+    if let Some(stdin) = child.stdin.as_mut() {
+        let _ = stdin.write_all(b"q\n");
+        let _ = stdin.flush();
+    }
+    for _ in 0..40 {
+        if child
+            .try_wait()
+            .map_err(|error| {
+                FeatureHostError::Contract(format!("wait for teach recorder: {error}"))
+            })?
+            .is_some()
+        {
+            return Ok(());
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    child
+        .kill()
+        .map_err(|error| FeatureHostError::Contract(format!("stop teach recorder: {error}")))?;
+    let _ = child.wait();
+    Ok(())
+}
+
+fn extract_teach_frames(video_path: &Path, frames_dir: &Path) -> Result<(), FeatureHostError> {
+    let ffmpeg = find_ffmpeg_binary()?;
+    std::fs::create_dir_all(frames_dir).map_err(|error| {
+        FeatureHostError::Contract(format!("create teach frames directory: {error}"))
+    })?;
+    let pattern = frames_dir.join("frame-%03d.jpg");
+    let status = std::process::Command::new(ffmpeg)
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            video_path.to_string_lossy().as_ref(),
+            "-vf",
+            "fps=0.5,scale=1280:-2:force_original_aspect_ratio=decrease",
+            "-frames:v",
+            "120",
+            pattern.to_string_lossy().as_ref(),
+        ])
+        .status()
+        .map_err(|error| FeatureHostError::Contract(format!("extract teach frames: {error}")))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(FeatureHostError::Contract(
+            "ffmpeg failed to extract teach frames".into(),
+        ))
+    }
+}
+
+fn sanitize_auto_review_rules(rules: Vec<AutoReviewRule>) -> Vec<AutoReviewRule> {
+    let mut seen = BTreeSet::new();
+    let mut sanitized = Vec::new();
+    for mut rule in rules.into_iter().take(200) {
+        rule.id = clamp_line(&rule.id, 96);
+        rule.text = clamp_line(&rule.text, 2000);
+        if rule.text.is_empty() {
+            continue;
+        }
+        if rule.id.is_empty() {
+            rule.id = format!("rule-{}", sanitized.len() + 1);
+        }
+        if seen.insert(rule.id.clone()) {
+            sanitized.push(rule);
+        }
+    }
+    sanitized
+}
+
+fn load_product_host_settings(path: &Path) -> ProductHostSettings {
+    let Ok(bytes) = std::fs::read(path) else {
+        return ProductHostSettings::default();
+    };
+    let Ok(mut settings) = serde_json::from_slice::<ProductHostSettings>(&bytes) else {
+        return ProductHostSettings::default();
+    };
+    settings.auto_review_rules = sanitize_auto_review_rules(settings.auto_review_rules);
+    settings
+}
+
+fn persist_product_host_settings(
+    path: &Path,
+    settings: &ProductHostSettings,
+) -> Result<(), FeatureHostError> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            FeatureHostError::Contract(format!("create settings directory: {error}"))
+        })?;
+    }
+    let temp = path.with_extension("json.tmp");
+    let bytes = serde_json::to_vec_pretty(settings)
+        .map_err(|error| FeatureHostError::Contract(format!("serialize host settings: {error}")))?;
+    std::fs::write(&temp, bytes)
+        .map_err(|error| FeatureHostError::Contract(format!("write host settings: {error}")))?;
+    std::fs::rename(&temp, path)
+        .map_err(|error| FeatureHostError::Contract(format!("commit host settings: {error}")))
+}
+
+fn valid_remote_computer_device_secret(device_id: &str, secret: &str) -> bool {
+    is_safe_memory_agent_id(device_id)
+        && secret.len() >= 48
+        && secret.len() <= 256
+        && secret.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn load_remote_computer_device_secrets(path: &Path) -> BTreeMap<String, String> {
+    let Ok(metadata) = std::fs::metadata(path) else {
+        return BTreeMap::new();
+    };
+    if metadata.len() > REMOTE_DEVICE_SECRET_MAX_BYTES {
+        return BTreeMap::new();
+    }
+    let Ok(bytes) = std::fs::read(path) else {
+        return BTreeMap::new();
+    };
+    if bytes.len() as u64 > REMOTE_DEVICE_SECRET_MAX_BYTES {
+        return BTreeMap::new();
+    }
+    let Ok(secrets) = serde_json::from_slice::<BTreeMap<String, String>>(&bytes) else {
+        return BTreeMap::new();
+    };
+    if secrets.len() > REMOTE_DEVICE_SECRET_MAX_ENTRIES {
+        return BTreeMap::new();
+    }
+    secrets
+        .into_iter()
+        .filter(|(device_id, secret)| valid_remote_computer_device_secret(device_id, secret))
+        .collect()
+}
+
+fn persist_remote_computer_device_secrets(
+    path: &Path,
+    secrets: &BTreeMap<String, String>,
+) -> Result<(), FeatureHostError> {
+    if secrets.len() > REMOTE_DEVICE_SECRET_MAX_ENTRIES
+        || secrets
+            .iter()
+            .any(|(device_id, secret)| !valid_remote_computer_device_secret(device_id, secret))
+    {
+        return Err(FeatureHostError::Contract(
+            "remote device secret state exceeds its safe entry limit or contains invalid data"
+                .into(),
+        ));
+    }
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            FeatureHostError::Contract(format!("create remote device directory: {error}"))
+        })?;
+    }
+    let temp = path.with_extension("json.tmp");
+    let bytes = serde_json::to_vec_pretty(secrets).map_err(|error| {
+        FeatureHostError::Contract(format!("serialize remote device secret: {error}"))
+    })?;
+    if bytes.len() as u64 > REMOTE_DEVICE_SECRET_MAX_BYTES {
+        return Err(FeatureHostError::Contract(
+            "remote device secret state exceeds its safe byte limit".into(),
+        ));
+    }
+    std::fs::write(&temp, bytes).map_err(|error| {
+        FeatureHostError::Contract(format!("write remote device secret: {error}"))
+    })?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+        std::fs::set_permissions(&temp, std::fs::Permissions::from_mode(0o600)).map_err(
+            |error| FeatureHostError::Contract(format!("protect remote device secret: {error}")),
+        )?;
+    }
+    std::fs::rename(&temp, path).map_err(|error| {
+        FeatureHostError::Contract(format!("commit remote device secret: {error}"))
+    })
+}
+
+#[cfg(test)]
+mod remote_device_secret_tests {
+    use super::*;
+
+    #[test]
+    fn remote_device_secret_round_trip_is_private_and_never_contains_control_data() {
+        let path = std::env::temp_dir().join(format!(
+            "fabushi-remote-device-secret-test-{}-{}.json",
+            std::process::id(),
+            now_millis()
+        ));
+        let device_id = "fabushi-mac-test".to_string();
+        let secret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string();
+        let secrets = BTreeMap::from([(device_id.clone(), secret.clone())]);
+        persist_remote_computer_device_secrets(&path, &secrets).expect("persist device secret");
+        let restored = load_remote_computer_device_secrets(&path);
+        assert_eq!(restored.get(&device_id), Some(&secret));
+        let raw = std::fs::read_to_string(&path).expect("read device secret file");
+        assert!(!raw.contains("screenshot"));
+        assert!(!raw.contains("computer.action"));
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt as _;
+            let mode = std::fs::metadata(&path)
+                .expect("device secret metadata")
+                .permissions()
+                .mode()
+                & 0o777;
+            assert_eq!(mode, 0o600);
+        }
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn remote_device_secret_state_limits_fail_closed() {
+        let path = std::env::temp_dir().join(format!(
+            "fabushi-remote-device-secret-limit-test-{}-{}.json",
+            std::process::id(),
+            now_millis()
+        ));
+        std::fs::write(
+            &path,
+            vec![b'x'; REMOTE_DEVICE_SECRET_MAX_BYTES as usize + 1],
+        )
+        .expect("write oversized device secret state");
+        assert!(load_remote_computer_device_secrets(&path).is_empty());
+
+        let secret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string();
+        let too_many = (0..=REMOTE_DEVICE_SECRET_MAX_ENTRIES)
+            .map(|index| (format!("fabushi-device-{index}"), secret.clone()))
+            .collect::<BTreeMap<_, _>>();
+        assert!(persist_remote_computer_device_secrets(&path, &too_many).is_err());
+        std::fs::write(
+            &path,
+            serde_json::to_vec(&too_many).expect("serialize oversized map"),
+        )
+        .expect("write oversized entry map");
+        assert!(load_remote_computer_device_secrets(&path).is_empty());
+        let _ = std::fs::remove_file(path);
+    }
+}
+
+fn read_action_audit(path: &Path, limit: usize) -> Vec<Value> {
+    if limit == 0 {
+        return Vec::new();
+    }
+    let Ok(raw) = std::fs::read_to_string(path) else {
+        return Vec::new();
+    };
+    raw.lines()
+        .rev()
+        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+        .take(limit)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect()
+}
+
+fn auto_review_rule_matches(rule: &AutoReviewRule, title: &str, details: &Value) -> bool {
+    let needle = rule.text.trim().to_lowercase();
+    if needle.is_empty() {
+        return false;
+    }
+    let proposed_rule = details
+        .get("proposedRule")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    if !proposed_rule.is_empty() && (proposed_rule == needle || proposed_rule.contains(&needle)) {
+        return true;
+    }
+    let subject = details
+        .get("subject")
+        .or_else(|| details.get("command"))
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    if !subject.is_empty() && (subject == needle || subject.contains(&needle)) {
+        return true;
+    }
+    let capability = details
+        .get("capability")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    if !capability.is_empty() && (capability == needle || capability.contains(&needle)) {
+        return true;
+    }
+    title.trim().to_lowercase().contains(&needle)
+}
+
+fn load_peer_messages(path: &Path) -> Vec<AgentPeerMessage> {
+    let Ok(bytes) = std::fs::read(path) else {
+        return Vec::new();
+    };
+    let Ok(mut messages) = serde_json::from_slice::<Vec<AgentPeerMessage>>(&bytes) else {
+        return Vec::new();
+    };
+    messages.retain(|message| {
+        !message.id.trim().is_empty()
+            && !message.from_agent_id.trim().is_empty()
+            && !message.target_id.trim().is_empty()
+            && !clamp_block(&message.text, 8000).is_empty()
+    });
+    for message in &mut messages {
+        message.text = clamp_block(&message.text, 8000);
+        message.from_agent_name = clamp_line(&message.from_agent_name, 72);
+        message.target_name = clamp_line(&message.target_name, 72);
+    }
+    if messages.len() > 5000 {
+        messages.drain(0..messages.len() - 5000);
+    }
+    messages
+}
+
+fn persist_peer_messages(
+    path: &Path,
+    messages: &[AgentPeerMessage],
+) -> Result<(), FeatureHostError> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            FeatureHostError::Contract(format!("create peer message directory: {error}"))
+        })?;
+    }
+    let temp = path.with_extension("json.tmp");
+    let data = serde_json::to_vec_pretty(messages)
+        .map_err(|error| FeatureHostError::Contract(format!("serialize peer messages: {error}")))?;
+    std::fs::write(&temp, data).map_err(|error| {
+        FeatureHostError::Contract(format!("write peer message store: {error}"))
+    })?;
+    std::fs::rename(&temp, path).map_err(|error| {
+        FeatureHostError::Contract(format!("commit peer message store: {error}"))
+    })?;
+    Ok(())
+}
+
+fn load_groups(path: &Path) -> BTreeMap<String, GroupSummary> {
+    let Ok(bytes) = std::fs::read(path) else {
+        return BTreeMap::new();
+    };
+    let Ok(items) = serde_json::from_slice::<Vec<GroupSummary>>(&bytes) else {
+        return BTreeMap::new();
+    };
+    items
+        .into_iter()
+        .filter_map(|mut group| {
+            group.name = clamp_line(&group.name, 72);
+            group.description = clamp_block(&group.description, 2000);
+            let mut seen = BTreeSet::new();
+            group
+                .member_ids
+                .retain(|id| !id.trim().is_empty() && seen.insert(id.clone()));
+            if group.id.trim().is_empty() || group.name.is_empty() || group.member_ids.is_empty() {
+                return None;
+            }
+            Some((group.id.clone(), group))
+        })
+        .collect()
+}
+
+fn persist_groups(
+    path: &Path,
+    groups: &BTreeMap<String, GroupSummary>,
+) -> Result<(), FeatureHostError> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            FeatureHostError::Contract(format!("create group directory: {error}"))
+        })?;
+    }
+    let temp = path.with_extension("json.tmp");
+    let data = serde_json::to_vec_pretty(&groups.values().cloned().collect::<Vec<_>>())
+        .map_err(|error| FeatureHostError::Contract(format!("serialize groups: {error}")))?;
+    std::fs::write(&temp, data)
+        .map_err(|error| FeatureHostError::Contract(format!("write group store: {error}")))?;
+    std::fs::rename(&temp, path)
+        .map_err(|error| FeatureHostError::Contract(format!("commit group store: {error}")))?;
+    Ok(())
+}
+
+fn load_test_auth_user(path: &Path) -> Option<Value> {
+    let bytes = std::fs::read(path).ok()?;
+    let stored = serde_json::from_slice::<Value>(&bytes).ok()?;
+    if stored.get("version").and_then(Value::as_u64) != Some(1) {
+        return None;
+    }
+    stored.get("user").filter(|user| user.is_object()).cloned()
+}
+
+fn persist_test_auth_user(path: &Path, user: Option<&Value>) -> Result<(), FeatureHostError> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            FeatureHostError::Contract(format!("create test auth directory: {error}"))
+        })?;
+    }
+    let temp = path.with_extension("json.tmp");
+    if let Some(user) = user {
+        let data = serde_json::to_vec_pretty(&json!({
+            "version": 1,
+            "user": user,
+        }))
+        .map_err(|error| {
+            FeatureHostError::Contract(format!("serialize test auth state: {error}"))
+        })?;
+        std::fs::write(&temp, data).map_err(|error| {
+            FeatureHostError::Contract(format!("write test auth state: {error}"))
+        })?;
+        std::fs::rename(&temp, path).map_err(|error| {
+            FeatureHostError::Contract(format!("commit test auth state: {error}"))
+        })?;
+        return Ok(());
+    }
+
+    match std::fs::remove_file(path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => {
+            return Err(FeatureHostError::Contract(format!(
+                "clear test auth state: {error}"
+            )));
+        }
+    }
+    let _ = std::fs::remove_file(temp);
+    Ok(())
+}
+
+fn load_bots(path: &Path) -> BTreeMap<String, BotSummary> {
+    let Ok(bytes) = std::fs::read(path) else {
+        return BTreeMap::new();
+    };
+    let Ok(items) = serde_json::from_slice::<Vec<BotSummary>>(&bytes) else {
+        return BTreeMap::new();
+    };
+    items
+        .into_iter()
+        .filter_map(|mut bot| {
+            bot.name = clamp_line(&bot.name, 72);
+            bot.description = clamp_block(&bot.description, 2000);
+            bot.title = bot.title.trim().to_string();
+            bot.avatar_shape = clean_optional_string(bot.avatar_shape);
+            bot.avatar_color = clean_optional_string(bot.avatar_color);
+            if bot.id.trim().is_empty() || bot.name.is_empty() {
+                return None;
+            }
+            Some((bot.id.clone(), bot))
+        })
+        .collect()
+}
+
+fn persist_bots(path: &Path, bots: &BTreeMap<String, BotSummary>) -> Result<(), FeatureHostError> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            FeatureHostError::Contract(format!("create bot directory: {error}"))
+        })?;
+    }
+    let temp = path.with_extension("json.tmp");
+    let data = serde_json::to_vec_pretty(&bots.values().cloned().collect::<Vec<_>>())
+        .map_err(|error| FeatureHostError::Contract(format!("serialize bots: {error}")))?;
+    std::fs::write(&temp, data)
+        .map_err(|error| FeatureHostError::Contract(format!("write bot store: {error}")))?;
+    std::fs::rename(&temp, path)
+        .map_err(|error| FeatureHostError::Contract(format!("commit bot store: {error}")))?;
+    Ok(())
+}
+
+fn persist_json_atomic(path: &Path, value: &Value, label: &str) -> Result<(), FeatureHostError> {
+    let parent = path.parent().ok_or_else(|| {
+        FeatureHostError::Contract(format!("{label} path has no parent"))
+    })?;
+    std::fs::create_dir_all(parent).map_err(|error| {
+        FeatureHostError::Contract(format!("create {label} directory: {error}"))
+    })?;
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("state.json");
+    let temp = parent.join(format!(
+        ".{file_name}.{}.{}.tmp",
+        std::process::id(),
+        now_millis()
+    ));
+    let mut data = serde_json::to_vec_pretty(value)
+        .map_err(|error| FeatureHostError::Contract(format!("serialize {label}: {error}")))?;
+    data.push(b'\n');
+    std::fs::write(&temp, data)
+        .map_err(|error| FeatureHostError::Contract(format!("write {label}: {error}")))?;
+    std::fs::rename(&temp, path)
+        .map_err(|error| FeatureHostError::Contract(format!("commit {label}: {error}")))?;
+    Ok(())
+}
+
+fn copy_agent_state_tree(source: &Path, target: &Path) -> Result<(), FeatureHostError> {
+    if !source.exists() {
+        return Ok(());
+    }
+    std::fs::create_dir_all(target).map_err(|error| {
+        FeatureHostError::Contract(format!("create cloned Agent directory: {error}"))
+    })?;
+    for entry in std::fs::read_dir(source).map_err(|error| {
+        FeatureHostError::Contract(format!("read Agent clone source: {error}"))
+    })? {
+        let entry = entry.map_err(|error| {
+            FeatureHostError::Contract(format!("read Agent clone entry: {error}"))
+        })?;
+        let file_type = entry.file_type().map_err(|error| {
+            FeatureHostError::Contract(format!("inspect Agent clone entry: {error}"))
+        })?;
+        let destination = target.join(entry.file_name());
+        if file_type.is_symlink() {
+            continue;
+        }
+        if file_type.is_dir() {
+            copy_agent_state_tree(&entry.path(), &destination)?;
+        } else if file_type.is_file() {
+            std::fs::copy(entry.path(), &destination).map_err(|error| {
+                FeatureHostError::Contract(format!("copy Agent clone file: {error}"))
+            })?;
+        }
+    }
+    Ok(())
+}
+
+fn clone_fabu_agent_local_state(
+    agent_root: &Path,
+    source_agent_id: &str,
+    target_agent_id: &str,
+) -> Result<(), FeatureHostError> {
+    let source = agent_root.join(source_agent_id);
+    if !source.exists() {
+        return Ok(());
+    }
+    let target = agent_root.join(target_agent_id);
+    if target.exists() {
+        return Err(FeatureHostError::Contract(format!(
+            "Agent clone target already exists: {target_agent_id}"
+        )));
+    }
+    std::fs::create_dir_all(&target).map_err(|error| {
+        FeatureHostError::Contract(format!("create Agent clone target: {error}"))
+    })?;
+    let result = (|| {
+        copy_agent_state_tree(&source.join("memory"), &target.join("memory"))?;
+        copy_agent_state_tree(&source.join("automations"), &target.join("automations"))?;
+        let workflow_enablement = source.join(WORKFLOW_ENABLEMENT_FILENAME);
+        if workflow_enablement.is_file() {
+            std::fs::copy(
+                &workflow_enablement,
+                target.join(WORKFLOW_ENABLEMENT_FILENAME),
+            )
+            .map_err(|error| {
+                FeatureHostError::Contract(format!(
+                    "copy Agent workflow enablement: {error}"
+                ))
+            })?;
+        }
+        Ok::<(), FeatureHostError>(())
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_dir_all(&target);
+    }
+    result
+}
+
+fn persist_fabu_agent_manifest(agent_dir: &Path, bot: &BotSummary) -> Result<(), FeatureHostError> {
+    let profile = json!({
+        "name": bot.name,
+        "description": bot.description,
+        "title": bot.title.trim(),
+        "avatarShape": bot.avatar_shape.clone().unwrap_or_default(),
+        "avatarColor": bot.avatar_color.clone().unwrap_or_default(),
+    });
+    let mut settings = json!({
+        "notifyOnAgentUpdates": bot.notify_on_updates,
+        "hiddenFromSidebar": bot.hidden,
+    });
+    if let Some(provider) = bot.inference_provider {
+        settings["inferenceProvider"] = json!(provider);
+    }
+    persist_json_atomic(&agent_dir.join("profile.json"), &profile, "Agent profile")?;
+    persist_json_atomic(&agent_dir.join("settings.json"), &settings, "Agent settings")
+}
+
+const FABU_AUTOMATIONS_DIRNAME: &str = "automations";
+const FABU_AUTOMATION_CONFIG_FILENAME: &str = "automation.json";
+
+fn automation_state_key(agent_id: &str, automation_id: &str) -> String {
+    format!("{agent_id}\u{1f}{automation_id}")
+}
+
+fn find_automation_state_key(
+    automations: &BTreeMap<String, AutomationSummary>,
+    automation_id: &str,
+    agent_id: Option<&str>,
+) -> Option<String> {
+    if let Some(agent_id) = agent_id {
+        let key = automation_state_key(agent_id, automation_id);
+        return automations.contains_key(&key).then_some(key);
+    }
+    let main_key = automation_state_key("mahayana-assistant", automation_id);
+    if automations.contains_key(&main_key) {
+        return Some(main_key);
+    }
+    let mut matches = automations
+        .iter()
+        .filter(|(_, automation)| automation.id == automation_id)
+        .map(|(key, _)| key.clone());
+    let first = matches.next()?;
+    matches.next().is_none().then_some(first)
+}
+
+fn fabu_automation_owner(automation: &AutomationSummary) -> &str {
+    automation
+        .agent_id
+        .as_deref()
+        .unwrap_or("mahayana-assistant")
+}
+
+fn fabu_automation_payload(automation: &AutomationSummary) -> Value {
+    json!({
+        // These top-level fields intentionally follow Fabu's automation.json
+        // contract so scheduled routines remain readable by that store.
+        "name": automation.name,
+        "prompt": automation.prompt,
+        "schedule": automation.schedule,
+        "enabled": automation.enabled,
+        "createdAt": automation.created_at_ms,
+        "lastRunAt": automation.last_run_at_ms,
+        // Mahayana keeps the richer trigger/runtime metadata in a namespaced
+        // extension without changing Fabu's stable file shape.
+        "_mahayana": {
+            "id": automation.id,
+            "agentId": fabu_automation_owner(automation),
+            "trigger": automation.trigger,
+            "nextRunAt": automation.next_run_at_ms,
+        }
+    })
+}
+
+fn load_fabu_agent_automations(agent_root: &Path) -> BTreeMap<String, AutomationSummary> {
+    let mut automations = BTreeMap::new();
+    let Ok(agent_entries) = std::fs::read_dir(agent_root) else {
+        return automations;
+    };
+    let now = now_millis();
+    for agent_entry in agent_entries.flatten() {
+        let Ok(file_type) = agent_entry.file_type() else {
+            continue;
+        };
+        if !file_type.is_dir() {
+            continue;
+        }
+        let agent_id = agent_entry.file_name().to_string_lossy().to_string();
+        if !is_safe_memory_agent_id(&agent_id) {
+            continue;
+        }
+        let automation_root = agent_entry.path().join(FABU_AUTOMATIONS_DIRNAME);
+        let Ok(entries) = std::fs::read_dir(&automation_root) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let Ok(entry_type) = entry.file_type() else {
+                continue;
+            };
+            if !entry_type.is_dir() {
+                continue;
+            }
+            let folder_id = entry.file_name().to_string_lossy().to_string();
+            if !is_safe_automation_id(&folder_id) {
+                continue;
+            }
+            let Ok(bytes) = std::fs::read(entry.path().join(FABU_AUTOMATION_CONFIG_FILENAME))
+            else {
+                continue;
+            };
+            let Ok(value) = serde_json::from_slice::<Value>(&bytes) else {
+                continue;
+            };
+            let extension = value.get("_mahayana").filter(|value| value.is_object());
+            let id = extension
+                .and_then(|value| value.get("id"))
+                .and_then(Value::as_str)
+                .filter(|id| is_safe_automation_id(id))
+                .unwrap_or(folder_id.as_str())
+                .to_string();
+            let owner = extension
+                .and_then(|value| value.get("agentId"))
+                .and_then(Value::as_str)
+                .filter(|id| is_safe_memory_agent_id(id))
+                .unwrap_or(agent_id.as_str())
+                .to_string();
+            let name = value
+                .get("name")
+                .and_then(Value::as_str)
+                .map(|value| value.trim().to_string())
+                .unwrap_or_default();
+            let prompt = value
+                .get("prompt")
+                .and_then(Value::as_str)
+                .map(|value| value.trim().to_string())
+                .unwrap_or_default();
+            let schedule = value
+                .get("schedule")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            if name.is_empty() || prompt.is_empty() {
+                continue;
+            }
+            let trigger = extension
+                .and_then(|value| value.get("trigger"))
+                .cloned()
+                .and_then(|value| serde_json::from_value::<AutomationTrigger>(value).ok())
+                .or_else(|| {
+                    normalize_automation_schedule(&schedule)
+                        .ok()
+                        .map(|schedule| AutomationTrigger::Schedule { schedule })
+                });
+            let Some(trigger) = trigger else {
+                continue;
+            };
+            let enabled = value
+                .get("enabled")
+                .and_then(Value::as_bool)
+                .unwrap_or(true);
+            let created_at_ms = value
+                .get("createdAt")
+                .and_then(Value::as_i64)
+                .unwrap_or(now);
+            let last_run_at_ms = value.get("lastRunAt").and_then(Value::as_i64);
+            let next_run_at_ms = extension
+                .and_then(|value| value.get("nextRunAt"))
+                .and_then(Value::as_i64)
+                .filter(|next| *next > now)
+                .or_else(|| automation_next_run(&trigger, &schedule, enabled, now));
+            let state_key = automation_state_key(&owner, &id);
+            automations.insert(
+                state_key,
+                AutomationSummary {
+                    id,
+                    agent_id: Some(owner),
+                    name,
+                    prompt,
+                    schedule,
+                    trigger: Some(trigger),
+                    enabled,
+                    created_at_ms,
+                    last_run_at_ms,
+                    next_run_at_ms,
+                },
+            );
+        }
+    }
+    automations
+}
+
+fn persist_fabu_agent_automations(
+    agent_root: &Path,
+    automations: &BTreeMap<String, AutomationSummary>,
+) -> Result<(), FeatureHostError> {
+    std::fs::create_dir_all(agent_root).map_err(|error| {
+        FeatureHostError::Contract(format!("create Agent automation root: {error}"))
+    })?;
+
+    let desired = automations
+        .values()
+        .filter(|automation| {
+            is_safe_automation_id(&automation.id)
+                && is_safe_memory_agent_id(fabu_automation_owner(automation))
+        })
+        .map(|automation| {
+            (
+                (
+                    fabu_automation_owner(automation).to_string(),
+                    automation.id.clone(),
+                ),
+                automation,
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+
+    // Remove only directories that contain our automation.json marker and are
+    // no longer represented in state. Other Agent-owned files are untouched.
+    if let Ok(agent_entries) = std::fs::read_dir(agent_root) {
+        for agent_entry in agent_entries.flatten() {
+            if !agent_entry.file_type().is_ok_and(|kind| kind.is_dir()) {
+                continue;
+            }
+            let agent_id = agent_entry.file_name().to_string_lossy().to_string();
+            let automation_root = agent_entry.path().join(FABU_AUTOMATIONS_DIRNAME);
+            let Ok(entries) = std::fs::read_dir(&automation_root) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                if !entry.file_type().is_ok_and(|kind| kind.is_dir()) {
+                    continue;
+                }
+                let automation_id = entry.file_name().to_string_lossy().to_string();
+                if !entry.path().join(FABU_AUTOMATION_CONFIG_FILENAME).is_file() {
+                    continue;
+                }
+                if !desired.contains_key(&(agent_id.clone(), automation_id)) {
+                    std::fs::remove_dir_all(entry.path()).map_err(|error| {
+                        FeatureHostError::Contract(format!(
+                            "remove stale Agent automation: {error}"
+                        ))
+                    })?;
+                }
+            }
+        }
+    }
+
+    for ((agent_id, automation_id), automation) in desired {
+        let path = agent_root
+            .join(agent_id)
+            .join(FABU_AUTOMATIONS_DIRNAME)
+            .join(automation_id)
+            .join(FABU_AUTOMATION_CONFIG_FILENAME);
+        persist_json_atomic(&path, &fabu_automation_payload(automation), "Agent automation")?;
+    }
+    Ok(())
+}
+
+fn load_automations(path: &Path) -> BTreeMap<String, AutomationSummary> {
+    let Ok(bytes) = std::fs::read(path) else {
+        return BTreeMap::new();
+    };
+    let Ok(items) = serde_json::from_slice::<Vec<AutomationSummary>>(&bytes) else {
+        return BTreeMap::new();
+    };
+    let now = now_millis();
+    items
+        .into_iter()
+        .filter_map(|mut item| {
+            if !is_safe_automation_id(&item.id)
+                || item.name.trim().is_empty()
+                || item.prompt.trim().is_empty()
+                || normalize_automation_schedule(&item.schedule).is_err()
+            {
+                return None;
+            }
+            item.next_run_at_ms = item
+                .enabled
+                .then(|| {
+                    item.next_run_at_ms
+                        .filter(|next| *next > now)
+                        .or_else(|| next_automation_run(&item.schedule, now))
+                })
+                .flatten();
+            Some((item.id.clone(), item))
+        })
+        .collect()
+}
+
+fn persist_automations(
+    path: &Path,
+    automations: &BTreeMap<String, AutomationSummary>,
+) -> Result<(), FeatureHostError> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            FeatureHostError::Contract(format!("create automation directory: {error}"))
+        })?;
+    }
+    let temp = path.with_extension("json.tmp");
+    let data = serde_json::to_vec_pretty(&automations.values().cloned().collect::<Vec<_>>())
+        .map_err(|error| FeatureHostError::Contract(format!("serialize automations: {error}")))?;
+    std::fs::write(&temp, data)
+        .map_err(|error| FeatureHostError::Contract(format!("write automation store: {error}")))?;
+    std::fs::rename(&temp, path)
+        .map_err(|error| FeatureHostError::Contract(format!("commit automation store: {error}")))?;
+    Ok(())
+}
+
+fn normalize_automation_schedule(raw: &str) -> Result<String, FeatureHostError> {
+    let schedule = raw.split_whitespace().collect::<Vec<_>>().join(" ");
+    if schedule.is_empty() || next_automation_run(&schedule, now_millis()).is_none() {
+        return Err(FeatureHostError::Contract(
+            "invalid automation schedule; use a 5-field cron, @hourly/@daily/@weekly/@monthly/@yearly, or @every <n><s|m|h|d>"
+                .into(),
+        ));
+    }
+    Ok(schedule)
+}
+
+fn parse_every_interval_ms(schedule: &str) -> Option<i64> {
+    let rest = schedule.strip_prefix("@every ")?.trim();
+    let split = rest
+        .find(|character: char| !character.is_ascii_digit())
+        .unwrap_or(rest.len());
+    let amount = rest[..split].parse::<i64>().ok()?;
+    let unit = rest[split..].trim().to_ascii_lowercase();
+    let unit_ms = match unit.as_str() {
+        "s" => 1_000,
+        "m" => 60_000,
+        "h" => 3_600_000,
+        "d" => 86_400_000,
+        _ => return None,
+    };
+    amount.checked_mul(unit_ms).filter(|value| *value > 0)
+}
+
+fn expand_cron_alias(schedule: &str) -> &str {
+    match schedule.to_ascii_lowercase().as_str() {
+        "@hourly" => "0 * * * *",
+        "@daily" | "@midnight" => "0 0 * * *",
+        "@weekly" => "0 0 * * 0",
+        "@monthly" => "0 0 1 * *",
+        "@yearly" | "@annually" => "0 0 1 1 *",
+        _ => schedule,
+    }
+}
+
+fn parse_cron_field(field: &str, min: u32, max: u32) -> Option<BTreeSet<u32>> {
+    let mut values = BTreeSet::new();
+    for part in field.split(',') {
+        let mut step_parts = part.split('/');
+        let range = step_parts.next()?;
+        let step: u32 = step_parts
+            .next()
+            .map_or(Some(1), |value| value.parse().ok())?;
+        if step_parts.next().is_some() || step == 0 {
+            return None;
+        }
+        let (start, end) = if range == "*" || range.is_empty() {
+            (min, max)
+        } else if let Some((start, end)) = range.split_once('-') {
+            (start.parse().ok()?, end.parse().ok()?)
+        } else {
+            let start = range.parse().ok()?;
+            (start, if part.contains('/') { max } else { start })
+        };
+        if start < min || end > max || start > end {
+            return None;
+        }
+        for value in (start..=end).step_by(step as usize) {
+            values.insert(if max == 7 && value == 7 { 0 } else { value });
+        }
+    }
+    (!values.is_empty()).then_some(values)
+}
+
+fn next_automation_run(schedule: &str, after_ms: i64) -> Option<i64> {
+    if let Some(interval) = parse_every_interval_ms(schedule) {
+        return after_ms.checked_add(interval);
+    }
+    let expression = expand_cron_alias(schedule);
+    let fields = expression.split_whitespace().collect::<Vec<_>>();
+    if fields.len() != 5 {
+        return None;
+    }
+    let minute = parse_cron_field(fields[0], 0, 59)?;
+    let hour = parse_cron_field(fields[1], 0, 23)?;
+    let day_of_month = parse_cron_field(fields[2], 1, 31)?;
+    let month = parse_cron_field(fields[3], 1, 12)?;
+    let day_of_week = parse_cron_field(fields[4], 0, 7)?;
+    let dom_restricted = fields[2] != "*";
+    let dow_restricted = fields[4] != "*";
+    let mut candidate = after_ms.div_euclid(60_000) * 60_000 + 60_000;
+    for _ in 0..(366 * 24 * 60) {
+        let date = chrono::DateTime::<Utc>::from_timestamp_millis(candidate)?;
+        let dom_ok = day_of_month.contains(&date.day());
+        let dow_ok = day_of_week.contains(&date.weekday().num_days_from_sunday());
+        let day_ok = if dom_restricted && dow_restricted {
+            dom_ok || dow_ok
+        } else {
+            (!dom_restricted || dom_ok) && (!dow_restricted || dow_ok)
+        };
+        if minute.contains(&date.minute())
+            && hour.contains(&date.hour())
+            && month.contains(&date.month())
+            && day_ok
+        {
+            return Some(candidate);
+        }
+        candidate = candidate.checked_add(60_000)?;
+    }
+    None
+}
+
+fn now_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(i64::MAX as u128) as i64)
+        .unwrap_or(0)
+}
+
+fn timestamp() -> String {
+    now_millis().to_string()
+}
+
+fn computer_origin_label(origin: ComputerControlOrigin) -> &'static str {
+    match origin {
+        ComputerControlOrigin::LocalUi => "local-ui",
+        ComputerControlOrigin::RemoteMobile => "remote-mobile",
+        ComputerControlOrigin::Ai => "ai",
+    }
+}
+
+fn sync_computer_control_policy(settings: &ProductHostSettings) {
+    mahayana_computer::set_control_policy(mahayana_computer::ComputerControlPolicy {
+        local_execution_enabled: settings.local_execution,
+        remote_control_enabled: settings.remote_control_enabled,
+        ai_control_enabled: settings.ai_computer_control_enabled,
+        local_tool_permission: settings.local_tool_permission,
+    });
+}
+
+fn test_computer_snapshot() -> ComputerSnapshot {
+    ComputerSnapshot {
+        captured_at_ms: now_millis(),
+        // Deterministic 1x1 transparent PNG. Test mode must never capture or
+        // mutate the developer's real desktop.
+        data_url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=".into(),
+        width: Some(1),
+        height: Some(1),
+    }
+}
+
+fn stable_identity_component(value: Option<&Value>) -> Option<String> {
+    match value? {
+        Value::String(value) => {
+            let value = value.trim();
+            if value.is_empty() {
+                None
+            } else {
+                Some(value.to_string())
+            }
+        }
+        Value::Number(value) => Some(value.to_string()),
+        _ => None,
+    }
+}
+
+fn browser_login_platform(platform: SurfacePlatform) -> &'static str {
+    match platform {
+        SurfacePlatform::Ios | SurfacePlatform::Android => "mobile",
+        SurfacePlatform::Wasm => "web",
+        SurfacePlatform::Mock | SurfacePlatform::Electron => "desktop",
+    }
+}
+
+fn stable_authenticated_account_id(auth: &Value) -> Option<String> {
+    const ID_KEYS: [&str; 8] = [
+        "principalId",
+        "principal_id",
+        "id",
+        "userId",
+        "user_id",
+        "userNo",
+        "user_no",
+        "username",
+    ];
+
+    auth.get("user")
+        .and_then(Value::as_object)
+        .and_then(|user| {
+            ID_KEYS
+                .iter()
+                .find_map(|key| stable_identity_component(user.get(*key)))
+        })
+        .or_else(|| {
+            ID_KEYS
+                .iter()
+                .find_map(|key| stable_identity_component(auth.get(*key)))
+        })
+}
+
+#[cfg(feature = "production")]
+fn auth_payload(response: &Value) -> &Value {
+    response
+        .get("auth")
+        .filter(|value| value.is_object())
+        .unwrap_or(response)
+}
+
+#[cfg(feature = "production")]
+fn auth_account_id(auth: &Value) -> Option<String> {
+    stable_authenticated_account_id(auth)
+}
+
+#[cfg(feature = "production")]
+fn account_fingerprint(account_id: &str) -> String {
+    Sha256::digest(account_id.as_bytes())[..16]
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+#[cfg(feature = "production")]
+fn account_scoped_path(base: &Path, account_id: &str) -> PathBuf {
+    base.parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join("accounts")
+        .join(account_fingerprint(account_id))
+        .join(
+            base.file_name()
+                .unwrap_or_else(|| std::ffi::OsStr::new("state.json")),
+        )
+}
+
+#[cfg(feature = "production")]
+fn actor_id_for_account_id(account_id: &str) -> ActorId {
+    ActorId::new(format!("human:account:{}", account_fingerprint(account_id)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mahayana_host_protocol::ApprovalDecision;
+
+    #[cfg(feature = "production")]
+    fn isolated_host_config(profile: &str) -> HostCreateConfig {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-feature-host-{profile}-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).expect("create isolated Host root");
+        HostCreateConfig {
+            runtime: mahayana_core::RuntimeConfig {
+                data_dir: Some(root.join("runtime")),
+                ..Default::default()
+            },
+            product_session_path: Some(root.join("product-session.json")),
+            inherit_installed_plugins: Some(false),
+            ..Default::default()
+        }
+    }
+
+    fn controller() -> FeatureHostController {
+        FeatureHostController::create(
+            HostConfig {
+                profile_id: "fast-e2e".into(),
+                mode: HostMode::Test,
+            },
+            SurfacePlatform::Electron,
+        )
+        .expect("create feature Host")
+    }
+
+    fn drain(controller: &FeatureHostController) -> Vec<HostEvent> {
+        let mut events = Vec::new();
+        while let Some(event) = controller.receive().expect("receive event") {
+            events.push(event);
+        }
+        events
+    }
+
+    #[test]
+    fn browser_login_platform_maps_native_surfaces_to_mobile() {
+        assert_eq!(browser_login_platform(SurfacePlatform::Ios), "mobile");
+        assert_eq!(browser_login_platform(SurfacePlatform::Android), "mobile");
+        assert_eq!(browser_login_platform(SurfacePlatform::Wasm), "web");
+        assert_eq!(browser_login_platform(SurfacePlatform::Electron), "desktop");
+    }
+
+    #[test]
+    fn fabu_automation_store_namespaces_same_id_per_agent() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-fabu-automation-store-{}-{}",
+            std::process::id(),
+            now_millis()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        let make = |agent_id: &str| AutomationSummary {
+            id: "daily-brief".into(),
+            agent_id: Some(agent_id.into()),
+            name: format!("{agent_id} brief"),
+            prompt: "Summarize the day.".into(),
+            schedule: "@daily".into(),
+            trigger: Some(AutomationTrigger::Schedule {
+                schedule: "@daily".into(),
+            }),
+            enabled: true,
+            created_at_ms: 1,
+            last_run_at_ms: None,
+            next_run_at_ms: None,
+        };
+        let research = make("research");
+        let incident = make("incident");
+        let automations = BTreeMap::from([
+            (
+                automation_state_key("research", "daily-brief"),
+                research.clone(),
+            ),
+            (
+                automation_state_key("incident", "daily-brief"),
+                incident.clone(),
+            ),
+        ]);
+        persist_fabu_agent_automations(&root, &automations)
+            .expect("persist Fabu Agent automations");
+        assert!(root
+            .join("research/automations/daily-brief/automation.json")
+            .is_file());
+        assert!(root
+            .join("incident/automations/daily-brief/automation.json")
+            .is_file());
+
+        let restored = load_fabu_agent_automations(&root);
+        assert_eq!(restored.len(), 2);
+        assert_eq!(
+            restored
+                .get(&automation_state_key("research", "daily-brief"))
+                .and_then(|automation| automation.agent_id.as_deref()),
+            Some("research")
+        );
+        assert_eq!(
+            restored
+                .get(&automation_state_key("incident", "daily-brief"))
+                .and_then(|automation| automation.agent_id.as_deref()),
+            Some("incident")
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn fabu_agent_clone_keeps_reusable_state_but_not_history_or_audit() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-fabu-agent-clone-{}-{}",
+            std::process::id(),
+            now_millis()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        let source = root.join("research");
+        std::fs::create_dir_all(source.join("memory")).expect("create memory");
+        std::fs::create_dir_all(source.join("automations/routine-a"))
+            .expect("create automation");
+        std::fs::create_dir_all(source.join("attachments")).expect("create attachments");
+        std::fs::write(source.join("memory/profile.json"), b"{}")
+            .expect("write memory");
+        std::fs::write(
+            source.join("automations/routine-a/automation.json"),
+            b"{}",
+        )
+        .expect("write automation");
+        std::fs::write(source.join(WORKFLOW_ENABLEMENT_FILENAME), b"[]")
+            .expect("write workflow enablement");
+        std::fs::write(source.join("audit.jsonl"), b"secret audit")
+            .expect("write audit");
+        std::fs::write(source.join("attachments/file.txt"), b"private attachment")
+            .expect("write attachment");
+        std::fs::write(source.join("conversation.json"), b"chat history")
+            .expect("write conversation");
+
+        clone_fabu_agent_local_state(&root, "research", "research-copy")
+            .expect("clone Fabu Agent state");
+        let target = root.join("research-copy");
+        assert!(target.join("memory/profile.json").is_file());
+        assert!(target
+            .join("automations/routine-a/automation.json")
+            .is_file());
+        assert!(target.join(WORKFLOW_ENABLEMENT_FILENAME).is_file());
+        assert!(!target.join("audit.jsonl").exists());
+        assert!(!target.join("attachments").exists());
+        assert!(!target.join("conversation.json").exists());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn remote_computer_target_rejects_stale_generation_and_wrong_device() {
+        let controller = controller();
+        {
+            let mut state = controller.state().expect("state");
+            state.remote_computer_sessions.insert(
+                "session-1".into(),
+                RemoteComputerLocalSession {
+                    device_id: "desktop-a".into(),
+                    client_id: "phone-a".into(),
+                    expires_at_seconds: now_millis() / 1_000 + 60,
+                    generation: 7,
+                },
+            );
+        }
+        let settings = ProductHostSettings {
+            remote_control_enabled: true,
+            ..Default::default()
+        };
+        let stale = ComputerControlTarget::remote_desktop("desktop-a", 6);
+        assert!(matches!(
+            controller.ensure_computer_origin_allowed(
+                ComputerControlOrigin::RemoteMobile,
+                Some("session-1"),
+                &stale,
+                &settings,
+            ),
+            Err(FeatureHostError::Contract(message)) if message.contains("generation")
+        ));
+        let wrong = ComputerControlTarget::remote_desktop("desktop-b", 7);
+        assert!(matches!(
+            controller.ensure_computer_origin_allowed(
+                ComputerControlOrigin::RemoteMobile,
+                Some("session-1"),
+                &wrong,
+                &settings,
+            ),
+            Err(FeatureHostError::Contract(message)) if message.contains("device")
+        ));
+        let current = ComputerControlTarget::remote_desktop("desktop-a", 7);
+        controller
+            .ensure_computer_origin_allowed(
+                ComputerControlOrigin::RemoteMobile,
+                Some("session-1"),
+                &current,
+                &settings,
+            )
+            .expect("current target accepted");
+    }
+
+    #[test]
+    fn group_chat_handles_mentions_round_order_and_pass_rules() {
+        let bots = BTreeMap::from([
+            (
+                "research-bot".into(),
+                BotSummary {
+                    id: "research-bot".into(),
+                    agent_id: Some("research".into()),
+                    name: "Research Bot".into(),
+                    description: String::new(),
+                    title: String::new(),
+                    hidden: false,
+                    avatar: None,
+                    avatar_shape: None,
+                    avatar_color: None,
+                    notifications_enabled: true,
+                    notify_on_updates: true,
+                    unread: false,
+                    conversation_id: Some("codex:agent:research".into()),
+                    inference_provider: None,
+                },
+            ),
+            (
+                "incident-bot".into(),
+                BotSummary {
+                    id: "incident-bot".into(),
+                    agent_id: Some("incident".into()),
+                    name: "Incident Bot".into(),
+                    description: String::new(),
+                    title: String::new(),
+                    hidden: false,
+                    avatar: None,
+                    avatar_shape: None,
+                    avatar_color: None,
+                    notifications_enabled: true,
+                    notify_on_updates: true,
+                    unread: false,
+                    conversation_id: Some("codex:agent:incident".into()),
+                    inference_provider: None,
+                },
+            ),
+        ]);
+        let mut group = GroupSummary {
+            id: "group-1".into(),
+            name: "Ops Room".into(),
+            description: String::new(),
+            member_ids: vec!["research-bot".into(), "incident-bot".into()],
+            messages: vec![GroupMessage {
+                id: "message-1".into(),
+                speaker: GroupSpeaker::User { name: None },
+                content: "@Research please verify the source".into(),
+                created_at_ms: 1,
+            }],
+            created_at_ms: 1,
+            updated_at_ms: 1,
+        };
+        assert_eq!(
+            resolve_group_responders(&group, &bots),
+            vec!["research-bot"]
+        );
+        group.messages.push(GroupMessage {
+            id: "message-2".into(),
+            speaker: GroupSpeaker::User { name: None },
+            content: "@everyone weigh in".into(),
+            created_at_ms: 2,
+        });
+        assert_eq!(
+            resolve_group_responders(&group, &bots),
+            vec!["research-bot", "incident-bot"]
+        );
+        assert_eq!(
+            order_round_speakers(&["a".into(), "b".into(), "c".into()], 1),
+            vec!["b", "c", "a"]
+        );
+        assert!(is_group_pass_content("(pass)."));
+        assert!(is_group_pass_content(" PASS "));
+        assert!(!is_group_pass_content("pass this to the next agent"));
+    }
+
+    #[test]
+    fn group_crud_uses_real_host_state_and_rejects_nested_groups() {
+        let controller = controller();
+        drain(&controller);
+        controller
+            .execute(FeatureCommand::GroupCreate {
+                request_id: "group-create".into(),
+                name: "Research room".into(),
+                description: "Cross-check sources".into(),
+                member_ids: vec!["mahayana-assistant".into(), "research-bot".into()],
+            })
+            .expect("create group");
+        let group = drain(&controller)
+            .into_iter()
+            .find_map(|event| match event {
+                HostEvent::GroupChanged { action, group, .. } if action == "created" => Some(group),
+                _ => None,
+            })
+            .expect("created group event");
+        controller
+            .execute(FeatureCommand::GroupSend {
+                request_id: "group-send".into(),
+                id: group.id.clone(),
+                text: "@Research check this".into(),
+            })
+            .expect("send group message");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::GroupChanged { action, group: changed, .. }
+                if action == "message" && changed.messages.len() == 1
+        )));
+        let nested = controller.execute(FeatureCommand::GroupCreate {
+            request_id: "nested-group".into(),
+            name: "Nested".into(),
+            description: String::new(),
+            member_ids: vec![group.id.clone()],
+        });
+        assert!(nested.is_err());
+        controller
+            .execute(FeatureCommand::GroupDelete {
+                request_id: "group-delete".into(),
+                id: group.id,
+            })
+            .expect("delete group");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::GroupChanged { action, .. } if action == "deleted"
+        )));
+    }
+
+    #[test]
+    fn trays_preserve_dedupe_count_and_twenty_item_cap() {
+        let controller = controller();
+        drain(&controller);
+        {
+            let mut state = controller.state().expect("state");
+            push_error_tray(
+                &mut state,
+                "research-bot".into(),
+                "Provider busy".into(),
+                Some("retry later".into()),
+                None,
+                Some("provider:busy".into()),
+            );
+            push_error_tray(
+                &mut state,
+                "research-bot".into(),
+                "Provider still busy".into(),
+                Some("retry later".into()),
+                None,
+                Some("provider:busy".into()),
+            );
+            assert_eq!(state.trays.len(), 1);
+            assert_eq!(state.trays[0].count, Some(2));
+            assert_eq!(state.trays[0].title, "Provider still busy");
+            for index in 0..25 {
+                push_error_tray(
+                    &mut state,
+                    "research-bot".into(),
+                    format!("Error {index}"),
+                    None,
+                    None,
+                    Some(format!("error:{index}")),
+                );
+            }
+            assert_eq!(state.trays.len(), MAX_TRAYS);
+            assert!(
+                state
+                    .trays
+                    .iter()
+                    .all(|tray| tray.id != state.trays[0].dedupe_key.clone().unwrap_or_default())
+            );
+        }
+        controller
+            .execute(FeatureCommand::TrayList {
+                request_id: "tray-list".into(),
+            })
+            .expect("list trays");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::TrayListed { ref trays, .. } if trays.len() == MAX_TRAYS
+        )));
+        controller
+            .execute(FeatureCommand::TrayClear {
+                request_id: "tray-clear".into(),
+            })
+            .expect("clear trays");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::TrayChanged { action, .. } if action == "cleared"
+        )));
+    }
+
+    #[test]
+    fn memory_store_preserves_id_dedupe_and_markdown_layout() {
+        assert_eq!(memory_id_for("hello"), "aaf4c61ddcc5e8a2");
+        let controller = controller();
+        drain(&controller);
+        controller
+            .execute(FeatureCommand::MemoryClear {
+                request_id: "memory-clear-initial".into(),
+                agent_id: "mahayana-assistant".into(),
+            })
+            .expect("clear initial memory");
+        drain(&controller);
+        controller
+            .execute(FeatureCommand::MemoryAdd {
+                request_id: "memory-add".into(),
+                agent_id: "mahayana-assistant".into(),
+                content: "  Likes    tea  ".into(),
+                kind: MemoryKind::Profile,
+            })
+            .expect("add profile memory");
+        let added = drain(&controller)
+            .into_iter()
+            .find_map(|event| match event {
+                HostEvent::MemoryChanged { action, memory, .. } if action == "added" => memory,
+                _ => None,
+            })
+            .expect("added memory event");
+        assert_eq!(added.content, "Likes tea");
+        assert_eq!(added.id, memory_id_for("likes tea"));
+        controller
+            .execute(FeatureCommand::MemoryAdd {
+                request_id: "memory-duplicate".into(),
+                agent_id: "mahayana-assistant".into(),
+                content: "likes tea".into(),
+                kind: MemoryKind::Log,
+            })
+            .expect("dedupe memory");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::MemoryChanged { action, memory: None, .. } if action == "duplicate"
+        )));
+        controller
+            .execute(FeatureCommand::MemoryList {
+                request_id: "memory-list".into(),
+                agent_id: "mahayana-assistant".into(),
+                limit: 1000,
+            })
+            .expect("list memory");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::MemoryListed { count: 1, ref memories, .. }
+                if memories.len() == 1 && memories[0].content == "Likes tea"
+        )));
+        let profile = controller
+            .memory_root_path
+            .as_ref()
+            .expect("memory root")
+            .join("mahayana-assistant/memory/profile.md");
+        let raw = std::fs::read_to_string(profile).expect("profile markdown");
+        assert!(raw.starts_with(MEMORY_PROFILE_HEADER));
+        assert!(raw.contains("Likes tea"));
+        controller
+            .execute(FeatureCommand::MemoryRemove {
+                request_id: "memory-remove".into(),
+                agent_id: "mahayana-assistant".into(),
+                id: added.id,
+            })
+            .expect("remove memory");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::MemoryChanged { action, .. } if action == "removed"
+        )));
+    }
+
+    #[test]
+    fn automation_schedule_supports_supported_schedule_grammar() {
+        let base = 1_750_000_000_000_i64;
+        assert_eq!(parse_every_interval_ms("@every 5m"), Some(300_000));
+        assert_eq!(next_automation_run("@every 5m", base), Some(base + 300_000));
+        assert!(next_automation_run("@daily", base).is_some());
+        assert!(next_automation_run("*/15 9-17 * * 1-5", base).is_some());
+        assert!(normalize_automation_schedule("not a schedule").is_err());
+    }
+
+    #[test]
+    fn automation_crud_and_manual_run_use_the_host_event_contract() {
+        let controller = controller();
+        drain(&controller);
+        controller
+            .execute(FeatureCommand::AutomationUpsert {
+                request_id: "automation-create".into(),
+                id: Some("morning-review".into()),
+                agent_id: None,
+                name: "晨间复盘".into(),
+                prompt: "总结昨天的进展并给出今天的三个行动。".into(),
+                schedule: "@daily".into(),
+                trigger: Some(AutomationTrigger::Schedule {
+                    schedule: "@daily".into(),
+                }),
+                enabled: true,
+            })
+            .expect("create automation");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::AutomationChanged { action, automation, .. }
+                if action == "created" && automation.id == "morning-review"
+        )));
+
+        controller
+            .execute(FeatureCommand::AutomationList {
+                request_id: "automation-list".into(),
+                agent_id: None,
+            })
+            .expect("list automations");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::AutomationListed { automations, .. }
+                if automations.len() == 1 && automations[0].name == "晨间复盘"
+        )));
+
+        controller
+            .execute(FeatureCommand::AutomationSetEnabled {
+                request_id: "automation-pause".into(),
+                id: "morning-review".into(),
+                agent_id: None,
+                enabled: false,
+            })
+            .expect("pause automation");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::AutomationChanged { action, automation, .. }
+                if action == "paused" && !automation.enabled
+        )));
+
+        controller
+            .execute(FeatureCommand::AutomationRun {
+                request_id: "automation-run".into(),
+                id: "morning-review".into(),
+                agent_id: None,
+            })
+            .expect("run automation");
+        let kinds = drain(&controller)
+            .into_iter()
+            .map(|event| event.kind())
+            .collect::<Vec<_>>();
+        assert!(kinds.contains(&"automation.changed"));
+        assert!(kinds.contains(&"chat.message"));
+
+        controller
+            .execute(FeatureCommand::AutomationDelete {
+                request_id: "automation-delete".into(),
+                id: "morning-review".into(),
+                agent_id: None,
+            })
+            .expect("delete automation");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::AutomationChanged { action, .. } if action == "deleted"
+        )));
+    }
+
+    #[test]
+    fn automation_agent_scope_filters_routes_and_blocks_cross_agent_mutation() {
+        let controller = controller();
+        drain(&controller);
+
+        for (id, agent_id, name) in [
+            ("research-digest", "research-bot", "Research digest"),
+            ("incident-digest", "incident-bot", "Incident digest"),
+        ] {
+            controller
+                .execute(FeatureCommand::AutomationUpsert {
+                    request_id: format!("create-{id}"),
+                    id: Some(id.into()),
+                    agent_id: Some(agent_id.into()),
+                    name: name.into(),
+                    prompt: format!("Run the {name} task."),
+                    schedule: "@daily".into(),
+                    trigger: Some(AutomationTrigger::Schedule {
+                        schedule: "@daily".into(),
+                    }),
+                    enabled: true,
+                })
+                .expect("create agent automation");
+            drain(&controller);
+        }
+
+        controller
+            .execute(FeatureCommand::AutomationList {
+                request_id: "research-list".into(),
+                agent_id: Some("research-bot".into()),
+            })
+            .expect("list research automations");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::AutomationListed { automations, .. }
+                if automations.len() == 1
+                    && automations[0].id == "research-digest"
+                    && automations[0].agent_id.as_deref() == Some("research-bot")
+        )));
+
+        let error = controller
+            .execute(FeatureCommand::AutomationSetEnabled {
+                request_id: "wrong-owner-pause".into(),
+                id: "research-digest".into(),
+                agent_id: Some("incident-bot".into()),
+                enabled: false,
+            })
+            .expect_err("cross-agent automation mutation must be rejected");
+        assert!(
+            error
+                .to_string()
+                .contains("does not belong to agent incident-bot")
+        );
+
+        controller
+            .execute(FeatureCommand::AutomationRun {
+                request_id: "research-run".into(),
+                id: "research-digest".into(),
+                agent_id: Some("research-bot".into()),
+            })
+            .expect("run research automation");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::ChatMessage { role: MessageRole::Assistant, text, .. }
+                if text.starts_with("research-bot机器人收到：")
+        )));
+
+        let error = controller
+            .execute(FeatureCommand::AutomationDelete {
+                request_id: "wrong-owner-delete".into(),
+                id: "research-digest".into(),
+                agent_id: Some("incident-bot".into()),
+            })
+            .expect_err("cross-agent automation deletion must be rejected");
+        assert!(
+            error
+                .to_string()
+                .contains("does not belong to agent incident-bot")
+        );
+    }
+
+    #[test]
+    fn cloud_task_resource_id_only_accepts_structured_run_keys() {
+        assert_eq!(
+            cloud_task_resource_id(Some(&json!({"bcId": "cloud-run-1"}))).as_deref(),
+            Some("cloud-run-1")
+        );
+        assert_eq!(
+            cloud_task_resource_id(Some(&json!({"metadata": {"runId": "cloud-run-2"}}))).as_deref(),
+            Some("cloud-run-2")
+        );
+        assert_eq!(
+            cloud_task_resource_id(Some(&json!({"id": "generic-step-id"}))),
+            None
+        );
+        assert_eq!(cloud_task_resource_id(Some(&json!({"runId": "   "}))), None);
+    }
+
+    #[test]
+    fn mcp_settings_use_refresh_event_contract_in_test_mode() {
+        let controller = controller();
+        drain(&controller);
+        controller
+            .execute(FeatureCommand::McpSetCustomInstructions {
+                request_id: "mcp-instructions-test".into(),
+                server: "docs".into(),
+                instructions: "Prefer source links.".into(),
+            })
+            .expect("set MCP custom instructions in test mode");
+        controller
+            .execute(FeatureCommand::McpSetToolDisabled {
+                request_id: "mcp-tool-disable-test".into(),
+                server: "docs".into(),
+                tool: "delete_page".into(),
+                disabled: true,
+            })
+            .expect("disable MCP tool in test mode");
+        let refreshed = drain(&controller)
+            .into_iter()
+            .filter(|event| matches!(event, HostEvent::McpRefreshed { .. }))
+            .count();
+        assert_eq!(refreshed, 2);
+    }
+
+    #[test]
+    fn mcp_instruction_context_is_sorted_bounded_and_hidden() {
+        let instructions = std::collections::HashMap::from([
+            ("zeta".into(), "Use read-only operations.".into()),
+            ("alpha".into(), "Always include source links.".into()),
+            ("empty".into(), "   ".into()),
+        ]);
+        let context = render_mcp_instruction_context(&instructions).expect("MCP context");
+        assert!(context.starts_with("[MCP connector operating instructions]"));
+        assert!(
+            context.find("Connector: alpha").unwrap() < context.find("Connector: zeta").unwrap()
+        );
+        assert!(!context.contains("Connector: empty"));
+        assert!(context.len() < 16_000);
+    }
+
+    #[test]
+    fn mcp_remove_uses_refresh_event_contract_in_test_mode() {
+        let controller = controller();
+        drain(&controller);
+        controller
+            .execute(FeatureCommand::McpRemove {
+                request_id: "mcp-remove-test".into(),
+                server: "docs".into(),
+            })
+            .expect("remove MCP server in test mode");
+        assert!(
+            drain(&controller)
+                .into_iter()
+                .any(|event| matches!(event, HostEvent::McpRefreshed { .. }))
+        );
+    }
+
+    #[test]
+    fn product_surfaces_emit_stateful_events_without_leaking_secrets() {
+        let controller = controller();
+        drain(&controller);
+
+        controller
+            .execute(FeatureCommand::ConnectorList {
+                request_id: "connector-list".into(),
+            })
+            .expect("list connectors");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::ConnectorListed { connectors, .. }
+                if connectors.iter().any(|connector| connector.id == "github")
+        )));
+
+        controller
+            .execute(FeatureCommand::ConnectorConnect {
+                request_id: "connector-connect".into(),
+                connector_id: "github".into(),
+                account_label: Some("Work".into()),
+            })
+            .expect("connect GitHub");
+        let events = drain(&controller);
+        assert!(events.iter().any(|event| matches!(
+            event,
+            HostEvent::ConnectorChanged { connector, .. }
+                if connector.id == "github"
+                    && connector.status == ConnectorStatus::Connected
+                    && connector.accounts.iter().any(|account| account.label == "Work")
+        )));
+        assert!(events.iter().any(|event| matches!(
+            event,
+            HostEvent::ListenerChanged { integration, .. }
+                if integration.platform == ListenerPlatform::Github
+                    && integration.is_connected
+        )));
+
+        controller
+            .execute(FeatureCommand::ConnectorSetToolEnabled {
+                request_id: "connector-tool".into(),
+                connector_id: "github".into(),
+                tool_id: "create_issue".into(),
+                enabled: false,
+            })
+            .expect("disable connector tool");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::ConnectorChanged { action, connector, .. }
+                if action == "toolChanged"
+                    && connector.tools.iter().any(|tool| tool.id == "create_issue" && !tool.enabled)
+        )));
+
+        controller
+            .execute(FeatureCommand::SkillUpsert {
+                request_id: "skill-create".into(),
+                id: Some("skill-release-check".into()),
+                name: "Release check".into(),
+                description: "Verify a release candidate before publishing.".into(),
+                use_when: "Use before a production release.".into(),
+                instructions: "Run tests, inspect diffs, and summarize risks.".into(),
+                owner_agent_id: Some("mahayana-assistant".into()),
+            })
+            .expect("create skill");
+        drain(&controller);
+        controller
+            .execute(FeatureCommand::SkillPublish {
+                request_id: "skill-publish".into(),
+                id: "skill-release-check".into(),
+                team_id: "team-mahayana".into(),
+            })
+            .expect("publish skill");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::SkillChanged { action, skill, .. }
+                if action == "published"
+                    && skill.publish_state == SkillPublishState::Published
+                    && skill.team_id.as_deref() == Some("team-mahayana")
+        )));
+
+        controller
+            .execute(FeatureCommand::BotSetHidden {
+                request_id: "bot-hide".into(),
+                id: "research-bot".into(),
+                hidden: true,
+            })
+            .expect("hide bot");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::BotChanged { bot, .. }
+                if bot.id == "research-bot" && bot.hidden
+        )));
+
+        controller
+            .execute(FeatureCommand::DraftResolve {
+                request_id: "draft-send".into(),
+                draft: MessageDraft::Email {
+                    id: "draft-1".into(),
+                    from: None,
+                    to: vec!["person@example.com".into()],
+                    cc: None,
+                    subject: "Release ready".into(),
+                    body: "The release candidate passed validation.".into(),
+                    status: DraftSendState::Editable,
+                    error: None,
+                },
+                action: DraftAction::Send,
+            })
+            .expect("send draft");
+        let events = drain(&controller);
+        assert!(events.iter().any(|event| matches!(
+            event,
+            HostEvent::DraftChanged {
+                status: DraftSendState::Sending,
+                ..
+            }
+        )));
+        assert!(events.iter().any(|event| matches!(
+            event,
+            HostEvent::DraftChanged {
+                status: DraftSendState::Sent,
+                ..
+            }
+        )));
+
+        controller
+            .execute(FeatureCommand::SecretProvide {
+                request_id: "secret-provide".into(),
+                secret_request_id: "deployment-token".into(),
+                value: "super-secret-value".into(),
+            })
+            .expect("provide secret");
+        let secret_events = drain(&controller);
+        let serialized = serde_json::to_string(&secret_events).expect("serialize events");
+        assert!(!serialized.contains("super-secret-value"));
+        assert!(secret_events.into_iter().any(|event| matches!(
+            event,
+            HostEvent::SecretProvided { secret_request_id, .. }
+                if secret_request_id == "deployment-token"
+        )));
+
+        controller
+            .execute(FeatureCommand::AutomationUpsert {
+                request_id: "event-routine-create".into(),
+                id: Some("regression-triage".into()),
+                agent_id: None,
+                name: "Regression triage".into(),
+                prompt: "Inspect the regression and summarize impact.".into(),
+                schedule: "event:sentry:issue.regressed".into(),
+                trigger: Some(AutomationTrigger::Event {
+                    source: ListenerPlatform::Sentry,
+                    event: "issue.regressed".into(),
+                    filter: Some("web".into()),
+                }),
+                enabled: true,
+            })
+            .expect("create event routine");
+        drain(&controller);
+        assert_eq!(
+            controller
+                .ingest_listener_event(EventCard {
+                    source: ListenerPlatform::Sentry,
+                    event: "issue.regressed".into(),
+                    title: "Checkout regression".into(),
+                    summary: "A production regression was detected.".into(),
+                    url: Some("https://sentry.example.invalid/issues/42".into()),
+                    actor: Some("sentry".into()),
+                    fields: Some(vec![EventField {
+                        label: "Project".into(),
+                        value: "web".into(),
+                    }]),
+                    occurred_at_ms: Some(now_millis()),
+                })
+                .expect("ingest listener event"),
+            1
+        );
+        let event_events = drain(&controller);
+        assert!(event_events.iter().any(|event| matches!(
+            event,
+            HostEvent::TranscriptCard {
+                card: TranscriptCard::Event { event },
+                ..
+            } if event.source == ListenerPlatform::Sentry
+                && event.event == "issue.regressed"
+                && event.title == "Checkout regression"
+        )));
+        assert!(event_events.iter().any(|event| matches!(
+            event,
+            HostEvent::AutomationChanged { action, automation, .. }
+                if action == "triggered" && automation.id == "regression-triage"
+        )));
+
+        controller
+            .execute(FeatureCommand::UpdateCheck {
+                request_id: "update-check".into(),
+            })
+            .expect("check updates");
+        let events = drain(&controller);
+        assert!(events.iter().any(|event| matches!(
+            event,
+            HostEvent::UpdateChanged {
+                state: UpdateState::Checking,
+                ..
+            }
+        )));
+        assert!(events.iter().any(|event| matches!(
+            event,
+            HostEvent::UpdateChanged {
+                state: UpdateState::UpToDate { .. },
+                ..
+            }
+        )));
+    }
+
+    #[test]
+    fn automation_store_round_trips_atomically() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-automation-store-{}-{}",
+            std::process::id(),
+            now_millis()
+        ));
+        let path = root.join("automations.json");
+        let mut items = BTreeMap::new();
+        items.insert(
+            "weekly-review".into(),
+            AutomationSummary {
+                id: "weekly-review".into(),
+                agent_id: None,
+                name: "每周复盘".into(),
+                prompt: "整理本周工作。".into(),
+                schedule: "@weekly".into(),
+                trigger: Some(AutomationTrigger::Schedule {
+                    schedule: "@weekly".into(),
+                }),
+                enabled: false,
+                created_at_ms: 1,
+                last_run_at_ms: None,
+                next_run_at_ms: None,
+            },
+        );
+        persist_automations(&path, &items).expect("persist automation store");
+        let loaded = load_automations(&path);
+        assert_eq!(loaded.get("weekly-review"), items.get("weekly-review"));
+        std::fs::remove_dir_all(&root).expect("remove isolated automation store");
+    }
+
+    #[test]
+    fn deterministic_rust_backend_executes_every_declared_feature_journey() {
+        let controller = controller();
+        assert_eq!(drain(&controller)[0].kind(), "host.ready");
+
+        controller
+            .execute(FeatureCommand::ChatSend {
+                request_id: "chat-1".into(),
+                text: "验证极速自动化测试".into(),
+                agent_id: None,
+                conversation_id: None,
+                mode: AgentMode::Agent,
+                mode_statement: None,
+                model: None,
+                attachments: Vec::new(),
+            })
+            .expect("chat");
+        controller
+            .execute(FeatureCommand::MarketplaceInstall {
+                request_id: "install-1".into(),
+                mini_app_id: "global-dharma".into(),
+            })
+            .expect("install");
+        controller
+            .execute(FeatureCommand::MiniAppOpen {
+                request_id: "open-1".into(),
+                mini_app_id: "global-dharma".into(),
+            })
+            .expect("open");
+        controller
+            .execute(FeatureCommand::CapabilityRequest {
+                request_id: "capability-1".into(),
+                mini_app_id: "global-dharma".into(),
+                capability: "camera".into(),
+                reason: "scan scripture".into(),
+            })
+            .expect("capability");
+        let approval_id = drain(&controller)
+            .into_iter()
+            .find_map(|event| match event {
+                HostEvent::ApprovalRequested { approval_id, .. } => Some(approval_id),
+                _ => None,
+            })
+            .expect("approval id");
+        controller
+            .resolve_approval(ApprovalResolution {
+                approval_id,
+                decision: ApprovalDecision::AllowOnce,
+            })
+            .expect("resolve approval");
+        let operation = controller
+            .execute(FeatureCommand::RuntimeLongTask {
+                request_id: "operation-1".into(),
+                label: "index scriptures".into(),
+            })
+            .expect("long task")
+            .operation_id
+            .expect("operation id");
+        controller.interrupt(&operation).expect("interrupt");
+        controller
+            .execute(FeatureCommand::SessionClear {
+                request_id: "session-1".into(),
+            })
+            .expect("clear session");
+        controller.close().expect("close");
+
+        let kinds = drain(&controller)
+            .into_iter()
+            .map(|event| event.kind())
+            .collect::<Vec<_>>();
+        assert!(kinds.contains(&"approval.resolved"));
+        assert!(kinds.contains(&"operation.started"));
+        assert!(kinds.contains(&"operation.interrupted"));
+        assert!(kinds.contains(&"session.cleared"));
+        assert!(kinds.contains(&"host.closed"));
+    }
+
+    #[test]
+    fn stable_messaging_account_identity_accepts_numeric_and_legacy_session_ids() {
+        assert_eq!(
+            stable_authenticated_account_id(&json!({
+                "loggedIn": true,
+                "user": {"id": 42, "username": "ignored"},
+            }))
+            .as_deref(),
+            Some("42")
+        );
+        assert_eq!(
+            stable_authenticated_account_id(&json!({
+                "loggedIn": true,
+                "user": {},
+                "userId": 77,
+                "username": "legacy-user",
+            }))
+            .as_deref(),
+            Some("77")
+        );
+        assert_eq!(
+            stable_authenticated_account_id(&json!({
+                "loggedIn": true,
+                "user": {"username": "  legacy-name  "},
+            }))
+            .as_deref(),
+            Some("legacy-name")
+        );
+        assert_eq!(
+            stable_authenticated_account_id(&json!({
+                "loggedIn": true,
+                "user": {"nickname": "No stable identifier"},
+            })),
+            None
+        );
+    }
+
+    #[test]
+    fn messaging_access_is_issued_only_from_authenticated_account_session() {
+        let controller = controller();
+        let error = controller
+            .issue_messaging_access(
+                "desktop:test".into(),
+                "account-session:test".into(),
+                vec!["messaging".into(), "calls".into()],
+                60 * 60 * 1000,
+            )
+            .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("authenticated Fabushi account session")
+        );
+        controller
+            .password_login("tester@example.invalid".into(), "secret".into())
+            .expect("test account login");
+        let issued = controller
+            .issue_messaging_access(
+                "desktop:test".into(),
+                "account-session:test".into(),
+                vec!["messaging".into(), "calls".into()],
+                60 * 60 * 1000,
+            )
+            .expect("issue messaging access");
+        let token = issued["accessToken"]
+            .as_str()
+            .expect("one-time access token")
+            .to_string();
+        let actor_id = ActorId::new(issued["actorId"].as_str().expect("actor id"));
+        let root = controller.memory_root_path.as_ref().expect("memory root");
+        let access_path = root.join("_messaging").join("access.json");
+        let persisted = std::fs::read_to_string(&access_path).expect("read access registry");
+        assert!(!persisted.contains(&token));
+        let store = FileAccessTokenStore::new(access_path);
+        assert!(
+            store
+                .authorize(
+                    token.as_bytes(),
+                    &actor_id,
+                    "desktop:test",
+                    "account-session:test",
+                    AccessScope::Messaging,
+                    now_millis(),
+                )
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn deterministic_browser_login_keeps_credentials_out_of_the_presentation_boundary() {
+        let login_controller = controller();
+        assert_eq!(login_controller.auth_status().unwrap()["loggedIn"], false);
+
+        let attempt = login_controller
+            .browser_login_start()
+            .expect("start browser login");
+        assert_eq!(attempt["attemptId"], "test-browser-login");
+        assert_eq!(
+            attempt["loginUrl"],
+            "about:blank#fabushi-test-browser-login"
+        );
+        assert!(attempt.get("accessToken").is_none());
+        assert!(attempt.get("refreshToken").is_none());
+        assert!(attempt.get("password").is_none());
+
+        let completed = login_controller
+            .browser_login_poll(
+                attempt["attemptId"]
+                    .as_str()
+                    .expect("attempt id")
+                    .to_string(),
+            )
+            .expect("complete browser login");
+        assert_eq!(completed["status"], "completed");
+        assert_eq!(completed["auth"]["loggedIn"], true);
+        assert!(completed["auth"].get("accessToken").is_none());
+        assert!(completed["auth"].get("refreshToken").is_none());
+        assert_eq!(login_controller.auth_status().unwrap()["loggedIn"], true);
+
+        let reopened_controller = controller();
+        let reopened_attempt = reopened_controller
+            .browser_login_start()
+            .expect("start reopenable browser login");
+        let reopened = reopened_controller
+            .browser_login_reopen(
+                reopened_attempt["attemptId"]
+                    .as_str()
+                    .expect("reopen attempt id")
+                    .to_string(),
+            )
+            .expect("reopen browser login");
+        assert_eq!(reopened["status"], "pending");
+        assert_eq!(reopened["attemptId"], reopened_attempt["attemptId"]);
+        assert_eq!(
+            reopened["loginUrl"],
+            "about:blank#fabushi-test-browser-login"
+        );
+        assert!(reopened.get("pollSecret").is_none());
+
+        let cancelled_controller = controller();
+        let cancelled_attempt = cancelled_controller
+            .browser_login_start()
+            .expect("start cancellable browser login");
+        let cancelled = cancelled_controller
+            .browser_login_cancel(
+                cancelled_attempt["attemptId"]
+                    .as_str()
+                    .expect("cancel attempt id")
+                    .to_string(),
+            )
+            .expect("cancel browser login");
+        assert_eq!(cancelled["status"], "cancelled");
+        assert_eq!(
+            cancelled_controller.auth_status().unwrap()["loggedIn"],
+            false
+        );
+    }
+
+    #[cfg(feature = "production")]
+    #[test]
+    fn test_backend_restores_browser_session_across_controller_restart_and_logout_clears_it() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-feature-host-returning-auth-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).expect("create returning auth root");
+        let host_config = || HostCreateConfig {
+            runtime: mahayana_core::RuntimeConfig {
+                data_dir: Some(root.join("runtime")),
+                ..Default::default()
+            },
+            product_session_path: Some(root.join("product-session.json")),
+            inherit_installed_plugins: Some(false),
+            ..Default::default()
+        };
+        let config = || HostConfig {
+            profile_id: "returning-auth".into(),
+            mode: HostMode::Test,
+        };
+
+        let first = FeatureHostController::create_with_host_config(
+            config(),
+            SurfacePlatform::Electron,
+            host_config(),
+        )
+        .expect("create first test Host");
+        let attempt = first.browser_login_start().expect("start browser login");
+        first
+            .browser_login_poll(
+                attempt["attemptId"]
+                    .as_str()
+                    .expect("attempt id")
+                    .to_string(),
+            )
+            .expect("complete browser login");
+        assert_eq!(first.auth_status().unwrap()["loggedIn"], true);
+        drop(first);
+
+        let reopened = FeatureHostController::create_with_host_config(
+            config(),
+            SurfacePlatform::Electron,
+            host_config(),
+        )
+        .expect("reopen test Host");
+        let restored = reopened.auth_status().expect("restore browser session");
+        assert_eq!(restored["loggedIn"], true);
+        assert_eq!(restored["user"]["id"], "fast-e2e-browser-user");
+        let persisted = std::fs::read_to_string(root.join("runtime/test-auth-session.json"))
+            .expect("read persisted test auth state");
+        assert!(!persisted.contains("accessToken"));
+        assert!(!persisted.contains("refreshToken"));
+
+        reopened.logout().expect("logout returning account");
+        drop(reopened);
+        let after_logout = FeatureHostController::create_with_host_config(
+            config(),
+            SurfacePlatform::Electron,
+            host_config(),
+        )
+        .expect("reopen after logout");
+        assert_eq!(after_logout.auth_status().unwrap()["loggedIn"], false);
+        assert!(!root.join("runtime/test-auth-session.json").exists());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn deterministic_oauth_journey_matches_the_cross_platform_ui_contract() {
+        let controller = controller();
+        let providers = controller.auth_providers().expect("OAuth providers");
+        assert_eq!(providers.as_array().map(Vec::len), Some(4));
+        assert_eq!(providers[0]["id"], "google");
+
+        let attempt = controller
+            .oauth_start("google".into())
+            .expect("start OAuth");
+        assert_eq!(attempt["provider"], "google");
+        let completed = controller
+            .oauth_poll(
+                attempt["attemptId"]
+                    .as_str()
+                    .expect("attempt id")
+                    .to_string(),
+            )
+            .expect("complete OAuth");
+        assert_eq!(completed["status"], "completed");
+        assert_eq!(completed["auth"]["loggedIn"], true);
+        assert_eq!(controller.auth_status().unwrap()["loggedIn"], true);
+    }
+
+    #[test]
+    fn attachment_store_enforces_limits_content_addressing_and_scoped_reads() {
+        let controller = controller();
+        drain(&controller);
+        let content = b"hello attachment\nsecond line\n";
+        controller
+            .execute(FeatureCommand::AttachmentUpload {
+                request_id: "attachment-upload".into(),
+                agent_id: "mahayana-assistant".into(),
+                filename: "notes.txt".into(),
+                mime_type: Some("text/plain".into()),
+                bytes_base64: base64::engine::general_purpose::STANDARD.encode(content),
+            })
+            .expect("upload attachment");
+        let attachment = drain(&controller)
+            .into_iter()
+            .find_map(|event| match event {
+                HostEvent::AttachmentStored { attachment, .. } => Some(attachment),
+                _ => None,
+            })
+            .expect("stored attachment event");
+        assert_eq!(attachment.size_bytes, content.len() as u64);
+        assert_eq!(attachment.hash.len(), 64);
+        assert!(attachment.path.ends_with(".txt"));
+        assert!(Path::new(&attachment.path).is_file());
+
+        controller
+            .execute(FeatureCommand::AttachmentReadText {
+                request_id: "attachment-text".into(),
+                agent_id: "mahayana-assistant".into(),
+                path: attachment.path.clone(),
+            })
+            .expect("read attachment text");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::AttachmentTextRead { result, .. }
+                if result.kind == "text"
+                    && result.text.as_deref() == Some("hello attachment\nsecond line\n")
+                    && !result.truncated
+        )));
+
+        controller
+            .execute(FeatureCommand::AttachmentReadChunk {
+                request_id: "attachment-chunk".into(),
+                agent_id: "mahayana-assistant".into(),
+                path: attachment.path.clone(),
+                offset: 6,
+                length: 10,
+            })
+            .expect("read attachment chunk");
+        assert!(drain(&controller).into_iter().any(|event| match event {
+            HostEvent::AttachmentChunkRead { result, .. } => {
+                base64::engine::general_purpose::STANDARD
+                    .decode(result.bytes_base64)
+                    .ok()
+                    .as_deref()
+                    == Some(b"attachment".as_slice())
+            }
+            _ => false,
+        }));
+
+        assert_eq!(attachment_byte_limit_for_name("clip.mp4"), VIDEO_BYTE_LIMIT);
+        assert_eq!(
+            attachment_byte_limit_for_name("document.pdf"),
+            ATTACHMENT_BYTE_LIMIT
+        );
+
+        let outside =
+            std::env::temp_dir().join(format!("fabushi-attachment-outside-{}", std::process::id()));
+        std::fs::write(&outside, b"outside").expect("write outside fixture");
+        let escaped = controller.execute(FeatureCommand::AttachmentReadText {
+            request_id: "attachment-escape".into(),
+            agent_id: "mahayana-assistant".into(),
+            path: outside.to_string_lossy().to_string(),
+        });
+        assert!(
+            matches!(escaped, Err(FeatureHostError::Contract(message)) if message.contains("escapes"))
+        );
+        let _ = std::fs::remove_file(outside);
+    }
+
+    #[test]
+    fn agent_messaging_is_async_persistent_and_broadcasts_without_chat_pollution() {
+        let controller = controller();
+        drain(&controller);
+        controller
+            .execute(FeatureCommand::BotCreate {
+                request_id: "bot-peer".into(),
+                name: "Research".into(),
+                description: "Research teammate".into(),
+                title: "Researcher".into(),
+                avatar: None,
+                avatar_shape: None,
+                avatar_color: None,
+                inference_provider: None,
+            })
+            .expect("create peer bot");
+        let peer = drain(&controller)
+            .into_iter()
+            .find_map(|event| match event {
+                HostEvent::BotChanged { bot, .. } if bot.name == "Research" => Some(bot),
+                _ => None,
+            })
+            .expect("created peer");
+
+        controller
+            .execute(FeatureCommand::AgentSend {
+                request_id: "peer-send".into(),
+                from_agent_id: "mahayana-assistant".into(),
+                target_id: peer.id.clone(),
+                text: "Summarize the evidence.".into(),
+                priority: true,
+            })
+            .expect("send peer message");
+        let events = drain(&controller);
+        assert!(events.iter().any(|event| matches!(
+            event,
+            HostEvent::AgentPeerMessageChanged { message, .. }
+                if message.from_agent_id == "mahayana-assistant"
+                    && message.target_id == peer.id
+                    && message.priority
+        )));
+        assert!(events.iter().any(|event| matches!(
+            event,
+            HostEvent::AgentBackgroundMessage { agent_id, source, .. }
+                if agent_id == &peer.id && source == "agent-priority"
+        )));
+        assert!(!events.iter().any(|event| matches!(
+            event,
+            HostEvent::ChatMessage {
+                role: MessageRole::User,
+                ..
+            }
+        )));
+
+        controller
+            .execute(FeatureCommand::AgentPeerHistory {
+                request_id: "peer-history".into(),
+                agent_id: peer.id.clone(),
+                limit: 20,
+            })
+            .expect("load peer history");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::AgentPeerHistoryListed { messages, .. }
+                if messages.len() == 1 && messages[0].text == "Summarize the evidence."
+        )));
+
+        controller
+            .execute(FeatureCommand::AgentBroadcast {
+                request_id: "broadcast".into(),
+                target_ids: None,
+                message: "Owner announcement".into(),
+            })
+            .expect("broadcast");
+        assert!(drain(&controller).into_iter().any(|event| matches!(
+            event,
+            HostEvent::AgentBroadcasted { result, .. }
+                if result.total >= 2 && result.scheduled == result.total
+        )));
+    }
+
+    #[cfg(not(feature = "production"))]
+    #[test]
+    fn production_mode_requires_the_explicit_runtime_feature() {
+        let error = FeatureHostController::create(
+            HostConfig {
+                profile_id: "production".into(),
+                mode: HostMode::Production,
+            },
+            SurfacePlatform::Electron,
+        )
+        .err()
+        .expect("production must not fall back to the test backend");
+        assert!(matches!(error, FeatureHostError::ProductionUnavailable));
+    }
+
+    #[cfg(feature = "production")]
+    #[test]
+    fn production_uses_the_real_runtime_and_rust_owned_session_store() {
+        let controller = FeatureHostController::create_with_host_config(
+            HostConfig {
+                profile_id: "production".into(),
+                mode: HostMode::Production,
+            },
+            SurfacePlatform::Electron,
+            isolated_host_config("production"),
+        )
+        .expect("create feature Host");
+        let ready = drain(&controller);
+        assert_eq!(ready[0].kind(), "host.ready");
+        assert!(
+            controller
+                .info()
+                .runtime_version
+                .starts_with("mahayana-abi-")
+        );
+
+        controller
+            .execute(FeatureCommand::MarketplaceInstall {
+                request_id: "install-1".into(),
+                mini_app_id: "global-dharma".into(),
+            })
+            .expect("verify bundled production MiniApp");
+        controller
+            .execute(FeatureCommand::SessionClear {
+                request_id: "session-1".into(),
+            })
+            .expect("clear isolated Rust session");
+
+        let kinds = drain(&controller)
+            .into_iter()
+            .map(|event| event.kind())
+            .collect::<Vec<_>>();
+        assert!(kinds.contains(&"marketplace.installed"));
+        assert!(kinds.contains(&"session.cleared"));
+    }
+
+    #[cfg(feature = "production")]
+    #[test]
+    fn draft_tool_arguments_match_live_gmail_and_slack_schemas() {
+        let email = MessageDraft::Email {
+            id: "email-1".into(),
+            from: Some("sender@example.com".into()),
+            to: vec!["one@example.com".into(), "two@example.com".into()],
+            cc: Some(vec!["copy@example.com".into()]),
+            subject: "Subject".into(),
+            body: "Plain text body".into(),
+            status: DraftSendState::Editable,
+            error: None,
+        };
+        let gmail_schema = json!({
+            "type": "object",
+            "properties": {
+                "to": {"type": "string"},
+                "cc": {"type": "string"},
+                "subject": {"type": "string"},
+                "from_address": {"type": ["string", "null"]},
+                "payload": {"type": "object"}
+            }
+        });
+        let email_args = draft_tool_arguments(&email, Some(&gmail_schema)).expect("email args");
+        assert_eq!(email_args["to"], "one@example.com, two@example.com");
+        assert_eq!(email_args["cc"], "copy@example.com");
+        assert_eq!(email_args["from_address"], "sender@example.com");
+        assert_eq!(email_args["payload"]["mime_type"], "text/plain");
+        assert_eq!(email_args["payload"]["body"]["content"], "Plain text body");
+
+        let slack = MessageDraft::Slack {
+            id: "slack-1".into(),
+            workspace: None,
+            target: "C012345".into(),
+            thread: Some("1234.56".into()),
+            body: "hello".into(),
+            status: DraftSendState::Editable,
+            error: None,
+        };
+        let slack_schema = json!({
+            "type": "object",
+            "properties": {
+                "channel_id": {"type": "string"},
+                "text": {"type": "string"},
+                "thread_ts": {"type": "string"}
+            }
+        });
+        let slack_args = draft_tool_arguments(&slack, Some(&slack_schema)).expect("Slack args");
+        assert_eq!(slack_args["channel_id"], "C012345");
+        assert_eq!(slack_args["text"], "hello");
+        assert_eq!(slack_args["thread_ts"], "1234.56");
+    }
+
+    #[cfg(feature = "production")]
+    #[test]
+    fn production_runtime_events_preserve_streaming_and_terminal_states() {
+        let controller = FeatureHostController::create_with_host_config(
+            HostConfig {
+                profile_id: "production-events".into(),
+                mode: HostMode::Production,
+            },
+            SurfacePlatform::Electron,
+            isolated_host_config("production-events"),
+        )
+        .expect("create production event Host");
+        let operation_id = OperationId("operation-1".into());
+        let conversation_id = ConversationId(MAHAYANA_AI_CONVERSATION_ID.into());
+
+        let delta = controller
+            .translate_runtime_event(RuntimeEvent::MessageDelta {
+                operation_id: operation_id.clone(),
+                conversation_id: conversation_id.clone(),
+                delta: "般若".into(),
+            })
+            .expect("translate delta")
+            .expect("delta event");
+        assert!(matches!(
+            delta,
+            HostEvent::ChatDelta {
+                operation_id: ref current,
+                ref delta,
+                ..
+            } if current == "operation-1" && delta == "般若"
+        ));
+
+        let completed = controller
+            .translate_runtime_event(RuntimeEvent::MessageCompleted {
+                operation_id: operation_id.clone(),
+                message: mahayana_core::Message {
+                    id: mahayana_core::MessageId("message-1".into()),
+                    conversation_id,
+                    role: RuntimeMessageRole::Assistant,
+                    text: "般若波罗蜜多".into(),
+                    created_at_ms: 1,
+                    metadata: serde_json::json!({}),
+                },
+            })
+            .expect("translate completed message")
+            .expect("completed message event");
+        assert!(matches!(
+            completed,
+            HostEvent::ChatMessage {
+                operation_id: Some(ref current),
+                role: MessageRole::Assistant,
+                ref text,
+                ..
+            } if current == "operation-1" && text == "般若波罗蜜多"
+        ));
+
+        let terminal = controller
+            .translate_runtime_event(RuntimeEvent::OperationCompleted {
+                operation_id: operation_id.clone(),
+            })
+            .expect("translate completion")
+            .expect("completion event");
+        assert!(matches!(
+            terminal,
+            HostEvent::OperationCompleted {
+                operation_id: ref current,
+                ..
+            } if current == "operation-1"
+        ));
+
+        let failed = controller
+            .translate_runtime_event(RuntimeEvent::OperationFailed {
+                operation_id,
+                code: "provider_error".into(),
+                message: "provider unavailable".into(),
+            })
+            .expect("translate failure")
+            .expect("failure event");
+        assert!(matches!(
+            failed,
+            HostEvent::OperationFailed {
+                operation_id: ref current,
+                ref code,
+                ref message,
+                ..
+            } if current == "operation-1"
+                && code == "provider_error"
+                && message == "provider unavailable"
+        ));
+    }
+
+    #[cfg(feature = "production")]
+    #[derive(Default)]
+    struct FcmUnreadBackend;
+
+    #[cfg(feature = "production")]
+    #[async_trait::async_trait]
+    impl mahayana_kernel::EngineBackend for FcmUnreadBackend {
+        fn descriptor(&self) -> mahayana_kernel::BackendDescriptor {
+            mahayana_kernel::BackendDescriptor {
+                id: "fcm-unread-test".into(),
+                display_name: "FCM unread deterministic backend".into(),
+                native: true,
+                capabilities: mahayana_kernel::CapabilitySet::new([
+                    mahayana_kernel::Capability::Model,
+                ]),
+            }
+        }
+
+        async fn open_session(
+            &self,
+            _request: mahayana_kernel::OpenSessionRequest,
+        ) -> Result<mahayana_kernel::SessionId, mahayana_kernel::KernelError> {
+            Ok(mahayana_kernel::SessionId::new())
+        }
+
+        async fn run(
+            &self,
+            request: mahayana_kernel::RunRequest,
+            events: mahayana_kernel::SharedKernelEventSink,
+        ) -> Result<(), mahayana_kernel::KernelError> {
+            events.emit(mahayana_kernel::KernelEvent::MessageCompleted {
+                operation_id: request.operation_id,
+                text: "deterministic assistant completion".into(),
+            })
+        }
+
+        async fn interrupt(
+            &self,
+            _operation_id: &mahayana_kernel::OperationId,
+        ) -> Result<(), mahayana_kernel::KernelError> {
+            Ok(())
+        }
+
+        async fn resolve_approval(
+            &self,
+            _resolution: mahayana_kernel::ApprovalResolution,
+        ) -> Result<(), mahayana_kernel::KernelError> {
+            Ok(())
+        }
+    }
+
+    #[cfg(feature = "production")]
+    fn fcm_unread_production_controller() -> FeatureHostController {
+        let profile = format!("fcm-unread-cross-layer-{}", std::process::id());
+        let host_config = isolated_host_config(&profile);
+        let runtime = MahayanaHost::create_with_engine_backend_for_test(
+            host_config,
+            std::sync::Arc::new(FcmUnreadBackend),
+        )
+        .expect("create deterministic production runtime");
+        let mut controller = FeatureHostController::create_test_backend(
+            HostConfig {
+                profile_id: profile,
+                mode: HostMode::Test,
+            },
+            SurfacePlatform::Electron,
+            None,
+        );
+        controller.config.mode = HostMode::Production;
+        controller.runtime = Some(runtime);
+        controller
+    }
+
+    #[cfg(feature = "production")]
+    fn fcm_assistant_unread(controller: &FeatureHostController, request_id: &str) -> u32 {
+        controller
+            .production_list_conversations_from_runtime(request_id.into(), None)
+            .expect("authoritative conversation.list");
+        let mut state = controller.state().expect("feature state");
+        while let Some(event) = state.events.pop_back() {
+            if let HostEvent::ConversationListed { conversations, .. } = event {
+                return conversations
+                    .into_iter()
+                    .find(|conversation| conversation.id == MAHAYANA_AI_CONVERSATION_ID)
+                    .expect("assistant conversation")
+                    .unread_count;
+            }
+        }
+        panic!("conversation.list event missing")
+    }
+
+    #[cfg(feature = "production")]
+    fn wait_for_fcm_assistant_unread(
+        controller: &FeatureHostController,
+        expected: u32,
+        request_id: &str,
+    ) {
+        for attempt in 0..100 {
+            if fcm_assistant_unread(controller, &format!("{request_id}-{attempt}")) == expected {
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        panic!("assistant unread did not become {expected}")
+    }
+
+    #[cfg(feature = "production")]
+    #[test]
+    fn fcm_010_13_11_production_adapter_keeps_read_boundary_conversation_scoped() {
+        let controller = fcm_unread_production_controller();
+        let assistant = ConversationId(MAHAYANA_AI_CONVERSATION_ID.to_string());
+        let research = ConversationId("codex:agent:research".to_string());
+
+        assert_eq!(fcm_assistant_unread(&controller, "initial-list"), 0);
+
+        controller
+            .runtime()
+            .expect("runtime")
+            .execute(RuntimeCommand::SendMessage {
+                conversation_id: assistant.clone(),
+                text: "visible assistant completion".into(),
+                client_message_id: Some("visible-completion".into()),
+                inference_provider: None,
+                hidden: false,
+            })
+            .expect("visible production runtime send");
+        wait_for_fcm_assistant_unread(&controller, 1, "after-visible");
+
+        controller
+            .production_open_conversation_from_runtime("open-research".into(), research.0.clone())
+            .expect("explicit unrelated conversation.open");
+        assert_eq!(
+            fcm_assistant_unread(&controller, "after-unrelated-open"),
+            1,
+            "opening a shared-provider codex conversation must not clear assistant unread"
+        );
+
+        controller
+            .runtime()
+            .expect("runtime")
+            .execute(RuntimeCommand::ConversationHistory {
+                conversation_id: assistant.clone(),
+                limit: Some(2_000),
+            })
+            .expect("background history request clamped by Runtime");
+        assert_eq!(
+            fcm_assistant_unread(&controller, "after-background-history"),
+            1,
+            "Runtime clamp=500 background history must not acknowledge unread"
+        );
+
+        let visible_history_before_hidden = match controller
+            .runtime()
+            .expect("runtime")
+            .execute(RuntimeCommand::ConversationHistory {
+                conversation_id: assistant.clone(),
+                limit: Some(500),
+            })
+            .expect("visible history before hidden completion")
+        {
+            RuntimeResponse::History { data } => data.len(),
+            other => panic!("unexpected history response: {other:?}"),
+        };
+        controller
+            .runtime()
+            .expect("runtime")
+            .execute(RuntimeCommand::SendMessage {
+                conversation_id: assistant.clone(),
+                text: "hidden background completion".into(),
+                client_message_id: Some("hidden-completion".into()),
+                inference_provider: None,
+                hidden: true,
+            })
+            .expect("hidden production runtime send");
+        std::thread::sleep(Duration::from_millis(25));
+        assert_eq!(fcm_assistant_unread(&controller, "after-hidden"), 1);
+        let visible_history_after_hidden = match controller
+            .runtime()
+            .expect("runtime")
+            .execute(RuntimeCommand::ConversationHistory {
+                conversation_id: assistant.clone(),
+                limit: Some(500),
+            })
+            .expect("visible history after hidden completion")
+        {
+            RuntimeResponse::History { data } => data.len(),
+            other => panic!("unexpected history response: {other:?}"),
+        };
+        assert_eq!(visible_history_after_hidden, visible_history_before_hidden);
+
+        controller
+            .production_open_conversation_from_runtime("open-assistant".into(), assistant.0.clone())
+            .expect("explicit assistant conversation.open");
+        assert_eq!(
+            fcm_assistant_unread(&controller, "after-assistant-open"),
+            0,
+            "only explicit assistant open may clear assistant unread"
+        );
+    }
+}
