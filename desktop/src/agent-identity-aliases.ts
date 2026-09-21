@@ -1,4 +1,4 @@
-import { registerBotIdentityAliases } from '../../frontend/apps/web/src/app/host/bot-mark';
+import { registerFabAvatarIdentityAliases } from './ui/avatar/fab-avatar';
 import { MAHAYANA_RUNTIME_EVENT_NAME } from '../../frontend/apps/web/src/lib/mahayana-host/electron-transport';
 
 export type BotIdentityAlias = { alias: string; canonical: string };
@@ -108,20 +108,20 @@ export function botIdentityAliasesFromRuntimeDetail(detail: unknown): BotIdentit
 }
 
 /**
- * Subscribe to the single Mahayana runtime event stream and teach BotMark which
- * UI aliases point at the same canonical Bot. BotMark owns the reactive store,
+ * Subscribe to the single Mahayana runtime event stream and teach FabAvatar which
+ * UI aliases point at the same canonical Bot. FabAvatar owns the reactive store,
  * so already-mounted avatars immediately redraw when authoritative identity
  * metadata arrives.
  */
-export function installBotIdentityAliases(): () => void {
+export function installFabAvatarIdentityAliases(): () => void {
   if (typeof window === 'undefined') return () => {};
   // The primary Mahayana conversation has a stable built-in Bot identity even
   // before the first Host bot.listed event arrives. Register it synchronously
   // before React renders so list/header/empty-state and Workbench use one seed.
-  registerBotIdentityAliases(PRIMARY_MAHAYANA_IDENTITY_ALIASES);
+  registerFabAvatarIdentityAliases(PRIMARY_MAHAYANA_IDENTITY_ALIASES);
   const onRuntimeEvent = (event: Event) => {
     const aliases = botIdentityAliasesFromRuntimeDetail((event as CustomEvent<unknown>).detail);
-    if (aliases.length) registerBotIdentityAliases(aliases);
+    if (aliases.length) registerFabAvatarIdentityAliases(aliases);
   };
   window.addEventListener(MAHAYANA_RUNTIME_EVENT_NAME, onRuntimeEvent);
   return () => window.removeEventListener(MAHAYANA_RUNTIME_EVENT_NAME, onRuntimeEvent);
