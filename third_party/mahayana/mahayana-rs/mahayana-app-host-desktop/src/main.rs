@@ -7,6 +7,7 @@ use std::io::{self, BufRead, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
+use std::time::Duration;
 
 fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     // The desktop product owns this fallback workspace.  It must exist before
@@ -24,6 +25,32 @@ fn write_response(stdout: &Mutex<io::Stdout>, response: &str) -> io::Result<()> 
     stdout.flush()
 }
 
+fn write_runtime_event(
+    stdout: &Mutex<io::Stdout>,
+    event: serde_json::Value,
+) -> io::Result<()> {
+    let frame = serde_json::json!({ "event": event });
+    let encoded = serde_json::to_string(&frame)
+        .map_err(|error| io::Error::other(format!("event serialization failed: {error}")))?;
+    write_response(stdout, &encoded)
+}
+
+fn drain_ready_runtime_events(
+    host: &UnifiedAppHost,
+    stdout: &Mutex<io::Stdout>,
+) -> io::Result<()> {
+    loop {
+        match host.receive_feature_event(Duration::ZERO) {
+            Ok(Some(event)) => write_runtime_event(stdout, event)?,
+            Ok(None) => return Ok(()),
+            Err(error) => {
+                eprintln!("failed to drain Mahayana runtime event: {error}");
+                return Ok(());
+            }
+        }
+    }
+}
+
 fn main() {
     let app_data_dir = default_unified_app_data_dir();
     if let Err(error) = ensure_managed_runtime_layout(&app_data_dir) {
@@ -35,7 +62,7 @@ fn main() {
     }
 
     let host = match UnifiedAppHost::new(app_data_dir.clone()) {
-        Ok(host) => host,
+        Ok(host) => Arc::new(host),
         Err(error) => {
             eprintln!("failed to initialize unified Mahayana app host: {error}");
             std::process::exit(1);
@@ -54,6 +81,28 @@ fn main() {
         }
     };
     let stdout = Arc::new(Mutex::new(io::stdout()));
+
+    // Runtime events travel as unsolicited JSON frames. The event worker blocks
+    // in Rust instead of issuing 500 ms JSON-RPC receive requests from Electron.
+    // Test mode has a non-blocking deterministic backend, so a small sleep keeps
+    // that lane from spinning while CI is idle.
+    let event_host = Arc::clone(&host);
+    let event_stdout = Arc::clone(&stdout);
+    let _event_worker = thread::spawn(move || loop {
+        match event_host.receive_feature_event(Duration::from_secs(30)) {
+            Ok(Some(event)) => {
+                if write_runtime_event(&event_stdout, event).is_err() {
+                    break;
+                }
+            }
+            Ok(None) => thread::sleep(Duration::from_millis(25)),
+            Err(error) => {
+                eprintln!("Mahayana runtime event stream failed: {error}");
+                thread::sleep(Duration::from_millis(100));
+            }
+        }
+    });
+
     let platform_stdout = Arc::clone(&stdout);
     let (platform_tx, platform_rx) = mpsc::channel::<String>();
     let _platform_worker = thread::spawn(move || {
@@ -85,6 +134,12 @@ fn main() {
         }
         let response = dispatch_json(&host, &line);
         if write_response(&stdout, &response).is_err() {
+            break;
+        }
+        // Commands may enqueue product-local events that are not backed by the
+        // model runtime receiver. Drain those immediately so they are pushed in
+        // the same turn instead of waiting for the blocking runtime lane.
+        if drain_ready_runtime_events(&host, &stdout).is_err() {
             break;
         }
     }
