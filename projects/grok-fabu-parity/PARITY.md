@@ -195,3 +195,15 @@ P3: DONE for the primary Agent path: HostProcess lifecycle/generation is replaye
 P4: DONE for the primary Agent root: cross-device `root.json` validation, full referenced-object materialization, transcript + attachment-index + runtime-checkpoint recovery and etag/conflict-safe writes are implemented. A remote `running` checkpoint is never promoted to a local active operation without a fresh runtime event.
 
 P5: CODE COMPLETE for the current Network inventory; the remaining gate is packaged macOS acceptance against the exact successful HEAD, including direct handoff+broadcast and two-Agent isolation with retained video/screenshots/trace/logs.
+
+## 2026-09-21 Rust-owned workspace state and capability gateway closure
+
+This slice closes the two remaining architecture leaks identified during the OpenBot + Grok Bot design review before any new CI/release run:
+
+- Agent Composer drafts, rich-text documents, attachments, reply context and stable references are no longer persisted by renderer `localStorage` or the generic Electron client-persistence bridge. `useAgentWorkspaceRuntime` hydrates `agent-workspace:drafts:v2` from Mahayana `RuntimeStore`, merges any one-time legacy draft without overwriting edits made while the Host connects, and writes the authoritative snapshot back to Rust with a short trailing debounce.
+- `RuntimeStore` now has an explicit SQLite `workspace_state` table. FeatureHost scopes the durable key by the authenticated account fingerprint before it reaches the Runtime, so drafts cannot cross account boundaries. The old localStorage key remains read-only migration input and is deleted only after a successful Rust write.
+- `CapabilityBroker` now accepts generic `CapabilityRequest` authorization, not only registry descriptors. FeatureHost applies that gateway before privileged Computer screen/input, Remote Computer sessions, MCP tool calls, Agent-to-Agent handoff/broadcast, Agent workspace file read/write, Mini App open and Connector management paths. Existing domain-specific permission checks and the physical `ComputerControlLease` remain a second enforcement layer.
+- `desktop/scripts/check-agent-workspace-boundary.mjs` now fails CI if Agent draft persistence is moved back to renderer writes or if the privileged FeatureHost paths bypass the Rust CapabilityBroker.
+- Desktop version is `1.2.74`. No code/test/version mutation is permitted after the exact-HEAD CI gate; the same merged source commit must be passed to the signed/notarized macOS packaging workflow.
+
+The remaining gate is verification, not additional architecture work: create a fresh PR from `refactor/fabu-agent-runtime-20260920` to `main`, require the Desktop Chat Parity and Rust desktop runtime workflows on its exact HEAD, merge only after they are green, then package and publish macOS from the merged exact source.
