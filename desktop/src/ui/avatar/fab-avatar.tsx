@@ -94,6 +94,7 @@ export default function FabAvatar({
     aria-label={`${label} · ${normalized}`}
     data-fab-avatar="true"
     data-avatar-identity={identity}
+    data-shape={`fab-geometric-${identityHue(identity) % 4}`}
     data-state={normalized}
     data-active={active || undefined}
     title={label}
