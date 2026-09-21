@@ -1,5 +1,6 @@
 import { LoaderCircle, Mic, Paperclip, Reply, Send, Square, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
+import { FabButton, FabInput } from '../ui/primitives/fab-primitives';
 import AgentRichTextEditor, { type AgentRichTextEditorControls } from './agent-rich-text-editor';
 import {
   emojiSuggestions,
@@ -369,18 +370,18 @@ export default function AgentComposer({
     {replyTarget ? <div className={styles.replyTarget} data-testid="reply-message-banner">
       <Reply size={15} />
       <div><strong>{replyTarget.label}</strong><span>{replyTarget.text}</span></div>
-      {onClearReplyTarget ? <button type="button" data-testid="reply-message-cancel" aria-label="Cancel reply" onClick={onClearReplyTarget}><X size={14} /></button> : null}
+      {onClearReplyTarget ? <FabButton variant="bare" type="button" data-testid="reply-message-cancel" aria-label="Cancel reply" onClick={onClearReplyTarget}><X size={14} /></FabButton> : null}
     </div> : null}
     {attachments.length ? <div className={styles.attachments} role="list" aria-label="Attachments">
       {attachments.map((attachment) => <span key={attachment.id} className={styles.attachment} role="listitem">
         <span><strong>{attachment.name}</strong>{attachmentSize(attachment.sizeBytes) ? <small>{attachmentSize(attachment.sizeBytes)}</small> : null}</span>
-        <button type="button" aria-label={`Remove ${attachment.name}`} onClick={() => onRemoveAttachment(attachment.id)}><X size={13} /></button>
+        <FabButton variant="bare" type="button" aria-label={`Remove ${attachment.name}`} onClick={() => onRemoveAttachment(attachment.id)}><X size={13} /></FabButton>
       </span>)}
     </div> : null}
-    <button type="button" className={styles.attach} title="Attach files" aria-label="Attach files" disabled={!ready || uploading || voiceState !== 'idle' || atAttachmentLimit} onClick={() => fileInputRef.current?.click()}>
+    <FabButton variant="bare" type="button" className={styles.attach} title="Attach files" aria-label="Attach files" disabled={!ready || uploading || voiceState !== 'idle' || atAttachmentLimit} onClick={() => fileInputRef.current?.click()}>
       <Paperclip size={18} />
-    </button>
-    {onTranscribeVoice ? <button
+    </FabButton>
+    {onTranscribeVoice ? <FabButton variant="bare"
       type="button"
       className={styles.voice}
       data-state={voiceState}
@@ -390,8 +391,8 @@ export default function AgentComposer({
       onClick={() => voiceState === 'recording' ? stopVoice() : void startVoice()}
     >
       {voiceState === 'transcribing' ? <LoaderCircle size={17} className={styles.spin} /> : voiceState === 'recording' ? <Square size={13} fill="currentColor" /> : <Mic size={17} />}
-    </button> : null}
-    <input
+    </FabButton> : null}
+    <FabInput variant="bare"
       ref={fileInputRef}
       className={styles.fileInput}
       type="file"
@@ -420,7 +421,7 @@ export default function AgentComposer({
         onControls={(controls) => { editorControlsRef.current = controls; }}
       />
       {mentionResults.length ? <div className={styles.mentions} role="listbox" aria-label="Mention an Agent">
-        {mentionResults.map((candidate, index) => <button
+        {mentionResults.map((candidate, index) => <FabButton variant="bare"
           key={candidate.id}
           type="button"
           role="option"
@@ -429,10 +430,10 @@ export default function AgentComposer({
           onClick={() => insertMention(candidate)}
         >
           <span><strong>@{candidate.name}</strong>{candidate.description ? <small>{candidate.description}</small> : null}</span><small>{candidate.kind === 'mcp' ? 'MCP' : 'Agent'}</small>
-        </button>)}
+        </FabButton>)}
       </div> : null}
       {workflowResults.length ? <div className={styles.mentions} role="listbox" aria-label="Reference a workflow">
-        {workflowResults.map((candidate, index) => <button
+        {workflowResults.map((candidate, index) => <FabButton variant="bare"
           key={candidate.id}
           type="button"
           role="option"
@@ -441,10 +442,10 @@ export default function AgentComposer({
           onClick={() => insertWorkflow(candidate)}
         >
           <span><strong>/{candidate.name}</strong>{candidate.description ? <small>{candidate.description}</small> : null}</span>
-        </button>)}
+        </FabButton>)}
       </div> : null}
       {emojiResults.length ? <div className={styles.mentions} role="listbox" aria-label="Insert emoji">
-        {emojiResults.map((candidate, index) => <button
+        {emojiResults.map((candidate, index) => <FabButton variant="bare"
           key={candidate.id}
           type="button"
           role="option"
@@ -453,10 +454,10 @@ export default function AgentComposer({
           onClick={() => insertEmoji(candidate)}
         >
           <span><strong>{candidate.native} :{candidate.shortcodes[0] ?? candidate.id}:</strong><small>{candidate.name}</small></span>
-        </button>)}
+        </FabButton>)}
       </div> : null}
       {pullRequestResults.length ? <div className={styles.mentions} role="listbox" aria-label="Reference a pull request">
-        {pullRequestResults.map((candidate, index) => <button
+        {pullRequestResults.map((candidate, index) => <FabButton variant="bare"
           key={candidate.url}
           type="button"
           role="option"
@@ -465,18 +466,18 @@ export default function AgentComposer({
           onClick={() => insertPullRequest(candidate)}
         >
           <span><strong>#{candidate.prNumber} {candidate.title}</strong>{candidate.repository ? <small>{candidate.repository}</small> : null}</span><small>PR</small>
-        </button>)}
+        </FabButton>)}
       </div> : null}
       {voiceState === 'recording' ? <span className={styles.voiceStatus}>Recording…</span> : voiceError ? <span className={styles.voiceError} title={voiceError}>Voice unavailable</span> : null}
     </div>
     {hasPayload ? (
-      <button data-testid="messenger-send" className={styles.primary} type="submit" disabled={!canSend}>
+      <FabButton variant="bare" data-testid="messenger-send" className={styles.primary} type="submit" disabled={!canSend}>
         <Send size={17} />
-      </button>
+      </FabButton>
     ) : busy ? (
-      <button data-testid="messenger-stop" className={styles.primary} type="button" title="Stop" aria-label="Stop" onClick={onStop}>
+      <FabButton variant="bare" data-testid="messenger-stop" className={styles.primary} type="button" title="Stop" aria-label="Stop" onClick={onStop}>
         <Square size={15} fill="currentColor" />
-      </button>
+      </FabButton>
     ) : (
       <span className={styles.primaryPlaceholder} aria-hidden="true" />
     )}
