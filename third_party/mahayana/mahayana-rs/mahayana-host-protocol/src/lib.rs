@@ -601,6 +601,18 @@ pub struct ComputerStatus {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ComputerControlLeaseState {
+    pub controller_id: String,
+    pub run_id: String,
+    pub device_id: String,
+    pub origin: ComputerControlOrigin,
+    pub mode: String,
+    pub acquired_at_ms: i64,
+    pub expires_at_ms: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ComputerSnapshot {
     pub captured_at_ms: i64,
     pub data_url: String,
@@ -1517,6 +1529,26 @@ pub enum FeatureCommand {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         then: Vec<ComputerAction>,
     },
+    #[serde(rename = "computer.takeControl")]
+    ComputerTakeControl {
+        #[serde(rename = "requestId")]
+        request_id: String,
+        #[serde(rename = "agentId")]
+        agent_id: String,
+        #[serde(rename = "leaseId")]
+        lease_id: String,
+        #[serde(default)]
+        target: ComputerControlTarget,
+    },
+    #[serde(rename = "computer.releaseControl")]
+    ComputerReleaseControl {
+        #[serde(rename = "requestId")]
+        request_id: String,
+        #[serde(rename = "agentId")]
+        agent_id: String,
+        #[serde(rename = "leaseId")]
+        lease_id: String,
+    },
     #[serde(rename = "remoteComputer.register")]
     RemoteComputerRegister {
         #[serde(rename = "requestId")]
@@ -1983,6 +2015,8 @@ impl FeatureCommand {
             | Self::ComputerStatus { request_id }
             | Self::ComputerScreenshot { request_id, .. }
             | Self::ComputerAction { request_id, .. }
+            | Self::ComputerTakeControl { request_id, .. }
+            | Self::ComputerReleaseControl { request_id, .. }
             | Self::RemoteComputerRegister { request_id, .. }
             | Self::RemoteComputerHeartbeat { request_id, .. }
             | Self::RemoteComputerClients { request_id, .. }
@@ -2450,6 +2484,19 @@ pub enum HostEvent {
         agent_id: Option<String>,
         result: ComputerActionResult,
     },
+    #[serde(rename = "computer.controlChanged")]
+    ComputerControlChanged {
+        timestamp: String,
+        #[serde(rename = "requestId")]
+        request_id: String,
+        #[serde(rename = "agentId")]
+        agent_id: String,
+        #[serde(rename = "leaseId")]
+        lease_id: String,
+        active: bool,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        lease: Option<ComputerControlLeaseState>,
+    },
     #[serde(rename = "remoteComputer.changed")]
     RemoteComputerChanged {
         timestamp: String,
@@ -2802,6 +2849,7 @@ impl HostEvent {
             Self::ComputerStatusChanged { .. } => "computer.status",
             Self::ComputerSnapshotCaptured { .. } => "computer.snapshot",
             Self::ComputerActionCompleted { .. } => "computer.result",
+            Self::ComputerControlChanged { .. } => "computer.controlChanged",
             Self::RemoteComputerChanged { .. } => "remoteComputer.changed",
             Self::MemoryListed { .. } => "memory.listed",
             Self::MemoryChanged { .. } => "memory.changed",
