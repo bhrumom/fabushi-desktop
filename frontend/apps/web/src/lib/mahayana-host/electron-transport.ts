@@ -28,7 +28,7 @@ import type {
 type MahayanaElectronBridge = {
   contractVersion: number;
   invoke<T>(method: string, params?: Record<string, unknown>): Promise<T>;
-  subscribe?(listener: RuntimeEventListener): () => void;
+  subscribe(listener: RuntimeEventListener): () => void;
 };
 
 type ElectronShellBridge = {
@@ -95,9 +95,6 @@ type ConversationJournal = {
   version: 1;
   conversations: Record<string, ConversationJournalMessage[]>;
 };
-
-const idle = (milliseconds = 10) =>
-  new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 
 function isMiniAppConversation(kind: string): boolean {
   return kind.trim().toLocaleLowerCase() === "miniapp";
@@ -290,7 +287,8 @@ export function isElectronMahayanaHostAvailable(): boolean {
   return (
     typeof window !== "undefined" &&
     window.mahayana?.contractVersion === ELECTRON_EDGE_CONTRACT_VERSION &&
-    typeof window.mahayana.invoke === "function"
+    typeof window.mahayana.invoke === "function" &&
+    typeof window.mahayana.subscribe === "function"
   );
 }
 
@@ -319,7 +317,6 @@ export class ElectronMahayanaHostTransport implements MahayanaHostTransport {
   private activeConversationId: string | null = null;
   private suppressUnscopedRuntime = false;
   private closed = false;
-  private pumping = false;
   private unsubscribeBridge: (() => void) | null = null;
   private unsubscribeCommandObserver: (() => void) | null = null;
   private unsubscribeAccountSessionReset: (() => void) | null = null;
@@ -650,14 +647,7 @@ export class ElectronMahayanaHostTransport implements MahayanaHostTransport {
     this.unsubscribeBridge = null;
 
     const electronBridge = mahayanaBridge();
-    if (typeof electronBridge.subscribe === "function") {
-      this.unsubscribeBridge = electronBridge.subscribe((event) => this.dispatchEvent(event));
-      return;
-    }
-
-    // Compatibility fallback for older Tauri/Electron bundles which have not
-    // yet adopted the native edge event channel.
-    this.startEventPump();
+    this.unsubscribeBridge = electronBridge.subscribe((event) => this.dispatchEvent(event));
   }
 
   private attachCommandObserver(): void {
@@ -794,27 +784,4 @@ export class ElectronMahayanaHostTransport implements MahayanaHostTransport {
     }
   }
 
-  private startEventPump(): void {
-    if (this.pumping) return;
-    this.pumping = true;
-    void this.pumpEvents();
-  }
-
-  private async pumpEvents(): Promise<void> {
-    try {
-      while (!this.closed) {
-        try {
-          const event = await mahayanaBridge().invoke<RuntimeEvent | null>("feature.receive");
-          if (event) this.dispatchEvent(event);
-          else await idle(10);
-        } catch (error) {
-          if (this.closed) break;
-          console.error("Electron Mahayana Host event pump failed", error);
-          await idle(100);
-        }
-      }
-    } finally {
-      this.pumping = false;
-    }
-  }
 }
