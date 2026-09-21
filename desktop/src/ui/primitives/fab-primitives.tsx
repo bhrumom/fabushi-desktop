@@ -11,7 +11,7 @@ export function FabButton({
   className,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  readonly variant?: 'default' | 'primary' | 'danger' | 'ghost';
+  readonly variant?: 'default' | 'primary' | 'danger' | 'ghost' | 'bare';
 }) {
   return <button {...props} className={classes(styles.button, className)} data-variant={variant} />;
 }
