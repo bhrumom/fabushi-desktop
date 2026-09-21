@@ -6893,7 +6893,7 @@ impl FeatureHostController {
                 account_memory_root.as_deref(),
             ) {
                 (Some(workflow_root), Some(agent_root)) => {
-                    render_workflow_catalog(workflow_root, agent_root, member_agent_id)
+                    render_workflow_catalog(workflow_root, agent_root, &member_agent_id)
                 }
                 _ => String::new(),
             };
