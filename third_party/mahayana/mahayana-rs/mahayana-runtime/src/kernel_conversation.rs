@@ -300,15 +300,20 @@ impl ConversationProvider for KernelConversationProvider {
             metadata: json!({"runtime": "mahayana-kernel"}),
         };
         if !request.hidden {
-            self.state
-                .lock()
-                .map_err(|_| {
-                    ConversationError::Provider("kernel conversation state mutex poisoned".into())
-                })?
-                .history
-                .push(user_message);
-            let history_path = self.current_history_path()?;
-            persist_history(&self.state, history_path.as_deref()).map_err(kernel_error)?;
+            let mut state = self.state.lock().map_err(|_| {
+                ConversationError::Provider("kernel conversation state mutex poisoned".into())
+            })?;
+            let already_recorded = state.history.iter().any(|message| {
+                message.id == user_message.id
+                    && message.conversation_id == user_message.conversation_id
+                    && message.role == MessageRole::User
+            });
+            if !already_recorded {
+                state.history.push(user_message);
+                drop(state);
+                let history_path = self.current_history_path()?;
+                persist_history(&self.state, history_path.as_deref()).map_err(kernel_error)?;
+            }
         }
 
         let kernel_operation_id = KernelOperationId::from_string(request.operation_id.as_str());
