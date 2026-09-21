@@ -425,7 +425,14 @@ impl MahayanaRuntime {
                     .map_err(RuntimeError::CapabilityBroker)?;
                 require_capability_execution_allowed(&capability.id, decision)?;
                 let operation_id =
-                    self.start_message(conversation_id.clone(), text, client_message_id, None, false)?;
+                    self.start_message(
+                        conversation_id.clone(),
+                        text,
+                        client_message_id,
+                        None,
+                        None,
+                        false,
+                    )?;
                 Ok(RuntimeResponse::CapabilityAccepted {
                     capability_id: capability.id,
                     conversation_id,
@@ -724,6 +731,7 @@ impl MahayanaRuntime {
                 conversation_id,
                 text,
                 client_message_id,
+                retry_of_client_message_id,
                 inference_provider,
                 hidden,
             } => Ok(RuntimeResponse::Accepted {
@@ -731,6 +739,7 @@ impl MahayanaRuntime {
                     conversation_id,
                     text,
                     client_message_id,
+                    retry_of_client_message_id,
                     inference_provider,
                     hidden,
                 )?,
@@ -1041,6 +1050,7 @@ impl MahayanaRuntime {
             target_conversation,
             handoff_prompt(&intent),
             Some(intent_id.to_string()),
+            None,
             inference_provider,
             true,
         )?;
@@ -1102,6 +1112,7 @@ impl MahayanaRuntime {
         conversation_id: ConversationId,
         text: String,
         client_message_id: Option<String>,
+        retry_of_client_message_id: Option<String>,
         inference_provider: Option<String>,
         hidden: bool,
     ) -> Result<OperationId, RuntimeError> {
@@ -1115,12 +1126,41 @@ impl MahayanaRuntime {
         // operationId remains the backwards-compatible wire key. Canonical
         // runtime ownership now belongs to ExecutionRun.
         let operation_id = OperationId(run_id.0.clone());
-        let turn_id = TurnId::generated("turn");
-        let created_at_ms = now_millis();
-        let user_message_id = client_message_id
-            .as_ref()
-            .and_then(|value| MessageId::new(value.clone()).ok())
-            .or_else(|| Some(MessageId::generated("message")));
+        let run_started_at_ms = now_millis();
+        let (
+            turn_id,
+            user_message_id,
+            turn_created_at_ms,
+            generation,
+            provider_client_message_id,
+        ) = if let Some(retry_message_id) = retry_of_client_message_id {
+            let (turn_id, created_at_ms, generation) = self
+                .store
+                .retry_turn_generation(conversation_id.as_str(), &retry_message_id)?
+                .ok_or_else(|| RuntimeError::RetryTargetNotFound(retry_message_id.clone()))?;
+            let user_message_id = MessageId::new(retry_message_id.clone())
+                .map_err(|_| RuntimeError::RetryTargetNotFound(retry_message_id.clone()))?;
+            (
+                turn_id,
+                Some(user_message_id),
+                created_at_ms,
+                generation,
+                Some(retry_message_id),
+            )
+        } else {
+            let turn_id = TurnId::generated("turn");
+            let user_message_id = client_message_id
+                .as_ref()
+                .and_then(|value| MessageId::new(value.clone()).ok())
+                .or_else(|| Some(MessageId::generated("message")));
+            (
+                turn_id,
+                user_message_id,
+                run_started_at_ms,
+                1,
+                client_message_id,
+            )
+        };
         let actor = self
             .actors
             .actor(&conversation_id)
@@ -1133,16 +1173,16 @@ impl MahayanaRuntime {
             id: turn_id.clone(),
             conversation_id: conversation_id.clone(),
             user_message_id,
-            created_at_ms,
+            created_at_ms: turn_created_at_ms,
             state: TurnState::Accepted,
             active_run_id: Some(run_id.clone()),
         };
         let run = ExecutionRun {
             id: run_id.clone(),
             turn_id: turn_id.clone(),
-            generation: 1,
+            generation,
             provider: provider_key.clone(),
-            started_at_ms: created_at_ms,
+            started_at_ms: run_started_at_ms,
             finished_at_ms: None,
             state: TurnState::Accepted,
         };
@@ -1176,7 +1216,7 @@ impl MahayanaRuntime {
             conversation_id: conversation_id.clone(),
             operation_id: operation_id.clone(),
             text,
-            client_message_id,
+            client_message_id: provider_client_message_id,
             inference_provider,
             hidden,
         };
@@ -1560,6 +1600,8 @@ pub enum RuntimeError {
     TelemetryNotCompiled,
     #[error("message text must not be empty")]
     EmptyMessage,
+    #[error("logical retry target was not found or is not terminal: {0}")]
+    RetryTargetNotFound(String),
     #[error(transparent)]
     Conversation(#[from] ConversationError),
     #[error("runtime event consumer is closed")]
