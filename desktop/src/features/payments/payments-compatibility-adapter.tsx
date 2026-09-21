@@ -14,7 +14,7 @@ export default function PaymentsCompatibilityAdapter({
   onClose,
 }: {
   readonly transport: MahayanaHostTransport;
-  readonly onClose(): void;
+  readonly onClose: () => void;
 }) {
   const runtime = useCompatibilityMessagingRuntime(transport, { includeWallet: true });
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
