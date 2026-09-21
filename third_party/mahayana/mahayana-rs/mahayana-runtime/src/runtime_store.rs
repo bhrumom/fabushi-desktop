@@ -34,6 +34,7 @@ pub(crate) struct RecoverableTurn {
     pub conversation_id: ConversationId,
     pub turn_id: TurnId,
     pub message_id: MessageId,
+    pub state: TurnState,
     pub last_run_id: RunId,
     pub generation: u32,
     pub text: Option<String>,
@@ -322,7 +323,7 @@ impl RuntimeStore {
                         message_id.as_str(),
                         text,
                         inference_provider,
-                        i64::from(hidden),
+                        if hidden { 1_i64 } else { 0_i64 },
                         updated_at_ms,
                     ],
                 )
@@ -493,6 +494,7 @@ impl RuntimeStore {
                         t.conversation_id,
                         t.turn_id,
                         t.user_message_id,
+                        t.state,
                         r.run_id,
                         r.generation,
                         q.text,
@@ -508,6 +510,7 @@ impl RuntimeStore {
                          'thinking',
                          'tool-running',
                          'streaming',
+                         'waiting-user',
                          'recovering'
                      )
                        AND t.user_message_id IS NOT NULL
@@ -532,10 +535,11 @@ impl RuntimeStore {
                         row.get::<_, String>(1)?,
                         row.get::<_, String>(2)?,
                         row.get::<_, String>(3)?,
-                        row.get::<_, i64>(4)?,
-                        row.get::<_, Option<String>>(5)?,
+                        row.get::<_, String>(4)?,
+                        row.get::<_, i64>(5)?,
                         row.get::<_, Option<String>>(6)?,
-                        row.get::<_, Option<i64>>(7)?,
+                        row.get::<_, Option<String>>(7)?,
+                        row.get::<_, Option<i64>>(8)?,
                     ))
                 })
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
@@ -545,6 +549,7 @@ impl RuntimeStore {
                     conversation_id,
                     turn_id,
                     message_id,
+                    state,
                     run_id,
                     generation,
                     text,
@@ -555,6 +560,7 @@ impl RuntimeStore {
                     conversation_id: ConversationId(conversation_id),
                     turn_id: TurnId(turn_id),
                     message_id: MessageId(message_id),
+                    state: parse_turn_state(&state)?,
                     last_run_id: RunId(run_id),
                     generation: generation.max(0).min(i64::from(u32::MAX)) as u32,
                     text,
@@ -1072,7 +1078,7 @@ mod tests {
     }
 
     #[test]
-    fn recoverable_turns_include_active_user_work_but_exclude_waiting_user() {
+    fn recoverable_turns_include_active_and_waiting_user_restart_candidates() {
         let (path, store) = temp_store();
         let conversation_id = ConversationId("codex:agent:restart".to_string());
 
@@ -1118,12 +1124,22 @@ mod tests {
             .expect("record recovery input");
 
         let recoverable = store.recoverable_turns().expect("recover active turns");
-        assert_eq!(recoverable.len(), 1);
-        assert_eq!(recoverable[0].message_id.as_str(), "message:thinking");
-        assert_eq!(recoverable[0].generation, 1);
-        assert_eq!(recoverable[0].text.as_deref(), Some("resume this prompt"));
-        assert_eq!(recoverable[0].inference_provider.as_deref(), Some("codex"));
-        assert_eq!(recoverable[0].hidden, Some(false));
+        assert_eq!(recoverable.len(), 2);
+        let thinking = recoverable
+            .iter()
+            .find(|candidate| candidate.message_id.as_str() == "message:thinking")
+            .expect("thinking turn");
+        assert_eq!(thinking.state, TurnState::Thinking);
+        assert_eq!(thinking.generation, 1);
+        assert_eq!(thinking.text.as_deref(), Some("resume this prompt"));
+        assert_eq!(thinking.inference_provider.as_deref(), Some("codex"));
+        assert_eq!(thinking.hidden, Some(false));
+        let waiting = recoverable
+            .iter()
+            .find(|candidate| candidate.message_id.as_str() == "message:waiting")
+            .expect("waiting-user turn");
+        assert_eq!(waiting.state, TurnState::WaitingUser);
+        assert_eq!(waiting.text, None);
 
         drop(store);
         let _ = std::fs::remove_dir_all(path);
