@@ -20,7 +20,8 @@
     "test:credential-gateway": "node --test electron/credential-gateway.test.cjs",
     "test:e2e": "playwright test",
     "test:openbot-parity": "node scripts/assert-openbot-parity.mjs",
-    "start": "electron ."
+    "start": "electron .",
+    "check:architecture": "node scripts/check-agent-workspace-boundary.mjs"
   },
   "dependencies": {
     "@tiptap/core": "3.14.0",
