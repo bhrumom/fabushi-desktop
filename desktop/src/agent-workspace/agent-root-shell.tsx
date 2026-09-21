@@ -239,6 +239,7 @@ export default function AgentRootShell({
   const eventHandlerRef = useRef<(event: RuntimeEvent) => void>(() => {});
   eventHandlerRef.current = (event) => {
     if (product.directory.handle(event)) return;
+    if (product.sidebar.handle(event)) return;
     if (product.network.handle(event)) return;
     if (product.storeSync.handle(event)) return;
     if (product.workflow.handle(event)) return;

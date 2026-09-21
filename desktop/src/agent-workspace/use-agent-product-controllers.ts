@@ -67,7 +67,7 @@ export function useAgentProductControllers(
   options: AgentProductControllersOptions,
 ): AgentProductControllers {
   const palette = useAgentCommandPaletteController();
-  const sidebar = useAgentSidebarController(options.accountScope);
+  const sidebar = useAgentSidebarController(options.client, options.accountScope);
   const network = useAgentNetworkController(options.client, options.onError);
   const workflow = useAgentWorkflowController(options.client, options.workflow);
   const mcp = useAgentMcpController(options.client, options.mcp);

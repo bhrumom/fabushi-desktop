@@ -51,6 +51,8 @@ const runtimeFacade = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-wor
 const directoryController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-directory-controller.ts');
 const networkController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-network-controller.ts');
 const computerController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-computer-controller.ts');
+const sidebarController = read(desktopRoot, 'src', 'agent-workspace', 'use-agent-sidebar-controller.ts');
+const sidebarState = read(desktopRoot, 'src', 'agent-workspace', 'agent-sidebar-state.ts');
 const agentTranscript = read(desktopRoot, 'src', 'agent-workspace', 'agent-transcript.tsx');
 const agentHeader = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-header.tsx');
 const agentSidebar = read(desktopRoot, 'src', 'grok-shell', 'grok-agent-sidebar.tsx');
@@ -161,6 +163,17 @@ forbidPattern(
 );
 requirePattern('Agent product controllers no longer compose directory ownership', productControllers, /useAgentDirectoryController\s*\(/);
 requirePattern('Agent product controllers no longer compose network ownership', productControllers, /useAgentNetworkController\s*\(/);
+requirePattern('Agent product controllers must inject the coordinator into Sidebar persistence', productControllers, /useAgentSidebarController\s*\(options\.client,\s*options\.accountScope\)/);
+requirePattern('AgentRootShell must route Sidebar RuntimeStore events', rootShell, /product\.sidebar\.handle\(event\)/);
+requirePattern('Agent Sidebar local durability must read Mahayana RuntimeStore workspace state', sidebarController, /client\.readWorkspaceState\s*\(/);
+requirePattern('Agent Sidebar local durability must write Mahayana RuntimeStore workspace state', sidebarController, /client\.writeWorkspaceState\s*\(/);
+for (const [name, source] of [
+  ['Agent Sidebar controller', sidebarController],
+  ['Agent Sidebar state', sidebarState],
+]) {
+  forbidPattern(`${name} must not write business state to localStorage`, source, /localStorage\.(?:setItem|removeItem)\s*\(/);
+  forbidPattern(`${name} must not write renderer/native client persistence`, source, /(?:writeClientPersistence|removeClientPersistence)/);
+}
 requirePattern('Agent runtime facade no longer owns queued submission lifecycle', runtimeFacade, /createAgentSubmissionQueue\s*\(/);
 requirePattern('Agent directory no longer owns bot.listed projection', directoryController, /event\.type === ['"]bot\.listed['"]/);
 requirePattern('Agent directory no longer owns bot.changed projection', directoryController, /event\.type === ['"]bot\.changed['"]/);
