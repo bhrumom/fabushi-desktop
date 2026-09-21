@@ -101,6 +101,22 @@ import BotConversationView from '../../bot-conversation-view';
 import type { BotTranscriptMessage } from '../../bot-conversation-view';
 import AgentWorkspace from '../../agent-workspace/agent-workspace';
 import { CompatibilitySurface, buildCompatibilityPeers, compatibilityMessagingEnvelope, type CompatibilityPeerItem as PeerItem, type CompatibilityPeerKind as PeerKind, type CompatibilityPeerSource as PeerSource, type CompatibilitySection as MessengerSection } from '../../agent-workspace/messenger-compatibility-adapter';
+import type {
+  DesktopMessengerPreferences,
+  DisplayMessage,
+  EditDialogState,
+  ForwardDialogState,
+  InfoTab,
+  InferenceRouterStatus,
+  InvoiceDialogState,
+  LocalCall,
+  MessageMenu,
+  MessengerProjection,
+  MiniAppCallSession,
+  NewDialog,
+  SettingsCategory,
+  UsageSummary,
+} from './legacy-messaging-model';
 import AgentOverlays from '../../agent-workspace/agent-overlays';
 import { AgentCoordinatorClient } from '../../agent-workspace/coordinator-client';
 import type { AgentTranscriptSourceMessage } from '../../agent-workspace/agent-transcript-store';
@@ -198,104 +214,11 @@ function generatedMiniAppPreview(text: string, stableId: string): GeneratedMiniA
   return { id: `generated-${suffix}`.slice(0, 64), title, html, complete: close >= 0 };
 }
 
-type DisplayMessage = {
-  id: string;
-  source: PeerSource;
-  role: 'me' | 'peer';
-  text: string;
-  createdAtMs: number;
-  kind?: 'message' | 'assistant-turn' | 'action' | 'thinking';
-  operationId?: string;
-  streaming?: boolean;
-  optimistic?: boolean;
-  queued?: boolean;
-  actionTitle?: string;
-  actionDetail?: string;
-  actionStatus?: 'running' | 'completed' | 'failed' | 'interrupted';
-  assistantTurn?: AssistantTurn;
-  attachments?: readonly AttachmentContext[];
-  miniAppId?: string;
-  pinned?: boolean;
-  reactions?: string[];
-  invoiceId?: string;
-  media?: MessagingMediaRef;
-  mediaType?: 'photo' | 'video' | 'document';
-};
-
 function toAgentTranscriptSources(
   messages: readonly DisplayMessage[],
 ): AgentTranscriptSourceMessage[] {
   return messages.map((message) => ({ ...message, source: 'legacy' as const }));
 }
-
-type NewDialog =
-  | { type: 'group'; name: string; selectedBotIds: Set<string> }
-  | { type: 'channel'; name: string; description: string }
-  | null;
-
-type LocalCall = {
-  kind: 'voice' | 'video';
-  title: string;
-  status: WebRtcCallStatus;
-  incoming: boolean;
-  muted: boolean;
-  videoEnabled: boolean;
-  error?: string;
-};
-
-type MiniAppCallSession = {
-  callId: string;
-  miniAppId: string;
-  title: string;
-  kind: 'voice' | 'video';
-  program: MiniAppBotCallProgram;
-  html?: string;
-};
-
-type MessageMenu = { message: DisplayMessage; x: number; y: number } | null;
-type ForwardDialogState = { sourceConversationId: string; message: DisplayMessage } | null;
-type EditDialogState = { conversationId: string; messageId: string; originalText: string; text: string } | null;
-type InvoiceDialogState = { conversationId: string; title: string; amount: string } | null;
-type InfoTab = 'media' | 'files' | 'links';
-type SettingsCategory = 'account' | 'router' | 'usage' | 'updates' | 'notifications' | 'privacy' | 'data' | 'chat' | 'folders' | 'devices' | 'calls' | 'language' | 'advanced' | 'fabushi';
-
-type InferenceRouterStatus = {
-  schemaVersion: 1;
-  providers: Array<{ id: InferenceProvider; label: string; available: boolean; authenticated: boolean; installed?: boolean; source: string }>;
-  sandboxes: Array<{ id: SandboxRuntime; label: string; available: boolean; source: string }>;
-};
-
-type ProviderUsageSummary = { provider: string; requests: number; inputTokens: number; cachedInputTokens: number; outputTokens: number; reasoningTokens: number; totalTokens: number; lifetimeTokens: number; lastUsedAtMs: number | null };
-type UsageSummary = { totalTokens: number; lifetimeTokens?: number; events: number; source: string; updatedAtMs?: number | null; byProvider?: ProviderUsageSummary[] };
-
-type DesktopMessengerPreferences = {
-  showInfoPanel: boolean;
-  messagePreview: boolean;
-  autoPlayMedia: boolean;
-  enterToSend: boolean;
-  reducedMotion: boolean;
-};
-
-type MessengerProjection = {
-  version: 1;
-  savedAtMs: number;
-  actorId?: string;
-  cursor?: string | null;
-  activePeerKey?: string | null;
-  // The complete lightweight left-rail model is persisted for first-frame paint.
-  // Rust/Host remains authoritative and reconciles these display-only summaries in background.
-  legacyConversations?: ConversationSummary[];
-  legacyBots?: BotSummary[];
-  legacyGroups?: GroupSummary[];
-  // Account-installed Bot/Mini App identities are also lightweight first-frame
-  // summaries. Persist them so bots such as 全球法布施 do not disappear until
-  // a slower account sync finishes after every launch.
-  accountBots?: AccountBotMembership[];
-  miniAppIdentityCatalog?: MarketplacePluginSummary[];
-  selfActors: MessagingActor[];
-  selfConversations: MessagingConversation[];
-  selfMessages: Record<string, MessagingMessage[]>;
-};
 
 const messengerSettingsKey = 'fabushi.desktop.messenger-settings.v2';
 const messengerDraftsKey = 'fabushi.desktop.messenger-drafts.v2';
