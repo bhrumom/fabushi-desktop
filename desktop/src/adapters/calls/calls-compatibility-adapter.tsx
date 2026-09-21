@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mic, Phone, PhoneCall, Radio, Video } from 'lucide-react';
-import type { LocalCall } from '../legacy-messaging/legacy-messaging-model';
+import type { LocalCall } from '../compatibility/compatibility-model';
 import { FabAvatar, FabButton, FabIconButton, FabSurface } from '../../ui/primitives/fab-primitives';
 import styles from '../../messaging-shell.module.css';
 import extra from '../../agent-workspace/agent-root-shell.module.css';
