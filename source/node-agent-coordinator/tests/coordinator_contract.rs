@@ -450,3 +450,72 @@ fn gateway_dispatch_preserves_command_unreachable_and_transport_failures() {
     let serialized = serde_json::to_value(dns).unwrap();
     assert_eq!(serialized["transportKind"], "dns");
 }
+
+
+#[test]
+fn gateway_dns_diagnostics_match_cursorvm_target_and_failure_matrix() {
+    use mahayana_node_agent_coordinator::gateway::gateway_dns_diagnostics::{
+        classify_dns_diagnosis, classify_probe_error, dns_target_from_base_url, DnsCluster,
+        DnsDiagnosis, DnsProbeResult, GatewayDnsDiagnosticReporter,
+        DNS_PROBE_MIN_INTERVAL_MS,
+    };
+
+    let target = dns_target_from_base_url(
+        Some("https://agent-7.us8.cursorvm.com/api"),
+        "probe-1",
+    )
+    .expect("cursorvm endpoint");
+    assert_eq!(target.cluster, DnsCluster::Us8);
+    assert_eq!(target.endpoint_hostname, "agent-7.us8.cursorvm.com");
+    assert_eq!(target.wildcard_hostname, "probe-1.us8.cursorvm.com");
+    assert!(dns_target_from_base_url(Some("http://agent-7.us8.cursorvm.com"), "probe").is_none());
+    assert_eq!(classify_probe_error(Some("ENOTFOUND"), false), DnsProbeResult::NotFound);
+    assert_eq!(classify_probe_error(Some("EAI_AGAIN"), false), DnsProbeResult::TemporaryFailure);
+    assert_eq!(
+        classify_dns_diagnosis(
+            DnsProbeResult::NotFound,
+            DnsProbeResult::Resolved,
+            DnsProbeResult::Resolved,
+            DnsProbeResult::Resolved,
+        ),
+        DnsDiagnosis::SystemPathFailure
+    );
+    assert_eq!(
+        classify_dns_diagnosis(
+            DnsProbeResult::NotFound,
+            DnsProbeResult::NotFound,
+            DnsProbeResult::Resolved,
+            DnsProbeResult::Resolved,
+        ),
+        DnsDiagnosis::EndpointFailure
+    );
+
+    let mut reporter = GatewayDnsDiagnosticReporter::default();
+    assert!(reporter.diagnose(
+        1,
+        DnsCluster::Us8,
+        DnsProbeResult::NotFound,
+        DnsProbeResult::NotFound,
+        DnsProbeResult::Resolved,
+        DnsProbeResult::Resolved,
+        DnsProbeResult::Resolved,
+    ).is_some());
+    assert!(reporter.diagnose(
+        1 + DNS_PROBE_MIN_INTERVAL_MS - 1,
+        DnsCluster::Us8,
+        DnsProbeResult::NotFound,
+        DnsProbeResult::NotFound,
+        DnsProbeResult::Resolved,
+        DnsProbeResult::Resolved,
+        DnsProbeResult::Resolved,
+    ).is_none());
+    assert!(reporter.diagnose(
+        1 + DNS_PROBE_MIN_INTERVAL_MS,
+        DnsCluster::Us8,
+        DnsProbeResult::NotFound,
+        DnsProbeResult::NotFound,
+        DnsProbeResult::Resolved,
+        DnsProbeResult::Resolved,
+        DnsProbeResult::Resolved,
+    ).is_some());
+}
