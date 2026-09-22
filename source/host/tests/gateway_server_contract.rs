@@ -5,11 +5,14 @@ use std::thread;
 use std::time::Duration;
 
 use flate2::read::GzDecoder;
-use mahayana_host_runtime::gateway_config::GatewayServerConfig;
+use mahayana_host_runtime::gateway_config::{GatewayServerConfig, GatewayTlsConfig};
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayBridgeHub, GatewayCommandError, GatewayEventHub, GatewayHealth,
     GatewayServerDeps, start_gateway_server,
 };
+use rcgen::generate_simple_self_signed;
+use rustls::pki_types::ServerName;
+use rustls::{ClientConfig, ClientConnection, RootCertStore, StreamOwned};
 use serde_json::{Value, json};
 
 #[derive(Debug)]
@@ -161,6 +164,64 @@ fn gateway_health_command_security_and_upgrade_routes_match_grok_contract() {
         untrusted_host.starts_with("HTTP/1.1 403 Forbidden"),
         "{untrusted_host}"
     );
+
+    server.close();
+}
+
+
+#[test]
+fn gateway_serves_real_tls_when_cert_and_key_are_configured() {
+    let certified = generate_simple_self_signed(vec!["localhost".to_string()])
+        .expect("generate TLS certificate");
+    let cert_pem = certified.cert.pem();
+    let key_pem = certified.key_pair.serialize_pem();
+
+    let mut roots = RootCertStore::empty();
+    roots
+        .add(certified.cert.der().clone())
+        .expect("trust generated TLS certificate");
+    let client = ClientConfig::builder()
+        .with_root_certificates(roots)
+        .with_no_client_auth();
+
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: GatewayServerConfig {
+            host: "127.0.0.1".into(),
+            port: None,
+            auth_token: None,
+            tls: Some(GatewayTlsConfig {
+                cert: cert_pem.into_bytes(),
+                key: key_pem.into_bytes(),
+            }),
+        },
+        started_at: 321,
+    })
+    .expect("TLS gateway server");
+
+    let socket = TcpStream::connect(("127.0.0.1", server.port())).expect("connect TLS gateway");
+    socket
+        .set_read_timeout(Some(Duration::from_secs(2)))
+        .expect("TLS read timeout");
+    let name = ServerName::try_from("localhost")
+        .expect("valid TLS server name")
+        .to_owned();
+    let connection =
+        ClientConnection::new(Arc::new(client), name).expect("create TLS client connection");
+    let mut stream = StreamOwned::new(connection, socket);
+    stream
+        .write_all(b"GET /health HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n")
+        .expect("write TLS health request");
+    stream.flush().expect("flush TLS health request");
+    let mut response = String::new();
+    stream
+        .read_to_string(&mut response)
+        .expect("read TLS health response");
+    assert!(response.starts_with("HTTP/1.1 200 OK"), "{response}");
+    assert_eq!(json_body(&response)["startedAt"], 321);
 
     server.close();
 }
