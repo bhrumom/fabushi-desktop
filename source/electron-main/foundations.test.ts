@@ -1,0 +1,181 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { getSimulatedGatewayLatencyMs, setSimulatedGatewayLatencyMs, SIMULATED_GATEWAY_LATENCY_MAX_MS } from "./dev/dev-network-latency.js";
+import { DEFAULT_DEV_CONTROL_PORT, isDevControlsEnabled, resolveDevControlPort } from "./dev/dev-controls-gate.js";
+import { SAND_DEV_PRELOAD_FILENAME, SAND_PRIMARY_PRELOAD_FILENAME, resolveSandMainWindowPreload } from "./dev/dev-capability.js";
+import { createDevGatewayOfflineControl } from "./dev/dev-gateway-offline.js";
+import { registerExperimentsIpc } from "./experiments/experiments-ipc.js";
+import { computeDockBadgeTotal } from "./notifications/dock-badge.js";
+import { resolveScanRoots } from "./process-metrics/wiring.js";
+import { computeUpdateDisabledReason } from "./update/update-gate.js";
+import { isSafeToRelaunchForUpdate } from "./update/safe-relaunch-gate.js";
+import { createProductionWindowBroadcaster } from "./window-broadcast.js";
+import { unavailableOnePasswordProvisioningSink, OnePasswordProvisioningError } from "./onepassword/onepassword-provisioning-contract.js";
+import { requireDisposable, requireFunction, requireObject } from "./adapters/provider-guards.js";
+import { registerSettingsIpc } from "./prefs/settings-ipc.js";
+import { isValidSendLatencyReport, sendLatencyReportToTelemetry } from "./telemetry/send-telemetry.js";
+import { isValidAgentsUnreachableReport, agentsUnreachableReportToTelemetry } from "./telemetry/agents-unreachable-telemetry.js";
+import { createBoxVncHandlers, createBoxVncTrust } from "./vnc/vnc-edge.js";
+import { classifyWindowShortcut } from "./window-shortcuts.js";
+
+test("dev gates and latency clamps match Grok behavior", () => {
+  assert.equal(setSimulatedGatewayLatencyMs(25.9), 25);
+  assert.equal(getSimulatedGatewayLatencyMs(), 25);
+  assert.equal(setSimulatedGatewayLatencyMs(Infinity), 0);
+  assert.equal(setSimulatedGatewayLatencyMs(SIMULATED_GATEWAY_LATENCY_MAX_MS + 99), SIMULATED_GATEWAY_LATENCY_MAX_MS);
+
+  assert.equal(isDevControlsEnabled({ isPackaged: false }), true);
+  assert.equal(isDevControlsEnabled({ isPackaged: true }), false);
+  assert.equal(resolveDevControlPort({ SAND_DEV_CONTROL_PORT: "62001" }), 62001);
+  assert.equal(resolveDevControlPort({ SAND_DEV_CONTROL_PORT: "70000" }), DEFAULT_DEV_CONTROL_PORT);
+  assert.equal(resolveSandMainWindowPreload({ isPackaged: false, env: { SAND_DEV_CAPABILITY: "1" } }), SAND_DEV_PRELOAD_FILENAME);
+  assert.equal(resolveSandMainWindowPreload({ isPackaged: true, env: { SAND_DEV_CAPABILITY: "1" } }), SAND_PRIMARY_PRELOAD_FILENAME);
+});
+
+test("dev gateway offline control serializes and reapplies state", async () => {
+  const calls: boolean[] = [];
+  const control = createDevGatewayOfflineControl(async (next) => {
+    calls.push(next);
+    return { induced: next };
+  });
+  assert.deepEqual(await Promise.all([control.apply(true), control.apply(false)]), [{ induced: true }, { induced: false }]);
+  assert.deepEqual(calls, [true, false]);
+  assert.equal(control.isInduced(), false);
+  await control.apply(true);
+  assert.deepEqual(await control.reapplyAfterCoordinatorLaunch(), { induced: true });
+  assert.deepEqual(calls, [true, false, true, true]);
+});
+
+test("sync IPC helpers expose experiment and settings snapshots", () => {
+  const listeners = new Map<string, (event: { returnValue: unknown }) => void>();
+  const ipcMain = { on(channel: string, listener: (event: { returnValue: unknown }) => void) { listeners.set(channel, listener); } };
+  registerExperimentsIpc({ ipcMain, getExperimentService: () => ({ getSnapshot: () => ({ flag: true }) }) });
+  registerSettingsIpc({
+    ipcMain,
+    settingsStore: { getEgressTunnelEnabled: () => true, getWebauthnProxyEnabled: () => false },
+    themeController: { getState: () => ({ theme: "dark" }) },
+    egressTunnelController: { getStatus: () => ({ connected: true }) },
+  });
+  const invoke = (channel: string) => {
+    const event = { returnValue: undefined as unknown };
+    listeners.get(channel)?.(event);
+    return event.returnValue;
+  };
+  assert.deepEqual(invoke("sand:experiments-snapshot-sync"), { flag: true });
+  assert.deepEqual(invoke("sand:theme-get-sync"), { theme: "dark" });
+  assert.equal(invoke("sand:egress-tunnel-get-sync"), true);
+  assert.equal(invoke("sand:webauthn-proxy-get-sync"), false);
+  assert.deepEqual(invoke("sand:egress-tunnel-status-get-sync"), { connected: true });
+});
+
+test("dock badge, process roots, and window broadcast preserve production semantics", async () => {
+  assert.equal(computeDockBadgeTotal([
+    { hasUnread: true },
+    { hasUnread: true, unreadCount: 3.9 },
+    { hasUnread: true, unreadCount: 0 },
+    { hasUnread: true, unreadCount: 9, isHiddenFromSidebar: true },
+    { hasUnread: false, unreadCount: 5 },
+  ]), 5);
+
+  assert.deepEqual(await resolveScanRoots(10, async () => ({ pid: 20 }), (pid) => pid === 20), [10, 20]);
+  assert.deepEqual(await resolveScanRoots(10, async () => { throw new Error("missing"); }, () => true), [10]);
+
+  const received: Array<[string, unknown]> = [];
+  const broadcast = createProductionWindowBroadcaster({
+    getAllWindows: () => [
+      { webContents: { send: (channel, payload) => received.push([channel, payload]) } },
+      { webContents: { send: (channel, payload) => received.push([channel, payload]) } },
+    ],
+  });
+  broadcast("event", { value: 7 });
+  assert.deepEqual(received, [["event", { value: 7 }], ["event", { value: 7 }]]);
+});
+
+test("update gates fail closed unless every safe-relaunch condition holds", () => {
+  assert.equal(computeUpdateDisabledReason({ envDisabled: true, isLabBuild: false, hasDevFeedOverride: false, isPackaged: true, platform: "darwin" }), "disabled-by-env");
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: true, hasDevFeedOverride: false, isPackaged: true, platform: "darwin" }), "lab-build");
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: true, isPackaged: false, platform: "linux" }), null);
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: false, isPackaged: false, platform: "darwin" }), "not-packaged");
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: false, isPackaged: true, platform: "linux" }), "unsupported-platform");
+
+  const safe = {
+    optInEnabled: true,
+    gateEnabled: true,
+    updateStaged: true,
+    hostIdle: { kind: "confirmed-idle" },
+    screenLocked: true,
+    screensaverActive: false,
+    systemIdleSeconds: 900,
+    idleThresholdSeconds: 600,
+  };
+  assert.equal(isSafeToRelaunchForUpdate(safe), true);
+  assert.equal(isSafeToRelaunchForUpdate({ ...safe, hostIdle: { kind: "busy" } }), false);
+  assert.equal(isSafeToRelaunchForUpdate({ ...safe, screenLocked: false }), false);
+});
+
+test("provider guards and unavailable 1Password sink fail closed", async () => {
+  assert.deepEqual(requireObject({ ok: true }, "object"), { ok: true });
+  assert.throws(() => requireObject(null, "object"), /Missing Electron production adapter port/);
+  const fn = () => 1;
+  assert.equal(requireFunction(fn, "fn"), fn);
+  assert.throws(() => requireFunction(undefined, "fn"), /Missing Electron production adapter port/);
+  const disposable = { dispose() {} };
+  assert.equal(requireDisposable(disposable, "resource"), disposable);
+  assert.throws(() => requireDisposable({} as { dispose(): void }, "resource"), /resource\.dispose/);
+  await assert.rejects(
+    () => unavailableOnePasswordProvisioningSink.accept({}),
+    (error: unknown) => error instanceof OnePasswordProvisioningError && error.code === "sink-unavailable",
+  );
+});
+
+test("send and agents telemetry validators reject malformed input", () => {
+  assert.equal(isValidSendLatencyReport({ durationMs: 12.5, attachmentCount: 2, isFork: false }), true);
+  assert.equal(isValidSendLatencyReport({ durationMs: -1, attachmentCount: 2, isFork: false }), false);
+  assert.deepEqual(sendLatencyReportToTelemetry({ durationMs: 12.5, attachmentCount: 2, isFork: false }), {
+    level: "info",
+    metadata: {
+      duration_ms: "13",
+      commit_ms: undefined,
+      attachment_count: "2",
+      is_fork: "false",
+      trace_id: undefined,
+      span_id: undefined,
+      conversation_id: undefined,
+    },
+  });
+  assert.equal(isValidAgentsUnreachableReport({ phase: "entered", isManual: false, msSinceLastReachedMs: 10 }), true);
+  assert.equal(isValidAgentsUnreachableReport({ phase: "bad", isManual: false }), false);
+  assert.equal(agentsUnreachableReportToTelemetry({ phase: "entered", isManual: false }).level, "warn");
+  assert.equal(agentsUnreachableReportToTelemetry({ phase: "recovered", isManual: false }).level, "info");
+});
+
+test("VNC trust and handlers expose only the trusted box webview", () => {
+  const trust = createBoxVncTrust((url) => url === "https://trusted/");
+  assert.equal(trust.boxDesktopWebview.test({ isBoxVncPartition: true, frameUrl: "https://trusted/" }), true);
+  assert.equal(trust.boxDesktopWebview.test({ isBoxVncPartition: false, frameUrl: "https://trusted/" }), false);
+  assert.equal(trust.boxDesktopWebview.test({ isBoxVncPartition: true, frameUrl: "https://evil/" }), false);
+
+  let clipboard = "initial";
+  let presence = false;
+  const handlers = createBoxVncHandlers({
+    readClipboardText: () => clipboard,
+    writeClipboardText: (text) => { clipboard = text; },
+    onUserPresence: (value) => { presence = value; },
+  });
+  assert.equal(handlers.boxDesktopWebview.readClipboard(), "initial");
+  handlers.boxDesktopWebview.writeClipboard({ text: "next" });
+  handlers.boxDesktopWebview.reportUserPresence({ isPresent: true });
+  assert.equal(clipboard, "next");
+  assert.equal(presence, true);
+});
+
+test("window shortcut classifier matches platform chords", () => {
+  assert.equal(classifyWindowShortcut({ type: "keyDown", key: "F11" }, "linux"), "fullscreen");
+  assert.equal(classifyWindowShortcut({ type: "keyDown", key: "f", meta: true, control: true }, "darwin"), "fullscreen");
+  assert.equal(classifyWindowShortcut({ type: "keyDown", key: "i", meta: true, alt: true }, "darwin"), "toggledevtools");
+  assert.equal(classifyWindowShortcut({ type: "keyDown", key: "i", control: true, shift: true }, "win32"), "toggledevtools");
+  assert.equal(classifyWindowShortcut({ type: "keyDown", key: "r", control: true }, "win32"), "reload");
+  assert.equal(classifyWindowShortcut({ type: "keyDown", key: "q", meta: true }, "darwin"), "quit");
+  assert.equal(classifyWindowShortcut({ type: "keyUp", key: "F11" }, "linux"), null);
+});
