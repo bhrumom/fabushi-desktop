@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": "..",
+    "outDir": ".tmp-grok-electron",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": ["node"],
+    "declaration": false,
+    "sourceMap": false
+  },
+  "include": [
+    "../source/shared/rpc/coordinator.ts",
+    "../source/shared/rpc/coordinator-port.ts",
+    "../source/electron-preload/coordinator-port-bridge.ts",
+    "../source/electron-preload/coordinator-port-bridge.test.ts",
+    "../source/electron-main/coordinator/coordinator-control-server.ts",
+    "../source/electron-main/coordinator/coordinator-launcher.ts",
+    "../source/electron-main/coordinator/coordinator-launcher.test.ts"
+  ]
+}
