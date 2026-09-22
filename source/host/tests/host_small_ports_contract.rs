@@ -176,3 +176,93 @@ fn ua_token_kill_switch_retries_failures_and_reconciles_marker() {
 
     fs::remove_dir_all(root).expect("remove UA test root");
 }
+
+
+#[test]
+fn production_box_environment_uses_connect_unary_control_service_from_host_graph() {
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::thread;
+    use std::time::Duration;
+
+    use mahayana_host_runtime::r#box::production::ProductionBoxEnvironment;
+
+    let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind fake exec daemon");
+    let port = listener.local_addr().expect("fake daemon address").port();
+    let server = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().expect("accept production box client");
+        stream
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .expect("read timeout");
+
+        let mut received = Vec::new();
+        let mut buffer = [0u8; 1024];
+        let header_end;
+        loop {
+            let count = stream.read(&mut buffer).expect("read HTTP request");
+            assert!(count > 0, "client closed before HTTP headers completed");
+            received.extend_from_slice(&buffer[..count]);
+            if let Some(index) = received.windows(4).position(|window| window == b"\r\n\r\n") {
+                header_end = index;
+                break;
+            }
+        }
+        let header_text = std::str::from_utf8(&received[..header_end]).expect("UTF-8 request headers");
+        let content_length = header_text
+            .lines()
+            .find_map(|line| {
+                let (name, value) = line.split_once(':')?;
+                name.eq_ignore_ascii_case("content-length")
+                    .then(|| value.trim().parse::<usize>().expect("content length"))
+            })
+            .expect("content-length header");
+        while received.len() < header_end + 4 + content_length {
+            let count = stream.read(&mut buffer).expect("read HTTP body");
+            assert!(count > 0, "client closed before HTTP body completed");
+            received.extend_from_slice(&buffer[..count]);
+        }
+
+        stream
+            .write_all(
+                b"HTTP/1.1 200 OK\r\nContent-Type: application/proto\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+            )
+            .expect("write fake Connect response");
+        stream.flush().expect("flush fake Connect response");
+        received
+    });
+
+    let service = ProductionBoxEnvironment::new("127.0.0.1", port, "test-token");
+    let update = BoxEnvironmentUpdate {
+        env: BTreeMap::from([
+            ("A".to_string(), "1".to_string()),
+            ("B".to_string(), "two".to_string()),
+        ]),
+        replace: true,
+    };
+    service
+        .apply_environment(&update)
+        .expect("shipping production environment call");
+
+    let request = server.join().expect("fake daemon server");
+    let header_end = request
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
+        .expect("HTTP header terminator");
+    let headers = std::str::from_utf8(&request[..header_end]).expect("request headers");
+    assert!(headers.starts_with(
+        "POST /agent.v1.ControlService/UpdateEnvironmentVariables HTTP/1.1\r\n"
+    ));
+    assert!(headers.contains("\r\nAuthorization: Bearer test-token\r\n"));
+    assert!(headers.contains("\r\nContent-Type: application/proto\r\n"));
+    assert!(headers.contains("\r\nConnect-Protocol-Version: 1\r\n"));
+
+    let body = &request[header_end + 4..];
+    assert_eq!(
+        body,
+        &[
+            0x0a, 0x06, 0x0a, 0x01, b'A', 0x12, 0x01, b'1',
+            0x0a, 0x08, 0x0a, 0x01, b'B', 0x12, 0x03, b't', b'w', b'o',
+            0x10, 0x01,
+        ]
+    );
+}

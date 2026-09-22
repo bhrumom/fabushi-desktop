@@ -15,10 +15,15 @@ use mahayana_host_runtime::host_discovery::{
 };
 use mahayana_host_runtime::host_lock::acquire_host_lock;
 use mahayana_host_runtime::host_paths::{get_gateway_discovery_path, get_host_lock_path};
+use mahayana_host_runtime::r#box::box_env::BoxEnvironmentUpdate;
+use mahayana_host_runtime::r#box::production::{
+    BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionBoxEnvironment,
+};
 use mahayana_unified_app_host::{
     PlatformRequestHost, UnifiedAppHost, default_unified_app_data_dir, dispatch_json,
     is_platform_request_json,
 };
+use std::collections::BTreeMap;
 use std::fs;
 use std::io::{self, BufRead, Write};
 use std::path::Path;
@@ -98,11 +103,67 @@ fn log_gateway_command_report(kind: &str, report: &GatewayCommandReport) {
     eprintln!("mahayana-host-gateway-command {value}");
 }
 
+fn decode_box_environment_update(
+    args: &serde_json::Value,
+) -> Result<BoxEnvironmentUpdate, GatewayCommandError> {
+    let object = args.as_object().ok_or_else(|| {
+        GatewayCommandError::Internal("box.applyEnvironment params must be an object".into())
+    })?;
+    let raw_env = object.get("env").and_then(serde_json::Value::as_object).ok_or_else(|| {
+        GatewayCommandError::Internal("box.applyEnvironment params.env must be an object".into())
+    })?;
+    let replace = object
+        .get("replace")
+        .and_then(serde_json::Value::as_bool)
+        .ok_or_else(|| {
+            GatewayCommandError::Internal("box.applyEnvironment params.replace must be a boolean".into())
+        })?;
+    let mut env = BTreeMap::new();
+    for (name, value) in raw_env {
+        let value = value.as_str().ok_or_else(|| {
+            GatewayCommandError::Internal(format!(
+                "box.applyEnvironment env value for {name} must be a string"
+            ))
+        })?;
+        env.insert(name.clone(), value.to_string());
+    }
+    Ok(BoxEnvironmentUpdate { env, replace })
+}
+
+fn dispatch_box_environment_call<Apply>(
+    method: &str,
+    args: &serde_json::Value,
+    mut apply: Apply,
+) -> Option<Result<serde_json::Value, GatewayCommandError>>
+where
+    Apply: FnMut(&BoxEnvironmentUpdate) -> Result<(), String>,
+{
+    if method != BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD {
+        return None;
+    }
+    Some(
+        decode_box_environment_update(args).and_then(|update| {
+            apply(&update)
+                .map_err(GatewayCommandError::Internal)
+                .map(|()| serde_json::json!({ "applied": true }))
+        }),
+    )
+}
+
 fn dispatch_gateway_call(
     host: &UnifiedAppHost,
+    production_box: &ProductionBoxEnvironment,
     method: &str,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
+    if let Some(result) = dispatch_box_environment_call(method, &args, |update| {
+        production_box
+            .apply_environment(update)
+            .map_err(|error| error.to_string())
+    }) {
+        return result;
+    }
+
     let request = serde_json::json!({
         "id": "gateway",
         "method": method,
@@ -190,6 +251,7 @@ fn main() {
             std::process::exit(1);
         }
     };
+    let production_box = ProductionBoxEnvironment::from_process_env();
     let (host_tx, host_rx) = mpsc::channel::<HostLaneRequest>();
     // Platform/account HTTP may legitimately take tens of seconds. Keep it on
     // a dedicated Rust product lane so feature.receive and Agent commands keep
@@ -322,7 +384,7 @@ fn main() {
     while let Ok(request) = host_rx.recv() {
         match request {
             HostLaneRequest::Gateway { method, args, reply } => {
-                let _ = reply.send(dispatch_gateway_call(&host, &method, args));
+                let _ = reply.send(dispatch_gateway_call(&host, &production_box, &method, args));
             }
             HostLaneRequest::StdinClosed => break,
             HostLaneRequest::Stdin(line) => {
@@ -364,7 +426,8 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::{
-        UnifiedGatewayApi, ensure_managed_runtime_layout, is_platform_request_json,
+        BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, UnifiedGatewayApi,
+        dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
     };
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -386,6 +449,33 @@ mod tests {
         assert!(!is_platform_request_json(
             r#"{"id":3,"method":"feature.execute","params":{}}"#,
         ));
+    }
+
+
+
+    #[test]
+    fn shipping_gateway_routes_box_environment_to_production_box_owner() {
+        let args = serde_json::json!({
+            "env": { "FABUSHI_AGENT": "enabled", "SHELL": "/bin/zsh" },
+            "replace": true
+        });
+        let mut observed = None;
+        let result = dispatch_box_environment_call(
+            BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD,
+            &args,
+            |update| {
+                observed = Some(update.clone());
+                Ok(())
+            },
+        )
+        .expect("box route should be owned by production Host")
+        .expect("box route should succeed");
+
+        assert_eq!(result, serde_json::json!({ "applied": true }));
+        let observed = observed.expect("production box update");
+        assert_eq!(observed.env["FABUSHI_AGENT"], "enabled");
+        assert_eq!(observed.env["SHELL"], "/bin/zsh");
+        assert!(observed.replace);
     }
 
     #[test]
