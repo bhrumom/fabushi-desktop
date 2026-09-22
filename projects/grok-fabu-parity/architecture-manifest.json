@@ -3451,12 +3451,18 @@
       "targetPath": "source/electron-main/account/account-authorization.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "5470896e1a623e69ec3b326cb08a5fb9865fb737",
       "architecturalRole": "electron-main/account",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/account/account-authorization.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Target blob matches the frozen Grok 0.18 reference exactly; behavior is covered by the recorded Electron-main test."
     },
     {
       "referencePath": "source/electron-main/account/cursor-auth-wiring.ts",
@@ -3877,12 +3883,18 @@
       "targetPath": "source/electron-main/box/box-recreate-commands.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "15087dd03fbc15da8073d830f7283b776693aa72",
       "architecturalRole": "electron-main/box",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/box/box-recreate-commands.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Target blob matches the frozen Grok 0.18 reference exactly; behavior is covered by the recorded Electron-main test."
     },
     {
       "referencePath": "source/electron-main/box/box-visibility-sink.ts",
@@ -4009,12 +4021,18 @@
       "targetPath": "source/electron-main/coordinator/coordinator-control-server.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "80ca9fda01a1675dd47f3201288ec6aa59ee8b15",
       "architecturalRole": "electron-main/coordinator",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-control-server.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-launcher.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Target preserves the frozen Grok 0.18 control/launch semantics while replacing Promise.withResolvers with an equivalent compatibility deferred helper; behavior is covered by the recorded launcher test."
     },
     {
       "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
@@ -4045,12 +4063,18 @@
       "targetPath": "source/electron-main/coordinator/coordinator-launcher.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "a3fdc2aea0adba03aefb0c4a44b24383cc09fa09",
       "architecturalRole": "electron-main/coordinator",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-launcher.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-launcher.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Target preserves the frozen Grok 0.18 control/launch semantics while replacing Promise.withResolvers with an equivalent compatibility deferred helper; behavior is covered by the recorded launcher test."
     },
     {
       "referencePath": "source/electron-main/coordinator/coordinator-main-legs.ts",
@@ -4759,12 +4783,18 @@
       "targetPath": "source/electron-main/prefs/host-settings-fields.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "70b39227c0dbcd3af9a4dd0787667be3477a95e3",
       "architecturalRole": "electron-main/prefs",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/prefs/host-settings-fields.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Target blob matches the frozen Grok 0.18 reference exactly; behavior is covered by the recorded Electron-main test."
     },
     {
       "referencePath": "source/electron-main/prefs/settings-ipc.ts",
@@ -5521,12 +5551,18 @@
       "targetPath": "source/electron-main/update/release-metadata.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "d6cd0bb1c88ce8a0959b45b1002318cd28c6c90a",
       "architecturalRole": "electron-main/update",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/update/release-metadata.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Target blob matches the frozen Grok 0.18 reference exactly; behavior is covered by the recorded Electron-main test."
     },
     {
       "referencePath": "source/electron-main/update/safe-relaunch-gate.ts",
