@@ -317,3 +317,205 @@ fn normalize_success(success: &serde_json::Map<String, Value>) -> Value {
     }
     Value::Object(normalized)
 }
+
+
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
+
+pub struct RoutedMcpServer {
+    url: String,
+    stop: Arc<AtomicBool>,
+    worker: Option<JoinHandle<()>>,
+}
+
+impl RoutedMcpServer {
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+
+    pub fn close(&mut self) {
+        self.stop.store(true, Ordering::Release);
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
+    }
+}
+
+impl Drop for RoutedMcpServer {
+    fn drop(&mut self) {
+        self.close();
+    }
+}
+
+pub fn start_routed_mcp_server<B>(backend: B) -> Result<RoutedMcpServer, Failure>
+where
+    B: RoutedMcpBackend + Send + 'static,
+{
+    let listener = TcpListener::bind("127.0.0.1:0").map_err(|error| {
+        Failure::new(
+            "MCP_BRIDGE_BIND_FAILED",
+            format!("could not bind routed MCP loopback server: {error}"),
+        )
+    })?;
+    listener.set_nonblocking(true).map_err(|error| {
+        Failure::new(
+            "MCP_BRIDGE_BIND_FAILED",
+            format!("could not configure routed MCP loopback server: {error}"),
+        )
+    })?;
+    let port = listener
+        .local_addr()
+        .map_err(|error| Failure::new("MCP_BRIDGE_BIND_FAILED", error.to_string()))?
+        .port();
+    let mut bridge = RoutedMcpProtocolBridge::new();
+    let url = bridge.local_url(port)?;
+    let stop = Arc::new(AtomicBool::new(false));
+    let worker_stop = Arc::clone(&stop);
+    let worker = thread::spawn(move || {
+        let mut backend = backend;
+        while !worker_stop.load(Ordering::Acquire) {
+            match listener.accept() {
+                Ok((stream, _)) => {
+                    let _ = serve_routed_mcp_request(stream, &mut bridge, &mut backend);
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    thread::sleep(Duration::from_millis(10));
+                }
+                Err(_) => {
+                    if worker_stop.load(Ordering::Acquire) {
+                        break;
+                    }
+                    thread::sleep(Duration::from_millis(10));
+                }
+            }
+        }
+    });
+    Ok(RoutedMcpServer {
+        url,
+        stop,
+        worker: Some(worker),
+    })
+}
+
+fn serve_routed_mcp_request<B: RoutedMcpBackend>(
+    mut stream: TcpStream,
+    bridge: &mut RoutedMcpProtocolBridge,
+    backend: &mut B,
+) -> std::io::Result<()> {
+    stream.set_nonblocking(false)?;
+    stream.set_read_timeout(Some(Duration::from_secs(5)))?;
+    stream.set_write_timeout(Some(Duration::from_secs(5)))?;
+
+    const MAX_HEADER_BYTES: usize = 64 * 1024;
+    let mut request = Vec::with_capacity(4096);
+    let mut chunk = [0_u8; 4096];
+    let header_end = loop {
+        let count = stream.read(&mut chunk)?;
+        if count == 0 {
+            return Ok(());
+        }
+        request.extend_from_slice(&chunk[..count]);
+        if let Some(index) = request.windows(4).position(|window| window == b"\r\n\r\n") {
+            break index + 4;
+        }
+        if request.len() > MAX_HEADER_BYTES {
+            write_routed_mcp_response(&mut stream, RoutedMcpHttpOutcome::HttpError(431))?;
+            return Ok(());
+        }
+    };
+
+    let headers = std::str::from_utf8(&request[..header_end]).map_err(|_| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "routed MCP request headers are not UTF-8",
+        )
+    })?;
+    let mut lines = headers.lines();
+    let Some(request_line) = lines.next() else {
+        write_routed_mcp_response(&mut stream, RoutedMcpHttpOutcome::HttpError(400))?;
+        return Ok(());
+    };
+    let mut request_parts = request_line.split_whitespace();
+    let method = request_parts.next().unwrap_or("");
+    let path = request_parts.next().unwrap_or("");
+    let content_length = lines
+        .find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.eq_ignore_ascii_case("content-length")
+                .then(|| value.trim().parse::<usize>().ok())
+                .flatten()
+        })
+        .unwrap_or(0);
+
+    if content_length > ROUTED_MCP_MAX_BODY_BYTES {
+        write_routed_mcp_response(&mut stream, RoutedMcpHttpOutcome::HttpError(413))?;
+        return Ok(());
+    }
+
+    let total_needed = header_end.saturating_add(content_length);
+    while request.len() < total_needed {
+        let count = stream.read(&mut chunk)?;
+        if count == 0 {
+            break;
+        }
+        request.extend_from_slice(&chunk[..count]);
+        if request.len() > total_needed {
+            request.truncate(total_needed);
+            break;
+        }
+    }
+    if request.len() < total_needed {
+        write_routed_mcp_response(&mut stream, RoutedMcpHttpOutcome::HttpError(400))?;
+        return Ok(());
+    }
+
+    let outcome = bridge.handle_http(
+        method,
+        path,
+        &request[header_end..total_needed],
+        backend,
+    );
+    write_routed_mcp_response(&mut stream, outcome)
+}
+
+fn write_routed_mcp_response(
+    stream: &mut TcpStream,
+    outcome: RoutedMcpHttpOutcome,
+) -> std::io::Result<()> {
+    let (status, content_type, body) = match outcome {
+        RoutedMcpHttpOutcome::Accepted => (202, None, Vec::new()),
+        RoutedMcpHttpOutcome::Json(value) => (
+            200,
+            Some("application/json"),
+            serde_json::to_vec(&value)
+                .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?,
+        ),
+        RoutedMcpHttpOutcome::HttpError(status) => (status, None, Vec::new()),
+    };
+    let reason = match status {
+        200 => "OK",
+        202 => "Accepted",
+        400 => "Bad Request",
+        404 => "Not Found",
+        413 => "Payload Too Large",
+        431 => "Request Header Fields Too Large",
+        _ => "Response",
+    };
+    write!(
+        stream,
+        "HTTP/1.1 {status} {reason}\r\nContent-Length: {}\r\nConnection: close\r\n",
+        body.len()
+    )?;
+    if let Some(content_type) = content_type {
+        write!(stream, "Content-Type: {content_type}\r\n")?;
+    }
+    write!(stream, "\r\n")?;
+    stream.write_all(&body)?;
+    stream.flush()
+}
