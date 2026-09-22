@@ -205,3 +205,140 @@ fn turn_run_shell_converts_checkpoint_boundary_to_waiting_user_or_quiesce() {
     shell.cancel_quiesce_for_upgrade();
     assert!(!shell.is_quiescing_for_upgrade());
 }
+
+
+#[test]
+fn tool_call_identity_resolves_late_names_and_releases_completed_entries() {
+    use mahayana_host_runtime::{ToolCallIdentity, ToolSurfaceUpdate, TOOL_CALL_IDENTITY_CAP};
+    use serde_json::{Map, Value};
+
+    let mut identity = ToolCallIdentity::default();
+    let mut fields = Map::new();
+    fields.insert("status".into(), Value::String("pending".into()));
+    identity.stash_surface_unresolved_pending(
+        "call-1",
+        ToolSurfaceUpdate { fields },
+    );
+    let emitted = identity
+        .record_model_tool_name("call-1", "mcp.search")
+        .expect("held update");
+    assert_eq!(emitted.fields["name"], "mcp.search");
+    assert_eq!(
+        identity.resolve_model_tool_name("toolCallStarted", "call-1", "Tool"),
+        "mcp.search"
+    );
+    assert_eq!(
+        identity.resolve_model_tool_name("toolCallCompleted", "call-1", "Tool"),
+        "mcp.search"
+    );
+    assert_eq!(identity.resolve_model_tool_name("toolCallStarted", "call-1", "Tool"), "Tool");
+
+    for index in 0..=TOOL_CALL_IDENTITY_CAP {
+        identity.record_model_tool_name(format!("id-{index}"), format!("tool-{index}"));
+    }
+    assert_eq!(identity.name_count(), TOOL_CALL_IDENTITY_CAP);
+    assert_eq!(identity.resolve_model_tool_name("toolCallStarted", "id-0", "fallback"), "fallback");
+}
+
+#[test]
+fn turn_usage_clamps_bigint_equivalent_and_merges_without_overflow() {
+    use mahayana_host_runtime::{
+        MAX_SAFE_TOKEN_COUNT, TurnEndedUsage, TurnUsage, merge_turn_usage,
+        to_safe_token_count, turn_usage_from_turn_ended,
+    };
+
+    assert_eq!(to_safe_token_count(-1), 0);
+    assert_eq!(
+        to_safe_token_count(i128::MAX),
+        MAX_SAFE_TOKEN_COUNT
+    );
+    assert!(turn_usage_from_turn_ended(&TurnEndedUsage::default()).is_none());
+    let usage = turn_usage_from_turn_ended(&TurnEndedUsage {
+        input_tokens: Some(10),
+        output_tokens: Some(5),
+        cache_read_tokens: Some(-1),
+        cache_write_tokens: Some(2),
+        reasoning_tokens: Some(i128::MAX),
+    })
+    .unwrap();
+    assert_eq!(usage.input_tokens, 10);
+    assert_eq!(usage.cache_read_tokens, 0);
+    assert_eq!(usage.reasoning_tokens, Some(MAX_SAFE_TOKEN_COUNT));
+
+    let merged = merge_turn_usage(
+        Some(TurnUsage {
+            input_tokens: MAX_SAFE_TOKEN_COUNT,
+            output_tokens: 1,
+            cache_read_tokens: 2,
+            cache_write_tokens: 3,
+            reasoning_tokens: None,
+        }),
+        Some(TurnUsage {
+            input_tokens: 99,
+            output_tokens: 4,
+            cache_read_tokens: 5,
+            cache_write_tokens: 6,
+            reasoning_tokens: Some(7),
+        }),
+    )
+    .unwrap();
+    assert_eq!(merged.input_tokens, MAX_SAFE_TOKEN_COUNT);
+    assert_eq!(merged.output_tokens, 5);
+    assert_eq!(merged.reasoning_tokens, Some(7));
+}
+
+#[test]
+fn conversation_state_recovers_unconfirmed_user_messages_and_rejects_stale_model_resolution() {
+    use mahayana_host_runtime::{
+        HIDDEN_PROMPT_MARKER, RecentUserMessage, ResolvedModelTracker,
+        build_unanswered_questions_note, sanitize_usage,
+        select_unconfirmed_user_messages, should_use_self_summary,
+    };
+
+    let messages = vec![
+        RecentUserMessage { id: "u1".into(), text: "first".into() },
+        RecentUserMessage { id: "u2".into(), text: "   ".into() },
+        RecentUserMessage { id: "u3".into(), text: "third".into() },
+        RecentUserMessage { id: "u4".into(), text: "current".into() },
+    ];
+    let recovered = select_unconfirmed_user_messages(
+        &messages,
+        Some("u4"),
+        Some("u1"),
+        true,
+    );
+    assert_eq!(
+        recovered.iter().map(|message| message.id.as_str()).collect::<Vec<_>>(),
+        vec!["u3"]
+    );
+    assert!(select_unconfirmed_user_messages(&messages, Some("u4"), Some("missing"), true).is_empty());
+    let first_turn = select_unconfirmed_user_messages(&messages, Some("u4"), None, false);
+    assert_eq!(
+        first_turn.iter().map(|message| message.id.as_str()).collect::<Vec<_>>(),
+        vec!["u1", "u3"]
+    );
+
+    let note = build_unanswered_questions_note(
+        &["old question".into()],
+        &["private question".into()],
+    );
+    assert!(note.starts_with(HIDDEN_PROMPT_MARKER));
+    assert!(note.contains("moved on"));
+    assert!(note.contains("dismissed"));
+
+    let usage = sanitize_usage(f64::NAN, 2.9, 0.0);
+    assert_eq!(usage.prompt_tokens, 0);
+    assert_eq!(usage.completion_tokens, 2);
+    assert_eq!(usage.total_tokens, 2);
+
+    let mut tracker = ResolvedModelTracker::default();
+    let older = tracker.begin_request("requested");
+    let newer = tracker.begin_request("requested");
+    assert!(tracker.accept_resolution(&newer, "resolved-new"));
+    assert!(!tracker.accept_resolution(&older, "resolved-old"));
+    assert_eq!(tracker.resolved("requested"), Some("resolved-new"));
+
+    assert!(should_use_self_summary("grok-4.5#account"));
+    assert!(should_use_self_summary("cursor/vega-x"));
+    assert!(!should_use_self_summary("gpt-4.1"));
+}
