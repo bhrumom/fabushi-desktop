@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
+use serde_json::Value;
+
 pub const HIDDEN_PROMPT_MARKER: &str = "[SAND_HIDDEN_PROMPT]";
 pub const SUMMARIZATION_MAX_PROMPT_CHARS: usize = 2_800_000;
+pub const SUMMARIZATION_MAX_OUTPUT_TOKENS: u64 = 32_000;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecentUserMessage {
@@ -95,6 +98,70 @@ pub fn to_safe_usage_count(value: f64) -> u64 {
     }
 }
 
+pub fn await_block_until_ms(value: Option<&Value>) -> f64 {
+    match value {
+        None | Some(Value::Null) => 0.0,
+        Some(Value::Bool(value)) => u8::from(*value) as f64,
+        Some(Value::Number(value)) => value.as_f64().unwrap_or(f64::NAN),
+        Some(Value::String(value)) if value.trim().is_empty() => 0.0,
+        Some(Value::String(value)) => value.trim().parse::<f64>().unwrap_or(f64::NAN),
+        Some(Value::Array(_)) | Some(Value::Object(_)) => f64::NAN,
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompletedAwaitOutcome {
+    SleptFull,
+    CompletedEarly,
+}
+
+pub fn classify_completed_await_outcome(await_call: &Value) -> CompletedAwaitOutcome {
+    let Some(success) = await_call
+        .get("result")
+        .and_then(|value| value.get("result"))
+        .filter(|value| value.get("case").and_then(Value::as_str) == Some("success"))
+    else {
+        return CompletedAwaitOutcome::CompletedEarly;
+    };
+    let Some(await_result) = success
+        .get("value")
+        .and_then(|value| value.get("awaitResult"))
+    else {
+        return CompletedAwaitOutcome::CompletedEarly;
+    };
+
+    match await_result.get("case").and_then(Value::as_str) {
+        Some("complete") => {
+            let task_id = await_result
+                .get("value")
+                .and_then(|value| value.get("taskId"))
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            if task_id.trim().is_empty() {
+                CompletedAwaitOutcome::SleptFull
+            } else {
+                CompletedAwaitOutcome::CompletedEarly
+            }
+        }
+        Some("stillRunning") => {
+            let regex_match = await_result
+                .get("value")
+                .and_then(|value| value.get("regexMatch"));
+            let matched = match regex_match {
+                Some(Value::String(value)) => !value.is_empty(),
+                Some(Value::Array(value)) => !value.is_empty(),
+                _ => false,
+            };
+            if matched {
+                CompletedAwaitOutcome::CompletedEarly
+            } else {
+                CompletedAwaitOutcome::SleptFull
+            }
+        }
+        _ => CompletedAwaitOutcome::CompletedEarly,
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SanitizedUsage {
     pub prompt_tokens: u64,
@@ -102,7 +169,11 @@ pub struct SanitizedUsage {
     pub total_tokens: u64,
 }
 
-pub fn sanitize_usage(prompt_tokens: f64, completion_tokens: f64, total_tokens: f64) -> SanitizedUsage {
+pub fn sanitize_usage(
+    prompt_tokens: f64,
+    completion_tokens: f64,
+    total_tokens: f64,
+) -> SanitizedUsage {
     let prompt_tokens = to_safe_usage_count(prompt_tokens);
     let completion_tokens = to_safe_usage_count(completion_tokens);
     let total_tokens = to_safe_usage_count(total_tokens);
@@ -117,6 +188,108 @@ pub fn sanitize_usage(prompt_tokens: f64, completion_tokens: f64, total_tokens: 
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SanitizedExtendedUsage {
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+    pub cache_read_tokens: u64,
+    pub cache_write_tokens: u64,
+    pub max_tokens: u64,
+}
+
+#[derive(Debug, Default)]
+pub struct ContextWindowTracker {
+    by_model: HashMap<String, u64>,
+}
+
+impl ContextWindowTracker {
+    pub fn last_reported(&self, model_id: &str) -> Option<u64> {
+        self.by_model.get(model_id).copied()
+    }
+
+    pub fn sanitize_extended_usage(
+        &mut self,
+        usage: &Value,
+        model_id: &str,
+    ) -> SanitizedExtendedUsage {
+        let count = |field: &str| {
+            usage
+                .get(field)
+                .and_then(Value::as_f64)
+                .map(to_safe_usage_count)
+                .unwrap_or_default()
+        };
+        let max_tokens = count("maxTokens");
+        if max_tokens > 0 {
+            self.by_model.insert(model_id.to_string(), max_tokens);
+        }
+        SanitizedExtendedUsage {
+            input_tokens: count("inputTokens"),
+            output_tokens: count("outputTokens"),
+            cache_read_tokens: count("cacheReadTokens"),
+            cache_write_tokens: count("cacheWriteTokens"),
+            max_tokens,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum StreamSanitizerItem<T> {
+    Emit(T),
+    DeferredError(String),
+    Suppressed,
+}
+
+#[derive(Debug, Default)]
+pub struct FullStreamSanitizer {
+    deferred_error: Option<String>,
+}
+
+impl FullStreamSanitizer {
+    pub fn accept_error(&mut self, error: impl Into<String>) -> StreamSanitizerItem<()> {
+        if self.deferred_error.is_none() {
+            self.deferred_error = Some(error.into());
+            StreamSanitizerItem::DeferredError(
+                self.deferred_error.clone().unwrap_or_default(),
+            )
+        } else {
+            StreamSanitizerItem::Suppressed
+        }
+    }
+
+    pub fn accept_value<T>(&self, value: T) -> StreamSanitizerItem<T> {
+        if self.deferred_error.is_some() {
+            StreamSanitizerItem::Suppressed
+        } else {
+            StreamSanitizerItem::Emit(value)
+        }
+    }
+
+    pub fn finish(self) -> Result<(), String> {
+        match self.deferred_error {
+            Some(error) => Err(error),
+            None => Ok(()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SummarizationPolicy {
+    pub enable_reduce_inputs_retry: bool,
+    pub max_prompt_chars: usize,
+    pub max_output_tokens: u64,
+    pub preserve_latest_image: bool,
+}
+
+pub fn summarization_policy(preserve_latest_image: bool) -> SummarizationPolicy {
+    SummarizationPolicy {
+        enable_reduce_inputs_retry: true,
+        max_prompt_chars: SUMMARIZATION_MAX_PROMPT_CHARS,
+        max_output_tokens: SUMMARIZATION_MAX_OUTPUT_TOKENS,
+        preserve_latest_image,
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct ResolvedModelTracker {
     sequence: u64,
@@ -125,7 +298,9 @@ pub struct ResolvedModelTracker {
 
 impl ResolvedModelTracker {
     pub fn resolved(&self, requested_model: &str) -> Option<&str> {
-        self.accepted.get(requested_model).map(|(_, model)| model.as_str())
+        self.accepted
+            .get(requested_model)
+            .map(|(_, model)| model.as_str())
     }
 
     pub fn begin_request(&mut self, requested_model: &str) -> ModelResolutionTicket {
@@ -137,7 +312,10 @@ impl ResolvedModelTracker {
     }
 
     pub fn accept_resolution(&mut self, ticket: &ModelResolutionTicket, model_id: &str) -> bool {
-        let prior = self.accepted.get(&ticket.requested_model).map(|(sequence, _)| *sequence);
+        let prior = self
+            .accepted
+            .get(&ticket.requested_model)
+            .map(|(sequence, _)| *sequence);
         if prior.is_some_and(|sequence| sequence >= ticket.sequence) {
             return false;
         }
