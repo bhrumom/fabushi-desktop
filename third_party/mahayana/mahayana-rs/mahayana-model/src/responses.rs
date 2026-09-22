@@ -4,6 +4,9 @@ use crate::{
 };
 use async_trait::async_trait;
 use mahayana_core::ModelProviderMode;
+use mahayana_host_runtime::{
+    AttemptProgress, RetryDecision, StreamAttemptPolicy, TransientStreamError,
+};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader};
@@ -24,9 +27,6 @@ pub enum ResponsesWireApi {
 const MODEL_CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
 const MODEL_READ_TIMEOUT: Duration = Duration::from_secs(150);
 const MODEL_WRITE_TIMEOUT: Duration = Duration::from_secs(30);
-const FIRST_OUTPUT_TIMEOUT: Duration = Duration::from_secs(150);
-const PROVIDER_MAX_ATTEMPTS: u32 = 3;
-const PROVIDER_RETRY_BASE_DELAY_MS: u64 = 500;
 
 struct FirstOutputTrackingSink {
     inner: SharedModelEventSink,
@@ -140,14 +140,21 @@ impl ModelRuntime for ResponsesModelRuntime {
         }
         let tracker = Arc::new(FirstOutputTrackingSink::new(Arc::clone(&events)));
         let tracked_events: SharedModelEventSink = tracker.clone();
+        let policy = StreamAttemptPolicy::default();
         let mut attempt = 0_u32;
         let (payload, streamed_text) = loop {
             attempt += 1;
             let config_for_attempt = config.clone();
             let request_for_attempt = request.clone();
             let events_for_attempt = Arc::clone(&tracked_events);
+            let first_output_timeout = policy.first_output_timeout;
             let outcome = tokio::task::spawn_blocking(move || {
-                request_response(&config_for_attempt, request_for_attempt, events_for_attempt)
+                request_response(
+                    &config_for_attempt,
+                    request_for_attempt,
+                    events_for_attempt,
+                    first_output_timeout,
+                )
             })
             .await
             .map_err(|error| ModelError::Inference(format!("model task failed: {error}")))
@@ -155,16 +162,25 @@ impl ModelRuntime for ResponsesModelRuntime {
 
             match outcome {
                 Ok(value) => break value,
-                Err(error)
-                    if attempt < PROVIDER_MAX_ATTEMPTS
-                        && !tracker.seen()
-                        && is_retryable_model_error(&error) =>
-                {
-                    let backoff = PROVIDER_RETRY_BASE_DELAY_MS
-                        .saturating_mul(1_u64 << (attempt - 1).min(4));
-                    tokio::time::sleep(Duration::from_millis(backoff)).await;
+                Err(error) => {
+                    let mut progress = AttemptProgress::default();
+                    if tracker.seen() {
+                        progress.record_output(1);
+                    }
+                    let failure = TransientStreamError::classify(error.to_string(), None, None);
+                    match policy.retry_decision(attempt, &progress, &failure) {
+                        RetryDecision::RetryAfter(delay) if is_retryable_model_error(&error) => {
+                            tokio::time::sleep(delay).await;
+                        }
+                        RetryDecision::ResumeAfter { .. } => {
+                            // The Responses transport does not currently expose a durable
+                            // provider cursor/checkpoint. Never replay partial visible
+                            // output without one; fail closed instead.
+                            return Err(error);
+                        }
+                        RetryDecision::RetryAfter(_) | RetryDecision::Fail => return Err(error),
+                    }
                 }
-                Err(error) => return Err(error),
             }
         };
 
@@ -214,6 +230,7 @@ fn request_response(
     config: &ResponsesModelConfig,
     request: ModelRequest,
     events: SharedModelEventSink,
+    first_output_timeout: Duration,
 ) -> Result<(Value, bool), ModelError> {
     if matches!(
         config.provider_mode,
@@ -326,7 +343,7 @@ fn request_response(
         .to_ascii_lowercase()
         .contains("text/event-stream")
     {
-        return request_stream(response, config.wire_api, events);
+        return request_stream(response, config.wire_api, events, first_output_timeout);
     }
     let payload: Value = response
         .into_json()
@@ -468,6 +485,7 @@ fn request_stream(
     response: ureq::Response,
     wire_api: ResponsesWireApi,
     events: SharedModelEventSink,
+    first_output_timeout: Duration,
 ) -> Result<(Value, bool), ModelError> {
     let mut reader = BufReader::new(response.into_reader());
     let started = Instant::now();
@@ -475,10 +493,10 @@ fn request_stream(
     let mut stream = StreamAccumulator::new(wire_api);
 
     loop {
-        if !stream.first_output_seen && started.elapsed() >= FIRST_OUTPUT_TIMEOUT {
+        if !stream.first_output_seen && started.elapsed() >= first_output_timeout {
             return Err(ModelError::Inference(format!(
                 "model first-output watchdog expired after {} ms",
-                FIRST_OUTPUT_TIMEOUT.as_millis()
+                first_output_timeout.as_millis()
             )));
         }
 
@@ -487,10 +505,10 @@ fn request_stream(
             .read_line(&mut line)
             .map_err(|error| ModelError::Inference(format!("model stream read failed: {error}")))?;
 
-        if !stream.first_output_seen && started.elapsed() >= FIRST_OUTPUT_TIMEOUT {
+        if !stream.first_output_seen && started.elapsed() >= first_output_timeout {
             return Err(ModelError::Inference(format!(
                 "model first-output watchdog expired after {} ms",
-                FIRST_OUTPUT_TIMEOUT.as_millis()
+                first_output_timeout.as_millis()
             )));
         }
 
