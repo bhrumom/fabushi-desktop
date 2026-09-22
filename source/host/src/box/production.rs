@@ -5,8 +5,8 @@ use super::box_env::{
 };
 use super::box_remote_accessor::BoxEndpoint;
 use super::generated_production::{
-    ProductionBoxTransport, ProductionBoxTransportError,
-    create_production_box_control_client,
+    ProductionBoxResourceAccessor, ProductionBoxTransport, ProductionBoxTransportError,
+    create_production_box_control_client, create_production_box_resource_accessor,
 };
 
 pub const EXEC_DAEMON_PORT: u16 = 1337;
@@ -48,6 +48,10 @@ impl ProductionBoxEnvironment {
 
     pub fn transport(&self) -> &ProductionBoxTransport {
         &self.transport
+    }
+
+    pub fn remote_resource_accessor(&self) -> ProductionBoxResourceAccessor {
+        create_production_box_resource_accessor(&self.transport)
     }
 
     pub fn apply_environment(

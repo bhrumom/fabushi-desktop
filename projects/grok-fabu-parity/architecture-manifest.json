@@ -9580,12 +9580,15 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/box/box_shell_command.rs",
-        "source/host/src/box/mod.rs"
+        "source/host/src/box/mod.rs",
+        "source/host/src/box/generated_production.rs",
+        "source/host/src/box/production.rs"
       ],
       "testEvidence": [
-        "source/host/tests/host_small_ports_contract.rs"
+        "source/host/tests/host_small_ports_contract.rs",
+        "source/host/tests/box_generated_production_contract.rs"
       ],
-      "notes": "Behavioral builder and contract test exist, but final status is withheld until the migrated shell execution path uses build_host_shell_args in the shipping Host graph."
+      "notes": "The Grok shell builder is now consumed by the concrete production ExecService accessor for shell/window and file-transfer execution, with a bearer-authenticated Connect streaming contract test. Final status is still withheld until BoxLifecycle/shared-desktop production composition obtains this accessor from the shipping Host graph."
     },
     {
       "referencePath": "source/host/box/box-store-backend-policy.ts",
@@ -9675,15 +9678,17 @@
         "source/host/src/box/box_env.rs",
         "source/host/app/src/main.rs",
         "source/host/src/box/box_remote_accessor.rs",
-        "source/host/src/box/box_mcp.rs"
+        "source/host/src/box/box_mcp.rs",
+        "source/host/src/box/production.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_small_ports_contract.rs",
         "source/host/app/src/main.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/box_foundation_contract.rs"
+        "source/host/tests/box_foundation_contract.rs",
+        "source/host/tests/box_generated_production_contract.rs"
       ],
-      "notes": "Rust production bindings now concretely implement authenticated ControlService Ping, UpdateEnvironmentVariables, and LoadMcpServers over the shipping HTTP/1.1 Connect transport, including protobuf response decoding and Connect/errno classification. Contract tests assert the frozen service paths, bearer headers, request protobufs, and MCP response projection. ExecService/resource-accessor construction and the remaining generated/package bindings are still pending, so this module intentionally remains non-final."
+      "notes": "Rust production bindings now implement authenticated ControlService Ping/UpdateEnvironmentVariables/LoadMcpServers and the Connect HTTP/1.1 server-streaming ExecService envelope protocol. A ProductionBoxResourceAccessor routes ShellArgs and WriteArgs through BoxRemoteExecManager, decodes stream-close/throw/heartbeat plus shell/write results, and is constructed from ProductionBoxEnvironment. A real loopback contract test exercises bearer-authenticated chunked Connect streaming for shell and write. Full Grok resource coverage (guarded read/computer overlays and remaining Exec bindings) plus BoxLifecycle/shared-desktop composition are still pending, so this module remains non-final."
     },
     {
       "referencePath": "source/host/box/loopback-sand-box.ts",
@@ -9709,14 +9714,16 @@
       "behavioralEvidence": [
         "source/host/src/box/production.rs",
         "source/host/src/box/box_env.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/box/generated_production.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_small_ports_contract.rs",
         "source/host/app/src/main.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_generated_production_contract.rs"
       ],
-      "notes": "The shipping Host now constructs the Rust ProductionBoxEnvironment slice and routes box.applyEnvironment through it to the concrete exec-daemon Connect transport. The complete Grok ProductionBoxInner graph (ping/readiness, remote accessor, MCP, file transfer, loopback/shared-desktop composition) is still pending, so this module remains non-final."
+      "notes": "ProductionBoxEnvironment now constructs both the concrete authenticated ControlService client and the Connect server-streaming ExecService resource accessor; contract coverage proves shell and write traffic over the real loopback HTTP framing. The complete Grok ProductionBoxInner graph (readiness, guarded read/computer overlays, MCP/file transfer lifecycle, BoxLifecycle and shared-desktop composition) is still pending, so this module remains non-final."
     },
     {
       "referencePath": "source/host/box/protected-path-guard.ts",
