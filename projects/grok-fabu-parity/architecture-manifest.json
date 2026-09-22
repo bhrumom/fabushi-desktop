@@ -12334,24 +12334,43 @@
       "targetPath": "source/host/src/extensions/source_map/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c423a7910af10f6ecc8e076bd2caabf2f41d94cc",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/source_map/extension.rs",
+        "source/host/src/extensions/source_map/source_map_service.rs",
+        "source/host/src/extensions/mod.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/source_map_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Final: the frozen zero-dependency SourceMap extension is represented by an independent Rust extension boundary and is started and retained by the shipping Mahayana Host production extension graph. The owned service uses the canonical sand data root and preserves the frozen source-map identity/mode contract."
     },
     {
       "referencePath": "source/host/extensions/source-map/source-map-service.ts",
       "targetPath": "source/host/src/extensions/source_map/source_map_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "4d1a816f66c137faceae955f705b2f05bb44ca67",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/source_map/source_map_service.rs",
+        "source/host/src/extensions/source_map/extension.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/source_map_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Final: Rust SourceMap preserves tolerant cached loading, per-agent stable source IDs, local/agent-store mode switching without changing identity, the box-store sentinel entry, canonical source-map.json placement, parent creation and atomic temporary-file replacement. The shipping Host owns the service for its full process lifetime."
     },
     {
       "referencePath": "source/host/extensions/state-backstop/extension.ts",
