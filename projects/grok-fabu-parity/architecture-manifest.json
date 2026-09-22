@@ -391,12 +391,18 @@
       "targetPath": "frontend/src/recovered/contracts/desktop-bridge.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "4a71f3a3a95ee62fdd8e30e4fd6dd3ceeece5402",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/contracts/desktop-bridge.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/contracts/desktop-bridge.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer/preload contract parity: restored the typed attachment, MCP/Connector, account, experiments, window, Forever Box, telemetry, timezone, permissions, theme, secrets, Agent, updater, and attach-prod-box surface; executable contract verifies frozen top-level bridge keys and fail-closed structural ownership guard."
     },
     {
       "referencePath": "frontend/src/recovered/contracts/main-rpc.ts",
