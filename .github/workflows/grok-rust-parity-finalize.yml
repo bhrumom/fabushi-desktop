@@ -26,12 +26,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: refactor/grok-018-architecture-rebuild
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Bind input HEAD
         shell: bash
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           echo "Input HEAD: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
       - uses: dtolnay/rust-toolchain@stable
         with:
