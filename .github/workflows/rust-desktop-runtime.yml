@@ -5,6 +5,9 @@ on:
     branches: [main, restore/rust-desktop-runtime]
     paths:
       - 'desktop/**'
+      - 'source/**'
+      - 'projects/grok-fabu-parity/architecture-manifest.json'
+      - 'scripts/check-grok-architecture.mjs'
       - 'third_party/mahayana/mahayana-rs/**'
       - 'third_party/mahayana/codex-rs/**'
       - 'native/mahayana-messaging/**'
@@ -17,6 +20,9 @@ on:
   pull_request:
     paths:
       - 'desktop/**'
+      - 'source/**'
+      - 'projects/grok-fabu-parity/architecture-manifest.json'
+      - 'scripts/check-grok-architecture.mjs'
       - 'third_party/mahayana/mahayana-rs/**'
       - 'third_party/mahayana/codex-rs/**'
       - 'native/mahayana-messaging/**'
@@ -73,6 +79,9 @@ jobs:
       - name: Check desktop Mahayana host
         shell: bash
         run: cargo check --profile ci -p mahayana-app-host-desktop --bin mahayana-app-host --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml
+      - name: Test independent Mahayana Coordinator contract
+        shell: bash
+        run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml
       - name: Test human Computer takeover lifecycle
         shell: bash
         run: cargo test -p mahayana-feature-host computer_takeover_acquires_and_releases_a_human_control_lease --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml
@@ -143,6 +152,8 @@ jobs:
         run: node --test desktop/electron/host-process.test.cjs
       - name: Check Agent workspace architecture boundary
         run: node desktop/scripts/check-agent-workspace-boundary.mjs
+      - name: Check Grok architecture inventory
+        run: node scripts/check-grok-architecture.mjs
       - name: Typecheck and build renderer
         run: npm --prefix desktop run build:renderer
       - name: Enforce built desktop bundle boundary
