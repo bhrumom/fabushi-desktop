@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::env;
 use std::fs;
 use std::io::{self, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
@@ -10,6 +11,8 @@ use serde_json::Value;
 
 pub const HEALTH_TIMEOUT_MS: u64 = 1_500;
 pub const HEALTH_PROBE_TTL_MS: u64 = 5_000;
+pub const DISABLE_HEALTH_TTL_ENV: &str = "SAND_DISABLE_GATEWAY_HEALTH_TTL";
+pub const DISABLE_STREAM_LIVENESS_ENV: &str = "SAND_DISABLE_GATEWAY_STREAM_LIVENESS";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GatewayReachability {
@@ -48,6 +51,8 @@ pub struct GatewayHostSupervisor {
     transport_live: bool,
     last_healthy_ms: Option<u64>,
     health_ttl_ms: u64,
+    health_ttl_disabled: bool,
+    stream_liveness_disabled: bool,
     connection: Option<GatewayConnection>,
     latest_attempt: Option<ConnectionAttempt>,
     next_attempt_generation: u64,
@@ -55,12 +60,26 @@ pub struct GatewayHostSupervisor {
 
 impl GatewayHostSupervisor {
     pub fn new(health_ttl_ms: u64) -> Self {
+        Self::with_feature_flags(
+            health_ttl_ms,
+            env::var(DISABLE_HEALTH_TTL_ENV).ok().as_deref() == Some("1"),
+            env::var(DISABLE_STREAM_LIVENESS_ENV).ok().as_deref() == Some("1"),
+        )
+    }
+
+    pub fn with_feature_flags(
+        health_ttl_ms: u64,
+        health_ttl_disabled: bool,
+        stream_liveness_disabled: bool,
+    ) -> Self {
         Self {
             reachability: GatewayReachability::Unknown,
             health_epoch: 0,
             transport_live: false,
             last_healthy_ms: None,
             health_ttl_ms,
+            health_ttl_disabled,
+            stream_liveness_disabled,
             connection: None,
             latest_attempt: None,
             next_attempt_generation: 0,
@@ -146,13 +165,15 @@ impl GatewayHostSupervisor {
     }
 
     pub fn decision(&self, now_ms: u64) -> GatewayHealthDecision {
-        if self.connection.is_some() && self.transport_live {
+        if self.connection.is_some() && self.transport_live && !self.stream_liveness_disabled {
             return GatewayHealthDecision::UseCached;
         }
         if self.connection.is_some() {
-            if let Some(last) = self.last_healthy_ms {
-                if now_ms.saturating_sub(last) < self.health_ttl_ms {
-                    return GatewayHealthDecision::UseCached;
+            if !self.health_ttl_disabled {
+                if let Some(last) = self.last_healthy_ms {
+                    if now_ms.saturating_sub(last) < self.health_ttl_ms {
+                        return GatewayHealthDecision::UseCached;
+                    }
                 }
             }
             if self.reachability == GatewayReachability::Unreachable {
