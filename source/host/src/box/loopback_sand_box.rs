@@ -56,7 +56,7 @@ impl Default for LoopbackSandBoxOptions {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[derive(Debug, Error)]
 pub enum LoopbackSandBoxError {
     #[error(transparent)]
     Daemon(#[from] SandBoxDaemonUnreachableError),
