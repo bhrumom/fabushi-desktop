@@ -23,11 +23,13 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 use mahayana_host_runtime::extensions::managed_setup::team_rules::ProductionTeamRulesResolver;
 use mahayana_host_runtime::extensions::auth::credential_renewer::RenewalOutcome;
 use mahayana_host_runtime::host_request_context::create_host_request_context;
+use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
-    ProductionRoutedProviderCheckpointStore, RoutedProviderRun,
-    RoutedProviderTaskRegistry, RoutedToolBridge, RunnerRequestContextSnapshot,
-    RunnerRequestContextSource, run_routed_provider_in_runner,
+    ProductionRoutedProviderCheckpointStore, RoutedProviderTaskRegistry,
+    RoutedToolBridge, RunnerRequestContextSnapshot, RunnerRequestContextSource,
 };
+use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
+use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayCommandError, GatewayCommandReport, GatewayEventHub, GatewayServerDeps, start_gateway_server,
@@ -341,16 +343,18 @@ fn start_routed_provider_task(
                     }
                 }));
             };
-            let result = run_routed_provider_in_runner(
-                RoutedProviderRun {
-                    provider,
-                    data_dir: &data_dir,
-                    messages: &messages,
-                    bridge,
-                    request_context: resolved_request_context,
-                    cancellation,
-                    checkpoint_store,
-                },
+            let composition = TurnAgentComposition::new(
+                provider,
+                bridge,
+                resolved_request_context,
+                cancellation,
+                checkpoint_store,
+            );
+            let owner = ProductionTurnAgentOwner::new(composition);
+            let mut runner = SandAgentRunner::new(owner);
+            let result = runner.run_routed_provider(
+                &data_dir,
+                &messages,
                 &mut on_text_delta,
             );
             if !worker_cancellation.is_cancelled() {
