@@ -252,3 +252,117 @@ fn run_scheduler_watchdog_ignores_background_backlog_without_waiting_user() {
     let diagnostics = scheduler.diagnostics(10_000);
     assert_eq!(diagnostics[0].depth_background, 1);
 }
+
+
+#[test]
+fn send_pipeline_coalesces_inflight_nonce_and_preserves_accepted_outcome_on_failure() {
+    use mahayana_host_runtime::extensions::transcript::prompt_acceptance_ledger::{
+        AcceptanceLookup, AcceptanceStatus, PromptAcceptanceError,
+    };
+    use mahayana_host_runtime::extensions::transcript::send_pipeline::{
+        SendBegin, SendEchoIdentity, SendPipelineState,
+    };
+
+    let root = temp_dir("send-pipeline");
+    let mut ledger = PromptAcceptanceLedger::new(Some(&root));
+    let mut pipeline = SendPipelineState::default();
+    let input = sample_input("hello");
+
+    let begin = pipeline
+        .begin_send(&mut ledger, &input, Some("nonce-1"))
+        .expect("begin");
+    assert!(matches!(
+        begin,
+        SendBegin::Dispatch {
+            client_nonce: Some(ref nonce),
+            input_digest: Some(_),
+        } if nonce == "nonce-1"
+    ));
+    assert!(pipeline.is_in_flight("nonce-1"));
+
+    let different = sample_input("different while first is running");
+    assert_eq!(
+        pipeline
+            .begin_send(&mut ledger, &different, Some("nonce-1"))
+            .unwrap(),
+        SendBegin::Coalesced {
+            client_nonce: "nonce-1".into(),
+        }
+    );
+
+    let pending = pipeline
+        .record_pending_acceptance(
+            &mut ledger,
+            "nonce-1",
+            SendEchoIdentity {
+                agent_id: "agent-1".into(),
+                echo_entry_id: Some("t1u".into()),
+            },
+        )
+        .unwrap();
+    assert_eq!(pending.status, AcceptanceStatus::Pending);
+    pipeline.mark_send_accepted(&mut ledger, Some("nonce-1"));
+    pipeline.finish_send(&mut ledger, Some("nonce-1"), false);
+    assert!(!pipeline.is_in_flight("nonce-1"));
+    assert!(matches!(
+        ledger.lookup("host", "nonce-1"),
+        AcceptanceLookup::Found(record) if record.status == AcceptanceStatus::Accepted
+    ));
+
+    assert!(matches!(
+        pipeline.begin_send(&mut ledger, &input, Some("nonce-1")).unwrap(),
+        SendBegin::DuplicateNoop { record } if record.status == AcceptanceStatus::Accepted
+    ));
+    assert!(matches!(
+        pipeline.begin_send(&mut ledger, &different, Some("nonce-1")),
+        Err(PromptAcceptanceError::DigestMismatch { .. })
+    ));
+
+    assert_eq!(pipeline.next_turn_epoch("agent-1"), 1);
+    assert_eq!(pipeline.next_turn_epoch("agent-1"), 2);
+    assert_eq!(pipeline.current_turn_epoch("agent-1"), 2);
+    let batch = pipeline.claim_attachment_batch_id("agent-1");
+    assert_eq!(pipeline.claim_attachment_batch_id("agent-1"), batch);
+    pipeline.clear_attachment_batch_id("agent-1");
+    assert_ne!(pipeline.claim_attachment_batch_id("agent-1"), batch);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn failed_unaccepted_send_is_cleared_for_retry() {
+    use mahayana_host_runtime::extensions::transcript::prompt_acceptance_ledger::AcceptanceLookup;
+    use mahayana_host_runtime::extensions::transcript::send_pipeline::{
+        SendBegin, SendEchoIdentity, SendPipelineState,
+    };
+
+    let root = temp_dir("send-retry");
+    let mut ledger = PromptAcceptanceLedger::new(Some(&root));
+    let mut pipeline = SendPipelineState::default();
+    let input = sample_input("retry me");
+
+    assert!(matches!(
+        pipeline.begin_send(&mut ledger, &input, Some("nonce-retry")).unwrap(),
+        SendBegin::Dispatch { .. }
+    ));
+    pipeline
+        .record_pending_acceptance(
+            &mut ledger,
+            "nonce-retry",
+            SendEchoIdentity {
+                agent_id: "agent-1".into(),
+                echo_entry_id: Some("t2u".into()),
+            },
+        )
+        .unwrap();
+    pipeline.finish_send(&mut ledger, Some("nonce-retry"), false);
+    assert_eq!(
+        ledger.lookup("host", "nonce-retry"),
+        AcceptanceLookup::NotFound
+    );
+    assert!(matches!(
+        pipeline.begin_send(&mut ledger, &input, Some("nonce-retry")).unwrap(),
+        SendBegin::Dispatch { .. }
+    ));
+    let _ = fs::remove_dir_all(root);
+}
