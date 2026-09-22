@@ -400,6 +400,14 @@ pub fn start_routed_mcp_server_with_cancellation(
             while !worker_stop.load(Ordering::Acquire) && !worker_cancellation.is_cancelled() {
                 match listener.accept() {
                     Ok((stream, _)) => {
+                        // A nonblocking listener can yield accepted sockets that are
+                        // still nonblocking on some platforms. The routed MCP HTTP
+                        // parser is deliberately synchronous, so normalize each
+                        // accepted stream before the first header read instead of
+                        // treating an early WouldBlock as a closed request.
+                        if stream.set_nonblocking(false).is_err() {
+                            continue;
+                        }
                         let _ = serve_request(
                             stream,
                             &path,
