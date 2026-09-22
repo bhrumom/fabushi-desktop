@@ -34,8 +34,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git clone --filter=blob:none https://github.com/b-nnett/grok-bot-0.18-reconstructed.git "$RUNNER_TEMP/grok-ref"
-          git -C "$RUNNER_TEMP/grok-ref" checkout --detach a9f633e09d49a85829b8236331b9e21f7e612634
+          GIT_LFS_SKIP_SMUDGE=1 git clone --filter=blob:none https://github.com/b-nnett/grok-bot-0.18-reconstructed.git "$RUNNER_TEMP/grok-ref"
+          GIT_LFS_SKIP_SMUDGE=1 git -C "$RUNNER_TEMP/grok-ref" checkout --detach a9f633e09d49a85829b8236331b9e21f7e612634
           test "$(git -C "$RUNNER_TEMP/grok-ref" rev-parse HEAD)" = "a9f633e09d49a85829b8236331b9e21f7e612634"
       - name: Restore byte-identical TypeScript and React modules
         shell: bash
