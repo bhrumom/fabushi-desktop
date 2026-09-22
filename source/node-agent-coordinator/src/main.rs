@@ -413,41 +413,14 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
                     continue;
                 }
 
-                let Some(id) = value.get("id") else {
-                    output_state.lifecycle(
-                        "protocol-error",
-                        generation,
-                        true,
-                        Some("Host response omitted id"),
-                    );
-                    continue;
-                };
-                let host_request_id = id.as_str().map(str::to_owned).unwrap_or_else(|| id.to_string());
-                let pending = output_state
-                    .pending
-                    .lock()
-                    .ok()
-                    .and_then(|mut pending| pending.remove(&host_request_id));
-                let Some(pending) = pending else {
-                    continue;
-                };
-
-                let outcome = if value.get("ok").and_then(Value::as_bool) == Some(true) {
-                    ReplyOutcome::Ok {
-                        value: value.get("result").cloned().unwrap_or(Value::Null),
-                    }
-                } else {
-                    ReplyOutcome::Failed {
-                        failure: Failure::new(
-                            "HOST_REQUEST_FAILED",
-                            value
-                                .get("error")
-                                .and_then(Value::as_str)
-                                .unwrap_or("Mahayana Host request failed"),
-                        ),
-                    }
-                };
-                output_state.complete_request(pending.channel, &pending.request_id, outcome);
+                output_state.lifecycle(
+                    "protocol-error",
+                    generation,
+                    true,
+                    Some(
+                        "unexpected non-event Host stdout frame; Coordinator business requests must use the Host gateway",
+                    ),
+                );
             }
         });
     }
