@@ -60,6 +60,16 @@ for (const row of manifest.modules ?? []) {
     if (!target.startsWith(root + path.sep) || !fs.existsSync(target)) {
       fail(`implemented target missing: ${row.targetPath} for ${row.referencePath}`);
     }
+    if (!Array.isArray(row.evidence) || row.evidence.length === 0) {
+      fail(`implemented row requires evidence: ${row.referencePath}`);
+    } else {
+      for (const evidencePath of row.evidence) {
+        const evidence = path.resolve(root, evidencePath);
+        if (!evidence.startsWith(root + path.sep) || !fs.existsSync(evidence)) {
+          fail(`implemented evidence missing: ${evidencePath} for ${row.referencePath}`);
+        }
+      }
+    }
   }
   const prior = targets.get(row.targetPath);
   if (prior && prior !== row.referencePath) {
