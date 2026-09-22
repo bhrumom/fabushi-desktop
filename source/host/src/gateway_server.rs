@@ -855,7 +855,7 @@ fn serve_event_body<W: Write>(
     sink.flush()?;
     let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
     while !stop.load(Ordering::Acquire) {
-        match subscription.recv_timeout(heartbeat) {
+        match receiver.recv_timeout(heartbeat) {
             Ok(event) => {
                 if channels
                     .as_ref()
@@ -1017,7 +1017,7 @@ fn serve_bridge_body<W: Write>(
     sink.flush()?;
     let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
     while !stop.load(Ordering::Acquire) {
-        match receiver.recv_timeout(heartbeat) {
+        match subscription.recv_timeout(heartbeat) {
             Ok(frame) => {
                 let encoded = serde_json::to_string(&frame)
                     .map_err(|error| io::Error::other(format!("serialize gateway bridge frame: {error}")))?;

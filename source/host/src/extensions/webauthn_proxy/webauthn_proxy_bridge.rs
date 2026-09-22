@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::sync::{
     Arc, Mutex, Weak,
-    mpsc::{self, Receiver, RecvTimeoutError, Sender},
+    mpsc::{self, RecvTimeoutError, Sender},
 };
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
