@@ -11,7 +11,19 @@ const runnerContract = "source/host/tests/runner_contract.rs";
 const utilityContract = "source/host/tests/runner_small_modules_contract.rs";
 const extensionContract = "source/host/tests/extensions_turn_execution_contract.rs";
 const localExecContract = "source/host/tests/extensions_local_exec_contract.rs";
+const hostFoundationContract = "source/host/tests/host_foundation_contract.rs";
 const completed = new Map([
+  ["source/host/sand-quiet-work-origin.ts", ["source/host/src/sand_quiet_work_origin.rs", hostFoundationContract]],
+  ["source/host/sha256.ts", ["source/host/src/sha256.rs", hostFoundationContract]],
+  ["source/host/storage/folder-id.ts", ["source/host/src/storage/folder_id.rs", hostFoundationContract]],
+  ["source/host/host-diagnostics.ts", ["source/host/src/host_diagnostics.rs", hostFoundationContract]],
+  ["source/host/box/box-monitor-layout.ts", ["source/host/src/box/box_monitor_layout.rs", hostFoundationContract]],
+  ["source/host/automations/automation-id.ts", ["source/host/src/automations/automation_id.rs", hostFoundationContract]],
+  ["source/host/attachment-paths.ts", ["source/host/src/attachment_paths.rs", hostFoundationContract]],
+  ["source/host/ports/user-computer.ts", ["source/host/src/ports/user_computer.rs", hostFoundationContract]],
+  ["source/host/ports/transport.ts", ["source/host/src/ports/transport.rs", hostFoundationContract]],
+  ["source/host/durable-file-policy.ts", ["source/host/src/durable_file_policy.rs", hostFoundationContract]],
+  ["source/host/sand-user-identity.ts", ["source/host/src/sand_user_identity.rs", hostFoundationContract]],
   ["source/host/extensions/local-exec/local-exec-error.ts", ["source/host/src/extensions/local_exec/local_exec_error.rs", localExecContract]],
   ["source/host/extensions/local-exec/local-exec-failure-classifier.ts", ["source/host/src/extensions/local_exec/local_exec_failure_classifier.rs", localExecContract]],
   ["source/host/extensions/extension-ids.generated.ts", ["source/host/src/extensions/extension_ids.generated.rs", extensionContract]],
