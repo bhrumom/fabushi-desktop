@@ -15,7 +15,7 @@ use mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::{
     GatewayDispatchError, dispatch_http_json, failure_for,
 };
 use mahayana_node_agent_coordinator::gateway::host_supervisor::{
-    GatewayConnection, read_gateway_discovery,
+    GatewayConnection, GatewayHostSupervisor, HEALTH_PROBE_TTL_MS, read_gateway_discovery,
 };
 use mahayana_node_agent_coordinator::protocol::{
     CoordinatorFrame, Failure, LifecyclePhase, ReplyOutcome, COORDINATOR_DISCONNECTED,
@@ -58,6 +58,7 @@ struct CoordinatorState {
     gateway_discovery_path: PathBuf,
     host_stdin: Mutex<Option<ActiveHostStdin>>,
     gateway_client: Mutex<CoordinatorGatewayClient>,
+    host_supervisor: Mutex<GatewayHostSupervisor>,
     tool_relay: Mutex<ClientSideToolV2Relay>,
     tool_replay_done: AtomicBool,
     pending: Mutex<HashMap<String, PendingHostRequest>>,
@@ -256,7 +257,7 @@ fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
 fn run_gateway_event_stream(
     state: Arc<CoordinatorState>,
     generation: u64,
-    connection: GatewayConnection,
+    mut connection: GatewayConnection,
 ) {
     loop {
         if state.closed.load(Ordering::SeqCst)
@@ -279,6 +280,10 @@ fn run_gateway_event_stream(
                     u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
                 if let Ok(mut gateway) = on_connected_state.gateway_client.lock() {
                     let _ = gateway.start(now_ms);
+                }
+                if let Ok(mut supervisor) = on_connected_state.host_supervisor.lock() {
+                    supervisor.mark_transport_live(true);
+                    supervisor.record_health(now_ms, true);
                 }
                 on_connected_state.gateway_lifecycle(
                     "transport-connected",
@@ -314,11 +319,40 @@ fn run_gateway_event_stream(
             .lock()
             .ok()
             .and_then(|mut gateway| gateway.transport_down(outcome));
+        if let Ok(mut supervisor) = state.host_supervisor.lock() {
+            supervisor.mark_transport_live(false);
+            supervisor.invalidate();
+        }
         state.gateway_lifecycle("transport-down", generation, Some(&detail));
         let Some(delay) = delay else {
             return;
         };
         thread::sleep(delay);
+
+        if state.closed.load(Ordering::SeqCst)
+            || state.host_generation.load(Ordering::SeqCst) != generation
+        {
+            return;
+        }
+        match read_gateway_discovery(&state.gateway_discovery_path) {
+            Ok(next_connection) => {
+                if let Ok(mut supervisor) = state.host_supervisor.lock() {
+                    let attempt = supervisor.begin_connection_attempt();
+                    let _ = supervisor.settle_connection_attempt(attempt, next_connection.clone());
+                }
+                if let Ok(mut gateway) = state.gateway_client.lock() {
+                    let _ = gateway.install_connection(next_connection.clone());
+                }
+                connection = next_connection;
+            }
+            Err(error) => {
+                state.gateway_lifecycle(
+                    "rediscovery-failed",
+                    generation,
+                    Some(&error.to_string()),
+                );
+            }
+        }
     }
 }
 
@@ -337,6 +371,9 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
     }
 
     let generation = state.host_generation.fetch_add(1, Ordering::SeqCst) + 1;
+    if let Ok(mut supervisor) = state.host_supervisor.lock() {
+        supervisor.invalidate();
+    }
     let _ = fs::remove_file(&state.gateway_discovery_path);
     let mut child = Command::new(&state.host_bin)
         .env(
@@ -386,13 +423,24 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
                 if let Ok(connection) =
                     read_gateway_discovery(&discovery_state.gateway_discovery_path)
                 {
-                    let installed = discovery_state
-                        .gateway_client
+                    let supervised = discovery_state
+                        .host_supervisor
                         .lock()
                         .ok()
-                        .is_some_and(|mut gateway| {
-                            gateway.install_connection(connection.clone()).is_ok()
+                        .is_some_and(|mut supervisor| {
+                            let attempt = supervisor.begin_connection_attempt();
+                            supervisor
+                                .settle_connection_attempt(attempt, connection.clone())
+                                .is_ok()
                         });
+                    let installed = supervised
+                        && discovery_state
+                            .gateway_client
+                            .lock()
+                            .ok()
+                            .is_some_and(|mut gateway| {
+                                gateway.install_connection(connection.clone()).is_ok()
+                            });
                     if installed {
                         discovery_state.gateway_lifecycle(
                             "discovered",
@@ -484,6 +532,10 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
         if let Ok(mut gateway) = state.gateway_client.lock() {
             let _ = gateway.transport_down(ReachabilityOutcome::Network);
         }
+        if let Ok(mut supervisor) = state.host_supervisor.lock() {
+            supervisor.mark_transport_live(false);
+            supervisor.invalidate();
+        }
         state.reject_generation(generation, &detail);
         state.lifecycle("stopped", generation, true, Some(&detail));
 
@@ -532,6 +584,14 @@ fn wait_for_gateway_connection(
             return Err(io::Error::other("Host generation changed while waiting for gateway"));
         }
         if let Some(connection) = state
+            .host_supervisor
+            .lock()
+            .ok()
+            .and_then(|supervisor| supervisor.connection().cloned())
+        {
+            return Ok(connection);
+        }
+        if let Some(connection) = state
             .gateway_client
             .lock()
             .ok()
@@ -543,6 +603,10 @@ fn wait_for_gateway_connection(
         // it here as well removes the historical stdin business-request
         // fallback without introducing a startup race for the first command.
         if let Ok(connection) = read_gateway_discovery(&state.gateway_discovery_path) {
+            if let Ok(mut supervisor) = state.host_supervisor.lock() {
+                let attempt = supervisor.begin_connection_attempt();
+                let _ = supervisor.settle_connection_attempt(attempt, connection.clone());
+            }
             if let Ok(mut gateway) = state.gateway_client.lock() {
                 let _ = gateway.install_connection(connection.clone());
             }
@@ -783,6 +847,7 @@ fn main() {
         gateway_discovery_path,
         host_stdin: Mutex::new(None),
         gateway_client: Mutex::new(gateway_client),
+        host_supervisor: Mutex::new(GatewayHostSupervisor::new(HEALTH_PROBE_TTL_MS)),
         tool_relay: Mutex::new(ClientSideToolV2Relay::default()),
         tool_replay_done: AtomicBool::new(false),
         pending: Mutex::new(HashMap::new()),
