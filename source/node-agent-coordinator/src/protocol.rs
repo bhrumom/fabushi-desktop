@@ -25,7 +25,7 @@ pub enum ShutdownReason {
     Crash,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Failure {
     pub code: String,
     pub message: String,
