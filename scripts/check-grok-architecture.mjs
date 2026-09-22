@@ -115,6 +115,36 @@ for (const [domain, expected] of Object.entries(expectedCounts)) {
   if (actual !== expected) fail(`${domain} expected ${expected} frozen modules, found ${actual}`);
 }
 
+const sourceHostMainPath = path.join(root, 'source/host/src/main.rs');
+if (!fs.existsSync(sourceHostMainPath)) {
+  fail('shipping Host binary must be owned by source/host/src/main.rs');
+}
+
+const desktopPackagePath = path.join(root, 'desktop/package.json');
+if (fs.existsSync(desktopPackagePath)) {
+  const desktopPackage = JSON.parse(fs.readFileSync(desktopPackagePath, 'utf8'));
+  for (const scriptName of ['build:host', 'build:host:ci']) {
+    const script = String(desktopPackage.scripts?.[scriptName] ?? '');
+    if (!script.includes('../source/host/Cargo.toml') || !script.includes('--bin mahayana-app-host')) {
+      fail(`${scriptName} must compile the shipping Host from source/host`);
+    }
+    if (script.includes('mahayana-app-host-desktop')) {
+      fail(`${scriptName} must not compile the legacy third_party desktop Host binary directly`);
+    }
+  }
+}
+
+const stageHostPath = path.join(root, 'desktop/scripts/stage-host.mjs');
+if (fs.existsSync(stageHostPath)) {
+  const stageHost = fs.readFileSync(stageHostPath, 'utf8');
+  if (!stageHost.includes("'source',\n  'host',\n  'target'")) {
+    fail('desktop staging must copy mahayana-app-host from source/host/target');
+  }
+  if (/hostExecutable[\s\S]{0,260}'third_party'[\s\S]{0,260}'mahayana-rs'[\s\S]{0,260}'target'/.test(stageHost)) {
+    fail('desktop staging must not copy the legacy third_party desktop Host binary');
+  }
+}
+
 const rendererRuntimePath = path.join(root, 'desktop/src/agent-workspace/agent-runtime-coordinator.ts');
 if (fs.existsSync(rendererRuntimePath)) {
   const rendererRuntime = fs.readFileSync(rendererRuntimePath, 'utf8');
