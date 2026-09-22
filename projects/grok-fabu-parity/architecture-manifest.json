@@ -9520,12 +9520,18 @@
       "targetPath": "source/host/src/box/box_shell_command.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "d3f4e80db17f99dc1b2e18d13e2037e1dbd3050b",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/box_shell_command.rs",
+        "source/host/src/box/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_small_ports_contract.rs"
+      ],
+      "notes": "Grok shell-argument construction is compiled into the Mahayana Host box module. The contract fixes skipApproval=true and the single executable-command parse metadata used by Host shell execution."
     },
     {
       "referencePath": "source/host/box/box-store-backend-policy.ts",

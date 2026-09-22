@@ -68,3 +68,35 @@ fn box_environment_port_is_wired_and_forwards_a_cloned_update() {
         }]
     );
 }
+
+#[test]
+fn box_shell_command_builder_matches_grok_host_contract() {
+    use mahayana_host_runtime::r#box::box_shell_command::{
+        HostShellArgsInput, ShellCommandExecutable, ShellCommandParsingResult, build_host_shell_args,
+    };
+
+    let args = build_host_shell_args(HostShellArgsInput {
+        command: "git status --short".to_string(),
+        name: "git".to_string(),
+        working_directory: "/workspace".to_string(),
+        tool_call_id: "tool-42".to_string(),
+    });
+
+    assert_eq!(args.command, "git status --short");
+    assert_eq!(args.working_directory, "/workspace");
+    assert_eq!(args.tool_call_id, "tool-42");
+    assert!(args.skip_approval);
+    assert_eq!(
+        args.parsing_result,
+        ShellCommandParsingResult {
+            parsing_failed: false,
+            executable_commands: vec![ShellCommandExecutable {
+                name: "git".to_string(),
+                args: Vec::new(),
+                full_text: "git status --short".to_string(),
+            }],
+            has_redirects: false,
+            has_command_substitution: false,
+        }
+    );
+}
