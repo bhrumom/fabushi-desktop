@@ -1,5 +1,8 @@
 use chrono::{SecondsFormat, Utc};
 use mahayana_node_agent_coordinator::carrier::{parse_bootstrap_argument, CoordinatorBootstrap};
+use mahayana_node_agent_coordinator::gateway::gateway_client::CoordinatorGatewayClient;
+use mahayana_node_agent_coordinator::gateway::gateway_reachability::ReachabilityOutcome;
+use mahayana_node_agent_coordinator::gateway::host_supervisor::GatewayConnection;
 use mahayana_node_agent_coordinator::protocol::{
     CoordinatorFrame, Failure, ReplyOutcome, COORDINATOR_DISCONNECTED,
 };
@@ -7,7 +10,7 @@ use mahayana_node_agent_coordinator::renderer_port_server::{
     RendererPortServer, ServerAction,
 };
 use serde_json::{Value, json};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::env;
 use std::io::{self, BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -38,6 +41,7 @@ struct CoordinatorState {
     bootstrap: CoordinatorBootstrap,
     host_bin: PathBuf,
     host_stdin: Mutex<Option<ActiveHostStdin>>,
+    gateway_client: Mutex<CoordinatorGatewayClient>,
     pending: Mutex<HashMap<String, PendingHostRequest>>,
     renderer_port: Mutex<RendererPortServer>,
     stdout_lock: Mutex<()>,
@@ -174,6 +178,10 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
         .lock()
         .map_err(|_| io::Error::other("host stdin lock poisoned"))? =
         Some(ActiveHostStdin { generation, stdin });
+    if let Ok(mut gateway) = state.gateway_client.lock() {
+        let now_ms = u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
+        let _ = gateway.start(now_ms);
+    }
     state.lifecycle("running", generation, true, None);
     drop(spawn_guard);
 
@@ -266,6 +274,9 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
             Ok(status) => format!("Host exited with {status}"),
             Err(error) => format!("Host wait failed: {error}"),
         };
+        if let Ok(mut gateway) = state.gateway_client.lock() {
+            let _ = gateway.transport_down(ReachabilityOutcome::Network);
+        }
         state.reject_generation(generation, &detail);
         state.lifecycle("stopped", generation, true, Some(&detail));
 
@@ -347,6 +358,13 @@ fn dispatch_to_host(
         .ok_or_else(|| io::Error::other("Host did not provide stdin"))?;
 
     state
+        .gateway_client
+        .lock()
+        .map_err(|_| io::Error::other("gateway client lock poisoned"))?
+        .connection_for_dispatch()
+        .map_err(|error| io::Error::other(format!("gateway route unavailable: {error}")))?;
+
+    state
         .pending
         .lock()
         .map_err(|_| io::Error::other("pending lock poisoned"))?
@@ -422,10 +440,24 @@ fn main() {
         }
     };
 
+    let mut gateway_client = CoordinatorGatewayClient::default();
+    let gateway_base_url = env::var("MAHAYANA_API_BASE_URL")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "mahayana-host://local".to_string());
+    if let Err(error) = gateway_client.install_connection(GatewayConnection {
+        base_url: gateway_base_url,
+        headers: BTreeMap::new(),
+    }) {
+        eprintln!("node-agent-coordinator: failed to initialize gateway route: {error}");
+        std::process::exit(2);
+    }
+
     let state = Arc::new(CoordinatorState {
         bootstrap,
         host_bin,
         host_stdin: Mutex::new(None),
+        gateway_client: Mutex::new(gateway_client),
         pending: Mutex::new(HashMap::new()),
         renderer_port: Mutex::new(RendererPortServer::default()),
         stdout_lock: Mutex::new(()),
