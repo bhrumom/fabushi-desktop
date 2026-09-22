@@ -17,7 +17,9 @@ pub fn parse_loopback_redirect(value: &str) -> Result<LoopbackRedirect, Failure>
             "MCP OAuth redirect_uri must be a localhost HTTP URL",
         )
     })?;
-    let authority_end = rest.find(['/', '?', '#']).unwrap_or(rest.len());
+    let authority_end = rest
+        .find(|character| matches!(character, '/' | '?' | '#'))
+        .unwrap_or(rest.len());
     let authority = &rest[..authority_end];
     if authority.contains('@') {
         return Err(Failure::new(
