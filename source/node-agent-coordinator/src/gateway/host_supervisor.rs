@@ -2,12 +2,13 @@ use std::collections::BTreeMap;
 use std::env;
 use std::fs;
 use std::io::{self, Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
 use std::path::Path;
 use std::time::Duration;
 
 use serde::Deserialize;
 use serde_json::Value;
+
+use super::http_transport::parse_gateway_http_base;
 
 pub const HEALTH_TIMEOUT_MS: u64 = 1_500;
 pub const HEALTH_PROBE_TTL_MS: u64 = 5_000;
@@ -259,80 +260,19 @@ pub fn read_gateway_discovery(path: &Path) -> io::Result<GatewayConnection> {
     info.into_connection()
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct ParsedHttpBase {
-    host: String,
-    port: u16,
-    base_path: String,
-}
-
-fn parse_http_base(base_url: &str) -> io::Result<ParsedHttpBase> {
-    let Some(rest) = base_url.strip_prefix("http://") else {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            format!("unsupported Host gateway health scheme in {base_url}"),
-        ));
-    };
-    let (authority, base_path) = rest
-        .split_once('/')
-        .map_or((rest, String::new()), |(authority, path)| {
-            (authority, format!("/{}", path.trim_end_matches('/')))
-        });
-    let (host, port) = if let Some(ipv6) = authority.strip_prefix('[') {
-        let Some((host, suffix)) = ipv6.split_once(']') else {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "invalid IPv6 Host gateway authority",
-            ));
-        };
-        let port = suffix
-            .strip_prefix(':')
-            .and_then(|value| value.parse::<u16>().ok())
-            .ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "Host gateway URL must include a port",
-                )
-            })?;
-        (host.to_string(), port)
-    } else {
-        let (host, port) = authority.rsplit_once(':').ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "Host gateway URL must include a port",
-            )
-        })?;
-        let port = port.parse::<u16>().map_err(|_| {
-            io::Error::new(io::ErrorKind::InvalidInput, "invalid Host gateway port")
-        })?;
-        (host.to_string(), port)
-    };
-    if host.is_empty() || port == 0 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "invalid Host gateway authority",
-        ));
-    }
-    Ok(ParsedHttpBase {
-        host,
-        port,
-        base_path,
-    })
-}
-
 pub fn fetch_health(
     connection: &GatewayConnection,
     timeout: Duration,
 ) -> io::Result<Option<Value>> {
-    let parsed = parse_http_base(&connection.base_url)?;
-    let mut addresses = format!("{}:{}", parsed.host, parsed.port).to_socket_addrs()?;
-    let socket = addresses.next().ok_or_else(|| {
+    let parsed = parse_gateway_http_base(&connection.base_url)?;
+    let addresses = parsed.socket_addrs()?;
+    let socket = addresses.first().copied().ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::AddrNotAvailable,
             "Host gateway health address did not resolve",
         )
     })?;
-    let mut stream = TcpStream::connect_timeout(&socket, timeout)?;
+    let mut stream = parsed.connect(&socket, timeout)?;
     stream.set_read_timeout(Some(timeout))?;
     stream.set_write_timeout(Some(timeout))?;
 
