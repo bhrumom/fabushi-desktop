@@ -252,9 +252,15 @@ fn production_box_environment_uses_connect_unary_control_service_from_host_graph
     assert!(headers.starts_with(
         "POST /agent.v1.ControlService/UpdateEnvironmentVariables HTTP/1.1\r\n"
     ));
-    assert!(headers.contains("\r\nAuthorization: Bearer test-token\r\n"));
-    assert!(headers.contains("\r\nContent-Type: application/proto\r\n"));
-    assert!(headers.contains("\r\nConnect-Protocol-Version: 1\r\n"));
+    let header_value = |expected_name: &str| {
+        headers.lines().find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.eq_ignore_ascii_case(expected_name).then_some(value.trim())
+        })
+    };
+    assert_eq!(header_value("authorization"), Some("Bearer test-token"));
+    assert_eq!(header_value("content-type"), Some("application/proto"));
+    assert_eq!(header_value("connect-protocol-version"), Some("1"));
 
     let body = &request[header_end + 4..];
     assert_eq!(
