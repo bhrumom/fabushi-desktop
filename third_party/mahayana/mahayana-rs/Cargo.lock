@@ -9255,6 +9255,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "mahayana-host-runtime"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "mahayana-js-runtime"
 version = "0.1.0"
 dependencies = [
@@ -9339,6 +9347,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "mahayana-core",
+ "mahayana-host-runtime",
  "serde",
  "serde_json",
  "thiserror 2.0.20",
