@@ -24,7 +24,6 @@ pub enum ControlPortPhase {
     Settled,
 }
 
-#[derive(Debug)]
 pub type ControlCallResult = Result<Value, Failure>;
 
 pub struct ControlPortWaiter {
