@@ -26,3 +26,8 @@ pub mod automation_fire_telemetry;
 pub mod conversation_gc_telemetry;
 pub mod local_exec_telemetry;
 pub mod queue_telemetry_mappers;
+
+pub mod sand_error_tags;
+pub mod memory_synthesis_telemetry;
+pub mod journal_outcome_telemetry;
+pub mod webauthn_proxy_telemetry;
