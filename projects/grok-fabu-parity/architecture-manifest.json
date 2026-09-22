@@ -12296,12 +12296,20 @@
       "targetPath": "source/host/src/extensions/telemetry/journal_outcome_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "159f40954375adf2d776cbc35b693f6c064763f4",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/journal_outcome_telemetry.rs",
+        "source/host/src/extensions/telemetry/sand_error_tags.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_error_telemetry_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 error-aware telemetry module, sharing the generated 87-code Sand error registry mirror. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35709699781 at exact tested HEAD 8940c7d548c42252eb98a7391f1f9a1b916abd2f."
     },
     {
       "referencePath": "source/host/extensions/telemetry/lifecycle-telemetry.ts",
@@ -12339,12 +12347,20 @@
       "targetPath": "source/host/src/extensions/telemetry/memory_synthesis_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "948a6d9a9275823cf9e91e11283d5ac6f9ccb619",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/memory_synthesis_telemetry.rs",
+        "source/host/src/extensions/telemetry/sand_error_tags.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_error_telemetry_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 error-aware telemetry module, sharing the generated 87-code Sand error registry mirror. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35709699781 at exact tested HEAD 8940c7d548c42252eb98a7391f1f9a1b916abd2f."
     },
     {
       "referencePath": "source/host/extensions/telemetry/model-experiment-exposure.ts",
@@ -12513,12 +12529,20 @@
       "targetPath": "source/host/src/extensions/telemetry/webauthn_proxy_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "161ae3201ea343b09f0b185cfe554992aa99775f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/webauthn_proxy_telemetry.rs",
+        "source/host/src/extensions/telemetry/sand_error_tags.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_error_telemetry_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 error-aware telemetry module, sharing the generated 87-code Sand error registry mirror. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35709699781 at exact tested HEAD 8940c7d548c42252eb98a7391f1f9a1b916abd2f."
     },
     {
       "referencePath": "source/host/extensions/transcript/ack-obligations.ts",
