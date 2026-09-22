@@ -9147,7 +9147,7 @@
       "targetPath": "source/host/src/agent_isolation/agent_worker_pool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7297c5dc455136d1a2889d49ada4e0dc5555f510",
       "architecturalRole": "host/agent-isolation",
       "processOrPackage": "mahayana-host",
@@ -9164,7 +9164,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/session_production_contract.rs"
       ],
-      "notes": "Rust pool owns a real named worker thread per blob store, explicit init, monotonic request IDs, active-operation retention, reuse, capacity eviction, idle sweep, diagnostics, close-store/all, and the frozen root/clear/stale-root/GC/legacy-retirement protocol with the concrete SQLite ConversationBlobWorkerBackend. Shipping Host Session composition now retains the production pool, prepares existing per-agent stores before routed Runner inference, and closes all workers on Host shutdown. Final status remains withheld until full conversation recovery and maintenance/metadata-GC parity are composed."
+      "notes": "Finalized after frozen Grok AgentWorkerPool comparison confirmed the Rust adapter owns the same worker init/request-id protocol, get/set/root/clear/stale-root/GC/legacy-retirement requests, active-op retention, capacity eviction, idle sweep, diagnostics, closeStore and closeAll lifecycle. Shipping source/host/app retains ProductionSessionWorkers, prepares existing agent stores before Runner provider execution, and closes all workers on Host shutdown. Exact implementation parent b38e6886f3d2e348d7d347455b39ec05e664c698 passed Rust desktop runtime run 35784709087."
     },
     {
       "referencePath": "source/host/agent-isolation/conversation-blob-db.ts",
@@ -9266,7 +9266,7 @@
       "targetPath": "source/host/src/agent_isolation/worker_blob_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "9e3b9c36a4da403b77576529615b57fbd9be696d",
       "architecturalRole": "host/agent-isolation",
       "processOrPackage": "mahayana-host",
@@ -9284,7 +9284,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/session_production_contract.rs"
       ],
-      "notes": "WorkerBlobStore routes get/set/set-locally-only through the real Rust AgentWorkerPool and concrete SQLite ConversationBlobWorkerBackend while preserving agent/blob/legacy paths; flush remains a no-op as in Grok. Shipping Host Session composition now constructs the store on frozen session paths and exercises the worker backend for existing agents before routed Runner inference. Final status remains withheld until full conversation recovery/metadata-GC and Session materialization parity are complete."
+      "notes": "Finalized after frozen Grok WorkerBlobStore comparison confirmed getBlob/setBlob/setBlobLocallyOnly/flush(no-op) parity. Shipping ProductionSessionWorkers constructs WorkerBlobStore on the frozen per-agent paths and exercises the concrete SQLite worker backend before routed Runner inference; Host shutdown closes the owning pool. Exact implementation parent b38e6886f3d2e348d7d347455b39ec05e664c698 passed Rust desktop runtime run 35784709087."
     },
     {
       "referencePath": "source/host/agents/agent-avatar.ts",
