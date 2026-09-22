@@ -8,7 +8,7 @@ use std::time::Duration;
 use serde::Deserialize;
 use serde_json::Value;
 
-use super::http_transport::parse_gateway_http_base;
+use super::http_transport::{parse_gateway_http_base, read_http_response};
 
 pub const HEALTH_TIMEOUT_MS: u64 = 1_500;
 pub const HEALTH_PROBE_TTL_MS: u64 = 5_000;
@@ -288,40 +288,11 @@ pub fn fetch_health(
     write!(stream, "\r\n")?;
     stream.flush()?;
 
-    let mut response = Vec::new();
-    stream.read_to_end(&mut response)?;
-    let header_end = response
-        .windows(4)
-        .position(|window| window == b"\r\n\r\n")
-        .map(|index| index + 4)
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidData,
-                "Host gateway health returned invalid HTTP",
-            )
-        })?;
-    let headers = std::str::from_utf8(&response[..header_end]).map_err(|_| {
-        io::Error::new(
-            io::ErrorKind::InvalidData,
-            "Host gateway health headers are not UTF-8",
-        )
-    })?;
-    let status = headers
-        .lines()
-        .next()
-        .and_then(|line| line.split_whitespace().nth(1))
-        .and_then(|status| status.parse::<u16>().ok())
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidData,
-                "Host gateway health response has no status",
-            )
-        })?;
-    if !(200..300).contains(&status) {
+    let response = read_http_response(&mut stream, 64 * 1024, 4 * 1024 * 1024)?;
+    if !(200..300).contains(&response.status) {
         return Ok(None);
     }
-    let payload: Value = serde_json::from_slice(&response[header_end..]).map_err(|error| {
-        io::Error::new(io::ErrorKind::InvalidData, error)
-    })?;
+    let payload: Value = serde_json::from_slice(&response.body)
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
     Ok((payload.get("ok").and_then(Value::as_bool) == Some(true)).then_some(payload))
 }
