@@ -1,6 +1,7 @@
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
@@ -24,6 +25,13 @@ use mahayana_host_runtime::r#box::loopback_sand_box::{
     LoopbackSandBox, LoopbackSandBoxOptions,
 };
 use mahayana_host_runtime::r#box::production::ProductionBoxEnvironment;
+use mahayana_host_runtime::extensions::box_lifecycle::RecreateSandBoxResponse;
+use mahayana_host_runtime::extensions::forever_box::{
+    ForeverBoxLifecycle, ForeverBoxRunnerResourcePort, ForeverBoxService, HostBox,
+};
+use mahayana_host_runtime::runner::box_tool_access::{
+    RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest,
+};
 
 fn encode_varint(mut value: u64, out: &mut Vec<u8>) {
     while value >= 0x80 {
@@ -458,4 +466,79 @@ fn production_exec_service_computer_use_has_remote_and_no_monitor_paths() {
     );
 
     server.join().expect("fake computer ExecService thread");
+}
+
+
+struct NoopForeverBoxLifecycle;
+
+impl ForeverBoxLifecycle for NoopForeverBoxLifecycle {
+    fn fetch_image_update_available(&self) -> Result<bool, String> {
+        Ok(false)
+    }
+
+    fn recreate_in_box(
+        &self,
+        _preserve_data: bool,
+        _force: Option<bool>,
+    ) -> Result<RecreateSandBoxResponse, String> {
+        Ok(RecreateSandBoxResponse {
+            started: false,
+            reason: Some("not-used-by-runner-resource-contract".into()),
+        })
+    }
+}
+
+#[test]
+fn forever_box_runner_resource_port_reaches_authenticated_shipping_exec_service() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind Runner box daemon");
+    let port = listener.local_addr().expect("local address").port();
+    let server = thread::spawn(move || {
+        serve_unary_success(&listener, PING_PATH);
+        serve_exec_response(
+            &listener,
+            b"echo runner-box",
+            shell_success_element("runner-shell"),
+        );
+        serve_unary_success(&listener, PING_PATH);
+        serve_exec_response(
+            &listener,
+            b"/workspace/runner.txt",
+            read_success_element("/workspace/runner.txt", "runner-read"),
+        );
+    });
+
+    let service = Arc::new(ForeverBoxService::new(
+        HostBox::new(ProductionBoxEnvironment::new("127.0.0.1", port, "secret")),
+        Arc::new(NoopForeverBoxLifecycle),
+        false,
+        false,
+        false,
+    ));
+    let port_adapter = ForeverBoxRunnerResourcePort::new(service, "agent-runner");
+
+    let shell = port_adapter
+        .execute_shell(RunnerBoxShellRequest {
+            command: "echo runner-box".into(),
+            working_directory: "/workspace".into(),
+            tool_call_id: "runner-shell-contract".into(),
+        })
+        .expect("Runner Shell through ForeverBox");
+    assert_eq!(shell["kind"], "success");
+    assert_eq!(shell["exitCode"], 0);
+    assert_eq!(shell["stderr"], "runner-shell");
+
+    let read = port_adapter
+        .execute_read(RunnerBoxReadRequest {
+            path: "/workspace/runner.txt".into(),
+            tool_call_id: "runner-read-contract".into(),
+            offset: None,
+            limit: None,
+            encoding_hint: None,
+        })
+        .expect("Runner Read through ForeverBox");
+    assert_eq!(read["kind"], "success");
+    assert_eq!(read["path"], "/workspace/runner.txt");
+    assert_eq!(read["output"]["content"], "runner-read");
+
+    server.join().expect("Runner box daemon thread");
 }

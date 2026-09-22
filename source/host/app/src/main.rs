@@ -22,8 +22,8 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 };
 use mahayana_host_runtime::extensions::managed_setup::team_rules::ProductionTeamRulesResolver;
 use mahayana_host_runtime::extensions::forever_box::{
-    ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxService,
-    start_forever_box_extension,
+    ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxRunnerResourcePort,
+    ForeverBoxService, start_forever_box_extension,
 };
 use mahayana_host_runtime::extensions::auth::credential_renewer::RenewalOutcome;
 use mahayana_host_runtime::host_request_context::create_host_request_context;
@@ -176,6 +176,7 @@ struct UnifiedGatewayApi {
     request_context: Arc<dyn RunnerRequestContextSource>,
     session_workers: Arc<ProductionSessionWorkers>,
     routed_provider_tasks: Arc<RoutedProviderTaskRegistry>,
+    forever_box: Arc<ForeverBoxService>,
 }
 
 fn call_host_lane(
@@ -286,6 +287,7 @@ fn start_routed_provider_task(
     request_context: Arc<dyn RunnerRequestContextSource>,
     session_workers: Arc<ProductionSessionWorkers>,
     routed_provider_tasks: Arc<RoutedProviderTaskRegistry>,
+    forever_box: Arc<ForeverBoxService>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
@@ -333,8 +335,12 @@ fn start_routed_provider_task(
         .spawn(move || {
             let bridge: Arc<dyn RoutedToolBridge> = Arc::new(HostLaneRoutedToolBridge {
                 host_tx,
-                agent_id,
+                agent_id: agent_id.clone(),
             });
+            let box_resources = Arc::new(ForeverBoxRunnerResourcePort::new(
+                Arc::clone(&forever_box),
+                agent_id,
+            ));
             let delta_events = worker_events.clone();
             let delta_stream_id = stream_id.clone();
             let mut on_text_delta = move |_delta: &str, accumulated: &str| {
@@ -353,7 +359,8 @@ fn start_routed_provider_task(
                 resolved_request_context,
                 cancellation,
                 checkpoint_store,
-            );
+            )
+            .with_box_resources(box_resources);
             let owner = ProductionTurnAgentOwner::new(composition);
             let mut runner = SandAgentRunner::new(owner);
             let result = runner.run_routed_provider(
@@ -410,6 +417,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.request_context),
                 Arc::clone(&self.session_workers),
                 Arc::clone(&self.routed_provider_tasks),
+                Arc::clone(&self.forever_box),
                 args,
             );
         }
@@ -692,6 +700,7 @@ fn main() {
             request_context: runner_request_context,
             session_workers: Arc::clone(&session_workers),
             routed_provider_tasks: Arc::clone(&routed_provider_tasks),
+            forever_box: Arc::clone(&forever_box),
         }),
         events: gateway_events.clone(),
         local_exec: None,
