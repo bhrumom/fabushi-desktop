@@ -177,6 +177,7 @@ jobs:
           frontend/src/recovered/features/recovered-runtime-models.contract.test.ts
           frontend/src/recovered/features/access-cover.contract.test.ts
           frontend/src/recovered/features/recovered-configuration-models.contract.test.ts
+          frontend/src/recovered/features/recovered-navigation.contract.test.ts
           frontend/src/recovered/runtime/runtime-foundations.contract.test.ts
       - name: Check Agent workspace architecture boundary
         run: node desktop/scripts/check-agent-workspace-boundary.mjs
