@@ -13352,12 +13352,19 @@
       "targetPath": "source/host/src/extensions/webauthn_proxy/webauthn_proxy_marker.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "7786e350c85f40c2d292a0e2f734e7572f6c5007",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/webauthn_proxy/webauthn_proxy_marker.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/grok_small_foundation_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/gateway-command-error.ts",
@@ -13797,24 +13804,38 @@
       "targetPath": "source/host/src/ports/product_analytics.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "12fcdfa951ea5d35fa05ef81350cda213e8229a9",
       "architecturalRole": "host/ports",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/ports/product_analytics.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/grok_small_foundation_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/ports/sand-analytics-types.ts",
       "targetPath": "source/host/src/ports/sand_analytics_types.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c86733de6fdecad46b0323dddfcbbff76be04c19",
       "architecturalRole": "host/ports",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/ports/sand_analytics_types.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/grok_small_foundation_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/ports/telemetry.ts",
@@ -15066,12 +15087,19 @@
       "targetPath": "source/host/src/selected_image_inputs.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "f0d3dd8c9374dee31dd2131073a29787b7d05235",
       "architecturalRole": "host/selected-image-inputs",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/selected_image_inputs.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/grok_small_foundation_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/send-trace-host.ts",
@@ -15279,12 +15307,19 @@
       "targetPath": "source/host/src/transcript_mutation_events.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "038bd526307126d1e39d7c307614f21cd4511bf1",
       "architecturalRole": "host/transcript-mutation-events",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/transcript_mutation_events.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/grok_small_foundation_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/watched-directory.ts",
