@@ -226,8 +226,17 @@ function harness(options = {}) {
       },
     },
     providerEnvironment: options.providerEnvironment,
-    spawn: (bin, _args, spawnOptions) => {
+    spawn: (bin, args, spawnOptions) => {
       assert.match(bin, /mahayana-node-agent-coordinator(?:\.exe)?$/);
+      assert.equal(args.length, 1);
+      assert.match(args[0], /^--bootstrap=/);
+      assert.deepEqual(JSON.parse(args[0].slice('--bootstrap='.length)), {
+        processConfig: {
+          appVersion: '0.0.0-dev',
+          isPackaged: false,
+          dataDir: '/tmp/fabushi-host-test',
+        },
+      });
       assert.match(spawnOptions.env.MAHAYANA_APP_HOST_BIN, /mahayana-app-host(?:\.exe)?$/);
       assert.equal(spawnOptions.env.MAHAYANA_API_BASE_URL, 'https://api.example.test');
       assert.equal(spawnOptions.env.FABUSHI_APP_DATA, '/tmp/fabushi-host-test');
