@@ -45,7 +45,7 @@ impl FirstOutputTrackingSink {
 
 impl ModelEventSink for FirstOutputTrackingSink {
     fn emit(&self, event: ModelEvent) -> Result<(), ModelError> {
-        if matches!(event, ModelEvent::OutputTextDelta(_) | ModelEvent::Completed { .. }) {
+        if matches!(&event, ModelEvent::OutputTextDelta(_) | ModelEvent::Completed { .. }) {
             self.seen.store(true, Ordering::SeqCst);
         }
         self.inner.emit(event)
@@ -185,7 +185,7 @@ impl ModelRuntime for ResponsesModelRuntime {
 }
 
 fn is_retryable_model_error(error: &ModelError) -> bool {
-    let ModelError::Inference(message) | ModelError::Unavailable(message) = error else {
+    let (ModelError::Inference(message) | ModelError::Unavailable(message)) = error else {
         return false;
     };
     let message = message.to_ascii_lowercase();
@@ -560,7 +560,9 @@ fn consume_sse_event(
             return Err(ModelError::Inference(message.to_string()));
         }
         "message_start" => {
-            stream.first_output_seen = true;
+            // Anthropic's message_start only acknowledges stream creation; it
+            // is not user-visible model output and must not disarm the
+            // first-output watchdog.
             let usage = payload.pointer("/message/usage").unwrap_or(&Value::Null);
             stream.anthropic_input_tokens = usage
                 .get("input_tokens")
