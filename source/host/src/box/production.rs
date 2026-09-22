@@ -14,7 +14,7 @@ use super::loopback_sand_box::{
 
 pub const BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD: &str = "box.applyEnvironment";
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct ProductionBoxEnvironment {
     transport: ProductionBoxTransport,
     composition: SandBoxComposition,
@@ -28,7 +28,6 @@ impl ProductionBoxEnvironment {
     ) -> Self {
         let host = host.into();
         let auth_token = auth_token.into();
-        let endpoint = BoxEndpoint::new(host.clone(), port, auth_token.clone());
         Self::new_with_shared_desktop(host, port, auth_token, false)
     }
 
