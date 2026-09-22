@@ -9673,14 +9673,17 @@
       "behavioralEvidence": [
         "source/host/src/box/generated_production.rs",
         "source/host/src/box/box_env.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/box/box_remote_accessor.rs",
+        "source/host/src/box/box_mcp.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_small_ports_contract.rs",
         "source/host/app/src/main.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_foundation_contract.rs"
       ],
-      "notes": "The Rust production binding now concretely implements the UpdateEnvironmentVariables unary ControlService slice and is wired by the shipping Host. Ping, LoadMcpServers, ExecService/resource-accessor construction and the remaining generated/package bindings are still pending, so this module is intentionally non-final."
+      "notes": "Rust production bindings now concretely implement authenticated ControlService Ping, UpdateEnvironmentVariables, and LoadMcpServers over the shipping HTTP/1.1 Connect transport, including protobuf response decoding and Connect/errno classification. Contract tests assert the frozen service paths, bearer headers, request protobufs, and MCP response projection. ExecService/resource-accessor construction and the remaining generated/package bindings are still pending, so this module intentionally remains non-final."
     },
     {
       "referencePath": "source/host/box/loopback-sand-box.ts",

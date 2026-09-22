@@ -7,12 +7,19 @@ use std::time::Duration;
 use url::Url;
 
 use super::box_env::{BoxEnvironmentControlClient, BoxEnvironmentUpdate};
+use super::box_mcp::{
+    BoxMcpControlClient, BoxMcpLoadRequest, BoxMcpLoadResponse, ConnectErrorCode,
+    ConnectErrorCodeSource,
+};
 use super::box_remote_accessor::{
-    BoxEndpoint, BoxTransportOptions, create_box_transport,
+    BoxEndpoint, BoxPingControlClient, BoxPingErrorMetadata, BoxTransportOptions, ConnectCode,
+    create_box_transport,
 };
 
+pub const PING_PATH: &str = "/agent.v1.ControlService/Ping";
 pub const UPDATE_ENVIRONMENT_VARIABLES_PATH: &str =
     "/agent.v1.ControlService/UpdateEnvironmentVariables";
+pub const LOAD_MCP_SERVERS_PATH: &str = "/agent.v1.ControlService/LoadMcpServers";
 pub const CONNECT_PROTOCOL_VERSION: &str = "1";
 pub const PRODUCTION_BOX_RPC_TIMEOUT_MS: u64 = 15_000;
 
@@ -58,6 +65,59 @@ impl From<std::io::Error> for ProductionBoxTransportError {
     }
 }
 
+fn http_status_connect_code(status: u16) -> Option<i64> {
+    match status {
+        400 => Some(3),
+        401 => Some(16),
+        403 => Some(7),
+        404 => Some(5),
+        409 => Some(10),
+        429 => Some(8),
+        499 => Some(1),
+        501 => Some(12),
+        503 => Some(14),
+        504 => Some(4),
+        _ => None,
+    }
+}
+
+impl BoxPingErrorMetadata for ProductionBoxTransportError {
+    fn connect_code(&self) -> Option<ConnectCode> {
+        match self {
+            Self::Io(error) if error.kind() == std::io::ErrorKind::TimedOut => {
+                Some(ConnectCode::Number(4))
+            }
+            Self::HttpStatus { status, .. } => {
+                http_status_connect_code(*status).map(ConnectCode::Number)
+            }
+            _ => None,
+        }
+    }
+
+    fn system_errno(&self) -> Option<&str> {
+        match self {
+            Self::Io(error) if error.kind() == std::io::ErrorKind::ConnectionRefused => {
+                Some("ECONNREFUSED")
+            }
+            _ => None,
+        }
+    }
+}
+
+impl ConnectErrorCodeSource for ProductionBoxTransportError {
+    fn connect_error_code(&self) -> Option<ConnectErrorCode> {
+        match self {
+            Self::Io(error) if error.kind() == std::io::ErrorKind::TimedOut => {
+                Some(ConnectErrorCode::Number(4))
+            }
+            Self::HttpStatus { status, .. } => {
+                http_status_connect_code(*status).map(ConnectErrorCode::Number)
+            }
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProductionBoxTransport {
     options: BoxTransportOptions,
@@ -96,6 +156,14 @@ pub fn create_production_box_control_client(
     }
 }
 
+impl<Ctx> BoxPingControlClient<Ctx> for ProductionBoxControlClient {
+    type Error = ProductionBoxTransportError;
+
+    fn ping(&mut self, _ctx: &Ctx, _timeout_ms: u64) -> Result<(), Self::Error> {
+        send_connect_unary(&self.transport, PING_PATH, &[])
+    }
+}
+
 impl<Ctx> BoxEnvironmentControlClient<Ctx> for ProductionBoxControlClient {
     type Error = ProductionBoxTransportError;
 
@@ -110,6 +178,26 @@ impl<Ctx> BoxEnvironmentControlClient<Ctx> for ProductionBoxControlClient {
             UPDATE_ENVIRONMENT_VARIABLES_PATH,
             &body,
         )
+    }
+}
+
+impl<Ctx> BoxMcpControlClient<Ctx> for ProductionBoxControlClient {
+    type Error = ProductionBoxTransportError;
+
+    fn load_mcp_servers(
+        &mut self,
+        _ctx: &Ctx,
+        request: BoxMcpLoadRequest,
+    ) -> Result<BoxMcpLoadResponse, Self::Error> {
+        let body = encode_load_mcp_servers_request(&request);
+        let response = send_connect_unary_response(
+            &self.transport,
+            LOAD_MCP_SERVERS_PATH,
+            &body,
+        )?;
+        Ok(BoxMcpLoadResponse {
+            loaded_server_names: decode_load_mcp_servers_response(&response)?,
+        })
     }
 }
 
@@ -159,11 +247,119 @@ pub fn encode_update_environment_variables_request(update: &BoxEnvironmentUpdate
     body
 }
 
+pub fn encode_load_mcp_servers_request(request: &BoxMcpLoadRequest) -> Vec<u8> {
+    let mut body = Vec::new();
+    if !request.mcp_config_json.is_empty() {
+        encode_len_delimited(1, request.mcp_config_json.as_bytes(), &mut body);
+    }
+    if request.remove_missing {
+        body.extend_from_slice(&[0x10, 0x01]);
+    }
+    body
+}
+
+fn decode_varint(input: &[u8], cursor: &mut usize) -> Result<u64, ProductionBoxTransportError> {
+    let mut value = 0u64;
+    let mut shift = 0u32;
+    while *cursor < input.len() && shift < 64 {
+        let byte = input[*cursor];
+        *cursor += 1;
+        value |= u64::from(byte & 0x7f) << shift;
+        if byte & 0x80 == 0 {
+            return Ok(value);
+        }
+        shift += 7;
+    }
+    Err(ProductionBoxTransportError::InvalidHttpResponse(
+        "box ControlService returned malformed protobuf".into(),
+    ))
+}
+
+fn skip_protobuf_field(
+    input: &[u8],
+    cursor: &mut usize,
+    wire_type: u8,
+) -> Result<(), ProductionBoxTransportError> {
+    match wire_type {
+        0 => {
+            let _ = decode_varint(input, cursor)?;
+        }
+        1 => {
+            *cursor = cursor.saturating_add(8);
+        }
+        2 => {
+            let length = usize::try_from(decode_varint(input, cursor)?).map_err(|_| {
+                ProductionBoxTransportError::InvalidHttpResponse(
+                    "box ControlService protobuf length overflow".into(),
+                )
+            })?;
+            *cursor = cursor.saturating_add(length);
+        }
+        5 => {
+            *cursor = cursor.saturating_add(4);
+        }
+        _ => {
+            return Err(ProductionBoxTransportError::InvalidHttpResponse(format!(
+                "box ControlService returned unsupported protobuf wire type {wire_type}"
+            )));
+        }
+    }
+    if *cursor > input.len() {
+        return Err(ProductionBoxTransportError::InvalidHttpResponse(
+            "box ControlService returned truncated protobuf".into(),
+        ));
+    }
+    Ok(())
+}
+
+pub fn decode_load_mcp_servers_response(
+    input: &[u8],
+) -> Result<Vec<String>, ProductionBoxTransportError> {
+    let mut cursor = 0usize;
+    let mut names = Vec::new();
+    while cursor < input.len() {
+        let key = decode_varint(input, &mut cursor)?;
+        let field_number = key >> 3;
+        let wire_type = (key & 0x07) as u8;
+        if field_number == 1 && wire_type == 2 {
+            let length = usize::try_from(decode_varint(input, &mut cursor)?).map_err(|_| {
+                ProductionBoxTransportError::InvalidHttpResponse(
+                    "box ControlService protobuf length overflow".into(),
+                )
+            })?;
+            let end = cursor.saturating_add(length);
+            if end > input.len() {
+                return Err(ProductionBoxTransportError::InvalidHttpResponse(
+                    "box ControlService returned truncated MCP server name".into(),
+                ));
+            }
+            let name = std::str::from_utf8(&input[cursor..end]).map_err(|_| {
+                ProductionBoxTransportError::InvalidHttpResponse(
+                    "box ControlService returned non-UTF-8 MCP server name".into(),
+                )
+            })?;
+            names.push(name.to_string());
+            cursor = end;
+            continue;
+        }
+        skip_protobuf_field(input, &mut cursor, wire_type)?;
+    }
+    Ok(names)
+}
+
 fn send_connect_unary(
     transport: &ProductionBoxTransport,
     path: &str,
     body: &[u8],
 ) -> Result<(), ProductionBoxTransportError> {
+    send_connect_unary_response(transport, path, body).map(|_| ())
+}
+
+fn send_connect_unary_response(
+    transport: &ProductionBoxTransport,
+    path: &str,
+    body: &[u8],
+) -> Result<Vec<u8>, ProductionBoxTransportError> {
     let base = Url::parse(&transport.options.base_url)
         .map_err(|error| ProductionBoxTransportError::InvalidBaseUrl(error.to_string()))?;
     if base.scheme() != "http" {
@@ -224,7 +420,7 @@ fn send_connect_unary(
             "box ControlService returned an invalid status line: {status_line}"
         )))?;
     if (200..300).contains(&status) {
-        return Ok(());
+        return Ok(response[header_end + 4..].to_vec());
     }
     let body_text = String::from_utf8_lossy(&response[header_end + 4..]);
     let body_text = body_text.chars().take(512).collect::<String>();

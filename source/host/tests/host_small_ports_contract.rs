@@ -272,3 +272,145 @@ fn production_box_environment_uses_connect_unary_control_service_from_host_graph
         ]
     );
 }
+
+
+fn spawn_fake_production_control_service(
+    response_body: Vec<u8>,
+) -> (u16, std::thread::JoinHandle<Vec<u8>>) {
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::thread;
+    use std::time::Duration;
+
+    let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind fake control service");
+    let port = listener.local_addr().expect("fake control service address").port();
+    let server = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().expect("accept production box client");
+        stream
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .expect("read timeout");
+
+        let mut received = Vec::new();
+        let mut buffer = [0u8; 1024];
+        let header_end;
+        loop {
+            let count = stream.read(&mut buffer).expect("read HTTP request");
+            assert!(count > 0, "client closed before HTTP headers completed");
+            received.extend_from_slice(&buffer[..count]);
+            if let Some(index) = received.windows(4).position(|window| window == b"\r\n\r\n") {
+                header_end = index;
+                break;
+            }
+        }
+        let header_text =
+            std::str::from_utf8(&received[..header_end]).expect("UTF-8 request headers");
+        let content_length = header_text
+            .lines()
+            .find_map(|line| {
+                let (name, value) = line.split_once(':')?;
+                name.eq_ignore_ascii_case("content-length")
+                    .then(|| value.trim().parse::<usize>().expect("content length"))
+            })
+            .expect("content-length header");
+        while received.len() < header_end + 4 + content_length {
+            let count = stream.read(&mut buffer).expect("read HTTP body");
+            assert!(count > 0, "client closed before HTTP body completed");
+            received.extend_from_slice(&buffer[..count]);
+        }
+
+        let response_head = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/proto\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            response_body.len()
+        );
+        stream
+            .write_all(response_head.as_bytes())
+            .expect("write fake Connect response headers");
+        stream
+            .write_all(&response_body)
+            .expect("write fake Connect response body");
+        stream.flush().expect("flush fake Connect response");
+        received
+    });
+    (port, server)
+}
+
+fn request_parts(request: &[u8]) -> (&str, &[u8]) {
+    let header_end = request
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
+        .expect("HTTP header terminator");
+    (
+        std::str::from_utf8(&request[..header_end]).expect("UTF-8 request headers"),
+        &request[header_end + 4..],
+    )
+}
+
+#[test]
+fn production_box_control_service_ping_is_authenticated_and_uses_frozen_path() {
+    use mahayana_host_runtime::r#box::box_remote_accessor::{
+        BoxEndpoint, BoxPingControlClient,
+    };
+    use mahayana_host_runtime::r#box::generated_production::{
+        ProductionBoxTransport, create_production_box_control_client,
+    };
+
+    let (port, server) = spawn_fake_production_control_service(Vec::new());
+    let endpoint = BoxEndpoint::new("127.0.0.1", port, "ping-token");
+    let transport = ProductionBoxTransport::from_endpoint(&endpoint);
+    let mut client = create_production_box_control_client(&transport);
+    client
+        .ping(&(), 1_500)
+        .expect("production Ping should reach fake exec daemon");
+
+    let request = server.join().expect("fake Ping server");
+    let (headers, body) = request_parts(&request);
+    assert!(headers.starts_with("POST /agent.v1.ControlService/Ping HTTP/1.1\r\n"));
+    assert!(
+        headers
+            .lines()
+            .any(|line| line.eq_ignore_ascii_case("Authorization: Bearer ping-token"))
+    );
+    assert!(body.is_empty(), "PingRequest has no protobuf fields");
+}
+
+#[test]
+fn production_box_control_service_load_mcp_servers_round_trips_frozen_proto() {
+    use mahayana_host_runtime::r#box::box_mcp::{
+        BoxMcpControlClient, BoxMcpLoadRequest,
+    };
+    use mahayana_host_runtime::r#box::box_remote_accessor::BoxEndpoint;
+    use mahayana_host_runtime::r#box::generated_production::{
+        ProductionBoxTransport, create_production_box_control_client,
+    };
+
+    let response = vec![
+        0x0a, 0x0a, b'f', b'i', b'l', b'e', b's', b'y', b's', b't', b'e', b'm',
+        0x0a, 0x07, b'b', b'r', b'o', b'w', b's', b'e', b'r',
+    ];
+    let (port, server) = spawn_fake_production_control_service(response);
+    let endpoint = BoxEndpoint::new("127.0.0.1", port, "mcp-token");
+    let transport = ProductionBoxTransport::from_endpoint(&endpoint);
+    let mut client = create_production_box_control_client(&transport);
+    let loaded = client
+        .load_mcp_servers(
+            &(),
+            BoxMcpLoadRequest {
+                mcp_config_json: "{}".into(),
+                remove_missing: true,
+            },
+        )
+        .expect("production MCP load should decode the response");
+    assert_eq!(loaded.loaded_server_names, vec!["filesystem", "browser"]);
+
+    let request = server.join().expect("fake MCP server");
+    let (headers, body) = request_parts(&request);
+    assert!(headers.starts_with(
+        "POST /agent.v1.ControlService/LoadMcpServers HTTP/1.1\r\n"
+    ));
+    assert!(
+        headers
+            .lines()
+            .any(|line| line.eq_ignore_ascii_case("Authorization: Bearer mcp-token"))
+    );
+    assert_eq!(body, &[0x0a, 0x02, b'{', b'}', 0x10, 0x01]);
+}
