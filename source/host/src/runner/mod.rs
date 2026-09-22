@@ -18,10 +18,12 @@ pub use turn_run_shell::{
     TurnRunOptions, TurnRunShell, TurnRunShellError, TurnRunStarted,
 };
 pub use conversation_state::{
-    HIDDEN_PROMPT_MARKER, ModelResolutionTicket, RecentUserMessage, ResolvedModelTracker,
-    SanitizedUsage, SUMMARIZATION_MAX_PROMPT_CHARS, build_unanswered_questions_note,
-    sanitize_usage, select_unconfirmed_user_messages, should_use_self_summary,
-    to_safe_usage_count,
+    CompletedAwaitOutcome, ContextWindowTracker, FullStreamSanitizer, HIDDEN_PROMPT_MARKER,
+    ModelResolutionTicket, RecentUserMessage, ResolvedModelTracker, SUMMARIZATION_MAX_OUTPUT_TOKENS,
+    SUMMARIZATION_MAX_PROMPT_CHARS, SanitizedExtendedUsage, SanitizedUsage, StreamSanitizerItem,
+    SummarizationPolicy, await_block_until_ms, build_unanswered_questions_note,
+    classify_completed_await_outcome, sanitize_usage, select_unconfirmed_user_messages,
+    should_use_self_summary, summarization_policy, to_safe_usage_count,
 };
 pub use tool_call_identity::{ToolCallIdentity, ToolSurfaceUpdate, TOOL_CALL_IDENTITY_CAP};
 pub use turn_usage::{
