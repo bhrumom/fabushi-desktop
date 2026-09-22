@@ -17,6 +17,7 @@ import {
   parsePullRequestToolResult,
 } from '../src/agent-workspace/agent-composer-suggestion-provider';
 import type { TranscriptEntry } from '../src/agent-workspace/transcript-model';
+import type { RuntimeEvent } from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
 import {
   FABU_AGENT_ATTACHMENT_INDEX_PATH,
   FABU_AGENT_ROOT_PATH,
@@ -788,7 +789,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
         type: 'chat.delta',
         timestamp: new Date(31).toISOString(),
         delta: 'must-not-be-inferred',
-      })).toBe(false);
+      } as unknown as RuntimeEvent)).toBe(false);
       expect(coordinator.handle({
         type: 'chat.message',
         timestamp: new Date(32).toISOString(),
