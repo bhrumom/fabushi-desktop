@@ -945,9 +945,12 @@ function broadcastMahayanaEvent(event) {
     broadcastNativeEvent('mcp-auth-completed', { server: event.server, completedAtMs: Date.now() });
   }
   if (!mahayanaEdgeServer) return;
-  for (const win of BrowserWindow.getAllWindows()) {
-    if (win.isDestroyed() || win.webContents.isDestroyed()) continue;
-    mahayanaEdgeServer.emit(win.webContents, 'runtime-event', event);
+  const targetWindow = mainWindow;
+  if (targetWindow && !targetWindow.isDestroyed() && !targetWindow.webContents.isDestroyed()) {
+    mahayanaEdgeServer.emit(targetWindow.webContents, 'runtime-event', event);
+  }
+  if (event?.type === 'settings.changed') {
+    remoteDeviceAgentSupervisor?.setEnabled(event.settings?.remoteControlEnabled === true);
   }
   if (event?.type === 'settings.changed'
       && ((typeof event.settings?.inferenceProvider === 'string'
@@ -1412,10 +1415,12 @@ app.whenReady().then(async () => {
   await startAppAgentSurfaceServer().catch((error) => {
     console.error('[app-agent-surface] failed to start', error);
   });
-  host.start();
+  // The Coordinator/Host is demand-started by the first renderer or background
+  // capability request. Do not burn CPU/network before a product surface needs it.
   remoteDeviceAgentSupervisor = new RemoteDeviceAgentSupervisor({
     host,
     app,
+    enabled: false,
     onState: (state) => broadcastNativeEvent('remote-computer-background-state', state),
   });
   remoteDeviceAgentSupervisor.start();
