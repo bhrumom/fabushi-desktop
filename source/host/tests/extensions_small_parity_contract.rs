@@ -1,0 +1,182 @@
+use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex};
+
+use mahayana_host_runtime::extensions::box_store_sync::files::SAND_FILES_MAX_BYTES;
+use mahayana_host_runtime::extensions::box_store_sync::object_store_port::BoxStoreCanonicalWriteConflictError;
+use mahayana_host_runtime::extensions::session::session_diagnostics::{
+    SessionDiagnostic, pin_session_diagnostics_reporter, report_session_diagnostic,
+};
+use mahayana_host_runtime::extensions::telemetry::auto_review_approval_telemetry::{
+    AutoReviewApprovalReport, auto_review_approval_telemetry,
+};
+use mahayana_host_runtime::extensions::telemetry::disk_pressure_telemetry::{
+    DiskPressureReport, disk_pressure_telemetry, telemetry_level,
+};
+use mahayana_host_runtime::extensions::telemetry::host_diagnostic_telemetry::{
+    HostDiagnostic, host_diagnostic_telemetry,
+};
+use mahayana_host_runtime::extensions::telemetry::host_event_bus_telemetry::{
+    HOST_EVENT_BUS_EVENT, HostEventBusReport, host_event_bus_telemetry,
+};
+use mahayana_host_runtime::extensions::telemetry::search_index_health_telemetry::{
+    SearchIndexHealthReport, search_index_health_telemetry,
+};
+use mahayana_host_runtime::extensions::telemetry::send_trace_sampler::{
+    NOT_RECORD, create_send_trace_sampler,
+};
+use mahayana_host_runtime::extensions::transcript::sand_automation_failure::{
+    is_background_automation_trigger, normalize_automation_error_kind,
+    should_notify_automation_failure,
+};
+use serde_json::json;
+
+#[test]
+fn frozen_grok_small_extension_modules_preserve_behavior() {
+    assert_eq!(SAND_FILES_MAX_BYTES, 16 * 1024 * 1024);
+
+    let event_bus = host_event_bus_telemetry(&HostEventBusReport {
+        kind: "subscriber_failed".into(),
+        topic: "turn.updated".into(),
+        error_class: "io".into(),
+    });
+    assert_eq!(event_bus.level, Some("error"));
+    assert_eq!(event_bus.event, Some(HOST_EVENT_BUS_EVENT));
+    assert_eq!(event_bus.metadata["kind"], "subscriber_failed");
+    assert_eq!(event_bus.metadata["topic"], "turn.updated");
+    assert_eq!(event_bus.metadata["error_class"], "io");
+
+    let degraded = host_diagnostic_telemetry(&HostDiagnostic {
+        kind: "send_ledger_degraded".into(),
+        stage: Some("persist".into()),
+        agent_id: Some("agent-7".into()),
+        reason: None,
+        error_class: Some("sqlite".into()),
+    });
+    assert_eq!(degraded.level, Some("error"));
+    assert_eq!(degraded.metadata["stage"], "persist");
+    assert_eq!(degraded.metadata["agent_id"], "agent-7");
+    assert!(!degraded.metadata.contains_key("reason"));
+
+    let warning = host_diagnostic_telemetry(&HostDiagnostic {
+        kind: "other".into(),
+        ..HostDiagnostic::default()
+    });
+    assert_eq!(warning.level, Some("warn"));
+
+    let search = search_index_health_telemetry(&SearchIndexHealthReport {
+        kind: "job_retry".into(),
+        stage: Some("flush".into()),
+        error_class: None,
+        count: Some(3),
+    });
+    assert_eq!(search.level, Some("warn"));
+    assert_eq!(search.event, Some("sand.search_index.health"));
+    assert_eq!(search.metadata["count"], "3");
+
+    let approval = auto_review_approval_telemetry(&AutoReviewApprovalReport {
+        event_type: "settled".into(),
+        conversation_id: "conversation-1".into(),
+        approval_id: "approval-2".into(),
+        surface: "desktop".into(),
+        status: "approved".into(),
+        age_ms: 12.6,
+        ttl_ms: Some(-4.0),
+        cause: Some("user".into()),
+    });
+    assert_eq!(approval.level, None);
+    assert_eq!(approval.event, Some("sand.auto_review.approval"));
+    assert_eq!(approval.metadata["age_ms"], "13");
+    assert_eq!(approval.metadata["ttl_ms"], "0");
+    assert_eq!(approval.metadata["cause"], "user");
+
+    assert_eq!(telemetry_level("hard"), "error");
+    assert_eq!(telemetry_level("soft"), "warn");
+    assert_eq!(telemetry_level("future"), "info");
+    let disk = disk_pressure_telemetry(&DiskPressureReport {
+        level: "soft".into(),
+        volume: "/".into(),
+        trigger: "periodic".into(),
+        total_bytes: 100.0,
+        available_bytes: 12.0,
+        used_percent: 88.55,
+    });
+    assert_eq!(disk.level, Some("warn"));
+    assert_eq!(disk.event, None);
+    assert_eq!(disk.metadata["total_bytes"], "100");
+    assert_eq!(disk.metadata["available_bytes"], "12");
+    assert_eq!(disk.metadata["used_percent"], "88.5");
+
+    let sampler = create_send_trace_sampler();
+    assert_eq!(sampler.should_sample().decision, NOT_RECORD);
+    assert_eq!(sampler.to_string(), "ParentBased{root=AlwaysOffSampler}");
+
+    let conflict = BoxStoreCanonicalWriteConflictError::new(
+        "agents/a.json",
+        Some("conflicts/a.json".into()),
+        Some("etag-1".into()),
+        Some("remote".into()),
+    );
+    assert_eq!(conflict.key, "agents/a.json");
+    assert_eq!(conflict.base_etag.as_deref(), Some("etag-1"));
+    assert_eq!(conflict.baseline_source.as_deref(), Some("remote"));
+    assert_eq!(
+        conflict.to_string(),
+        "agent-store write for agents/a.json lost a concurrent-write race; content preserved at conflicts/a.json"
+    );
+    let canonical = BoxStoreCanonicalWriteConflictError::new(
+        "agents/b.json",
+        None,
+        None,
+        None,
+    );
+    assert_eq!(
+        canonical.to_string(),
+        "canonical write for agents/b.json lost a concurrent-write race"
+    );
+
+    assert!(is_background_automation_trigger("schedule"));
+    assert!(is_background_automation_trigger("event"));
+    assert!(!is_background_automation_trigger("manual"));
+    assert_eq!(normalize_automation_error_kind(None), "unknown");
+    assert_eq!(
+        normalize_automation_error_kind(Some(
+            "HTTP 503 (request 123) 550e8400-e29b-41d4-a716-446655440000 0xdeadBEEF Connection_Reset"
+        )),
+        "http connection reset"
+    );
+    for occurrence in [0, 1, 2, 4, 8, 16] {
+        assert!(should_notify_automation_failure(occurrence));
+    }
+    for occurrence in [3, 5, 6, 7, 9] {
+        assert!(!should_notify_automation_failure(occurrence));
+    }
+}
+
+#[test]
+fn session_diagnostics_reporter_can_be_pinned_replaced_and_cleared() {
+    let seen = Arc::new(Mutex::new(Vec::<(String, String)>::new()));
+    let sink = Arc::clone(&seen);
+    pin_session_diagnostics_reporter(Some(Arc::new(move |report| {
+        sink.lock()
+            .expect("session diagnostic sink")
+            .push((report.family.clone(), report.kind.clone()));
+    })));
+
+    report_session_diagnostic(&SessionDiagnostic {
+        family: "session".into(),
+        kind: "recovered".into(),
+        metadata: BTreeMap::from([("generation".into(), json!(3))]),
+    });
+    assert_eq!(
+        seen.lock().expect("session diagnostic values").as_slice(),
+        &[("session".into(), "recovered".into())]
+    );
+
+    pin_session_diagnostics_reporter(None);
+    report_session_diagnostic(&SessionDiagnostic {
+        family: "session".into(),
+        kind: "ignored".into(),
+        metadata: BTreeMap::new(),
+    });
+    assert_eq!(seen.lock().expect("cleared diagnostic values").len(), 1);
+}
