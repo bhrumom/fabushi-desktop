@@ -87,7 +87,6 @@ struct ProductionHostExtensions {
     trays: Arc<HostTraysExtension>,
     box_lifecycle: Arc<BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>>,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
-    trays: Arc<HostTraysExtension>,
 }
 
 impl Drop for ProductionHostExtensions {
@@ -211,6 +210,7 @@ struct UnifiedGatewayApi {
     routed_provider_tasks: Arc<RoutedProviderTaskRegistry>,
     forever_box: Arc<ForeverBoxService>,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
+    trays: Arc<HostTraysExtension>,
 }
 
 fn call_host_lane(
