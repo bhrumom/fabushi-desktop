@@ -25,6 +25,10 @@ impl GatewayApi for TestApi {
                 "version": "avatar-v1"
             })),
             "getTranscript" => Ok(args),
+            method if method.starts_with("feature.") => Ok(json!({
+                "method": method,
+                "args": args,
+            })),
             "conflict" => Err(GatewayCommandError::Conflict("conflict".into())),
             other => Err(GatewayCommandError::UnknownMethod(other.to_string())),
         }
@@ -180,6 +184,59 @@ fn gateway_bearer_auth_is_required_when_configured() {
     assert_eq!(json_body(&authorized), json!({}));
 
     server.close();
+}
+
+#[test]
+fn gateway_carries_explicit_fabushi_extensions_without_widening_unknown_methods() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(None),
+        started_at: 777,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let extensions = [
+        "feature.info",
+        "feature.execute",
+        "feature.marketplace.browse",
+        "feature.marketplace.release",
+        "feature.plugin.install",
+        "feature.plugin.uninstall",
+        "feature.plugin.rollback",
+        "feature.plugin.active",
+        "feature.plugin.listInstalled",
+        "feature.plugin.uiDocument",
+        "feature.auth.status",
+        "feature.auth.providers",
+        "feature.auth.browserStart",
+        "feature.auth.browserPoll",
+        "feature.auth.browserCancel",
+        "feature.auth.browserReopen",
+        "feature.auth.passwordLogin",
+        "feature.auth.oauthStart",
+        "feature.auth.oauthPoll",
+        "feature.auth.logout",
+        "feature.interrupt",
+        "feature.approval.resolve",
+    ];
+
+    for method in extensions {
+        let response = request(
+            port,
+            &format!(
+                "POST /api/{method} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}"
+            ),
+        );
+        assert!(
+            response.starts_with("HTTP/1.1 200 OK"),
+            "{method} was not admitted through the explicit Fabushi extension boundary: {response}"
+        );
+        assert_eq!(json_body(&response)["method"], method);
+    }
 }
 
 #[test]
