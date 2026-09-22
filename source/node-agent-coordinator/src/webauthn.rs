@@ -79,7 +79,7 @@ impl<'de> Deserialize<'de> for WebAuthnCeremony {
 pub struct ApprovedWebAuthnConsent {
     pub approved: bool,
     pub prompt_id: Option<String>,
-    pub window_handle: Option<String>,
+    pub window_handle: Option<u64>,
 }
 
 impl ApprovedWebAuthnConsent {

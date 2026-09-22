@@ -1,6 +1,8 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io::{Read, Write};
-use std::time::Duration;
+use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
+use std::thread;
+use std::time::{Duration, Instant};
 
 use serde_json::{Value, json};
 
@@ -14,6 +16,9 @@ use crate::gateway::sse_block_decoder::SseBlockDecoder;
 use crate::webauthn::{
     ApprovedWebAuthnConsent, WebAuthnCeremony, WebAuthnSigner, WebAuthnSignerError,
     WebAuthnSignerResult,
+};
+use crate::webauthn::signer::{
+    SpawnedWebAuthnSigner, WebAuthnPinRequest, WebAuthnSignCancellation,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -433,8 +438,9 @@ where
     stream
         .set_write_timeout(Some(connect_timeout))
         .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
+    let cancellation_poll = Duration::from_millis(250);
     stream
-        .set_read_timeout(Some(Duration::from_millis(SSE_STALL_TIMEOUT_MS)))
+        .set_read_timeout(Some(cancellation_poll))
         .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
 
     let path = format!("{}{}", endpoint.base_path, GATEWAY_WEBAUTHN_REQUESTS_PATH);
@@ -457,13 +463,32 @@ where
 
     let mut buffered = Vec::with_capacity(4096);
     let mut chunk = [0_u8; 4096];
+    let handshake_started = Instant::now();
     let header_end = loop {
-        let count = stream.read(&mut chunk).map_err(|error| {
-            GatewayDispatchError::Unreachable {
-                outcome: webauthn_io_outcome(&error),
-                message: format!("WebAuthn request stream handshake failed: {error}"),
+        if !should_continue() {
+            return Ok(());
+        }
+        let count = match stream.read(&mut chunk) {
+            Ok(count) => count,
+            Err(error) if matches!(error.kind(), std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock) => {
+                if !should_continue() {
+                    return Ok(());
+                }
+                if handshake_started.elapsed() >= connect_timeout {
+                    return Err(GatewayDispatchError::Unreachable {
+                        outcome: ReachabilityOutcome::Timeout,
+                        message: "WebAuthn request stream handshake timed out".into(),
+                    });
+                }
+                continue;
             }
-        })?;
+            Err(error) => {
+                return Err(GatewayDispatchError::Unreachable {
+                    outcome: webauthn_io_outcome(&error),
+                    message: format!("WebAuthn request stream handshake failed: {error}"),
+                });
+            }
+        };
         if count == 0 {
             return Err(GatewayDispatchError::Unreachable {
                 outcome: ReachabilityOutcome::Network,
@@ -536,25 +561,489 @@ where
         return Ok(());
     }
 
+    let mut last_data = Instant::now();
     loop {
         if !should_continue() {
             return Ok(());
         }
-        let count = stream.read(&mut chunk).map_err(|error| {
-            GatewayDispatchError::Unreachable {
-                outcome: webauthn_io_outcome(&error),
-                message: format!("WebAuthn request stream failed: {error}"),
+        let count = match stream.read(&mut chunk) {
+            Ok(count) => count,
+            Err(error) if matches!(error.kind(), std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock) => {
+                if !should_continue() {
+                    return Ok(());
+                }
+                if last_data.elapsed() >= Duration::from_millis(SSE_STALL_TIMEOUT_MS) {
+                    return Err(GatewayDispatchError::Unreachable {
+                        outcome: ReachabilityOutcome::Timeout,
+                        message: "WebAuthn request stream stalled".into(),
+                    });
+                }
+                continue;
             }
-        })?;
+            Err(error) => {
+                return Err(GatewayDispatchError::Unreachable {
+                    outcome: webauthn_io_outcome(&error),
+                    message: format!("WebAuthn request stream failed: {error}"),
+                });
+            }
+        };
         if count == 0 {
             return Err(GatewayDispatchError::Unreachable {
                 outcome: ReachabilityOutcome::Network,
                 message: "WebAuthn request stream closed".into(),
             });
         }
+        last_data = Instant::now();
         deliver(&mut decoder, &chunk[..count], &mut on_frame);
         if !should_continue() {
             return Ok(());
         }
+    }
+}
+
+
+pub type WebAuthnResolveConnection = Arc<
+    dyn Fn() -> Result<GatewayConnection, GatewayDispatchError> + Send + Sync,
+>;
+pub type WebAuthnConsentCallback = Arc<
+    dyn Fn(&WebAuthnCeremony) -> Result<ApprovedWebAuthnConsent, String> + Send + Sync,
+>;
+pub type WebAuthnStatusCallback = Arc<dyn Fn(&str) + Send + Sync>;
+pub type WebAuthnPinCallback = Arc<
+    dyn Fn(WebAuthnPinRequest, &str) -> Option<String> + Send + Sync,
+>;
+pub type WebAuthnFinishCallback = Arc<dyn Fn() + Send + Sync>;
+
+#[derive(Clone)]
+pub struct ProductionWebAuthnRuntimeOptions {
+    pub signer: SpawnedWebAuthnSigner,
+    pub resolve_connection: WebAuthnResolveConnection,
+    pub request_consent: WebAuthnConsentCallback,
+    pub update_status: WebAuthnStatusCallback,
+    pub request_pin: WebAuthnPinCallback,
+    pub finish_consent: WebAuthnFinishCallback,
+    pub computer_id: Option<String>,
+    pub label: Option<String>,
+}
+
+pub struct ProductionWebAuthnRuntime {
+    options: ProductionWebAuthnRuntimeOptions,
+    closed: Arc<AtomicBool>,
+    paused: Arc<AtomicBool>,
+    cancellations: Arc<Mutex<HashMap<String, WebAuthnSignCancellation>>>,
+    worker: Option<thread::JoinHandle<()>>,
+}
+
+impl ProductionWebAuthnRuntime {
+    pub fn new(options: ProductionWebAuthnRuntimeOptions) -> Self {
+        Self {
+            options,
+            closed: Arc::new(AtomicBool::new(false)),
+            paused: Arc::new(AtomicBool::new(true)),
+            cancellations: Arc::new(Mutex::new(HashMap::new())),
+            worker: None,
+        }
+    }
+
+    pub fn start(&mut self) {
+        self.paused.store(false, Ordering::Release);
+        if self.worker.is_some() {
+            return;
+        }
+        let options = self.options.clone();
+        let closed = Arc::clone(&self.closed);
+        let paused = Arc::clone(&self.paused);
+        let cancellations = Arc::clone(&self.cancellations);
+        self.worker = Some(thread::spawn(move || {
+            run_production_webauthn_runtime(options, closed, paused, cancellations);
+        }));
+    }
+
+    pub fn stop(&mut self) {
+        self.paused.store(true, Ordering::Release);
+        cancel_all_webauthn(&self.cancellations);
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.paused.load(Ordering::Acquire)
+    }
+
+    pub fn in_flight_count(&self) -> usize {
+        self.cancellations.lock().map(|value| value.len()).unwrap_or_default()
+    }
+
+    pub fn dispose(&mut self) {
+        self.closed.store(true, Ordering::Release);
+        self.stop();
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
+    }
+}
+
+impl Drop for ProductionWebAuthnRuntime {
+    fn drop(&mut self) {
+        self.dispose();
+    }
+}
+
+fn cancel_all_webauthn(
+    cancellations: &Arc<Mutex<HashMap<String, WebAuthnSignCancellation>>>,
+) {
+    let active = cancellations
+        .lock()
+        .map(|mut entries| entries.drain().map(|(_, value)| value).collect::<Vec<_>>())
+        .unwrap_or_default();
+    for cancellation in active {
+        cancellation.cancel();
+    }
+}
+
+fn sleep_webauthn_backoff(
+    closed: &AtomicBool,
+    paused: &AtomicBool,
+    duration: Duration,
+) {
+    let started = Instant::now();
+    while started.elapsed() < duration {
+        if closed.load(Ordering::Acquire) || paused.load(Ordering::Acquire) {
+            return;
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+}
+
+fn webauthn_reconnect_delay(attempt: u32) -> Duration {
+    let exponent = attempt.saturating_sub(1).min(5);
+    Duration::from_millis((1_000_u64.saturating_mul(1_u64 << exponent)).min(30_000))
+}
+
+fn deliver_webauthn_frames_with_retry(
+    connection: &GatewayConnection,
+    provider_id: Option<String>,
+    frames: &[WebAuthnResponseFrame],
+    cancellation: Option<&WebAuthnSignCancellation>,
+) {
+    for attempt in 0..5_u32 {
+        if cancellation.is_some_and(WebAuthnSignCancellation::is_cancelled) {
+            return;
+        }
+        if post_webauthn_frames(connection, provider_id.as_deref(), frames).is_ok() {
+            return;
+        }
+        if attempt < 4 {
+            thread::sleep(Duration::from_millis(
+                (250_u64.saturating_mul(1_u64 << attempt)).min(4_000),
+            ));
+        }
+    }
+}
+
+fn run_production_webauthn_runtime(
+    options: ProductionWebAuthnRuntimeOptions,
+    closed: Arc<AtomicBool>,
+    paused: Arc<AtomicBool>,
+    cancellations: Arc<Mutex<HashMap<String, WebAuthnSignCancellation>>>,
+) {
+    let provider_id = Arc::new(Mutex::new(None::<String>));
+    let mut reconnect_attempt = 0_u32;
+
+    while !closed.load(Ordering::Acquire) {
+        if paused.load(Ordering::Acquire) {
+            thread::sleep(Duration::from_millis(50));
+            reconnect_attempt = 0;
+            continue;
+        }
+
+        let connection = match (options.resolve_connection)() {
+            Ok(connection) => connection,
+            Err(_) => {
+                reconnect_attempt = reconnect_attempt.saturating_add(1);
+                sleep_webauthn_backoff(
+                    &closed,
+                    &paused,
+                    webauthn_reconnect_delay(reconnect_attempt),
+                );
+                continue;
+            }
+        };
+
+        let heartbeat_stop = Arc::new(AtomicBool::new(false));
+        let heartbeat_flag = Arc::clone(&heartbeat_stop);
+        let heartbeat_closed = Arc::clone(&closed);
+        let heartbeat_paused = Arc::clone(&paused);
+        let heartbeat_connection = connection.clone();
+        let heartbeat_provider_id = Arc::clone(&provider_id);
+        let heartbeat = thread::spawn(move || {
+            while !heartbeat_flag.load(Ordering::Acquire)
+                && !heartbeat_closed.load(Ordering::Acquire)
+                && !heartbeat_paused.load(Ordering::Acquire)
+            {
+                let started = Instant::now();
+                while started.elapsed() < Duration::from_millis(WEBAUTHN_HEARTBEAT_INTERVAL_MS) {
+                    if heartbeat_flag.load(Ordering::Acquire)
+                        || heartbeat_closed.load(Ordering::Acquire)
+                        || heartbeat_paused.load(Ordering::Acquire)
+                    {
+                        return;
+                    }
+                    thread::sleep(Duration::from_millis(50));
+                }
+                let current_provider_id = heartbeat_provider_id
+                    .lock()
+                    .ok()
+                    .and_then(|value| value.clone());
+                let _ = post_webauthn_frames(
+                    &heartbeat_connection,
+                    current_provider_id.as_deref(),
+                    &[WebAuthnResponseFrame::Ping],
+                );
+            }
+        });
+
+        let stream_connection = connection.clone();
+        let frame_connection = connection.clone();
+        let stream_provider_id = Arc::clone(&provider_id);
+        let stream_cancellations = Arc::clone(&cancellations);
+        let stream_options = options.clone();
+        let stream_closed = Arc::clone(&closed);
+        let stream_paused = Arc::clone(&paused);
+        let stream_result = stream_webauthn_requests(
+            &stream_connection,
+            || {},
+            move |frame| match frame {
+                WebAuthnRequestFrame::Welcome { provider_id: next_provider_id } => {
+                    if let Ok(mut current) = stream_provider_id.lock() {
+                        *current = Some(next_provider_id.clone());
+                    }
+                    let _ = post_webauthn_frames(
+                        &frame_connection,
+                        Some(&next_provider_id),
+                        &[WebAuthnResponseFrame::Hello {
+                            computer_id: stream_options.computer_id.clone(),
+                            label: stream_options.label.clone(),
+                        }],
+                    );
+                }
+                WebAuthnRequestFrame::Cancel { request_id } => {
+                    let cancellation = stream_cancellations
+                        .lock()
+                        .ok()
+                        .and_then(|mut values| values.remove(&request_id));
+                    if let Some(cancellation) = cancellation {
+                        cancellation.cancel();
+                    }
+                }
+                WebAuthnRequestFrame::Ceremony {
+                    request_id,
+                    ceremony,
+                } => {
+                    let cancellation = WebAuthnSignCancellation::default();
+                    let duplicate = stream_cancellations
+                        .lock()
+                        .map(|mut values| {
+                            if values.contains_key(&request_id) {
+                                true
+                            } else {
+                                values.insert(request_id.clone(), cancellation.clone());
+                                false
+                            }
+                        })
+                        .unwrap_or(true);
+                    if duplicate {
+                        let current_provider_id = stream_provider_id
+                            .lock()
+                            .ok()
+                            .and_then(|value| value.clone());
+                        deliver_webauthn_frames_with_retry(
+                            &frame_connection,
+                            current_provider_id,
+                            &[WebAuthnResponseFrame::Error {
+                                request_id,
+                                error: WebAuthnSignerError {
+                                    name: "InvalidStateError".into(),
+                                    code: Some("duplicate_request".into()),
+                                    message: "WebAuthn request is already active".into(),
+                                },
+                            }],
+                            None,
+                        );
+                        return;
+                    }
+
+                    let ceremony_connection = frame_connection.clone();
+                    let ceremony_provider_id = Arc::clone(&stream_provider_id);
+                    let ceremony_cancellations = Arc::clone(&stream_cancellations);
+                    let ceremony_options = stream_options.clone();
+                    thread::spawn(move || {
+                        let consent = match (ceremony_options.request_consent)(&ceremony) {
+                            Ok(consent) => consent,
+                            Err(message) => {
+                                let current_provider_id = ceremony_provider_id
+                                    .lock()
+                                    .ok()
+                                    .and_then(|value| value.clone());
+                                deliver_webauthn_frames_with_retry(
+                                    &ceremony_connection,
+                                    current_provider_id,
+                                    &[
+                                        WebAuthnResponseFrame::Stage {
+                                            request_id: request_id.clone(),
+                                            stage: "grant",
+                                            outcome: "failed",
+                                        },
+                                        WebAuthnResponseFrame::Error {
+                                            request_id: request_id.clone(),
+                                            error: WebAuthnSignerError {
+                                                name: "NotAllowedError".into(),
+                                                code: Some("consent_failed".into()),
+                                                message,
+                                            },
+                                        },
+                                    ],
+                                    Some(&cancellation),
+                                );
+                                ceremony_cancellations
+                                    .lock()
+                                    .ok()
+                                    .map(|mut values| values.remove(&request_id));
+                                (ceremony_options.finish_consent)();
+                                return;
+                            }
+                        };
+
+                        if !consent.approved {
+                            let current_provider_id = ceremony_provider_id
+                                .lock()
+                                .ok()
+                                .and_then(|value| value.clone());
+                            deliver_webauthn_frames_with_retry(
+                                &ceremony_connection,
+                                current_provider_id,
+                                &[
+                                    WebAuthnResponseFrame::Stage {
+                                        request_id: request_id.clone(),
+                                        stage: "grant",
+                                        outcome: "declined",
+                                    },
+                                    WebAuthnResponseFrame::Error {
+                                        request_id: request_id.clone(),
+                                        error: WebAuthnSignerError {
+                                            name: "NotAllowedError".into(),
+                                            code: Some("consent_declined".into()),
+                                            message: "The security key request was declined on this computer".into(),
+                                        },
+                                    },
+                                ],
+                                Some(&cancellation),
+                            );
+                            ceremony_cancellations
+                                .lock()
+                                .ok()
+                                .map(|mut values| values.remove(&request_id));
+                            (ceremony_options.finish_consent)();
+                            return;
+                        }
+
+                        let current_provider_id = ceremony_provider_id
+                            .lock()
+                            .ok()
+                            .and_then(|value| value.clone());
+                        deliver_webauthn_frames_with_retry(
+                            &ceremony_connection,
+                            current_provider_id.clone(),
+                            &[WebAuthnResponseFrame::Stage {
+                                request_id: request_id.clone(),
+                                stage: "grant",
+                                outcome: "ok",
+                            }],
+                            Some(&cancellation),
+                        );
+
+                        if cancellation.is_cancelled() {
+                            ceremony_cancellations
+                                .lock()
+                                .ok()
+                                .map(|mut values| values.remove(&request_id));
+                            (ceremony_options.finish_consent)();
+                            return;
+                        }
+
+                        let status = Arc::clone(&ceremony_options.update_status);
+                        let pin = Arc::clone(&ceremony_options.request_pin);
+                        let result = ceremony_options.signer.sign_interactive(
+                            &ceremony,
+                            Some(&consent),
+                            &cancellation,
+                            move |message| status(message),
+                            move |request, prompt_id| pin(request, prompt_id),
+                        );
+                        if !cancellation.is_cancelled() {
+                            let frames = match result {
+                                WebAuthnSignerResult::Success { credential_json } => vec![
+                                    WebAuthnResponseFrame::Stage {
+                                        request_id: request_id.clone(),
+                                        stage: "sign",
+                                        outcome: "ok",
+                                    },
+                                    WebAuthnResponseFrame::Result {
+                                        request_id: request_id.clone(),
+                                        credential_json,
+                                    },
+                                ],
+                                WebAuthnSignerResult::Failed { error } => vec![
+                                    WebAuthnResponseFrame::Stage {
+                                        request_id: request_id.clone(),
+                                        stage: "sign",
+                                        outcome: "failed",
+                                    },
+                                    WebAuthnResponseFrame::Error {
+                                        request_id: request_id.clone(),
+                                        error,
+                                    },
+                                ],
+                            };
+                            deliver_webauthn_frames_with_retry(
+                                &ceremony_connection,
+                                current_provider_id,
+                                &frames,
+                                Some(&cancellation),
+                            );
+                        }
+                        ceremony_cancellations
+                            .lock()
+                            .ok()
+                            .map(|mut values| values.remove(&request_id));
+                        (ceremony_options.finish_consent)();
+                    });
+                }
+            },
+            move || {
+                !stream_closed.load(Ordering::Acquire)
+                    && !stream_paused.load(Ordering::Acquire)
+            },
+        );
+
+        heartbeat_stop.store(true, Ordering::Release);
+        let _ = heartbeat.join();
+        if let Ok(mut current) = provider_id.lock() {
+            *current = None;
+        }
+        cancel_all_webauthn(&cancellations);
+
+        if closed.load(Ordering::Acquire) || paused.load(Ordering::Acquire) {
+            reconnect_attempt = 0;
+            continue;
+        }
+        if stream_result.is_ok() {
+            reconnect_attempt = 0;
+        } else {
+            reconnect_attempt = reconnect_attempt.saturating_add(1);
+        }
+        sleep_webauthn_backoff(
+            &closed,
+            &paused,
+            webauthn_reconnect_delay(reconnect_attempt.max(1)),
+        );
     }
 }

@@ -116,6 +116,58 @@ mod unix {
         let _ = fs::remove_file(reply_path);
     }
 
+
+    #[test]
+    fn interactive_signer_preserves_numeric_native_window_handle() {
+        let request_path = std::env::temp_dir().join(format!(
+            "fabushi-webauthn-window-handle-{}.json",
+            Uuid::new_v4()
+        ));
+        let script = format!(
+            "#!/bin/sh\n\
+             IFS= read -r request\n\
+             printf '%s' \"$request\" > \"{}\"\n\
+             printf '%s' '{{\"ok\":true,\"credentialJson\":{{\"id\":\"credential-window\"}}}}'\n",
+            shell_path(&request_path),
+        );
+        let script_path = write_script(&script);
+        let signer = SpawnedWebAuthnSigner {
+            binary_path: script_path.clone(),
+        };
+        let ceremony = WebAuthnCeremony {
+            kind: "get".into(),
+            origin: "https://example.test".into(),
+            payload: json!({"challenge":"window-handle"}),
+        };
+        let approved = ApprovedWebAuthnConsent {
+            approved: true,
+            prompt_id: Some("prompt-window".into()),
+            window_handle: Some(4_294_967_297),
+        };
+        let cancellation = WebAuthnSignCancellation::default();
+        let result = signer.sign_interactive(
+            &ceremony,
+            Some(&approved),
+            &cancellation,
+            |_| {},
+            |_, _| None,
+        );
+        assert!(matches!(
+            result,
+            WebAuthnSignerResult::Success { credential_json }
+                if credential_json["id"] == "credential-window"
+        ));
+
+        let request: Value = serde_json::from_str(
+            &fs::read_to_string(&request_path).expect("read signer request"),
+        )
+        .expect("signer request json");
+        assert_eq!(request["windowHandle"].as_u64(), Some(4_294_967_297));
+
+        let _ = fs::remove_file(script_path);
+        let _ = fs::remove_file(request_path);
+    }
+
     #[test]
     fn interactive_signer_cancel_terminates_an_inflight_helper() {
         let script_path = write_script(

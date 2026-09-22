@@ -186,9 +186,9 @@ impl SpawnedWebAuthnSigner {
         };
 
         let mut request = serde_json::to_value(ceremony).unwrap_or_else(|_| json!({}));
-        if let Some(window_handle) = approved.and_then(|value| value.window_handle.as_ref()) {
+        if let Some(window_handle) = approved.and_then(|value| value.window_handle) {
             if let Some(object) = request.as_object_mut() {
-                object.insert("windowHandle".into(), Value::String(window_handle.clone()));
+                object.insert("windowHandle".into(), Value::from(window_handle));
             }
         }
         if writeln!(stdin, "{request}")
@@ -395,9 +395,9 @@ impl WebAuthnSigner for SpawnedWebAuthnSigner {
         };
 
         let mut request = serde_json::to_value(ceremony).unwrap_or_else(|_| json!({}));
-        if let Some(window_handle) = approved.and_then(|value| value.window_handle.as_ref()) {
+        if let Some(window_handle) = approved.and_then(|value| value.window_handle) {
             if let Some(object) = request.as_object_mut() {
-                object.insert("windowHandle".into(), Value::String(window_handle.clone()));
+                object.insert("windowHandle".into(), Value::from(window_handle));
             }
         }
 

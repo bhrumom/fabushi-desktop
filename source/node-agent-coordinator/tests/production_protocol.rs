@@ -37,6 +37,7 @@ mod unix {
         token: String,
         oauth_callback_port: u16,
         oauth_completion: Arc<Mutex<Option<Value>>>,
+        webauthn_batches: Arc<Mutex<Vec<Value>>>,
         stop: Arc<AtomicBool>,
         worker: Option<thread::JoinHandle<()>>,
     }
@@ -57,11 +58,13 @@ mod unix {
                 .port();
             drop(oauth_callback_probe);
             let oauth_completion = Arc::new(Mutex::new(None));
+            let webauthn_batches = Arc::new(Mutex::new(Vec::new()));
             let crash_path = data_dir.join("fake-host-crash");
             let stop = Arc::new(AtomicBool::new(false));
             let worker_stop = Arc::clone(&stop);
             let worker_token = token.clone();
             let worker_oauth_completion = Arc::clone(&oauth_completion);
+            let worker_webauthn_batches = Arc::clone(&webauthn_batches);
             let worker = thread::spawn(move || {
                 while !worker_stop.load(Ordering::Acquire) {
                     match listener.accept() {
@@ -70,6 +73,7 @@ mod unix {
                             let crash_path = crash_path.clone();
                             let handler_stop = Arc::clone(&worker_stop);
                             let oauth_completion = Arc::clone(&worker_oauth_completion);
+                            let webauthn_batches = Arc::clone(&worker_webauthn_batches);
                             thread::spawn(move || {
                                 let _ = serve_fake_gateway(
                                     stream,
@@ -78,6 +82,7 @@ mod unix {
                                     handler_stop.as_ref(),
                                     oauth_callback_port,
                                     oauth_completion.as_ref(),
+                                    webauthn_batches.as_ref(),
                                 );
                             });
                         }
@@ -98,6 +103,7 @@ mod unix {
                 token,
                 oauth_callback_port,
                 oauth_completion,
+                webauthn_batches,
                 stop,
                 worker: Some(worker),
             }
@@ -129,6 +135,32 @@ mod unix {
             }
             panic!("shipping Coordinator did not complete MCP OAuth");
         }
+
+        fn wait_for_webauthn_result(&self) -> Value {
+            for _ in 0..300 {
+                if let Some(value) = self
+                    .webauthn_batches
+                    .lock()
+                    .expect("WebAuthn batches lock")
+                    .iter()
+                    .find_map(|batch| {
+                        batch
+                            .get("frames")
+                            .and_then(Value::as_array)
+                            .and_then(|frames| {
+                                frames.iter().find_map(|frame| {
+                                    (frame.get("kind").and_then(Value::as_str) == Some("result"))
+                                        .then(|| frame.clone())
+                                })
+                            })
+                    })
+                {
+                    return value;
+                }
+                thread::sleep(Duration::from_millis(10));
+            }
+            panic!("shipping Coordinator did not deliver the WebAuthn result");
+        }
     }
 
     impl Drop for FakeGateway {
@@ -148,6 +180,7 @@ mod unix {
         stop: &AtomicBool,
         oauth_callback_port: u16,
         oauth_completion: &Mutex<Option<Value>>,
+        webauthn_batches: &Mutex<Vec<Value>>,
     ) -> io::Result<()> {
         stream.set_read_timeout(Some(Duration::from_secs(2)))?;
         stream.set_write_timeout(Some(Duration::from_secs(2)))?;
@@ -203,6 +236,48 @@ mod unix {
         }
 
         match (method.as_str(), path.as_str()) {
+            ("GET", "/webauthn/requests") => {
+                write!(
+                    stream,
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache\r\nConnection: keep-alive\r\n\r\n"
+                )?;
+                writeln!(
+                    stream,
+                    "data: {}\n",
+                    json!({
+                        "kind": "welcome",
+                        "providerId": "provider-production"
+                    })
+                )?;
+                writeln!(
+                    stream,
+                    "data: {}\n",
+                    json!({
+                        "kind": "ceremony",
+                        "requestId": "webauthn-production-1",
+                        "ceremony": {
+                            "kind": "get",
+                            "origin": "https://example.test",
+                            "optionsJson": "{\"rpId\":\"example.test\"}",
+                            "challenge": "production"
+                        }
+                    })
+                )?;
+                stream.flush()?;
+                while !stop.load(Ordering::Acquire) {
+                    thread::sleep(Duration::from_millis(10));
+                }
+                Ok(())
+            }
+            ("POST", "/webauthn/responses") => {
+                let payload = serde_json::from_slice::<Value>(&request[header_end..total])
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                webauthn_batches
+                    .lock()
+                    .map_err(|_| io::Error::other("WebAuthn batches lock poisoned"))?
+                    .push(payload);
+                write_fake_response(&mut stream, 200, r#"{"ok":true}"#)
+            }
             ("GET", "/events") => {
                 write!(
                     stream,
@@ -319,7 +394,7 @@ mod unix {
                 CoordinatorFrame::Request {
                     request_id,
                     method,
-                    args: _,
+                    args,
                 } => {
                     seen_control_methods.push(method.clone());
                     let outcome = match method.as_str() {
@@ -330,6 +405,35 @@ mod unix {
                             ),
                         },
                         "mintLocalExecDaemonCredential" => ReplyOutcome::Ok {
+                            value: Value::Null,
+                        },
+                        "requestWebAuthnConsent" => {
+                            assert_eq!(args["origin"], "https://example.test");
+                            assert_eq!(args["rpId"], "example.test");
+                            ReplyOutcome::Ok {
+                                value: json!({
+                                    "approved": true,
+                                    "promptId": "prompt-production",
+                                    "windowHandle": 4_294_967_297_u64
+                                }),
+                            }
+                        }
+                        "requestWebAuthnPin" => {
+                            assert_eq!(args["promptId"], "prompt-production");
+                            assert_eq!(args["invalid"], false);
+                            ReplyOutcome::Ok {
+                                value: json!({ "pin": "2468" }),
+                            }
+                        }
+                        "updateWebAuthnConsent" => ReplyOutcome::Ok {
+                            value: Value::Null,
+                        },
+                        "finishWebAuthnConsent" => ReplyOutcome::Ok {
+                            value: Value::Null,
+                        },
+                        "getRpcTraceWindowTraceparent"
+                        | "reportTransportStage"
+                        | "reportGatewayCommandSpan" => ReplyOutcome::Ok {
                             value: Value::Null,
                         },
                         _ => ReplyOutcome::Failed {
@@ -384,6 +488,34 @@ mod unix {
         response
     }
 
+
+    fn fake_webauthn_signer(data_dir: &Path) -> (PathBuf, PathBuf, PathBuf) {
+        let request_path = data_dir.join("webauthn-signer-request.json");
+        let pin_path = data_dir.join("webauthn-signer-pin.json");
+        let path = data_dir.join("fake-webauthn-signer.sh");
+        fs::write(
+            &path,
+            format!(
+                "#!/bin/sh\n\
+                 IFS= read -r request\n\
+                 printf '%s' \"$request\" > \"{}\"\n\
+                 printf '%s\\n' '[signer-event] {{\"kind\":\"pin-required\"}}' >&2\n\
+                 IFS= read -r pin\n\
+                 printf '%s' \"$pin\" > \"{}\"\n\
+                 printf '%s' '{{\"ok\":true,\"credentialJson\":{{\"id\":\"credential-production\"}}}}'\n",
+                request_path.display(),
+                pin_path.display(),
+            ),
+        )
+        .expect("write fake WebAuthn signer");
+        let mut permissions = fs::metadata(&path)
+            .expect("fake WebAuthn signer metadata")
+            .permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(&path, permissions).expect("make fake WebAuthn signer executable");
+        (path, request_path, pin_path)
+    }
+
     fn fake_host() -> PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -421,6 +553,8 @@ exit 17
         let host = fake_host();
         let data_dir = host.parent().expect("fake host parent").to_path_buf();
         let gateway = FakeGateway::start(&data_dir);
+        let (webauthn_signer, webauthn_request_path, webauthn_pin_path) =
+            fake_webauthn_signer(&data_dir);
         let coordinator = env!("CARGO_BIN_EXE_mahayana-node-agent-coordinator");
         let bootstrap = format!(
             "--bootstrap={}",
@@ -437,6 +571,7 @@ exit 17
             .env("MAHAYANA_APP_HOST_BIN", &host)
             .env("FABUSHI_TEST_GATEWAY_PORT", gateway.port().to_string())
             .env("FABUSHI_TEST_GATEWAY_TOKEN", gateway.token())
+            .env("SAND_WEBAUTHN_SIGNER_PATH", &webauthn_signer)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
@@ -609,6 +744,29 @@ exit 17
                 assert_eq!(value["accepted"], true);
             }
             other => panic!("unexpected sendPrompt frame: {other:?}"),
+        }
+
+        let webauthn_result = gateway.wait_for_webauthn_result();
+        assert_eq!(webauthn_result["credentialJson"]["id"], "credential-production");
+        let signer_request: Value = serde_json::from_str(
+            &fs::read_to_string(&webauthn_request_path).expect("read WebAuthn signer request"),
+        )
+        .expect("WebAuthn signer request JSON");
+        assert_eq!(signer_request["windowHandle"].as_u64(), Some(4_294_967_297));
+        let signer_pin: Value = serde_json::from_str(
+            &fs::read_to_string(&webauthn_pin_path).expect("read WebAuthn signer PIN reply"),
+        )
+        .expect("WebAuthn signer PIN JSON");
+        assert_eq!(signer_pin, json!({ "kind": "pin", "pin": "2468" }));
+        for method in [
+            "requestWebAuthnConsent",
+            "requestWebAuthnPin",
+            "finishWebAuthnConsent",
+        ] {
+            assert!(
+                seen_control_methods.iter().any(|seen| seen == method),
+                "shipping Coordinator did not wire production WebAuthn control method {method}"
+            );
         }
 
         assert!(

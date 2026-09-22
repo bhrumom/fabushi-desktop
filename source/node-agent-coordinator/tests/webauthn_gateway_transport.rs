@@ -2,7 +2,9 @@ use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpListener;
+use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 use std::thread;
+use std::time::{Duration, Instant};
 
 use mahayana_node_agent_coordinator::gateway::host_supervisor::GatewayConnection;
 use mahayana_node_agent_coordinator::webauthn::provider::{
@@ -164,4 +166,54 @@ fn webauthn_response_delivery_posts_provider_batch_and_auth() {
             { "kind": "ping" }
         ])
     );
+}
+
+
+#[test]
+fn webauthn_request_stream_observes_async_cancellation_without_waiting_for_stall_timeout() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind cancellable WebAuthn stream");
+    let port = listener.local_addr().expect("stream address").port();
+    let observed = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().expect("accept cancellable WebAuthn stream");
+        let mut reader = BufReader::new(stream.try_clone().expect("clone stream"));
+        loop {
+            let mut line = String::new();
+            reader.read_line(&mut line).expect("read request header");
+            if line.is_empty() || line == "\r\n" {
+                break;
+            }
+        }
+        write!(
+            stream,
+            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: keep-alive\r\n\r\n"
+        )
+        .expect("write SSE headers");
+        stream.flush().expect("flush SSE headers");
+        thread::sleep(Duration::from_secs(2));
+    });
+
+    let connection = GatewayConnection {
+        base_url: format!("http://127.0.0.1:{port}"),
+        headers: BTreeMap::new(),
+    };
+    let keep_running = Arc::new(AtomicBool::new(true));
+    let stop = Arc::clone(&keep_running);
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(350));
+        stop.store(false, Ordering::Release);
+    });
+
+    let started = Instant::now();
+    stream_webauthn_requests(
+        &connection,
+        || {},
+        |_| {},
+        || keep_running.load(Ordering::Acquire),
+    )
+    .expect("cancellation should close WebAuthn stream cleanly");
+    assert!(
+        started.elapsed() < Duration::from_secs(2),
+        "stream cancellation waited for the full stall timeout"
+    );
+    observed.join().expect("stream observer");
 }

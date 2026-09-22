@@ -27,6 +27,15 @@ use mahayana_node_agent_coordinator::oauth::mcp_oauth_forwarder::{
     McpOAuthForwarderState, McpOAuthPendingPayload, OAuthForwarderAction,
 };
 use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::McpOAuthLoopbackRegistry;
+use mahayana_node_agent_coordinator::webauthn::{
+    ApprovedWebAuthnConsent, WebAuthnCeremony,
+};
+use mahayana_node_agent_coordinator::webauthn::provider::{
+    ProductionWebAuthnRuntime, ProductionWebAuthnRuntimeOptions,
+};
+use mahayana_node_agent_coordinator::webauthn::signer::{
+    SpawnedWebAuthnSigner, resolve_web_authn_signer_path,
+};
 use mahayana_node_agent_coordinator::local_exec::supervisor::{
     ExpectedLocalExecProcessIdentity, LOCAL_EXEC_DAEMON_LIVENESS_INTERVAL_MS,
     LOCAL_EXEC_DAEMON_REFRESH_INTERVAL_MS, LocalExecControl, LocalExecDaemonRuntime,
@@ -42,10 +51,10 @@ use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::{env, fs};
 use std::io::{self, BufRead, BufReader, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{ChildStdin, Command, Stdio};
 use std::sync::{
-    Arc, Mutex,
+    Arc, Mutex, Weak,
     atomic::{AtomicBool, AtomicU64, Ordering},
     mpsc::{self, RecvTimeoutError, Sender},
 };
@@ -90,6 +99,7 @@ struct CoordinatorState {
     pending: Mutex<HashMap<String, PendingHostRequest>>,
     control_port: Mutex<ControlPortClient>,
     local_exec_commands: Mutex<Option<Sender<LocalExecRuntimeCommand>>>,
+    webauthn_runtime: Mutex<Option<ProductionWebAuthnRuntime>>,
     renderer_port: Mutex<RendererPortServer>,
     main_data_port: Mutex<RendererPortServer>,
     stdout_lock: Mutex<()>,
@@ -456,6 +466,183 @@ fn ensure_local_exec_runtime_started(state: &Arc<CoordinatorState>) {
         }
         runtime.dispose();
     });
+}
+
+fn coordinator_repo_root() -> PathBuf {
+    let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    if cwd.file_name().is_some_and(|name| name == "desktop") {
+        return cwd.parent().unwrap_or(Path::new(".")).to_path_buf();
+    }
+    cwd
+}
+
+fn coordinator_resources_path() -> PathBuf {
+    env::current_exe()
+        .ok()
+        .and_then(|path| path.parent().map(Path::to_path_buf))
+        .and_then(|bin| bin.parent().map(Path::to_path_buf))
+        .unwrap_or_default()
+}
+
+fn webauthn_relying_party_id(ceremony: &WebAuthnCeremony) -> String {
+    let options = ceremony
+        .payload
+        .get("optionsJson")
+        .and_then(Value::as_str)
+        .and_then(|raw| serde_json::from_str::<Value>(raw).ok());
+    options
+        .as_ref()
+        .and_then(|value| value.get("rpId").and_then(Value::as_str))
+        .or_else(|| {
+            options
+                .as_ref()
+                .and_then(|value| value.get("rp"))
+                .and_then(|rp| rp.get("id"))
+                .and_then(Value::as_str)
+        })
+        .filter(|value| !value.is_empty())
+        .unwrap_or(ceremony.origin.as_str())
+        .to_string()
+}
+
+fn webauthn_control_state(
+    state: &Weak<CoordinatorState>,
+) -> Result<Arc<CoordinatorState>, String> {
+    state
+        .upgrade()
+        .ok_or_else(|| "Coordinator closed during WebAuthn request".to_string())
+}
+
+fn ensure_webauthn_runtime_started(state: &Arc<CoordinatorState>) {
+    let mut slot = match state.webauthn_runtime.lock() {
+        Ok(slot) => slot,
+        Err(_) => return,
+    };
+    if slot.is_some() {
+        return;
+    }
+
+    let override_path = env::var_os("SAND_WEBAUTHN_SIGNER_PATH").map(PathBuf::from);
+    let signer_path = resolve_web_authn_signer_path(
+        state.bootstrap.process_config.is_packaged,
+        &coordinator_resources_path(),
+        &coordinator_repo_root(),
+        override_path.as_deref(),
+    );
+    let Some(signer_path) = signer_path else {
+        return;
+    };
+
+    let connection_state = Arc::downgrade(state);
+    let consent_state = Arc::downgrade(state);
+    let status_state = Arc::downgrade(state);
+    let pin_state = Arc::downgrade(state);
+    let finish_state = Arc::downgrade(state);
+
+    let options = ProductionWebAuthnRuntimeOptions {
+        signer: SpawnedWebAuthnSigner {
+            binary_path: signer_path,
+        },
+        resolve_connection: Arc::new(move || {
+            let state = webauthn_control_state(&connection_state)
+                .map_err(GatewayDispatchError::Transport)?;
+            let generation = state.host_generation.load(Ordering::SeqCst);
+            wait_for_gateway_connection(&state, generation)
+                .map_err(|error| GatewayDispatchError::Transport(error.to_string()))
+        }),
+        request_consent: Arc::new(move |ceremony| {
+            let state = webauthn_control_state(&consent_state)?;
+            let value = control_command(
+                &state,
+                "requestWebAuthnConsent",
+                json!({
+                    "origin": ceremony.origin,
+                    "rpId": webauthn_relying_party_id(ceremony),
+                }),
+            )
+            .map_err(|error| error.message)?;
+            let approved = value
+                .get("approved")
+                .and_then(Value::as_bool)
+                .ok_or_else(|| "requestWebAuthnConsent returned no approved flag".to_string())?;
+            if !approved {
+                return Ok(ApprovedWebAuthnConsent::declined());
+            }
+            Ok(ApprovedWebAuthnConsent {
+                approved: true,
+                prompt_id: value
+                    .get("promptId")
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.is_empty())
+                    .map(str::to_string),
+                window_handle: value
+                    .get("windowHandle")
+                    .and_then(Value::as_u64),
+            })
+        }),
+        update_status: Arc::new(move |status| {
+            let Ok(state) = webauthn_control_state(&status_state) else {
+                return;
+            };
+            let _ = control_command(
+                &state,
+                "updateWebAuthnConsent",
+                json!({ "status": status }),
+            );
+        }),
+        request_pin: Arc::new(move |request, prompt_id| {
+            let Ok(state) = webauthn_control_state(&pin_state) else {
+                return None;
+            };
+            let mut args = json!({
+                "promptId": prompt_id,
+                "invalid": request.invalid,
+            });
+            if let Some(retries) = request.retries {
+                args["retries"] = Value::from(retries);
+            }
+            control_command(&state, "requestWebAuthnPin", args)
+                .ok()
+                .and_then(|value| value.get("pin").and_then(Value::as_str).map(str::to_string))
+                .filter(|pin| !pin.is_empty())
+        }),
+        finish_consent: Arc::new(move || {
+            let Ok(state) = webauthn_control_state(&finish_state) else {
+                return;
+            };
+            let _ = control_command(&state, "finishWebAuthnConsent", json!({}));
+        }),
+        computer_id: None,
+        label: env::var("HOSTNAME")
+            .ok()
+            .or_else(|| env::var("COMPUTERNAME").ok()),
+    };
+    let mut runtime = ProductionWebAuthnRuntime::new(options);
+    runtime.start();
+    *slot = Some(runtime);
+}
+
+fn set_webauthn_paused(state: &Arc<CoordinatorState>, paused: bool) {
+    if let Ok(mut slot) = state.webauthn_runtime.lock() {
+        if let Some(runtime) = slot.as_mut() {
+            if paused {
+                runtime.stop();
+            } else {
+                runtime.start();
+            }
+        }
+    }
+}
+
+fn dispose_webauthn_runtime(state: &Arc<CoordinatorState>) {
+    let runtime = state
+        .webauthn_runtime
+        .lock()
+        .ok()
+        .and_then(|mut slot| slot.take());
+    if let Some(mut runtime) = runtime {
+        runtime.dispose();
+    }
 }
 
 fn coordinator_now_ms() -> u64 {
@@ -1368,10 +1555,11 @@ fn execute_actions(
                         }
                     );
                 let _ = state.write_frame(channel, &frame);
-                if serving_ready
-                    && !state.tool_replay_done.swap(true, Ordering::SeqCst)
-                {
-                    replay_tool_events(state);
+                if serving_ready {
+                    ensure_webauthn_runtime_started(state);
+                    if !state.tool_replay_done.swap(true, Ordering::SeqCst) {
+                        replay_tool_events(state);
+                    }
                 }
             }
             ServerAction::Dispatch {
@@ -1385,6 +1573,7 @@ fn execute_actions(
                         .and_then(Value::as_bool)
                         .unwrap_or(false);
                     signal_local_exec(state, LocalExecRuntimeCommand::SetPaused(paused));
+                    set_webauthn_paused(state, paused);
                     let paused = state
                         .gateway_client
                         .lock()
@@ -1496,6 +1685,7 @@ fn main() {
         pending: Mutex::new(HashMap::new()),
         control_port: Mutex::new(ControlPortClient::default()),
         local_exec_commands: Mutex::new(None),
+        webauthn_runtime: Mutex::new(None),
         renderer_port: Mutex::new(RendererPortServer::default()),
         main_data_port: Mutex::new(RendererPortServer::default()),
         stdout_lock: Mutex::new(()),
@@ -1583,6 +1773,7 @@ fn main() {
 
     state.closed.store(true, Ordering::SeqCst);
     signal_local_exec(&state, LocalExecRuntimeCommand::Dispose);
+    dispose_webauthn_runtime(&state);
     if let Ok(mut control) = state.control_port.lock() {
         let _ = control.handle_port_closed();
     }
