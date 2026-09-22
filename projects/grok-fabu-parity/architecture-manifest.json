@@ -9491,12 +9491,20 @@
       "targetPath": "source/host/src/box/box_mcp.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "0df5805699367c353b84db1d366dc564cf264908",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/box_mcp.rs",
+        "source/host/src/box/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_foundation_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port forwards MCP config with removeMissing=true, returns loaded server names, and maps Connect code 12/unimplemented to the Grok box compatibility error while preserving other transport failures."
     },
     {
       "referencePath": "source/host/box/box-monitor-layout.ts",
@@ -9552,12 +9560,20 @@
       "targetPath": "source/host/src/box/box_store_backend_policy.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "528e147cd8541a5ec5cc6768ac05adf698cd5a8d",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/box_store_backend_policy.rs",
+        "source/host/src/box/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_foundation_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port preserves absolute local-dir precedence, v2/agent-store selection, per-environment identity caching, process policy caching, and sync/copy-in enablement semantics."
     },
     {
       "referencePath": "source/host/box/box-transfer.ts",
@@ -9636,12 +9652,20 @@
       "targetPath": "source/host/src/box/protected_path_guard.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e8c4de0c48c869847327892188e2d6cfe8382de6",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/protected_path_guard.rs",
+        "source/host/src/box/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_foundation_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port rejects direct, relative, and realpath/symlink traversal into protected host-only roots while permitting workspace-local paths."
     },
     {
       "referencePath": "source/host/box/shared-desktop-sand-box.ts",
@@ -13851,12 +13875,20 @@
       "targetPath": "source/host/src/ports/box.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "04e86568e6997cd49c176cba25d30a7a6a8ff558",
       "architecturalRole": "host/ports",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/ports/box.rs",
+        "source/host/src/ports/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_foundation_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port preserves Grok box readiness classification/messages, no-monitor executor identity, primary/fork window constants, and environment/MCP capability errors."
     },
     {
       "referencePath": "source/host/ports/mcp-state-executor.ts",
