@@ -196,8 +196,12 @@ export default function AgentRootShell({
   })), [peers, runtime.controller, runtime.revision, runtime.transcriptStore]);
 
   const agentItems = useMemo(
-    () => projectAgentSidebarItems(peers, { ...requestSnapshot, ...operationSnapshot }, activityByPeer, product.sidebar.pinnedOrder),
-    [activityByPeer, operationSnapshot, peers, product.sidebar.pinnedOrder, requestSnapshot],
+    // Request ids describe submission/acceptance only. A peer becomes
+    // runtime-active only after the Coordinator binds a distinct canonical
+    // operation id; otherwise the renderer would paint "Working" before Host
+    // execution has actually started.
+    () => projectAgentSidebarItems(peers, operationSnapshot, activityByPeer, product.sidebar.pinnedOrder),
+    [activityByPeer, operationSnapshot, peers, product.sidebar.pinnedOrder],
   );
 
   useEffect(() => {
@@ -214,7 +218,7 @@ export default function AgentRootShell({
   const activeEntriesAll = activePeer ? runtime.transcriptStore.entries(activePeer.key) : [];
   const activeEntries = activeEntriesAll.slice(Math.max(0, activeEntriesAll.length - view.messageRenderCount));
   const activeOperationId = activePeer ? operationSnapshot[activePeer.key] ?? null : null;
-  const activeBusy = Boolean(activePeer && (activeOperationId || requestSnapshot[activePeer.key]));
+  const activeBusy = Boolean(activePeer && activeOperationId);
   const activePinned = activeItem?.pinned === true;
 
   const settings = useAgentSettingsController(product.directory, activeAgent);
