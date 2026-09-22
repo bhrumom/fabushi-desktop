@@ -2143,12 +2143,18 @@
       "targetPath": "frontend/src/recovered/features/conversation/workspace/sidebar-profile-action.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e4eae37911dadbd12a2fcd5a1786d57b5d43df0d",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/sidebar-profile-action.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer leaf parity with executable contract coverage; no dependency on legacy desktop/src or frontend/apps/web."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/sidebar-search-trigger.ts",
@@ -2335,12 +2341,18 @@
       "targetPath": "frontend/src/recovered/features/deep-links/overlay/model.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "4c8ac7036daa8956431e246bd4bce5d2de5c7609",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/deep-links/overlay/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer leaf parity with executable contract coverage; no dependency on legacy desktop/src or frontend/apps/web."
     },
     {
       "referencePath": "frontend/src/recovered/features/deep-links/overlay/view.tsx",
@@ -2395,12 +2407,18 @@
       "targetPath": "frontend/src/recovered/features/hidden-chats/overlay/model.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "49c3da9b0b03e2b1ee4a7c77370f3d5783c82a6f",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/hidden-chats/overlay/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer leaf parity with executable contract coverage; no dependency on legacy desktop/src or frontend/apps/web."
     },
     {
       "referencePath": "frontend/src/recovered/features/hidden-chats/overlay/mutation-controller.ts",
@@ -2575,12 +2593,18 @@
       "targetPath": "frontend/src/recovered/features/org-chart/workspace/network-trigger.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "b863e04a68da6fa1d1b7df3224cd4a67d7a1d233",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/org-chart/workspace/network-trigger.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer leaf parity with executable contract coverage; no dependency on legacy desktop/src or frontend/apps/web."
     },
     {
       "referencePath": "frontend/src/recovered/features/org-chart/workspace/view.tsx",
@@ -24537,5 +24561,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:25:12.523Z"
+  "generatedAt": "2026-09-22T07:26:40.502Z"
 }
