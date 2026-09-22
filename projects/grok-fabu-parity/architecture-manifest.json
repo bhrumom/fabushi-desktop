@@ -10004,7 +10004,7 @@
       "targetPath": "source/host/src/extensions/auth/auth_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "e6c7b858d2e782883191e254d642850daf50c6c2",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10012,7 +10012,8 @@
         "source/host/src/extensions/auth/auth_service.rs",
         "source/host/src/extensions/auth/credential_renewer.rs",
         "source/host/src/host_secret_store.rs",
-        "source/host/src/extensions/auth/extension.rs"
+        "source/host/src/extensions/auth/extension.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/extensions_auth_service_contract.rs",
@@ -10020,14 +10021,14 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/extensions_auth_extension_contract.rs"
       ],
-      "notes": "Rust Auth service owns the Grok credential store/renewer and is now consumed by a real Rust Auth extension runtime with renewal subscriptions, BrowserUa bridge, machine identity and user-name refresh. Final remains withheld until that extension is installed by the shipping Host bootstrap."
+      "notes": "Rust Auth service owns the Grok credential store/renewer and is consumed by the shipping Rust Host through HostAuthExtension. source/host/app starts and retains that production Auth extension for Host lifetime, so renewal, bearer access and machine identity execute on the shipping Host graph."
     },
     {
       "referencePath": "source/host/extensions/auth/credential-renewer.ts",
       "targetPath": "source/host/src/extensions/auth/credential_renewer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7eac889c75ec570c8e8c6a2a3e739d58ed4c62ab",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10035,13 +10036,14 @@
         "source/host/src/extensions/auth/credential_renewer.rs",
         "source/host/src/extensions/auth/mod.rs",
         "source/host/src/extensions/mod.rs",
-        "source/host/Cargo.toml"
+        "source/host/Cargo.toml",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/extensions_auth_credential_renewer_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust credential-renewer is now consumed by auth_service.rs with real backend/dev-token source selection, but final is still withheld until the Auth extension is wired into the shipping Host bootstrap; tests cover HTTP metadata, scheduling/backoff, immediate renewal, and Auth integration."
+      "notes": "Rust credential-renewer is consumed by auth_service.rs and the shipping Host-owned HostAuthExtension with real backend/dev-token source selection. source/host/app starts and retains the extension for Host lifetime; contract tests cover HTTP metadata, scheduling/backoff, immediate renewal and Auth integration."
     },
     {
       "referencePath": "source/host/extensions/auth/extension.ts",
