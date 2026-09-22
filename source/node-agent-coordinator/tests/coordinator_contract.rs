@@ -227,3 +227,42 @@ fn gateway_reachability_matches_http_network_and_base_url_semantics() {
     );
     assert_eq!(classify_base_url_kind(Some("not a url")), BaseUrlKind::Unknown);
 }
+
+
+#[test]
+fn box_vnc_proxy_maps_primary_and_fork_viewers_without_touching_foreign_urls() {
+    use mahayana_node_agent_coordinator::gateway::box_vnc_proxy::{
+        proxify_box_vnc_url, proxify_forever_box_status, VncProxyDescriptor,
+    };
+
+    let descriptor = VncProxyDescriptor {
+        primary_url: "https://proxy.example/sand-special-treatment-v1/vnc.html?primary=1".into(),
+        fork_base_url: "https://fork.example/base".into(),
+        network_token: "network-123".into(),
+    };
+    assert_eq!(
+        proxify_box_vnc_url("http://127.0.0.1:6080/vnc.html", &descriptor),
+        descriptor.primary_url
+    );
+    let fork = proxify_box_vnc_url(
+        "http://localhost:6081/vnc.html?path=websockify%3Ftoken%3Ddisplay-7",
+        &descriptor,
+    );
+    assert!(fork.starts_with("https://fork.example/base/sand-special-treatment-v1/vnc.html?"));
+    assert!(fork.contains("network_token=network-123"));
+    assert!(fork.contains("path=websockify%3Ftoken%3Ddisplay-7%26network_token%3Dnetwork-123"));
+    assert_eq!(
+        proxify_box_vnc_url("https://remote.example:6080/vnc.html", &descriptor),
+        "https://remote.example:6080/vnc.html"
+    );
+
+    let status = json!({
+        "vncUrl": "http://127.0.0.1:6080/vnc.html",
+        "windows": [{"vncUrl": "http://127.0.0.1:6081/vnc.html"}],
+        "state": "ready"
+    });
+    let projected = proxify_forever_box_status(&status, Some(&descriptor));
+    assert_eq!(projected["vncUrl"], descriptor.primary_url);
+    assert!(projected["windows"][0]["vncUrl"].as_str().unwrap().contains("network_token=network-123"));
+    assert_eq!(projected["state"], "ready");
+}
