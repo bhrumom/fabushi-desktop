@@ -245,6 +245,9 @@ fn production_box_environment_uses_connect_unary_control_service_from_host_graph
                 .any(|line| line.eq_ignore_ascii_case("Authorization: Bearer test-token"))
         );
         reply_ok(&mut ping_stream);
+        // Production ControlService calls use Connection: close and read to EOF.
+        // Close the Ping response before accepting the independent update request.
+        drop(ping_stream);
 
         let (mut update_stream, _) = listener.accept().expect("accept environment update");
         let update = read_request(&mut update_stream);
