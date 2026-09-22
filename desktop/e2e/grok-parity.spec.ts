@@ -766,6 +766,63 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       coordinator.dispose();
     });
 
+    await test.step('Agent runtime correlation fails closed without a canonical operation id', async () => {
+      const controller = new AgentWorkspaceController();
+      const transcripts = new AgentTranscriptStore();
+      const coordinator = new AgentRuntimeCoordinator(controller, transcripts);
+      coordinator.bindAgentPeers([{
+        agentId: 'strict',
+        peerKey: 'agent:strict',
+        conversationId: 'codex:agent:strict',
+      }]);
+
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:strict',
+        requestId: 'request:strict',
+        messageId: 'user:strict',
+        text: 'strict ownership',
+        createdAtMs: 30,
+      });
+
+      expect(coordinator.handle({
+        type: 'chat.delta',
+        timestamp: new Date(31).toISOString(),
+        delta: 'must-not-be-inferred',
+      })).toBe(false);
+      expect(coordinator.handle({
+        type: 'chat.message',
+        timestamp: new Date(32).toISOString(),
+        role: 'assistant',
+        text: 'must-not-be-inferred',
+      })).toBe(false);
+      expect(controller.requestForPeer('agent:strict')).toBe('request:strict');
+      expect(controller.operationForPeer('agent:strict')).toBeNull();
+      expect(transcripts.entries('agent:strict').map((entry) => entry.text).join(' ')).not.toContain('must-not-be-inferred');
+
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(33).toISOString(),
+        operationId: 'operation:strict',
+        turnId: 'turn:strict',
+        runId: 'run:strict',
+        conversationId: 'codex:agent:strict',
+        state: 'thinking',
+        sequence: 1,
+      })).toBe(true);
+      expect(controller.operationForPeer('agent:strict')).toBe('operation:strict');
+      expect(controller.requestForPeer('agent:strict')).toBeNull();
+
+      expect(coordinator.handle({
+        type: 'chat.delta',
+        timestamp: new Date(34).toISOString(),
+        operationId: 'operation:strict',
+        delta: 'canonical',
+      })).toBe(true);
+      coordinator.flushPendingDeltas();
+      expect(transcripts.entries('agent:strict').map((entry) => entry.text).join(' ')).toContain('canonical');
+      coordinator.dispose();
+    });
+
     await test.step('Agent command bridge resolves Rust conversation ids back to canonical peers under concurrent sends', async () => {
       const controller = new AgentWorkspaceController();
       const transcripts = new AgentTranscriptStore();
