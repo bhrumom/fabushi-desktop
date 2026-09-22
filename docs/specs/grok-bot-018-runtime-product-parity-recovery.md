@@ -155,7 +155,7 @@ The desired end state is therefore: **Grok Bot 0.18’s code architecture and pr
 - **CONN-006 — Server/tool inventory.** MCP servers/connectors must expose connection state, available tools, tool count, and per-tool enable/disable when supported.
 - **CONN-007 — Composer integration.** Enabled connectors/MCP references must be available from the composer through the reference-equivalent interaction, including mention/tool selection where applicable.
 - **CONN-008 — Runtime execution.** Selecting a connector must affect the actual Agent tool set and tool execution path; a UI-only catalog is not completion.
-- **CONN-009 — Mini Apps remain distinct.** Mini Apps/Marketplace/WebMCP remain supported but must not be mislabeled or used as the implementation of the Plugins/Connector surface.
+- **CONN-009 — Remove non-reference Mini Apps surface.** The current Fabushi Mini Apps/Marketplace/WebMCP desktop surface must be removed unless the frozen Grok baseline contains an explicit counterpart. It must not survive as a separate compatibility/product architecture.
 - **CONN-010 — Error and offline behavior.** Connector auth expiry, unavailable server, tool failure, lost network, and partial catalog failure must be recoverable without breaking ordinary chat.
 
 ### New / create interaction and visible parity
