@@ -141,6 +141,24 @@ if (fs.existsSync(coordinatorMainPath)) {
     }
   }
 }
+const coordinatorMainRow = (manifest.modules ?? []).find(
+  (row) => row.referencePath === 'source/node-agent-coordinator/main.ts',
+);
+if (coordinatorMainRow?.status === 'implemented' && fs.existsSync(coordinatorMainPath)) {
+  const coordinatorMain = fs.readFileSync(coordinatorMainPath, 'utf8');
+  for (const [label, patterns] of [
+    ['LocalExec supervisor', [/LocalExecDaemonRuntime/, /local_exec/]],
+    ['MCP OAuth forwarder', [/McpOAuthForwarder/, /mcp_oauth_forwarder/]],
+    ['WebAuthn provider', [/WebAuthnProvider/, /webauthn/]],
+    ['Inference router', [/InferenceRouter|CoordinatorInferenceRouter/, /inference_router/]],
+    ['client-side tool relay', [/ClientSideToolV2Relay/, /client_side_tool_v2_relay/]],
+  ]) {
+    if (!patterns.some((pattern) => pattern.test(coordinatorMain))) {
+      fail(`Coordinator main cannot be implemented before production composition wires ${label}`);
+    }
+  }
+}
+
 const sourceHostMainPath = path.join(root, 'source/host/app/src/main.rs');
 if (!fs.existsSync(sourceHostMainPath)) {
   fail('shipping Host binary must be owned by source/host/app/src/main.rs');
@@ -149,6 +167,19 @@ if (!fs.existsSync(sourceHostMainPath)) {
 const desktopPackagePath = path.join(root, 'desktop/package.json');
 if (fs.existsSync(desktopPackagePath)) {
   const desktopPackage = JSON.parse(fs.readFileSync(desktopPackagePath, 'utf8'));
+  if (strict) {
+    const shippingMain = String(desktopPackage.main ?? '');
+    if (/^electron\//.test(shippingMain)) {
+      fail(`final gate: desktop package main still points at legacy CJS Electron root: ${shippingMain}`);
+    }
+    const shippedFiles = Array.isArray(desktopPackage.build?.files)
+      ? desktopPackage.build.files.map(String)
+      : [];
+    if (shippedFiles.some((entry) => entry === 'electron/**' || entry.startsWith('electron/'))) {
+      fail('final gate: desktop package still ships the legacy desktop/electron runtime');
+    }
+  }
+
   for (const scriptName of ['build:host', 'build:host:ci']) {
     const script = String(desktopPackage.scripts?.[scriptName] ?? '');
     if (!script.includes('../source/host/app/Cargo.toml') || !script.includes('--bin mahayana-app-host')) {
