@@ -372,6 +372,56 @@ export class AgentCoordinatorClient {
     } as HostCommand);
   }
 
+  refreshMcpServers(requestId: string) {
+    return this.transport.execute({
+      type: 'mcp.refresh',
+      requestId,
+    } as HostCommand);
+  }
+
+  mcpOauthLogin(requestId: string, server: string) {
+    return this.transport.execute({
+      type: 'mcp.oauthLogin',
+      requestId,
+      server,
+    } as HostCommand);
+  }
+
+  mcpOauthLogout(requestId: string, server: string) {
+    return this.transport.execute({
+      type: 'mcp.oauthLogout',
+      requestId,
+      server,
+    } as HostCommand);
+  }
+
+  removeMcpServer(requestId: string, server: string) {
+    return this.transport.execute({
+      type: 'mcp.remove',
+      requestId,
+      server,
+    } as HostCommand);
+  }
+
+  setMcpCustomInstructions(requestId: string, server: string, instructions: string) {
+    return this.transport.execute({
+      type: 'mcp.setCustomInstructions',
+      requestId,
+      server,
+      instructions,
+    } as HostCommand);
+  }
+
+  setMcpToolDisabled(requestId: string, server: string, tool: string, disabled: boolean) {
+    return this.transport.execute({
+      type: 'mcp.setToolDisabled',
+      requestId,
+      server,
+      tool,
+      disabled,
+    } as HostCommand);
+  }
+
   async callMcpTool(
     requestId: string,
     server: string,
