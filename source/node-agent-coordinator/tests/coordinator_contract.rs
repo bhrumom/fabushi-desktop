@@ -411,3 +411,42 @@ fn client_side_tool_v2_relay_fences_epochs_sequences_and_replays_wire_payloads()
     assert!(relay.accept(event("epoch-b", 2, ToolMessageKind::Reset, "")).is_some());
     assert!(relay.replay().is_empty());
 }
+
+
+#[test]
+fn gateway_dispatch_preserves_command_unreachable_and_transport_failures() {
+    use mahayana_node_agent_coordinator::gateway::gateway_errors::SandGatewayCommandError;
+    use mahayana_node_agent_coordinator::gateway::gateway_reachability::ReachabilityOutcome;
+    use mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::{
+        GatewayDispatchError, GatewayRequestDispatcher, GATEWAY_COMMAND_FAILED,
+        GATEWAY_TRANSPORT_FAILED, GATEWAY_UNREACHABLE,
+    };
+
+    let mut dispatcher = GatewayRequestDispatcher::default();
+    dispatcher.register("command", Box::new(|_| {
+        Err(GatewayDispatchError::Command(SandGatewayCommandError::new("bad command")))
+    }));
+    dispatcher.register("dns", Box::new(|_| {
+        Err(GatewayDispatchError::Unreachable {
+            outcome: ReachabilityOutcome::Dns,
+            message: "dns failed".into(),
+        })
+    }));
+    dispatcher.register("transport", Box::new(|_| {
+        Err(GatewayDispatchError::Transport("socket closed".into()))
+    }));
+
+    let command = dispatcher.dispatch("command", json!({})).unwrap_err();
+    assert_eq!(command.code, GATEWAY_COMMAND_FAILED);
+    assert_eq!(command.transport_kind, None);
+
+    let dns = dispatcher.dispatch("dns", json!({})).unwrap_err();
+    assert_eq!(dns.code, GATEWAY_UNREACHABLE);
+    assert_eq!(dns.transport_kind.as_deref(), Some("dns"));
+
+    let transport = dispatcher.dispatch("transport", json!({})).unwrap_err();
+    assert_eq!(transport.code, GATEWAY_TRANSPORT_FAILED);
+
+    let serialized = serde_json::to_value(dns).unwrap();
+    assert_eq!(serialized["transportKind"], "dns");
+}
