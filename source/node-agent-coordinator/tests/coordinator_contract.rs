@@ -1783,3 +1783,89 @@ fn gateway_client_pause_and_dev_offline_gate_dispatch_without_closing_client() {
     client.start(3).unwrap();
     assert!(client.connection_for_dispatch().is_ok());
 }
+
+
+#[test]
+fn inference_router_serializes_each_agent_but_allows_parallel_agents() {
+    use std::sync::{Arc, mpsc};
+    use std::time::Duration;
+
+    use mahayana_node_agent_coordinator::inference_router::InferenceTaskQueue;
+
+    let queue = Arc::new(InferenceTaskQueue::default());
+    let (same_tx, same_rx) = mpsc::channel::<&'static str>();
+    let (release_tx, release_rx) = mpsc::channel::<()>();
+
+    queue
+        .enqueue("agent-a", {
+            let same_tx = same_tx.clone();
+            move || {
+                same_tx.send("first-start").expect("first start");
+                release_rx.recv().expect("release first");
+                same_tx.send("first-end").expect("first end");
+            }
+        })
+        .expect("first enqueue");
+    assert_eq!(
+        same_rx.recv_timeout(Duration::from_secs(1)).expect("first starts"),
+        "first-start"
+    );
+
+    queue
+        .enqueue("agent-a", {
+            let same_tx = same_tx.clone();
+            move || {
+                same_tx.send("second").expect("second");
+            }
+        })
+        .expect("second enqueue");
+    assert!(
+        same_rx.recv_timeout(Duration::from_millis(75)).is_err(),
+        "same-agent second task must wait for the first task"
+    );
+
+    let (other_tx, other_rx) = mpsc::channel::<&'static str>();
+    queue
+        .enqueue("agent-b", move || {
+            other_tx.send("parallel").expect("other agent");
+        })
+        .expect("parallel enqueue");
+    assert_eq!(
+        other_rx
+            .recv_timeout(Duration::from_secs(1))
+            .expect("different agent runs"),
+        "parallel"
+    );
+
+    release_tx.send(()).expect("release first");
+    assert_eq!(
+        same_rx.recv_timeout(Duration::from_secs(1)).expect("first ends"),
+        "first-end"
+    );
+    assert_eq!(
+        same_rx.recv_timeout(Duration::from_secs(1)).expect("second runs"),
+        "second"
+    );
+
+    queue
+        .enqueue("agent-a", || panic!("simulated provider failure"))
+        .expect("panic task enqueue");
+    queue
+        .enqueue("agent-a", {
+            let same_tx = same_tx.clone();
+            move || {
+                same_tx.send("after-failure").expect("after failure");
+            }
+        })
+        .expect("post-failure enqueue");
+    assert_eq!(
+        same_rx
+            .recv_timeout(Duration::from_secs(1))
+            .expect("queue survives provider failure"),
+        "after-failure"
+    );
+
+    assert_eq!(queue.worker_count(), 2);
+    queue.dispose();
+    assert_eq!(queue.worker_count(), 0);
+}

@@ -15953,7 +15953,7 @@
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial parity: Rust route selection, schema-v2 transcript persistence, bounded history, reaction state and turn-id recovery are implemented and contract-tested; provider streaming/tool-execution queue integration remains before final status."
+      "notes": "Partial parity advanced: Rust route selection, schema-v2 transcript persistence, bounded history, reaction state, turn-id recovery, and a production-safe per-agent task queue are implemented and contract-tested. The queue serializes each agent, permits parallel agents, survives a failed task, and supports disposal. Final status remains withheld until real provider streaming/routed MCP tool execution is connected through main.rs."
     },
     {
       "referencePath": "source/node-agent-coordinator/local-exec/daemon-files.ts",

@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::sync::{Mutex, mpsc};
+use std::thread;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -15,6 +18,86 @@ pub const INFERENCE_TRANSCRIPT_LIMIT: usize = 200;
 pub struct InferenceRoute {
     pub provider: String,
     pub host_slot: String,
+}
+
+type InferenceTask = Box<dyn FnOnce() + Send + 'static>;
+
+#[derive(Default)]
+pub struct InferenceTaskQueue {
+    workers: Mutex<HashMap<String, mpsc::Sender<InferenceTask>>>,
+}
+
+impl InferenceTaskQueue {
+    fn spawn_worker(agent_id: &str) -> Result<mpsc::Sender<InferenceTask>, Failure> {
+        let (sender, receiver) = mpsc::channel::<InferenceTask>();
+        thread::Builder::new()
+            .name(format!("inference-router-{agent_id}"))
+            .spawn(move || {
+                while let Ok(task) = receiver.recv() {
+                    let _ = catch_unwind(AssertUnwindSafe(task));
+                }
+            })
+            .map_err(|error| {
+                Failure::new(
+                    "INFERENCE_QUEUE_SPAWN_FAILED",
+                    format!("could not start inference queue worker: {error}"),
+                )
+            })?;
+        Ok(sender)
+    }
+
+    pub fn enqueue<F>(&self, agent_id: &str, task: F) -> Result<(), Failure>
+    where
+        F: FnOnce() + Send + 'static,
+    {
+        let agent_id = agent_id.trim();
+        if agent_id.is_empty() {
+            return Err(Failure::new(
+                "INFERENCE_QUEUE_AGENT_REQUIRED",
+                "local inference routing requires a non-empty agentId",
+            ));
+        }
+        let mut task: InferenceTask = Box::new(task);
+        let mut workers = self.workers.lock().map_err(|_| {
+            Failure::new(
+                "INFERENCE_QUEUE_LOCK_FAILED",
+                "inference queue lock poisoned",
+            )
+        })?;
+
+        if let Some(sender) = workers.get(agent_id) {
+            match sender.send(task) {
+                Ok(()) => return Ok(()),
+                Err(error) => {
+                    task = error.0;
+                    workers.remove(agent_id);
+                }
+            }
+        }
+
+        let sender = Self::spawn_worker(agent_id)?;
+        sender.send(task).map_err(|error| {
+            Failure::new(
+                "INFERENCE_QUEUE_DISCONNECTED",
+                format!("inference queue worker stopped before enqueue: {error}"),
+            )
+        })?;
+        workers.insert(agent_id.to_string(), sender);
+        Ok(())
+    }
+
+    pub fn worker_count(&self) -> usize {
+        self.workers
+            .lock()
+            .map(|workers| workers.len())
+            .unwrap_or_default()
+    }
+
+    pub fn dispose(&self) {
+        if let Ok(mut workers) = self.workers.lock() {
+            workers.clear();
+        }
+    }
 }
 
 #[derive(Debug, Default)]
