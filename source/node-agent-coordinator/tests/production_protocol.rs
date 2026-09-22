@@ -296,6 +296,58 @@ mod unix {
         stream.flush()
     }
 
+    fn recv_application_frame(
+        rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
+        stdin: &mut impl Write,
+        seen_control_methods: &mut Vec<String>,
+        timeout: Duration,
+    ) -> (CarrierChannel, CoordinatorFrame) {
+        loop {
+            let (channel, frame) = rx
+                .recv_timeout(timeout)
+                .expect("Coordinator frame")
+                .expect("valid Coordinator frame");
+            if channel != CarrierChannel::Control {
+                return (channel, frame);
+            }
+            match frame {
+                CoordinatorFrame::Request {
+                    request_id,
+                    method,
+                    args: _,
+                } => {
+                    seen_control_methods.push(method.clone());
+                    let outcome = match method.as_str() {
+                        "resolveGatewayConnection" => ReplyOutcome::Failed {
+                            failure: Failure::new(
+                                "SAND_CLIENT_PAUSE",
+                                "SAND_CLIENT_PAUSE: fake main keeps LocalExec paused",
+                            ),
+                        },
+                        "mintLocalExecDaemonCredential" => ReplyOutcome::Ok {
+                            value: Value::Null,
+                        },
+                        _ => ReplyOutcome::Failed {
+                            failure: Failure::new(
+                                "TEST_UNKNOWN_CONTROL_COMMAND",
+                                format!("fake main does not implement {method}"),
+                            ),
+                        },
+                    };
+                    send(
+                        stdin,
+                        CarrierChannel::Control,
+                        &CoordinatorFrame::Reply {
+                            request_id,
+                            outcome,
+                        },
+                    );
+                }
+                other => panic!("unexpected post-handshake control frame: {other:?}"),
+            }
+        }
+    }
+
     fn complete_live_oauth(port: u16) -> String {
         let mut stream = None;
         for _ in 0..200 {
@@ -412,6 +464,7 @@ exit 17
         assert_eq!(channel, CarrierChannel::Control);
         assert_eq!(hello, CoordinatorFrame::hello());
         send(&mut stdin, CarrierChannel::Control, &CoordinatorFrame::ready());
+        let mut seen_control_methods = Vec::new();
 
         for channel in [CarrierChannel::Data, CarrierChannel::MainData] {
             send(
@@ -425,9 +478,12 @@ exit 17
                 },
             );
             assert_eq!(
-                rx.recv_timeout(Duration::from_secs(2))
-                    .expect("ready frame")
-                    .expect("valid ready frame"),
+                recv_application_frame(
+                    &rx,
+                    &mut stdin,
+                    &mut seen_control_methods,
+                    Duration::from_secs(2),
+                ),
                 (channel, CoordinatorFrame::ready())
             );
         }
@@ -441,10 +497,12 @@ exit 17
                 args: json!({}),
             },
         );
-        let (channel, health) = rx
-            .recv_timeout(Duration::from_secs(2))
-            .expect("health reply")
-            .expect("valid health reply");
+        let (channel, health) = recv_application_frame(
+            &rx,
+            &mut stdin,
+            &mut seen_control_methods,
+            Duration::from_secs(2),
+        );
         assert_eq!(channel, CarrierChannel::Data);
         match health {
             CoordinatorFrame::Reply {
@@ -474,10 +532,12 @@ exit 17
         let mut saw_tool_event = false;
         let mut saw_echo_reply = false;
         for _ in 0..12 {
-            let (channel, frame) = rx
-                .recv_timeout(Duration::from_secs(2))
-                .expect("frame while serving echo")
-                .expect("valid coordinator frame");
+            let (channel, frame) = recv_application_frame(
+                &rx,
+                &mut stdin,
+                &mut seen_control_methods,
+                Duration::from_secs(2),
+            );
             assert_eq!(channel, CarrierChannel::Data);
             match frame {
                 CoordinatorFrame::Event { family, payload } if family == "runtime" => {
@@ -515,6 +575,18 @@ exit 17
         assert!(saw_runtime_event, "shipping Coordinator did not relay Host event");
         assert!(saw_tool_event, "shipping Coordinator did not relay client-side tool events");
         assert!(saw_echo_reply, "shipping Coordinator did not settle Host reply");
+        assert!(
+            seen_control_methods
+                .iter()
+                .any(|method| method == "resolveGatewayConnection"),
+            "shipping Coordinator did not start LocalExec through the control port"
+        );
+        assert!(
+            seen_control_methods
+                .iter()
+                .any(|method| method == "mintLocalExecDaemonCredential"),
+            "shipping Coordinator did not request the LocalExec credential through the control port"
+        );
 
         let oauth_response = complete_live_oauth(gateway.oauth_callback_port());
         assert!(
@@ -547,10 +619,12 @@ exit 17
         let mut saw_crash_reply = false;
         let mut saw_stopped = false;
         for _ in 0..10 {
-            let (channel, frame) = rx
-                .recv_timeout(Duration::from_secs(3))
-                .expect("frame while settling crashed Host")
-                .expect("valid coordinator frame");
+            let (channel, frame) = recv_application_frame(
+                &rx,
+                &mut stdin,
+                &mut seen_control_methods,
+                Duration::from_secs(3),
+            );
             assert_eq!(channel, CarrierChannel::Data);
             match frame {
                 CoordinatorFrame::Reply {
