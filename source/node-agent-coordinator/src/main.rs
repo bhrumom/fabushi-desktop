@@ -3,12 +3,17 @@ use mahayana_node_agent_coordinator::carrier::{
     parse_bootstrap_argument, CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
 };
 use mahayana_node_agent_coordinator::control_port_client::{ClientAction, ControlPortClient};
-use mahayana_node_agent_coordinator::gateway::gateway_client::CoordinatorGatewayClient;
+use mahayana_node_agent_coordinator::gateway::gateway_client::{
+    CoordinatorGatewayClient, stream_http_events,
+};
+use mahayana_node_agent_coordinator::gateway::gateway_event_families::coordinator_event_family_for_sse_channel;
 use mahayana_node_agent_coordinator::gateway::gateway_reachability::ReachabilityOutcome;
 use mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::{
-    dispatch_http_json, failure_for,
+    GatewayDispatchError, dispatch_http_json, failure_for,
 };
-use mahayana_node_agent_coordinator::gateway::host_supervisor::read_gateway_discovery;
+use mahayana_node_agent_coordinator::gateway::host_supervisor::{
+    GatewayConnection, read_gateway_discovery,
+};
 use mahayana_node_agent_coordinator::protocol::{
     CoordinatorFrame, Failure, ReplyOutcome, COORDINATOR_DISCONNECTED,
 };
@@ -60,6 +65,7 @@ struct CoordinatorState {
     lifecycle_sequence: AtomicU64,
     closed: AtomicBool,
     consecutive_crashes: AtomicU64,
+    gateway_events_live: AtomicBool,
 }
 
 impl CoordinatorState {
@@ -101,6 +107,22 @@ impl CoordinatorState {
             "generation": generation,
             "sequence": sequence,
             "recoverable": recoverable,
+        });
+        if let Some(detail) = detail {
+            event["reason"] = Value::String(detail.to_string());
+        }
+        self.post_event("runtime", event);
+    }
+
+
+    fn gateway_lifecycle(&self, lifecycle: &str, generation: u64, detail: Option<&str>) {
+        let sequence = self.lifecycle_sequence.fetch_add(1, Ordering::SeqCst) + 1;
+        let mut event = json!({
+            "type": "gateway.lifecycle",
+            "timestamp": Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true),
+            "lifecycle": lifecycle,
+            "generation": generation,
+            "sequence": sequence,
         });
         if let Some(detail) = detail {
             event["reason"] = Value::String(detail.to_string());
@@ -643,6 +665,7 @@ fn main() {
         lifecycle_sequence: AtomicU64::new(0),
         closed: AtomicBool::new(false),
         consecutive_crashes: AtomicU64::new(0),
+        gateway_events_live: AtomicBool::new(false),
     });
 
     if let Ok(control) = state.control_port.lock() {
