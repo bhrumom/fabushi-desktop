@@ -1404,6 +1404,67 @@ fn report_gateway_execution_async(
 }
 
 
+fn dispatch_gateway_value(
+    state: &Arc<CoordinatorState>,
+    method: &str,
+    args: Value,
+) -> Result<Value, Failure> {
+    let host_running = state
+        .host_stdin
+        .lock()
+        .map_err(|_| Failure::new("COORDINATOR_HOST_LOCK_FAILED", "Host stdin lock poisoned"))?
+        .is_some();
+    if !host_running {
+        spawn_host(Arc::clone(state)).map_err(|error| {
+            Failure::new(
+                "COORDINATOR_HOST_SPAWN_FAILED",
+                format!("could not start Mahayana Host: {error}"),
+            )
+        })?;
+    }
+
+    let generation = state.host_generation.load(Ordering::SeqCst);
+    refresh_gateway_trace_window_async(state);
+    let result = dispatch_gateway_command(
+        &state.gateway_command_policy,
+        method,
+        args,
+        coordinator_now_ms(),
+        |required_base_url| {
+            let connection = wait_for_gateway_connection(state, generation)
+                .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
+            if let Some(required_base_url) = required_base_url {
+                if connection.base_url != required_base_url {
+                    return Err(GatewayDispatchError::Transport(format!(
+                        "gateway endpoint changed from {required_base_url} to {}",
+                        connection.base_url
+                    )));
+                }
+            }
+            Ok(connection)
+        },
+    );
+
+    match result {
+        Ok(GatewayCommandExecution {
+            value,
+            command_spans,
+            transport_stages,
+        }) => {
+            report_gateway_execution_async(state, command_spans, transport_stages);
+            Ok(value)
+        }
+        Err(error) => {
+            if let GatewayDispatchError::Unreachable { outcome, .. } = &error {
+                if let Ok(mut gateway) = state.gateway_client.lock() {
+                    let _ = gateway.transport_down(*outcome);
+                }
+            }
+            Err(failure_for(&error))
+        }
+    }
+}
+
 fn configured_inference_provider(state: &CoordinatorState) -> InferenceProvider {
     configured_inference_provider_from_settings(&state.inference_settings_path)
         .unwrap_or(InferenceProvider::Cursor)
