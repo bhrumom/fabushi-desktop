@@ -67,6 +67,13 @@ impl ControlPortClient {
         }))
     }
 
+    pub fn post_event(&self, family: impl Into<String>, payload: Value) -> Option<ClientAction> {
+        (self.phase != ControlPortPhase::Settled).then(|| ClientAction::Post(CoordinatorFrame::Event {
+            family: family.into(),
+            payload,
+        }))
+    }
+
     pub fn handle_frame(&mut self, frame: CoordinatorFrame) -> Vec<ClientAction> {
         if self.phase == ControlPortPhase::Settled {
             return Vec::new();
@@ -93,8 +100,8 @@ impl ControlPortClient {
                     ReplyOutcome::Failed { failure } => vec![ClientAction::Reject { request_id, failure }],
                 }
             }
-            CoordinatorFrame::Event { family, payload } => vec![ClientAction::Event { family, payload }],
-            CoordinatorFrame::Request { .. }
+            CoordinatorFrame::Event { .. }
+            | CoordinatorFrame::Request { .. }
             | CoordinatorFrame::Cancel { .. }
             | CoordinatorFrame::Lifecycle { phase: LifecyclePhase::Hello, .. } => {
                 self.protocol_breach("server posted a client-direction frame")
