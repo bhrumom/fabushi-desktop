@@ -446,8 +446,8 @@ fn serve_routed_mcp_request<B: RoutedMcpBackend>(
         return Ok(());
     };
     let mut request_parts = request_line.split_whitespace();
-    let method = request_parts.next().unwrap_or("");
-    let path = request_parts.next().unwrap_or("");
+    let method = request_parts.next().unwrap_or("").to_string();
+    let path = request_parts.next().unwrap_or("").to_string();
     let content_length = lines
         .find_map(|line| {
             let (name, value) = line.split_once(':')?;
@@ -480,8 +480,8 @@ fn serve_routed_mcp_request<B: RoutedMcpBackend>(
     }
 
     let outcome = bridge.handle_http(
-        method,
-        path,
+        &method,
+        &path,
         &request[header_end..total_needed],
         backend,
     );

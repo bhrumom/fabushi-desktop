@@ -240,7 +240,18 @@ test("secrets IPC guard requires both trusted webContents and exact main frame",
 });
 
 test("idle relaunch signals preserve platform and power-monitor semantics", async () => {
-  assert.equal(await isScreensaverRunning("linux", ((_file, _args, _options, callback) => callback(null)) as any), false);
+  assert.equal(
+    await isScreensaverRunning(
+      "linux",
+      ((
+        _file: string,
+        _args: readonly string[],
+        _options: { timeout: number },
+        callback: (error: null) => void,
+      ) => callback(null)) as any,
+    ),
+    false,
+  );
   const signals = createIdleRelaunchSignals({
     powerMonitor: {
       getSystemIdleState: () => "locked",
