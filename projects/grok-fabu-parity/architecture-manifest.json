@@ -11782,11 +11782,14 @@
       "referenceBlobSha": "e8f2936275715d26b687be327ef35dbecb1ed785",
       "architecturalRole": "coordinator/inference-routing",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/inference_router.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Partial parity: Rust route selection, schema-v2 transcript persistence, bounded history, reaction state and turn-id recovery are implemented and contract-tested; provider streaming/tool-execution queue integration remains before final status."
     },
     {
       "referencePath": "source/node-agent-coordinator/local-exec/daemon-files.ts",
@@ -11846,11 +11849,14 @@
       "referenceBlobSha": "411f9bb6cc889cfdfb60faaed340ce1af4b833e3",
       "architecturalRole": "coordinator/oauth",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/oauth/mcp_oauth_callback_listener.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Partial parity: callback path/state/error/code classification and URL decoding are implemented fail-closed; live loopback HTTP dispatch/response-page adapter remains."
     },
     {
       "referencePath": "source/node-agent-coordinator/oauth/mcp-oauth-forwarder.ts",
@@ -11861,11 +11867,15 @@
       "referenceBlobSha": "2a549204786c8e9e66024a30a9b6e6b1cacad813",
       "architecturalRole": "coordinator/oauth",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/oauth/mcp_oauth_forwarder.rs",
+        "source/node-agent-coordinator/src/oauth.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Partial parity: pending TTL, server supersession, listener lifecycle, callback completion and expiry settlement are implemented; live completion/event subscriptions remain."
     },
     {
       "referencePath": "source/node-agent-coordinator/oauth/mcp-oauth-loopback-registry.ts",
@@ -11876,11 +11886,14 @@
       "referenceBlobSha": "fd1c5f8ef283723e9c84fb7548e962ab6d8ca7f0",
       "architecturalRole": "coordinator/oauth",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/oauth/mcp_oauth_loopback_registry.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Partial parity: localhost-only redirect validation and shared origin lease lifecycle are implemented; real socket binding/HTTP handler multiplexing remains."
     },
     {
       "referencePath": "source/node-agent-coordinator/renderer-port-server.ts",
@@ -11908,11 +11921,14 @@
       "referenceBlobSha": "3a63b97317ad688dc32886a036d0def2b8529897",
       "architecturalRole": "coordinator/mcp-relay",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/routed_mcp_bridge.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Partial parity: private endpoint JSON-RPC semantics, body limits, tool catalog/call routing and MCP result normalization are implemented; production loopback server lifecycle remains."
     },
     {
       "referencePath": "source/node-agent-coordinator/telemetry/transport-stage-recorder.ts",
@@ -11923,11 +11939,14 @@
       "referenceBlobSha": "28c37c2e6f691c1ad40561645cb8f5b252ad8b9a",
       "architecturalRole": "coordinator/telemetry",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/telemetry/transport_stage_recorder.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Partial parity: stage timing, one-shot settlement, SSE echo correlation TTL/cap and report in-flight limiting are implemented; production egress wiring remains."
     },
     {
       "referencePath": "source/node-agent-coordinator/webauthn/provider.ts",
@@ -11938,11 +11957,15 @@
       "referenceBlobSha": "1658c88421dd5db359964d4c372ba99a9a9f9947",
       "architecturalRole": "coordinator/webauthn",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/webauthn/provider.rs",
+        "source/node-agent-coordinator/src/webauthn.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Partial parity: welcome/hello, ceremony, consent, sign/result/error, cancel, heartbeat and transport reset state are implemented; live SSE reconnect and asynchronous cancellation remain."
     },
     {
       "referencePath": "source/node-agent-coordinator/webauthn/signer.ts",
@@ -11953,11 +11976,15 @@
       "referenceBlobSha": "b6eb2c8053dce15b5ac737ca7b276599f097b048",
       "architecturalRole": "coordinator/webauthn",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/webauthn/signer.rs",
+        "source/node-agent-coordinator/src/webauthn.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Partial parity: signer event parsing, status mapping, binary resolution and helper process result boundary are implemented; interactive PIN retry/cancel lifecycle remains."
     },
     {
       "referencePath": "source/packages/agent-analytics/commit-scoring/git-repo-utils.ts",
