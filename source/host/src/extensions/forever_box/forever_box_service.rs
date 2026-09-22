@@ -1,6 +1,6 @@
 use std::fmt;
 use std::sync::{
-    Arc,
+    Arc, Mutex,
     atomic::{AtomicBool, Ordering},
 };
 use std::thread;
@@ -12,6 +12,8 @@ use crate::r#box::box_env::BoxEnvironmentUpdate;
 use crate::r#box::generated_production::ProductionBoxResourceAccessor;
 use crate::r#box::loopback_sand_box::LoopbackSandBoxError;
 
+use super::disk_pressure::{DiskPressureWatch};
+use super::disk_pressure_guard::DiskPressureLevel;
 use super::host_box::{BoxStatus, HostBox};
 
 pub trait ForeverBoxLifecycle: Send + Sync {
@@ -66,6 +68,7 @@ pub struct ForeverBoxService {
     busy: AtomicBool,
     update_in_flight: AtomicBool,
     stopped: AtomicBool,
+    disk_pressure_watch: Mutex<Option<DiskPressureWatch>>,
 }
 
 impl ForeverBoxService {
@@ -85,6 +88,7 @@ impl ForeverBoxService {
             busy: AtomicBool::new(false),
             update_in_flight: AtomicBool::new(false),
             stopped: AtomicBool::new(false),
+            disk_pressure_watch: Mutex::new(None),
         }
     }
 
@@ -102,6 +106,21 @@ impl ForeverBoxService {
 
     pub fn box_(&self) -> &HostBox {
         &self.box_
+    }
+
+    pub fn install_disk_pressure_watch(&self, watch: DiskPressureWatch) {
+        if let Ok(mut slot) = self.disk_pressure_watch.lock() {
+            if let Some(previous) = slot.replace(watch) {
+                previous.dispose();
+            }
+        }
+    }
+
+    pub fn disk_pressure_level(&self) -> Option<DiskPressureLevel> {
+        self.disk_pressure_watch
+            .lock()
+            .ok()
+            .and_then(|watch| watch.as_ref().and_then(DiskPressureWatch::level))
     }
 
     pub fn is_auto_update_enabled(&self) -> bool {
@@ -235,6 +254,14 @@ impl ForeverBoxService {
 
     pub fn dispose(&self) {
         self.stopped.store(true, Ordering::Release);
+        if let Some(watch) = self
+            .disk_pressure_watch
+            .lock()
+            .ok()
+            .and_then(|mut slot| slot.take())
+        {
+            watch.dispose();
+        }
     }
 
     pub fn host_bundle_auto_update_enabled(&self) -> bool {

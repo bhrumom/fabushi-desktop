@@ -1,7 +1,19 @@
+pub mod disk_pressure;
+pub mod disk_pressure_guard;
 pub mod extension;
 pub mod forever_box_service;
 pub mod host_box;
 
+pub use disk_pressure::{
+    DiskPressureReminderEpisodes, DiskPressureWatch, DiskPressureWatchDeps,
+    start_disk_pressure_watch,
+};
+pub use disk_pressure_guard::{
+    DISK_PRESSURE_HEARTBEAT_MS, DISK_PRESSURE_THRESHOLDS, GIB, DiskPressureGuard,
+    DiskPressureGuardOptions, DiskPressureLevel, DiskPressureReport,
+    DiskPressureTrigger, DiskVolumeRoot, DiskVolumeSample, DiskVolumeSnapshot,
+    classify_disk_pressure, read_disk_volume_snapshots,
+};
 pub use extension::{
     ForeverBoxExtensionOptions, is_host_bundle_auto_update_enabled,
     is_image_auto_update_enabled, start_forever_box_extension,

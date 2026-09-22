@@ -1,12 +1,17 @@
 use std::collections::BTreeMap;
 use std::env;
 use std::sync::Arc;
+use std::time::Duration;
 
+use crate::host_diagnostics::{HostDiagnostic, report_host_diagnostic};
+use crate::host_paths::get_sand_root_dir;
 use crate::r#box::box_store_backend_policy::{
     is_box_store_copy_in_enabled, is_box_store_sync_enabled,
 };
 use crate::r#box::production::ProductionBoxEnvironment;
 
+use super::disk_pressure::{DiskPressureWatchDeps, start_disk_pressure_watch};
+use super::disk_pressure_guard::{DiskPressureLevel, DiskPressureTrigger};
 use super::forever_box_service::{ForeverBoxLifecycle, ForeverBoxService};
 use super::host_box::HostBox;
 
@@ -57,6 +62,51 @@ pub fn start_forever_box_extension(
         options.host_bundle_auto_update_enabled,
         options.is_in_box,
     ));
+
+    let report = Arc::new(|report: &super::disk_pressure_guard::DiskPressureReport| {
+        let level = match report.level {
+            DiskPressureLevel::Healthy => "healthy",
+            DiskPressureLevel::Soft => "soft",
+            DiskPressureLevel::Hard => "hard",
+        };
+        let trigger = match report.trigger {
+            DiskPressureTrigger::Transition => "transition",
+            DiskPressureTrigger::Heartbeat => "heartbeat",
+        };
+        let fields = serde_json::json!({
+            "volume": report.volume,
+            "deviceId": report.device_id,
+            "totalBytes": report.total_bytes,
+            "availableBytes": report.available_bytes,
+            "level": level,
+            "trigger": trigger,
+            "usedPercent": report.used_percent,
+        })
+        .as_object()
+        .cloned()
+        .unwrap_or_default();
+        report_host_diagnostic(&HostDiagnostic {
+            kind: "disk_pressure".into(),
+            fields,
+        });
+    });
+    let log = Arc::new(|message: &str| {
+        report_host_diagnostic(&HostDiagnostic {
+            kind: "disk_pressure_log".into(),
+            fields: serde_json::json!({ "message": message })
+                .as_object()
+                .cloned()
+                .unwrap_or_default(),
+        });
+    });
+    let watch = start_disk_pressure_watch(DiskPressureWatchDeps {
+        is_in_box: options.is_in_box,
+        root_dir: get_sand_root_dir(),
+        polling_interval: Duration::from_secs(60),
+        report,
+        log,
+    });
+    service.install_disk_pressure_watch(watch);
     service.start();
     service
 }
