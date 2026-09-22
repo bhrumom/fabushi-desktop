@@ -9525,12 +9525,22 @@
       "targetPath": "source/host/src/box/box_factory.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "49f951bb47311ef84663d9da5951a51b3673ec6c",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/box_factory.rs",
+        "source/host/src/box/loopback_sand_box.rs",
+        "source/host/src/box/shared_desktop_sand_box.rs",
+        "source/host/src/box/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/shared_desktop_box_contract.rs",
+        "source/host/tests/box_generated_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Final: Rust factory composes the loopback and shared-desktop production backends, preserves the primary no-monitor gate, delegates lifecycle/resource/file operations, and is used by ProductionBoxEnvironment."
     },
     {
       "referencePath": "source/host/box/box-file-transfer.ts",
@@ -9617,21 +9627,23 @@
       "targetPath": "source/host/src/box/box_shell_command.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "d3f4e80db17f99dc1b2e18d13e2037e1dbd3050b",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/box/box_shell_command.rs",
-        "source/host/src/box/mod.rs",
         "source/host/src/box/generated_production.rs",
-        "source/host/src/box/production.rs"
+        "source/host/src/box/production.rs",
+        "source/host/src/extensions/forever_box/forever_box_service.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_small_ports_contract.rs",
-        "source/host/tests/box_generated_production_contract.rs"
+        "source/host/tests/box_generated_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "The Grok shell builder is now consumed by the concrete production ExecService accessor for shell/window and file-transfer execution, with a bearer-authenticated Connect streaming contract test. Final status is still withheld until BoxLifecycle/shared-desktop production composition obtains this accessor from the shipping Host graph."
+      "notes": "Final: the frozen shell-argument builder is consumed by ProductionBoxResourceAccessor, which sends authenticated Connect ExecService shell requests; ProductionBoxEnvironment is owned by the shipping Host and is composed into ForeverBox together with the production BoxLifecycle service. The contract suite exercises the real loopback ExecService and the Runner -> ForeverBox -> shipping accessor path."
     },
     {
       "referencePath": "source/host/box/box-store-backend-policy.ts",
@@ -9712,61 +9724,78 @@
       "targetPath": "source/host/src/box/generated_production.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "fe192459204cc749dd2dd320b0ab0a6d25177d1d",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/box/generated_production.rs",
         "source/host/src/box/box_env.rs",
-        "source/host/app/src/main.rs",
         "source/host/src/box/box_remote_accessor.rs",
         "source/host/src/box/box_mcp.rs",
-        "source/host/src/box/production.rs"
+        "source/host/src/box/production.rs",
+        "source/host/src/box/box_factory.rs",
+        "source/host/src/box/loopback_sand_box.rs",
+        "source/host/src/box/shared_desktop_sand_box.rs",
+        "source/host/src/extensions/forever_box/forever_box_service.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
-        "source/host/tests/host_small_ports_contract.rs",
-        "source/host/app/src/main.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_generated_production_contract.rs",
         "source/host/tests/box_foundation_contract.rs",
-        "source/host/tests/box_generated_production_contract.rs"
+        "source/host/tests/shared_desktop_box_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust production bindings now implement authenticated ControlService Ping/UpdateEnvironmentVariables/LoadMcpServers and the Connect HTTP/1.1 server-streaming ExecService envelope protocol. A ProductionBoxResourceAccessor routes ShellArgs and WriteArgs through BoxRemoteExecManager, decodes stream-close/throw/heartbeat plus shell/write results, and is constructed from ProductionBoxEnvironment. A real loopback contract test exercises bearer-authenticated chunked Connect streaming for shell and write. Full Grok resource coverage (guarded read/computer overlays and remaining Exec bindings) plus BoxLifecycle/shared-desktop composition are still pending, so this module remains non-final."
+      "notes": "Final: Rust production bindings cover authenticated ControlService Ping/UpdateEnvironmentVariables/LoadMcpServers and Connect server-streaming ExecService. ProductionBoxResourceAccessor implements shell/write/read/computer-use plus generic generated resource bindings, protected-read and no-monitor overlays. ProductionBoxEnvironment -> ForeverBox -> Runner production composition consumes this accessor, and real loopback contracts exercise bearer-authenticated framing and resource execution."
     },
     {
       "referencePath": "source/host/box/loopback-sand-box.ts",
       "targetPath": "source/host/src/box/loopback_sand_box.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "812a64f62f09db628308bdd973c519dcd02b34f9",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/loopback_sand_box.rs",
+        "source/host/src/box/generated_production.rs",
+        "source/host/src/box/production.rs",
+        "source/host/src/box/box_factory.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_generated_production_contract.rs",
+        "source/host/tests/shared_desktop_box_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Final: the Rust loopback box owns authenticated daemon readiness, protected read access, environment/MCP/file transfer, remote ExecService resource access and primary-window behavior; ProductionBoxEnvironment constructs it for the shipping Host."
     },
     {
       "referencePath": "source/host/box/production.ts",
       "targetPath": "source/host/src/box/production.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "72ac90d93c406afc19033c66c8f3a3ea66112fb5",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/box/production.rs",
-        "source/host/src/box/box_env.rs",
-        "source/host/app/src/main.rs",
-        "source/host/src/box/generated_production.rs"
+        "source/host/src/box/generated_production.rs",
+        "source/host/src/box/box_factory.rs",
+        "source/host/src/box/loopback_sand_box.rs",
+        "source/host/src/box/shared_desktop_sand_box.rs",
+        "source/host/src/extensions/forever_box/extension.rs",
+        "source/host/src/extensions/forever_box/host_box.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
-        "source/host/tests/host_small_ports_contract.rs",
-        "source/host/app/src/main.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/box_generated_production_contract.rs"
+        "source/host/tests/box_generated_production_contract.rs",
+        "source/host/tests/shared_desktop_box_contract.rs",
+        "source/host/tests/extensions_forever_box_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "ProductionBoxEnvironment now constructs both the concrete authenticated ControlService client and the Connect server-streaming ExecService resource accessor; contract coverage proves shell and write traffic over the real loopback HTTP framing. The complete Grok ProductionBoxInner graph (readiness, guarded read/computer overlays, MCP/file transfer lifecycle, BoxLifecycle and shared-desktop composition) is still pending, so this module remains non-final."
+      "notes": "Final: ProductionBoxEnvironment reconstructs the production loopback/shared-desktop graph with authenticated readiness, environment/MCP/file-transfer operations and the generated ExecService accessor. The shipping Host creates it from process configuration and passes it into ForeverBox alongside the production BoxLifecycle service; shared-desktop and Runner resource contracts cover the production path."
     },
     {
       "referencePath": "source/host/box/protected-path-guard.ts",
@@ -9793,12 +9822,22 @@
       "targetPath": "source/host/src/box/shared_desktop_sand_box.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "31ff8a5dbcc99baf2ff233c4f050fb00248838da",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/shared_desktop_sand_box.rs",
+        "source/host/src/box/box_factory.rs",
+        "source/host/src/box/production.rs",
+        "source/host/src/box/generated_production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/shared_desktop_box_contract.rs",
+        "source/host/tests/box_generated_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Final: shared-desktop assignment parsing/allocation, primary/fork routing, no-monitor primary gate, persistence-facing behavior and resource/file/MCP delegation are implemented and selected by the production box factory."
     },
     {
       "referencePath": "source/host/cloud-agents/cloud-agent-images.ts",
@@ -11126,60 +11165,110 @@
       "targetPath": "source/host/src/extensions/forever_box/disk_pressure_guard.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "5b6459b873f2a38d9e627664e36f1b0e2be58226",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/forever_box/disk_pressure_guard.rs",
+        "source/host/src/extensions/forever_box/disk_pressure.rs",
+        "source/host/src/extensions/forever_box/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_forever_box_disk_pressure_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Final: Rust disk-pressure guard implements frozen thresholds, hysteresis/aggregate reporting and lifecycle disposal and is installed by the production ForeverBox extension."
     },
     {
       "referencePath": "source/host/extensions/forever-box/disk-pressure.ts",
       "targetPath": "source/host/src/extensions/forever_box/disk_pressure.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "0ac51baba0fad76c589dcfd8d5b28105f5bc2623",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/forever_box/disk_pressure.rs",
+        "source/host/src/extensions/forever_box/disk_pressure_guard.rs",
+        "source/host/src/extensions/forever_box/extension.rs",
+        "source/host/src/extensions/forever_box/forever_box_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_forever_box_disk_pressure_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Final: Rust pressure watch/reminder episode ledger and subscription lifecycle are wired into the production ForeverBox service and covered by transition/restart contracts."
     },
     {
       "referencePath": "source/host/extensions/forever-box/extension.ts",
       "targetPath": "source/host/src/extensions/forever_box/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "1cc6715776f88f96d3d1c1401c2dfda7842c5d07",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/forever_box/extension.rs",
+        "source/host/src/extensions/forever_box/forever_box_service.rs",
+        "source/host/src/extensions/forever_box/host_box.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_forever_box_contract.rs",
+        "source/host/tests/extensions_forever_box_disk_pressure_contract.rs",
+        "source/host/tests/box_generated_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Final: shipping Host calls start_forever_box_extension with ProductionBoxEnvironment and the production BoxLifecycle service; the extension starts image-update/disk-pressure behavior without a parallel runtime."
     },
     {
       "referencePath": "source/host/extensions/forever-box/forever-box-service.ts",
       "targetPath": "source/host/src/extensions/forever_box/forever_box_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "295712cd5455d6025f080d3b7a482938b3ea4815",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/forever_box/forever_box_service.rs",
+        "source/host/src/extensions/forever_box/host_box.rs",
+        "source/host/src/extensions/forever_box/extension.rs",
+        "source/host/src/extensions/box_lifecycle/production.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_forever_box_contract.rs",
+        "source/host/tests/box_generated_production_contract.rs",
+        "source/host/tests/extensions_box_lifecycle_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Final: ForeverBox owns HostBox plus the production lifecycle service, recreate/update/auto-update state, environment/MCP/resource access and disposal. The shipping Host constructs this exact graph and the Runner resource contract reaches the authenticated ExecService through it."
     },
     {
       "referencePath": "source/host/extensions/forever-box/host-box.ts",
       "targetPath": "source/host/src/extensions/forever_box/host_box.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "264ea2beeb336d7e12b08cee081c54cd158de026",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/forever_box/host_box.rs",
+        "source/host/src/box/production.rs",
+        "source/host/src/extensions/forever_box/forever_box_service.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_forever_box_contract.rs",
+        "source/host/tests/box_generated_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Final: HostBox wraps ProductionBoxEnvironment and projects readiness/status/window/resource/environment/MCP/file operations for ForeverBox in the shipping Host graph."
     },
     {
       "referencePath": "source/host/extensions/host-upgrade/extension.ts",
@@ -12128,12 +12217,21 @@
       "targetPath": "source/host/src/extensions/session/session_paths.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "525ff7fc65cf58c919264e42514fc5b8cb343c8c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/session_paths.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/session_paths_contract.rs",
+        "source/host/tests/session_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Final: Rust session path policy preserves the frozen database/root-slot/GC override and connector-secret layout contracts; ProductionSessionWorkers consumes get_agent_db_path in the shipping Host session worker graph."
     },
     {
       "referencePath": "source/host/extensions/session/session-profile-files.ts",
