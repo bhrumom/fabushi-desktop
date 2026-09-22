@@ -1,0 +1,321 @@
+use std::cell::RefCell;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
+use std::thread;
+use std::time::{Duration, Instant};
+
+use crate::extensions::inference::provider_session::{
+    ProviderSessionError, RoutedProviderCheckpoint,
+};
+
+use super::routed_provider_runtime::RoutedProviderCancellation;
+use super::{
+    AttemptCheckpoint, AttemptProgress, RetryDecision, StreamAttemptPolicy,
+    StreamFailureKind, TransientStreamError,
+};
+
+pub const DEFAULT_WATCHDOG_POLL_INTERVAL: Duration =
+    Duration::from_millis(10);
+
+pub trait RoutedProviderCheckpointStore: Send + Sync {
+    /// Persist the checkpoint before it becomes eligible for resume.
+    ///
+    /// The returned cursor must identify the durable checkpoint payload.
+    fn persist(
+        &self,
+        checkpoint: &RoutedProviderCheckpoint,
+    ) -> Result<String, ProviderSessionError>;
+}
+
+pub trait RoutedProviderAttemptExecutor {
+    fn run_attempt(
+        &mut self,
+        resume_from: Option<&RoutedProviderCheckpoint>,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+        on_checkpoint: &mut dyn FnMut(
+            &RoutedProviderCheckpoint,
+        ) -> Result<(), ProviderSessionError>,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<String, ProviderSessionError>;
+}
+
+#[derive(Debug, Clone)]
+pub struct ProductionTurnRunShellAdapter {
+    pub policy: StreamAttemptPolicy,
+    pub watchdog_poll_interval: Duration,
+}
+
+impl Default for ProductionTurnRunShellAdapter {
+    fn default() -> Self {
+        Self {
+            policy: StreamAttemptPolicy::default(),
+            watchdog_poll_interval: DEFAULT_WATCHDOG_POLL_INTERVAL,
+        }
+    }
+}
+
+impl ProductionTurnRunShellAdapter {
+    pub fn run(
+        &self,
+        cancellation: &RoutedProviderCancellation,
+        checkpoint_store: &dyn RoutedProviderCheckpointStore,
+        executor: &mut dyn RoutedProviderAttemptExecutor,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+    ) -> Result<String, ProviderSessionError> {
+        let mut attempt = 1_u32;
+        let mut resume_from: Option<RoutedProviderCheckpoint> = None;
+
+        loop {
+            if cancellation.is_cancelled() {
+                return Err(cancelled_error(cancellation));
+            }
+
+            let first_output_seen = Arc::new(AtomicBool::new(false));
+            let attempt_done = Arc::new(AtomicBool::new(false));
+            let watchdog_expired = Arc::new(AtomicBool::new(false));
+            let watchdog = spawn_first_output_watchdog(
+                self.policy.first_output_timeout,
+                self.watchdog_poll_interval,
+                Arc::clone(&first_output_seen),
+                Arc::clone(&attempt_done),
+                Arc::clone(&watchdog_expired),
+                cancellation.clone(),
+            );
+
+            let progress = RefCell::new(AttemptProgress::default());
+            let accepted_resume =
+                RefCell::new(resume_from.clone());
+            let seen_for_delta = Arc::clone(&first_output_seen);
+            let mut guarded_delta = |delta: &str, accumulated: &str| {
+                seen_for_delta.store(true, Ordering::Release);
+                let mut progress = progress.borrow_mut();
+                progress.record_output(delta.len());
+                // Output after a prior checkpoint invalidates that checkpoint
+                // for this attempt until a newer boundary is durably accepted.
+                progress.checkpoint = None;
+                drop(progress);
+                on_text_delta(delta, accumulated);
+            };
+            let mut accept_checkpoint =
+                |checkpoint: &RoutedProviderCheckpoint| {
+                    let cursor = checkpoint_store.persist(checkpoint)?;
+                    progress.borrow_mut().checkpoint =
+                        Some(AttemptCheckpoint::new(
+                            cursor,
+                            checkpoint.emitted_text_bytes(),
+                            checkpoint.tool_calls_completed(),
+                        ));
+                    *accepted_resume.borrow_mut() =
+                        Some(checkpoint.clone());
+                    Ok(())
+                };
+
+            let timed_out_for_attempt = Arc::clone(&watchdog_expired);
+            let should_cancel = || {
+                cancellation.is_cancelled()
+                    || timed_out_for_attempt.load(Ordering::Acquire)
+            };
+            let result = executor.run_attempt(
+                resume_from.as_ref(),
+                &mut guarded_delta,
+                &mut accept_checkpoint,
+                &should_cancel,
+            );
+
+            attempt_done.store(true, Ordering::Release);
+            if let Some(watchdog) = watchdog {
+                let _ = watchdog.join();
+            }
+
+            if cancellation.is_cancelled() {
+                return Err(cancelled_error(cancellation));
+            }
+
+            let timed_out =
+                watchdog_expired.load(Ordering::Acquire);
+            let progress = progress.into_inner();
+            resume_from = accepted_resume.into_inner();
+
+            match result {
+                Ok(value) if !timed_out => return Ok(value),
+                Ok(_) => {
+                    let error = ProviderSessionError::Transport(
+                        "Runner first-output watchdog timed out before provider output."
+                            .into(),
+                    );
+                    if !self.retry(
+                        &mut attempt,
+                        &progress,
+                        &error,
+                        true,
+                        cancellation,
+                        resume_from.as_ref(),
+                    )? {
+                        return Err(error);
+                    }
+                }
+                Err(error) => {
+                    let error = if timed_out {
+                        ProviderSessionError::Transport(
+                            "Runner first-output watchdog timed out before provider output."
+                                .into(),
+                        )
+                    } else {
+                        error
+                    };
+                    if !self.retry(
+                        &mut attempt,
+                        &progress,
+                        &error,
+                        timed_out,
+                        cancellation,
+                        resume_from.as_ref(),
+                    )? {
+                        return Err(error);
+                    }
+                }
+            }
+        }
+    }
+
+    fn retry(
+        &self,
+        attempt: &mut u32,
+        progress: &AttemptProgress,
+        error: &ProviderSessionError,
+        watchdog_expired: bool,
+        cancellation: &RoutedProviderCancellation,
+        accepted_resume: Option<&RoutedProviderCheckpoint>,
+    ) -> Result<bool, ProviderSessionError> {
+        let transient =
+            classify_provider_failure(error, watchdog_expired);
+        let decision = self
+            .policy
+            .retry_decision(*attempt, progress, &transient);
+        let delay = match decision {
+            RetryDecision::RetryAfter(delay) => delay,
+            RetryDecision::ResumeAfter {
+                delay,
+                checkpoint: _,
+            } => {
+                if accepted_resume.is_none() {
+                    return Ok(false);
+                }
+                delay
+            }
+            RetryDecision::Fail => return Ok(false),
+        };
+        sleep_with_cancellation(delay, cancellation)?;
+        *attempt = attempt.saturating_add(1);
+        Ok(true)
+    }
+}
+
+fn cancelled_error(
+    cancellation: &RoutedProviderCancellation,
+) -> ProviderSessionError {
+    ProviderSessionError::Cancelled(
+        cancellation
+            .reason()
+            .unwrap_or_else(|| "Runner provider request cancelled".into()),
+    )
+}
+
+fn spawn_first_output_watchdog(
+    timeout: Duration,
+    poll_interval: Duration,
+    first_output_seen: Arc<AtomicBool>,
+    attempt_done: Arc<AtomicBool>,
+    expired: Arc<AtomicBool>,
+    cancellation: RoutedProviderCancellation,
+) -> Option<thread::JoinHandle<()>> {
+    if timeout.is_zero() {
+        expired.store(true, Ordering::Release);
+        return None;
+    }
+    Some(thread::spawn(move || {
+        let started = Instant::now();
+        while !attempt_done.load(Ordering::Acquire)
+            && !first_output_seen.load(Ordering::Acquire)
+            && !cancellation.is_cancelled()
+        {
+            let elapsed = started.elapsed();
+            if elapsed >= timeout {
+                expired.store(true, Ordering::Release);
+                break;
+            }
+            let remaining = timeout.saturating_sub(elapsed);
+            let sleep_for = if poll_interval.is_zero() {
+                remaining.min(Duration::from_millis(1))
+            } else {
+                remaining.min(poll_interval)
+            };
+            thread::sleep(sleep_for);
+        }
+    }))
+}
+
+fn sleep_with_cancellation(
+    delay: Duration,
+    cancellation: &RoutedProviderCancellation,
+) -> Result<(), ProviderSessionError> {
+    let started = Instant::now();
+    while started.elapsed() < delay {
+        if cancellation.is_cancelled() {
+            return Err(cancelled_error(cancellation));
+        }
+        let remaining = delay.saturating_sub(started.elapsed());
+        thread::sleep(remaining.min(Duration::from_millis(10)));
+    }
+    Ok(())
+}
+
+fn classify_provider_failure(
+    error: &ProviderSessionError,
+    watchdog_expired: bool,
+) -> TransientStreamError {
+    if watchdog_expired {
+        return TransientStreamError {
+            kind: StreamFailureKind::Timeout,
+            message: error.to_string(),
+            retry_after_ms: None,
+        };
+    }
+
+    let message = error.to_string();
+    match error {
+        ProviderSessionError::Cancelled(_) => TransientStreamError {
+            kind: StreamFailureKind::Cancelled,
+            message,
+            retry_after_ms: None,
+        },
+        ProviderSessionError::Authentication(_) => TransientStreamError {
+            kind: StreamFailureKind::Authentication,
+            message,
+            retry_after_ms: None,
+        },
+        ProviderSessionError::Configuration(_) => TransientStreamError {
+            kind: StreamFailureKind::InvalidRequest,
+            message,
+            retry_after_ms: None,
+        },
+        ProviderSessionError::Protocol(_) | ProviderSessionError::Tool(_) => {
+            TransientStreamError {
+                kind: StreamFailureKind::Protocol,
+                message,
+                retry_after_ms: None,
+            }
+        }
+        ProviderSessionError::Transport(_) => {
+            let status = [408_u16, 429, 500, 502, 503, 504]
+                .into_iter()
+                .find(|status| {
+                    message.contains(&format!("({status}"))
+                        || message.contains(&format!(" {status} "))
+                });
+            TransientStreamError::classify(message, status, None)
+        }
+    }
+}

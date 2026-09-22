@@ -44,4 +44,5 @@ pub mod send_message_reminder_middleware;
 pub mod start_of_turn_ack_reminder_middleware;
 pub mod turn_shape;
 pub mod routed_provider_runtime;
+pub mod production_turn_run_shell_adapter;
 pub mod system_prompt_assembly;
