@@ -11246,7 +11246,7 @@
       "targetPath": "source/host/src/extensions/inference/codex_direct_responses.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "dacd5def6e49182321e2d0e0783d67ea7778b695",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -11259,7 +11259,7 @@
         "source/host/tests/inference_codex_direct_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust semantic core preserves streamed Codex Responses events, accumulated text deltas, usage accounting, function-call continuation, routed tool execution, unknown/invalid tool error projection, and bounded multi-step completion. It is now consumed by the production provider-session that the shipping Coordinator main composition calls, but status remains non-final until the current exact HEAD passes the independent Coordinator/Host CI evidence."
+      "notes": "Rust semantic core preserves streamed Codex Responses text deltas, terminal completion, accumulated usage, function-call continuation, routed tool execution, unknown/invalid tool error projection, bounded multi-step completion and Runner cancellation. It is consumed by the production provider-session on the shipping Host/Runner path. Exact implementation HEAD 7d7611adfa70356312beef2153d73701af4faf5c passed Rust desktop runtime run 35771914130, including independent Coordinator and full Host/Runner contract suites."
     },
     {
       "referencePath": "source/host/extensions/inference/cursor-session.ts",
@@ -11585,7 +11585,7 @@
       "targetPath": "source/host/src/extensions/managed_setup/team_rules.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "d7ce5a34f1815d15865385996694d8ec5129ae12",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -11594,9 +11594,10 @@
         "source/host/app/src/main.rs"
       ],
       "testEvidence": [
-        "source/host/tests/managed_setup_team_rules_contract.rs"
+        "source/host/tests/managed_setup_team_rules_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust managed-setup team-rules resolver now implements the frozen Dashboard GetTeams(activeOnly) -> direct-team GetTeamRules(activeOnly, teamId) flow, filters ALL/SAND rules, maps global/file-globbed rules, merges first-by-fullPath, preserves the prior snapshot on incomplete refresh, preloads at Host startup and refreshes after credential renewal. Shipping Runner request-context consumes the resolver. Status remains non-final until the exact implementation HEAD passes Rust runtime Actions."
+      "notes": "Rust managed-setup team-rules resolver implements the frozen Dashboard GetTeams(activeOnly) -> direct-team GetTeamRules(activeOnly, teamId) flow, filters ALL/SAND rules, maps global/file-globbed rules, merges first-by-fullPath, preserves the previous snapshot on incomplete refresh, preloads at Host startup and refreshes after credential renewal. Shipping Runner request-context consumes the resolver. Exact implementation HEAD 7d7611adfa70356312beef2153d73701af4faf5c passed Rust desktop runtime run 35771914130, including shipping Host check, independent Coordinator contract, full Host/Runner cargo tests and takeover/runtime ownership gates."
     },
     {
       "referencePath": "source/host/extensions/mcp/box-mcp-exec.ts",
@@ -13908,7 +13909,7 @@
       "targetPath": "source/host/src/host_request_context.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "a6d7991636ed7d2a565fc3887bf835ec2fa9df77",
       "architecturalRole": "host/host-request-context",
       "processOrPackage": "mahayana-host",
@@ -13927,7 +13928,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/managed_setup_team_rules_contract.rs"
       ],
-      "notes": "Rust Host request-context is consumed by the shipping routed-provider Runner and resolves live OS/shell/timezone/transcript folder, production Auth user full name, and production managed-setup team rules. The former None rules placeholder has been removed. Status remains non-final until the exact implementation HEAD passes Rust runtime Actions."
+      "notes": "Rust Host request-context is consumed by the shipping routed-provider Runner and resolves live OS/shell/timezone/transcript folder, production Auth user full name, and production managed-setup team rules; the former None rules placeholder is removed. Exact implementation HEAD 7d7611adfa70356312beef2153d73701af4faf5c passed Rust desktop runtime run 35771914130, including shipping Host check, independent Coordinator contract and full Host/Runner cargo tests."
     },
     {
       "referencePath": "source/host/host-roster-bookkeeping.ts",
