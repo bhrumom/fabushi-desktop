@@ -519,3 +519,44 @@ fn gateway_dns_diagnostics_match_cursorvm_target_and_failure_matrix() {
         DnsProbeResult::Resolved,
     ).is_some());
 }
+
+
+#[test]
+fn gateway_host_supervisor_rejects_stale_connection_resolution_after_invalidation() {
+    use mahayana_node_agent_coordinator::gateway::host_supervisor::{
+        GatewayConnection, GatewayHealthDecision, GatewayHostSupervisor,
+    };
+    use std::collections::BTreeMap;
+
+    let mut supervisor = GatewayHostSupervisor::new(5_000);
+    let stale = supervisor.begin_connection_attempt();
+    supervisor.invalidate();
+    let fresh = supervisor.begin_connection_attempt();
+    assert_ne!(stale.health_epoch, fresh.health_epoch);
+
+    assert!(supervisor
+        .settle_connection_attempt(
+            stale,
+            GatewayConnection {
+                base_url: "https://stale.example".into(),
+                headers: BTreeMap::new(),
+            },
+        )
+        .is_err());
+
+    supervisor
+        .settle_connection_attempt(
+            fresh,
+            GatewayConnection {
+                base_url: "https://fresh.example".into(),
+                headers: BTreeMap::new(),
+            },
+        )
+        .expect("fresh connection wins");
+    assert_eq!(supervisor.connection().unwrap().base_url, "https://fresh.example");
+    assert_eq!(supervisor.decision(0), GatewayHealthDecision::Probe);
+    supervisor.record_health(100, true);
+    assert_eq!(supervisor.decision(101), GatewayHealthDecision::UseCached);
+    supervisor.mark_transport_live(true);
+    assert_eq!(supervisor.decision(10_000), GatewayHealthDecision::UseCached);
+}
