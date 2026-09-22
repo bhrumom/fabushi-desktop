@@ -1,21 +1,23 @@
 use std::env;
 
-use super::box_env::{
-    BoxEnvironmentUpdate, apply_box_environment_via_transport,
-};
+use super::box_env::BoxEnvironmentUpdate;
+use super::box_factory::create_sand_box;
 use super::box_remote_accessor::BoxEndpoint;
 use super::generated_production::{
-    ProductionBoxResourceAccessor, ProductionBoxTransport, ProductionBoxTransportError,
-    create_production_box_control_client, create_production_box_resource_accessor,
+    ProductionBoxResourceAccessor, ProductionBoxTransport,
+    create_production_box_resource_accessor,
+};
+use super::loopback_sand_box::{
+    DEFAULT_AUTH_TOKEN, EXEC_DAEMON_PORT, LoopbackReady, LoopbackSandBox,
+    LoopbackSandBoxError, LoopbackSandBoxOptions,
 };
 
-pub const EXEC_DAEMON_PORT: u16 = 1337;
-pub const DEFAULT_AUTH_TOKEN: &str = "local";
 pub const BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD: &str = "box.applyEnvironment";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProductionBoxEnvironment {
     transport: ProductionBoxTransport,
+    loopback: LoopbackSandBox,
 }
 
 impl ProductionBoxEnvironment {
@@ -24,9 +26,17 @@ impl ProductionBoxEnvironment {
         port: u16,
         auth_token: impl Into<String>,
     ) -> Self {
-        let endpoint = BoxEndpoint::new(host, port, auth_token);
+        let host = host.into();
+        let auth_token = auth_token.into();
+        let endpoint = BoxEndpoint::new(host.clone(), port, auth_token.clone());
         Self {
             transport: ProductionBoxTransport::from_endpoint(&endpoint),
+            loopback: create_sand_box(LoopbackSandBoxOptions {
+                host,
+                auth_token,
+                exec_daemon_port: port,
+                ..LoopbackSandBoxOptions::default()
+            }),
         }
     }
 
@@ -50,19 +60,32 @@ impl ProductionBoxEnvironment {
         &self.transport
     }
 
+    pub fn loopback(&self) -> &LoopbackSandBox {
+        &self.loopback
+    }
+
     pub fn remote_resource_accessor(&self) -> ProductionBoxResourceAccessor {
         create_production_box_resource_accessor(&self.transport)
+    }
+
+    pub fn ensure_ready(
+        &self,
+        agent_id: &str,
+    ) -> Result<LoopbackReady, LoopbackSandBoxError> {
+        self.loopback.ensure_ready(&(), agent_id)
+    }
+
+    pub fn load_mcp_servers(
+        &self,
+        config_json: &str,
+    ) -> Result<Vec<String>, LoopbackSandBoxError> {
+        self.loopback.load_mcp_servers(&(), config_json)
     }
 
     pub fn apply_environment(
         &self,
         update: &BoxEnvironmentUpdate,
-    ) -> Result<(), ProductionBoxTransportError> {
-        apply_box_environment_via_transport(
-            &(),
-            &self.transport,
-            update,
-            create_production_box_control_client,
-        )
+    ) -> Result<(), LoopbackSandBoxError> {
+        self.loopback.apply_environment(&(), update)
     }
 }

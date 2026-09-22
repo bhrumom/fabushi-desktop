@@ -13,7 +13,10 @@ use mahayana_host_runtime::r#box::box_windows::{
     ShellAccessor, ShellExecutionOutcome,
 };
 use mahayana_host_runtime::r#box::generated_production::{
-    CONNECT_STREAM_CONTENT_TYPE, EXEC_PATH,
+    CONNECT_STREAM_CONTENT_TYPE, EXEC_PATH, PING_PATH,
+};
+use mahayana_host_runtime::r#box::box_factory::{
+    format_sand_box_startup_summary, should_apply_shared_desktop,
 };
 use mahayana_host_runtime::r#box::production::ProductionBoxEnvironment;
 
@@ -206,4 +209,83 @@ fn production_exec_service_streams_shell_and_write_through_shipping_accessor() {
     assert_eq!(write, WriteExecResult::Success);
 
     server.join().expect("fake ExecService thread");
+}
+
+
+fn serve_unary_success(listener: &TcpListener, expected_path: &str) {
+    let (mut stream, _) = listener.accept().expect("accept ControlService request");
+    let request = read_request(&mut stream);
+    let header_end = request
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
+        .expect("header end");
+    let headers = std::str::from_utf8(&request[..header_end]).expect("headers");
+    assert!(headers.starts_with(&format!("POST {expected_path} HTTP/1.1\r\n")));
+    assert!(
+        headers
+            .lines()
+            .any(|line| line.eq_ignore_ascii_case("Authorization: Bearer secret"))
+    );
+    write!(
+        stream,
+        "HTTP/1.1 200 OK\r\nContent-Type: application/proto\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    )
+    .expect("write unary response");
+    stream.flush().expect("flush unary response");
+}
+
+#[test]
+fn production_loopback_factory_gates_exec_accessor_on_authenticated_readiness() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind fake box daemon");
+    let port = listener.local_addr().expect("local address").port();
+    let server = thread::spawn(move || {
+        serve_unary_success(&listener, PING_PATH);
+        serve_exec_response(
+            &listener,
+            b"echo loopback-production",
+            shell_success_element("loopback-ready"),
+        );
+    });
+
+    let environment = ProductionBoxEnvironment::new("127.0.0.1", port, "secret");
+    assert_eq!(environment.loopback().describe(), "loopback");
+    let mut ready = environment
+        .ensure_ready("agent-production")
+        .expect("authenticated loopback readiness");
+    assert_eq!(
+        ready.vnc_url,
+        "http://127.0.0.1:6080/vnc.html"
+    );
+    assert_eq!(
+        ready.terminals_folder,
+        "/root/.cursor/projects/workspace/terminals"
+    );
+
+    let shell = ready
+        .remote_accessor
+        .execute(
+            &(),
+            build_host_shell_args(HostShellArgsInput {
+                command: "echo loopback-production".into(),
+                name: "echo".into(),
+                working_directory: "/workspace".into(),
+                tool_call_id: "loopback-production-contract".into(),
+            }),
+        )
+        .expect("loopback production shell");
+    assert_eq!(
+        shell.result,
+        ShellExecutionOutcome::Success {
+            exit_code: 0,
+            stderr: "loopback-ready".into(),
+        }
+    );
+
+    assert!(should_apply_shared_desktop(environment.loopback().max_windows()));
+    assert_eq!(
+        format_sand_box_startup_summary(true, true),
+        "[sand-host] agent box backend: loopback (in-box); image: host's own container; auto-update: on; build: packaged"
+    );
+
+    server.join().expect("fake box daemon thread");
 }
