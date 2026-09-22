@@ -10049,14 +10049,15 @@
       "behavioralEvidence": [
         "source/host/src/extensions/auth/extension.rs",
         "source/host/src/extensions/auth/auth_service.rs",
-        "source/host/src/extensions/auth/user_full_name_service.rs"
+        "source/host/src/extensions/auth/user_full_name_service.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/extensions_auth_extension_contract.rs",
         "source/host/tests/extensions_auth_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Auth extension composition now owns the production HostAuthService lifecycle, renewal subscription, BrowserUa Auth API bridge, machine-id/access-token surface, and user-full-name resolver refresh. It remains non-final until the production Dashboard GetMe adapter and shipping Host extension/bootstrap graph consume this runtime."
+      "notes": "Shipping source/host/app now starts and retains the Rust Auth extension for the lifetime of the Host process, so credential renewal, bearer access and machine identity are production-owned. User-full-name fetching remains fail-closed until the Dashboard GetMe transport is migrated; therefore this entry is not final."
     },
     {
       "referencePath": "source/host/extensions/auth/user-full-name-service.ts",
@@ -10255,14 +10256,15 @@
         "source/host/src/extensions/box_lifecycle/mod.rs",
         "source/host/src/extensions/registry.rs",
         "source/host/src/extensions/box_lifecycle/production.rs",
-        "source/host/src/extensions/auth/extension.rs"
+        "source/host/src/extensions/auth/extension.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/extensions_box_lifecycle_contract.rs",
         "source/host/tests/extensions_box_lifecycle_production_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "BoxLifecycle now has a concrete Rust GrokBotService production client: the frozen GetSandBoxRunState/RecreateSandBox protobuf contracts, bearer Auth extension integration, machine-bound Cursor checksum, Sand client metadata, request IDs, privacy-safe ghost fallback, and real HTTP/1.1 Connect unary transport are contract-tested. Final remains withheld until the shipping Host bootstrap starts this extension with the production Auth runtime and the shared privacy/ghost-mode resolver replaces the explicit fail-closed fallback."
+      "notes": "Shipping source/host/app now starts and retains BoxLifecycle with the production Auth extension and concrete GrokBotService client. RPC/protobuf/auth/checksum behavior is contract-tested. Final remains withheld until the shared privacy/ghost-mode resolver replaces the explicit fail-closed fallback and exact-HEAD CI succeeds."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/agent-store-sand-files.ts",
@@ -14012,7 +14014,9 @@
         "source/host/app/src/main.rs",
         "desktop/package.json",
         "desktop/scripts/stage-host.mjs",
-        "source/host/src/runner/routed_provider_runtime.rs"
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/extensions/auth/extension.rs",
+        "source/host/src/extensions/box_lifecycle/production.rs"
       ],
       "testEvidence": [
         ".github/workflows/rust-desktop-runtime.yml"

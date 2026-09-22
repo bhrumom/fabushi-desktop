@@ -6,6 +6,15 @@
 //! modules are moved behind this process boundary. Electron must never launch
 //! the legacy third_party desktop Host binary directly.
 
+use mahayana_host_runtime::extensions::auth::auth_service::HostAuthServiceOptions;
+use mahayana_host_runtime::extensions::auth::extension::{
+    HostAuthExtension, start_host_auth_extension_with_options,
+};
+use mahayana_host_runtime::extensions::box_lifecycle::box_lifecycle_service::BoxLifecycleService;
+use mahayana_host_runtime::extensions::box_lifecycle::extension::start_box_lifecycle_extension;
+use mahayana_host_runtime::extensions::box_lifecycle::production::{
+    ProductionBoxLifecycleClient, ProductionBoxLifecycleClientFactory,
+};
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
 };
@@ -43,6 +52,38 @@ fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     // session.  User-selected workspace paths are validated elsewhere and are
     // never created implicitly.
     fs::create_dir_all(app_data_dir.join("feature-host/runtime/workspace"))
+}
+
+
+struct ProductionHostExtensions {
+    _auth: Arc<HostAuthExtension>,
+    _box_lifecycle: BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>,
+}
+
+fn start_production_host_extensions() -> Result<ProductionHostExtensions, String> {
+    let auth_options = HostAuthServiceOptions::production(|message| {
+        eprintln!("mahayana-host-auth {message}");
+    })
+    .map_err(|error| error.to_string())?;
+
+    // The Dashboard GetMe adapter is still being migrated. Keep the fetch port
+    // fail-closed instead of inventing a display name; Auth renewal/token and
+    // machine identity are fully production-owned already.
+    let auth = Arc::new(
+        start_host_auth_extension_with_options(
+            auth_options,
+            Arc::new(|_access_token| Ok(None)),
+        )
+        .map_err(|error| error.to_string())?,
+    );
+    let factory =
+        ProductionBoxLifecycleClientFactory::from_process_env().map_err(|error| error.to_string())?;
+    let box_lifecycle = start_box_lifecycle_extension(Arc::clone(&auth), &factory);
+
+    Ok(ProductionHostExtensions {
+        _auth: auth,
+        _box_lifecycle: box_lifecycle,
+    })
 }
 
 enum HostLaneRequest {
@@ -473,6 +514,14 @@ fn main() {
         }
     };
 
+    let _production_extensions = match start_production_host_extensions() {
+        Ok(extensions) => extensions,
+        Err(error) => {
+            eprintln!("failed to start production Host extensions: {error}");
+            return;
+        }
+    };
+
     let gateway_config = match resolve_gateway_server_config() {
         Ok(config) => config,
         Err(error) => {
@@ -622,12 +671,18 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::{
-        BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, UnifiedGatewayApi,
+        BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionHostExtensions, UnifiedGatewayApi,
         decode_provider_messages, dispatch_box_environment_call, ensure_managed_runtime_layout,
         is_platform_request_json,
     };
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn shipping_production_extension_graph_is_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<ProductionHostExtensions>();
+    }
 
     #[test]
     fn gateway_proxy_is_send_sync_without_moving_the_unified_host() {
