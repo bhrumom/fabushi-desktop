@@ -13,6 +13,7 @@ use crate::protocol::{Failure, ReplyOutcome, COORDINATOR_UNKNOWN_METHOD};
 pub const GATEWAY_COMMAND_FAILED: &str = "gateway-command-failed";
 pub const GATEWAY_UNREACHABLE: &str = "gateway-unreachable";
 pub const GATEWAY_TRANSPORT_FAILED: &str = "gateway-transport-failed";
+pub const GATEWAY_SLIM_AVATARS_HEADER: &str = "x-sand-slim-avatars";
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum GatewayDispatchError {
@@ -214,7 +215,7 @@ pub fn dispatch_http_json(
     let path = format!("{}{GATEWAY_API_PREFIX}/{method}", parsed.base_path);
     write!(
         stream,
-        "POST {path} HTTP/1.1\r\nHost: {}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n",
+        "POST {path} HTTP/1.1\r\nHost: {}\r\nContent-Type: application/json\r\nContent-Length: {}\r\n{GATEWAY_SLIM_AVATARS_HEADER}: 1\r\nConnection: close\r\n",
         parsed.host,
         body.len()
     )
