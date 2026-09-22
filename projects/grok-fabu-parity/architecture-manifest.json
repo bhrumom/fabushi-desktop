@@ -11578,13 +11578,16 @@
       "targetPath": "source/node-agent-coordinator/src/carrier.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f51c3fe4512abb63a700e640329194aec9dadc0d",
       "architecturalRole": "coordinator/core",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/carrier.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/node-agent-coordinator/tests/production_protocol.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ]
     },
@@ -11593,11 +11596,13 @@
       "targetPath": "source/node-agent-coordinator/src/client_side_tool_v2_relay.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "3a3b80c8d61361fb3b8625f741a8ea0061489139",
       "architecturalRole": "coordinator/client-tool-relay",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/client_side_tool_v2_relay.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -11642,11 +11647,13 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_client.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "6ed3aa06b089d79ae8ece4c38984acc163ab6962",
       "architecturalRole": "coordinator/gateway",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/gateway/gateway_client.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -11657,11 +11664,13 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_dns_diagnostics.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "34aca36c8b5d75a411b2af893f0f7c5c9a8baf75",
       "architecturalRole": "coordinator/gateway",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/gateway/gateway_dns_diagnostics.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -11706,11 +11715,13 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_reachability.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "9d91671c0fda1f5917cdef15eb0bd5dbfbf58bf8",
       "architecturalRole": "coordinator/gateway",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/gateway/gateway_reachability.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -11721,11 +11732,13 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_request_dispatcher.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "62707f75c8cb8d27a600256e3dfc872e8519cc68",
       "architecturalRole": "coordinator/gateway",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/gateway/gateway_request_dispatcher.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -11736,13 +11749,16 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/host_supervisor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "6883cd201b950b1a6a6cf1d36f856a1dd64fa185",
       "architecturalRole": "coordinator/gateway",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/gateway/host_supervisor.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/node-agent-coordinator/tests/production_protocol.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ]
     },
@@ -11783,11 +11799,13 @@
       "targetPath": "source/node-agent-coordinator/src/local_exec/daemon_files.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "13ba42d511d92c3b13a171aeeaef029ffe29a6f2",
       "architecturalRole": "coordinator/local-exec",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/local_exec/daemon_files.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -11798,11 +11816,13 @@
       "targetPath": "source/node-agent-coordinator/src/local_exec/supervisor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "14cb1aab2210e42345bdc6b0b79e701ac1c2013f",
       "architecturalRole": "coordinator/local-exec",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/local_exec/supervisor.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
