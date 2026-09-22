@@ -121,6 +121,15 @@ if (fs.existsSync(coordinatorMainPath)) {
   if (coordinatorMain.includes('env::var("MAHAYANA_API_BASE_URL")')) {
     fail('product API must not be reused as the Host gateway in Mahayana Coordinator');
   }
+  for (const [label, pattern] of [
+    ['Host stdin business serialization', /serde_json::to_writer\s*\(\s*&mut\s+active\.stdin/],
+    ['legacy stdin business fallback marker', /Compatibility lane while the Host gateway/],
+    ['Host stdout business reply settlement', /HOST_REQUEST_FAILED/],
+  ]) {
+    if (pattern.test(coordinatorMain)) {
+      fail(`shipping Coordinator must use the Host gateway exclusively; found ${label}`);
+    }
+  }
   for (const required of [
     'read_gateway_discovery',
     'dispatch_http_json',
