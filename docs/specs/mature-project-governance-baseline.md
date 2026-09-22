@@ -4,7 +4,7 @@ Status: active
 Owner: Fabushi desktop / repository governance  
 Last updated: 2026-09-22  
 Related project: repository-wide  
-Related task / issue / PR: user request on 2026-09-22 to complete missing mature-project governance and require AI agents to follow the standard project lifecycle
+Related task / issue / PR: user request on 2026-09-22; GitHub PR #22
 
 ## 1. Context / problem
 
@@ -164,7 +164,23 @@ Required evidence:
 
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| R1–R11 | pending | implementation follows this spec |
-| AC-1–AC-7 | pending | verify after branch changes and PR creation |
+| R1 | passed | `docs/README.md` establishes the canonical documentation map. |
+| R2 | passed | `docs/architecture/system-overview.md` and `docs/architecture/invariants.md` added. |
+| R3 | passed | ADR policy/template plus `ADR-0001` added under `docs/adr/`. |
+| R4 | passed | migration policy/template added under `docs/migrations/`. |
+| R5 | passed | `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`, PR template and issue forms added. |
+| R6 | passed | `docs/testing/strategy.md` and `docs/operations/release-and-evidence.md` added and grounded in exact-source evidence rules. |
+| R7 | passed | root `AGENTS.md` now requires the full standard lifecycle, including Migration and post-release verification. |
+| R8 | passed | root `AGENTS.md` fail-closes architecture-affecting work on Spec + ADR + architecture-doc updates. |
+| R9 | passed | root `AGENTS.md` and migration policy require controlled migration records for incompatible ownership/state/protocol transitions. |
+| R10 | passed | `AGENTS.md` defines specified/implemented/source-verified/CI-verified/merged/release-candidate/released/post-release-verified/blocked states. |
+| R11 | passed | root `README.md` links product, roadmap and governance entry points. |
+| AC-1 | passed | branch compare against `main@4277fe1009327a23e8a171281d6172213a2b5142` shows the complete governance set on one branch. |
+| AC-2 | passed | GitHub compare shows no runtime/application source changes; only docs/governance/templates and `.editorconfig`. |
+| AC-3 | passed | `AGENTS.md` was read back from the branch with Spec-first preserved and the full lifecycle added. |
+| AC-4 | passed | `README.md` exposes product/governance/architecture/testing/release entry points. |
+| AC-5 | passed | GitHub PR #22 opened against `main`. |
+| AC-6 | passed | LICENSE and CODEOWNERS are intentionally not fabricated; final report must state this. |
+| AC-7 | passed | no merged/released claim is made by this Spec; those statuses require later GitHub evidence. |
 
 Allowed statuses: `passed`, `blocked`, `not-applicable`.
