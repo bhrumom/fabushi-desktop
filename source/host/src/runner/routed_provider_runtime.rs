@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, Ordering},
@@ -10,13 +11,18 @@ use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use crate::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderOptions,
-    RoutedToolDefinition, run_routed_provider_text,
+    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderCheckpoint,
+    RoutedProviderOptions, RoutedToolDefinition, run_routed_provider_text_with_lifecycle,
 };
 use crate::host_request_context::HostRequestContext;
+use crate::runner::production_turn_run_shell_adapter::{
+    ProductionTurnRunShellAdapter, RoutedProviderAttemptExecutor,
+    RoutedProviderCheckpointStore,
+};
 use crate::runner::system_prompt_assembly::render_request_context_system_prompt;
 
 pub const ROUTED_MCP_PROTOCOL_VERSION: &str = "2025-03-26";
@@ -134,6 +140,111 @@ pub trait RunnerRequestContextSource: Send + Sync {
     fn resolve(&self) -> RunnerRequestContextSnapshot;
 }
 
+#[derive(Debug, Clone)]
+pub struct ProductionRoutedProviderCheckpointStore {
+    directory: PathBuf,
+}
+
+impl ProductionRoutedProviderCheckpointStore {
+    pub fn new(data_dir: &Path, agent_id: &str, stream_id: &str) -> Self {
+        let agent_key = format!("{:x}", Sha256::digest(agent_id.as_bytes()));
+        let stream_key = format!("{:x}", Sha256::digest(stream_id.as_bytes()));
+        Self {
+            directory: data_dir
+                .join("runner-provider-checkpoints")
+                .join(agent_key)
+                .join(stream_key),
+        }
+    }
+
+    pub fn directory(&self) -> &Path {
+        &self.directory
+    }
+}
+
+impl RoutedProviderCheckpointStore for ProductionRoutedProviderCheckpointStore {
+    fn persist(
+        &self,
+        checkpoint: &RoutedProviderCheckpoint,
+    ) -> Result<String, ProviderSessionError> {
+        fs::create_dir_all(&self.directory).map_err(|error| {
+            ProviderSessionError::Transport(format!(
+                "could not create Runner checkpoint directory: {error}"
+            ))
+        })?;
+        let checkpoint_id = Uuid::new_v4().to_string();
+        let temporary_path = self.directory.join(format!("{checkpoint_id}.tmp"));
+        let final_path = self.directory.join(format!("{checkpoint_id}.json"));
+        let payload = serde_json::to_vec(checkpoint).map_err(|error| {
+            ProviderSessionError::Protocol(format!(
+                "could not encode Runner provider checkpoint: {error}"
+            ))
+        })?;
+        let write_result = (|| -> std::io::Result<()> {
+            let mut file = OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(&temporary_path)?;
+            file.write_all(&payload)?;
+            file.sync_all()
+        })();
+        if let Err(error) = write_result {
+            let _ = fs::remove_file(&temporary_path);
+            return Err(ProviderSessionError::Transport(format!(
+                "could not persist Runner provider checkpoint: {error}"
+            )));
+        }
+        if let Err(error) = fs::rename(&temporary_path, &final_path) {
+            let _ = fs::remove_file(&temporary_path);
+            return Err(ProviderSessionError::Transport(format!(
+                "could not commit Runner provider checkpoint: {error}"
+            )));
+        }
+        Ok(final_path.to_string_lossy().into_owned())
+    }
+}
+
+struct ProductionRoutedProviderAttemptExecutor<'a> {
+    provider: RoutedProvider,
+    data_dir: &'a Path,
+    messages: &'a [ProviderMessage],
+    tools: &'a [RoutedToolDefinition],
+    mcp_server_url: Option<&'a str>,
+    execute_tool: &'a mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+}
+
+impl RoutedProviderAttemptExecutor for ProductionRoutedProviderAttemptExecutor<'_> {
+    fn run_attempt(
+        &mut self,
+        resume_from: Option<&RoutedProviderCheckpoint>,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+        on_checkpoint: &mut dyn FnMut(
+            &RoutedProviderCheckpoint,
+        ) -> Result<(), ProviderSessionError>,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<String, ProviderSessionError> {
+        let mut options = RoutedProviderOptions {
+            data_dir: self.data_dir,
+            tools: self.tools,
+            mcp_server_url: self.mcp_server_url,
+            execute_tool: &mut *self.execute_tool,
+            on_text_delta,
+            should_cancel,
+        };
+        run_routed_provider_text_with_lifecycle(
+            self.provider,
+            self.messages,
+            &mut options,
+            resume_from,
+            on_checkpoint,
+        )
+    }
+}
+
 pub struct RoutedProviderRun<'a> {
     pub provider: RoutedProvider,
     pub data_dir: &'a Path,
@@ -141,6 +252,7 @@ pub struct RoutedProviderRun<'a> {
     pub bridge: Arc<dyn RoutedToolBridge>,
     pub request_context: RunnerRequestContextSnapshot,
     pub cancellation: RoutedProviderCancellation,
+    pub checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
 }
 
 pub fn run_routed_provider_in_runner(
@@ -200,19 +312,19 @@ pub fn run_routed_provider_in_runner(
         }
     };
 
-    let session_cancellation = run.cancellation.clone();
-    let should_cancel = || session_cancellation.is_cancelled();
-    let result = run_routed_provider_text(
-        run.provider,
-        &provider_messages,
-        &mut RoutedProviderOptions {
-            data_dir: run.data_dir,
-            tools: &direct_tools,
-            mcp_server_url: mcp_url.as_deref(),
-            execute_tool: &mut execute_tool,
-            on_text_delta: &mut guarded_delta,
-            should_cancel: &should_cancel,
-        },
+    let mut executor = ProductionRoutedProviderAttemptExecutor {
+        provider: run.provider,
+        data_dir: run.data_dir,
+        messages: &provider_messages,
+        tools: &direct_tools,
+        mcp_server_url: mcp_url.as_deref(),
+        execute_tool: &mut execute_tool,
+    };
+    let result = ProductionTurnRunShellAdapter::default().run(
+        &run.cancellation,
+        run.checkpoint_store.as_ref(),
+        &mut executor,
+        &mut guarded_delta,
     );
 
     if let Some(server) = mcp_server.as_mut() {
