@@ -555,13 +555,13 @@ fn serve_events(
     channels: Option<Vec<String>>,
     slim_avatars: bool,
 ) -> io::Result<()> {
+    let receiver = deps.events.subscribe();
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
     write!(
         stream,
         "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache, no-transform\r\nConnection: keep-alive\r\n\r\nretry: 1000\n\n"
     )?;
     stream.flush()?;
-    let receiver = deps.events.subscribe();
     let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
     while !stop.load(Ordering::Acquire) {
         match receiver.recv_timeout(heartbeat) {
@@ -701,13 +701,13 @@ fn serve_bridge_requests(
     bridge: &GatewayBridgeHub,
     stop: &AtomicBool,
 ) -> io::Result<()> {
+    let receiver = bridge.subscribe_requests();
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
     write!(
         stream,
         "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache, no-transform\r\nConnection: keep-alive\r\n\r\nretry: 1000\n\n"
     )?;
     stream.flush()?;
-    let receiver = bridge.subscribe_requests();
     let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
     while !stop.load(Ordering::Acquire) {
         match receiver.recv_timeout(heartbeat) {
