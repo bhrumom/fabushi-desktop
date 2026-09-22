@@ -177,6 +177,56 @@ pub trait GatewayApi: Send + Sync + 'static {
 }
 
 #[derive(Clone, Default)]
+pub struct GatewayBridgeHub {
+    request_subscribers: Arc<Mutex<Vec<Sender<Value>>>>,
+    response_subscribers: Arc<Mutex<Vec<Sender<Value>>>>,
+}
+
+impl GatewayBridgeHub {
+    pub fn publish_request(&self, frame: Value) {
+        if let Ok(mut subscribers) = self.request_subscribers.lock() {
+            subscribers.retain(|subscriber| subscriber.send(frame.clone()).is_ok());
+        }
+    }
+
+    pub fn subscribe_requests(&self) -> Receiver<Value> {
+        let (sender, receiver) = mpsc::channel();
+        if let Ok(mut subscribers) = self.request_subscribers.lock() {
+            subscribers.push(sender);
+        }
+        receiver
+    }
+
+    pub fn submit_responses(&self, batch: Value) {
+        if let Ok(mut subscribers) = self.response_subscribers.lock() {
+            subscribers.retain(|subscriber| subscriber.send(batch.clone()).is_ok());
+        }
+    }
+
+    pub fn subscribe_responses(&self) -> Receiver<Value> {
+        let (sender, receiver) = mpsc::channel();
+        if let Ok(mut subscribers) = self.response_subscribers.lock() {
+            subscribers.push(sender);
+        }
+        receiver
+    }
+
+    pub fn request_subscriber_count(&self) -> usize {
+        self.request_subscribers
+            .lock()
+            .map(|subscribers| subscribers.len())
+            .unwrap_or_default()
+    }
+
+    pub fn response_subscriber_count(&self) -> usize {
+        self.response_subscribers
+            .lock()
+            .map(|subscribers| subscribers.len())
+            .unwrap_or_default()
+    }
+}
+
+#[derive(Clone, Default)]
 pub struct GatewayEventHub {
     subscribers: Arc<Mutex<Vec<Sender<Value>>>>,
 }
@@ -208,6 +258,8 @@ impl GatewayEventHub {
 pub struct GatewayServerDeps {
     pub api: Arc<dyn GatewayApi>,
     pub events: GatewayEventHub,
+    pub local_exec: Option<GatewayBridgeHub>,
+    pub webauthn: Option<GatewayBridgeHub>,
     pub config: GatewayServerConfig,
     pub started_at: u64,
 }
@@ -616,6 +668,56 @@ fn serve_avatar(
     )
 }
 
+fn serve_bridge_requests(
+    stream: &mut TcpStream,
+    bridge: &GatewayBridgeHub,
+    stop: &AtomicBool,
+) -> io::Result<()> {
+    stream.set_write_timeout(Some(Duration::from_secs(5)))?;
+    write!(
+        stream,
+        "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache, no-transform\r\nConnection: keep-alive\r\n\r\nretry: 1000\n\n"
+    )?;
+    stream.flush()?;
+    let receiver = bridge.subscribe_requests();
+    let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
+    while !stop.load(Ordering::Acquire) {
+        match receiver.recv_timeout(heartbeat) {
+            Ok(frame) => {
+                let encoded = serde_json::to_string(&frame)
+                    .map_err(|error| io::Error::other(format!("serialize gateway bridge frame: {error}")))?;
+                write!(stream, "data: {encoded}\n\n")?;
+                stream.flush()?;
+            }
+            Err(RecvTimeoutError::Timeout) => {
+                write!(stream, ":ping\n\n")?;
+                stream.flush()?;
+            }
+            Err(RecvTimeoutError::Disconnected) => break,
+        }
+    }
+    Ok(())
+}
+
+fn submit_bridge_responses(
+    stream: &mut TcpStream,
+    bridge: &GatewayBridgeHub,
+    body: &[u8],
+) -> io::Result<()> {
+    let batch = if body.is_empty() {
+        json!({})
+    } else {
+        match serde_json::from_slice::<Value>(body) {
+            Ok(value) => value,
+            Err(error) => {
+                return respond_error(stream, 400, format!("invalid JSON body: {error}"));
+            }
+        }
+    };
+    bridge.submit_responses(batch);
+    respond_json(stream, 200, json!({ "ok": true }))
+}
+
 fn handle_connection(
     mut stream: TcpStream,
     deps: &GatewayServerDeps,
@@ -667,24 +769,51 @@ fn handle_connection(
         && path
             .strip_prefix(&format!("{GATEWAY_API_PREFIX}/"))
             .is_some_and(|method| !method.is_empty());
-    let known_but_unwired = path == GATEWAY_LOCAL_EXEC_REQUESTS_PATH
-        || path == GATEWAY_LOCAL_EXEC_RESPONSES_PATH
-        || path == GATEWAY_WEBAUTHN_REQUESTS_PATH
-        || path == GATEWAY_WEBAUTHN_RESPONSES_PATH;
-    if !(events || prepare || avatar || command || known_but_unwired) {
+    let local_requests = request.method == "GET" && path == GATEWAY_LOCAL_EXEC_REQUESTS_PATH;
+    let local_responses = request.method == "POST" && path == GATEWAY_LOCAL_EXEC_RESPONSES_PATH;
+    let webauthn_requests = request.method == "GET" && path == GATEWAY_WEBAUTHN_REQUESTS_PATH;
+    let webauthn_responses = request.method == "POST" && path == GATEWAY_WEBAUTHN_RESPONSES_PATH;
+    if !(events || prepare || avatar || command || local_requests || local_responses || webauthn_requests || webauthn_responses) {
         return respond_error(
             &mut stream,
             404,
             format!("not found: {} {path}", request.method),
         );
     }
+    if (local_requests || local_responses) && deps.config.auth_token.is_none() {
+        return respond_error(&mut stream, 401, "local-exec requires gateway authentication");
+    }
+    if (webauthn_requests || webauthn_responses) && deps.config.auth_token.is_none() {
+        return respond_error(&mut stream, 401, "webauthn requires gateway authentication");
+    }
     if let Some(token) = deps.config.auth_token.as_deref() {
         if !is_authorized(&request, token) {
             return respond_error(&mut stream, 401, "unauthorized");
         }
     }
-    if known_but_unwired {
-        return respond_error(&mut stream, 404, "gateway bridge channel is not enabled");
+    if local_requests {
+        return match deps.local_exec.as_ref() {
+            Some(bridge) => serve_bridge_requests(&mut stream, bridge, stop),
+            None => respond_error(&mut stream, 404, "local-exec channel not enabled"),
+        };
+    }
+    if local_responses {
+        return match deps.local_exec.as_ref() {
+            Some(bridge) => submit_bridge_responses(&mut stream, bridge, &request.body),
+            None => respond_error(&mut stream, 404, "local-exec channel not enabled"),
+        };
+    }
+    if webauthn_requests {
+        return match deps.webauthn.as_ref() {
+            Some(bridge) => serve_bridge_requests(&mut stream, bridge, stop),
+            None => respond_error(&mut stream, 404, "webauthn channel not enabled"),
+        };
+    }
+    if webauthn_responses {
+        return match deps.webauthn.as_ref() {
+            Some(bridge) => submit_bridge_responses(&mut stream, bridge, &request.body),
+            None => respond_error(&mut stream, 404, "webauthn channel not enabled"),
+        };
     }
     if avatar {
         return serve_avatar(&mut stream, deps, &request, path, query);
