@@ -1,3 +1,7 @@
+use std::fs;
+use std::io;
+use std::path::Path;
+use serde::Deserialize;
 use std::collections::BTreeMap;
 
 pub const HEALTH_TIMEOUT_MS: u64 = 1_500;
@@ -157,4 +161,58 @@ impl GatewayHostSupervisor {
             _ => GatewayHealthDecision::Probe,
         }
     }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GatewayDiscoveryInfo {
+    pub port: u16,
+    pub pid: u32,
+    pub started_at: u64,
+    pub scheme: Option<String>,
+    pub host: Option<String>,
+    pub token: Option<String>,
+}
+
+impl GatewayDiscoveryInfo {
+    pub fn into_connection(self) -> io::Result<GatewayConnection> {
+        if self.port == 0 || self.pid == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "invalid Host gateway discovery port/pid",
+            ));
+        }
+        let scheme = self.scheme.unwrap_or_else(|| "http".into());
+        if scheme != "http" && scheme != "https" {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "invalid Host gateway discovery scheme",
+            ));
+        }
+        let host = self
+            .host
+            .filter(|host| !host.trim().is_empty())
+            .unwrap_or_else(|| "127.0.0.1".into());
+        let host_for_url = if host.contains(':') && !host.starts_with('[') {
+            format!("[{host}]")
+        } else {
+            host
+        };
+        let mut headers = BTreeMap::new();
+        if let Some(token) = self.token.filter(|token| !token.is_empty()) {
+            headers.insert("authorization".into(), format!("Bearer {token}"));
+        }
+        Ok(GatewayConnection {
+            base_url: format!("{scheme}://{host_for_url}:{}", self.port),
+            headers,
+        })
+    }
+}
+
+pub fn read_gateway_discovery(path: &Path) -> io::Result<GatewayConnection> {
+    let bytes = fs::read(path)?;
+    let info = serde_json::from_slice::<GatewayDiscoveryInfo>(&bytes)
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    info.into_connection()
 }
