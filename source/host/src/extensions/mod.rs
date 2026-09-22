@@ -5,3 +5,7 @@ pub mod extension_ids_generated;
 pub mod registry;
 pub mod turn_execution;
 pub mod local_exec;
+
+pub mod session;
+pub mod box_store_sync;
+pub mod cloud_agents;

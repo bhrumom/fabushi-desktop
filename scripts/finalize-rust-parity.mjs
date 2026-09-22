@@ -12,7 +12,17 @@ const utilityContract = "source/host/tests/runner_small_modules_contract.rs";
 const extensionContract = "source/host/tests/extensions_turn_execution_contract.rs";
 const localExecContract = "source/host/tests/extensions_local_exec_contract.rs";
 const hostFoundationContract = "source/host/tests/host_foundation_contract.rs";
+const hostStorageContract = "source/host/tests/host_storage_contract.rs";
 const completed = new Map([
+  ["source/host/notify-drain-gate.ts", ["source/host/src/notify_drain_gate.rs", hostStorageContract]],
+  ["source/host/storage/agent-paths.ts", ["source/host/src/storage/agent_paths.rs", hostStorageContract]],
+  ["source/host/agents/settings-file.ts", ["source/host/src/agents/settings_file.rs", hostStorageContract]],
+  ["source/host/extensions/session/conversation-blobs-path.ts", ["source/host/src/extensions/session/conversation_blobs_path.rs", hostStorageContract]],
+  ["source/host/extensions/box-store-sync/box-store-sync-error.ts", ["source/host/src/extensions/box_store_sync/box_store_sync_error.rs", hostStorageContract]],
+  ["source/host/extensions/box-store-sync/box-store-diagnostics.ts", ["source/host/src/extensions/box_store_sync/box_store_diagnostics.rs", hostStorageContract]],
+  ["source/host/extensions/cloud-agents/cloud-agent-launch-error.ts", ["source/host/src/extensions/cloud_agents/cloud_agent_launch_error.rs", hostStorageContract]],
+  ["source/host/extensions/transcript/channel-delivery-unregistered-error.ts", ["source/host/src/extensions/transcript/channel_delivery_unregistered_error.rs", hostStorageContract]],
+  ["source/host/extensions/transcript/send-not-persisted-error.ts", ["source/host/src/extensions/transcript/send_not_persisted_error.rs", hostStorageContract]],
   ["source/host/sand-quiet-work-origin.ts", ["source/host/src/sand_quiet_work_origin.rs", hostFoundationContract]],
   ["source/host/sha256.ts", ["source/host/src/sha256.rs", hostFoundationContract]],
   ["source/host/storage/folder-id.ts", ["source/host/src/storage/folder_id.rs", hostFoundationContract]],
