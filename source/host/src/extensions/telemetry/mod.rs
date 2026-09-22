@@ -13,3 +13,11 @@ pub struct HostTelemetryProjection {
     pub event: Option<&'static str>,
     pub metadata: BTreeMap<String, String>,
 }
+
+pub mod automation_shadow_prune_telemetry;
+pub mod box_log_ship_telemetry;
+pub mod experiments_diagnostic_telemetry;
+pub mod host_extension_diagnostic_telemetry;
+pub mod revival_telemetry_mappers;
+pub mod session_diagnostic_telemetry;
+pub mod turn_empty_delivery_telemetry;
