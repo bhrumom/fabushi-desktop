@@ -8,12 +8,11 @@ const runtime = acquireProductionRendererRuntime(window);
 mountProductionRenderer(mount, <RootShellErrorBoundary><ProductionRenderer {...runtime} /></RootShellErrorBoundary>);
 
 const reportHealth = async () => {
-  const preloadWindow = window as Window & { desktop?: unknown; coordinatorPort?: unknown };
   const health = {
     ready: mount.childElementCount > 0,
     title: document.title,
     url: location.href,
-    preload: typeof preloadWindow.desktop === "object" && typeof preloadWindow.coordinatorPort === "object",
+    preload: typeof window.desktop === "object" && typeof window.coordinatorPort === "object",
     sourceComposed: true,
     upstreamEntry: false,
     cleanEntrypoint: "frontend/src/main.tsx",
