@@ -14369,12 +14369,19 @@
       "targetPath": "source/host/src/runner/send_message_reminder_middleware.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "d43933bc190f62238ab6f4be8edf101b8186ac0a",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/send_message_reminder_middleware.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_delivery_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 visible-delivery Runner chain. Middleware state transitions, silent-tool-tail handling and computerUse configuration passed Grok Rust parity finalize run 35710659340 at exact tested HEAD ff2936415aafc4b97c3e8b3740382f68c0429500."
     },
     {
       "referencePath": "source/host/runner/shell-terminal-watch.ts",
@@ -14412,12 +14419,19 @@
       "targetPath": "source/host/src/runner/start_of_turn_ack_reminder_middleware.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "1b39ddad691c5e0f9c745d61fdddfec985d32f85",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/start_of_turn_ack_reminder_middleware.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_delivery_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 visible-delivery Runner chain. Middleware state transitions, silent-tool-tail handling and computerUse configuration passed Grok Rust parity finalize run 35710659340 at exact tested HEAD ff2936415aafc4b97c3e8b3740382f68c0429500."
     },
     {
       "referencePath": "source/host/runner/stream-attempt.ts",
@@ -14632,12 +14646,19 @@
       "targetPath": "source/host/src/runner/tools/sand_computer_use_subagent.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "825261850c3ffc2b7190c859a1bc3e90cdba9c14",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/sand_computer_use_subagent.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_delivery_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 visible-delivery Runner chain. Middleware state transitions, silent-tool-tail handling and computerUse configuration passed Grok Rust parity finalize run 35710659340 at exact tested HEAD ff2936415aafc4b97c3e8b3740382f68c0429500."
     },
     {
       "referencePath": "source/host/runner/tools/sand-file-transfer-tools.ts",
@@ -14914,12 +14935,19 @@
       "targetPath": "source/host/src/runner/turn_shape.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "06d6b2d15c239e8fea6c1aa6a84159caf659904e",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/turn_shape.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_delivery_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 visible-delivery Runner chain. Middleware state transitions, silent-tool-tail handling and computerUse configuration passed Grok Rust parity finalize run 35710659340 at exact tested HEAD ff2936415aafc4b97c3e8b3740382f68c0429500."
     },
     {
       "referencePath": "source/host/runner/turn-usage.ts",
