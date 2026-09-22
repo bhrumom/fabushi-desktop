@@ -763,12 +763,18 @@
       "targetPath": "frontend/src/recovered/features/agent-info/group-members/route.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e94ff60e860cd758697376016bd184f2e9491b8d",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/agent-info/group-members/route.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-navigation.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer navigation parity with executable Node contract coverage; isolated from legacy production-model ownership."
     },
     {
       "referencePath": "frontend/src/recovered/features/agent-info/group-members/view.tsx",
@@ -2185,12 +2191,18 @@
       "targetPath": "frontend/src/recovered/features/conversation/workspace/sidebar-search-trigger.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "7e85a8fd0d3041c75329d3f661c18145944f232a",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/sidebar-search-trigger.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-navigation.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer navigation parity with executable Node contract coverage; isolated from legacy production-model ownership."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/sidebar-section-delete-confirmation.tsx",
@@ -24645,5 +24657,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:34:28.243Z"
+  "generatedAt": "2026-09-22T07:35:53.238Z"
 }
