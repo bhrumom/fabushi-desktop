@@ -5,10 +5,10 @@ use crate::agent_isolation::{
     AgentWorkerPool, ProductionAgentStoreWorkerBackend, WorkerBlobStore,
     create_production_agent_store_worker_backend,
 };
-use crate::storage::agent_paths::{assert_valid_sand_agent_id, get_sand_agents_root_dir};
+use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::conversation_blobs_path::conversation_blobs_path;
-use super::session_paths::STORE_FILENAME;
+use super::session_paths::get_agent_db_path;
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
@@ -58,8 +58,7 @@ impl ProductionSessionWorkers {
     }
 
     pub fn session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {
-        assert_valid_sand_agent_id(agent_id).map_err(|error| error.to_string())?;
-        Ok(self.agents_root.join(agent_id).join(STORE_FILENAME))
+        get_agent_db_path(&self.agents_root, agent_id).map_err(|error| error.to_string())
     }
 
     pub fn create_agent_blob_store(
