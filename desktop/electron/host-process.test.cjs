@@ -170,36 +170,71 @@ class FakeChild extends EventEmitter {
     };
   }
 
-  requestAt(index = this.writes.length - 1) {
+  envelopeAt(index = this.writes.length - 1) {
     return JSON.parse(this.writes[index]);
   }
 
+  requestAt(index) {
+    if (index !== undefined) return this.envelopeAt(index).frame;
+    for (let offset = this.writes.length - 1; offset >= 0; offset -= 1) {
+      const envelope = this.envelopeAt(offset);
+      if (envelope?.frame?.kind === 'request') return envelope.frame;
+    }
+    return undefined;
+  }
+
+  requestCount() {
+    return this.writes.reduce((count, raw) => {
+      const envelope = JSON.parse(raw);
+      return count + (envelope?.frame?.kind === 'request' ? 1 : 0);
+    }, 0);
+  }
+
+  emitEnvelope(channel, frame) {
+    this.stdout.write(`${JSON.stringify({ channel, frame })}\n`);
+  }
+
   ready(protocolVersion = 1) {
-    this.stdout.write(`${JSON.stringify({
+    this.emitEnvelope('coordinator-control', {
+      kind: 'lifecycle',
+      phase: 'hello',
+      protocolVersion: 1,
+    });
+    this.emitEnvelope('coordinator-data', {
       kind: 'lifecycle',
       phase: 'ready',
       protocolVersion,
-    })}\n`);
+    });
+    this.emitEnvelope('coordinator-main-data', {
+      kind: 'lifecycle',
+      phase: 'ready',
+      protocolVersion,
+    });
   }
 
-  respond(requestId, result) {
-    this.stdout.write(`${JSON.stringify({
+  respond(requestId, result, channel = 'coordinator-data') {
+    this.emitEnvelope(channel, {
       kind: 'reply',
       requestId: String(requestId),
       outcome: { status: 'ok', value: result },
-    })}\n`);
+    });
   }
 
   emitRuntimeEvent(event) {
-    this.stdout.write(`${JSON.stringify({ kind: 'event', family: 'runtime', payload: event })}\n`);
+    this.emitEnvelope('coordinator-data', {
+      kind: 'event',
+      family: 'runtime',
+      payload: event,
+    });
   }
 
-  fail(requestId, error) {
-    this.stdout.write(`${JSON.stringify({
+  fail(requestId, error, channel = 'coordinator-data') {
+    this.emitEnvelope(channel, {
       kind: 'reply',
       requestId: String(requestId),
-      outcome: { status: 'failed', failure: { code: 'TEST_FAILURE', message: String(error) } },
-    })}\n`);
+      outcome: { status: 'failed', failure: { code: 'TEST_FAILURE', message: String(error) },
+      },
+    });
   }
 
   kill() {
@@ -396,7 +431,7 @@ test('unsolicited Rust runtime event frames are pushed without a receive request
   const events = [];
   const unsubscribe = host.onRuntimeEvent((event) => events.push(event));
   host.start();
-  assert.equal(children[0].writes.length, 1);
+  assert.equal(children[0].writes.length, 2);
   assert.deepEqual(children[0].requestAt(0), {
     kind: 'lifecycle',
     phase: 'hello',
@@ -424,7 +459,7 @@ test('unsolicited Rust runtime event frames are pushed without a receive request
     state: 'thinking',
     sequence: 3,
   }]);
-  assert.equal(children[0].writes.length, 1);
+  assert.equal(children[0].requestCount(), 0);
   unsubscribe();
   host.close();
 });

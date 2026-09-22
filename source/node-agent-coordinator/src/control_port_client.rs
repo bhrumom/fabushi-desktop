@@ -47,6 +47,13 @@ impl ControlPortClient {
     pub fn phase(&self) -> ControlPortPhase { self.phase }
     pub fn pending_count(&self) -> usize { self.pending.len() }
 
+    pub fn handle_value(&mut self, value: Value) -> Vec<ClientAction> {
+        match serde_json::from_value::<CoordinatorFrame>(value) {
+            Ok(frame) => self.handle_frame(frame),
+            Err(error) => self.protocol_breach(&format!("invalid coordinator frame: {error}")),
+        }
+    }
+
     pub fn call(&mut self, method: impl Into<String>, args: Value) -> Result<(String, ClientAction), Failure> {
         if self.phase == ControlPortPhase::Settled {
             return Err(Failure::new(COORDINATOR_DISCONNECTED, "control port is settled"));

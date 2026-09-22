@@ -1,5 +1,8 @@
 use chrono::{SecondsFormat, Utc};
-use mahayana_node_agent_coordinator::carrier::{parse_bootstrap_argument, CoordinatorBootstrap};
+use mahayana_node_agent_coordinator::carrier::{
+    parse_bootstrap_argument, CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
+};
+use mahayana_node_agent_coordinator::control_port_client::{ClientAction, ControlPortClient};
 use mahayana_node_agent_coordinator::gateway::gateway_client::CoordinatorGatewayClient;
 use mahayana_node_agent_coordinator::gateway::gateway_reachability::ReachabilityOutcome;
 use mahayana_node_agent_coordinator::gateway::host_supervisor::GatewayConnection;
@@ -34,6 +37,7 @@ struct ActiveHostStdin {
 struct PendingHostRequest {
     generation: u64,
     request_id: String,
+    channel: CarrierChannel,
 }
 
 #[derive(Debug)]
@@ -43,7 +47,9 @@ struct CoordinatorState {
     host_stdin: Mutex<Option<ActiveHostStdin>>,
     gateway_client: Mutex<CoordinatorGatewayClient>,
     pending: Mutex<HashMap<String, PendingHostRequest>>,
+    control_port: Mutex<ControlPortClient>,
     renderer_port: Mutex<RendererPortServer>,
+    main_data_port: Mutex<RendererPortServer>,
     stdout_lock: Mutex<()>,
     spawn_lock: Mutex<()>,
     host_generation: AtomicU64,
@@ -53,11 +59,19 @@ struct CoordinatorState {
 }
 
 impl CoordinatorState {
-    fn write_frame(&self, frame: &CoordinatorFrame) -> io::Result<()> {
-        let _guard = self.stdout_lock.lock().map_err(|_| io::Error::other("stdout lock poisoned"))?;
+    fn write_frame(&self, channel: CarrierChannel, frame: &CoordinatorFrame) -> io::Result<()> {
+        let _guard = self
+            .stdout_lock
+            .lock()
+            .map_err(|_| io::Error::other("stdout lock poisoned"))?;
+        let envelope = CarrierEnvelope::new(
+            channel,
+            serde_json::to_value(frame)
+                .map_err(|error| io::Error::other(format!("coordinator frame serialization failed: {error}")))?,
+        );
         let mut stdout = io::stdout().lock();
-        serde_json::to_writer(&mut stdout, frame)
-            .map_err(|error| io::Error::other(format!("coordinator frame serialization failed: {error}")))?;
+        serde_json::to_writer(&mut stdout, &envelope)
+            .map_err(|error| io::Error::other(format!("coordinator envelope serialization failed: {error}")))?;
         writeln!(stdout)?;
         stdout.flush()
     }
@@ -69,7 +83,7 @@ impl CoordinatorState {
             .ok()
             .and_then(|server| server.post_event(family.to_string(), payload));
         if let Some(ServerAction::Post(frame)) = action {
-            let _ = self.write_frame(&frame);
+            let _ = self.write_frame(CarrierChannel::Data, &frame);
         }
     }
 
@@ -90,15 +104,28 @@ impl CoordinatorState {
         self.post_event("runtime", event);
     }
 
-    fn complete_request(&self, request_id: &str, outcome: ReplyOutcome) {
-        let actions = self
-            .renderer_port
-            .lock()
-            .map(|mut server| server.complete_request(request_id, outcome))
-            .unwrap_or_default();
+    fn complete_request(
+        &self,
+        channel: CarrierChannel,
+        request_id: &str,
+        outcome: ReplyOutcome,
+    ) {
+        let actions = match channel {
+            CarrierChannel::Data => self
+                .renderer_port
+                .lock()
+                .map(|mut server| server.complete_request(request_id, outcome))
+                .unwrap_or_default(),
+            CarrierChannel::MainData => self
+                .main_data_port
+                .lock()
+                .map(|mut server| server.complete_request(request_id, outcome))
+                .unwrap_or_default(),
+            CarrierChannel::Control => Vec::new(),
+        };
         for action in actions {
             if let ServerAction::Post(frame) = action {
-                let _ = self.write_frame(&frame);
+                let _ = self.write_frame(channel, &frame);
             }
         }
     }
@@ -119,6 +146,7 @@ impl CoordinatorState {
         };
         for request in rejected {
             self.complete_request(
+                request.channel,
                 &request.request_id,
                 ReplyOutcome::Failed {
                     failure: Failure::new(COORDINATOR_DISCONNECTED, message),
@@ -127,9 +155,17 @@ impl CoordinatorState {
         }
     }
 
-    fn abort_request(&self, request_id: &str) {
+    fn abort_request(&self, channel: CarrierChannel, request_id: &str) {
         if let Ok(mut pending) = self.pending.lock() {
-            pending.remove(request_id);
+            let host_request_id = pending
+                .iter()
+                .find_map(|(host_request_id, request)| {
+                    (request.channel == channel && request.request_id == request_id)
+                        .then(|| host_request_id.clone())
+                });
+            if let Some(host_request_id) = host_request_id {
+                pending.remove(&host_request_id);
+            }
         }
     }
 }
@@ -223,15 +259,15 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
                     );
                     continue;
                 };
-                let request_id = id.as_str().map(str::to_owned).unwrap_or_else(|| id.to_string());
+                let host_request_id = id.as_str().map(str::to_owned).unwrap_or_else(|| id.to_string());
                 let pending = output_state
                     .pending
                     .lock()
                     .ok()
-                    .and_then(|mut pending| pending.remove(&request_id));
-                if pending.is_none() {
+                    .and_then(|mut pending| pending.remove(&host_request_id));
+                let Some(pending) = pending else {
                     continue;
-                }
+                };
 
                 let outcome = if value.get("ok").and_then(Value::as_bool) == Some(true) {
                     ReplyOutcome::Ok {
@@ -248,7 +284,7 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
                         ),
                     }
                 };
-                output_state.complete_request(&request_id, outcome);
+                output_state.complete_request(pending.channel, &pending.request_id, outcome);
             }
         });
     }
@@ -315,6 +351,7 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
 
 fn dispatch_to_host(
     state: &Arc<CoordinatorState>,
+    channel: CarrierChannel,
     request_id: String,
     method: String,
     args: Value,
@@ -338,6 +375,7 @@ fn dispatch_to_host(
             })
             .unwrap_or((false, 0, None));
         state.complete_request(
+            channel,
             &request_id,
             ReplyOutcome::Ok {
                 value: json!({
@@ -384,20 +422,22 @@ fn dispatch_to_host(
         .connection_for_dispatch()
         .map_err(|error| io::Error::other(format!("gateway route unavailable: {error}")))?;
 
+    let host_request_id = format!("{}:{request_id}", channel.wire_name());
     state
         .pending
         .lock()
         .map_err(|_| io::Error::other("pending lock poisoned"))?
         .insert(
-            request_id.clone(),
+            host_request_id.clone(),
             PendingHostRequest {
                 generation: active.generation,
                 request_id: request_id.clone(),
+                channel,
             },
         );
 
     let host_request = json!({
-        "id": request_id,
+        "id": host_request_id,
         "method": method,
         "params": args,
     });
@@ -407,12 +447,16 @@ fn dispatch_to_host(
     active.stdin.flush()
 }
 
-fn execute_actions(state: &Arc<CoordinatorState>, actions: Vec<ServerAction>) -> bool {
+fn execute_actions(
+    state: &Arc<CoordinatorState>,
+    channel: CarrierChannel,
+    actions: Vec<ServerAction>,
+) -> bool {
     let mut close = false;
     for action in actions {
         match action {
             ServerAction::Post(frame) => {
-                let _ = state.write_frame(&frame);
+                let _ = state.write_frame(channel, &frame);
             }
             ServerAction::Dispatch {
                 request_id,
@@ -420,9 +464,10 @@ fn execute_actions(state: &Arc<CoordinatorState>, actions: Vec<ServerAction>) ->
                 args,
             } => {
                 if let Err(error) =
-                    dispatch_to_host(state, request_id.clone(), method, args)
+                    dispatch_to_host(state, channel, request_id.clone(), method, args)
                 {
                     state.complete_request(
+                        channel,
                         &request_id,
                         ReplyOutcome::Failed {
                             failure: Failure::new(
@@ -434,9 +479,25 @@ fn execute_actions(state: &Arc<CoordinatorState>, actions: Vec<ServerAction>) ->
                 }
             }
             ServerAction::Abort { request_id } => {
-                state.abort_request(&request_id);
+                state.abort_request(channel, &request_id);
             }
             ServerAction::Close => close = true,
+        }
+    }
+    close
+}
+
+fn execute_control_actions(state: &Arc<CoordinatorState>, actions: Vec<ClientAction>) -> bool {
+    let mut close = false;
+    for action in actions {
+        match action {
+            ClientAction::Post(frame) => {
+                let _ = state.write_frame(CarrierChannel::Control, &frame);
+            }
+            ClientAction::Close => close = true,
+            ClientAction::Resolve { .. }
+            | ClientAction::Reject { .. }
+            | ClientAction::Event { .. } => {}
         }
     }
     close
@@ -479,7 +540,9 @@ fn main() {
         host_stdin: Mutex::new(None),
         gateway_client: Mutex::new(gateway_client),
         pending: Mutex::new(HashMap::new()),
+        control_port: Mutex::new(ControlPortClient::default()),
         renderer_port: Mutex::new(RendererPortServer::default()),
+        main_data_port: Mutex::new(RendererPortServer::default()),
         stdout_lock: Mutex::new(()),
         spawn_lock: Mutex::new(()),
         host_generation: AtomicU64::new(0),
@@ -487,6 +550,14 @@ fn main() {
         closed: AtomicBool::new(false),
         consecutive_crashes: AtomicU64::new(0),
     });
+
+    if let Ok(control) = state.control_port.lock() {
+        if let ClientAction::Post(frame) = control.start() {
+            if state.write_frame(CarrierChannel::Control, &frame).is_err() {
+                std::process::exit(1);
+            }
+        }
+    }
 
     for line in io::stdin().lock().lines() {
         let line = match line {
@@ -500,37 +571,59 @@ fn main() {
             continue;
         }
 
-        let value = match serde_json::from_str::<Value>(&line) {
-            Ok(value) => value,
+        let envelope = match serde_json::from_str::<CarrierEnvelope>(&line) {
+            Ok(envelope) => envelope,
             Err(error) => {
+                eprintln!("node-agent-coordinator: invalid carrier envelope: {error}");
+                break;
+            }
+        };
+        let Some(channel) = envelope.classify() else {
+            eprintln!("node-agent-coordinator: unknown carrier channel {}", envelope.channel);
+            break;
+        };
+
+        let close = match channel {
+            CarrierChannel::Control => {
+                let actions = state
+                    .control_port
+                    .lock()
+                    .map(|mut client| client.handle_value(envelope.frame))
+                    .unwrap_or_default();
+                execute_control_actions(&state, actions)
+            }
+            CarrierChannel::Data => {
                 let actions = state
                     .renderer_port
                     .lock()
-                    .map(|mut server| {
-                        server.handle_value(json!({
-                            "kind": "invalid",
-                            "detail": error.to_string()
-                        }))
-                    })
+                    .map(|mut server| server.handle_value(envelope.frame))
                     .unwrap_or_default();
-                if execute_actions(&state, actions) {
-                    break;
-                }
-                continue;
+                execute_actions(&state, CarrierChannel::Data, actions)
+            }
+            CarrierChannel::MainData => {
+                let actions = state
+                    .main_data_port
+                    .lock()
+                    .map(|mut server| server.handle_value(envelope.frame))
+                    .unwrap_or_default();
+                execute_actions(&state, CarrierChannel::MainData, actions)
             }
         };
-
-        let actions = state
-            .renderer_port
-            .lock()
-            .map(|mut server| server.handle_value(value))
-            .unwrap_or_default();
-        if execute_actions(&state, actions) {
+        if close {
             break;
         }
     }
 
     state.closed.store(true, Ordering::SeqCst);
+    if let Ok(mut control) = state.control_port.lock() {
+        let _ = control.handle_port_closed();
+    }
+    if let Ok(mut server) = state.renderer_port.lock() {
+        let _ = server.handle_port_closed();
+    }
+    if let Ok(mut server) = state.main_data_port.lock() {
+        let _ = server.handle_port_closed();
+    }
     if let Ok(mut active) = state.host_stdin.lock() {
         active.take();
     }

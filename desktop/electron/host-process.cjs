@@ -14,7 +14,21 @@ const INFERENCE_PROVIDERS = new Set(['fabushi', 'codex', 'claude-code', 'openrou
 const SANDBOX_RUNTIMES = new Set(['host', 'local-docker']);
 const DEFAULT_DOCKER_IMAGE = 'mcr.microsoft.com/devcontainers/base:ubuntu24.04@sha256:c5cc2b45afe06a1df3aba17e58ba0dc4a02b999493198dab37dd0ccd4e2b0705';
 const COORDINATOR_PROTOCOL_VERSION = 1;
+const COORDINATOR_CONTROL_CHANNEL = 'coordinator-control';
+const COORDINATOR_DATA_CHANNEL = 'coordinator-data';
+const COORDINATOR_MAIN_DATA_CHANNEL = 'coordinator-main-data';
 const PACKAGED_COMPUTER_RUNTIME_ID = /^v1-[a-f0-9]{20}$/;
+
+function coordinatorEnvelope(channel, frame) {
+  return { channel, frame };
+}
+
+function coordinatorChannelKey(channel) {
+  if (channel === COORDINATOR_CONTROL_CHANNEL) return 'control';
+  if (channel === COORDINATOR_DATA_CHANNEL) return 'data';
+  if (channel === COORDINATOR_MAIN_DATA_CHANNEL) return 'mainData';
+  return null;
+}
 
 function safeExistsSync(fsImpl, candidate) {
   const implementation = typeof fsImpl?.existsSync === 'function' ? fsImpl : fs;
@@ -211,6 +225,7 @@ class MahayanaHostProcess {
     this.nextId = 1;
     this.pending = new Map();
     this.protocolReady = false;
+    this.channelReady = { control: false, data: false, mainData: false };
     this.closed = false;
     this.state = 'stopped';
     this.startedAt = null;
@@ -282,6 +297,7 @@ class MahayanaHostProcess {
       pid: this.child?.pid ?? null,
       pending: this.pending.size,
       protocolReady: this.protocolReady,
+      coordinatorChannels: { ...this.channelReady },
       startedAt: this.startedAt,
       lastExit: this.lastExit ? { ...this.lastExit } : null,
       unexpectedExitCount: this.unexpectedExitCount,
@@ -319,6 +335,141 @@ class MahayanaHostProcess {
     this.lastLifecycleEvent = event;
     this.events.emit('lifecycle', event);
     return event;
+  }
+
+  writeCoordinatorFrame(child, channel, frame, callback) {
+    const payload = JSON.stringify(coordinatorEnvelope(channel, frame));
+    return child.stdin.write(`${payload}\n`, callback);
+  }
+
+  markCoordinatorChannelReady(channel, generation) {
+    const key = coordinatorChannelKey(channel);
+    if (!key || this.currentGeneration !== generation) return;
+    this.channelReady[key] = true;
+    if (!this.protocolReady
+      && this.channelReady.control
+      && this.channelReady.data
+      && this.channelReady.mainData) {
+      this.protocolReady = true;
+      this.emitLifecycle('protocol-ready', { protocolVersion: COORDINATOR_PROTOCOL_VERSION });
+    }
+  }
+
+  failCoordinatorProtocol(generation, message) {
+    const error = message instanceof Error ? message : new Error(String(message));
+    this.protocolReady = false;
+    this.rejectGeneration(generation, error);
+    this.emitLifecycle('protocol-error', { error: error.message });
+  }
+
+  handleCoordinatorControlFrame(child, generation, frame) {
+    if (frame?.kind === 'lifecycle' && frame.phase === 'hello') {
+      if (frame.protocolVersion !== COORDINATOR_PROTOCOL_VERSION) {
+        this.failCoordinatorProtocol(
+          generation,
+          `Coordinator control protocol version ${String(frame.protocolVersion)} does not match ${COORDINATOR_PROTOCOL_VERSION}.`,
+        );
+        return;
+      }
+      this.writeCoordinatorFrame(child, COORDINATOR_CONTROL_CHANNEL, {
+        kind: 'lifecycle',
+        phase: 'ready',
+        protocolVersion: COORDINATOR_PROTOCOL_VERSION,
+      }, () => undefined);
+      this.markCoordinatorChannelReady(COORDINATOR_CONTROL_CHANNEL, generation);
+      return;
+    }
+    if (frame?.kind === 'lifecycle' && frame.phase === 'shutdown') {
+      this.failCoordinatorProtocol(generation, frame.detail || frame.reason || 'Coordinator control channel shut down.');
+      return;
+    }
+    if (frame?.kind === 'event') {
+      this.events.emit('coordinator-control-event', {
+        family: frame.family,
+        payload: frame.payload,
+      });
+      return;
+    }
+    if (frame?.kind === 'request') {
+      this.writeCoordinatorFrame(child, COORDINATOR_CONTROL_CHANNEL, {
+        kind: 'reply',
+        requestId: String(frame.requestId ?? ''),
+        outcome: {
+          status: 'failed',
+          failure: {
+            code: 'COORDINATOR_UNKNOWN_METHOD',
+            message: `Electron main has no control handler named ${String(frame.method || '')}`,
+          },
+        },
+      }, () => undefined);
+      return;
+    }
+    if (frame?.kind === 'cancel') return;
+    this.failCoordinatorProtocol(generation, 'Unexpected Coordinator control frame.');
+  }
+
+  handleCoordinatorDataFrame(channel, generation, frame) {
+    const key = coordinatorChannelKey(channel);
+    if (!key || key === 'control') {
+      this.failCoordinatorProtocol(generation, `Unexpected Coordinator channel ${String(channel)}.`);
+      return;
+    }
+    if (frame?.kind === 'lifecycle') {
+      if (frame.phase === 'ready') {
+        if (frame.protocolVersion !== COORDINATOR_PROTOCOL_VERSION) {
+          this.failCoordinatorProtocol(
+            generation,
+            `Coordinator protocol version ${String(frame.protocolVersion)} does not match ${COORDINATOR_PROTOCOL_VERSION}.`,
+          );
+          return;
+        }
+        this.markCoordinatorChannelReady(channel, generation);
+        return;
+      }
+      if (frame.phase === 'shutdown') {
+        this.failCoordinatorProtocol(generation, frame.detail || frame.reason || 'Coordinator data channel shut down.');
+        return;
+      }
+      this.failCoordinatorProtocol(generation, 'Unexpected Coordinator lifecycle frame.');
+      return;
+    }
+
+    if (!this.channelReady[key]) {
+      this.failCoordinatorProtocol(generation, `Coordinator emitted a ${key} frame before the ready handshake.`);
+      return;
+    }
+
+    if (frame?.kind === 'event') {
+      this.events.emit('coordinator-event', {
+        channel,
+        family: frame.family,
+        payload: frame.payload,
+      });
+      if (channel === COORDINATOR_DATA_CHANNEL
+        && frame.family === 'runtime'
+        && frame.payload
+        && typeof frame.payload === 'object') {
+        this.chromePlatformServer.broadcastEvent(frame.payload);
+        this.events.emit('runtime-event', frame.payload);
+      }
+      return;
+    }
+
+    if (frame?.kind !== 'reply') {
+      this.failCoordinatorProtocol(generation, 'Unexpected Coordinator data frame.');
+      return;
+    }
+
+    const requestId = String(frame.requestId ?? '');
+    const pending = this.pending.get(requestId);
+    if (!pending || pending.generation !== generation || pending.channel !== channel) return;
+    this.pending.delete(requestId);
+    if (frame.outcome?.status === 'ok') pending.resolve(frame.outcome.value);
+    else pending.reject(new Error(
+      frame.outcome?.failure?.message
+        || frame.outcome?.failure?.code
+        || 'Mahayana Coordinator request failed',
+    ));
   }
 
   start() {
@@ -393,6 +544,7 @@ class MahayanaHostProcess {
 
     this.child = child;
     this.protocolReady = false;
+    this.channelReady = { control: false, data: false, mainData: false };
     this.state = 'running';
     this.startedAt = this.now();
     this.emitLifecycle('running');
@@ -407,77 +559,36 @@ class MahayanaHostProcess {
 
     const lines = this.readline.createInterface({ input: child.stdout });
     lines.on('line', (line) => {
-      let message;
+      let envelope;
       try {
-        message = JSON.parse(line);
+        envelope = JSON.parse(line);
       } catch (error) {
-        this.rejectGeneration(generation, new Error(`Invalid Mahayana Coordinator response: ${error}`));
-        this.emitLifecycle('protocol-error', { error: error instanceof Error ? error.message : String(error) });
+        this.failCoordinatorProtocol(generation, new Error(`Invalid Mahayana Coordinator response: ${error}`));
         return;
       }
-
-      if (message?.kind === 'lifecycle') {
-        if (message.phase === 'ready') {
-          if (message.protocolVersion !== COORDINATOR_PROTOCOL_VERSION) {
-            const error = new Error(
-              `Coordinator protocol version ${String(message.protocolVersion)} does not match ${COORDINATOR_PROTOCOL_VERSION}.`,
-            );
-            this.protocolReady = false;
-            this.rejectGeneration(generation, error);
-            this.emitLifecycle('protocol-error', { error: error.message });
-            return;
-          }
-          this.protocolReady = true;
-          this.emitLifecycle('protocol-ready', { protocolVersion: message.protocolVersion });
-          return;
-        }
-        if (message.phase === 'shutdown') {
-          const detail = String(message.detail || message.reason || 'Coordinator shut down');
-          this.protocolReady = false;
-          this.rejectGeneration(generation, new Error(detail));
-          this.emitLifecycle('protocol-error', { error: detail });
-          return;
-        }
-        this.emitLifecycle('protocol-error', { error: 'Unexpected Coordinator lifecycle frame.' });
+      const channel = String(envelope?.channel || '');
+      const frame = envelope?.frame;
+      if (coordinatorChannelKey(channel) == null || !frame || typeof frame !== 'object') {
+        this.failCoordinatorProtocol(generation, 'Invalid Mahayana Coordinator carrier envelope.');
         return;
       }
-
-      if (!this.protocolReady) {
-        const error = new Error('Coordinator emitted a data frame before the ready handshake.');
-        this.rejectGeneration(generation, error);
-        this.emitLifecycle('protocol-error', { error: error.message });
+      if (channel === COORDINATOR_CONTROL_CHANNEL) {
+        this.handleCoordinatorControlFrame(child, generation, frame);
         return;
       }
-
-      if (message?.kind === 'event') {
-        if (message.family !== 'runtime' || !message.payload || typeof message.payload !== 'object') return;
-        this.chromePlatformServer.broadcastEvent(message.payload);
-        this.events.emit('runtime-event', message.payload);
-        return;
-      }
-
-      if (message?.kind !== 'reply') {
-        this.emitLifecycle('protocol-error', { error: 'Unexpected Coordinator frame.' });
-        return;
-      }
-
-      const key = String(message.requestId ?? '');
-      const pending = this.pending.get(key);
-      if (!pending || pending.generation !== generation) return;
-      this.pending.delete(key);
-      if (message.outcome?.status === 'ok') pending.resolve(message.outcome.value);
-      else pending.reject(new Error(
-        message.outcome?.failure?.message
-          || message.outcome?.failure?.code
-          || 'Mahayana Coordinator request failed',
-      ));
+      this.handleCoordinatorDataFrame(channel, generation, frame);
     });
 
-    child.stdin.write(`${JSON.stringify({
+    this.writeCoordinatorFrame(child, COORDINATOR_DATA_CHANNEL, {
       kind: 'lifecycle',
       phase: 'hello',
       protocolVersion: COORDINATOR_PROTOCOL_VERSION,
-    })}\n`);
+    });
+    this.writeCoordinatorFrame(child, COORDINATOR_MAIN_DATA_CHANNEL, {
+      kind: 'lifecycle',
+      phase: 'hello',
+      protocolVersion: COORDINATOR_PROTOCOL_VERSION,
+    });
 
     child.stderr.on('data', (chunk) => console.error(`[mahayana-coordinator] ${String(chunk).trimEnd()}`));
     child.on('error', (error) => {
@@ -501,6 +612,7 @@ class MahayanaHostProcess {
     if (isCurrent) {
       this.child = null;
       this.protocolReady = false;
+      this.channelReady = { control: false, data: false, mainData: false };
       this.startedAt = null;
       if (!this.closed) {
         this.state = 'stopped';
@@ -513,9 +625,20 @@ class MahayanaHostProcess {
   }
 
   request(method, params = {}, timeoutMs = 120000) {
+    return this.requestOnChannel(COORDINATOR_DATA_CHANNEL, method, params, timeoutMs);
+  }
+
+  mainRequest(method, params = {}, timeoutMs = 120000) {
+    return this.requestOnChannel(COORDINATOR_MAIN_DATA_CHANNEL, method, params, timeoutMs);
+  }
+
+  requestOnChannel(channel, method, params = {}, timeoutMs = 120000) {
     if (method === 'platform.request' && this.testPlatformAccount) {
       const result = this.testPlatformAccount.request(params);
       if (result) return Promise.resolve(result);
+    }
+    if (channel !== COORDINATOR_DATA_CHANNEL && channel !== COORDINATOR_MAIN_DATA_CHANNEL) {
+      return Promise.reject(new Error(`Invalid Coordinator request channel: ${String(channel)}`));
     }
     let child;
     try {
@@ -529,31 +652,36 @@ class MahayanaHostProcess {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         const pending = this.pending.get(key);
-        if (!pending || pending.generation !== generation) return;
+        if (!pending || pending.generation !== generation || pending.channel !== channel) return;
         this.pending.delete(key);
-        this.emitLifecycle('request-timeout', { method: String(method), requestId: id });
+        this.emitLifecycle('request-timeout', { method: String(method), requestId: id, channel });
         if (this.child === child && !child.stdin?.destroyed) {
-          child.stdin.write(`${JSON.stringify({ kind: 'cancel', requestId: key })}\n`, () => undefined);
+          this.writeCoordinatorFrame(child, channel, { kind: 'cancel', requestId: key }, () => undefined);
         }
         reject(new Error(`Mahayana Coordinator request timed out: ${method}`));
       }, timeoutMs);
       timer.unref?.();
       this.pending.set(key, {
         generation,
+        channel,
         resolve: (value) => {
           clearTimeout(timer);
           resolve(value);
         },
         reject: (error) => { clearTimeout(timer); reject(error); },
       });
-      const payload = JSON.stringify({ kind: 'request', requestId: key, method, args: params });
-      child.stdin.write(`${payload}\n`, (error) => {
-        if (!error) return;
-        const pending = this.pending.get(key);
-        if (!pending || pending.generation !== generation) return;
-        this.pending.delete(key);
-        pending.reject(error);
-      });
+      this.writeCoordinatorFrame(
+        child,
+        channel,
+        { kind: 'request', requestId: key, method, args: params },
+        (error) => {
+          if (!error) return;
+          const pending = this.pending.get(key);
+          if (!pending || pending.generation !== generation || pending.channel !== channel) return;
+          this.pending.delete(key);
+          pending.reject(error);
+        },
+      );
     });
   }
 
@@ -574,6 +702,7 @@ class MahayanaHostProcess {
     if (child) {
       this.child = null;
       this.protocolReady = false;
+      this.channelReady = { control: false, data: false, mainData: false };
       this.startedAt = null;
       this.rejectGeneration(generation, new Error(`Mahayana host restarted: ${reason}`));
       child.stdin?.end?.();
@@ -591,11 +720,22 @@ class MahayanaHostProcess {
     const generation = this.currentGeneration;
     this.child = null;
     this.protocolReady = false;
+    this.channelReady = { control: false, data: false, mainData: false };
     this.startedAt = null;
     this.rejectGeneration(generation, new Error('Mahayana host closed.'));
     this.emitLifecycle('closed');
     if (child) {
-      child.stdin?.write?.(`${JSON.stringify({ kind: 'lifecycle', phase: 'shutdown' })}\n`, () => undefined);
+      for (const channel of [
+        COORDINATOR_CONTROL_CHANNEL,
+        COORDINATOR_DATA_CHANNEL,
+        COORDINATOR_MAIN_DATA_CHANNEL,
+      ]) {
+        this.writeCoordinatorFrame(child, channel, {
+          kind: 'lifecycle',
+          phase: 'shutdown',
+          reason: 'requested',
+        }, () => undefined);
+      }
       child.stdin?.end?.();
       const fallbackKill = setTimeout(() => child.kill(), 1_000);
       fallbackKill.unref?.();

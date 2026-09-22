@@ -1,5 +1,8 @@
 #[cfg(unix)]
 mod unix {
+    use mahayana_node_agent_coordinator::carrier::{
+        CarrierChannel, CarrierEnvelope,
+    };
     use mahayana_node_agent_coordinator::protocol::{
         CoordinatorFrame, Failure, LifecyclePhase, ReplyOutcome, COORDINATOR_DISCONNECTED,
         COORDINATOR_PROTOCOL_VERSION,
@@ -14,10 +17,14 @@ mod unix {
     use std::thread;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-    fn send(stdin: &mut impl Write, frame: &CoordinatorFrame) {
-        serde_json::to_writer(&mut *stdin, frame).expect("serialize coordinator frame");
-        writeln!(stdin).expect("write coordinator frame");
-        stdin.flush().expect("flush coordinator frame");
+    fn send(stdin: &mut impl Write, channel: CarrierChannel, frame: &CoordinatorFrame) {
+        let envelope = CarrierEnvelope::new(
+            channel,
+            serde_json::to_value(frame).expect("serialize coordinator frame"),
+        );
+        serde_json::to_writer(&mut *stdin, &envelope).expect("serialize carrier envelope");
+        writeln!(stdin).expect("write carrier envelope");
+        stdin.flush().expect("flush carrier envelope");
     }
 
     fn fake_host() -> PathBuf {
@@ -38,7 +45,7 @@ while IFS= read -r line; do
   case "$line" in
     *'"method":"echo"'*)
       printf '%s\n' '{"event":{"type":"host.test","value":1}}'
-      printf '%s\n' '{"id":"r-echo","ok":true,"result":{"echoed":true}}'
+      printf '%s\n' '{"id":"coordinator-data:r-echo","ok":true,"result":{"echoed":true}}'
       ;;
     *'"method":"crash"'*)
       exit 17
@@ -86,41 +93,60 @@ done
         thread::spawn(move || {
             for line in BufReader::new(stdout).lines() {
                 let Ok(line) = line else { break };
-                let parsed = serde_json::from_str::<CoordinatorFrame>(&line);
+                let parsed = serde_json::from_str::<CarrierEnvelope>(&line).and_then(|envelope| {
+                    let channel = envelope
+                        .classify()
+                        .ok_or_else(|| serde_json::Error::io(std::io::Error::other("unknown channel")))?;
+                    let frame = serde_json::from_value::<CoordinatorFrame>(envelope.frame)?;
+                    Ok((channel, frame))
+                });
                 if tx.send(parsed).is_err() {
                     break;
                 }
             }
         });
 
-        send(
-            &mut stdin,
-            &CoordinatorFrame::Lifecycle {
-                phase: LifecyclePhase::Hello,
-                protocol_version: Some(COORDINATOR_PROTOCOL_VERSION),
-                reason: None,
-                detail: None,
-            },
-        );
-        assert_eq!(
-            rx.recv_timeout(Duration::from_secs(2))
-                .expect("ready frame")
-                .expect("valid ready frame"),
-            CoordinatorFrame::ready()
-        );
+        let (channel, hello) = rx
+            .recv_timeout(Duration::from_secs(2))
+            .expect("control hello")
+            .expect("valid control hello");
+        assert_eq!(channel, CarrierChannel::Control);
+        assert_eq!(hello, CoordinatorFrame::hello());
+        send(&mut stdin, CarrierChannel::Control, &CoordinatorFrame::ready());
+
+        for channel in [CarrierChannel::Data, CarrierChannel::MainData] {
+            send(
+                &mut stdin,
+                channel,
+                &CoordinatorFrame::Lifecycle {
+                    phase: LifecyclePhase::Hello,
+                    protocol_version: Some(COORDINATOR_PROTOCOL_VERSION),
+                    reason: None,
+                    detail: None,
+                },
+            );
+            assert_eq!(
+                rx.recv_timeout(Duration::from_secs(2))
+                    .expect("ready frame")
+                    .expect("valid ready frame"),
+                (channel, CoordinatorFrame::ready())
+            );
+        }
 
         send(
             &mut stdin,
+            CarrierChannel::Data,
             &CoordinatorFrame::Request {
                 request_id: "r-health".into(),
                 method: "coordinator.health".into(),
                 args: json!({}),
             },
         );
-        let health = rx
+        let (channel, health) = rx
             .recv_timeout(Duration::from_secs(2))
             .expect("health reply")
             .expect("valid health reply");
+        assert_eq!(channel, CarrierChannel::Data);
         match health {
             CoordinatorFrame::Reply {
                 request_id,
@@ -136,6 +162,7 @@ done
 
         send(
             &mut stdin,
+            CarrierChannel::Data,
             &CoordinatorFrame::Request {
                 request_id: "r-echo".into(),
                 method: "echo".into(),
@@ -147,10 +174,11 @@ done
         let mut saw_runtime_event = false;
         let mut saw_echo_reply = false;
         for _ in 0..8 {
-            let frame = rx
+            let (channel, frame) = rx
                 .recv_timeout(Duration::from_secs(2))
                 .expect("frame while serving echo")
                 .expect("valid coordinator frame");
+            assert_eq!(channel, CarrierChannel::Data);
             match frame {
                 CoordinatorFrame::Event { family, payload } if family == "runtime" => {
                     if payload.get("type").and_then(|value| value.as_str()) == Some("host.lifecycle")
@@ -181,6 +209,7 @@ done
 
         send(
             &mut stdin,
+            CarrierChannel::Data,
             &CoordinatorFrame::Request {
                 request_id: "r-crash".into(),
                 method: "crash".into(),
@@ -195,10 +224,11 @@ done
         let mut saw_crash_reply = false;
         let mut saw_stopped = false;
         for _ in 0..10 {
-            let frame = rx
+            let (channel, frame) = rx
                 .recv_timeout(Duration::from_secs(3))
                 .expect("frame while settling crashed Host")
                 .expect("valid coordinator frame");
+            assert_eq!(channel, CarrierChannel::Data);
             match frame {
                 CoordinatorFrame::Reply {
                     request_id,
