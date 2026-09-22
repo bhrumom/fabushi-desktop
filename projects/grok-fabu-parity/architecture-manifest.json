@@ -3079,12 +3079,18 @@
       "targetPath": "frontend/src/recovered/features/window-chrome/app-alert/controller.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "24bcac7360a07d20e97cd4f6545596c0aebf6865",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/window-chrome/app-alert/controller.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/window-chrome/app-alert/controller.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room TypeScript state machine matching the recovered alert contract: one active alert, one non-cancellable queued follow-up, cancellable-alert rejection while busy, async primary/secondary actions, pending state, surfaced failures, reset/dispose settlement, and generation-safe stale completion handling."
     },
     {
       "referencePath": "frontend/src/recovered/features/window-chrome/app-alert/view.tsx",
@@ -24525,5 +24531,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:20:35.295Z"
+  "generatedAt": "2026-09-22T07:23:54.904Z"
 }
