@@ -156,7 +156,7 @@ jobs:
       - name: Check Agent workspace architecture boundary
         run: node desktop/scripts/check-agent-workspace-boundary.mjs
       - name: Check Grok architecture inventory
-        run: node scripts/check-grok-architecture.mjs
+        run: node scripts/check-grok-architecture.mjs --strict
       - name: Typecheck and build renderer
         run: npm --prefix desktop run build:renderer
       - name: Enforce built desktop bundle boundary
