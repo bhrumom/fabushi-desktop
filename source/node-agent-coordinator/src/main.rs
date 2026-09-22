@@ -762,6 +762,7 @@ fn run_gateway_event_stream(
                     supervisor.mark_transport_live(true);
                     supervisor.record_health(now_ms, true);
                 }
+                signal_local_exec(&on_connected_state, LocalExecRuntimeCommand::Refresh);
                 on_connected_state.gateway_lifecycle(
                     "transport-connected",
                     generation,
@@ -1256,6 +1257,13 @@ fn execute_actions(
                 method,
                 args,
             } => {
+                if channel == CarrierChannel::MainData && method == "setGatewayPaused" {
+                    let paused = args
+                        .get("paused")
+                        .and_then(Value::as_bool)
+                        .unwrap_or(false);
+                    signal_local_exec(state, LocalExecRuntimeCommand::SetPaused(paused));
+                }
                 if let Err(error) =
                     dispatch_to_host(state, channel, request_id.clone(), method, args)
                 {
