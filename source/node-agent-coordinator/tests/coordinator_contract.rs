@@ -692,3 +692,94 @@ fn local_exec_supervisor_matches_grok_spawn_adopt_replace_policy() {
         }
     ));
 }
+
+
+#[test]
+fn transport_stage_recorder_bounds_echo_correlation_and_settles_once() {
+    use mahayana_node_agent_coordinator::telemetry::transport_stage_recorder::{
+        TransportIdentity, TransportReportLimiter, TransportStageRecorder,
+        MAX_IN_FLIGHT_TRANSPORT_REPORTS, PENDING_SEND_ECHO_MAX,
+        PENDING_SEND_ECHO_TTL_MS, SSE_ECHO_STAGE,
+    };
+
+    let mut recorder = TransportStageRecorder::default();
+    assert!(recorder
+        .begin_send(
+            TransportIdentity {
+                account_slot: "host".into(),
+                client_nonce: None,
+                traceparent: Some("00-root".into()),
+            },
+            0,
+        )
+        .is_none());
+
+    let trace = recorder
+        .begin_send(
+            TransportIdentity {
+                account_slot: "host".into(),
+                client_nonce: Some("nonce-1".into()),
+                traceparent: Some("00-root".into()),
+            },
+            10,
+        )
+        .expect("send trace");
+    let mut stage = trace.begin_stage("gateway-post", 2, 1_000, 20);
+    let completed = stage.complete(45).expect("first settlement");
+    assert_eq!(completed.duration_ms, 25);
+    assert!(!completed.is_error);
+    assert!(stage.fail(50).is_none(), "stage settlement is idempotent");
+
+    let echo = recorder
+        .record_send_echo("host", "nonce-1", 1_100, 50)
+        .expect("echo report");
+    assert_eq!(echo.stage, SSE_ECHO_STAGE);
+    assert_eq!(echo.traceparent.as_deref(), Some("00-root"));
+    assert!(recorder
+        .record_send_echo("host", "nonce-1", 1_101, 51)
+        .is_none());
+
+    for index in 0..=PENDING_SEND_ECHO_MAX {
+        recorder
+            .begin_send(
+                TransportIdentity {
+                    account_slot: "host".into(),
+                    client_nonce: Some(format!("nonce-{index}")),
+                    traceparent: Some(format!("00-{index}")),
+                },
+                100 + index as u64,
+            )
+            .expect("bounded trace");
+    }
+    assert_eq!(recorder.pending_echo_count(), PENDING_SEND_ECHO_MAX);
+    assert!(recorder
+        .record_send_echo("host", "nonce-0", 2_000, 200)
+        .is_none(), "oldest pending echo is evicted");
+
+    recorder
+        .begin_send(
+            TransportIdentity {
+                account_slot: "host".into(),
+                client_nonce: Some("expired".into()),
+                traceparent: Some("00-expired".into()),
+            },
+            500,
+        )
+        .expect("expiring trace");
+    assert!(recorder
+        .record_send_echo(
+            "host",
+            "expired",
+            2_500,
+            500 + PENDING_SEND_ECHO_TTL_MS + 1,
+        )
+        .is_none());
+
+    let mut limiter = TransportReportLimiter::default();
+    for _ in 0..MAX_IN_FLIGHT_TRANSPORT_REPORTS {
+        assert!(limiter.try_begin());
+    }
+    assert!(!limiter.try_begin());
+    limiter.settle();
+    assert!(limiter.try_begin());
+}
