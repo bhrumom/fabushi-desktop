@@ -97,7 +97,12 @@ fn box_file_transfer_runs_shell_through_host_shell_args_contract() {
         args.command,
         "bash -lc 'mkdir -p -- '\\''/workspace/a'\\'''"
     );
-    assert_eq!(args.name, "bash");
+    assert_eq!(args.parsing_result.executable_commands.len(), 1);
+    assert_eq!(args.parsing_result.executable_commands[0].name, "bash");
+    assert_eq!(
+        args.parsing_result.executable_commands[0].full_text,
+        args.command
+    );
     assert_eq!(args.working_directory, "/");
     assert_eq!(args.tool_call_id, TRANSFER_TOOL_CALL_ID);
     assert!(args.skip_approval);
