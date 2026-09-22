@@ -10413,43 +10413,54 @@
       "targetPath": "source/host/src/extensions/browser_ua/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "79754801d2105180ef556346f5df4d15990709ac",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/browser_ua/extension.rs",
+        "source/host/src/extensions/browser_ua/mod.rs",
+        "source/host/src/extensions/registry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_browser_ua_contract.rs"
+      ],
+      "notes": "Mahayana Host BrowserUa extension preserves Auth + Experiments dependencies, starts owner stamping, subscribes renewed auth tokens, subscribes experiment changes, performs initial kill-switch reconciliation, and owns unsubscribe guards."
     },
     {
       "referencePath": "source/host/extensions/browser-ua/ua-owner-stamp-service.ts",
       "targetPath": "source/host/src/extensions/browser_ua/ua_owner_stamp_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "9d42e8c4b225312d578532a1b574d4e7476ed3bb",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/browser_ua/ua_owner_stamp_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_browser_ua_contract.rs"
+      ],
+      "notes": "Rust owner-stamp service parses the JWT subject, hashes it with SHA-256, truncates to 16 hex chars, writes atomically through a .tmp file, and suppresses duplicate writes."
     },
     {
       "referencePath": "source/host/extensions/browser-ua/ua-token-kill-switch-service.ts",
       "targetPath": "source/host/src/extensions/browser_ua/ua_token_kill_switch_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b40b1a75555fb6153839f6531b8e2d3a5019601a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/browser_ua/ua_token_kill_switch_service.rs",
-        "source/host/src/extensions/browser_ua/mod.rs",
-        "source/host/src/extensions/mod.rs"
+        "source/host/src/extensions/browser_ua/extension.rs"
       ],
       "testEvidence": [
-        "source/host/tests/host_small_ports_contract.rs"
+        "source/host/tests/extensions_browser_ua_contract.rs"
       ],
-      "notes": "Service behavior is implemented and compiled into Mahayana Host, including retry-after-write-failure and force-like removal semantics. Remains existing-needs-parity until the BrowserUa extension owns the Experiments subscription and initial reconciliation."
+      "notes": "Kill-switch marker behavior is wired to the BrowserUa Experiments dependency for initial and subscription-driven reconciliation; failed marker updates remain retryable."
     },
     {
       "referencePath": "source/host/extensions/cloud-agents/cloud-agent-launch-error.ts",
