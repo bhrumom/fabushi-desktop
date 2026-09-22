@@ -6,7 +6,7 @@ These instructions apply repository-wide to all AI-assisted development in `bhru
 
 Every AI agent performing product-affecting work must follow:
 
-**Discover → Classify → Spec → Architecture/ADR → Migration → Plan → Implement → Verify → Compliance Review → PR/Merge → Release → Post-release verification**
+**Discover → Duplicate-work check → Classify → Spec → Architecture/ADR → Migration → Plan → Implement → Verify → Compliance Review → PR/Merge → Release → Post-release verification**
 
 The depth of a stage may scale with the task, but required gates do not disappear because a change looks small.
 
