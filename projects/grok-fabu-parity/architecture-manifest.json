@@ -3121,12 +3121,18 @@
       "targetPath": "frontend/src/recovered/features/window-chrome/model.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "b98344ca7fde8d2a1ad337bc6a60a2738589604b",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/window-chrome/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer model covering platform-specific window-controls metrics, zoom-scaled CSS variables, cleanup, cursor-light/cursor-dark root theme identity, root zoom factor and focus-refresh eligibility."
     },
     {
       "referencePath": "frontend/src/recovered/features/window-chrome/notification-host.tsx",
@@ -24531,5 +24537,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:23:54.904Z"
+  "generatedAt": "2026-09-22T07:25:12.523Z"
 }
