@@ -13611,12 +13611,19 @@
       "targetPath": "source/host/src/host_request_context.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "a6d7991636ed7d2a565fc3887bf835ec2fa9df77",
       "architecturalRole": "host/host-request-context",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/host_request_context.rs",
+        "source/host/src/sand_user_identity.rs",
+        "source/host/src/lib.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_small_ports_contract.rs"
+      ],
+      "notes": "Mahayana Host owns request-context construction. The Rust provider preserves injectable timezone/rules/full-name resolvers, applies the existing Sand identity normalizer, and exposes best-effort OS/shell/timezone defaults."
     },
     {
       "referencePath": "source/host/host-roster-bookkeeping.ts",

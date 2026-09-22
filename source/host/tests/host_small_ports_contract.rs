@@ -100,3 +100,36 @@ fn box_shell_command_builder_matches_grok_host_contract() {
         }
     );
 }
+
+#[test]
+fn host_request_context_prefers_injected_timezone_and_normalizes_identity() {
+    use mahayana_host_runtime::host_request_context::create_host_request_context;
+
+    let provider = create_host_request_context(
+        "/tmp/transcripts",
+        || Some("Asia/Shanghai".to_string()),
+        || vec!["rule-a", "rule-b"],
+        || Some("  Gloria   Chan  ".to_string()),
+    );
+
+    let resolved = provider.resolve();
+    assert_eq!(resolved.transcripts_folder, "/tmp/transcripts");
+    assert_eq!(resolved.time_zone.as_deref(), Some("Asia/Shanghai"));
+    assert_eq!(resolved.user_full_name.as_deref(), Some("Gloria Chan"));
+    assert!(!resolved.os_version.trim().is_empty());
+    assert_eq!(provider.resolve_rules(), vec!["rule-a", "rule-b"]);
+}
+
+#[test]
+fn host_request_context_omits_blank_user_identity() {
+    use mahayana_host_runtime::host_request_context::create_host_request_context;
+
+    let provider = create_host_request_context(
+        "/tmp/transcripts",
+        || Some("UTC".to_string()),
+        || Vec::<String>::new(),
+        || Some("   ".to_string()),
+    );
+
+    assert_eq!(provider.resolve().user_full_name, None);
+}
