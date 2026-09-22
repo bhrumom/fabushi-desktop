@@ -266,13 +266,13 @@ pub fn fetch_health(
 ) -> io::Result<Option<Value>> {
     let parsed = parse_gateway_http_base(&connection.base_url)?;
     let addresses = parsed.socket_addrs()?;
-    let socket = addresses.first().copied().ok_or_else(|| {
-        io::Error::new(
+    if addresses.is_empty() {
+        return Err(io::Error::new(
             io::ErrorKind::AddrNotAvailable,
             "Host gateway health address did not resolve",
-        )
-    })?;
-    let mut stream = parsed.connect(&socket, timeout)?;
+        ));
+    }
+    let mut stream = parsed.connect_any(&addresses, timeout)?;
     stream.set_read_timeout(Some(timeout))?;
     stream.set_write_timeout(Some(timeout))?;
 
