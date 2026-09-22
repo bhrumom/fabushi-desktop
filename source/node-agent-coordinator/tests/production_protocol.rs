@@ -7,7 +7,7 @@ mod unix {
         CoordinatorFrame, Failure, LifecyclePhase, ReplyOutcome, COORDINATOR_DISCONNECTED,
         COORDINATOR_PROTOCOL_VERSION,
     };
-    use serde_json::json;
+    use serde_json::{Value, json};
     use std::fs;
     use std::io::{self, BufRead, BufReader, Read, Write};
     use std::os::unix::fs::PermissionsExt;
@@ -15,7 +15,7 @@ mod unix {
     use std::path::{Path, PathBuf};
     use std::process::{Command, Stdio};
     use std::sync::{
-        Arc,
+        Arc, Mutex,
         atomic::{AtomicBool, Ordering},
         mpsc,
     };
@@ -35,6 +35,8 @@ mod unix {
     struct FakeGateway {
         address: std::net::SocketAddr,
         token: String,
+        oauth_callback_port: u16,
+        oauth_completion: Arc<Mutex<Option<Value>>>,
         stop: Arc<AtomicBool>,
         worker: Option<thread::JoinHandle<()>>,
     }
@@ -47,10 +49,19 @@ mod unix {
                 .expect("set fake Host gateway nonblocking");
             let address = listener.local_addr().expect("fake Host gateway address");
             let token = "production-protocol-token".to_string();
+            let oauth_callback_probe =
+                TcpListener::bind("127.0.0.1:0").expect("reserve OAuth callback port");
+            let oauth_callback_port = oauth_callback_probe
+                .local_addr()
+                .expect("OAuth callback address")
+                .port();
+            drop(oauth_callback_probe);
+            let oauth_completion = Arc::new(Mutex::new(None));
             let crash_path = data_dir.join("fake-host-crash");
             let stop = Arc::new(AtomicBool::new(false));
             let worker_stop = Arc::clone(&stop);
             let worker_token = token.clone();
+            let worker_oauth_completion = Arc::clone(&oauth_completion);
             let worker = thread::spawn(move || {
                 while !worker_stop.load(Ordering::Acquire) {
                     match listener.accept() {
@@ -58,12 +69,15 @@ mod unix {
                             let token = worker_token.clone();
                             let crash_path = crash_path.clone();
                             let handler_stop = Arc::clone(&worker_stop);
+                            let oauth_completion = Arc::clone(&worker_oauth_completion);
                             thread::spawn(move || {
                                 let _ = serve_fake_gateway(
                                     stream,
                                     &token,
                                     &crash_path,
                                     handler_stop.as_ref(),
+                                    oauth_callback_port,
+                                    oauth_completion.as_ref(),
                                 );
                             });
                         }
@@ -82,6 +96,8 @@ mod unix {
             Self {
                 address,
                 token,
+                oauth_callback_port,
+                oauth_completion,
                 stop,
                 worker: Some(worker),
             }
@@ -93,6 +109,25 @@ mod unix {
 
         fn token(&self) -> &str {
             &self.token
+        }
+
+        fn oauth_callback_port(&self) -> u16 {
+            self.oauth_callback_port
+        }
+
+        fn wait_for_oauth_completion(&self) -> Value {
+            for _ in 0..200 {
+                if let Some(value) = self
+                    .oauth_completion
+                    .lock()
+                    .expect("OAuth completion lock")
+                    .clone()
+                {
+                    return value;
+                }
+                thread::sleep(Duration::from_millis(10));
+            }
+            panic!("shipping Coordinator did not complete MCP OAuth");
         }
     }
 
@@ -111,6 +146,8 @@ mod unix {
         expected_token: &str,
         crash_path: &Path,
         stop: &AtomicBool,
+        oauth_callback_port: u16,
+        oauth_completion: &Mutex<Option<Value>>,
     ) -> io::Result<()> {
         stream.set_read_timeout(Some(Duration::from_secs(2)))?;
         stream.set_write_timeout(Some(Duration::from_secs(2)))?;
@@ -183,6 +220,20 @@ mod unix {
                     stream,
                     "data: {}\n",
                     json!({
+                        "channel": "mcp-oauth-pending",
+                        "payload": {
+                            "redirectUrl": format!(
+                                "http://127.0.0.1:{oauth_callback_port}/oauth/callback"
+                            ),
+                            "state": "state-live",
+                            "serverName": "github"
+                        }
+                    })
+                )?;
+                writeln!(
+                    stream,
+                    "data: {}\n",
+                    json!({
                         "channel": "client-side-tool-v2",
                         "payload": {
                             "version": 1,
@@ -210,6 +261,15 @@ mod unix {
                 200,
                 r#"{"echoed":true}"#,
             ),
+            ("POST", "/api/completeMcpOAuth") => {
+                let payload = serde_json::from_slice::<Value>(&request[header_end..total])
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                *oauth_completion
+                    .lock()
+                    .map_err(|_| io::Error::other("OAuth completion lock poisoned"))? =
+                    Some(payload);
+                write_fake_response(&mut stream, 200, r#"{"completed":true}"#)
+            }
             ("POST", "/api/crash") => {
                 fs::write(crash_path, b"crash")?;
                 thread::sleep(Duration::from_millis(750));
@@ -234,6 +294,37 @@ mod unix {
             body.len()
         )?;
         stream.flush()
+    }
+
+    fn complete_live_oauth(port: u16) -> String {
+        let mut stream = None;
+        for _ in 0..200 {
+            match TcpStream::connect(("127.0.0.1", port)) {
+                Ok(value) => {
+                    stream = Some(value);
+                    break;
+                }
+                Err(_) => thread::sleep(Duration::from_millis(10)),
+            }
+        }
+        let mut stream = stream.expect("connect to Coordinator OAuth callback listener");
+        stream
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .expect("set OAuth callback read timeout");
+        stream
+            .set_write_timeout(Some(Duration::from_secs(2)))
+            .expect("set OAuth callback write timeout");
+        write!(
+            stream,
+            "GET /oauth/callback?code=code-live&state=state-live HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"
+        )
+        .expect("write OAuth callback");
+        stream.flush().expect("flush OAuth callback");
+        let mut response = String::new();
+        stream
+            .read_to_string(&mut response)
+            .expect("read OAuth callback response");
+        response
     }
 
     fn fake_host() -> PathBuf {
@@ -424,6 +515,20 @@ exit 17
         assert!(saw_runtime_event, "shipping Coordinator did not relay Host event");
         assert!(saw_tool_event, "shipping Coordinator did not relay client-side tool events");
         assert!(saw_echo_reply, "shipping Coordinator did not settle Host reply");
+
+        let oauth_response = complete_live_oauth(gateway.oauth_callback_port());
+        assert!(
+            oauth_response.starts_with("HTTP/1.1 200 OK"),
+            "Coordinator OAuth callback did not complete successfully: {oauth_response}"
+        );
+        assert_eq!(
+            gateway.wait_for_oauth_completion(),
+            json!({
+                "code": "code-live",
+                "state": "state-live"
+            }),
+            "Coordinator did not forward the browser callback to completeMcpOAuth"
+        );
 
         send(
             &mut stdin,
