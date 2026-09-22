@@ -312,3 +312,43 @@ fn local_exec_daemon_files_parse_and_retire_only_the_expected_generation() {
     assert!(!paths.discovery_path.exists());
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn carrier_bootstrap_and_channels_preserve_grok_process_boundaries() {
+    use mahayana_node_agent_coordinator::carrier::{
+        parse_bootstrap_argument, Carrier, CarrierChannel, CarrierEnvelope,
+    };
+
+    let argument = r#"--bootstrap={"processConfig":{"appVersion":"1.2.75","isPackaged":true,"dataDir":"/tmp/fabushi"}}"#;
+    let bootstrap = parse_bootstrap_argument([argument]).expect("valid bootstrap");
+    assert_eq!(bootstrap.process_config.app_version, "1.2.75");
+    assert!(bootstrap.process_config.is_packaged);
+
+    let mut carrier = Carrier::new(bootstrap);
+    carrier
+        .accept_envelope(CarrierEnvelope::new(
+            CarrierChannel::Control,
+            json!({"kind":"control"}),
+        ))
+        .unwrap();
+    carrier
+        .accept_envelope(CarrierEnvelope::new(
+            CarrierChannel::Data,
+            json!({"kind":"renderer"}),
+        ))
+        .unwrap();
+    carrier
+        .accept_envelope(CarrierEnvelope::new(
+            CarrierChannel::MainData,
+            json!({"kind":"main"}),
+        ))
+        .unwrap();
+    let messages = carrier.drain();
+    assert_eq!(messages.len(), 3);
+    assert_eq!(messages[0].channel, CarrierChannel::Control);
+    assert_eq!(messages[1].channel, CarrierChannel::Data);
+    assert_eq!(messages[2].channel, CarrierChannel::MainData);
+    carrier.close();
+    assert!(carrier.post(CarrierChannel::Data, json!({})).is_err());
+}
