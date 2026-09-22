@@ -1448,3 +1448,143 @@ fn oauth_loopback_listener_binds_dispatches_and_releases_real_http_callback() {
     assert_eq!(registry.active_origin_count(), 0);
     assert_eq!(registry.bound_listener_count(&format!("http://127.0.0.1:{port}")), 0);
 }
+
+
+#[test]
+fn host_gateway_discovery_resolves_local_endpoint_and_bearer_header() {
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use mahayana_node_agent_coordinator::gateway::host_supervisor::read_gateway_discovery;
+
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!(
+        "mahayana-gateway-discovery-{}-{nonce}",
+        std::process::id()
+    ));
+    fs::create_dir_all(&root).expect("create discovery root");
+    let path = root.join("gateway.json");
+    fs::write(
+        &path,
+        r#"{
+          "port": 43123,
+          "pid": 77,
+          "startedAt": 1234,
+          "scheme": "http",
+          "host": "127.0.0.1",
+          "token": "secret-token"
+        }"#,
+    )
+    .expect("write discovery");
+
+    let connection = read_gateway_discovery(&path).expect("read discovery");
+    assert_eq!(connection.base_url, "http://127.0.0.1:43123");
+    assert_eq!(
+        connection.headers.get("authorization").map(String::as_str),
+        Some("Bearer secret-token")
+    );
+
+    fs::remove_dir_all(root).expect("remove discovery root");
+}
+
+#[test]
+fn gateway_request_dispatcher_posts_real_http_json_and_classifies_errors() {
+    use std::io::{BufRead, BufReader, Read, Write};
+    use std::net::TcpListener;
+    use std::thread;
+
+    use mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::{
+        GatewayDispatchError, dispatch_http_json,
+    };
+    use mahayana_node_agent_coordinator::gateway::gateway_reachability::ReachabilityOutcome;
+    use mahayana_node_agent_coordinator::gateway::host_supervisor::GatewayConnection;
+    use serde_json::json;
+    use std::collections::BTreeMap;
+
+    fn serve_once(listener: TcpListener, status: u16, response_body: &'static str) -> thread::JoinHandle<String> {
+        thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept gateway request");
+            let mut reader = BufReader::new(stream.try_clone().expect("clone stream"));
+            let mut request_line = String::new();
+            reader.read_line(&mut request_line).expect("request line");
+            let mut headers = Vec::new();
+            let mut content_length = 0usize;
+            loop {
+                let mut line = String::new();
+                reader.read_line(&mut line).expect("request header");
+                if line == "\r\n" || line.is_empty() {
+                    break;
+                }
+                if let Some(value) = line
+                    .to_ascii_lowercase()
+                    .strip_prefix("content-length:")
+                    .map(str::trim)
+                {
+                    content_length = value.parse().expect("content length");
+                }
+                headers.push(line);
+            }
+            let mut body = vec![0u8; content_length];
+            reader.read_exact(&mut body).expect("request body");
+            let reason = if status == 200 { "OK" } else { "Internal Server Error" };
+            write!(
+                stream,
+                "HTTP/1.1 {status} {reason}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{response_body}",
+                response_body.len()
+            )
+            .expect("gateway response");
+            stream.flush().expect("gateway flush");
+            format!(
+                "{request_line}{}{}",
+                headers.concat(),
+                String::from_utf8_lossy(&body)
+            )
+        })
+    }
+
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind gateway");
+    let port = listener.local_addr().expect("gateway addr").port();
+    let observed = serve_once(listener, 200, r#"{"echoed":true}"#);
+    let mut headers = BTreeMap::new();
+    headers.insert("authorization".into(), "Bearer secret".into());
+    let connection = GatewayConnection {
+        base_url: format!("http://127.0.0.1:{port}"),
+        headers,
+    };
+    let value = dispatch_http_json(&connection, "sendPrompt", json!({"prompt":"hello"}))
+        .expect("HTTP gateway dispatch");
+    assert_eq!(value, json!({"echoed":true}));
+    let request = observed.join().expect("gateway observer");
+    assert!(request.starts_with("POST /api/sendPrompt HTTP/1.1\r\n"), "{request}");
+    assert!(
+        request
+            .to_ascii_lowercase()
+            .contains("authorization: bearer secret\r\n"),
+        "{request}"
+    );
+    assert!(request.ends_with(r#"{"prompt":"hello"}"#), "{request}");
+
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind failing gateway");
+    let port = listener.local_addr().expect("gateway addr").port();
+    let observed = serve_once(listener, 500, r#"{"error":"host exploded"}"#);
+    let error = dispatch_http_json(
+        &GatewayConnection {
+            base_url: format!("http://127.0.0.1:{port}"),
+            headers: BTreeMap::new(),
+        },
+        "sendPrompt",
+        json!({}),
+    )
+    .expect_err("HTTP 500 is unreachable");
+    observed.join().expect("failing gateway observer");
+    assert!(matches!(
+        error,
+        GatewayDispatchError::Unreachable {
+            outcome: ReachabilityOutcome::Http(500),
+            ..
+        }
+    ));
+}
