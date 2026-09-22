@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -10,6 +11,15 @@ const strict = process.argv.includes('--strict') || process.env.GROK_ARCH_STRICT
 function fail(message) {
   console.error(`[grok-architecture] ERROR: ${message}`);
   process.exitCode = 1;
+}
+
+function gitBlobSha(content) {
+  const bytes = Buffer.isBuffer(content) ? content : Buffer.from(content);
+  return crypto
+    .createHash('sha1')
+    .update(Buffer.from(`blob ${bytes.length}\0`))
+    .update(bytes)
+    .digest('hex');
 }
 
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -70,6 +80,15 @@ for (const row of manifest.modules ?? []) {
     const target = path.resolve(root, row.targetPath);
     if (!target.startsWith(root + path.sep) || !fs.existsSync(target)) {
       fail(`implemented target missing: ${row.targetPath} for ${row.referencePath}`);
+    }
+    if (row.parityMode === 'reference-copy') {
+      if (!['typescript', 'react-typescript'].includes(row.targetLanguage)) {
+        fail(`reference-copy parity is only allowed for TypeScript/React modules: ${row.referencePath}`);
+      }
+      const actualBlobSha = gitBlobSha(fs.readFileSync(target));
+      if (actualBlobSha !== row.referenceBlobSha) {
+        fail(`reference-copy target diverged: ${row.targetPath} expected ${row.referenceBlobSha}, found ${actualBlobSha}`);
+      }
     }
     for (const [label, evidencePaths] of [
       ['behavioralEvidence', row.behavioralEvidence],
