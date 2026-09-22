@@ -84,17 +84,19 @@ impl ProductionBoxTransport {
     }
 }
 
-pub struct ProductionBoxControlClient<'a> {
-    transport: &'a ProductionBoxTransport,
+pub struct ProductionBoxControlClient {
+    transport: ProductionBoxTransport,
 }
 
 pub fn create_production_box_control_client(
     transport: &ProductionBoxTransport,
-) -> ProductionBoxControlClient<'_> {
-    ProductionBoxControlClient { transport }
+) -> ProductionBoxControlClient {
+    ProductionBoxControlClient {
+        transport: transport.clone(),
+    }
 }
 
-impl<Ctx> BoxEnvironmentControlClient<Ctx> for ProductionBoxControlClient<'_> {
+impl<Ctx> BoxEnvironmentControlClient<Ctx> for ProductionBoxControlClient {
     type Error = ProductionBoxTransportError;
 
     fn update_environment_variables(
