@@ -13736,24 +13736,44 @@
       "targetPath": "source/host/src/extensions/webauthn_proxy/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "20fd171af814bce2694a2b18a98366c141ef11d0",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/webauthn_proxy/extension.rs",
+        "source/host/src/extensions/webauthn_proxy/webauthn_proxy_bridge.rs",
+        "source/host/src/gateway_server.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_webauthn_proxy_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Final: the shipping Host starts and retains the Rust WebAuthn Proxy extension, exposes requestWebAuthnCeremony through UnifiedGatewayApi, and installs its provider/response bridge on the authenticated Host gateway. The extension keeps Telemetry as its declared dependency, owns provider registration lifetime and response submission, and its exact implementation HEAD 1d977f0fc518cb14d7c3e4f8a7ae0340a8448f3e passed Rust desktop runtime run 35796581834 including the shipping Host check, independent Coordinator contract and full Host/Runner cargo tests."
     },
     {
       "referencePath": "source/host/extensions/webauthn-proxy/webauthn-proxy-bridge.ts",
       "targetPath": "source/host/src/extensions/webauthn_proxy/webauthn_proxy_bridge.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "b1619afd96ec209cdafc90fc395f9373b66128d3",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/webauthn_proxy/webauthn_proxy_bridge.rs",
+        "source/host/src/extensions/webauthn_proxy/extension.rs",
+        "source/host/src/gateway_server.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_webauthn_proxy_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Final: the Rust bridge owns provider welcome/hello/ping liveness, deterministic live-provider selection, correlated ceremony request/stage/result/error settlement, timeout cancellation and telemetry classification. The shipping Host wires the bridge into the gateway's WebAuthn SSE/response path and requestWebAuthnCeremony command. Exact implementation HEAD 1d977f0fc518cb14d7c3e4f8a7ae0340a8448f3e passed Rust desktop runtime run 35796581834 after the SSE receiver compile fix."
     },
     {
       "referencePath": "source/host/extensions/webauthn-proxy/webauthn-proxy-marker.ts",
