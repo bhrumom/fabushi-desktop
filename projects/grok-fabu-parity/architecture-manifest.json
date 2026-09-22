@@ -943,12 +943,18 @@
       "targetPath": "frontend/src/recovered/features/automations/routines/run-history.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "a9a89625119670526c5bb917e6bd23249974a8ef",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/automations/routines/run-history.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable contract coverage for validation, shared subscriptions, optimistic/retry lifecycle, scoped search navigation, and run-history presentation."
     },
     {
       "referencePath": "frontend/src/recovered/features/automations/routines/schedule-editor.tsx",
@@ -1207,12 +1213,18 @@
       "targetPath": "frontend/src/recovered/features/conversation/cards/timeline-event-registry.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "f8f628a21997e82118f11d658c4f73bd372b4191",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/timeline-event-registry.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable contract coverage for validation, shared subscriptions, optimistic/retry lifecycle, scoped search navigation, and run-history presentation."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/cards/timeline-event-resolver.tsx",
@@ -1567,12 +1579,18 @@
       "targetPath": "frontend/src/recovered/features/conversation/cards/transcript-card/transcript-feed-source.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "ab4aec466d92ad86f87c3b26a1cb9522ae84d86d",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/transcript-feed-source.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable contract coverage for validation, shared subscriptions, optimistic/retry lifecycle, scoped search navigation, and run-history presentation."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
@@ -2011,12 +2029,18 @@
       "targetPath": "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "bee3cb7f4c811380cd529e72cf1c7d4498f085ef",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable contract coverage for validation, shared subscriptions, optimistic/retry lifecycle, scoped search navigation, and run-history presentation."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/find-in-chat.tsx",
@@ -2521,12 +2545,18 @@
       "targetPath": "frontend/src/recovered/features/hidden-chats/overlay/mutation-controller.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c0cd395f973e1309cdd963a619f77e7d2437d7e6",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/hidden-chats/overlay/mutation-controller.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable contract coverage for validation, shared subscriptions, optimistic/retry lifecycle, scoped search navigation, and run-history presentation."
     },
     {
       "referencePath": "frontend/src/recovered/features/hidden-chats/overlay/view.tsx",
@@ -24717,5 +24747,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:42:31.638Z"
+  "generatedAt": "2026-09-22T07:46:01.089Z"
 }
