@@ -607,12 +607,18 @@
       "targetPath": "frontend/src/recovered/features/agent-info/async-tasks/clock.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "66790cf0d4ce09ca9d5ebf037b432ebfc4b5c97d",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/agent-info/async-tasks/clock.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-runtime-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage; no dependency on legacy runtime roots."
     },
     {
       "referencePath": "frontend/src/recovered/features/agent-info/async-tasks/provider.ts",
@@ -2803,12 +2809,18 @@
       "targetPath": "frontend/src/recovered/features/roster/access-readiness.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "bc3968ba517c4fec09e04ec5af429d992d69d035",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/roster/access-readiness.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-runtime-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage; no dependency on legacy runtime roots."
     },
     {
       "referencePath": "frontend/src/recovered/features/roster/privacy-blocked.tsx",
@@ -3055,12 +3067,18 @@
       "targetPath": "frontend/src/recovered/features/terminal/output/model.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c325b4cac2814ebb2a1650c21a7f7b2382755d69",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/terminal/output/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-runtime-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage; no dependency on legacy runtime roots."
     },
     {
       "referencePath": "frontend/src/recovered/features/terminal/output/view.tsx",
@@ -24585,5 +24603,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:28:07.829Z"
+  "generatedAt": "2026-09-22T07:29:32.420Z"
 }
