@@ -82,6 +82,29 @@ fn disconnect_rejects_every_pending_control_call() {
 }
 
 #[test]
+fn control_port_preserves_client_event_direction_and_rejects_server_events() {
+    let mut client = ControlPortClient::default();
+    assert!(matches!(
+        client.post_event("renderer-event", json!({"ok": true})),
+        Some(ClientAction::Post(CoordinatorFrame::Event { .. }))
+    ));
+
+    client.handle_frame(CoordinatorFrame::ready());
+    let actions = client.handle_frame(CoordinatorFrame::Event {
+        family: "server-event".into(),
+        payload: json!({}),
+    });
+    assert!(matches!(
+        actions.first(),
+        Some(ClientAction::Post(CoordinatorFrame::Lifecycle {
+            phase: LifecyclePhase::Shutdown,
+            ..
+        }))
+    ));
+    assert!(matches!(actions.last(), Some(ClientAction::Close)));
+}
+
+#[test]
 fn reconnect_resync_reports_generation_and_pending_state() {
     let mut supervisor = CoordinatorSupervisor::default();
     let first = supervisor.connect();
