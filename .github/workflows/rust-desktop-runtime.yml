@@ -82,6 +82,9 @@ jobs:
       - name: Test independent Mahayana Coordinator contract
         shell: bash
         run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml
+      - name: Test independent Mahayana Host Runner contract
+        shell: bash
+        run: cargo test --manifest-path source/host/Cargo.toml
       - name: Test human Computer takeover lifecycle
         shell: bash
         run: cargo test -p mahayana-feature-host computer_takeover_acquires_and_releases_a_human_control_lease --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml
