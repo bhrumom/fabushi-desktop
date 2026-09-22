@@ -6,6 +6,7 @@ pub mod gateway_event_families;
 pub mod gateway_reachability;
 pub mod gateway_request_dispatcher;
 pub mod host_supervisor;
+pub mod http_transport;
 pub mod sse_block_decoder;
 
 pub use host_supervisor::{
