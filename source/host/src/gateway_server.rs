@@ -936,7 +936,7 @@ fn handle_connection(
     }
     if webauthn_requests {
         return match deps.webauthn.as_ref() {
-            Some(bridge) => serve_bridge_requests(&mut stream, bridge, stop),
+            Some(bridge) => serve_bridge_requests(&mut stream, bridge, stop, sse_gzip_enabled(&request)),
             None => respond_error(&mut stream, 404, "webauthn channel not enabled"),
         };
     }
