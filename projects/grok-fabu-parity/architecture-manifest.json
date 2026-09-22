@@ -9951,12 +9951,21 @@
       "targetPath": "source/host/src/extensions/auth/auth_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "e6c7b858d2e782883191e254d642850daf50c6c2",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/auth/auth_service.rs",
+        "source/host/src/extensions/auth/credential_renewer.rs",
+        "source/host/src/host_secret_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_auth_service_contract.rs",
+        "source/host/tests/extensions_auth_credential_renewer_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Auth service now owns the Grok credential store with 30s expiry leeway, fail-closed waiting error, immediate renewer wakeup, first-credential renewal events, subscriber isolation surface, machine-id provider, and production environment/backend construction. Final is withheld until auth/extension.rs is in the shipping Host extension/bootstrap graph."
     },
     {
       "referencePath": "source/host/extensions/auth/credential-renewer.ts",
@@ -9977,7 +9986,7 @@
         "source/host/tests/extensions_auth_credential_renewer_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust credential-renewer now preserves Grok renewal credential/dev-token sources, token expiry fallback, Cursor/Sand backend metadata, real HTTP(S) POST to /sand-box/inference-credential, refresh/backoff bounds, immediate-renewal wakeup, result reporting, and error redaction. Final status is intentionally withheld until source/host/extensions/auth/auth-service.ts consumes this renewer in the shipping Host Auth extension."
+      "notes": "Rust credential-renewer is now consumed by auth_service.rs with real backend/dev-token source selection, but final is still withheld until the Auth extension is wired into the shipping Host bootstrap; tests cover HTTP metadata, scheduling/backoff, immediate renewal, and Auth integration."
     },
     {
       "referencePath": "source/host/extensions/auth/extension.ts",

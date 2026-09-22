@@ -61,7 +61,7 @@ pub enum SandCredentialRenewalError {
     ParseJson(#[from] serde_json::Error),
 }
 
-fn now_ms() -> u64 {
+pub fn system_now_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
@@ -120,7 +120,7 @@ pub fn read_dev_inference_credential_file(
     credential_from_payload(
         parsed,
         &format!("Dev inference token file {} has no accessToken yet.", path.display()),
-        now_ms(),
+        system_now_ms(),
     )
 }
 
@@ -287,7 +287,7 @@ impl CredentialRenewerHooks {
             get_credential,
             set_credential,
             on_result,
-            now_ms: Arc::new(now_ms),
+            now_ms: Arc::new(system_now_ms),
         }
     }
 }
