@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::mpsc::{self, Receiver, Sender};
 
 use serde_json::Value;
 
@@ -24,11 +25,20 @@ pub enum ControlPortPhase {
 }
 
 #[derive(Debug)]
+pub type ControlCallResult = Result<Value, Failure>;
+
+pub struct ControlPortWaiter {
+    pub request_id: String,
+    pub action: ClientAction,
+    pub reply: Receiver<ControlCallResult>,
+}
+
 pub struct ControlPortClient {
     phase: ControlPortPhase,
     ready_observed: bool,
     next_request_id: u64,
     pending: HashMap<String, String>,
+    waiters: HashMap<String, Sender<ControlCallResult>>,
 }
 
 impl Default for ControlPortClient {
@@ -38,6 +48,7 @@ impl Default for ControlPortClient {
             ready_observed: false,
             next_request_id: 0,
             pending: HashMap::new(),
+            waiters: HashMap::new(),
         }
     }
 }
@@ -66,6 +77,21 @@ impl ControlPortClient {
             request_id.clone(),
             ClientAction::Post(CoordinatorFrame::Request { request_id, method, args }),
         ))
+    }
+
+    pub fn call_waiting(
+        &mut self,
+        method: impl Into<String>,
+        args: Value,
+    ) -> Result<ControlPortWaiter, Failure> {
+        let (request_id, action) = self.call(method, args)?;
+        let (sender, reply) = mpsc::channel();
+        self.waiters.insert(request_id.clone(), sender);
+        Ok(ControlPortWaiter {
+            request_id,
+            action,
+            reply,
+        })
     }
 
     pub fn cancel(&mut self, request_id: &str) -> Option<ClientAction> {
@@ -103,8 +129,18 @@ impl ControlPortClient {
                     return Vec::new();
                 }
                 match outcome {
-                    ReplyOutcome::Ok { value } => vec![ClientAction::Resolve { request_id, value }],
-                    ReplyOutcome::Failed { failure } => vec![ClientAction::Reject { request_id, failure }],
+                    ReplyOutcome::Ok { value } => {
+                        if let Some(waiter) = self.waiters.remove(&request_id) {
+                            let _ = waiter.send(Ok(value.clone()));
+                        }
+                        vec![ClientAction::Resolve { request_id, value }]
+                    }
+                    ReplyOutcome::Failed { failure } => {
+                        if let Some(waiter) = self.waiters.remove(&request_id) {
+                            let _ = waiter.send(Err(failure.clone()));
+                        }
+                        vec![ClientAction::Reject { request_id, failure }]
+                    }
                 }
             }
             CoordinatorFrame::Event { .. }
@@ -147,13 +183,17 @@ impl ControlPortClient {
         }
         self.phase = ControlPortPhase::Settled;
         let pending = std::mem::take(&mut self.pending);
-        let mut actions = pending
-            .into_keys()
-            .map(|request_id| ClientAction::Reject {
+        let mut actions = Vec::with_capacity(pending.len().saturating_add(1));
+        for request_id in pending.into_keys() {
+            if let Some(waiter) = self.waiters.remove(&request_id) {
+                let _ = waiter.send(Err(failure.clone()));
+            }
+            actions.push(ClientAction::Reject {
                 request_id,
                 failure: failure.clone(),
-            })
-            .collect::<Vec<_>>();
+            });
+        }
+        self.waiters.clear();
         actions.push(ClientAction::Close);
         actions
     }
