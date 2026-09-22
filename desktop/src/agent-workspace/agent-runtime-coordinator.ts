@@ -66,22 +66,6 @@ export class AgentRuntimeCoordinator {
     this.hooks.onOperationChanged?.(peerKey);
   }
 
-  private knownRuntimeIds(): string[] {
-    return [...new Set([
-      ...Object.values(this.workspace.snapshot()),
-      ...Object.values(this.workspace.requestSnapshot()),
-    ])];
-  }
-
-  private unambiguousRuntimeId(): string | undefined {
-    const ids = this.knownRuntimeIds();
-    return ids.length === 1 ? ids[0] : undefined;
-  }
-
-  private hasAgentWork(): boolean {
-    return this.knownRuntimeIds().length > 0;
-  }
-
   bindAgentPeers(bindings: readonly { agentId: string; peerKey: string; conversationId?: string }[]): void {
     this.peerByAgentId.clear();
     this.peerByConversationId.clear();
@@ -186,23 +170,11 @@ export class AgentRuntimeCoordinator {
       return fallbackPeerKey;
     }
 
-    if (alreadyOwned) return alreadyOwned;
-    // Unknown runtime operations must not be adopted by inference. The only
-    // safe compatibility fallback is an explicit request id that is itself
-    // present on the event path; otherwise wait for canonical adoption or an
-    // event carrying conversation/Agent ownership.
-    const fallback = this.workspace.peerForRequest(operationId);
-    const requestId = fallback ? this.workspace.requestForPeer(fallback) : null;
-    const peerKey = this.workspace.claimRuntimeOperation(operationId, fallback);
-    if (!peerKey) return null;
-
-    if (requestId && requestId !== operationId) {
-      this.transcripts.adoptOperation(peerKey, requestId, operationId);
-    }
-    this.transcripts.markUserOperationAccepted(peerKey, operationId);
-    this.emitTranscript(peerKey);
-    this.emitOperation(peerKey);
-    return peerKey;
+    // Canonical operation ownership is established only by Coordinator
+    // acceptance or by an event carrying explicit conversation/Agent ownership.
+    // Never infer an operation from a request id or from "the only pending turn":
+    // request ids and operation ids are distinct protocol concepts.
+    return alreadyOwned ?? null;
   }
 
   private appendAssistantEvent(peerKey: string, event: RuntimeEvent): void {
@@ -347,9 +319,9 @@ export class AgentRuntimeCoordinator {
       || event.type === 'operation.failed'
       || event.type === 'operation.interrupted'
     ) {
-      const operationId = ('operationId' in event && typeof event.operationId === 'string'
+      const operationId = 'operationId' in event && typeof event.operationId === 'string'
         ? event.operationId
-        : this.unambiguousRuntimeId()) ?? undefined;
+        : undefined;
       if (operationId) this.flushPendingDeltas(operationId);
     }
 
@@ -382,12 +354,12 @@ export class AgentRuntimeCoordinator {
       }
 
       case 'chat.message': {
-        const operationId = event.operationId ?? this.unambiguousRuntimeId();
+        const operationId = event.operationId;
         if (event.role === 'assistant') {
-          if (!operationId) return this.hasAgentWork();
+          if (!operationId) return false;
           if (this.workspace.isOperationFinished(operationId)) return true;
           const peerKey = this.claimOperation(operationId);
-          if (!peerKey) return this.hasAgentWork();
+          if (!peerKey) return false;
           this.appendAssistantEvent(peerKey, { ...event, operationId });
           return true;
         }
@@ -401,11 +373,11 @@ export class AgentRuntimeCoordinator {
       }
 
       case 'chat.delta': {
-        const operationId = event.operationId ?? this.unambiguousRuntimeId();
-        if (!operationId) return this.hasAgentWork();
+        const operationId = event.operationId;
+        if (!operationId) return false;
         if (this.workspace.isOperationFinished(operationId)) return true;
         const peerKey = this.claimOperation(operationId);
-        if (!peerKey) return this.hasAgentWork();
+        if (!peerKey) return false;
         this.queueDelta({ ...event, operationId });
         return true;
       }
@@ -453,10 +425,10 @@ export class AgentRuntimeCoordinator {
 
       case 'model.routed':
       case 'agent.step': {
-        const operationId = event.operationId ?? this.unambiguousRuntimeId();
-        if (!operationId) return this.hasAgentWork();
+        const operationId = event.operationId;
+        if (!operationId) return false;
         const peerKey = this.claimOperation(operationId);
-        if (!peerKey) return this.hasAgentWork();
+        if (!peerKey) return false;
         this.appendAssistantEvent(peerKey, { ...event, operationId });
         return true;
       }
@@ -465,7 +437,7 @@ export class AgentRuntimeCoordinator {
         if (!event.operationId) return false;
         if (this.workspace.isOperationFinished(event.operationId)) return true;
         const peerKey = this.claimOperation(event.operationId);
-        if (!peerKey) return this.hasAgentWork();
+        if (!peerKey) return false;
         this.transcripts.appendApprovalRequested(peerKey, event);
         this.emitTranscript(peerKey);
         return true;
