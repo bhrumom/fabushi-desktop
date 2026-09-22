@@ -344,7 +344,17 @@ class MahayanaHostProcess {
     let child;
     try {
       const hostExecutable = this.executablePath();
-      child = this.spawn(this.coordinatorExecutablePath(), [], {
+      const coordinatorBootstrap = {
+        processConfig: {
+          appVersion: typeof this.app.getVersion === 'function' ? this.app.getVersion() : '0.0.0-dev',
+          isPackaged: this.app.isPackaged === true,
+          dataDir: this.app.getPath('userData'),
+        },
+      };
+      child = this.spawn(
+        this.coordinatorExecutablePath(),
+        [`--bootstrap=${JSON.stringify(coordinatorBootstrap)}`],
+        {
         stdio: ['pipe', 'pipe', 'pipe'],
         env: {
           MAHAYANA_APP_HOST_BIN: hostExecutable,
@@ -370,7 +380,8 @@ class MahayanaHostProcess {
           ...computerEnvironment,
         },
         windowsHide: true,
-      });
+        },
+      );
     } catch (error) {
       this.state = 'stopped';
       this.startedAt = null;
