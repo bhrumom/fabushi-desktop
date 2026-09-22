@@ -1669,6 +1669,21 @@ fn wait_for_runner_event_stream(state: &Arc<CoordinatorState>) -> Result<(), Fai
     ))
 }
 
+fn cancel_runner_stream_best_effort(
+    state: &Arc<CoordinatorState>,
+    stream_id: &str,
+    reason: &str,
+) {
+    let _ = dispatch_gateway_value(
+        state,
+        "runner.cancelRoutedProvider",
+        json!({
+            "streamId": stream_id,
+            "reason": reason,
+        }),
+    );
+}
+
 fn execute_local_inference(
     state: Arc<CoordinatorState>,
     provider: InferenceProvider,
@@ -1825,16 +1840,32 @@ fn execute_local_inference(
                         RunnerInferenceEvent::Failed { message } => {
                             return Err(Failure::new("INFERENCE_PROVIDER_FAILED", message));
                         }
+                        RunnerInferenceEvent::Cancelled { message } => {
+                            return Err(Failure::new(
+                                "INFERENCE_PROVIDER_CANCELLED",
+                                message,
+                            ));
+                        }
                     }
                 }
                 Err(RecvTimeoutError::Timeout) => {
                     if state.closed.load(Ordering::SeqCst) {
+                        cancel_runner_stream_best_effort(
+                            &state,
+                            &stream_id,
+                            "Coordinator closed while waiting for the Host Runner",
+                        );
                         return Err(Failure::new(
                             "INFERENCE_RUNNER_STREAM_CLOSED",
                             "Coordinator closed while waiting for the Host Runner",
                         ));
                     }
                     if started.elapsed() >= Duration::from_secs(30 * 60) {
+                        cancel_runner_stream_best_effort(
+                            &state,
+                            &stream_id,
+                            "Coordinator inference safety deadline exceeded",
+                        );
                         return Err(Failure::new(
                             "INFERENCE_RUNNER_TIMEOUT",
                             "Host Runner inference exceeded the 30 minute safety deadline",
@@ -2034,7 +2065,9 @@ fn dispatch_inference_if_handled(
         if let Err(error) =
             execute_local_inference(Arc::clone(&worker_state), provider, worker_args)
         {
-            record_inference_error(&worker_state, provider, &agent_id, &error);
+            if error.code != "INFERENCE_PROVIDER_CANCELLED" {
+                record_inference_error(&worker_state, provider, &agent_id, &error);
+            }
         }
     });
     match enqueue {

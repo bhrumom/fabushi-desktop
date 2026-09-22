@@ -21,8 +21,9 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 };
 use mahayana_host_runtime::host_request_context::create_host_request_context;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
-    RoutedProviderRun, RoutedToolBridge, RunnerRequestContextSnapshot,
-    RunnerRequestContextSource, run_routed_provider_in_runner,
+    RoutedProviderRun, RoutedProviderTaskRegistry, RoutedToolBridge,
+    RunnerRequestContextSnapshot, RunnerRequestContextSource,
+    run_routed_provider_in_runner,
 };
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
@@ -120,6 +121,7 @@ enum HostLaneRequest {
 }
 
 const RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD: &str = "runner.startRoutedProvider";
+const RUNNER_CANCEL_ROUTED_PROVIDER_GATEWAY_METHOD: &str = "runner.cancelRoutedProvider";
 const RUNNER_INFERENCE_EVENT_CHANNEL: &str = "runner-inference";
 
 struct UnifiedGatewayApi {
@@ -128,6 +130,7 @@ struct UnifiedGatewayApi {
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
     session_workers: Arc<ProductionSessionWorkers>,
+    routed_provider_tasks: Arc<RoutedProviderTaskRegistry>,
 }
 
 fn call_host_lane(
@@ -237,6 +240,7 @@ fn start_routed_provider_task(
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
     session_workers: Arc<ProductionSessionWorkers>,
+    routed_provider_tasks: Arc<RoutedProviderTaskRegistry>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
@@ -258,6 +262,9 @@ fn start_routed_provider_task(
         ))?
         .to_string();
     let messages = decode_provider_messages(&args)?;
+    let cancellation = routed_provider_tasks.register(&stream_id).map_err(|error| {
+        GatewayCommandError::Internal(error.to_string())
+    })?;
     session_workers.prepare_existing_agent(&agent_id).map_err(|error| {
         GatewayCommandError::Internal(format!(
             "could not prepare production session worker state for {agent_id}: {error}"
@@ -266,7 +273,10 @@ fn start_routed_provider_task(
     let resolved_request_context = request_context.resolve();
     let worker_events = events.clone();
     let accepted_stream_id = stream_id.clone();
-    thread::Builder::new()
+    let worker_stream_id = stream_id.clone();
+    let worker_tasks = Arc::clone(&routed_provider_tasks);
+    let worker_cancellation = cancellation.clone();
+    let spawn = thread::Builder::new()
         .name(format!("mahayana-runner-provider-{agent_id}"))
         .spawn(move || {
             let bridge: Arc<dyn RoutedToolBridge> = Arc::new(HostLaneRoutedToolBridge {
@@ -292,31 +302,38 @@ fn start_routed_provider_task(
                     messages: &messages,
                     bridge,
                     request_context: resolved_request_context,
+                    cancellation,
                 },
                 &mut on_text_delta,
             );
-            match result {
-                Ok(content) => worker_events.publish(serde_json::json!({
-                    "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
-                    "payload": {
-                        "streamId": stream_id,
-                        "type": "completed",
-                        "content": content
-                    }
-                })),
-                Err(error) => worker_events.publish(serde_json::json!({
-                    "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
-                    "payload": {
-                        "streamId": stream_id,
-                        "type": "failed",
-                        "message": error.to_string()
-                    }
-                })),
+            if !worker_cancellation.is_cancelled() {
+                match result {
+                    Ok(content) => worker_events.publish(serde_json::json!({
+                        "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+                        "payload": {
+                            "streamId": stream_id,
+                            "type": "completed",
+                            "content": content
+                        }
+                    })),
+                    Err(error) => worker_events.publish(serde_json::json!({
+                        "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+                        "payload": {
+                            "streamId": stream_id,
+                            "type": "failed",
+                            "message": error.to_string()
+                        }
+                    })),
+                }
             }
-        })
-        .map_err(|error| GatewayCommandError::Internal(format!(
+            worker_tasks.finish(&worker_stream_id);
+        });
+    if let Err(error) = spawn {
+        routed_provider_tasks.finish(&accepted_stream_id);
+        return Err(GatewayCommandError::Internal(format!(
             "could not start routed provider Runner: {error}"
-        )))?;
+        )));
+    }
     Ok(serde_json::json!({
         "accepted": true,
         "streamId": accepted_stream_id,
@@ -337,8 +354,38 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.data_dir.clone(),
                 Arc::clone(&self.request_context),
                 Arc::clone(&self.session_workers),
+                Arc::clone(&self.routed_provider_tasks),
                 args,
             );
+        }
+        if method == RUNNER_CANCEL_ROUTED_PROVIDER_GATEWAY_METHOD {
+            let stream_id = args
+                .get("streamId")
+                .and_then(serde_json::Value::as_str)
+                .filter(|value| !value.trim().is_empty())
+                .ok_or_else(|| GatewayCommandError::Internal(
+                    "runner.cancelRoutedProvider requires streamId".into()
+                ))?;
+            let reason = args
+                .get("reason")
+                .and_then(serde_json::Value::as_str)
+                .filter(|value| !value.trim().is_empty())
+                .unwrap_or("Runner provider request cancelled");
+            let cancelled = self.routed_provider_tasks.cancel(stream_id, reason);
+            if cancelled {
+                self.events.publish(serde_json::json!({
+                    "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+                    "payload": {
+                        "streamId": stream_id,
+                        "type": "cancelled",
+                        "message": reason
+                    }
+                }));
+            }
+            return Ok(serde_json::json!({
+                "streamId": stream_id,
+                "cancelled": cancelled,
+            }));
         }
         // UnifiedAppHost owns a QuickJS runtime and is intentionally !Send.
         // Product calls remain on its owner lane while the Runner provider
@@ -563,6 +610,7 @@ fn main() {
             transcripts_folder: app_data_dir.join("transcripts"),
         });
     let session_workers = Arc::new(ProductionSessionWorkers::production());
+    let routed_provider_tasks = Arc::new(RoutedProviderTaskRegistry::default());
 
     let gateway_config = match resolve_gateway_server_config() {
         Ok(config) => config,
@@ -580,6 +628,7 @@ fn main() {
             data_dir: app_data_dir.clone(),
             request_context: runner_request_context,
             session_workers: Arc::clone(&session_workers),
+            routed_provider_tasks: Arc::clone(&routed_provider_tasks),
         }),
         events: gateway_events.clone(),
         local_exec: None,
@@ -698,6 +747,7 @@ fn main() {
     }
     drop(platform_tx);
     drop(gateway_server);
+    routed_provider_tasks.cancel_all("Mahayana Host shutting down");
     session_workers.shutdown();
     if let Err(error) = clear_gateway_discovery(&gateway_discovery_path) {
         eprintln!(
@@ -728,6 +778,7 @@ mod tests {
         fn assert_send_sync<T: Send + Sync>() {}
         assert_send_sync::<ProductionHostExtensions>();
         assert_send_sync::<ProductionSessionWorkers>();
+        assert_send_sync::<RoutedProviderTaskRegistry>();
     }
 
     #[test]

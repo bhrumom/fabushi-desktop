@@ -62,6 +62,7 @@ pub enum RunnerInferenceEvent {
     Delta { content: String },
     Completed { content: String },
     Failed { message: String },
+    Cancelled { message: String },
 }
 
 pub fn parse_runner_inference_event(
@@ -100,6 +101,13 @@ pub fn parse_runner_inference_event(
                 .get("message")
                 .and_then(Value::as_str)
                 .unwrap_or("Runner inference failed")
+                .to_string(),
+        },
+        "cancelled" => RunnerInferenceEvent::Cancelled {
+            message: value
+                .get("message")
+                .and_then(Value::as_str)
+                .unwrap_or("Runner inference cancelled")
                 .to_string(),
         },
         other => {

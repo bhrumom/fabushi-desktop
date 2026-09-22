@@ -6,7 +6,8 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
-    ROUTED_MCP_PROTOCOL_VERSION, RoutedToolBridge, start_routed_mcp_server,
+    ROUTED_MCP_PROTOCOL_VERSION, RoutedProviderTaskRegistry, RoutedToolBridge,
+    start_routed_mcp_server,
 };
 use serde_json::{Value, json};
 
@@ -83,4 +84,18 @@ fn runner_owned_mcp_bridge_lists_and_executes_host_tools() {
     );
     assert_eq!(called["result"]["content"][0]["text"], "tool-result");
     server.close();
+}
+
+#[test]
+fn runner_provider_registry_cancels_by_stream_and_retires_finished_runs() {
+    let registry = RoutedProviderTaskRegistry::default();
+    let cancellation = registry.register("stream-cancel").expect("register");
+    assert_eq!(registry.active_count(), 1);
+    assert!(!cancellation.is_cancelled());
+    assert!(registry.cancel("stream-cancel", "user cancelled"));
+    assert!(cancellation.is_cancelled());
+    assert_eq!(cancellation.reason().as_deref(), Some("user cancelled"));
+    assert!(!registry.cancel("missing-stream", "ignored"));
+    registry.finish("stream-cancel");
+    assert_eq!(registry.active_count(), 0);
 }

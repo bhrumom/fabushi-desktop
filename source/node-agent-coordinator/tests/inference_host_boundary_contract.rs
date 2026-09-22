@@ -67,6 +67,19 @@ fn runner_inference_events_are_correlated_by_stream_id() {
         }
     );
 
+    let (_, cancelled) = parse_runner_inference_event(&json!({
+        "streamId":"stream-42",
+        "type":"cancelled",
+        "message":"user cancelled"
+    }))
+    .expect("cancelled event");
+    assert_eq!(
+        cancelled,
+        RunnerInferenceEvent::Cancelled {
+            message: "user cancelled".into()
+        }
+    );
+
     assert!(parse_runner_inference_event(&json!({
         "streamId":"stream-42",
         "type":"unknown"

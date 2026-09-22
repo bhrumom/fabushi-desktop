@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 use std::sync::{
-    Arc,
+    Arc, Mutex,
     atomic::{AtomicBool, Ordering},
 };
 use std::thread::{self, JoinHandle};
@@ -21,6 +21,98 @@ use crate::runner::system_prompt_assembly::render_request_context_system_prompt;
 
 pub const ROUTED_MCP_PROTOCOL_VERSION: &str = "2025-03-26";
 pub const ROUTED_MCP_MAX_BODY_BYTES: usize = 1_048_576;
+
+#[derive(Clone, Default)]
+pub struct RoutedProviderCancellation {
+    cancelled: Arc<AtomicBool>,
+    reason: Arc<Mutex<Option<String>>>,
+}
+
+impl RoutedProviderCancellation {
+    pub fn cancel(&self, reason: impl Into<String>) -> bool {
+        let first = !self.cancelled.swap(true, Ordering::AcqRel);
+        if first {
+            if let Ok(mut slot) = self.reason.lock() {
+                *slot = Some(reason.into());
+            }
+        }
+        first
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled.load(Ordering::Acquire)
+    }
+
+    pub fn reason(&self) -> Option<String> {
+        self.reason.lock().ok().and_then(|reason| reason.clone())
+    }
+
+    pub fn check(&self) -> Result<(), ProviderSessionError> {
+        if self.is_cancelled() {
+            Err(ProviderSessionError::Transport(
+                self.reason().unwrap_or_else(|| "Runner provider request cancelled".into()),
+            ))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct RoutedProviderTaskRegistry {
+    active: Mutex<HashMap<String, RoutedProviderCancellation>>,
+}
+
+impl RoutedProviderTaskRegistry {
+    pub fn register(
+        &self,
+        stream_id: &str,
+    ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
+        let mut active = self
+            .active
+            .lock()
+            .map_err(|_| ProviderSessionError::Protocol(
+                "Runner provider registry lock poisoned".into(),
+            ))?;
+        if active.contains_key(stream_id) {
+            return Err(ProviderSessionError::Protocol(format!(
+                "Runner provider stream already exists: {stream_id}"
+            )));
+        }
+        let cancellation = RoutedProviderCancellation::default();
+        active.insert(stream_id.to_string(), cancellation.clone());
+        Ok(cancellation)
+    }
+
+    pub fn cancel(&self, stream_id: &str, reason: impl Into<String>) -> bool {
+        self.active
+            .lock()
+            .ok()
+            .and_then(|active| active.get(stream_id).cloned())
+            .is_some_and(|cancellation| cancellation.cancel(reason))
+    }
+
+    pub fn finish(&self, stream_id: &str) {
+        if let Ok(mut active) = self.active.lock() {
+            active.remove(stream_id);
+        }
+    }
+
+    pub fn cancel_all(&self, reason: &str) {
+        let cancellations = self
+            .active
+            .lock()
+            .map(|active| active.values().cloned().collect::<Vec<_>>())
+            .unwrap_or_default();
+        for cancellation in cancellations {
+            cancellation.cancel(reason.to_string());
+        }
+    }
+
+    pub fn active_count(&self) -> usize {
+        self.active.lock().map(|active| active.len()).unwrap_or_default()
+    }
+}
 
 pub trait RoutedToolBridge: Send + Sync {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError>;
@@ -48,12 +140,14 @@ pub struct RoutedProviderRun<'a> {
     pub messages: &'a [ProviderMessage],
     pub bridge: Arc<dyn RoutedToolBridge>,
     pub request_context: RunnerRequestContextSnapshot,
+    pub cancellation: RoutedProviderCancellation,
 }
 
 pub fn run_routed_provider_in_runner(
     run: RoutedProviderRun<'_>,
     on_text_delta: &mut dyn FnMut(&str, &str),
 ) -> Result<String, ProviderSessionError> {
+    run.cancellation.check()?;
     if run.provider == RoutedProvider::Cursor {
         return Err(ProviderSessionError::Configuration(
             "Cursor inference is owned by the Host gateway and cannot enter the local Runner provider path."
@@ -77,20 +171,34 @@ pub fn run_routed_provider_in_runner(
     let direct_tools = if run.provider == RoutedProvider::ClaudeCode {
         Vec::new()
     } else {
+        run.cancellation.check()?;
         run.bridge.list_tools()?
     };
     let mut mcp_server = if run.provider == RoutedProvider::ClaudeCode {
-        Some(start_routed_mcp_server(Arc::clone(&run.bridge))?)
+        Some(start_routed_mcp_server_with_cancellation(
+            Arc::clone(&run.bridge),
+            run.cancellation.clone(),
+        )?)
     } else {
         None
     };
     let mcp_url = mcp_server.as_ref().map(|server| server.url().to_string());
     let bridge = Arc::clone(&run.bridge);
+    let tool_cancellation = run.cancellation.clone();
     let mut execute_tool = move |
         tool: &RoutedToolDefinition,
         args: Value,
         tool_call_id: &str,
-    | bridge.call_tool(tool, args, tool_call_id);
+    | {
+        tool_cancellation.check()?;
+        bridge.call_tool(tool, args, tool_call_id)
+    };
+    let delta_cancellation = run.cancellation.clone();
+    let mut guarded_delta = |delta: &str, accumulated: &str| {
+        if !delta_cancellation.is_cancelled() {
+            on_text_delta(delta, accumulated);
+        }
+    };
 
     let result = run_routed_provider_text(
         run.provider,
@@ -100,13 +208,14 @@ pub fn run_routed_provider_in_runner(
             tools: &direct_tools,
             mcp_server_url: mcp_url.as_deref(),
             execute_tool: &mut execute_tool,
-            on_text_delta,
+            on_text_delta: &mut guarded_delta,
         },
     );
 
     if let Some(server) = mcp_server.as_mut() {
         server.close();
     }
+    run.cancellation.check()?;
     result
 }
 
@@ -144,6 +253,16 @@ impl Drop for RoutedMcpServer {
 pub fn start_routed_mcp_server(
     bridge: Arc<dyn RoutedToolBridge>,
 ) -> Result<RoutedMcpServer, ProviderSessionError> {
+    start_routed_mcp_server_with_cancellation(
+        bridge,
+        RoutedProviderCancellation::default(),
+    )
+}
+
+pub fn start_routed_mcp_server_with_cancellation(
+    bridge: Arc<dyn RoutedToolBridge>,
+    cancellation: RoutedProviderCancellation,
+) -> Result<RoutedMcpServer, ProviderSessionError> {
     let listener = TcpListener::bind("127.0.0.1:0").map_err(|error| {
         ProviderSessionError::Transport(format!("could not bind routed MCP server: {error}"))
     })?;
@@ -158,14 +277,21 @@ pub fn start_routed_mcp_server(
     let url = format!("http://{}{}", address, path);
     let stop = Arc::new(AtomicBool::new(false));
     let worker_stop = Arc::clone(&stop);
+    let worker_cancellation = cancellation.clone();
     let worker = thread::Builder::new()
         .name("mahayana-runner-routed-mcp".into())
         .spawn(move || {
             let mut tools = HashMap::<String, RoutedToolDefinition>::new();
-            while !worker_stop.load(Ordering::Acquire) {
+            while !worker_stop.load(Ordering::Acquire) && !worker_cancellation.is_cancelled() {
                 match listener.accept() {
                     Ok((stream, _)) => {
-                        let _ = serve_request(stream, &path, &mut tools, bridge.as_ref());
+                        let _ = serve_request(
+                            stream,
+                            &path,
+                            &mut tools,
+                            bridge.as_ref(),
+                            &worker_cancellation,
+                        );
                     }
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                         thread::sleep(Duration::from_millis(10));
@@ -190,6 +316,7 @@ fn serve_request(
     expected_path: &str,
     tools: &mut HashMap<String, RoutedToolDefinition>,
     bridge: &dyn RoutedToolBridge,
+    cancellation: &RoutedProviderCancellation,
 ) -> std::io::Result<()> {
     stream.set_read_timeout(Some(Duration::from_secs(5)))?;
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
@@ -245,6 +372,19 @@ fn serve_request(
     };
 
     let rpc_method = message.get("method").and_then(Value::as_str).unwrap_or("");
+    if cancellation.is_cancelled() {
+        let id = message.get("id").cloned().unwrap_or(Value::Null);
+        return write_json(
+            &mut stream,
+            json!({
+                "jsonrpc":"2.0",
+                "id":id,
+                "result":tool_failure(
+                    cancellation.reason().unwrap_or_else(|| "Runner request cancelled".into())
+                )
+            }),
+        );
+    }
     if rpc_method == "notifications/initialized" {
         return write_response(&mut stream, 202, None);
     }

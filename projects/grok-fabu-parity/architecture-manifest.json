@@ -14555,12 +14555,15 @@
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/routed_provider_runtime.rs",
-        "source/host/src/runner/system_prompt_assembly.rs"
+        "source/host/src/runner/system_prompt_assembly.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
-        "source/host/tests/runner_routed_provider_contract.rs"
+        "source/host/tests/runner_routed_provider_contract.rs",
+        "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "A Runner-owned routed-provider/MCP execution slice is now shipping behind the Host gateway. The full SandAgentRunner lifecycle, checkpoint/resume, watchdog, cancellation and terminal settlement composition is still not complete, so this mapping remains planned."
+      "notes": "A Runner-owned routed-provider/MCP execution slice is shipping behind the Host gateway. Shipping Host now registers active provider streams by streamId, exposes runner.cancelRoutedProvider, emits correlated cancelled events immediately, suppresses post-cancel text/tool callbacks, stops the Runner-owned MCP bridge, and retires stream registry entries. The underlying Codex/OpenRouter/Claude provider transports are not yet all interruptible while blocked inside provider I/O, and full checkpoint/resume, first-output watchdog/retry, production turn-agent owner/composition and terminal lifecycle remain incomplete, so this mapping stays planned."
     },
     {
       "referencePath": "source/host/runner/sand-auto-review-classifier-run.ts",
@@ -16037,7 +16040,7 @@
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs"
       ],
-      "notes": "Coordinator now owns only provider selection, transcript projection, per-agent admission queue and correlated Runner event settlement. Provider/model streaming and routed MCP tool execution cross the Host gateway into source/host/src/runner/routed_provider_runtime.rs; the Coordinator Cargo crate no longer links mahayana-host-runtime in-process. Final remains withheld until exact-HEAD Coordinator/Host/Runner protocol tests and Actions succeed, plus full Runner cancel/checkpoint/watchdog lifecycle is composed."
+      "notes": "Coordinator owns provider selection, transcript projection, per-agent admission queue and correlated Runner event settlement. Provider/model streaming and routed MCP tool execution cross the Host gateway; Coordinator deadline/close paths now issue runner.cancelRoutedProvider and consume correlated cancelled events. Final remains withheld until exact-HEAD tests/Actions succeed and full provider-I/O cancellation plus Runner checkpoint/resume, first-output watchdog/retry and production turn composition are complete."
     },
     {
       "referencePath": "source/node-agent-coordinator/local-exec/daemon-files.ts",
@@ -16101,7 +16104,7 @@
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs"
       ],
-      "notes": "Shipping Coordinator composition now preserves the process boundary for non-Cursor inference: sendPrompt is accepted/queued in Coordinator, runner.startRoutedProvider crosses the authenticated Host gateway, streaming returns through correlated SSE events, and the Coordinator has no direct host-runtime crate dependency. Final remains withheld pending exact-HEAD CI and completion of the remaining Host/Runner production composition."
+      "notes": "Shipping Coordinator composition preserves the process boundary for non-Cursor inference: sendPrompt is accepted/queued in Coordinator, runner.startRoutedProvider crosses the authenticated Host gateway, streaming returns through correlated SSE events, and deadline/close termination now calls runner.cancelRoutedProvider. Final remains withheld pending exact-HEAD CI and completion of provider-I/O cancellation, Runner checkpoint/resume, first-output watchdog/retry and remaining Host/Runner production composition."
     },
     {
       "referencePath": "source/node-agent-coordinator/oauth/mcp-oauth-callback-listener.ts",
