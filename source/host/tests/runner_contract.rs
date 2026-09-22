@@ -93,3 +93,115 @@ fn terminal_settlement_is_exactly_once() {
     assert!(settlement.settle(TerminalOutcome::Cancelled).is_err());
     assert_eq!(settlement.outcome(), Some(&TerminalOutcome::Completed));
 }
+
+
+#[test]
+fn turn_run_shell_enforces_owner_generation_and_pre_dispatch_supersede_rules() {
+    use mahayana_host_runtime::{
+        TerminalOutcome, TurnRunOptions, TurnRunShell, TurnRunShellError,
+    };
+
+    let mut shell = TurnRunShell::default();
+    assert_eq!(
+        shell.begin_run("   ", TurnRunOptions::default()),
+        Err(TurnRunShellError::EmptyPrompt)
+    );
+
+    let first = shell
+        .begin_run(
+            "recover me",
+            TurnRunOptions {
+                inference_request_id: Some("request-1".into()),
+                message_id: Some("t1u".into()),
+                recent_message_text: Some("recover me".into()),
+                ..TurnRunOptions::default()
+            },
+        )
+        .expect("first run");
+    assert!(first.recovery_shaped);
+    assert_eq!(shell.active_request_id(), Some("request-1"));
+
+    assert!(
+        !shell.interrupt("superseded without recovery", Some(false)),
+        "a pre-dispatch run must not be interrupted by an unsafe supersede"
+    );
+    assert!(
+        shell.interrupt("superseded with recovery", Some(true)),
+        "a recovery-shaped run can be safely superseded before dispatch"
+    );
+    let cancelled = shell.finish_cancelled(&first.owner).expect("cancelled");
+    assert_eq!(cancelled.outcome, TerminalOutcome::Cancelled);
+
+    let second = shell
+        .begin_run(
+            "new turn",
+            TurnRunOptions {
+                inference_request_id: Some("request-2".into()),
+                ..TurnRunOptions::default()
+            },
+        )
+        .expect("second run");
+    assert!(second.owner.generation > first.owner.generation);
+    assert_eq!(
+        shell.mark_dispatched(&first.owner),
+        Err(TurnRunShellError::StaleOwner)
+    );
+    assert_eq!(
+        shell.finish_completed(&first.owner),
+        Err(TurnRunShellError::StaleOwner)
+    );
+    shell.mark_dispatched(&second.owner).unwrap();
+    let completed = shell.finish_completed(&second.owner).unwrap();
+    assert_eq!(completed.outcome, TerminalOutcome::Completed);
+    assert!(!shell.has_active_run());
+}
+
+#[test]
+fn turn_run_shell_converts_checkpoint_boundary_to_waiting_user_or_quiesce() {
+    use mahayana_host_runtime::{
+        CheckpointBoundary, TerminalOutcome, TurnRunOptions, TurnRunShell,
+    };
+
+    let mut shell = TurnRunShell::default();
+    let run = shell
+        .begin_run(
+            "choose",
+            TurnRunOptions {
+                inference_request_id: Some("request-user".into()),
+                ..TurnRunOptions::default()
+            },
+        )
+        .unwrap();
+    shell.mark_dispatched(&run.owner).unwrap();
+    shell
+        .end_turn_awaiting_user(&run.owner, "permission selection")
+        .unwrap();
+    assert!(matches!(
+        shell.checkpoint_boundary(&run.owner).unwrap(),
+        CheckpointBoundary::Cancel(ref cancellation)
+            if cancellation.intentional && cancellation.reason == "permission selection"
+    ));
+    let waiting = shell.finish_cancelled(&run.owner).unwrap();
+    assert_eq!(waiting.outcome, TerminalOutcome::WaitingUser);
+
+    let upgrade = shell
+        .begin_run(
+            "upgrade",
+            TurnRunOptions {
+                inference_request_id: Some("request-upgrade".into()),
+                ..TurnRunOptions::default()
+            },
+        )
+        .unwrap();
+    shell.request_quiesce_for_upgrade();
+    assert!(shell.is_quiescing_for_upgrade());
+    assert!(matches!(
+        shell.checkpoint_boundary(&upgrade.owner).unwrap(),
+        CheckpointBoundary::Cancel(ref cancellation)
+            if cancellation.reason.contains("forced host upgrade")
+    ));
+    let ended = shell.finish_cancelled(&upgrade.owner).unwrap();
+    assert!(ended.quiesced_for_upgrade);
+    shell.cancel_quiesce_for_upgrade();
+    assert!(!shell.is_quiescing_for_upgrade());
+}
