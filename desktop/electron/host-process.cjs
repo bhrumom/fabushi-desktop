@@ -505,7 +505,7 @@ class MahayanaHostProcess {
       this.child = null;
       this.startedAt = null;
       this.rejectGeneration(generation, new Error(`Mahayana host restarted: ${reason}`));
-      child.stdin?.end();
+      child.stdin?.end?.();
       const fallbackKill = setTimeout(() => child.kill(), 1_000);
       fallbackKill.unref?.();
     }
@@ -523,7 +523,7 @@ class MahayanaHostProcess {
     this.rejectGeneration(generation, new Error('Mahayana host closed.'));
     this.emitLifecycle('closed');
     if (child) {
-      child.stdin?.end();
+      child.stdin?.end?.();
       const fallbackKill = setTimeout(() => child.kill(), 1_000);
       fallbackKill.unref?.();
     }
