@@ -548,3 +548,66 @@ fn gateway_gzips_only_large_successful_command_json_when_requested() {
 
     server.close();
 }
+
+
+#[test]
+fn gateway_events_negotiate_gzip_for_sse_streams() {
+    let events = GatewayEventHub::default();
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: events.clone(),
+        local_exec: None,
+        webauthn: None,
+        config: config(None),
+        started_at: 1,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let mut stream = TcpStream::connect(("127.0.0.1", port)).expect("connect gzip SSE");
+    stream
+        .set_read_timeout(Some(Duration::from_secs(2)))
+        .expect("gzip SSE read timeout");
+    stream
+        .write_all(
+            b"GET /events?channels=runtime HTTP/1.1\r\nHost: 127.0.0.1\r\nAccept-Encoding: gzip\r\nConnection: keep-alive\r\n\r\n",
+        )
+        .expect("write gzip SSE request");
+    stream.flush().expect("flush gzip SSE request");
+
+    for _ in 0..100 {
+        if events.subscriber_count() > 0 {
+            break;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    assert_eq!(events.subscriber_count(), 1, "gzip SSE subscriber registered");
+    events.publish(json!({
+        "channel": "runtime",
+        "payload": { "value": 9 }
+    }));
+
+    let mut bytes = Vec::new();
+    let mut chunk = [0_u8; 1024];
+    let header_end = loop {
+        let count = stream.read(&mut chunk).expect("read gzip SSE frame");
+        assert!(count > 0, "gzip SSE closed before compressed body");
+        bytes.extend_from_slice(&chunk[..count]);
+        if let Some(index) = bytes.windows(4).position(|window| window == b"\r\n\r\n") {
+            let end = index + 4;
+            if bytes.len() >= end + 10 {
+                break end;
+            }
+        }
+        assert!(bytes.len() < 32 * 1024, "unexpectedly large gzip SSE response");
+    };
+    let headers = String::from_utf8(bytes[..header_end].to_vec()).expect("gzip SSE headers utf8");
+    let lower = headers.to_ascii_lowercase();
+    assert!(headers.starts_with("HTTP/1.1 200 OK"), "{headers}");
+    assert!(lower.contains("content-encoding: gzip"), "{headers}");
+    assert!(lower.contains("vary: accept-encoding"), "{headers}");
+    assert_eq!(&bytes[header_end..header_end + 2], &[0x1f, 0x8b]);
+
+    drop(stream);
+    server.close();
+}
