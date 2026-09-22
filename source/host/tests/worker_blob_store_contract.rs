@@ -89,6 +89,62 @@ impl AgentBlobWorkerBackend for FakeBackend {
             .insert(blob_id.to_vec(), blob_data.to_vec());
         Box::pin(async { Ok(()) })
     }
+
+    fn find_latest_root_blob_id<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+        _legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<Option<Vec<u8>>, Self::Error>> {
+        Box::pin(async { Ok(None) })
+    }
+
+    fn clear_blobs<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+        _legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<(), Self::Error>> {
+        Box::pin(async { Ok(()) })
+    }
+
+    fn clear_stale_checkpoint_roots<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+        _retained_root_id_hex: &'a str,
+        _legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<usize, Self::Error>> {
+        Box::pin(async { Ok(0) })
+    }
+
+    fn collect_conversation_garbage<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+        _retained_root_id_hex: &'a str,
+        _pending_write_retention_ms: u64,
+        _legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<mahayana_host_runtime::agent_isolation::ConversationGarbageCollectionOutcome, Self::Error>> {
+        Box::pin(async {
+            Ok(mahayana_host_runtime::agent_isolation::ConversationGarbageCollectionOutcome::Skipped {
+                reason: "not-used".into(),
+                unresolved_proto_refs: 0,
+            })
+        })
+    }
+
+    fn verify_legacy_blob_retirement<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+        _retained_root_id_hex: &'a str,
+        _legacy_blob_db_path: &'a Path,
+    ) -> AgentWorkerFuture<'a, Result<mahayana_host_runtime::agent_isolation::LegacyBlobRetirementVerdict, Self::Error>> {
+        Box::pin(async {
+            Ok(mahayana_host_runtime::agent_isolation::LegacyBlobRetirementVerdict::defer("not-used"))
+        })
+    }
 }
 
 #[test]

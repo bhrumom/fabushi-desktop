@@ -34,6 +34,45 @@ pub trait AgentBlobWorkerBackend: Send + Sync {
         blob_data: &'a [u8],
         legacy_blob_db_path: Option<&'a Path>,
     ) -> AgentWorkerFuture<'a, Result<(), Self::Error>>;
+
+    fn find_latest_root_blob_id<'a>(
+        &'a self,
+        agent_id: &'a str,
+        blob_db_path: &'a Path,
+        legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<Option<Vec<u8>>, Self::Error>>;
+
+    fn clear_blobs<'a>(
+        &'a self,
+        agent_id: &'a str,
+        blob_db_path: &'a Path,
+        legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<(), Self::Error>>;
+
+    fn clear_stale_checkpoint_roots<'a>(
+        &'a self,
+        agent_id: &'a str,
+        blob_db_path: &'a Path,
+        retained_root_id_hex: &'a str,
+        legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<usize, Self::Error>>;
+
+    fn collect_conversation_garbage<'a>(
+        &'a self,
+        agent_id: &'a str,
+        blob_db_path: &'a Path,
+        retained_root_id_hex: &'a str,
+        pending_write_retention_ms: u64,
+        legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<ConversationGarbageCollectionOutcome, Self::Error>>;
+
+    fn verify_legacy_blob_retirement<'a>(
+        &'a self,
+        agent_id: &'a str,
+        blob_db_path: &'a Path,
+        retained_root_id_hex: &'a str,
+        legacy_blob_db_path: &'a Path,
+    ) -> AgentWorkerFuture<'a, Result<LegacyBlobRetirementVerdict, Self::Error>>;
 }
 
 #[derive(Debug)]
@@ -92,6 +131,50 @@ pub struct AgentWorkerDescription {
     pub next_request_id: u64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConversationGarbageCollectionOutcome {
+    Skipped {
+        reason: String,
+        unresolved_proto_refs: usize,
+    },
+    Collected {
+        deleted_rows: usize,
+        deleted_bytes: u64,
+        live_rows: usize,
+        live_bytes: u64,
+        retained_pending_rows: usize,
+        vacuumed: bool,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LegacyBlobRetirementVerdict {
+    pub is_retirable: bool,
+    pub reason: Option<String>,
+    pub legacy_rows: u64,
+    pub legacy_bytes: u64,
+}
+
+impl LegacyBlobRetirementVerdict {
+    pub fn defer(reason: impl Into<String>) -> Self {
+        Self {
+            is_retirable: false,
+            reason: Some(reason.into()),
+            legacy_rows: 0,
+            legacy_bytes: 0,
+        }
+    }
+
+    pub fn retirable(legacy_rows: u64, legacy_bytes: u64) -> Self {
+        Self {
+            is_retirable: true,
+            reason: None,
+            legacy_rows,
+            legacy_bytes,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct WorkerBoot {
     agent_id: String,
@@ -115,6 +198,31 @@ enum WorkerRequest<BackendError> {
         blob_id: Vec<u8>,
         blob_data: Vec<u8>,
         reply: mpsc::SyncSender<Result<(), AgentWorkerPoolError<BackendError>>>,
+    },
+    FindLatestRoot {
+        request_id: u64,
+        reply: mpsc::SyncSender<Result<Option<Vec<u8>>, AgentWorkerPoolError<BackendError>>>,
+    },
+    ClearBlobs {
+        request_id: u64,
+        reply: mpsc::SyncSender<Result<(), AgentWorkerPoolError<BackendError>>>,
+    },
+    ClearStaleRoots {
+        request_id: u64,
+        retained_root_id_hex: String,
+        reply: mpsc::SyncSender<Result<usize, AgentWorkerPoolError<BackendError>>>,
+    },
+    CollectGarbage {
+        request_id: u64,
+        retained_root_id_hex: String,
+        pending_write_retention_ms: u64,
+        reply: mpsc::SyncSender<Result<ConversationGarbageCollectionOutcome, AgentWorkerPoolError<BackendError>>>,
+    },
+    VerifyLegacyBlobRetirement {
+        request_id: u64,
+        retained_root_id_hex: String,
+        legacy_blob_db_path: PathBuf,
+        reply: mpsc::SyncSender<Result<LegacyBlobRetirementVerdict, AgentWorkerPoolError<BackendError>>>,
     },
     Close {
         request_id: u64,
@@ -205,6 +313,80 @@ where
                 "agent worker exited before replying".into(),
             )
         })?;
+        self.touch();
+        result
+    }
+
+    fn send_find_latest_root(&self) -> Result<Option<Vec<u8>>, AgentWorkerPoolError<BackendError>> {
+        self.touch();
+        let request_id = self.request_id();
+        let (reply, result) = mpsc::sync_channel(1);
+        self.sender.send(WorkerRequest::FindLatestRoot { request_id, reply })
+            .map_err(|_| AgentWorkerPoolError::WorkerUnavailable("agent worker request channel is closed".into()))?;
+        let result = result.recv().map_err(|_| AgentWorkerPoolError::WorkerUnavailable("agent worker exited before replying".into()))?;
+        self.touch();
+        result
+    }
+
+    fn send_clear_blobs(&self) -> Result<(), AgentWorkerPoolError<BackendError>> {
+        self.touch();
+        let request_id = self.request_id();
+        let (reply, result) = mpsc::sync_channel(1);
+        self.sender.send(WorkerRequest::ClearBlobs { request_id, reply })
+            .map_err(|_| AgentWorkerPoolError::WorkerUnavailable("agent worker request channel is closed".into()))?;
+        let result = result.recv().map_err(|_| AgentWorkerPoolError::WorkerUnavailable("agent worker exited before replying".into()))?;
+        self.touch();
+        result
+    }
+
+    fn send_clear_stale_roots(&self, retained_root_id_hex: &str) -> Result<usize, AgentWorkerPoolError<BackendError>> {
+        self.touch();
+        let request_id = self.request_id();
+        let (reply, result) = mpsc::sync_channel(1);
+        self.sender.send(WorkerRequest::ClearStaleRoots {
+            request_id,
+            retained_root_id_hex: retained_root_id_hex.to_string(),
+            reply,
+        }).map_err(|_| AgentWorkerPoolError::WorkerUnavailable("agent worker request channel is closed".into()))?;
+        let result = result.recv().map_err(|_| AgentWorkerPoolError::WorkerUnavailable("agent worker exited before replying".into()))?;
+        self.touch();
+        result
+    }
+
+    fn send_collect_garbage(
+        &self,
+        retained_root_id_hex: &str,
+        pending_write_retention_ms: u64,
+    ) -> Result<ConversationGarbageCollectionOutcome, AgentWorkerPoolError<BackendError>> {
+        self.touch();
+        let request_id = self.request_id();
+        let (reply, result) = mpsc::sync_channel(1);
+        self.sender.send(WorkerRequest::CollectGarbage {
+            request_id,
+            retained_root_id_hex: retained_root_id_hex.to_string(),
+            pending_write_retention_ms,
+            reply,
+        }).map_err(|_| AgentWorkerPoolError::WorkerUnavailable("agent worker request channel is closed".into()))?;
+        let result = result.recv().map_err(|_| AgentWorkerPoolError::WorkerUnavailable("agent worker exited before replying".into()))?;
+        self.touch();
+        result
+    }
+
+    fn send_verify_legacy_blob_retirement(
+        &self,
+        retained_root_id_hex: &str,
+        legacy_blob_db_path: &Path,
+    ) -> Result<LegacyBlobRetirementVerdict, AgentWorkerPoolError<BackendError>> {
+        self.touch();
+        let request_id = self.request_id();
+        let (reply, result) = mpsc::sync_channel(1);
+        self.sender.send(WorkerRequest::VerifyLegacyBlobRetirement {
+            request_id,
+            retained_root_id_hex: retained_root_id_hex.to_string(),
+            legacy_blob_db_path: legacy_blob_db_path.to_path_buf(),
+            reply,
+        }).map_err(|_| AgentWorkerPoolError::WorkerUnavailable("agent worker request channel is closed".into()))?;
+        let result = result.recv().map_err(|_| AgentWorkerPoolError::WorkerUnavailable("agent worker exited before replying".into()))?;
         self.touch();
         result
     }
@@ -355,6 +537,75 @@ where
         let result = self
             .ensure(agent_id, blob_db_path, legacy_blob_db_path)
             .and_then(|connection| connection.send_set(blob_id, blob_data));
+        self.release(blob_db_path);
+        result
+    }
+
+    pub async fn find_latest_root_blob_id(
+        &self,
+        agent_id: &str,
+        blob_db_path: &Path,
+        legacy_blob_db_path: Option<&Path>,
+    ) -> Result<Option<Vec<u8>>, AgentWorkerPoolError<Backend::Error>> {
+        self.retain(blob_db_path);
+        let result = self.ensure(agent_id, blob_db_path, legacy_blob_db_path)
+            .and_then(|connection| connection.send_find_latest_root());
+        self.release(blob_db_path);
+        result
+    }
+
+    pub async fn clear_blobs(
+        &self,
+        agent_id: &str,
+        blob_db_path: &Path,
+        legacy_blob_db_path: Option<&Path>,
+    ) -> Result<(), AgentWorkerPoolError<Backend::Error>> {
+        self.retain(blob_db_path);
+        let result = self.ensure(agent_id, blob_db_path, legacy_blob_db_path)
+            .and_then(|connection| connection.send_clear_blobs());
+        self.release(blob_db_path);
+        result
+    }
+
+    pub async fn clear_stale_checkpoint_roots(
+        &self,
+        agent_id: &str,
+        blob_db_path: &Path,
+        retained_root_id_hex: &str,
+        legacy_blob_db_path: Option<&Path>,
+    ) -> Result<usize, AgentWorkerPoolError<Backend::Error>> {
+        self.retain(blob_db_path);
+        let result = self.ensure(agent_id, blob_db_path, legacy_blob_db_path)
+            .and_then(|connection| connection.send_clear_stale_roots(retained_root_id_hex));
+        self.release(blob_db_path);
+        result
+    }
+
+    pub async fn collect_conversation_garbage(
+        &self,
+        agent_id: &str,
+        blob_db_path: &Path,
+        retained_root_id_hex: &str,
+        pending_write_retention_ms: u64,
+        legacy_blob_db_path: Option<&Path>,
+    ) -> Result<ConversationGarbageCollectionOutcome, AgentWorkerPoolError<Backend::Error>> {
+        self.retain(blob_db_path);
+        let result = self.ensure(agent_id, blob_db_path, legacy_blob_db_path)
+            .and_then(|connection| connection.send_collect_garbage(retained_root_id_hex, pending_write_retention_ms));
+        self.release(blob_db_path);
+        result
+    }
+
+    pub async fn verify_legacy_blob_retirement(
+        &self,
+        agent_id: &str,
+        blob_db_path: &Path,
+        retained_root_id_hex: &str,
+        legacy_blob_db_path: &Path,
+    ) -> Result<LegacyBlobRetirementVerdict, AgentWorkerPoolError<Backend::Error>> {
+        self.retain(blob_db_path);
+        let result = self.ensure(agent_id, blob_db_path, Some(legacy_blob_db_path))
+            .and_then(|connection| connection.send_verify_legacy_blob_retirement(retained_root_id_hex, legacy_blob_db_path));
         self.release(blob_db_path);
         result
     }
@@ -605,6 +856,55 @@ where
                             worker_boot.legacy_blob_db_path.as_deref(),
                         ))
                         .map_err(AgentWorkerPoolError::Backend);
+                        let _ = reply.send(result);
+                    }
+                    WorkerRequest::FindLatestRoot { request_id, reply } => {
+                        let _ = request_id;
+                        let result = futures::executor::block_on(backend.find_latest_root_blob_id(
+                            &worker_boot.agent_id,
+                            &worker_boot.blob_db_path,
+                            worker_boot.legacy_blob_db_path.as_deref(),
+                        )).map_err(AgentWorkerPoolError::Backend);
+                        let _ = reply.send(result);
+                    }
+                    WorkerRequest::ClearBlobs { request_id, reply } => {
+                        let _ = request_id;
+                        let result = futures::executor::block_on(backend.clear_blobs(
+                            &worker_boot.agent_id,
+                            &worker_boot.blob_db_path,
+                            worker_boot.legacy_blob_db_path.as_deref(),
+                        )).map_err(AgentWorkerPoolError::Backend);
+                        let _ = reply.send(result);
+                    }
+                    WorkerRequest::ClearStaleRoots { request_id, retained_root_id_hex, reply } => {
+                        let _ = request_id;
+                        let result = futures::executor::block_on(backend.clear_stale_checkpoint_roots(
+                            &worker_boot.agent_id,
+                            &worker_boot.blob_db_path,
+                            &retained_root_id_hex,
+                            worker_boot.legacy_blob_db_path.as_deref(),
+                        )).map_err(AgentWorkerPoolError::Backend);
+                        let _ = reply.send(result);
+                    }
+                    WorkerRequest::CollectGarbage { request_id, retained_root_id_hex, pending_write_retention_ms, reply } => {
+                        let _ = request_id;
+                        let result = futures::executor::block_on(backend.collect_conversation_garbage(
+                            &worker_boot.agent_id,
+                            &worker_boot.blob_db_path,
+                            &retained_root_id_hex,
+                            pending_write_retention_ms,
+                            worker_boot.legacy_blob_db_path.as_deref(),
+                        )).map_err(AgentWorkerPoolError::Backend);
+                        let _ = reply.send(result);
+                    }
+                    WorkerRequest::VerifyLegacyBlobRetirement { request_id, retained_root_id_hex, legacy_blob_db_path, reply } => {
+                        let _ = request_id;
+                        let result = futures::executor::block_on(backend.verify_legacy_blob_retirement(
+                            &worker_boot.agent_id,
+                            &worker_boot.blob_db_path,
+                            &retained_root_id_hex,
+                            &legacy_blob_db_path,
+                        )).map_err(AgentWorkerPoolError::Backend);
                         let _ = reply.send(result);
                     }
                     WorkerRequest::Close { request_id, reply } => {

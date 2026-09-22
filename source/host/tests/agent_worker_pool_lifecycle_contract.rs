@@ -7,6 +7,7 @@ use std::task::{Context, Poll, Wake, Waker};
 
 use mahayana_host_runtime::agent_isolation::{
     AgentBlobWorkerBackend, AgentWorkerFuture, AgentWorkerPool, AgentWorkerPoolOptions,
+    ConversationGarbageCollectionOutcome, LegacyBlobRetirementVerdict,
 };
 
 struct NoopWake;
@@ -78,6 +79,69 @@ impl AgentBlobWorkerBackend for LifecycleBackend {
             .insert(blob_id.to_vec(), blob_data.to_vec());
         Box::pin(async { Ok(()) })
     }
+
+    fn find_latest_root_blob_id<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+        _legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<Option<Vec<u8>>, Self::Error>> {
+        self.record_thread();
+        Box::pin(async { Ok(Some(b"root".to_vec())) })
+    }
+
+    fn clear_blobs<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+        _legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<(), Self::Error>> {
+        self.record_thread();
+        Box::pin(async { Ok(()) })
+    }
+
+    fn clear_stale_checkpoint_roots<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+        _retained_root_id_hex: &'a str,
+        _legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<usize, Self::Error>> {
+        self.record_thread();
+        Box::pin(async { Ok(3) })
+    }
+
+    fn collect_conversation_garbage<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+        _retained_root_id_hex: &'a str,
+        _pending_write_retention_ms: u64,
+        _legacy_blob_db_path: Option<&'a Path>,
+    ) -> AgentWorkerFuture<'a, Result<ConversationGarbageCollectionOutcome, Self::Error>> {
+        self.record_thread();
+        Box::pin(async {
+            Ok(ConversationGarbageCollectionOutcome::Collected {
+                deleted_rows: 2,
+                deleted_bytes: 128,
+                live_rows: 4,
+                live_bytes: 512,
+                retained_pending_rows: 1,
+                vacuumed: false,
+            })
+        })
+    }
+
+    fn verify_legacy_blob_retirement<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+        _retained_root_id_hex: &'a str,
+        _legacy_blob_db_path: &'a Path,
+    ) -> AgentWorkerFuture<'a, Result<LegacyBlobRetirementVerdict, Self::Error>> {
+        self.record_thread();
+        Box::pin(async { Ok(LegacyBlobRetirementVerdict::retirable(7, 2048)) })
+    }
 }
 
 fn options(max_workers: usize) -> AgentWorkerPoolOptions {
@@ -142,4 +206,62 @@ fn worker_pool_idle_sweep_and_close_store_retire_worker_threads() {
     assert_eq!(pool.active_worker_count(), 1);
     block_on_ready(pool.close_store(second));
     assert_eq!(pool.active_worker_count(), 0);
+}
+
+#[test]
+fn worker_pool_routes_root_clear_gc_and_legacy_retirement_over_correlated_requests() {
+    let pool = AgentWorkerPool::with_options(LifecycleBackend::default(), options(4));
+    let path = Path::new("/tmp/agent-maintenance.sqlite");
+    let legacy = Path::new("/tmp/agent-maintenance-legacy.sqlite");
+
+    assert_eq!(
+        block_on_ready(pool.find_latest_root_blob_id("agent", path, Some(legacy)))
+            .expect("latest root"),
+        Some(b"root".to_vec())
+    );
+    block_on_ready(pool.clear_blobs("agent", path, Some(legacy))).expect("clear blobs");
+    assert_eq!(
+        block_on_ready(pool.clear_stale_checkpoint_roots(
+            "agent",
+            path,
+            "root-hex",
+            Some(legacy),
+        ))
+        .expect("clear stale roots"),
+        3
+    );
+    assert_eq!(
+        block_on_ready(pool.collect_conversation_garbage(
+            "agent",
+            path,
+            "root-hex",
+            60_000,
+            Some(legacy),
+        ))
+        .expect("collect garbage"),
+        ConversationGarbageCollectionOutcome::Collected {
+            deleted_rows: 2,
+            deleted_bytes: 128,
+            live_rows: 4,
+            live_bytes: 512,
+            retained_pending_rows: 1,
+            vacuumed: false,
+        }
+    );
+    assert_eq!(
+        block_on_ready(pool.verify_legacy_blob_retirement(
+            "agent",
+            path,
+            "root-hex",
+            legacy,
+        ))
+        .expect("legacy retirement"),
+        LegacyBlobRetirementVerdict::retirable(7, 2048)
+    );
+
+    let worker = pool.describe_workers().pop().expect("worker description");
+    assert_eq!(
+        worker.next_request_id, 7,
+        "init + five maintenance requests consume correlated request ids",
+    );
 }
