@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "allowJs": false,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -13,19 +17,42 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@fabushi/shared": ["../frontend/packages/shared/src/index.ts"],
-      "@fabushi/mcp-app-sdk": ["../frontend/packages/mcp-app-sdk/src/index.ts"],
-      "react": ["node_modules/@types/react"],
-      "react/*": ["node_modules/@types/react/*"],
-      "react-dom": ["node_modules/@types/react-dom"],
-      "react-dom/*": ["node_modules/@types/react-dom/*"],
-      "lucide-react": ["node_modules/lucide-react"]
+      "@fabushi/shared": [
+        "../frontend/packages/shared/src/index.ts"
+      ],
+      "@fabushi/mcp-app-sdk": [
+        "../frontend/packages/mcp-app-sdk/src/index.ts"
+      ],
+      "react": [
+        "node_modules/@types/react"
+      ],
+      "react/*": [
+        "node_modules/@types/react/*"
+      ],
+      "react-dom": [
+        "node_modules/@types/react-dom"
+      ],
+      "react-dom/*": [
+        "node_modules/@types/react-dom/*"
+      ],
+      "lucide-react": [
+        "node_modules/lucide-react"
+      ],
+      "@tiptap/*": [
+        "node_modules/@tiptap/*"
+      ]
     },
-    "types": ["node", "react", "react-dom"],
+    "types": [
+      "node",
+      "react",
+      "react-dom",
+      "vite/client"
+    ],
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true
   },
   "include": [
     "src",
