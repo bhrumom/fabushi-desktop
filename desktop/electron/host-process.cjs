@@ -13,6 +13,7 @@ const DEVELOPMENT_PRODUCT_API_BASE_URL = 'https://mahayana-platform.bhrumom.work
 const INFERENCE_PROVIDERS = new Set(['fabushi', 'codex', 'claude-code', 'openrouter']);
 const SANDBOX_RUNTIMES = new Set(['host', 'local-docker']);
 const DEFAULT_DOCKER_IMAGE = 'mcr.microsoft.com/devcontainers/base:ubuntu24.04@sha256:c5cc2b45afe06a1df3aba17e58ba0dc4a02b999493198dab37dd0ccd4e2b0705';
+const COORDINATOR_PROTOCOL_VERSION = 1;
 const PACKAGED_COMPUTER_RUNTIME_ID = /^v1-[a-f0-9]{20}$/;
 
 function safeExistsSync(fsImpl, candidate) {
@@ -209,6 +210,7 @@ class MahayanaHostProcess {
     this.currentGeneration = 0;
     this.nextId = 1;
     this.pending = new Map();
+    this.protocolReady = false;
     this.closed = false;
     this.state = 'stopped';
     this.startedAt = null;
@@ -279,6 +281,7 @@ class MahayanaHostProcess {
       generation: this.currentGeneration,
       pid: this.child?.pid ?? null,
       pending: this.pending.size,
+      protocolReady: this.protocolReady,
       startedAt: this.startedAt,
       lastExit: this.lastExit ? { ...this.lastExit } : null,
       unexpectedExitCount: this.unexpectedExitCount,
@@ -378,6 +381,7 @@ class MahayanaHostProcess {
     }
 
     this.child = child;
+    this.protocolReady = false;
     this.state = 'running';
     this.startedAt = this.now();
     this.emitLifecycle('running');
@@ -396,22 +400,57 @@ class MahayanaHostProcess {
       try {
         message = JSON.parse(line);
       } catch (error) {
-        this.rejectGeneration(generation, new Error(`Invalid Mahayana host response: ${error}`));
+        this.rejectGeneration(generation, new Error(`Invalid Mahayana Coordinator response: ${error}`));
         this.emitLifecycle('protocol-error', { error: error instanceof Error ? error.message : String(error) });
         return;
       }
-      if (!Object.prototype.hasOwnProperty.call(message, 'id') && message.event && typeof message.event === 'object') {
-        this.chromePlatformServer.broadcastEvent(message.event);
-        this.events.emit('runtime-event', message.event);
+
+      if (message?.kind === 'lifecycle') {
+        if (message.phase === 'ready' && message.protocolVersion === COORDINATOR_PROTOCOL_VERSION) {
+          this.protocolReady = true;
+          this.emitLifecycle('protocol-ready', { protocolVersion: message.protocolVersion });
+          return;
+        }
+        if (message.phase === 'shutdown') {
+          const detail = String(message.detail || message.reason || 'Coordinator shut down');
+          this.protocolReady = false;
+          this.rejectGeneration(generation, new Error(detail));
+          this.emitLifecycle('protocol-error', { error: detail });
+          return;
+        }
+        this.emitLifecycle('protocol-error', { error: 'Unexpected Coordinator lifecycle frame.' });
         return;
       }
-      const key = String(message.id ?? '');
+
+      if (message?.kind === 'event') {
+        if (message.family !== 'runtime' || !message.payload || typeof message.payload !== 'object') return;
+        this.chromePlatformServer.broadcastEvent(message.payload);
+        this.events.emit('runtime-event', message.payload);
+        return;
+      }
+
+      if (message?.kind !== 'reply') {
+        this.emitLifecycle('protocol-error', { error: 'Unexpected Coordinator frame.' });
+        return;
+      }
+
+      const key = String(message.requestId ?? '');
       const pending = this.pending.get(key);
       if (!pending || pending.generation !== generation) return;
       this.pending.delete(key);
-      if (message.ok) pending.resolve(message.result);
-      else pending.reject(new Error(message.error || 'Mahayana host request failed'));
+      if (message.outcome?.status === 'ok') pending.resolve(message.outcome.value);
+      else pending.reject(new Error(
+        message.outcome?.failure?.message
+          || message.outcome?.failure?.code
+          || 'Mahayana Coordinator request failed',
+      ));
     });
+
+    child.stdin.write(`${JSON.stringify({
+      kind: 'lifecycle',
+      phase: 'hello',
+      protocolVersion: COORDINATOR_PROTOCOL_VERSION,
+    })}\n`);
 
     child.stderr.on('data', (chunk) => console.error(`[mahayana-coordinator] ${String(chunk).trimEnd()}`));
     child.on('error', (error) => {
@@ -434,6 +473,7 @@ class MahayanaHostProcess {
     const isCurrent = this.child === child && this.currentGeneration === generation;
     if (isCurrent) {
       this.child = null;
+      this.protocolReady = false;
       this.startedAt = null;
       if (!this.closed) {
         this.state = 'stopped';
@@ -465,7 +505,10 @@ class MahayanaHostProcess {
         if (!pending || pending.generation !== generation) return;
         this.pending.delete(key);
         this.emitLifecycle('request-timeout', { method: String(method), requestId: id });
-        reject(new Error(`Mahayana host request timed out: ${method}`));
+        if (this.child === child && !child.stdin?.destroyed) {
+          child.stdin.write(`${JSON.stringify({ kind: 'cancel', requestId: key })}\n`, () => undefined);
+        }
+        reject(new Error(`Mahayana Coordinator request timed out: ${method}`));
       }, timeoutMs);
       timer.unref?.();
       this.pending.set(key, {
@@ -476,7 +519,7 @@ class MahayanaHostProcess {
         },
         reject: (error) => { clearTimeout(timer); reject(error); },
       });
-      const payload = JSON.stringify({ id, method, params });
+      const payload = JSON.stringify({ kind: 'request', requestId: key, method, args: params });
       child.stdin.write(`${payload}\n`, (error) => {
         if (!error) return;
         const pending = this.pending.get(key);
@@ -519,10 +562,12 @@ class MahayanaHostProcess {
     const child = this.child;
     const generation = this.currentGeneration;
     this.child = null;
+    this.protocolReady = false;
     this.startedAt = null;
     this.rejectGeneration(generation, new Error('Mahayana host closed.'));
     this.emitLifecycle('closed');
     if (child) {
+      child.stdin?.write?.(`${JSON.stringify({ kind: 'lifecycle', phase: 'shutdown' })}\n`, () => undefined);
       child.stdin?.end?.();
       const fallbackKill = setTimeout(() => child.kill(), 1_000);
       fallbackKill.unref?.();
