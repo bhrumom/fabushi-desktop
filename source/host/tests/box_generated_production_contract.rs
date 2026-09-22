@@ -1,5 +1,6 @@
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 
@@ -13,10 +14,14 @@ use mahayana_host_runtime::r#box::box_windows::{
     ShellAccessor, ShellExecutionOutcome,
 };
 use mahayana_host_runtime::r#box::generated_production::{
-    CONNECT_STREAM_CONTENT_TYPE, EXEC_PATH, PING_PATH,
+    CONNECT_STREAM_CONTENT_TYPE, EXEC_PATH, PING_PATH, ProductionReadArgs,
+    ProductionReadOutput, ProductionReadResult,
 };
 use mahayana_host_runtime::r#box::box_factory::{
     format_sand_box_startup_summary, should_apply_shared_desktop,
+};
+use mahayana_host_runtime::r#box::loopback_sand_box::{
+    LoopbackSandBox, LoopbackSandBoxOptions,
 };
 use mahayana_host_runtime::r#box::production::ProductionBoxEnvironment;
 
@@ -69,6 +74,38 @@ fn write_success_element() -> Vec<u8> {
 
     let mut client_message = Vec::new();
     push_len(3, &write_result, &mut client_message);
+
+    let mut element = Vec::new();
+    push_len(1, &client_message, &mut element);
+    element
+}
+
+fn read_success_element(path: &str, content: &str) -> Vec<u8> {
+    let mut success = Vec::new();
+    push_len(1, path.as_bytes(), &mut success);
+    push_len(2, content.as_bytes(), &mut success);
+    push_varint(3, 2, &mut success);
+    push_varint(4, content.len() as u64, &mut success);
+    push_varint(6, 0, &mut success);
+    push_varint(8, 0, &mut success);
+
+    let mut read_result = Vec::new();
+    push_len(1, &success, &mut read_result);
+
+    let mut client_message = Vec::new();
+    push_len(7, &read_result, &mut client_message);
+
+    let mut element = Vec::new();
+    push_len(1, &client_message, &mut element);
+    element
+}
+
+fn computer_use_success_element() -> Vec<u8> {
+    let mut computer_result = Vec::new();
+    push_len(1, &[], &mut computer_result);
+
+    let mut client_message = Vec::new();
+    push_len(22, &computer_result, &mut client_message);
 
     let mut element = Vec::new();
     push_len(1, &client_message, &mut element);
@@ -288,4 +325,112 @@ fn production_loopback_factory_gates_exec_accessor_on_authenticated_readiness() 
     );
 
     server.join().expect("fake box daemon thread");
+}
+
+
+#[test]
+fn production_exec_service_reads_through_protected_shipping_accessor() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind fake read ExecService");
+    let port = listener.local_addr().expect("local address").port();
+    let server = thread::spawn(move || {
+        serve_unary_success(&listener, PING_PATH);
+        serve_exec_response(
+            &listener,
+            b"/workspace/safe.txt",
+            read_success_element("/workspace/safe.txt", "safe\ncontent"),
+        );
+    });
+
+    let loopback = LoopbackSandBox::new(LoopbackSandBoxOptions {
+        host: "127.0.0.1".into(),
+        auth_token: "secret".into(),
+        exec_daemon_port: port,
+        ready_timeout_ms: 5_000,
+        poll_interval_ms: 0,
+        protected_box_paths: vec![PathBuf::from("/workspace/private")],
+    });
+    let mut ready = loopback
+        .ensure_ready(&(), "agent-read")
+        .expect("shipping protected accessor readiness");
+
+    let safe = ready
+        .remote_accessor
+        .execute_read(
+            &(),
+            ProductionReadArgs {
+                path: "/workspace/safe.txt".into(),
+                tool_call_id: "shipping-read-contract".into(),
+                offset: None,
+                limit: None,
+                encoding_hint: None,
+            },
+        )
+        .expect("safe read should reach ExecService");
+    assert_eq!(
+        safe,
+        ProductionReadResult::Success {
+            path: "/workspace/safe.txt".into(),
+            output: ProductionReadOutput::Content("safe\ncontent".into()),
+            total_lines: 2,
+            file_size: 12,
+            truncated: false,
+            output_blob_id: None,
+            range_applied: false,
+        }
+    );
+
+    let protected = ready.remote_accessor.execute_read(
+        &(),
+        ProductionReadArgs {
+            path: "/workspace/private/secret.db".into(),
+            tool_call_id: "blocked-read-contract".into(),
+            offset: None,
+            limit: None,
+            encoding_hint: None,
+        },
+    );
+    assert!(
+        protected.is_err(),
+        "protected host paths must be rejected before a remote ExecService call"
+    );
+
+    server.join().expect("fake read ExecService thread");
+}
+
+#[test]
+fn production_exec_service_computer_use_has_remote_and_no_monitor_paths() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind fake computer ExecService");
+    let port = listener.local_addr().expect("local address").port();
+    let server = thread::spawn(move || {
+        serve_exec_response(
+            &listener,
+            b"computer-contract",
+            computer_use_success_element(),
+        );
+    });
+
+    let environment = ProductionBoxEnvironment::new("127.0.0.1", port, "secret");
+    let mut accessor = environment.remote_resource_accessor();
+    let protobuf_args = {
+        let mut args = Vec::new();
+        push_len(1, b"computer-contract", &mut args);
+        args
+    };
+    let result = accessor
+        .execute_computer_use_protobuf(&(), protobuf_args)
+        .expect("shipping computer-use ExecService call");
+    assert_eq!(result, vec![0x0a, 0x00]);
+
+    let mut denied = environment
+        .remote_resource_accessor()
+        .with_no_monitor_computer_use();
+    let error = denied
+        .execute_computer_use_protobuf(&(), Vec::new())
+        .expect_err("no-monitor overlay must fail locally");
+    assert!(
+        error.to_string().contains("No private desktop monitor"),
+        "no-monitor overlay should preserve the Grok error contract"
+    );
+
+    server.join().expect("fake computer ExecService thread");
 }

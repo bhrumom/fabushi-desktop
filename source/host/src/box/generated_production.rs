@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::io::{Read, Write};
 use std::net::TcpStream;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use url::Url;
@@ -19,6 +20,8 @@ use super::box_remote_accessor::{
 };
 use super::box_shell_command::HostShellArgs;
 use super::box_windows::{ShellAccessor, ShellExecutionOutcome, ShellExecutionResult};
+use super::protected_path_guard::{SandProtectedPathError, assert_path_outside_protected_roots};
+use crate::ports::r#box::SandBoxNoMonitorAvailableError;
 
 pub const PING_PATH: &str = "/agent.v1.ControlService/Ping";
 pub const UPDATE_ENVIRONMENT_VARIABLES_PATH: &str =
@@ -208,6 +211,45 @@ impl<Ctx> BoxMcpControlClient<Ctx> for ProductionBoxControlClient {
     }
 }
 
+pub const BOX_GENERATED_PROTOBUF_VERSION: &str = "1.10.1";
+pub const BOX_GENERATED_CONNECT_VERSION: &str = "1.6.1";
+pub const BOX_GENERATED_CONNECT_NODE_VERSION: &str = "1.6.1";
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProductionReadArgs {
+    pub path: String,
+    pub tool_call_id: String,
+    pub offset: Option<i32>,
+    pub limit: Option<u32>,
+    pub encoding_hint: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProductionReadOutput {
+    Content(String),
+    Data(Vec<u8>),
+    None,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProductionReadResult {
+    Success {
+        path: String,
+        output: ProductionReadOutput,
+        total_lines: i32,
+        file_size: i64,
+        truncated: bool,
+        output_blob_id: Option<Vec<u8>>,
+        range_applied: bool,
+    },
+    Error { path: String, error: String },
+    Rejected { path: String, reason: String },
+    FileNotFound { path: String },
+    PermissionDenied { path: String },
+    InvalidFile { path: String, reason: String },
+    Other { case: String },
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProductionExecRequest {
     Shell { id: u64, args: HostShellArgs },
@@ -217,6 +259,8 @@ pub enum ProductionExecRequest {
         file_bytes: Vec<u8>,
         tool_call_id: String,
     },
+    Read { id: u64, args: ProductionReadArgs },
+    ComputerUse { id: u64, protobuf_args: Vec<u8> },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -239,12 +283,16 @@ pub enum ProductionShellResult {
 pub enum ProductionExecClientMessage {
     Shell(ProductionShellResult),
     Write(WriteExecResult),
+    Read(ProductionReadResult),
+    ComputerUse(Vec<u8>),
     Other,
 }
 
 #[derive(Debug)]
 pub enum ProductionBoxExecError {
     Remote(BoxRemoteExecError<ProductionBoxTransportError>),
+    ProtectedPath(SandProtectedPathError),
+    NoMonitor(SandBoxNoMonitorAvailableError),
     MissingResult(&'static str),
 }
 
@@ -252,6 +300,8 @@ impl fmt::Display for ProductionBoxExecError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Remote(error) => error.fmt(formatter),
+            Self::ProtectedPath(error) => error.fmt(formatter),
+            Self::NoMonitor(error) => error.fmt(formatter),
             Self::MissingResult(kind) => {
                 write!(formatter, "box ExecService closed without a {kind} result")
             }
@@ -263,6 +313,8 @@ impl std::error::Error for ProductionBoxExecError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Remote(error) => Some(error),
+            Self::ProtectedPath(error) => Some(error),
+            Self::NoMonitor(error) => Some(error),
             Self::MissingResult(_) => None,
         }
     }
@@ -271,6 +323,18 @@ impl std::error::Error for ProductionBoxExecError {
 impl From<BoxRemoteExecError<ProductionBoxTransportError>> for ProductionBoxExecError {
     fn from(error: BoxRemoteExecError<ProductionBoxTransportError>) -> Self {
         Self::Remote(error)
+    }
+}
+
+impl From<SandProtectedPathError> for ProductionBoxExecError {
+    fn from(error: SandProtectedPathError) -> Self {
+        Self::ProtectedPath(error)
+    }
+}
+
+impl From<SandBoxNoMonitorAvailableError> for ProductionBoxExecError {
+    fn from(error: SandBoxNoMonitorAvailableError) -> Self {
+        Self::NoMonitor(error)
     }
 }
 
@@ -303,6 +367,8 @@ impl<Ctx> BoxRemoteExecClient<Ctx, ProductionExecRequest, ProductionExecClientMe
 
 pub struct ProductionBoxResourceAccessor {
     manager: BoxRemoteExecManager<ProductionBoxExecClient>,
+    protected_read_roots: Vec<PathBuf>,
+    no_monitor_computer_use: bool,
 }
 
 pub fn create_production_box_resource_accessor(
@@ -310,10 +376,64 @@ pub fn create_production_box_resource_accessor(
 ) -> ProductionBoxResourceAccessor {
     ProductionBoxResourceAccessor {
         manager: BoxRemoteExecManager::new(create_production_box_exec_client(transport)),
+        protected_read_roots: Vec::new(),
+        no_monitor_computer_use: false,
     }
 }
 
 impl ProductionBoxResourceAccessor {
+    pub fn with_file_read_guard(mut self, protected_read_roots: Vec<PathBuf>) -> Self {
+        self.protected_read_roots = protected_read_roots;
+        self
+    }
+
+    pub fn with_no_monitor_computer_use(mut self) -> Self {
+        self.no_monitor_computer_use = true;
+        self
+    }
+
+    pub fn execute_read<Ctx>(
+        &mut self,
+        ctx: &Ctx,
+        args: ProductionReadArgs,
+    ) -> Result<ProductionReadResult, ProductionBoxExecError> {
+        assert_path_outside_protected_roots(
+            &self.protected_read_roots,
+            Path::new(&args.path),
+            Path::new("/workspace"),
+        )?;
+        let messages = self.manager.create_exec_instance(ctx, |id| {
+            ProductionExecRequest::Read { id, args }
+        })?;
+        messages
+            .into_iter()
+            .find_map(|message| match message {
+                ProductionExecClientMessage::Read(result) => Some(result),
+                _ => None,
+            })
+            .ok_or(ProductionBoxExecError::MissingResult("read"))
+    }
+
+    pub fn execute_computer_use_protobuf<Ctx>(
+        &mut self,
+        ctx: &Ctx,
+        protobuf_args: Vec<u8>,
+    ) -> Result<Vec<u8>, ProductionBoxExecError> {
+        if self.no_monitor_computer_use {
+            return Err(SandBoxNoMonitorAvailableError::default().into());
+        }
+        let messages = self.manager.create_exec_instance(ctx, |id| {
+            ProductionExecRequest::ComputerUse { id, protobuf_args }
+        })?;
+        messages
+            .into_iter()
+            .find_map(|message| match message {
+                ProductionExecClientMessage::ComputerUse(result) => Some(result),
+                _ => None,
+            })
+            .ok_or(ProductionBoxExecError::MissingResult("computer-use"))
+    }
+
     fn execute_shell_raw<Ctx>(
         &mut self,
         ctx: &Ctx,
@@ -522,6 +642,33 @@ fn encode_write_args(path: &str, file_bytes: &[u8], tool_call_id: &str) -> Vec<u
     body
 }
 
+fn encode_int32_field(field_number: u8, value: i32, out: &mut Vec<u8>) {
+    out.push(field_number << 3);
+    let encoded = value as i64 as u64;
+    let encoded = usize::try_from(encoded).unwrap_or(usize::MAX);
+    encode_varint(encoded, out);
+}
+
+fn encode_read_args(args: &ProductionReadArgs) -> Vec<u8> {
+    let mut body = Vec::new();
+    if !args.path.is_empty() {
+        encode_len_delimited(1, args.path.as_bytes(), &mut body);
+    }
+    if !args.tool_call_id.is_empty() {
+        encode_len_delimited(2, args.tool_call_id.as_bytes(), &mut body);
+    }
+    if let Some(offset) = args.offset {
+        encode_int32_field(4, offset, &mut body);
+    }
+    if let Some(limit) = args.limit {
+        encode_uint32_field(5, u64::from(limit), &mut body);
+    }
+    if let Some(encoding_hint) = args.encoding_hint.as_deref().filter(|value| !value.is_empty()) {
+        encode_len_delimited(6, encoding_hint.as_bytes(), &mut body);
+    }
+    body
+}
+
 pub fn encode_exec_server_message(request: &ProductionExecRequest) -> Vec<u8> {
     let mut body = Vec::new();
     match request {
@@ -539,6 +686,15 @@ pub fn encode_exec_server_message(request: &ProductionExecRequest) -> Vec<u8> {
             encode_uint32_field(1, *id, &mut body);
             let args = encode_write_args(path, file_bytes, tool_call_id);
             encode_len_delimited(3, &args, &mut body);
+        }
+        ProductionExecRequest::Read { id, args } => {
+            encode_uint32_field(1, *id, &mut body);
+            let args = encode_read_args(args);
+            encode_len_delimited(7, &args, &mut body);
+        }
+        ProductionExecRequest::ComputerUse { id, protobuf_args } => {
+            encode_uint32_field(1, *id, &mut body);
+            encode_len_delimited(22, protobuf_args, &mut body);
         }
     }
     body
@@ -602,6 +758,82 @@ fn decode_string_field(
         skip_protobuf_field(input, &mut cursor, wire)?;
     }
     Ok(None)
+}
+
+fn decode_bytes_field(
+    input: &[u8],
+    wanted: u64,
+) -> Result<Option<Vec<u8>>, ProductionBoxTransportError> {
+    let mut cursor = 0usize;
+    while cursor < input.len() {
+        let key = decode_varint(input, &mut cursor)?;
+        let field = key >> 3;
+        let wire = (key & 0x07) as u8;
+        if field == wanted && wire == 2 {
+            return Ok(Some(decode_len_delimited(input, &mut cursor)?.to_vec()));
+        }
+        skip_protobuf_field(input, &mut cursor, wire)?;
+    }
+    Ok(None)
+}
+
+fn decode_read_result(
+    input: &[u8],
+) -> Result<ProductionReadResult, ProductionBoxTransportError> {
+    let mut cursor = 0usize;
+    while cursor < input.len() {
+        let key = decode_varint(input, &mut cursor)?;
+        let field = key >> 3;
+        let wire = (key & 0x07) as u8;
+        if wire == 2 {
+            let nested = decode_len_delimited(input, &mut cursor)?;
+            return match field {
+                1 => {
+                    let output = if let Some(content) = decode_string_field(nested, 2)? {
+                        ProductionReadOutput::Content(content)
+                    } else if let Some(data) = decode_bytes_field(nested, 5)? {
+                        ProductionReadOutput::Data(data)
+                    } else {
+                        ProductionReadOutput::None
+                    };
+                    Ok(ProductionReadResult::Success {
+                        path: decode_string_field(nested, 1)?.unwrap_or_default(),
+                        output,
+                        total_lines: decode_u64_field(nested, 3)?.unwrap_or_default() as u32 as i32,
+                        file_size: decode_u64_field(nested, 4)?.unwrap_or_default() as i64,
+                        truncated: decode_u64_field(nested, 6)?.unwrap_or_default() != 0,
+                        output_blob_id: decode_bytes_field(nested, 7)?,
+                        range_applied: decode_u64_field(nested, 8)?.unwrap_or_default() != 0,
+                    })
+                }
+                2 => Ok(ProductionReadResult::Error {
+                    path: decode_string_field(nested, 1)?.unwrap_or_default(),
+                    error: decode_string_field(nested, 2)?.unwrap_or_default(),
+                }),
+                3 => Ok(ProductionReadResult::Rejected {
+                    path: decode_string_field(nested, 1)?.unwrap_or_default(),
+                    reason: decode_string_field(nested, 2)?.unwrap_or_default(),
+                }),
+                4 => Ok(ProductionReadResult::FileNotFound {
+                    path: decode_string_field(nested, 1)?.unwrap_or_default(),
+                }),
+                5 => Ok(ProductionReadResult::PermissionDenied {
+                    path: decode_string_field(nested, 1)?.unwrap_or_default(),
+                }),
+                6 => Ok(ProductionReadResult::InvalidFile {
+                    path: decode_string_field(nested, 1)?.unwrap_or_default(),
+                    reason: decode_string_field(nested, 2)?.unwrap_or_default(),
+                }),
+                _ => Ok(ProductionReadResult::Other {
+                    case: format!("read_result_field_{field}"),
+                }),
+            };
+        }
+        skip_protobuf_field(input, &mut cursor, wire)?;
+    }
+    Ok(ProductionReadResult::Other {
+        case: "missing_read_result".into(),
+    })
 }
 
 fn decode_shell_success(
@@ -704,16 +936,14 @@ fn decode_exec_client_message(
         let key = decode_varint(input, &mut cursor)?;
         let field = key >> 3;
         let wire = (key & 0x07) as u8;
-        if wire == 2 && (field == 2 || field == 3) {
+        if wire == 2 && matches!(field, 2 | 3 | 7 | 22) {
             let nested = decode_len_delimited(input, &mut cursor)?;
-            return if field == 2 {
-                Ok(ProductionExecClientMessage::Shell(decode_shell_result(
-                    nested,
-                )?))
-            } else {
-                Ok(ProductionExecClientMessage::Write(decode_write_result(
-                    nested,
-                )?))
+            return match field {
+                2 => Ok(ProductionExecClientMessage::Shell(decode_shell_result(nested)?)),
+                3 => Ok(ProductionExecClientMessage::Write(decode_write_result(nested)?)),
+                7 => Ok(ProductionExecClientMessage::Read(decode_read_result(nested)?)),
+                22 => Ok(ProductionExecClientMessage::ComputerUse(nested.to_vec())),
+                _ => Ok(ProductionExecClientMessage::Other),
             };
         }
         skip_protobuf_field(input, &mut cursor, wire)?;

@@ -176,7 +176,8 @@ impl LoopbackSandBox {
         self.wait_until_ready(ctx, &endpoint, self.options.ready_timeout_ms)?;
         let transport = ProductionBoxTransport::from_endpoint(&endpoint);
         Ok(LoopbackReady {
-            remote_accessor: create_production_box_resource_accessor(&transport),
+            remote_accessor: create_production_box_resource_accessor(&transport)
+                .with_file_read_guard(self.options.protected_box_paths.clone()),
             vnc_url: format!("http://{}:{VNC_PORT}/vnc.html", self.options.host),
             terminals_folder: BOX_TERMINALS_FOLDER.into(),
         })
@@ -223,7 +224,8 @@ impl LoopbackSandBox {
         let endpoint = self.primary_endpoint();
         self.wait_until_ready(ctx, &endpoint, self.options.ready_timeout_ms)?;
         let transport = ProductionBoxTransport::from_endpoint(&endpoint);
-        Ok(create_production_box_resource_accessor(&transport))
+        Ok(create_production_box_resource_accessor(&transport)
+            .with_file_read_guard(self.options.protected_box_paths.clone()))
     }
 
     pub fn ensure_window<Ctx>(
@@ -268,7 +270,8 @@ impl LoopbackSandBox {
         let transport = ProductionBoxTransport::from_endpoint(&endpoint);
         Ok(SandBoxWindow {
             window_index,
-            computer_use: create_production_box_resource_accessor(&transport),
+            computer_use: create_production_box_resource_accessor(&transport)
+                .with_file_read_guard(self.options.protected_box_paths.clone()),
             vnc_url: format!(
                 "http://{}:{FORK_VNC_PORT}/vnc.html?path=websockify%3Ftoken%3D{display_token}",
                 self.options.host

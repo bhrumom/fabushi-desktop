@@ -298,7 +298,11 @@ impl SharedDesktopSandBox {
         let assigned = self.assign_window(agent_id);
         let primary = self.inner.ensure_ready(ctx, &self.shared_box_id)?;
         let Some(assigned) = assigned else {
-            return Ok(primary);
+            return Ok(LoopbackReady {
+                remote_accessor: primary.remote_accessor.with_no_monitor_computer_use(),
+                vnc_url: primary.vnc_url,
+                terminals_folder: primary.terminals_folder,
+            });
         };
         let index = self.migrate_legacy_primary_seat(agent_id, assigned);
         let is_migration = index != assigned;
