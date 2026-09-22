@@ -5,7 +5,10 @@ use mahayana_node_agent_coordinator::carrier::{
 use mahayana_node_agent_coordinator::control_port_client::{ClientAction, ControlPortClient};
 use mahayana_node_agent_coordinator::gateway::gateway_client::CoordinatorGatewayClient;
 use mahayana_node_agent_coordinator::gateway::gateway_reachability::ReachabilityOutcome;
-use mahayana_node_agent_coordinator::gateway::host_supervisor::GatewayConnection;
+use mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::{
+    dispatch_http_json, failure_for,
+};
+use mahayana_node_agent_coordinator::gateway::host_supervisor::read_gateway_discovery;
 use mahayana_node_agent_coordinator::protocol::{
     CoordinatorFrame, Failure, ReplyOutcome, COORDINATOR_DISCONNECTED,
 };
@@ -13,8 +16,8 @@ use mahayana_node_agent_coordinator::renderer_port_server::{
     RendererPortServer, ServerAction,
 };
 use serde_json::{Value, json};
-use std::collections::{BTreeMap, HashMap};
-use std::env;
+use std::collections::HashMap;
+use std::{env, fs};
 use std::io::{self, BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{ChildStdin, Command, Stdio};
@@ -44,6 +47,7 @@ struct PendingHostRequest {
 struct CoordinatorState {
     bootstrap: CoordinatorBootstrap,
     host_bin: PathBuf,
+    gateway_discovery_path: PathBuf,
     host_stdin: Mutex<Option<ActiveHostStdin>>,
     gateway_client: Mutex<CoordinatorGatewayClient>,
     pending: Mutex<HashMap<String, PendingHostRequest>>,
@@ -185,7 +189,12 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
     }
 
     let generation = state.host_generation.fetch_add(1, Ordering::SeqCst) + 1;
+    let _ = fs::remove_file(&state.gateway_discovery_path);
     let mut child = Command::new(&state.host_bin)
+        .env(
+            "SAND_DATA_ROOT",
+            state.bootstrap.process_config.data_dir.trim(),
+        )
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -214,12 +223,47 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
         .lock()
         .map_err(|_| io::Error::other("host stdin lock poisoned"))? =
         Some(ActiveHostStdin { generation, stdin });
-    if let Ok(mut gateway) = state.gateway_client.lock() {
-        let now_ms = u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
-        let _ = gateway.start(now_ms);
-    }
     state.lifecycle("running", generation, true, None);
     drop(spawn_guard);
+
+    {
+        let discovery_state = Arc::clone(&state);
+        thread::spawn(move || {
+            for _ in 0..500 {
+                if discovery_state.closed.load(Ordering::SeqCst)
+                    || discovery_state.host_generation.load(Ordering::SeqCst) != generation
+                {
+                    return;
+                }
+                if let Ok(connection) =
+                    read_gateway_discovery(&discovery_state.gateway_discovery_path)
+                {
+                    if let Ok(mut gateway) = discovery_state.gateway_client.lock() {
+                        let now_ms =
+                            u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
+                        if gateway.install_connection(connection).is_ok()
+                            && gateway.start(now_ms).is_ok()
+                        {
+                            discovery_state.lifecycle(
+                                "gateway-connected",
+                                generation,
+                                true,
+                                None,
+                            );
+                            return;
+                        }
+                    }
+                }
+                thread::sleep(Duration::from_millis(10));
+            }
+            discovery_state.lifecycle(
+                "gateway-discovery-timeout",
+                generation,
+                true,
+                Some("Host gateway discovery did not appear"),
+            );
+        });
+    }
 
     {
         let output_state = Arc::clone(&state);
@@ -521,22 +565,14 @@ fn main() {
         }
     };
 
-    let mut gateway_client = CoordinatorGatewayClient::default();
-    let gateway_base_url = env::var("MAHAYANA_API_BASE_URL")
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| "mahayana-host://local".to_string());
-    if let Err(error) = gateway_client.install_connection(GatewayConnection {
-        base_url: gateway_base_url,
-        headers: BTreeMap::new(),
-    }) {
-        eprintln!("node-agent-coordinator: failed to initialize gateway route: {error}");
-        std::process::exit(2);
-    }
+    let gateway_discovery_path =
+        PathBuf::from(bootstrap.process_config.data_dir.trim()).join("gateway.json");
+    let gateway_client = CoordinatorGatewayClient::default();
 
     let state = Arc::new(CoordinatorState {
         bootstrap,
         host_bin,
+        gateway_discovery_path,
         host_stdin: Mutex::new(None),
         gateway_client: Mutex::new(gateway_client),
         pending: Mutex::new(HashMap::new()),
