@@ -196,6 +196,97 @@ impl CoordinatorState {
     }
 }
 
+
+fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
+    let (channel, family, payload) = match (
+        value.get("channel").and_then(Value::as_str),
+        value.get("payload"),
+    ) {
+        (Some(channel), Some(payload)) => (
+            channel.to_string(),
+            coordinator_event_family_for_sse_channel(channel)
+                .unwrap_or("runtime")
+                .to_string(),
+            payload.clone(),
+        ),
+        _ => ("runtime".into(), "runtime".into(), value),
+    };
+    let now_ms = u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
+    if let Ok(mut gateway) = state.gateway_client.lock() {
+        let _ = gateway.accept_event(now_ms, channel, payload.clone());
+    }
+    state.post_event(&family, payload);
+}
+
+fn run_gateway_event_stream(
+    state: Arc<CoordinatorState>,
+    generation: u64,
+    connection: GatewayConnection,
+) {
+    loop {
+        if state.closed.load(Ordering::SeqCst)
+            || state.host_generation.load(Ordering::SeqCst) != generation
+        {
+            state.gateway_events_live.store(false, Ordering::SeqCst);
+            return;
+        }
+
+        let on_connected_state = Arc::clone(&state);
+        let on_event_state = Arc::clone(&state);
+        let continue_state = Arc::clone(&state);
+        let result = stream_http_events(
+            &connection,
+            move || {
+                on_connected_state
+                    .gateway_events_live
+                    .store(true, Ordering::SeqCst);
+                let now_ms =
+                    u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
+                if let Ok(mut gateway) = on_connected_state.gateway_client.lock() {
+                    let _ = gateway.start(now_ms);
+                }
+                on_connected_state.gateway_lifecycle(
+                    "transport-connected",
+                    generation,
+                    None,
+                );
+            },
+            move |event| dispatch_gateway_event(&on_event_state, event),
+            move || {
+                !continue_state.closed.load(Ordering::SeqCst)
+                    && continue_state.host_generation.load(Ordering::SeqCst) == generation
+            },
+        );
+
+        state.gateway_events_live.store(false, Ordering::SeqCst);
+        if state.closed.load(Ordering::SeqCst)
+            || state.host_generation.load(Ordering::SeqCst) != generation
+        {
+            return;
+        }
+
+        let outcome = match &result {
+            Err(GatewayDispatchError::Unreachable { outcome, .. }) => *outcome,
+            Err(GatewayDispatchError::Command(_)) => ReachabilityOutcome::AccessDenied,
+            Err(GatewayDispatchError::Transport(_)) | Ok(()) => ReachabilityOutcome::Network,
+        };
+        let detail = result
+            .err()
+            .map(|error| error.to_string())
+            .unwrap_or_else(|| "gateway event stream ended".into());
+        let delay = state
+            .gateway_client
+            .lock()
+            .ok()
+            .and_then(|mut gateway| gateway.transport_down(outcome));
+        state.gateway_lifecycle("transport-down", generation, Some(&detail));
+        let Some(delay) = delay else {
+            return;
+        };
+        thread::sleep(delay);
+    }
+}
+
 fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
     let spawn_guard = state
         .spawn_lock
@@ -260,28 +351,32 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
                 if let Ok(connection) =
                     read_gateway_discovery(&discovery_state.gateway_discovery_path)
                 {
-                    if let Ok(mut gateway) = discovery_state.gateway_client.lock() {
-                        let now_ms =
-                            u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
-                        if gateway.install_connection(connection).is_ok()
-                            && gateway.start(now_ms).is_ok()
-                        {
-                            discovery_state.lifecycle(
-                                "gateway-connected",
-                                generation,
-                                true,
-                                None,
-                            );
-                            return;
-                        }
+                    let installed = discovery_state
+                        .gateway_client
+                        .lock()
+                        .ok()
+                        .is_some_and(|mut gateway| {
+                            gateway.install_connection(connection.clone()).is_ok()
+                        });
+                    if installed {
+                        discovery_state.gateway_lifecycle(
+                            "discovered",
+                            generation,
+                            None,
+                        );
+                        run_gateway_event_stream(
+                            Arc::clone(&discovery_state),
+                            generation,
+                            connection,
+                        );
+                        return;
                     }
                 }
                 thread::sleep(Duration::from_millis(10));
             }
-            discovery_state.lifecycle(
-                "gateway-discovery-timeout",
+            discovery_state.gateway_lifecycle(
+                "discovery-timeout",
                 generation,
-                true,
                 Some("Host gateway discovery did not appear"),
             );
         });
@@ -312,7 +407,9 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
                 };
 
                 if let Some(event) = value.get("event").filter(|event| event.is_object()) {
-                    output_state.post_event("runtime", event.clone());
+                    if !output_state.gateway_events_live.load(Ordering::SeqCst) {
+                        output_state.post_event("runtime", event.clone());
+                    }
                     continue;
                 }
 
