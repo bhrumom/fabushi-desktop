@@ -1,0 +1,15 @@
+[package]
+name = "mahayana-app-host-runtime"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+publish = false
+
+[[bin]]
+name = "mahayana-app-host"
+path = "src/main.rs"
+
+[dependencies]
+mahayana-host-runtime = { path = ".." }
+mahayana-unified-app-host = { path = "../../../third_party/mahayana/mahayana-rs/mahayana-unified-app-host" }
+serde_json = "1"
