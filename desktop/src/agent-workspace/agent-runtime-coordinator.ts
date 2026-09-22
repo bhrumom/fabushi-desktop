@@ -128,24 +128,16 @@ export class AgentRuntimeCoordinator {
       text: input.text,
       richText: input.richText,
       createdAtMs: input.createdAtMs,
-      operationId: input.requestId,
       optimistic: true,
       queued: false,
       attachments: input.attachments,
-    });
-    this.transcripts.appendAssistantTurnEvent(input.peerKey, {
-      type: 'operation.started',
-      timestamp: new Date(input.createdAtMs).toISOString(),
-      operationId: input.requestId,
-      label: '正在思考',
-      interruptible: true,
     });
     this.emitTranscript(input.peerKey);
     this.emitOperation(input.peerKey);
   }
 
   cancelLocalTurn(peerKey: string, requestId: string, messageId: string): void {
-    this.transcripts.removeByIds(peerKey, [messageId, `${requestId}:assistant-turn`]);
+    this.transcripts.removeByIds(peerKey, [messageId]);
     this.workspace.cancelRequest(requestId);
     this.emitTranscript(peerKey);
     this.emitOperation(peerKey);
