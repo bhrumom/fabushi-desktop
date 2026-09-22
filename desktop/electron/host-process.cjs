@@ -406,7 +406,16 @@ class MahayanaHostProcess {
       }
 
       if (message?.kind === 'lifecycle') {
-        if (message.phase === 'ready' && message.protocolVersion === COORDINATOR_PROTOCOL_VERSION) {
+        if (message.phase === 'ready') {
+          if (message.protocolVersion !== COORDINATOR_PROTOCOL_VERSION) {
+            const error = new Error(
+              `Coordinator protocol version ${String(message.protocolVersion)} does not match ${COORDINATOR_PROTOCOL_VERSION}.`,
+            );
+            this.protocolReady = false;
+            this.rejectGeneration(generation, error);
+            this.emitLifecycle('protocol-error', { error: error.message });
+            return;
+          }
           this.protocolReady = true;
           this.emitLifecycle('protocol-ready', { protocolVersion: message.protocolVersion });
           return;
@@ -419,6 +428,13 @@ class MahayanaHostProcess {
           return;
         }
         this.emitLifecycle('protocol-error', { error: 'Unexpected Coordinator lifecycle frame.' });
+        return;
+      }
+
+      if (!this.protocolReady) {
+        const error = new Error('Coordinator emitted a data frame before the ready handshake.');
+        this.rejectGeneration(generation, error);
+        this.emitLifecycle('protocol-error', { error: error.message });
         return;
       }
 
@@ -546,6 +562,7 @@ class MahayanaHostProcess {
     this.emitLifecycle('restarting', { reason: String(reason) });
     if (child) {
       this.child = null;
+      this.protocolReady = false;
       this.startedAt = null;
       this.rejectGeneration(generation, new Error(`Mahayana host restarted: ${reason}`));
       child.stdin?.end?.();
