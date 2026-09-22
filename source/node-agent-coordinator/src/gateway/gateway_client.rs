@@ -342,12 +342,14 @@ where
             message: format!("gateway events unreachable (dns): {error}"),
         }
     })?;
-    let socket = addresses.first().copied().ok_or_else(|| GatewayDispatchError::Unreachable {
-        outcome: ReachabilityOutcome::Dns,
-        message: "gateway events unreachable (dns)".into(),
-    })?;
+    if addresses.is_empty() {
+        return Err(GatewayDispatchError::Unreachable {
+            outcome: ReachabilityOutcome::Dns,
+            message: "gateway events unreachable (dns)".into(),
+        });
+    }
     let connect_timeout = Duration::from_millis(SSE_CONNECT_TIMEOUT_MS);
-    let mut stream = endpoint.connect(&socket, connect_timeout).map_err(|error| {
+    let mut stream = endpoint.connect_any(&addresses, connect_timeout).map_err(|error| {
         GatewayDispatchError::Unreachable {
             outcome: sse_outcome_for_io(&error),
             message: format!("gateway events connect failed: {error}"),
