@@ -9648,7 +9648,7 @@
       "targetPath": "source/node-agent-coordinator/src/carrier.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9661,7 +9661,7 @@
       "targetPath": "source/node-agent-coordinator/src/client_side_tool_v2_relay.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9674,7 +9674,7 @@
       "targetPath": "source/node-agent-coordinator/src/control_port_client.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9687,7 +9687,7 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/box_vnc_proxy.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9700,7 +9700,7 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_client.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9713,7 +9713,7 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_dns_diagnostics.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9726,7 +9726,7 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_errors.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9739,7 +9739,7 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_event_families.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9752,7 +9752,7 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_reachability.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9765,7 +9765,7 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_request_dispatcher.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9778,7 +9778,7 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/host_supervisor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9791,7 +9791,7 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/sse_block_decoder.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9804,7 +9804,7 @@
       "targetPath": "source/node-agent-coordinator/src/inference_router.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9817,7 +9817,7 @@
       "targetPath": "source/node-agent-coordinator/src/local_exec/daemon_files.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9830,7 +9830,7 @@
       "targetPath": "source/node-agent-coordinator/src/local_exec/supervisor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9856,7 +9856,7 @@
       "targetPath": "source/node-agent-coordinator/src/oauth/mcp_oauth_callback_listener.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9869,7 +9869,7 @@
       "targetPath": "source/node-agent-coordinator/src/oauth/mcp_oauth_forwarder.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9882,7 +9882,7 @@
       "targetPath": "source/node-agent-coordinator/src/oauth/mcp_oauth_loopback_registry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9908,7 +9908,7 @@
       "targetPath": "source/node-agent-coordinator/src/routed_mcp_bridge.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9921,7 +9921,7 @@
       "targetPath": "source/node-agent-coordinator/src/telemetry/transport_stage_recorder.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9934,7 +9934,7 @@
       "targetPath": "source/node-agent-coordinator/src/webauthn/provider.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -9947,7 +9947,7 @@
       "targetPath": "source/node-agent-coordinator/src/webauthn/signer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "evidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
@@ -20125,5 +20125,6 @@
       "referenceBlobSha": "39aa4a862aeef6287b84d53eb44517d167796aab",
       "architecturalRole": "shared/write-epoch"
     }
-  ]
+  ],
+  "generatedAt": "2026-09-22T01:54:44.493Z"
 }
