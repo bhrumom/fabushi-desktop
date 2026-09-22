@@ -46,6 +46,7 @@ Create a minimal but complete repository governance baseline that:
 - R9: Require migration plans for incompatible state/schema/process/protocol/ownership changes.
 - R10: Require completion claims to be evidence-backed and distinguish source-complete, CI-complete, merged, released, and post-release-verified states.
 - R11: Update `README.md` with links to the governance and architecture entry points.
+- R12: Before product-affecting implementation, require an explicit duplicate-work check across current branch/base, active Specs/tasks, remote branches, open PRs, and relevant recent merged work; when materially overlapping work already exists, the agent must continue/review/fix that work instead of creating a parallel implementation unless the latest requirement explicitly calls for an independent replacement.
 
 ## 5. Current state
 
@@ -104,6 +105,7 @@ No runtime interfaces change. New repository-governance contracts are Markdown c
 - Architecture doc becomes aspirational while code differs: require active migration spec and explicit transitional status.
 - ADR is edited to hide history: ADR policy forbids rewriting accepted decisions except typo/clarity corrections; supersede with a new ADR.
 - AI agent skips architecture review for an architecture-affecting task: root `AGENTS.md` must fail closed.
+- AI agent starts a new branch/implementation while a materially equivalent branch or PR is already active: root `AGENTS.md` must require a pre-implementation duplicate-work check and reuse/continue the existing work by default.
 - Release candidate passes source tests but real package fails: release guide requires packaged acceptance when applicable and distinguishes merged from released.
 - Legal/ownership metadata is missing: do not fabricate LICENSE/CODEOWNERS.
 
@@ -121,14 +123,14 @@ No runtime interfaces change. New repository-governance contracts are Markdown c
 ## 12. Verification / test strategy
 
 - Structural verification: every required file exists on the branch.
-- Content verification: `AGENTS.md` explicitly contains the mandatory lifecycle and fail-closed architecture/ADR/migration rules.
+- Content verification: `AGENTS.md` explicitly contains the mandatory lifecycle, duplicate-work gate, and fail-closed architecture/ADR/migration rules.
 - Traceability verification: PR template links Spec/ADR/architecture/evidence fields.
 - Regression safety: no runtime/application files are changed.
 - CI: inspect the exact PR HEAD checks; documentation-only changes may not trigger path-filtered runtime workflows, which must not be misrepresented as runtime validation.
 
 ## 13. Acceptance criteria / Definition of Done
 
-- AC-1: R1–R11 are present on one branch and reviewed against this spec.
+- AC-1: R1–R12 are present on one branch and reviewed against this spec.
 - AC-2: no runtime source file is changed.
 - AC-3: root `AGENTS.md` preserves Spec-first policy and adds full standard lifecycle governance.
 - AC-4: README exposes the new governance entry points.
@@ -175,6 +177,7 @@ Required evidence:
 | R9 | passed | root `AGENTS.md` and migration policy require controlled migration records for incompatible ownership/state/protocol transitions. |
 | R10 | passed | `AGENTS.md` defines specified/implemented/source-verified/CI-verified/merged/release-candidate/released/post-release-verified/blocked states. |
 | R11 | passed | root `README.md` links product, roadmap and governance entry points. |
+| R12 | pending | add and read back the mandatory duplicate-work branch/PR check in root `AGENTS.md`. |
 | AC-1 | passed | branch compare against `main@4277fe1009327a23e8a171281d6172213a2b5142` shows the complete governance set on one branch. |
 | AC-2 | passed | GitHub compare shows no runtime/application source changes; only docs/governance/templates and `.editorconfig`. |
 | AC-3 | passed | `AGENTS.md` was read back from the branch with Spec-first preserved and the full lifecycle added. |
