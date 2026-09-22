@@ -11,6 +11,7 @@ use std::time::Duration;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use reqwest::{Client as AsyncClient, Response as AsyncResponse};
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 use thiserror::Error;
 use tokio::runtime::{Builder as TokioRuntimeBuilder, Runtime};
@@ -937,61 +938,52 @@ struct PartialOpenRouterToolCall {
     arguments: String,
 }
 
-fn run_openrouter_provider_text(
-    messages: &[ProviderMessage],
-    options: &mut RoutedProviderOptions<'_>,
-) -> Result<String, ProviderSessionError> {
-    let api_key = openrouter_api_key(options.data_dir)?;
-    let client = AsyncClient::builder()
-        .build()
-        .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
-    let runtime = provider_io_runtime()?;
-    let model = env::var("SAND_OPENROUTER_MODEL")
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "openai/gpt-5.2".into());
-    let tool_index = options
-        .tools
-        .iter()
-        .map(|tool| (tool.name.clone(), tool))
-        .collect::<BTreeMap<_, _>>();
-    let declared_tools = openrouter_tools(options.tools);
-    let system_prompt = assembled_provider_system_prompt(messages);
-    let mut conversation = vec![json!({
-        "role": "system",
-        "content": system_prompt
-    })];
-    conversation.extend(messages.iter().filter(|message| message.role != "system").map(|message| {
-        json!({
-            "role": if message.role == "assistant" { "assistant" } else { "user" },
-            "content": message.content,
-        })
-    }));
-    let should_cancel = options.should_cancel;
-    let on_text_delta = &mut *options.on_text_delta;
-    let execute_tool = &mut *options.execute_tool;
-    let mut text = String::new();
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OpenRouterCheckpoint {
+    pub conversation: Vec<Value>,
+    pub text: String,
+    pub completed_steps: usize,
+    pub tool_calls_completed: usize,
+}
 
-    for _step in 0..8 {
-        if should_cancel() {
-            return Err(ProviderSessionError::Cancelled(
-                "Runner cancelled the OpenRouter request".into(),
-            ));
-        }
-        let mut request = json!({
-            "model": model,
-            "messages": conversation,
-            "stream": true,
-        });
-        if !declared_tools.is_empty() {
-            request["tools"] = Value::Array(declared_tools.clone());
-            request["tool_choice"] = Value::String("auto".into());
-        }
-        let response = runtime.block_on(await_reqwest(
-            client
+pub trait OpenRouterTransport {
+    fn stream_response(
+        &mut self,
+        request: &Value,
+        on_event: &mut dyn FnMut(Value) -> Result<(), ProviderSessionError>,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<(), ProviderSessionError>;
+}
+
+struct OpenRouterHttpTransport {
+    client: AsyncClient,
+    runtime: Runtime,
+    api_key: String,
+}
+
+impl OpenRouterHttpTransport {
+    fn new(api_key: String) -> Result<Self, ProviderSessionError> {
+        Ok(Self {
+            client: AsyncClient::builder()
+                .build()
+                .map_err(|error| ProviderSessionError::Transport(error.to_string()))?,
+            runtime: provider_io_runtime()?,
+            api_key,
+        })
+    }
+}
+
+impl OpenRouterTransport for OpenRouterHttpTransport {
+    fn stream_response(
+        &mut self,
+        request: &Value,
+        on_event: &mut dyn FnMut(Value) -> Result<(), ProviderSessionError>,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<(), ProviderSessionError> {
+        let response = self.runtime.block_on(await_reqwest(
+            self.client
                 .post("https://openrouter.ai/api/v1/chat/completions")
-                .header("authorization", format!("Bearer {api_key}"))
+                .header("authorization", format!("Bearer {}", self.api_key))
                 .header("content-type", "application/json")
                 .header("accept", "text/event-stream")
                 .header(
@@ -999,14 +991,15 @@ fn run_openrouter_provider_text(
                     "https://github.com/bhrumom/fabushi-desktop",
                 )
                 .header("X-Title", "Fabushi")
-                .json(&request)
+                .json(request)
                 .send(),
             should_cancel,
             "the OpenRouter provider request",
         ))?;
         if !response.status().is_success() {
             let status = response.status();
-            let detail = runtime
+            let detail = self
+                .runtime
                 .block_on(await_reqwest(
                     response.text(),
                     should_cancel,
@@ -1024,12 +1017,101 @@ fn run_openrouter_provider_text(
                 }
             )));
         }
-
-        let mut partial_calls = BTreeMap::<usize, PartialOpenRouterToolCall>::new();
-        let mut step_text = String::new();
-        runtime.block_on(decode_async_sse_stream(
+        self.runtime.block_on(decode_async_sse_stream(
             response,
             should_cancel,
+            on_event,
+        ))
+    }
+}
+
+pub fn run_openrouter_with_transport(
+    transport: &mut dyn OpenRouterTransport,
+    model: &str,
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&OpenRouterCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &OpenRouterCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+) -> Result<String, ProviderSessionError> {
+    let tool_index = tools
+        .iter()
+        .map(|tool| (tool.name.clone(), tool))
+        .collect::<BTreeMap<_, _>>();
+    let declared_tools = openrouter_tools(tools);
+    let (
+        mut conversation,
+        mut text,
+        mut completed_steps,
+        mut tool_calls_completed,
+    ) = match resume_from {
+        Some(checkpoint) => (
+            checkpoint.conversation.clone(),
+            checkpoint.text.clone(),
+            checkpoint.completed_steps,
+            checkpoint.tool_calls_completed,
+        ),
+        None => {
+            let system_prompt = assembled_provider_system_prompt(messages);
+            let mut conversation = vec![json!({
+                "role": "system",
+                "content": system_prompt
+            })];
+            conversation.extend(
+                messages
+                    .iter()
+                    .filter(|message| message.role != "system")
+                    .map(|message| {
+                        json!({
+                            "role": if message.role == "assistant" {
+                                "assistant"
+                            } else {
+                                "user"
+                            },
+                            "content": message.content,
+                        })
+                    }),
+            );
+            (conversation, String::new(), 0, 0)
+        }
+    };
+
+    if completed_steps >= 8 {
+        return Err(ProviderSessionError::Protocol(
+            "OpenRouter resume checkpoint already exhausted Fabushi's 8-step tool limit."
+                .into(),
+        ));
+    }
+
+    for _step in completed_steps..8 {
+        if should_cancel() {
+            return Err(ProviderSessionError::Cancelled(
+                "Runner cancelled the OpenRouter request".into(),
+            ));
+        }
+        let mut request = json!({
+            "model": model,
+            "messages": conversation,
+            "stream": true,
+        });
+        if !declared_tools.is_empty() {
+            request["tools"] = Value::Array(declared_tools.clone());
+            request["tool_choice"] = Value::String("auto".into());
+        }
+
+        let mut partial_calls =
+            BTreeMap::<usize, PartialOpenRouterToolCall>::new();
+        let mut step_text = String::new();
+        transport.stream_response(
+            &request,
             &mut |event| {
                 if should_cancel() {
                     return Err(ProviderSessionError::Cancelled(
@@ -1050,19 +1132,26 @@ fn run_openrouter_provider_text(
                 else {
                     return Ok(());
                 };
-                if let Some(content) = delta.get("content").and_then(Value::as_str) {
+                if let Some(content) =
+                    delta.get("content").and_then(Value::as_str)
+                {
                     step_text.push_str(content);
                     text.push_str(content);
                     on_text_delta(content, &text);
                 }
-                if let Some(calls) = delta.get("tool_calls").and_then(Value::as_array) {
+                if let Some(calls) =
+                    delta.get("tool_calls").and_then(Value::as_array)
+                {
                     for call in calls {
                         let index = call
                             .get("index")
                             .and_then(Value::as_u64)
                             .unwrap_or(0) as usize;
-                        let partial = partial_calls.entry(index).or_default();
-                        if let Some(id) = call.get("id").and_then(Value::as_str) {
+                        let partial =
+                            partial_calls.entry(index).or_default();
+                        if let Some(id) =
+                            call.get("id").and_then(Value::as_str)
+                        {
                             partial.id.push_str(id);
                         }
                         if let Some(function) =
@@ -1083,12 +1172,14 @@ fn run_openrouter_provider_text(
                 }
                 Ok(())
             },
-        ))?;
+            should_cancel,
+        )?;
 
         if partial_calls.is_empty() {
             return Ok(text);
         }
 
+        let calls_in_step = partial_calls.len();
         let tool_calls = partial_calls
             .iter()
             .map(|(index, call)| {
@@ -1149,11 +1240,51 @@ fn run_openrouter_provider_text(
                     .unwrap_or_else(|_| "null".into()),
             }));
         }
+
+        completed_steps = completed_steps.saturating_add(1);
+        tool_calls_completed =
+            tool_calls_completed.saturating_add(calls_in_step);
+        on_checkpoint(&OpenRouterCheckpoint {
+            conversation: conversation.clone(),
+            text: text.clone(),
+            completed_steps,
+            tool_calls_completed,
+        })?;
     }
 
     Err(ProviderSessionError::Protocol(
         "OpenRouter exceeded Fabushi's 8-step tool limit.".into(),
     ))
+}
+
+fn run_openrouter_provider_text(
+    messages: &[ProviderMessage],
+    options: &mut RoutedProviderOptions<'_>,
+) -> Result<String, ProviderSessionError> {
+    let api_key = openrouter_api_key(options.data_dir)?;
+    let model = env::var("SAND_OPENROUTER_MODEL")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "openai/gpt-5.2".into());
+    let tools = options.tools;
+    let should_cancel = options.should_cancel;
+    let execute_tool = &mut *options.execute_tool;
+    let on_text_delta = &mut *options.on_text_delta;
+    let mut transport = OpenRouterHttpTransport::new(api_key)?;
+    let mut ignore_checkpoint =
+        |_checkpoint: &OpenRouterCheckpoint| Ok(());
+    run_openrouter_with_transport(
+        &mut transport,
+        &model,
+        messages,
+        tools,
+        execute_tool,
+        on_text_delta,
+        should_cancel,
+        None,
+        &mut ignore_checkpoint,
+    )
 }
 
 fn resolve_claude_cli_path() -> Option<PathBuf> {

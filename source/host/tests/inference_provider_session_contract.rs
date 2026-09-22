@@ -1,12 +1,15 @@
+use std::collections::VecDeque;
 use std::fs;
 use std::io::Cursor;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    ProviderSessionError, RoutedProvider, RoutedProviderOptions, configured_routed_provider,
-    decode_sse_stream, run_routed_provider_text,
+    OpenRouterCheckpoint, OpenRouterTransport, ProviderMessage,
+    ProviderSessionError, RoutedProvider, RoutedProviderOptions,
+    RoutedToolDefinition, configured_routed_provider, decode_sse_stream,
+    run_openrouter_with_transport, run_routed_provider_text,
 };
-use serde_json::json;
+use serde_json::{Value, json};
 
 #[test]
 fn provider_session_reads_router_settings_and_streams_sse_events() {
@@ -70,4 +73,151 @@ fn provider_session_honors_runner_cancellation_before_provider_setup() {
     )
     .expect_err("runner cancellation should win before provider setup");
     assert!(matches!(error, ProviderSessionError::Cancelled(_)));
+}
+
+
+struct FakeOpenRouterTransport {
+    responses: VecDeque<Vec<Value>>,
+    requests: Vec<Value>,
+}
+
+impl OpenRouterTransport for FakeOpenRouterTransport {
+    fn stream_response(
+        &mut self,
+        request: &Value,
+        on_event: &mut dyn FnMut(Value) -> Result<(), ProviderSessionError>,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<(), ProviderSessionError> {
+        self.requests.push(request.clone());
+        if should_cancel() {
+            return Err(ProviderSessionError::Cancelled(
+                "fake OpenRouter transport observed cancellation".into(),
+            ));
+        }
+        for event in self.responses.pop_front().expect("fake response") {
+            on_event(event)?;
+        }
+        Ok(())
+    }
+}
+
+#[test]
+fn openrouter_resumes_only_from_an_accepted_tool_boundary_checkpoint() {
+    let mut first_transport = FakeOpenRouterTransport {
+        responses: VecDeque::from([
+            vec![json!({
+                "choices":[{
+                    "delta":{
+                        "content":"Checking ",
+                        "tool_calls":[{
+                            "index":0,
+                            "id":"call-resume",
+                            "function":{
+                                "name":"calendar_list",
+                                "arguments":"{\"days\":1}"
+                            }
+                        }]
+                    }
+                }]
+            })],
+            vec![json!({
+                "error":{"message":"transient upstream failure"}
+            })],
+        ]),
+        requests: Vec::new(),
+    };
+    let messages = vec![ProviderMessage {
+        role: "user".into(),
+        content: "calendar".into(),
+    }];
+    let tools = vec![RoutedToolDefinition {
+        name: "calendar_list".into(),
+        provider_identifier: "calendar".into(),
+        tool_name: "list".into(),
+        description: Some("List calendar entries".into()),
+        input_schema: json!({"type":"object"}),
+    }];
+
+    let mut checkpoint: Option<OpenRouterCheckpoint> = None;
+    let mut first_tool_calls = 0_usize;
+    let mut first_deltas = Vec::new();
+    let error = run_openrouter_with_transport(
+        &mut first_transport,
+        "openai/test",
+        &messages,
+        &tools,
+        &mut |_tool, _args, _call_id| {
+            first_tool_calls += 1;
+            Ok(json!({"events":["daily"]}))
+        },
+        &mut |delta, accumulated| {
+            first_deltas.push((delta.to_string(), accumulated.to_string()));
+        },
+        &|| false,
+        None,
+        &mut |accepted| {
+            checkpoint = Some(accepted.clone());
+            Ok(())
+        },
+    )
+    .expect_err("second provider step should fail after checkpoint");
+    assert!(error.to_string().contains("transient upstream failure"));
+    assert_eq!(first_tool_calls, 1);
+    assert_eq!(
+        first_deltas,
+        vec![("Checking ".to_string(), "Checking ".to_string())]
+    );
+
+    let checkpoint = checkpoint.expect("OpenRouter tool boundary checkpoint");
+    assert_eq!(checkpoint.text, "Checking ");
+    assert_eq!(checkpoint.completed_steps, 1);
+    assert_eq!(checkpoint.tool_calls_completed, 1);
+    assert!(checkpoint.conversation.iter().any(|message| {
+        message["role"] == "tool"
+            && message["tool_call_id"] == "call-resume"
+    }));
+
+    let mut resumed_transport = FakeOpenRouterTransport {
+        responses: VecDeque::from([vec![json!({
+            "choices":[{"delta":{"content":"done"}}]
+        })]),
+        requests: Vec::new(),
+    };
+    let mut resumed_tool_calls = 0_usize;
+    let mut resumed_deltas = Vec::new();
+    let resumed = run_openrouter_with_transport(
+        &mut resumed_transport,
+        "openai/test",
+        &messages,
+        &tools,
+        &mut |_tool, _args, _call_id| {
+            resumed_tool_calls += 1;
+            Ok(Value::Null)
+        },
+        &mut |delta, accumulated| {
+            resumed_deltas.push((delta.to_string(), accumulated.to_string()));
+        },
+        &|| false,
+        Some(&checkpoint),
+        &mut |_accepted| Ok(()),
+    )
+    .expect("resume from accepted OpenRouter checkpoint");
+
+    assert_eq!(
+        resumed_tool_calls, 0,
+        "accepted OpenRouter tool work must not repeat"
+    );
+    assert_eq!(resumed, "Checking done");
+    assert_eq!(
+        resumed_deltas,
+        vec![("done".to_string(), "Checking done".to_string())]
+    );
+    assert_eq!(resumed_transport.requests.len(), 1);
+    let resumed_messages = resumed_transport.requests[0]["messages"]
+        .as_array()
+        .expect("resumed messages");
+    assert!(resumed_messages.iter().any(|message| {
+        message["role"] == "tool"
+            && message["tool_call_id"] == "call-resume"
+    }));
 }
