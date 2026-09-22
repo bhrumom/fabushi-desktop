@@ -21,6 +21,12 @@ import {
 } from "./box-migration.js";
 import { WriteEpoch } from "./write-epoch.js";
 import { BoxSettingsField } from "./host-settings-field.js";
+import {
+  commandCarriesLocalExecGeneration,
+  localExecDiscoveryTimeMatchesProcess,
+  sameLocalExecProcessIdentity,
+  type LocalExecProcessIdentity,
+} from "./local-exec-process-identity.js";
 import { createReleaseMetadata } from "../electron-main/update/release-metadata.js";
 import { createDesktopAccountAuthorizer } from "../electron-main/account/account-authorization.js";
 import { createSandRecreateCommands } from "../electron-main/box/box-recreate-commands.js";
@@ -171,4 +177,32 @@ test("desktop host settings field absorbs box values and clears account mirror",
   assert.equal(reports[0]?.outcome, "ok");
   fields.onAccountDeparted();
   assert.equal(mirror, undefined);
+});
+
+
+test("local-exec process identity fences generation and publication time", () => {
+  const identity: LocalExecProcessIdentity = {
+    pid: 42,
+    startEpochMs: 1_000,
+    command: "/usr/bin/node /opt/fabushi/local-exec.js --sand-local-exec-generation=g-1",
+    entryRealpath: "/opt/fabushi/local-exec.js",
+    generationToken: "g-1",
+  };
+  assert.equal(
+    commandCarriesLocalExecGeneration(identity.command, identity.entryRealpath, identity.generationToken),
+    true,
+  );
+  assert.equal(
+    commandCarriesLocalExecGeneration(
+      "/usr/bin/node /opt/fabushi/local-exec.js.bak --sand-local-exec-generation=g-10",
+      identity.entryRealpath,
+      identity.generationToken,
+    ),
+    false,
+  );
+  assert.equal(sameLocalExecProcessIdentity(identity, { ...identity }), true);
+  assert.equal(sameLocalExecProcessIdentity(identity, { ...identity, pid: 43 }), false);
+  assert.equal(localExecDiscoveryTimeMatchesProcess(1_500, 1_000, 2_000), true);
+  assert.equal(localExecDiscoveryTimeMatchesProcess(61_001, 1_000, 61_001), false);
+  assert.equal(localExecDiscoveryTimeMatchesProcess(900, 1_000, 2_000), false);
 });
