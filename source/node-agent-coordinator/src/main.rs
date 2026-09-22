@@ -12,6 +12,8 @@ use std::sync::{
 use std::thread;
 use std::time::Duration;
 
+const HOST_CRASH_CIRCUIT_LIMIT: u64 = 6;
+
 #[derive(Debug)]
 struct ActiveHostStdin {
     generation: u64,
@@ -122,7 +124,6 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
     let stderr = child.stderr.take().ok_or_else(|| io::Error::other("Host stderr unavailable"))?;
     *state.host_stdin.lock().map_err(|_| io::Error::other("host stdin lock poisoned"))? =
         Some(ActiveHostStdin { generation, stdin });
-    state.consecutive_crashes.store(0, Ordering::SeqCst);
     state.lifecycle("running", generation, true, None);
     // Host spawn serialization is only needed through publication of the active generation.
     // Release the guard before the wait thread takes ownership of the shared state.
@@ -137,7 +138,12 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
                     continue;
                 }
                 let value = match serde_json::from_str::<Value>(&line) {
-                    Ok(value) => value,
+                    Ok(value) => {
+                        // Any valid Host frame demonstrates that the new
+                        // generation survived startup long enough to serve.
+                        output_state.consecutive_crashes.store(0, Ordering::SeqCst);
+                        value
+                    },
                     Err(error) => {
                         output_state.lifecycle(
                             "protocol-error",
@@ -187,6 +193,15 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
             return;
         }
         let crashes = state.consecutive_crashes.fetch_add(1, Ordering::SeqCst) + 1;
+        if crashes >= HOST_CRASH_CIRCUIT_LIMIT {
+            state.lifecycle(
+                "circuit-open",
+                generation,
+                true,
+                Some(&format!("Host crash circuit opened after {crashes} consecutive startup failures")),
+            );
+            return;
+        }
         let delay_ms = (250_u64.saturating_mul(1_u64 << crashes.saturating_sub(1).min(4))).min(4_000);
         thread::sleep(Duration::from_millis(delay_ms));
         if !state.closed.load(Ordering::SeqCst) {
