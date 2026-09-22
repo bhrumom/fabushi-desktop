@@ -5,7 +5,7 @@ import {
   getLocalExecDaemonDiscoveryPath,
   readLocalExecDaemonDiscovery,
   type LocalExecDiscovery,
-} from "../../host/local-exec/local-exec-daemon-protocol.js";
+} from "../local-exec/local-exec-daemon-protocol.js";
 
 import {
   isProcessAlive,

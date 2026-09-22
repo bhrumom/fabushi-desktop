@@ -1,166 +1,165 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  COORDINATOR_CONTROL_METHODS,
-  createCoordinatorControlExecutors,
-} from "./coordinator-executors.js";
+import { createCoordinatorControlExecutors } from "./coordinator-executors.js";
 
-test("control executor exposes the frozen Grok platform command surface", () => {
-  assert.deepEqual(COORDINATOR_CONTROL_METHODS, [
-    "resolveGatewayConnection",
-    "listRoutedMcpTools",
-    "executeRoutedMcpTool",
-    "mintLocalExecDaemonCredential",
-    "requestWebAuthnConsent",
-    "requestWebAuthnPin",
-    "updateWebAuthnConsent",
-    "finishWebAuthnConsent",
-    "spawnLocalExecDaemon",
-    "terminateProcess",
-    "isProcessAlive",
-    "getProcessIdentity",
-    "waitLocalExecDaemonExit",
-    "getRpcTraceWindowTraceparent",
-    "reportTransportStage",
-    "reportGatewayCommandSpan",
-    "reportGatewayReachability",
-    "reportGatewayDnsDiagnostic",
-    "reportProcessCrash",
-  ]);
-});
+const EXPECTED_CONTROL_METHODS = [
+  "resolveGatewayConnection",
+  "listRoutedMcpTools",
+  "executeRoutedMcpTool",
+  "mintLocalExecDaemonCredential",
+  "requestWebAuthnConsent",
+  "requestWebAuthnPin",
+  "updateWebAuthnConsent",
+  "finishWebAuthnConsent",
+  "spawnLocalExecDaemon",
+  "terminateProcess",
+  "isProcessAlive",
+  "getProcessIdentity",
+  "waitLocalExecDaemonExit",
+  "getRpcTraceWindowTraceparent",
+  "reportTransportStage",
+  "reportGatewayCommandSpan",
+  "reportGatewayReachability",
+  "reportGatewayDnsDiagnostic",
+  "reportProcessCrash",
+] as const;
 
-test("control executor routes platform work without absorbing Host or Runner behavior", async () => {
-  const calls: string[] = [];
-  const identity = {
-    pid: 77,
-    startEpochMs: 1_000,
-    command:
-      "/bin/node /app/local-exec --sand-local-exec-generation=g-1",
-    entryRealpath: "/app/local-exec",
-    generationToken: "g-1",
-  };
-  const executors = createCoordinatorControlExecutors({
-    gateway: {
-      resolveConnection: () => {
+function makeDependencies(calls: string[]) {
+  return {
+    connector: {
+      async connect() {
         calls.push("gateway");
         return { baseUrl: "https://127.0.0.1:43123" };
       },
-      mintLocalExecDaemonCredential: () => ({ token: "secret" }),
-    },
-    mcp: {
-      listRoutedMcpTools: () => [{ name: "tool" }],
-      executeRoutedMcpTool: (request) => ({ request }),
+      async issueLocalExecDaemonCredential() {
+        calls.push("credential");
+        return { token: "secret" };
+      },
     },
     webauthnPrompt: {
-      requestConsent: (args) => ({ approved: true, args }),
-      requestPin: () => "1234",
-      update: (status) => calls.push(`status:${status}`),
-      finish: () => calls.push("finish"),
-    },
-    localExec: {
-      spawnLocalExecDaemon: ({ logPath, env }) => {
-        assert.equal(logPath, "/tmp/local-exec.log");
-        assert.equal(env.SAND_PACKAGED, "1");
-        return identity;
+      async requestConsent() {
+        calls.push("consent");
+        return { approved: true as const, promptId: "prompt-1", windowHandle: undefined };
       },
-      terminateProcess: (expected) => expected.pid === identity.pid,
-      isProcessAlive: (pid) => pid === identity.pid,
-      getProcessIdentity: (expected) =>
-        expected.pid === identity.pid ? identity : null,
-      waitLocalExecDaemonExit: (expected) => ({
-        identity: expected,
-        exitCode: 0,
-      }),
+      async requestPin() {
+        calls.push("pin");
+        return { pin: "1234" };
+      },
+      update(status: string) {
+        calls.push(`status:${status}`);
+      },
+      finish() {
+        calls.push("finish");
+      },
     },
-    telemetry: {
-      getRpcTraceWindowTraceparent: () => "00-trace-span-01",
-      reportProcessCrash: () => calls.push("crash"),
+    recordSendStage(report: { readonly name: string }) {
+      calls.push(`stage:${report.name}`);
     },
-  });
+    recordGatewayCommandSpan() {
+      calls.push("command-span");
+    },
+    onReachability() {
+      calls.push("reachability");
+    },
+    onDnsDiagnostic() {
+      calls.push("dns");
+    },
+    onProcessCrash() {
+      calls.push("crash");
+    },
+    getRpcTraceWindowTraceparent: () => "00-trace-span-01",
+    async listRoutedMcpTools() {
+      calls.push("mcp-list");
+      return [{ name: "tool" }];
+    },
+    async executeRoutedMcpTool(request: unknown) {
+      calls.push("mcp-call");
+      return { request };
+    },
+  };
+}
 
-  assert.deepEqual(await executors.resolveGatewayConnection({}), {
+test("control executor exposes the frozen Grok platform command surface", () => {
+  const calls: string[] = [];
+  const executors = createCoordinatorControlExecutors(makeDependencies(calls));
+  assert.deepEqual(Object.keys(executors), EXPECTED_CONTROL_METHODS);
+});
+
+test("control executor routes gateway, MCP, WebAuthn, and telemetry without absorbing Host behavior", async () => {
+  const calls: string[] = [];
+  const executors = createCoordinatorControlExecutors(makeDependencies(calls));
+
+  assert.deepEqual(await executors.resolveGatewayConnection(), {
     baseUrl: "https://127.0.0.1:43123",
   });
-  assert.deepEqual(
-    await executors.mintLocalExecDaemonCredential({}),
-    { token: "secret" },
-  );
-  assert.deepEqual(
-    await executors.spawnLocalExecDaemon({
-      logPath: "/tmp/local-exec.log",
-      env: { SAND_PACKAGED: "1" },
-    }),
-    identity,
-  );
-  assert.equal(await executors.isProcessAlive({ pid: 77 }), true);
-  assert.deepEqual(
-    await executors.getProcessIdentity({
-      pid: 77,
-      entryRealpath: "/app/local-exec",
-      generationToken: "g-1",
-    }),
-    identity,
-  );
-  assert.deepEqual(
-    await executors.terminateProcess({ identity }),
-    { terminated: true },
-  );
-  assert.deepEqual(
-    await executors.waitLocalExecDaemonExit(identity),
-    { identity, exitCode: 0 },
-  );
-  await executors.updateWebAuthnConsent({
-    status: "Touch your security key now",
+  assert.deepEqual(await executors.mintLocalExecDaemonCredential(), { token: "secret" });
+  assert.deepEqual(await executors.listRoutedMcpTools(), [{ name: "tool" }]);
+  assert.deepEqual(await executors.executeRoutedMcpTool({ id: 7 }), {
+    request: { id: 7 },
   });
-  await executors.finishWebAuthnConsent({});
-  await executors.reportProcessCrash({ kind: "panic" });
-  assert.equal(
-    await executors.getRpcTraceWindowTraceparent({}),
-    "00-trace-span-01",
-  );
+  assert.deepEqual(await executors.requestWebAuthnConsent({
+    origin: "https://example.test",
+    rpId: "example.test",
+  }), {
+    approved: true,
+    promptId: "prompt-1",
+    windowHandle: undefined,
+  });
+  assert.deepEqual(await executors.requestWebAuthnPin({
+    promptId: "prompt-1",
+    invalid: false,
+  }), { pin: "1234" });
+
+  executors.updateWebAuthnConsent({ status: "Touch your security key now" });
+  executors.finishWebAuthnConsent();
+  assert.equal(executors.getRpcTraceWindowTraceparent(), "00-trace-span-01");
+  executors.reportTransportStage({
+    stage: "gateway.dispatch",
+    traceparent: "00-trace-span-01",
+    clientNonce: "nonce",
+    startEpochMs: 10,
+    durationMs: 5,
+    attempt: 1,
+    isError: false,
+  });
+  executors.reportGatewayCommandSpan({});
+  executors.reportGatewayReachability({});
+  executors.reportGatewayDnsDiagnostic({});
+  executors.reportProcessCrash({ kind: "panic" });
+
   assert.deepEqual(calls, [
     "gateway",
+    "credential",
+    "mcp-list",
+    "mcp-call",
+    "consent",
+    "pin",
     "status:Touch your security key now",
     "finish",
+    "stage:gateway.dispatch",
+    "command-span",
+    "reachability",
+    "dns",
     "crash",
   ]);
 });
 
-test("control executor rejects malformed native process requests before delegation", async () => {
+test("MCP control methods fail closed when routing is not configured", async () => {
+  const calls: string[] = [];
+  const deps = makeDependencies(calls);
   const executors = createCoordinatorControlExecutors({
-    gateway: { resolveConnection: () => ({}) },
-    mcp: {
-      listRoutedMcpTools: () => [],
-      executeRoutedMcpTool: () => null,
-    },
-    webauthnPrompt: {
-      requestConsent: () => ({ approved: false }),
-      requestPin: () => null,
-      update: () => undefined,
-      finish: () => undefined,
-    },
-    localExec: {
-      spawnLocalExecDaemon: () => {
-        throw new Error("must not delegate");
-      },
-      terminateProcess: () => false,
-      isProcessAlive: () => false,
-      getProcessIdentity: () => null,
-    },
+    connector: deps.connector,
+    webauthnPrompt: deps.webauthnPrompt,
+    recordSendStage: deps.recordSendStage,
+    recordGatewayCommandSpan: deps.recordGatewayCommandSpan,
+    onReachability: deps.onReachability,
+    onDnsDiagnostic: deps.onDnsDiagnostic,
+    onProcessCrash: deps.onProcessCrash,
   });
-
+  await assert.rejects(executors.listRoutedMcpTools(), /Desktop MCP routing is unavailable/);
   await assert.rejects(
-    async () => await executors.spawnLocalExecDaemon({
-      logPath: "",
-      env: { SAND_PACKAGED: "1" },
-    }),
-    /logPath must be a non-empty string/,
-  );
-  await assert.rejects(
-    async () => await executors.terminateProcess({
-      identity: { pid: 0 },
-    }),
-    /pid must be a positive integer/,
+    executors.executeRoutedMcpTool({}),
+    /Desktop MCP routing is unavailable/,
   );
 });

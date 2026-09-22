@@ -168,6 +168,7 @@ jobs:
           desktop/.tmp-grok-electron/source/electron-main/foundations.test.js
           desktop/.tmp-grok-electron/source/electron-main/coordinator/coordinator-launcher.test.js
           desktop/.tmp-grok-electron/source/electron-main/coordinator/coordinator-executors.test.js
+          desktop/.tmp-grok-electron/source/electron-main/local-exec/local-exec-daemon-protocol.test.js
       - name: Test recovered window chrome contracts
         run: >-
           node --experimental-strip-types --test
