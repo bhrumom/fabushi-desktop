@@ -23,6 +23,9 @@ import { RECENT_WAKE_WINDOW_MS, connectivityStamps, createDesktopConnectivity } 
 import { resolveDefaultDownloadDir, resolveDefaultDownloadPath, resolveSuggestedDownloadName } from "./downloads/download-path.js";
 import { assertTrustedClientPersistenceSender, assertTrustedSecretsSender, isTrustedSecretsSender, UntrustedClientPersistenceSenderError, UntrustedSecretsSenderError } from "./secrets/secrets-ipc-guard.js";
 import { createIdleRelaunchSignals, isScreensaverRunning } from "./update/idle-relaunch-signals.js";
+import { createDesktopAccountAuthorizer } from "./account/account-authorization.js";
+import { createSandRecreateCommands } from "./box/box-recreate-commands.js";
+import { createDesktopHostSettingsFields } from "./prefs/host-settings-fields.js";
 
 test("dev gates and latency clamps match Grok behavior", () => {
   assert.equal(setSimulatedGatewayLatencyMs(25.9), 25);
@@ -264,4 +267,95 @@ test("idle relaunch signals preserve platform and power-monitor semantics", asyn
   assert.equal(await signals.getScreensaverActive(), true);
   assert.equal(signals.getSystemIdleSeconds(), 777);
   assert.deepEqual(await signals.probeHostIdle(), { kind: "confirmed-idle" });
+});
+
+
+test("account authorization scopes durable state only after approval", async () => {
+  let scoped: string | undefined;
+  let abandoned = 0;
+  let storedScope = "foreign";
+  const authorizeCalls: unknown[] = [];
+  const authorize = createDesktopAccountAuthorizer({
+    binding: {
+      async authorize(args) {
+        authorizeCalls.push(args);
+        return args.accountSlot !== "deny";
+      },
+    },
+    descriptorUrl: "https://gateway.example/descriptor",
+    hasExistingDurableData: () => true,
+    store: {
+      getMcpCustomInstructionsAccountScope: () => storedScope,
+      scopeToAccount(scope) {
+        scoped = scope;
+        storedScope = scope;
+      },
+    },
+    abandonForeignOnboardingMirror: () => { abandoned += 1; },
+  });
+
+  assert.equal(await authorize("deny", { isStartup: true }), false);
+  assert.equal(scoped, undefined);
+  assert.equal(await authorize("account-token", { isStartup: true }), true);
+  assert.match(scoped ?? "", /^[0-9a-f]{64}$/);
+  assert.equal(abandoned, 1);
+  assert.equal(authorizeCalls.length, 2);
+});
+
+test("box recreate commands preserve tracked, untrackable, fallback and rejected outcomes", async () => {
+  const accepted: Array<string | null> = [];
+  const tracked = createSandRecreateCommands<{ reason: string }>({
+    connector: {
+      recreate: async () => ({ status: "started", operationId: "operation-1" as any }),
+      forceRecreate: async () => ({ status: "started-untrackable" }),
+    },
+    noteRecreateAccepted: (operationId) => accepted.push(operationId),
+  });
+  assert.deepEqual(await tracked.recreateComputer({ reason: "test" }), {
+    status: "started",
+    operationId: "operation-1",
+  });
+  assert.deepEqual(await tracked.forceRecreateComputer(), { status: "started-untrackable" });
+  assert.deepEqual(accepted, ["operation-1", null]);
+
+  const unavailable = createSandRecreateCommands<{}>({
+    connector: {},
+    noteRecreateAccepted: () => assert.fail("unavailable connector must not record acceptance"),
+  });
+  assert.deepEqual(await unavailable.recreateComputer({}), { status: "dev-fallback" });
+  assert.deepEqual(await unavailable.forceRecreateComputer(), {
+    status: "rejected",
+    reason: "Reset Grok Bot's Computer is unavailable without a backend connection.",
+  });
+});
+
+test("host settings field hydrates from live box state and clears on account departure", async () => {
+  let local: boolean | undefined = false;
+  let cleared = 0;
+  const persistence: Array<Record<string, string>> = [];
+  const fields = createDesktopHostSettingsFields({
+    read: async () => ({ hasSeenOnboarding: true }),
+    write: async (update) => ({ ...update }),
+    store: {
+      getHasSeenOnboarding: () => local,
+      setHasSeenOnboarding(value) { local = value; },
+      clearHasSeenOnboarding() { local = undefined; cleared += 1; },
+    },
+    reportPersistence: (event) => persistence.push(event),
+  });
+
+  assert.equal(await fields.onboardingSeen.reconcile(), false);
+  fields.onTransportConnected();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.equal(local, true);
+  assert.deepEqual(persistence, [{
+    kind: "client_persistence",
+    op: "writeback",
+    outcome: "ok",
+    slice: "host-settings.onboarding",
+  }]);
+
+  fields.onAccountDeparted();
+  assert.equal(local, undefined);
+  assert.equal(cleared, 1);
 });
