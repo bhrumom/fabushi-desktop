@@ -14,6 +14,104 @@ use crate::protocol::Failure;
 pub const INFERENCE_TRANSCRIPT_SCHEMA_VERSION: u32 = 2;
 pub const INFERENCE_TRANSCRIPT_LIMIT: usize = 200;
 
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InferenceProvider {
+    Cursor,
+    Codex,
+    ClaudeCode,
+    OpenRouter,
+}
+
+impl InferenceProvider {
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "cursor" => Some(Self::Cursor),
+            "codex" => Some(Self::Codex),
+            "claude-code" => Some(Self::ClaudeCode),
+            "openrouter" => Some(Self::OpenRouter),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Cursor => "cursor",
+            Self::Codex => "codex",
+            Self::ClaudeCode => "claude-code",
+            Self::OpenRouter => "openrouter",
+        }
+    }
+}
+
+pub fn configured_inference_provider(settings_path: &Path) -> Option<InferenceProvider> {
+    let value: Value =
+        serde_json::from_str(&fs::read_to_string(settings_path).ok()?).ok()?;
+    [
+        value.get("inferenceProvider"),
+        value.get("inference_provider"),
+        value.get("router").and_then(|router| router.get("provider")),
+    ]
+    .into_iter()
+    .flatten()
+    .find_map(|value| value.as_str().and_then(InferenceProvider::parse))
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RunnerInferenceEvent {
+    Delta { content: String },
+    Completed { content: String },
+    Failed { message: String },
+}
+
+pub fn parse_runner_inference_event(
+    value: &Value,
+) -> Result<(String, RunnerInferenceEvent), Failure> {
+    let stream_id = value
+        .get("streamId")
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| Failure::new(
+            "INFERENCE_RUNNER_EVENT_INVALID",
+            "Runner inference event is missing streamId",
+        ))?
+        .to_string();
+    let event_type = value
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let event = match event_type {
+        "delta" => RunnerInferenceEvent::Delta {
+            content: value
+                .get("content")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string(),
+        },
+        "completed" => RunnerInferenceEvent::Completed {
+            content: value
+                .get("content")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string(),
+        },
+        "failed" => RunnerInferenceEvent::Failed {
+            message: value
+                .get("message")
+                .and_then(Value::as_str)
+                .unwrap_or("Runner inference failed")
+                .to_string(),
+        },
+        other => {
+            return Err(Failure::new(
+                "INFERENCE_RUNNER_EVENT_INVALID",
+                format!("unknown Runner inference event type: {other}"),
+            ));
+        }
+    };
+    Ok((stream_id, event))
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InferenceRoute {
     pub provider: String,

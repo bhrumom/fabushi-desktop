@@ -1,8 +1,4 @@
 use chrono::{SecondsFormat, Utc};
-use mahayana_host_runtime::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderOptions,
-    RoutedToolDefinition, configured_routed_provider, run_routed_provider_text,
-};
 use mahayana_node_agent_coordinator::carrier::{
     parse_bootstrap_argument, CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
 };
@@ -32,11 +28,9 @@ use mahayana_node_agent_coordinator::oauth::mcp_oauth_forwarder::{
 };
 use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::McpOAuthLoopbackRegistry;
 use mahayana_node_agent_coordinator::inference_router::{
-    InferenceTaskQueue, InferenceTranscriptFile, StoredEntry, StoredRole,
-    project_transcript_entry,
-};
-use mahayana_node_agent_coordinator::routed_mcp_bridge::{
-    RoutedMcpBackend, RoutedTool, RoutedToolCall, start_routed_mcp_server,
+    InferenceProvider, InferenceTaskQueue, InferenceTranscriptFile, RunnerInferenceEvent,
+    StoredEntry, StoredRole, configured_inference_provider as configured_inference_provider_from_settings,
+    parse_runner_inference_event, project_transcript_entry,
 };
 use mahayana_node_agent_coordinator::webauthn::{
     ApprovedWebAuthnConsent, WebAuthnCeremony,
@@ -98,11 +92,11 @@ struct CoordinatorState {
     bootstrap: CoordinatorBootstrap,
     host_bin: PathBuf,
     gateway_discovery_path: PathBuf,
-    inference_data_dir: PathBuf,
     inference_settings_path: PathBuf,
     inference_store: InferenceTranscriptFile,
     inference_store_lock: Mutex<()>,
     inference_queue: InferenceTaskQueue,
+    inference_streams: Mutex<HashMap<String, Sender<Value>>>,
     host_stdin: Mutex<Option<ActiveHostStdin>>,
     gateway_client: Mutex<CoordinatorGatewayClient>,
     gateway_command_policy: GatewayCommandPolicy,
@@ -917,6 +911,24 @@ fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
         let _ = gateway.accept_event(now_ms, channel.clone(), payload.clone());
     }
 
+    if channel == "runner-inference" {
+        let stream_id = payload
+            .get("streamId")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        if !stream_id.is_empty() {
+            let sender = state
+                .inference_streams
+                .lock()
+                .ok()
+                .and_then(|streams| streams.get(stream_id).cloned());
+            if let Some(sender) = sender {
+                let _ = sender.send(payload);
+            }
+        }
+        return;
+    }
+
     if channel == "mcp-oauth-pending" {
         handle_oauth_pending(state, &payload);
         return;
@@ -1392,145 +1404,9 @@ fn report_gateway_execution_async(
 }
 
 
-fn configured_inference_provider(state: &CoordinatorState) -> RoutedProvider {
-    configured_routed_provider(&state.inference_settings_path).unwrap_or(RoutedProvider::Cursor)
-}
-
-fn inference_failure(error: ProviderSessionError) -> Failure {
-    Failure::new("INFERENCE_PROVIDER_FAILED", error.to_string())
-}
-
-fn dispatch_gateway_value(
-    state: &Arc<CoordinatorState>,
-    method: &str,
-    args: Value,
-) -> Result<Value, Failure> {
-    let host_running = state
-        .host_stdin
-        .lock()
-        .map_err(|_| Failure::new("COORDINATOR_HOST_LOCK_FAILED", "host stdin lock poisoned"))?
-        .is_some();
-    if !host_running {
-        spawn_host(Arc::clone(state)).map_err(|error| {
-            Failure::new(
-                "COORDINATOR_HOST_DISPATCH_FAILED",
-                format!("could not start Host for {method}: {error}"),
-            )
-        })?;
-    }
-
-    let generation = state.host_generation.load(Ordering::SeqCst);
-    refresh_gateway_trace_window_async(state);
-    let result = dispatch_gateway_command(
-        &state.gateway_command_policy,
-        method,
-        args,
-        coordinator_now_ms(),
-        |required_base_url| {
-            let connection = wait_for_gateway_connection(state, generation)
-                .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
-            if let Some(required_base_url) = required_base_url {
-                if connection.base_url != required_base_url {
-                    return Err(GatewayDispatchError::Transport(format!(
-                        "gateway endpoint changed from {required_base_url} to {}",
-                        connection.base_url
-                    )));
-                }
-            }
-            Ok(connection)
-        },
-    );
-
-    match result {
-        Ok(GatewayCommandExecution {
-            value,
-            command_spans,
-            transport_stages,
-        }) => {
-            report_gateway_execution_async(state, command_spans, transport_stages);
-            Ok(value)
-        }
-        Err(error) => {
-            if let GatewayDispatchError::Unreachable { outcome, .. } = &error {
-                if let Ok(mut gateway) = state.gateway_client.lock() {
-                    let _ = gateway.transport_down(*outcome);
-                }
-            }
-            Err(failure_for(&error))
-        }
-    }
-}
-
-fn list_routed_mcp_tools(state: &Arc<CoordinatorState>) -> Result<Vec<RoutedTool>, Failure> {
-    let value = control_command(state, "listRoutedMcpTools", json!({}))?;
-    serde_json::from_value(value).map_err(|error| {
-        Failure::new(
-            "INFERENCE_ROUTED_MCP_INVALID_TOOLS",
-            format!("Electron returned invalid routed MCP tools: {error}"),
-        )
-    })
-}
-
-fn execute_routed_mcp_tool(
-    state: &Arc<CoordinatorState>,
-    agent_id: &str,
-    definition: &RoutedToolDefinition,
-    args: Value,
-    tool_call_id: &str,
-) -> Result<Value, Failure> {
-    control_command(
-        state,
-        "executeRoutedMcpTool",
-        json!({
-            "providerIdentifier": definition.provider_identifier,
-            "name": definition.name,
-            "toolName": definition.tool_name,
-            "args": args,
-            "toolCallId": tool_call_id,
-            "agentId": agent_id,
-        }),
-    )
-}
-
-fn provider_tool_definition(tool: RoutedTool) -> RoutedToolDefinition {
-    RoutedToolDefinition {
-        name: tool.name,
-        provider_identifier: tool.provider_identifier,
-        tool_name: tool.tool_name,
-        description: tool.description,
-        input_schema: tool.input_schema.unwrap_or_else(|| {
-            json!({
-                "type": "object",
-                "additionalProperties": true
-            })
-        }),
-    }
-}
-
-struct CoordinatorRoutedMcpBackend {
-    state: Arc<CoordinatorState>,
-    agent_id: String,
-}
-
-impl RoutedMcpBackend for CoordinatorRoutedMcpBackend {
-    fn list_tools(&mut self) -> Result<Vec<RoutedTool>, Failure> {
-        list_routed_mcp_tools(&self.state)
-    }
-
-    fn call_tool(&mut self, call: RoutedToolCall) -> Result<Value, Failure> {
-        control_command(
-            &self.state,
-            "executeRoutedMcpTool",
-            json!({
-                "providerIdentifier": call.provider_identifier,
-                "name": call.name,
-                "toolName": call.tool_name,
-                "args": call.args,
-                "toolCallId": call.tool_call_id,
-                "agentId": self.agent_id,
-            }),
-        )
-    }
+fn configured_inference_provider(state: &CoordinatorState) -> InferenceProvider {
+    configured_inference_provider_from_settings(&state.inference_settings_path)
+        .unwrap_or(InferenceProvider::Cursor)
 }
 
 fn emit_inference_transcript(
@@ -1673,7 +1549,7 @@ fn remote_transcript_ids(value: &Value) -> Vec<String> {
 
 fn record_inference_error(
     state: &Arc<CoordinatorState>,
-    provider: RoutedProvider,
+    provider: InferenceProvider,
     agent_id: &str,
     error: &Failure,
 ) {
@@ -1712,9 +1588,29 @@ fn record_inference_error(
     }
 }
 
+fn wait_for_runner_event_stream(state: &Arc<CoordinatorState>) -> Result<(), Failure> {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while Instant::now() < deadline {
+        if state.gateway_events_live.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+        if state.closed.load(Ordering::SeqCst) {
+            return Err(Failure::new(
+                "INFERENCE_RUNNER_STREAM_CLOSED",
+                "Coordinator closed before the Host Runner event stream became live",
+            ));
+        }
+        thread::sleep(Duration::from_millis(25));
+    }
+    Err(Failure::new(
+        "INFERENCE_RUNNER_STREAM_UNAVAILABLE",
+        "Host Runner event stream did not become live before inference dispatch",
+    ))
+}
+
 fn execute_local_inference(
     state: Arc<CoordinatorState>,
-    provider: RoutedProvider,
+    provider: InferenceProvider,
     args: Value,
 ) -> Result<(), Failure> {
     let root = args.as_object().ok_or_else(|| {
@@ -1789,98 +1685,115 @@ fn execute_local_inference(
         let messages = store
             .entries(&agent_id)
             .iter()
-            .map(|entry| ProviderMessage {
-                role: match entry.role {
-                    StoredRole::User => "user".into(),
-                    StoredRole::Assistant => "assistant".into(),
+            .map(|entry| json!({
+                "role": match entry.role {
+                    StoredRole::User => "user",
+                    StoredRole::Assistant => "assistant",
                 },
-                content: entry.content.clone(),
-            })
+                "content": entry.content,
+            }))
             .collect::<Vec<_>>();
         (turn, messages)
     };
 
     let activity = begin_inference_activity(&state, &agent_id);
     thread::sleep(Duration::from_millis(1_200));
-
-    let routed_tools = if matches!(provider, RoutedProvider::ClaudeCode) {
-        Vec::new()
-    } else {
-        list_routed_mcp_tools(&state)?
-            .into_iter()
-            .map(provider_tool_definition)
-            .collect::<Vec<_>>()
-    };
-
-    let mut mcp_server = if matches!(provider, RoutedProvider::ClaudeCode) {
-        Some(start_routed_mcp_server(CoordinatorRoutedMcpBackend {
-            state: Arc::clone(&state),
-            agent_id: agent_id.clone(),
-        })?)
-    } else {
-        None
-    };
-    let mcp_url = mcp_server.as_ref().map(|server| server.url().to_string());
+    wait_for_runner_event_stream(&state)?;
 
     let assistant_timestamp_ms = coordinator_now_ms();
     let assistant_id = format!("t{turn}s0");
-    let mut assistant_stream_started = false;
-    let tool_state = Arc::clone(&state);
-    let tool_agent_id = agent_id.clone();
-    let mut execute_tool = move |
-        definition: &RoutedToolDefinition,
-        tool_args: Value,
-        tool_call_id: &str,
-    | -> Result<Value, ProviderSessionError> {
-        execute_routed_mcp_tool(
-            &tool_state,
-            &tool_agent_id,
-            definition,
-            tool_args,
-            tool_call_id,
-        )
-        .map_err(|error| ProviderSessionError::Tool(error.message))
-    };
-    let stream_state = Arc::clone(&state);
-    let stream_agent_id = agent_id.clone();
-    let stream_assistant_id = assistant_id.clone();
-    let mut on_text_delta = move |_delta: &str, accumulated: &str| {
-        emit_inference_transcript(
-            &stream_state,
-            &stream_agent_id,
-            if assistant_stream_started { "updated" } else { "appended" },
-            json!({
-                "kind": "send-message",
-                "id": stream_assistant_id,
-                "message": {
-                    "type": "text",
-                    "content": accumulated
-                },
-                "streaming": true,
-                "timestampMs": assistant_timestamp_ms
-            }),
-        );
-        assistant_stream_started = true;
-    };
-
-    let result = run_routed_provider_text(
-        provider,
-        &messages,
-        &mut RoutedProviderOptions {
-            data_dir: &state.inference_data_dir,
-            tools: &routed_tools,
-            mcp_server_url: mcp_url.as_deref(),
-            execute_tool: &mut execute_tool,
-            on_text_delta: &mut on_text_delta,
-        },
-    )
-    .map_err(inference_failure);
-
-    drop(activity);
-    if let Some(server) = mcp_server.as_mut() {
-        server.close();
+    let stream_id = uuid::Uuid::new_v4().to_string();
+    let (stream_tx, stream_rx) = mpsc::channel::<Value>();
+    {
+        let mut streams = state.inference_streams.lock().map_err(|_| {
+            Failure::new(
+                "INFERENCE_RUNNER_STREAM_LOCK_FAILED",
+                "Runner inference stream registry lock poisoned",
+            )
+        })?;
+        streams.insert(stream_id.clone(), stream_tx);
     }
-    drop(mcp_server);
+
+    let result = (|| -> Result<String, Failure> {
+        let accepted = dispatch_gateway_value(
+            &state,
+            "runner.startRoutedProvider",
+            json!({
+                "provider": provider.as_str(),
+                "agentId": agent_id,
+                "streamId": stream_id,
+                "messages": messages,
+            }),
+        )?;
+        if accepted.get("accepted").and_then(Value::as_bool) != Some(true) {
+            return Err(Failure::new(
+                "INFERENCE_RUNNER_REJECTED",
+                "Host Runner did not accept the routed provider request",
+            ));
+        }
+
+        let started = Instant::now();
+        let mut assistant_stream_started = false;
+        loop {
+            match stream_rx.recv_timeout(Duration::from_millis(250)) {
+                Ok(value) => {
+                    let (event_stream_id, event) = parse_runner_inference_event(&value)?;
+                    if event_stream_id != stream_id {
+                        continue;
+                    }
+                    match event {
+                        RunnerInferenceEvent::Delta { content } => {
+                            emit_inference_transcript(
+                                &state,
+                                &agent_id,
+                                if assistant_stream_started { "updated" } else { "appended" },
+                                json!({
+                                    "kind": "send-message",
+                                    "id": assistant_id,
+                                    "message": {
+                                        "type": "text",
+                                        "content": content,
+                                    },
+                                    "streaming": true,
+                                    "timestampMs": assistant_timestamp_ms,
+                                }),
+                            );
+                            assistant_stream_started = true;
+                        }
+                        RunnerInferenceEvent::Completed { content } => return Ok(content),
+                        RunnerInferenceEvent::Failed { message } => {
+                            return Err(Failure::new("INFERENCE_PROVIDER_FAILED", message));
+                        }
+                    }
+                }
+                Err(RecvTimeoutError::Timeout) => {
+                    if state.closed.load(Ordering::SeqCst) {
+                        return Err(Failure::new(
+                            "INFERENCE_RUNNER_STREAM_CLOSED",
+                            "Coordinator closed while waiting for the Host Runner",
+                        ));
+                    }
+                    if started.elapsed() >= Duration::from_secs(30 * 60) {
+                        return Err(Failure::new(
+                            "INFERENCE_RUNNER_TIMEOUT",
+                            "Host Runner inference exceeded the 30 minute safety deadline",
+                        ));
+                    }
+                }
+                Err(RecvTimeoutError::Disconnected) => {
+                    return Err(Failure::new(
+                        "INFERENCE_RUNNER_STREAM_DISCONNECTED",
+                        "Host Runner inference event stream disconnected",
+                    ));
+                }
+            }
+        }
+    })();
+
+    if let Ok(mut streams) = state.inference_streams.lock() {
+        streams.remove(&stream_id);
+    }
+    drop(activity);
     let content = result?;
 
     let assistant_entry = StoredEntry {
@@ -2007,7 +1920,7 @@ fn dispatch_inference_if_handled(
     }
 
     let provider = configured_inference_provider(state);
-    if matches!(provider, RoutedProvider::Cursor) {
+    if matches!(provider, InferenceProvider::Cursor) {
         return false;
     }
 
@@ -2403,11 +2316,11 @@ fn main() {
         bootstrap,
         host_bin,
         gateway_discovery_path,
-        inference_data_dir,
         inference_settings_path,
         inference_store,
         inference_store_lock: Mutex::new(()),
         inference_queue: InferenceTaskQueue::default(),
+        inference_streams: Mutex::new(HashMap::new()),
         host_stdin: Mutex::new(None),
         gateway_client: Mutex::new(gateway_client),
         gateway_command_policy: GatewayCommandPolicy::default(),
