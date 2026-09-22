@@ -13816,6 +13816,7 @@
       "processOrPackage": "electron-main",
       "behavioralEvidence": [
         "source/electron-main/local-exec/local-exec-daemon-protocol.ts",
+        "source/host/local-exec/local-exec-daemon-protocol.ts",
         "source/electron-main/local-exec/local-exec-native.ts",
         "source/electron-main/coordinator/coordinator-executors.ts"
       ],
@@ -13825,7 +13826,7 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "typescript-port",
-      "notes": "Best-fit language correction: the Grok local-exec discovery/credential protocol is consumed by Electron/Coordinator process supervision, so Fabushi owns this protocol bridge in Electron main TypeScript instead of duplicating a TS runtime under Rust Host. It preserves Grok payload validation, atomic JSON publication, owner-only credential/connection file mode, compare-and-retire discovery clearing, and shared data-root semantics. The actual Host/local-exec runtime remains separate; this module is protocol/discovery only."
+      "notes": "Best-fit language correction: local-exec discovery/credential protocol ownership follows Electron/Coordinator process supervision. The target implementation is TypeScript under source/electron-main/local-exec. The original Grok Host import path is retained only as a logic-free re-export facade so frozen reference-copy Electron modules remain byte-identical; it is not a second daemon/runtime. The protocol preserves Grok validation, atomic JSON publication, owner-only connection mode, compare-and-retire discovery clearing, and data-root semantics."
     },
     {
       "referencePath": "source/host/local-exec/local-exec-daemon.ts",

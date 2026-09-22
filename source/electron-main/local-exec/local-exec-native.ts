@@ -5,7 +5,7 @@ import { mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { readLocalExecDaemonDiscovery } from "./local-exec-daemon-protocol.js";
+import { readLocalExecDaemonDiscovery } from "../../host/local-exec/local-exec-daemon-protocol.js";
 import {
   commandCarriesLocalExecGeneration,
   localExecDiscoveryTimeMatchesProcess,
