@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
 use serde_json::Value;
@@ -8,6 +7,7 @@ use serde_json::Value;
 use crate::gateway::gateway_errors::SandGatewayCommandError;
 use crate::gateway::gateway_reachability::ReachabilityOutcome;
 use crate::gateway::host_supervisor::GatewayConnection;
+use crate::gateway::http_transport::parse_gateway_http_base;
 use crate::protocol::{Failure, ReplyOutcome, COORDINATOR_UNKNOWN_METHOD};
 
 pub const GATEWAY_COMMAND_FAILED: &str = "gateway-command-failed";
@@ -96,63 +96,6 @@ impl GatewayRequestDispatcher {
 }
 
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct ParsedHttpBase {
-    host: String,
-    port: u16,
-    base_path: String,
-}
-
-fn parse_http_base(base_url: &str) -> Result<ParsedHttpBase, GatewayDispatchError> {
-    let Some(rest) = base_url.strip_prefix("http://") else {
-        return Err(GatewayDispatchError::Transport(format!(
-            "unsupported Host gateway scheme in {base_url}"
-        )));
-    };
-    let (authority, base_path) = rest
-        .split_once('/')
-        .map_or((rest, String::new()), |(authority, path)| {
-            (authority, format!("/{}", path.trim_end_matches('/')))
-        });
-    if authority.is_empty() {
-        return Err(GatewayDispatchError::Transport(
-            "Host gateway URL has no authority".into(),
-        ));
-    }
-    let (host, port) = if let Some(ipv6) = authority.strip_prefix('[') {
-        let Some((host, suffix)) = ipv6.split_once(']') else {
-            return Err(GatewayDispatchError::Transport(
-                "invalid IPv6 Host gateway authority".into(),
-            ));
-        };
-        let port = suffix
-            .strip_prefix(':')
-            .and_then(|value| value.parse::<u16>().ok())
-            .ok_or_else(|| GatewayDispatchError::Transport(
-                "Host gateway URL must include a port".into(),
-            ))?;
-        (host.to_string(), port)
-    } else {
-        let (host, port) = authority.rsplit_once(':').ok_or_else(|| {
-            GatewayDispatchError::Transport("Host gateway URL must include a port".into())
-        })?;
-        let port = port.parse::<u16>().map_err(|_| {
-            GatewayDispatchError::Transport("invalid Host gateway port".into())
-        })?;
-        (host.to_string(), port)
-    };
-    if host.is_empty() || port == 0 {
-        return Err(GatewayDispatchError::Transport(
-            "invalid Host gateway authority".into(),
-        ));
-    }
-    Ok(ParsedHttpBase {
-        host,
-        port,
-        base_path,
-    })
-}
-
 fn classify_connect_error(error: &std::io::Error) -> ReachabilityOutcome {
     match error.kind() {
         std::io::ErrorKind::ConnectionRefused => ReachabilityOutcome::Refused,
@@ -184,20 +127,20 @@ pub fn dispatch_http_json(
             "invalid Host gateway method".into(),
         ));
     }
-    let parsed = parse_http_base(&connection.base_url)?;
-    let address = format!("{}:{}", parsed.host, parsed.port);
-    let mut addresses = address.to_socket_addrs().map_err(|error| {
+    let parsed = parse_gateway_http_base(&connection.base_url)
+        .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
+    let addresses = parsed.socket_addrs().map_err(|error| {
         GatewayDispatchError::Unreachable {
             outcome: ReachabilityOutcome::Dns,
             message: format!("gateway {method} unreachable (dns): {error}"),
         }
     })?;
-    let socket = addresses.next().ok_or_else(|| GatewayDispatchError::Unreachable {
+    let socket = addresses.first().copied().ok_or_else(|| GatewayDispatchError::Unreachable {
         outcome: ReachabilityOutcome::Dns,
         message: format!("gateway {method} unreachable (dns)"),
     })?;
     let timeout = Duration::from_millis(15_000);
-    let mut stream = TcpStream::connect_timeout(&socket, timeout).map_err(|error| {
+    let mut stream = parsed.connect(&socket, timeout).map_err(|error| {
         GatewayDispatchError::Unreachable {
             outcome: classify_connect_error(&error),
             message: format!("gateway {method} unreachable: {error}"),
