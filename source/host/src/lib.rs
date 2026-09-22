@@ -32,7 +32,7 @@ pub mod sand_quiet_work_origin;
 pub mod sha256;
 pub mod storage;
 pub mod host_diagnostics;
-pub mod box;
+pub mod r#box;
 pub mod automations;
 pub mod attachment_paths;
 pub mod ports;

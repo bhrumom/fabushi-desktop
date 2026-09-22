@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use mahayana_host_runtime::{
     attachment_paths::{get_agent_assets_dir, get_agent_attachments_dir, get_agent_media_store_roots},
     automations::automation_id::stable_automation_id,
-    box::box_monitor_layout::{display_space_sentence, SAND_MONITOR_HEIGHT, SAND_MONITOR_WIDTH},
+    r#box::box_monitor_layout::{display_space_sentence, SAND_MONITOR_HEIGHT, SAND_MONITOR_WIDTH},
     durable_file_policy::{BOX_STORE_SAND_DATA_EXCLUDED_FILE_NAMES, SAND_UPGRADE_RESUME_FILE_NAME},
     host_diagnostics::{pin_host_diagnostics_reporter, report_host_diagnostic, HostDiagnostic},
     ports::{transport::{SandTransport, SandUpdate}, user_computer::{SingleUserComputer, DEFAULT_SAND_COMPUTER_ID}},
