@@ -8,7 +8,8 @@ All contributions should be traceable from requirement to implementation to evid
 2. Find the owning project/spec under `projects/` or `docs/specs/`.
 3. Read relevant architecture and ADRs.
 4. Classify whether the work changes architecture, protocols/state, migration, security, build/release, or only implementation detail.
-5. Create/update the Spec before product-affecting implementation.
+5. Check active/relevant remote branches, all open PRs, recent merged work, and associated Specs/tasks for materially overlapping implementation. Continue/consolidate existing work by default instead of creating duplicate code.
+6. Create/update the Spec before product-affecting implementation.
 
 ## Architecture-affecting contributions
 
