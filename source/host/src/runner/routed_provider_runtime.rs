@@ -291,7 +291,7 @@ fn normalize_tool_result(value: Value) -> Value {
     if let Some(root) = value.as_object() {
         if root.contains_key("content") || root.contains_key("structuredContent") {
             let mut normalized = root.clone();
-            normalized.entry("isError".into()).or_insert(Value::Bool(false));
+            normalized.entry("isError").or_insert(Value::Bool(false));
             return Value::Object(normalized);
         }
     }
