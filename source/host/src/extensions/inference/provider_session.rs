@@ -3,7 +3,9 @@ use std::env;
 use std::fs;
 use std::io::{BufRead, BufReader, Read};
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::thread;
+use std::time::Duration;
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -16,7 +18,7 @@ use crate::host_paths::get_sand_root_dir;
 
 use super::codex_direct_responses::{
     CodexDirectError, CodexDirectOptions, CodexDirectTool, CodexDirectTransport,
-    run_codex_direct_responses,
+    run_codex_direct_responses_with_cancel,
 };
 
 pub const GROK_ROUTER_SYSTEM_PROMPT: &str =
@@ -96,6 +98,8 @@ pub enum ProviderSessionError {
     Protocol(String),
     #[error("{0}")]
     Tool(String),
+    #[error("{0}")]
+    Cancelled(String),
 }
 
 impl From<CodexDirectError> for ProviderSessionError {
@@ -104,6 +108,7 @@ impl From<CodexDirectError> for ProviderSessionError {
             CodexDirectError::Transport(message) => Self::Transport(message),
             CodexDirectError::Protocol(message) => Self::Protocol(message),
             CodexDirectError::Tool(message) => Self::Tool(message),
+            CodexDirectError::Cancelled(message) => Self::Cancelled(message),
         }
     }
 }
@@ -561,7 +566,10 @@ impl CodexDirectTransport for CodexHttpTransport {
         decode_sse_stream(response, |event| {
             on_event(event).map_err(ProviderSessionError::from)
         })
-        .map_err(|error| CodexDirectError::Protocol(error.to_string()))
+        .map_err(|error| match error {
+            ProviderSessionError::Cancelled(message) => CodexDirectError::Cancelled(message),
+            other => CodexDirectError::Protocol(other.to_string()),
+        })
     }
 }
 
@@ -589,6 +597,7 @@ pub fn run_codex_provider_text(
         &str,
     ) -> Result<Value, ProviderSessionError>,
     on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
 ) -> Result<String, ProviderSessionError> {
     let mut transport = CodexHttpTransport::new(&codex_home().join("auth.json"))?;
     let system_prompt = assembled_provider_system_prompt(messages);
@@ -613,7 +622,7 @@ pub fn run_codex_provider_text(
         .iter()
         .map(|tool| (tool.name.clone(), tool))
         .collect::<BTreeMap<_, _>>();
-    let result = run_codex_direct_responses(
+    let result = run_codex_direct_responses_with_cancel(
         &mut transport,
         &request,
         &mut |tool, args, tool_call_id| {
@@ -627,6 +636,7 @@ pub fn run_codex_provider_text(
                 .map_err(|error| CodexDirectError::Tool(error.to_string()))
         },
         on_text_delta,
+        should_cancel,
     )?;
     Ok(result.text)
 }
@@ -642,6 +652,7 @@ pub struct RoutedProviderOptions<'a> {
         &str,
     ) -> Result<Value, ProviderSessionError>,
     pub on_text_delta: &'a mut dyn FnMut(&str, &str),
+    pub should_cancel: &'a dyn Fn() -> bool,
 }
 
 pub fn run_routed_provider_text(
@@ -649,7 +660,12 @@ pub fn run_routed_provider_text(
     messages: &[ProviderMessage],
     options: &mut RoutedProviderOptions<'_>,
 ) -> Result<String, ProviderSessionError> {
-    match provider {
+    if (options.should_cancel)() {
+        return Err(ProviderSessionError::Cancelled(
+            "Runner cancelled before provider dispatch".into(),
+        ));
+    }
+    let result = match provider {
         RoutedProvider::Cursor => Err(ProviderSessionError::Configuration(
             "Cursor inference is owned by the Host/Gateway path and must not enter the local provider router."
                 .into(),
@@ -659,10 +675,17 @@ pub fn run_routed_provider_text(
             options.tools,
             options.execute_tool,
             options.on_text_delta,
+            options.should_cancel,
         ),
         RoutedProvider::OpenRouter => run_openrouter_provider_text(messages, options),
         RoutedProvider::ClaudeCode => run_claude_code_provider_text(messages, options),
+    };
+    if (options.should_cancel)() {
+        return Err(ProviderSessionError::Cancelled(
+            "Runner cancelled the provider request".into(),
+        ));
     }
+    result
 }
 
 fn provider_prompt(messages: &[ProviderMessage]) -> String {
@@ -776,6 +799,11 @@ fn run_openrouter_provider_text(
     let mut text = String::new();
 
     for _step in 0..8 {
+        if (options.should_cancel)() {
+            return Err(ProviderSessionError::Cancelled(
+                "Runner cancelled the OpenRouter request".into(),
+            ));
+        }
         let mut request = json!({
             "model": model,
             "messages": conversation,
@@ -819,6 +847,11 @@ fn run_openrouter_provider_text(
         let mut partial_calls = BTreeMap::<usize, PartialOpenRouterToolCall>::new();
         let mut step_text = String::new();
         decode_sse_stream(response, |event| {
+            if (options.should_cancel)() {
+                return Err(ProviderSessionError::Cancelled(
+                    "Runner cancelled the OpenRouter stream".into(),
+                ));
+            }
             if let Some(error) = event.get("error") {
                 return Err(ProviderSessionError::Protocol(format!(
                     "OpenRouter stream failed: {error}"
@@ -896,6 +929,11 @@ fn run_openrouter_provider_text(
         }));
 
         for (_index, call) in partial_calls {
+            if (options.should_cancel)() {
+                return Err(ProviderSessionError::Cancelled(
+                    "Runner cancelled before OpenRouter tool execution".into(),
+                ));
+            }
             let tool_call_id = if call.id.is_empty() {
                 Uuid::new_v4().to_string()
             } else {
@@ -1014,22 +1052,74 @@ fn run_claude_code_provider_text(
         command.arg("--model").arg(model);
     }
 
-    let output = command.output().map_err(|error| {
+    if (options.should_cancel)() {
+        if let Some(path) = mcp_config_path {
+            let _ = fs::remove_file(path);
+        }
+        return Err(ProviderSessionError::Cancelled(
+            "Runner cancelled before Claude Code dispatch".into(),
+        ));
+    }
+
+    let stdout_path = env::temp_dir().join(format!(
+        "fabushi-claude-stdout-{}.json",
+        Uuid::new_v4()
+    ));
+    let stderr_path = env::temp_dir().join(format!(
+        "fabushi-claude-stderr-{}.txt",
+        Uuid::new_v4()
+    ));
+    let stdout_file = fs::File::create(&stdout_path)
+        .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
+    let stderr_file = fs::File::create(&stderr_path)
+        .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
+    command
+        .stdout(Stdio::from(stdout_file))
+        .stderr(Stdio::from(stderr_file));
+
+    let mut child = command.spawn().map_err(|error| {
         ProviderSessionError::Transport(format!(
             "Could not run Claude Code: {error}"
         ))
-    });
+    })?;
+    let status = loop {
+        if (options.should_cancel)() {
+            let _ = child.kill();
+            let _ = child.wait();
+            if let Some(path) = mcp_config_path.as_ref() {
+                let _ = fs::remove_file(path);
+            }
+            let _ = fs::remove_file(&stdout_path);
+            let _ = fs::remove_file(&stderr_path);
+            return Err(ProviderSessionError::Cancelled(
+                "Runner cancelled Claude Code".into(),
+            ));
+        }
+        match child
+            .try_wait()
+            .map_err(|error| ProviderSessionError::Transport(error.to_string()))?
+        {
+            Some(status) => break status,
+            None => thread::sleep(Duration::from_millis(25)),
+        }
+    };
+
     if let Some(path) = mcp_config_path {
         let _ = fs::remove_file(path);
     }
-    let output = output?;
-    if !output.status.success() {
+    let stdout_bytes = fs::read(&stdout_path)
+        .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
+    let stderr_bytes = fs::read(&stderr_path)
+        .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
+    let _ = fs::remove_file(&stdout_path);
+    let _ = fs::remove_file(&stderr_path);
+    if !status.success() {
         return Err(ProviderSessionError::Transport(format!(
             "Claude Code failed: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
+            String::from_utf8_lossy(&stderr_bytes).trim()
         )));
     }
-    let stdout = String::from_utf8(output.stdout)
+    let stdout = String::from_utf8(stdout_bytes)
         .map_err(|error| ProviderSessionError::Protocol(error.to_string()))?;
     let payload = serde_json::from_str::<Value>(stdout.trim())
         .ok()

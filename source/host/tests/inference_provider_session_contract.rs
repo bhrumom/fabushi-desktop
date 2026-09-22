@@ -3,7 +3,8 @@ use std::io::Cursor;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    RoutedProvider, configured_routed_provider, decode_sse_stream,
+    ProviderSessionError, RoutedProvider, RoutedProviderOptions, configured_routed_provider,
+    decode_sse_stream, run_routed_provider_text,
 };
 use serde_json::json;
 
@@ -39,4 +40,34 @@ fn provider_session_reads_router_settings_and_streams_sse_events() {
             "delta":"hi"
         })]
     );
+}
+
+#[test]
+fn provider_session_honors_runner_cancellation_before_provider_setup() {
+    let root = std::env::temp_dir();
+    let messages = [];
+    let tools = [];
+    let should_cancel = || true;
+    let mut execute_tool = |_tool: &mahayana_host_runtime::extensions::inference::provider_session::RoutedToolDefinition,
+                            _args: serde_json::Value,
+                            _call_id: &str| -> Result<serde_json::Value, ProviderSessionError> {
+        unreachable!("cancelled provider must not execute tools")
+    };
+    let mut on_text_delta = |_delta: &str, _accumulated: &str| {
+        panic!("cancelled provider must not emit text")
+    };
+    let error = run_routed_provider_text(
+        RoutedProvider::Cursor,
+        &messages,
+        &mut RoutedProviderOptions {
+            data_dir: &root,
+            tools: &tools,
+            mcp_server_url: None,
+            execute_tool: &mut execute_tool,
+            on_text_delta: &mut on_text_delta,
+            should_cancel: &should_cancel,
+        },
+    )
+    .expect_err("runner cancellation should win before provider setup");
+    assert!(matches!(error, ProviderSessionError::Cancelled(_)));
 }

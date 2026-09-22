@@ -72,6 +72,8 @@ pub enum CodexDirectError {
     Protocol(String),
     #[error("Codex direct tool failed: {0}")]
     Tool(String),
+    #[error("Codex direct request cancelled: {0}")]
+    Cancelled(String),
 }
 
 pub trait CodexDirectTransport {
@@ -156,6 +158,26 @@ pub fn run_codex_direct_responses(
     ) -> Result<Value, CodexDirectError>,
     on_text_delta: &mut dyn FnMut(&str, &str),
 ) -> Result<CodexDirectResult, CodexDirectError> {
+    run_codex_direct_responses_with_cancel(
+        transport,
+        options,
+        execute_tool,
+        on_text_delta,
+        &|| false,
+    )
+}
+
+pub fn run_codex_direct_responses_with_cancel(
+    transport: &mut dyn CodexDirectTransport,
+    options: &CodexDirectOptions,
+    execute_tool: &mut dyn FnMut(
+        &CodexDirectTool,
+        Value,
+        &str,
+    ) -> Result<Value, CodexDirectError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+) -> Result<CodexDirectResult, CodexDirectError> {
     let max_steps = options.max_steps.max(1);
     let tools_by_name = options
         .tools
@@ -169,6 +191,11 @@ pub fn run_codex_direct_responses(
     let mut total_usage = CodexDirectUsage::default();
 
     for _step in 0..max_steps {
+        if should_cancel() {
+            return Err(CodexDirectError::Cancelled(
+                "Runner cancelled before provider dispatch".into(),
+            ));
+        }
         let mut request = json!({
             "model": options.model,
             "instructions": options.instructions,
@@ -189,6 +216,11 @@ pub fn run_codex_direct_responses(
         let mut completed: Option<Value> = None;
         let mut observed_output = Vec::new();
         transport.stream_response(&request, &mut |event| {
+            if should_cancel() {
+                return Err(CodexDirectError::Cancelled(
+                    "Runner cancelled the provider stream".into(),
+                ));
+            }
             match event.get("type").and_then(Value::as_str) {
                 Some("response.output_text.delta") => {
                     if let Some(delta) = event.get("delta").and_then(Value::as_str) {
@@ -251,6 +283,11 @@ pub fn run_codex_direct_responses(
 
         let mut results = Vec::new();
         for call in calls {
+            if should_cancel() {
+                return Err(CodexDirectError::Cancelled(
+                    "Runner cancelled before tool execution".into(),
+                ));
+            }
             let name = call.get("name").and_then(Value::as_str).unwrap_or("");
             let call_id = call.get("call_id").and_then(Value::as_str).unwrap_or("");
             let output = match tools_by_name.get(name).copied() {

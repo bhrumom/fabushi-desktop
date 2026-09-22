@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use mahayana_host_runtime::extensions::inference::codex_direct_responses::{
     CodexDirectError, CodexDirectOptions, CodexDirectTool, CodexDirectTransport,
-    run_codex_direct_responses,
+    run_codex_direct_responses, run_codex_direct_responses_with_cancel,
 };
 use serde_json::{Value, json};
 
@@ -133,4 +133,39 @@ fn codex_direct_rejects_a_stream_without_terminal_completion() {
     )
     .expect_err("missing completion should fail");
     assert!(error.to_string().contains("response.completed"));
+}
+
+#[test]
+fn codex_direct_stops_on_runner_cancellation_before_processing_more_stream_events() {
+    use std::cell::Cell;
+
+    let mut transport = FakeTransport {
+        responses: VecDeque::from([vec![
+            json!({"type":"response.output_text.delta","delta":"should-not-emit"}),
+            json!({"type":"response.completed","response":{"id":"resp-cancel","output":[]}})
+        ]]),
+        requests: Vec::new(),
+    };
+    let options = CodexDirectOptions::new(
+        "gpt-test",
+        "system",
+        vec![json!({"role":"user","content":"cancel me"})],
+    );
+    let checks = Cell::new(0_u32);
+    let should_cancel = || {
+        let seen = checks.get();
+        checks.set(seen + 1);
+        seen >= 1
+    };
+    let mut deltas = Vec::new();
+    let error = run_codex_direct_responses_with_cancel(
+        &mut transport,
+        &options,
+        &mut |_tool, _args, _call_id| Ok(Value::Null),
+        &mut |delta, _accumulated| deltas.push(delta.to_string()),
+        &should_cancel,
+    )
+    .expect_err("runner cancellation should stop the stream");
+    assert!(matches!(error, CodexDirectError::Cancelled(_)));
+    assert!(deltas.is_empty(), "cancelled stream must not emit text");
 }

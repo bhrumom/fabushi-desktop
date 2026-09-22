@@ -200,6 +200,8 @@ pub fn run_routed_provider_in_runner(
         }
     };
 
+    let session_cancellation = run.cancellation.clone();
+    let should_cancel = || session_cancellation.is_cancelled();
     let result = run_routed_provider_text(
         run.provider,
         &provider_messages,
@@ -209,6 +211,7 @@ pub fn run_routed_provider_in_runner(
             mcp_server_url: mcp_url.as_deref(),
             execute_tool: &mut execute_tool,
             on_text_delta: &mut guarded_delta,
+            should_cancel: &should_cancel,
         },
     );
 
