@@ -10,6 +10,7 @@ use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
+use flate2::{Compression, write::GzEncoder};
 use serde_json::{Value, json};
 use subtle::ConstantTimeEq;
 use thiserror::Error;
@@ -31,6 +32,8 @@ pub const GATEWAY_MINT_DEDUPE_HEADER: &str = "x-sand-mint-dedupe";
 pub const GATEWAY_SLIM_AVATARS_HEADER: &str = "x-sand-slim-avatars";
 pub const GATEWAY_TRACEPARENT_HEADER: &str = "traceparent";
 pub const SSE_HEARTBEAT_MS: u64 = 15_000;
+pub const GZIP_MIN_BYTES: usize = 1_400;
+pub const DISABLE_SSE_GZIP_ENV: &str = "SAND_DISABLE_GATEWAY_SSE_GZIP";
 pub const MAX_REQUEST_PAYLOAD_BYTES: usize = 256 * 1024 * 1024;
 pub const MAX_BODY_BYTES: usize = MAX_REQUEST_PAYLOAD_BYTES * 4 / 3 + 64 * 1024;
 const MAX_HEADER_BYTES: usize = 64 * 1024;
@@ -532,6 +535,49 @@ fn respond_json(stream: &mut TcpStream, status: u16, value: Value) -> io::Result
     )
 }
 
+fn client_accepts_gzip(request: &HttpRequest) -> bool {
+    request
+        .headers
+        .get("accept-encoding")
+        .is_some_and(|value| value.to_ascii_lowercase().contains("gzip"))
+}
+
+fn respond_command_json(
+    stream: &mut TcpStream,
+    status: u16,
+    value: Value,
+    request: &HttpRequest,
+) -> io::Result<()> {
+    let encoded = serde_json::to_vec(&value)
+        .map_err(|error| io::Error::other(format!("gateway response serialization failed: {error}")))?;
+    if encoded.len() < GZIP_MIN_BYTES || !client_accepts_gzip(request) {
+        return write_response(
+            stream,
+            status,
+            "application/json",
+            &encoded,
+            &[(GATEWAY_MINT_DEDUPE_HEADER, "1")],
+        );
+    }
+
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(&encoded)?;
+    let zipped = encoder
+        .finish()
+        .map_err(|error| io::Error::other(format!("gateway gzip finish failed: {error}")))?;
+    write_response(
+        stream,
+        status,
+        "application/json",
+        &zipped,
+        &[
+            ("Content-Encoding", "gzip"),
+            ("Vary", "Accept-Encoding"),
+            (GATEWAY_MINT_DEDUPE_HEADER, "1"),
+        ],
+    )
+}
+
 fn respond_error(stream: &mut TcpStream, status: u16, message: impl Into<String>) -> io::Result<()> {
     let encoded = serde_json::to_vec(&json!({ "error": message.into() }))
         .map_err(|error| io::Error::other(format!("gateway error serialization failed: {error}")))?;
@@ -889,10 +935,11 @@ fn handle_connection(
                 .headers
                 .get(GATEWAY_SLIM_AVATARS_HEADER)
                 .is_some_and(|value| value == "1");
-            respond_json(
+            respond_command_json(
                 &mut stream,
                 200,
                 if slim { slim_command_result(method, value) } else { value },
+                &request,
             )
         }
         Err(error) => respond_error(&mut stream, error.status(), error.to_string()),
