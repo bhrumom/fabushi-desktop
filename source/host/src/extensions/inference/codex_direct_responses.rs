@@ -81,6 +81,7 @@ pub trait CodexDirectTransport {
         &mut self,
         request: &Value,
         on_event: &mut dyn FnMut(Value) -> Result<(), CodexDirectError>,
+        should_cancel: &dyn Fn() -> bool,
     ) -> Result<(), CodexDirectError>;
 }
 
@@ -251,7 +252,7 @@ pub fn run_codex_direct_responses_with_cancel(
                 _ => {}
             }
             Ok(())
-        })?;
+        }, should_cancel)?;
 
         let completed = completed.ok_or_else(|| {
             CodexDirectError::Protocol(

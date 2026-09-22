@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::env;
 use std::fs;
+use std::future::Future;
 use std::io::{BufRead, BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -9,9 +10,12 @@ use std::time::Duration;
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use reqwest::blocking::{Client, Response};
+use reqwest::blocking::Client;
+use reqwest::{Client as AsyncClient, Response as AsyncResponse};
 use serde_json::{Map, Value, json};
 use thiserror::Error;
+use tokio::runtime::{Builder as TokioRuntimeBuilder, Runtime};
+use tokio::time::timeout;
 use uuid::Uuid;
 
 use crate::host_paths::get_sand_root_dir;
@@ -110,6 +114,67 @@ impl From<CodexDirectError> for ProviderSessionError {
             CodexDirectError::Tool(message) => Self::Tool(message),
             CodexDirectError::Cancelled(message) => Self::Cancelled(message),
         }
+    }
+}
+
+pub const PROVIDER_IO_CANCEL_POLL_MS: u64 = 50;
+
+fn provider_io_runtime() -> Result<Runtime, ProviderSessionError> {
+    TokioRuntimeBuilder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .build()
+        .map_err(|error| ProviderSessionError::Transport(format!(
+            "Could not create provider I/O runtime: {error}"
+        )))
+}
+
+async fn await_cancelable_provider_io<F, T>(
+    future: F,
+    should_cancel: &dyn Fn() -> bool,
+    label: &str,
+) -> Result<T, ProviderSessionError>
+where
+    F: Future<Output = T>,
+{
+    let mut future = Box::pin(future);
+    loop {
+        if should_cancel() {
+            return Err(ProviderSessionError::Cancelled(format!(
+                "Runner cancelled {label}"
+            )));
+        }
+        match timeout(
+            Duration::from_millis(PROVIDER_IO_CANCEL_POLL_MS),
+            future.as_mut(),
+        )
+        .await
+        {
+            Ok(value) => return Ok(value),
+            Err(_) => continue,
+        }
+    }
+}
+
+async fn await_reqwest<T, F>(
+    future: F,
+    should_cancel: &dyn Fn() -> bool,
+    label: &str,
+) -> Result<T, ProviderSessionError>
+where
+    F: Future<Output = Result<T, reqwest::Error>>,
+{
+    await_cancelable_provider_io(future, should_cancel, label)
+        .await?
+        .map_err(|error| ProviderSessionError::Transport(error.to_string()))
+}
+
+fn codex_provider_error(error: ProviderSessionError) -> CodexDirectError {
+    match error {
+        ProviderSessionError::Cancelled(message) => CodexDirectError::Cancelled(message),
+        ProviderSessionError::Protocol(message) => CodexDirectError::Protocol(message),
+        ProviderSessionError::Tool(message) => CodexDirectError::Tool(message),
+        other => CodexDirectError::Transport(other.to_string()),
     }
 }
 
@@ -379,9 +444,10 @@ fn persist_refreshed_credentials(
     })
 }
 
-fn refresh_codex_credentials(
-    client: &Client,
+async fn refresh_codex_credentials(
+    client: &AsyncClient,
     current: &CodexCredentials,
+    should_cancel: &dyn Fn() -> bool,
 ) -> Result<CodexCredentials, ProviderSessionError> {
     let client_id = jwt_audience(&current.id_token).ok_or_else(|| {
         ProviderSessionError::Authentication(
@@ -394,26 +460,33 @@ fn refresh_codex_credentials(
         form_encode(&current.refresh_token),
         form_encode(&client_id),
     );
-    let response = client
-        .post("https://auth.openai.com/oauth/token")
-        .header("content-type", "application/x-www-form-urlencoded")
-        .body(body)
-        .send()
-        .map_err(|error| {
-            ProviderSessionError::Transport(format!(
-                "Could not refresh Codex login: {error}"
-            ))
-        })?;
+    let response = await_reqwest(
+        client
+            .post("https://auth.openai.com/oauth/token")
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(body)
+            .send(),
+        should_cancel,
+        "the Codex login refresh request",
+    )
+    .await?;
     if !response.status().is_success() {
         return Err(ProviderSessionError::Authentication(
             "Codex login expired and could not be refreshed. Run `codex login` again."
                 .into(),
         ));
     }
-    let payload: Value = response.json().map_err(|error| {
-        ProviderSessionError::Protocol(format!(
-            "Codex refresh response was invalid: {error}"
-        ))
+    let payload: Value = await_reqwest(
+        response.json::<Value>(),
+        should_cancel,
+        "the Codex login refresh response",
+    )
+    .await
+    .map_err(|error| match error {
+        ProviderSessionError::Cancelled(message) => ProviderSessionError::Cancelled(message),
+        other => ProviderSessionError::Protocol(format!(
+            "Codex refresh response was invalid: {other}"
+        )),
     })?;
     let access_token = payload
         .get("access_token")
@@ -446,6 +519,46 @@ fn refresh_codex_credentials(
     )
 }
 
+fn flush_sse_data<F>(
+    data: &mut Vec<String>,
+    on_event: &mut F,
+) -> Result<(), ProviderSessionError>
+where
+    F: FnMut(Value) -> Result<(), ProviderSessionError> + ?Sized,
+{
+    if data.is_empty() {
+        return Ok(());
+    }
+    let payload = data.join("\n");
+    data.clear();
+    if payload == "[DONE]" {
+        return Ok(());
+    }
+    let value: Value = serde_json::from_str(&payload).map_err(|_| {
+        ProviderSessionError::Protocol(
+            "Provider stream contained malformed SSE JSON.".into(),
+        )
+    })?;
+    on_event(value)
+}
+
+fn push_sse_line<F>(
+    line: &str,
+    data: &mut Vec<String>,
+    on_event: &mut F,
+) -> Result<(), ProviderSessionError>
+where
+    F: FnMut(Value) -> Result<(), ProviderSessionError> + ?Sized,
+{
+    let trimmed = line.trim_end_matches(['\r', '\n']);
+    if trimmed.is_empty() {
+        flush_sse_data(data, on_event)?;
+    } else if let Some(payload) = trimmed.strip_prefix("data:") {
+        data.push(payload.trim_start().to_string());
+    }
+    Ok(())
+}
+
 pub fn decode_sse_stream<R, F>(
     reader: R,
     mut on_event: F,
@@ -458,25 +571,6 @@ where
     let mut line = String::new();
     let mut data = Vec::<String>::new();
 
-    let flush = |data: &mut Vec<String>,
-                 on_event: &mut F|
-     -> Result<(), ProviderSessionError> {
-        if data.is_empty() {
-            return Ok(());
-        }
-        let payload = data.join("\n");
-        data.clear();
-        if payload == "[DONE]" {
-            return Ok(());
-        }
-        let value: Value = serde_json::from_str(&payload).map_err(|_| {
-            ProviderSessionError::Protocol(
-                "Provider stream contained malformed SSE JSON.".into(),
-            )
-        })?;
-        on_event(value)
-    };
-
     loop {
         line.clear();
         let count = reader
@@ -485,24 +579,63 @@ where
         if count == 0 {
             break;
         }
-        let trimmed = line.trim_end_matches(['\r', '\n']);
-        if trimmed.is_empty() {
-            flush(&mut data, &mut on_event)?;
-        } else if let Some(payload) = trimmed.strip_prefix("data:") {
-            data.push(payload.trim_start().to_string());
+        push_sse_line(&line, &mut data, &mut on_event)?;
+    }
+    flush_sse_data(&mut data, &mut on_event)
+}
+
+async fn decode_async_sse_stream<F>(
+    mut response: AsyncResponse,
+    should_cancel: &dyn Fn() -> bool,
+    on_event: &mut F,
+) -> Result<(), ProviderSessionError>
+where
+    F: FnMut(Value) -> Result<(), ProviderSessionError> + ?Sized,
+{
+    let mut pending = Vec::<u8>::new();
+    let mut data = Vec::<String>::new();
+
+    loop {
+        let chunk = await_reqwest(
+            response.chunk(),
+            should_cancel,
+            "the provider response stream",
+        )
+        .await?;
+        let Some(chunk) = chunk else {
+            break;
+        };
+        pending.extend_from_slice(&chunk);
+        while let Some(newline) = pending.iter().position(|byte| *byte == b'\n') {
+            let line = pending.drain(..=newline).collect::<Vec<_>>();
+            let line = std::str::from_utf8(&line).map_err(|_| {
+                ProviderSessionError::Protocol(
+                    "Provider stream contained invalid UTF-8.".into(),
+                )
+            })?;
+            push_sse_line(line, &mut data, on_event)?;
         }
     }
-    flush(&mut data, &mut on_event)
+
+    if !pending.is_empty() {
+        let line = std::str::from_utf8(&pending).map_err(|_| {
+            ProviderSessionError::Protocol(
+                "Provider stream contained invalid UTF-8.".into(),
+            )
+        })?;
+        push_sse_line(line, &mut data, on_event)?;
+    }
+    flush_sse_data(&mut data, on_event)
 }
 
 struct CodexHttpTransport {
-    client: Client,
+    client: AsyncClient,
     credentials: CodexCredentials,
 }
 
 impl CodexHttpTransport {
     fn new(auth_path: &Path) -> Result<Self, ProviderSessionError> {
-        let client = Client::builder()
+        let client = AsyncClient::builder()
             .build()
             .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
         Ok(Self {
@@ -510,25 +643,31 @@ impl CodexHttpTransport {
             credentials: read_codex_credentials(auth_path)?,
         })
     }
+}
 
-    fn send(&self, request: &Value) -> Result<Response, ProviderSessionError> {
-        self.client
+async fn send_codex_request(
+    client: &AsyncClient,
+    credentials: &CodexCredentials,
+    request: &Value,
+    should_cancel: &dyn Fn() -> bool,
+) -> Result<AsyncResponse, ProviderSessionError> {
+    await_reqwest(
+        client
             .post("https://chatgpt.com/backend-api/codex/responses")
             .header(
                 "authorization",
-                format!("Bearer {}", self.credentials.access_token),
+                format!("Bearer {}", credentials.access_token),
             )
-            .header(
-                "ChatGPT-Account-Id",
-                self.credentials.account_id.clone(),
-            )
+            .header("ChatGPT-Account-Id", credentials.account_id.clone())
             .header("content-type", "application/json")
             .header("accept", "text/event-stream")
             .header("user-agent", "fabushi-router/1")
             .json(request)
-            .send()
-            .map_err(|error| ProviderSessionError::Transport(error.to_string()))
-    }
+            .send(),
+        should_cancel,
+        "the Codex provider request",
+    )
+    .await
 }
 
 impl CodexDirectTransport for CodexHttpTransport {
@@ -536,40 +675,73 @@ impl CodexDirectTransport for CodexHttpTransport {
         &mut self,
         request: &Value,
         on_event: &mut dyn FnMut(Value) -> Result<(), CodexDirectError>,
+        should_cancel: &dyn Fn() -> bool,
     ) -> Result<(), CodexDirectError> {
-        let mut response = self
-            .send(request)
-            .map_err(|error| CodexDirectError::Transport(error.to_string()))?;
-        if response.status().as_u16() == 401 {
-            self.credentials =
-                refresh_codex_credentials(&self.client, &self.credentials)
-                    .map_err(|error| {
-                        CodexDirectError::Transport(error.to_string())
-                    })?;
-            response = self
-                .send(request)
-                .map_err(|error| CodexDirectError::Transport(error.to_string()))?;
-        }
-        if !response.status().is_success() {
-            let status = response.status();
-            let mut detail = String::new();
-            let _ = response.take(4096).read_to_string(&mut detail);
-            return Err(CodexDirectError::Transport(format!(
-                "Codex direct request failed ({status}{}).",
-                if detail.trim().is_empty() {
-                    String::new()
-                } else {
-                    format!(": {}", detail.trim())
-                }
-            )));
-        }
-        decode_sse_stream(response, |event| {
-            on_event(event).map_err(ProviderSessionError::from)
-        })
-        .map_err(|error| match error {
-            ProviderSessionError::Cancelled(message) => CodexDirectError::Cancelled(message),
-            other => CodexDirectError::Protocol(other.to_string()),
-        })
+        let runtime = provider_io_runtime().map_err(codex_provider_error)?;
+        let client = self.client.clone();
+        let mut credentials = self.credentials.clone();
+        let result = runtime.block_on(async {
+            let mut response = send_codex_request(
+                &client,
+                &credentials,
+                request,
+                should_cancel,
+            )
+            .await
+            .map_err(codex_provider_error)?;
+
+            if response.status().as_u16() == 401 {
+                credentials = refresh_codex_credentials(
+                    &client,
+                    &credentials,
+                    should_cancel,
+                )
+                .await
+                .map_err(codex_provider_error)?;
+                response = send_codex_request(
+                    &client,
+                    &credentials,
+                    request,
+                    should_cancel,
+                )
+                .await
+                .map_err(codex_provider_error)?;
+            }
+
+            if !response.status().is_success() {
+                let status = response.status();
+                let detail = await_reqwest(
+                    response.text(),
+                    should_cancel,
+                    "the Codex provider error response",
+                )
+                .await
+                .map_err(codex_provider_error)?
+                .chars()
+                .take(4096)
+                .collect::<String>();
+                return Err(CodexDirectError::Transport(format!(
+                    "Codex direct request failed ({status}{}).",
+                    if detail.trim().is_empty() {
+                        String::new()
+                    } else {
+                        format!(": {}", detail.trim())
+                    }
+                )));
+            }
+
+            decode_async_sse_stream(
+                response,
+                should_cancel,
+                &mut |event| {
+                    on_event(event).map_err(ProviderSessionError::from)
+                },
+            )
+            .await
+            .map_err(codex_provider_error)
+        });
+        self.credentials = credentials;
+        result
     }
 }
 
@@ -1165,9 +1337,14 @@ fn run_claude_code_provider_text(
 
 #[cfg(test)]
 mod tests {
-    use super::{RoutedProvider, jwt_audience, toml_string_setting};
+    use super::{
+        RoutedProvider, await_cancelable_provider_io, jwt_audience,
+        provider_io_runtime, toml_string_setting,
+    };
     use base64::Engine;
     use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use std::cell::Cell;
+    use std::future::pending;
 
     #[test]
     fn parses_reference_provider_names() {
@@ -1199,4 +1376,27 @@ mod tests {
         let token = format!("header.{payload}.signature");
         assert_eq!(jwt_audience(&token).as_deref(), Some("client-123"));
     }
+    #[test]
+    fn cancellable_provider_io_returns_while_the_io_future_is_silent() {
+        let checks = Cell::new(0_u32);
+        let should_cancel = || {
+            let seen = checks.get();
+            checks.set(seen.saturating_add(1));
+            seen >= 1
+        };
+        let runtime = provider_io_runtime().expect("provider I/O runtime");
+        let error = runtime
+            .block_on(await_cancelable_provider_io(
+                pending::<()>(),
+                &should_cancel,
+                "a silent provider probe",
+            ))
+            .expect_err("silent I/O must be interruptible by Runner cancellation");
+        assert!(matches!(error, super::ProviderSessionError::Cancelled(_)));
+        assert!(
+            checks.get() >= 2,
+            "cancellation must be re-checked without requiring provider output"
+        );
+    }
+
 }

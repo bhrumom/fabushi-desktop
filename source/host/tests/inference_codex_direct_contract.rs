@@ -16,8 +16,14 @@ impl CodexDirectTransport for FakeTransport {
         &mut self,
         request: &Value,
         on_event: &mut dyn FnMut(Value) -> Result<(), CodexDirectError>,
+        should_cancel: &dyn Fn() -> bool,
     ) -> Result<(), CodexDirectError> {
         self.requests.push(request.clone());
+        if should_cancel() {
+            return Err(CodexDirectError::Cancelled(
+                "fake transport observed Runner cancellation".into(),
+            ));
+        }
         for event in self.responses.pop_front().expect("fake response") {
             on_event(event)?;
         }
