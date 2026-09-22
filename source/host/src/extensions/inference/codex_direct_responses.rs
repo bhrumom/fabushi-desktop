@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use thiserror::Error;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct CodexDirectUsage {
     pub input_tokens: u64,
     pub output_tokens: u64,
@@ -62,6 +63,16 @@ pub struct CodexDirectResult {
     pub text: String,
     pub response_id: String,
     pub usage: CodexDirectUsage,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CodexDirectCheckpoint {
+    pub input: Vec<Value>,
+    pub text: String,
+    pub response_id: String,
+    pub usage: CodexDirectUsage,
+    pub completed_steps: usize,
+    pub tool_calls_completed: usize,
 }
 
 #[derive(Debug, Error)]
@@ -159,11 +170,15 @@ pub fn run_codex_direct_responses(
     ) -> Result<Value, CodexDirectError>,
     on_text_delta: &mut dyn FnMut(&str, &str),
 ) -> Result<CodexDirectResult, CodexDirectError> {
-    run_codex_direct_responses_with_cancel(
+    let mut ignore_checkpoint =
+        |_checkpoint: &CodexDirectCheckpoint| Ok(());
+    run_codex_direct_responses_with_lifecycle(
         transport,
         options,
+        None,
         execute_tool,
         on_text_delta,
+        &mut ignore_checkpoint,
         &|| false,
     )
 }
@@ -179,6 +194,34 @@ pub fn run_codex_direct_responses_with_cancel(
     on_text_delta: &mut dyn FnMut(&str, &str),
     should_cancel: &dyn Fn() -> bool,
 ) -> Result<CodexDirectResult, CodexDirectError> {
+    let mut ignore_checkpoint =
+        |_checkpoint: &CodexDirectCheckpoint| Ok(());
+    run_codex_direct_responses_with_lifecycle(
+        transport,
+        options,
+        None,
+        execute_tool,
+        on_text_delta,
+        &mut ignore_checkpoint,
+        should_cancel,
+    )
+}
+
+pub fn run_codex_direct_responses_with_lifecycle(
+    transport: &mut dyn CodexDirectTransport,
+    options: &CodexDirectOptions,
+    resume_from: Option<&CodexDirectCheckpoint>,
+    execute_tool: &mut dyn FnMut(
+        &CodexDirectTool,
+        Value,
+        &str,
+    ) -> Result<Value, CodexDirectError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    on_checkpoint: &mut dyn FnMut(
+        &CodexDirectCheckpoint,
+    ) -> Result<(), CodexDirectError>,
+    should_cancel: &dyn Fn() -> bool,
+) -> Result<CodexDirectResult, CodexDirectError> {
     let max_steps = options.max_steps.max(1);
     let tools_by_name = options
         .tools
@@ -186,12 +229,39 @@ pub fn run_codex_direct_responses_with_cancel(
         .map(|tool| (tool.name.as_str(), tool))
         .collect::<HashMap<_, _>>();
     let declared_tools = request_tools(&options.tools);
-    let mut input = options.input.clone();
-    let mut text = String::new();
-    let mut response_id = String::new();
-    let mut total_usage = CodexDirectUsage::default();
+    let (
+        mut input,
+        mut text,
+        mut response_id,
+        mut total_usage,
+        mut completed_steps,
+        mut tool_calls_completed,
+    ) = match resume_from {
+        Some(checkpoint) => (
+            checkpoint.input.clone(),
+            checkpoint.text.clone(),
+            checkpoint.response_id.clone(),
+            checkpoint.usage,
+            checkpoint.completed_steps,
+            checkpoint.tool_calls_completed,
+        ),
+        None => (
+            options.input.clone(),
+            String::new(),
+            String::new(),
+            CodexDirectUsage::default(),
+            0,
+            0,
+        ),
+    };
 
-    for _step in 0..max_steps {
+    if completed_steps >= max_steps {
+        return Err(CodexDirectError::Protocol(format!(
+            "provider resume checkpoint already exhausted Fabushi's {max_steps}-step tool limit"
+        )));
+    }
+
+    for _step in completed_steps..max_steps {
         if should_cancel() {
             return Err(CodexDirectError::Cancelled(
                 "Runner cancelled before provider dispatch".into(),
@@ -282,6 +352,7 @@ pub fn run_codex_direct_responses_with_cancel(
             });
         }
 
+        let calls_in_step = calls.len();
         let mut results = Vec::new();
         for call in calls {
             if should_cancel() {
@@ -325,6 +396,17 @@ pub fn run_codex_direct_responses_with_cancel(
 
         input.extend(output);
         input.extend(results);
+        completed_steps = completed_steps.saturating_add(1);
+        tool_calls_completed =
+            tool_calls_completed.saturating_add(calls_in_step);
+        on_checkpoint(&CodexDirectCheckpoint {
+            input: input.clone(),
+            text: text.clone(),
+            response_id: response_id.clone(),
+            usage: total_usage,
+            completed_steps,
+            tool_calls_completed,
+        })?;
     }
 
     Err(CodexDirectError::Protocol(format!(

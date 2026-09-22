@@ -1,8 +1,10 @@
 use std::collections::VecDeque;
 
 use mahayana_host_runtime::extensions::inference::codex_direct_responses::{
-    CodexDirectError, CodexDirectOptions, CodexDirectTool, CodexDirectTransport,
-    run_codex_direct_responses, run_codex_direct_responses_with_cancel,
+    CodexDirectCheckpoint, CodexDirectError, CodexDirectOptions, CodexDirectTool,
+    CodexDirectTransport, run_codex_direct_responses,
+    run_codex_direct_responses_with_cancel,
+    run_codex_direct_responses_with_lifecycle,
 };
 use serde_json::{Value, json};
 
@@ -174,4 +176,125 @@ fn codex_direct_stops_on_runner_cancellation_before_processing_more_stream_event
     .expect_err("runner cancellation should stop the stream");
     assert!(matches!(error, CodexDirectError::Cancelled(_)));
     assert!(deltas.is_empty(), "cancelled stream must not emit text");
+}
+
+
+#[test]
+fn codex_direct_resumes_only_from_an_accepted_tool_boundary_checkpoint() {
+    let first_round = vec![
+        json!({"type":"response.output_text.delta","delta":"Checking "}),
+        json!({"type":"response.output_item.done","item":{
+            "type":"function_call",
+            "name":"calendar_list",
+            "call_id":"call-resume",
+            "arguments":"{\"days\":1}"
+        }}),
+        json!({"type":"response.completed","response":{
+            "id":"resp-before-resume",
+            "usage":{"input_tokens":10,"output_tokens":2},
+            "output":[{
+                "type":"function_call",
+                "name":"calendar_list",
+                "call_id":"call-resume",
+                "arguments":"{\"days\":1}"
+            }]
+        }})
+    ];
+    let failure_round = vec![json!({
+        "type":"response.failed",
+        "response":{"error":{"message":"transient upstream failure"}}
+    })];
+    let mut first_transport = FakeTransport {
+        responses: VecDeque::from([first_round, failure_round]),
+        requests: Vec::new(),
+    };
+    let mut options = CodexDirectOptions::new(
+        "gpt-test",
+        "system",
+        vec![json!({"role":"user","content":"calendar"})],
+    );
+    options.tools = vec![CodexDirectTool {
+        name: "calendar_list".into(),
+        description: Some("List calendar entries".into()),
+        parameters: json!({"type":"object"}),
+        source: json!({"providerIdentifier":"calendar","toolName":"list"}),
+    }];
+
+    let mut checkpoint: Option<CodexDirectCheckpoint> = None;
+    let mut first_tool_calls = 0_usize;
+    let mut first_deltas = Vec::new();
+    let error = run_codex_direct_responses_with_lifecycle(
+        &mut first_transport,
+        &options,
+        None,
+        &mut |_tool, _args, _call_id| {
+            first_tool_calls += 1;
+            Ok(json!({"events":["daily"]}))
+        },
+        &mut |delta, accumulated| {
+            first_deltas.push((delta.to_string(), accumulated.to_string()));
+        },
+        &mut |accepted| {
+            checkpoint = Some(accepted.clone());
+            Ok(())
+        },
+        &|| false,
+    )
+    .expect_err("second provider step should fail after checkpoint");
+    assert!(error.to_string().contains("transient upstream failure"));
+    assert_eq!(first_tool_calls, 1);
+    assert_eq!(first_deltas[0].0, "Checking ");
+
+    let checkpoint = checkpoint.expect("tool boundary checkpoint");
+    assert_eq!(checkpoint.text, "Checking ");
+    assert_eq!(checkpoint.completed_steps, 1);
+    assert_eq!(checkpoint.tool_calls_completed, 1);
+    assert!(checkpoint
+        .input
+        .iter()
+        .any(|item| item["type"] == "function_call_output"));
+
+    let mut resumed_transport = FakeTransport {
+        responses: VecDeque::from([vec![
+            json!({"type":"response.output_text.delta","delta":"done"}),
+            json!({"type":"response.completed","response":{
+                "id":"resp-after-resume",
+                "usage":{"input_tokens":6,"output_tokens":1},
+                "output":[]
+            }})
+        ]]),
+        requests: Vec::new(),
+    };
+    let mut resumed_tool_calls = 0_usize;
+    let mut resumed_deltas = Vec::new();
+    let resumed = run_codex_direct_responses_with_lifecycle(
+        &mut resumed_transport,
+        &options,
+        Some(&checkpoint),
+        &mut |_tool, _args, _call_id| {
+            resumed_tool_calls += 1;
+            Ok(Value::Null)
+        },
+        &mut |delta, accumulated| {
+            resumed_deltas.push((delta.to_string(), accumulated.to_string()));
+        },
+        &mut |_accepted| Ok(()),
+        &|| false,
+    )
+    .expect("resume from accepted checkpoint");
+
+    assert_eq!(resumed_tool_calls, 0, "accepted tool work must not repeat");
+    assert_eq!(resumed.text, "Checking done");
+    assert_eq!(resumed.response_id, "resp-after-resume");
+    assert_eq!(
+        resumed_deltas,
+        vec![("done".to_string(), "Checking done".to_string())]
+    );
+    assert_eq!(resumed_transport.requests.len(), 1);
+    let resumed_input = resumed_transport.requests[0]["input"]
+        .as_array()
+        .expect("resumed input");
+    assert!(resumed_input
+        .iter()
+        .any(|item| item["type"] == "function_call_output"));
 }
