@@ -13,6 +13,16 @@
     "sourceMap": false
   },
   "include": [
+    "../source/shared/update-track.ts",
+    "../source/shared/node/cursor-token.ts",
+    "../source/shared/box-migration.ts",
+    "../source/shared/write-epoch.ts",
+    "../source/shared/host-settings-field.ts",
+    "../source/shared/foundations.test.ts",
+    "../source/electron-main/update/release-metadata.ts",
+    "../source/electron-main/account/account-authorization.ts",
+    "../source/electron-main/box/box-recreate-commands.ts",
+    "../source/electron-main/prefs/host-settings-fields.ts",
     "../source/shared/rpc/coordinator.ts",
     "../source/shared/rpc/coordinator-port.ts",
     "../source/shared/rpc/main.ts",
