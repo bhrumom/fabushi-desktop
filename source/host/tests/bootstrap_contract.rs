@@ -157,3 +157,61 @@ fn gateway_discovery_is_validated_written_and_cleared() {
     assert!(write_gateway_discovery(&invalid, &path).is_err());
     fs::remove_dir_all(root).unwrap();
 }
+
+
+#[test]
+fn host_lock_takes_over_only_known_host_processes() {
+    use std::cell::{Cell, RefCell};
+    use mahayana_host_runtime::host_lock::{
+        HostLockOutcome, acquire_host_lock_with, read_lock_pid,
+    };
+
+    let root = temp_dir("lock");
+    fs::create_dir_all(&root).unwrap();
+    let path = root.join("host.lock");
+    fs::write(&path, "41").unwrap();
+
+    let alive = Cell::new(true);
+    let signals = RefCell::new(Vec::<(u32, bool)>::new());
+    let acquired = acquire_host_lock_with(
+        &path,
+        99,
+        |_| alive.get(),
+        |_| true,
+        |pid, force| {
+            signals.borrow_mut().push((pid, force));
+            alive.set(false);
+        },
+        |_| {},
+        100,
+        10,
+    )
+    .unwrap();
+    assert_eq!(acquired.outcome, HostLockOutcome::TookOver);
+    assert_eq!(acquired.previous_pid, Some(41));
+    assert_eq!(signals.borrow().as_slice(), &[(41, false)]);
+    assert_eq!(read_lock_pid(&path), Some(99));
+    acquired.lock.release().unwrap();
+    assert!(!path.exists());
+
+    fs::write(&path, "42").unwrap();
+    let signals = RefCell::new(Vec::<(u32, bool)>::new());
+    let foreign = acquire_host_lock_with(
+        &path,
+        100,
+        |_| true,
+        |_| false,
+        |pid, force| signals.borrow_mut().push((pid, force)),
+        |_| {},
+        100,
+        10,
+    )
+    .unwrap();
+    assert_eq!(foreign.outcome, HostLockOutcome::ReclaimedForeign);
+    assert_eq!(foreign.previous_pid, Some(42));
+    assert!(signals.borrow().is_empty());
+    assert_eq!(read_lock_pid(&path), Some(100));
+    foreign.lock.release().unwrap();
+
+    fs::remove_dir_all(root).unwrap();
+}
