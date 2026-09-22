@@ -34,3 +34,7 @@ impl OAuthPendingRegistry {
         self.by_key.retain(|_, entry| entry.server_name != server_name);
     }
 }
+
+pub mod mcp_oauth_callback_listener;
+pub mod mcp_oauth_forwarder;
+pub mod mcp_oauth_loopback_registry;
