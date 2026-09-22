@@ -1,4 +1,4 @@
-# Grok Bot 0.18 Runtime, Product, Connector, and Power Parity Recovery — Specification
+# Grok Bot 0.18 One-to-One Rust Structural Port and Product Parity Recovery — Specification
 
 Status: active  
 Owner: Fabushi desktop / Agent runtime  
@@ -93,26 +93,31 @@ Any older `IMPLEMENTED` or `COMPLETE` label in `projects/grok-fabu-parity/PARITY
 
 ## 2. Goal
 
-Deliver a Fabushi desktop Agent experience that matches the Grok Bot reference in observable interaction quality and control-plane architecture for chat, streaming, Agent lifecycle, creation, Plugins/connectors/MCP, and failure recovery, while retaining Fabushi-specific identity, account system, local-computer control, Mini Apps, and Mahayana capabilities.
+The target is no longer “borrow Grok Bot’s design principles while keeping a different Fabushi desktop architecture.” The target is an **explicit one-to-one Rust structural port of Grok Bot 0.18** from the exact reference baseline `b-nnett/grok-bot-0.18-reconstructed@a9f633e09d49a85829b8236331b9e21f7e612634`.
 
-The finished product must:
+The implementation must proceed **module by module and file by file** across the Grok Bot code tree:
 
-- answer ordinary questions reliably and promptly;
-- stream visible output/progress rather than sitting in a synthetic thinking state;
-- terminate or recover every accepted turn;
-- expose Plugins/connectors/MCP as first-class product functionality;
-- reproduce the reference creation flow from captured evidence;
-- materially reduce idle/background energy consumption;
-- use the same architectural pattern as the reference where doing so is necessary for parity: TypeScript/Node for the desktop orchestration/control plane and Rust only behind narrow native/capability boundaries.
+- every Grok Bot source-code file must have a tracked Fabushi Rust counterpart, or an explicit evidence-backed `not-applicable` classification when the reference file is generated data, a platform-only artifact, or non-executable evidence;
+- the **relative source folder architecture must mirror Grok Bot**, including the same major process/domain boundaries and the same nested feature/module organization;
+- Grok Bot TypeScript/Node application logic must be translated into Rust with equivalent contracts, state machines, failure behavior, process ownership, persistence, streaming, retries, MCP/plugin behavior, and observable product semantics;
+- Fabushi code, folders, services, compatibility layers, and product surfaces that **do not have a Grok Bot counterpart must be removed from the canonical desktop implementation** rather than kept “just in case”;
+- the final shipped desktop application must not have a second parallel Fabushi architecture beside the Grok-shaped Rust port;
+- Fabushi branding, service endpoints, signing identity, and account credentials may differ through narrow configuration/adapters, but those differences must not introduce a separate product architecture;
+- ordinary chat, Agents, creation flow, Plugins/connectors/MCP, power behavior, process lifecycle, error recovery, and UI interaction must match the approved Grok reference behavior.
+
+The desired end state is therefore: **Grok Bot 0.18’s code architecture and product behavior, reimplemented in Rust under Fabushi identity, with no unexplained extra Fabushi desktop subsystems.**
 
 ## 3. Non-goals / out of scope
 
-- Removing Rust from the product merely because a TypeScript implementation exists. Rust remains appropriate for native OS integration, local-computer control, security-sensitive/native capabilities, and compute-heavy code.
-- Copying proprietary compiled code, assets, branding, or other material without a license/right to do so. Parity means behavior, architecture, interaction, and measurable quality unless a source asset is licensed for reuse.
-- Replacing Fabushi account, messaging, Mini Apps, payments, or computer-control product identity with Grok branding.
+- Keeping the current Fabushi desktop folder layout merely because it already exists.
+- Keeping `desktop/src`, `desktop/electron`, `frontend/apps/web`, `third_party/mahayana`, compatibility adapters, Mini Apps, Telegram/messaging, payments, calls, or other Fabushi-only desktop subsystems after cutover **unless an exact Grok Bot counterpart is documented in the port manifest**.
+- Reinterpreting “same architecture” as only matching high-level concepts. Folder ownership, module boundaries, dependency direction, process boundaries, runtime contracts, and lifecycle ownership must be mirrored and verified.
+- Rewriting Grok behavior into a new “cleaner” architecture when that changes ownership or observable semantics. Improvements may be proposed only after one-to-one parity is complete and separately specified.
+- Treating existing Fabushi features as automatically grandfathered. If Grok Bot does not have a counterpart, the default action is removal from the desktop product/code path.
 - Treating a deterministic “reply exactly X” probe as proof of ordinary user-chat correctness.
-- Declaring parity from unit tests or renderer mocks without signed packaged-app evidence.
-- Expanding this desktop recovery into iOS/Android work.
+- Declaring parity from unit tests, mocks, source layout, or compile success without signed packaged-app evidence.
+- Copying unlicensed upstream source text, comments, compiled code, assets, or branding. “Translate file by file” in this spec means a **Rust semantic port/reimplementation with a traceable one-to-one mapping**. Because the Grok reconstruction provenance explicitly says no upstream source-code license is implied, any direct source-level reuse requires an independent rights review before redistribution.
+- Expanding this desktop port into iOS/Android work.
 
 ## 4. Requirements
 
@@ -162,16 +167,24 @@ The finished product must:
 - **UI-005 — State fidelity.** idle, queued, preparing, thinking, streaming, tool-running, waiting-user, retrying, completed, failed, cancelled, offline, and reconnecting states must be distinguishable and driven by canonical runtime state.
 - **UI-006 — Reference screenshots/video.** Pixel/layout parity is assessed against captured reference at 1671x937 dark mode/reduced-motion where applicable, with documented intentional Fabushi branding/product differences.
 
-### Architecture
+### Architecture / one-to-one Rust port
 
-- **ARCH-001 — TypeScript/Node desktop control plane.** To minimize semantic drift from Grok, the canonical desktop orchestration plane for submission journaling, coordinator RPC, conversation/run lifecycle, provider-attempt policy, transcript projection, Plugins/MCP orchestration, and desktop state machines must be TypeScript/Node.
-- **ARCH-002 — React/TypeScript renderer.** User-visible Agent/Plugins/creation surfaces remain React/TypeScript and consume typed events/state; renderer code must not own durable run truth.
-- **ARCH-003 — Narrow Rust boundary.** Rust may own native OS integration, local-computer control, sandbox/native execution, security-sensitive/native helpers, and compute-heavy capabilities. Rust must not be the only owner of desktop-visible first-token timeout/retry semantics or require the renderer to infer lifecycle from Rust-internal state.
-- **ARCH-004 — Single coordinator transport.** Renderer <-> preload <-> coordinator uses a single typed MessagePort/RPC channel with explicit ready/disconnect/reconnect semantics and pending-request rejection on disconnect.
-- **ARCH-005 — Host runner boundary.** Provider attempts and tool-run orchestration use a dedicated Host/runner layer, separate from Electron window lifecycle and from React components.
-- **ARCH-006 — Durable transcript boundary.** Canonical transcript/run state must have one persistence owner. Renderer localStorage may cache UI preferences/drafts but must not become run-state authority.
-- **ARCH-007 — No compatibility shell ownership inversion.** Mini Apps, contacts, Telegram, payments, and calls may remain compatibility/features, but they must not own or wrap the canonical Agent runtime.
-- **ARCH-008 — Migration safety.** The TypeScript control-plane cutover must be incremental behind explicit adapters/feature gates until packaged acceptance is green; no “big bang” rewrite may discard recoverability.
+- **ARCH-001 — Frozen Grok source baseline.** All structural comparisons and port decisions use `b-nnett/grok-bot-0.18-reconstructed@a9f633e09d49a85829b8236331b9e21f7e612634`. A baseline change requires a spec update and a new complete mapping.
+- **ARCH-002 — Complete source inventory.** Generate and check in a machine-readable port manifest covering every source-bearing Grok path. Each row records: Grok path, Grok blob SHA, kind, target Fabushi path, Rust module/crate, status, behavior/test evidence, and removal/replacement notes. No source file may be silently skipped.
+- **ARCH-003 — Folder-tree parity.** The Fabushi canonical source tree must mirror Grok Bot’s relative folder hierarchy for application code. Major reference roots such as `frontend/`, `source/electron-main/`, `source/electron-preload/`, `source/host/`, `source/node-agent-coordinator/`, `source/shared/`, and `source/packages/` keep the same relative domain/subfolder structure. The historical name `node-agent-coordinator` is retained for structural parity even though its implementation is Rust.
+- **ARCH-004 — File-by-file Rust counterpart.** Each executable `.ts/.tsx/.js/.mjs/.cjs` Grok module must map to a Rust implementation at the corresponding logical path/domain. The file stem and subfolder should remain the same where practical; when Rust module naming makes this impractical, the port manifest must record the exact 1:1 mapping.
+- **ARCH-005 — Rust owns application logic.** Chat/runtime, submission journal, coordinator, host/runner, persistence, retry/deadline logic, Plugins/MCP, account/runtime orchestration, settings state machines, local execution orchestration, process lifecycle policy, and equivalent frontend state machines are implemented in Rust.
+- **ARCH-006 — Minimal platform glue exception.** JavaScript/TypeScript may remain only where the platform itself requires it (for example Electron bootstrap/preload or generated WASM loader glue). Such files must be listed in an explicit allowlist, contain no independent product/business state machine, and delegate immediately to Rust-owned contracts. Any non-allowlisted JS/TS application logic is a release blocker.
+- **ARCH-007 — Frontend Rust translation.** Recovered Grok frontend application logic must also be translated, not left as a separate Fabushi React architecture. The preferred target is Rust/WASM or another Rust-owned renderer state layer with only minimal browser/Electron glue. CSS/HTML/static assets may remain non-Rust where they are declarative resources.
+- **ARCH-008 — Process-boundary parity.** Preserve the Grok responsibilities and communication topology between renderer/frontend, electron-main boundary, preload bridge, coordinator, host, runner, shared contracts, MCP/plugins, and local/native execution. Changing language to Rust must not collapse those responsibilities into a new monolith.
+- **ARCH-009 — Dependency-direction parity.** The dependency graph must follow the Grok tree’s domain direction. Cross-folder imports/RPC dependencies that have no reference counterpart require an explicit spec exception; “convenient” Fabushi-only cross-coupling is forbidden.
+- **ARCH-010 — State-ownership parity.** Submission, run identity, transcript/checkpoint, retry/cancel, connector state, account state, process lifecycle, and renderer projection ownership must follow the corresponding Grok module ownership. Renderer-side inference/repair used only by the old Fabushi architecture must be removed.
+- **ARCH-011 — Remove non-Grok code.** Any shipping Fabushi module without a reference counterpart must be deleted after required data migration. Git history is the archive; a parallel “legacy” implementation is not allowed to remain enabled or compiled into the production desktop package.
+- **ARCH-012 — Remove non-Grok product surfaces.** Mini Apps, Telegram/messaging compatibility UI, payments, calls, legacy compatibility shells, duplicate Agent runtimes, and other extra desktop surfaces must be removed unless the port manifest identifies an exact Grok Bot reference counterpart. A Fabushi-only feature cannot remain merely because it existed in an earlier release.
+- **ARCH-013 — No shadow architecture.** After cutover there must be exactly one canonical implementation for each reference subsystem. Adapters may exist only during migration and must have a removal task and fail the final architecture gate if still on a shipping path.
+- **ARCH-014 — Automated structural gate.** CI must compare the frozen Grok source inventory against the Fabushi Rust port manifest and canonical tree. Completion requires zero unmapped executable reference files and zero unauthorized extra shipping code modules.
+- **ARCH-015 — Semantic port, not literal-copy dependency.** The Rust implementation must preserve behavior/contracts proven by reference code/artifacts while respecting provenance and licensing. If direct source reuse is not licensed, reimplement semantics from inspectable evidence instead of copying source text.
+- **ARCH-016 — Migration safety.** User data needed by the retained Grok-equivalent product must be migrated before legacy trees are deleted. Data belonging only to removed Fabushi-only features may be exported/backed up, but the feature implementation itself does not remain in the shipping architecture.
 
 ### Power / process lifecycle
 
@@ -235,161 +248,199 @@ Production starts the Host and remote-device supervisor at app ready. The main w
 
 ## 6. Target state
 
-### 6.1 Target desktop data flow
+### 6.1 Canonical repository shape
+
+The shipping source tree follows the Grok Bot 0.18 source tree instead of the current Fabushi desktop layout. The exact mapping is generated from the frozen reference commit and checked by CI.
+
+Representative shape:
 
 ```text
-React/TypeScript Renderer
-  -> SubmissionJournal.enqueue(clientNonce, agentId, conversationId, payload)
-       -> optimistic user message only
-  -> Coordinator RPC (MessagePort)
-       -> durable acceptance assigns operationId
-       -> canonical state event: queued/preparing
-  -> TypeScript/Node Host Runner
-       -> attempt owner
-       -> first-output watchdog
-       -> transient/capacity classification
-       -> bounded retry / resume checkpoint
-       -> streaming provider adapter
-       -> typed tool/MCP execution
-       -> durable transcript/checkpoint persistence
-  -> canonical typed event stream
-       -> {agentId, conversationId, operationId, turnId, runId, sequence}
-  -> subscribed Renderer
-       -> coalesced paint only
-       -> no inference/correlation guesses
-  -> optional Rust native services
-       -> computer control / native OS / sandbox / security capability
-       -> explicit typed RPC, not desktop run-state ownership
+frontend/
+  ... same Grok frontend domain/subfolder structure ...
+source/
+  electron-main/
+    ... same Grok electron-main domain/subfolder structure, Rust-owned logic ...
+  electron-preload/
+    ... same Grok preload structure, minimal platform glue + Rust-owned contracts ...
+  host/
+    ... same Grok host/runner/extensions/services structure in Rust ...
+  node-agent-coordinator/
+    ... same Grok coordinator structure in Rust ...
+  shared/
+    ... same Grok shared-contract structure in Rust ...
+  packages/
+    ... same Grok package/domain structure in Rust ...
 ```
 
-The first visible assistant state after submit is a canonical accepted/preparing state. “Thinking” is only shown after the real run reports it. First output, retry, waiting-user, terminal state, and errors are all generated by the Host runner.
+The directory name `node-agent-coordinator` is intentionally retained for structural parity; it does not imply the final implementation remains Node.
 
-### 6.2 Target connector state
+Legacy Fabushi roots such as `desktop/src`, `desktop/electron`, `frontend/apps/web`, and `third_party/mahayana` are migration sources only. They must not remain as parallel canonical architectures after the one-to-one port is complete.
 
-Plugins/Connectors/MCP is a dedicated first-class surface with catalog, installed list, auth/account management, server/tool inventory and control, and composer/runtime integration. Mini Apps remains a separate surface.
+### 6.2 Target runtime flow
 
-### 6.3 Target power state
+```text
+Rust-owned frontend state / renderer projection
+  -> Rust submission journal
+  -> Rust coordinator at Grok-equivalent source/node-agent-coordinator boundary
+  -> Rust host/runner at Grok-equivalent source/host boundary
+       -> provider attempt owner
+       -> first-output watchdog
+       -> bounded retry / checkpoint resume
+       -> streaming provider adapter
+       -> tools / MCP / plugins
+       -> durable transcript/checkpoint
+  -> canonical typed event stream
+  -> Rust-owned frontend projection
+```
 
-The default idle profile runs only the processes needed to keep the visible app responsive. Remote-control/background presence is opt-in/demand-driven. Closing/hiding the app enters a measured low-power profile. Long-lived helpers have lifecycle ownership and bounded restart policy.
+Electron/browser-required JavaScript is a thin transport/bootstrap layer only and cannot own run state.
+
+### 6.3 Target product surface
+
+The visible desktop product contains the Grok-equivalent surfaces and flows proven by the reference: Agent roster/conversation, create/new flows, Plugins/connectors/MCP, settings/account, local execution/computer capabilities where the reference has them, and the corresponding overlays/dialogs.
+
+Fabushi-only surfaces with no reference counterpart are removed rather than hidden behind compatibility menus.
+
+### 6.4 Target power/process behavior
+
+Process lifetime, background services, reconnect policy, coordinator/host startup, helper lifecycle, and event fanout follow the Grok-equivalent ownership model, implemented in Rust. No old Fabushi background supervisor may remain active unless it maps to an explicit reference subsystem.
 
 ## 7. Architecture and ownership boundaries
 
-### Renderer — React/TypeScript
+This section is defined by **reference folder ownership**, not by the current Fabushi implementation.
 
-Owns:
+### `frontend/` — Rust-owned frontend/application state
 
-- visual state and interaction;
-- draft text, selection, ephemeral menu/dialog state;
-- rendering normalized transcript/run events;
-- presentation batching.
+Owns the user-visible state/projection corresponding to the Grok frontend tree:
 
-Must not own:
+- conversation/Agent UI state;
+- create/new flows;
+- Plugins/connectors UI state;
+- composer/drafts/selection;
+- transcript projection;
+- settings/account presentation;
+- approved reference interactions.
 
-- durable send acceptance;
-- operation identity allocation;
-- provider retries/timeouts;
-- canonical transcript/run state;
-- connector credentials.
+Business/run truth remains outside the renderer. Any required JS/WASM loader is glue only.
 
-### Coordinator — TypeScript/Node
+### `source/electron-main/` — Rust-owned desktop-main semantics
 
-Owns:
+Owns the Grok-equivalent desktop-main responsibilities:
 
-- renderer MessagePort lifecycle;
+- window/process lifecycle policy;
+- application menu/update/deep-link behavior;
+- account/native adapters;
+- main-side MCP/OAuth bridge;
+- starting/stopping coordinator, host, and native helpers;
+- secure transport to preload/renderer.
+
+A tiny Electron bootstrap may remain JavaScript only as an allowlisted platform adapter.
+
+### `source/electron-preload/` — minimal bridge
+
+Owns no business state. It exposes the smallest safe typed bridge required by Electron and delegates to Rust-owned IPC/RPC contracts.
+
+### `source/node-agent-coordinator/` — Rust coordinator
+
+Owns the Grok-equivalent:
+
+- renderer connection lifecycle;
+- request/RPC multiplexing;
 - Agent/conversation registry;
-- submission journal and client-nonce deduplication;
-- durable acceptance routing;
-- reconnect/resync protocol;
+- submission journal coordination;
+- reconnect/resync;
+- routed MCP bridge;
 - event subscription/scoping.
 
-### Host / runner — TypeScript/Node
+### `source/host/` — Rust host/runner
 
-Owns:
+Owns the Grok-equivalent:
 
-- provider selection and attempt lifecycle;
+- provider selection and streaming attempt lifecycle;
 - first-output/overall deadlines;
-- safe retry and checkpoint resume;
-- tool/MCP invocation orchestration;
+- safe retry/backoff/checkpoint resume;
 - transcript/checkpoint persistence;
+- tools and MCP invocation;
 - canonical lifecycle events;
-- cancellation and terminal settlement.
+- cancellation and terminal settlement;
+- Host extensions/services.
 
-### Electron main
+### `source/shared/`
 
-Owns:
+Contains Rust shared schemas/contracts corresponding one-to-one to Grok shared modules. It must not become a dumping ground for Fabushi-only abstractions.
 
-- process/window lifecycle;
-- secure preload/IPC bootstrap;
-- native menu/tray/update integration;
-- starting/stopping coordinator/Host/native services according to explicit lifecycle policy.
+### `source/packages/`
 
-Must not synthesize chat results or become transcript authority.
+Contains Rust translations of Grok package modules with the same package/domain segmentation. Each package must have an explicit manifest mapping to its reference source path(s).
 
-### Rust services
+### Native/platform capability implementations
 
-Allowed ownership:
+Native OS/computer-control code may be Rust, but it must be placed behind the Grok-equivalent module boundary. A separate Fabushi-specific native architecture outside the mirrored tree is not allowed without an explicit reference mapping.
 
-- local-computer control and native input/capture;
-- platform/native security adapters;
-- sandbox/native execution primitives;
-- high-performance/native-only capabilities.
+### Removed legacy ownership
 
-The desktop Agent control plane must not require renderer-side provisional operation ids or special-case event repair because a Rust actor owns opaque lifecycle state.
+After the final cutover:
 
-### Plugins/MCP
+- `desktop/src/**` is not a canonical product runtime;
+- `desktop/electron/**` is not a parallel Electron architecture;
+- `frontend/apps/web/**` is not a parallel desktop runtime;
+- `third_party/mahayana/**` is not a parallel Agent engine;
+- compatibility adapters for Fabushi-only surfaces are deleted if they have no Grok counterpart.
 
-A single TypeScript product service owns catalog/install/auth/account/server/tool state. Renderer receives normalized projections. Raw credentials remain in secure main/Host storage.
+Git history provides rollback provenance; shipping duplicate architectures do not.
 
 ## 8. Interfaces / contracts / schemas / data flow
 
 ### 8.1 Submission contract
 
-```ts
-type SubmitTurn = {
-  clientNonce: string;
-  requestId: string;
-  agentId: string;
-  conversationId: string;
-  text: string;
-  attachments: AttachmentRef[];
-  references: AgentOrConnectorRef[];
-};
+The Rust port keeps the Grok-equivalent separation between client nonce/request identity and canonical operation identity.
 
-type TurnAccepted = {
-  requestId: string;
-  clientNonce: string;
-  operationId: string;
-  turnId: string;
-  runId: string;
-  acceptedAtMs: number;
-};
+```rust
+struct SubmitTurn {
+    client_nonce: String,
+    request_id: String,
+    agent_id: String,
+    conversation_id: String,
+    text: String,
+    attachments: Vec<AttachmentRef>,
+    references: Vec<AgentOrConnectorRef>,
+}
+
+struct TurnAccepted {
+    request_id: String,
+    client_nonce: String,
+    operation_id: String,
+    turn_id: String,
+    run_id: String,
+    accepted_at_ms: u64,
+}
 ```
 
-`clientNonce` is the idempotency key. `requestId` scopes one RPC. `operationId` is created only by the canonical runtime owner.
+`client_nonce` is the idempotency key. `request_id` scopes one RPC. `operation_id` is created only by the canonical runtime owner.
 
 ### 8.2 Lifecycle envelope
 
-Every runtime event used for a user-visible turn must include:
+Every runtime event used for a user-visible turn must carry the canonical correlation fields:
 
-```ts
-type TurnEnvelope = {
-  agentId: string;
-  conversationId: string;
-  operationId: string;
-  turnId: string;
-  runId: string;
-  sequence: number;
-  occurredAtMs: number;
-};
+```rust
+struct TurnEnvelope {
+    agent_id: String,
+    conversation_id: String,
+    operation_id: String,
+    turn_id: String,
+    run_id: String,
+    sequence: u64,
+    occurred_at_ms: u64,
+}
 ```
 
-Event kinds include accepted/queued, preparing, thinking, first-output, text delta, reasoning/progress, tool started/completed/failed, retrying, waiting-user, completed, failed, cancelled.
+Event kinds include accepted/queued, preparing, thinking, first-output, text delta, reasoning/progress, tool started/completed/failed, retrying, waiting-user, completed, failed, and cancelled.
 
-The renderer must reject stale generation/sequence events deterministically and must never guess the target Agent from “only pending peer”.
+The frontend must reject stale generation/sequence events deterministically and must never guess the target Agent from “only pending peer”.
 
 ### 8.3 Provider attempt contract
 
-The runner exposes an attempt abstraction equivalent in responsibility to Grok’s `createStreamAttempt`:
+The Rust translation of the Grok runner exposes the same responsibilities as Grok’s `createStreamAttempt` / retry modules:
 
 - cancelable context;
 - first-output deadline;
@@ -400,9 +451,11 @@ The runner exposes an attempt abstraction equivalent in responsibility to Grok�
 - explicit retry/exhausted outcome;
 - final-state persistence.
 
-### 8.4 Connector contract
+The port manifest links each Rust runner module to its exact Grok source file(s).
 
-The TypeScript Plugins service exposes typed operations for:
+### 8.4 Plugins/MCP contract
+
+The Rust Plugins/MCP subsystem exposes typed operations equivalent to the Grok reference for:
 
 - catalog search/list;
 - installed list;
@@ -411,38 +464,72 @@ The TypeScript Plugins service exposes typed operations for:
 - accounts list/add/rename/remove/select;
 - MCP server status/refresh;
 - tools list/enable/disable;
-- reference/tool selection for a turn.
+- reference/tool selection and actual tool execution for a turn.
 
-Mini Apps contracts remain separate.
+No separate Mini Apps contract remains unless the frozen Grok baseline contains an equivalent subsystem.
+
+### 8.5 Port-manifest contract
+
+A machine-readable manifest is mandatory. Minimum fields:
+
+```text
+reference_path
+reference_blob_sha
+reference_kind
+target_path
+target_crate_or_module
+status
+behavioral_evidence
+test_evidence
+notes
+```
+
+Allowed final statuses are `ported`, `not-applicable-noncode`, and `removed-extra`. `pending` or `compatibility-only` blocks completion.
 
 ## 9. Constraints and non-functional requirements
 
 ### Performance / latency
 
-Performance is measured from the user gesture, not from an internal Rust state transition. TTFA and time-to-terminal are stored as test artifacts. Slow providers may exceed normal targets, but they must produce explicit retry/progress/error state instead of an indefinite spinner.
+Performance is measured from the user gesture. Rust translation is not accepted merely because it compiles or uses less CPU; it must reproduce Grok-equivalent responsiveness, streaming cadence, cancellation, and failure recovery.
 
 ### Power / CPU / memory
 
-Power gates are measured on the whole process tree. Disabling a feature must stop the processes/network loops dedicated to that feature. Background services must be demand-driven and must have idle/suspend semantics.
+Power gates are measured on the whole process tree. The Rust port must not preserve old Fabushi always-on helpers simply because they already exist. Background processes/services remain only when the Grok architecture has a corresponding responsibility and the feature is active.
+
+### Structural fidelity
+
+- source-bearing folder hierarchy mirrors the frozen Grok tree;
+- every executable reference module is mapped;
+- unauthorized extra shipping modules are forbidden;
+- old Fabushi trees cannot remain as a parallel implementation;
+- the Rust translation may change syntax/language, but not silently change module responsibility.
 
 ### Security / privacy
 
-- preserve Electron context isolation, sandboxing, web security, and no renderer Node integration;
-- OAuth/tokens remain outside renderer state and logs;
-- Mini App/WebMCP iframe security boundaries are unchanged unless separately specified;
-- connector tool execution remains policy/approval controlled.
+- preserve Electron/browser sandbox and isolation requirements;
+- OAuth/tokens remain outside renderer-visible state and logs;
+- connector tool execution remains policy/approval controlled;
+- Rust FFI/WASM/platform boundaries must be memory-safe and narrowly exposed;
+- unavoidable JS/preload glue must expose only allowlisted methods.
 
-### Compatibility
+### Compatibility and deletion
 
-During migration, existing Fabushi accounts, Agent identities, conversations, Mini Apps, settings, and computer-control configuration must remain readable. Any storage/schema change requires an explicit forward migration and rollback-safe compatibility plan.
+Compatibility exists only to migrate data into the new Grok-shaped Rust architecture. It is not a reason to keep old product features.
+
+Before removing a Fabushi-only subsystem:
+
+1. identify whether any user data must be exported or migrated;
+2. provide a deterministic migration/backup path where needed;
+3. remove the code, navigation, background service, storage writer, tests, and package dependencies for that subsystem;
+4. verify no shipping binary imports or starts it.
 
 ### Reliability
 
-No accepted turn may be orphaned by renderer reload, Host restart, provider timeout, OAuth expiry, or transient network failure.
+No accepted turn may be orphaned by renderer reload, coordinator/Host restart, provider timeout, OAuth expiry, or transient network failure. The corresponding recovery behavior must map back to the reference Grok module/state machine.
 
-### Provenance
+### Provenance / rights
 
-Reference code/behavior may be studied and independently implemented. No unlicensed binary/assets may be copied into Fabushi solely to achieve parity.
+The Grok reconstruction’s provenance explicitly states that no upstream source-code license is implied. The one-to-one requirement is therefore a **traceable semantic Rust port**, not permission to reproduce unlicensed source text or binaries. Public redistribution of any directly reused material requires a separate rights review.
 
 ## 10. Failure modes and edge cases
 
@@ -469,51 +556,93 @@ The implementation and tests must cover:
 
 ## 11. Implementation strategy
 
-### Phase 0 — Evidence and instrumentation
+### Phase 0 — Freeze and enumerate Grok 0.18
 
-Before behavior changes, add stage timing and process-tree instrumentation, reproduce the reported normal prompts on the exact 1.2.75 package, and capture the approved Grok UI/create/plugin reference. Preserve the failing lifecycle/log trace.
+Generate the complete source inventory from `a9f633e09d49a85829b8236331b9e21f7e612634`. Establish the port manifest before implementation. Every source-bearing Grok file must have a row; every current Fabushi shipping module must be classified as mapped-to-Grok or extra-to-remove.
 
-### Phase 1 — Stop indefinite thinking
+### Phase 1 — Create the mirrored Rust tree
 
-Introduce a canonical provider-attempt watchdog/retry policy and terminal invariant. Remove the renderer’s synthetic “thinking” semantics: optimistic user paint remains, but assistant state is driven by canonical accepted/runtime events.
+Create the Grok-shaped canonical folders first:
 
-Enable actual streaming for provider routes that currently buffer full responses. Ensure all provider errors settle the operation.
+- `frontend/**`
+- `source/electron-main/**`
+- `source/electron-preload/**`
+- `source/host/**`
+- `source/node-agent-coordinator/**`
+- `source/shared/**`
+- `source/packages/**`
 
-### Phase 2 — Canonical ID and send-journal cutover
+Populate compileable Rust module/crate skeletons following the exact reference subdivision. Do not invent a new Fabushi hierarchy.
 
-Port the Grok-style submission journal and MessagePort coordinator semantics into the TypeScript/Node control plane. Separate `clientNonce`, request id, and operation id. Remove “only pending peer” correlation as a correctness mechanism.
+### Phase 2 — Translate shared contracts and coordinator semantics
 
-### Phase 3 — TypeScript Host/runner cutover
+Port Grok shared schemas, RPC/event contracts, submission journal, coordinator client/server behavior, reconnect/resync, request rejection, routing, and event subscription logic into Rust, file by file.
 
-Move provider-attempt lifecycle, retry/deadline, transcript/checkpoint orchestration, and desktop-visible Agent run-state ownership into the TypeScript/Node Host/runner. Keep Rust behind typed capability RPCs. Migrate incrementally with compatibility adapters until package acceptance proves equivalence.
+No current Fabushi provisional-operation-id or “only pending peer” repair logic may survive unless a Grok counterpart exists.
 
-### Phase 4 — Plugins/connectors/MCP parity
+### Phase 3 — Translate Host / runner / transcript / provider stack
 
-Build the dedicated Plugins surface and wire catalog, auth/accounts, server/tool state, composer selection, and actual Agent execution. Keep Mini Apps in their own navigation/surface.
+Port the Grok `source/host/**` tree module by module, including:
 
-### Phase 5 — New/create and visual parity
+- send pipeline;
+- stream attempt;
+- first-token stall policy;
+- transient/provider error classification;
+- retry/backoff/checkpoint behavior;
+- transcript persistence;
+- runner lifecycle;
+- provider streaming;
+- tool execution;
+- waiting-user/cancel/terminal state.
 
-Implement the approved captured New/+ creation behavior and close remaining transcript/sidebar/composer/loading/error interaction gaps. Do not guess from incomplete recovered source.
+This phase replaces the old Mahayana desktop Agent engine as canonical runtime ownership.
 
-### Phase 6 — Power lifecycle
+### Phase 4 — Translate Plugins/MCP and desktop-main/preload
 
-Make remote-device/background services demand-driven, introduce low-power hidden-window profile, scope runtime subscriptions, and add bounded helper restart. Profile before/after each process to avoid moving the cost rather than removing it.
+Port Grok MCP/plugin/account/OAuth/catalog/runtime modules and the corresponding Electron-main/preload contracts into Rust. Keep only minimal platform-required JS glue.
 
-### Phase 7 — Packaged acceptance and release
+### Phase 5 — Translate frontend/product behavior
 
-Only after all implementation phases are complete, run static/unit/contract/integration tests and then signed packaged acceptance through GitHub Actions. Fix failures at the exact candidate HEAD. Merge only a fully evidenced candidate, then verify the canonical-main release artifact separately.
+Port the recovered Grok frontend tree and state machines into Rust-owned renderer logic, preserving the same subfolder organization and approved observed behavior. Where reconstructed frontend source is incomplete, use the immutable reference artifact/captures as the behavioral source and document the gap in the manifest.
+
+### Phase 6 — Delete everything without a Grok counterpart
+
+After each mapped subsystem has a passing Rust replacement, remove the old Fabushi implementation. Before final acceptance, delete all unmatched shipping code and product surfaces, including any Mini Apps, messaging/Telegram, payments, calls, legacy compatibility shells, duplicate Agent runtime, or background service that lacks a reference mapping.
+
+No compatibility adapter may remain in the final shipping path simply to preserve the previous architecture.
+
+### Phase 7 — Structural, performance, power, and behavioral convergence
+
+Run the tree-parity checker, module manifest checker, JS/TS logic allowlist checker, latency suite, live chat suite, connector suite, process-tree power suite, and side-by-side UI reference capture.
+
+### Phase 8 — GitHub Actions, packaged acceptance, merge, release
+
+Only after the **entire one-to-one Rust port and removal pass is complete** should the release validation run through GitHub Actions. Fix any failure at the exact candidate HEAD. Merge only after all structural/behavioral/power gates pass, then independently verify the canonical-main signed release and published assets.
 
 ## 12. Verification / test strategy
 
-### Static / architecture
+### Structural / port-completeness gates
 
-- architecture checker rejects renderer-owned durable operation state;
-- rejects request id used as provisional operation id;
-- rejects Plugins navigation to Mini Apps;
-- rejects direct connector credentials in renderer;
-- enforces allowed TypeScript/Rust dependency boundaries.
+CI must fail if any of the following is true:
 
-### Unit / contract
+- a source-bearing Grok file has no port-manifest row;
+- an executable Grok module is not `ported`;
+- a shipping Fabushi code module has no Grok counterpart and is not explicitly allowlisted as platform bootstrap/configuration;
+- the canonical folder hierarchy diverges from the frozen Grok tree without an approved spec exception;
+- old `desktop/src`, `desktop/electron`, `frontend/apps/web`, `third_party/mahayana`, or another legacy tree is still compiled/imported as a parallel runtime after final cutover;
+- non-allowlisted JS/TS application logic remains;
+- a temporary compatibility adapter remains on the production code path.
+
+### Rust compile / dependency gates
+
+- all mirrored Rust crates/modules compile on supported desktop platforms;
+- circular/cross-domain dependencies not present in the Grok architecture are rejected;
+- Rust module ownership is checked against the manifest;
+- required WASM/native/Electron glue is generated or allowlisted and contains no independent business state.
+
+### Behavioral unit / contract gates
+
+For each mapped Grok module, tests cover the corresponding observable semantics. At minimum:
 
 - submission journal duplicate/offline/reconnect/stale-generation behavior;
 - operation correlation and sequence fencing;
@@ -521,9 +650,11 @@ Only after all implementation phases are complete, run static/unit/contract/inte
 - retry eligibility after zero/partial output;
 - server Retry-After/backoff;
 - cancellation during every phase;
-- streaming parsers for Responses, Chat Completions, Anthropic;
+- streaming parsers for supported providers;
 - connector auth/account/tool state machines;
-- helper lifecycle/circuit breaker.
+- coordinator disconnect/reconnect;
+- helper lifecycle/circuit breaker;
+- transcript/checkpoint recovery.
 
 ### Simulated integration faults
 
@@ -538,74 +669,102 @@ Use a controllable provider test server to produce:
 - malformed stream;
 - successful retry with checkpoint.
 
-Assertions must cover UI state and canonical persisted state, not just backend return values.
+Assertions cover both visible UI behavior and canonical persisted state.
 
 ### Packaged live-provider acceptance
 
-The signed package must exercise ordinary prompts, not only marker probes. Minimum scenarios:
+The signed package must exercise ordinary prompts, not only marker probes:
 
 1. simple Chinese Q&A;
 2. simple English Q&A;
-3. “创建一个打地鼠的小程序” or an equivalent real tool-capable task;
+3. “创建一个打地鼠的小程序” or an equivalent real tool-capable task **only if the approved Grok reference supports the same creation capability**;
 4. two concurrent Agent turns;
 5. stop/cancel then new turn;
 6. transient provider/network recovery;
 7. renderer reload/reopen during a turn;
-8. at least one authenticated connector/MCP catalog -> select -> tool execution journey;
-9. creation flow from the approved reference capture.
+8. authenticated connector/MCP catalog -> select -> tool execution;
+9. the approved reference New/+ creation journey.
 
-Marker prompts such as `PR7_A_OK`, `BENCH_OK`, `FABUSHI-*-ONLY-*`, or `CANDIDATE-LIFECYCLE-OK` may remain diagnostic cases but cannot be the only chat proof.
+Marker prompts may remain diagnostics but cannot be the only proof.
+
+### Removal acceptance
+
+For every current Fabushi subsystem classified `extra-to-remove`, acceptance must prove:
+
+- source removed;
+- navigation/control removed;
+- background process/service removed;
+- package dependency removed when no longer used;
+- storage migration/export completed if required;
+- packaged app contains no runtime entrypoint for it.
 
 ### Latency acceptance
 
-Record at least 20 simple live turns and report p50/p95 local-paint, acceptance, first-output, first-text, and completion. A turn that reaches the outer 180-second test watchdog is a latency failure even if it eventually completes.
+Record at least 20 simple live turns and report p50/p95 local-paint, acceptance, first-output, first-text, and completion. Reaching a 180-second outer watchdog is a latency failure even if the turn eventually completes.
 
 ### Power acceptance
 
 On the packaged candidate:
 
-- record process tree before interaction;
+- record the full process tree before interaction;
 - warm for five minutes;
 - sample visible idle for ten minutes;
-- sample hidden idle for ten minutes with remote computer background capability disabled;
-- repeat with the background capability explicitly enabled to quantify the feature cost;
-- attach CPU/memory/process/network samples and an Activity Monitor / battery menu capture.
+- sample hidden idle for ten minutes;
+- verify no unmatched Fabushi-only helper/service remains alive;
+- attach CPU/memory/process/network samples and an Activity Monitor/battery-menu capture.
 
 ## 13. Acceptance criteria / Definition of Done
 
 - **AC-01:** The exact packaged candidate answers all required ordinary live-provider prompts with canonical completed/failed terminal state; none remains indefinitely at “正在思考”.
-- **AC-02:** No renderer-generated synthetic assistant “thinking” event exists before canonical Host acceptance.
+- **AC-02:** No renderer-generated synthetic assistant “thinking” event exists before canonical runtime acceptance.
 - **AC-03:** Concurrent Agent acceptance/stream/final events remain isolated without fallback target guessing.
-- **AC-04:** A provider that emits no first output triggers the configured watchdog and bounded retry/terminal failure; the UI leaves spinning state.
-- **AC-05:** Supported providers stream partial output; Chat Completions/Anthropic are not intentionally buffered when upstream streaming is available.
+- **AC-04:** A provider that emits no first output triggers the Grok-equivalent watchdog and bounded retry/terminal failure.
+- **AC-05:** Supported providers stream partial output with Grok-equivalent attempt lifecycle.
 - **AC-06:** Latency artifacts meet PERF-001 through PERF-005 and show p50/p95, not only eventual completion.
-- **AC-07:** “Plugins” opens a dedicated connector/plugin surface and a real auth/account/server/tool journey completes in the packaged app.
-- **AC-08:** Mini Apps remain independently accessible and are not presented as the Plugins implementation.
-- **AC-09:** The approved New/+ reference journey is reproduced and verified by side-by-side video/screenshots.
-- **AC-10:** The canonical desktop Agent orchestration/control plane conforms to ARCH-001 through ARCH-008.
-- **AC-11:** With background computer control disabled, the remote-device helper is absent and the packaged app satisfies POWER-008; the macOS supplemental energy check in POWER-009 also passes.
-- **AC-12:** Hiding/closing the window enters a measurable low-power profile and does not keep unnecessary provider/Agent activity alive.
-- **AC-13:** No credentials/secrets appear in renderer state, logs, traces, or evidence bundles.
-- **AC-14:** Existing user account/Agent/conversation/Mini App data survives migration and rollback testing.
-- **AC-15:** Exact-HEAD GitHub Actions tests, signed packaged acceptance, merge SHA, and canonical-main release are all separately recorded. A green PR without canonical-main release evidence is not release completion.
+- **AC-07:** Plugins/connectors/MCP reproduce the mapped Grok catalog/auth/account/server/tool behavior in the packaged app.
+- **AC-08:** The approved New/+ reference journey is reproduced and verified by side-by-side video/screenshots.
+- **AC-09:** The complete frozen Grok source inventory has a port-manifest row; there are zero silently skipped executable source files.
+- **AC-10:** Every executable Grok application module is represented by a Rust counterpart or an explicitly justified non-code/platform exception; final manifest has no `pending` or `compatibility-only` rows.
+- **AC-11:** The canonical Fabushi source folder hierarchy mirrors the Grok source hierarchy and passes the automated tree-parity gate.
+- **AC-12:** There are zero unauthorized extra shipping Fabushi code modules/surfaces without a Grok counterpart.
+- **AC-13:** Legacy Fabushi parallel runtimes/compatibility shells are deleted from the production path; there is exactly one canonical implementation per reference subsystem.
+- **AC-14:** Non-allowlisted JS/TS application logic is absent. Remaining JS/TS is only platform-required bootstrap/generated glue with no product state machine.
+- **AC-15:** Rust process/module boundaries reproduce Grok’s renderer/main/preload/coordinator/host/shared/packages ownership rather than collapsing into a different monolith.
+- **AC-16:** With inactive background features, the packaged app satisfies POWER-008 and the macOS supplemental energy check in POWER-009.
+- **AC-17:** No credentials/secrets appear in frontend state, logs, traces, or evidence bundles.
+- **AC-18:** Required retained user data survives migration; data for removed Fabushi-only features has an explicit export/backup decision.
+- **AC-19:** Exact-HEAD GitHub Actions tests, signed packaged acceptance, merge SHA, and canonical-main release are all separately recorded. A green PR without canonical-main release evidence is not release completion.
+- **AC-20:** A final diff report lists every Grok reference source file and its Rust target, plus every deleted Fabushi-only source path, so reviewers can verify the port was actually performed one by one.
 
 ## 14. Release / migration / rollback
 
-Implementation must be delivered from a single recovery branch (or a documented sequence of small protected PRs) based on the canonical main that contains this spec.
+Implementation must be delivered from the canonical main containing this spec.
 
 Migration order:
 
-1. instrumentation and watchdog/stream correctness;
-2. typed ID/submission-journal compatibility layer;
-3. TypeScript coordinator/Host ownership cutover;
-4. Plugins/connectors surface;
-5. creation/visual parity;
-6. power lifecycle;
-7. removal of obsolete Rust/renderer lifecycle compatibility paths only after packaged acceptance.
+1. freeze reference inventory and create the one-to-one port manifest;
+2. create the mirrored Rust folder/crate skeleton;
+3. translate shared contracts and coordinator;
+4. translate Host/runner/transcript/provider stack;
+5. translate Plugins/MCP/electron-main/preload;
+6. translate frontend/product state;
+7. migrate/export required retained user data;
+8. delete every Fabushi-only/unmapped shipping subsystem and old parallel runtime tree;
+9. run structural parity, behavioral, performance, power, signed packaged acceptance;
+10. merge;
+11. verify canonical-main release and published assets.
 
-Rollback must preserve the previous persistence schema or provide a backward reader. A rollback must not strand accepted turns, corrupt Agent transcripts, or lose connector account metadata.
+Rollback must operate at a release boundary. Git history and tagged artifacts provide code rollback; the production binary must not ship both old and new architectures just to make rollback easier.
 
-Release gate order is: implementation complete -> GitHub Actions tests -> exact-HEAD signed packaged acceptance -> merge -> canonical-main release workflow -> published artifact verification.
+No release is allowed while:
+
+- the port manifest is incomplete;
+- any executable Grok module remains unported;
+- unauthorized extra Fabushi shipping modules remain;
+- a legacy compatibility runtime is still required for ordinary operation;
+- the folder-tree parity gate fails.
+
+Release gate order remains: implementation complete -> GitHub Actions tests -> exact-HEAD signed packaged acceptance -> merge -> canonical-main release workflow -> published artifact verification.
 
 ## 15. Observability / evidence
 
@@ -685,7 +844,7 @@ The evidence must make it possible to answer “where did this turn spend time?�
 | PERF-001..005 | blocked | Requires exact packaged live-provider timing evidence. |
 | CONN-001..010 | blocked | Current Plugins action routes to Mini Apps; full parity not implemented. |
 | UI-001..006 | blocked | Reference capture set not yet attached. |
-| ARCH-001..008 | blocked | Current canonical user-visible run lifecycle is split across TypeScript/Electron/Rust and requires cutover. |
+| ARCH-001..016 | blocked | Current Fabushi tree is not yet a one-to-one Rust mirror of the frozen Grok source tree; manifest, translation, deletion, and structural gates remain incomplete. |
 | POWER-001..009 | blocked | Process-level measurement and demand-driven lifecycle work not yet completed. |
 | OBS-001..005 | blocked | Required parity evidence bundle not yet produced. |
 | AC-01..15 | blocked | This document defines the recovery gate; no implementation completion is claimed. |
