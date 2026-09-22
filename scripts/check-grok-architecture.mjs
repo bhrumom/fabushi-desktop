@@ -115,6 +115,23 @@ for (const [domain, expected] of Object.entries(expectedCounts)) {
   if (actual !== expected) fail(`${domain} expected ${expected} frozen modules, found ${actual}`);
 }
 
+const coordinatorMainPath = path.join(root, 'source/node-agent-coordinator/src/main.rs');
+if (fs.existsSync(coordinatorMainPath)) {
+  const coordinatorMain = fs.readFileSync(coordinatorMainPath, 'utf8');
+  if (coordinatorMain.includes('env::var("MAHAYANA_API_BASE_URL")')) {
+    fail('product API must not be reused as the Host gateway in Mahayana Coordinator');
+  }
+  for (const required of [
+    'read_gateway_discovery',
+    'dispatch_http_json',
+    'stream_http_events',
+    'gateway_discovery_path',
+  ]) {
+    if (!coordinatorMain.includes(required)) {
+      fail('shipping Coordinator must retain Grok Host gateway transport: missing ' + required);
+    }
+  }
+}
 const sourceHostMainPath = path.join(root, 'source/host/app/src/main.rs');
 if (!fs.existsSync(sourceHostMainPath)) {
   fail('shipping Host binary must be owned by source/host/app/src/main.rs');
