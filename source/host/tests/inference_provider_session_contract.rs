@@ -180,7 +180,7 @@ fn openrouter_resumes_only_from_an_accepted_tool_boundary_checkpoint() {
     let mut resumed_transport = FakeOpenRouterTransport {
         responses: VecDeque::from([vec![json!({
             "choices":[{"delta":{"content":"done"}}]
-        })]),
+        })]]),
         requests: Vec::new(),
     };
     let mut resumed_tool_calls = 0_usize;
