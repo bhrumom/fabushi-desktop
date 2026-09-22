@@ -391,6 +391,22 @@ impl GatewayStream {
     }
 }
 
+impl Drop for GatewayStream {
+    fn drop(&mut self) {
+        let Self::Tls(stream) = self else {
+            return;
+        };
+        stream.conn.send_close_notify();
+        while stream.conn.wants_write() {
+            match stream.conn.write_tls(&mut stream.sock) {
+                Ok(0) | Err(_) => break,
+                Ok(_) => {}
+            }
+        }
+        let _ = stream.sock.flush();
+    }
+}
+
 impl Read for GatewayStream {
     fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
         match self {
