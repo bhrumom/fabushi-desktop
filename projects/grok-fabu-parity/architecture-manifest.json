@@ -11967,7 +11967,7 @@
       "targetPath": "source/node-agent-coordinator/src/routed_mcp_bridge.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "3a63b97317ad688dc32886a036d0def2b8529897",
       "architecturalRole": "coordinator/mcp-relay",
       "processOrPackage": "mahayana-coordinator",
@@ -11976,9 +11976,10 @@
       ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/node-agent-coordinator/tests/routed_mcp_http.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial parity: private endpoint JSON-RPC semantics, body limits, tool catalog/call routing and MCP result normalization are implemented; production loopback server lifecycle remains."
+      "notes": "Final parity evidence: private secret-scoped loopback HTTP lifecycle, request/body limits, initialize/initialized, tools/list, tools/call routing, read-only annotations, MCP result normalization, server shutdown, and live loopback contract tests are implemented."
     },
     {
       "referencePath": "source/node-agent-coordinator/telemetry/transport-stage-recorder.ts",
