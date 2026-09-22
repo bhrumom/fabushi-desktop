@@ -204,6 +204,8 @@ fn main() {
             host_tx: host_tx.clone(),
         }),
         events: gateway_events.clone(),
+        local_exec: None,
+        webauthn: None,
         config: gateway_config.clone(),
         started_at: gateway_started_at,
     }) {
