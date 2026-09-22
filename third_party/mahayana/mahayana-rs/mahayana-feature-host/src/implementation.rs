@@ -8362,7 +8362,7 @@ impl FeatureHostController {
                     timestamp: timestamp(),
                     role: MessageRole::User,
                     text: text.clone(),
-                    operation_id: None,
+                    operation_id: Some(operation_id.clone()),
                 });
                 state.events.push_back(HostEvent::OperationStarted {
                     timestamp: timestamp(),
