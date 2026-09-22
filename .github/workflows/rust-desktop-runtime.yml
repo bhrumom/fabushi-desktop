@@ -157,6 +157,8 @@ jobs:
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
       - name: Check Electron Host boundary
         run: node --test desktop/electron/host-process.test.cjs
+      - name: Test Grok preload Coordinator port contract
+        run: node --experimental-strip-types --test source/electron-preload/coordinator-port-bridge.test.ts
       - name: Check Agent workspace architecture boundary
         run: node desktop/scripts/check-agent-workspace-boundary.mjs
       - name: Check Grok architecture inventory
