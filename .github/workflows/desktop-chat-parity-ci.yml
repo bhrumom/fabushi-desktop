@@ -1,0 +1,113 @@
+name: Desktop Chat Parity CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "desktop/**"
+      - "frontend/apps/web/**"
+      - "projects/desktop-chat-streaming-parity/**"
+      - ".github/workflows/desktop-chat-parity-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-chat-parity-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  renderer:
+    name: Renderer typecheck and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        working-directory: .
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - name: Enforce Agent workspace architecture boundary
+        run: node scripts/check-agent-workspace-boundary.mjs
+      - run: npm run typecheck
+      - run: npm run build:renderer
+      - name: Enforce built desktop bundle boundary
+        run: node scripts/check-desktop-bundle.mjs
+
+  focused-electron-e2e:
+    name: Focused Electron chat E2E
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        working-directory: .
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: third_party/mahayana/mahayana-rs -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Build deterministic Mahayana test host
+        run: npm run build:host:ci
+      - run: npm run build:renderer
+      - name: Enforce built desktop bundle boundary
+        run: node scripts/check-desktop-bundle.mjs
+      - name: Run Grok Agent shell and Mahayana chat regression
+        env:
+          FABUSHI_FEATURE_HOST_MODE: test
+          MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts e2e/grok-parity.spec.ts --grep "Mahayana renders one Hermes-style assistant turn|desktop uses the Fabushi-owned Grok parity surface"
+      - name: Upload Playwright evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-chat-parity-playwright-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            desktop/playwright-report
+            desktop/test-results
+          if-no-files-found: ignore

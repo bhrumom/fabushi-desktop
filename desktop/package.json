@@ -1,0 +1,155 @@
+{
+  "name": "@fabushi/desktop",
+  "version": "1.2.75",
+  "description": "Fabushi Electron desktop client",
+  "homepage": "https://fabushi.ombhrum.com/",
+  "author": "bhrumom",
+  "desktopName": "com.ombhrum.fabushi",
+  "private": true,
+  "type": "module",
+  "main": "electron/bootstrap.cjs",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 1420",
+    "prebuild:renderer": "node scripts/prepare-desktop-window-branding.mjs",
+    "typecheck": "tsc --noEmit",
+    "build:renderer": "tsc --noEmit && vite build && node scripts/check-desktop-bundle.mjs",
+    "build:host": "cargo build --release --manifest-path ../source/host/app/Cargo.toml --bin mahayana-app-host && cargo build --release --manifest-path ../source/node-agent-coordinator/Cargo.toml && node scripts/stage-host.mjs release",
+    "build:host:ci": "cargo build --profile ci --manifest-path ../source/host/app/Cargo.toml --bin mahayana-app-host && cargo build --profile ci --manifest-path ../source/node-agent-coordinator/Cargo.toml && node scripts/stage-host.mjs ci",
+    "build": "npm run build:host && npm run build:renderer",
+    "package": "npm run build:host && npm run build:renderer && electron-builder",
+    "test:credential-gateway": "node --test electron/credential-gateway.test.cjs",
+    "test:e2e": "playwright test",
+    "test:openbot-parity": "node scripts/assert-openbot-parity.mjs",
+    "start": "electron ."
+  },
+  "dependencies": {
+    "@tiptap/core": "3.14.0",
+    "@tiptap/extension-link": "3.14.0",
+    "@tiptap/extension-placeholder": "3.14.0",
+    "@tiptap/pm": "3.14.0",
+    "@tiptap/react": "3.14.0",
+    "@tiptap/starter-kit": "3.14.0",
+    "electron-updater": "^6.8.9",
+    "lucide-react": "^1.14.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "^24.0.0",
+    "@types/react": "19.1.10",
+    "@types/react-dom": "19.1.7",
+    "@vitejs/plugin-react": "4.3.4",
+    "electron": "43.4.0",
+    "electron-builder": "26.15.3",
+    "typescript": "5.9.2",
+    "vite": "6.4.3"
+  },
+  "build": {
+    "appId": "com.ombhrum.fabushi",
+    "productName": "Fabushi",
+    "executableName": "fabushi",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/bin",
+        "to": "bin"
+      },
+      {
+        "from": "resources/asr",
+        "to": "asr",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/computer-control",
+        "to": "computer-control",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.lifestyle",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "artifactName": "fabushi-${version}-macos-${arch}.${ext}",
+      "entitlements": "resources/mac/entitlements.plist",
+      "entitlementsInherit": "resources/mac/entitlements.plist",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音消息、语音输入和离线语音识别。",
+        "NSCameraUsageDescription": "全球法布施使用摄像头进行视频通话。"
+      },
+      "icon": "resources/icon.png",
+      "forceCodeSigning": true
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "fabushi-${version}-setup.${ext}",
+      "icon": "resources/icon.png"
+    },
+    "linux": {
+      "category": "Utility",
+      "maintainer": "bhrumom",
+      "syncDesktopName": true,
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "artifactName": "fabushi-${version}-${arch}.${ext}"
+    },
+    "deb": {
+      "packageName": "fabushi",
+      "artifactName": "fabushi-${version}-${arch}.${ext}"
+    },
+    "protocols": [
+      {
+        "name": "Fabushi",
+        "schemes": [
+          "fabushi"
+        ]
+      }
+    ],
+    "mas": {
+      "target": [
+        "mas"
+      ],
+      "category": "public.app-category.lifestyle",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "entitlements": "resources/mas/entitlements.mas.plist",
+      "entitlementsInherit": "resources/mas/entitlements.mas.inherit.plist",
+      "provisioningProfile": "resources/mas/Fabushi_AppStore.provisionprofile",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音输入和离线语音识别。"
+      },
+      "forceCodeSigning": true,
+      "icon": "resources/icon.png"
+    },
+    "afterSign": "scripts/notarize-after-sign.cjs",
+    "copyright": "Copyright © 2026 Fabushi. All rights reserved.",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "bhrumom",
+        "repo": "fabushi-desktop",
+        "releaseType": "release"
+      }
+    ]
+  }
+}

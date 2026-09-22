@@ -1,0 +1,152 @@
+import { Monitor, Pin, Search, Settings, X } from 'lucide-react';
+import React from 'react';
+import { FabButton } from '../ui/primitives/fab-primitives';
+import FabAvatar, { type FabAvatarInputState } from '../ui/avatar/fab-avatar';
+import type {
+  ComputerControlLeaseState,
+  ComputerStatus,
+  InferenceProvider,
+} from '../../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import type { RemoteComputerDesktopState } from '../../../frontend/apps/web/src/lib/remote-computer/desktop-peer';
+import AgentSettingsPanel, { type AgentSettingsProfileUpdate, type AgentSettingsProfileValue } from './agent-settings-panel';
+import styles from './agent-overlays.module.css';
+
+export interface AgentOverlayComputerProps {
+  agentId: string;
+  open: boolean;
+  label: string;
+  status: string;
+  online: boolean;
+  aiControlEnabled: boolean;
+  remoteControlEnabled: boolean;
+  state: RemoteComputerDesktopState | null;
+  capabilityStatus?: ComputerStatus | null;
+  control?: { agentId: string; leaseId: string; lease: ComputerControlLeaseState } | null;
+  onToggle(): void;
+  onRefreshPairingCode(): void;
+  onApproveSession(sessionId: string): void;
+  onDenySession(sessionId: string): void;
+  onDisconnect(): void;
+  onTakeControl(): void;
+  onReleaseControl(): void;
+  onToggleRemoteControl(): void;
+  onOpenControlPage(): void;
+}
+
+export interface AgentOverlaySettingsProps {
+  agentId: string;
+  open: boolean;
+  value: AgentSettingsProfileValue;
+  pending: import('./agent-settings-controller').AgentSettingsPending;
+  error: string | null;
+  onToggle(): void;
+  onUpdateProfile(profile: AgentSettingsProfileUpdate): Promise<unknown>;
+  onSetNotifications(enabled: boolean): Promise<unknown>;
+  onSetInferenceProvider(provider: InferenceProvider | 'account-default'): Promise<unknown>;
+}
+
+export interface AgentOverlaysProps {
+  title: string;
+  description: string;
+  botId: string;
+  botState: FabAvatarInputState;
+  pinned: boolean;
+  overlay: boolean;
+  computer: AgentOverlayComputerProps;
+  settings: AgentOverlaySettingsProps;
+  onClose(): void;
+  onSearch(): void;
+  onTogglePin(): void;
+}
+
+/**
+ * Agent-owned secondary surface for profile and Computer.
+ *
+ * Messenger-only concepts such as voice/video calls, archive and payment are
+ * intentionally absent. Computer is projected as a first-class Agent
+ * capability while its executor remains the installed Fabushi machine.
+ */
+export default function AgentOverlays(props: AgentOverlaysProps) {
+  const { computer, settings } = props;
+  const pending = computer.state?.pendingAuthorization;
+  return <aside className={styles.root} data-testid="agent-overlays" data-overlay={props.overlay || undefined}>
+    <header className={styles.header}>
+      <strong>Agent</strong>
+      <FabButton variant="bare" type="button" onClick={props.onClose} aria-label="Close Agent info"><X size={17} /></FabButton>
+    </header>
+
+    <section className={styles.identity}>
+      <FabAvatar identity={props.botId} state={props.botState} size={88} label={props.title} active={props.botState !== 'idle'} />
+      <strong>{props.title}</strong>
+      <small>{props.description}</small>
+      <div className={styles.quickActions}>
+        <FabButton variant="bare" type="button" onClick={props.onSearch}><Search size={17} /><span>Search</span></FabButton>
+        <FabButton variant="bare" type="button" data-active={props.pinned || undefined} onClick={props.onTogglePin}><Pin size={17} /><span>{props.pinned ? 'Unpin' : 'Pin'}</span></FabButton>
+        <FabButton variant="bare" type="button" data-testid="bot-computer-toggle" data-active={computer.open || undefined} onClick={computer.onToggle}><Monitor size={17} /><span>Computer</span></FabButton>
+        <FabButton variant="bare" type="button" data-testid="agent-settings-toggle" data-active={settings.open || undefined} onClick={settings.onToggle}><Settings size={17} /><span>Settings</span></FabButton>
+      </div>
+    </section>
+
+    {settings.open ? <AgentSettingsPanel
+      agentId={settings.agentId}
+      value={settings.value}
+      pending={settings.pending}
+      error={settings.error}
+      onUpdateProfile={settings.onUpdateProfile}
+      onSetNotifications={settings.onSetNotifications}
+      onSetInferenceProvider={settings.onSetInferenceProvider}
+    /> : null}
+
+    {computer.open ? <section className={styles.computer} data-testid="bot-computer-panel" data-agent-id={computer.agentId}>
+      <header>
+        <span className={styles.computerIcon}><Monitor size={18} /></span>
+        <span><strong>This computer</strong><small>{computer.label}</small></span>
+        <i data-live={computer.state?.channelOpen ? 'active' : computer.online ? 'online' : 'offline'} />
+      </header>
+      <div className={styles.metrics}>
+        <span><small>Device</small><strong>{computer.status}</strong></span>
+        <span><small>Authorized clients</small><strong>{computer.state?.clients.length ?? 0}</strong></span>
+        <span><small>Agent control</small><strong>{computer.aiControlEnabled ? 'Allowed' : 'Off'}</strong></span>
+      </div>
+      {computer.capabilityStatus ? <div className={styles.metrics} data-testid="agent-computer-permissions">
+        <span><small>Screen Recording</small><strong>{computer.capabilityStatus.screenRecordingGranted ? 'Granted' : 'Required'}</strong></span>
+        <span><small>Accessibility</small><strong>{computer.capabilityStatus.accessibilityGranted ? 'Granted' : 'Required'}</strong></span>
+        <span><small>Capture</small><strong>{computer.capabilityStatus.captureSupported ? 'Supported' : 'Unavailable'}</strong></span>
+        <span><small>Input</small><strong>{computer.capabilityStatus.inputSupported ? 'Supported' : 'Unavailable'}</strong></span>
+        <span><small>Local execution</small><strong>{computer.capabilityStatus.localExecutionEnabled ? 'Enabled' : 'Off'}</strong></span>
+        <span><small>Platform</small><strong>{computer.capabilityStatus.platform}</strong></span>
+      </div> : null}
+      <p>The Computer surface belongs to this Agent. Execution is bound to the machine where Fabushi is installed, not a cloud computer.</p>
+
+      <div className={styles.request} data-testid="agent-computer-takeover">
+        <span>
+          <small>Control lease</small>
+          <strong>{computer.control?.agentId === computer.agentId ? 'You have control' : 'Agent control'}</strong>
+        </span>
+        {computer.control?.agentId === computer.agentId
+          ? <FabButton variant="bare" type="button" onClick={computer.onReleaseControl}>Release Control</FabButton>
+          : <FabButton variant="bare" type="button" onClick={computer.onTakeControl}>Take Control</FabButton>}
+      </div>
+
+      {computer.remoteControlEnabled && computer.state?.registration?.pairingCode ? <div className={styles.request}>
+        <span><small>Pairing code</small><strong>{computer.state.registration.pairingCode}</strong></span>
+        <FabButton variant="bare" type="button" onClick={computer.onRefreshPairingCode}>Refresh</FabButton>
+      </div> : null}
+
+      {pending ? <div className={styles.request} data-testid="remote-session-consent">
+        <span><small>Remote request</small><strong>{pending.clientLabel || 'Paired device'}</strong></span>
+        <FabButton variant="bare" type="button" onClick={() => computer.onApproveSession(pending.sessionId)}>Allow once</FabButton>
+        <FabButton variant="bare" type="button" data-danger="true" onClick={() => computer.onDenySession(pending.sessionId)}>Deny</FabButton>
+      </div> : null}
+
+      {computer.state?.activeSessionId ? <FabButton variant="bare" type="button" className={styles.disconnect} onClick={computer.onDisconnect}>Disconnect active session</FabButton> : null}
+      <div className={styles.computerActions}>
+        <FabButton variant="bare" type="button" data-enabled={computer.remoteControlEnabled || undefined} onClick={computer.onToggleRemoteControl}>
+          {computer.remoteControlEnabled ? 'Disable remote control' : 'Enable remote control'}
+        </FabButton>
+        <FabButton variant="bare" type="button" onClick={computer.onOpenControlPage}>Open Computer</FabButton>
+      </div>
+      {computer.state?.error ? <small className={styles.error}>{computer.state.error}</small> : null}
+    </section> : null}
+  </aside>;
+}
