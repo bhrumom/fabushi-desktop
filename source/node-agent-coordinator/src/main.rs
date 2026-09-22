@@ -599,6 +599,25 @@ fn dispatch_to_host(
     let dispatch_state = Arc::clone(state);
     thread::spawn(move || {
         let result = dispatch_http_json(&connection, &method, args);
+        if matches!(result, Err(GatewayDispatchError::Unreachable { .. })) {
+            // A Host crash closes the in-flight HTTP socket before the process
+            // waiter can reject its generation. Give that owner a short window
+            // to settle the request as COORDINATOR_DISCONNECTED. If the Host is
+            // still alive, this is a genuine gateway/network failure and the
+            // dispatch worker below owns the reply.
+            for _ in 0..20 {
+                let host_alive = dispatch_state
+                    .host_stdin
+                    .lock()
+                    .ok()
+                    .and_then(|active| active.as_ref().map(|entry| entry.generation))
+                    == Some(generation);
+                if !host_alive {
+                    return;
+                }
+                thread::sleep(Duration::from_millis(5));
+            }
+        }
         let pending_request = dispatch_state
             .pending
             .lock()
