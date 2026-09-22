@@ -16,7 +16,7 @@ const { MessagingSignalingClient } = require('./messaging-signaling-client.cjs')
 const { createAppAgentSurfaceServer } = require('./app-agent-surface-server.cjs');
 const { RemoteDeviceAgentSupervisor } = require('./remote-device-agent-supervisor.cjs');
 const { RustDeskSidecarProcess } = require('./rustdesk-sidecar-process.cjs');
-const { normalizeDesktopUpdateStatus } = require('./update-state.cjs');
+const { normalizeDesktopUpdateStatus, projectDesktopUpdateStatus } = require('./update-state.cjs');
 
 const appDataOverride = process.env.FABUSHI_APP_DATA?.trim();
 if (appDataOverride) app.setPath('userData', path.resolve(appDataOverride));
@@ -621,9 +621,12 @@ function broadcastNativeEvent(eventName, payload) {
     });
   }
   if (!nativeEdgeServer) return;
+  const rendererPayload = eventName === 'update-status'
+    ? projectDesktopUpdateStatus(payload, app.getVersion())
+    : payload;
   for (const win of BrowserWindow.getAllWindows()) {
     if (win.isDestroyed() || win.webContents.isDestroyed()) continue;
-    nativeEdgeServer.emit(win.webContents, eventName, payload);
+    nativeEdgeServer.emit(win.webContents, eventName, rendererPayload);
   }
 }
 

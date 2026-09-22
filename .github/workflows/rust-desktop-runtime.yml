@@ -156,7 +156,9 @@ jobs:
       - name: Install desktop dependencies
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
       - name: Check Electron Host boundary
-        run: node --test desktop/electron/host-process.test.cjs
+        run: |
+          node --test desktop/electron/host-process.test.cjs desktop/electron/update-state.test.cjs
+          node --test --test-name-pattern="desktop update bridge projects legacy" desktop/electron/native-capability-handlers.test.cjs
       - name: Compile Grok Electron boundary contracts
         run: ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.grok-electron.json
       - name: Test Grok Electron boundary contracts

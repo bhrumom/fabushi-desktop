@@ -1,6 +1,7 @@
 'use strict';
 
 const { inspectOfflineAsr, downloadOfflineAsrModel, transcribeOfflineAudio } = require('./offline-asr.cjs');
+const { effectiveDesktopUpdateTrack, normalizeDesktopUpdateTrack, projectDesktopUpdateStatus } = require('./update-state.cjs');
 
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -13,7 +14,7 @@ const MAX_DOWNLOAD_BYTES = 64 * 1024 * 1024;
 const MAX_DIAGNOSTIC_BYTES = 256 * 1024;
 const SENSITIVE_KEY = /(secret|token|password|authorization|cookie|credential|private.?key)/i;
 const LOCAL_TOOL_PERMISSIONS = new Set(['never', 'ask', 'always']);
-const UPDATE_TRACKS = new Set(['stable', 'beta', 'alpha']);
+const UPDATE_TRACKS = new Set(['stable', 'nightly', 'dogfood', 'beta', 'alpha']);
 const GLOBAL_DHARMA_ID = 'global-dharma';
 const LOCAL_PRAYER_WHEEL_CAPABILITY = 'local.prayer-wheel.start';
 const LOCAL_PRAYER_WHEEL_LIFETIME_SKU = 'local-prayer-wheel.lifetime';
@@ -349,7 +350,21 @@ function createNativeCapabilityHandlers(deps) {
       type: 'upToDate',
       version: app.getVersion(),
     };
-    return { ...status, track: status?.track ?? state.preferences?.updateTrack ?? 'stable' };
+    const trackOverride = state.preferences?.updateTrack ?? null;
+    return {
+      ...status,
+      track: effectiveDesktopUpdateTrack(status?.track ?? trackOverride ?? 'stable'),
+      trackOverride,
+      autoUpdateWhenIdleOptIn: state.preferences?.autoUpdateWhenIdle === true,
+    };
+  }
+
+  function rendererUpdateStatus(status) {
+    return projectDesktopUpdateStatus(status, app.getVersion(), {
+      currentTrack: status?.track,
+      trackOverride: status?.trackOverride,
+      autoUpdateWhenIdleOptIn: status?.autoUpdateWhenIdleOptIn === true,
+    });
   }
 
   async function writeUpdateStatus(status) {
@@ -503,28 +518,36 @@ function createNativeCapabilityHandlers(deps) {
       return enabled;
     },
 
-    getUpdateStatus() {
-      return currentUpdateStatus();
+    async getUpdateStatus() {
+      return rendererUpdateStatus(await currentUpdateStatus());
     },
 
     async checkForUpdates() {
       if (!app.isPackaged || !autoUpdater?.checkForUpdates) {
-        return writeUpdateStatus({ type: 'upToDate', version: app.getVersion(), source: 'local-build' });
+        return rendererUpdateStatus(await writeUpdateStatus({
+          type: 'upToDate',
+          version: app.getVersion(),
+          source: 'local-build',
+        }));
       }
       await writeUpdateStatus({ type: 'checking', version: app.getVersion() });
       try {
         await autoUpdater.checkForUpdates();
-        return currentUpdateStatus();
+        return rendererUpdateStatus(await currentUpdateStatus());
       } catch (error) {
-        return writeUpdateStatus({ type: 'error', message: error instanceof Error ? error.message : String(error) });
+        return rendererUpdateStatus(await writeUpdateStatus({
+          type: 'error',
+          message: error instanceof Error ? error.message : String(error),
+        }));
       }
     },
 
     async setUpdateTrack(params) {
-      const track = cleanString(params.track ?? 'stable', 20);
-      if (!UPDATE_TRACKS.has(track)) throw new Error('Unsupported update track.');
+      const requestedTrack = cleanString(params.track ?? 'stable', 20);
+      if (!UPDATE_TRACKS.has(requestedTrack)) throw new Error('Unsupported update track.');
+      const track = normalizeDesktopUpdateTrack(requestedTrack);
       await setPreference('updateTrack', track);
-      return { ...(await currentUpdateStatus()), track };
+      return rendererUpdateStatus(await currentUpdateStatus());
     },
 
     async quitAndInstallUpdate(params) {
@@ -578,7 +601,8 @@ function createNativeCapabilityHandlers(deps) {
     },
 
     async setAutoUpdateWhenIdleOptIn(params) {
-      return setPreference('autoUpdateWhenIdle', params.enabled === true);
+      await setPreference('autoUpdateWhenIdle', params.enabled === true);
+      return rendererUpdateStatus(await currentUpdateStatus());
     },
 
     async getComputeMigrationStatus() {

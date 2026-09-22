@@ -86,7 +86,9 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
       - name: Validate production Renderer bridge contracts
-        run: node --test electron/coordinator-renderer-port.test.cjs electron/production-renderer-bridge.test.cjs
+        run: |
+          node --test electron/coordinator-renderer-port.test.cjs electron/production-renderer-bridge.test.cjs electron/update-state.test.cjs
+          node --test --test-name-pattern="desktop update bridge projects legacy" electron/native-capability-handlers.test.cjs
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1

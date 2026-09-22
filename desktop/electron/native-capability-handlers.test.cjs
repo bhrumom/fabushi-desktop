@@ -469,6 +469,46 @@ test('diagnostic reports redact nested secrets before persistence', async () => 
 });
 
 
+test('desktop update bridge projects legacy flat updater state into the recovered Grok contract', async () => {
+  await harness(async ({ handlers, getState }) => {
+    const initial = await handlers.getUpdateStatus();
+    assert.deepEqual(initial.state, {
+      type: 'downloading',
+      version: '2.0.0',
+      progress: 0.42,
+    });
+    assert.equal(initial.currentVersion, 'test');
+    assert.equal(initial.currentTrack, 'dogfood');
+    assert.equal(initial.trackOverride, 'dogfood');
+    assert.deepEqual(initial.availableTracks, ['stable', 'dogfood']);
+    assert.equal(initial.autoUpdateWhenIdleOptIn, false);
+
+    const retargeted = await handlers.setUpdateTrack({ track: 'nightly' });
+    assert.equal(getState().preferences.updateTrack, 'nightly');
+    assert.equal(retargeted.currentTrack, 'stable', 'disabled nightly track folds to the shipping stable track');
+    assert.equal(retargeted.trackOverride, 'nightly');
+    assert.deepEqual(retargeted.availableTracks, ['stable']);
+
+    const optedIn = await handlers.setAutoUpdateWhenIdleOptIn({ enabled: true });
+    assert.equal(getState().preferences.autoUpdateWhenIdle, true);
+    assert.equal(optedIn.autoUpdateWhenIdleOptIn, true);
+    assert.equal(optedIn.state.type, 'downloading');
+
+    const checked = await handlers.checkForUpdates();
+    assert.equal(checked.state.type, 'idle');
+    assert.equal(checked.currentTrack, 'stable');
+    assert.equal(checked.trackOverride, 'nightly');
+    assert.equal(checked.autoUpdateWhenIdleOptIn, true);
+  }, {
+    initialState: {
+      preferences: { updateTrack: 'alpha', autoUpdateWhenIdle: false },
+      clientPersistence: {},
+      updateStatus: { type: 'downloading', version: '2.0.0', progress: 42 },
+    },
+  });
+});
+
+
 test('desktop update click uses live status even while persisted state is stale', async () => {
   const calls = [];
   let liveStatus = { type: 'available', version: '1.0.9' };
