@@ -4,6 +4,7 @@
 //! crate owns accepted turn execution, stream attempts, retry/checkpoint policy,
 //! cancellation and terminal settlement.
 
+pub mod extensions;
 pub mod runner;
 
 pub use runner::{
