@@ -10037,24 +10037,37 @@
       "targetPath": "source/host/src/extensions/box_lifecycle/box_lifecycle_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "1d5c429860bc44d7ad3ca3240b5d39f4dba1815e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_lifecycle/box_lifecycle_service.rs",
+        "source/host/src/extensions/box_lifecycle/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_box_lifecycle_contract.rs"
+      ],
+      "notes": "Rust service preserves the Grok async client boundary, forwards the caller cancellation signal to run-state retrieval, defaults force to false, and preserves started/reason response semantics."
     },
     {
       "referencePath": "source/host/extensions/box-lifecycle/extension.ts",
       "targetPath": "source/host/src/extensions/box_lifecycle/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "7a8a026d9da30fbeec0f8b7e2d2326cad4900aca",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_lifecycle/extension.rs",
+        "source/host/src/extensions/box_lifecycle/mod.rs",
+        "source/host/src/extensions/registry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_box_lifecycle_contract.rs"
+      ],
+      "notes": "Auth dependency and client-factory composition are implemented and contract-tested. Final status is withheld until the production Auth extension and concrete GrokBot backend client adapter are migrated and Host bootstrap starts BoxLifecycle with those real dependencies."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/agent-store-sand-files.ts",
