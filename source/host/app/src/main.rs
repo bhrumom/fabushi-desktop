@@ -8,7 +8,7 @@
 
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
-    GatewayApi, GatewayCommandError, GatewayEventHub, GatewayServerDeps, start_gateway_server,
+    GatewayApi, GatewayCommandError, GatewayCommandReport, GatewayEventHub, GatewayServerDeps, start_gateway_server,
 };
 use mahayana_host_runtime::host_discovery::{
     GatewayDiscoveryInfo, clear_gateway_discovery, write_gateway_discovery,
@@ -69,6 +69,33 @@ impl GatewayApi for UnifiedGatewayApi {
             .recv_timeout(Duration::from_secs(120))
             .map_err(|_| GatewayCommandError::Internal("Mahayana Host gateway request timed out".into()))?
     }
+
+    fn on_command_complete(&self, report: GatewayCommandReport) {
+        log_gateway_command_report("complete", &report);
+    }
+
+    fn on_command_error(&self, report: GatewayCommandReport) {
+        log_gateway_command_report("error", &report);
+    }
+}
+
+fn log_gateway_command_report(kind: &str, report: &GatewayCommandReport) {
+    let mut value = serde_json::json!({
+        "kind": kind,
+        "method": report.method,
+        "durationMs": report.duration_ms,
+        "status": report.status,
+    });
+    if let Some(request_id) = report.request_id.as_deref() {
+        value["requestId"] = serde_json::Value::String(request_id.to_string());
+    }
+    if let Some(traceparent) = report.traceparent.as_deref() {
+        value["traceparent"] = serde_json::Value::String(traceparent.to_string());
+    }
+    if let Some(error) = report.error.as_deref() {
+        value["error"] = serde_json::Value::String(error.to_string());
+    }
+    eprintln!("mahayana-host-gateway-command {value}");
 }
 
 fn dispatch_gateway_call(
