@@ -11296,7 +11296,7 @@
         "source/host/tests/inference_codex_direct_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial production parity: Rust now reads the existing private Codex ChatGPT login, refreshes expired OAuth credentials on 401, persists refreshed tokens atomically, posts the real Responses streaming endpoint with account identity, decodes SSE, and executes routed function tools through the Codex direct continuation loop. Provider selection from settings is also modeled. Final status is withheld until Claude Code and OpenRouter transports plus the shipping Coordinator InferenceRouter queue/main composition consume this provider session."
+      "notes": "Rust production provider-session now covers all three Grok local router providers: Codex uses the existing private ChatGPT login with 401 OAuth refresh and real Responses SSE/tool continuation; OpenRouter uses real chat-completions SSE with incremental text and multi-step function tools; Claude Code invokes the installed CLI and accepts the Coordinator-owned routed MCP bridge URL. Provider selection still comes from settings. Final status remains withheld until Coordinator InferenceRouter per-agent queue/main production composition consumes this module and provider-specific behavior is covered by the end-to-end Coordinator contract."
     },
     {
       "referencePath": "source/host/extensions/inference/sand-labeling.ts",

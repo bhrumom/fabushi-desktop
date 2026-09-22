@@ -3,6 +3,7 @@ use std::env;
 use std::fs;
 use std::io::{BufRead, BufReader, Read};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -10,6 +11,8 @@ use reqwest::blocking::{Client, Response};
 use serde_json::{Map, Value, json};
 use thiserror::Error;
 use uuid::Uuid;
+
+use crate::host_paths::get_sand_root_dir;
 
 use super::codex_direct_responses::{
     CodexDirectError, CodexDirectOptions, CodexDirectTool, CodexDirectTransport,
@@ -609,6 +612,445 @@ pub fn run_codex_provider_text(
         on_text_delta,
     )?;
     Ok(result.text)
+}
+
+
+pub struct RoutedProviderOptions<'a> {
+    pub data_dir: &'a Path,
+    pub tools: &'a [RoutedToolDefinition],
+    pub mcp_server_url: Option<&'a str>,
+    pub execute_tool: &'a mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    pub on_text_delta: &'a mut dyn FnMut(&str, &str),
+}
+
+pub fn run_routed_provider_text(
+    provider: RoutedProvider,
+    messages: &[ProviderMessage],
+    options: &mut RoutedProviderOptions<'_>,
+) -> Result<String, ProviderSessionError> {
+    match provider {
+        RoutedProvider::Cursor => Err(ProviderSessionError::Configuration(
+            "Cursor inference is owned by the Host/Gateway path and must not enter the local provider router."
+                .into(),
+        )),
+        RoutedProvider::Codex => run_codex_provider_text(
+            messages,
+            options.tools,
+            options.execute_tool,
+            options.on_text_delta,
+        ),
+        RoutedProvider::OpenRouter => run_openrouter_provider_text(messages, options),
+        RoutedProvider::ClaudeCode => run_claude_code_provider_text(messages, options),
+    }
+}
+
+fn provider_prompt(messages: &[ProviderMessage]) -> String {
+    let rendered = messages
+        .iter()
+        .map(|message| {
+            format!(
+                "{}: {}",
+                message.role.to_ascii_uppercase(),
+                message.content
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    format!(
+        "{GROK_ROUTER_SYSTEM_PROMPT}\n\nContinue this Grok Bot conversation.\n\n{rendered}"
+    )
+}
+
+fn openrouter_api_key(data_dir: &Path) -> Result<String, ProviderSessionError> {
+    if let Some(value) = env::var("OPENROUTER_API_KEY")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+    {
+        return Ok(value);
+    }
+    for path in [
+        data_dir.join("box-secrets.json"),
+        get_sand_root_dir().join("box-secrets.json"),
+    ] {
+        let Ok(raw) = fs::read_to_string(path) else {
+            continue;
+        };
+        let Ok(value) = serde_json::from_str::<Value>(&raw) else {
+            continue;
+        };
+        if let Some(key) = value
+            .get("secrets")
+            .and_then(Value::as_object)
+            .and_then(|secrets| secrets.get("OPENROUTER_API_KEY"))
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            return Ok(key.to_string());
+        }
+    }
+    Err(ProviderSessionError::Authentication(
+        "OpenRouter needs OPENROUTER_API_KEY. Add it in Settings -> Router.".into(),
+    ))
+}
+
+fn openrouter_tools(tools: &[RoutedToolDefinition]) -> Vec<Value> {
+    tools
+        .iter()
+        .map(|tool| {
+            json!({
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description.clone().unwrap_or_else(|| {
+                        format!("{} via {}", tool.tool_name, tool.provider_identifier)
+                    }),
+                    "parameters": tool.input_schema,
+                }
+            })
+        })
+        .collect()
+}
+
+#[derive(Default)]
+struct PartialOpenRouterToolCall {
+    id: String,
+    name: String,
+    arguments: String,
+}
+
+fn run_openrouter_provider_text(
+    messages: &[ProviderMessage],
+    options: &mut RoutedProviderOptions<'_>,
+) -> Result<String, ProviderSessionError> {
+    let api_key = openrouter_api_key(options.data_dir)?;
+    let client = Client::builder()
+        .build()
+        .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
+    let model = env::var("SAND_OPENROUTER_MODEL")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "openai/gpt-5.2".into());
+    let tool_index = options
+        .tools
+        .iter()
+        .map(|tool| (tool.name.clone(), tool))
+        .collect::<BTreeMap<_, _>>();
+    let declared_tools = openrouter_tools(options.tools);
+    let mut conversation = vec![json!({
+        "role": "system",
+        "content": GROK_ROUTER_SYSTEM_PROMPT
+    })];
+    conversation.extend(messages.iter().map(|message| {
+        json!({
+            "role": if message.role == "assistant" { "assistant" } else { "user" },
+            "content": message.content,
+        })
+    }));
+    let mut text = String::new();
+
+    for _step in 0..8 {
+        let mut request = json!({
+            "model": model,
+            "messages": conversation,
+            "stream": true,
+        });
+        if !declared_tools.is_empty() {
+            request["tools"] = Value::Array(declared_tools.clone());
+            request["tool_choice"] = Value::String("auto".into());
+        }
+        let response = client
+            .post("https://openrouter.ai/api/v1/chat/completions")
+            .header("authorization", format!("Bearer {api_key}"))
+            .header("content-type", "application/json")
+            .header("accept", "text/event-stream")
+            .header(
+                "HTTP-Referer",
+                "https://github.com/bhrumom/fabushi-desktop",
+            )
+            .header("X-Title", "Fabushi")
+            .json(&request)
+            .send()
+            .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
+        if !response.status().is_success() {
+            let status = response.status();
+            let detail = response
+                .text()
+                .unwrap_or_default()
+                .chars()
+                .take(4096)
+                .collect::<String>();
+            return Err(ProviderSessionError::Transport(format!(
+                "OpenRouter request failed ({status}{}).",
+                if detail.trim().is_empty() {
+                    String::new()
+                } else {
+                    format!(": {}", detail.trim())
+                }
+            )));
+        }
+
+        let mut partial_calls = BTreeMap::<usize, PartialOpenRouterToolCall>::new();
+        let mut step_text = String::new();
+        decode_sse_stream(response, |event| {
+            if let Some(error) = event.get("error") {
+                return Err(ProviderSessionError::Protocol(format!(
+                    "OpenRouter stream failed: {error}"
+                )));
+            }
+            let Some(delta) = event
+                .get("choices")
+                .and_then(Value::as_array)
+                .and_then(|choices| choices.first())
+                .and_then(|choice| choice.get("delta"))
+                .and_then(Value::as_object)
+            else {
+                return Ok(());
+            };
+            if let Some(content) = delta.get("content").and_then(Value::as_str) {
+                step_text.push_str(content);
+                text.push_str(content);
+                (options.on_text_delta)(content, &text);
+            }
+            if let Some(calls) = delta.get("tool_calls").and_then(Value::as_array) {
+                for call in calls {
+                    let index = call
+                        .get("index")
+                        .and_then(Value::as_u64)
+                        .unwrap_or(0) as usize;
+                    let partial = partial_calls.entry(index).or_default();
+                    if let Some(id) = call.get("id").and_then(Value::as_str) {
+                        partial.id.push_str(id);
+                    }
+                    if let Some(function) =
+                        call.get("function").and_then(Value::as_object)
+                    {
+                        if let Some(name) =
+                            function.get("name").and_then(Value::as_str)
+                        {
+                            partial.name.push_str(name);
+                        }
+                        if let Some(arguments) =
+                            function.get("arguments").and_then(Value::as_str)
+                        {
+                            partial.arguments.push_str(arguments);
+                        }
+                    }
+                }
+            }
+            Ok(())
+        })?;
+
+        if partial_calls.is_empty() {
+            return Ok(text);
+        }
+
+        let tool_calls = partial_calls
+            .iter()
+            .map(|(index, call)| {
+                json!({
+                    "index": index,
+                    "id": call.id,
+                    "type": "function",
+                    "function": {
+                        "name": call.name,
+                        "arguments": call.arguments
+                    }
+                })
+            })
+            .collect::<Vec<_>>();
+        conversation.push(json!({
+            "role": "assistant",
+            "content": if step_text.is_empty() {
+                Value::Null
+            } else {
+                Value::String(step_text)
+            },
+            "tool_calls": tool_calls,
+        }));
+
+        for (_index, call) in partial_calls {
+            let tool_call_id = if call.id.is_empty() {
+                Uuid::new_v4().to_string()
+            } else {
+                call.id
+            };
+            let result = match tool_index.get(&call.name).copied() {
+                None => json!({
+                    "isError": true,
+                    "error": format!("Unknown Fabushi tool: {}", call.name)
+                }),
+                Some(tool) => {
+                    let args =
+                        serde_json::from_str::<Value>(&call.arguments)
+                            .unwrap_or_else(|_| json!({}));
+                    match (options.execute_tool)(tool, args, &tool_call_id) {
+                        Ok(value) => value,
+                        Err(error) => json!({
+                            "isError": true,
+                            "error": error.to_string()
+                        }),
+                    }
+                }
+            };
+            conversation.push(json!({
+                "role": "tool",
+                "tool_call_id": tool_call_id,
+                "content": serde_json::to_string(&result)
+                    .unwrap_or_else(|_| "null".into()),
+            }));
+        }
+    }
+
+    Err(ProviderSessionError::Protocol(
+        "OpenRouter exceeded Fabushi's 8-step tool limit.".into(),
+    ))
+}
+
+fn resolve_claude_cli_path() -> Option<PathBuf> {
+    let home = home_dir();
+    let mut candidates = vec![
+        env::var_os("CLAUDE_CODE_PATH").map(PathBuf::from),
+        Some(home.join(".local").join("bin").join("claude")),
+        Some(home.join(".claude").join("local").join("claude")),
+    ];
+    if let Some(path) = env::var_os("PATH") {
+        candidates.extend(
+            env::split_paths(&path)
+                .map(|directory| Some(directory.join("claude"))),
+        );
+    }
+    candidates.extend([
+        Some(PathBuf::from("/opt/homebrew/bin/claude")),
+        Some(PathBuf::from("/usr/local/bin/claude")),
+    ]);
+    candidates
+        .into_iter()
+        .flatten()
+        .find(|path| path.is_file())
+}
+
+fn run_claude_code_provider_text(
+    messages: &[ProviderMessage],
+    options: &mut RoutedProviderOptions<'_>,
+) -> Result<String, ProviderSessionError> {
+    let executable = resolve_claude_cli_path().ok_or_else(|| {
+        ProviderSessionError::Configuration(
+            "Claude Code is not installed. Install and sign in to Claude Code, then reopen Fabushi."
+                .into(),
+        )
+    })?;
+    let mut command = Command::new(executable);
+    command
+        .arg("-p")
+        .arg(provider_prompt(messages))
+        .arg("--output-format")
+        .arg("json")
+        .arg("--max-turns")
+        .arg(if options.mcp_server_url.is_some() {
+            "8"
+        } else {
+            "1"
+        });
+
+    let mut mcp_config_path = None;
+    if let Some(url) = options.mcp_server_url {
+        let path = env::temp_dir().join(format!(
+            "fabushi-claude-mcp-{}.json",
+            Uuid::new_v4()
+        ));
+        fs::write(
+            &path,
+            serde_json::to_vec(&json!({
+                "mcpServers": {
+                    "grok_bot_plugins": {
+                        "type": "http",
+                        "url": url
+                    }
+                }
+            }))
+            .map_err(|error| ProviderSessionError::Protocol(error.to_string()))?,
+        )
+        .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
+        command
+            .arg("--mcp-config")
+            .arg(&path)
+            .arg("--strict-mcp-config")
+            .arg("--allowedTools")
+            .arg("mcp__grok_bot_plugins__*");
+        mcp_config_path = Some(path);
+    }
+    if let Some(model) = env::var("SAND_CLAUDE_MODEL")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+    {
+        command.arg("--model").arg(model);
+    }
+
+    let output = command.output().map_err(|error| {
+        ProviderSessionError::Transport(format!(
+            "Could not run Claude Code: {error}"
+        ))
+    });
+    if let Some(path) = mcp_config_path {
+        let _ = fs::remove_file(path);
+    }
+    let output = output?;
+    if !output.status.success() {
+        return Err(ProviderSessionError::Transport(format!(
+            "Claude Code failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        )));
+    }
+    let stdout = String::from_utf8(output.stdout)
+        .map_err(|error| ProviderSessionError::Protocol(error.to_string()))?;
+    let payload = serde_json::from_str::<Value>(stdout.trim())
+        .ok()
+        .or_else(|| {
+            stdout
+                .lines()
+                .rev()
+                .find_map(|line| serde_json::from_str::<Value>(line).ok())
+        })
+        .ok_or_else(|| {
+            ProviderSessionError::Protocol(
+                "Claude Code returned invalid JSON.".into(),
+            )
+        })?;
+    if payload
+        .get("subtype")
+        .and_then(Value::as_str)
+        .is_some_and(|value| value != "success")
+    {
+        return Err(ProviderSessionError::Protocol(format!(
+            "Claude Code failed: {}",
+            payload
+                .get("errors")
+                .cloned()
+                .unwrap_or_else(|| Value::String("unknown failure".into()))
+        )));
+    }
+    let text = payload
+        .get("result")
+        .and_then(Value::as_str)
+        .or_else(|| payload.get("content").and_then(Value::as_str))
+        .ok_or_else(|| {
+            ProviderSessionError::Protocol(
+                "Claude Code ended without a result.".into(),
+            )
+        })?
+        .to_string();
+    if !text.is_empty() {
+        (options.on_text_delta)(&text, &text);
+    }
+    Ok(text)
 }
 
 #[cfg(test)]
