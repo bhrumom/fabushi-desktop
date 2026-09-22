@@ -18,6 +18,11 @@ import { isValidSendLatencyReport, sendLatencyReportToTelemetry } from "./teleme
 import { isValidAgentsUnreachableReport, agentsUnreachableReportToTelemetry } from "./telemetry/agents-unreachable-telemetry.js";
 import { createBoxVncHandlers, createBoxVncTrust } from "./vnc/vnc-edge.js";
 import { classifyWindowShortcut } from "./window-shortcuts.js";
+import { hashProcessName, sanitizeProcessName } from "./process-metrics/redaction.js";
+import { RECENT_WAKE_WINDOW_MS, connectivityStamps, createDesktopConnectivity } from "./coordinator/desktop-connectivity.js";
+import { resolveDefaultDownloadDir, resolveDefaultDownloadPath, resolveSuggestedDownloadName } from "./downloads/download-path.js";
+import { assertTrustedClientPersistenceSender, assertTrustedSecretsSender, isTrustedSecretsSender, UntrustedClientPersistenceSenderError, UntrustedSecretsSenderError } from "./secrets/secrets-ipc-guard.js";
+import { createIdleRelaunchSignals, isScreensaverRunning } from "./update/idle-relaunch-signals.js";
 
 test("dev gates and latency clamps match Grok behavior", () => {
   assert.equal(setSimulatedGatewayLatencyMs(25.9), 25);
@@ -178,4 +183,74 @@ test("window shortcut classifier matches platform chords", () => {
   assert.equal(classifyWindowShortcut({ type: "keyDown", key: "r", control: true }, "win32"), "reload");
   assert.equal(classifyWindowShortcut({ type: "keyDown", key: "q", meta: true }, "darwin"), "quit");
   assert.equal(classifyWindowShortcut({ type: "keyUp", key: "F11" }, "linux"), null);
+});
+
+
+test("process redaction keeps only Grok helper labels and hashes every original name", () => {
+  const helper = sanitizeProcessName("/Applications/Grok Bot Helper (GPU)");
+  assert.equal(helper.name, "Grok Bot Helper (GPU)");
+  assert.equal(helper.nameHash, hashProcessName("/Applications/Grok Bot Helper (GPU)"));
+  const foreign = sanitizeProcessName("/tmp/secret-app --token=abc");
+  assert.equal(foreign.name, "secret-app");
+  assert.equal(foreign.nameHash.length, 64);
+  assert.notEqual(foreign.nameHash, foreign.name);
+});
+
+test("desktop connectivity tracks only recent resumes and exposes telemetry stamps", () => {
+  let now = 1_000;
+  let resume: (() => void) | undefined;
+  let online = true;
+  const connectivity = createDesktopConnectivity({
+    isOnline: () => online,
+    onResume: (listener) => { resume = listener; },
+    monotonicNow: () => now,
+  });
+  assert.equal(connectivity.recentWake(), false);
+  resume?.();
+  assert.equal(connectivity.recentWake(), true);
+  now += RECENT_WAKE_WINDOW_MS;
+  assert.equal(connectivity.recentWake(), false);
+  online = false;
+  assert.deepEqual(connectivityStamps(connectivity), { client_online: "false", recent_wake: "false" });
+});
+
+test("download path resolution rejects relative configured roots and unsafe suggested names", () => {
+  assert.equal(resolveDefaultDownloadDir({ configuredDir: "/safe/downloads", osDownloadsDir: "/os/downloads" }), "/safe/downloads");
+  assert.equal(resolveDefaultDownloadDir({ configuredDir: "relative", osDownloadsDir: "/os/downloads" }), "/os/downloads");
+  assert.equal(resolveDefaultDownloadPath({ configuredDir: "/safe", osDownloadsDir: "/os", fileName: "../nested/file.txt" }), "/safe/file.txt");
+  assert.equal(resolveSuggestedDownloadName({ sourcePath: "/tmp/report.pdf", suggestedName: "../../renamed.pdf" }), "renamed.pdf");
+  assert.equal(resolveSuggestedDownloadName({ sourcePath: "/tmp/report.pdf", suggestedName: "renamed.exe" }), "report.pdf");
+});
+
+test("secrets IPC guard requires both trusted webContents and exact main frame", () => {
+  const contents = {};
+  const frame = {};
+  const trusted = { sender: contents, senderFrame: frame, trustedContents: contents, trustedMainFrame: frame };
+  assert.equal(isTrustedSecretsSender(trusted), true);
+  assert.doesNotThrow(() => assertTrustedSecretsSender(trusted));
+  assert.doesNotThrow(() => assertTrustedClientPersistenceSender(trusted));
+  assert.throws(
+    () => assertTrustedSecretsSender({ ...trusted, sender: {} }),
+    (error: unknown) => error instanceof UntrustedSecretsSenderError,
+  );
+  assert.throws(
+    () => assertTrustedClientPersistenceSender({ ...trusted, senderFrame: {} }),
+    (error: unknown) => error instanceof UntrustedClientPersistenceSenderError,
+  );
+});
+
+test("idle relaunch signals preserve platform and power-monitor semantics", async () => {
+  assert.equal(await isScreensaverRunning("linux", ((_file, _args, _options, callback) => callback(null)) as any), false);
+  const signals = createIdleRelaunchSignals({
+    powerMonitor: {
+      getSystemIdleState: () => "locked",
+      getSystemIdleTime: () => 777,
+    },
+    probeHostIdle: async () => ({ kind: "confirmed-idle" }),
+    screensaverProbe: async () => true,
+  });
+  assert.equal(signals.getScreenLocked(), true);
+  assert.equal(await signals.getScreensaverActive(), true);
+  assert.equal(signals.getSystemIdleSeconds(), 777);
+  assert.deepEqual(await signals.probeHostIdle(), { kind: "confirmed-idle" });
 });
