@@ -320,9 +320,9 @@ fn dispatch_to_host(
                     "pending": pending,
                     "hostRunning": state.host_stdin.lock().map(|host| host.is_some()).unwrap_or(false),
                     "processConfig": {
-                        "appVersion": state.bootstrap.process_config.app_version,
+                        "appVersion": state.bootstrap.process_config.app_version.clone(),
                         "isPackaged": state.bootstrap.process_config.is_packaged,
-                        "dataDir": state.bootstrap.process_config.data_dir
+                        "dataDir": state.bootstrap.process_config.data_dir.clone()
                     }
                 }),
             },
