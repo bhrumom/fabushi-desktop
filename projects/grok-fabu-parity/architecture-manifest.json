@@ -12041,24 +12041,38 @@
       "targetPath": "source/host/src/extensions/telemetry/automation_shadow_prune_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "ba4bf1595a0f9051e73e0d470ba9fa6fcb9e8554",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/automation_shadow_prune_telemetry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_telemetry_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 telemetry module. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35709046525 at exact tested HEAD ee8770592c604030a5a22dd4055383d466ee78e1."
     },
     {
       "referencePath": "source/host/extensions/telemetry/box-log-ship-telemetry.ts",
       "targetPath": "source/host/src/extensions/telemetry/box_log_ship_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "6770ea0c325b19a41142fa1f269298b43c1e610e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/box_log_ship_telemetry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_telemetry_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 telemetry module. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35709046525 at exact tested HEAD ee8770592c604030a5a22dd4055383d466ee78e1."
     },
     {
       "referencePath": "source/host/extensions/telemetry/box-log-shipper.ts",
@@ -12132,12 +12146,19 @@
       "targetPath": "source/host/src/extensions/telemetry/experiments_diagnostic_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "b66ba403de58a7fe74f352d338ae9f7432382201",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/experiments_diagnostic_telemetry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_telemetry_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 telemetry module. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35709046525 at exact tested HEAD ee8770592c604030a5a22dd4055383d466ee78e1."
     },
     {
       "referencePath": "source/host/extensions/telemetry/extension.ts",
@@ -12206,12 +12227,19 @@
       "targetPath": "source/host/src/extensions/telemetry/host_extension_diagnostic_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "ff49ef2d6529a3e60a23b2986943b72b2501851f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/host_extension_diagnostic_telemetry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_telemetry_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 telemetry module. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35709046525 at exact tested HEAD ee8770592c604030a5a22dd4055383d466ee78e1."
     },
     {
       "referencePath": "source/host/extensions/telemetry/host-lifecycle-progress.ts",
@@ -12338,12 +12366,19 @@
       "targetPath": "source/host/src/extensions/telemetry/revival_telemetry_mappers.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "f75d05e9a405055f30469631ac7cbb6f79857f95",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/revival_telemetry_mappers.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_telemetry_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 telemetry module. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35709046525 at exact tested HEAD ee8770592c604030a5a22dd4055383d466ee78e1."
     },
     {
       "referencePath": "source/host/extensions/telemetry/search-index-health-telemetry.ts",
@@ -12388,12 +12423,19 @@
       "targetPath": "source/host/src/extensions/telemetry/session_diagnostic_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "405d9f6c7b2b0da540089bcce83bba8cda6f34cc",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/session_diagnostic_telemetry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_telemetry_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 telemetry module. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35709046525 at exact tested HEAD ee8770592c604030a5a22dd4055383d466ee78e1."
     },
     {
       "referencePath": "source/host/extensions/telemetry/structured-log-telemetry.ts",
@@ -12412,12 +12454,19 @@
       "targetPath": "source/host/src/extensions/telemetry/turn_empty_delivery_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "143b22fd36815e41a86c386e5a0aa00e1899726e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/turn_empty_delivery_telemetry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_telemetry_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 telemetry module. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35709046525 at exact tested HEAD ee8770592c604030a5a22dd4055383d466ee78e1."
     },
     {
       "referencePath": "source/host/extensions/telemetry/turn-telemetry-mappers.ts",
