@@ -61,7 +61,18 @@ done
     fn shipping_coordinator_binary_enforces_protocol_and_settles_host_crash() {
         let host = fake_host();
         let coordinator = env!("CARGO_BIN_EXE_mahayana-node-agent-coordinator");
+        let bootstrap = format!(
+            "--bootstrap={}",
+            json!({
+                "processConfig": {
+                    "appVersion": "test-0.18",
+                    "isPackaged": false,
+                    "dataDir": host.parent().expect("fake host parent").to_string_lossy()
+                }
+            })
+        );
         let mut child = Command::new(coordinator)
+            .arg(bootstrap)
             .env("MAHAYANA_APP_HOST_BIN", &host)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -97,6 +108,31 @@ done
                 .expect("valid ready frame"),
             CoordinatorFrame::ready()
         );
+
+        send(
+            &mut stdin,
+            &CoordinatorFrame::Request {
+                request_id: "r-health".into(),
+                method: "coordinator.health".into(),
+                args: json!({}),
+            },
+        );
+        let health = rx
+            .recv_timeout(Duration::from_secs(2))
+            .expect("health reply")
+            .expect("valid health reply");
+        match health {
+            CoordinatorFrame::Reply {
+                request_id,
+                outcome: ReplyOutcome::Ok { value },
+            } => {
+                assert_eq!(request_id, "r-health");
+                assert_eq!(value["protocolVersion"], 1);
+                assert_eq!(value["processConfig"]["appVersion"], "test-0.18");
+                assert_eq!(value["processConfig"]["isPackaged"], false);
+            }
+            other => panic!("unexpected health frame: {other:?}"),
+        }
 
         send(
             &mut stdin,
