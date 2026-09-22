@@ -1,0 +1,63 @@
+name: Grok architecture reference migration
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - refactor/grok-018-architecture-rebuild
+    paths:
+      - 'scripts/import-grok-reference.mjs'
+      - 'projects/grok-fabu-parity/architecture-manifest.json'
+      - '.github/workflows/grok-architecture-migrate.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: grok-architecture-reference-migration
+  cancel-in-progress: false
+
+jobs:
+  import-reference:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refactor/grok-018-architecture-rebuild
+          fetch-depth: 0
+      - name: Bind PR branch HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Input HEAD: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Fetch frozen Grok 0.18 reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none https://github.com/b-nnett/grok-bot-0.18-reconstructed.git "$RUNNER_TEMP/grok-ref"
+          git -C "$RUNNER_TEMP/grok-ref" checkout --detach a9f633e09d49a85829b8236331b9e21f7e612634
+          test "$(git -C "$RUNNER_TEMP/grok-ref" rev-parse HEAD)" = "a9f633e09d49a85829b8236331b9e21f7e612634"
+      - name: Restore byte-identical TypeScript and React modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/import-grok-reference.mjs "$RUNNER_TEMP/grok-ref"
+      - name: Verify architecture inventory after import
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check-grok-architecture.mjs
+      - name: Commit import to existing PR branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No reference-copy changes remain." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend source projects/grok-fabu-parity/architecture-manifest.json
+          git commit -m "feat(architecture): restore frozen Grok TypeScript modules"
+          git push origin HEAD:refactor/grok-018-architecture-rebuild
+          echo "Committed HEAD: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
