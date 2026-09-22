@@ -34,7 +34,11 @@ impl SandBoxComposition {
         agent_id: &str,
     ) -> Result<LoopbackReady, LoopbackSandBoxError> {
         match self {
-            Self::Loopback(inner) => inner.ensure_ready(ctx, agent_id),
+            Self::Loopback(inner) => inner.ensure_ready(ctx, agent_id).map(|ready| LoopbackReady {
+                remote_accessor: ready.remote_accessor.with_no_monitor_computer_use(),
+                vnc_url: ready.vnc_url,
+                terminals_folder: ready.terminals_folder,
+            }),
             Self::SharedDesktop(shared) => shared.ensure_ready(ctx, agent_id),
         }
     }

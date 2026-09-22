@@ -15,8 +15,8 @@ use mahayana_host_runtime::r#box::box_windows::{
     ShellAccessor, ShellExecutionOutcome,
 };
 use mahayana_host_runtime::r#box::generated_production::{
-    CONNECT_STREAM_CONTENT_TYPE, EXEC_PATH, PING_PATH, ProductionReadArgs,
-    ProductionReadOutput, ProductionReadResult,
+    CONNECT_STREAM_CONTENT_TYPE, EXEC_PATH, PING_PATH, ProductionBoxExecError,
+    ProductionReadArgs, ProductionReadOutput, ProductionReadResult,
 };
 use mahayana_host_runtime::r#box::box_factory::{
     format_sand_box_startup_summary, should_apply_shared_desktop,
@@ -337,6 +337,15 @@ fn production_loopback_factory_gates_exec_accessor_on_authenticated_readiness() 
             exit_code: 0,
             stderr: "loopback-ready".into(),
         }
+    );
+
+    let computer_error = ready
+        .remote_accessor
+        .execute_computer_use_protobuf(&(), Vec::new())
+        .expect_err("standalone production primary must block monitor computer use");
+    assert!(
+        matches!(computer_error, ProductionBoxExecError::NoMonitor(_)),
+        "standalone production primary must use the Grok no-monitor overlay"
     );
 
     assert!(should_apply_shared_desktop(environment.loopback().max_windows()));

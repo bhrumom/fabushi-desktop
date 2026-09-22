@@ -307,7 +307,11 @@ impl SharedDesktopSandBox {
         let index = self.migrate_legacy_primary_seat(agent_id, assigned);
         let is_migration = index != assigned;
         if is_primary_window_index(index) {
-            return Ok(primary);
+            return Ok(LoopbackReady {
+                remote_accessor: primary.remote_accessor.with_no_monitor_computer_use(),
+                vnc_url: primary.vnc_url,
+                terminals_folder: primary.terminals_folder,
+            });
         }
 
         let token_is_new = {
@@ -365,7 +369,11 @@ impl SharedDesktopSandBox {
                         }
                     }
                     self.write_persisted_assignments(ctx);
-                    return Ok(primary);
+                    return Ok(LoopbackReady {
+                        remote_accessor: primary.remote_accessor.with_no_monitor_computer_use(),
+                        vnc_url: primary.vnc_url,
+                        terminals_folder: primary.terminals_folder,
+                    });
                 }
                 let _ = self.inner.release_window(ctx, &self.shared_box_id, index);
                 if is_new_assignment {
