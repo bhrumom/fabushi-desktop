@@ -12005,16 +12005,21 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/host_supervisor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "6883cd201b950b1a6a6cf1d36f856a1dd64fa185",
       "architecturalRole": "coordinator/gateway",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/gateway/host_supervisor.rs",
+        "source/node-agent-coordinator/src/main.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/node-agent-coordinator/tests/host_supervisor_health.rs",
         "source/node-agent-coordinator/tests/production_protocol.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Parity verified: stream-liveness and health-TTL shortcuts, debug feature flags, bounded authenticated /health probing, stale connection-attempt invalidation, transport-failure normalization to reconnect, discovery installation, and production Host generation recovery are implemented and contract/integration-tested."
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/sse-block-decoder.ts",
