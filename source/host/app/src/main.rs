@@ -6,6 +6,15 @@
 //! modules are moved behind this process boundary. Electron must never launch
 //! the legacy third_party desktop Host binary directly.
 
+use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
+use mahayana_host_runtime::gateway_server::{
+    GatewayApi, GatewayCommandError, GatewayEventHub, GatewayServerDeps, start_gateway_server,
+};
+use mahayana_host_runtime::host_discovery::{
+    GatewayDiscoveryInfo, clear_gateway_discovery, write_gateway_discovery,
+};
+use mahayana_host_runtime::host_lock::acquire_host_lock;
+use mahayana_host_runtime::host_paths::{get_gateway_discovery_path, get_host_lock_path};
 use mahayana_unified_app_host::{
     PlatformRequestHost, UnifiedAppHost, default_unified_app_data_dir, dispatch_json,
     is_platform_request_json,
@@ -15,7 +24,7 @@ use std::io::{self, BufRead, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     // The desktop product owns this fallback workspace.  It must exist before
@@ -23,6 +32,55 @@ fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     // session.  User-selected workspace paths are validated elsewhere and are
     // never created implicitly.
     fs::create_dir_all(app_data_dir.join("feature-host/runtime/workspace"))
+}
+
+struct UnifiedGatewayApi {
+    host: Arc<Mutex<UnifiedAppHost>>,
+}
+
+impl GatewayApi for UnifiedGatewayApi {
+    fn call(
+        &self,
+        method: &str,
+        args: serde_json::Value,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        let request = serde_json::json!({
+            "id": "gateway",
+            "method": method,
+            "params": args,
+        });
+        let encoded = serde_json::to_string(&request)
+            .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+        let response = {
+            let host = self
+                .host
+                .lock()
+                .map_err(|_| GatewayCommandError::Internal("Host lock poisoned".into()))?;
+            dispatch_json(&host, &encoded)
+        };
+        let parsed: serde_json::Value = serde_json::from_str(&response)
+            .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+        if parsed.get("ok").and_then(serde_json::Value::as_bool) == Some(true) {
+            return Ok(parsed.get("result").cloned().unwrap_or(serde_json::Value::Null));
+        }
+        let message = parsed
+            .get("error")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("Mahayana Host gateway request failed")
+            .to_string();
+        if message.contains("unknown") {
+            Err(GatewayCommandError::UnknownMethod(method.to_string()))
+        } else {
+            Err(GatewayCommandError::Internal(message))
+        }
+    }
+}
+
+fn started_at_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(u64::MAX as u128) as u64)
+        .unwrap_or_default()
 }
 
 fn write_response(stdout: &Mutex<io::Stdout>, response: &str) -> io::Result<()> {
@@ -35,8 +93,10 @@ fn write_response(stdout: &Mutex<io::Stdout>, response: &str) -> io::Result<()> 
 
 fn write_runtime_event(
     stdout: &Mutex<io::Stdout>,
+    gateway_events: &GatewayEventHub,
     event: serde_json::Value,
 ) -> io::Result<()> {
+    gateway_events.publish(event.clone());
     let frame = serde_json::json!({ "event": event });
     let encoded = serde_json::to_string(&frame)
         .map_err(|error| io::Error::other(format!("event serialization failed: {error}")))?;
@@ -44,12 +104,19 @@ fn write_runtime_event(
 }
 
 fn drain_ready_runtime_events(
-    host: &UnifiedAppHost,
+    host: &Mutex<UnifiedAppHost>,
     stdout: &Mutex<io::Stdout>,
+    gateway_events: &GatewayEventHub,
 ) -> io::Result<()> {
     loop {
-        match host.receive_feature_event(Duration::ZERO) {
-            Ok(Some(event)) => write_runtime_event(stdout, event)?,
+        let event = {
+            let host = host
+                .lock()
+                .map_err(|_| io::Error::other("desktop Host lock poisoned"))?;
+            host.receive_feature_event(Duration::ZERO)
+        };
+        match event {
+            Ok(Some(event)) => write_runtime_event(stdout, gateway_events, event)?,
             Ok(None) => return Ok(()),
             Err(error) => {
                 eprintln!("failed to drain Mahayana runtime event: {error}");
@@ -70,7 +137,7 @@ fn main() {
     }
 
     let host = match UnifiedAppHost::new(app_data_dir.clone()) {
-        Ok(host) => Arc::new(host),
+        Ok(host) => Arc::new(Mutex::new(host)),
         Err(error) => {
             eprintln!("failed to initialize unified Mahayana app host: {error}");
             std::process::exit(1);
@@ -90,16 +157,76 @@ fn main() {
     };
     let stdout = Arc::new(Mutex::new(io::stdout()));
 
+    let host_lock_path = get_host_lock_path();
+    let host_lock = match acquire_host_lock(&host_lock_path, std::process::id()) {
+        Ok(acquisition) => acquisition.lock,
+        Err(error) => {
+            eprintln!(
+                "failed to acquire Mahayana Host lock at {}: {error}",
+                host_lock_path.display()
+            );
+            return;
+        }
+    };
+
+    let gateway_config = match resolve_gateway_server_config() {
+        Ok(config) => config,
+        Err(error) => {
+            eprintln!("failed to resolve Mahayana gateway configuration: {error}");
+            return;
+        }
+    };
+    let gateway_started_at = started_at_ms();
+    let gateway_events = GatewayEventHub::default();
+    let gateway_server = match start_gateway_server(GatewayServerDeps {
+        api: Arc::new(UnifiedGatewayApi {
+            host: Arc::clone(&host),
+        }),
+        events: gateway_events.clone(),
+        config: gateway_config.clone(),
+        started_at: gateway_started_at,
+    }) {
+        Ok(server) => server,
+        Err(error) => {
+            eprintln!("failed to start Mahayana Host gateway: {error}");
+            return;
+        }
+    };
+
+    let gateway_discovery_path = get_gateway_discovery_path();
+    let gateway_discovery = GatewayDiscoveryInfo {
+        port: gateway_server.port(),
+        pid: std::process::id(),
+        started_at: gateway_started_at,
+        scheme: Some(gateway_scheme(&gateway_config).to_string()),
+        host: Some(gateway_config.host.clone()),
+        token: gateway_config.auth_token.clone(),
+    };
+    if let Err(error) = write_gateway_discovery(&gateway_discovery, &gateway_discovery_path) {
+        eprintln!(
+            "failed to publish Mahayana Host gateway discovery at {}: {error}",
+            gateway_discovery_path.display()
+        );
+        return;
+    }
+
     // Runtime events travel as unsolicited JSON frames. The event worker blocks
     // in Rust instead of issuing 500 ms JSON-RPC receive requests from Electron.
     // Test mode has a non-blocking deterministic backend, so a small sleep keeps
     // that lane from spinning while CI is idle.
-    let event_source = host.feature_event_source();
+    let event_source = match host.lock() {
+        Ok(host) => host.feature_event_source(),
+        Err(_) => {
+            eprintln!("failed to acquire Mahayana Host while creating event source");
+            return;
+        }
+    };
     let event_stdout = Arc::clone(&stdout);
+    let event_gateway = gateway_events.clone();
     let _event_worker = thread::spawn(move || loop {
         match event_source.receive(Duration::from_secs(30)) {
             Ok(Some(event)) => {
-                if write_runtime_event(&event_stdout, event).is_err() {
+                if write_runtime_event(&event_stdout, &event_gateway, event).is_err() {
                     break;
                 }
             }
@@ -140,18 +267,37 @@ fn main() {
             }
             continue;
         }
-        let response = dispatch_json(&host, &line);
+        let response = match host.lock() {
+            Ok(host) => dispatch_json(&host, &line),
+            Err(_) => {
+                eprintln!("desktop Host lock poisoned while dispatching request");
+                break;
+            }
+        };
         if write_response(&stdout, &response).is_err() {
             break;
         }
         // Commands may enqueue product-local events that are not backed by the
         // model runtime receiver. Drain those immediately so they are pushed in
         // the same turn instead of waiting for the blocking runtime lane.
-        if drain_ready_runtime_events(&host, &stdout).is_err() {
+        if drain_ready_runtime_events(&host, &stdout, &gateway_events).is_err() {
             break;
         }
     }
     drop(platform_tx);
+    drop(gateway_server);
+    if let Err(error) = clear_gateway_discovery(&gateway_discovery_path) {
+        eprintln!(
+            "failed to clear Mahayana Host gateway discovery at {}: {error}",
+            gateway_discovery_path.display()
+        );
+    }
+    if let Err(error) = host_lock.release() {
+        eprintln!(
+            "failed to release Mahayana Host lock at {}: {error}",
+            host_lock_path.display()
+        );
+    }
 }
 
 #[cfg(test)]
