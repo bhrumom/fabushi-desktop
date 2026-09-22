@@ -10005,14 +10005,16 @@
       "behavioralEvidence": [
         "source/host/src/extensions/auth/auth_service.rs",
         "source/host/src/extensions/auth/credential_renewer.rs",
-        "source/host/src/host_secret_store.rs"
+        "source/host/src/host_secret_store.rs",
+        "source/host/src/extensions/auth/extension.rs"
       ],
       "testEvidence": [
         "source/host/tests/extensions_auth_service_contract.rs",
         "source/host/tests/extensions_auth_credential_renewer_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/extensions_auth_extension_contract.rs"
       ],
-      "notes": "Rust Auth service now owns the Grok credential store with 30s expiry leeway, fail-closed waiting error, immediate renewer wakeup, first-credential renewal events, subscriber isolation surface, machine-id provider, and production environment/backend construction. Final is withheld until auth/extension.rs is in the shipping Host extension/bootstrap graph."
+      "notes": "Rust Auth service owns the Grok credential store/renewer and is now consumed by a real Rust Auth extension runtime with renewal subscriptions, BrowserUa bridge, machine identity and user-name refresh. Final remains withheld until that extension is installed by the shipping Host bootstrap."
     },
     {
       "referencePath": "source/host/extensions/auth/credential-renewer.ts",
@@ -10040,24 +10042,40 @@
       "targetPath": "source/host/src/extensions/auth/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "dda5e2a5513e0264375233fa9999b9fb1bd97e0e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/auth/extension.rs",
+        "source/host/src/extensions/auth/auth_service.rs",
+        "source/host/src/extensions/auth/user_full_name_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_auth_extension_contract.rs",
+        "source/host/tests/extensions_auth_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Auth extension composition now owns the production HostAuthService lifecycle, renewal subscription, BrowserUa Auth API bridge, machine-id/access-token surface, and user-full-name resolver refresh. It remains non-final until the production Dashboard GetMe adapter and shipping Host extension/bootstrap graph consume this runtime."
     },
     {
       "referencePath": "source/host/extensions/auth/user-full-name-service.ts",
       "targetPath": "source/host/src/extensions/auth/user_full_name_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "717e235077d1ecf68c4cc2ac996ae3dba1a18173",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/auth/user_full_name_service.rs",
+        "source/host/src/extensions/auth/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_auth_extension_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust user-full-name resolver now preserves token-principal fencing, normalization, duplicate-refresh suppression, stale-principal rejection, cached-name invalidation and renewal-driven refresh through the Auth extension. Final remains withheld until the real DashboardService GetMe transport is wired instead of an injected fetch port."
     },
     {
       "referencePath": "source/host/extensions/auto-review/auto-review-service.ts",
