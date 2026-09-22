@@ -2,6 +2,17 @@ import { createCoordinatorControlServer } from "./coordinator-control-server.js"
 
 export const COORDINATOR_SERVICE_NAME = "sand-node-agent-coordinator";
 
+function createDeferred<T>(): {
+  readonly promise: Promise<T>;
+  readonly resolve: (value: T | PromiseLike<T>) => void;
+} {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
+
 export interface CoordinatorMessagePort {
   postMessage(value: unknown): void;
   on(event: "message", listener: (event: { readonly data: unknown }) => void): void;
@@ -72,7 +83,7 @@ export function launchCoordinator(
 
   let exited = false;
   const { promise: processExited, resolve: resolveExited } =
-    Promise.withResolvers<{ readonly code: number | null }>();
+    createDeferred<{ readonly code: number | null }>();
   let controlSettlementObserved = false;
   void server.settled.then(() => {
     controlSettlementObserved = true;
