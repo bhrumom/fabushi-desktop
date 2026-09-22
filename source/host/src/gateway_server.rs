@@ -34,6 +34,34 @@ pub const MAX_REQUEST_PAYLOAD_BYTES: usize = 256 * 1024 * 1024;
 pub const MAX_BODY_BYTES: usize = MAX_REQUEST_PAYLOAD_BYTES * 4 / 3 + 64 * 1024;
 const MAX_HEADER_BYTES: usize = 64 * 1024;
 
+const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
+    // Explicit Fabushi product extensions carried through the Grok Host
+    // Gateway boundary. Keep these separate from the reconstructed Grok
+    // command inventory so the 1:1 architecture remains auditable.
+    "feature.info",
+    "feature.execute",
+    "feature.marketplace.browse",
+    "feature.marketplace.release",
+    "feature.plugin.install",
+    "feature.plugin.uninstall",
+    "feature.plugin.rollback",
+    "feature.plugin.active",
+    "feature.plugin.listInstalled",
+    "feature.plugin.uiDocument",
+    "feature.auth.status",
+    "feature.auth.providers",
+    "feature.auth.browserStart",
+    "feature.auth.browserPoll",
+    "feature.auth.browserCancel",
+    "feature.auth.browserReopen",
+    "feature.auth.passwordLogin",
+    "feature.auth.oauthStart",
+    "feature.auth.oauthPoll",
+    "feature.auth.logout",
+    "feature.interrupt",
+    "feature.approval.resolve",
+];
+
 const GATEWAY_COMMANDS: &[&str] = &[
     "getTranscript", "getAgentTranscript", "getAgentTranscriptPage", "openAgentWindowed",
     "getAgentTranscriptWindow", "openAgentTail", "getAgentTranscriptTail", "getAgentThread",
@@ -70,7 +98,7 @@ const GATEWAY_COMMANDS: &[&str] = &[
 ];
 
 fn is_gateway_command(method: &str) -> bool {
-    GATEWAY_COMMANDS.contains(&method)
+    GATEWAY_COMMANDS.contains(&method) || FABUSHI_EXTENSION_COMMANDS.contains(&method)
 }
 
 fn slim_command_result(method: &str, mut value: Value) -> Value {
