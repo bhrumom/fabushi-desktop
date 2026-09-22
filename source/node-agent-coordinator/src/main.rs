@@ -124,6 +124,9 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
         Some(ActiveHostStdin { generation, stdin });
     state.consecutive_crashes.store(0, Ordering::SeqCst);
     state.lifecycle("running", generation, true, None);
+    // Host spawn serialization is only needed through publication of the active generation.
+    // Release the guard before the wait thread takes ownership of the shared state.
+    drop(_spawn_guard);
 
     {
         let output_state = Arc::clone(&state);
