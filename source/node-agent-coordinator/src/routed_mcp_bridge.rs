@@ -180,7 +180,7 @@ fn json_rpc_reply(id: Value, result: Value) -> Value {
 fn project_tool(tool: &RoutedTool) -> Value {
     let read_only = is_read_only(tool);
     json!({
-        "name": tool.name,
+        "name": tool.name.clone(),
         "description": tool.description.clone().unwrap_or_else(|| {
             format!("{} via {}", tool.tool_name, tool.provider_identifier)
         }),
