@@ -163,13 +163,13 @@ impl ModelRuntime for ResponsesModelRuntime {
             match outcome {
                 Ok(value) => break value,
                 Err(error) => {
-                    let mut progress = AttemptProgress::default();
-                    if tracker.seen() {
-                        progress.record_output(1);
-                    }
-                    let failure = TransientStreamError::classify(error.to_string(), None, None);
-                    match policy.retry_decision(attempt, &progress, &failure) {
-                        RetryDecision::RetryAfter(delay) if is_retryable_model_error(&error) => {
+                    match retry_decision_for_model_error(
+                        &policy,
+                        attempt,
+                        tracker.seen(),
+                        &error,
+                    ) {
+                        RetryDecision::RetryAfter(delay) => {
                             tokio::time::sleep(delay).await;
                         }
                         RetryDecision::ResumeAfter { .. } => {
@@ -178,7 +178,7 @@ impl ModelRuntime for ResponsesModelRuntime {
                             // output without one; fail closed instead.
                             return Err(error);
                         }
-                        RetryDecision::RetryAfter(_) | RetryDecision::Fail => return Err(error),
+                        RetryDecision::Fail => return Err(error),
                     }
                 }
             }
@@ -198,6 +198,23 @@ impl ModelRuntime for ResponsesModelRuntime {
     fn provider_mode(&self) -> ModelProviderMode {
         self.config.provider_mode
     }
+}
+
+fn retry_decision_for_model_error(
+    policy: &StreamAttemptPolicy,
+    attempt: u32,
+    has_visible_output: bool,
+    error: &ModelError,
+) -> RetryDecision {
+    if !is_retryable_model_error(error) {
+        return RetryDecision::Fail;
+    }
+    let mut progress = AttemptProgress::default();
+    if has_visible_output {
+        progress.record_output(1);
+    }
+    let failure = TransientStreamError::classify(error.to_string(), None, None);
+    policy.retry_decision(attempt, &progress, &failure)
 }
 
 fn is_retryable_model_error(error: &ModelError) -> bool {
@@ -1021,6 +1038,27 @@ fn usage_value(usage: &Value, keys: &[&str]) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn production_retry_decision_is_owned_by_host_runner_policy() {
+        let policy = StreamAttemptPolicy::default();
+        let transient = ModelError::Unavailable("provider returned 503 unavailable".into());
+        assert!(matches!(
+            retry_decision_for_model_error(&policy, 1, false, &transient),
+            RetryDecision::RetryAfter(_)
+        ));
+        assert_eq!(
+            retry_decision_for_model_error(&policy, 1, true, &transient),
+            RetryDecision::Fail,
+            "visible output without a durable checkpoint must never be replayed"
+        );
+
+        let auth = ModelError::InvalidRequest("credential is invalid".into());
+        assert_eq!(
+            retry_decision_for_model_error(&policy, 1, false, &auth),
+            RetryDecision::Fail
+        );
+    }
 
     #[test]
     fn extracts_text_and_usage_from_responses_payload() {
