@@ -6,8 +6,8 @@ use std::time::Duration;
 
 use mahayana_host_runtime::gateway_config::GatewayServerConfig;
 use mahayana_host_runtime::gateway_server::{
-    GatewayApi, GatewayCommandError, GatewayEventHub, GatewayHealth, GatewayServerDeps,
-    start_gateway_server,
+    GatewayApi, GatewayBridgeHub, GatewayCommandError, GatewayEventHub, GatewayHealth,
+    GatewayServerDeps, start_gateway_server,
 };
 use serde_json::{Value, json};
 
@@ -259,6 +259,105 @@ fn gateway_avatar_endpoint_serves_versioned_bytes_and_security_headers() {
         "GET /avatars/agent-1 HTTP/1.1\r\nHost: 127.0.0.1\r\nSec-Fetch-Site: cross-site\r\nConnection: close\r\n\r\n",
     );
     assert!(cross_site.starts_with("HTTP/1.1 403 Forbidden"), "{cross_site}");
+    server.close();
+}
+
+#[test]
+fn gateway_bridge_channels_require_auth_and_round_trip_frames() {
+    let unauthenticated_local = GatewayBridgeHub::default();
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: Some(unauthenticated_local),
+        webauthn: None,
+        config: config(None),
+        started_at: 1,
+    })
+    .expect("gateway server");
+    let denied = request(
+        server.port(),
+        "GET /local-exec/requests HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
+    );
+    assert!(denied.starts_with("HTTP/1.1 401 Unauthorized"), "{denied}");
+    server.close();
+
+    let local_exec = GatewayBridgeHub::default();
+    let webauthn = GatewayBridgeHub::default();
+    let local_responses = local_exec.subscribe_responses();
+    let webauthn_responses = webauthn.subscribe_responses();
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: Some(local_exec.clone()),
+        webauthn: Some(webauthn.clone()),
+        config: config(Some("secret")),
+        started_at: 1,
+    })
+    .expect("authenticated gateway server");
+    let port = server.port();
+
+    let local_client = thread::spawn(move || {
+        let mut stream = TcpStream::connect(("127.0.0.1", port)).expect("connect local-exec SSE");
+        stream
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .expect("local-exec read timeout");
+        stream
+            .write_all(
+                b"GET /local-exec/requests HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer secret\r\nConnection: keep-alive\r\n\r\n",
+            )
+            .expect("write local-exec SSE request");
+        stream.flush().expect("flush local-exec request");
+        let mut bytes = Vec::new();
+        let mut chunk = [0_u8; 1024];
+        loop {
+            let count = stream.read(&mut chunk).expect("read local-exec SSE");
+            assert!(count > 0, "local-exec SSE ended before request frame");
+            bytes.extend_from_slice(&chunk[..count]);
+            let text = String::from_utf8_lossy(&bytes);
+            if text.contains("\"kind\":\"execute\"") {
+                return text.into_owned();
+            }
+        }
+    });
+    for _ in 0..100 {
+        if local_exec.request_subscriber_count() > 0 {
+            break;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    assert_eq!(local_exec.request_subscriber_count(), 1);
+    local_exec.publish_request(json!({"kind":"execute","requestId":"local-1"}));
+    let local_stream = local_client.join().expect("local-exec client");
+    assert!(local_stream.contains("retry: 1000"), "{local_stream}");
+
+    let local_body = r#"{"kind":"result","requestId":"local-1","value":7}"#;
+    let local_post = request(
+        port,
+        &format!(
+            "POST /local-exec/responses HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer secret\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{local_body}",
+            local_body.len()
+        ),
+    );
+    assert!(local_post.starts_with("HTTP/1.1 200 OK"), "{local_post}");
+    assert_eq!(
+        local_responses.recv_timeout(Duration::from_secs(1)).expect("local response"),
+        json!({"kind":"result","requestId":"local-1","value":7})
+    );
+
+    let web_body = r#"{"kind":"hello","computerId":"computer-1"}"#;
+    let web_post = request(
+        port,
+        &format!(
+            "POST /webauthn/responses HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer secret\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{web_body}",
+            web_body.len()
+        ),
+    );
+    assert!(web_post.starts_with("HTTP/1.1 200 OK"), "{web_post}");
+    assert_eq!(
+        webauthn_responses.recv_timeout(Duration::from_secs(1)).expect("webauthn response"),
+        json!({"kind":"hello","computerId":"computer-1"})
+    );
+
     server.close();
 }
 
