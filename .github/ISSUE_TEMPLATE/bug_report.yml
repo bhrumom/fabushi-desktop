@@ -1,0 +1,61 @@
+name: Bug report
+description: Report a reproducible Fabushi Desktop defect
+title: "[Bug] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide reproducible facts. Remove secrets, credentials, private data, and unrelated logs.
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Installed version and exact commit/SHA if known.
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: macOS / Windows / Linux and OS version.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Minimal sequence that reproduces the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Relevant logs, screenshots, trace/run IDs. Redact secrets and private data.
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Regression?
+      options:
+        - Unknown
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
