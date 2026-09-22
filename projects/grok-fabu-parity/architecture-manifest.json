@@ -9435,7 +9435,7 @@
       "targetPath": "source/host/src/box/box_env.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "fd17bbef6b62117dc65337a582cb06df1ffb3b6d",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
@@ -9446,7 +9446,7 @@
       "testEvidence": [
         "source/host/tests/host_small_ports_contract.rs"
       ],
-      "notes": "Grok box environment control port is compiled into the Mahayana Host box module and its transport/client forwarding semantics are covered by the host small-ports contract."
+      "notes": "Behavioral port and contract test exist, but final status is withheld until source/host/box/production is migrated and the shipping Host box graph calls apply_box_environment_via_transport."
     },
     {
       "referencePath": "source/host/box/box-factory.ts",
@@ -9520,7 +9520,7 @@
       "targetPath": "source/host/src/box/box_shell_command.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "d3f4e80db17f99dc1b2e18d13e2037e1dbd3050b",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
@@ -9531,7 +9531,7 @@
       "testEvidence": [
         "source/host/tests/host_small_ports_contract.rs"
       ],
-      "notes": "Grok shell-argument construction is compiled into the Mahayana Host box module. The contract fixes skipApproval=true and the single executable-command parse metadata used by Host shell execution."
+      "notes": "Behavioral builder and contract test exist, but final status is withheld until the migrated shell execution path uses build_host_shell_args in the shipping Host graph."
     },
     {
       "referencePath": "source/host/box/box-store-backend-policy.ts",
@@ -10413,7 +10413,7 @@
       "targetPath": "source/host/src/extensions/browser_ua/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "79754801d2105180ef556346f5df4d15990709ac",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10425,7 +10425,7 @@
       "testEvidence": [
         "source/host/tests/extensions_browser_ua_contract.rs"
       ],
-      "notes": "Mahayana Host BrowserUa extension preserves Auth + Experiments dependencies, starts owner stamping, subscribes renewed auth tokens, subscribes experiment changes, performs initial kill-switch reconciliation, and owns unsubscribe guards."
+      "notes": "BrowserUa dependency/subscription behavior is implemented and contract-tested, but final status is withheld until the production Auth and Experiments extensions are migrated and Host bootstrap starts this extension with those real dependencies."
     },
     {
       "referencePath": "source/host/extensions/browser-ua/ua-owner-stamp-service.ts",
@@ -13629,7 +13629,7 @@
       "targetPath": "source/host/src/host_request_context.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "a6d7991636ed7d2a565fc3887bf835ec2fa9df77",
       "architecturalRole": "host/host-request-context",
       "processOrPackage": "mahayana-host",
@@ -13641,7 +13641,7 @@
       "testEvidence": [
         "source/host/tests/host_small_ports_contract.rs"
       ],
-      "notes": "Mahayana Host owns request-context construction. The Rust provider preserves injectable timezone/rules/full-name resolvers, applies the existing Sand identity normalizer, and exposes best-effort OS/shell/timezone defaults."
+      "notes": "Behavioral request-context provider and contract tests exist, but final status is withheld until the shipping Mahayana Host bootstrap constructs and supplies this provider to request execution."
     },
     {
       "referencePath": "source/host/host-roster-bookkeeping.ts",
