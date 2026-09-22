@@ -1048,3 +1048,130 @@ fn oauth_forwarder_scopes_loopback_state_ttl_and_listener_lifecycle() {
     ));
     assert_eq!(forwarder.pending_count(), 0);
 }
+
+
+#[test]
+fn webauthn_provider_models_welcome_consent_sign_and_failure_frames() {
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    use mahayana_node_agent_coordinator::webauthn::provider::{
+        WebAuthnProvider, WebAuthnRequestFrame, WebAuthnResponseFrame,
+    };
+    use mahayana_node_agent_coordinator::webauthn::signer::{
+        SignerEvent, describe_signer_event_as_status, parse_signer_event_line,
+        SIGNER_EVENT_PREFIX,
+    };
+    use mahayana_node_agent_coordinator::webauthn::{
+        ApprovedWebAuthnConsent, WebAuthnCeremony, WebAuthnSigner, WebAuthnSignerResult,
+    };
+    use serde_json::json;
+
+    struct Signer {
+        calls: Rc<Cell<usize>>,
+    }
+
+    impl WebAuthnSigner for Signer {
+        fn sign(
+            &mut self,
+            ceremony: &WebAuthnCeremony,
+            _approved: Option<&ApprovedWebAuthnConsent>,
+        ) -> WebAuthnSignerResult {
+            self.calls.set(self.calls.get() + 1);
+            WebAuthnSignerResult::Success {
+                credential_json: json!({
+                    "origin": ceremony.origin,
+                    "kind": ceremony.kind,
+                }),
+            }
+        }
+    }
+
+    let calls = Rc::new(Cell::new(0));
+    let mut provider = WebAuthnProvider::new(
+        Signer { calls: calls.clone() },
+        Some("computer-1".into()),
+        Some("Fabushi".into()),
+    );
+
+    let welcome = provider.handle_frame(
+        WebAuthnRequestFrame::Welcome {
+            provider_id: "provider-1".into(),
+        },
+        None,
+    );
+    assert_eq!(provider.provider_id(), Some("provider-1"));
+    assert!(matches!(
+        welcome.as_slice(),
+        [WebAuthnResponseFrame::Hello { computer_id, label }]
+            if computer_id.as_deref() == Some("computer-1")
+                && label.as_deref() == Some("Fabushi")
+    ));
+    assert!(matches!(provider.heartbeat(), WebAuthnResponseFrame::Ping));
+
+    let ceremony = WebAuthnCeremony {
+        kind: "get".into(),
+        origin: "https://example.test".into(),
+        payload: json!({ "challenge": "abc" }),
+    };
+    let approved = provider.handle_frame(
+        WebAuthnRequestFrame::Ceremony {
+            request_id: "request-1".into(),
+            ceremony: ceremony.clone(),
+        },
+        Some(ApprovedWebAuthnConsent::approved()),
+    );
+    assert_eq!(calls.get(), 1);
+    assert_eq!(provider.in_flight_count(), 0);
+    assert!(matches!(
+        approved.as_slice(),
+        [
+            WebAuthnResponseFrame::Stage { stage: "grant", outcome: "ok", .. },
+            WebAuthnResponseFrame::Stage { stage: "sign", outcome: "ok", .. },
+            WebAuthnResponseFrame::Result { credential_json, .. },
+        ] if credential_json["origin"] == "https://example.test"
+    ));
+
+    let declined = provider.handle_frame(
+        WebAuthnRequestFrame::Ceremony {
+            request_id: "request-2".into(),
+            ceremony,
+        },
+        Some(ApprovedWebAuthnConsent::declined()),
+    );
+    assert_eq!(calls.get(), 1, "declined consent must not invoke the signer");
+    assert!(matches!(
+        declined.as_slice(),
+        [
+            WebAuthnResponseFrame::Stage { stage: "grant", outcome: "declined", .. },
+            WebAuthnResponseFrame::Error { .. },
+        ]
+    ));
+
+    assert!(provider
+        .handle_frame(
+            WebAuthnRequestFrame::Cancel {
+                request_id: "missing".into(),
+            },
+            None,
+        )
+        .is_empty());
+    provider.reset_transport();
+    assert_eq!(provider.provider_id(), None);
+
+    let presence = parse_signer_event_line(&format!(
+        "{SIGNER_EVENT_PREFIX}{{\"kind\":\"presence-required\"}}"
+    ))
+    .expect("signer event");
+    assert_eq!(presence, SignerEvent::PresenceRequired);
+    assert_eq!(
+        describe_signer_event_as_status(&presence),
+        Some("Touch your security key now")
+    );
+    let pin = parse_signer_event_line(&format!(
+        "{SIGNER_EVENT_PREFIX}{{\"kind\":\"pin-invalid\",\"retries\":2}}"
+    ))
+    .expect("pin event");
+    assert_eq!(pin, SignerEvent::PinInvalid { retries: Some(2) });
+    assert_eq!(describe_signer_event_as_status(&pin), None);
+}
