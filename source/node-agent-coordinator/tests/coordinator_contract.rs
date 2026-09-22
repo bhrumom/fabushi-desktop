@@ -1279,3 +1279,100 @@ fn inference_router_persists_bounded_transcripts_reactions_and_turn_ids() {
     );
     let _ = fs::remove_file(path);
 }
+
+
+#[test]
+fn gateway_dns_reporter_models_failure_episode_cooldown_and_recovery() {
+    use std::cell::Cell;
+
+    use mahayana_node_agent_coordinator::gateway::gateway_dns_diagnostics::{
+        DnsDiagnosis, DnsProbeResult, GatewayDnsDiagnosticReporter,
+        DNS_PROBE_MIN_INTERVAL_MS,
+    };
+
+    let system_calls = Cell::new(0_u32);
+    let independent_calls = Cell::new(0_u32);
+    let mut reporter = GatewayDnsDiagnosticReporter::default();
+
+    let first = reporter
+        .observe_with_probes(
+            1_000,
+            "dns",
+            Some("lookup failed: ENOTFOUND"),
+            Some("https://agent-7.us8.cursorvm.com/api"),
+            "probe-episode",
+            |_| {
+                system_calls.set(system_calls.get() + 1);
+                DnsProbeResult::NotFound
+            },
+            |hostname| {
+                independent_calls.set(independent_calls.get() + 1);
+                if hostname == "agent-7.us8.cursorvm.com" {
+                    DnsProbeResult::Resolved
+                } else {
+                    DnsProbeResult::NotFound
+                }
+            },
+        )
+        .expect("first DNS failure starts a diagnostic episode");
+    assert_eq!(first.trigger, DnsProbeResult::NotFound);
+    assert_eq!(first.diagnosis, DnsDiagnosis::SystemPathFailure);
+    assert_eq!(system_calls.get(), 1);
+    assert_eq!(independent_calls.get(), 3);
+    assert!(reporter.episode_active());
+    assert!(!reporter.probe_in_flight());
+
+    assert!(reporter
+        .observe_with_probes(
+            2_000,
+            "dns",
+            Some("EAI_AGAIN"),
+            Some("https://agent-7.us8.cursorvm.com/api"),
+            "probe-duplicate",
+            |_| DnsProbeResult::Resolved,
+            |_| DnsProbeResult::Resolved,
+        )
+        .is_none(), "duplicate failures in the same episode are suppressed");
+    assert_eq!(system_calls.get(), 1);
+    assert_eq!(independent_calls.get(), 3);
+
+    assert!(reporter
+        .observe_with_probes(
+            3_000,
+            "ok",
+            None,
+            Some("https://agent-7.us8.cursorvm.com/api"),
+            "probe-reset",
+            |_| DnsProbeResult::Resolved,
+            |_| DnsProbeResult::Resolved,
+        )
+        .is_none());
+    assert!(!reporter.episode_active());
+
+    assert!(reporter
+        .observe_with_probes(
+            3_001,
+            "dns",
+            None,
+            Some("https://agent-7.us8.cursorvm.com/api"),
+            "probe-too-soon",
+            |_| DnsProbeResult::Resolved,
+            |_| DnsProbeResult::Resolved,
+        )
+        .is_none(), "recovered episodes still honor the global probe cooldown");
+    assert!(!reporter.episode_active());
+
+    let after_cooldown = reporter
+        .observe_with_probes(
+            1_000 + DNS_PROBE_MIN_INTERVAL_MS,
+            "dns",
+            Some("EAI_AGAIN"),
+            Some("https://agent-7.us8.cursorvm.com/api"),
+            "probe-after-cooldown",
+            |_| DnsProbeResult::TemporaryFailure,
+            |_| DnsProbeResult::TemporaryFailure,
+        )
+        .expect("a recovered episode can probe again after the cooldown");
+    assert_eq!(after_cooldown.trigger, DnsProbeResult::TemporaryFailure);
+    assert_eq!(after_cooldown.diagnosis, DnsDiagnosis::GeneralDnsFailure);
+}
