@@ -29,6 +29,9 @@ use mahayana_host_runtime::extensions::webauthn_proxy::extension::{
 use mahayana_host_runtime::extensions::telemetry::webauthn_proxy_telemetry::{
     WebAuthnProxyReport, webauthn_proxy_telemetry,
 };
+use mahayana_host_runtime::extensions::trays::extension::{
+    HostTraysExtension, start_trays_extension,
+};
 use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxRunnerResourcePort,
     ForeverBoxService, start_forever_box_extension,
@@ -81,8 +84,10 @@ struct ProductionHostExtensions {
     team_rules: Arc<ProductionTeamRulesResolver>,
     team_rules_renewal_subscription: Option<u64>,
     source_map: Arc<SandSourceMap>,
+    trays: Arc<HostTraysExtension>,
     box_lifecycle: Arc<BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>>,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
+    trays: Arc<HostTraysExtension>,
 }
 
 impl Drop for ProductionHostExtensions {
@@ -155,6 +160,8 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
 
     let source_map = Arc::new(start_source_map_extension());
 
+    let trays = Arc::new(start_trays_extension());
+
     let factory =
         ProductionBoxLifecycleClientFactory::from_process_env().map_err(|error| error.to_string())?;
     let box_lifecycle = Arc::new(start_box_lifecycle_extension(Arc::clone(&auth), &factory));
@@ -175,6 +182,7 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
         team_rules,
         team_rules_renewal_subscription: Some(team_rules_renewal_subscription),
         source_map,
+        trays,
         box_lifecycle,
         webauthn_proxy,
     })
@@ -446,6 +454,24 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.forever_box),
                 args,
             );
+        }
+        if method == "getTrays" {
+            return serde_json::to_value(self.trays.list())
+                .map_err(|error| GatewayCommandError::Internal(error.to_string()));
+        }
+        if method == "dismissTray" {
+            let id = args
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .filter(|value| !value.trim().is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "dismissTray requires id".into()
+                ))?;
+            return Ok(serde_json::Value::Bool(self.trays.dismiss(id)));
+        }
+        if method == "clearTrays" {
+            self.trays.clear_all();
+            return Ok(serde_json::Value::Null);
         }
         if method == "requestWebAuthnCeremony" {
             return self
@@ -734,6 +760,7 @@ fn main() {
             routed_provider_tasks: Arc::clone(&routed_provider_tasks),
             forever_box: Arc::clone(&forever_box),
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
+            trays: Arc::clone(&production_extensions.trays),
         }),
         events: gateway_events.clone(),
         local_exec: None,
