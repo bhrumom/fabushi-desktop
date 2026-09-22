@@ -98,15 +98,23 @@ impl ProductionTurnRunShellAdapter {
                 drop(progress);
                 on_text_delta(delta, accumulated);
             };
+            let seen_for_checkpoint = Arc::clone(&first_output_seen);
             let mut accept_checkpoint =
                 |checkpoint: &RoutedProviderCheckpoint| {
                     let cursor = checkpoint_store.persist(checkpoint)?;
-                    progress.borrow_mut().checkpoint =
-                        Some(AttemptCheckpoint::new(
-                            cursor,
-                            checkpoint.emitted_text_bytes(),
-                            checkpoint.tool_calls_completed(),
-                        ));
+                    // A durable tool-boundary checkpoint is observable provider
+                    // progress even when no text delta preceded it. Stop the
+                    // first-output watchdog only after persistence succeeds so
+                    // an unpersisted boundary can never authorize resume.
+                    seen_for_checkpoint.store(true, Ordering::Release);
+                    let mut progress = progress.borrow_mut();
+                    progress.record_output(0);
+                    progress.checkpoint = Some(AttemptCheckpoint::new(
+                        cursor,
+                        checkpoint.emitted_text_bytes(),
+                        checkpoint.tool_calls_completed(),
+                    ));
+                    drop(progress);
                     *accepted_resume.borrow_mut() =
                         Some(checkpoint.clone());
                     Ok(())
