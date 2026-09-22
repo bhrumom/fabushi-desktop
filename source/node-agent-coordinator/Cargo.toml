@@ -14,3 +14,8 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "std"
 
 [dev-dependencies]
 pretty_assertions = "1"
+
+[profile.ci]
+inherits = "dev"
+debug = 0
+incremental = true
