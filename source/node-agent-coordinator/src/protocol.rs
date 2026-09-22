@@ -29,11 +29,25 @@ pub enum ShutdownReason {
 pub struct Failure {
     pub code: String,
     pub message: String,
+    #[serde(rename = "transportKind", default, skip_serializing_if = "Option::is_none")]
+    pub transport_kind: Option<String>,
 }
 
 impl Failure {
     pub fn new(code: impl Into<String>, message: impl Into<String>) -> Self {
-        Self { code: code.into(), message: message.into() }
+        Self { code: code.into(), message: message.into(), transport_kind: None }
+    }
+
+    pub fn with_transport_kind(
+        code: impl Into<String>,
+        message: impl Into<String>,
+        transport_kind: impl Into<String>,
+    ) -> Self {
+        Self {
+            code: code.into(),
+            message: message.into(),
+            transport_kind: Some(transport_kind.into()),
+        }
     }
 }
 
