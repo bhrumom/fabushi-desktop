@@ -9,6 +9,7 @@ pub enum DnsProbeResult {
     NotFound,
     TemporaryFailure,
     Error,
+    Unknown,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -130,6 +131,8 @@ pub fn classify_dns_diagnosis(
 #[derive(Debug, Default)]
 pub struct GatewayDnsDiagnosticReporter {
     last_probe_ms: Option<u64>,
+    episode_active: bool,
+    probe_in_flight: bool,
 }
 
 impl GatewayDnsDiagnosticReporter {
@@ -140,6 +143,67 @@ impl GatewayDnsDiagnosticReporter {
 
     pub fn record_probe(&mut self, now_ms: u64) {
         self.last_probe_ms = Some(now_ms);
+    }
+
+    pub fn episode_active(&self) -> bool {
+        self.episode_active
+    }
+
+    pub fn probe_in_flight(&self) -> bool {
+        self.probe_in_flight
+    }
+
+    pub fn observe_with_probes<SystemLookup, IndependentLookup>(
+        &mut self,
+        now_ms: u64,
+        outcome: &str,
+        cause_summary: Option<&str>,
+        base_url: Option<&str>,
+        wildcard_label: &str,
+        mut system_lookup: SystemLookup,
+        mut independent_lookup: IndependentLookup,
+    ) -> Option<GatewayDnsDiagnostic>
+    where
+        SystemLookup: FnMut(&str) -> DnsProbeResult,
+        IndependentLookup: FnMut(&str) -> DnsProbeResult,
+    {
+        if outcome == "ok" {
+            self.episode_active = false;
+            return None;
+        }
+        if outcome != "dns" || self.episode_active || self.probe_in_flight || !self.should_probe(now_ms) {
+            return None;
+        }
+        let target = dns_target_from_base_url(base_url, wildcard_label)?;
+        self.episode_active = true;
+        self.probe_in_flight = true;
+        self.record_probe(now_ms);
+
+        let system_exact = system_lookup(&target.endpoint_hostname);
+        let independent_exact = independent_lookup(&target.endpoint_hostname);
+        let independent_wildcard = independent_lookup(&target.wildcard_hostname);
+        let independent_general = independent_lookup(GENERAL_CONTROL_HOSTNAME);
+        self.probe_in_flight = false;
+
+        let trigger = match cause_summary {
+            Some(detail) if detail.contains("ENOTFOUND") => DnsProbeResult::NotFound,
+            Some(detail) if detail.contains("EAI_AGAIN") => DnsProbeResult::TemporaryFailure,
+            _ => DnsProbeResult::Unknown,
+        };
+        Some(GatewayDnsDiagnostic {
+            cluster: target.cluster,
+            trigger,
+            diagnosis: classify_dns_diagnosis(
+                system_exact,
+                independent_exact,
+                independent_wildcard,
+                independent_general,
+            ),
+            system_exact,
+            independent_exact,
+            independent_wildcard,
+            independent_general,
+        })
     }
 
     pub fn diagnose(
