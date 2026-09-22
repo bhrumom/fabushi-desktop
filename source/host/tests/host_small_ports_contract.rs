@@ -133,3 +133,46 @@ fn host_request_context_omits_blank_user_identity() {
 
     assert_eq!(provider.resolve().user_full_name, None);
 }
+
+#[test]
+fn ua_token_kill_switch_retries_failures_and_reconciles_marker() {
+    use std::cell::Cell;
+    use std::fs;
+    use std::rc::Rc;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use mahayana_host_runtime::extensions::browser_ua::ua_token_kill_switch_service::create_ua_token_kill_switch_reconciler;
+
+    let suffix = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!("fabushi-ua-kill-switch-{suffix}"));
+    let marker = root.join("nested").join("disabled");
+    let enabled = Rc::new(Cell::new(true));
+    let log_count = Rc::new(Cell::new(0usize));
+
+    let enabled_for_reconciler = Rc::clone(&enabled);
+    let logs_for_reconciler = Rc::clone(&log_count);
+    let mut reconcile = create_ua_token_kill_switch_reconciler(
+        Some(marker.clone()),
+        move || enabled_for_reconciler.get(),
+        move |_message| logs_for_reconciler.set(logs_for_reconciler.get() + 1),
+    );
+
+    reconcile.reconcile();
+    assert_eq!(log_count.get(), 1);
+    assert_eq!(reconcile.last_applied(), None);
+
+    fs::create_dir_all(marker.parent().expect("marker parent")).expect("create marker parent");
+    reconcile.reconcile();
+    assert_eq!(fs::read_to_string(&marker).expect("marker text"), "1\n");
+    assert_eq!(reconcile.last_applied(), Some(true));
+
+    enabled.set(false);
+    reconcile.reconcile();
+    assert!(!marker.exists());
+    assert_eq!(reconcile.last_applied(), Some(false));
+
+    fs::remove_dir_all(root).expect("remove UA test root");
+}
