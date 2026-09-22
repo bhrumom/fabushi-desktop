@@ -20,6 +20,11 @@ struct StaticBackend {
 impl CredentialRenewalBackend for StaticBackend {
     fn renew(&self, credential: &str) -> Result<InferenceCredential, SandCredentialRenewalError> {
         assert_eq!(credential, "renewal-secret");
+        // Grok's renewal backend is async: even an immediately-resolved Promise
+        // yields before onResult fires, so callers can subscribe after service
+        // construction without racing the first renewal event. Preserve that
+        // scheduling boundary in this synchronous Rust test double.
+        thread::sleep(Duration::from_millis(5));
         Ok(InferenceCredential {
             access_token: self.token.clone(),
             expires_at_ms: self.expires_at_ms,
