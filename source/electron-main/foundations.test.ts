@@ -26,6 +26,7 @@ import { createIdleRelaunchSignals, isScreensaverRunning } from "./update/idle-r
 import { createDesktopAccountAuthorizer } from "./account/account-authorization.js";
 import { createSandRecreateCommands, type RecreateOperationId } from "./box/box-recreate-commands.js";
 import { createDesktopHostSettingsFields } from "./prefs/host-settings-fields.js";
+import { createReleaseMetadata } from "./update/release-metadata.js";
 
 test("dev gates and latency clamps match Grok behavior", () => {
   assert.equal(setSimulatedGatewayLatencyMs(25.9), 25);
@@ -358,4 +359,30 @@ test("host settings field hydrates from live box state and clears on account dep
   fields.onAccountDeparted();
   assert.equal(local, undefined);
   assert.equal(cleared, 1);
+});
+
+
+test("release metadata resolves package identity and live update gates", async () => {
+  const metadata = createReleaseMetadata({
+    packageVersion: "1.2.75",
+    packageTrack: "not-a-track",
+    isLabBuild: false,
+    app: { getVersion: () => "fallback-version", isPackaged: true },
+    env: { SAND_DISABLE_UPDATES: "1" },
+    platform: "darwin",
+  });
+  assert.deepEqual(metadata.readAppReleaseMetadata(), {
+    version: "1.2.75",
+    buildDefaultTrack: null,
+  });
+  assert.equal(await metadata.computeUpdateDisabledReasonLive(), "disabled-by-env");
+
+  const fallback = createReleaseMetadata({
+    isLabBuild: false,
+    app: { getVersion: () => "9.9.9", isPackaged: true },
+    env: {},
+    platform: "darwin",
+  });
+  assert.equal(fallback.readAppReleaseMetadata().version, "9.9.9");
+  assert.equal(await fallback.computeUpdateDisabledReasonLive(), null);
 });
