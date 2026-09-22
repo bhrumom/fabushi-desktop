@@ -10,6 +10,12 @@ What changes, and what user/engineering problem does it solve?
 - Migration record, if applicable:
 - Architecture docs updated:
 
+## Existing-work / duplicate check
+
+- Related active branch/PR/SHA found:
+- Decision: continue / consolidate / supersede / no material overlap found
+- Evidence/reason:
+
 ## Scope
 
 - In scope:
