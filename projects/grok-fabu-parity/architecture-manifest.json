@@ -10232,10 +10232,12 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/box_lifecycle/box_lifecycle_service.rs",
-        "source/host/src/extensions/box_lifecycle/mod.rs"
+        "source/host/src/extensions/box_lifecycle/mod.rs",
+        "source/host/src/extensions/box_lifecycle/production.rs"
       ],
       "testEvidence": [
-        "source/host/tests/extensions_box_lifecycle_contract.rs"
+        "source/host/tests/extensions_box_lifecycle_contract.rs",
+        "source/host/tests/extensions_box_lifecycle_production_contract.rs"
       ],
       "notes": "Rust service preserves the Grok async client boundary, forwards the caller cancellation signal to run-state retrieval, defaults force to false, and preserves started/reason response semantics."
     },
@@ -10251,12 +10253,16 @@
       "behavioralEvidence": [
         "source/host/src/extensions/box_lifecycle/extension.rs",
         "source/host/src/extensions/box_lifecycle/mod.rs",
-        "source/host/src/extensions/registry.rs"
+        "source/host/src/extensions/registry.rs",
+        "source/host/src/extensions/box_lifecycle/production.rs",
+        "source/host/src/extensions/auth/extension.rs"
       ],
       "testEvidence": [
-        "source/host/tests/extensions_box_lifecycle_contract.rs"
+        "source/host/tests/extensions_box_lifecycle_contract.rs",
+        "source/host/tests/extensions_box_lifecycle_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Auth dependency and client-factory composition are implemented and contract-tested. Final status is withheld until the production Auth extension and concrete GrokBot backend client adapter are migrated and Host bootstrap starts BoxLifecycle with those real dependencies."
+      "notes": "BoxLifecycle now has a concrete Rust GrokBotService production client: the frozen GetSandBoxRunState/RecreateSandBox protobuf contracts, bearer Auth extension integration, machine-bound Cursor checksum, Sand client metadata, request IDs, privacy-safe ghost fallback, and real HTTP/1.1 Connect unary transport are contract-tested. Final remains withheld until the shipping Host bootstrap starts this extension with the production Auth runtime and the shared privacy/ghost-mode resolver replaces the explicit fail-closed fallback."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/agent-store-sand-files.ts",

@@ -139,7 +139,7 @@ pub fn get_configured_backend_url() -> Result<String, SandCredentialRenewalError
         .map_err(|error| SandCredentialRenewalError::InvalidBackendUrl(error.to_string()))
 }
 
-fn sand_box_namespace() -> &'static str {
+pub fn sand_box_namespace() -> &'static str {
     match env::var("SAND_BOX_OWNER_NAMESPACE").ok().as_deref() {
         Some("dev") => "dev",
         Some("lab") => "lab",
@@ -166,7 +166,7 @@ fn sand_client_base_version() -> String {
     }
 }
 
-fn sand_client_version() -> String {
+pub fn sand_client_version() -> String {
     let base = sand_client_base_version();
     match sand_box_namespace() {
         "dev" => format!("{base}-dev"),
