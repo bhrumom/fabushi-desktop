@@ -179,6 +179,26 @@ mod unix {
                         "payload": { "type": "host.test", "value": 1 }
                     })
                 )?;
+                writeln!(
+                    stream,
+                    "data: {}\n",
+                    json!({
+                        "channel": "client-side-tool-v2",
+                        "payload": {
+                            "version": 1,
+                            "kind": "call",
+                            "accountSlot": "host",
+                            "agentId": "agent-tool",
+                            "epoch": "epoch-1",
+                            "sequence": 1,
+                            "message": {
+                                "encoding": "protobuf-base64",
+                                "messageType": "aiserver.v1.ClientSideToolV2Call",
+                                "bytes": "GgZjYWxsLTc="
+                            }
+                        }
+                    })
+                )?;
                 stream.flush()?;
                 while !stop.load(Ordering::Acquire) {
                     thread::sleep(Duration::from_millis(10));
@@ -360,8 +380,9 @@ exit 17
 
         let mut saw_host_running = false;
         let mut saw_runtime_event = false;
+        let mut saw_tool_event = false;
         let mut saw_echo_reply = false;
-        for _ in 0..8 {
+        for _ in 0..12 {
             let (channel, frame) = rx
                 .recv_timeout(Duration::from_secs(2))
                 .expect("frame while serving echo")
@@ -378,6 +399,14 @@ exit 17
                         saw_runtime_event = true;
                     }
                 }
+                CoordinatorFrame::Event { family, payload }
+                    if family == "client-side-tool-v2" =>
+                {
+                    assert_eq!(payload["agentId"], "agent-tool");
+                    assert_eq!(payload["epoch"], "epoch-1");
+                    assert_eq!(payload["sequence"], 1);
+                    saw_tool_event = true;
+                }
                 CoordinatorFrame::Reply {
                     request_id,
                     outcome: ReplyOutcome::Ok { value },
@@ -387,12 +416,13 @@ exit 17
                 }
                 _ => {}
             }
-            if saw_host_running && saw_runtime_event && saw_echo_reply {
+            if saw_host_running && saw_runtime_event && saw_tool_event && saw_echo_reply {
                 break;
             }
         }
         assert!(saw_host_running, "shipping Coordinator did not expose Host lifecycle");
         assert!(saw_runtime_event, "shipping Coordinator did not relay Host event");
+        assert!(saw_tool_event, "shipping Coordinator did not relay client-side tool events");
         assert!(saw_echo_reply, "shipping Coordinator did not settle Host reply");
 
         send(
