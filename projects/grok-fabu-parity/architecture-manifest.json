@@ -10807,12 +10807,18 @@
       "targetPath": "source/host/src/runner/tool_call_identity.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "fbc756c31928094afaf3de47a057a5425b05dd43",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tool_call_identity.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust semantic port verified against the frozen Grok 0.18 behavior and covered by the independent Host Runner contract."
     },
     {
       "referencePath": "source/host/runner/tools/box-help-tool.ts",
@@ -11201,12 +11207,18 @@
       "targetPath": "source/host/src/runner/turn_usage.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "245a7574a573189feb91adbb2925b80b9981ea13",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/turn_usage.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust semantic port verified against the frozen Grok 0.18 behavior and covered by the independent Host Runner contract."
     },
     {
       "referencePath": "source/host/runner/video-container.ts",
