@@ -14477,12 +14477,23 @@
       "targetPath": "source/host/src/runner/production_turn_agent_owner.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "c390ece2ff2ed6032118b7e8921b94a1f2869c2f",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner/sand_agent_runner.rs",
+        "source/host/src/runner/turn_run_shell.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/production_turn_agent_owner_contract.rs",
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Shipping Host now constructs a Runner-owned TurnAgentComposition -> ProductionTurnAgentOwner -> SandAgentRunner chain. The owner drives TurnRunShell begin/dispatched and exactly one completed/cancelled/failed terminal settlement, with retryable transport classification and fail-closed prompt validation. The frozen Grok owner still binds a much larger Agent build surface (resource/remote-box accessors, tool host/session, summarization session, static config, disk-pressure/profile/update relays and disposer semantics), so this production slice is real but not yet 1:1 final."
     },
     {
       "referencePath": "source/host/runner/production-turn-input-projection.ts",
@@ -14501,12 +14512,23 @@
       "targetPath": "source/host/src/runner/production_turn_run_shell_adapter.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "563d27a2ae7bc120c9e1982ef94d98c4185e7708",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/production_turn_run_shell_adapter.rs",
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/extensions/inference/provider_session.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+        "source/host/tests/runner_routed_provider_contract.rs",
+        "source/host/tests/inference_provider_session_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "The shipping routed-provider path now enters ProductionTurnRunShellAdapter for bounded retry/backoff, first-output watchdog, cancellation, durable checkpoint-before-resume and tool-only checkpoint progress. Provider attempts use run_routed_provider_text_with_lifecycle and the Host supplies a per-agent/per-stream durable checkpoint store. This Rust target currently covers the provider-attempt lifecycle nested inside the frozen adapter; the full Grok prepared-turn/Agent stream/session/settle/context-linking adapter remains to be ported before final."
     },
     {
       "referencePath": "source/host/runner/prompt-collector-glue.ts",
@@ -14580,25 +14602,28 @@
       "targetPath": "source/host/src/runner/sand_agent_runner.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "1823ba8f57adbede2aae2aafa1f3fd5d09a8d8da",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
+        "source/host/src/runner/sand_agent_runner.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner/production_turn_run_shell_adapter.rs",
         "source/host/src/runner/routed_provider_runtime.rs",
-        "source/host/src/runner/system_prompt_assembly.rs",
-        "source/host/app/src/main.rs",
-        "source/host/src/extensions/inference/codex_direct_responses.rs",
-        "source/host/src/extensions/inference/provider_session.rs"
+        "source/host/src/extensions/inference/provider_session.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
+        "source/host/tests/production_turn_agent_owner_contract.rs",
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs",
+        "source/host/tests/inference_provider_session_contract.rs",
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/inference_codex_direct_contract.rs",
-        "source/host/tests/inference_provider_session_contract.rs"
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "A Runner-owned routed-provider/MCP execution slice is shipping behind the Host gateway. Active provider streams are registered by streamId and runner.cancelRoutedProvider emits correlated cancellation immediately. The cancellation signal now reaches provider setup, Codex/OpenRouter stream-event and tool boundaries, and Claude Code process ownership; Claude Code is spawned and killed on cancellation instead of being hidden behind Command::output. Blocking HTTP connection/read syscalls are still not independently interruptible during a completely silent provider interval, and full checkpoint/resume, first-output watchdog/retry, production turn-agent owner/composition and terminal lifecycle remain incomplete, so this mapping stays planned."
+      "notes": "Shipping Host now routes provider-backed turns through SandAgentRunner -> ProductionTurnAgentOwner -> TurnAgentComposition -> routed-provider lifecycle. The path has correlated cancellation, async cancel polling for silent HTTP I/O, Claude child ownership, first-output watchdog/retry, durable checkpoint/resume and terminal settlement. Exact implementation HEAD 7560ed956ce2b13593d2581e87f8bfad035120c4 passed Rust desktop runtime run 35776427009 after a non-reproducing loopback BrokenPipe retry. Full Grok SandAgentRunner parity still requires the complete Agent session/action/resource/toolset/attachments/subagents/computer-use/quiesce/await-user lifecycle, so this mapping remains existing-needs-parity."
     },
     {
       "referencePath": "source/host/runner/sand-auto-review-classifier-run.ts",
@@ -15256,12 +15281,23 @@
       "targetPath": "source/host/src/runner/turn_agent_composition.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "0f285618ee8e625869485a9121bdc00612659203",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/runner/sand_agent_runner.rs",
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/production_turn_agent_owner_contract.rs",
+        "source/host/tests/runner_routed_provider_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "A real shipping TurnAgentComposition now owns provider selection, routed Host tool bridge, request-context projection, cancellation and durable checkpoint store, and invokes the independent Runner routed-provider runtime. The frozen Grok composition also builds the full Agent/tool-session/resource-projection/MCP/static-config stream graph; those Agent construction surfaces are not yet represented by this Rust slice, so the mapping remains non-final."
     },
     {
       "referencePath": "source/host/runner/turn-memory.ts",
@@ -16065,7 +16101,11 @@
         "source/node-agent-coordinator/src/routed_mcp_bridge.rs",
         "source/host/src/extensions/inference/provider_session.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/runner/routed_provider_runtime.rs"
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/runner/production_turn_run_shell_adapter.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner/sand_agent_runner.rs"
       ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
@@ -16075,9 +16115,11 @@
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs",
         "source/host/tests/inference_codex_direct_contract.rs",
-        "source/host/tests/inference_provider_session_contract.rs"
+        "source/host/tests/inference_provider_session_contract.rs",
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+        "source/host/tests/production_turn_agent_owner_contract.rs"
       ],
-      "notes": "Coordinator owns provider selection, transcript projection, per-agent admission queue and correlated Runner event settlement. Provider/model streaming and routed MCP tool execution cross the Host gateway; cancellation crosses runner.cancelRoutedProvider into provider setup/stream/tool boundaries and Claude child-process ownership. Final remains withheld until exact-HEAD Actions succeed and silent HTTP I/O interruption plus Runner checkpoint/resume, first-output watchdog/retry and production turn composition are complete."
+      "notes": "Coordinator owns provider selection, transcript projection, per-agent admission queue and correlated Runner event settlement. Non-Cursor sendPrompt crosses runner.startRoutedProvider into the independent shipping Host/Runner; cancellation crosses runner.cancelRoutedProvider. The downstream provider path now has cancel-polling silent HTTP I/O, owned Claude child termination, first-output watchdog/retry and durable checkpoint/resume. Final is still withheld because the frozen production Agent composition/session/resource/tool/subagent lifecycle is not 1:1 complete and the end-to-end Renderer/Electron/Coordinator/Host/Runner cutover chain has not yet passed its final exact-HEAD gate."
     },
     {
       "referencePath": "source/node-agent-coordinator/local-exec/daemon-files.ts",
@@ -16131,7 +16173,11 @@
         "source/node-agent-coordinator/src/routed_mcp_bridge.rs",
         "source/host/src/extensions/inference/provider_session.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/runner/routed_provider_runtime.rs"
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/runner/production_turn_run_shell_adapter.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner/sand_agent_runner.rs"
       ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/production_protocol.rs",
@@ -16139,9 +16185,11 @@
         "source/node-agent-coordinator/tests/routed_mcp_http.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
-        "source/host/tests/runner_routed_provider_contract.rs"
+        "source/host/tests/runner_routed_provider_contract.rs",
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+        "source/host/tests/production_turn_agent_owner_contract.rs"
       ],
-      "notes": "Shipping Coordinator composition preserves the process boundary for non-Cursor inference: sendPrompt is accepted/queued in Coordinator, runner.startRoutedProvider crosses the authenticated Host gateway, streaming returns through correlated SSE events, and deadline/close termination calls runner.cancelRoutedProvider. The Host/Runner now propagates cancellation into provider boundaries and kills owned Claude Code children. Final remains withheld pending exact-HEAD CI and silent HTTP I/O interruption, Runner checkpoint/resume, first-output watchdog/retry and remaining Host/Runner production composition."
+      "notes": "Shipping Coordinator composition includes Host supervision, authenticated Gateway dispatch, LocalExec supervision, MCP/OAuth forwarding, WebAuthn runtime, client-side tool relay, pause/disposal and the independent inference queue. Provider-backed turns now cross the Host gateway into the Runner owner/composition and return correlated streaming/terminal events with cancellation, retry/watchdog and checkpoint/resume underneath. Final remains withheld until the complete frozen Runner Agent lifecycle and the same-exact-HEAD Renderer -> Electron -> Coordinator -> Host -> Runner production-chain acceptance are proven; no cutover is authorized yet."
     },
     {
       "referencePath": "source/node-agent-coordinator/oauth/mcp-oauth-callback-listener.ts",
@@ -35613,5 +35661,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T15:21:25.635Z"
+  "generatedAt": "2026-09-22T19:58:49.172Z"
 }
