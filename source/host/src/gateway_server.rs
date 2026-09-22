@@ -11,6 +11,7 @@ use std::time::Duration;
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use serde_json::{Value, json};
+use subtle::ConstantTimeEq;
 use thiserror::Error;
 
 use crate::gateway_config::{GatewayServerConfig, is_loopback_host};
@@ -480,7 +481,11 @@ fn is_authorized(request: &HttpRequest, expected: &str) -> bool {
         .headers
         .get("authorization")
         .and_then(|value| value.strip_prefix(&format!("{GATEWAY_AUTH_SCHEME} ")))
-        .is_some_and(|provided| provided.as_bytes() == expected.as_bytes())
+        .is_some_and(|provided| {
+            let provided = provided.as_bytes();
+            let expected = expected.as_bytes();
+            provided.len() == expected.len() && bool::from(provided.ct_eq(expected))
+        })
 }
 
 fn write_response(
@@ -528,7 +533,9 @@ fn respond_json(stream: &mut TcpStream, status: u16, value: Value) -> io::Result
 }
 
 fn respond_error(stream: &mut TcpStream, status: u16, message: impl Into<String>) -> io::Result<()> {
-    respond_json(stream, status, json!({ "error": message.into() }))
+    let encoded = serde_json::to_vec(&json!({ "error": message.into() }))
+        .map_err(|error| io::Error::other(format!("gateway error serialization failed: {error}")))?;
+    write_response(stream, status, "application/json", &encoded, &[])
 }
 
 fn parse_channels(query: Option<&str>) -> Option<Vec<String>> {
