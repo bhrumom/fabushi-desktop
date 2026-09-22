@@ -451,12 +451,18 @@
       "targetPath": "frontend/src/recovered/features/access/cover/composition.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "31569a3b1c493151f13abf2330c1c732c1c1c6d1",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/access/cover/composition.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/access-roster-state.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer state parity with executable contract coverage for rebuild locking/transport lifecycle, access composition, and account-scoped roster selection persistence."
     },
     {
       "referencePath": "frontend/src/recovered/features/access/cover/computer-rebuild-box-store.ts",
@@ -487,24 +493,36 @@
       "targetPath": "frontend/src/recovered/features/access/cover/computer-rebuild-model.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "203f6a835fb908e6aff9e2c39ab4200efadb1004",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/access/cover/computer-rebuild-model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/access-roster-state.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer state parity with executable contract coverage for rebuild locking/transport lifecycle, access composition, and account-scoped roster selection persistence."
     },
     {
       "referencePath": "frontend/src/recovered/features/access/cover/computer-rebuild-transport-store.ts",
       "targetPath": "frontend/src/recovered/features/access/cover/computer-rebuild-transport-store.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "2622baee96cccc4f71ec3e42068da6ecabeb3eae",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/access/cover/computer-rebuild-transport-store.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/access-roster-state.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer state parity with executable contract coverage for rebuild locking/transport lifecycle, access composition, and account-scoped roster selection persistence."
     },
     {
       "referencePath": "frontend/src/recovered/features/access/cover/first-box-gate.ts",
@@ -2983,12 +3001,18 @@
       "targetPath": "frontend/src/recovered/features/roster/selection-state.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "4bf94656eb5b0677e30bc0f92bb4be3e74bac3cd",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/roster/selection-state.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/access-roster-state.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer state parity with executable contract coverage for rebuild locking/transport lifecycle, access composition, and account-scoped roster selection persistence."
     },
     {
       "referencePath": "frontend/src/recovered/features/roster/status.tsx",
@@ -24747,5 +24771,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:46:01.089Z"
+  "generatedAt": "2026-09-22T07:49:04.909Z"
 }
