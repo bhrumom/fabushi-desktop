@@ -12,9 +12,8 @@ const coordinatorExecutable = process.platform === 'win32'
 const profile = process.argv[2] || process.env.MAHAYANA_HOST_PROFILE || 'release';
 const source = path.join(
   repoRoot,
-  'third_party',
-  'mahayana',
-  'mahayana-rs',
+  'source',
+  'host',
   'target',
   profile,
   hostExecutable,
