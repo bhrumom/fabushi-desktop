@@ -1588,3 +1588,77 @@ fn gateway_request_dispatcher_posts_real_http_json_and_classifies_errors() {
         }
     ));
 }
+
+
+#[test]
+fn gateway_client_streams_real_sse_and_honors_bearer_auth() {
+    use std::cell::{Cell, RefCell};
+    use std::io::{BufRead, BufReader, Write};
+    use std::net::TcpListener;
+    use std::thread;
+
+    use mahayana_node_agent_coordinator::gateway::gateway_client::stream_http_events;
+    use mahayana_node_agent_coordinator::gateway::host_supervisor::GatewayConnection;
+    use serde_json::json;
+    use std::collections::BTreeMap;
+
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind SSE gateway");
+    let port = listener.local_addr().expect("SSE address").port();
+    let observed = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().expect("accept SSE request");
+        let mut reader = BufReader::new(stream.try_clone().expect("clone SSE stream"));
+        let mut request = String::new();
+        loop {
+            let mut line = String::new();
+            reader.read_line(&mut line).expect("SSE request line");
+            if line.is_empty() || line == "\r\n" {
+                break;
+            }
+            request.push_str(&line);
+        }
+        write!(
+            stream,
+            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: keep-alive\r\n\r\nretry: 1000\n\ndata: {{\"channel\":\"runtime\",\"payload\":{{\"value\":9}}}}\n\n"
+        )
+        .expect("write SSE response");
+        stream.flush().expect("flush SSE response");
+        request
+    });
+
+    let mut headers = BTreeMap::new();
+    headers.insert("authorization".into(), "Bearer stream-secret".into());
+    let connection = GatewayConnection {
+        base_url: format!("http://127.0.0.1:{port}"),
+        headers,
+    };
+    let connected = Cell::new(false);
+    let keep_streaming = Cell::new(true);
+    let events = RefCell::new(Vec::new());
+    stream_http_events(
+        &connection,
+        || connected.set(true),
+        |event| {
+            events.borrow_mut().push(event);
+            keep_streaming.set(false);
+        },
+        || keep_streaming.get(),
+    )
+    .expect("SSE stream");
+    assert!(connected.get());
+    assert_eq!(
+        events.borrow().as_slice(),
+        &[json!({"channel":"runtime","payload":{"value":9}})]
+    );
+    let request = observed.join().expect("SSE observer");
+    assert!(request.starts_with("GET /events HTTP/1.1\r\n"), "{request}");
+    assert!(
+        request
+            .to_ascii_lowercase()
+            .contains("authorization: bearer stream-secret\r\n"),
+        "{request}"
+    );
+    assert!(
+        request.to_ascii_lowercase().contains("accept: text/event-stream\r\n"),
+        "{request}"
+    );
+}
