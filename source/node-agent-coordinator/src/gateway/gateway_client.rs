@@ -443,6 +443,12 @@ where
             "gateway events response has no HTTP status".into(),
         ))?;
     if !(200..300).contains(&status) {
+        if matches!(status, 401 | 403) {
+            return Err(GatewayDispatchError::Unreachable {
+                outcome: ReachabilityOutcome::AccessDenied,
+                message: format!("gateway events failed with HTTP {status}"),
+            });
+        }
         if status >= 500 {
             return Err(GatewayDispatchError::Unreachable {
                 outcome: ReachabilityOutcome::Http(status),
