@@ -47,6 +47,10 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   const onboardingGate = page.getByTestId('onboarding-gate');
   const loginGate = page.getByTestId('login-gate');
   const workspace = page.getByTestId('messenger-workspace');
+  const rendererErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') rendererErrors.push(message.text());
+  });
   type LoginPhase = 'onboarding' | 'login' | 'ready' | 'fatal' | 'waiting';
 
   // Read the auth surface in one renderer evaluation. During the HostClient ->
@@ -57,7 +61,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
       return await page.evaluate(() => {
         if (document.querySelector('[data-testid="onboarding-gate"]')) return 'onboarding';
         if (document.querySelector('[data-testid="login-gate"]')) return 'login';
-        if (document.querySelector('[data-testid="root-render-error"]')) return 'fatal';
+        if (document.querySelector('.sand-error-boundary--app')) return 'fatal';
         const messenger = document.querySelector('[data-testid="messenger-workspace"]');
         if (messenger?.getAttribute('data-initial-host-hydrated') === 'true') return 'ready';
         return 'waiting';
@@ -72,15 +76,34 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     const currentPhase = await readPhase();
 
     if (currentPhase === 'fatal') {
-      const fatal = await page.evaluate(() => {
-        const node = document.querySelector<HTMLElement>('[data-testid="root-render-error"]');
+      const fatal = await page.evaluate(async () => {
+        const node = document.querySelector<HTMLElement>('.sand-error-boundary--app');
+        const scriptUrl = Array.from(document.scripts)
+          .map((script) => script.src)
+          .find((source) => /\/assets\/index-[^/]+\.js$/.test(source)) ?? null;
+        let sourceMapText: string | null = null;
+        if (scriptUrl != null) {
+          try {
+            const response = await fetch(`${scriptUrl}.map`);
+            if (response.ok) sourceMapText = await response.text();
+          } catch {
+            // The source map is diagnostic-only and must not change product behavior.
+          }
+        }
         return {
-          name: node?.dataset.errorName ?? 'Error',
-          message: node?.dataset.errorMessage ?? 'unknown renderer failure',
-          componentStack: node?.dataset.componentStack ?? '',
+          surfaceText: node?.innerText ?? 'unknown renderer failure',
+          scriptUrl,
+          sourceMapText,
         };
       });
-      throw new Error(`renderer root fatal: ${fatal.name}: ${fatal.message}\n${fatal.componentStack}`);
+      if (fatal.sourceMapText != null) {
+        await test.info().attach('renderer-root-fatal-source-map', {
+          body: fatal.sourceMapText,
+          contentType: 'application/json',
+        });
+      }
+      const consoleDetail = rendererErrors.at(-1) ?? fatal.surfaceText;
+      throw new Error(`renderer root fatal: ${consoleDetail}\nsource=${fatal.scriptUrl ?? 'unknown'}`);
     }
     if (currentPhase === 'onboarding') {
       await page.getByTestId('onboarding-next').click();

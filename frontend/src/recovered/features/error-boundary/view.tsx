@@ -38,14 +38,7 @@ export function ErrorBoundarySurface({ error, componentStack, labels }: ErrorBou
       // Keep the error surface visible when clipboard access is unavailable.
     }
   };
-  return <div
-    className="sand-error-boundary--app"
-    data-component-stack={componentStack?.trim() || ""}
-    data-error-message={error.message}
-    data-error-name={error.name}
-    data-testid="root-render-error"
-    style={{ display: "grid", height: "100%", placeItems: "center" }}
-  >
+  return <div className="sand-error-boundary--app" style={{ display: "grid", height: "100%", placeItems: "center" }}>
     <div>
       <div aria-describedby={detailId} aria-labelledby={titleId} role="alert">
         <p id={titleId}>{labels.title}</p>
