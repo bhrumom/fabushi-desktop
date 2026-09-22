@@ -12117,19 +12117,21 @@
       "targetPath": "source/node-agent-coordinator/src/oauth/mcp_oauth_forwarder.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "2a549204786c8e9e66024a30a9b6e6b1cacad813",
       "architecturalRole": "coordinator/oauth",
       "processOrPackage": "mahayana-coordinator",
       "behavioralEvidence": [
         "source/node-agent-coordinator/src/oauth/mcp_oauth_forwarder.rs",
-        "source/node-agent-coordinator/src/oauth.rs"
+        "source/node-agent-coordinator/src/oauth.rs",
+        "source/node-agent-coordinator/src/main.rs"
       ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/node-agent-coordinator/tests/production_protocol.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial parity: pending TTL, server supersession, listener lifecycle, callback completion and expiry settlement are implemented; live completion/event subscriptions remain."
+      "notes": "Parity verified: pending TTL and expiry, per-origin/state resolution, server supersession, loopback listener lifecycle, callback completion/settlement, and disposal are implemented; the shipping Coordinator consumes live mcp-oauth-pending SSE events and completes a real loopback callback through the Host gateway."
     },
     {
       "referencePath": "source/node-agent-coordinator/oauth/mcp-oauth-loopback-registry.ts",
