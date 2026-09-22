@@ -32,7 +32,37 @@ At the start of every development task:
 7. Inspect the current code and live GitHub branch/PR/CI/release facts needed for the task.
 8. Reconcile durable docs with the latest explicit user requirement and exact repository state.
 
-Do not implement from chat memory alone.
+### Mandatory duplicate-work check — before writing code or creating a new implementation branch
+
+Before any product-affecting implementation, the agent must verify that the same or materially overlapping work is not already being implemented.
+
+Check, at minimum:
+
+1. the current checked-out branch and canonical base/main SHA;
+2. active project tasks and applicable Specs for the same requirement IDs, feature, bug, architecture change, or migration;
+3. relevant remote branches, including branch names and their actual diffs/commits rather than names alone;
+4. **all open PRs** whose scope, Spec, issue, touched subsystem/files, or stated goal overlaps the task;
+5. relevant recently merged PRs/commits that may already satisfy or supersede the request;
+6. active CI/release work associated with the overlapping branch/PR when delivery status matters.
+
+The check must be semantic, not keyword-only: different branch/PR names can still implement the same requirement.
+
+If materially overlapping work exists:
+
+- **do not create a second parallel implementation by default**;
+- inspect the existing branch/PR exact HEAD, diff, Spec/ADR/migration links, review state, CI state, blockers, and remaining acceptance criteria;
+- continue, repair, review, rebase, or complete the existing work when it is the authoritative/latest implementation;
+- reuse existing code and commits where possible instead of re-writing the same behavior;
+- if the existing work is stale, invalid, abandoned, or contradicts the latest authoritative requirement, record that finding in the owning Spec/PR and explicitly supersede/replace it rather than silently creating duplicate code;
+- if multiple overlapping implementations already exist, consolidate around one canonical path before adding more implementation;
+- create an independent replacement only when the latest explicit user requirement or governing Spec actually requires one.
+
+Before creating a new implementation branch, the agent should be able to state either:
+
+- `duplicate-work check: no materially overlapping active branch/PR found`; or
+- `existing work found: <branch/PR/SHA>; continuing/superseding it for <documented reason>`.
+
+Do not implement from chat memory alone. Do not assume a new chat means a new code path is needed.
 
 ## 2. Classify the change
 
@@ -317,6 +347,8 @@ The following are prohibited:
 - using the chat prompt as the only persistent specification for substantive work;
 - inventing requirements from memory when an authoritative source exists;
 - silently expanding or reducing scope;
+- creating a new parallel implementation without first checking active/relevant branches, Specs/tasks, open PRs, and recent merged work for material overlap;
+- duplicating an existing active implementation instead of continuing/consolidating it, unless an independent replacement is explicitly required;
 - making an architecture change without Architecture/ADR review;
 - making an incompatible transition without a migration record;
 - rewriting accepted ADR history instead of superseding it;
