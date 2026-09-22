@@ -366,3 +366,53 @@ fn failed_unaccepted_send_is_cleared_for_retry() {
     ));
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn run_lifecycle_settles_nested_sessions_only_at_outer_boundary() {
+    use mahayana_host_runtime::extensions::transcript::run_lifecycle::RunLifecycleState;
+
+    let mut lifecycle = RunLifecycleState::default();
+    lifecycle.begin_session_run("agent", 100, false);
+    lifecycle.begin_session_run("agent", 105, true);
+    lifecycle.set_composing("agent", true);
+    lifecycle.set_retrying("agent", true);
+    lifecycle.set_activity("agent", Some("thinking"));
+    assert_eq!(lifecycle.in_flight_count("agent"), 2);
+    assert!(lifecycle.running_agent_ids().contains("agent"));
+
+    lifecycle.track_turn_request_id("agent", "req-b");
+    lifecycle.track_turn_request_id("agent", "req-a");
+    lifecycle.track_turn_request_id("agent", "req-a");
+    let usage = lifecycle.settle_turn_usage("agent", "composer");
+    assert_eq!(usage.request_id.as_deref(), Some("req-a"));
+    assert_eq!(usage.request_id_count, 2);
+    assert_eq!(usage.turn_ended_seq, 1);
+    lifecycle.track_turn_request_id("agent", "req-c");
+    let usage2 = lifecycle.settle_turn_usage("agent", "");
+    assert_eq!(usage2.turn_ended_seq, 2);
+    assert_eq!(usage2.source, "turn");
+
+    assert!(lifecycle.end_session_run("agent", 130).is_none());
+    assert_eq!(lifecycle.in_flight_count("agent"), 1);
+    assert!(!lifecycle.is_composing("agent"));
+    assert!(!lifecycle.is_retrying("agent"));
+    assert_eq!(lifecycle.activity("agent"), None);
+
+    let completed = lifecycle.end_session_run("agent", 160).expect("outer completion");
+    assert_eq!(completed.agent_id, "agent");
+    assert_eq!(completed.duration_ms, 60);
+    assert_eq!(completed.turn_worthy_begin_count, 1);
+    assert!(lifecycle.running_agent_ids().is_empty());
+    assert_eq!(lifecycle.active_run_session(), None);
+}
+
+#[test]
+fn group_member_only_run_does_not_emit_user_turn_completion() {
+    use mahayana_host_runtime::extensions::transcript::run_lifecycle::RunLifecycleState;
+
+    let mut lifecycle = RunLifecycleState::default();
+    lifecycle.begin_session_run("member", 10, true);
+    assert!(lifecycle.end_session_run("member", 20).is_none());
+    assert!(lifecycle.running_agent_ids().is_empty());
+}
