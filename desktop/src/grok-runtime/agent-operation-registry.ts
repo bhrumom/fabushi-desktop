@@ -103,11 +103,6 @@ export class AgentOperationRegistry {
     return Object.freeze(Object.fromEntries(this.requestByPeer));
   }
 
-  onlyPendingPeer(): string | null {
-    if (this.requestByPeer.size !== 1) return null;
-    return this.requestByPeer.keys().next().value ?? null;
-  }
-
   clearPeer(peerKey: string): void {
     const requestId = this.requestByPeer.get(peerKey);
     if (requestId) this.cancelRequest(requestId);
