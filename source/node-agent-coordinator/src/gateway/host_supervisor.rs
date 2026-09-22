@@ -191,10 +191,15 @@ impl GatewayHostSupervisor {
         let Some(connection) = self.connection.clone() else {
             return Ok(false);
         };
+        // Grok's supervisor treats transport/parse failures from /health as an
+        // unhealthy cached endpoint and immediately transitions to reconnect.
+        // A probe failure must not escape as an unrelated Coordinator I/O error.
         let healthy = fetch_health(
             &connection,
             Duration::from_millis(HEALTH_TIMEOUT_MS),
-        )?
+        )
+        .ok()
+        .flatten()
         .is_some();
         self.record_health(now_ms, healthy);
         Ok(healthy)
