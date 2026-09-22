@@ -17,7 +17,14 @@ struct TestApi;
 impl GatewayApi for TestApi {
     fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
         match method {
-            "echo" => Ok(args),
+            "listAgents" => Ok(args.get("agents").cloned().unwrap_or_else(|| json!([
+                {"id":"agent-1","name":"One","avatarDataUrl":"data:image/png;base64,aGVsbG8="}
+            ]))),
+            "getAgentAvatar" => Ok(json!({
+                "dataUrl": "data:image/png;base64,aGVsbG8=",
+                "version": "avatar-v1"
+            })),
+            "getTranscript" => Ok(args),
             "conflict" => Err(GatewayCommandError::Conflict("conflict".into())),
             other => Err(GatewayCommandError::UnknownMethod(other.to_string())),
         }
@@ -92,20 +99,20 @@ fn gateway_health_command_security_and_upgrade_routes_match_grok_contract() {
     assert_eq!(health_json["startedAt"], 777);
 
     let body = r#"{"value":"hello"}"#;
-    let echo = request(
+    let transcript = request(
         port,
         &format!(
-            "POST /api/echo HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            "POST /api/getTranscript HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
             body.len()
         ),
     );
-    assert!(echo.starts_with("HTTP/1.1 200 OK"), "{echo}");
+    assert!(transcript.starts_with("HTTP/1.1 200 OK"), "{transcript}");
     assert!(
-        echo.to_ascii_lowercase()
+        transcript.to_ascii_lowercase()
             .contains("x-sand-mint-dedupe: 1"),
-        "{echo}"
+        "{transcript}"
     );
-    assert_eq!(json_body(&echo), json!({ "value": "hello" }));
+    assert_eq!(json_body(&transcript), json!({ "value": "hello" }));
 
     let unknown = request(
         port,
@@ -154,13 +161,13 @@ fn gateway_bearer_auth_is_required_when_configured() {
 
     let missing = request(
         port,
-        "POST /api/echo HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+        "POST /api/getTranscript HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
     );
     assert!(missing.starts_with("HTTP/1.1 401 Unauthorized"), "{missing}");
 
     let authorized = request(
         port,
-        "POST /api/echo HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer secret\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+        "POST /api/getTranscript HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer secret\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
     );
     assert!(
         authorized.starts_with("HTTP/1.1 200 OK"),
@@ -168,6 +175,80 @@ fn gateway_bearer_auth_is_required_when_configured() {
     );
     assert_eq!(json_body(&authorized), json!({}));
 
+    server.close();
+}
+
+#[test]
+fn gateway_rejects_unknown_commands_before_host_dispatch() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        config: config(None),
+        started_at: 1,
+    })
+    .expect("gateway server");
+    let response = request(
+        server.port(),
+        "POST /api/notARealGrokMethod HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+    );
+    assert!(response.starts_with("HTTP/1.1 404 Not Found"), "{response}");
+    assert_eq!(json_body(&response)["error"], "unknown gateway method: notARealGrokMethod");
+    server.close();
+}
+
+#[test]
+fn gateway_slim_avatar_projection_matches_grok_contract() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        config: config(None),
+        started_at: 1,
+    })
+    .expect("gateway server");
+    let response = request(
+        server.port(),
+        "POST /api/listAgents HTTP/1.1\r\nHost: 127.0.0.1\r\nx-sand-slim-avatars: 1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+    );
+    assert!(response.starts_with("HTTP/1.1 200 OK"), "{response}");
+    let body = json_body(&response);
+    assert_eq!(body[0]["id"], "agent-1");
+    assert_eq!(body[0]["avatarDataUrl"], Value::Null);
+    server.close();
+}
+
+#[test]
+fn gateway_avatar_endpoint_serves_versioned_bytes_and_security_headers() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        config: config(None),
+        started_at: 1,
+    })
+    .expect("gateway server");
+    let response = request(
+        server.port(),
+        "GET /avatars/agent-1?v=avatar-v1 HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
+    );
+    assert!(response.starts_with("HTTP/1.1 200 OK"), "{response}");
+    let lower = response.to_ascii_lowercase();
+    assert!(lower.contains("content-type: image/png"), "{response}");
+    assert!(lower.contains("content-disposition: attachment"), "{response}");
+    assert!(lower.contains("x-content-type-options: nosniff"), "{response}");
+    assert!(lower.contains("cache-control: private, max-age=31536000, immutable"), "{response}");
+    assert!(response.contains("ETag: \"avatar-v1\""), "{response}");
+    assert!(response.ends_with("hello"), "{response}");
+
+    let not_modified = request(
+        server.port(),
+        "GET /avatars/agent-1?v=avatar-v1 HTTP/1.1\r\nHost: 127.0.0.1\r\nIf-None-Match: \"avatar-v1\"\r\nConnection: close\r\n\r\n",
+    );
+    assert!(not_modified.starts_with("HTTP/1.1 304 Not Modified"), "{not_modified}");
+
+    let cross_site = request(
+        server.port(),
+        "GET /avatars/agent-1 HTTP/1.1\r\nHost: 127.0.0.1\r\nSec-Fetch-Site: cross-site\r\nConnection: close\r\n\r\n",
+    );
+    assert!(cross_site.starts_with("HTTP/1.1 403 Forbidden"), "{cross_site}");
     server.close();
 }
 
