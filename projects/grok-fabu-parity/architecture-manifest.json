@@ -11709,15 +11709,18 @@
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_dns_diagnostics.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "34aca36c8b5d75a411b2af893f0f7c5c9a8baf75",
       "architecturalRole": "coordinator/gateway",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/gateway/gateway_dns_diagnostics.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Rust semantic port verified against frozen Grok 0.18 behavior; independent Coordinator contract covers failure classification, lifecycle/cooldown/bounds, listener dispatch and cleanup."
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/gateway-errors.ts",
@@ -11892,7 +11895,7 @@
       "targetPath": "source/node-agent-coordinator/src/oauth/mcp_oauth_callback_listener.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "411f9bb6cc889cfdfb60faaed340ce1af4b833e3",
       "architecturalRole": "coordinator/oauth",
       "processOrPackage": "mahayana-coordinator",
@@ -11903,7 +11906,7 @@
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial parity: callback path/state/error/code classification and URL decoding are implemented fail-closed; live loopback HTTP dispatch/response-page adapter remains."
+      "notes": "Rust semantic port verified against frozen Grok 0.18 behavior; independent Coordinator contract covers failure classification, lifecycle/cooldown/bounds, listener dispatch and cleanup."
     },
     {
       "referencePath": "source/node-agent-coordinator/oauth/mcp-oauth-forwarder.ts",
@@ -11929,7 +11932,7 @@
       "targetPath": "source/node-agent-coordinator/src/oauth/mcp_oauth_loopback_registry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "fd1c5f8ef283723e9c84fb7548e962ab6d8ca7f0",
       "architecturalRole": "coordinator/oauth",
       "processOrPackage": "mahayana-coordinator",
@@ -11940,7 +11943,7 @@
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial parity: localhost-only redirect validation and shared origin lease lifecycle are implemented; real socket binding/HTTP handler multiplexing remains."
+      "notes": "Rust semantic port verified against frozen Grok 0.18 behavior; independent Coordinator contract covers failure classification, lifecycle/cooldown/bounds, listener dispatch and cleanup."
     },
     {
       "referencePath": "source/node-agent-coordinator/renderer-port-server.ts",
@@ -11982,7 +11985,7 @@
       "targetPath": "source/node-agent-coordinator/src/telemetry/transport_stage_recorder.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "28c37c2e6f691c1ad40561645cb8f5b252ad8b9a",
       "architecturalRole": "coordinator/telemetry",
       "processOrPackage": "mahayana-coordinator",
@@ -11993,7 +11996,7 @@
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial parity: stage timing, one-shot settlement, SSE echo correlation TTL/cap and report in-flight limiting are implemented; production egress wiring remains."
+      "notes": "Rust semantic port verified against frozen Grok 0.18 behavior; independent Coordinator contract covers failure classification, lifecycle/cooldown/bounds, listener dispatch and cleanup."
     },
     {
       "referencePath": "source/node-agent-coordinator/webauthn/provider.ts",
