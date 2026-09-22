@@ -1565,6 +1565,12 @@ fn gateway_request_dispatcher_posts_real_http_json_and_classifies_errors() {
             .contains("authorization: bearer secret\r\n"),
         "{request}"
     );
+    assert!(
+        request
+            .to_ascii_lowercase()
+            .contains("x-sand-slim-avatars: 1\r\n"),
+        "{request}"
+    );
     assert!(request.ends_with(r#"{"prompt":"hello"}"#), "{request}");
 
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind failing gateway");
@@ -1659,6 +1665,12 @@ fn gateway_client_streams_real_sse_and_honors_bearer_auth() {
     );
     assert!(
         request.to_ascii_lowercase().contains("accept: text/event-stream\r\n"),
+        "{request}"
+    );
+    assert!(
+        request
+            .to_ascii_lowercase()
+            .contains("x-sand-slim-avatars: 1\r\n"),
         "{request}"
     );
 }
