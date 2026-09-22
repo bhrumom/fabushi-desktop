@@ -1,3 +1,8 @@
+use std::collections::BTreeMap;
+
+pub const HEALTH_TIMEOUT_MS: u64 = 1_500;
+pub const HEALTH_PROBE_TTL_MS: u64 = 5_000;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GatewayReachability {
     Unknown,
@@ -12,6 +17,22 @@ pub enum GatewayHealthDecision {
     Reconnect,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GatewayConnection {
+    pub base_url: String,
+    pub headers: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ConnectionAttempt {
+    pub health_epoch: u64,
+    pub generation: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[error("the gateway connection resolve was abandoned before it answered")]
+pub struct GatewayConnectResolveAbandonedError;
+
 #[derive(Debug)]
 pub struct GatewayHostSupervisor {
     reachability: GatewayReachability,
@@ -19,6 +40,9 @@ pub struct GatewayHostSupervisor {
     transport_live: bool,
     last_healthy_ms: Option<u64>,
     health_ttl_ms: u64,
+    connection: Option<GatewayConnection>,
+    latest_attempt: Option<ConnectionAttempt>,
+    next_attempt_generation: u64,
 }
 
 impl GatewayHostSupervisor {
@@ -29,10 +53,23 @@ impl GatewayHostSupervisor {
             transport_live: false,
             last_healthy_ms: None,
             health_ttl_ms,
+            connection: None,
+            latest_attempt: None,
+            next_attempt_generation: 0,
         }
     }
 
-    pub fn health_epoch(&self) -> u64 { self.health_epoch }
+    pub fn health_epoch(&self) -> u64 {
+        self.health_epoch
+    }
+
+    pub fn connection(&self) -> Option<&GatewayConnection> {
+        self.connection.as_ref()
+    }
+
+    pub fn latest_attempt(&self) -> Option<ConnectionAttempt> {
+        self.latest_attempt
+    }
 
     pub fn mark_transport_live(&mut self, live: bool) {
         self.transport_live = live;
@@ -50,21 +87,70 @@ impl GatewayHostSupervisor {
         self.last_healthy_ms = reachable.then_some(now_ms);
     }
 
+    pub fn begin_connection_attempt(&mut self) -> ConnectionAttempt {
+        if let Some(current) = self.latest_attempt {
+            if current.health_epoch == self.health_epoch {
+                return current;
+            }
+        }
+        self.next_attempt_generation = self.next_attempt_generation.saturating_add(1);
+        let attempt = ConnectionAttempt {
+            health_epoch: self.health_epoch,
+            generation: self.next_attempt_generation,
+        };
+        self.latest_attempt = Some(attempt);
+        attempt
+    }
+
+    pub fn settle_connection_attempt(
+        &mut self,
+        attempt: ConnectionAttempt,
+        connection: GatewayConnection,
+    ) -> Result<(), GatewayConnectResolveAbandonedError> {
+        if attempt.health_epoch != self.health_epoch || self.latest_attempt != Some(attempt) {
+            return Err(GatewayConnectResolveAbandonedError);
+        }
+        self.connection = Some(connection);
+        self.last_healthy_ms = None;
+        self.reachability = GatewayReachability::Unknown;
+        self.latest_attempt = None;
+        Ok(())
+    }
+
+    pub fn fail_connection_attempt(
+        &mut self,
+        attempt: ConnectionAttempt,
+    ) -> Result<(), GatewayConnectResolveAbandonedError> {
+        if attempt.health_epoch != self.health_epoch || self.latest_attempt != Some(attempt) {
+            return Err(GatewayConnectResolveAbandonedError);
+        }
+        self.latest_attempt = None;
+        self.reachability = GatewayReachability::Unreachable;
+        Ok(())
+    }
+
     pub fn invalidate(&mut self) {
         self.health_epoch = self.health_epoch.saturating_add(1);
         self.last_healthy_ms = None;
         self.transport_live = false;
         self.reachability = GatewayReachability::Unknown;
+        self.latest_attempt = None;
     }
 
     pub fn decision(&self, now_ms: u64) -> GatewayHealthDecision {
-        if self.transport_live {
+        if self.connection.is_some() && self.transport_live {
             return GatewayHealthDecision::UseCached;
         }
-        if let Some(last) = self.last_healthy_ms {
-            if now_ms.saturating_sub(last) < self.health_ttl_ms {
-                return GatewayHealthDecision::UseCached;
+        if self.connection.is_some() {
+            if let Some(last) = self.last_healthy_ms {
+                if now_ms.saturating_sub(last) < self.health_ttl_ms {
+                    return GatewayHealthDecision::UseCached;
+                }
             }
+            if self.reachability == GatewayReachability::Unreachable {
+                return GatewayHealthDecision::Reconnect;
+            }
+            return GatewayHealthDecision::Probe;
         }
         match self.reachability {
             GatewayReachability::Unreachable => GatewayHealthDecision::Reconnect,
