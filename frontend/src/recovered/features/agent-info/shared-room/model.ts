@@ -55,6 +55,31 @@ export type SharedInviteResult =
     }
   | { readonly status: "error"; readonly message: string };
 
+export interface SharedRoomContext {
+  readonly roomId: string;
+  readonly agentId: string;
+  readonly accountGeneration: number;
+  readonly agents: readonly SharedRoomAgent[];
+}
+
+export type SharedRoomAction = "refresh" | "invite" | "respond" | "add" | "remove" | "leave";
+
+export interface SharedRoomSnapshot {
+  readonly context: SharedRoomContext | null;
+  readonly state: SharedSharingState | null;
+  readonly room: SharedRoom | null;
+  readonly isHost: boolean;
+  readonly selfAgentIds: readonly string[];
+  readonly candidates: readonly SharedRoomAgent[];
+  readonly requests: readonly SharedJoinRequest[];
+  readonly pending: ReadonlySet<string>;
+  readonly pendingAction: SharedRoomAction | null;
+  readonly invite: SharedInviteResult | null;
+  readonly isLoading: boolean;
+  readonly transport: "connected" | "down" | "unknown";
+  readonly failure: unknown | null;
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? value as Record<string, unknown>
