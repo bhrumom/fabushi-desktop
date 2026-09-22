@@ -139,7 +139,11 @@ pub fn proxify_forever_box_status(status: &Value, descriptor: Option<&VncProxyDe
     }
     if let Some(Value::Array(windows)) = object.get_mut("windows") {
         for window in windows {
-            if let Some(url) = window.get_mut("vncUrl").and_then(Value::as_str).map(str::to_string) {
+            if let Some(url) = window
+                .get_mut("vncUrl")
+                .and_then(|value| value.as_str())
+                .map(str::to_string)
+            {
                 if let Some(slot) = window.get_mut("vncUrl") {
                     *slot = Value::String(proxify_box_vnc_url(&url, descriptor));
                 }
