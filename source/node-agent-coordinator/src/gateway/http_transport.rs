@@ -180,6 +180,118 @@ fn server_name(host: &str) -> io::Result<ServerName<'static>> {
     })
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GatewayHttpResponse {
+    pub status: u16,
+    pub headers: Vec<(String, String)>,
+    pub body: Vec<u8>,
+}
+
+impl GatewayHttpResponse {
+    pub fn header(&self, name: &str) -> Option<&str> {
+        self.headers
+            .iter()
+            .find(|(key, _)| key.eq_ignore_ascii_case(name))
+            .map(|(_, value)| value.as_str())
+    }
+}
+
+pub fn read_http_response(
+    stream: &mut GatewayHttpStream,
+    max_header_bytes: usize,
+    max_body_bytes: usize,
+) -> io::Result<GatewayHttpResponse> {
+    let mut response = Vec::new();
+    let mut chunk = [0_u8; 8192];
+    let header_end = loop {
+        let count = stream.read(&mut chunk)?;
+        if count == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Host gateway closed before HTTP response headers completed",
+            ));
+        }
+        response.extend_from_slice(&chunk[..count]);
+        if let Some(index) = response.windows(4).position(|window| window == b"\r\n\r\n") {
+            break index + 4;
+        }
+        if response.len() > max_header_bytes {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Host gateway HTTP response headers are too large",
+            ));
+        }
+    };
+
+    let header_text = std::str::from_utf8(&response[..header_end]).map_err(|_| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Host gateway HTTP response headers are not UTF-8",
+        )
+    })?;
+    let mut lines = header_text.split("\r\n");
+    let status = lines
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|status| status.parse::<u16>().ok())
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Host gateway HTTP response has no valid status",
+            )
+        })?;
+
+    let mut headers = Vec::new();
+    let mut content_length = None;
+    for line in lines {
+        if line.is_empty() {
+            continue;
+        }
+        let Some((name, value)) = line.split_once(':') else {
+            continue;
+        };
+        let value = value.trim();
+        if name.eq_ignore_ascii_case("content-length") {
+            let parsed = value.parse::<usize>().map_err(|_| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Host gateway HTTP response has invalid Content-Length",
+                )
+            })?;
+            content_length = Some(parsed);
+        }
+        headers.push((name.trim().to_string(), value.to_string()));
+    }
+
+    let content_length = content_length.ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Host gateway HTTP response is missing Content-Length",
+        )
+    })?;
+    if content_length > max_body_bytes {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Host gateway HTTP response body is too large",
+        ));
+    }
+
+    let mut body = response.split_off(header_end);
+    if body.len() > content_length {
+        body.truncate(content_length);
+    } else if body.len() < content_length {
+        let remaining = content_length - body.len();
+        body.resize(content_length, 0);
+        stream.read_exact(&mut body[content_length - remaining..])?;
+    }
+
+    Ok(GatewayHttpResponse {
+        status,
+        headers,
+        body,
+    })
+}
+
 pub enum GatewayHttpStream {
     Plain(std::net::TcpStream),
     Tls(StreamOwned<ClientConnection, std::net::TcpStream>),
