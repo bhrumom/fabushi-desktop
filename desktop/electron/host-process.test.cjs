@@ -174,16 +174,32 @@ class FakeChild extends EventEmitter {
     return JSON.parse(this.writes[index]);
   }
 
-  respond(id, result) {
-    this.stdout.write(`${JSON.stringify({ id, ok: true, result })}\n`);
+  ready(protocolVersion = 1) {
+    this.stdout.write(`${JSON.stringify({
+      kind: 'lifecycle',
+      phase: 'ready',
+      protocolVersion,
+    })}\n`);
+  }
+
+  respond(requestId, result) {
+    this.stdout.write(`${JSON.stringify({
+      kind: 'reply',
+      requestId: String(requestId),
+      outcome: { status: 'ok', value: result },
+    })}\n`);
   }
 
   emitRuntimeEvent(event) {
-    this.stdout.write(`${JSON.stringify({ event })}\n`);
+    this.stdout.write(`${JSON.stringify({ kind: 'event', family: 'runtime', payload: event })}\n`);
   }
 
-  fail(id, error) {
-    this.stdout.write(`${JSON.stringify({ id, ok: false, error })}\n`);
+  fail(requestId, error) {
+    this.stdout.write(`${JSON.stringify({
+      kind: 'reply',
+      requestId: String(requestId),
+      outcome: { status: 'failed', failure: { code: 'TEST_FAILURE', message: String(error) } },
+    })}\n`);
   }
 
   kill() {
@@ -371,7 +387,15 @@ test('unsolicited Rust runtime event frames are pushed without a receive request
   const events = [];
   const unsubscribe = host.onRuntimeEvent((event) => events.push(event));
   host.start();
-  assert.equal(children[0].writes.length, 0);
+  assert.equal(children[0].writes.length, 1);
+  assert.deepEqual(children[0].requestAt(0), {
+    kind: 'lifecycle',
+    phase: 'hello',
+    protocolVersion: 1,
+  });
+  children[0].ready();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(host.health().protocolReady, true);
   children[0].emitRuntimeEvent({
     type: 'turn.state',
     operationId: 'run:1',
@@ -391,8 +415,20 @@ test('unsolicited Rust runtime event frames are pushed without a receive request
     state: 'thinking',
     sequence: 3,
   }]);
-  assert.equal(children[0].writes.length, 0);
+  assert.equal(children[0].writes.length, 1);
   unsubscribe();
+  host.close();
+});
+
+test('Coordinator protocol rejects a mismatched ready version before serving replies', async () => {
+  const { host, children } = harness();
+  const pending = host.request('feature.info', {});
+  const child = children[0];
+  assert.equal(child.requestAt(0).kind, 'lifecycle');
+  child.ready(99);
+  await assert.rejects(pending, /protocol version 99 does not match 1/);
+  assert.equal(host.health().protocolReady, false);
+  assert.equal(host.health().lastLifecycleEvent.type, 'protocol-error');
   host.close();
 });
 
@@ -400,9 +436,16 @@ test('host resolves structured requests and reports health for the active genera
   const { host, children } = harness();
   const pending = host.request('feature.info', { hello: 'world' });
   assert.equal(children.length, 1);
+  children[0].ready();
+  await new Promise((resolve) => setImmediate(resolve));
   const request = children[0].requestAt();
-  assert.equal(request.method, 'feature.info');
-  children[0].respond(request.id, { ready: true });
+  assert.deepEqual(request, {
+    kind: 'request',
+    requestId: request.requestId,
+    method: 'feature.info',
+    args: { hello: 'world' },
+  });
+  children[0].respond(request.requestId, { ready: true });
   assert.deepEqual(await pending, { ready: true });
   const health = host.health();
   assert.equal(health.state, 'running');
@@ -410,7 +453,8 @@ test('host resolves structured requests and reports health for the active genera
   assert.equal(health.pid, 7000);
   assert.equal(health.pending, 0);
   assert.equal(health.unexpectedExitCount, 0);
-  assert.equal(health.lastLifecycleEvent.type, 'running');
+  assert.equal(health.protocolReady, true);
+  assert.equal(health.lastLifecycleEvent.type, 'protocol-ready');
   host.close();
 });
 
@@ -431,7 +475,9 @@ test('lifecycle stream exposes start, crash recovery generation, restart, and te
   assert.deepEqual(events.slice(-2).map((event) => event.type), ['starting', 'running']);
   assert.equal(events.at(-1).generation, 2);
   const request = children[1].requestAt();
-  children[1].respond(request.id, { ok: true });
+  children[1].ready();
+  await new Promise((resolve) => setImmediate(resolve));
+  children[1].respond(request.requestId, { ok: true });
   await second;
 
   host.restart('test restart');
@@ -465,7 +511,9 @@ test('stale process termination cannot reject requests from a newer generation',
   assert.equal(host.health().unexpectedExitCount, 1);
 
   const request = current.requestAt();
-  current.respond(request.id, { generation: 2 });
+  current.ready();
+  await new Promise((resolve) => setImmediate(resolve));
+  current.respond(request.requestId, { generation: 2 });
   assert.deepEqual(await second, { generation: 2 });
   host.close();
 });
