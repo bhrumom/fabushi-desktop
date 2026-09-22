@@ -85,4 +85,13 @@ if (touched.length !== completed.size) {
 fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
 const counts = {};
 for (const row of manifest.modules) counts[row.status] = (counts[row.status] ?? 0) + 1;
-console.log(JSON.stringify({ finalized: touched.length, counts, touched }, null, 2));
+const remaining = manifest.modules
+  .filter((row) => row.status === "planned" || row.status === "existing-needs-parity")
+  .map((row) => ({
+    referencePath: row.referencePath,
+    targetPath: row.targetPath,
+    targetLanguage: row.targetLanguage,
+    processOrPackage: row.processOrPackage,
+    status: row.status,
+  }));
+console.log(JSON.stringify({ finalized: touched.length, counts, touched, remaining }, null, 2));
