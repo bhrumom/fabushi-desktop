@@ -7,7 +7,7 @@ use std::sync::{
     mpsc::{self, Receiver, RecvTimeoutError, Sender},
 };
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use flate2::{Compression, write::GzEncoder};
@@ -199,8 +199,23 @@ impl GatewayCommandError {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GatewayCommandReport {
+    pub method: String,
+    pub duration_ms: u64,
+    pub request_id: Option<String>,
+    pub traceparent: Option<String>,
+    pub status: u16,
+    pub error: Option<String>,
+}
+
 pub trait GatewayApi: Send + Sync + 'static {
     fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError>;
+
+    fn on_command_complete(&self, _report: GatewayCommandReport) {}
+
+    fn on_command_error(&self, _report: GatewayCommandReport) {}
+
     fn health(&self) -> GatewayHealth {
         GatewayHealth::default()
     }
@@ -683,6 +698,51 @@ fn event_channel(event: &Value) -> Option<&str> {
     event.get("channel").and_then(Value::as_str)
 }
 
+fn valid_traceparent(value: &str) -> bool {
+    let mut parts = value.split('-');
+    let Some(version) = parts.next() else { return false };
+    let Some(trace_id) = parts.next() else { return false };
+    let Some(parent_id) = parts.next() else { return false };
+    let Some(flags) = parts.next() else { return false };
+    if parts.next().is_some()
+        || version.len() != 2
+        || trace_id.len() != 32
+        || parent_id.len() != 16
+        || flags.len() != 2
+        || ![version, trace_id, parent_id, flags]
+            .into_iter()
+            .all(|part| part.bytes().all(|byte| byte.is_ascii_hexdigit()))
+    {
+        return false;
+    }
+    !trace_id.bytes().all(|byte| byte == b'0') && !parent_id.bytes().all(|byte| byte == b'0')
+}
+
+fn command_report(
+    request: &HttpRequest,
+    method: &str,
+    started: Instant,
+    status: u16,
+    error: Option<String>,
+) -> GatewayCommandReport {
+    GatewayCommandReport {
+        method: method.to_string(),
+        duration_ms: started.elapsed().as_millis().min(u64::MAX as u128) as u64,
+        request_id: request
+            .headers
+            .get(GATEWAY_REQUEST_ID_HEADER)
+            .filter(|value| !value.is_empty())
+            .cloned(),
+        traceparent: request
+            .headers
+            .get(GATEWAY_TRACEPARENT_HEADER)
+            .filter(|value| valid_traceparent(value))
+            .cloned(),
+        status,
+        error,
+    }
+}
+
 fn sse_gzip_enabled(request: &HttpRequest) -> bool {
     std::env::var(DISABLE_SSE_GZIP_ENV).ok().as_deref() != Some("1")
         && client_accepts_gzip(request)
@@ -1068,8 +1128,11 @@ fn handle_connection(
             }
         }
     };
+    let started = Instant::now();
     match deps.api.call(method, args) {
         Ok(value) => {
+            deps.api
+                .on_command_complete(command_report(&request, method, started, 200, None));
             let slim = request
                 .headers
                 .get(GATEWAY_SLIM_AVATARS_HEADER)
@@ -1081,6 +1144,18 @@ fn handle_connection(
                 &request,
             )
         }
-        Err(error) => respond_error(&mut stream, error.status(), error.to_string()),
+        Err(error) => {
+            let status = error.status();
+            if status >= 500 {
+                deps.api.on_command_error(command_report(
+                    &request,
+                    method,
+                    started,
+                    status,
+                    Some(error.to_string()),
+                ));
+            }
+            respond_error(&mut stream, status, error.to_string())
+        }
     }
 }
