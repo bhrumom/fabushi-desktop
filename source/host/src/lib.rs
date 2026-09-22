@@ -5,6 +5,9 @@
 //! cancellation and terminal settlement.
 
 pub mod extensions;
+pub mod host_paths;
+pub mod host_discovery;
+pub mod gateway_config;
 pub mod runner;
 
 pub use runner::{
