@@ -150,7 +150,7 @@ test("recreate commands record trackable and untrackable accepted operations", a
 
 test("desktop host settings field absorbs box values and clears account mirror", async () => {
   let box = { hasSeenOnboarding: true };
-  let mirror: boolean | undefined;
+  let mirror: boolean | undefined = false;
   const reports: Array<Record<string, string>> = [];
   const fields = createDesktopHostSettingsFields({
     read: async () => box,
