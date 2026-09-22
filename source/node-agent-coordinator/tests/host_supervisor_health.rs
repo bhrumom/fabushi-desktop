@@ -137,3 +137,34 @@ fn feature_flags_disable_stream_liveness_and_health_ttl_shortcuts() {
         "Grok debug flags must force a real health decision even when the stream is live and the cached health is fresh"
     );
 }
+
+#[test]
+fn health_transport_failure_is_a_reconnect_decision_not_an_io_escape() {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("reserve refused health port");
+    let address = listener.local_addr().expect("reserved health address");
+    drop(listener);
+
+    let mut supervisor = GatewayHostSupervisor::new(HEALTH_PROBE_TTL_MS);
+    let attempt = supervisor.begin_connection_attempt();
+    supervisor
+        .settle_connection_attempt(
+            attempt,
+            GatewayConnection {
+                base_url: format!("http://{address}"),
+                headers: BTreeMap::new(),
+            },
+        )
+        .expect("install cached gateway");
+
+    assert_eq!(supervisor.decision(20_000), GatewayHealthDecision::Probe);
+    assert_eq!(
+        supervisor
+            .probe_cached_connection(20_000)
+            .expect("transport failure is normalized to an unhealthy probe"),
+        false
+    );
+    assert_eq!(
+        supervisor.decision(20_001),
+        GatewayHealthDecision::Reconnect
+    );
+}
