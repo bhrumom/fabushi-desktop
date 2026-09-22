@@ -116,7 +116,7 @@ fn account_cache_scope(access_token: &str) -> String {
     format!("{:x}", Sha256::digest(seed.as_bytes()))
 }
 
-fn send_cursor_unary(
+pub(crate) fn send_cursor_unary(
     backend_url: &str,
     access_token: &str,
     machine_id: &str,

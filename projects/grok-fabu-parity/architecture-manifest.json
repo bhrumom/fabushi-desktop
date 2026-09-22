@@ -11516,8 +11516,14 @@
       "referenceBlobSha": "e8302dfdb174eb14d4e3560511b29204f7400140",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/managed_setup/team_rules.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/managed_setup_team_rules_contract.rs"
+      ],
+      "notes": "Production Host now owns the managed team-rules slice, including startup preload and credential-renewal refresh, but managed-skills ownership from the frozen extension is still pending; mapping remains planned."
     },
     {
       "referencePath": "source/host/extensions/managed-setup/managed-skills-cache.ts",
@@ -11552,8 +11558,15 @@
       "referenceBlobSha": "25699155c2fdf1d73da2b61d40a834a9f0ebe87a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/managed_setup/team_rules.rs",
+        "source/host/src/cursor_backend.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/managed_setup_team_rules_contract.rs"
+      ],
+      "notes": "Production Dashboard transport for managed team rules is wired through the shared Cursor identity/privacy client and shipping Auth. Managed-skills/catalog production wiring is still pending; mapping remains planned."
     },
     {
       "referencePath": "source/host/extensions/managed-setup/sand-managed-skills.ts",
@@ -11576,8 +11589,14 @@
       "referenceBlobSha": "d7ce5a34f1815d15865385996694d8ec5129ae12",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/managed_setup/team_rules.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/managed_setup_team_rules_contract.rs"
+      ],
+      "notes": "Rust managed-setup team-rules resolver now implements the frozen Dashboard GetTeams(activeOnly) -> direct-team GetTeamRules(activeOnly, teamId) flow, filters ALL/SAND rules, maps global/file-globbed rules, merges first-by-fullPath, preserves the prior snapshot on incomplete refresh, preloads at Host startup and refreshes after credential renewal. Shipping Runner request-context consumes the resolver. Status remains non-final until the exact implementation HEAD passes Rust runtime Actions."
     },
     {
       "referencePath": "source/host/extensions/mcp/box-mcp-exec.ts",
@@ -13899,14 +13918,16 @@
         "source/host/src/lib.rs",
         "source/host/app/src/main.rs",
         "source/host/src/runner/routed_provider_runtime.rs",
-        "source/host/src/runner/system_prompt_assembly.rs"
+        "source/host/src/runner/system_prompt_assembly.rs",
+        "source/host/src/extensions/managed_setup/team_rules.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_small_ports_contract.rs",
         "source/host/tests/runner_request_context_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/managed_setup_team_rules_contract.rs"
       ],
-      "notes": "Shipping Host now constructs a per-turn request-context source from production Auth plus the product transcript directory, and Runner provider execution consumes the resolved timezone/user identity/rules projection before provider dispatch. OS/shell/timezone/transcript fields are resolved live; unknown team-rules state is preserved as None rather than fabricated. Final remains withheld until Rust managed-setup supplies production team rules and the Dashboard GetMe adapter supplies the production user full name."
+      "notes": "Rust Host request-context is consumed by the shipping routed-provider Runner and resolves live OS/shell/timezone/transcript folder, production Auth user full name, and production managed-setup team rules. The former None rules placeholder has been removed. Status remains non-final until the exact implementation HEAD passes Rust runtime Actions."
     },
     {
       "referencePath": "source/host/host-roster-bookkeeping.ts",

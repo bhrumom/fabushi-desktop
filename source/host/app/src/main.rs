@@ -20,6 +20,8 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
 };
+use mahayana_host_runtime::extensions::managed_setup::team_rules::ProductionTeamRulesResolver;
+use mahayana_host_runtime::extensions::auth::credential_renewer::RenewalOutcome;
 use mahayana_host_runtime::host_request_context::create_host_request_context;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderRun, RoutedProviderTaskRegistry, RoutedToolBridge,
@@ -62,20 +64,32 @@ fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
 
 struct ProductionHostExtensions {
     auth: Arc<HostAuthExtension>,
+    team_rules: Arc<ProductionTeamRulesResolver>,
+    team_rules_renewal_subscription: Option<u64>,
     _box_lifecycle: BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>,
+}
+
+impl Drop for ProductionHostExtensions {
+    fn drop(&mut self) {
+        if let Some(subscription) = self.team_rules_renewal_subscription.take() {
+            self.auth.service().unsubscribe_from_renewal(subscription);
+        }
+    }
 }
 
 struct ProductionRunnerRequestContextSource {
     auth: Arc<HostAuthExtension>,
+    team_rules: Arc<ProductionTeamRulesResolver>,
     transcripts_folder: PathBuf,
 }
 
 impl RunnerRequestContextSource for ProductionRunnerRequestContextSource {
     fn resolve(&self) -> RunnerRequestContextSnapshot {
+        let rules = self.team_rules.resolve_rules();
         let provider = create_host_request_context(
             self.transcripts_folder.to_string_lossy().into_owned(),
             || None,
-            || None::<Vec<serde_json::Value>>,
+            || rules.clone(),
             || self.auth.get_user_full_name(),
         );
         RunnerRequestContextSnapshot {
@@ -102,12 +116,35 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
         )
         .map_err(|error| error.to_string())?,
     );
+    let team_rules = Arc::new(ProductionTeamRulesResolver::new(
+        backend_url,
+        Arc::clone(&auth),
+    ));
+    team_rules.preload();
+    let weak_team_rules = Arc::downgrade(&team_rules);
+    let team_rules_renewal_subscription =
+        auth.service().subscribe_to_renewal(Arc::new(move |event| {
+            if event.result.outcome != RenewalOutcome::Renewed {
+                return;
+            }
+            let Some(resolver) = weak_team_rules.upgrade() else {
+                return;
+            };
+            let _ = thread::Builder::new()
+                .name("host-managed-team-rules-renewal".into())
+                .spawn(move || {
+                    let _ = resolver.refresh();
+                });
+        }));
+
     let factory =
         ProductionBoxLifecycleClientFactory::from_process_env().map_err(|error| error.to_string())?;
     let box_lifecycle = start_box_lifecycle_extension(Arc::clone(&auth), &factory);
 
     Ok(ProductionHostExtensions {
         auth,
+        team_rules,
+        team_rules_renewal_subscription: Some(team_rules_renewal_subscription),
         _box_lifecycle: box_lifecycle,
     })
 }
@@ -609,6 +646,7 @@ fn main() {
     let runner_request_context: Arc<dyn RunnerRequestContextSource> =
         Arc::new(ProductionRunnerRequestContextSource {
             auth: Arc::clone(&production_extensions.auth),
+            team_rules: Arc::clone(&production_extensions.team_rules),
             transcripts_folder: app_data_dir.join("transcripts"),
         });
     let session_workers = Arc::new(ProductionSessionWorkers::production());

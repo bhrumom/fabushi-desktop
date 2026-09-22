@@ -16,3 +16,5 @@ pub mod box_lifecycle;
 pub mod inference;
 
 pub mod auth;
+
+pub mod managed_setup;
