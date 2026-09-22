@@ -9306,24 +9306,38 @@
       "targetPath": "source/host/src/attachment_paths.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "4f31bbe8eac5618a3cfe1c638b5ab3a8065e61d7",
       "architecturalRole": "host/attachment-paths",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/attachment_paths.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_foundation_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/automations/automation-id.ts",
       "targetPath": "source/host/src/automations/automation_id.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "9d350b84fed1dbbd6785d2fa453980bcb17c5f07",
       "architecturalRole": "host/automations",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/automations/automation_id.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_foundation_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/automations/automation-status-reminder.ts",
@@ -9462,12 +9476,19 @@
       "targetPath": "source/host/src/box/box_monitor_layout.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "2f5965da6b6c3a3cd5f152f4820a31054bd0e053",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/box_monitor_layout.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_foundation_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/box/box-remote-accessor.ts",
@@ -9654,12 +9675,19 @@
       "targetPath": "source/host/src/durable_file_policy.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "29662852e95d8b703dc131b587250cbfe45adcf9",
       "architecturalRole": "host/durable-file-policy",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/durable_file_policy.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_foundation_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/extensions/action-audit/action-audit-backend.ts",
@@ -13223,12 +13251,19 @@
       "targetPath": "source/host/src/host_diagnostics.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "082b287ae1a00504ec70c0e91e4e687ec1be6364",
       "architecturalRole": "host/host-diagnostics",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/host_diagnostics.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_foundation_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/host-discovery.ts",
@@ -13571,24 +13606,38 @@
       "targetPath": "source/host/src/ports/transport.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "6b747760074240e14ff303ad8c65d82a798e8a3b",
       "architecturalRole": "host/ports",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/ports/transport.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_foundation_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/ports/user-computer.ts",
       "targetPath": "source/host/src/ports/user_computer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "abcf4f7416af7609635cb68150057490ea049249",
       "architecturalRole": "host/ports",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/ports/user_computer.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_foundation_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/process-crash-guard.ts",
@@ -14703,24 +14752,38 @@
       "targetPath": "source/host/src/sand_quiet_work_origin.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "822dd3acfb686a2447359fee3a18f81e343e04dd",
       "architecturalRole": "host/sand-quiet-work-origin",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/sand_quiet_work_origin.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_foundation_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/sand-user-identity.ts",
       "targetPath": "source/host/src/sand_user_identity.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "ec153ea3a6c7d8a9b3495c41555be4e46477c0da",
       "architecturalRole": "host/sand-user-identity",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/sand_user_identity.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_foundation_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/selected-image-inputs.ts",
@@ -14751,12 +14814,19 @@
       "targetPath": "source/host/src/sha256.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "63b8dc5a5e198216b4136d9359433463bd8f8820",
       "architecturalRole": "host/sha256",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/sha256.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_foundation_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/storage/agent-paths.ts",
@@ -14775,12 +14845,19 @@
       "targetPath": "source/host/src/storage/folder_id.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e740128528338a9104b5224947bcb47e3ef86664",
       "architecturalRole": "host/storage",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/storage/folder_id.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_foundation_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/storage/sqlite-busy.ts",
