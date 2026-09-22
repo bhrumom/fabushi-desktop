@@ -1099,12 +1099,18 @@
       "targetPath": "frontend/src/recovered/features/computer/shell/model.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "922ba003ee4f2fce6ac993fc8acc3e1e237e3275",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/computer/shell/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-shell-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage for computer status/monitor projection, VNC URL/session/liveness helpers, warm previews, cursor presentation, monitor selection, and handoff status."
     },
     {
       "referencePath": "frontend/src/recovered/features/computer/shell/status-store.ts",
@@ -1843,12 +1849,18 @@
       "targetPath": "frontend/src/recovered/features/conversation/tool-results/model.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "2d4ca6529d286ecd97035ef522eadc83991ea56f",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/tool-results/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-shell-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage for shell/file tool kind detection, terminal/permission states, streaming delta projection, normalized output/diff, and merge semantics."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/tool-results/proto-adapter.ts",
@@ -3331,12 +3343,18 @@
       "targetPath": "frontend/src/recovered/features/window-chrome/global-keyboard-shortcuts.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "3734f47421d002e742a348677427ebef040abe55",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/window-chrome/global-keyboard-shortcuts.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-shell-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage for shipped shortcut ordering, editable-target gating, alternate hotkeys, indexed Agent focus, reference-counted keydown ownership, and Escape handling."
     },
     {
       "referencePath": "frontend/src/recovered/features/window-chrome/model.ts",
