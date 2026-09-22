@@ -10782,12 +10782,19 @@
       "targetPath": "source/host/src/extensions/extension_ids.generated.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "64664d319defe8c2c3be4577f1c357c813c82abf",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/extension_ids.generated.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_turn_execution_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/extensions/forever-box/disk-pressure-guard.ts",
@@ -11430,12 +11437,19 @@
       "targetPath": "source/host/src/extensions/registry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "7ed9b277e4f4d11448b0c995a7cd7cbc9e448824",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/registry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_turn_execution_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/extensions/secrets/extension.ts",
@@ -12978,24 +12992,38 @@
       "targetPath": "source/host/src/extensions/turn_execution/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "776c9014c49d60f2b91a5ca46ee2be2ba1f015fc",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/turn_execution/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_turn_execution_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/extensions/turn-execution/turn-execution-service.ts",
       "targetPath": "source/host/src/extensions/turn_execution/turn_execution_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "7e27956ea637c343a3079461d65ffd338cdbaeb1",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/turn_execution/turn_execution_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_turn_execution_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/extensions/wallpaper/box-wallpaper-commands.ts",
