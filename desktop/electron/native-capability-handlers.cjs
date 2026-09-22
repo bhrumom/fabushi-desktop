@@ -524,21 +524,23 @@ function createNativeCapabilityHandlers(deps) {
 
     async checkForUpdates() {
       if (!app.isPackaged || !autoUpdater?.checkForUpdates) {
-        return rendererUpdateStatus(await writeUpdateStatus({
+        await writeUpdateStatus({
           type: 'upToDate',
           version: app.getVersion(),
           source: 'local-build',
-        }));
+        });
+        return rendererUpdateStatus(await currentUpdateStatus());
       }
       await writeUpdateStatus({ type: 'checking', version: app.getVersion() });
       try {
         await autoUpdater.checkForUpdates();
         return rendererUpdateStatus(await currentUpdateStatus());
       } catch (error) {
-        return rendererUpdateStatus(await writeUpdateStatus({
+        await writeUpdateStatus({
           type: 'error',
           message: error instanceof Error ? error.message : String(error),
-        }));
+        });
+        return rendererUpdateStatus(await currentUpdateStatus());
       }
     },
 
