@@ -214,6 +214,13 @@ fn serve_request(
     mut stream: TcpStream,
     handlers: &Arc<Mutex<BTreeMap<u64, McpOAuthLoopbackHandler>>>,
 ) -> std::io::Result<()> {
+    // The listener is non-blocking so its accept loop can observe shutdown.
+    // Accepted sockets may inherit that mode on some platforms (notably the
+    // macOS CI runner), which can make the first read return WouldBlock and
+    // close the callback connection before the browser finishes writing it.
+    // Each accepted OAuth HTTP exchange is bounded by explicit read/write
+    // timeouts, so restore blocking I/O for deterministic request handling.
+    stream.set_nonblocking(false)?;
     stream.set_read_timeout(Some(Duration::from_secs(2)))?;
     stream.set_write_timeout(Some(Duration::from_secs(2)))?;
     const MAX_REQUEST_BYTES: usize = 16 * 1024;
