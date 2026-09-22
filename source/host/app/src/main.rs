@@ -21,6 +21,12 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
 };
 use mahayana_host_runtime::extensions::managed_setup::team_rules::ProductionTeamRulesResolver;
+use mahayana_host_runtime::extensions::webauthn_proxy::extension::{
+    HostWebAuthnProxyExtension, start_webauthn_proxy_extension,
+};
+use mahayana_host_runtime::extensions::telemetry::webauthn_proxy_telemetry::{
+    WebAuthnProxyReport, webauthn_proxy_telemetry,
+};
 use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxRunnerResourcePort,
     ForeverBoxService, start_forever_box_extension,
@@ -73,6 +79,7 @@ struct ProductionHostExtensions {
     team_rules: Arc<ProductionTeamRulesResolver>,
     team_rules_renewal_subscription: Option<u64>,
     box_lifecycle: Arc<BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>>,
+    webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
 }
 
 impl Drop for ProductionHostExtensions {
@@ -146,12 +153,24 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
     let factory =
         ProductionBoxLifecycleClientFactory::from_process_env().map_err(|error| error.to_string())?;
     let box_lifecycle = Arc::new(start_box_lifecycle_extension(Arc::clone(&auth), &factory));
+    let webauthn_proxy = Arc::new(start_webauthn_proxy_extension(Arc::new(
+        |report: WebAuthnProxyReport| {
+            let projection = webauthn_proxy_telemetry(&report);
+            eprintln!(
+                "mahayana-host-webauthn level={} event={} metadata={}",
+                projection.level.unwrap_or("info"),
+                projection.event.unwrap_or("sand.webauthn_proxy"),
+                serde_json::to_string(&projection.metadata).unwrap_or_else(|_| "{}".into()),
+            );
+        },
+    )));
 
     Ok(ProductionHostExtensions {
         auth,
         team_rules,
         team_rules_renewal_subscription: Some(team_rules_renewal_subscription),
         box_lifecycle,
+        webauthn_proxy,
     })
 }
 
@@ -177,6 +196,7 @@ struct UnifiedGatewayApi {
     session_workers: Arc<ProductionSessionWorkers>,
     routed_provider_tasks: Arc<RoutedProviderTaskRegistry>,
     forever_box: Arc<ForeverBoxService>,
+    webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
 }
 
 fn call_host_lane(
@@ -420,6 +440,12 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.forever_box),
                 args,
             );
+        }
+        if method == "requestWebAuthnCeremony" {
+            return self
+                .webauthn_proxy
+                .request_ceremony(args)
+                .map_err(|error| GatewayCommandError::Internal(error.to_string()));
         }
         if method == RUNNER_CANCEL_ROUTED_PROVIDER_GATEWAY_METHOD {
             let stream_id = args
@@ -701,10 +727,11 @@ fn main() {
             session_workers: Arc::clone(&session_workers),
             routed_provider_tasks: Arc::clone(&routed_provider_tasks),
             forever_box: Arc::clone(&forever_box),
+            webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
         }),
         events: gateway_events.clone(),
         local_exec: None,
-        webauthn: None,
+        webauthn: Some(production_extensions.webauthn_proxy.gateway_bridge()),
         config: gateway_config.clone(),
         started_at: gateway_started_at,
     }) {

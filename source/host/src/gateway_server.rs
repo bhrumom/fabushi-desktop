@@ -224,28 +224,86 @@ pub trait GatewayApi: Send + Sync + 'static {
     }
 }
 
-#[derive(Clone, Default)]
+pub type GatewayBridgeClose = Box<dyn FnOnce() + Send + 'static>;
+type GatewayBridgeSubscribeHandler =
+    Arc<dyn Fn(Sender<Value>) -> GatewayBridgeClose + Send + Sync + 'static>;
+type GatewayBridgeResponseHandler = Arc<dyn Fn(Value) + Send + Sync + 'static>;
+
+pub struct GatewayBridgeSubscription {
+    receiver: Receiver<Value>,
+    close: Option<GatewayBridgeClose>,
+}
+
+impl GatewayBridgeSubscription {
+    pub fn recv_timeout(&self, timeout: Duration) -> Result<Value, RecvTimeoutError> {
+        self.receiver.recv_timeout(timeout)
+    }
+}
+
+impl Drop for GatewayBridgeSubscription {
+    fn drop(&mut self) {
+        if let Some(close) = self.close.take() {
+            close();
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct GatewayBridgeHub {
     request_subscribers: Arc<Mutex<Vec<Sender<Value>>>>,
     response_subscribers: Arc<Mutex<Vec<Sender<Value>>>>,
+    on_request_subscribe: Option<GatewayBridgeSubscribeHandler>,
+    on_response: Option<GatewayBridgeResponseHandler>,
+}
+
+impl Default for GatewayBridgeHub {
+    fn default() -> Self {
+        Self {
+            request_subscribers: Arc::new(Mutex::new(Vec::new())),
+            response_subscribers: Arc::new(Mutex::new(Vec::new())),
+            on_request_subscribe: None,
+            on_response: None,
+        }
+    }
 }
 
 impl GatewayBridgeHub {
+    pub fn with_handlers<Subscribe, Response>(
+        on_request_subscribe: Subscribe,
+        on_response: Response,
+    ) -> Self
+    where
+        Subscribe: Fn(Sender<Value>) -> GatewayBridgeClose + Send + Sync + 'static,
+        Response: Fn(Value) + Send + Sync + 'static,
+    {
+        Self {
+            on_request_subscribe: Some(Arc::new(on_request_subscribe)),
+            on_response: Some(Arc::new(on_response)),
+            ..Self::default()
+        }
+    }
     pub fn publish_request(&self, frame: Value) {
         if let Ok(mut subscribers) = self.request_subscribers.lock() {
             subscribers.retain(|subscriber| subscriber.send(frame.clone()).is_ok());
         }
     }
 
-    pub fn subscribe_requests(&self) -> Receiver<Value> {
+    pub fn subscribe_requests(&self) -> GatewayBridgeSubscription {
         let (sender, receiver) = mpsc::channel();
         if let Ok(mut subscribers) = self.request_subscribers.lock() {
-            subscribers.push(sender);
+            subscribers.push(sender.clone());
         }
-        receiver
+        let close = self
+            .on_request_subscribe
+            .as_ref()
+            .map(|handler| handler(sender));
+        GatewayBridgeSubscription { receiver, close }
     }
 
     pub fn submit_responses(&self, batch: Value) {
+        if let Some(handler) = self.on_response.as_ref() {
+            handler(batch.clone());
+        }
         if let Ok(mut subscribers) = self.response_subscribers.lock() {
             subscribers.retain(|subscriber| subscriber.send(batch.clone()).is_ok());
         }
@@ -797,7 +855,7 @@ fn serve_event_body<W: Write>(
     sink.flush()?;
     let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
     while !stop.load(Ordering::Acquire) {
-        match receiver.recv_timeout(heartbeat) {
+        match subscription.recv_timeout(heartbeat) {
             Ok(event) => {
                 if channels
                     .as_ref()
@@ -952,7 +1010,7 @@ fn serve_avatar(
 
 fn serve_bridge_body<W: Write>(
     sink: &mut W,
-    receiver: Receiver<Value>,
+    subscription: GatewayBridgeSubscription,
     stop: &AtomicBool,
 ) -> io::Result<()> {
     sink.write_all(b"retry: 1000\n\n")?;
