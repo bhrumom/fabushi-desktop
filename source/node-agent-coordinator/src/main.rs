@@ -1,4 +1,8 @@
 use chrono::{SecondsFormat, Utc};
+use mahayana_host_runtime::extensions::inference::provider_session::{
+    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderOptions,
+    RoutedToolDefinition, configured_routed_provider, run_routed_provider_text,
+};
 use mahayana_node_agent_coordinator::carrier::{
     parse_bootstrap_argument, CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
 };
@@ -27,6 +31,13 @@ use mahayana_node_agent_coordinator::oauth::mcp_oauth_forwarder::{
     McpOAuthForwarderState, McpOAuthPendingPayload, OAuthForwarderAction,
 };
 use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::McpOAuthLoopbackRegistry;
+use mahayana_node_agent_coordinator::inference_router::{
+    InferenceTaskQueue, InferenceTranscriptFile, StoredEntry, StoredRole,
+    project_transcript_entry,
+};
+use mahayana_node_agent_coordinator::routed_mcp_bridge::{
+    RoutedMcpBackend, RoutedTool, RoutedToolCall, start_routed_mcp_server,
+};
 use mahayana_node_agent_coordinator::webauthn::{
     ApprovedWebAuthnConsent, WebAuthnCeremony,
 };
@@ -87,6 +98,11 @@ struct CoordinatorState {
     bootstrap: CoordinatorBootstrap,
     host_bin: PathBuf,
     gateway_discovery_path: PathBuf,
+    inference_data_dir: PathBuf,
+    inference_settings_path: PathBuf,
+    inference_store: InferenceTranscriptFile,
+    inference_store_lock: Mutex<()>,
+    inference_queue: InferenceTaskQueue,
     host_stdin: Mutex<Option<ActiveHostStdin>>,
     gateway_client: Mutex<CoordinatorGatewayClient>,
     gateway_command_policy: GatewayCommandPolicy,
@@ -1375,6 +1391,704 @@ fn report_gateway_execution_async(
     });
 }
 
+
+fn configured_inference_provider(state: &CoordinatorState) -> RoutedProvider {
+    configured_routed_provider(&state.inference_settings_path).unwrap_or(RoutedProvider::Cursor)
+}
+
+fn inference_failure(error: ProviderSessionError) -> Failure {
+    Failure::new("INFERENCE_PROVIDER_FAILED", error.to_string())
+}
+
+fn dispatch_gateway_value(
+    state: &Arc<CoordinatorState>,
+    method: &str,
+    args: Value,
+) -> Result<Value, Failure> {
+    let host_running = state
+        .host_stdin
+        .lock()
+        .map_err(|_| Failure::new("COORDINATOR_HOST_LOCK_FAILED", "host stdin lock poisoned"))?
+        .is_some();
+    if !host_running {
+        spawn_host(Arc::clone(state)).map_err(|error| {
+            Failure::new(
+                "COORDINATOR_HOST_DISPATCH_FAILED",
+                format!("could not start Host for {method}: {error}"),
+            )
+        })?;
+    }
+
+    let generation = state.host_generation.load(Ordering::SeqCst);
+    refresh_gateway_trace_window_async(state);
+    let result = dispatch_gateway_command(
+        &state.gateway_command_policy,
+        method,
+        args,
+        coordinator_now_ms(),
+        |required_base_url| {
+            let connection = wait_for_gateway_connection(state, generation)
+                .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
+            if let Some(required_base_url) = required_base_url {
+                if connection.base_url != required_base_url {
+                    return Err(GatewayDispatchError::Transport(format!(
+                        "gateway endpoint changed from {required_base_url} to {}",
+                        connection.base_url
+                    )));
+                }
+            }
+            Ok(connection)
+        },
+    );
+
+    match result {
+        Ok(GatewayCommandExecution {
+            value,
+            command_spans,
+            transport_stages,
+        }) => {
+            report_gateway_execution_async(state, command_spans, transport_stages);
+            Ok(value)
+        }
+        Err(error) => {
+            if let GatewayDispatchError::Unreachable { outcome, .. } = &error {
+                if let Ok(mut gateway) = state.gateway_client.lock() {
+                    let _ = gateway.transport_down(*outcome);
+                }
+            }
+            Err(failure_for(&error))
+        }
+    }
+}
+
+fn list_routed_mcp_tools(state: &Arc<CoordinatorState>) -> Result<Vec<RoutedTool>, Failure> {
+    let value = control_command(state, "listRoutedMcpTools", json!({}))?;
+    serde_json::from_value(value).map_err(|error| {
+        Failure::new(
+            "INFERENCE_ROUTED_MCP_INVALID_TOOLS",
+            format!("Electron returned invalid routed MCP tools: {error}"),
+        )
+    })
+}
+
+fn execute_routed_mcp_tool(
+    state: &Arc<CoordinatorState>,
+    agent_id: &str,
+    definition: &RoutedToolDefinition,
+    args: Value,
+    tool_call_id: &str,
+) -> Result<Value, Failure> {
+    control_command(
+        state,
+        "executeRoutedMcpTool",
+        json!({
+            "providerIdentifier": definition.provider_identifier,
+            "name": definition.name,
+            "toolName": definition.tool_name,
+            "args": args,
+            "toolCallId": tool_call_id,
+            "agentId": agent_id,
+        }),
+    )
+}
+
+fn provider_tool_definition(tool: RoutedTool) -> RoutedToolDefinition {
+    RoutedToolDefinition {
+        name: tool.name,
+        provider_identifier: tool.provider_identifier,
+        tool_name: tool.tool_name,
+        description: tool.description,
+        input_schema: tool.input_schema.unwrap_or_else(|| {
+            json!({
+                "type": "object",
+                "additionalProperties": true
+            })
+        }),
+    }
+}
+
+struct CoordinatorRoutedMcpBackend {
+    state: Arc<CoordinatorState>,
+    agent_id: String,
+}
+
+impl RoutedMcpBackend for CoordinatorRoutedMcpBackend {
+    fn list_tools(&mut self) -> Result<Vec<RoutedTool>, Failure> {
+        list_routed_mcp_tools(&self.state)
+    }
+
+    fn call_tool(&mut self, call: RoutedToolCall) -> Result<Value, Failure> {
+        control_command(
+            &self.state,
+            "executeRoutedMcpTool",
+            json!({
+                "providerIdentifier": call.provider_identifier,
+                "name": call.name,
+                "toolName": call.tool_name,
+                "args": call.args,
+                "toolCallId": call.tool_call_id,
+                "agentId": self.agent_id,
+            }),
+        )
+    }
+}
+
+fn emit_inference_transcript(
+    state: &Arc<CoordinatorState>,
+    agent_id: &str,
+    event_type: &str,
+    entry: Value,
+) {
+    state.post_event(
+        "transcript",
+        json!({
+            "type": event_type,
+            "entry": entry,
+            "agentId": agent_id,
+        }),
+    );
+}
+
+fn project_inference_activity(
+    agents: &[Value],
+    agent_id: &str,
+    running: bool,
+) -> Vec<Value> {
+    agents
+        .iter()
+        .map(|raw| {
+            let Some(root) = raw.as_object() else {
+                return raw.clone();
+            };
+            if root.get("id").and_then(Value::as_str) != Some(agent_id) {
+                return raw.clone();
+            }
+            let mut projected = root.clone();
+            projected.insert("isRunning".into(), Value::Bool(running));
+            projected.insert("isRunningTurn".into(), Value::Bool(running));
+            projected.insert("isComposingMessage".into(), Value::Bool(running));
+            projected.insert("isRetrying".into(), Value::Bool(false));
+            if running {
+                projected.insert("currentActivity".into(), json!({ "kind": "thinking" }));
+            } else {
+                projected.remove("currentActivity");
+            }
+            Value::Object(projected)
+        })
+        .collect()
+}
+
+struct InferenceActivityGuard {
+    state: Arc<CoordinatorState>,
+    agent_id: String,
+    idle_agents: Vec<Value>,
+    stop: Option<Sender<()>>,
+    worker: Option<thread::JoinHandle<()>>,
+}
+
+impl Drop for InferenceActivityGuard {
+    fn drop(&mut self) {
+        if let Some(stop) = self.stop.take() {
+            let _ = stop.send(());
+        }
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
+        self.state.post_event(
+            "agents",
+            json!({
+                "activeAgentId": self.agent_id,
+                "agents": self.idle_agents,
+            }),
+        );
+    }
+}
+
+fn begin_inference_activity(
+    state: &Arc<CoordinatorState>,
+    agent_id: &str,
+) -> Option<InferenceActivityGuard> {
+    let remote = dispatch_gateway_value(state, "listAgents", json!({})).ok()?;
+    let agents = remote.as_array()?.clone();
+    let running_agents = project_inference_activity(&agents, agent_id, true);
+    let idle_agents = project_inference_activity(&agents, agent_id, false);
+    state.post_event(
+        "agents",
+        json!({
+            "activeAgentId": agent_id,
+            "agents": running_agents,
+        }),
+    );
+
+    let (stop_tx, stop_rx) = mpsc::channel::<()>();
+    let pulse_state = Arc::clone(state);
+    let pulse_agent_id = agent_id.to_string();
+    let pulse_agents = running_agents.clone();
+    let worker = thread::spawn(move || {
+        loop {
+            match stop_rx.recv_timeout(Duration::from_millis(250)) {
+                Ok(()) | Err(RecvTimeoutError::Disconnected) => break,
+                Err(RecvTimeoutError::Timeout) => {
+                    if pulse_state.closed.load(Ordering::SeqCst) {
+                        break;
+                    }
+                    pulse_state.post_event(
+                        "agents",
+                        json!({
+                            "activeAgentId": pulse_agent_id,
+                            "agents": pulse_agents,
+                        }),
+                    );
+                }
+            }
+        }
+    });
+
+    Some(InferenceActivityGuard {
+        state: Arc::clone(state),
+        agent_id: agent_id.to_string(),
+        idle_agents,
+        stop: Some(stop_tx),
+        worker: Some(worker),
+    })
+}
+
+fn remote_transcript_ids(value: &Value) -> Vec<String> {
+    value
+        .get("entries")
+        .and_then(Value::as_array)
+        .map(|entries| {
+            entries
+                .iter()
+                .filter_map(|entry| {
+                    entry
+                        .get("id")
+                        .and_then(Value::as_str)
+                        .map(str::to_string)
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn record_inference_error(
+    state: &Arc<CoordinatorState>,
+    provider: RoutedProvider,
+    agent_id: &str,
+    error: &Failure,
+) {
+    if agent_id.trim().is_empty() {
+        return;
+    }
+    let timestamp_ms = coordinator_now_ms();
+    let entry = StoredEntry {
+        provider: provider.as_str().to_string(),
+        role: StoredRole::Assistant,
+        content: format!("Router error: {}", error.message),
+        rich_text: None,
+        id: format!("t{timestamp_ms}s0"),
+        client_nonce: None,
+        reactions: Vec::new(),
+        timestamp_ms,
+    };
+    let persisted = state
+        .inference_store_lock
+        .lock()
+        .map_err(|_| ())
+        .and_then(|_guard| {
+            state
+                .inference_store
+                .append(agent_id, [entry.clone()])
+                .map(|_| ())
+                .map_err(|_| ())
+        });
+    if persisted.is_ok() {
+        emit_inference_transcript(
+            state,
+            agent_id,
+            "appended",
+            project_transcript_entry(&entry),
+        );
+    }
+}
+
+fn execute_local_inference(
+    state: Arc<CoordinatorState>,
+    provider: RoutedProvider,
+    args: Value,
+) -> Result<(), Failure> {
+    let root = args.as_object().ok_or_else(|| {
+        Failure::new(
+            "INFERENCE_ROUTER_INVALID_REQUEST",
+            "local inference routing requires an object request",
+        )
+    })?;
+    let agent_id = root
+        .get("agentId")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let prompt = root
+        .get("prompt")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let rich_text = root
+        .get("richText")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let client_nonce = root
+        .get("clientNonce")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+
+    if agent_id.is_empty() || prompt.is_empty() {
+        return Err(Failure::new(
+            "INFERENCE_ROUTER_INVALID_PROMPT",
+            "local inference routing requires an agentId and prompt",
+        ));
+    }
+
+    let remote = dispatch_gateway_value(
+        &state,
+        "getAgentTranscriptTail",
+        json!({ "id": agent_id }),
+    )?;
+    let timestamp_ms = coordinator_now_ms();
+
+    let (turn, messages) = {
+        let _guard = state.inference_store_lock.lock().map_err(|_| {
+            Failure::new(
+                "INFERENCE_STORE_LOCK_FAILED",
+                "inference transcript lock poisoned",
+            )
+        })?;
+        let mut store = state.inference_store.load();
+        let turn = store.next_turn_number(&agent_id, remote_transcript_ids(&remote));
+        let user_entry = StoredEntry {
+            provider: provider.as_str().to_string(),
+            role: StoredRole::User,
+            content: prompt,
+            rich_text,
+            id: format!("t{turn}u"),
+            client_nonce: Some(client_nonce),
+            reactions: Vec::new(),
+            timestamp_ms,
+        };
+        store.append(&agent_id, [user_entry.clone()]);
+        state.inference_store.persist(&store)?;
+        emit_inference_transcript(
+            &state,
+            &agent_id,
+            "appended",
+            project_transcript_entry(&user_entry),
+        );
+        let messages = store
+            .entries(&agent_id)
+            .iter()
+            .map(|entry| ProviderMessage {
+                role: match entry.role {
+                    StoredRole::User => "user".into(),
+                    StoredRole::Assistant => "assistant".into(),
+                },
+                content: entry.content.clone(),
+            })
+            .collect::<Vec<_>>();
+        (turn, messages)
+    };
+
+    let activity = begin_inference_activity(&state, &agent_id);
+    thread::sleep(Duration::from_millis(1_200));
+
+    let routed_tools = if matches!(provider, RoutedProvider::ClaudeCode) {
+        Vec::new()
+    } else {
+        list_routed_mcp_tools(&state)?
+            .into_iter()
+            .map(provider_tool_definition)
+            .collect::<Vec<_>>()
+    };
+
+    let mut mcp_server = if matches!(provider, RoutedProvider::ClaudeCode) {
+        Some(start_routed_mcp_server(CoordinatorRoutedMcpBackend {
+            state: Arc::clone(&state),
+            agent_id: agent_id.clone(),
+        })?)
+    } else {
+        None
+    };
+    let mcp_url = mcp_server.as_ref().map(|server| server.url().to_string());
+
+    let assistant_timestamp_ms = coordinator_now_ms();
+    let assistant_id = format!("t{turn}s0");
+    let mut assistant_stream_started = false;
+    let tool_state = Arc::clone(&state);
+    let tool_agent_id = agent_id.clone();
+    let mut execute_tool = move |
+        definition: &RoutedToolDefinition,
+        tool_args: Value,
+        tool_call_id: &str,
+    | -> Result<Value, ProviderSessionError> {
+        execute_routed_mcp_tool(
+            &tool_state,
+            &tool_agent_id,
+            definition,
+            tool_args,
+            tool_call_id,
+        )
+        .map_err(|error| ProviderSessionError::Tool(error.message))
+    };
+    let stream_state = Arc::clone(&state);
+    let stream_agent_id = agent_id.clone();
+    let stream_assistant_id = assistant_id.clone();
+    let mut on_text_delta = move |_delta: &str, accumulated: &str| {
+        emit_inference_transcript(
+            &stream_state,
+            &stream_agent_id,
+            if assistant_stream_started { "updated" } else { "appended" },
+            json!({
+                "kind": "send-message",
+                "id": stream_assistant_id,
+                "message": {
+                    "type": "text",
+                    "content": accumulated
+                },
+                "streaming": true,
+                "timestampMs": assistant_timestamp_ms
+            }),
+        );
+        assistant_stream_started = true;
+    };
+
+    let result = run_routed_provider_text(
+        provider,
+        &messages,
+        &mut RoutedProviderOptions {
+            data_dir: &state.inference_data_dir,
+            tools: &routed_tools,
+            mcp_server_url: mcp_url.as_deref(),
+            execute_tool: &mut execute_tool,
+            on_text_delta: &mut on_text_delta,
+        },
+    )
+    .map_err(inference_failure);
+
+    drop(activity);
+    if let Some(server) = mcp_server.as_mut() {
+        server.close();
+    }
+    drop(mcp_server);
+    let content = result?;
+
+    let assistant_entry = StoredEntry {
+        provider: provider.as_str().to_string(),
+        role: StoredRole::Assistant,
+        content,
+        rich_text: None,
+        id: assistant_id,
+        client_nonce: None,
+        reactions: Vec::new(),
+        timestamp_ms: assistant_timestamp_ms,
+    };
+    {
+        let _guard = state.inference_store_lock.lock().map_err(|_| {
+            Failure::new(
+                "INFERENCE_STORE_LOCK_FAILED",
+                "inference transcript lock poisoned",
+            )
+        })?;
+        state
+            .inference_store
+            .append(&agent_id, [assistant_entry.clone()])?;
+    }
+    let mut final_entry = project_transcript_entry(&assistant_entry);
+    final_entry["streaming"] = Value::Bool(false);
+    emit_inference_transcript(&state, &agent_id, "updated", final_entry);
+    Ok(())
+}
+
+fn merged_local_transcript(
+    state: &Arc<CoordinatorState>,
+    method: &str,
+    args: &Value,
+) -> Result<Value, Failure> {
+    let agent_id = args
+        .get("id")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let mut remote = dispatch_gateway_value(state, method, args.clone())?;
+    if agent_id.is_empty() {
+        return Ok(remote);
+    }
+    let local_entries = {
+        let _guard = state.inference_store_lock.lock().map_err(|_| {
+            Failure::new(
+                "INFERENCE_STORE_LOCK_FAILED",
+                "inference transcript lock poisoned",
+            )
+        })?;
+        state
+            .inference_store
+            .load()
+            .entries(agent_id)
+            .iter()
+            .map(project_transcript_entry)
+            .collect::<Vec<_>>()
+    };
+    let Some(root) = remote.as_object_mut() else {
+        return Ok(remote);
+    };
+    let Some(remote_entries) = root.get("entries").and_then(Value::as_array) else {
+        return Ok(remote);
+    };
+    let mut entries = remote_entries.clone();
+    entries.extend(local_entries);
+    let limit = args
+        .get("limit")
+        .and_then(Value::as_u64)
+        .filter(|value| *value > 0)
+        .and_then(|value| usize::try_from(value).ok())
+        .unwrap_or(500);
+    if entries.len() > limit {
+        entries.drain(..entries.len() - limit);
+    }
+    root.insert("entries".into(), Value::Array(entries));
+    Ok(remote)
+}
+
+fn dispatch_inference_if_handled(
+    state: &Arc<CoordinatorState>,
+    channel: CarrierChannel,
+    request_id: &str,
+    method: &str,
+    args: &Value,
+) -> bool {
+    if method == "reactToMessage" {
+        let agent_id = args
+            .get("agentId")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        let entry_id = args
+            .get("entryId")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        let emoji = args
+            .get("emoji")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        let updated = state
+            .inference_store_lock
+            .lock()
+            .ok()
+            .and_then(|_guard| {
+                state
+                    .inference_store
+                    .toggle_local_reaction(agent_id, entry_id, emoji)
+                    .ok()
+                    .flatten()
+            });
+        if let Some(entry) = updated {
+            emit_inference_transcript(
+                state,
+                agent_id,
+                "updated",
+                project_transcript_entry(&entry),
+            );
+            state.complete_request(
+                channel,
+                request_id,
+                ReplyOutcome::Ok { value: Value::Null },
+            );
+            return true;
+        }
+    }
+
+    let provider = configured_inference_provider(state);
+    if matches!(provider, RoutedProvider::Cursor) {
+        return false;
+    }
+
+    if matches!(
+        method,
+        "getAgentTranscriptTail" | "openAgentTail" | "getAgentTranscriptWindow"
+    ) {
+        let worker_state = Arc::clone(state);
+        let request_id = request_id.to_string();
+        let method = method.to_string();
+        let args = args.clone();
+        thread::spawn(move || {
+            match merged_local_transcript(&worker_state, &method, &args) {
+                Ok(value) => worker_state.complete_request(
+                    channel,
+                    &request_id,
+                    ReplyOutcome::Ok { value },
+                ),
+                Err(failure) => worker_state.complete_request(
+                    channel,
+                    &request_id,
+                    ReplyOutcome::Failed { failure },
+                ),
+            }
+        });
+        return true;
+    }
+
+    if method != "sendPrompt" {
+        return false;
+    }
+
+    let agent_id = args
+        .get("agentId")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let queue_key = if agent_id.trim().is_empty() {
+        format!("invalid-{}", uuid::Uuid::new_v4())
+    } else {
+        agent_id.clone()
+    };
+    let client_nonce = args
+        .get("clientNonce")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let worker_state = Arc::clone(state);
+    let worker_args = args.clone();
+    let enqueue = state.inference_queue.enqueue(&queue_key, move || {
+        if let Err(error) =
+            execute_local_inference(Arc::clone(&worker_state), provider, worker_args)
+        {
+            record_inference_error(&worker_state, provider, &agent_id, &error);
+        }
+    });
+    match enqueue {
+        Ok(()) => {
+            let mut value = json!({
+                "accepted": true,
+                "provider": provider.as_str(),
+            });
+            if let Some(client_nonce) = client_nonce {
+                value["clientNonce"] = Value::String(client_nonce);
+            }
+            state.complete_request(
+                channel,
+                request_id,
+                ReplyOutcome::Ok { value },
+            );
+        }
+        Err(failure) => {
+            state.complete_request(
+                channel,
+                request_id,
+                ReplyOutcome::Failed { failure },
+            );
+        }
+    }
+    true
+}
+
 fn dispatch_to_host(
     state: &Arc<CoordinatorState>,
     channel: CarrierChannel,
@@ -1418,6 +2132,10 @@ fn dispatch_to_host(
                         "appVersion": state.bootstrap.process_config.app_version.clone(),
                         "isPackaged": state.bootstrap.process_config.is_packaged,
                         "dataDir": state.bootstrap.process_config.data_dir.clone()
+                    },
+                    "inference": {
+                        "provider": configured_inference_provider(state).as_str(),
+                        "queueWorkers": state.inference_queue.worker_count()
                     }
                 }),
             },
@@ -1607,6 +2325,15 @@ fn execute_actions(
                     );
                     continue;
                 }
+                if dispatch_inference_if_handled(
+                    state,
+                    channel,
+                    &request_id,
+                    &method,
+                    &args,
+                ) {
+                    continue;
+                }
                 if let Err(error) =
                     dispatch_to_host(state, channel, request_id.clone(), method, args)
                 {
@@ -1665,14 +2392,22 @@ fn main() {
         }
     };
 
-    let gateway_discovery_path =
-        PathBuf::from(bootstrap.process_config.data_dir.trim()).join("gateway.json");
+    let inference_data_dir = PathBuf::from(bootstrap.process_config.data_dir.trim());
+    let gateway_discovery_path = inference_data_dir.join("gateway.json");
+    let inference_settings_path = inference_data_dir.join("settings.json");
+    let inference_store =
+        InferenceTranscriptFile::new(inference_data_dir.join("inference-router-transcript.json"));
     let gateway_client = CoordinatorGatewayClient::default();
 
     let state = Arc::new(CoordinatorState {
         bootstrap,
         host_bin,
         gateway_discovery_path,
+        inference_data_dir,
+        inference_settings_path,
+        inference_store,
+        inference_store_lock: Mutex::new(()),
+        inference_queue: InferenceTaskQueue::default(),
         host_stdin: Mutex::new(None),
         gateway_client: Mutex::new(gateway_client),
         gateway_command_policy: GatewayCommandPolicy::default(),
@@ -1772,6 +2507,7 @@ fn main() {
     }
 
     state.closed.store(true, Ordering::SeqCst);
+    state.inference_queue.dispose();
     signal_local_exec(&state, LocalExecRuntimeCommand::Dispose);
     dispose_webauthn_runtime(&state);
     if let Ok(mut control) = state.control_port.lock() {

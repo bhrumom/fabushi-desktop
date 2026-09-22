@@ -11210,13 +11210,15 @@
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/inference/codex_direct_responses.rs"
+        "source/host/src/extensions/inference/codex_direct_responses.rs",
+        "source/host/src/extensions/inference/provider_session.rs",
+        "source/node-agent-coordinator/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/inference_codex_direct_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust semantic core now preserves Grok's streamed Codex Responses event handling, accumulated text deltas, usage accounting, function-call continuation, routed tool execution, unknown/invalid tool error projection, and bounded multi-step completion. This remains non-final until the production provider-session transport/auth layer consumes it and the Coordinator InferenceRouter is wired to the shipping provider/tool queue."
+      "notes": "Rust semantic core preserves streamed Codex Responses events, accumulated text deltas, usage accounting, function-call continuation, routed tool execution, unknown/invalid tool error projection, and bounded multi-step completion. It is now consumed by the production provider-session that the shipping Coordinator main composition calls, but status remains non-final until the current exact HEAD passes the independent Coordinator/Host CI evidence."
     },
     {
       "referencePath": "source/host/extensions/inference/cursor-session.ts",
@@ -11289,14 +11291,17 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/inference/provider_session.rs",
-        "source/host/src/extensions/inference/codex_direct_responses.rs"
+        "source/host/src/extensions/inference/codex_direct_responses.rs",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/node-agent-coordinator/src/routed_mcp_bridge.rs"
       ],
       "testEvidence": [
         "source/host/tests/inference_provider_session_contract.rs",
         "source/host/tests/inference_codex_direct_contract.rs",
+        "source/node-agent-coordinator/tests/production_protocol.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust production provider-session now covers all three Grok local router providers: Codex uses the existing private ChatGPT login with 401 OAuth refresh and real Responses SSE/tool continuation; OpenRouter uses real chat-completions SSE with incremental text and multi-step function tools; Claude Code invokes the installed CLI and accepts the Coordinator-owned routed MCP bridge URL. Provider selection still comes from settings. Final status remains withheld until Coordinator InferenceRouter per-agent queue/main production composition consumes this module and provider-specific behavior is covered by the end-to-end Coordinator contract."
+      "notes": "Rust production provider-session covers Codex (private ChatGPT login, 401 OAuth refresh, Responses SSE/tool continuation), OpenRouter (real chat-completions SSE and multi-step function tools), and Claude Code (installed CLI plus Coordinator-owned routed MCP bridge URL). The shipping Coordinator main composition now selects it from settings and supplies real routed MCP execution. Status remains non-final until the exact wiring commit passes CI."
     },
     {
       "referencePath": "source/host/extensions/inference/sand-labeling.ts",
@@ -15947,13 +15952,18 @@
       "architecturalRole": "coordinator/inference-routing",
       "processOrPackage": "mahayana-coordinator",
       "behavioralEvidence": [
-        "source/node-agent-coordinator/src/inference_router.rs"
+        "source/node-agent-coordinator/src/inference_router.rs",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/node-agent-coordinator/src/routed_mcp_bridge.rs",
+        "source/host/src/extensions/inference/provider_session.rs"
       ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/node-agent-coordinator/tests/production_protocol.rs",
+        "source/node-agent-coordinator/tests/routed_mcp_http.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial parity advanced: Rust route selection, schema-v2 transcript persistence, bounded history, reaction state, turn-id recovery, and a production-safe per-agent task queue are implemented and contract-tested. The queue serializes each agent, permits parallel agents, survives a failed task, and supports disposal. Final status remains withheld until real provider streaming/routed MCP tool execution is connected through main.rs."
+      "notes": "Production composition prepared: Rust preserves schema-v2 local transcript state, bounded history/reactions/turn IDs, per-agent serialization with cross-agent parallelism and failure isolation, settings-based provider routing, immediate local sendPrompt acceptance, remote+local transcript merging, 1200ms activity window with pulses, streaming transcript events, direct routed MCP tool execution, Claude loopback MCP, persisted assistant/error settlement, and disposal. Status remains existing-needs-parity until this exact production wiring passes the independent Coordinator production protocol/CI."
     },
     {
       "referencePath": "source/node-agent-coordinator/local-exec/daemon-files.ts",
@@ -16002,13 +16012,18 @@
       "architecturalRole": "coordinator/process-entry",
       "processOrPackage": "mahayana-coordinator",
       "behavioralEvidence": [
-        "source/node-agent-coordinator/src/main.rs"
+        "source/node-agent-coordinator/src/main.rs",
+        "source/node-agent-coordinator/src/inference_router.rs",
+        "source/node-agent-coordinator/src/routed_mcp_bridge.rs",
+        "source/host/src/extensions/inference/provider_session.rs"
       ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/production_protocol.rs",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/node-agent-coordinator/tests/routed_mcp_http.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial parity only: the Rust process entry owns carrier/renderer/control ports, Host process generation, Gateway discovery/SSE, request settlement and crash recovery, but frozen Grok 0.18 main composition also wires HostSupervisor, LocalExec supervisor, MCP OAuth forwarder, WebAuthn provider/signer, InferenceRouter, client-side tool relay, pause propagation and coordinated disposal. Those production integrations must be wired before final status."
+      "notes": "Production composition now includes the existing carrier/control/renderer ports, Gateway/Host generation and crash settlement, HostSupervisor, LocalExec, MCP OAuth, WebAuthn provider/signer, client-side tool relay and pause/disposal plus the shipping InferenceRouter path: provider settings, per-agent queue, real Host provider-session, direct routed MCP tools, Claude MCP bridge, transcript streaming/persistence and inference disposal. Status remains non-final until the exact wiring commit passes Coordinator production protocol and CI."
     },
     {
       "referencePath": "source/node-agent-coordinator/oauth/mcp-oauth-callback-listener.ts",

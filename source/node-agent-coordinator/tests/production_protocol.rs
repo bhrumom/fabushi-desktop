@@ -695,6 +695,8 @@ exit 17
                 assert_eq!(value["protocolVersion"], 1);
                 assert_eq!(value["processConfig"]["appVersion"], "test-0.18");
                 assert_eq!(value["processConfig"]["isPackaged"], false);
+                assert_eq!(value["inference"]["provider"], "cursor");
+                assert_eq!(value["inference"]["queueWorkers"], 0);
             }
             other => panic!("unexpected health frame: {other:?}"),
         }
@@ -891,6 +893,68 @@ exit 17
         }
         assert!(saw_crash_reply, "Host crash did not reject the pending request");
         assert!(saw_stopped, "Host crash did not emit stopped lifecycle");
+
+        fs::write(
+            data_dir.join("settings.json"),
+            r#"{"inferenceProvider":"codex"}"#,
+        )
+        .expect("switch shipping Coordinator to local inference provider");
+        send(
+            &mut stdin,
+            CarrierChannel::Data,
+            &CoordinatorFrame::Request {
+                request_id: "r-local-inference".into(),
+                method: "sendPrompt".into(),
+                args: json!({
+                    "agentId": "agent-local",
+                    "prompt": "",
+                    "clientNonce": "local-inference-1"
+                }),
+            },
+        );
+        let mut saw_local_accept = false;
+        let mut saw_local_error = false;
+        for _ in 0..8 {
+            let (channel, frame) = recv_application_frame(
+                &rx,
+                &mut stdin,
+                &mut seen_control_methods,
+                Duration::from_secs(2),
+            );
+            assert_eq!(channel, CarrierChannel::Data);
+            match frame {
+                CoordinatorFrame::Reply {
+                    request_id,
+                    outcome: ReplyOutcome::Ok { value },
+                } if request_id == "r-local-inference" => {
+                    assert_eq!(value["accepted"], true);
+                    assert_eq!(value["provider"], "codex");
+                    assert_eq!(value["clientNonce"], "local-inference-1");
+                    saw_local_accept = true;
+                }
+                CoordinatorFrame::Event { family, payload } if family == "transcript" => {
+                    if payload["agentId"] == "agent-local"
+                        && payload["entry"]["message"]["content"]
+                            .as_str()
+                            .is_some_and(|value| value.contains("Router error:"))
+                    {
+                        saw_local_error = true;
+                    }
+                }
+                _ => {}
+            }
+            if saw_local_accept && saw_local_error {
+                break;
+            }
+        }
+        assert!(
+            saw_local_accept,
+            "shipping Coordinator did not accept a local-provider sendPrompt"
+        );
+        assert!(
+            saw_local_error,
+            "shipping Coordinator did not settle a failed local-provider turn into transcript state"
+        );
 
         drop(stdin);
         let status = child.wait().expect("wait for Coordinator");

@@ -373,6 +373,18 @@ impl InferenceTranscriptFile {
                 format!("could not write temporary transcript: {error}"),
             )
         })?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&temporary, fs::Permissions::from_mode(0o600)).map_err(
+                |error| {
+                    Failure::new(
+                        "INFERENCE_STORE_WRITE_FAILED",
+                        format!("could not secure temporary transcript: {error}"),
+                    )
+                },
+            )?;
+        }
         fs::rename(&temporary, &self.path).map_err(|error| {
             let _ = fs::remove_file(&temporary);
             Failure::new(
