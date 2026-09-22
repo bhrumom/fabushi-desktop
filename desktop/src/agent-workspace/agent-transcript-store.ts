@@ -273,14 +273,41 @@ export class AgentTranscriptStore {
   }
 
   markUserOperationAccepted(peerKey: string, operationId: string): AgentTranscriptSourceMessage[] {
-    return this.update(peerKey, (current) => current.map((message) =>
-      message.role === 'me'
-      && message.kind === 'message'
-      && message.operationId === operationId
-      && (message.optimistic || message.queued)
-        ? { ...message, optimistic: false, queued: false }
-        : message,
-    ));
+    return this.update(peerKey, (current) => {
+      // The renderer request id is not an operation id. Until Host acceptance
+      // the optimistic user row intentionally has no operationId. Bind only
+      // the latest optimistic/queued user row when the canonical operation is
+      // accepted; a peer can have only one active request at this boundary.
+      let candidateIndex = -1;
+      for (let index = current.length - 1; index >= 0; index -= 1) {
+        const message = current[index];
+        if (
+          message?.role === 'me'
+          && message.kind === 'message'
+          && !message.operationId
+          && (message.optimistic || message.queued)
+        ) {
+          candidateIndex = index;
+          break;
+        }
+      }
+      return current.map((message, index) => {
+        if (
+          message.role === 'me'
+          && message.kind === 'message'
+          && (message.operationId === operationId || index === candidateIndex)
+          && (message.optimistic || message.queued)
+        ) {
+          return {
+            ...message,
+            operationId,
+            optimistic: false,
+            queued: false,
+          };
+        }
+        return message;
+      });
+    });
   }
 
   reconcileUserMessage(
