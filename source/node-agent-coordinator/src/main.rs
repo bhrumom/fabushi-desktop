@@ -3,6 +3,9 @@ use mahayana_node_agent_coordinator::carrier::{
     parse_bootstrap_argument, CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
 };
 use mahayana_node_agent_coordinator::control_port_client::{ClientAction, ControlPortClient};
+use mahayana_node_agent_coordinator::client_side_tool_v2_relay::{
+    ClientSideToolV2Relay, CLIENT_SIDE_TOOL_V2_FAMILY,
+};
 use mahayana_node_agent_coordinator::gateway::gateway_client::{
     CoordinatorGatewayClient, stream_http_events,
 };
@@ -15,7 +18,7 @@ use mahayana_node_agent_coordinator::gateway::host_supervisor::{
     GatewayConnection, read_gateway_discovery,
 };
 use mahayana_node_agent_coordinator::protocol::{
-    CoordinatorFrame, Failure, ReplyOutcome, COORDINATOR_DISCONNECTED,
+    CoordinatorFrame, Failure, LifecyclePhase, ReplyOutcome, COORDINATOR_DISCONNECTED,
 };
 use mahayana_node_agent_coordinator::renderer_port_server::{
     RendererPortServer, ServerAction,
@@ -55,6 +58,8 @@ struct CoordinatorState {
     gateway_discovery_path: PathBuf,
     host_stdin: Mutex<Option<ActiveHostStdin>>,
     gateway_client: Mutex<CoordinatorGatewayClient>,
+    tool_relay: Mutex<ClientSideToolV2Relay>,
+    tool_replay_done: AtomicBool,
     pending: Mutex<HashMap<String, PendingHostRequest>>,
     control_port: Mutex<ControlPortClient>,
     renderer_port: Mutex<RendererPortServer>,
@@ -197,6 +202,23 @@ impl CoordinatorState {
 }
 
 
+fn post_tool_event(state: &Arc<CoordinatorState>, event: mahayana_node_agent_coordinator::client_side_tool_v2_relay::RendererToolEvent) {
+    if let Ok(payload) = serde_json::to_value(event) {
+        state.post_event(CLIENT_SIDE_TOOL_V2_FAMILY, payload);
+    }
+}
+
+fn replay_tool_events(state: &Arc<CoordinatorState>) {
+    let events = state
+        .tool_relay
+        .lock()
+        .map(|relay| relay.replay())
+        .unwrap_or_default();
+    for event in events {
+        post_tool_event(state, event);
+    }
+}
+
 fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
     let (channel, family, payload) = match (
         value.get("channel").and_then(Value::as_str),
@@ -213,8 +235,21 @@ fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
     };
     let now_ms = u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
     if let Ok(mut gateway) = state.gateway_client.lock() {
-        let _ = gateway.accept_event(now_ms, channel, payload.clone());
+        let _ = gateway.accept_event(now_ms, channel.clone(), payload.clone());
     }
+
+    if channel == CLIENT_SIDE_TOOL_V2_FAMILY {
+        let projected = state
+            .tool_relay
+            .lock()
+            .ok()
+            .and_then(|mut relay| relay.accept_value(payload));
+        if let Some(event) = projected {
+            post_tool_event(state, event);
+        }
+        return;
+    }
+
     state.post_event(&family, payload);
 }
 
@@ -660,7 +695,20 @@ fn execute_actions(
     for action in actions {
         match action {
             ServerAction::Post(frame) => {
+                let serving_ready = channel == CarrierChannel::Data
+                    && matches!(
+                        &frame,
+                        CoordinatorFrame::Lifecycle {
+                            phase: LifecyclePhase::Ready,
+                            ..
+                        }
+                    );
                 let _ = state.write_frame(channel, &frame);
+                if serving_ready
+                    && !state.tool_replay_done.swap(true, Ordering::SeqCst)
+                {
+                    replay_tool_events(state);
+                }
             }
             ServerAction::Dispatch {
                 request_id,
@@ -735,6 +783,8 @@ fn main() {
         gateway_discovery_path,
         host_stdin: Mutex::new(None),
         gateway_client: Mutex::new(gateway_client),
+        tool_relay: Mutex::new(ClientSideToolV2Relay::default()),
+        tool_replay_done: AtomicBool::new(false),
         pending: Mutex::new(HashMap::new()),
         control_port: Mutex::new(ControlPortClient::default()),
         renderer_port: Mutex::new(RendererPortServer::default()),
@@ -823,6 +873,9 @@ fn main() {
     }
     if let Ok(mut active) = state.host_stdin.lock() {
         active.take();
+    }
+    if let Ok(mut relay) = state.tool_relay.lock() {
+        relay.clear();
     }
     let generation = state.host_generation.load(Ordering::SeqCst);
     state.reject_generation(generation, "Coordinator input closed");
