@@ -1,9 +1,17 @@
-use crate::{ModelError, ModelEvent, ModelRequest, ModelRuntime, ModelUsage, SharedModelEventSink};
+use crate::{
+    ModelError, ModelEvent, ModelEventSink, ModelRequest, ModelRuntime, ModelUsage,
+    SharedModelEventSink,
+};
 use async_trait::async_trait;
 use mahayana_core::ModelProviderMode;
 use serde_json::{Value, json};
+use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader};
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum ResponsesWireApi {
@@ -12,6 +20,38 @@ pub enum ResponsesWireApi {
     ChatCompletions,
     AnthropicMessages,
 }
+
+const MODEL_CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
+const MODEL_READ_TIMEOUT: Duration = Duration::from_secs(150);
+const MODEL_WRITE_TIMEOUT: Duration = Duration::from_secs(30);
+const FIRST_OUTPUT_TIMEOUT: Duration = Duration::from_secs(150);
+const PROVIDER_MAX_ATTEMPTS: u32 = 3;
+const PROVIDER_RETRY_BASE_DELAY_MS: u64 = 500;
+
+struct FirstOutputTrackingSink {
+    inner: SharedModelEventSink,
+    seen: AtomicBool,
+}
+
+impl FirstOutputTrackingSink {
+    fn new(inner: SharedModelEventSink) -> Self {
+        Self { inner, seen: AtomicBool::new(false) }
+    }
+
+    fn seen(&self) -> bool {
+        self.seen.load(Ordering::SeqCst)
+    }
+}
+
+impl ModelEventSink for FirstOutputTrackingSink {
+    fn emit(&self, event: ModelEvent) -> Result<(), ModelError> {
+        if matches!(event, ModelEvent::OutputTextDelta(_) | ModelEvent::Completed { .. }) {
+            self.seen.store(true, Ordering::SeqCst);
+        }
+        self.inner.emit(event)
+    }
+}
+
 
 #[derive(Debug, Clone)]
 pub struct ResponsesModelConfig {
@@ -98,12 +138,35 @@ impl ModelRuntime for ResponsesModelRuntime {
         if let Some(resolver) = self.credential_resolver.as_ref() {
             config.bearer_token = resolver()?;
         }
-        let events_for_request = Arc::clone(&events);
-        let (payload, streamed_text) = tokio::task::spawn_blocking(move || {
-            request_response(&config, request, events_for_request)
-        })
-        .await
-        .map_err(|error| ModelError::Inference(format!("model task failed: {error}")))??;
+        let tracker = Arc::new(FirstOutputTrackingSink::new(Arc::clone(&events)));
+        let tracked_events: SharedModelEventSink = tracker.clone();
+        let mut attempt = 0_u32;
+        let (payload, streamed_text) = loop {
+            attempt += 1;
+            let config_for_attempt = config.clone();
+            let request_for_attempt = request.clone();
+            let events_for_attempt = Arc::clone(&tracked_events);
+            let outcome = tokio::task::spawn_blocking(move || {
+                request_response(&config_for_attempt, request_for_attempt, events_for_attempt)
+            })
+            .await
+            .map_err(|error| ModelError::Inference(format!("model task failed: {error}")))
+            .and_then(|result| result);
+
+            match outcome {
+                Ok(value) => break value,
+                Err(error)
+                    if attempt < PROVIDER_MAX_ATTEMPTS
+                        && !tracker.seen()
+                        && is_retryable_model_error(&error) =>
+                {
+                    let backoff = PROVIDER_RETRY_BASE_DELAY_MS
+                        .saturating_mul(1_u64 << (attempt - 1).min(4));
+                    tokio::time::sleep(Duration::from_millis(backoff)).await;
+                }
+                Err(error) => return Err(error),
+            }
+        };
 
         // SSE deltas have already reached the Agent event sink. Only emit the
         // final text for JSON/fallback endpoints to avoid duplicating replies.
@@ -120,6 +183,32 @@ impl ModelRuntime for ResponsesModelRuntime {
         self.config.provider_mode
     }
 }
+
+fn is_retryable_model_error(error: &ModelError) -> bool {
+    let ModelError::Inference(message) | ModelError::Unavailable(message) = error else {
+        return false;
+    };
+    let message = message.to_ascii_lowercase();
+    [
+        "timeout",
+        "timed out",
+        "transport",
+        "connection",
+        "temporar",
+        "unavailable",
+        "overload",
+        "capacity",
+        "rate limit",
+        "429",
+        "500",
+        "502",
+        "503",
+        "504",
+    ]
+    .iter()
+    .any(|needle| message.contains(needle))
+}
+
 
 fn request_response(
     config: &ResponsesModelConfig,
@@ -172,7 +261,7 @@ fn request_response(
             {
                 messages.insert(0, json!({"role":"system", "content": instructions}));
             }
-            let mut body = json!({ "model": request.model, "messages": messages, "stream": false });
+            let mut body = json!({ "model": request.model, "messages": messages, "stream": true });
             if let Some(tools) = request.metadata.get("tools").and_then(Value::as_array) {
                 body["tools"] = Value::Array(tools.iter().filter_map(chat_tool).collect());
             }
@@ -196,6 +285,7 @@ fn request_response(
                 "model": request.model,
                 "messages": anthropic_messages(&request.input),
                 "max_tokens": request.metadata.get("max_output_tokens").cloned().unwrap_or_else(|| json!(4096)),
+                "stream": true,
             });
             let system = anthropic_system(&request.input, request.metadata.get("instructions"));
             if !system.is_empty() {
@@ -211,12 +301,14 @@ fn request_response(
         }
     };
 
-    let accept = if matches!(config.wire_api, ResponsesWireApi::Responses) {
-        "text/event-stream, application/json"
-    } else {
-        "application/json"
-    };
-    let mut http = ureq::post(&endpoint).set("Accept", accept);
+    let agent = ureq::AgentBuilder::new()
+        .timeout_connect(MODEL_CONNECT_TIMEOUT)
+        .timeout_read(MODEL_READ_TIMEOUT)
+        .timeout_write(MODEL_WRITE_TIMEOUT)
+        .build();
+    let mut http = agent
+        .post(&endpoint)
+        .set("Accept", "text/event-stream, application/json");
     if let Some(token) = config.bearer_token.as_deref() {
         http = match config.wire_api {
             ResponsesWireApi::AnthropicMessages => http
@@ -228,14 +320,13 @@ fn request_response(
         };
     }
     let response = http.send_json(body).map_err(redacted_http_error)?;
-    if matches!(config.wire_api, ResponsesWireApi::Responses)
-        && response
-            .header("Content-Type")
-            .unwrap_or_default()
-            .to_ascii_lowercase()
-            .contains("text/event-stream")
+    if response
+        .header("Content-Type")
+        .unwrap_or_default()
+        .to_ascii_lowercase()
+        .contains("text/event-stream")
     {
-        return request_stream(response, events);
+        return request_stream(response, config.wire_api, events);
     }
     let payload: Value = response
         .into_json()
@@ -257,40 +348,159 @@ fn request_response(
     ))
 }
 
+#[derive(Debug, Default)]
+struct StreamToolCall {
+    id: String,
+    name: String,
+    arguments: String,
+}
+
+#[derive(Debug)]
+struct StreamAccumulator {
+    wire_api: ResponsesWireApi,
+    id: Option<Value>,
+    text: String,
+    streamed_text: bool,
+    first_output_seen: bool,
+    final_payload: Option<Value>,
+    tools: BTreeMap<usize, StreamToolCall>,
+    usage: Option<Value>,
+    anthropic_input_tokens: u64,
+    anthropic_cache_creation_input_tokens: u64,
+    anthropic_cache_read_input_tokens: u64,
+    anthropic_output_tokens: u64,
+}
+
+impl StreamAccumulator {
+    fn new(wire_api: ResponsesWireApi) -> Self {
+        Self {
+            wire_api,
+            id: None,
+            text: String::new(),
+            streamed_text: false,
+            first_output_seen: false,
+            final_payload: None,
+            tools: BTreeMap::new(),
+            usage: None,
+            anthropic_input_tokens: 0,
+            anthropic_cache_creation_input_tokens: 0,
+            anthropic_cache_read_input_tokens: 0,
+            anthropic_output_tokens: 0,
+        }
+    }
+
+    fn emit_text(
+        &mut self,
+        delta: &str,
+        events: &SharedModelEventSink,
+    ) -> Result<(), ModelError> {
+        if delta.is_empty() {
+            return Ok(());
+        }
+        self.first_output_seen = true;
+        self.streamed_text = true;
+        self.text.push_str(delta);
+        events.emit(ModelEvent::OutputTextDelta(delta.to_string()))
+    }
+
+    fn tool_mut(&mut self, index: usize) -> &mut StreamToolCall {
+        self.first_output_seen = true;
+        self.tools.entry(index).or_default()
+    }
+
+    fn finish(self) -> Result<(Value, bool), ModelError> {
+        if let Some(payload) = self.final_payload {
+            validate_response_payload(&payload)?;
+            return Ok((
+                match self.wire_api {
+                    ResponsesWireApi::Responses => payload,
+                    ResponsesWireApi::ChatCompletions => normalize_chat_payload(payload),
+                    ResponsesWireApi::AnthropicMessages => normalize_anthropic_payload(payload),
+                },
+                self.streamed_text,
+            ));
+        }
+
+        let mut output = Vec::new();
+        if !self.text.is_empty() {
+            output.push(json!({
+                "type": "message",
+                "role": "assistant",
+                "content": [{"type":"output_text", "text":self.text}],
+            }));
+        }
+        for tool in self.tools.into_values() {
+            output.push(json!({
+                "type": "function_call",
+                "call_id": if tool.id.is_empty() { "call" } else { tool.id.as_str() },
+                "name": if tool.name.is_empty() { "tool" } else { tool.name.as_str() },
+                "arguments": if tool.arguments.is_empty() { "{}" } else { tool.arguments.as_str() },
+            }));
+        }
+        let usage = match self.wire_api {
+            ResponsesWireApi::AnthropicMessages => {
+                let input_tokens = self
+                    .anthropic_input_tokens
+                    .saturating_add(self.anthropic_cache_creation_input_tokens);
+                json!({
+                    "input_tokens": input_tokens,
+                    "cached_input_tokens": self.anthropic_cache_read_input_tokens,
+                    "output_tokens": self.anthropic_output_tokens,
+                    "total_tokens": input_tokens
+                        .saturating_add(self.anthropic_cache_read_input_tokens)
+                        .saturating_add(self.anthropic_output_tokens),
+                })
+            }
+            _ => self.usage.unwrap_or(Value::Null),
+        };
+        let payload = json!({
+            "id": self.id.unwrap_or_else(|| json!("resp_stream")),
+            "object": "response",
+            "status": "completed",
+            "output": output,
+            "usage": usage,
+        });
+        Ok((payload, self.streamed_text))
+    }
+}
+
 fn request_stream(
     response: ureq::Response,
+    wire_api: ResponsesWireApi,
     events: SharedModelEventSink,
 ) -> Result<(Value, bool), ModelError> {
     let mut reader = BufReader::new(response.into_reader());
+    let started = Instant::now();
     let mut data = String::new();
-    let mut streamed_text = false;
-    let mut accumulated_text = String::new();
-    let mut final_payload = None;
+    let mut stream = StreamAccumulator::new(wire_api);
 
     loop {
+        if !stream.first_output_seen && started.elapsed() >= FIRST_OUTPUT_TIMEOUT {
+            return Err(ModelError::Inference(format!(
+                "model first-output watchdog expired after {} ms",
+                FIRST_OUTPUT_TIMEOUT.as_millis()
+            )));
+        }
+
         let mut line = String::new();
         let read = reader
             .read_line(&mut line)
             .map_err(|error| ModelError::Inference(format!("model stream read failed: {error}")))?;
+
+        if !stream.first_output_seen && started.elapsed() >= FIRST_OUTPUT_TIMEOUT {
+            return Err(ModelError::Inference(format!(
+                "model first-output watchdog expired after {} ms",
+                FIRST_OUTPUT_TIMEOUT.as_millis()
+            )));
+        }
+
         if read == 0 {
-            consume_sse_event(
-                &data,
-                &events,
-                &mut accumulated_text,
-                &mut streamed_text,
-                &mut final_payload,
-            )?;
+            consume_sse_event(&data, &events, &mut stream)?;
             break;
         }
         let line = line.trim_end_matches(['\r', '\n']);
         if line.is_empty() {
-            consume_sse_event(
-                &data,
-                &events,
-                &mut accumulated_text,
-                &mut streamed_text,
-                &mut final_payload,
-            )?;
+            consume_sse_event(&data, &events, &mut stream)?;
             data.clear();
             continue;
         }
@@ -305,32 +515,13 @@ fn request_stream(
         }
     }
 
-    let payload = final_payload.unwrap_or_else(|| {
-        json!({
-            "id": "resp_local",
-            "object": "response",
-            "status": "completed",
-            "output": if accumulated_text.is_empty() {
-                Vec::<Value>::new()
-            } else {
-                vec![json!({
-                    "type": "message",
-                    "role": "assistant",
-                    "content": [{"type": "output_text", "text": accumulated_text}],
-                })]
-            },
-        })
-    });
-    validate_response_payload(&payload)?;
-    Ok((payload, streamed_text))
+    stream.finish()
 }
 
 fn consume_sse_event(
     data: &str,
     events: &SharedModelEventSink,
-    accumulated_text: &mut String,
-    streamed_text: &mut bool,
-    final_payload: &mut Option<Value>,
+    stream: &mut StreamAccumulator,
 ) -> Result<(), ModelError> {
     let data = data.trim();
     if data.is_empty() || data == "[DONE]" {
@@ -339,22 +530,26 @@ fn consume_sse_event(
     let payload: Value = serde_json::from_str(data).map_err(|error| {
         ModelError::Inference(format!("model stream returned invalid JSON: {error}"))
     })?;
-    let event_type = payload
-        .get("type")
-        .and_then(Value::as_str)
-        .unwrap_or_default();
+    if stream.id.is_none() {
+        stream.id = payload
+            .get("id")
+            .cloned()
+            .or_else(|| payload.pointer("/message/id").cloned());
+    }
+    if let Some(usage) = payload.get("usage") {
+        stream.usage = Some(usage.clone());
+    }
+
+    let event_type = payload.get("type").and_then(Value::as_str).unwrap_or_default();
     match event_type {
         "response.output_text.delta" => {
-            if let Some(delta) = payload.get("delta").and_then(Value::as_str)
-                && !delta.is_empty()
-            {
-                accumulated_text.push_str(delta);
-                *streamed_text = true;
-                events.emit(ModelEvent::OutputTextDelta(delta.to_string()))?;
+            if let Some(delta) = payload.get("delta").and_then(Value::as_str) {
+                stream.emit_text(delta, events)?;
             }
         }
         "response.completed" => {
-            *final_payload = payload.get("response").cloned().or(Some(payload));
+            stream.first_output_seen = true;
+            stream.final_payload = payload.get("response").cloned().or(Some(payload));
         }
         "response.failed" | "response.incomplete" => {
             let message = payload
@@ -364,17 +559,88 @@ fn consume_sse_event(
                 .unwrap_or("model endpoint returned an incomplete response");
             return Err(ModelError::Inference(message.to_string()));
         }
+        "message_start" => {
+            stream.first_output_seen = true;
+            let usage = payload.pointer("/message/usage").unwrap_or(&Value::Null);
+            stream.anthropic_input_tokens = usage
+                .get("input_tokens")
+                .and_then(Value::as_u64)
+                .unwrap_or(0);
+            stream.anthropic_cache_creation_input_tokens = usage
+                .get("cache_creation_input_tokens")
+                .and_then(Value::as_u64)
+                .unwrap_or(0);
+            stream.anthropic_cache_read_input_tokens = usage
+                .get("cache_read_input_tokens")
+                .and_then(Value::as_u64)
+                .unwrap_or(0);
+        }
+        "content_block_start" => {
+            let index = payload.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
+            let block = payload.get("content_block").unwrap_or(&Value::Null);
+            if block.get("type").and_then(Value::as_str) == Some("tool_use") {
+                let tool = stream.tool_mut(index);
+                tool.id = block.get("id").and_then(Value::as_str).unwrap_or_default().to_string();
+                tool.name = block.get("name").and_then(Value::as_str).unwrap_or_default().to_string();
+                if let Some(input) = block.get("input").filter(|value| !value.is_null()) {
+                    let encoded = serde_json::to_string(input).unwrap_or_default();
+                    if encoded != "{}" {
+                        tool.arguments.push_str(&encoded);
+                    }
+                }
+            }
+        }
+        "content_block_delta" => {
+            let index = payload.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
+            let delta = payload.get("delta").unwrap_or(&Value::Null);
+            match delta.get("type").and_then(Value::as_str) {
+                Some("text_delta") => {
+                    if let Some(text) = delta.get("text").and_then(Value::as_str) {
+                        stream.emit_text(text, events)?;
+                    }
+                }
+                Some("input_json_delta") => {
+                    if let Some(fragment) = delta.get("partial_json").and_then(Value::as_str) {
+                        stream.tool_mut(index).arguments.push_str(fragment);
+                    }
+                }
+                _ => {}
+            }
+        }
+        "message_delta" => {
+            let usage = payload.get("usage").unwrap_or(&Value::Null);
+            stream.anthropic_output_tokens = usage
+                .get("output_tokens")
+                .and_then(Value::as_u64)
+                .unwrap_or(stream.anthropic_output_tokens);
+        }
+        "message_stop" => {}
         _ => {
-            // Compatibility with an upstream that sends chat-completions
-            // chunks while advertising an event-stream response.
             if let Some(delta) = payload
                 .pointer("/choices/0/delta/content")
                 .and_then(Value::as_str)
-                && !delta.is_empty()
             {
-                accumulated_text.push_str(delta);
-                *streamed_text = true;
-                events.emit(ModelEvent::OutputTextDelta(delta.to_string()))?;
+                stream.emit_text(delta, events)?;
+            }
+            if let Some(calls) = payload
+                .pointer("/choices/0/delta/tool_calls")
+                .and_then(Value::as_array)
+            {
+                for call in calls {
+                    let index = call.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
+                    let tool = stream.tool_mut(index);
+                    if let Some(id) = call.get("id").and_then(Value::as_str) {
+                        if tool.id.is_empty() {
+                            tool.id.push_str(id);
+                        }
+                    }
+                    if let Some(name) = call.pointer("/function/name").and_then(Value::as_str) {
+                        tool.name.push_str(name);
+                    }
+                    if let Some(arguments) = call.pointer("/function/arguments").and_then(Value::as_str) {
+                        tool.arguments.push_str(arguments);
+                    }
+                }
             }
         }
     }
@@ -810,6 +1076,73 @@ mod tests {
         assert_eq!(extract_usage(&normalized).unwrap().input_tokens, 12);
         assert_eq!(extract_usage(&normalized).unwrap().cached_input_tokens, 4);
         assert_eq!(extract_usage(&normalized).unwrap().total_tokens, 19);
+    }
+
+    #[derive(Default)]
+    struct RecordingSink {
+        text: std::sync::Mutex<String>,
+    }
+
+    impl ModelEventSink for RecordingSink {
+        fn emit(&self, event: ModelEvent) -> Result<(), ModelError> {
+            if let ModelEvent::OutputTextDelta(delta) = event {
+                self.text.lock().unwrap().push_str(&delta);
+            }
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn parses_chat_stream_text_and_tool_calls() {
+        let sink = Arc::new(RecordingSink::default());
+        let events: SharedModelEventSink = sink.clone();
+        let mut stream = StreamAccumulator::new(ResponsesWireApi::ChatCompletions);
+        consume_sse_event(
+            r#"{"id":"chat-1","choices":[{"delta":{"content":"善","tool_calls":[{"index":0,"id":"call-1","function":{"name":"search","arguments":"{\\"q\\":"}}]}}]}"#,
+            &events,
+            &mut stream,
+        )
+        .unwrap();
+        consume_sse_event(
+            r#"{"choices":[{"delta":{"content":"哉","tool_calls":[{"index":0,"function":{"arguments":"\\"法\\"}"}}]}}]}"#,
+            &events,
+            &mut stream,
+        )
+        .unwrap();
+        let (payload, streamed) = stream.finish().unwrap();
+        assert!(streamed);
+        assert_eq!(extract_output_text(&payload).as_deref(), Some("善哉"));
+        assert_eq!(payload["output"][1]["name"], "search");
+        assert_eq!(payload["output"][1]["arguments"], "{\"q\":\"法\"}");
+    }
+
+    #[test]
+    fn parses_anthropic_stream_text_and_tool_input() {
+        let sink = Arc::new(RecordingSink::default());
+        let events: SharedModelEventSink = sink.clone();
+        let mut stream = StreamAccumulator::new(ResponsesWireApi::AnthropicMessages);
+        consume_sse_event(
+            r#"{"type":"message_start","message":{"id":"msg-1","usage":{"input_tokens":4}}}"#,
+            &events,
+            &mut stream,
+        )
+        .unwrap();
+        consume_sse_event(
+            r#"{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"tool-1","name":"search","input":{}}}"#,
+            &events,
+            &mut stream,
+        )
+        .unwrap();
+        consume_sse_event(
+            r#"{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\\"q\\":\\"法\\"}"}}"#,
+            &events,
+            &mut stream,
+        )
+        .unwrap();
+        let (payload, _) = stream.finish().unwrap();
+        assert_eq!(payload["output"][0]["call_id"], "tool-1");
+        assert_eq!(payload["output"][0]["name"], "search");
+        assert_eq!(payload["output"][0]["arguments"], "{\"q\":\"法\"}");
     }
 
     #[test]
