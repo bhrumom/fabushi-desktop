@@ -926,3 +926,125 @@ fn routed_mcp_bridge_serves_private_json_rpc_and_routes_cached_tools() {
     ));
     assert_eq!(unknown["result"]["isError"], true);
 }
+
+
+#[test]
+fn oauth_forwarder_scopes_loopback_state_ttl_and_listener_lifecycle() {
+    use mahayana_node_agent_coordinator::oauth::mcp_oauth_callback_listener::{
+        OAuthCallbackDisposition, classify_callback,
+    };
+    use mahayana_node_agent_coordinator::oauth::mcp_oauth_forwarder::{
+        McpOAuthForwarderState, McpOAuthPendingPayload, OAuthForwarderAction,
+        MCP_OAUTH_PENDING_TTL_MS,
+    };
+    use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::{
+        McpOAuthLoopbackRegistry, loopback_bind_hosts, parse_loopback_redirect,
+    };
+
+    let parsed = parse_loopback_redirect("http://localhost:43124/oauth/callback")
+        .expect("loopback redirect");
+    assert_eq!(parsed.origin, "http://localhost:43124");
+    assert_eq!(parsed.path, "/oauth/callback");
+    assert_eq!(loopback_bind_hosts("localhost"), vec!["127.0.0.1", "::1"]);
+    assert!(parse_loopback_redirect("https://localhost:43124/oauth/callback").is_err());
+    assert!(parse_loopback_redirect("http://example.com:43124/oauth/callback").is_err());
+    assert!(parse_loopback_redirect("http://localhost/oauth/callback").is_err());
+
+    let mut pool = McpOAuthLoopbackRegistry::default();
+    let first = pool
+        .acquire("http://localhost:43124/oauth/callback")
+        .expect("first lease");
+    let second = pool
+        .acquire("http://localhost:43124/other")
+        .expect("shared origin lease");
+    assert_eq!(pool.active_origin_count(), 1);
+    assert_eq!(pool.lease_count(&first.origin), 2);
+    assert!(pool.release(&first));
+    assert_eq!(pool.lease_count(&second.origin), 1);
+    assert!(pool.release(&second));
+    assert_eq!(pool.active_origin_count(), 0);
+
+    let mut forwarder = McpOAuthForwarderState::default();
+    let actions = forwarder
+        .handle_pending(
+            McpOAuthPendingPayload {
+                redirect_url: "http://localhost:43124/oauth/callback".into(),
+                state: "state-1".into(),
+                server_name: "github".into(),
+            },
+            1_000,
+        )
+        .expect("pending");
+    assert!(matches!(
+        actions.as_slice(),
+        [OAuthForwarderAction::StartListener { origin, .. }]
+            if origin == "http://localhost:43124"
+    ));
+    assert!(forwarder
+        .listener_started("http://localhost:43124", 1_001)
+        .is_empty());
+    assert_eq!(forwarder.listener_count(), 1);
+    assert_eq!(
+        forwarder.resolve_server("http://localhost:43124", "state-1", 1_002),
+        Some("github")
+    );
+
+    let disposition = classify_callback(
+        "/oauth/callback?state=state-1&code=abc%2B123",
+        "/oauth/callback",
+        |state| forwarder
+            .resolve_server("http://localhost:43124", state, 1_003)
+            .map(str::to_string),
+    )
+    .expect("callback classification");
+    let OAuthCallbackDisposition::Complete(callback) = disposition else {
+        panic!("expected completed callback");
+    };
+    assert_eq!(callback.code, "abc+123");
+    assert_eq!(callback.server_name, "github");
+
+    let completion = forwarder
+        .begin_callback(
+            "http://localhost:43124",
+            callback.code,
+            callback.state.clone(),
+            1_004,
+        )
+        .expect("completion");
+    assert!(matches!(
+        completion,
+        OAuthForwarderAction::Complete { callback }
+            if callback.server_name == "github" && callback.state == "state-1"
+    ));
+    let settled = forwarder.settle_callback(
+        "http://localhost:43124",
+        &callback.state,
+        1_005,
+    );
+    assert!(matches!(
+        settled.as_slice(),
+        [OAuthForwarderAction::CloseListener { origin }]
+            if origin == "http://localhost:43124"
+    ));
+    assert_eq!(forwarder.pending_count(), 0);
+    assert_eq!(forwarder.listener_count(), 0);
+
+    forwarder
+        .handle_pending(
+            McpOAuthPendingPayload {
+                redirect_url: "http://127.0.0.1:43125/callback".into(),
+                state: "expiring".into(),
+                server_name: "drive".into(),
+            },
+            10_000,
+        )
+        .expect("expiring pending");
+    forwarder.listener_started("http://127.0.0.1:43125", 10_001);
+    let expired = forwarder.expire(10_000 + MCP_OAUTH_PENDING_TTL_MS);
+    assert!(matches!(
+        expired.as_slice(),
+        [OAuthForwarderAction::CloseListener { origin }]
+            if origin == "http://127.0.0.1:43125"
+    ));
+    assert_eq!(forwarder.pending_count(), 0);
+}
