@@ -5779,12 +5779,18 @@
       "targetPath": "source/electron-preload/box-vnc-clipboard-paste.ts",
       "targetLanguage": "typescript",
       "owner": "electron-preload",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "55cab9f0e773bf7bfcf9c1841723a2ab8e497379",
       "architecturalRole": "electron-preload/bridge",
       "processOrPackage": "electron-preload",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-preload/box-vnc-clipboard-paste.ts"
+      ],
+      "testEvidence": [
+        "source/electron-preload/preload-boundaries.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/electron-preload/box-vnc-liveness.ts",
@@ -5803,36 +5809,54 @@
       "targetPath": "source/electron-preload/box-vnc-visibility-gate.ts",
       "targetLanguage": "typescript",
       "owner": "electron-preload",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "3e827be67401d32040678b7eb482cb749d714633",
       "architecturalRole": "electron-preload/bridge",
       "processOrPackage": "electron-preload",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-preload/box-vnc-visibility-gate.ts"
+      ],
+      "testEvidence": [
+        "source/electron-preload/preload-boundaries.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/electron-preload/coordinator-port-bridge.ts",
       "targetPath": "source/electron-preload/coordinator-port-bridge.ts",
       "targetLanguage": "typescript",
       "owner": "electron-preload",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "df5be4813dc8068133db14e13916c3c7d31d64ce",
       "architecturalRole": "electron-preload/bridge",
       "processOrPackage": "electron-preload",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-preload/coordinator-port-bridge.ts"
+      ],
+      "testEvidence": [
+        "source/electron-preload/coordinator-port-bridge.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/electron-preload/main-rpc-runtime.ts",
       "targetPath": "source/electron-preload/main-rpc-runtime.ts",
       "targetLanguage": "typescript",
       "owner": "electron-preload",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "90086ee55ab2adb5a69100267a66bfe240d7a4af",
       "architecturalRole": "electron-preload/bridge",
       "processOrPackage": "electron-preload",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-preload/main-rpc-runtime.ts"
+      ],
+      "testEvidence": [
+        "source/electron-preload/preload-boundaries.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/electron-preload/passkey-stall.ts",
@@ -5911,12 +5935,18 @@
       "targetPath": "source/electron-preload/rpc-edge-runtime.ts",
       "targetLanguage": "typescript",
       "owner": "electron-preload",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "5c0e651b2ccf8226432466649bd77c75a44670bb",
       "architecturalRole": "electron-preload/bridge",
       "processOrPackage": "electron-preload",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-preload/rpc-edge-runtime.ts"
+      ],
+      "testEvidence": [
+        "source/electron-preload/preload-boundaries.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/electron-preload/runtime/dev-controls.ts",
@@ -22572,12 +22602,18 @@
       "targetPath": "source/shared/box-migration.ts",
       "targetLanguage": "typescript",
       "owner": "shared",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "85f541cd08c594dc34f8b02f7870ffcf67f5d257",
       "architecturalRole": "shared/box-migration",
       "processOrPackage": "shared",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/shared/box-migration.ts"
+      ],
+      "testEvidence": [
+        "source/shared/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/shared/box-runtime.ts",
@@ -22788,12 +22824,18 @@
       "targetPath": "source/shared/host-settings-field.ts",
       "targetLanguage": "typescript",
       "owner": "shared",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "d42c80580522a85459220303771d2cdf98a0e786",
       "architecturalRole": "shared/host-settings-field",
       "processOrPackage": "shared",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/shared/host-settings-field.ts"
+      ],
+      "testEvidence": [
+        "source/shared/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/shared/host-settings.ts",
