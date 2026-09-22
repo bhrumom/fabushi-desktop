@@ -1,0 +1,146 @@
+use std::collections::HashMap;
+
+use serde_json::Value;
+
+use crate::protocol::{
+    CoordinatorFrame, Failure, LifecyclePhase, ReplyOutcome, ShutdownReason,
+    COORDINATOR_DISCONNECTED, COORDINATOR_PROTOCOL_VERSION,
+};
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ClientAction {
+    Post(CoordinatorFrame),
+    Resolve { request_id: String, value: Value },
+    Reject { request_id: String, failure: Failure },
+    Event { family: String, payload: Value },
+    Close,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ControlPortPhase {
+    Connecting,
+    Serving,
+    Settled,
+}
+
+#[derive(Debug)]
+pub struct ControlPortClient {
+    phase: ControlPortPhase,
+    ready_observed: bool,
+    next_request_id: u64,
+    pending: HashMap<String, String>,
+}
+
+impl Default for ControlPortClient {
+    fn default() -> Self {
+        Self {
+            phase: ControlPortPhase::Connecting,
+            ready_observed: false,
+            next_request_id: 0,
+            pending: HashMap::new(),
+        }
+    }
+}
+
+impl ControlPortClient {
+    pub fn start(&self) -> ClientAction { ClientAction::Post(CoordinatorFrame::hello()) }
+    pub fn phase(&self) -> ControlPortPhase { self.phase }
+    pub fn pending_count(&self) -> usize { self.pending.len() }
+
+    pub fn call(&mut self, method: impl Into<String>, args: Value) -> Result<(String, ClientAction), Failure> {
+        if self.phase == ControlPortPhase::Settled {
+            return Err(Failure::new(COORDINATOR_DISCONNECTED, "control port is settled"));
+        }
+        self.next_request_id += 1;
+        let request_id = format!("c-{}", self.next_request_id);
+        let method = method.into();
+        self.pending.insert(request_id.clone(), method.clone());
+        Ok((
+            request_id.clone(),
+            ClientAction::Post(CoordinatorFrame::Request { request_id, method, args }),
+        ))
+    }
+
+    pub fn cancel(&mut self, request_id: &str) -> Option<ClientAction> {
+        self.pending.contains_key(request_id).then(|| ClientAction::Post(CoordinatorFrame::Cancel {
+            request_id: request_id.to_string(),
+        }))
+    }
+
+    pub fn handle_frame(&mut self, frame: CoordinatorFrame) -> Vec<ClientAction> {
+        if self.phase == ControlPortPhase::Settled {
+            return Vec::new();
+        }
+        match frame {
+            CoordinatorFrame::Lifecycle { phase: LifecyclePhase::Ready, protocol_version, .. } => {
+                if self.ready_observed || protocol_version != Some(COORDINATOR_PROTOCOL_VERSION) {
+                    return self.protocol_breach("invalid or repeated ready frame");
+                }
+                self.ready_observed = true;
+                self.phase = ControlPortPhase::Serving;
+                Vec::new()
+            }
+            CoordinatorFrame::Lifecycle { phase: LifecyclePhase::Shutdown, reason, detail, .. } => {
+                let message = detail.unwrap_or_else(|| format!("coordinator shutdown: {reason:?}"));
+                self.settle(Failure::new(COORDINATOR_DISCONNECTED, message))
+            }
+            CoordinatorFrame::Reply { request_id, outcome } => {
+                if self.pending.remove(&request_id).is_none() {
+                    return Vec::new();
+                }
+                match outcome {
+                    ReplyOutcome::Ok { value } => vec![ClientAction::Resolve { request_id, value }],
+                    ReplyOutcome::Failed { failure } => vec![ClientAction::Reject { request_id, failure }],
+                }
+            }
+            CoordinatorFrame::Event { family, payload } => vec![ClientAction::Event { family, payload }],
+            CoordinatorFrame::Request { .. }
+            | CoordinatorFrame::Cancel { .. }
+            | CoordinatorFrame::Lifecycle { phase: LifecyclePhase::Hello, .. } => {
+                self.protocol_breach("server posted a client-direction frame")
+            }
+        }
+    }
+
+    pub fn handle_port_closed(&mut self) -> Vec<ClientAction> {
+        self.settle(Failure::new(COORDINATOR_DISCONNECTED, "control port closed"))
+    }
+
+    pub fn shutdown(&mut self) -> Vec<ClientAction> {
+        if self.phase == ControlPortPhase::Settled {
+            return Vec::new();
+        }
+        let mut actions = vec![ClientAction::Post(CoordinatorFrame::shutdown(
+            ShutdownReason::Requested,
+            None,
+        ))];
+        actions.extend(self.settle(Failure::new(COORDINATOR_DISCONNECTED, "shutdown requested")));
+        actions
+    }
+
+    fn protocol_breach(&mut self, detail: &str) -> Vec<ClientAction> {
+        let mut actions = vec![ClientAction::Post(CoordinatorFrame::shutdown(
+            ShutdownReason::ProtocolError,
+            Some(detail.to_string()),
+        ))];
+        actions.extend(self.settle(Failure::new(COORDINATOR_DISCONNECTED, detail)));
+        actions
+    }
+
+    fn settle(&mut self, failure: Failure) -> Vec<ClientAction> {
+        if self.phase == ControlPortPhase::Settled {
+            return Vec::new();
+        }
+        self.phase = ControlPortPhase::Settled;
+        let pending = std::mem::take(&mut self.pending);
+        let mut actions = pending
+            .into_keys()
+            .map(|request_id| ClientAction::Reject {
+                request_id,
+                failure: failure.clone(),
+            })
+            .collect::<Vec<_>>();
+        actions.push(ClientAction::Close);
+        actions
+    }
+}
