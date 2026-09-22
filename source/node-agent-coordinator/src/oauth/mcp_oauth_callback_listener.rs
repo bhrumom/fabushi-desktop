@@ -1,5 +1,10 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
+use crate::oauth::mcp_oauth_loopback_registry::{
+    LoopbackHttpResponse, LoopbackLease, McpOAuthLoopbackHandler, McpOAuthLoopbackRegistry,
+    parse_loopback_redirect,
+};
 use crate::protocol::Failure;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -150,4 +155,84 @@ fn hex(byte: u8) -> Option<u8> {
         b'A'..=b'F' => Some(byte - b'A' + 10),
         _ => None,
     }
+}
+
+
+pub struct McpOAuthCallbackListener {
+    lease: LoopbackLease,
+}
+
+impl McpOAuthCallbackListener {
+    pub fn lease(&self) -> &LoopbackLease {
+        &self.lease
+    }
+
+    pub fn close(self, registry: &mut McpOAuthLoopbackRegistry) -> bool {
+        registry.release(&self.lease)
+    }
+}
+
+pub fn start_mcp_oauth_callback_listener<Resolve, Complete, Settled>(
+    redirect_url: &str,
+    registry: &mut McpOAuthLoopbackRegistry,
+    resolve: Resolve,
+    on_callback: Complete,
+    on_settled: Settled,
+) -> Result<McpOAuthCallbackListener, Failure>
+where
+    Resolve: Fn(&str) -> Option<String> + Send + Sync + 'static,
+    Complete: Fn(OAuthCallback) -> Result<(), Failure> + Send + Sync + 'static,
+    Settled: Fn(&str) + Send + Sync + 'static,
+{
+    let redirect = parse_loopback_redirect(redirect_url)?;
+    let expected_path = redirect.path;
+    let resolve = Arc::new(resolve);
+    let on_callback = Arc::new(on_callback);
+    let on_settled = Arc::new(on_settled);
+
+    let handler: McpOAuthLoopbackHandler = Arc::new(move |request_target| {
+        let disposition = match classify_callback(request_target, &expected_path, {
+            let resolve = Arc::clone(&resolve);
+            move |state| resolve(state)
+        }) {
+            Ok(disposition) => disposition,
+            Err(_) => {
+                return Some(LoopbackHttpResponse::html(
+                    400,
+                    "<!doctype html><title>OAuth error</title><p>Invalid OAuth callback.</p>",
+                ));
+            }
+        };
+
+        match disposition {
+            OAuthCallbackDisposition::Unhandled => None,
+            OAuthCallbackDisposition::ProviderError { state, .. }
+            | OAuthCallbackDisposition::MissingCode { state, .. } => {
+                on_settled(&state);
+                Some(LoopbackHttpResponse::html(
+                    400,
+                    "<!doctype html><title>OAuth error</title><p>OAuth authorization failed.</p>",
+                ))
+            }
+            OAuthCallbackDisposition::Complete(callback) => {
+                let state = callback.state.clone();
+                let completed = on_callback(callback).is_ok();
+                on_settled(&state);
+                Some(if completed {
+                    LoopbackHttpResponse::html(
+                        200,
+                        "<!doctype html><title>OAuth complete</title><p>Authorization complete. You may close this window.</p>",
+                    )
+                } else {
+                    LoopbackHttpResponse::html(
+                        500,
+                        "<!doctype html><title>OAuth error</title><p>OAuth authorization could not be completed.</p>",
+                    )
+                })
+            }
+        }
+    });
+
+    let lease = registry.acquire_with_handler(redirect_url, handler)?;
+    Ok(McpOAuthCallbackListener { lease })
 }
