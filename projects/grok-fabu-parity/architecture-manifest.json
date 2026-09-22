@@ -511,36 +511,54 @@
       "targetPath": "frontend/src/recovered/features/access/cover/first-box-gate.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "ecd055a1db69abb62bba27646f3529c3c42258c3",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/access/cover/first-box-gate.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/access-cover.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer access/rebuild state parity with executable Node contract coverage and no legacy renderer dependency."
     },
     {
       "referencePath": "frontend/src/recovered/features/access/cover/model.ts",
       "targetPath": "frontend/src/recovered/features/access/cover/model.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "f4240aac2041105ba2988e976e7370b33b6fe332",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/access/cover/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/access-cover.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer access/rebuild state parity with executable Node contract coverage and no legacy renderer dependency."
     },
     {
       "referencePath": "frontend/src/recovered/features/access/cover/rebuild-signal.ts",
       "targetPath": "frontend/src/recovered/features/access/cover/rebuild-signal.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "807f814b83fe7b5973c9ad5eda4b00f9f5087066",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/access/cover/rebuild-signal.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/access-cover.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer access/rebuild state parity with executable Node contract coverage and no legacy renderer dependency."
     },
     {
       "referencePath": "frontend/src/recovered/features/access/cover/roster-snapshot-store.ts",
@@ -24603,5 +24621,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:29:32.420Z"
+  "generatedAt": "2026-09-22T07:31:14.485Z"
 }
