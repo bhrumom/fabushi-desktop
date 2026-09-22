@@ -3259,48 +3259,72 @@
       "targetPath": "frontend/src/recovered/runtime/define-entrypoint.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c45d43173f83eb4d162a50061120cfeca4398281",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/runtime/define-entrypoint.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/runtime/runtime-foundations.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room recovered renderer runtime foundation with executable Node contract coverage; no legacy desktop/src or frontend/apps/web dependency."
     },
     {
       "referencePath": "frontend/src/recovered/runtime/entrypoints.ts",
       "targetPath": "frontend/src/recovered/runtime/entrypoints.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "48fb346fa11d84e81af24322bbdaf2fffab8c52e",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/runtime/entrypoints.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/runtime/runtime-foundations.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room recovered renderer runtime foundation with executable Node contract coverage; no legacy desktop/src or frontend/apps/web dependency."
     },
     {
       "referencePath": "frontend/src/recovered/runtime/snapshot-store.ts",
       "targetPath": "frontend/src/recovered/runtime/snapshot-store.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "2d81c3d04bb038e3a966c763d52c346f4337e71d",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/runtime/snapshot-store.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/runtime/runtime-foundations.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room recovered renderer runtime foundation with executable Node contract coverage; no legacy desktop/src or frontend/apps/web dependency."
     },
     {
       "referencePath": "frontend/src/recovered/runtime/source-boundary.ts",
       "targetPath": "frontend/src/recovered/runtime/source-boundary.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e43436011f6489318ccd4abe92dc861899e3c6bc",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/runtime/source-boundary.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/runtime/runtime-foundations.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room recovered renderer runtime foundation with executable Node contract coverage; no legacy desktop/src or frontend/apps/web dependency."
     },
     {
       "referencePath": "frontend/src/recovered/ui/movable-panel.ts",
@@ -24561,5 +24585,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:26:40.502Z"
+  "generatedAt": "2026-09-22T07:28:07.829Z"
 }
