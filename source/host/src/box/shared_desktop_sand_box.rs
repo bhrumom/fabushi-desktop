@@ -259,7 +259,7 @@ impl SharedDesktopSandBox {
         .ok()
     }
 
-    fn persist_assignments<Ctx>(&self, ctx: &Ctx) {
+    fn write_persisted_assignments<Ctx>(&self, ctx: &Ctx) {
         if !self.persist_assignments {
             return;
         }
@@ -320,7 +320,7 @@ impl SharedDesktopSandBox {
             }
         };
         if is_new_assignment || token_is_new || is_migration {
-            self.persist_assignments(ctx);
+            self.write_persisted_assignments(ctx);
         }
         let owner_token = self
             .state
@@ -360,7 +360,7 @@ impl SharedDesktopSandBox {
                             state.agent_window_tokens.remove(agent_id);
                         }
                     }
-                    self.persist_assignments(ctx);
+                    self.write_persisted_assignments(ctx);
                     return Ok(primary);
                 }
                 let _ = self.inner.release_window(ctx, &self.shared_box_id, index);
@@ -369,7 +369,7 @@ impl SharedDesktopSandBox {
                         state.agent_windows.remove(agent_id);
                         state.agent_window_tokens.remove(agent_id);
                     }
-                    self.persist_assignments(ctx);
+                    self.write_persisted_assignments(ctx);
                 }
                 Err(error)
             }
@@ -394,7 +394,7 @@ impl SharedDesktopSandBox {
             index
         };
         if index.is_some() {
-            self.persist_assignments(ctx);
+            self.write_persisted_assignments(ctx);
         }
         if let Some(index) = index.filter(|index| *index >= SAND_BOX_FIRST_FORK_WINDOW_INDEX) {
             let result = self.inner.release_window(ctx, &self.shared_box_id, index);
