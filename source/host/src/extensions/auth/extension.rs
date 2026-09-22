@@ -81,7 +81,6 @@ impl BrowserUaAuthApi for HostAuthExtension {
                 outcome: match event.result.outcome {
                     RenewalOutcome::Renewed => "renewed",
                     RenewalOutcome::Failed => "failed",
-                    RenewalOutcome::Skipped => "skipped",
                 }
                 .to_string(),
             });
