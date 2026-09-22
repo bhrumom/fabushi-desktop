@@ -181,20 +181,16 @@ fn ua_token_kill_switch_retries_failures_and_reconciles_marker() {
 #[test]
 fn production_box_environment_uses_connect_unary_control_service_from_host_graph() {
     use std::io::{Read, Write};
-    use std::net::TcpListener;
+    use std::net::{TcpListener, TcpStream};
     use std::thread;
     use std::time::Duration;
 
     use mahayana_host_runtime::r#box::production::ProductionBoxEnvironment;
 
-    let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind fake exec daemon");
-    let port = listener.local_addr().expect("fake daemon address").port();
-    let server = thread::spawn(move || {
-        let (mut stream, _) = listener.accept().expect("accept production box client");
+    fn read_request(stream: &mut TcpStream) -> Vec<u8> {
         stream
             .set_read_timeout(Some(Duration::from_secs(3)))
             .expect("read timeout");
-
         let mut received = Vec::new();
         let mut buffer = [0u8; 1024];
         let header_end;
@@ -207,7 +203,8 @@ fn production_box_environment_uses_connect_unary_control_service_from_host_graph
                 break;
             }
         }
-        let header_text = std::str::from_utf8(&received[..header_end]).expect("UTF-8 request headers");
+        let header_text =
+            std::str::from_utf8(&received[..header_end]).expect("UTF-8 request headers");
         let content_length = header_text
             .lines()
             .find_map(|line| {
@@ -221,14 +218,38 @@ fn production_box_environment_uses_connect_unary_control_service_from_host_graph
             assert!(count > 0, "client closed before HTTP body completed");
             received.extend_from_slice(&buffer[..count]);
         }
+        received
+    }
 
+    fn reply_ok(stream: &mut TcpStream) {
         stream
             .write_all(
                 b"HTTP/1.1 200 OK\r\nContent-Type: application/proto\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
             )
             .expect("write fake Connect response");
         stream.flush().expect("flush fake Connect response");
-        received
+    }
+
+    let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind fake exec daemon");
+    let port = listener.local_addr().expect("fake daemon address").port();
+    let server = thread::spawn(move || {
+        let (mut ping_stream, _) = listener.accept().expect("accept readiness Ping");
+        let ping = read_request(&mut ping_stream);
+        let ping_headers = request_parts(&ping).0;
+        assert!(ping_headers.starts_with(
+            "POST /agent.v1.ControlService/Ping HTTP/1.1\r\n"
+        ));
+        assert!(
+            ping_headers
+                .lines()
+                .any(|line| line.eq_ignore_ascii_case("Authorization: Bearer test-token"))
+        );
+        reply_ok(&mut ping_stream);
+
+        let (mut update_stream, _) = listener.accept().expect("accept environment update");
+        let update = read_request(&mut update_stream);
+        reply_ok(&mut update_stream);
+        update
     });
 
     let service = ProductionBoxEnvironment::new("127.0.0.1", port, "test-token");
@@ -272,7 +293,6 @@ fn production_box_environment_uses_connect_unary_control_service_from_host_graph
         ]
     );
 }
-
 
 fn spawn_fake_production_control_service(
     response_body: Vec<u8>,
