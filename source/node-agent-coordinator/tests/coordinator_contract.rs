@@ -352,3 +352,62 @@ fn carrier_bootstrap_and_channels_preserve_grok_process_boundaries() {
     carrier.close();
     assert!(carrier.post(CarrierChannel::Data, json!({})).is_err());
 }
+
+
+#[test]
+fn client_side_tool_v2_relay_fences_epochs_sequences_and_replays_wire_payloads() {
+    use base64::{engine::general_purpose::STANDARD, Engine as _};
+    use mahayana_node_agent_coordinator::client_side_tool_v2_relay::{
+        ClientSideToolV2Relay, EncodedToolMessage, ToolMessageKind, ToolTransportEvent,
+        CLIENT_SIDE_TOOL_V2_ACCOUNT_SLOT, CLIENT_SIDE_TOOL_V2_WIRE_VERSION,
+    };
+
+    fn encoded(kind: ToolMessageKind, call_id: &str) -> EncodedToolMessage {
+        let mut wire = Vec::new();
+        match kind {
+            ToolMessageKind::Call => wire.push((3_u8 << 3) | 2),
+            ToolMessageKind::Result => {
+                wire.push(0x9a);
+                wire.push(0x02);
+            }
+            ToolMessageKind::Reset => unreachable!(),
+        }
+        wire.push(call_id.len() as u8);
+        wire.extend_from_slice(call_id.as_bytes());
+        EncodedToolMessage {
+            encoding: "protobuf-base64".into(),
+            message_type: match kind {
+                ToolMessageKind::Call => "aiserver.v1.ClientSideToolV2Call",
+                ToolMessageKind::Result => "aiserver.v1.ClientSideToolV2Result",
+                ToolMessageKind::Reset => unreachable!(),
+            }.into(),
+            bytes: STANDARD.encode(wire),
+        }
+    }
+
+    fn event(epoch: &str, sequence: u64, kind: ToolMessageKind, call_id: &str) -> ToolTransportEvent {
+        ToolTransportEvent {
+            version: CLIENT_SIDE_TOOL_V2_WIRE_VERSION,
+            kind,
+            account_slot: CLIENT_SIDE_TOOL_V2_ACCOUNT_SLOT.into(),
+            agent_id: "agent-1".into(),
+            epoch: epoch.into(),
+            sequence,
+            message: (kind != ToolMessageKind::Reset).then(|| encoded(kind, call_id)),
+        }
+    }
+
+    let mut relay = ClientSideToolV2Relay::default();
+    let call = relay.accept(event("epoch-a", 1, ToolMessageKind::Call, "call-7")).unwrap();
+    assert_eq!(call.bytes.as_deref(), Some(&[0x1a, 0x06, b'c', b'a', b'l', b'l', b'-', b'7'][..]));
+    assert!(relay.accept(event("epoch-a", 1, ToolMessageKind::Call, "duplicate")).is_none());
+    assert!(relay.accept(event("epoch-a", 2, ToolMessageKind::Result, "call-7")).is_some());
+    assert_eq!(relay.replay().len(), 2);
+
+    assert!(relay.accept(event("epoch-b", 1, ToolMessageKind::Call, "call-8")).is_some());
+    assert!(relay.accept(event("epoch-a", 3, ToolMessageKind::Result, "call-7")).is_none());
+    assert_eq!(relay.replay().len(), 1);
+
+    assert!(relay.accept(event("epoch-b", 2, ToolMessageKind::Reset, "")).is_some());
+    assert!(relay.replay().is_empty());
+}
