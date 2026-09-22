@@ -7,7 +7,7 @@ use serde_json::Value;
 use crate::gateway::gateway_errors::SandGatewayCommandError;
 use crate::gateway::gateway_reachability::ReachabilityOutcome;
 use crate::gateway::host_supervisor::GatewayConnection;
-use crate::gateway::http_transport::parse_gateway_http_base;
+use crate::gateway::http_transport::{parse_gateway_http_base, read_http_response};
 use crate::protocol::{Failure, ReplyOutcome, COORDINATOR_UNKNOWN_METHOD};
 
 pub const GATEWAY_COMMAND_FAILED: &str = "gateway-command-failed";
@@ -179,46 +179,25 @@ pub fn dispatch_http_json(
             message: format!("gateway {method} write failed: {error}"),
         })?;
 
-    let mut response = Vec::new();
-    stream
-        .read_to_end(&mut response)
+    let response = read_http_response(&mut stream, 64 * 1024, 512 * 1024 * 1024)
         .map_err(|error| GatewayDispatchError::Unreachable {
             outcome: classify_connect_error(&error),
             message: format!("gateway {method} read failed: {error}"),
         })?;
-    let header_end = response
-        .windows(4)
-        .position(|window| window == b"\r\n\r\n")
-        .map(|index| index + 4)
-        .ok_or_else(|| GatewayDispatchError::Transport(
-            "Host gateway returned an invalid HTTP response".into(),
-        ))?;
-    let headers = std::str::from_utf8(&response[..header_end]).map_err(|_| {
-        GatewayDispatchError::Transport("Host gateway response headers are not UTF-8".into())
-    })?;
-    let status = headers
-        .lines()
-        .next()
-        .and_then(|line| line.split_whitespace().nth(1))
-        .and_then(|status| status.parse::<u16>().ok())
-        .ok_or_else(|| GatewayDispatchError::Transport(
-            "Host gateway response has no HTTP status".into(),
-        ))?;
-    let response_body = &response[header_end..];
-    if !(200..300).contains(&status) {
+    if !(200..300).contains(&response.status) {
         let message = gateway_error_message(
-            response_body,
-            &format!("gateway {method} failed with HTTP {status}"),
+            &response.body,
+            &format!("gateway {method} failed with HTTP {}", response.status),
         );
-        if status >= 500 {
+        if response.status >= 500 {
             return Err(GatewayDispatchError::Unreachable {
-                outcome: ReachabilityOutcome::Http(status),
+                outcome: ReachabilityOutcome::Http(response.status),
                 message,
             });
         }
         return Err(GatewayDispatchError::Command(SandGatewayCommandError::new(message)));
     }
-    serde_json::from_slice(response_body)
+    serde_json::from_slice(&response.body)
         .map_err(|error| GatewayDispatchError::Transport(format!(
             "Host gateway returned invalid JSON: {error}"
         )))
