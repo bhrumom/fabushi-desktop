@@ -10,7 +10,6 @@ use std::time::Duration;
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use reqwest::blocking::Client;
 use reqwest::{Client as AsyncClient, Response as AsyncResponse};
 use serde_json::{Map, Value, json};
 use thiserror::Error;
@@ -943,9 +942,10 @@ fn run_openrouter_provider_text(
     options: &mut RoutedProviderOptions<'_>,
 ) -> Result<String, ProviderSessionError> {
     let api_key = openrouter_api_key(options.data_dir)?;
-    let client = Client::builder()
+    let client = AsyncClient::builder()
         .build()
         .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
+    let runtime = provider_io_runtime()?;
     let model = env::var("SAND_OPENROUTER_MODEL")
         .ok()
         .map(|value| value.trim().to_string())
@@ -968,10 +968,13 @@ fn run_openrouter_provider_text(
             "content": message.content,
         })
     }));
+    let should_cancel = options.should_cancel;
+    let on_text_delta = &mut *options.on_text_delta;
+    let execute_tool = &mut *options.execute_tool;
     let mut text = String::new();
 
     for _step in 0..8 {
-        if (options.should_cancel)() {
+        if should_cancel() {
             return Err(ProviderSessionError::Cancelled(
                 "Runner cancelled the OpenRouter request".into(),
             ));
@@ -985,24 +988,30 @@ fn run_openrouter_provider_text(
             request["tools"] = Value::Array(declared_tools.clone());
             request["tool_choice"] = Value::String("auto".into());
         }
-        let response = client
-            .post("https://openrouter.ai/api/v1/chat/completions")
-            .header("authorization", format!("Bearer {api_key}"))
-            .header("content-type", "application/json")
-            .header("accept", "text/event-stream")
-            .header(
-                "HTTP-Referer",
-                "https://github.com/bhrumom/fabushi-desktop",
-            )
-            .header("X-Title", "Fabushi")
-            .json(&request)
-            .send()
-            .map_err(|error| ProviderSessionError::Transport(error.to_string()))?;
+        let response = runtime.block_on(await_reqwest(
+            client
+                .post("https://openrouter.ai/api/v1/chat/completions")
+                .header("authorization", format!("Bearer {api_key}"))
+                .header("content-type", "application/json")
+                .header("accept", "text/event-stream")
+                .header(
+                    "HTTP-Referer",
+                    "https://github.com/bhrumom/fabushi-desktop",
+                )
+                .header("X-Title", "Fabushi")
+                .json(&request)
+                .send(),
+            should_cancel,
+            "the OpenRouter provider request",
+        ))?;
         if !response.status().is_success() {
             let status = response.status();
-            let detail = response
-                .text()
-                .unwrap_or_default()
+            let detail = runtime
+                .block_on(await_reqwest(
+                    response.text(),
+                    should_cancel,
+                    "the OpenRouter provider error response",
+                ))?
                 .chars()
                 .take(4096)
                 .collect::<String>();
@@ -1018,59 +1027,63 @@ fn run_openrouter_provider_text(
 
         let mut partial_calls = BTreeMap::<usize, PartialOpenRouterToolCall>::new();
         let mut step_text = String::new();
-        decode_sse_stream(response, |event| {
-            if (options.should_cancel)() {
-                return Err(ProviderSessionError::Cancelled(
-                    "Runner cancelled the OpenRouter stream".into(),
-                ));
-            }
-            if let Some(error) = event.get("error") {
-                return Err(ProviderSessionError::Protocol(format!(
-                    "OpenRouter stream failed: {error}"
-                )));
-            }
-            let Some(delta) = event
-                .get("choices")
-                .and_then(Value::as_array)
-                .and_then(|choices| choices.first())
-                .and_then(|choice| choice.get("delta"))
-                .and_then(Value::as_object)
-            else {
-                return Ok(());
-            };
-            if let Some(content) = delta.get("content").and_then(Value::as_str) {
-                step_text.push_str(content);
-                text.push_str(content);
-                (options.on_text_delta)(content, &text);
-            }
-            if let Some(calls) = delta.get("tool_calls").and_then(Value::as_array) {
-                for call in calls {
-                    let index = call
-                        .get("index")
-                        .and_then(Value::as_u64)
-                        .unwrap_or(0) as usize;
-                    let partial = partial_calls.entry(index).or_default();
-                    if let Some(id) = call.get("id").and_then(Value::as_str) {
-                        partial.id.push_str(id);
-                    }
-                    if let Some(function) =
-                        call.get("function").and_then(Value::as_object)
-                    {
-                        if let Some(name) =
-                            function.get("name").and_then(Value::as_str)
-                        {
-                            partial.name.push_str(name);
+        runtime.block_on(decode_async_sse_stream(
+            response,
+            should_cancel,
+            &mut |event| {
+                if should_cancel() {
+                    return Err(ProviderSessionError::Cancelled(
+                        "Runner cancelled the OpenRouter stream".into(),
+                    ));
+                }
+                if let Some(error) = event.get("error") {
+                    return Err(ProviderSessionError::Protocol(format!(
+                        "OpenRouter stream failed: {error}"
+                    )));
+                }
+                let Some(delta) = event
+                    .get("choices")
+                    .and_then(Value::as_array)
+                    .and_then(|choices| choices.first())
+                    .and_then(|choice| choice.get("delta"))
+                    .and_then(Value::as_object)
+                else {
+                    return Ok(());
+                };
+                if let Some(content) = delta.get("content").and_then(Value::as_str) {
+                    step_text.push_str(content);
+                    text.push_str(content);
+                    on_text_delta(content, &text);
+                }
+                if let Some(calls) = delta.get("tool_calls").and_then(Value::as_array) {
+                    for call in calls {
+                        let index = call
+                            .get("index")
+                            .and_then(Value::as_u64)
+                            .unwrap_or(0) as usize;
+                        let partial = partial_calls.entry(index).or_default();
+                        if let Some(id) = call.get("id").and_then(Value::as_str) {
+                            partial.id.push_str(id);
                         }
-                        if let Some(arguments) =
-                            function.get("arguments").and_then(Value::as_str)
+                        if let Some(function) =
+                            call.get("function").and_then(Value::as_object)
                         {
-                            partial.arguments.push_str(arguments);
+                            if let Some(name) =
+                                function.get("name").and_then(Value::as_str)
+                            {
+                                partial.name.push_str(name);
+                            }
+                            if let Some(arguments) =
+                                function.get("arguments").and_then(Value::as_str)
+                            {
+                                partial.arguments.push_str(arguments);
+                            }
                         }
                     }
                 }
-            }
-            Ok(())
-        })?;
+                Ok(())
+            },
+        ))?;
 
         if partial_calls.is_empty() {
             return Ok(text);
@@ -1101,7 +1114,7 @@ fn run_openrouter_provider_text(
         }));
 
         for (_index, call) in partial_calls {
-            if (options.should_cancel)() {
+            if should_cancel() {
                 return Err(ProviderSessionError::Cancelled(
                     "Runner cancelled before OpenRouter tool execution".into(),
                 ));
@@ -1120,7 +1133,7 @@ fn run_openrouter_provider_text(
                     let args =
                         serde_json::from_str::<Value>(&call.arguments)
                             .unwrap_or_else(|_| json!({}));
-                    match (options.execute_tool)(tool, args, &tool_call_id) {
+                    match execute_tool(tool, args, &tool_call_id) {
                         Ok(value) => value,
                         Err(error) => json!({
                             "isError": true,
