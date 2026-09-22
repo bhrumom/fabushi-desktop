@@ -14,6 +14,7 @@ const source = path.join(
   repoRoot,
   'source',
   'host',
+  'app',
   'target',
   profile,
   hostExecutable,
