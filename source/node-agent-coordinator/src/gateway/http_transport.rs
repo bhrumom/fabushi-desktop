@@ -31,6 +31,26 @@ impl GatewayHttpEndpoint {
             .map(|addresses| addresses.collect())
     }
 
+    pub fn connect_any(
+        &self,
+        sockets: &[SocketAddr],
+        timeout: Duration,
+    ) -> io::Result<GatewayHttpStream> {
+        let mut last_error = None;
+        for socket in sockets {
+            match self.connect(socket, timeout) {
+                Ok(stream) => return Ok(stream),
+                Err(error) => last_error = Some(error),
+            }
+        }
+        Err(last_error.unwrap_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::AddrNotAvailable,
+                "Host gateway address did not resolve to a connectable socket",
+            )
+        }))
+    }
+
     pub fn connect(
         &self,
         socket: &SocketAddr,
