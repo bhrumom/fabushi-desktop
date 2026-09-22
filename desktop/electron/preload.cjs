@@ -3,7 +3,8 @@
 // Electron sandboxed preloads may only require Electron and a small set of
 // built-ins. Keep this file self-contained; the main process remains the
 // authority that validates the registered edge/method allowlists.
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
+const { createCoordinatorPortBroker, createProductionRendererDesktopBridge, wrapTransferredPort } = require('./production-renderer-bridge.cjs');
 
 const MAHAYANA_EDGE = 'mahayana-host';
 const NATIVE_EDGE = 'native-desktop';
@@ -168,3 +169,20 @@ contextBridge.exposeInMainWorld('fabushi', Object.freeze({
     return ipcRenderer.invoke('fabushi:register-miniapp-document', { pluginId, html });
   },
 }));
+
+
+const productionDesktop = createProductionRendererDesktopBridge({
+  invokeNative: (method, params = {}) => invokeEdge(NATIVE_EDGE, method, params),
+  subscribeNative: (eventName, listener) => subscribeEdge(NATIVE_EDGE, eventName, listener),
+  invokeMahayana: (method, params = {}) => mahayana.invoke(method, params),
+  platform: process.platform,
+  getZoomFactor: () => webFrame.getZoomFactor(),
+});
+contextBridge.exposeInMainWorld('desktop', Object.freeze(productionDesktop));
+
+const coordinatorBroker = createCoordinatorPortBroker(() => ipcRenderer.invoke('sand:coordinator-port-request'));
+contextBridge.exposeInMainWorld('coordinatorPort', Object.freeze(coordinatorBroker.bridge));
+ipcRenderer.on('sand:coordinator-port', (event) => {
+  const port = event.ports?.[0];
+  if (port) coordinatorBroker.deliver(wrapTransferredPort(port));
+});

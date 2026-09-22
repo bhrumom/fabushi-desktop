@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, nativeTheme, Notification, protocol, safeStorage, shell, session, Tray } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, MessageChannelMain, nativeImage, net, nativeTheme, Notification, protocol, safeStorage, shell, session, Tray } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const fs = require('node:fs/promises');
 const fsSync = require('node:fs');
@@ -7,6 +7,7 @@ const path = require('node:path');
 const { pathToFileURL, URL } = require('node:url');
 const { Readable } = require('node:stream');
 const { MahayanaHostProcess } = require('./host-process.cjs');
+const { bindCoordinatorRendererPort } = require('./coordinator-renderer-port.cjs');
 const { serveMainEdge } = require('./edge-ipc.cjs');
 const { MAHAYANA_EDGE } = require('./mahayana-edge.cjs');
 const { NATIVE_EDGE } = require('./native-edge.cjs');
@@ -986,6 +987,19 @@ host.onRuntimeEvent((event) => {
 function installIpcHandlers() {
   installMahayanaEdge();
   installNativeEdge();
+
+  ipcMain.handle('sand:coordinator-port-request', (event) => {
+    assertTrustedSender(event);
+    if (!mainWindow || mainWindow.isDestroyed()
+        || event.sender !== mainWindow.webContents
+        || event.senderFrame !== mainWindow.webContents.mainFrame) {
+      throw new Error('Coordinator access is only available from the primary Fabushi app frame.');
+    }
+    const { port1, port2 } = new MessageChannelMain();
+    bindCoordinatorRendererPort({ port: port2, host });
+    event.sender.postMessage('sand:coordinator-port', null, [port1]);
+    return null;
+  });
 
   ipcMain.handle('fabushi:pick-file', async (event) => {
     assertTrustedSender(event);

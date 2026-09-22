@@ -320,6 +320,12 @@ class MahayanaHostProcess {
     return () => this.events.off('runtime-event', listener);
   }
 
+  onCoordinatorEvent(listener) {
+    if (typeof listener !== 'function') throw new TypeError('Mahayana Coordinator event listener must be a function.');
+    this.events.on('coordinator-event', listener);
+    return () => this.events.off('coordinator-event', listener);
+  }
+
   emitLifecycle(type, detail = {}) {
     const event = Object.freeze({
       type,
