@@ -115,6 +115,22 @@ for (const [domain, expected] of Object.entries(expectedCounts)) {
   if (actual !== expected) fail(`${domain} expected ${expected} frozen modules, found ${actual}`);
 }
 
+const rendererRuntimePath = path.join(root, 'desktop/src/agent-workspace/agent-runtime-coordinator.ts');
+if (fs.existsSync(rendererRuntimePath)) {
+  const rendererRuntime = fs.readFileSync(rendererRuntimePath, 'utf8');
+  const forbiddenCorrelationPatterns = [
+    ['unambiguous runtime fallback helper', /\bunambiguousRuntimeId\b/],
+    ['runtime-id inventory fallback helper', /\bknownRuntimeIds\b/],
+    ['event operation-id nullish fallback', /event\.operationId\s*\?\?/],
+    ['operation id reinterpreted as request id', /peerForRequest\(operationId\)/],
+  ];
+  for (const [label, pattern] of forbiddenCorrelationPatterns) {
+    if (pattern.test(rendererRuntime)) {
+      fail(`renderer runtime correlation must fail closed; found ${label}`);
+    }
+  }
+}
+
 if (strict) {
   const forbiddenParallelRoots = [
     'desktop/src',
