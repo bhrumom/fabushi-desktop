@@ -9963,12 +9963,21 @@
       "targetPath": "source/host/src/extensions/auth/credential_renewer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "7eac889c75ec570c8e8c6a2a3e739d58ed4c62ab",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/auth/credential_renewer.rs",
+        "source/host/src/extensions/auth/mod.rs",
+        "source/host/src/extensions/mod.rs",
+        "source/host/Cargo.toml"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_auth_credential_renewer_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust credential-renewer now preserves Grok renewal credential/dev-token sources, token expiry fallback, Cursor/Sand backend metadata, real HTTP(S) POST to /sand-box/inference-credential, refresh/backoff bounds, immediate-renewal wakeup, result reporting, and error redaction. Final status is intentionally withheld until source/host/extensions/auth/auth-service.ts consumes this renewer in the shipping Host Auth extension."
     },
     {
       "referencePath": "source/host/extensions/auth/extension.ts",

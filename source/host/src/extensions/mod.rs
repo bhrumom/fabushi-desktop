@@ -13,3 +13,5 @@ pub mod telemetry;
 pub mod webauthn_proxy;
 pub mod browser_ua;
 pub mod box_lifecycle;
+
+pub mod auth;

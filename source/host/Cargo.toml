@@ -7,6 +7,7 @@ publish = false
 
 [dependencies]
 base64 = "0.22"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 flate2 = "1"
 rustls = "0.23"
 rustls-pemfile = "2"
