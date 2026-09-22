@@ -2,13 +2,13 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use base64::Engine;
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use reqwest::blocking::Client;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use url::Url;
 use uuid::Uuid;
 
+pub use crate::cursor_backend::create_cursor_checksum;
+use crate::cursor_backend::resolve_sand_ghost_mode_header;
 use crate::extensions::auth::credential_renewer::{
     SAND_CLIENT_TYPE, get_configured_backend_url, sand_box_namespace, sand_client_version,
 };
@@ -98,6 +98,8 @@ where
             .get_machine_id()
             .map_err(ProductionBoxLifecycleError::Auth)?;
         let checksum = create_cursor_checksum(&machine_id, system_now_ms());
+        let ghost_mode =
+            resolve_sand_ghost_mode_header(&self.backend_url, &access_token, &machine_id);
 
         let response = self
             .client
@@ -112,7 +114,7 @@ where
             // createSandCursorBackendClient resolves privacy first and falls back
             // to the privacy-safe ghost mode on lookup failure. Until the shared
             // privacy client is migrated, preserve that fail-closed value here.
-            .header("x-ghost-mode", "true")
+            .header("x-ghost-mode", ghost_mode)
             .header("x-request-id", Uuid::new_v4().to_string())
             .body(body)
             .send()
@@ -212,24 +214,6 @@ where
         ProductionBoxLifecycleClient::new(auth, self.backend_url.clone())
             .expect("validated production box lifecycle backend URL")
     }
-}
-
-pub fn create_cursor_checksum(machine_id: &str, now_ms: u64) -> String {
-    let kilo_seconds = now_ms / 1_000_000;
-    let mut bytes = [
-        ((kilo_seconds >> 40) & 0xff) as u8,
-        ((kilo_seconds >> 32) & 0xff) as u8,
-        ((kilo_seconds >> 24) & 0xff) as u8,
-        ((kilo_seconds >> 16) & 0xff) as u8,
-        ((kilo_seconds >> 8) & 0xff) as u8,
-        (kilo_seconds & 0xff) as u8,
-    ];
-    let mut last = 165_u8;
-    for (index, byte) in bytes.iter_mut().enumerate() {
-        *byte = ((*byte ^ last).wrapping_add((index % 256) as u8)) & 0xff;
-        last = *byte;
-    }
-    format!("{}{}", URL_SAFE_NO_PAD.encode(bytes), machine_id)
 }
 
 fn system_now_ms() -> u64 {

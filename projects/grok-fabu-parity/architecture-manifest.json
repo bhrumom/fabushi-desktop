@@ -10058,14 +10058,16 @@
         "source/host/src/extensions/auth/extension.rs",
         "source/host/src/extensions/auth/auth_service.rs",
         "source/host/src/extensions/auth/user_full_name_service.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/cursor_backend.rs"
       ],
       "testEvidence": [
         "source/host/tests/extensions_auth_extension_contract.rs",
         "source/host/tests/extensions_auth_service_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/cursor_backend_contract.rs"
       ],
-      "notes": "Shipping source/host/app now starts and retains the Rust Auth extension for the lifetime of the Host process, so credential renewal, bearer access and machine identity are production-owned. User-full-name fetching remains fail-closed until the Dashboard GetMe transport is migrated; therefore this entry is not final."
+      "notes": "Shipping source/host/app starts and retains the Rust Auth extension for Host lifetime. Credential renewal, bearer access, machine identity and user-full-name refresh are production-owned; the full-name resolver now calls DashboardService/GetMe through the shared Rust Cursor backend privacy/identity transport. Status remains non-final until the exact implementation HEAD passes Rust runtime Actions."
     },
     {
       "referencePath": "source/host/extensions/auth/user-full-name-service.ts",
@@ -10078,13 +10080,16 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/auth/user_full_name_service.rs",
-        "source/host/src/extensions/auth/extension.rs"
+        "source/host/src/extensions/auth/extension.rs",
+        "source/host/src/cursor_backend.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/extensions_auth_extension_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/cursor_backend_contract.rs"
       ],
-      "notes": "Rust user-full-name resolver now preserves token-principal fencing, normalization, duplicate-refresh suppression, stale-principal rejection, cached-name invalidation and renewal-driven refresh through the Auth extension. Final remains withheld until the real DashboardService GetMe transport is wired instead of an injected fetch port."
+      "notes": "Rust user-full-name resolver preserves principal fencing, normalization, duplicate-refresh suppression and renewal-driven refresh. A production DashboardService/GetMe adapter now uses the shared Rust Cursor backend path with machine identity, checksum/client metadata and privacy-derived ghost-mode; shipping source/host/app supplies this adapter to HostAuthExtension. Status remains non-final until the exact implementation HEAD passes Rust runtime Actions."
     },
     {
       "referencePath": "source/host/extensions/auto-review/auto-review-service.ts",
@@ -10265,14 +10270,16 @@
         "source/host/src/extensions/registry.rs",
         "source/host/src/extensions/box_lifecycle/production.rs",
         "source/host/src/extensions/auth/extension.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/cursor_backend.rs"
       ],
       "testEvidence": [
         "source/host/tests/extensions_box_lifecycle_contract.rs",
         "source/host/tests/extensions_box_lifecycle_production_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/cursor_backend_contract.rs"
       ],
-      "notes": "Shipping source/host/app now starts and retains BoxLifecycle with the production Auth extension and concrete GrokBotService client. RPC/protobuf/auth/checksum behavior is contract-tested. Final remains withheld until the shared privacy/ghost-mode resolver replaces the explicit fail-closed fallback and exact-HEAD CI succeeds."
+      "notes": "Shipping source/host/app starts and retains BoxLifecycle with production Auth and GrokBotService transport. The previous hard-coded ghost-mode fallback is replaced by a shared Rust Dashboard GetUserPrivacyMode resolver with frozen NO_STORAGE inference, account-scoped cache, privacy-safe failure fallback, checksum/client metadata and production headers. Status remains non-final until the exact implementation HEAD passes Rust runtime Actions."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/agent-store-sand-files.ts",

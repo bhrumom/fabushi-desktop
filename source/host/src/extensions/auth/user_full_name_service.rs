@@ -4,6 +4,8 @@ use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use serde_json::Value;
 
+use crate::cursor_backend::fetch_sand_user_full_name;
+use crate::host_secret_store::get_or_create_host_machine_id;
 use crate::sand_user_identity::normalize_sand_user_full_name;
 
 pub const GET_ME_TIMEOUT_MS: u64 = 10_000;
@@ -11,6 +13,15 @@ pub const GET_ME_TIMEOUT_MS: u64 = 10_000;
 pub type UserFullNameFetch =
     Arc<dyn Fn(&str) -> Result<Option<String>, String> + Send + Sync>;
 pub type UserFullNameLog = Arc<dyn Fn(&str) + Send + Sync>;
+
+pub fn production_user_full_name_fetch(backend_url: String) -> UserFullNameFetch {
+    Arc::new(move |access_token| {
+        let machine_id = get_or_create_host_machine_id(None)
+            .map_err(|error| format!("could not resolve Host machine id for Dashboard GetMe: {error}"))?;
+        fetch_sand_user_full_name(&backend_url, access_token, &machine_id)
+            .map_err(|error| error.to_string())
+    })
+}
 
 #[derive(Default)]
 struct ResolverState {

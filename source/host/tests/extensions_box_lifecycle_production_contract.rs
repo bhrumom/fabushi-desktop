@@ -106,12 +106,13 @@ fn production_box_lifecycle_uses_auth_headers_and_frozen_grok_rpc_paths() {
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind backend");
     let port = listener.local_addr().expect("backend address").port();
     let server = thread::spawn(move || {
+        let privacy_request = serve(&listener, &[0x08, 0x03]);
         let state_request = serve(&listener, &[0x10, 0x01]);
         let reason = b"recreating";
         let mut recreate_response = vec![0x08, 0x01, 0x12, reason.len() as u8];
         recreate_response.extend_from_slice(reason);
         let recreate_request = serve(&listener, &recreate_response);
-        (state_request, recreate_request)
+        (privacy_request, state_request, recreate_request)
     });
 
     let client = ProductionBoxLifecycleClient::new(
@@ -131,7 +132,15 @@ fn production_box_lifecycle_uses_auth_headers_and_frozen_grok_rpc_paths() {
     assert!(recreated.started);
     assert_eq!(recreated.reason.as_deref(), Some("recreating"));
 
-    let (state_request, recreate_request) = server.join().expect("backend server");
+    let (privacy_request, state_request, recreate_request) =
+        server.join().expect("backend server");
+    let (privacy_headers, privacy_body) = split_request(&privacy_request);
+    assert!(privacy_headers.starts_with(
+        "POST /aiserver.v1.DashboardService/GetUserPrivacyMode HTTP/1.1\r\n"
+    ));
+    assert_eq!(privacy_body, &[0x08, 0x01]);
+    assert!(privacy_headers.to_ascii_lowercase().contains("x-ghost-mode: true\r\n"));
+
     let (state_headers, state_body) = split_request(&state_request);
     assert!(state_headers.starts_with(
         "POST /aiserver.v1.GrokBotService/GetSandBoxRunState HTTP/1.1\r\n"
@@ -145,7 +154,7 @@ fn production_box_lifecycle_uses_auth_headers_and_frozen_grok_rpc_paths() {
         assert!(lowercase.contains("connect-protocol-version: 1\r\n"));
         assert!(lowercase.contains("x-cursor-client-type: sand\r\n"));
         assert!(lowercase.contains("x-cursor-checksum: "));
-        assert!(lowercase.contains("x-ghost-mode: true\r\n"));
+        assert!(lowercase.contains("x-ghost-mode: false\r\n"));
     }
 
     let (recreate_headers, recreate_body) = split_request(&recreate_request);

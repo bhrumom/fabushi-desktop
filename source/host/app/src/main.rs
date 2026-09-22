@@ -10,6 +10,7 @@ use mahayana_host_runtime::extensions::auth::auth_service::HostAuthServiceOption
 use mahayana_host_runtime::extensions::auth::extension::{
     HostAuthExtension, start_host_auth_extension_with_options,
 };
+use mahayana_host_runtime::extensions::auth::user_full_name_service::production_user_full_name_fetch;
 use mahayana_host_runtime::extensions::box_lifecycle::box_lifecycle_service::BoxLifecycleService;
 use mahayana_host_runtime::extensions::box_lifecycle::extension::start_box_lifecycle_extension;
 use mahayana_host_runtime::extensions::box_lifecycle::production::{
@@ -90,13 +91,14 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
     })
     .map_err(|error| error.to_string())?;
 
-    // The Dashboard GetMe adapter is still being migrated. Keep the fetch port
-    // fail-closed instead of inventing a display name; Auth renewal/token and
-    // machine identity are fully production-owned already.
+    let backend_url = auth_options
+        .backend_url
+        .clone()
+        .ok_or_else(|| "production Auth requires a configured backend URL".to_string())?;
     let auth = Arc::new(
         start_host_auth_extension_with_options(
             auth_options,
-            Arc::new(|_access_token| Ok(None)),
+            production_user_full_name_fetch(backend_url),
         )
         .map_err(|error| error.to_string())?,
     );

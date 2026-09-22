@@ -5,6 +5,7 @@
 //! cancellation and terminal settlement.
 
 pub mod extensions;
+pub mod cursor_backend;
 pub mod host_paths;
 pub mod host_discovery;
 pub mod host_lock;
