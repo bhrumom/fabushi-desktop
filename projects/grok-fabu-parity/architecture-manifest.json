@@ -10620,12 +10620,18 @@
       "targetPath": "source/host/src/runner/conversation_state.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "8385904e9634907c6b995b9cf23dc017ba0f0508",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/conversation_state.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room Rust semantic parity for unconfirmed-user recovery, unanswered-question notes, usage sanitization, await outcome classification, context-window tracking, deferred stream errors, resolved-model ordering, self-summary routing, and summarization policy. Contract coverage is in runner_contract.rs; exact-HEAD CI is intentionally deferred until the full architecture cutover per the active spec."
     },
     {
       "referencePath": "source/host/runner/host-computer-tool-dependencies.ts",
@@ -24519,5 +24525,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T02:05:46.222Z"
+  "generatedAt": "2026-09-22T07:20:35.295Z"
 }
