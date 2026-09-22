@@ -111,9 +111,8 @@ where
             .header("x-cursor-client-type", SAND_CLIENT_TYPE)
             .header("x-cursor-client-version", sand_client_version())
             .header("x-sand-box-namespace", sand_box_namespace())
-            // createSandCursorBackendClient resolves privacy first and falls back
-            // to the privacy-safe ghost mode on lookup failure. Until the shared
-            // privacy client is migrated, preserve that fail-closed value here.
+            // Shared Cursor backend parity resolves privacy first and falls back
+            // to the privacy-safe ghost mode on lookup failure.
             .header("x-ghost-mode", ghost_mode)
             .header("x-request-id", Uuid::new_v4().to_string())
             .body(body)

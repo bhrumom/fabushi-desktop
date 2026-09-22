@@ -10050,7 +10050,7 @@
       "targetPath": "source/host/src/extensions/auth/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "dda5e2a5513e0264375233fa9999b9fb1bd97e0e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10067,14 +10067,14 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/cursor_backend_contract.rs"
       ],
-      "notes": "Shipping source/host/app starts and retains the Rust Auth extension for Host lifetime. Credential renewal, bearer access, machine identity and user-full-name refresh are production-owned; the full-name resolver now calls DashboardService/GetMe through the shared Rust Cursor backend privacy/identity transport. Status remains non-final until the exact implementation HEAD passes Rust runtime Actions."
+      "notes": "Shipping source/host/app starts and retains the Rust Auth extension for Host lifetime. Credential renewal, bearer access, machine identity and user-full-name refresh are production-owned; the full-name resolver now calls DashboardService/GetMe through the shared Rust Cursor backend privacy/identity transport. Exact implementation HEAD f884db77d1e36523e83e55d6e3fbb627e9c01cb0 passed Rust desktop runtime run 35770549772, including the full source/host cargo test suite."
     },
     {
       "referencePath": "source/host/extensions/auth/user-full-name-service.ts",
       "targetPath": "source/host/src/extensions/auth/user_full_name_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "717e235077d1ecf68c4cc2ac996ae3dba1a18173",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10089,7 +10089,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/cursor_backend_contract.rs"
       ],
-      "notes": "Rust user-full-name resolver preserves principal fencing, normalization, duplicate-refresh suppression and renewal-driven refresh. A production DashboardService/GetMe adapter now uses the shared Rust Cursor backend path with machine identity, checksum/client metadata and privacy-derived ghost-mode; shipping source/host/app supplies this adapter to HostAuthExtension. Status remains non-final until the exact implementation HEAD passes Rust runtime Actions."
+      "notes": "Rust user-full-name resolver preserves principal fencing, normalization, duplicate-refresh suppression and renewal-driven refresh. A production DashboardService/GetMe adapter now uses the shared Rust Cursor backend path with machine identity, checksum/client metadata and privacy-derived ghost-mode; shipping source/host/app supplies this adapter to HostAuthExtension. Exact implementation HEAD f884db77d1e36523e83e55d6e3fbb627e9c01cb0 passed Rust desktop runtime run 35770549772, including the full source/host cargo test suite."
     },
     {
       "referencePath": "source/host/extensions/auto-review/auto-review-service.ts",
@@ -10260,7 +10260,7 @@
       "targetPath": "source/host/src/extensions/box_lifecycle/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "7a8a026d9da30fbeec0f8b7e2d2326cad4900aca",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -10279,7 +10279,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/cursor_backend_contract.rs"
       ],
-      "notes": "Shipping source/host/app starts and retains BoxLifecycle with production Auth and GrokBotService transport. The previous hard-coded ghost-mode fallback is replaced by a shared Rust Dashboard GetUserPrivacyMode resolver with frozen NO_STORAGE inference, account-scoped cache, privacy-safe failure fallback, checksum/client metadata and production headers. Status remains non-final until the exact implementation HEAD passes Rust runtime Actions."
+      "notes": "Shipping source/host/app starts and retains BoxLifecycle with production Auth and GrokBotService transport. The previous hard-coded ghost-mode fallback is replaced by a shared Rust Dashboard GetUserPrivacyMode resolver with frozen NO_STORAGE inference, account-scoped cache, privacy-safe failure fallback, checksum/client metadata and production headers. Exact implementation HEAD f884db77d1e36523e83e55d6e3fbb627e9c01cb0 passed Rust desktop runtime run 35770549772, including the full source/host cargo test suite."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/agent-store-sand-files.ts",
