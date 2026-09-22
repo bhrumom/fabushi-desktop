@@ -10,7 +10,15 @@ const OFFICIAL_DEVICE_GATEWAY_URL = 'wss://fabushi-mcp.ombhrum.com/agent';
 const SESSION_REFRESH_FALLBACK_MS = 30 * 60_000;
 const SESSION_REFRESH_SKEW_MS = 5 * 60_000;
 const SESSION_REFRESH_MIN_MS = 30_000;
-const RETRY_MS = 5_000;
+const RETRY_BASE_MS = 1_000;
+const RETRY_MAX_MS = 60_000;
+const RETRY_CIRCUIT_LIMIT = 6;
+
+function retryDelayMs(failureCount) {
+  const normalized = Math.max(1, Number(failureCount) || 1);
+  const exponent = Math.min(6, normalized - 1);
+  return Math.min(RETRY_MAX_MS, RETRY_BASE_MS * (2 ** exponent));
+}
 
 function remoteDeviceGatewayUrl(app, env = process.env) {
   if (app.isPackaged) return OFFICIAL_DEVICE_GATEWAY_URL;
@@ -133,11 +141,17 @@ class RemoteDeviceAgentSupervisor {
     this.child = null;
     this.activeKey = '';
     this.closed = false;
+    this.started = false;
+    this.enabled = options.enabled === true;
     this.syncing = false;
+    this.failureCount = 0;
+    this.circuitOpen = false;
     this.tokenFile = path.join(this.app.getPath('userData'), 'remote-device', 'account-access-token');
     this.onState = typeof options.onState === 'function' ? options.onState : null;
     this.state = {
       running: false,
+      enabled: this.enabled,
+      circuitOpen: false,
       deviceId: '',
       sessionId: '',
       username: '',
@@ -158,12 +172,31 @@ class RemoteDeviceAgentSupervisor {
 
   start() {
     if (this.closed) throw new Error('Fabushi remote device supervisor is closed.');
-    this.emitState({ error: null });
-    this.schedule(0);
+    this.started = true;
+    this.emitState({ enabled: this.enabled, circuitOpen: this.circuitOpen, error: null });
+    if (this.enabled) this.schedule(0);
+  }
+
+  setEnabled(enabled) {
+    if (this.closed) return this.snapshot();
+    const next = enabled === true;
+    if (next === this.enabled) return this.snapshot();
+    this.enabled = next;
+    this.failureCount = 0;
+    this.circuitOpen = false;
+    if (!next) {
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = null;
+      this.stopAgent();
+      return this.emitState({ enabled: false, circuitOpen: false, error: null });
+    }
+    this.emitState({ enabled: true, circuitOpen: false, error: null });
+    if (this.started) this.schedule(0);
+    return this.snapshot();
   }
 
   schedule(delay = SESSION_REFRESH_FALLBACK_MS) {
-    if (this.closed || this.timer) return;
+    if (this.closed || !this.started || !this.enabled || this.circuitOpen || this.timer) return;
     this.timer = setTimeout(() => {
       this.timer = null;
       void this.sync();
@@ -181,7 +214,10 @@ class RemoteDeviceAgentSupervisor {
   }
 
   async sync() {
-    if (this.closed || this.syncing) return;
+    if (this.closed || !this.enabled || this.circuitOpen || this.syncing) {
+      if (!this.enabled) this.stopAgent();
+      return;
+    }
     this.syncing = true;
     let nextSyncDelay = null;
     try {
@@ -219,7 +255,9 @@ class RemoteDeviceAgentSupervisor {
       });
       const key = `${session.deviceId}\0${session.sessionId}\0${session.accessToken}`;
       if (this.child && this.activeKey === key) {
-        this.emitState({ running: true });
+        this.failureCount = 0;
+        this.circuitOpen = false;
+        this.emitState({ running: true, circuitOpen: false });
         return;
       }
 
@@ -265,11 +303,21 @@ class RemoteDeviceAgentSupervisor {
         this.child = null;
         this.activeKey = '';
         try { this.fs.rmSync(this.tokenFile, { force: true }); } catch {}
-        if (!this.closed) {
+        if (!this.closed && this.enabled) {
           console.error(`[fabushi-remote-device] agent exited (${code ?? 'null'}, ${signal ?? 'none'})`);
           if (this.timer) clearTimeout(this.timer);
           this.timer = null;
-          this.schedule(RETRY_MS);
+          this.failureCount += 1;
+          if (this.failureCount >= RETRY_CIRCUIT_LIMIT) {
+            this.circuitOpen = true;
+            this.emitState({
+              running: false,
+              circuitOpen: true,
+              error: `Remote device helper stopped after ${this.failureCount} consecutive exits.`,
+            });
+          } else {
+            this.schedule(retryDelayMs(this.failureCount));
+          }
         }
       });
     } catch (error) {
@@ -278,7 +326,14 @@ class RemoteDeviceAgentSupervisor {
       this.emitState({ running: false, error: message, lastSyncAtMs: Date.now() });
       if (!/not logged in|notloggedin|missing account|session expired/iu.test(message)) {
         console.error('[fabushi-remote-device] session sync failed', error);
-        nextSyncDelay = RETRY_MS;
+        this.failureCount += 1;
+        if (this.failureCount >= RETRY_CIRCUIT_LIMIT) {
+          this.circuitOpen = true;
+          this.emitState({ circuitOpen: true });
+          nextSyncDelay = null;
+        } else {
+          nextSyncDelay = retryDelayMs(this.failureCount);
+        }
       }
     } finally {
       this.syncing = false;
@@ -288,6 +343,8 @@ class RemoteDeviceAgentSupervisor {
 
   close() {
     this.closed = true;
+    this.started = false;
+    this.enabled = false;
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     this.stopAgent();
@@ -301,6 +358,7 @@ module.exports = {
   remoteDeviceGatewayUrl,
   remoteDeviceRuntime,
   sessionExpirationMs,
+  retryDelayMs,
   sessionRefreshDelay,
   validAgentSession,
 };
