@@ -9,6 +9,7 @@ pub mod host_paths;
 pub mod host_discovery;
 pub mod host_lock;
 pub mod gateway_config;
+pub mod gateway_server;
 pub mod runner;
 
 pub use runner::{
