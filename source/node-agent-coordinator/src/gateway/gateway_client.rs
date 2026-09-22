@@ -1,11 +1,17 @@
 use std::collections::{BTreeMap, HashSet};
 use std::io::{Read, Write};
-use std::env;\nuse std::sync::Mutex;\nuse std::time::{Duration, Instant};
+use std::env;
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
-use chrono::Utc;\nuse serde_json::Value;\nuse uuid::Uuid;
+use chrono::Utc;
+use serde_json::Value;
+use uuid::Uuid;
 
 use super::gateway_reachability::ReachabilityOutcome;
-use super::gateway_request_dispatcher::{\n    GatewayDispatchError, GatewayJsonResponse, dispatch_http_json_response,\n};
+use super::gateway_request_dispatcher::{
+    GatewayDispatchError, GatewayJsonResponse, dispatch_http_json_response,
+};
 use super::host_supervisor::GatewayConnection;
 use super::http_transport::parse_gateway_http_base;
 use super::sse_block_decoder::SseBlockDecoder;
