@@ -443,28 +443,86 @@ fn dispatch_to_host(
         return Ok(());
     }
 
+    let host_running = state
+        .host_stdin
+        .lock()
+        .map_err(|_| io::Error::other("host stdin lock poisoned"))?
+        .is_some();
+    if !host_running {
+        spawn_host(Arc::clone(state))?;
+    }
+
+    let gateway_connection = state
+        .gateway_client
+        .lock()
+        .ok()
+        .and_then(|gateway| gateway.connection_for_dispatch().ok().cloned());
+    if let Some(connection) = gateway_connection {
+        let generation = state.host_generation.load(Ordering::SeqCst);
+        let host_request_id = format!("{}:{request_id}", channel.wire_name());
+        state
+            .pending
+            .lock()
+            .map_err(|_| io::Error::other("pending lock poisoned"))?
+            .insert(
+                host_request_id.clone(),
+                PendingHostRequest {
+                    generation,
+                    request_id: request_id.clone(),
+                    channel,
+                },
+            );
+
+        let dispatch_state = Arc::clone(state);
+        thread::spawn(move || {
+            let result = dispatch_http_json(&connection, &method, args);
+            let pending_request = dispatch_state
+                .pending
+                .lock()
+                .ok()
+                .and_then(|mut pending| pending.remove(&host_request_id));
+            let Some(pending_request) = pending_request else {
+                return;
+            };
+            match result {
+                Ok(value) => dispatch_state.complete_request(
+                    pending_request.channel,
+                    &pending_request.request_id,
+                    ReplyOutcome::Ok { value },
+                ),
+                Err(error) => {
+                    if matches!(
+                        error,
+                        mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::GatewayDispatchError::Unreachable { .. }
+                    ) {
+                        if let mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::GatewayDispatchError::Unreachable { outcome, .. } = &error {
+                            if let Ok(mut gateway) = dispatch_state.gateway_client.lock() {
+                                let _ = gateway.transport_down(*outcome);
+                            }
+                        }
+                    }
+                    dispatch_state.complete_request(
+                        pending_request.channel,
+                        &pending_request.request_id,
+                        ReplyOutcome::Failed {
+                            failure: failure_for(&error),
+                        },
+                    );
+                }
+            }
+        });
+        return Ok(());
+    }
+
+    // Compatibility lane while the Host gateway is still starting, and for
+    // migration/test Hosts that do not publish Grok gateway discovery yet.
     let mut active = state
         .host_stdin
         .lock()
         .map_err(|_| io::Error::other("host stdin lock poisoned"))?;
-    if active.is_none() {
-        drop(active);
-        spawn_host(Arc::clone(state))?;
-        active = state
-            .host_stdin
-            .lock()
-            .map_err(|_| io::Error::other("host stdin lock poisoned"))?;
-    }
     let active = active
         .as_mut()
         .ok_or_else(|| io::Error::other("Host did not provide stdin"))?;
-
-    state
-        .gateway_client
-        .lock()
-        .map_err(|_| io::Error::other("gateway client lock poisoned"))?
-        .connection_for_dispatch()
-        .map_err(|error| io::Error::other(format!("gateway route unavailable: {error}")))?;
 
     let host_request_id = format!("{}:{request_id}", channel.wire_name());
     state
