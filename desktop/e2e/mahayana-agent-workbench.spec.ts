@@ -25,7 +25,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   const onboardingGate = page.getByTestId('onboarding-gate');
   const loginGate = page.getByTestId('login-gate');
   const workspace = page.getByTestId('messenger-workspace');
-  type LoginPhase = 'onboarding' | 'login' | 'ready' | 'waiting';
+  type LoginPhase = 'onboarding' | 'login' | 'ready' | 'fatal' | 'waiting';
 
   // Read the auth surface in one renderer evaluation. During the HostClient ->
   // Messenger transition individual locator probes can straddle a destroyed
@@ -35,6 +35,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
       return await page.evaluate(() => {
         if (document.querySelector('[data-testid="onboarding-gate"]')) return 'onboarding';
         if (document.querySelector('[data-testid="login-gate"]')) return 'login';
+        if (document.querySelector('[data-testid="root-render-error"]')) return 'fatal';
         const messenger = document.querySelector('[data-testid="messenger-workspace"]');
         if (messenger?.getAttribute('data-initial-host-hydrated') === 'true') return 'ready';
         return 'waiting';
@@ -48,6 +49,17 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     await expect.poll(readPhase, { timeout: 15_000 }).not.toBe('waiting');
     const currentPhase = await readPhase();
 
+    if (currentPhase === 'fatal') {
+      const fatal = await page.evaluate(() => {
+        const node = document.querySelector<HTMLElement>('[data-testid="root-render-error"]');
+        return {
+          name: node?.dataset.errorName ?? 'Error',
+          message: node?.dataset.errorMessage ?? 'unknown renderer failure',
+          componentStack: node?.dataset.componentStack ?? '',
+        };
+      });
+      throw new Error(`renderer root fatal: ${fatal.name}: ${fatal.message}\n${fatal.componentStack}`);
+    }
     if (currentPhase === 'onboarding') {
       await page.getByTestId('onboarding-next').click();
       continue;
