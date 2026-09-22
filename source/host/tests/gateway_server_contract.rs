@@ -1,13 +1,13 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
 use flate2::read::GzDecoder;
 use mahayana_host_runtime::gateway_config::{GatewayServerConfig, GatewayTlsConfig};
 use mahayana_host_runtime::gateway_server::{
-    GatewayApi, GatewayBridgeHub, GatewayCommandError, GatewayEventHub, GatewayHealth,
+    GatewayApi, GatewayBridgeHub, GatewayCommandError, GatewayCommandReport, GatewayEventHub, GatewayHealth,
     GatewayServerDeps, start_gateway_server,
 };
 use rcgen::generate_simple_self_signed;
@@ -49,6 +49,38 @@ impl GatewayApi for TestApi {
 
     fn prepare_for_upgrade(&self) -> Result<Value, GatewayCommandError> {
         Ok(json!({ "quiescing": true, "runningTurns": 2 }))
+    }
+}
+
+
+#[derive(Clone, Default)]
+struct ReportingApi {
+    reports: Arc<Mutex<Vec<(String, GatewayCommandReport)>>>,
+}
+
+impl GatewayApi for ReportingApi {
+    fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
+        if method == "getTranscript" && args.get("fail").and_then(Value::as_bool) == Some(true) {
+            return Err(GatewayCommandError::Internal("synthetic internal failure".into()));
+        }
+        if method == "getTranscript" {
+            return Ok(args);
+        }
+        Err(GatewayCommandError::UnknownMethod(method.to_string()))
+    }
+
+    fn on_command_complete(&self, report: GatewayCommandReport) {
+        self.reports
+            .lock()
+            .expect("report lock")
+            .push(("complete".into(), report));
+    }
+
+    fn on_command_error(&self, report: GatewayCommandReport) {
+        self.reports
+            .lock()
+            .expect("report lock")
+            .push(("error".into(), report));
     }
 }
 
@@ -670,5 +702,63 @@ fn gateway_events_negotiate_gzip_for_sse_streams() {
     assert_eq!(&bytes[header_end..header_end + 2], &[0x1f, 0x8b]);
 
     drop(stream);
+    server.close();
+}
+
+
+#[test]
+fn gateway_command_telemetry_preserves_request_trace_and_server_error_semantics() {
+    let api = ReportingApi::default();
+    let reports = Arc::clone(&api.reports);
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(api),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(None),
+        started_at: 1,
+    })
+    .expect("gateway server");
+    let port = server.port();
+    let valid_traceparent =
+        "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
+
+    let success = request(
+        port,
+        &format!(
+            "POST /api/getTranscript HTTP/1.1\r\nHost: 127.0.0.1\r\nx-sand-request-id: request-ok\r\ntraceparent: {valid_traceparent}\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+        ),
+    );
+    assert!(success.starts_with("HTTP/1.1 200 OK"), "{success}");
+
+    let failed_body = r#"{"fail":true}"#;
+    let failed = request(
+        port,
+        &format!(
+            "POST /api/getTranscript HTTP/1.1\r\nHost: 127.0.0.1\r\nx-sand-request-id: request-fail\r\ntraceparent: invalid\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{failed_body}",
+            failed_body.len()
+        ),
+    );
+    assert!(failed.starts_with("HTTP/1.1 500 Internal Server Error"), "{failed}");
+
+    let reports = reports.lock().expect("read reports");
+    assert_eq!(reports.len(), 2);
+    assert_eq!(reports[0].0, "complete");
+    assert_eq!(reports[0].1.method, "getTranscript");
+    assert_eq!(reports[0].1.request_id.as_deref(), Some("request-ok"));
+    assert_eq!(reports[0].1.traceparent.as_deref(), Some(valid_traceparent));
+    assert_eq!(reports[0].1.status, 200);
+    assert_eq!(reports[0].1.error, None);
+
+    assert_eq!(reports[1].0, "error");
+    assert_eq!(reports[1].1.method, "getTranscript");
+    assert_eq!(reports[1].1.request_id.as_deref(), Some("request-fail"));
+    assert_eq!(reports[1].1.traceparent, None);
+    assert_eq!(reports[1].1.status, 500);
+    assert_eq!(
+        reports[1].1.error.as_deref(),
+        Some("synthetic internal failure")
+    );
+
     server.close();
 }
