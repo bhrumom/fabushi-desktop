@@ -6,6 +6,12 @@
 //! modules are moved behind this process boundary. Electron must never launch
 //! the legacy third_party desktop Host binary directly.
 
+use mahayana_host_runtime::extensions::inference::provider_session::{
+    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
+};
+use mahayana_host_runtime::runner::routed_provider_runtime::{
+    RoutedProviderRun, RoutedToolBridge, run_routed_provider_in_runner,
+};
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayCommandError, GatewayCommandReport, GatewayEventHub, GatewayServerDeps, start_gateway_server,
@@ -26,7 +32,7 @@ use mahayana_unified_app_host::{
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::{self, BufRead, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -49,8 +55,198 @@ enum HostLaneRequest {
     StdinClosed,
 }
 
+const RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD: &str = "runner.startRoutedProvider";
+const RUNNER_INFERENCE_EVENT_CHANNEL: &str = "runner-inference";
+
 struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
+    events: GatewayEventHub,
+    data_dir: PathBuf,
+}
+
+fn call_host_lane(
+    host_tx: &mpsc::Sender<HostLaneRequest>,
+    method: &str,
+    args: serde_json::Value,
+) -> Result<serde_json::Value, GatewayCommandError> {
+    let (reply, result) = mpsc::sync_channel(1);
+    host_tx
+        .send(HostLaneRequest::Gateway {
+            method: method.to_string(),
+            args,
+            reply,
+        })
+        .map_err(|_| GatewayCommandError::Internal("Mahayana Host lane is closed".into()))?;
+    result
+        .recv_timeout(Duration::from_secs(120))
+        .map_err(|_| GatewayCommandError::Internal("Mahayana Host gateway request timed out".into()))?
+}
+
+#[derive(Clone)]
+struct HostLaneRoutedToolBridge {
+    host_tx: mpsc::Sender<HostLaneRequest>,
+    agent_id: String,
+}
+
+impl RoutedToolBridge for HostLaneRoutedToolBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        let value = call_host_lane(&self.host_tx, "listRoutedMcpTools", serde_json::json!({}))
+            .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+        decode_routed_tools(value)
+    }
+
+    fn call_tool(
+        &self,
+        tool: &RoutedToolDefinition,
+        args: serde_json::Value,
+        tool_call_id: &str,
+    ) -> Result<serde_json::Value, ProviderSessionError> {
+        call_host_lane(
+            &self.host_tx,
+            "executeRoutedMcpTool",
+            serde_json::json!({
+                "providerIdentifier": tool.provider_identifier,
+                "name": tool.name,
+                "toolName": tool.tool_name,
+                "args": args,
+                "toolCallId": tool_call_id,
+                "agentId": self.agent_id,
+            }),
+        )
+        .map_err(|error| ProviderSessionError::Tool(error.to_string()))
+    }
+}
+
+fn decode_routed_tools(
+    value: serde_json::Value,
+) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+    let rows = value.as_array().ok_or_else(|| {
+        ProviderSessionError::Protocol("listRoutedMcpTools did not return an array".into())
+    })?;
+    Ok(rows
+        .iter()
+        .filter_map(|row| {
+            Some(RoutedToolDefinition {
+                name: row.get("name")?.as_str()?.to_string(),
+                provider_identifier: row.get("providerIdentifier")?.as_str()?.to_string(),
+                tool_name: row.get("toolName")?.as_str()?.to_string(),
+                description: row.get("description").and_then(serde_json::Value::as_str).map(str::to_string),
+                input_schema: row.get("inputSchema").cloned().unwrap_or_else(|| {
+                    serde_json::json!({"type":"object","additionalProperties":true})
+                }),
+            })
+        })
+        .collect())
+}
+
+fn decode_provider_messages(
+    args: &serde_json::Value,
+) -> Result<Vec<ProviderMessage>, GatewayCommandError> {
+    let rows = args
+        .get("messages")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| GatewayCommandError::Internal(
+            "runner.startRoutedProvider requires messages".into()
+        ))?;
+    let messages = rows
+        .iter()
+        .filter_map(|row| {
+            Some(ProviderMessage {
+                role: row.get("role")?.as_str()?.to_string(),
+                content: row.get("content")?.as_str()?.to_string(),
+            })
+        })
+        .collect::<Vec<_>>();
+    if messages.is_empty() {
+        return Err(GatewayCommandError::Internal(
+            "runner.startRoutedProvider requires at least one message".into()
+        ));
+    }
+    Ok(messages)
+}
+
+fn start_routed_provider_task(
+    host_tx: mpsc::Sender<HostLaneRequest>,
+    events: GatewayEventHub,
+    data_dir: PathBuf,
+    args: serde_json::Value,
+) -> Result<serde_json::Value, GatewayCommandError> {
+    let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
+    let provider = RoutedProvider::parse(provider_name)
+        .filter(|provider| *provider != RoutedProvider::Cursor)
+        .ok_or_else(|| GatewayCommandError::Internal(format!(
+            "unsupported routed provider: {provider_name}"
+        )))?;
+    let agent_id = args.get("agentId").and_then(serde_json::Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| GatewayCommandError::Internal(
+            "runner.startRoutedProvider requires agentId".into()
+        ))?
+        .to_string();
+    let stream_id = args.get("streamId").and_then(serde_json::Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| GatewayCommandError::Internal(
+            "runner.startRoutedProvider requires streamId".into()
+        ))?
+        .to_string();
+    let messages = decode_provider_messages(&args)?;
+    let worker_events = events.clone();
+    let accepted_stream_id = stream_id.clone();
+    thread::Builder::new()
+        .name(format!("mahayana-runner-provider-{agent_id}"))
+        .spawn(move || {
+            let bridge: Arc<dyn RoutedToolBridge> = Arc::new(HostLaneRoutedToolBridge {
+                host_tx,
+                agent_id,
+            });
+            let delta_events = worker_events.clone();
+            let delta_stream_id = stream_id.clone();
+            let mut on_text_delta = move |_delta: &str, accumulated: &str| {
+                delta_events.publish(serde_json::json!({
+                    "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+                    "payload": {
+                        "streamId": delta_stream_id,
+                        "type": "delta",
+                        "content": accumulated
+                    }
+                }));
+            };
+            let result = run_routed_provider_in_runner(
+                RoutedProviderRun {
+                    provider,
+                    data_dir: &data_dir,
+                    messages: &messages,
+                    bridge,
+                },
+                &mut on_text_delta,
+            );
+            match result {
+                Ok(content) => worker_events.publish(serde_json::json!({
+                    "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+                    "payload": {
+                        "streamId": stream_id,
+                        "type": "completed",
+                        "content": content
+                    }
+                })),
+                Err(error) => worker_events.publish(serde_json::json!({
+                    "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+                    "payload": {
+                        "streamId": stream_id,
+                        "type": "failed",
+                        "message": error.to_string()
+                    }
+                })),
+            }
+        })
+        .map_err(|error| GatewayCommandError::Internal(format!(
+            "could not start routed provider Runner: {error}"
+        )))?;
+    Ok(serde_json::json!({
+        "accepted": true,
+        "streamId": accepted_stream_id,
+        "provider": provider.as_str(),
+    }))
 }
 
 impl GatewayApi for UnifiedGatewayApi {
@@ -59,20 +255,18 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
-        // UnifiedAppHost owns a QuickJS runtime and is intentionally !Send.
-        // Keep the Host on one owner thread and route gateway calls onto that
-        // lane instead of smuggling it across threads behind Arc<Mutex<_>>.
-        let (reply, result) = mpsc::sync_channel(1);
-        self.host_tx
-            .send(HostLaneRequest::Gateway {
-                method: method.to_string(),
+        if method == RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD {
+            return start_routed_provider_task(
+                self.host_tx.clone(),
+                self.events.clone(),
+                self.data_dir.clone(),
                 args,
-                reply,
-            })
-            .map_err(|_| GatewayCommandError::Internal("Mahayana Host lane is closed".into()))?;
-        result
-            .recv_timeout(Duration::from_secs(120))
-            .map_err(|_| GatewayCommandError::Internal("Mahayana Host gateway request timed out".into()))?
+            );
+        }
+        // UnifiedAppHost owns a QuickJS runtime and is intentionally !Send.
+        // Product calls remain on its owner lane while the Runner provider
+        // worker above streams through the Host event hub.
+        call_host_lane(&self.host_tx, method, args)
     }
 
     fn on_command_complete(&self, report: GatewayCommandReport) {
@@ -258,7 +452,7 @@ fn main() {
     // flowing through the primary serial Host lane without starvation. The
     // child protocol already correlates responses by id, so out-of-order
     // platform replies are safe.
-    let platform_host = match PlatformRequestHost::new(app_data_dir) {
+    let platform_host = match PlatformRequestHost::new(app_data_dir.clone()) {
         Ok(host) => host,
         Err(error) => {
             eprintln!("failed to initialize Mahayana platform request lane: {error}");
@@ -291,6 +485,8 @@ fn main() {
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
+            events: gateway_events.clone(),
+            data_dir: app_data_dir.clone(),
         }),
         events: gateway_events.clone(),
         local_exec: None,
@@ -427,7 +623,8 @@ fn main() {
 mod tests {
     use super::{
         BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, UnifiedGatewayApi,
-        dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
+        decode_provider_messages, dispatch_box_environment_call, ensure_managed_runtime_layout,
+        is_platform_request_json,
     };
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -452,6 +649,18 @@ mod tests {
     }
 
 
+
+    #[test]
+    fn runner_provider_gateway_rejects_empty_message_batches() {
+        assert!(decode_provider_messages(&serde_json::json!({"messages": []})).is_err());
+        let messages = decode_provider_messages(&serde_json::json!({
+            "messages": [{"role":"user","content":"hello"}]
+        }))
+        .expect("provider messages");
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].role, "user");
+        assert_eq!(messages[0].content, "hello");
+    }
 
     #[test]
     fn shipping_gateway_routes_box_environment_to_production_box_owner() {

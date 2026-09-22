@@ -11317,15 +11317,18 @@
         "source/host/src/extensions/inference/provider_session.rs",
         "source/host/src/extensions/inference/codex_direct_responses.rs",
         "source/node-agent-coordinator/src/main.rs",
-        "source/node-agent-coordinator/src/routed_mcp_bridge.rs"
+        "source/node-agent-coordinator/src/routed_mcp_bridge.rs",
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/inference_provider_session_contract.rs",
         "source/host/tests/inference_codex_direct_contract.rs",
         "source/node-agent-coordinator/tests/production_protocol.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/runner_routed_provider_contract.rs"
       ],
-      "notes": "Rust production provider-session covers Codex (private ChatGPT login, 401 OAuth refresh, Responses SSE/tool continuation), OpenRouter (real chat-completions SSE and multi-step function tools), and Claude Code (installed CLI plus Coordinator-owned routed MCP bridge URL). The shipping Coordinator main composition now selects it from settings and supplies real routed MCP execution. Status remains non-final until the exact wiring commit passes CI."
+      "notes": "Provider execution now has a Runner-owned Rust composition and Host gateway entrypoint with per-run streaming events and Host-lane routed MCP tool calls; Claude Code uses a Runner-owned loopback MCP server. This entry remains non-final until Coordinator switches off its in-process host-runtime dependency and the full Host/Runner production chain passes exact-HEAD CI."
     },
     {
       "referencePath": "source/host/extensions/inference/sand-labeling.ts",
@@ -14008,7 +14011,8 @@
       "behavioralEvidence": [
         "source/host/app/src/main.rs",
         "desktop/package.json",
-        "desktop/scripts/stage-host.mjs"
+        "desktop/scripts/stage-host.mjs",
+        "source/host/src/runner/routed_provider_runtime.rs"
       ],
       "testEvidence": [
         ".github/workflows/rust-desktop-runtime.yml"
@@ -14521,8 +14525,13 @@
       "referenceBlobSha": "1823ba8f57adbede2aae2aafa1f3fd5d09a8d8da",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/routed_provider_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_routed_provider_contract.rs"
+      ],
+      "notes": "A Runner-owned routed-provider/MCP execution slice is now shipping behind the Host gateway. The full SandAgentRunner lifecycle, checkpoint/resume, watchdog, cancellation and terminal settlement composition is still not complete, so this mapping remains planned."
     },
     {
       "referencePath": "source/host/runner/sand-auto-review-classifier-run.ts",
