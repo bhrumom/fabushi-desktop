@@ -248,6 +248,30 @@ class MahayanaHostProcess {
     );
   }
 
+  coordinatorExecutablePath() {
+    const name = this.platform === 'win32'
+      ? 'mahayana-node-agent-coordinator.exe'
+      : 'mahayana-node-agent-coordinator';
+    if (this.app.isPackaged) return path.join(this.resourcesPath, 'bin', name);
+
+    const explicit = String(this.env.MAHAYANA_COORDINATOR_BIN || '').trim();
+    if (explicit) return explicit;
+
+    const staged = path.resolve(this.electronDir, '..', 'resources', 'bin', name);
+    if (safeIsFileSync(this.fs, staged)) return staged;
+
+    return path.resolve(
+      this.electronDir,
+      '..',
+      '..',
+      'source',
+      'node-agent-coordinator',
+      'target',
+      'release',
+      name,
+    );
+  }
+
   health() {
     return Object.freeze({
       state: this.state,
@@ -316,9 +340,11 @@ class MahayanaHostProcess {
 
     let child;
     try {
-      child = this.spawn(this.executablePath(), [], {
+      const hostExecutable = this.executablePath();
+      child = this.spawn(this.coordinatorExecutablePath(), [], {
         stdio: ['pipe', 'pipe', 'pipe'],
         env: {
+          MAHAYANA_APP_HOST_BIN: hostExecutable,
           ...this.env,
           ANTHROPIC_API_KEY: '',
           OPENROUTER_API_KEY: '',
@@ -387,7 +413,7 @@ class MahayanaHostProcess {
       else pending.reject(new Error(message.error || 'Mahayana host request failed'));
     });
 
-    child.stderr.on('data', (chunk) => console.error(`[mahayana-app-host] ${String(chunk).trimEnd()}`));
+    child.stderr.on('data', (chunk) => console.error(`[mahayana-coordinator] ${String(chunk).trimEnd()}`));
     child.on('error', (error) => {
       this.handleTermination(child, generation, error, { error: error.message });
     });
@@ -479,7 +505,9 @@ class MahayanaHostProcess {
       this.child = null;
       this.startedAt = null;
       this.rejectGeneration(generation, new Error(`Mahayana host restarted: ${reason}`));
-      child.kill();
+      child.stdin?.end();
+      const fallbackKill = setTimeout(() => child.kill(), 1_000);
+      fallbackKill.unref?.();
     }
     return this.start();
   }
@@ -494,7 +522,11 @@ class MahayanaHostProcess {
     this.startedAt = null;
     this.rejectGeneration(generation, new Error('Mahayana host closed.'));
     this.emitLifecycle('closed');
-    child?.kill();
+    if (child) {
+      child.stdin?.end();
+      const fallbackKill = setTimeout(() => child.kill(), 1_000);
+      fallbackKill.unref?.();
+    }
     void this.chromePlatformServer.close().catch((error) => console.error('[chrome-platform] desktop bridge shutdown failed', error));
     this.events.removeAllListeners();
   }
