@@ -17,6 +17,13 @@ use mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::{
 use mahayana_node_agent_coordinator::gateway::host_supervisor::{
     GatewayConnection, GatewayHostSupervisor, HEALTH_PROBE_TTL_MS, read_gateway_discovery,
 };
+use mahayana_node_agent_coordinator::oauth::mcp_oauth_callback_listener::{
+    McpOAuthCallbackListener, OAuthCallback, start_mcp_oauth_callback_listener,
+};
+use mahayana_node_agent_coordinator::oauth::mcp_oauth_forwarder::{
+    McpOAuthForwarderState, McpOAuthPendingPayload, OAuthForwarderAction,
+};
+use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::McpOAuthLoopbackRegistry;
 use mahayana_node_agent_coordinator::protocol::{
     CoordinatorFrame, Failure, LifecyclePhase, ReplyOutcome, COORDINATOR_DISCONNECTED,
 };
@@ -51,7 +58,6 @@ struct PendingHostRequest {
     channel: CarrierChannel,
 }
 
-#[derive(Debug)]
 struct CoordinatorState {
     bootstrap: CoordinatorBootstrap,
     host_bin: PathBuf,
@@ -61,6 +67,9 @@ struct CoordinatorState {
     host_supervisor: Mutex<GatewayHostSupervisor>,
     tool_relay: Mutex<ClientSideToolV2Relay>,
     tool_replay_done: AtomicBool,
+    oauth_forwarder: Mutex<McpOAuthForwarderState>,
+    oauth_loopback: Mutex<McpOAuthLoopbackRegistry>,
+    oauth_listeners: Mutex<HashMap<String, McpOAuthCallbackListener>>,
     pending: Mutex<HashMap<String, PendingHostRequest>>,
     control_port: Mutex<ControlPortClient>,
     renderer_port: Mutex<RendererPortServer>,
@@ -203,6 +212,226 @@ impl CoordinatorState {
 }
 
 
+fn coordinator_now_ms() -> u64 {
+    u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default()
+}
+
+fn close_oauth_listener(state: &Arc<CoordinatorState>, origin: &str) {
+    let listener = state
+        .oauth_listeners
+        .lock()
+        .ok()
+        .and_then(|mut listeners| listeners.remove(origin));
+    if let Some(listener) = listener {
+        if let Ok(mut registry) = state.oauth_loopback.lock() {
+            let _ = listener.close(&mut registry);
+        }
+    }
+}
+
+fn complete_oauth_callback(
+    state: &Arc<CoordinatorState>,
+    callback: OAuthCallback,
+) -> Result<(), Failure> {
+    let generation = state.host_generation.load(Ordering::SeqCst);
+    let connection = wait_for_gateway_connection(state, generation).map_err(|error| {
+        Failure::new(
+            "MCP_OAUTH_COMPLETION_UNAVAILABLE",
+            format!("Host gateway unavailable during OAuth completion: {error}"),
+        )
+    })?;
+    dispatch_http_json(
+        &connection,
+        "completeMcpOAuth",
+        json!({
+            "code": callback.code,
+            "state": callback.state,
+        }),
+    )
+    .map(|_| ())
+    .map_err(|error| failure_for(&error))
+}
+
+fn apply_oauth_actions(state: &Arc<CoordinatorState>, actions: Vec<OAuthForwarderAction>) {
+    for action in actions {
+        match action {
+            OAuthForwarderAction::CloseListener { origin } => {
+                close_oauth_listener(state, &origin);
+            }
+            OAuthForwarderAction::Complete { callback } => {
+                if let Err(error) = complete_oauth_callback(state, callback) {
+                    eprintln!(
+                        "node-agent-coordinator: mcp-oauth completion failed: {}",
+                        error.message
+                    );
+                }
+            }
+            OAuthForwarderAction::StartListener {
+                origin,
+                redirect_url,
+                state: pending_state,
+            } => {
+                let resolve_state = Arc::clone(state);
+                let resolve_origin = origin.clone();
+                let callback_state = Arc::clone(state);
+                let settled_state = Arc::clone(state);
+                let settled_origin = origin.clone();
+
+                let listener = {
+                    let mut registry = match state.oauth_loopback.lock() {
+                        Ok(registry) => registry,
+                        Err(_) => {
+                            let actions = state
+                                .oauth_forwarder
+                                .lock()
+                                .map(|mut forwarder| {
+                                    forwarder.listener_failed(
+                                        &origin,
+                                        &pending_state,
+                                        coordinator_now_ms(),
+                                    )
+                                })
+                                .unwrap_or_default();
+                            apply_oauth_actions(state, actions);
+                            continue;
+                        }
+                    };
+                    start_mcp_oauth_callback_listener(
+                        &redirect_url,
+                        &mut registry,
+                        move |callback_state_value| {
+                            resolve_state
+                                .oauth_forwarder
+                                .lock()
+                                .ok()
+                                .and_then(|forwarder| {
+                                    forwarder
+                                        .resolve_server(
+                                            &resolve_origin,
+                                            callback_state_value,
+                                            coordinator_now_ms(),
+                                        )
+                                        .map(str::to_string)
+                                })
+                        },
+                        move |callback| complete_oauth_callback(&callback_state, callback),
+                        move |callback_state_value| {
+                            let state_value = callback_state_value.to_string();
+                            let settle_state = Arc::clone(&settled_state);
+                            let settle_origin = settled_origin.clone();
+                            thread::spawn(move || {
+                                let actions = settle_state
+                                    .oauth_forwarder
+                                    .lock()
+                                    .map(|mut forwarder| {
+                                        forwarder.settle_callback(
+                                            &settle_origin,
+                                            &state_value,
+                                            coordinator_now_ms(),
+                                        )
+                                    })
+                                    .unwrap_or_default();
+                                apply_oauth_actions(&settle_state, actions);
+                            });
+                        },
+                    )
+                };
+
+                match listener {
+                    Ok(listener) => {
+                        if let Ok(mut listeners) = state.oauth_listeners.lock() {
+                            if let Some(previous) = listeners.insert(origin.clone(), listener) {
+                                if let Ok(mut registry) = state.oauth_loopback.lock() {
+                                    let _ = previous.close(&mut registry);
+                                }
+                            }
+                        }
+                        let actions = state
+                            .oauth_forwarder
+                            .lock()
+                            .map(|mut forwarder| {
+                                forwarder.listener_started(&origin, coordinator_now_ms())
+                            })
+                            .unwrap_or_default();
+                        apply_oauth_actions(state, actions);
+                    }
+                    Err(error) => {
+                        eprintln!(
+                            "node-agent-coordinator: mcp-oauth listener start failed for {}: {}",
+                            origin,
+                            error.message
+                        );
+                        let actions = state
+                            .oauth_forwarder
+                            .lock()
+                            .map(|mut forwarder| {
+                                forwarder.listener_failed(
+                                    &origin,
+                                    &pending_state,
+                                    coordinator_now_ms(),
+                                )
+                            })
+                            .unwrap_or_default();
+                        apply_oauth_actions(state, actions);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn handle_oauth_pending(state: &Arc<CoordinatorState>, payload: &Value) {
+    let Some(redirect_url) = payload.get("redirectUrl").and_then(Value::as_str) else {
+        eprintln!("node-agent-coordinator: mcp-oauth pending event missing redirectUrl");
+        return;
+    };
+    let Some(oauth_state) = payload.get("state").and_then(Value::as_str) else {
+        eprintln!("node-agent-coordinator: mcp-oauth pending event missing state");
+        return;
+    };
+    let Some(server_name) = payload.get("serverName").and_then(Value::as_str) else {
+        eprintln!("node-agent-coordinator: mcp-oauth pending event missing serverName");
+        return;
+    };
+    let actions = state
+        .oauth_forwarder
+        .lock()
+        .map_err(|_| ())
+        .and_then(|mut forwarder| {
+            forwarder
+                .handle_pending(
+                    McpOAuthPendingPayload {
+                        redirect_url: redirect_url.to_string(),
+                        state: oauth_state.to_string(),
+                        server_name: server_name.to_string(),
+                    },
+                    coordinator_now_ms(),
+                )
+                .map_err(|error| {
+                    eprintln!(
+                        "node-agent-coordinator: invalid mcp-oauth pending event: {}",
+                        error.message
+                    );
+                })
+        })
+        .unwrap_or_default();
+    apply_oauth_actions(state, actions);
+}
+
+fn start_oauth_expiry_loop(state: Arc<CoordinatorState>) {
+    thread::spawn(move || {
+        while !state.closed.load(Ordering::SeqCst) {
+            thread::sleep(Duration::from_secs(1));
+            let actions = state
+                .oauth_forwarder
+                .lock()
+                .map(|mut forwarder| forwarder.expire(coordinator_now_ms()))
+                .unwrap_or_default();
+            apply_oauth_actions(&state, actions);
+        }
+    });
+}
+
 fn post_tool_event(state: &Arc<CoordinatorState>, event: mahayana_node_agent_coordinator::client_side_tool_v2_relay::RendererToolEvent) {
     if let Ok(payload) = serde_json::to_value(event) {
         state.post_event(CLIENT_SIDE_TOOL_V2_FAMILY, payload);
@@ -234,9 +463,14 @@ fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
         ),
         _ => ("runtime".into(), "runtime".into(), value),
     };
-    let now_ms = u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
+    let now_ms = coordinator_now_ms();
     if let Ok(mut gateway) = state.gateway_client.lock() {
         let _ = gateway.accept_event(now_ms, channel.clone(), payload.clone());
+    }
+
+    if channel == "mcp-oauth-pending" {
+        handle_oauth_pending(state, &payload);
+        return;
     }
 
     if channel == CLIENT_SIDE_TOOL_V2_FAMILY {
@@ -850,6 +1084,9 @@ fn main() {
         host_supervisor: Mutex::new(GatewayHostSupervisor::new(HEALTH_PROBE_TTL_MS)),
         tool_relay: Mutex::new(ClientSideToolV2Relay::default()),
         tool_replay_done: AtomicBool::new(false),
+        oauth_forwarder: Mutex::new(McpOAuthForwarderState::default()),
+        oauth_loopback: Mutex::new(McpOAuthLoopbackRegistry::default()),
+        oauth_listeners: Mutex::new(HashMap::new()),
         pending: Mutex::new(HashMap::new()),
         control_port: Mutex::new(ControlPortClient::default()),
         renderer_port: Mutex::new(RendererPortServer::default()),
@@ -862,6 +1099,8 @@ fn main() {
         consecutive_crashes: AtomicU64::new(0),
         gateway_events_live: AtomicBool::new(false),
     });
+
+    start_oauth_expiry_loop(Arc::clone(&state));
 
     if let Ok(control) = state.control_port.lock() {
         if let ClientAction::Post(frame) = control.start() {
@@ -941,6 +1180,15 @@ fn main() {
     }
     if let Ok(mut relay) = state.tool_relay.lock() {
         relay.clear();
+    }
+    let oauth_actions = state
+        .oauth_forwarder
+        .lock()
+        .map(|mut forwarder| forwarder.dispose())
+        .unwrap_or_default();
+    apply_oauth_actions(&state, oauth_actions);
+    if let Ok(mut registry) = state.oauth_loopback.lock() {
+        registry.dispose();
     }
     let generation = state.host_generation.load(Ordering::SeqCst);
     state.reject_generation(generation, "Coordinator input closed");
