@@ -9437,12 +9437,21 @@
       "targetPath": "source/host/src/box/box_capabilities.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "23d1d985789f43c620076ce344b53a14a46c6a06",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/box_capabilities.rs",
+        "source/host/src/ports/box.rs",
+        "source/host/src/box/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_capabilities_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port preserves optional capability defaults, multi-window detection, window/terminal/availability/preparing/description forwarding, and fail-closed environment/MCP capability errors."
     },
     {
       "referencePath": "source/host/box/box-env.ts",
