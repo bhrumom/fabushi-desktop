@@ -21,6 +21,10 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
 };
 use mahayana_host_runtime::extensions::managed_setup::team_rules::ProductionTeamRulesResolver;
+use mahayana_host_runtime::extensions::forever_box::{
+    ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxService,
+    start_forever_box_extension,
+};
 use mahayana_host_runtime::extensions::auth::credential_renewer::RenewalOutcome;
 use mahayana_host_runtime::host_request_context::create_host_request_context;
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
@@ -68,7 +72,7 @@ struct ProductionHostExtensions {
     auth: Arc<HostAuthExtension>,
     team_rules: Arc<ProductionTeamRulesResolver>,
     team_rules_renewal_subscription: Option<u64>,
-    _box_lifecycle: BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>,
+    box_lifecycle: Arc<BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>>,
 }
 
 impl Drop for ProductionHostExtensions {
@@ -141,13 +145,13 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
 
     let factory =
         ProductionBoxLifecycleClientFactory::from_process_env().map_err(|error| error.to_string())?;
-    let box_lifecycle = start_box_lifecycle_extension(Arc::clone(&auth), &factory);
+    let box_lifecycle = Arc::new(start_box_lifecycle_extension(Arc::clone(&auth), &factory));
 
     Ok(ProductionHostExtensions {
         auth,
         team_rules,
         team_rules_renewal_subscription: Some(team_rules_renewal_subscription),
-        _box_lifecycle: box_lifecycle,
+        box_lifecycle,
     })
 }
 
@@ -521,12 +525,12 @@ where
 
 fn dispatch_gateway_call(
     host: &UnifiedAppHost,
-    production_box: &ProductionBoxEnvironment,
+    forever_box: &ForeverBoxService,
     method: &str,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     if let Some(result) = dispatch_box_environment_call(method, &args, |update| {
-        production_box
+        forever_box
             .apply_environment(update)
             .map_err(|error| error.to_string())
     }) {
@@ -655,6 +659,13 @@ fn main() {
             return;
         }
     };
+    let lifecycle: Arc<dyn ForeverBoxLifecycle> =
+        production_extensions.box_lifecycle.clone();
+    let forever_box = start_forever_box_extension(
+        production_box,
+        lifecycle,
+        ForeverBoxExtensionOptions::from_process_env(),
+    );
     let runner_request_context: Arc<dyn RunnerRequestContextSource> =
         Arc::new(ProductionRunnerRequestContextSource {
             auth: Arc::clone(&production_extensions.auth),
@@ -774,7 +785,7 @@ fn main() {
     while let Ok(request) = host_rx.recv() {
         match request {
             HostLaneRequest::Gateway { method, args, reply } => {
-                let _ = reply.send(dispatch_gateway_call(&host, &production_box, &method, args));
+                let _ = reply.send(dispatch_gateway_call(&host, &forever_box, &method, args));
             }
             HostLaneRequest::StdinClosed => break,
             HostLaneRequest::Stdin(line) => {
@@ -801,6 +812,7 @@ fn main() {
     drop(gateway_server);
     routed_provider_tasks.cancel_all("Mahayana Host shutting down");
     session_workers.shutdown();
+    forever_box.dispose();
     if let Err(error) = clear_gateway_discovery(&gateway_discovery_path) {
         eprintln!(
             "failed to clear Mahayana Host gateway discovery at {}: {error}",

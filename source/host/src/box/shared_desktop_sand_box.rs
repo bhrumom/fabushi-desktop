@@ -429,6 +429,25 @@ impl SharedDesktopSandBox {
         self.inner.mcp_resource_accessor(ctx)
     }
 
+    pub fn upload_file<Ctx>(
+        &self,
+        ctx: &Ctx,
+        _agent_id: &str,
+        path: &str,
+        data: &[u8],
+    ) -> Result<(), LoopbackSandBoxError> {
+        self.inner.upload_file(ctx, &self.shared_box_id, path, data)
+    }
+
+    pub fn download_file<Ctx>(
+        &self,
+        ctx: &Ctx,
+        _agent_id: &str,
+        path: &str,
+    ) -> Result<Vec<u8>, LoopbackSandBoxError> {
+        self.inner.download_file(ctx, &self.shared_box_id, path)
+    }
+
     pub fn run_state(&self) -> &'static str {
         self.inner.run_state()
     }

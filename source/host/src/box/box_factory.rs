@@ -70,6 +70,70 @@ impl SandBoxComposition {
             Self::SharedDesktop(shared) => shared.mcp_resource_accessor(ctx),
         }
     }
+    pub fn release_window<Ctx>(
+        &self,
+        ctx: &Ctx,
+        agent_id: &str,
+    ) -> Result<(), LoopbackSandBoxError> {
+        match self {
+            Self::Loopback(_) => Ok(()),
+            Self::SharedDesktop(shared) => shared.release_window(ctx, agent_id),
+        }
+    }
+
+    pub fn run_state(&self) -> &'static str {
+        match self {
+            Self::Loopback(inner) => inner.run_state(),
+            Self::SharedDesktop(shared) => shared.run_state(),
+        }
+    }
+
+    pub fn list_boxes(&self) -> Vec<(String, bool)> {
+        match self {
+            Self::Loopback(inner) => inner.list_boxes(),
+            Self::SharedDesktop(shared) => shared.list_boxes(),
+        }
+    }
+
+    pub fn get_agent_window_index(&self, agent_id: &str) -> Option<u32> {
+        match self {
+            Self::Loopback(_) => None,
+            Self::SharedDesktop(shared) => shared.get_agent_window_index(agent_id),
+        }
+    }
+
+    pub fn terminals_folder(&self) -> &'static str {
+        self.loopback().terminals_folder()
+    }
+
+    pub fn is_available(&self) -> bool {
+        self.loopback().is_available()
+    }
+
+    pub fn upload_file<Ctx>(
+        &self,
+        ctx: &Ctx,
+        agent_id: &str,
+        path: &str,
+        data: &[u8],
+    ) -> Result<(), LoopbackSandBoxError> {
+        match self {
+            Self::Loopback(inner) => inner.upload_file(ctx, agent_id, path, data),
+            Self::SharedDesktop(shared) => shared.upload_file(ctx, agent_id, path, data),
+        }
+    }
+
+    pub fn download_file<Ctx>(
+        &self,
+        ctx: &Ctx,
+        agent_id: &str,
+        path: &str,
+    ) -> Result<Vec<u8>, LoopbackSandBoxError> {
+        match self {
+            Self::Loopback(inner) => inner.download_file(ctx, agent_id, path),
+            Self::SharedDesktop(shared) => shared.download_file(ctx, agent_id, path),
+        }
+    }
 }
 
 pub fn apply_shared_desktop(

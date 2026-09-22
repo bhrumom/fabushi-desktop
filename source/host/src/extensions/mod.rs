@@ -18,3 +18,5 @@ pub mod inference;
 pub mod auth;
 
 pub mod managed_setup;
+
+pub mod forever_box;

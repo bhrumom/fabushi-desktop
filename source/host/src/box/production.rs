@@ -11,6 +11,7 @@ use super::loopback_sand_box::{
     DEFAULT_AUTH_TOKEN, EXEC_DAEMON_PORT, LoopbackReady, LoopbackSandBox,
     LoopbackSandBoxError, LoopbackSandBoxOptions,
 };
+use crate::host_paths::get_sand_root_dir;
 
 pub const BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD: &str = "box.applyEnvironment";
 
@@ -37,6 +38,16 @@ impl ProductionBoxEnvironment {
         auth_token: impl Into<String>,
         shared_desktop: bool,
     ) -> Self {
+        Self::new_with_options(host, port, auth_token, shared_desktop, Vec::new())
+    }
+
+    fn new_with_options(
+        host: impl Into<String>,
+        port: u16,
+        auth_token: impl Into<String>,
+        shared_desktop: bool,
+        protected_box_paths: Vec<std::path::PathBuf>,
+    ) -> Self {
         let host = host.into();
         let auth_token = auth_token.into();
         let endpoint = BoxEndpoint::new(host.clone(), port, auth_token.clone());
@@ -44,6 +55,7 @@ impl ProductionBoxEnvironment {
             host,
             auth_token,
             exec_daemon_port: port,
+            protected_box_paths,
             ..LoopbackSandBoxOptions::default()
         });
         Self {
@@ -68,8 +80,20 @@ impl ProductionBoxEnvironment {
         let shared_desktop = env::var("SAND_SHARED_DESKTOP")
             .ok()
             .map(|value| value.trim().to_ascii_lowercase())
-            .is_some_and(|value| matches!(value.as_str(), "1" | "true" | "yes" | "on"));
-        Self::new_with_shared_desktop(host, port, auth_token, shared_desktop)
+            .map(|value| matches!(value.as_str(), "1" | "true" | "yes" | "on"))
+            .unwrap_or_else(|| {
+                !env::var("SAND_STANDALONE_BOX_EXEC_DAEMON")
+                    .ok()
+                    .map(|value| value.trim().to_ascii_lowercase())
+                    .is_some_and(|value| matches!(value.as_str(), "1" | "true" | "yes" | "on"))
+            });
+        Self::new_with_options(
+            host,
+            port,
+            auth_token,
+            shared_desktop,
+            vec![get_sand_root_dir()],
+        )
     }
 
     pub fn transport(&self) -> &ProductionBoxTransport {
@@ -102,10 +126,57 @@ impl ProductionBoxEnvironment {
         self.composition.load_mcp_servers(&(), config_json)
     }
 
+    pub fn mcp_resource_accessor(
+        &self,
+    ) -> Result<ProductionBoxResourceAccessor, LoopbackSandBoxError> {
+        self.composition.mcp_resource_accessor(&())
+    }
+
     pub fn apply_environment(
         &self,
         update: &BoxEnvironmentUpdate,
     ) -> Result<(), LoopbackSandBoxError> {
         self.composition.apply_environment(&(), update)
+    }
+
+    pub fn release_window(&self, agent_id: &str) -> Result<(), LoopbackSandBoxError> {
+        self.composition.release_window(&(), agent_id)
+    }
+
+    pub fn run_state(&self) -> &'static str {
+        self.composition.run_state()
+    }
+
+    pub fn list_boxes(&self) -> Vec<(String, bool)> {
+        self.composition.list_boxes()
+    }
+
+    pub fn get_agent_window_index(&self, agent_id: &str) -> Option<u32> {
+        self.composition.get_agent_window_index(agent_id)
+    }
+
+    pub fn terminals_folder(&self) -> &'static str {
+        self.composition.terminals_folder()
+    }
+
+    pub fn is_available(&self) -> bool {
+        self.composition.is_available()
+    }
+
+    pub fn upload_file(
+        &self,
+        agent_id: &str,
+        path: &str,
+        data: &[u8],
+    ) -> Result<(), LoopbackSandBoxError> {
+        self.composition.upload_file(&(), agent_id, path, data)
+    }
+
+    pub fn download_file(
+        &self,
+        agent_id: &str,
+        path: &str,
+    ) -> Result<Vec<u8>, LoopbackSandBoxError> {
+        self.composition.download_file(&(), agent_id, path)
     }
 }
