@@ -156,8 +156,11 @@ jobs:
       - name: Check Agent workspace architecture boundary
         run: node desktop/scripts/check-agent-workspace-boundary.mjs
       - name: Check Grok architecture inventory
-        run: node scripts/check-grok-architecture.mjs --strict
+        run: node scripts/check-grok-architecture.mjs
       - name: Typecheck and build renderer
         run: npm --prefix desktop run build:renderer
       - name: Enforce built desktop bundle boundary
         run: node desktop/scripts/check-desktop-bundle.mjs
+      - name: Check Grok final architecture gate
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+        run: node scripts/check-grok-architecture.mjs --strict
