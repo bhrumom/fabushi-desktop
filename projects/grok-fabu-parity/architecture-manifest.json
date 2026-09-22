@@ -9147,9 +9147,11 @@
         "source/host/src/agent_isolation/mod.rs"
       ],
       "testEvidence": [
-        "source/host/tests/worker_blob_store_contract.rs"
+        "source/host/tests/worker_blob_store_contract.rs",
+        "source/host/tests/agent_worker_pool_lifecycle_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "The blob get/set pool boundary is compiled and contract-tested. Full Grok worker lifecycle parity (worker process/thread boot, request IDs, active-op retention, capacity eviction, idle sweep, close, GC and legacy retirement) remains before this module can be final."
+      "notes": "Partial parity advanced: the Rust pool now boots one named worker thread per blob store, performs an explicit init handshake, correlates monotonically increasing request IDs, retains active operations, reuses store workers, evicts the oldest unretained worker at capacity, sweeps idle workers, exposes worker diagnostics, and supports close-store/close-all. Final status remains withheld until the concrete migrated conversation-blob database backend plus root lookup, clear, garbage collection and legacy-retirement operations are wired into the shipping Host graph."
     },
     {
       "referencePath": "source/host/agent-isolation/conversation-blob-db.ts",
@@ -9239,9 +9241,11 @@
         "source/host/src/lib.rs"
       ],
       "testEvidence": [
-        "source/host/tests/worker_blob_store_contract.rs"
+        "source/host/tests/worker_blob_store_contract.rs",
+        "source/host/tests/agent_worker_pool_lifecycle_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "WorkerBlobStore now routes get/set/set-locally-only through the typed AgentWorkerPool boundary and keeps flush as a no-op, preserving agent/blob/legacy paths. Final status is withheld until AgentWorkerPool owns the real migrated worker lifecycle/backend."
+      "notes": "WorkerBlobStore routes get/set/set-locally-only through the real Rust AgentWorkerPool worker-thread lifecycle and preserves agent/blob/legacy paths; flush remains a no-op as in Grok. Final status remains withheld until the migrated conversation-blob database/GC/legacy-retirement backend is production-wired."
     },
     {
       "referencePath": "source/host/agents/agent-avatar.ts",

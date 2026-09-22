@@ -1,16 +1,24 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use super::agent_worker_pool::{AgentBlobWorkerBackend, AgentWorkerPool};
+use super::agent_worker_pool::{
+    AgentBlobWorkerBackend, AgentWorkerPool, AgentWorkerPoolError,
+};
 
-pub struct WorkerBlobStore<Backend> {
+pub struct WorkerBlobStore<Backend>
+where
+    Backend: AgentBlobWorkerBackend + 'static,
+{
     pub pool: Arc<AgentWorkerPool<Backend>>,
     pub agent_id: String,
     pub blob_db_path: PathBuf,
     pub legacy_blob_db_path: Option<PathBuf>,
 }
 
-impl<Backend> WorkerBlobStore<Backend> {
+impl<Backend> WorkerBlobStore<Backend>
+where
+    Backend: AgentBlobWorkerBackend + 'static,
+{
     pub fn new(
         pool: Arc<AgentWorkerPool<Backend>>,
         agent_id: impl Into<String>,
@@ -28,17 +36,12 @@ impl<Backend> WorkerBlobStore<Backend> {
     fn legacy_blob_db_path(&self) -> Option<&Path> {
         self.legacy_blob_db_path.as_deref()
     }
-}
 
-impl<Backend> WorkerBlobStore<Backend>
-where
-    Backend: AgentBlobWorkerBackend,
-{
     pub async fn get_blob<Ctx>(
         &self,
         _ctx: &Ctx,
         blob_id: &[u8],
-    ) -> Result<Option<Vec<u8>>, Backend::Error> {
+    ) -> Result<Option<Vec<u8>>, AgentWorkerPoolError<Backend::Error>> {
         self.pool
             .get_blob(
                 &self.agent_id,
@@ -54,7 +57,7 @@ where
         _ctx: &Ctx,
         blob_id: &[u8],
         blob_data: &[u8],
-    ) -> Result<(), Backend::Error> {
+    ) -> Result<(), AgentWorkerPoolError<Backend::Error>> {
         self.pool
             .set_blob(
                 &self.agent_id,
@@ -71,7 +74,7 @@ where
         ctx: &Ctx,
         blob_id: &[u8],
         blob_data: &[u8],
-    ) -> Result<(), Backend::Error> {
+    ) -> Result<(), AgentWorkerPoolError<Backend::Error>> {
         self.set_blob(ctx, blob_id, blob_data).await
     }
 
