@@ -95,8 +95,7 @@ export class AgentWorkspaceController {
   claimRuntimeOperation(operationId: string, fallbackPeerKey?: string | null): string | null {
     if (!operationId || this.finishedOperations.has(operationId)) return null;
     const peerKey = this.operations.peerForOperation(operationId)
-      ?? fallbackPeerKey
-      ?? this.operations.onlyPendingPeer();
+      ?? fallbackPeerKey;
     if (!peerKey) return null;
     const requestId = this.operations.requestForPeer(peerKey);
     this.operations.adoptOperation(requestId, operationId, peerKey);
@@ -154,10 +153,6 @@ export class AgentWorkspaceController {
 
   requestSnapshot(): Readonly<Record<string, string>> {
     return this.operations.requestSnapshot();
-  }
-
-  onlyPendingPeer(): string | null {
-    return this.operations.onlyPendingPeer();
   }
 
   clearPeer(peerKey: string): void {
