@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
 use serde_json::Value;
@@ -8,6 +7,7 @@ use serde_json::Value;
 use super::gateway_reachability::ReachabilityOutcome;
 use super::gateway_request_dispatcher::GatewayDispatchError;
 use super::host_supervisor::GatewayConnection;
+use super::http_transport::parse_gateway_http_base;
 use super::sse_block_decoder::SseBlockDecoder;
 
 pub const SSE_RECONNECT_MIN_MS: u64 = 1_000;
@@ -304,42 +304,6 @@ impl CoordinatorGatewayClient {
 }
 
 
-fn parse_sse_http_base(base_url: &str) -> Result<(String, u16, String), GatewayDispatchError> {
-    let Some(rest) = base_url.strip_prefix("http://") else {
-        return Err(GatewayDispatchError::Transport(format!(
-            "unsupported Host gateway SSE scheme in {base_url}"
-        )));
-    };
-    let (authority, base_path) = rest
-        .split_once('/')
-        .map_or((rest, String::new()), |(authority, path)| {
-            (authority, format!("/{}", path.trim_end_matches('/')))
-        });
-    let (host, port) = if let Some(ipv6) = authority.strip_prefix('[') {
-        let Some((host, suffix)) = ipv6.split_once(']') else {
-            return Err(GatewayDispatchError::Transport(
-                "invalid IPv6 Host gateway authority".into(),
-            ));
-        };
-        let port = suffix
-            .strip_prefix(':')
-            .and_then(|value| value.parse::<u16>().ok())
-            .ok_or_else(|| GatewayDispatchError::Transport(
-                "Host gateway URL must include a port".into(),
-            ))?;
-        (host.to_string(), port)
-    } else {
-        let (host, port) = authority.rsplit_once(':').ok_or_else(|| {
-            GatewayDispatchError::Transport("Host gateway URL must include a port".into())
-        })?;
-        let port = port.parse::<u16>().map_err(|_| {
-            GatewayDispatchError::Transport("invalid Host gateway port".into())
-        })?;
-        (host.to_string(), port)
-    };
-    Ok((host, port, base_path))
-}
-
 fn sse_outcome_for_io(error: &std::io::Error) -> ReachabilityOutcome {
     match error.kind() {
         std::io::ErrorKind::ConnectionRefused => ReachabilityOutcome::Refused,
@@ -368,19 +332,22 @@ where
     Event: FnMut(Value),
     Continue: Fn() -> bool,
 {
-    let (host, port, base_path) = parse_sse_http_base(&connection.base_url)?;
-    let mut addresses = format!("{host}:{port}").to_socket_addrs().map_err(|error| {
+    let endpoint = parse_gateway_http_base(&connection.base_url)
+        .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
+    let host = endpoint.host.clone();
+    let base_path = endpoint.base_path.clone();
+    let addresses = endpoint.socket_addrs().map_err(|error| {
         GatewayDispatchError::Unreachable {
             outcome: ReachabilityOutcome::Dns,
             message: format!("gateway events unreachable (dns): {error}"),
         }
     })?;
-    let socket = addresses.next().ok_or_else(|| GatewayDispatchError::Unreachable {
+    let socket = addresses.first().copied().ok_or_else(|| GatewayDispatchError::Unreachable {
         outcome: ReachabilityOutcome::Dns,
         message: "gateway events unreachable (dns)".into(),
     })?;
     let connect_timeout = Duration::from_millis(SSE_CONNECT_TIMEOUT_MS);
-    let mut stream = TcpStream::connect_timeout(&socket, connect_timeout).map_err(|error| {
+    let mut stream = endpoint.connect(&socket, connect_timeout).map_err(|error| {
         GatewayDispatchError::Unreachable {
             outcome: sse_outcome_for_io(&error),
             message: format!("gateway events connect failed: {error}"),
