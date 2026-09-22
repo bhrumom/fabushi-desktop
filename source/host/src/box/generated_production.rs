@@ -106,7 +106,7 @@ impl<Ctx> BoxEnvironmentControlClient<Ctx> for ProductionBoxControlClient {
     ) -> Result<(), Self::Error> {
         let body = encode_update_environment_variables_request(&request);
         send_connect_unary(
-            self.transport,
+            &self.transport,
             UPDATE_ENVIRONMENT_VARIABLES_PATH,
             &body,
         )
