@@ -80,6 +80,8 @@ fn gateway_health_command_security_and_upgrade_routes_match_grok_contract() {
     let server = start_gateway_server(GatewayServerDeps {
         api: Arc::new(TestApi),
         events,
+        local_exec: None,
+        webauthn: None,
         config: config(None),
         started_at: 777,
     })
@@ -153,6 +155,8 @@ fn gateway_bearer_auth_is_required_when_configured() {
     let server = start_gateway_server(GatewayServerDeps {
         api: Arc::new(TestApi),
         events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
         config: config(Some("secret")),
         started_at: 1,
     })
@@ -183,6 +187,8 @@ fn gateway_rejects_unknown_commands_before_host_dispatch() {
     let server = start_gateway_server(GatewayServerDeps {
         api: Arc::new(TestApi),
         events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
         config: config(None),
         started_at: 1,
     })
@@ -201,6 +207,8 @@ fn gateway_slim_avatar_projection_matches_grok_contract() {
     let server = start_gateway_server(GatewayServerDeps {
         api: Arc::new(TestApi),
         events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
         config: config(None),
         started_at: 1,
     })
@@ -221,6 +229,8 @@ fn gateway_avatar_endpoint_serves_versioned_bytes_and_security_headers() {
     let server = start_gateway_server(GatewayServerDeps {
         api: Arc::new(TestApi),
         events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
         config: config(None),
         started_at: 1,
     })
@@ -258,6 +268,8 @@ fn gateway_events_stream_retries_filters_and_delivers_runtime_events() {
     let server = start_gateway_server(GatewayServerDeps {
         api: Arc::new(TestApi),
         events: events.clone(),
+        local_exec: None,
+        webauthn: None,
         config: config(None),
         started_at: 1,
     })
