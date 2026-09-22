@@ -322,6 +322,21 @@ fn dispatch_to_host(
     if method == "coordinator.health" {
         let generation = state.host_generation.load(Ordering::SeqCst);
         let pending = state.pending.lock().map(|pending| pending.len()).unwrap_or_default();
+        let (gateway_connected, gateway_generation, gateway_base_url) = state
+            .gateway_client
+            .lock()
+            .map(|gateway| {
+                (
+                    gateway.state.connected,
+                    gateway.state.endpoint_generation,
+                    gateway
+                        .state
+                        .connection
+                        .as_ref()
+                        .map(|connection| connection.base_url.clone()),
+                )
+            })
+            .unwrap_or((false, 0, None));
         state.complete_request(
             &request_id,
             ReplyOutcome::Ok {
@@ -330,6 +345,11 @@ fn dispatch_to_host(
                     "hostGeneration": generation,
                     "pending": pending,
                     "hostRunning": state.host_stdin.lock().map(|host| host.is_some()).unwrap_or(false),
+                    "gateway": {
+                        "connected": gateway_connected,
+                        "endpointGeneration": gateway_generation,
+                        "baseUrl": gateway_base_url
+                    },
                     "processConfig": {
                         "appVersion": state.bootstrap.process_config.app_version.clone(),
                         "isPackaged": state.bootstrap.process_config.is_packaged,
