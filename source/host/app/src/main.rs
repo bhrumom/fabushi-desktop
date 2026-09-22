@@ -24,9 +24,9 @@ use mahayana_host_runtime::extensions::managed_setup::team_rules::ProductionTeam
 use mahayana_host_runtime::extensions::auth::credential_renewer::RenewalOutcome;
 use mahayana_host_runtime::host_request_context::create_host_request_context;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
-    RoutedProviderRun, RoutedProviderTaskRegistry, RoutedToolBridge,
-    RunnerRequestContextSnapshot, RunnerRequestContextSource,
-    run_routed_provider_in_runner,
+    ProductionRoutedProviderCheckpointStore, RoutedProviderRun,
+    RoutedProviderTaskRegistry, RoutedToolBridge, RunnerRequestContextSnapshot,
+    RunnerRequestContextSource, run_routed_provider_in_runner,
 };
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
@@ -309,6 +309,13 @@ fn start_routed_provider_task(
             "could not prepare production session worker state for {agent_id}: {error}"
         ))
     })?;
+    let checkpoint_store = Arc::new(
+        ProductionRoutedProviderCheckpointStore::new(
+            &data_dir,
+            &agent_id,
+            &stream_id,
+        ),
+    );
     let resolved_request_context = request_context.resolve();
     let worker_events = events.clone();
     let accepted_stream_id = stream_id.clone();
@@ -342,6 +349,7 @@ fn start_routed_provider_task(
                     bridge,
                     request_context: resolved_request_context,
                     cancellation,
+                    checkpoint_store,
                 },
                 &mut on_text_delta,
             );
