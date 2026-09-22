@@ -19,6 +19,11 @@ export type TimelineEventData =
       readonly automationName: string;
     };
 
+export type AutomationChangedTimelineEvent = Extract<
+  TimelineEventData,
+  { readonly type: "automation-changed" }
+>;
+
 export interface TimelineEventMetadata {
   readonly protocolKey: TimelineEventProtocolKey;
   readonly entryKind: "event";
