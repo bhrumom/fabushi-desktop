@@ -9488,12 +9488,21 @@
       "targetPath": "source/host/src/box/box_file_transfer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c5443d8d95a6ac12cf98a2d7040868e4d9253e57",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/box_file_transfer.rs",
+        "source/host/src/box/box_shell_command.rs",
+        "source/host/src/box/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_file_transfer_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port preserves shell single quoting, signal/transient/unavailable failure classification, host-shell-args execution, exec-daemon write errors, and atomic upload via mkdir -> random part write -> mv with best-effort part cleanup on write failure."
     },
     {
       "referencePath": "source/host/box/box-mcp.ts",

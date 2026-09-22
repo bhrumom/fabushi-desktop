@@ -7,3 +7,4 @@ pub mod protected_path_guard;
 pub mod box_windows;
 pub mod box_capabilities;
 pub mod box_transfer;
+pub mod box_file_transfer;
