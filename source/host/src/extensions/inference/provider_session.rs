@@ -21,8 +21,9 @@ use uuid::Uuid;
 use crate::host_paths::get_sand_root_dir;
 
 use super::codex_direct_responses::{
-    CodexDirectError, CodexDirectOptions, CodexDirectTool, CodexDirectTransport,
-    run_codex_direct_responses_with_cancel,
+    CodexDirectCheckpoint, CodexDirectError, CodexDirectOptions, CodexDirectTool,
+    CodexDirectTransport, run_codex_direct_responses_with_cancel,
+    run_codex_direct_responses_with_lifecycle,
 };
 
 pub const GROK_ROUTER_SYSTEM_PROMPT: &str =
@@ -88,6 +89,36 @@ pub struct RoutedToolDefinition {
     pub tool_name: String,
     pub description: Option<String>,
     pub input_schema: Value,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "provider", content = "checkpoint", rename_all = "kebab-case")]
+pub enum RoutedProviderCheckpoint {
+    Codex(CodexDirectCheckpoint),
+    OpenRouter(OpenRouterCheckpoint),
+}
+
+impl RoutedProviderCheckpoint {
+    pub fn emitted_text_bytes(&self) -> usize {
+        match self {
+            Self::Codex(checkpoint) => checkpoint.text.len(),
+            Self::OpenRouter(checkpoint) => checkpoint.text.len(),
+        }
+    }
+
+    pub fn tool_calls_completed(&self) -> usize {
+        match self {
+            Self::Codex(checkpoint) => checkpoint.tool_calls_completed,
+            Self::OpenRouter(checkpoint) => checkpoint.tool_calls_completed,
+        }
+    }
+
+    pub fn provider(&self) -> RoutedProvider {
+        match self {
+            Self::Codex(_) => RoutedProvider::Codex,
+            Self::OpenRouter(_) => RoutedProvider::OpenRouter,
+        }
+    }
 }
 
 #[derive(Debug, Error)]
@@ -771,6 +802,34 @@ pub fn run_codex_provider_text(
     on_text_delta: &mut dyn FnMut(&str, &str),
     should_cancel: &dyn Fn() -> bool,
 ) -> Result<String, ProviderSessionError> {
+    let mut ignore_checkpoint =
+        |_checkpoint: &CodexDirectCheckpoint| Ok(());
+    run_codex_provider_text_with_lifecycle(
+        messages,
+        tools,
+        execute_tool,
+        on_text_delta,
+        should_cancel,
+        None,
+        &mut ignore_checkpoint,
+    )
+}
+
+pub fn run_codex_provider_text_with_lifecycle(
+    messages: &[ProviderMessage],
+    tools: &[RoutedToolDefinition],
+    execute_tool: &mut dyn FnMut(
+        &RoutedToolDefinition,
+        Value,
+        &str,
+    ) -> Result<Value, ProviderSessionError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    should_cancel: &dyn Fn() -> bool,
+    resume_from: Option<&CodexDirectCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &CodexDirectCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+) -> Result<String, ProviderSessionError> {
     let mut transport = CodexHttpTransport::new(&codex_home().join("auth.json"))?;
     let system_prompt = assembled_provider_system_prompt(messages);
     let mut request = CodexDirectOptions::new(
@@ -794,9 +853,10 @@ pub fn run_codex_provider_text(
         .iter()
         .map(|tool| (tool.name.clone(), tool))
         .collect::<BTreeMap<_, _>>();
-    let result = run_codex_direct_responses_with_cancel(
+    let result = run_codex_direct_responses_with_lifecycle(
         &mut transport,
         &request,
+        resume_from,
         &mut |tool, args, tool_call_id| {
             let selected = tool_index.get(&tool.name).copied().ok_or_else(|| {
                 CodexDirectError::Tool(format!(
@@ -808,6 +868,10 @@ pub fn run_codex_provider_text(
                 .map_err(|error| CodexDirectError::Tool(error.to_string()))
         },
         on_text_delta,
+        &mut |checkpoint| {
+            on_checkpoint(checkpoint)
+                .map_err(|error| CodexDirectError::Transport(error.to_string()))
+        },
         should_cancel,
     )?;
     Ok(result.text)
@@ -832,25 +896,98 @@ pub fn run_routed_provider_text(
     messages: &[ProviderMessage],
     options: &mut RoutedProviderOptions<'_>,
 ) -> Result<String, ProviderSessionError> {
+    let mut ignore_checkpoint =
+        |_checkpoint: &RoutedProviderCheckpoint| Ok(());
+    run_routed_provider_text_with_lifecycle(
+        provider,
+        messages,
+        options,
+        None,
+        &mut ignore_checkpoint,
+    )
+}
+
+pub fn run_routed_provider_text_with_lifecycle(
+    provider: RoutedProvider,
+    messages: &[ProviderMessage],
+    options: &mut RoutedProviderOptions<'_>,
+    resume_from: Option<&RoutedProviderCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &RoutedProviderCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+) -> Result<String, ProviderSessionError> {
     if (options.should_cancel)() {
         return Err(ProviderSessionError::Cancelled(
             "Runner cancelled before provider dispatch".into(),
         ));
     }
+    if let Some(checkpoint) = resume_from {
+        if checkpoint.provider() != provider {
+            return Err(ProviderSessionError::Protocol(format!(
+                "Runner checkpoint belongs to {} but {} was selected",
+                checkpoint.provider().as_str(),
+                provider.as_str()
+            )));
+        }
+    }
+
     let result = match provider {
         RoutedProvider::Cursor => Err(ProviderSessionError::Configuration(
             "Cursor inference is owned by the Host/Gateway path and must not enter the local provider router."
                 .into(),
         )),
-        RoutedProvider::Codex => run_codex_provider_text(
-            messages,
-            options.tools,
-            options.execute_tool,
-            options.on_text_delta,
-            options.should_cancel,
-        ),
-        RoutedProvider::OpenRouter => run_openrouter_provider_text(messages, options),
-        RoutedProvider::ClaudeCode => run_claude_code_provider_text(messages, options),
+        RoutedProvider::Codex => {
+            let resume = match resume_from {
+                Some(RoutedProviderCheckpoint::Codex(checkpoint)) => {
+                    Some(checkpoint)
+                }
+                _ => None,
+            };
+            let mut codex_checkpoint = |checkpoint: &CodexDirectCheckpoint| {
+                on_checkpoint(&RoutedProviderCheckpoint::Codex(
+                    checkpoint.clone(),
+                ))
+            };
+            run_codex_provider_text_with_lifecycle(
+                messages,
+                options.tools,
+                options.execute_tool,
+                options.on_text_delta,
+                options.should_cancel,
+                resume,
+                &mut codex_checkpoint,
+            )
+        }
+        RoutedProvider::OpenRouter => {
+            let resume = match resume_from {
+                Some(RoutedProviderCheckpoint::OpenRouter(checkpoint)) => {
+                    Some(checkpoint)
+                }
+                _ => None,
+            };
+            let mut openrouter_checkpoint =
+                |checkpoint: &OpenRouterCheckpoint| {
+                    on_checkpoint(&RoutedProviderCheckpoint::OpenRouter(
+                        checkpoint.clone(),
+                    ))
+                };
+            run_openrouter_provider_text_with_lifecycle(
+                messages,
+                options,
+                resume,
+                &mut openrouter_checkpoint,
+            )
+        }
+        RoutedProvider::ClaudeCode => {
+            if resume_from.is_some() {
+                Err(ProviderSessionError::Protocol(
+                    "Claude Code does not emit a resumable tool-boundary checkpoint."
+                        .into(),
+                ))
+            } else {
+                run_claude_code_provider_text(messages, options)
+            }
+        }
     };
     if (options.should_cancel)() {
         return Err(ProviderSessionError::Cancelled(
@@ -1261,6 +1398,24 @@ fn run_openrouter_provider_text(
     messages: &[ProviderMessage],
     options: &mut RoutedProviderOptions<'_>,
 ) -> Result<String, ProviderSessionError> {
+    let mut ignore_checkpoint =
+        |_checkpoint: &OpenRouterCheckpoint| Ok(());
+    run_openrouter_provider_text_with_lifecycle(
+        messages,
+        options,
+        None,
+        &mut ignore_checkpoint,
+    )
+}
+
+fn run_openrouter_provider_text_with_lifecycle(
+    messages: &[ProviderMessage],
+    options: &mut RoutedProviderOptions<'_>,
+    resume_from: Option<&OpenRouterCheckpoint>,
+    on_checkpoint: &mut dyn FnMut(
+        &OpenRouterCheckpoint,
+    ) -> Result<(), ProviderSessionError>,
+) -> Result<String, ProviderSessionError> {
     let api_key = openrouter_api_key(options.data_dir)?;
     let model = env::var("SAND_OPENROUTER_MODEL")
         .ok()
@@ -1272,8 +1427,6 @@ fn run_openrouter_provider_text(
     let execute_tool = &mut *options.execute_tool;
     let on_text_delta = &mut *options.on_text_delta;
     let mut transport = OpenRouterHttpTransport::new(api_key)?;
-    let mut ignore_checkpoint =
-        |_checkpoint: &OpenRouterCheckpoint| Ok(());
     run_openrouter_with_transport(
         &mut transport,
         &model,
@@ -1282,8 +1435,8 @@ fn run_openrouter_provider_text(
         execute_tool,
         on_text_delta,
         should_cancel,
-        None,
-        &mut ignore_checkpoint,
+        resume_from,
+        on_checkpoint,
     )
 }
 
