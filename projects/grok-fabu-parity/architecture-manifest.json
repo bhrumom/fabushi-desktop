@@ -11205,12 +11205,18 @@
       "targetPath": "source/host/src/extensions/inference/codex_direct_responses.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "dacd5def6e49182321e2d0e0783d67ea7778b695",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/inference/codex_direct_responses.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inference_codex_direct_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust semantic core now preserves Grok's streamed Codex Responses event handling, accumulated text deltas, usage accounting, function-call continuation, routed tool execution, unknown/invalid tool error projection, and bounded multi-step completion. This remains non-final until the production provider-session transport/auth layer consumes it and the Coordinator InferenceRouter is wired to the shipping provider/tool queue."
     },
     {
       "referencePath": "source/host/extensions/inference/cursor-session.ts",
