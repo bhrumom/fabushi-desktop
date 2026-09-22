@@ -18,6 +18,7 @@ pub const SEND_POST_TIMEOUT_MS: u64 = 15_000;
 pub const ROSTER_READ_TIMEOUT_MS: u64 = 15_000;
 pub const TRACE_WINDOW_ROOT_CACHE_MS: u64 = 5_000;
 pub const HOST_ACCOUNT_SLOT: &str = "host";
+pub const GATEWAY_SLIM_AVATARS_HEADER: &str = "x-sand-slim-avatars";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GatewayClientTiming {
@@ -394,7 +395,7 @@ where
     let path = format!("{base_path}/events");
     write!(
         stream,
-        "GET {path} HTTP/1.1\r\nHost: {host}\r\nAccept: text/event-stream\r\nConnection: keep-alive\r\n"
+        "GET {path} HTTP/1.1\r\nHost: {host}\r\nAccept: text/event-stream\r\n{GATEWAY_SLIM_AVATARS_HEADER}: 1\r\nConnection: keep-alive\r\n"
     )
     .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
     for (name, value) in &connection.headers {
