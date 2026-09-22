@@ -4219,12 +4219,18 @@
       "targetPath": "source/electron-main/dev/dev-capability.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c4c483acda18f9f2f0edd0f2a84acfa6edc987d8",
       "architecturalRole": "electron-main/dev",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/dev/dev-capability.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Exact frozen Grok 0.18 blob is present at the mapped Electron-main target and is exercised by the Electron-main foundations contract in exact-HEAD CI."
     },
     {
       "referencePath": "source/electron-main/dev/dev-control-server.ts",
@@ -4255,12 +4261,18 @@
       "targetPath": "source/electron-main/dev/dev-controls-gate.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "40dc6b4e9462758214a86b03311d5da0ce175b82",
       "architecturalRole": "electron-main/dev",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/dev/dev-controls-gate.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Exact frozen Grok 0.18 blob is present at the mapped Electron-main target and is exercised by the Electron-main foundations contract in exact-HEAD CI."
     },
     {
       "referencePath": "source/electron-main/dev/dev-controls-window.ts",
@@ -4279,12 +4291,18 @@
       "targetPath": "source/electron-main/dev/dev-gateway-offline.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "aa9ec958ad12bee1a3fd0dd7a14e4ac9afce9a70",
       "architecturalRole": "electron-main/dev",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/dev/dev-gateway-offline.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Exact frozen Grok 0.18 blob is present at the mapped Electron-main target and is exercised by the Electron-main foundations contract in exact-HEAD CI."
     },
     {
       "referencePath": "source/electron-main/dev/dev-host-token-handoff.ts",
@@ -4315,12 +4333,18 @@
       "targetPath": "source/electron-main/dev/dev-network-latency.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "2639d1c10d5305e8ed6e629bf324e22def695237",
       "architecturalRole": "electron-main/dev",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/dev/dev-network-latency.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Exact frozen Grok 0.18 blob is present at the mapped Electron-main target and is exercised by the Electron-main foundations contract in exact-HEAD CI."
     },
     {
       "referencePath": "source/electron-main/dev/dev-wiring.ts",
@@ -4363,12 +4387,18 @@
       "targetPath": "source/electron-main/experiments/experiments-ipc.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "f2cf4344efa20c178bc00ee09ca11a092b4bd67d",
       "architecturalRole": "electron-main/experiments",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/experiments/experiments-ipc.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Exact frozen Grok 0.18 blob is present at the mapped Electron-main target and is exercised by the Electron-main foundations contract in exact-HEAD CI."
     },
     {
       "referencePath": "source/electron-main/experiments/experiments-runtime.ts",
@@ -4615,12 +4645,18 @@
       "targetPath": "source/electron-main/notifications/dock-badge.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "97d5d94ced8e07ff4899af09eb40fae6b39855af",
       "architecturalRole": "electron-main/notifications",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/notifications/dock-badge.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Exact frozen Grok 0.18 blob is present at the mapped Electron-main target and is exercised by the Electron-main foundations contract in exact-HEAD CI."
     },
     {
       "referencePath": "source/electron-main/notifications/os-notification-manager.ts",
@@ -4831,12 +4867,18 @@
       "targetPath": "source/electron-main/process-metrics/wiring.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "2611f9028fde2694d9ebbea6bcc771c7392f1cea",
       "architecturalRole": "electron-main/process-metrics",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/process-metrics/wiring.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Exact frozen Grok 0.18 blob is present at the mapped Electron-main target and is exercised by the Electron-main foundations contract in exact-HEAD CI."
     },
     {
       "referencePath": "source/electron-main/production-adapters.ts",
@@ -5491,12 +5533,18 @@
       "targetPath": "source/electron-main/update/update-gate.ts",
       "targetLanguage": "typescript",
       "owner": "electron-main",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "42231023c5da8d9b87ed23adc7d0613861bd9e78",
       "architecturalRole": "electron-main/update",
       "processOrPackage": "electron-main",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/electron-main/update/update-gate.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Exact frozen Grok 0.18 blob is present at the mapped Electron-main target and is exercised by the Electron-main foundations contract in exact-HEAD CI."
     },
     {
       "referencePath": "source/electron-main/update/update-telemetry.ts",
