@@ -202,6 +202,31 @@ if (fs.existsSync(stageHostPath)) {
   }
 }
 
+const rendererWorkspaceRuntimePath = path.join(root, 'desktop/src/agent-workspace/use-agent-workspace-runtime.ts');
+if (fs.existsSync(rendererWorkspaceRuntimePath)) {
+  const rendererWorkspaceRuntime = fs.readFileSync(rendererWorkspaceRuntimePath, 'utf8');
+  const forbiddenAcceptancePatterns = [
+    ['request id used as operation-id fallback', /accepted\.operationId\s*\?\?\s*requestId/],
+    ['request id accepted as canonical operation id', /operationId\s*===\s*requestId[\s\S]{0,220}(?:adoptOperation|claimOperation)/],
+  ];
+  for (const [label, pattern] of forbiddenAcceptancePatterns) {
+    if (pattern.test(rendererWorkspaceRuntime)) {
+      fail(`renderer must wait for a distinct canonical Coordinator operation id; found ${label}`);
+    }
+  }
+}
+
+const rendererShellPath = path.join(root, 'desktop/src/agent-workspace/agent-root-shell.tsx');
+if (fs.existsSync(rendererShellPath)) {
+  const rendererShell = fs.readFileSync(rendererShellPath, 'utf8');
+  if (/activeBusy\s*=\s*Boolean\([^\n]*(?:requestSnapshot|requestForPeer)/.test(rendererShell)) {
+    fail('renderer must not project a pending request as an active/running operation');
+  }
+  if (/projectAgentSidebarItems\([^\n]*requestSnapshot/.test(rendererShell)) {
+    fail('sidebar activity must be driven by canonical operations, not pending request ids');
+  }
+}
+
 const rendererRuntimePath = path.join(root, 'desktop/src/agent-workspace/agent-runtime-coordinator.ts');
 if (fs.existsSync(rendererRuntimePath)) {
   const rendererRuntime = fs.readFileSync(rendererRuntimePath, 'utf8');
