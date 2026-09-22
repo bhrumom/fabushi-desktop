@@ -1,0 +1,39 @@
+name: Feature request
+description: Propose a user or engineering capability
+title: "[Feature] "
+labels: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the problem/user need before proposing implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What observable outcome should exist?
+    validations:
+      required: true
+  - type: textarea
+    id: nongoals
+    attributes:
+      label: Non-goals
+      description: What should this proposal explicitly not change?
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Compatibility, architecture, security, performance, platform, migration, or release constraints.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance evidence
+      description: How should this be objectively verified?
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Related Specs, ADRs, projects, screenshots, reference implementations, issues or PRs.
