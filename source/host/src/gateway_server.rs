@@ -440,6 +440,13 @@ pub fn start_gateway_server(deps: GatewayServerDeps) -> io::Result<GatewayServer
         while !thread_stop.load(Ordering::Acquire) {
             match listener.accept() {
                 Ok((stream, _)) => {
+                    // The listener is nonblocking so the accept loop can observe shutdown.
+                    // On BSD/macOS accepted descriptors may retain nonblocking behavior, while
+                    // rustls' StreamOwned performs a blocking handshake over Read/Write.
+                    // Normalize every accepted socket before handing it to either HTTP or TLS.
+                    if stream.set_nonblocking(false).is_err() {
+                        continue;
+                    }
                     let connection_deps = Arc::clone(&thread_deps);
                     let connection_stop = Arc::clone(&thread_stop);
                     let connection_tls = tls_config.clone();
