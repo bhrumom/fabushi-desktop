@@ -15,6 +15,12 @@
   "include": [
     "../source/shared/rpc/coordinator.ts",
     "../source/shared/rpc/coordinator-port.ts",
+    "../source/shared/rpc/main.ts",
+    "../source/electron-preload/box-vnc-clipboard-paste.ts",
+    "../source/electron-preload/box-vnc-visibility-gate.ts",
+    "../source/electron-preload/rpc-edge-runtime.ts",
+    "../source/electron-preload/main-rpc-runtime.ts",
+    "../source/electron-preload/preload-boundaries.test.ts",
     "../source/electron-preload/coordinator-port-bridge.ts",
     "../source/electron-preload/coordinator-port-bridge.test.ts",
     "../source/electron-main/coordinator/coordinator-control-server.ts",
