@@ -56,7 +56,7 @@ for (const row of manifest.modules) {
     throw new Error(`copied target mismatch for ${row.targetPath}`);
   }
 
-  row.status = "implemented";
+  row.status = "existing-needs-parity";
   row.parityMode = "reference-copy";
   row.behavioralEvidence = [row.targetPath];
   row.testEvidence = [
@@ -64,7 +64,7 @@ for (const row of manifest.modules) {
     ".github/workflows/grok-architecture-migrate.yml",
   ];
   row.notes =
-    "Byte-identical frozen Grok 0.18 source restored at the mapped production path; Git blob SHA is enforced by the architecture gate.";
+    "Byte-identical frozen Grok 0.18 source restored at the mapped path and Git blob SHA is enforced, but import evidence alone is not a final gate. Keep this row existing-needs-parity until real production wiring, correct owner/process/language, and independent behavior or contract tests are all evidenced.";
   copied.push(row.referencePath);
 }
 
