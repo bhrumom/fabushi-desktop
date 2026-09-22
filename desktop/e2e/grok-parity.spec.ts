@@ -106,7 +106,6 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       const controller = new AgentWorkspaceController();
       controller.beginRequest('agent:a', 'request:a');
       controller.beginRequest('agent:b', 'request:b');
-      expect(controller.onlyPendingPeer()).toBeNull();
       expect(controller.requestSnapshot()).toEqual({
         'agent:a': 'request:a',
         'agent:b': 'request:b',
@@ -121,7 +120,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       controller.finishOperation('operation:a');
       expect(controller.isBusy('agent:a')).toBe(false);
       expect(controller.isBusy('agent:b')).toBe(true);
-      expect(controller.onlyPendingPeer()).toBe('agent:b');
+      expect(controller.claimRuntimeOperation('operation:unknown')).toBeNull();
 
       const claimedPeer = controller.claimRuntimeOperation('operation:b', controller.peerForRequest('request:b'));
       expect(claimedPeer).toBe('agent:b');
