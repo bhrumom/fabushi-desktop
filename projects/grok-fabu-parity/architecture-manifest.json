@@ -661,12 +661,18 @@
       "targetPath": "frontend/src/recovered/features/agent-info/async-tasks/provider.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "825416ba87d573e9a10116ba6fbc07ffd537ffc8",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/agent-info/async-tasks/provider.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-state-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage for task validation, capability-unavailable projection, refresh queuing, reconnect generation fencing, event ingestion, and relative-time formatting."
     },
     {
       "referencePath": "frontend/src/recovered/features/agent-info/async-tasks/view.tsx",
@@ -697,12 +703,18 @@
       "targetPath": "frontend/src/recovered/features/agent-info/avatar-editor/model.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "1eece78b81f00fd4c375ad5fd62f436ba5afbb29",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/agent-info/avatar-editor/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-state-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage for avatar zoom/crop/pan geometry plus the browser codec boundary for normalization, file-size enforcement, and PNG export."
     },
     {
       "referencePath": "frontend/src/recovered/features/agent-info/avatar-editor/production-adapter.ts",
