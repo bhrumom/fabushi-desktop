@@ -16075,38 +16075,44 @@
       "targetPath": "source/node-agent-coordinator/src/webauthn/provider.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "1658c88421dd5db359964d4c372ba99a9a9f9947",
       "architecturalRole": "coordinator/webauthn",
       "processOrPackage": "mahayana-coordinator",
       "behavioralEvidence": [
         "source/node-agent-coordinator/src/webauthn/provider.rs",
-        "source/node-agent-coordinator/src/webauthn.rs"
+        "source/node-agent-coordinator/src/webauthn/signer.rs",
+        "source/node-agent-coordinator/src/main.rs"
       ],
       "testEvidence": [
+        "source/node-agent-coordinator/tests/webauthn_provider_runtime.rs",
+        "source/node-agent-coordinator/tests/webauthn_gateway_transport.rs",
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial parity: welcome/hello, ceremony, consent, sign/result/error, cancel, heartbeat and transport reset state are implemented; live SSE reconnect and asynchronous cancellation remain."
+      "notes": "Final parity evidence: the production Coordinator owns the WebAuthn SSE provider lifecycle, reconnect/backoff, heartbeat and response delivery retries; each ceremony runs independently with per-request cancellation, transport reset cancels all active ceremonies, and main.rs starts, pauses/resumes and disposes the runtime from the shipping Coordinator composition."
     },
     {
       "referencePath": "source/node-agent-coordinator/webauthn/signer.ts",
       "targetPath": "source/node-agent-coordinator/src/webauthn/signer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b6eb2c8053dce15b5ac737ca7b276599f097b048",
       "architecturalRole": "coordinator/webauthn",
       "processOrPackage": "mahayana-coordinator",
       "behavioralEvidence": [
         "source/node-agent-coordinator/src/webauthn/signer.rs",
-        "source/node-agent-coordinator/src/webauthn.rs"
+        "source/node-agent-coordinator/src/webauthn/provider.rs",
+        "source/node-agent-coordinator/src/main.rs"
       ],
       "testEvidence": [
+        "source/node-agent-coordinator/tests/webauthn_signer_runtime.rs",
+        "source/node-agent-coordinator/tests/webauthn_provider_runtime.rs",
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial parity: signer event parsing, status mapping, binary resolution and helper process result boundary are implemented; interactive PIN retry/cancel lifecycle remains."
+      "notes": "Final parity evidence: the spawned signer preserves signer-event status projection, ordered interactive PIN prompts including invalid-PIN retry counts, explicit cancel replies when PIN input is declined, numeric native window handles, helper cancellation/termination, result decoding, and production Coordinator consent/PIN wiring."
     },
     {
       "referencePath": "source/packages/agent-analytics/commit-scoring/git-repo-utils.ts",
