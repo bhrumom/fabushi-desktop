@@ -560,3 +560,48 @@ fn gateway_host_supervisor_rejects_stale_connection_resolution_after_invalidatio
     supervisor.mark_transport_live(true);
     assert_eq!(supervisor.decision(10_000), GatewayHealthDecision::UseCached);
 }
+
+
+#[test]
+fn gateway_client_tracks_endpoint_stream_stall_retry_and_permanent_refusal() {
+    use mahayana_node_agent_coordinator::gateway::gateway_client::{
+        extract_gateway_error_message, CoordinatorGatewayClient, GatewayClientTiming,
+        SSE_RECONNECT_MAX_MS, SSE_RECONNECT_MIN_MS,
+    };
+    use mahayana_node_agent_coordinator::gateway::gateway_reachability::ReachabilityOutcome;
+    use mahayana_node_agent_coordinator::gateway::host_supervisor::GatewayConnection;
+    use std::collections::BTreeMap;
+    use std::time::Duration;
+
+    assert_eq!(
+        extract_gateway_error_message(r#"{"error":"gateway said no"}"#).as_deref(),
+        Some("gateway said no")
+    );
+
+    let mut client = CoordinatorGatewayClient::default();
+    client
+        .install_connection(GatewayConnection {
+            base_url: "https://gateway.example".into(),
+            headers: BTreeMap::new(),
+        })
+        .unwrap();
+    client.start(100).unwrap();
+    assert!(client.state.stream_live);
+    assert!(!client.state.stream_stalled(100, GatewayClientTiming::default()));
+    client.state.mark_event(200);
+    assert!(client
+        .state
+        .stream_stalled(200 + GatewayClientTiming::default().sse_stall_timeout_ms, GatewayClientTiming::default()));
+
+    let first = client.transport_down(ReachabilityOutcome::Dns).unwrap();
+    assert_eq!(first, Duration::from_millis(SSE_RECONNECT_MIN_MS));
+    let mut last = first;
+    for _ in 0..8 {
+        last = client.transport_down(ReachabilityOutcome::Network).unwrap();
+    }
+    assert_eq!(last, Duration::from_millis(SSE_RECONNECT_MAX_MS));
+    assert_eq!(
+        client.transport_down(ReachabilityOutcome::AccessDenied),
+        None
+    );
+}
