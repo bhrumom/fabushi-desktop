@@ -207,7 +207,7 @@ pub fn renew_sand_box_inference_credential(
     credential_from_payload(
         parsed,
         "Sand inference-credential renewal returned no token.",
-        now_ms(),
+        system_now_ms(),
     )
 }
 
