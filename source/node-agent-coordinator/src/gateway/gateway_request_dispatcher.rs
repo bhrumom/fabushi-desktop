@@ -135,12 +135,14 @@ pub fn dispatch_http_json(
             message: format!("gateway {method} unreachable (dns): {error}"),
         }
     })?;
-    let socket = addresses.first().copied().ok_or_else(|| GatewayDispatchError::Unreachable {
-        outcome: ReachabilityOutcome::Dns,
-        message: format!("gateway {method} unreachable (dns)"),
-    })?;
+    if addresses.is_empty() {
+        return Err(GatewayDispatchError::Unreachable {
+            outcome: ReachabilityOutcome::Dns,
+            message: format!("gateway {method} unreachable (dns)"),
+        });
+    }
     let timeout = Duration::from_millis(15_000);
-    let mut stream = parsed.connect(&socket, timeout).map_err(|error| {
+    let mut stream = parsed.connect_any(&addresses, timeout).map_err(|error| {
         GatewayDispatchError::Unreachable {
             outcome: classify_connect_error(&error),
             message: format!("gateway {method} unreachable: {error}"),
