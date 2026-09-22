@@ -2,7 +2,9 @@ use chrono::{SecondsFormat, Utc};
 use mahayana_node_agent_coordinator::carrier::{
     parse_bootstrap_argument, CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
 };
-use mahayana_node_agent_coordinator::control_port_client::{ClientAction, ControlPortClient};
+use mahayana_node_agent_coordinator::control_port_client::{
+    ClientAction, ControlPortClient, ControlPortPhase,
+};
 use mahayana_node_agent_coordinator::client_side_tool_v2_relay::{
     ClientSideToolV2Relay, CLIENT_SIDE_TOOL_V2_FAMILY,
 };
@@ -24,6 +26,11 @@ use mahayana_node_agent_coordinator::oauth::mcp_oauth_forwarder::{
     McpOAuthForwarderState, McpOAuthPendingPayload, OAuthForwarderAction,
 };
 use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::McpOAuthLoopbackRegistry;
+use mahayana_node_agent_coordinator::local_exec::supervisor::{
+    ExpectedLocalExecProcessIdentity, LOCAL_EXEC_DAEMON_LIVENESS_INTERVAL_MS,
+    LOCAL_EXEC_DAEMON_REFRESH_INTERVAL_MS, LocalExecControl, LocalExecDaemonRuntime,
+    LocalExecProcessIdentity, LocalExecSupervisorError, SpawnLocalExecDaemonRequest,
+};
 use mahayana_node_agent_coordinator::protocol::{
     CoordinatorFrame, Failure, LifecyclePhase, ReplyOutcome, COORDINATOR_DISCONNECTED,
 };
@@ -39,9 +46,10 @@ use std::process::{ChildStdin, Command, Stdio};
 use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, AtomicU64, Ordering},
+    mpsc::{self, RecvTimeoutError, Sender},
 };
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 const HOST_CRASH_CIRCUIT_LIMIT: u64 = 6;
 
@@ -58,6 +66,13 @@ struct PendingHostRequest {
     channel: CarrierChannel,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LocalExecRuntimeCommand {
+    Refresh,
+    SetPaused(bool),
+    Dispose,
+}
+
 struct CoordinatorState {
     bootstrap: CoordinatorBootstrap,
     host_bin: PathBuf,
@@ -72,6 +87,7 @@ struct CoordinatorState {
     oauth_listeners: Mutex<HashMap<String, McpOAuthCallbackListener>>,
     pending: Mutex<HashMap<String, PendingHostRequest>>,
     control_port: Mutex<ControlPortClient>,
+    local_exec_commands: Mutex<Option<Sender<LocalExecRuntimeCommand>>>,
     renderer_port: Mutex<RendererPortServer>,
     main_data_port: Mutex<RendererPortServer>,
     stdout_lock: Mutex<()>,
@@ -211,6 +227,233 @@ impl CoordinatorState {
     }
 }
 
+
+fn control_command(
+    state: &Arc<CoordinatorState>,
+    method: &str,
+    args: Value,
+) -> Result<Value, Failure> {
+    let waiter = state
+        .control_port
+        .lock()
+        .map_err(|_| Failure::new(COORDINATOR_DISCONNECTED, "control port lock poisoned"))?
+        .call_waiting(method.to_string(), args)?;
+    let frame = match waiter.action {
+        ClientAction::Post(frame) => frame,
+        _ => {
+            return Err(Failure::new(
+                "COORDINATOR_CONTROL_PROTOCOL_ERROR",
+                "control command did not produce a request frame",
+            ));
+        }
+    };
+    state
+        .write_frame(CarrierChannel::Control, &frame)
+        .map_err(|error| {
+            Failure::new(
+                COORDINATOR_DISCONNECTED,
+                format!("control request write failed: {error}"),
+            )
+        })?;
+    waiter
+        .reply
+        .recv_timeout(Duration::from_secs(15))
+        .map_err(|error| {
+            Failure::new(
+                COORDINATOR_DISCONNECTED,
+                format!("control request {method} did not settle: {error}"),
+            )
+        })?
+}
+
+fn local_exec_error(error: Failure) -> LocalExecSupervisorError {
+    LocalExecSupervisorError::new(format!("{}: {}", error.code, error.message))
+}
+
+fn parse_u64_field(value: &Value, field: &str) -> Result<u64, LocalExecSupervisorError> {
+    value
+        .get(field)
+        .and_then(Value::as_u64)
+        .ok_or_else(|| LocalExecSupervisorError::new(format!("missing {field}")))
+}
+
+fn parse_string_field(value: &Value, field: &str) -> Result<String, LocalExecSupervisorError> {
+    value
+        .get(field)
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| LocalExecSupervisorError::new(format!("missing {field}")))
+}
+
+fn parse_local_exec_identity(value: Value) -> Result<LocalExecProcessIdentity, LocalExecSupervisorError> {
+    let pid = u32::try_from(parse_u64_field(&value, "pid")?)
+        .map_err(|_| LocalExecSupervisorError::new("local-exec pid is out of range"))?;
+    Ok(LocalExecProcessIdentity {
+        pid,
+        start_epoch_ms: parse_u64_field(&value, "startEpochMs")?,
+        command: parse_string_field(&value, "command")?,
+        entry_realpath: parse_string_field(&value, "entryRealpath")?,
+        generation_token: parse_string_field(&value, "generationToken")?,
+    })
+}
+
+fn local_exec_identity_json(identity: &LocalExecProcessIdentity) -> Value {
+    json!({
+        "pid": identity.pid,
+        "startEpochMs": identity.start_epoch_ms,
+        "command": identity.command,
+        "entryRealpath": identity.entry_realpath,
+        "generationToken": identity.generation_token,
+    })
+}
+
+struct CoordinatorLocalExecControl {
+    state: Arc<CoordinatorState>,
+}
+
+impl LocalExecControl for CoordinatorLocalExecControl {
+    fn now_ms(&self) -> u64 {
+        coordinator_now_ms()
+    }
+
+    fn sleep_ms(&mut self, duration_ms: u64) {
+        thread::sleep(Duration::from_millis(duration_ms));
+    }
+
+    fn resolve_gateway_connection(&mut self) -> Result<Value, LocalExecSupervisorError> {
+        control_command(&self.state, "resolveGatewayConnection", json!({}))
+            .map_err(local_exec_error)
+    }
+
+    fn mint_local_exec_daemon_credential(
+        &mut self,
+    ) -> Result<Option<Value>, LocalExecSupervisorError> {
+        let value = control_command(&self.state, "mintLocalExecDaemonCredential", json!({}))
+            .map_err(local_exec_error)?;
+        Ok((!value.is_null()).then_some(value))
+    }
+
+    fn spawn_local_exec_daemon(
+        &mut self,
+        request: SpawnLocalExecDaemonRequest,
+    ) -> Result<LocalExecProcessIdentity, LocalExecSupervisorError> {
+        let value = control_command(
+            &self.state,
+            "spawnLocalExecDaemon",
+            json!({
+                "env": request.env,
+                "logPath": request.log_path.to_string_lossy(),
+            }),
+        )
+        .map_err(local_exec_error)?;
+        parse_local_exec_identity(value)
+    }
+
+    fn is_process_alive(&mut self, pid: u32) -> Result<bool, LocalExecSupervisorError> {
+        control_command(&self.state, "isProcessAlive", json!({ "pid": pid }))
+            .map_err(local_exec_error)?
+            .as_bool()
+            .ok_or_else(|| LocalExecSupervisorError::new("isProcessAlive returned a non-boolean"))
+    }
+
+    fn get_process_identity(
+        &mut self,
+        expected: &ExpectedLocalExecProcessIdentity,
+    ) -> Result<Option<LocalExecProcessIdentity>, LocalExecSupervisorError> {
+        let value = control_command(
+            &self.state,
+            "getProcessIdentity",
+            json!({
+                "pid": expected.pid,
+                "entryRealpath": expected.entry_realpath,
+                "generationToken": expected.generation_token,
+                "startEpochMs": expected.start_epoch_ms,
+                "command": expected.command,
+                "discoveryStartedAt": expected.discovery_started_at,
+            }),
+        )
+        .map_err(local_exec_error)?;
+        if value.is_null() {
+            return Ok(None);
+        }
+        parse_local_exec_identity(value).map(Some)
+    }
+
+    fn terminate_process(
+        &mut self,
+        identity: &LocalExecProcessIdentity,
+    ) -> Result<bool, LocalExecSupervisorError> {
+        let value = control_command(
+            &self.state,
+            "terminateProcess",
+            json!({ "identity": local_exec_identity_json(identity) }),
+        )
+        .map_err(local_exec_error)?;
+        value
+            .get("terminated")
+            .and_then(Value::as_bool)
+            .ok_or_else(|| LocalExecSupervisorError::new("terminateProcess returned no terminated flag"))
+    }
+}
+
+fn signal_local_exec(state: &Arc<CoordinatorState>, command: LocalExecRuntimeCommand) {
+    let sender = state
+        .local_exec_commands
+        .lock()
+        .ok()
+        .and_then(|sender| sender.clone());
+    if let Some(sender) = sender {
+        let _ = sender.send(command);
+    }
+}
+
+fn ensure_local_exec_runtime_started(state: &Arc<CoordinatorState>) {
+    let mut slot = match state.local_exec_commands.lock() {
+        Ok(slot) => slot,
+        Err(_) => return,
+    };
+    if slot.is_some() {
+        return;
+    }
+    let (sender, receiver) = mpsc::channel();
+    *slot = Some(sender);
+    drop(slot);
+
+    let runtime_state = Arc::clone(state);
+    let data_dir = runtime_state.bootstrap.process_config.data_dir.clone();
+    let is_packaged = runtime_state.bootstrap.process_config.is_packaged;
+    thread::spawn(move || {
+        let control = CoordinatorLocalExecControl {
+            state: Arc::clone(&runtime_state),
+        };
+        let mut runtime = LocalExecDaemonRuntime::new(data_dir, is_packaged, control);
+        runtime.start();
+        let mut last_refresh = Instant::now();
+        loop {
+            if runtime_state.closed.load(Ordering::SeqCst) {
+                break;
+            }
+            match receiver.recv_timeout(Duration::from_millis(
+                LOCAL_EXEC_DAEMON_LIVENESS_INTERVAL_MS,
+            )) {
+                Ok(LocalExecRuntimeCommand::Refresh) => runtime.refresh_tick(),
+                Ok(LocalExecRuntimeCommand::SetPaused(paused)) => runtime.set_paused(paused),
+                Ok(LocalExecRuntimeCommand::Dispose) => break,
+                Err(RecvTimeoutError::Timeout) => {}
+                Err(RecvTimeoutError::Disconnected) => break,
+            }
+            runtime.liveness_tick();
+            if last_refresh.elapsed()
+                >= Duration::from_millis(LOCAL_EXEC_DAEMON_REFRESH_INTERVAL_MS)
+            {
+                runtime.refresh_tick();
+                last_refresh = Instant::now();
+            }
+        }
+        runtime.dispose();
+    });
+}
 
 fn coordinator_now_ms() -> u64 {
     u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default()
@@ -1089,6 +1332,7 @@ fn main() {
         oauth_listeners: Mutex::new(HashMap::new()),
         pending: Mutex::new(HashMap::new()),
         control_port: Mutex::new(ControlPortClient::default()),
+        local_exec_commands: Mutex::new(None),
         renderer_port: Mutex::new(RendererPortServer::default()),
         main_data_port: Mutex::new(RendererPortServer::default()),
         stdout_lock: Mutex::new(()),
@@ -1136,12 +1380,20 @@ fn main() {
 
         let close = match channel {
             CarrierChannel::Control => {
-                let actions = state
+                let (actions, serving) = state
                     .control_port
                     .lock()
-                    .map(|mut client| client.handle_value(envelope.frame))
+                    .map(|mut client| {
+                        let actions = client.handle_value(envelope.frame);
+                        let serving = client.phase() == ControlPortPhase::Serving;
+                        (actions, serving)
+                    })
                     .unwrap_or_default();
-                execute_control_actions(&state, actions)
+                let close = execute_control_actions(&state, actions);
+                if serving {
+                    ensure_local_exec_runtime_started(&state);
+                }
+                close
             }
             CarrierChannel::Data => {
                 let actions = state
@@ -1166,6 +1418,7 @@ fn main() {
     }
 
     state.closed.store(true, Ordering::SeqCst);
+    signal_local_exec(&state, LocalExecRuntimeCommand::Dispose);
     if let Ok(mut control) = state.control_port.lock() {
         let _ = control.handle_port_closed();
     }
