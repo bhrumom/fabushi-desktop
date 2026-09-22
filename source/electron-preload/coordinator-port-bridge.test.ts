@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   createCoordinatorPortBroker,
   wrapTransferredCoordinatorPort,
-} from "./coordinator-port-bridge.ts";
+} from "./coordinator-port-bridge.js";
 
 test("coordinator port broker enforces single renderer ownership", () => {
   let requests = 0;
