@@ -1376,3 +1376,75 @@ fn gateway_dns_reporter_models_failure_episode_cooldown_and_recovery() {
     assert_eq!(after_cooldown.trigger, DnsProbeResult::TemporaryFailure);
     assert_eq!(after_cooldown.diagnosis, DnsDiagnosis::GeneralDnsFailure);
 }
+
+
+#[test]
+fn oauth_loopback_listener_binds_dispatches_and_releases_real_http_callback() {
+    use std::io::{Read, Write};
+    use std::net::{TcpListener, TcpStream};
+    use std::sync::{Arc, Mutex};
+
+    use mahayana_node_agent_coordinator::oauth::mcp_oauth_callback_listener::{
+        OAuthCallback, start_mcp_oauth_callback_listener,
+    };
+    use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::{
+        McpOAuthLoopbackRegistry,
+    };
+
+    let reservation = TcpListener::bind("127.0.0.1:0").expect("reserve callback port");
+    let port = reservation.local_addr().expect("local address").port();
+    drop(reservation);
+    let redirect_url = format!("http://127.0.0.1:{port}/oauth/callback");
+
+    let callbacks = Arc::new(Mutex::new(Vec::<OAuthCallback>::new()));
+    let settled = Arc::new(Mutex::new(Vec::<String>::new()));
+    let callback_sink = Arc::clone(&callbacks);
+    let settled_sink = Arc::clone(&settled);
+    let mut registry = McpOAuthLoopbackRegistry::default();
+
+    let listener = start_mcp_oauth_callback_listener(
+        &redirect_url,
+        &mut registry,
+        |state| (state == "state-1").then(|| "github".to_string()),
+        move |callback| {
+            callback_sink.lock().expect("callback sink").push(callback);
+            Ok(())
+        },
+        move |state| {
+            settled_sink
+                .lock()
+                .expect("settled sink")
+                .push(state.to_string());
+        },
+    )
+    .expect("OAuth listener");
+    assert_eq!(registry.active_origin_count(), 1);
+    assert_eq!(registry.lease_count(&format!("http://127.0.0.1:{port}")), 1);
+    assert_eq!(registry.bound_listener_count(&format!("http://127.0.0.1:{port}")), 1);
+
+    let mut stream = TcpStream::connect(("127.0.0.1", port)).expect("connect callback listener");
+    write!(
+        stream,
+        "GET /oauth/callback?state=state-1&code=abc%2B123 HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"
+    )
+    .expect("write callback request");
+    let mut response = String::new();
+    stream.read_to_string(&mut response).expect("read callback response");
+    assert!(response.starts_with("HTTP/1.1 200 OK"), "{response}");
+    assert!(response.contains("Authorization complete"));
+
+    let recorded = callbacks.lock().expect("callbacks");
+    assert_eq!(recorded.len(), 1);
+    assert_eq!(recorded[0].code, "abc+123");
+    assert_eq!(recorded[0].state, "state-1");
+    assert_eq!(recorded[0].server_name, "github");
+    drop(recorded);
+    assert_eq!(
+        settled.lock().expect("settled").as_slice(),
+        &["state-1".to_string()]
+    );
+
+    assert!(listener.close(&mut registry));
+    assert_eq!(registry.active_origin_count(), 0);
+    assert_eq!(registry.bound_listener_count(&format!("http://127.0.0.1:{port}")), 0);
+}
