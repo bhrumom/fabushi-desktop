@@ -219,6 +219,26 @@ impl CoordinatorGatewayClient {
         Ok(())
     }
 
+    pub fn connection_for_dispatch(&self) -> Result<&GatewayConnection, GatewayDispatchError> {
+        if self.closed {
+            return Err(GatewayDispatchError::Transport(
+                "gateway client is closed".into(),
+            ));
+        }
+        if !self.state.connected {
+            return Err(GatewayDispatchError::Unreachable {
+                outcome: self.state.last_outcome.unwrap_or(ReachabilityOutcome::Network),
+                message: "gateway transport is not connected".into(),
+            });
+        }
+        self.state.connection.as_ref().ok_or_else(|| {
+            GatewayDispatchError::Unreachable {
+                outcome: ReachabilityOutcome::Network,
+                message: "gateway connection is unresolved".into(),
+            }
+        })
+    }
+
     pub fn dispatch_command<F>(
         &mut self,
         method: &str,
