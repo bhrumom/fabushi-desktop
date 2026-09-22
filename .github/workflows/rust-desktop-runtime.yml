@@ -69,6 +69,7 @@ jobs:
           workspaces: |
             third_party/mahayana/mahayana-rs -> target
             source/host -> target
+            source/host/app -> target
             source/node-agent-coordinator -> target
           shared-key: desktop-restored-rust-1.97.1
       - name: Validate local Cargo dependency closure
@@ -81,7 +82,7 @@ jobs:
           cargo metadata --no-deps --format-version 1 --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml >/dev/null
       - name: Check Grok-aligned shipping Mahayana Host
         shell: bash
-        run: cargo check --profile ci --bin mahayana-app-host --manifest-path source/host/Cargo.toml
+        run: cargo check --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml
       - name: Test independent Mahayana Coordinator contract
         shell: bash
         run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml
