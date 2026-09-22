@@ -15,6 +15,7 @@ use mahayana_host_runtime::extensions::box_lifecycle::extension::start_box_lifec
 use mahayana_host_runtime::extensions::box_lifecycle::production::{
     ProductionBoxLifecycleClient, ProductionBoxLifecycleClientFactory,
 };
+use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
 };
@@ -126,6 +127,7 @@ struct UnifiedGatewayApi {
     events: GatewayEventHub,
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
+    session_workers: Arc<ProductionSessionWorkers>,
 }
 
 fn call_host_lane(
@@ -234,6 +236,7 @@ fn start_routed_provider_task(
     events: GatewayEventHub,
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
+    session_workers: Arc<ProductionSessionWorkers>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
@@ -255,6 +258,11 @@ fn start_routed_provider_task(
         ))?
         .to_string();
     let messages = decode_provider_messages(&args)?;
+    session_workers.prepare_existing_agent(&agent_id).map_err(|error| {
+        GatewayCommandError::Internal(format!(
+            "could not prepare production session worker state for {agent_id}: {error}"
+        ))
+    })?;
     let resolved_request_context = request_context.resolve();
     let worker_events = events.clone();
     let accepted_stream_id = stream_id.clone();
@@ -328,6 +336,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.events.clone(),
                 self.data_dir.clone(),
                 Arc::clone(&self.request_context),
+                Arc::clone(&self.session_workers),
                 args,
             );
         }
@@ -553,6 +562,7 @@ fn main() {
             auth: Arc::clone(&production_extensions.auth),
             transcripts_folder: app_data_dir.join("transcripts"),
         });
+    let session_workers = Arc::new(ProductionSessionWorkers::production());
 
     let gateway_config = match resolve_gateway_server_config() {
         Ok(config) => config,
@@ -569,6 +579,7 @@ fn main() {
             events: gateway_events.clone(),
             data_dir: app_data_dir.clone(),
             request_context: runner_request_context,
+            session_workers: Arc::clone(&session_workers),
         }),
         events: gateway_events.clone(),
         local_exec: None,
@@ -687,6 +698,7 @@ fn main() {
     }
     drop(platform_tx);
     drop(gateway_server);
+    session_workers.shutdown();
     if let Err(error) = clear_gateway_discovery(&gateway_discovery_path) {
         eprintln!(
             "failed to clear Mahayana Host gateway discovery at {}: {error}",
@@ -715,6 +727,7 @@ mod tests {
     fn shipping_production_extension_graph_is_send_sync() {
         fn assert_send_sync<T: Send + Sync>() {}
         assert_send_sync::<ProductionHostExtensions>();
+        assert_send_sync::<ProductionSessionWorkers>();
     }
 
     #[test]
