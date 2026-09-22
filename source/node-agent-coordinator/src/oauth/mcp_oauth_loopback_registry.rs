@@ -216,12 +216,30 @@ fn serve_request(
 ) -> std::io::Result<()> {
     stream.set_read_timeout(Some(Duration::from_secs(2)))?;
     stream.set_write_timeout(Some(Duration::from_secs(2)))?;
-    let mut bytes = [0_u8; 8192];
-    let count = stream.read(&mut bytes)?;
-    if count == 0 {
+    const MAX_REQUEST_BYTES: usize = 16 * 1024;
+    let mut request_bytes = Vec::with_capacity(1024);
+    let mut chunk = [0_u8; 2048];
+    loop {
+        let count = stream.read(&mut chunk)?;
+        if count == 0 {
+            break;
+        }
+        request_bytes.extend_from_slice(&chunk[..count]);
+        if request_bytes.windows(4).any(|window| window == b"\r\n\r\n") {
+            break;
+        }
+        if request_bytes.len() >= MAX_REQUEST_BYTES {
+            write_response(
+                &mut stream,
+                LoopbackHttpResponse::html(400, "Request headers are too large"),
+            )?;
+            return Ok(());
+        }
+    }
+    if request_bytes.is_empty() {
         return Ok(());
     }
-    let request = String::from_utf8_lossy(&bytes[..count]);
+    let request = String::from_utf8_lossy(&request_bytes);
     let request_target = request
         .lines()
         .next()
