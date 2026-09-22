@@ -106,3 +106,34 @@ fn failed_health_probe_moves_cached_connection_to_reconnect() {
     );
     handle.join().expect("health server joins");
 }
+
+
+#[test]
+fn feature_flags_disable_stream_liveness_and_health_ttl_shortcuts() {
+    let mut supervisor = GatewayHostSupervisor::with_feature_flags(
+        HEALTH_PROBE_TTL_MS,
+        true,
+        true,
+    );
+    let mut headers = BTreeMap::new();
+    headers.insert("authorization".into(), "Bearer flag-test".into());
+    let attempt = supervisor.begin_connection_attempt();
+    supervisor
+        .settle_connection_attempt(
+            attempt,
+            GatewayConnection {
+                base_url: "http://127.0.0.1:9".into(),
+                headers,
+            },
+        )
+        .expect("install connection");
+
+    supervisor.mark_transport_live(true);
+    supervisor.record_health(10_000, true);
+
+    assert_eq!(
+        supervisor.decision(10_001),
+        GatewayHealthDecision::Probe,
+        "Grok debug flags must force a real health decision even when the stream is live and the cached health is fresh"
+    );
+}
