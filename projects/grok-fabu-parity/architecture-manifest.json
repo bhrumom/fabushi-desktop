@@ -13974,12 +13974,19 @@
       "targetPath": "source/host/src/runner/bot_block_detection.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "f1139e630185748f9edb5550c1bddcbc289e0def",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/bot_block_detection.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_pure_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 Runner module. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35710189101 at exact tested HEAD 3d547f237c517eca4ef355e45e06bc24cf19a74a."
     },
     {
       "referencePath": "source/host/runner/box-reference-docs.ts",
@@ -14180,12 +14187,19 @@
       "targetPath": "source/host/src/runner/sand_agent_profile_prompt.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "523f5929ed781adc9faf12deabed4506f48fae23",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/sand_agent_profile_prompt.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_pure_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 Runner module. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35710189101 at exact tested HEAD 3d547f237c517eca4ef355e45e06bc24cf19a74a."
     },
     {
       "referencePath": "source/host/runner/sand-agent-runner.ts",
@@ -14587,12 +14601,19 @@
       "targetPath": "source/host/src/runner/tools/sand_browser_use_subagent.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "7539a31b76e6b4b76885643eef8040402a0e6a6e",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/sand_browser_use_subagent.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_pure_parity_contract.rs",
+        ".github/workflows/grok-rust-parity-finalize.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen Grok 0.18 Runner module. Cargo contracts and architecture recheck passed in Grok Rust parity finalize run 35710189101 at exact tested HEAD 3d547f237c517eca4ef355e45e06bc24cf19a74a."
     },
     {
       "referencePath": "source/host/runner/tools/sand-computer-tool.ts",
