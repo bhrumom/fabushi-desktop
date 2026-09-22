@@ -159,12 +159,14 @@ class FakeChild extends EventEmitter {
     this.stdout = new PassThrough();
     this.stderr = new PassThrough();
     this.writes = [];
+    this.stdinEnded = false;
     this.stdin = {
       write: (data, callback) => {
         this.writes.push(String(data));
         queueMicrotask(() => callback?.(null));
         return true;
       },
+      end: () => { this.stdinEnded = true; },
     };
   }
 
@@ -208,7 +210,9 @@ function harness(options = {}) {
       },
     },
     providerEnvironment: options.providerEnvironment,
-    spawn: (_bin, _args, spawnOptions) => {
+    spawn: (bin, _args, spawnOptions) => {
+      assert.match(bin, /mahayana-node-agent-coordinator(?:\.exe)?$/);
+      assert.match(spawnOptions.env.MAHAYANA_APP_HOST_BIN, /mahayana-app-host(?:\.exe)?$/);
       assert.equal(spawnOptions.env.MAHAYANA_API_BASE_URL, 'https://api.example.test');
       assert.equal(spawnOptions.env.FABUSHI_APP_DATA, '/tmp/fabushi-host-test');
       assert.equal(spawnOptions.env.MAHAYANA_AGENT_ENGINE, expectedProvider === 'codex' ? 'codex' : '');
@@ -243,10 +247,13 @@ test('development Host prefers the staged desktop binary before a release-profil
   try {
     const electronDir = path.join(root, 'desktop', 'electron');
     const staged = path.join(root, 'desktop', 'resources', 'bin', 'mahayana-app-host');
+    const stagedCoordinator = path.join(root, 'desktop', 'resources', 'bin', 'mahayana-node-agent-coordinator');
     fs.mkdirSync(electronDir, { recursive: true });
     fs.mkdirSync(path.dirname(staged), { recursive: true });
     fs.writeFileSync(staged, '#!/bin/sh\n');
+    fs.writeFileSync(stagedCoordinator, '#!/bin/sh\n');
     fs.chmodSync(staged, 0o755);
+    fs.chmodSync(stagedCoordinator, 0o755);
 
     const stagedHost = new MahayanaHostProcess({
       app: defaultApp,
@@ -256,17 +263,21 @@ test('development Host prefers the staged desktop binary before a release-profil
       fs,
     });
     assert.equal(stagedHost.executablePath(), staged);
+    assert.equal(stagedHost.coordinatorExecutablePath(), stagedCoordinator);
 
     const explicit = path.join(root, 'explicit-mahayana-app-host');
     fs.writeFileSync(explicit, '#!/bin/sh\n');
+    const explicitCoordinator = path.join(root, 'explicit-mahayana-coordinator');
+    fs.writeFileSync(explicitCoordinator, '#!/bin/sh\n');
     const explicitHost = new MahayanaHostProcess({
       app: defaultApp,
-      env: { MAHAYANA_APP_HOST_BIN: explicit },
+      env: { MAHAYANA_APP_HOST_BIN: explicit, MAHAYANA_COORDINATOR_BIN: explicitCoordinator },
       platform: 'linux',
       electronDir,
       fs,
     });
     assert.equal(explicitHost.executablePath(), explicit);
+    assert.equal(explicitHost.coordinatorExecutablePath(), explicitCoordinator);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
@@ -465,7 +476,7 @@ test('restart rejects only the active generation and immediately creates a fresh
   const previous = children[0];
   const fresh = host.restart('fault injection');
   await assert.rejects(pending, /restarted: fault injection/);
-  assert.equal(previous.killed, true);
+  assert.equal(previous.stdinEnded, true);
   assert.equal(fresh, children[1]);
   assert.equal(host.health().generation, 2);
   assert.equal(host.health().state, 'running');
