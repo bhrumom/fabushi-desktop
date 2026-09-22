@@ -9435,12 +9435,18 @@
       "targetPath": "source/host/src/box/box_env.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "fd17bbef6b62117dc65337a582cb06df1ffb3b6d",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/box_env.rs",
+        "source/host/src/box/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_small_ports_contract.rs"
+      ],
+      "notes": "Grok box environment control port is compiled into the Mahayana Host box module and its transport/client forwarding semantics are covered by the host small-ports contract."
     },
     {
       "referencePath": "source/host/box/box-factory.ts",
