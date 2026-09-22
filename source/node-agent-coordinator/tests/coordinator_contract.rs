@@ -155,3 +155,75 @@ fn crash_is_recorded_in_resync_snapshot() {
     let snapshot = supervisor.snapshot();
     assert_eq!(snapshot.last_crash.as_ref(), Some(&crash));
 }
+
+
+#[test]
+fn gateway_event_families_match_the_frozen_coordinator_contract() {
+    use mahayana_node_agent_coordinator::gateway::gateway_event_families::{
+        coordinator_event_family_for_sse_channel, sse_channel_for_family,
+    };
+
+    assert_eq!(sse_channel_for_family("agents-workflow"), Some("workflows"));
+    assert_eq!(sse_channel_for_family("mcp-servers-updated"), Some("mcp-servers"));
+    assert_eq!(sse_channel_for_family("host-settings"), Some("host-settings"));
+    assert_eq!(coordinator_event_family_for_sse_channel("automations"), Some("agents-automation"));
+    assert_eq!(coordinator_event_family_for_sse_channel("unknown"), None);
+}
+
+#[test]
+fn sse_decoder_preserves_chunk_boundaries_and_utf8_payloads() {
+    use mahayana_node_agent_coordinator::gateway::sse_block_decoder::SseBlockDecoder;
+
+    let mut decoder = SseBlockDecoder::default();
+    assert!(decoder.push_bytes(b"event: transcript\ndata: ").is_empty());
+    let unicode = "法布施".as_bytes();
+    assert!(decoder.push_bytes(&unicode[..2]).is_empty());
+    assert!(decoder.push_bytes(&unicode[2..]).is_empty());
+    let blocks = decoder.push_bytes(b"\n\nevent: agents\ndata: ok\n\n");
+    assert_eq!(blocks, vec![
+        "event: transcript\ndata: 法布施".to_string(),
+        "event: agents\ndata: ok".to_string(),
+    ]);
+
+    let mut boundary = SseBlockDecoder::default();
+    assert!(boundary.push("event: one\n").is_empty());
+    assert_eq!(boundary.push("\nevent: two\n\n"), vec![
+        "event: one".to_string(),
+        "event: two".to_string(),
+    ]);
+}
+
+#[test]
+fn gateway_reachability_matches_http_network_and_base_url_semantics() {
+    use mahayana_node_agent_coordinator::gateway::gateway_reachability::{
+        classify_base_url_kind, classify_system_error, outcome_for_http_status, BaseUrlKind,
+        ReachabilityOutcome,
+    };
+
+    assert_eq!(outcome_for_http_status(503), Some(ReachabilityOutcome::Http(503)));
+    assert_eq!(outcome_for_http_status(403), Some(ReachabilityOutcome::AccessDenied));
+    assert_eq!(outcome_for_http_status(404), None);
+    assert_eq!(
+        classify_system_error(Some("ECONNREFUSED"), false, ""),
+        ReachabilityOutcome::Refused
+    );
+    assert_eq!(
+        classify_system_error(Some("EAI_AGAIN"), false, ""),
+        ReachabilityOutcome::Dns
+    );
+    assert_eq!(
+        classify_system_error(None, true, ""),
+        ReachabilityOutcome::Timeout
+    );
+    assert!(!ReachabilityOutcome::AccessDenied.retryable());
+    assert!(ReachabilityOutcome::Http(503).retryable());
+    assert_eq!(
+        classify_base_url_kind(Some("http://127.0.0.1:7777")),
+        BaseUrlKind::Loopback
+    );
+    assert_eq!(
+        classify_base_url_kind(Some("https://agent.us8.cursorvm.com")),
+        BaseUrlKind::PodProxy
+    );
+    assert_eq!(classify_base_url_kind(Some("not a url")), BaseUrlKind::Unknown);
+}
