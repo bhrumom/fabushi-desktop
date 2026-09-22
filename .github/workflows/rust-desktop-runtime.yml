@@ -168,6 +168,8 @@ jobs:
           desktop/.tmp-grok-electron/source/electron-main/foundations.test.js
           desktop/.tmp-grok-electron/source/electron-main/coordinator/coordinator-launcher.test.js
           desktop/.tmp-grok-electron/source/electron-main/coordinator/coordinator-executors.test.js
+      - name: Test recovered window chrome contracts
+        run: node --experimental-strip-types --test frontend/src/recovered/features/window-chrome/app-alert/controller.contract.test.ts
       - name: Check Agent workspace architecture boundary
         run: node desktop/scripts/check-agent-workspace-boundary.mjs
       - name: Check Grok architecture inventory
