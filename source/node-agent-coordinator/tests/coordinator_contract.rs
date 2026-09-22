@@ -1175,3 +1175,107 @@ fn webauthn_provider_models_welcome_consent_sign_and_failure_frames() {
     assert_eq!(pin, SignerEvent::PinInvalid { retries: Some(2) });
     assert_eq!(describe_signer_event_as_status(&pin), None);
 }
+
+
+#[test]
+fn inference_router_persists_bounded_transcripts_reactions_and_turn_ids() {
+    use std::fs;
+
+    use mahayana_node_agent_coordinator::inference_router::{
+        InferenceRoute, InferenceRouter, InferenceTranscriptFile, StoredEntry, StoredRole,
+        TranscriptStore, INFERENCE_TRANSCRIPT_LIMIT, project_transcript_entry, turn_number_from_id,
+    };
+    use serde_json::json;
+    use uuid::Uuid;
+
+    let mut router = InferenceRouter::default();
+    router.set_default(InferenceRoute {
+        provider: "codex".into(),
+        host_slot: "host".into(),
+    });
+    router.bind_agent(
+        "research",
+        InferenceRoute {
+            provider: "claude-code".into(),
+            host_slot: "host".into(),
+        },
+    );
+    assert_eq!(router.resolve("research").map(|route| route.provider.as_str()), Some("claude-code"));
+    assert_eq!(router.resolve("other").map(|route| route.provider.as_str()), Some("codex"));
+    router.unbind_agent("research");
+    assert_eq!(router.resolve("research").map(|route| route.provider.as_str()), Some("codex"));
+
+    assert_eq!(turn_number_from_id("t17u"), Some(17));
+    assert_eq!(turn_number_from_id("t17s0"), Some(17));
+    assert_eq!(turn_number_from_id("request-17"), None);
+
+    let rows = (0..(INFERENCE_TRANSCRIPT_LIMIT + 5))
+        .map(|index| json!({
+            "provider": "codex",
+            "role": if index % 2 == 0 { "user" } else { "assistant" },
+            "content": format!("entry-{index}"),
+            "id": format!("t{}{}", index, if index % 2 == 0 { "u" } else { "s0" }),
+            "timestampMs": index,
+        }))
+        .collect::<Vec<_>>();
+    let mut store = TranscriptStore::parse(json!({
+        "schemaVersion": 2,
+        "agents": {
+            "a": rows,
+            "bad": [{
+                "provider": "unknown",
+                "role": "user",
+                "content": "invalid",
+                "id": "t1u",
+                "timestampMs": 1,
+            }]
+        }
+    }));
+    assert_eq!(store.entries("a").len(), INFERENCE_TRANSCRIPT_LIMIT);
+    assert_eq!(store.entries("a").first().map(|entry| entry.content.as_str()), Some("entry-5"));
+    assert!(store.entries("bad").is_empty());
+    assert_eq!(
+        store.next_turn_number("a", vec!["t500s0".to_string(), "noise".to_string()]),
+        501
+    );
+
+    let reaction_target = store.entries("a").last().expect("entry").id.clone();
+    let reacted = store
+        .toggle_local_reaction("a", &reaction_target, "👍")
+        .expect("reaction");
+    assert_eq!(reacted.reactions.len(), 1);
+    let reacted = store
+        .toggle_local_reaction("a", &reaction_target, "👍")
+        .expect("reaction removed");
+    assert!(reacted.reactions.is_empty());
+
+    let user = StoredEntry {
+        provider: "openrouter".into(),
+        role: StoredRole::User,
+        content: "hello".into(),
+        rich_text: Some("{\"type\":\"doc\"}".into()),
+        id: "t501u".into(),
+        client_nonce: Some("nonce-501".into()),
+        reactions: Vec::new(),
+        timestamp_ms: 501,
+    };
+    let projected = project_transcript_entry(&user);
+    assert_eq!(projected["kind"], "message");
+    assert_eq!(projected["clientNonce"], "nonce-501");
+
+    let path = std::env::temp_dir().join(format!(
+        "fabushi-inference-router-{}.json",
+        Uuid::new_v4()
+    ));
+    let file = InferenceTranscriptFile::new(&path);
+    let persisted = file.append("agent:file", [user]).expect("persist");
+    assert_eq!(persisted.entries("agent:file").len(), 1);
+    assert_eq!(file.load().entries("agent:file")[0].content, "hello");
+    file.toggle_local_reaction("agent:file", "t501u", "✅")
+        .expect("persist reaction");
+    assert_eq!(
+        file.load().entries("agent:file")[0].reactions[0].emoji,
+        "✅"
+    );
+    let _ = fs::remove_file(path);
+}
