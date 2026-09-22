@@ -1357,36 +1357,54 @@
       "targetPath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-actions.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "6441015c648ecffea713184156eddecee1df2344",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-actions.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/reaction-system.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room transcript reaction parity with executable Node contract coverage for projection, optimistic coordinator transport, authoritative feed reconciliation, scope/generation fencing, and fail-closed shell handoff."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-feed.ts",
       "targetPath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-feed.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "77e4841e59ca57d0146da4e7d153c66a4e85939c",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-feed.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/reaction-system.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room transcript reaction parity with executable Node contract coverage for projection, optimistic coordinator transport, authoritative feed reconciliation, scope/generation fencing, and fail-closed shell handoff."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker-handoff.ts",
       "targetPath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker-handoff.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "b094fceca068f5ccc835121c6004e9f165058067",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker-handoff.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/reaction-system.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room transcript reaction parity with executable Node contract coverage for projection, optimistic coordinator transport, authoritative feed reconciliation, scope/generation fencing, and fail-closed shell handoff."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx",
@@ -1405,12 +1423,18 @@
       "targetPath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-workspace-handoff.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c14164a9c7f1d5ea86c89a942979788b50346f7e",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-workspace-handoff.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/reaction-system.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room transcript reaction parity with executable Node contract coverage for projection, optimistic coordinator transport, authoritative feed reconciliation, scope/generation fencing, and fail-closed shell handoff."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/registry.ts",
@@ -24657,5 +24681,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:35:53.238Z"
+  "generatedAt": "2026-09-22T07:38:13.230Z"
 }
