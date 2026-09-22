@@ -7157,8 +7157,11 @@
       "targetPath": "source/host/src/runner/stream_attempt.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/host/tests/runner_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/host/runner/subagent-runtime.ts",
@@ -7389,8 +7392,11 @@
       "targetPath": "source/host/src/runner/transient_stream_error.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/host/tests/runner_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/host/runner/turn-agent-composition.ts",
@@ -7429,8 +7435,11 @@
       "targetPath": "source/host/src/runner/turn_settle.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/host/tests/runner_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/host/runner/turn-shape.ts",
@@ -7717,192 +7726,264 @@
       "targetPath": "source/node-agent-coordinator/src/carrier.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/client-side-tool-v2-relay.ts",
       "targetPath": "source/node-agent-coordinator/src/client_side_tool_v2_relay.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/control-port-client.ts",
       "targetPath": "source/node-agent-coordinator/src/control_port_client.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/box-vnc-proxy.ts",
       "targetPath": "source/node-agent-coordinator/src/gateway/box_vnc_proxy.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/gateway-client.ts",
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_client.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/gateway-dns-diagnostics.ts",
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_dns_diagnostics.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/gateway-errors.ts",
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_errors.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/gateway-event-families.ts",
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_event_families.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/gateway-reachability.ts",
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_reachability.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/gateway-request-dispatcher.ts",
       "targetPath": "source/node-agent-coordinator/src/gateway/gateway_request_dispatcher.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/host-supervisor.ts",
       "targetPath": "source/node-agent-coordinator/src/gateway/host_supervisor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/sse-block-decoder.ts",
       "targetPath": "source/node-agent-coordinator/src/gateway/sse_block_decoder.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/inference-router.ts",
       "targetPath": "source/node-agent-coordinator/src/inference_router.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/local-exec/daemon-files.ts",
       "targetPath": "source/node-agent-coordinator/src/local_exec/daemon_files.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/local-exec/supervisor.ts",
       "targetPath": "source/node-agent-coordinator/src/local_exec/supervisor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/main.ts",
       "targetPath": "source/node-agent-coordinator/src/main.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/oauth/mcp-oauth-callback-listener.ts",
       "targetPath": "source/node-agent-coordinator/src/oauth/mcp_oauth_callback_listener.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/oauth/mcp-oauth-forwarder.ts",
       "targetPath": "source/node-agent-coordinator/src/oauth/mcp_oauth_forwarder.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/oauth/mcp-oauth-loopback-registry.ts",
       "targetPath": "source/node-agent-coordinator/src/oauth/mcp_oauth_loopback_registry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/renderer-port-server.ts",
       "targetPath": "source/node-agent-coordinator/src/renderer_port_server.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/routed-mcp-bridge.ts",
       "targetPath": "source/node-agent-coordinator/src/routed_mcp_bridge.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/telemetry/transport-stage-recorder.ts",
       "targetPath": "source/node-agent-coordinator/src/telemetry/transport_stage_recorder.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/webauthn/provider.ts",
       "targetPath": "source/node-agent-coordinator/src/webauthn/provider.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/node-agent-coordinator/webauthn/signer.ts",
       "targetPath": "source/node-agent-coordinator/src/webauthn/signer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ]
     },
     {
       "referencePath": "source/packages/agent-analytics/commit-scoring/git-repo-utils.ts",
