@@ -41,7 +41,7 @@ Create a minimal but complete repository governance baseline that:
 - R4: Add a migration policy and template.
 - R5: Add repository-wide contribution, security-reporting, changelog, PR-template, and issue-template baselines.
 - R6: Add testing and release/evidence guides grounded in existing exact-HEAD GitHub Actions practices.
-- R7: Update `AGENTS.md` to require the lifecycle: Discover → Classify → Spec → Architecture/ADR → Plan → Implement → Verify → Compliance Review → PR/Merge → Release → Post-release verification.
+- R7: Update `AGENTS.md` to require the lifecycle: Discover → Duplicate-work check → Classify → Spec → Architecture/ADR → Migration → Plan → Implement → Verify → Compliance Review → PR/Merge → Release → Post-release verification.
 - R8: Require architecture-affecting changes to update both the applicable spec and durable architecture/ADR records before implementation.
 - R9: Require migration plans for incompatible state/schema/process/protocol/ownership changes.
 - R10: Require completion claims to be evidence-backed and distinguish source-complete, CI-complete, merged, released, and post-release-verified states.
@@ -177,10 +177,10 @@ Required evidence:
 | R9 | passed | root `AGENTS.md` and migration policy require controlled migration records for incompatible ownership/state/protocol transitions. |
 | R10 | passed | `AGENTS.md` defines specified/implemented/source-verified/CI-verified/merged/release-candidate/released/post-release-verified/blocked states. |
 | R11 | passed | root `README.md` links product, roadmap and governance entry points. |
-| R12 | pending | add and read back the mandatory duplicate-work branch/PR check in root `AGENTS.md`. |
+| R12 | passed | root `AGENTS.md` now requires a semantic pre-implementation check of current/base branches, active Specs/tasks, remote branches, all open PRs, recent merged work and relevant CI; overlapping work must be continued/consolidated by default instead of duplicated. |
 | AC-1 | passed | branch compare against `main@4277fe1009327a23e8a171281d6172213a2b5142` shows the complete governance set on one branch. |
 | AC-2 | passed | GitHub compare shows no runtime/application source changes; only docs/governance/templates and `.editorconfig`. |
-| AC-3 | passed | `AGENTS.md` was read back from the branch with Spec-first preserved and the full lifecycle added. |
+| AC-3 | passed | `AGENTS.md` was read back from the branch with Spec-first preserved, the full lifecycle added, and the duplicate-work gate placed before implementation. |
 | AC-4 | passed | `README.md` exposes product/governance/architecture/testing/release entry points. |
 | AC-5 | passed | GitHub PR #22 opened against `main`. |
 | AC-6 | passed | LICENSE and CODEOWNERS are intentionally not fabricated; final report must state this. |
