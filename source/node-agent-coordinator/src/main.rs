@@ -512,6 +512,42 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
     Ok(generation)
 }
 
+fn wait_for_gateway_connection(
+    state: &Arc<CoordinatorState>,
+    generation: u64,
+) -> io::Result<GatewayConnection> {
+    for _ in 0..500 {
+        if state.closed.load(Ordering::SeqCst) {
+            return Err(io::Error::other("coordinator closed while waiting for Host gateway"));
+        }
+        if state.host_generation.load(Ordering::SeqCst) != generation {
+            return Err(io::Error::other("Host generation changed while waiting for gateway"));
+        }
+        if let Some(connection) = state
+            .gateway_client
+            .lock()
+            .ok()
+            .and_then(|gateway| gateway.state.connection.clone())
+        {
+            return Ok(connection);
+        }
+        // The discovery worker normally installs this asynchronously. Reading
+        // it here as well removes the historical stdin business-request
+        // fallback without introducing a startup race for the first command.
+        if let Ok(connection) = read_gateway_discovery(&state.gateway_discovery_path) {
+            if let Ok(mut gateway) = state.gateway_client.lock() {
+                let _ = gateway.install_connection(connection.clone());
+            }
+            return Ok(connection);
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    Err(io::Error::new(
+        io::ErrorKind::TimedOut,
+        "Host gateway discovery did not become ready before command dispatch",
+    ))
+}
+
 fn dispatch_to_host(
     state: &Arc<CoordinatorState>,
     channel: CarrierChannel,
@@ -571,78 +607,8 @@ fn dispatch_to_host(
         spawn_host(Arc::clone(state))?;
     }
 
-    let gateway_connection = state
-        .gateway_client
-        .lock()
-        .ok()
-        .and_then(|gateway| gateway.connection_for_dispatch().ok().cloned());
-    if let Some(connection) = gateway_connection {
-        let generation = state.host_generation.load(Ordering::SeqCst);
-        let host_request_id = format!("{}:{request_id}", channel.wire_name());
-        state
-            .pending
-            .lock()
-            .map_err(|_| io::Error::other("pending lock poisoned"))?
-            .insert(
-                host_request_id.clone(),
-                PendingHostRequest {
-                    generation,
-                    request_id: request_id.clone(),
-                    channel,
-                },
-            );
-
-        let dispatch_state = Arc::clone(state);
-        thread::spawn(move || {
-            let result = dispatch_http_json(&connection, &method, args);
-            let pending_request = dispatch_state
-                .pending
-                .lock()
-                .ok()
-                .and_then(|mut pending| pending.remove(&host_request_id));
-            let Some(pending_request) = pending_request else {
-                return;
-            };
-            match result {
-                Ok(value) => dispatch_state.complete_request(
-                    pending_request.channel,
-                    &pending_request.request_id,
-                    ReplyOutcome::Ok { value },
-                ),
-                Err(error) => {
-                    if matches!(
-                        error,
-                        mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::GatewayDispatchError::Unreachable { .. }
-                    ) {
-                        if let mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::GatewayDispatchError::Unreachable { outcome, .. } = &error {
-                            if let Ok(mut gateway) = dispatch_state.gateway_client.lock() {
-                                let _ = gateway.transport_down(*outcome);
-                            }
-                        }
-                    }
-                    dispatch_state.complete_request(
-                        pending_request.channel,
-                        &pending_request.request_id,
-                        ReplyOutcome::Failed {
-                            failure: failure_for(&error),
-                        },
-                    );
-                }
-            }
-        });
-        return Ok(());
-    }
-
-    // Compatibility lane while the Host gateway is still starting, and for
-    // migration/test Hosts that do not publish Grok gateway discovery yet.
-    let mut active = state
-        .host_stdin
-        .lock()
-        .map_err(|_| io::Error::other("host stdin lock poisoned"))?;
-    let active = active
-        .as_mut()
-        .ok_or_else(|| io::Error::other("Host did not provide stdin"))?;
-
+    let generation = state.host_generation.load(Ordering::SeqCst);
+    let connection = wait_for_gateway_connection(state, generation)?;
     let host_request_id = format!("{}:{request_id}", channel.wire_name());
     state
         .pending
@@ -651,21 +617,46 @@ fn dispatch_to_host(
         .insert(
             host_request_id.clone(),
             PendingHostRequest {
-                generation: active.generation,
+                generation,
                 request_id: request_id.clone(),
                 channel,
             },
         );
 
-    let host_request = json!({
-        "id": host_request_id,
-        "method": method,
-        "params": args,
+    let dispatch_state = Arc::clone(state);
+    thread::spawn(move || {
+        let result = dispatch_http_json(&connection, &method, args);
+        let pending_request = dispatch_state
+            .pending
+            .lock()
+            .ok()
+            .and_then(|mut pending| pending.remove(&host_request_id));
+        let Some(pending_request) = pending_request else {
+            return;
+        };
+        match result {
+            Ok(value) => dispatch_state.complete_request(
+                pending_request.channel,
+                &pending_request.request_id,
+                ReplyOutcome::Ok { value },
+            ),
+            Err(error) => {
+                if let GatewayDispatchError::Unreachable { outcome, .. } = &error {
+                    if let Ok(mut gateway) = dispatch_state.gateway_client.lock() {
+                        let _ = gateway.transport_down(*outcome);
+                    }
+                }
+                dispatch_state.complete_request(
+                    pending_request.channel,
+                    &pending_request.request_id,
+                    ReplyOutcome::Failed {
+                        failure: failure_for(&error),
+                    },
+                );
+            }
+        }
     });
-    serde_json::to_writer(&mut active.stdin, &host_request)
-        .map_err(|error| io::Error::other(format!("Host request serialization failed: {error}")))?;
-    writeln!(active.stdin)?;
-    active.stdin.flush()
+    Ok(())
 }
 
 fn execute_actions(
