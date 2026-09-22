@@ -172,10 +172,11 @@ impl TranscriptStore {
         agent_id: &str,
         remote_entry_ids: impl IntoIterator<Item = String>,
     ) -> u64 {
+        let remote_entry_ids = remote_entry_ids.into_iter().collect::<Vec<_>>();
         self.entries(agent_id)
             .iter()
             .map(|entry| entry.id.as_str())
-            .chain(remote_entry_ids.into_iter().collect::<Vec<_>>().iter().map(String::as_str))
+            .chain(remote_entry_ids.iter().map(String::as_str))
             .filter_map(turn_number_from_id)
             .max()
             .map_or(0, |turn| turn.saturating_add(1))
