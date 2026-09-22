@@ -39,4 +39,4 @@ Repository work is governed by durable project records rather than chat history:
 
 For AI-assisted development, `AGENTS.md` is mandatory and enforces the standard lifecycle:
 
-**Discover → Classify → Spec → Architecture/ADR → Migration → Plan → Implement → Verify → Compliance Review → PR/Merge → Release → Post-release verification**
+**Discover → Duplicate-work check → Classify → Spec → Architecture/ADR → Migration → Plan → Implement → Verify → Compliance Review → PR/Merge → Release → Post-release verification**
