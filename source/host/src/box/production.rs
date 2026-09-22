@@ -1,7 +1,7 @@
 use std::env;
 
 use super::box_env::BoxEnvironmentUpdate;
-use super::box_factory::create_sand_box;
+use super::box_factory::{SandBoxComposition, apply_shared_desktop, create_sand_box};
 use super::box_remote_accessor::BoxEndpoint;
 use super::generated_production::{
     ProductionBoxResourceAccessor, ProductionBoxTransport,
@@ -17,7 +17,7 @@ pub const BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD: &str = "box.applyEnvironment";
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProductionBoxEnvironment {
     transport: ProductionBoxTransport,
-    loopback: LoopbackSandBox,
+    composition: SandBoxComposition,
 }
 
 impl ProductionBoxEnvironment {
@@ -29,14 +29,27 @@ impl ProductionBoxEnvironment {
         let host = host.into();
         let auth_token = auth_token.into();
         let endpoint = BoxEndpoint::new(host.clone(), port, auth_token.clone());
+        Self::new_with_shared_desktop(host, port, auth_token, false)
+    }
+
+    pub fn new_with_shared_desktop(
+        host: impl Into<String>,
+        port: u16,
+        auth_token: impl Into<String>,
+        shared_desktop: bool,
+    ) -> Self {
+        let host = host.into();
+        let auth_token = auth_token.into();
+        let endpoint = BoxEndpoint::new(host.clone(), port, auth_token.clone());
+        let loopback = create_sand_box(LoopbackSandBoxOptions {
+            host,
+            auth_token,
+            exec_daemon_port: port,
+            ..LoopbackSandBoxOptions::default()
+        });
         Self {
             transport: ProductionBoxTransport::from_endpoint(&endpoint),
-            loopback: create_sand_box(LoopbackSandBoxOptions {
-                host,
-                auth_token,
-                exec_daemon_port: port,
-                ..LoopbackSandBoxOptions::default()
-            }),
+            composition: apply_shared_desktop(loopback, shared_desktop, true),
         }
     }
 
@@ -53,7 +66,11 @@ impl ProductionBoxEnvironment {
             .ok()
             .filter(|value| !value.is_empty())
             .unwrap_or_else(|| DEFAULT_AUTH_TOKEN.into());
-        Self::new(host, port, auth_token)
+        let shared_desktop = env::var("SAND_SHARED_DESKTOP")
+            .ok()
+            .map(|value| value.trim().to_ascii_lowercase())
+            .is_some_and(|value| matches!(value.as_str(), "1" | "true" | "yes" | "on"));
+        Self::new_with_shared_desktop(host, port, auth_token, shared_desktop)
     }
 
     pub fn transport(&self) -> &ProductionBoxTransport {
@@ -61,7 +78,11 @@ impl ProductionBoxEnvironment {
     }
 
     pub fn loopback(&self) -> &LoopbackSandBox {
-        &self.loopback
+        self.composition.loopback()
+    }
+
+    pub fn shared_desktop(&self) -> Option<&super::shared_desktop_sand_box::SharedDesktopSandBox> {
+        self.composition.shared_desktop()
     }
 
     pub fn remote_resource_accessor(&self) -> ProductionBoxResourceAccessor {
@@ -72,20 +93,20 @@ impl ProductionBoxEnvironment {
         &self,
         agent_id: &str,
     ) -> Result<LoopbackReady, LoopbackSandBoxError> {
-        self.loopback.ensure_ready(&(), agent_id)
+        self.composition.ensure_ready(&(), agent_id)
     }
 
     pub fn load_mcp_servers(
         &self,
         config_json: &str,
     ) -> Result<Vec<String>, LoopbackSandBoxError> {
-        self.loopback.load_mcp_servers(&(), config_json)
+        self.composition.load_mcp_servers(&(), config_json)
     }
 
     pub fn apply_environment(
         &self,
         update: &BoxEnvironmentUpdate,
     ) -> Result<(), LoopbackSandBoxError> {
-        self.loopback.apply_environment(&(), update)
+        self.composition.apply_environment(&(), update)
     }
 }

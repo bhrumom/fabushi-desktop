@@ -14,3 +14,5 @@ pub mod production;
 
 pub mod loopback_sand_box;
 pub mod box_factory;
+
+pub mod shared_desktop_sand_box;
