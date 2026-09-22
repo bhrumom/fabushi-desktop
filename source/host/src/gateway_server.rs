@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::io::{self, Read, Write};
+use std::io::{self, BufReader, Cursor, Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::sync::{
     Arc, Mutex,
@@ -11,11 +11,12 @@ use std::time::Duration;
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use flate2::{Compression, write::GzEncoder};
+use rustls::{ServerConfig, ServerConnection, StreamOwned};
 use serde_json::{Value, json};
 use subtle::ConstantTimeEq;
 use thiserror::Error;
 
-use crate::gateway_config::{GatewayServerConfig, is_loopback_host};
+use crate::gateway_config::{GatewayServerConfig, GatewayTlsConfig, is_loopback_host};
 
 pub const GATEWAY_API_PREFIX: &str = "/api";
 pub const GATEWAY_EVENTS_PATH: &str = "/events";
@@ -327,13 +328,86 @@ impl Drop for GatewayServer {
     }
 }
 
-pub fn start_gateway_server(deps: GatewayServerDeps) -> io::Result<GatewayServer> {
-    if deps.config.tls.is_some() {
+fn build_tls_server_config(tls: &GatewayTlsConfig) -> io::Result<Arc<ServerConfig>> {
+    let mut cert_reader = BufReader::new(Cursor::new(tls.cert.as_slice()));
+    let certs = rustls_pemfile::certs(&mut cert_reader)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| io::Error::other(format!("gateway TLS certificate parse failed: {error}")))?;
+    if certs.is_empty() {
         return Err(io::Error::new(
-            io::ErrorKind::Unsupported,
-            "TLS gateway transport is not wired into the Rust Host yet",
+            io::ErrorKind::InvalidInput,
+            "gateway TLS certificate file contains no certificates",
         ));
     }
+    let mut key_reader = BufReader::new(Cursor::new(tls.key.as_slice()));
+    let key = rustls_pemfile::private_key(&mut key_reader)
+        .map_err(|error| io::Error::other(format!("gateway TLS private key parse failed: {error}")))?
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "gateway TLS private key file contains no private key",
+            )
+        })?;
+    let config = ServerConfig::builder()
+        .with_no_client_auth()
+        .with_single_cert(certs, key)
+        .map_err(|error| io::Error::other(format!("gateway TLS configuration failed: {error}")))?;
+    Ok(Arc::new(config))
+}
+
+enum GatewayStream {
+    Plain(TcpStream),
+    Tls(StreamOwned<ServerConnection, TcpStream>),
+}
+
+impl GatewayStream {
+    fn set_read_timeout(&self, timeout: Option<Duration>) -> io::Result<()> {
+        match self {
+            Self::Plain(stream) => stream.set_read_timeout(timeout),
+            Self::Tls(stream) => stream.sock.set_read_timeout(timeout),
+        }
+    }
+
+    fn set_write_timeout(&self, timeout: Option<Duration>) -> io::Result<()> {
+        match self {
+            Self::Plain(stream) => stream.set_write_timeout(timeout),
+            Self::Tls(stream) => stream.sock.set_write_timeout(timeout),
+        }
+    }
+}
+
+impl Read for GatewayStream {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        match self {
+            Self::Plain(stream) => stream.read(buffer),
+            Self::Tls(stream) => stream.read(buffer),
+        }
+    }
+}
+
+impl Write for GatewayStream {
+    fn write(&mut self, buffer: &[u8]) -> io::Result<usize> {
+        match self {
+            Self::Plain(stream) => stream.write(buffer),
+            Self::Tls(stream) => stream.write(buffer),
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        match self {
+            Self::Plain(stream) => stream.flush(),
+            Self::Tls(stream) => stream.flush(),
+        }
+    }
+}
+
+pub fn start_gateway_server(deps: GatewayServerDeps) -> io::Result<GatewayServer> {
+    let tls_config = deps
+        .config
+        .tls
+        .as_ref()
+        .map(build_tls_server_config)
+        .transpose()?;
     let port = deps.config.port.unwrap_or(0);
     let listener = TcpListener::bind((deps.config.host.as_str(), port))?;
     listener.set_nonblocking(true)?;
@@ -353,7 +427,15 @@ pub fn start_gateway_server(deps: GatewayServerDeps) -> io::Result<GatewayServer
                 Ok((stream, _)) => {
                     let connection_deps = Arc::clone(&thread_deps);
                     let connection_stop = Arc::clone(&thread_stop);
+                    let connection_tls = tls_config.clone();
                     thread::spawn(move || {
+                        let stream = match connection_tls {
+                            Some(config) => match ServerConnection::new(config) {
+                                Ok(connection) => GatewayStream::Tls(StreamOwned::new(connection, stream)),
+                                Err(_) => return,
+                            },
+                            None => GatewayStream::Plain(stream),
+                        };
                         let _ = handle_connection(stream, &connection_deps, &connection_stop);
                     });
                 }
@@ -381,7 +463,7 @@ struct HttpRequest {
     body: Vec<u8>,
 }
 
-fn read_request(stream: &mut TcpStream) -> io::Result<HttpRequest> {
+fn read_request(stream: &mut GatewayStream) -> io::Result<HttpRequest> {
     stream.set_read_timeout(Some(Duration::from_secs(15)))?;
     let mut bytes = Vec::with_capacity(2048);
     let mut chunk = [0_u8; 4096];
@@ -492,7 +574,7 @@ fn is_authorized(request: &HttpRequest, expected: &str) -> bool {
 }
 
 fn write_response(
-    stream: &mut TcpStream,
+    stream: &mut GatewayStream,
     status: u16,
     content_type: &str,
     body: &[u8],
@@ -523,7 +605,7 @@ fn write_response(
     stream.flush()
 }
 
-fn respond_json(stream: &mut TcpStream, status: u16, value: Value) -> io::Result<()> {
+fn respond_json(stream: &mut GatewayStream, status: u16, value: Value) -> io::Result<()> {
     let encoded = serde_json::to_vec(&value)
         .map_err(|error| io::Error::other(format!("gateway response serialization failed: {error}")))?;
     write_response(
@@ -543,7 +625,7 @@ fn client_accepts_gzip(request: &HttpRequest) -> bool {
 }
 
 fn respond_command_json(
-    stream: &mut TcpStream,
+    stream: &mut GatewayStream,
     status: u16,
     value: Value,
     request: &HttpRequest,
@@ -578,7 +660,7 @@ fn respond_command_json(
     )
 }
 
-fn respond_error(stream: &mut TcpStream, status: u16, message: impl Into<String>) -> io::Result<()> {
+fn respond_error(stream: &mut GatewayStream, status: u16, message: impl Into<String>) -> io::Result<()> {
     let encoded = serde_json::to_vec(&json!({ "error": message.into() }))
         .map_err(|error| io::Error::other(format!("gateway error serialization failed: {error}")))?;
     write_response(stream, status, "application/json", &encoded, &[])
@@ -606,7 +688,7 @@ fn sse_gzip_enabled(request: &HttpRequest) -> bool {
         && client_accepts_gzip(request)
 }
 
-fn write_sse_headers(stream: &mut TcpStream, gzip: bool) -> io::Result<()> {
+fn write_sse_headers(stream: &mut GatewayStream, gzip: bool) -> io::Result<()> {
     write!(
         stream,
         "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache, no-transform\r\nConnection: keep-alive\r\n"
@@ -657,7 +739,7 @@ fn serve_event_body<W: Write>(
 }
 
 fn serve_events(
-    stream: &mut TcpStream,
+    stream: &mut GatewayStream,
     deps: &GatewayServerDeps,
     stop: &AtomicBool,
     channels: Option<Vec<String>>,
@@ -712,7 +794,7 @@ fn query_value<'a>(query: Option<&'a str>, key: &str) -> Option<&'a str> {
 }
 
 fn serve_avatar(
-    stream: &mut TcpStream,
+    stream: &mut GatewayStream,
     deps: &GatewayServerDeps,
     request: &HttpRequest,
     path: &str,
@@ -812,7 +894,7 @@ fn serve_bridge_body<W: Write>(
 }
 
 fn serve_bridge_requests(
-    stream: &mut TcpStream,
+    stream: &mut GatewayStream,
     bridge: &GatewayBridgeHub,
     stop: &AtomicBool,
     gzip: bool,
@@ -831,7 +913,7 @@ fn serve_bridge_requests(
 }
 
 fn submit_bridge_responses(
-    stream: &mut TcpStream,
+    stream: &mut GatewayStream,
     bridge: &GatewayBridgeHub,
     body: &[u8],
 ) -> io::Result<()> {
@@ -850,7 +932,7 @@ fn submit_bridge_responses(
 }
 
 fn handle_connection(
-    mut stream: TcpStream,
+    mut stream: GatewayStream,
     deps: &GatewayServerDeps,
     stop: &AtomicBool,
 ) -> io::Result<()> {
