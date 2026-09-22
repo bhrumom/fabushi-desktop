@@ -111,6 +111,9 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
         'agent:a': 'request:a',
         'agent:b': 'request:b',
       });
+      expect(controller.snapshot()).toEqual({});
+      expect(controller.operationForPeer('agent:a')).toBeNull();
+      expect(controller.operationForPeer('agent:b')).toBeNull();
 
       controller.adoptOperation('request:a', 'operation:a', 'agent:a');
       expect(controller.operationForPeer('agent:a')).toBe('operation:a');
