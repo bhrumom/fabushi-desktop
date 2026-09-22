@@ -136,25 +136,27 @@ mod unix {
             panic!("shipping Coordinator did not complete MCP OAuth");
         }
 
+        fn webauthn_result(&self) -> Option<Value> {
+            self.webauthn_batches
+                .lock()
+                .expect("WebAuthn batches lock")
+                .iter()
+                .find_map(|batch| {
+                    batch
+                        .get("frames")
+                        .and_then(Value::as_array)
+                        .and_then(|frames| {
+                            frames.iter().find_map(|frame| {
+                                (frame.get("kind").and_then(Value::as_str) == Some("result"))
+                                    .then(|| frame.clone())
+                            })
+                        })
+                })
+        }
+
         fn wait_for_webauthn_result(&self) -> Value {
             for _ in 0..300 {
-                if let Some(value) = self
-                    .webauthn_batches
-                    .lock()
-                    .expect("WebAuthn batches lock")
-                    .iter()
-                    .find_map(|batch| {
-                        batch
-                            .get("frames")
-                            .and_then(Value::as_array)
-                            .and_then(|frames| {
-                                frames.iter().find_map(|frame| {
-                                    (frame.get("kind").and_then(Value::as_str) == Some("result"))
-                                        .then(|| frame.clone())
-                                })
-                            })
-                    })
-                {
+                if let Some(value) = self.webauthn_result() {
                     return value;
                 }
                 thread::sleep(Duration::from_millis(10));
@@ -376,6 +378,77 @@ mod unix {
         stream.flush()
     }
 
+    fn service_control_frame(
+        stdin: &mut impl Write,
+        seen_control_methods: &mut Vec<String>,
+        frame: CoordinatorFrame,
+    ) {
+        match frame {
+            CoordinatorFrame::Request {
+                request_id,
+                method,
+                args,
+            } => {
+                seen_control_methods.push(method.clone());
+                let outcome = match method.as_str() {
+                    "resolveGatewayConnection" => ReplyOutcome::Failed {
+                        failure: Failure::new(
+                            "SAND_CLIENT_PAUSE",
+                            "SAND_CLIENT_PAUSE: fake main keeps LocalExec paused",
+                        ),
+                    },
+                    "mintLocalExecDaemonCredential" => ReplyOutcome::Ok {
+                        value: Value::Null,
+                    },
+                    "requestWebAuthnConsent" => {
+                        assert_eq!(args["origin"], "https://example.test");
+                        assert_eq!(args["rpId"], "example.test");
+                        ReplyOutcome::Ok {
+                            value: json!({
+                                "approved": true,
+                                "promptId": "prompt-production",
+                                "windowHandle": 4_294_967_297_u64
+                            }),
+                        }
+                    }
+                    "requestWebAuthnPin" => {
+                        assert_eq!(args["promptId"], "prompt-production");
+                        assert_eq!(args["invalid"], false);
+                        ReplyOutcome::Ok {
+                            value: json!({ "pin": "2468" }),
+                        }
+                    }
+                    "updateWebAuthnConsent" => ReplyOutcome::Ok {
+                        value: Value::Null,
+                    },
+                    "finishWebAuthnConsent" => ReplyOutcome::Ok {
+                        value: Value::Null,
+                    },
+                    "getRpcTraceWindowTraceparent"
+                    | "reportTransportStage"
+                    | "reportGatewayCommandSpan" => ReplyOutcome::Ok {
+                        value: Value::Null,
+                    },
+                    _ => ReplyOutcome::Failed {
+                        failure: Failure::new(
+                            "TEST_UNKNOWN_CONTROL_COMMAND",
+                            format!("fake main does not implement {method}"),
+                        ),
+                    },
+                };
+                send(
+                    stdin,
+                    CarrierChannel::Control,
+                    &CoordinatorFrame::Reply {
+                        request_id,
+                        outcome,
+                    },
+                );
+            }
+            other => panic!("unexpected post-handshake control frame: {other:?}"),
+        }
+    }
+
     fn recv_application_frame(
         rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
         stdin: &mut impl Write,
@@ -390,69 +463,38 @@ mod unix {
             if channel != CarrierChannel::Control {
                 return (channel, frame);
             }
-            match frame {
-                CoordinatorFrame::Request {
-                    request_id,
-                    method,
-                    args,
-                } => {
-                    seen_control_methods.push(method.clone());
-                    let outcome = match method.as_str() {
-                        "resolveGatewayConnection" => ReplyOutcome::Failed {
-                            failure: Failure::new(
-                                "SAND_CLIENT_PAUSE",
-                                "SAND_CLIENT_PAUSE: fake main keeps LocalExec paused",
-                            ),
-                        },
-                        "mintLocalExecDaemonCredential" => ReplyOutcome::Ok {
-                            value: Value::Null,
-                        },
-                        "requestWebAuthnConsent" => {
-                            assert_eq!(args["origin"], "https://example.test");
-                            assert_eq!(args["rpId"], "example.test");
-                            ReplyOutcome::Ok {
-                                value: json!({
-                                    "approved": true,
-                                    "promptId": "prompt-production",
-                                    "windowHandle": 4_294_967_297_u64
-                                }),
-                            }
-                        }
-                        "requestWebAuthnPin" => {
-                            assert_eq!(args["promptId"], "prompt-production");
-                            assert_eq!(args["invalid"], false);
-                            ReplyOutcome::Ok {
-                                value: json!({ "pin": "2468" }),
-                            }
-                        }
-                        "updateWebAuthnConsent" => ReplyOutcome::Ok {
-                            value: Value::Null,
-                        },
-                        "finishWebAuthnConsent" => ReplyOutcome::Ok {
-                            value: Value::Null,
-                        },
-                        "getRpcTraceWindowTraceparent"
-                        | "reportTransportStage"
-                        | "reportGatewayCommandSpan" => ReplyOutcome::Ok {
-                            value: Value::Null,
-                        },
-                        _ => ReplyOutcome::Failed {
-                            failure: Failure::new(
-                                "TEST_UNKNOWN_CONTROL_COMMAND",
-                                format!("fake main does not implement {method}"),
-                            ),
-                        },
-                    };
-                    send(
-                        stdin,
-                        CarrierChannel::Control,
-                        &CoordinatorFrame::Reply {
-                            request_id,
-                            outcome,
-                        },
-                    );
+            service_control_frame(stdin, seen_control_methods, frame);
+        }
+    }
+
+    fn pump_control_until_webauthn_result(
+        rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
+        stdin: &mut impl Write,
+        seen_control_methods: &mut Vec<String>,
+        gateway: &FakeGateway,
+    ) -> Value {
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        loop {
+            if let Some(value) = gateway.webauthn_result() {
+                return value;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "shipping Coordinator did not deliver the WebAuthn result"
+            );
+            match rx.recv_timeout(Duration::from_millis(50)) {
+                Ok(Ok((CarrierChannel::Control, frame))) => {
+                    service_control_frame(stdin, seen_control_methods, frame);
                 }
-                other => panic!("unexpected post-handshake control frame: {other:?}"),
+                Ok(Ok((_channel, CoordinatorFrame::Event { .. }))) => {}
+                Ok(Ok((channel, frame))) => panic!(
+                    "unexpected application frame while awaiting WebAuthn result on {channel:?}: {frame:?}"
+                ),
+                Ok(Err(error)) => panic!("invalid Coordinator frame: {error}"),
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
+                Err(mpsc::RecvTimeoutError::Disconnected) => {
+                    panic!("Coordinator output closed while awaiting WebAuthn result")
+                }
             }
         }
     }
@@ -746,7 +788,12 @@ exit 17
             other => panic!("unexpected sendPrompt frame: {other:?}"),
         }
 
-        let webauthn_result = gateway.wait_for_webauthn_result();
+        let webauthn_result = pump_control_until_webauthn_result(
+            &rx,
+            &mut stdin,
+            &mut seen_control_methods,
+            &gateway,
+        );
         assert_eq!(webauthn_result["credentialJson"]["id"], "credential-production");
         let signer_request: Value = serde_json::from_str(
             &fs::read_to_string(&webauthn_request_path).expect("read WebAuthn signer request"),
