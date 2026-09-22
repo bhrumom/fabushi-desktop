@@ -1,55 +1,36 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { installDesktopAccountSessionSync } from '../../../desktop/src/account-session-sync';
-import { installDesktopAppAgentSurface } from '../../../desktop/src/app-agent-surface';
-import { installFabAvatarIdentityAliases } from '../../../desktop/src/agent-identity-aliases';
-import { installDurableAgentState, restoreDurableAgentState } from '../../../desktop/src/durable-agent-state';
-import { installMiniAppComposerOpenBridge } from '../../../desktop/src/miniapp-composer-open-bridge';
-import { installDesktopMiniAppDiscoveryAliases } from '../../../desktop/src/miniapp-discovery-aliases';
-import { installDesktopMiniAppWebMcpHost } from '../../../desktop/src/miniapp-webmcp-host';
-import { installSelfHostedMahayanaInvocationBridge } from '../../../desktop/src/selfhosted-mahayana-invocation-bridge';
-import '../../../desktop/src/messenger-layout-regressions.css';
-import '../../../desktop/src/grok-agent-ui-parity.css';
-import '../../../desktop/src/openbot-ui-parity.css';
-import '../../../desktop/src/mahayana-assistant-turn.css';
-import '../../../desktop/src/credential-vault.css';
-import '../../../desktop/src/sidebar-contact-groups.css';
-import '../../../desktop/src/ui/tokens.css';
-import ProductionRenderer from './ProductionRenderer';
+import { StrictMode, type ReactElement } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import type { CoordinatorPortBridge, DesktopBridge } from "../recovered/contracts/desktop-bridge";
+import { hasDesktopBridge } from "../recovered/contracts/desktop-bridge";
 
-function installOptionalBridge(name: string, install: () => unknown): void {
-  try {
-    install();
-  } catch (error) {
-    console.error(`Fabushi desktop ${name} bridge failed to install`, error);
-  }
+// @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L537 bytes 5,788,077-5,793,115
+export const PACKAGED_INVARIANT_MESSAGE = "Invariant violation (message stripped in packaged builds; the stack identifies the site)";
+
+export interface ProductionRendererRuntime {
+  bridge: DesktopBridge;
+  coordinatorPort: CoordinatorPortBridge;
 }
 
-async function hydrateCompatibilityProjection(): Promise<void> {
-  try {
-    await restoreDurableAgentState();
-  } catch (error) {
-    console.error('Fabushi desktop compatibility projection restore failed', error);
-  }
-  installOptionalBridge('durable Agent state', installDurableAgentState);
+function invariant(condition: unknown): asserts condition {
+  if (!condition) throw new Error(PACKAGED_INVARIANT_MESSAGE);
 }
 
-export function bootstrapProductionRenderer(rootElement: HTMLDivElement): void {
-  createRoot(rootElement).render(
-    <StrictMode>
-      <ProductionRenderer />
-    </StrictMode>,
-  );
+export function acquireProductionRendererRuntime(windowValue: unknown): ProductionRendererRuntime {
+  invariant(typeof windowValue === "object" && windowValue != null);
+  const candidate = windowValue as { desktop?: unknown; coordinatorPort?: unknown };
+  invariant(hasDesktopBridge(candidate.desktop));
+  invariant(typeof candidate.coordinatorPort === "object" && candidate.coordinatorPort != null);
+  invariant(typeof (candidate.coordinatorPort as { claim?: unknown }).claim === "function");
+  return { bridge: candidate.desktop, coordinatorPort: candidate.coordinatorPort as CoordinatorPortBridge };
+}
 
-  installOptionalBridge('account session sync', installDesktopAccountSessionSync);
-  installOptionalBridge('FabAvatar identity alias', installFabAvatarIdentityAliases);
-  installOptionalBridge('Mini App discovery alias', installDesktopMiniAppDiscoveryAliases);
-  installOptionalBridge('Mini App WebMCP host', installDesktopMiniAppWebMcpHost);
-  installOptionalBridge('Agent surface', installDesktopAppAgentSurface);
-  installOptionalBridge('Mini App composer', () => installMiniAppComposerOpenBridge(rootElement));
-  installOptionalBridge('self-hosted Mahayana invocation', installSelfHostedMahayanaInvocationBridge);
+export function requireProductionRendererMount(mount: HTMLElement | null): HTMLElement {
+  invariant(mount != null);
+  return mount;
+}
 
-  // Compatibility-only projections restore after first paint while migration
-  // continues. The canonical renderer root itself now lives under frontend/**.
-  void hydrateCompatibilityProjection();
+export function mountProductionRenderer(mount: HTMLElement, renderer: ReactElement): Root {
+  const root = createRoot(mount);
+  root.render(<StrictMode>{renderer}</StrictMode>);
+  return root;
 }
