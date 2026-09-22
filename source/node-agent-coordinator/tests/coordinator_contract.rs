@@ -266,3 +266,49 @@ fn box_vnc_proxy_maps_primary_and_fork_viewers_without_touching_foreign_urls() {
     assert!(projected["windows"][0]["vncUrl"].as_str().unwrap().contains("network_token=network-123"));
     assert_eq!(projected["state"], "ready");
 }
+
+
+#[test]
+fn local_exec_daemon_files_parse_and_retire_only_the_expected_generation() {
+    use mahayana_node_agent_coordinator::local_exec::daemon_files::{
+        parse_discovery, read_local_exec_daemon_discovery,
+        remove_local_exec_daemon_discovery_if_matches, resolve_local_exec_daemon_paths,
+        write_secret_json_file,
+    };
+    use std::fs;
+    use uuid::Uuid;
+
+    let root = std::env::temp_dir().join(format!("fabushi-local-exec-{}", Uuid::new_v4()));
+    let paths = resolve_local_exec_daemon_paths(&root);
+    assert!(paths.discovery_path.ends_with("local-exec-daemon.json"));
+    let value = json!({
+        "pid": 4242,
+        "startedAt": 1234.5,
+        "entryRealpath": "/tmp/daemon",
+        "generationToken": "generation-a",
+        "inflightCount": 2
+    });
+    let expected = parse_discovery(value.clone()).expect("valid discovery");
+    write_secret_json_file(&paths.discovery_path, &value).expect("write discovery");
+    assert_eq!(
+        read_local_exec_daemon_discovery(&paths.discovery_path)
+            .expect("read discovery")
+            .as_ref(),
+        Some(&expected)
+    );
+
+    let wrong = parse_discovery(json!({
+        "pid": 4242,
+        "startedAt": 1234.5,
+        "entryRealpath": "/tmp/daemon",
+        "generationToken": "generation-b"
+    })).unwrap();
+    assert!(!remove_local_exec_daemon_discovery_if_matches(&paths.discovery_path, &wrong)
+        .expect("mismatched generation is restored"));
+    assert!(paths.discovery_path.exists());
+
+    assert!(remove_local_exec_daemon_discovery_if_matches(&paths.discovery_path, &expected)
+        .expect("matching generation retires"));
+    assert!(!paths.discovery_path.exists());
+    let _ = fs::remove_dir_all(root);
+}
