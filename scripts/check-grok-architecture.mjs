@@ -13,7 +13,7 @@ function fail(message) {
 }
 
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-if (manifest.schemaVersion !== 2) fail(`unsupported schemaVersion ${manifest.schemaVersion}`);
+if (manifest.schemaVersion !== 3) fail(`unsupported schemaVersion ${manifest.schemaVersion}`);
 if (manifest.frozenReference?.commit !== 'a9f633e09d49a85829b8236331b9e21f7e612634') {
   fail('frozen Grok reference SHA changed');
 }
@@ -23,8 +23,8 @@ if (!Array.isArray(manifest.modules) || manifest.modules.length !== manifest.mod
 
 const refs = new Set();
 const targets = new Map();
-const allowedDevelopment = new Set(['planned', 'existing-needs-parity', 'implemented', 'not-applicable']);
-const finalAllowed = new Set(['implemented', 'not-applicable']);
+const allowedDevelopment = new Set(['planned', 'existing-needs-parity', 'implemented', 'not-applicable-noncode', 'removed-extra']);
+const finalAllowed = new Set(['implemented', 'not-applicable-noncode', 'removed-extra']);
 const requiredDomains = new Map([
   ['frontend/', 0],
   ['source/electron-main/', 0],
@@ -51,22 +51,38 @@ for (const row of manifest.modules ?? []) {
   if (refs.has(row.referencePath)) fail(`duplicate referencePath ${row.referencePath}`);
   refs.add(row.referencePath);
   if (!allowedDevelopment.has(row.status)) fail(`invalid status ${row.status} for ${row.referencePath}`);
+  if (typeof row.processOrPackage !== 'string' || row.processOrPackage.trim() === '') {
+    fail(`missing processOrPackage for ${row.referencePath}`);
+  }
   if (strict && !finalAllowed.has(row.status)) fail(`final gate: ${row.referencePath} is ${row.status}`);
-  if (row.status === 'not-applicable' && (!Array.isArray(row.evidence) || row.evidence.length === 0)) {
-    fail(`not-applicable row requires evidence: ${row.referencePath}`);
+  if (row.status === 'removed-extra') {
+    fail(`reference module cannot be removed-extra; Fabushi-only extras must be inventoried separately: ${row.referencePath}`);
+  }
+  if (row.status === 'not-applicable-noncode') {
+    if (row.referenceBlobSha) {
+      fail(`source-bearing reference module cannot be not-applicable-noncode: ${row.referencePath}`);
+    }
+    if (!Array.isArray(row.testEvidence) || row.testEvidence.length === 0) {
+      fail(`not-applicable-noncode row requires evidence: ${row.referencePath}`);
+    }
   }
   if (row.status === 'implemented') {
     const target = path.resolve(root, row.targetPath);
     if (!target.startsWith(root + path.sep) || !fs.existsSync(target)) {
       fail(`implemented target missing: ${row.targetPath} for ${row.referencePath}`);
     }
-    if (!Array.isArray(row.evidence) || row.evidence.length === 0) {
-      fail(`implemented row requires evidence: ${row.referencePath}`);
-    } else {
-      for (const evidencePath of row.evidence) {
+    for (const [label, evidencePaths] of [
+      ['behavioralEvidence', row.behavioralEvidence],
+      ['testEvidence', row.testEvidence],
+    ]) {
+      if (!Array.isArray(evidencePaths) || evidencePaths.length === 0) {
+        fail(`implemented row requires non-empty ${label}: ${row.referencePath}`);
+        continue;
+      }
+      for (const evidencePath of evidencePaths) {
         const evidence = path.resolve(root, evidencePath);
         if (!evidence.startsWith(root + path.sep) || !fs.existsSync(evidence)) {
-          fail(`implemented evidence missing: ${evidencePath} for ${row.referencePath}`);
+          fail(`implemented ${label} missing: ${evidencePath} for ${row.referencePath}`);
         }
       }
     }
