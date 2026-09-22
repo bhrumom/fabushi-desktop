@@ -34,8 +34,18 @@ fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     fs::create_dir_all(app_data_dir.join("feature-host/runtime/workspace"))
 }
 
+enum HostLaneRequest {
+    Stdin(String),
+    Gateway {
+        method: String,
+        args: serde_json::Value,
+        reply: mpsc::SyncSender<Result<serde_json::Value, GatewayCommandError>>,
+    },
+    StdinClosed,
+}
+
 struct UnifiedGatewayApi {
-    host: Arc<Mutex<UnifiedAppHost>>,
+    host_tx: mpsc::Sender<HostLaneRequest>,
 }
 
 impl GatewayApi for UnifiedGatewayApi {
@@ -44,35 +54,50 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
-        let request = serde_json::json!({
-            "id": "gateway",
-            "method": method,
-            "params": args,
-        });
-        let encoded = serde_json::to_string(&request)
-            .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
-        let response = {
-            let host = self
-                .host
-                .lock()
-                .map_err(|_| GatewayCommandError::Internal("Host lock poisoned".into()))?;
-            dispatch_json(&host, &encoded)
-        };
-        let parsed: serde_json::Value = serde_json::from_str(&response)
-            .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
-        if parsed.get("ok").and_then(serde_json::Value::as_bool) == Some(true) {
-            return Ok(parsed.get("result").cloned().unwrap_or(serde_json::Value::Null));
-        }
-        let message = parsed
-            .get("error")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or("Mahayana Host gateway request failed")
-            .to_string();
-        if message.contains("unknown") {
-            Err(GatewayCommandError::UnknownMethod(method.to_string()))
-        } else {
-            Err(GatewayCommandError::Internal(message))
-        }
+        // UnifiedAppHost owns a QuickJS runtime and is intentionally !Send.
+        // Keep the Host on one owner thread and route gateway calls onto that
+        // lane instead of smuggling it across threads behind Arc<Mutex<_>>.
+        let (reply, result) = mpsc::sync_channel(1);
+        self.host_tx
+            .send(HostLaneRequest::Gateway {
+                method: method.to_string(),
+                args,
+                reply,
+            })
+            .map_err(|_| GatewayCommandError::Internal("Mahayana Host lane is closed".into()))?;
+        result
+            .recv_timeout(Duration::from_secs(120))
+            .map_err(|_| GatewayCommandError::Internal("Mahayana Host gateway request timed out".into()))?
+    }
+}
+
+fn dispatch_gateway_call(
+    host: &UnifiedAppHost,
+    method: &str,
+    args: serde_json::Value,
+) -> Result<serde_json::Value, GatewayCommandError> {
+    let request = serde_json::json!({
+        "id": "gateway",
+        "method": method,
+        "params": args,
+    });
+    let encoded = serde_json::to_string(&request)
+        .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+    let response = dispatch_json(host, &encoded);
+    let parsed: serde_json::Value = serde_json::from_str(&response)
+        .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+    if parsed.get("ok").and_then(serde_json::Value::as_bool) == Some(true) {
+        return Ok(parsed.get("result").cloned().unwrap_or(serde_json::Value::Null));
+    }
+    let message = parsed
+        .get("error")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("Mahayana Host gateway request failed")
+        .to_string();
+    if message.contains("unknown") {
+        Err(GatewayCommandError::UnknownMethod(method.to_string()))
+    } else {
+        Err(GatewayCommandError::Internal(message))
     }
 }
 
@@ -104,17 +129,12 @@ fn write_runtime_event(
 }
 
 fn drain_ready_runtime_events(
-    host: &Mutex<UnifiedAppHost>,
+    host: &UnifiedAppHost,
     stdout: &Mutex<io::Stdout>,
     gateway_events: &GatewayEventHub,
 ) -> io::Result<()> {
     loop {
-        let event = {
-            let host = host
-                .lock()
-                .map_err(|_| io::Error::other("desktop Host lock poisoned"))?;
-            host.receive_feature_event(Duration::ZERO)
-        };
+        let event = host.receive_feature_event(Duration::ZERO);
         match event {
             Ok(Some(event)) => write_runtime_event(stdout, gateway_events, event)?,
             Ok(None) => return Ok(()),
@@ -137,12 +157,13 @@ fn main() {
     }
 
     let host = match UnifiedAppHost::new(app_data_dir.clone()) {
-        Ok(host) => Arc::new(Mutex::new(host)),
+        Ok(host) => host,
         Err(error) => {
             eprintln!("failed to initialize unified Mahayana app host: {error}");
             std::process::exit(1);
         }
     };
+    let (host_tx, host_rx) = mpsc::channel::<HostLaneRequest>();
     // Platform/account HTTP may legitimately take tens of seconds. Keep it on
     // a dedicated Rust product lane so feature.receive and Agent commands keep
     // flowing through the primary serial Host lane without starvation. The
@@ -180,7 +201,7 @@ fn main() {
     let gateway_events = GatewayEventHub::default();
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: Arc::new(UnifiedGatewayApi {
-            host: Arc::clone(&host),
+            host_tx: host_tx.clone(),
         }),
         events: gateway_events.clone(),
         config: gateway_config.clone(),
@@ -214,13 +235,7 @@ fn main() {
     // in Rust instead of issuing 500 ms JSON-RPC receive requests from Electron.
     // Test mode has a non-blocking deterministic backend, so a small sleep keeps
     // that lane from spinning while CI is idle.
-    let event_source = match host.lock() {
-        Ok(host) => host.feature_event_source(),
-        Err(_) => {
-            eprintln!("failed to acquire Mahayana Host while creating event source");
-            return;
-        }
-    };
+    let event_source = host.feature_event_source();
     let event_stdout = Arc::clone(&stdout);
     let event_gateway = gateway_events.clone();
     let _event_worker = thread::spawn(move || loop {
@@ -249,39 +264,56 @@ fn main() {
         }
     });
 
-    let stdin = io::stdin();
-    for line in stdin.lock().lines() {
-        let line = match line {
-            Ok(line) => line,
-            Err(error) => {
-                eprintln!("failed to read host request: {error}");
-                break;
+    // Read stdin on a lightweight transport thread. The UnifiedAppHost itself
+    // stays on this owner thread so QuickJS and the rest of the Host runtime
+    // never cross a Send/Sync boundary. Gateway requests join the same serial
+    // lane through HostLaneRequest.
+    let stdin_tx = host_tx.clone();
+    let _stdin_worker = thread::spawn(move || {
+        let stdin = io::stdin();
+        for line in stdin.lock().lines() {
+            let line = match line {
+                Ok(line) => line,
+                Err(error) => {
+                    eprintln!("failed to read host request: {error}");
+                    break;
+                }
+            };
+            if line.trim().is_empty() {
+                continue;
             }
-        };
-        if line.trim().is_empty() {
-            continue;
-        }
-        if is_platform_request_json(&line) {
-            if platform_tx.send(line).is_err() {
-                break;
+            if stdin_tx.send(HostLaneRequest::Stdin(line)).is_err() {
+                return;
             }
-            continue;
         }
-        let response = match host.lock() {
-            Ok(host) => dispatch_json(&host, &line),
-            Err(_) => {
-                eprintln!("desktop Host lock poisoned while dispatching request");
-                break;
+        let _ = stdin_tx.send(HostLaneRequest::StdinClosed);
+    });
+    drop(host_tx);
+
+    while let Ok(request) = host_rx.recv() {
+        match request {
+            HostLaneRequest::Gateway { method, args, reply } => {
+                let _ = reply.send(dispatch_gateway_call(&host, &method, args));
             }
-        };
-        if write_response(&stdout, &response).is_err() {
-            break;
-        }
-        // Commands may enqueue product-local events that are not backed by the
-        // model runtime receiver. Drain those immediately so they are pushed in
-        // the same turn instead of waiting for the blocking runtime lane.
-        if drain_ready_runtime_events(&host, &stdout, &gateway_events).is_err() {
-            break;
+            HostLaneRequest::StdinClosed => break,
+            HostLaneRequest::Stdin(line) => {
+                if is_platform_request_json(&line) {
+                    if platform_tx.send(line).is_err() {
+                        break;
+                    }
+                    continue;
+                }
+                let response = dispatch_json(&host, &line);
+                if write_response(&stdout, &response).is_err() {
+                    break;
+                }
+                // Commands may enqueue product-local events that are not backed
+                // by the model runtime receiver. Drain those immediately so
+                // they are pushed in the same turn.
+                if drain_ready_runtime_events(&host, &stdout, &gateway_events).is_err() {
+                    break;
+                }
+            }
         }
     }
     drop(platform_tx);
@@ -302,9 +334,17 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{ensure_managed_runtime_layout, is_platform_request_json};
+    use super::{
+        UnifiedGatewayApi, ensure_managed_runtime_layout, is_platform_request_json,
+    };
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn gateway_proxy_is_send_sync_without_moving_the_unified_host() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<UnifiedGatewayApi>();
+    }
 
     #[test]
     fn routes_platform_http_away_from_the_feature_event_lane() {
