@@ -13,7 +13,7 @@ function fail(message) {
 }
 
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-if (manifest.schemaVersion !== 1) fail(`unsupported schemaVersion ${manifest.schemaVersion}`);
+if (manifest.schemaVersion !== 2) fail(`unsupported schemaVersion ${manifest.schemaVersion}`);
 if (manifest.frozenReference?.commit !== 'a9f633e09d49a85829b8236331b9e21f7e612634') {
   fail('frozen Grok reference SHA changed');
 }
@@ -36,7 +36,15 @@ const requiredDomains = new Map([
 ]);
 
 for (const row of manifest.modules ?? []) {
-  if (!row.referencePath || !row.targetPath || !row.targetLanguage || !row.owner || !row.status) {
+  if (
+    !row.referencePath
+    || !/^[0-9a-f]{40}$/.test(row.referenceBlobSha || '')
+    || !row.architecturalRole
+    || !row.targetPath
+    || !row.targetLanguage
+    || !row.owner
+    || !row.status
+  ) {
     fail(`incomplete manifest row: ${JSON.stringify(row)}`);
     continue;
   }
