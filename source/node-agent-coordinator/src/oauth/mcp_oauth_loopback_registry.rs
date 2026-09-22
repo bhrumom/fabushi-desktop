@@ -1,4 +1,12 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+};
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 use crate::protocol::Failure;
 
@@ -82,14 +90,189 @@ pub struct LoopbackLease {
     pub bind_hosts: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LoopbackHttpResponse {
+    pub status_code: u16,
+    pub content_type: String,
+    pub body: String,
+}
+
+impl LoopbackHttpResponse {
+    pub fn html(status_code: u16, body: impl Into<String>) -> Self {
+        Self {
+            status_code,
+            content_type: "text/html; charset=utf-8".into(),
+            body: body.into(),
+        }
+    }
+}
+
+pub type McpOAuthLoopbackHandler =
+    Arc<dyn Fn(&str) -> Option<LoopbackHttpResponse> + Send + Sync + 'static>;
+
+struct LoopbackRuntime {
+    stop: Arc<AtomicBool>,
+    handlers: Arc<Mutex<BTreeMap<u64, McpOAuthLoopbackHandler>>>,
+    threads: Vec<JoinHandle<()>>,
+    listener_count: usize,
+}
+
+impl LoopbackRuntime {
+    fn bind(port: u16, hosts: &[String]) -> Result<Self, Failure> {
+        let stop = Arc::new(AtomicBool::new(false));
+        let handlers = Arc::new(Mutex::new(BTreeMap::new()));
+        let mut threads = Vec::new();
+        let mut errors = Vec::new();
+
+        for host in hosts {
+            let address = if host.contains(':') {
+                format!("[{host}]:{port}")
+            } else {
+                format!("{host}:{port}")
+            };
+            match TcpListener::bind(&address) {
+                Ok(listener) => {
+                    if let Err(error) = listener.set_nonblocking(true) {
+                        errors.push(error.to_string());
+                        continue;
+                    }
+                    let thread_stop = Arc::clone(&stop);
+                    let thread_handlers = Arc::clone(&handlers);
+                    threads.push(thread::spawn(move || {
+                        loop {
+                            if thread_stop.load(Ordering::Acquire) {
+                                break;
+                            }
+                            match listener.accept() {
+                                Ok((stream, _)) => {
+                                    let _ = serve_request(stream, &thread_handlers);
+                                }
+                                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                                    thread::sleep(Duration::from_millis(10));
+                                }
+                                Err(_) => {
+                                    if thread_stop.load(Ordering::Acquire) {
+                                        break;
+                                    }
+                                    thread::sleep(Duration::from_millis(10));
+                                }
+                            }
+                        }
+                    }));
+                }
+                Err(error) => errors.push(format!("{address}: {error}")),
+            }
+        }
+
+        if threads.is_empty() {
+            return Err(Failure::new(
+                "MCP_OAUTH_LOOPBACK_BIND_FAILED",
+                errors
+                    .into_iter()
+                    .next()
+                    .unwrap_or_else(|| format!("could not bind OAuth callback port {port}")),
+            ));
+        }
+
+        let listener_count = threads.len();
+        Ok(Self {
+            stop,
+            handlers,
+            threads,
+            listener_count,
+        })
+    }
+
+    fn install(&self, lease_id: u64, handler: McpOAuthLoopbackHandler) -> Result<(), Failure> {
+        self.handlers
+            .lock()
+            .map_err(|_| Failure::new(
+                "MCP_OAUTH_LOOPBACK_POISONED",
+                "OAuth loopback handler registry is unavailable",
+            ))?
+            .insert(lease_id, handler);
+        Ok(())
+    }
+
+    fn remove(&self, lease_id: u64) {
+        if let Ok(mut handlers) = self.handlers.lock() {
+            handlers.remove(&lease_id);
+        }
+    }
+}
+
+impl Drop for LoopbackRuntime {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Release);
+        for handle in self.threads.drain(..) {
+            let _ = handle.join();
+        }
+    }
+}
+
+fn serve_request(
+    mut stream: TcpStream,
+    handlers: &Arc<Mutex<BTreeMap<u64, McpOAuthLoopbackHandler>>>,
+) -> std::io::Result<()> {
+    stream.set_read_timeout(Some(Duration::from_secs(2)))?;
+    stream.set_write_timeout(Some(Duration::from_secs(2)))?;
+    let mut bytes = [0_u8; 8192];
+    let count = stream.read(&mut bytes)?;
+    if count == 0 {
+        return Ok(());
+    }
+    let request = String::from_utf8_lossy(&bytes[..count]);
+    let request_target = request
+        .lines()
+        .next()
+        .and_then(|line| {
+            let mut parts = line.split_whitespace();
+            let method = parts.next()?;
+            let target = parts.next()?;
+            (method == "GET").then_some(target)
+        })
+        .unwrap_or("/");
+
+    let callbacks = handlers
+        .lock()
+        .map(|entries| entries.values().cloned().collect::<Vec<_>>())
+        .unwrap_or_default();
+    let response = callbacks
+        .into_iter()
+        .find_map(|handler| handler(request_target))
+        .unwrap_or_else(|| LoopbackHttpResponse::html(404, "Not found"));
+    write_response(&mut stream, response)
+}
+
+fn write_response(stream: &mut TcpStream, response: LoopbackHttpResponse) -> std::io::Result<()> {
+    let reason = match response.status_code {
+        200 => "OK",
+        400 => "Bad Request",
+        404 => "Not Found",
+        500 => "Internal Server Error",
+        _ => "Response",
+    };
+    let bytes = response.body.as_bytes();
+    write!(
+        stream,
+        "HTTP/1.1 {} {}\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+        response.status_code,
+        reason,
+        response.content_type,
+        bytes.len()
+    )?;
+    stream.write_all(bytes)?;
+    stream.flush()
+}
+
 struct LoopbackEntry {
     port: u16,
     host: String,
     leases: HashSet<u64>,
+    runtime: Option<LoopbackRuntime>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct McpOAuthLoopbackRegistry {
     origins: HashMap<String, LoopbackEntry>,
     next_lease_id: u64,
@@ -102,6 +285,7 @@ impl McpOAuthLoopbackRegistry {
             port: parsed.port,
             host: parsed.host.clone(),
             leases: HashSet::new(),
+            runtime: None,
         });
         if entry.port != parsed.port || entry.host != parsed.host {
             return Err(Failure::new(
@@ -120,12 +304,45 @@ impl McpOAuthLoopbackRegistry {
         })
     }
 
+    pub fn acquire_with_handler(
+        &mut self,
+        redirect_url: &str,
+        handler: McpOAuthLoopbackHandler,
+    ) -> Result<LoopbackLease, Failure> {
+        let lease = self.acquire(redirect_url)?;
+        let install = (|| {
+            let entry = self.origins.get_mut(&lease.origin).ok_or_else(|| {
+                Failure::new(
+                    "MCP_OAUTH_LOOPBACK_MISSING",
+                    "OAuth loopback origin disappeared while acquiring it",
+                )
+            })?;
+            if entry.runtime.is_none() {
+                entry.runtime = Some(LoopbackRuntime::bind(lease.port, &lease.bind_hosts)?);
+            }
+            entry
+                .runtime
+                .as_ref()
+                .expect("loopback runtime installed")
+                .install(lease.lease_id, handler)
+        })();
+        if let Err(error) = install {
+            self.release(&lease);
+            return Err(error);
+        }
+        Ok(lease)
+    }
+
     pub fn release(&mut self, lease: &LoopbackLease) -> bool {
         let Some(entry) = self.origins.get_mut(&lease.origin) else {
             return false;
         };
         let removed = entry.leases.remove(&lease.lease_id);
-        if entry.leases.is_empty() {
+        if let Some(runtime) = entry.runtime.as_ref() {
+            runtime.remove(lease.lease_id);
+        }
+        let empty = entry.leases.is_empty();
+        if empty {
             self.origins.remove(&lease.origin);
         }
         removed
@@ -139,6 +356,14 @@ impl McpOAuthLoopbackRegistry {
         self.origins
             .get(origin)
             .map(|entry| entry.leases.len())
+            .unwrap_or(0)
+    }
+
+    pub fn bound_listener_count(&self, origin: &str) -> usize {
+        self.origins
+            .get(origin)
+            .and_then(|entry| entry.runtime.as_ref())
+            .map(|runtime| runtime.listener_count)
             .unwrap_or(0)
     }
 
