@@ -24,7 +24,7 @@ import { resolveDefaultDownloadDir, resolveDefaultDownloadPath, resolveSuggested
 import { assertTrustedClientPersistenceSender, assertTrustedSecretsSender, isTrustedSecretsSender, UntrustedClientPersistenceSenderError, UntrustedSecretsSenderError } from "./secrets/secrets-ipc-guard.js";
 import { createIdleRelaunchSignals, isScreensaverRunning } from "./update/idle-relaunch-signals.js";
 import { createDesktopAccountAuthorizer } from "./account/account-authorization.js";
-import { createSandRecreateCommands } from "./box/box-recreate-commands.js";
+import { createSandRecreateCommands, type RecreateOperationId } from "./box/box-recreate-commands.js";
 import { createDesktopHostSettingsFields } from "./prefs/host-settings-fields.js";
 
 test("dev gates and latency clamps match Grok behavior", () => {
@@ -303,7 +303,7 @@ test("account authorization scopes durable state only after approval", async () 
 });
 
 test("box recreate commands preserve tracked, untrackable, fallback and rejected outcomes", async () => {
-  const accepted: Array<string | null> = [];
+  const accepted: Array<RecreateOperationId | null> = [];
   const tracked = createSandRecreateCommands<{ reason: string }>({
     connector: {
       recreate: async () => ({ status: "started", operationId: "operation-1" as any }),
