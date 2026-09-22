@@ -131,11 +131,19 @@ export function useAgentWorkspaceRuntime(
             replyTo: input.replyTo,
             references: input.references,
           });
-          if (!accepted) {
+          if (accepted.requestId !== requestId) {
             coordinator.cancelLocalTurn(input.peerKey, requestId, input.messageId);
-            throw new Error('Agent prompt was not accepted by Mahayana.');
+            throw new Error(
+              `Mahayana Coordinator protocol breach: expected request ${requestId}, received ${accepted.requestId}.`,
+            );
           }
-          const operationId = accepted.operationId ?? requestId;
+          const operationId = accepted.operationId?.trim();
+          if (!operationId || operationId === requestId) {
+            coordinator.cancelLocalTurn(input.peerKey, requestId, input.messageId);
+            throw new Error(
+              'Mahayana Coordinator accepted Agent prompt without a distinct canonical operation id.',
+            );
+          }
           if (controller.isOperationFinished(operationId)) {
             controller.cancelRequest(requestId);
             notify();
