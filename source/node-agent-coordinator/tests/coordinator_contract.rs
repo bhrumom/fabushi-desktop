@@ -783,3 +783,146 @@ fn transport_stage_recorder_bounds_echo_correlation_and_settles_once() {
     limiter.settle();
     assert!(limiter.try_begin());
 }
+
+
+#[test]
+fn routed_mcp_bridge_serves_private_json_rpc_and_routes_cached_tools() {
+    use mahayana_node_agent_coordinator::routed_mcp_bridge::{
+        RoutedMcpBackend, RoutedMcpHttpOutcome, RoutedMcpProtocolBridge, RoutedTool,
+        RoutedToolCall, ROUTED_MCP_MAX_BODY_BYTES, ROUTED_MCP_PROTOCOL_VERSION,
+    };
+    use mahayana_node_agent_coordinator::Failure;
+    use serde_json::{Value, json};
+
+    #[derive(Default)]
+    struct Backend {
+        calls: Vec<RoutedToolCall>,
+    }
+
+    impl RoutedMcpBackend for Backend {
+        fn list_tools(&mut self) -> Result<Vec<RoutedTool>, Failure> {
+            Ok(vec![
+                RoutedTool {
+                    name: "github_search".into(),
+                    provider_identifier: "github".into(),
+                    tool_name: "search".into(),
+                    description: Some("Search repositories".into()),
+                    input_schema: Some(json!({ "type": "object" })),
+                },
+                RoutedTool {
+                    name: "github_create_issue".into(),
+                    provider_identifier: "github".into(),
+                    tool_name: "create".into(),
+                    description: Some("Create issue".into()),
+                    input_schema: None,
+                },
+            ])
+        }
+
+        fn call_tool(&mut self, call: RoutedToolCall) -> Result<Value, Failure> {
+            self.calls.push(call);
+            Ok(json!({
+                "result": {
+                    "case": "success",
+                    "value": {
+                        "isError": false,
+                        "content": [{
+                            "content": {
+                                "case": "text",
+                                "value": { "text": "tool-result" }
+                            }
+                        }]
+                    }
+                }
+            }))
+        }
+    }
+
+    fn result(outcome: RoutedMcpHttpOutcome) -> Value {
+        match outcome {
+            RoutedMcpHttpOutcome::Json(value) => value,
+            other => panic!("expected JSON reply, got {other:?}"),
+        }
+    }
+
+    let mut bridge = RoutedMcpProtocolBridge::with_secret("secret").expect("bridge");
+    let mut backend = Backend::default();
+    assert_eq!(bridge.path(), "/mcp/secret");
+    assert_eq!(
+        bridge.local_url(43123).expect("url"),
+        "http://127.0.0.1:43123/mcp/secret"
+    );
+    assert!(matches!(
+        bridge.handle_http("GET", "/mcp/secret", b"{}", &mut backend),
+        RoutedMcpHttpOutcome::HttpError(404)
+    ));
+    assert!(matches!(
+        bridge.handle_http(
+            "POST",
+            "/mcp/secret",
+            &vec![b'x'; ROUTED_MCP_MAX_BODY_BYTES + 1],
+            &mut backend,
+        ),
+        RoutedMcpHttpOutcome::HttpError(413)
+    ));
+
+    let initialized = result(bridge.handle_http(
+        "POST",
+        "/mcp/secret",
+        br#"{"jsonrpc":"2.0","id":1,"method":"initialize"}"#,
+        &mut backend,
+    ));
+    assert_eq!(
+        initialized["result"]["protocolVersion"],
+        ROUTED_MCP_PROTOCOL_VERSION
+    );
+    assert!(matches!(
+        bridge.handle_http(
+            "POST",
+            "/mcp/secret",
+            br#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#,
+            &mut backend,
+        ),
+        RoutedMcpHttpOutcome::Accepted
+    ));
+
+    let tools = result(bridge.handle_http(
+        "POST",
+        "/mcp/secret",
+        br#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#,
+        &mut backend,
+    ));
+    assert_eq!(bridge.cached_tool_count(), 2);
+    let rows = tools["result"]["tools"].as_array().expect("tools");
+    let search = rows
+        .iter()
+        .find(|tool| tool["name"] == "github_search")
+        .expect("search tool");
+    assert_eq!(search["annotations"]["readOnlyHint"], true);
+    let create = rows
+        .iter()
+        .find(|tool| tool["name"] == "github_create_issue")
+        .expect("create tool");
+    assert_eq!(create["annotations"]["readOnlyHint"], false);
+
+    let called = result(bridge.handle_http(
+        "POST",
+        "/mcp/secret",
+        br#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"github_search","arguments":{"q":"rust"}}}"#,
+        &mut backend,
+    ));
+    assert_eq!(called["result"]["isError"], false);
+    assert_eq!(called["result"]["content"][0]["text"], "tool-result");
+    assert_eq!(backend.calls.len(), 1);
+    assert_eq!(backend.calls[0].provider_identifier, "github");
+    assert_eq!(backend.calls[0].args["q"], "rust");
+    assert!(!backend.calls[0].tool_call_id.is_empty());
+
+    let unknown = result(bridge.handle_http(
+        "POST",
+        "/mcp/secret",
+        br#"{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"missing"}}"#,
+        &mut backend,
+    ));
+    assert_eq!(unknown["result"]["isError"], true);
+}
