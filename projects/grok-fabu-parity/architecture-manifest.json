@@ -9126,12 +9126,21 @@
       "targetPath": "source/host/src/agent_isolation/agent_store_worker.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "dcfbc6400c7057d48bdf96519ca10fc7ba2413e5",
       "architecturalRole": "host/agent-isolation",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/agent_isolation/agent_store_worker.rs",
+        "source/host/src/agent_isolation/agent_worker_pool.rs",
+        "source/host/src/agent_isolation/conversation_blob_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_worker_pool_lifecycle_contract.rs",
+        "source/host/tests/conversation_blob_store_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust adaptation now maps the JS worker entry onto the AgentWorkerPool-owned worker thread plus a concrete SQLite ConversationBlobWorkerBackend. The worker boundary has explicit init/request IDs, get/set/root/clear/stale-root/GC/legacy-retirement/close messages and closes its SQLite store on worker shutdown. Final status is withheld until the remaining conversation-blob recovery/GC metadata behavior and shipping Host bootstrap wiring are complete."
     },
     {
       "referencePath": "source/host/agent-isolation/agent-worker-pool.ts",
@@ -9149,21 +9158,29 @@
       "testEvidence": [
         "source/host/tests/worker_blob_store_contract.rs",
         "source/host/tests/agent_worker_pool_lifecycle_contract.rs",
+        "source/host/tests/conversation_blob_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Partial parity advanced: the Rust pool now boots one named worker thread per blob store, performs explicit init, correlates monotonically increasing request IDs, retains active operations, reuses workers, evicts the oldest unretained worker at capacity, sweeps idle workers, exposes diagnostics, closes stores/all workers, and routes the frozen root lookup, clear, stale-root cleanup, conversation-GC and legacy-retirement request surface through the worker boundary. Final status remains withheld until the concrete migrated conversation-blob database/GC/legacy-retirement backend is wired into the shipping Host graph."
+      "notes": "Partial parity advanced: the Rust pool owns a real named worker thread per blob store, explicit init, monotonic request IDs, active-operation retention, reuse, capacity eviction, idle sweep, diagnostics, close-store/all, and the full frozen root/clear/stale-root/GC/legacy-retirement protocol. A concrete SQLite ConversationBlobWorkerBackend now exists and is contract-tested. Final status remains withheld until full conversation-blob recovery/metadata-GC parity and shipping Host composition are complete."
     },
     {
       "referencePath": "source/host/agent-isolation/conversation-blob-db.ts",
       "targetPath": "source/host/src/agent_isolation/conversation_blob_db.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "64eab8ac6ea77046cc2ca752fcd6319ce2751de8",
       "architecturalRole": "host/agent-isolation",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/agent_isolation/conversation_blob_db.rs",
+        "source/host/src/agent_isolation/conversation_blob_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/conversation_blob_store_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust SQLite production DB now creates the strict blobs schema, applies busy timeout/WAL/NORMAL pragmas, reads/writes migration state, runs quick_check, removes recovery sidecars and retries sidecar-related open failures. Full Grok quarantine/salvage/resume/replacement recovery semantics remain before final status."
     },
     {
       "referencePath": "source/host/agent-isolation/conversation-blob-gc.ts",
@@ -9182,24 +9199,40 @@
       "targetPath": "source/host/src/agent_isolation/conversation_blob_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "12174ba324cd7853010dca457d9404182bc55f43",
       "architecturalRole": "host/agent-isolation",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/agent_isolation/conversation_blob_store.rs",
+        "source/host/src/agent_isolation/conversation_blob_db.rs",
+        "source/host/src/agent_isolation/legacy_blob_retirement.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/conversation_blob_store_contract.rs",
+        "source/host/tests/agent_worker_pool_lifecycle_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Concrete Rust SQLite store implements get/set/clear, bounded recent-write tracking, legacy adoption, protobuf-wire root scoring, latest-root recovery and SHA-valid stale-checkpoint-root cleanup, and is exercised through the real worker pool. Full blob-reference metadata graph GC remains explicitly fail-closed/skipped, and shipping Host composition has not yet bound this backend."
     },
     {
       "referencePath": "source/host/agent-isolation/legacy-blob-retirement.ts",
       "targetPath": "source/host/src/agent_isolation/legacy_blob_retirement.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "fca692d7794871a66bc32ebb22263dd74237cc8e",
       "architecturalRole": "host/agent-isolation",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/agent_isolation/legacy_blob_retirement.rs",
+        "source/host/src/agent_isolation/conversation_blob_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/conversation_blob_store_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust retirement gate checks legacy readability, destination quick_check, adoption-complete migration state, retained-root presence, and legacy row/byte totals; the real SQLite worker-backend contract proves the adoption/retirement path. Final status remains withheld until the production Host graph owns this backend and recovery-rebuilt/GC parity is closed."
     },
     {
       "referencePath": "source/host/agent-isolation/transcript-mirror-offload.ts",
@@ -9242,10 +9275,10 @@
       ],
       "testEvidence": [
         "source/host/tests/worker_blob_store_contract.rs",
-        "source/host/tests/agent_worker_pool_lifecycle_contract.rs",
+        "source/host/tests/conversation_blob_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "WorkerBlobStore routes get/set/set-locally-only through the real Rust AgentWorkerPool worker-thread lifecycle and preserves agent/blob/legacy paths; flush remains a no-op as in Grok. Final status remains withheld until the migrated conversation-blob database/GC/legacy-retirement backend is production-wired."
+      "notes": "WorkerBlobStore routes get/set/set-locally-only through the real Rust AgentWorkerPool and concrete SQLite ConversationBlobWorkerBackend while preserving agent/blob/legacy paths; flush remains a no-op as in Grok. Final status remains withheld until full recovery/GC parity and shipping Host composition bind the production pool."
     },
     {
       "referencePath": "source/host/agents/agent-avatar.ts",

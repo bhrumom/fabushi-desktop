@@ -142,6 +142,14 @@ impl AgentBlobWorkerBackend for LifecycleBackend {
         self.record_thread();
         Box::pin(async { Ok(LegacyBlobRetirementVerdict::retirable(7, 2048)) })
     }
+    fn close_store<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+    ) -> AgentWorkerFuture<'a, Result<(), Self::Error>> {
+        Box::pin(async { Ok(()) })
+    }
+
 }
 
 fn options(max_workers: usize) -> AgentWorkerPoolOptions {

@@ -73,6 +73,12 @@ pub trait AgentBlobWorkerBackend: Send + Sync {
         retained_root_id_hex: &'a str,
         legacy_blob_db_path: &'a Path,
     ) -> AgentWorkerFuture<'a, Result<LegacyBlobRetirementVerdict, Self::Error>>;
+
+    fn close_store<'a>(
+        &'a self,
+        agent_id: &'a str,
+        blob_db_path: &'a Path,
+    ) -> AgentWorkerFuture<'a, Result<(), Self::Error>>;
 }
 
 #[derive(Debug)]
@@ -909,6 +915,10 @@ where
                     }
                     WorkerRequest::Close { request_id, reply } => {
                         let _ = request_id;
+                        let _ = futures::executor::block_on(backend.close_store(
+                            &worker_boot.agent_id,
+                            &worker_boot.blob_db_path,
+                        ));
                         let _ = reply.send(());
                         break;
                     }

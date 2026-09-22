@@ -145,6 +145,14 @@ impl AgentBlobWorkerBackend for FakeBackend {
             Ok(mahayana_host_runtime::agent_isolation::LegacyBlobRetirementVerdict::defer("not-used"))
         })
     }
+    fn close_store<'a>(
+        &'a self,
+        _agent_id: &'a str,
+        _blob_db_path: &'a Path,
+    ) -> AgentWorkerFuture<'a, Result<(), Self::Error>> {
+        Box::pin(async { Ok(()) })
+    }
+
 }
 
 #[test]
