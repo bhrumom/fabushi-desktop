@@ -22,6 +22,14 @@ export interface AgentMcpReference {
   readonly toolCount: number;
 }
 
+export interface AgentMcpComposerReference {
+  readonly id: string;
+  readonly name: string;
+  readonly description?: string;
+  readonly status?: string;
+  readonly toolCount: number;
+}
+
 export interface AgentMcpControllerOptions {
   onError?(message: string): void;
 }
@@ -102,11 +110,21 @@ export function normalizeAgentMcpServer(value: unknown): AgentMcpReference | nul
   };
 }
 
-export function projectAgentMcpReferences(servers: readonly unknown[]): AgentMcpReference[] {
+export function normalizeAgentMcpServers(servers: readonly unknown[]): AgentMcpReference[] {
   return servers
     .map(normalizeAgentMcpServer)
     .filter((item): item is AgentMcpReference => item !== null)
     .filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index);
+}
+
+export function projectAgentMcpReferences(servers: readonly unknown[]): AgentMcpComposerReference[] {
+  return normalizeAgentMcpServers(servers).map((server) => ({
+    id: server.id,
+    name: server.name,
+    ...(server.description ? { description: server.description } : {}),
+    ...(server.status ? { status: server.status } : {}),
+    toolCount: server.toolCount,
+  }));
 }
 
 function requestId(action: string): string {
@@ -209,7 +227,7 @@ export function useAgentMcpController(
 
   const handle = useCallback((event: RuntimeEvent): boolean => {
     if (event.type === 'mcp.listed') {
-      setReferences(projectAgentMcpReferences(event.servers));
+      setReferences(normalizeAgentMcpServers(event.servers));
       setPullRequestTool(findPullRequestReadTool(event.servers));
       return true;
     }
