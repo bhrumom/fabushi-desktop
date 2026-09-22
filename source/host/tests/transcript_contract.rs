@@ -212,7 +212,7 @@ fn run_scheduler_prioritizes_user_work_and_escapes_only_after_watchdog_grace() {
     assert!(scheduler.active("agent").is_none());
 
     let successor = scheduler.start_next("agent", 141).expect("successor");
-    assert_eq!(successor.task_id, "group-user");
+    assert_eq!(successor.task_id, "new-user");
     assert_eq!(successor.lane, RunLane::User);
 
     let late = scheduler.settle("agent", first.generation, 150);
@@ -224,9 +224,10 @@ fn run_scheduler_prioritizes_user_work_and_escapes_only_after_watchdog_grace() {
     assert_eq!(scheduler.active("agent").unwrap().generation, successor.generation);
 
     let current = scheduler.settle("agent", successor.generation, 160);
-    assert!(matches!(current, RunSettlement::ActiveSettled { task_id, .. } if task_id == "group-user"));
-    let agent_run = scheduler.start_next("agent", 161).expect("agent lane");
-    assert_eq!(agent_run.lane, RunLane::User, "queued user work stays ahead of agent/background work");
+    assert!(matches!(current, RunSettlement::ActiveSettled { task_id, .. } if task_id == "new-user"));
+    let group_member = scheduler.start_next("agent", 161).expect("remaining user lane");
+    assert_eq!(group_member.task_id, "group-user");
+    assert_eq!(group_member.lane, RunLane::User);
 }
 
 #[test]
