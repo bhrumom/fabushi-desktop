@@ -165,3 +165,90 @@ fn acceptance_ledger_tracks_eviction_and_corrupt_history_as_unknown_durability()
     assert!(has_backup);
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn run_scheduler_prioritizes_user_work_and_escapes_only_after_watchdog_grace() {
+    use mahayana_host_runtime::extensions::transcript::run_scheduler::{
+        ActivePhase, QueuedRun, RunLane, RunScheduler, RunSettlement, WatchdogStage,
+    };
+
+    fn task(id: &str, lane: RunLane, source: &str, at: u64) -> QueuedRun {
+        QueuedRun {
+            task_id: id.into(),
+            lane,
+            source: source.into(),
+            enqueued_at_ms: at,
+            accepted_at_ms: Some(at.saturating_sub(2)),
+            ack_token: Some(format!("ack-{id}")),
+        }
+    }
+
+    let mut scheduler = RunScheduler::new(100, 20);
+    scheduler.enqueue("agent", task("background", RunLane::Background, "wake", 0)).unwrap();
+    scheduler.enqueue("agent", task("group-user", RunLane::User, "group-member", 1)).unwrap();
+    scheduler.enqueue("agent", task("direct-user", RunLane::User, "composer", 2)).unwrap();
+    scheduler.enqueue("agent", task("agent-run", RunLane::Agent, "subagent", 3)).unwrap();
+
+    let first = scheduler.start_next("agent", 10).expect("first run");
+    assert_eq!(first.task_id, "direct-user");
+    assert_eq!(first.lane, RunLane::User);
+    assert_eq!(
+        scheduler.queued_task_ids("agent"),
+        vec!["group-user", "agent-run", "background"]
+    );
+    assert!(scheduler.watchdog_tick("agent", 99).is_none());
+
+    scheduler.enqueue("agent", task("new-user", RunLane::User, "composer", 20)).unwrap();
+    assert!(scheduler.watchdog_tick("agent", 109).is_none());
+    let tripped = scheduler.watchdog_tick("agent", 120).expect("watchdog trip");
+    assert_eq!(tripped.stage, WatchdogStage::Trip);
+    assert_eq!(scheduler.active("agent").unwrap().phase, ActivePhase::Interrupted);
+    assert!(scheduler.watchdog_tick("agent", 139).is_none());
+
+    let escaped = scheduler.watchdog_tick("agent", 140).expect("watchdog escape");
+    assert_eq!(escaped.stage, WatchdogStage::Escape);
+    assert_eq!(escaped.ack_token.as_deref(), Some("ack-direct-user"));
+    assert!(scheduler.active("agent").is_none());
+
+    let successor = scheduler.start_next("agent", 141).expect("successor");
+    assert_eq!(successor.task_id, "group-user");
+    assert_eq!(successor.lane, RunLane::User);
+
+    let late = scheduler.settle("agent", first.generation, 150);
+    assert!(matches!(
+        late,
+        RunSettlement::ZombieSettled { watchdog, .. }
+            if watchdog.stage == WatchdogStage::LateSettle
+    ));
+    assert_eq!(scheduler.active("agent").unwrap().generation, successor.generation);
+
+    let current = scheduler.settle("agent", successor.generation, 160);
+    assert!(matches!(current, RunSettlement::ActiveSettled { task_id, .. } if task_id == "group-user"));
+    let agent_run = scheduler.start_next("agent", 161).expect("agent lane");
+    assert_eq!(agent_run.lane, RunLane::User, "queued user work stays ahead of agent/background work");
+}
+
+#[test]
+fn run_scheduler_watchdog_ignores_background_backlog_without_waiting_user() {
+    use mahayana_host_runtime::extensions::transcript::run_scheduler::{
+        QueuedRun, RunLane, RunScheduler,
+    };
+
+    let mut scheduler = RunScheduler::new(50, 10);
+    let mk = |id: &str, lane: RunLane| QueuedRun {
+        task_id: id.into(),
+        lane,
+        source: "test".into(),
+        enqueued_at_ms: 0,
+        accepted_at_ms: None,
+        ack_token: None,
+    };
+    scheduler.enqueue("agent", mk("a", RunLane::Agent)).unwrap();
+    scheduler.enqueue("agent", mk("b", RunLane::Background)).unwrap();
+    let active = scheduler.start_next("agent", 0).unwrap();
+    assert_eq!(active.task_id, "a");
+    assert!(scheduler.watchdog_tick("agent", 10_000).is_none());
+    let diagnostics = scheduler.diagnostics(10_000);
+    assert_eq!(diagnostics[0].depth_background, 1);
+}
