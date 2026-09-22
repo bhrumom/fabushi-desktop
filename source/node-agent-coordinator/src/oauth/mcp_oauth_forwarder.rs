@@ -60,7 +60,7 @@ impl McpOAuthForwarderState {
 
         self.pending.track(PendingOAuth {
             origin: redirect.origin.clone(),
-            state: payload.state,
+            state: payload.state.clone(),
             server_name: payload.server_name,
             expires_at_ms: now_ms.saturating_add(MCP_OAUTH_PENDING_TTL_MS),
         });
