@@ -342,3 +342,90 @@ fn conversation_state_recovers_unconfirmed_user_messages_and_rejects_stale_model
     assert!(should_use_self_summary("cursor/vega-x"));
     assert!(!should_use_self_summary("gpt-4.1"));
 }
+
+
+#[test]
+fn conversation_state_covers_await_stream_usage_and_summarization_contracts() {
+    use mahayana_host_runtime::{
+        CompletedAwaitOutcome, ContextWindowTracker, FullStreamSanitizer,
+        StreamSanitizerItem, SUMMARIZATION_MAX_OUTPUT_TOKENS,
+        SUMMARIZATION_MAX_PROMPT_CHARS, await_block_until_ms,
+        classify_completed_await_outcome, summarization_policy,
+    };
+    use serde_json::json;
+
+    assert_eq!(await_block_until_ms(Some(&json!(42.9))), 42.9);
+    assert_eq!(await_block_until_ms(Some(&json!("17"))), 17.0);
+    assert_eq!(await_block_until_ms(None), 0.0);
+    assert!(await_block_until_ms(Some(&json!({ "bad": true }))).is_nan());
+
+    let slept = json!({
+        "result": {
+            "result": {
+                "case": "success",
+                "value": {
+                    "awaitResult": {
+                        "case": "complete",
+                        "value": { "taskId": "   " }
+                    }
+                }
+            }
+        }
+    });
+    assert_eq!(
+        classify_completed_await_outcome(&slept),
+        CompletedAwaitOutcome::SleptFull
+    );
+
+    let completed = json!({
+        "result": {
+            "result": {
+                "case": "success",
+                "value": {
+                    "awaitResult": {
+                        "case": "stillRunning",
+                        "value": { "regexMatch": ["ready"] }
+                    }
+                }
+            }
+        }
+    });
+    assert_eq!(
+        classify_completed_await_outcome(&completed),
+        CompletedAwaitOutcome::CompletedEarly
+    );
+
+    let mut windows = ContextWindowTracker::default();
+    let usage = windows.sanitize_extended_usage(
+        &json!({
+            "inputTokens": 10.8,
+            "outputTokens": 3,
+            "cacheReadTokens": -2,
+            "cacheWriteTokens": 4,
+            "maxTokens": 128000
+        }),
+        "model-a",
+    );
+    assert_eq!(usage.input_tokens, 10);
+    assert_eq!(usage.output_tokens, 3);
+    assert_eq!(usage.cache_read_tokens, 0);
+    assert_eq!(usage.cache_write_tokens, 4);
+    assert_eq!(usage.max_tokens, 128000);
+    assert_eq!(windows.last_reported("model-a"), Some(128000));
+
+    let mut stream = FullStreamSanitizer::default();
+    assert_eq!(stream.accept_value("before"), StreamSanitizerItem::Emit("before"));
+    assert_eq!(
+        stream.accept_error("provider stream failed"),
+        StreamSanitizerItem::DeferredError("provider stream failed".into())
+    );
+    assert_eq!(stream.accept_value("after"), StreamSanitizerItem::Suppressed);
+    assert_eq!(stream.accept_error("second error"), StreamSanitizerItem::Suppressed);
+    assert_eq!(stream.finish(), Err("provider stream failed".into()));
+
+    let policy = summarization_policy(true);
+    assert!(policy.enable_reduce_inputs_retry);
+    assert_eq!(policy.max_prompt_chars, SUMMARIZATION_MAX_PROMPT_CHARS);
+    assert_eq!(policy.max_output_tokens, SUMMARIZATION_MAX_OUTPUT_TOKENS);
+    assert!(policy.preserve_latest_image);
+}
