@@ -1,5 +1,5 @@
 use std::collections::VecDeque;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
@@ -22,6 +22,7 @@ enum Behavior {
     FailBeforeOutput,
     OutputCheckpointThenFail,
     OutputThenFail,
+    ToolCheckpointThenDelayedSuccess,
     Success {
         delta: &'static str,
         accumulated: &'static str,
@@ -58,6 +59,18 @@ fn checkpoint() -> RoutedProviderCheckpoint {
     })
 }
 
+fn tool_only_checkpoint() -> RoutedProviderCheckpoint {
+    RoutedProviderCheckpoint::OpenRouter(OpenRouterCheckpoint {
+        conversation: vec![
+            json!({"role":"user","content":"calendar"}),
+            json!({"role":"tool","tool_call_id":"call-tool-only","content":"daily"}),
+        ],
+        text: String::new(),
+        completed_steps: 1,
+        tool_calls_completed: 1,
+    })
+}
+
 impl RoutedProviderAttemptExecutor for FakeExecutor {
     fn run_attempt(
         &mut self,
@@ -88,6 +101,11 @@ impl RoutedProviderAttemptExecutor for FakeExecutor {
                 Err(ProviderSessionError::Transport(
                     "connection reset after partial output".into(),
                 ))
+            }
+            Behavior::ToolCheckpointThenDelayedSuccess => {
+                on_checkpoint(&tool_only_checkpoint())?;
+                thread::sleep(Duration::from_millis(40));
+                Ok("done".into())
             }
             Behavior::Success {
                 delta,
@@ -292,6 +310,34 @@ fn production_turn_adapter_first_output_watchdog_interrupts_silent_attempt() {
 
     assert!(error.to_string().contains("first-output watchdog"));
     assert_eq!(executor.attempts, 1);
+}
+
+#[test]
+fn production_turn_adapter_tool_only_checkpoint_stops_first_output_watchdog() {
+    let adapter = ProductionTurnRunShellAdapter {
+        policy: policy(1),
+        watchdog_poll_interval: Duration::from_millis(1),
+    };
+    let cancellation = RoutedProviderCancellation::default();
+    let store = FakeStore::default();
+    let mut executor =
+        FakeExecutor::new(VecDeque::from([Behavior::ToolCheckpointThenDelayedSuccess]));
+
+    let result = adapter
+        .run(
+            &cancellation,
+            &store,
+            &mut executor,
+            &mut |_delta, _| {},
+        )
+        .expect("durable tool checkpoint is provider output");
+
+    assert_eq!(result, "done");
+    assert_eq!(executor.attempts, 1);
+    assert_eq!(
+        store.saved.lock().expect("saved checkpoints").as_slice(),
+        &[tool_only_checkpoint()]
+    );
 }
 
 #[test]
