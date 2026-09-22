@@ -9493,12 +9493,18 @@
       "targetPath": "source/host/src/extensions/transcript/prompt_acceptance_ledger.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "975a10158599c52bc1ea215a7541cbb27120e183",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/prompt_acceptance_ledger.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Parity verified: canonical send digest, nonce replay/digest mismatch fencing, pending/accepted/rejected settlement, bounded eviction, corrupt-ledger recovery, degraded durability markers/windows, atomic persistence and disposal are implemented and contract-tested."
     },
     {
       "referencePath": "source/host/extensions/transcript/replica-writer.ts",
@@ -9565,12 +9571,18 @@
       "targetPath": "source/host/src/extensions/transcript/run_scheduler.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "535a162663b9be2c2b538cc21c0926dbc087a0b8",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/run_scheduler.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Parity verified at the scheduler boundary: lane priority, queue admission/dequeue, active generation ownership, watchdog/grace escape, zombie/late settlement fencing, diagnostics, backlog handling and disposal are implemented as the Rust state-machine equivalent and contract-tested."
     },
     {
       "referencePath": "source/host/extensions/transcript/runner-registry.ts",
