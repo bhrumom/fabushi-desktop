@@ -10,6 +10,7 @@ pub mod session;
 pub mod box_store_sync;
 pub mod cloud_agents;
 pub mod telemetry;
+pub mod source_map;
 pub mod webauthn_proxy;
 pub mod browser_ua;
 pub mod box_lifecycle;
