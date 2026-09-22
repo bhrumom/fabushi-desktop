@@ -187,8 +187,11 @@ export class AgentRuntimeCoordinator {
     }
 
     if (alreadyOwned) return alreadyOwned;
-    const fallback = this.workspace.peerForRequest(operationId)
-      ?? this.workspace.onlyPendingPeer();
+    // Unknown runtime operations must not be adopted by inference. The only
+    // safe compatibility fallback is an explicit request id that is itself
+    // present on the event path; otherwise wait for canonical adoption or an
+    // event carrying conversation/Agent ownership.
+    const fallback = this.workspace.peerForRequest(operationId);
     const requestId = fallback ? this.workspace.requestForPeer(fallback) : null;
     const peerKey = this.workspace.claimRuntimeOperation(operationId, fallback);
     if (!peerKey) return null;
