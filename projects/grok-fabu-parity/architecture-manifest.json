@@ -2221,12 +2221,18 @@
       "targetPath": "frontend/src/recovered/features/conversation/workspace/sidebar-section-projection.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "8bc5d824f36c50b91f1cb4f352c59dc21a6ae25e",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/sidebar-section-projection.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-configuration-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage; no dependency on desktop/src, desktop/electron, frontend/apps/web, or third_party/mahayana."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/sidebar-sections-state.ts",
@@ -2605,12 +2611,18 @@
       "targetPath": "frontend/src/recovered/features/org-chart/workspace/model.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "462185ae960fccde44b74ff1ae6102813863b9e5",
       "architecturalRole": "renderer/module",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/org-chart/workspace/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-configuration-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage; no dependency on desktop/src, desktop/electron, frontend/apps/web, or third_party/mahayana."
     },
     {
       "referencePath": "frontend/src/recovered/features/org-chart/workspace/network-trigger.ts",
@@ -3001,12 +3013,18 @@
       "targetPath": "frontend/src/recovered/features/settings/overlay/model.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "552d14e0d58e5f2371422b8f9daba2f71ee64aae",
       "architecturalRole": "renderer/settings",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/model.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-configuration-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage; no dependency on desktop/src, desktop/electron, frontend/apps/web, or third_party/mahayana."
     },
     {
       "referencePath": "frontend/src/recovered/features/settings/overlay/notice.tsx",
@@ -3037,12 +3055,18 @@
       "targetPath": "frontend/src/recovered/features/settings/overlay/router.ts",
       "targetLanguage": "typescript",
       "owner": "renderer",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "161a6e19e59332d14e87d5fadfe5dd6ae10fc1c2",
       "architecturalRole": "renderer/settings",
       "processOrPackage": "renderer",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/router.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-configuration-models.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Clean-room renderer semantic parity with executable Node contract coverage; no dependency on desktop/src, desktop/electron, frontend/apps/web, or third_party/mahayana."
     },
     {
       "referencePath": "frontend/src/recovered/features/settings/overlay/updates-controller.ts",
@@ -24621,5 +24645,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:31:14.485Z"
+  "generatedAt": "2026-09-22T07:34:28.243Z"
 }
