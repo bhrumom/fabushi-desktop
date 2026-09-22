@@ -9,7 +9,8 @@ use mahayana_node_agent_coordinator::client_side_tool_v2_relay::{
     ClientSideToolV2Relay, CLIENT_SIDE_TOOL_V2_FAMILY,
 };
 use mahayana_node_agent_coordinator::gateway::gateway_client::{
-    CoordinatorGatewayClient, stream_http_events,
+    CoordinatorGatewayClient, GatewayCommandExecution, GatewayCommandPolicy,
+    GatewayCommandSpan, GatewayTransportStage, dispatch_gateway_command, stream_http_events,
 };
 use mahayana_node_agent_coordinator::gateway::gateway_event_families::coordinator_event_family_for_sse_channel;
 use mahayana_node_agent_coordinator::gateway::gateway_reachability::ReachabilityOutcome;
@@ -79,6 +80,7 @@ struct CoordinatorState {
     gateway_discovery_path: PathBuf,
     host_stdin: Mutex<Option<ActiveHostStdin>>,
     gateway_client: Mutex<CoordinatorGatewayClient>,
+    gateway_command_policy: GatewayCommandPolicy,
     host_supervisor: Mutex<GatewayHostSupervisor>,
     tool_relay: Mutex<ClientSideToolV2Relay>,
     tool_replay_done: AtomicBool,
@@ -97,6 +99,7 @@ struct CoordinatorState {
     closed: AtomicBool,
     consecutive_crashes: AtomicU64,
     gateway_events_live: AtomicBool,
+    trace_window_refresh_inflight: AtomicBool,
 }
 
 impl CoordinatorState {
@@ -1113,6 +1116,78 @@ fn wait_for_gateway_connection(
     ))
 }
 
+fn refresh_gateway_trace_window_async(state: &Arc<CoordinatorState>) {
+    let now_ms = coordinator_now_ms();
+    if !state
+        .gateway_command_policy
+        .trace_window_root_needs_refresh(now_ms)
+        || state
+            .trace_window_refresh_inflight
+            .swap(true, Ordering::SeqCst)
+    {
+        return;
+    }
+    let refresh_state = Arc::clone(state);
+    thread::spawn(move || {
+        let root = control_command(
+            &refresh_state,
+            "getRpcTraceWindowTraceparent",
+            json!({}),
+        )
+        .ok()
+        .and_then(|value| value.as_str().map(str::to_string));
+        refresh_state
+            .gateway_command_policy
+            .cache_trace_window_root(root, coordinator_now_ms());
+        refresh_state
+            .trace_window_refresh_inflight
+            .store(false, Ordering::SeqCst);
+    });
+}
+
+fn report_gateway_execution_async(
+    state: &Arc<CoordinatorState>,
+    spans: Vec<GatewayCommandSpan>,
+    stages: Vec<GatewayTransportStage>,
+) {
+    if spans.is_empty() && stages.is_empty() {
+        return;
+    }
+    let report_state = Arc::clone(state);
+    thread::spawn(move || {
+        for stage in stages {
+            let _ = control_command(
+                &report_state,
+                "reportTransportStage",
+                json!({
+                    "accountSlot": stage.account_slot,
+                    "clientNonce": stage.client_nonce,
+                    "stage": stage.stage,
+                    "attempt": stage.attempt,
+                    "traceparent": stage.traceparent,
+                    "startEpochMs": stage.start_epoch_ms,
+                    "durationMs": stage.duration_ms,
+                    "isError": stage.is_error,
+                }),
+            );
+        }
+        for span in spans {
+            let _ = control_command(
+                &report_state,
+                "reportGatewayCommandSpan",
+                json!({
+                    "method": span.method,
+                    "rootTraceparent": span.root_traceparent,
+                    "spanId": span.span_id,
+                    "startEpochMs": span.start_epoch_ms,
+                    "durationMs": span.duration_ms,
+                    "isError": span.is_error,
+                }),
+            );
+        }
+    });
+}
+
 fn dispatch_to_host(
     state: &Arc<CoordinatorState>,
     channel: CarrierChannel,
@@ -1173,7 +1248,9 @@ fn dispatch_to_host(
     }
 
     let generation = state.host_generation.load(Ordering::SeqCst);
-    let connection = wait_for_gateway_connection(state, generation)?;
+    // Mirror Grok's trace-window behavior: refresh asynchronously so the
+    // current command never waits on the Electron control port.
+    refresh_gateway_trace_window_async(state);
     let host_request_id = format!("{}:{request_id}", channel.wire_name());
     state
         .pending
@@ -1190,7 +1267,26 @@ fn dispatch_to_host(
 
     let dispatch_state = Arc::clone(state);
     thread::spawn(move || {
-        let result = dispatch_http_json(&connection, &method, args);
+        let command_now_ms = coordinator_now_ms();
+        let result = dispatch_gateway_command(
+            &dispatch_state.gateway_command_policy,
+            &method,
+            args,
+            command_now_ms,
+            |required_base_url| {
+                let connection = wait_for_gateway_connection(&dispatch_state, generation)
+                    .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
+                if let Some(required_base_url) = required_base_url {
+                    if connection.base_url != required_base_url {
+                        return Err(GatewayDispatchError::Transport(format!(
+                            "gateway endpoint changed from {required_base_url} to {}",
+                            connection.base_url
+                        )));
+                    }
+                }
+                Ok(connection)
+            },
+        );
         if matches!(result, Err(GatewayDispatchError::Unreachable { .. })) {
             // A Host crash closes the in-flight HTTP socket before the process
             // waiter can reject its generation. Give that owner a short window
@@ -1219,11 +1315,22 @@ fn dispatch_to_host(
             return;
         };
         match result {
-            Ok(value) => dispatch_state.complete_request(
-                pending_request.channel,
-                &pending_request.request_id,
-                ReplyOutcome::Ok { value },
-            ),
+            Ok(GatewayCommandExecution {
+                value,
+                command_spans,
+                transport_stages,
+            }) => {
+                dispatch_state.complete_request(
+                    pending_request.channel,
+                    &pending_request.request_id,
+                    ReplyOutcome::Ok { value },
+                );
+                report_gateway_execution_async(
+                    &dispatch_state,
+                    command_spans,
+                    transport_stages,
+                );
+            }
             Err(error) => {
                 if let GatewayDispatchError::Unreachable { outcome, .. } = &error {
                     if let Ok(mut gateway) = dispatch_state.gateway_client.lock() {
@@ -1379,6 +1486,7 @@ fn main() {
         gateway_discovery_path,
         host_stdin: Mutex::new(None),
         gateway_client: Mutex::new(gateway_client),
+        gateway_command_policy: GatewayCommandPolicy::default(),
         host_supervisor: Mutex::new(GatewayHostSupervisor::new(HEALTH_PROBE_TTL_MS)),
         tool_relay: Mutex::new(ClientSideToolV2Relay::default()),
         tool_replay_done: AtomicBool::new(false),
@@ -1397,6 +1505,7 @@ fn main() {
         closed: AtomicBool::new(false),
         consecutive_crashes: AtomicU64::new(0),
         gateway_events_live: AtomicBool::new(false),
+        trace_window_refresh_inflight: AtomicBool::new(false),
     });
 
     start_oauth_expiry_loop(Arc::clone(&state));

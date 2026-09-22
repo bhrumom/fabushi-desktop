@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::{Read, Write};
 use std::time::Duration;
 
@@ -113,11 +113,28 @@ fn gateway_error_message(body: &[u8], fallback: &str) -> String {
         .unwrap_or_else(|| fallback.to_string())
 }
 
-pub fn dispatch_http_json(
+#[derive(Debug, Clone, PartialEq)]
+pub struct GatewayJsonResponse {
+    pub value: Value,
+    pub headers: Vec<(String, String)>,
+}
+
+impl GatewayJsonResponse {
+    pub fn header(&self, name: &str) -> Option<&str> {
+        self.headers
+            .iter()
+            .find(|(key, _)| key.eq_ignore_ascii_case(name))
+            .map(|(_, value)| value.as_str())
+    }
+}
+
+pub fn dispatch_http_json_response(
     connection: &GatewayConnection,
     method: &str,
     args: Value,
-) -> Result<Value, GatewayDispatchError> {
+    timeout: Duration,
+    extra_headers: &BTreeMap<String, String>,
+) -> Result<GatewayJsonResponse, GatewayDispatchError> {
     if method.is_empty()
         || method
             .bytes()
@@ -141,7 +158,6 @@ pub fn dispatch_http_json(
             message: format!("gateway {method} unreachable (dns)"),
         });
     }
-    let timeout = Duration::from_millis(15_000);
     let mut stream = parsed.connect_any(&addresses, timeout).map_err(|error| {
         GatewayDispatchError::Unreachable {
             outcome: classify_connect_error(&error),
@@ -166,6 +182,10 @@ pub fn dispatch_http_json(
     )
     .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
     for (name, value) in &connection.headers {
+        write!(stream, "{name}: {value}\r\n")
+            .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
+    }
+    for (name, value) in extra_headers {
         write!(stream, "{name}: {value}\r\n")
             .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
     }
@@ -197,10 +217,29 @@ pub fn dispatch_http_json(
         }
         return Err(GatewayDispatchError::Command(SandGatewayCommandError::new(message)));
     }
-    serde_json::from_slice(&response.body)
+    let value = serde_json::from_slice(&response.body)
         .map_err(|error| GatewayDispatchError::Transport(format!(
             "Host gateway returned invalid JSON: {error}"
-        )))
+        )))?;
+    Ok(GatewayJsonResponse {
+        value,
+        headers: response.headers,
+    })
+}
+
+pub fn dispatch_http_json(
+    connection: &GatewayConnection,
+    method: &str,
+    args: Value,
+) -> Result<Value, GatewayDispatchError> {
+    dispatch_http_json_response(
+        connection,
+        method,
+        args,
+        Duration::from_millis(15_000),
+        &BTreeMap::new(),
+    )
+    .map(|response| response.value)
 }
 
 const GATEWAY_API_PREFIX: &str = "/api";

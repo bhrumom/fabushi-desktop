@@ -1,11 +1,11 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::io::{Read, Write};
-use std::time::Duration;
+use std::env;\nuse std::sync::Mutex;\nuse std::time::{Duration, Instant};
 
-use serde_json::Value;
+use chrono::Utc;\nuse serde_json::Value;\nuse uuid::Uuid;
 
 use super::gateway_reachability::ReachabilityOutcome;
-use super::gateway_request_dispatcher::GatewayDispatchError;
+use super::gateway_request_dispatcher::{\n    GatewayDispatchError, GatewayJsonResponse, dispatch_http_json_response,\n};
 use super::host_supervisor::GatewayConnection;
 use super::http_transport::parse_gateway_http_base;
 use super::sse_block_decoder::SseBlockDecoder;
@@ -17,7 +17,15 @@ pub const SSE_CONNECT_TIMEOUT_MS: u64 = 15_000;
 pub const SEND_POST_TIMEOUT_MS: u64 = 15_000;
 pub const ROSTER_READ_TIMEOUT_MS: u64 = 15_000;
 pub const TRACE_WINDOW_ROOT_CACHE_MS: u64 = 5_000;
+pub const CREATE_AGENT_RETRY_MAX_ATTEMPTS: u32 = 3;
+pub const CREATE_AGENT_RETRY_INITIAL_MS: u64 = 1_000;
+pub const CREATE_AGENT_RETRY_MAX_MS: u64 = 4_000;
 pub const HOST_ACCOUNT_SLOT: &str = "host";
+pub const GATEWAY_MINT_DEDUPE_HEADER: &str = "x-sand-mint-dedupe";
+pub const GATEWAY_TRACEPARENT_HEADER: &str = "traceparent";
+pub const DISABLE_SEND_ACCEPT_RETURN_ENV: &str = "SAND_DISABLE_SEND_ACCEPT_RETURN";
+pub const SEND_POST_TIMEOUT_ENV: &str = "SAND_SEND_POST_TIMEOUT_MS";
+pub const ROSTER_READ_TIMEOUT_ENV: &str = "SAND_ROSTER_READ_TIMEOUT_MS";
 pub const GATEWAY_SLIM_AVATARS_HEADER: &str = "x-sand-slim-avatars";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -28,6 +36,9 @@ pub struct GatewayClientTiming {
     pub sse_connect_timeout_ms: u64,
     pub send_post_timeout_ms: u64,
     pub roster_read_timeout_ms: u64,
+    pub create_agent_retry_max_attempts: u32,
+    pub create_agent_retry_initial_ms: u64,
+    pub create_agent_retry_max_ms: u64,
 }
 
 impl Default for GatewayClientTiming {
@@ -37,11 +48,23 @@ impl Default for GatewayClientTiming {
             sse_reconnect_max_ms: SSE_RECONNECT_MAX_MS,
             sse_stall_timeout_ms: SSE_STALL_TIMEOUT_MS,
             sse_connect_timeout_ms: SSE_CONNECT_TIMEOUT_MS,
-            send_post_timeout_ms: SEND_POST_TIMEOUT_MS,
-            roster_read_timeout_ms: ROSTER_READ_TIMEOUT_MS,
+            send_post_timeout_ms: env_timeout_ms(SEND_POST_TIMEOUT_ENV, SEND_POST_TIMEOUT_MS),
+            roster_read_timeout_ms: env_timeout_ms(ROSTER_READ_TIMEOUT_ENV, ROSTER_READ_TIMEOUT_MS),
+            create_agent_retry_max_attempts: CREATE_AGENT_RETRY_MAX_ATTEMPTS,
+            create_agent_retry_initial_ms: CREATE_AGENT_RETRY_INITIAL_MS,
+            create_agent_retry_max_ms: CREATE_AGENT_RETRY_MAX_MS,
         }
     }
 }
+
+fn env_timeout_ms(name: &str, fallback: u64) -> u64 {
+    env::var(name)
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .filter(|value| *value > 0)
+        .unwrap_or(fallback)
+}
+
 
 pub fn is_permanent_refusal(outcome: ReachabilityOutcome) -> bool {
     matches!(
@@ -354,6 +377,513 @@ impl CoordinatorGatewayClient {
 
     pub fn is_closed(&self) -> bool {
         self.closed
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GatewayCommandSpan {
+    pub method: String,
+    pub root_traceparent: String,
+    pub span_id: String,
+    pub start_epoch_ms: u64,
+    pub duration_ms: u64,
+    pub is_error: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GatewayTransportStage {
+    pub account_slot: String,
+    pub client_nonce: String,
+    pub stage: String,
+    pub attempt: u32,
+    pub traceparent: Option<String>,
+    pub start_epoch_ms: u64,
+    pub duration_ms: u64,
+    pub is_error: bool,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GatewayCommandExecution {
+    pub value: Value,
+    pub command_spans: Vec<GatewayCommandSpan>,
+    pub transport_stages: Vec<GatewayTransportStage>,
+}
+
+#[derive(Debug, Clone)]
+struct CachedTraceWindowRoot {
+    root: Option<String>,
+    expires_at_ms: u64,
+}
+
+#[derive(Debug)]
+pub struct GatewayCommandPolicy {
+    pub timing: GatewayClientTiming,
+    send_accept_return_disabled: bool,
+    mint_dedupe_proven_base_urls: Mutex<HashSet<String>>,
+    send_dedupe_proven_base_urls: Mutex<HashSet<String>>,
+    trace_window_root: Mutex<Option<CachedTraceWindowRoot>>,
+}
+
+impl Default for GatewayCommandPolicy {
+    fn default() -> Self {
+        Self::with_timing(GatewayClientTiming::default())
+    }
+}
+
+impl GatewayCommandPolicy {
+    pub fn with_timing(timing: GatewayClientTiming) -> Self {
+        Self {
+            timing,
+            send_accept_return_disabled: env::var(DISABLE_SEND_ACCEPT_RETURN_ENV)
+                .ok()
+                .as_deref()
+                == Some("1"),
+            mint_dedupe_proven_base_urls: Mutex::new(HashSet::new()),
+            send_dedupe_proven_base_urls: Mutex::new(HashSet::new()),
+            trace_window_root: Mutex::new(None),
+        }
+    }
+
+    pub fn trace_window_root_needs_refresh(&self, now_ms: u64) -> bool {
+        self.trace_window_root
+            .lock()
+            .map(|cached| {
+                cached
+                    .as_ref()
+                    .is_none_or(|cached| now_ms >= cached.expires_at_ms)
+            })
+            .unwrap_or(false)
+    }
+
+    pub fn cache_trace_window_root(&self, root: Option<String>, now_ms: u64) {
+        if let Ok(mut cached) = self.trace_window_root.lock() {
+            *cached = Some(CachedTraceWindowRoot {
+                root: root.filter(|value| !value.is_empty()),
+                expires_at_ms: now_ms.saturating_add(TRACE_WINDOW_ROOT_CACHE_MS),
+            });
+        }
+    }
+
+    pub fn cached_trace_window_root(&self, now_ms: u64) -> Option<String> {
+        self.trace_window_root
+            .lock()
+            .ok()
+            .and_then(|cached| cached.clone())
+            .filter(|cached| now_ms < cached.expires_at_ms)
+            .and_then(|cached| cached.root)
+    }
+
+    pub fn mint_dedupe_proven(&self, base_url: &str) -> bool {
+        self.mint_dedupe_proven_base_urls
+            .lock()
+            .map(|urls| urls.contains(base_url))
+            .unwrap_or(false)
+    }
+
+    pub fn send_dedupe_proven(&self, base_url: &str) -> bool {
+        self.send_dedupe_proven_base_urls
+            .lock()
+            .map(|urls| urls.contains(base_url))
+            .unwrap_or(false)
+    }
+
+    fn mark_mint_dedupe(&self, base_url: &str) {
+        if let Ok(mut urls) = self.mint_dedupe_proven_base_urls.lock() {
+            urls.insert(base_url.to_string());
+        }
+    }
+
+    fn mark_send_dedupe(&self, base_url: &str) {
+        if let Ok(mut urls) = self.send_dedupe_proven_base_urls.lock() {
+            urls.insert(base_url.to_string());
+        }
+    }
+}
+
+fn retryable_command_error(error: &GatewayDispatchError) -> bool {
+    match error {
+        GatewayDispatchError::Command(_) => false,
+        GatewayDispatchError::Unreachable { outcome, .. } => {
+            !is_permanent_refusal(*outcome)
+        }
+        GatewayDispatchError::Transport(_) => true,
+    }
+}
+
+fn retry_delay_ms(timing: GatewayClientTiming, completed_attempts: u32) -> u64 {
+    let exponent = completed_attempts.saturating_sub(1).min(8);
+    timing
+        .create_agent_retry_initial_ms
+        .saturating_mul(1_u64 << exponent)
+        .min(timing.create_agent_retry_max_ms)
+}
+
+fn derive_child_traceparent(root: &str) -> Option<(String, String)> {
+    let parts = root.split('-').collect::<Vec<_>>();
+    if parts.len() != 4
+        || parts[0].len() != 2
+        || parts[1].len() != 32
+        || parts[2].len() != 16
+        || parts[3].len() != 2
+        || !parts.iter().all(|part| part.bytes().all(|byte| byte.is_ascii_hexdigit()))
+    {
+        return None;
+    }
+    let span_id = Uuid::new_v4().simple().to_string()[..16].to_string();
+    Some((
+        format!("{}-{}-{}-{}", parts[0], parts[1], span_id, parts[3]),
+        span_id,
+    ))
+}
+
+fn request_with_policy(
+    policy: &GatewayCommandPolicy,
+    connection: &GatewayConnection,
+    method: &str,
+    args: Value,
+    timeout_ms: u64,
+    now_ms: u64,
+    command_spans: &mut Vec<GatewayCommandSpan>,
+) -> Result<GatewayJsonResponse, GatewayDispatchError> {
+    let trace_root = policy.cached_trace_window_root(now_ms);
+    let trace = trace_root
+        .as_deref()
+        .and_then(derive_child_traceparent);
+    let mut extra_headers = BTreeMap::new();
+    if let Some((traceparent, _)) = trace.as_ref() {
+        extra_headers.insert(GATEWAY_TRACEPARENT_HEADER.to_string(), traceparent.clone());
+    } else if let Some(root) = trace_root.as_ref() {
+        extra_headers.insert(GATEWAY_TRACEPARENT_HEADER.to_string(), root.clone());
+    }
+
+    let start_epoch_ms = u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
+    let started = Instant::now();
+    let result = dispatch_http_json_response(
+        connection,
+        method,
+        args,
+        Duration::from_millis(timeout_ms),
+        &extra_headers,
+    );
+    if let (Some(root), Some((_, span_id))) = (trace_root, trace) {
+        command_spans.push(GatewayCommandSpan {
+            method: method.to_string(),
+            root_traceparent: root,
+            span_id,
+            start_epoch_ms,
+            duration_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+            is_error: result.is_err(),
+        });
+    }
+    if let Ok(response) = &result {
+        if response.header(GATEWAY_MINT_DEDUPE_HEADER) == Some("1") {
+            policy.mark_mint_dedupe(&connection.base_url);
+        }
+    }
+    result
+}
+
+fn transport_identity(args: &Value) -> (Option<String>, Option<String>) {
+    let client_nonce = args
+        .get("clientNonce")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string);
+    let traceparent = args
+        .get("traceparent")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string);
+    (client_nonce, traceparent)
+}
+
+fn push_send_stage(
+    stages: &mut Vec<GatewayTransportStage>,
+    client_nonce: Option<&str>,
+    traceparent: Option<&str>,
+    stage: &str,
+    attempt: u32,
+    start_epoch_ms: u64,
+    started: Instant,
+    is_error: bool,
+) {
+    let Some(client_nonce) = client_nonce else {
+        return;
+    };
+    stages.push(GatewayTransportStage {
+        account_slot: HOST_ACCOUNT_SLOT.to_string(),
+        client_nonce: client_nonce.to_string(),
+        stage: stage.to_string(),
+        attempt,
+        traceparent: traceparent.map(str::to_string),
+        start_epoch_ms,
+        duration_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+        is_error,
+    });
+}
+
+pub fn dispatch_gateway_command<Resolve>(
+    policy: &GatewayCommandPolicy,
+    method: &str,
+    args: Value,
+    now_ms: u64,
+    mut resolve_connection: Resolve,
+) -> Result<GatewayCommandExecution, GatewayDispatchError>
+where
+    Resolve: FnMut(Option<&str>) -> Result<GatewayConnection, GatewayDispatchError>,
+{
+    let mut command_spans = Vec::new();
+    let mut transport_stages = Vec::new();
+
+    if method == "sendPrompt" && !policy.send_accept_return_disabled {
+        let (client_nonce, traceparent) = transport_identity(&args);
+        let mut required_base_url: Option<String> = None;
+        for attempt in 0..2_u32 {
+            let connect_epoch_ms =
+                u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
+            let connect_started = Instant::now();
+            let connection = match resolve_connection(required_base_url.as_deref()) {
+                Ok(connection) => {
+                    if let Some(required) = required_base_url.as_deref() {
+                        if connection.base_url != required {
+                            return Err(GatewayDispatchError::Transport(format!(
+                                "send retry aborted: gateway endpoint changed from {required} to {}",
+                                connection.base_url
+                            )));
+                        }
+                    }
+                    push_send_stage(
+                        &mut transport_stages,
+                        client_nonce.as_deref(),
+                        traceparent.as_deref(),
+                        "gateway-connect",
+                        attempt,
+                        connect_epoch_ms,
+                        connect_started,
+                        false,
+                    );
+                    connection
+                }
+                Err(error) => {
+                    push_send_stage(
+                        &mut transport_stages,
+                        client_nonce.as_deref(),
+                        traceparent.as_deref(),
+                        "gateway-connect",
+                        attempt,
+                        connect_epoch_ms,
+                        connect_started,
+                        true,
+                    );
+                    let retry = attempt == 0
+                        && client_nonce.is_some()
+                        && retryable_command_error(&error);
+                    if retry {
+                        continue;
+                    }
+                    return Err(error);
+                }
+            };
+
+            let post_epoch_ms =
+                u64::try_from(Utc::now().timestamp_millis()).unwrap_or_default();
+            let post_started = Instant::now();
+            let result = request_with_policy(
+                policy,
+                &connection,
+                method,
+                args.clone(),
+                policy.timing.send_post_timeout_ms,
+                now_ms,
+                &mut command_spans,
+            );
+            push_send_stage(
+                &mut transport_stages,
+                client_nonce.as_deref(),
+                traceparent.as_deref(),
+                "gateway-post",
+                attempt,
+                post_epoch_ms,
+                post_started,
+                result.is_err(),
+            );
+            match result {
+                Ok(response) => {
+                    if response
+                        .value
+                        .get("accepted")
+                        .and_then(Value::as_bool)
+                        == Some(true)
+                    {
+                        policy.mark_send_dedupe(&connection.base_url);
+                    }
+                    return Ok(GatewayCommandExecution {
+                        value: response.value,
+                        command_spans,
+                        transport_stages,
+                    });
+                }
+                Err(error) => {
+                    let retry = attempt == 0
+                        && client_nonce.is_some()
+                        && retryable_command_error(&error)
+                        && policy.send_dedupe_proven(&connection.base_url);
+                    if retry {
+                        required_base_url = Some(connection.base_url);
+                        continue;
+                    }
+                    return Err(error);
+                }
+            }
+        }
+        unreachable!("sendPrompt retry loop must settle");
+    }
+
+    if matches!(method, "listAgents" | "countAgents") {
+        let mut last_error = None;
+        for attempt in 0..2_u32 {
+            let connection = match resolve_connection(None) {
+                Ok(connection) => connection,
+                Err(error) => {
+                    let retry = attempt == 0 && retryable_command_error(&error);
+                    if retry {
+                        last_error = Some(error);
+                        continue;
+                    }
+                    return Err(error);
+                }
+            };
+            match request_with_policy(
+                policy,
+                &connection,
+                method,
+                serde_json::json!({}),
+                policy.timing.roster_read_timeout_ms,
+                now_ms,
+                &mut command_spans,
+            ) {
+                Ok(response) => {
+                    return Ok(GatewayCommandExecution {
+                        value: response.value,
+                        command_spans,
+                        transport_stages,
+                    });
+                }
+                Err(error) => {
+                    let retry = attempt == 0 && retryable_command_error(&error);
+                    if retry {
+                        last_error = Some(error);
+                        continue;
+                    }
+                    return Err(error);
+                }
+            }
+        }
+        return Err(last_error.unwrap_or_else(|| {
+            GatewayDispatchError::Transport("bounded roster read exhausted".into())
+        }));
+    }
+
+    if method == "createAgent" {
+        let mut stamped = args;
+        if let Some(object) = stamped.as_object_mut() {
+            let needs_nonce = object
+                .get("clientNonce")
+                .and_then(Value::as_str)
+                .is_none_or(str::is_empty);
+            if needs_nonce {
+                object.insert(
+                    "clientNonce".into(),
+                    Value::String(Uuid::new_v4().to_string()),
+                );
+            }
+        }
+        let mut pinned_base_url: Option<String> = None;
+        let mut last_error = None;
+        let max_attempts = policy.timing.create_agent_retry_max_attempts.max(1);
+        for attempt in 1..=max_attempts {
+            let connection = match resolve_connection(pinned_base_url.as_deref()) {
+                Ok(connection) => {
+                    if let Some(required) = pinned_base_url.as_deref() {
+                        if connection.base_url != required {
+                            return Err(last_error.unwrap_or_else(|| {
+                                GatewayDispatchError::Transport(format!(
+                                    "createAgent retry aborted: gateway endpoint changed from {required} to {}",
+                                    connection.base_url
+                                ))
+                            }));
+                        }
+                    }
+                    connection
+                }
+                Err(error) => {
+                    let retry = attempt < max_attempts
+                        && retryable_command_error(&error);
+                    if !retry {
+                        return Err(error);
+                    }
+                    last_error = Some(error);
+                    thread_sleep_retry(policy.timing, attempt);
+                    continue;
+                }
+            };
+
+            match request_with_policy(
+                policy,
+                &connection,
+                method,
+                stamped.clone(),
+                policy.timing.send_post_timeout_ms,
+                now_ms,
+                &mut command_spans,
+            ) {
+                Ok(response) => {
+                    return Ok(GatewayCommandExecution {
+                        value: response.value,
+                        command_spans,
+                        transport_stages,
+                    });
+                }
+                Err(error) => {
+                    let retry = attempt < max_attempts
+                        && retryable_command_error(&error)
+                        && policy.mint_dedupe_proven(&connection.base_url);
+                    if !retry {
+                        return Err(error);
+                    }
+                    pinned_base_url = Some(connection.base_url);
+                    last_error = Some(error);
+                    thread_sleep_retry(policy.timing, attempt);
+                }
+            }
+        }
+        return Err(last_error.unwrap_or_else(|| {
+            GatewayDispatchError::Transport("createAgent retry policy exhausted".into())
+        }));
+    }
+
+    let connection = resolve_connection(None)?;
+    let response = request_with_policy(
+        policy,
+        &connection,
+        method,
+        args,
+        policy.timing.send_post_timeout_ms,
+        now_ms,
+        &mut command_spans,
+    )?;
+    Ok(GatewayCommandExecution {
+        value: response.value,
+        command_spans,
+        transport_stages,
+    })
+}
+
+fn thread_sleep_retry(timing: GatewayClientTiming, completed_attempts: u32) {
+    let delay_ms = retry_delay_ms(timing, completed_attempts);
+    if delay_ms > 0 {
+        std::thread::sleep(Duration::from_millis(delay_ms));
     }
 }
 

@@ -261,6 +261,11 @@ mod unix {
                 200,
                 r#"{"echoed":true}"#,
             ),
+            ("POST", "/api/sendPrompt") => write_fake_response(
+                &mut stream,
+                200,
+                r#"{"accepted":true}"#,
+            ),
             ("POST", "/api/completeMcpOAuth") => {
                 let payload = serde_json::from_slice::<Value>(&request[header_end..total])
                     .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
@@ -575,6 +580,37 @@ exit 17
         assert!(saw_runtime_event, "shipping Coordinator did not relay Host event");
         assert!(saw_tool_event, "shipping Coordinator did not relay client-side tool events");
         assert!(saw_echo_reply, "shipping Coordinator did not settle Host reply");
+
+        send(
+            &mut stdin,
+            CarrierChannel::Data,
+            &CoordinatorFrame::Request {
+                request_id: "r-send".into(),
+                method: "sendPrompt".into(),
+                args: json!({
+                    "clientNonce": "production-send-1",
+                    "message": "production gateway command policy"
+                }),
+            },
+        );
+        let (channel, send_reply) = recv_application_frame(
+            &rx,
+            &mut stdin,
+            &mut seen_control_methods,
+            Duration::from_secs(2),
+        );
+        assert_eq!(channel, CarrierChannel::Data);
+        match send_reply {
+            CoordinatorFrame::Reply {
+                request_id,
+                outcome: ReplyOutcome::Ok { value },
+            } => {
+                assert_eq!(request_id, "r-send");
+                assert_eq!(value["accepted"], true);
+            }
+            other => panic!("unexpected sendPrompt frame: {other:?}"),
+        }
+
         assert!(
             seen_control_methods
                 .iter()
