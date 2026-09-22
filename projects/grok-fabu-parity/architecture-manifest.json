@@ -14100,65 +14100,95 @@
       "targetPath": "source/host/local-exec/local-exec-daemon.ts",
       "targetLanguage": "typescript",
       "owner": "local-exec",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "091d1e9332eb3df062569b3c4ff7242605534ec1",
       "architecturalRole": "local-exec-daemon",
       "processOrPackage": "local-exec",
-      "behavioralEvidence": [],
-      "testEvidence": [],
-      "notes": "Architecture correction for the updated Grok 0.18 principle: this module belongs to the independent local-exec daemon process. Mahayana Coordinator owns supervision only; Mahayana Host must not grow a second local-exec runtime. Restore the frozen TypeScript module byte-identically first, then keep it non-final until the daemon is actually bundled/staged, spawned by Electron through Coordinator supervision, and covered by behavior/contract tests."
+      "behavioralEvidence": [
+        "source/host/local-exec/local-exec-daemon.ts"
+      ],
+      "testEvidence": [
+        "scripts/check-grok-architecture.mjs",
+        ".github/workflows/grok-architecture-migrate.yml"
+      ],
+      "notes": "Byte-identical frozen Grok 0.18 source restored at the mapped path and Git blob SHA is enforced, but import evidence alone is not a final gate. Keep this row existing-needs-parity until real production wiring, correct owner/process/language, and independent behavior or contract tests are all evidenced.",
+      "parityMode": "reference-copy"
     },
     {
       "referencePath": "source/host/local-exec/local-exec-machine.ts",
       "targetPath": "source/host/local-exec/local-exec-machine.ts",
       "targetLanguage": "typescript",
       "owner": "local-exec",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "2879fb5070695c0334f5dc31b6c01aea256d05b6",
       "architecturalRole": "local-exec-daemon",
       "processOrPackage": "local-exec",
-      "behavioralEvidence": [],
-      "testEvidence": [],
-      "notes": "Architecture correction for the updated Grok 0.18 principle: this module belongs to the independent local-exec daemon process. Mahayana Coordinator owns supervision only; Mahayana Host must not grow a second local-exec runtime. Restore the frozen TypeScript module byte-identically first, then keep it non-final until the daemon is actually bundled/staged, spawned by Electron through Coordinator supervision, and covered by behavior/contract tests."
+      "behavioralEvidence": [
+        "source/host/local-exec/local-exec-machine.ts"
+      ],
+      "testEvidence": [
+        "scripts/check-grok-architecture.mjs",
+        ".github/workflows/grok-architecture-migrate.yml"
+      ],
+      "notes": "Byte-identical frozen Grok 0.18 source restored at the mapped path and Git blob SHA is enforced, but import evidence alone is not a final gate. Keep this row existing-needs-parity until real production wiring, correct owner/process/language, and independent behavior or contract tests are all evidenced.",
+      "parityMode": "reference-copy"
     },
     {
       "referencePath": "source/host/local-exec/local-exec-provider.ts",
       "targetPath": "source/host/local-exec/local-exec-provider.ts",
       "targetLanguage": "typescript",
       "owner": "local-exec",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "59e86ee759ba9e365c6108cc566011a0fe2cf0ec",
       "architecturalRole": "local-exec-daemon",
       "processOrPackage": "local-exec",
-      "behavioralEvidence": [],
-      "testEvidence": [],
-      "notes": "Architecture correction for the updated Grok 0.18 principle: this module belongs to the independent local-exec daemon process. Mahayana Coordinator owns supervision only; Mahayana Host must not grow a second local-exec runtime. Restore the frozen TypeScript module byte-identically first, then keep it non-final until the daemon is actually bundled/staged, spawned by Electron through Coordinator supervision, and covered by behavior/contract tests."
+      "behavioralEvidence": [
+        "source/host/local-exec/local-exec-provider.ts"
+      ],
+      "testEvidence": [
+        "scripts/check-grok-architecture.mjs",
+        ".github/workflows/grok-architecture-migrate.yml"
+      ],
+      "notes": "Byte-identical frozen Grok 0.18 source restored at the mapped path and Git blob SHA is enforced, but import evidence alone is not a final gate. Keep this row existing-needs-parity until real production wiring, correct owner/process/language, and independent behavior or contract tests are all evidenced.",
+      "parityMode": "reference-copy"
     },
     {
       "referencePath": "source/host/local-exec/local-tool-approvals.ts",
       "targetPath": "source/host/local-exec/local-tool-approvals.ts",
       "targetLanguage": "typescript",
       "owner": "local-exec",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "edeac663d7cce51fc9678287a9f9a5d7e2c3b0de",
       "architecturalRole": "local-exec-daemon",
       "processOrPackage": "local-exec",
-      "behavioralEvidence": [],
-      "testEvidence": [],
-      "notes": "Architecture correction for the updated Grok 0.18 principle: this module belongs to the independent local-exec daemon process. Mahayana Coordinator owns supervision only; Mahayana Host must not grow a second local-exec runtime. Restore the frozen TypeScript module byte-identically first, then keep it non-final until the daemon is actually bundled/staged, spawned by Electron through Coordinator supervision, and covered by behavior/contract tests."
+      "behavioralEvidence": [
+        "source/host/local-exec/local-tool-approvals.ts"
+      ],
+      "testEvidence": [
+        "scripts/check-grok-architecture.mjs",
+        ".github/workflows/grok-architecture-migrate.yml"
+      ],
+      "notes": "Byte-identical frozen Grok 0.18 source restored at the mapped path and Git blob SHA is enforced, but import evidence alone is not a final gate. Keep this row existing-needs-parity until real production wiring, correct owner/process/language, and independent behavior or contract tests are all evidenced.",
+      "parityMode": "reference-copy"
     },
     {
       "referencePath": "source/host/local-exec/sentry.ts",
       "targetPath": "source/host/local-exec/sentry.ts",
       "targetLanguage": "typescript",
       "owner": "local-exec",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "3c06c219ff068e5d7fd9c75a522dca31a72936f3",
       "architecturalRole": "local-exec-daemon",
       "processOrPackage": "local-exec",
-      "behavioralEvidence": [],
-      "testEvidence": [],
-      "notes": "Architecture correction for the updated Grok 0.18 principle: this module belongs to the independent local-exec daemon process. Mahayana Coordinator owns supervision only; Mahayana Host must not grow a second local-exec runtime. Restore the frozen TypeScript module byte-identically first, then keep it non-final until the daemon is actually bundled/staged, spawned by Electron through Coordinator supervision, and covered by behavior/contract tests."
+      "behavioralEvidence": [
+        "source/host/local-exec/sentry.ts"
+      ],
+      "testEvidence": [
+        "scripts/check-grok-architecture.mjs",
+        ".github/workflows/grok-architecture-migrate.yml"
+      ],
+      "notes": "Byte-identical frozen Grok 0.18 source restored at the mapped path and Git blob SHA is enforced, but import evidence alone is not a final gate. Keep this row existing-needs-parity until real production wiring, correct owner/process/language, and independent behavior or contract tests are all evidenced.",
+      "parityMode": "reference-copy"
     },
     {
       "referencePath": "source/host/main.ts",
@@ -15926,39 +15956,57 @@
       "targetPath": "source/local-exec-daemon/invariant-violation-log.ts",
       "targetLanguage": "typescript",
       "owner": "local-exec",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "be19a2eefaba7bd0b736fc4ec25f0bc00ff45996",
       "architecturalRole": "local-exec-daemon",
       "processOrPackage": "local-exec",
-      "behavioralEvidence": [],
-      "testEvidence": [],
-      "notes": "Architecture correction for the updated Grok 0.18 principle: this module belongs to the independent local-exec daemon process. Mahayana Coordinator owns supervision only; Mahayana Host must not grow a second local-exec runtime. Restore the frozen TypeScript module byte-identically first, then keep it non-final until the daemon is actually bundled/staged, spawned by Electron through Coordinator supervision, and covered by behavior/contract tests."
+      "behavioralEvidence": [
+        "source/local-exec-daemon/invariant-violation-log.ts"
+      ],
+      "testEvidence": [
+        "scripts/check-grok-architecture.mjs",
+        ".github/workflows/grok-architecture-migrate.yml"
+      ],
+      "notes": "Byte-identical frozen Grok 0.18 source restored at the mapped path and Git blob SHA is enforced, but import evidence alone is not a final gate. Keep this row existing-needs-parity until real production wiring, correct owner/process/language, and independent behavior or contract tests are all evidenced.",
+      "parityMode": "reference-copy"
     },
     {
       "referencePath": "source/local-exec-daemon/main.ts",
       "targetPath": "source/local-exec-daemon/main.ts",
       "targetLanguage": "typescript",
       "owner": "local-exec",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "6ed3c317002ffcc0c6d745cb4751491ed81e82e0",
       "architecturalRole": "local-exec-daemon",
       "processOrPackage": "local-exec",
-      "behavioralEvidence": [],
-      "testEvidence": [],
-      "notes": "Architecture correction for the updated Grok 0.18 principle: this module belongs to the independent local-exec daemon process. Mahayana Coordinator owns supervision only; Mahayana Host must not grow a second local-exec runtime. Restore the frozen TypeScript module byte-identically first, then keep it non-final until the daemon is actually bundled/staged, spawned by Electron through Coordinator supervision, and covered by behavior/contract tests."
+      "behavioralEvidence": [
+        "source/local-exec-daemon/main.ts"
+      ],
+      "testEvidence": [
+        "scripts/check-grok-architecture.mjs",
+        ".github/workflows/grok-architecture-migrate.yml"
+      ],
+      "notes": "Byte-identical frozen Grok 0.18 source restored at the mapped path and Git blob SHA is enforced, but import evidence alone is not a final gate. Keep this row existing-needs-parity until real production wiring, correct owner/process/language, and independent behavior or contract tests are all evidenced.",
+      "parityMode": "reference-copy"
     },
     {
       "referencePath": "source/local-exec-daemon/production-executor.ts",
       "targetPath": "source/local-exec-daemon/production-executor.ts",
       "targetLanguage": "typescript",
       "owner": "local-exec",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "ab36e8824bd960750bcf6e0f7b386ed524609244",
       "architecturalRole": "local-exec-daemon",
       "processOrPackage": "local-exec",
-      "behavioralEvidence": [],
-      "testEvidence": [],
-      "notes": "Architecture correction for the updated Grok 0.18 principle: this module belongs to the independent local-exec daemon process. Mahayana Coordinator owns supervision only; Mahayana Host must not grow a second local-exec runtime. Restore the frozen TypeScript module byte-identically first, then keep it non-final until the daemon is actually bundled/staged, spawned by Electron through Coordinator supervision, and covered by behavior/contract tests."
+      "behavioralEvidence": [
+        "source/local-exec-daemon/production-executor.ts"
+      ],
+      "testEvidence": [
+        "scripts/check-grok-architecture.mjs",
+        ".github/workflows/grok-architecture-migrate.yml"
+      ],
+      "notes": "Byte-identical frozen Grok 0.18 source restored at the mapped path and Git blob SHA is enforced, but import evidence alone is not a final gate. Keep this row existing-needs-parity until real production wiring, correct owner/process/language, and independent behavior or contract tests are all evidenced.",
+      "parityMode": "reference-copy"
     },
     {
       "referencePath": "source/mime-types.d.ts",
