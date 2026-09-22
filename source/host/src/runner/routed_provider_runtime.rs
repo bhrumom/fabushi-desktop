@@ -16,6 +16,8 @@ use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderOptions,
     RoutedToolDefinition, run_routed_provider_text,
 };
+use crate::host_request_context::HostRequestContext;
+use crate::runner::system_prompt_assembly::render_request_context_system_prompt;
 
 pub const ROUTED_MCP_PROTOCOL_VERSION: &str = "2025-03-26";
 pub const ROUTED_MCP_MAX_BODY_BYTES: usize = 1_048_576;
@@ -30,11 +32,22 @@ pub trait RoutedToolBridge: Send + Sync {
     ) -> Result<Value, ProviderSessionError>;
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct RunnerRequestContextSnapshot {
+    pub context: HostRequestContext,
+    pub rules: Option<Vec<Value>>,
+}
+
+pub trait RunnerRequestContextSource: Send + Sync {
+    fn resolve(&self) -> RunnerRequestContextSnapshot;
+}
+
 pub struct RoutedProviderRun<'a> {
     pub provider: RoutedProvider,
     pub data_dir: &'a Path,
     pub messages: &'a [ProviderMessage],
     pub bridge: Arc<dyn RoutedToolBridge>,
+    pub request_context: RunnerRequestContextSnapshot,
 }
 
 pub fn run_routed_provider_in_runner(
@@ -47,6 +60,19 @@ pub fn run_routed_provider_in_runner(
                 .into(),
         ));
     }
+
+    let system_prompt = render_request_context_system_prompt(
+        &run.request_context.context,
+        run.request_context.rules.as_deref(),
+    );
+    let mut provider_messages = Vec::with_capacity(run.messages.len() + usize::from(!system_prompt.is_empty()));
+    if !system_prompt.is_empty() {
+        provider_messages.push(ProviderMessage {
+            role: "system".into(),
+            content: system_prompt,
+        });
+    }
+    provider_messages.extend_from_slice(run.messages);
 
     let direct_tools = if run.provider == RoutedProvider::ClaudeCode {
         Vec::new()
@@ -68,7 +94,7 @@ pub fn run_routed_provider_in_runner(
 
     let result = run_routed_provider_text(
         run.provider,
-        run.messages,
+        &provider_messages,
         &mut RoutedProviderOptions {
             data_dir: run.data_dir,
             tools: &direct_tools,

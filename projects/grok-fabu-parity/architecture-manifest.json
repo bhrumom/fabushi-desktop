@@ -11321,14 +11321,16 @@
         "source/node-agent-coordinator/src/main.rs",
         "source/node-agent-coordinator/src/routed_mcp_bridge.rs",
         "source/host/src/runner/routed_provider_runtime.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/system_prompt_assembly.rs"
       ],
       "testEvidence": [
         "source/host/tests/inference_provider_session_contract.rs",
         "source/host/tests/inference_codex_direct_contract.rs",
         "source/node-agent-coordinator/tests/production_protocol.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/runner_routed_provider_contract.rs"
+        "source/host/tests/runner_routed_provider_contract.rs",
+        "source/host/tests/runner_request_context_contract.rs"
       ],
       "notes": "Provider execution now has a Runner-owned Rust composition and Host gateway entrypoint with per-run streaming events and Host-lane routed MCP tool calls; Claude Code uses a Runner-owned loopback MCP server. This entry remains non-final until Coordinator switches off its in-process host-runtime dependency and the full Host/Runner production chain passes exact-HEAD CI."
     },
@@ -13868,12 +13870,17 @@
       "behavioralEvidence": [
         "source/host/src/host_request_context.rs",
         "source/host/src/sand_user_identity.rs",
-        "source/host/src/lib.rs"
+        "source/host/src/lib.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/runner/system_prompt_assembly.rs"
       ],
       "testEvidence": [
-        "source/host/tests/host_small_ports_contract.rs"
+        "source/host/tests/host_small_ports_contract.rs",
+        "source/host/tests/runner_request_context_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Behavioral request-context provider and contract tests exist, but final status is withheld until the shipping Mahayana Host bootstrap constructs and supplies this provider to request execution."
+      "notes": "Shipping Host now constructs a per-turn request-context source from production Auth plus the product transcript directory, and Runner provider execution consumes the resolved timezone/user identity/rules projection before provider dispatch. OS/shell/timezone/transcript fields are resolved live; unknown team-rules state is preserved as None rather than fabricated. Final remains withheld until Rust managed-setup supplies production team rules and the Dashboard GetMe adapter supplies the production user full name."
     },
     {
       "referencePath": "source/host/host-roster-bookkeeping.ts",
@@ -14530,7 +14537,8 @@
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
-        "source/host/src/runner/routed_provider_runtime.rs"
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/runner/system_prompt_assembly.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_routed_provider_contract.rs"
@@ -14793,12 +14801,20 @@
       "targetPath": "source/host/src/runner/system_prompt_assembly.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "d3a64f607c520a45c8b0c63e145350c793c8cbbf",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/system_prompt_assembly.rs",
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/extensions/inference/provider_session.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_request_context_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Runner now owns the recovered request-context system-prompt slice: timezone, user identity, and loaded team-rule sections are projected into all routed providers as a true system message. The full Grok system-prompt assembly (memory, automations, workflows, channels, profile snapshots and remaining feature sections) is not yet ported, so this mapping is existing-needs-parity rather than final."
     },
     {
       "referencePath": "source/host/runner/system-prompt.ts",

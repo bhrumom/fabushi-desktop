@@ -18,8 +18,10 @@ use mahayana_host_runtime::extensions::box_lifecycle::production::{
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
 };
+use mahayana_host_runtime::host_request_context::create_host_request_context;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
-    RoutedProviderRun, RoutedToolBridge, run_routed_provider_in_runner,
+    RoutedProviderRun, RoutedToolBridge, RunnerRequestContextSnapshot,
+    RunnerRequestContextSource, run_routed_provider_in_runner,
 };
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
@@ -56,8 +58,28 @@ fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
 
 
 struct ProductionHostExtensions {
-    _auth: Arc<HostAuthExtension>,
+    auth: Arc<HostAuthExtension>,
     _box_lifecycle: BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>,
+}
+
+struct ProductionRunnerRequestContextSource {
+    auth: Arc<HostAuthExtension>,
+    transcripts_folder: PathBuf,
+}
+
+impl RunnerRequestContextSource for ProductionRunnerRequestContextSource {
+    fn resolve(&self) -> RunnerRequestContextSnapshot {
+        let provider = create_host_request_context(
+            self.transcripts_folder.to_string_lossy().into_owned(),
+            || None,
+            || None::<Vec<serde_json::Value>>,
+            || self.auth.get_user_full_name(),
+        );
+        RunnerRequestContextSnapshot {
+            context: provider.resolve(),
+            rules: provider.resolve_rules(),
+        }
+    }
 }
 
 fn start_production_host_extensions() -> Result<ProductionHostExtensions, String> {
@@ -81,7 +103,7 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
     let box_lifecycle = start_box_lifecycle_extension(Arc::clone(&auth), &factory);
 
     Ok(ProductionHostExtensions {
-        _auth: auth,
+        auth,
         _box_lifecycle: box_lifecycle,
     })
 }
@@ -103,6 +125,7 @@ struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
     events: GatewayEventHub,
     data_dir: PathBuf,
+    request_context: Arc<dyn RunnerRequestContextSource>,
 }
 
 fn call_host_lane(
@@ -210,6 +233,7 @@ fn start_routed_provider_task(
     host_tx: mpsc::Sender<HostLaneRequest>,
     events: GatewayEventHub,
     data_dir: PathBuf,
+    request_context: Arc<dyn RunnerRequestContextSource>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
@@ -231,6 +255,7 @@ fn start_routed_provider_task(
         ))?
         .to_string();
     let messages = decode_provider_messages(&args)?;
+    let resolved_request_context = request_context.resolve();
     let worker_events = events.clone();
     let accepted_stream_id = stream_id.clone();
     thread::Builder::new()
@@ -258,6 +283,7 @@ fn start_routed_provider_task(
                     data_dir: &data_dir,
                     messages: &messages,
                     bridge,
+                    request_context: resolved_request_context,
                 },
                 &mut on_text_delta,
             );
@@ -301,6 +327,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.host_tx.clone(),
                 self.events.clone(),
                 self.data_dir.clone(),
+                Arc::clone(&self.request_context),
                 args,
             );
         }
@@ -514,13 +541,18 @@ fn main() {
         }
     };
 
-    let _production_extensions = match start_production_host_extensions() {
+    let production_extensions = match start_production_host_extensions() {
         Ok(extensions) => extensions,
         Err(error) => {
             eprintln!("failed to start production Host extensions: {error}");
             return;
         }
     };
+    let runner_request_context: Arc<dyn RunnerRequestContextSource> =
+        Arc::new(ProductionRunnerRequestContextSource {
+            auth: Arc::clone(&production_extensions.auth),
+            transcripts_folder: app_data_dir.join("transcripts"),
+        });
 
     let gateway_config = match resolve_gateway_server_config() {
         Ok(config) => config,
@@ -536,6 +568,7 @@ fn main() {
             host_tx: host_tx.clone(),
             events: gateway_events.clone(),
             data_dir: app_data_dir.clone(),
+            request_context: runner_request_context,
         }),
         events: gateway_events.clone(),
         local_exec: None,
@@ -671,9 +704,9 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::{
-        BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionHostExtensions, UnifiedGatewayApi,
-        decode_provider_messages, dispatch_box_environment_call, ensure_managed_runtime_layout,
-        is_platform_request_json,
+        BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionHostExtensions,
+        ProductionRunnerRequestContextSource, UnifiedGatewayApi, decode_provider_messages,
+        dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
     };
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -688,6 +721,7 @@ mod tests {
     fn gateway_proxy_is_send_sync_without_moving_the_unified_host() {
         fn assert_send_sync<T: Send + Sync>() {}
         assert_send_sync::<UnifiedGatewayApi>();
+        assert_send_sync::<ProductionRunnerRequestContextSource>();
     }
 
     #[test]

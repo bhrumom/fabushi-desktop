@@ -25,6 +25,21 @@ You are running inside Grok Bot, not inside Codex CLI or Claude Code.\n\
 The tools supplied with this request are Grok Bot's already-connected plugins and accounts. Use them whenever they are relevant instead of claiming that a plugin is unavailable or asking the user to reconnect it.\n\
 Never ask for an API key for an already-connected plugin. Respond directly to the user in natural language after completing any necessary tool calls.";
 
+
+fn assembled_provider_system_prompt(messages: &[ProviderMessage]) -> String {
+    let additions = messages
+        .iter()
+        .filter(|message| message.role == "system")
+        .map(|message| message.content.trim())
+        .filter(|content| !content.is_empty())
+        .collect::<Vec<_>>();
+    if additions.is_empty() {
+        GROK_ROUTER_SYSTEM_PROMPT.to_string()
+    } else {
+        format!("{GROK_ROUTER_SYSTEM_PROMPT}\n\n{}", additions.join("\n\n"))
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RoutedProvider {
     Cursor,
@@ -576,11 +591,13 @@ pub fn run_codex_provider_text(
     on_text_delta: &mut dyn FnMut(&str, &str),
 ) -> Result<String, ProviderSessionError> {
     let mut transport = CodexHttpTransport::new(&codex_home().join("auth.json"))?;
+    let system_prompt = assembled_provider_system_prompt(messages);
     let mut request = CodexDirectOptions::new(
         configured_codex_model(),
-        GROK_ROUTER_SYSTEM_PROMPT,
+        system_prompt,
         messages
             .iter()
+            .filter(|message| message.role != "system")
             .map(|message| {
                 json!({
                     "role": if message.role == "assistant" { "assistant" } else { "user" },
@@ -649,8 +666,10 @@ pub fn run_routed_provider_text(
 }
 
 fn provider_prompt(messages: &[ProviderMessage]) -> String {
+    let system_prompt = assembled_provider_system_prompt(messages);
     let rendered = messages
         .iter()
+        .filter(|message| message.role != "system")
         .map(|message| {
             format!(
                 "{}: {}",
@@ -661,7 +680,7 @@ fn provider_prompt(messages: &[ProviderMessage]) -> String {
         .collect::<Vec<_>>()
         .join("\n\n");
     format!(
-        "{GROK_ROUTER_SYSTEM_PROMPT}\n\nContinue this Grok Bot conversation.\n\n{rendered}"
+        "{system_prompt}\n\nContinue this Grok Bot conversation.\n\n{rendered}"
     )
 }
 
@@ -743,11 +762,12 @@ fn run_openrouter_provider_text(
         .map(|tool| (tool.name.clone(), tool))
         .collect::<BTreeMap<_, _>>();
     let declared_tools = openrouter_tools(options.tools);
+    let system_prompt = assembled_provider_system_prompt(messages);
     let mut conversation = vec![json!({
         "role": "system",
-        "content": GROK_ROUTER_SYSTEM_PROMPT
+        "content": system_prompt
     })];
-    conversation.extend(messages.iter().map(|message| {
+    conversation.extend(messages.iter().filter(|message| message.role != "system").map(|message| {
         json!({
             "role": if message.role == "assistant" { "assistant" } else { "user" },
             "content": message.content,
