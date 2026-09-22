@@ -1,4 +1,6 @@
 use std::collections::BTreeMap;
+use std::io::{Read, Write};
+use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
 use serde_json::Value;
@@ -6,6 +8,7 @@ use serde_json::Value;
 use super::gateway_reachability::ReachabilityOutcome;
 use super::gateway_request_dispatcher::GatewayDispatchError;
 use super::host_supervisor::GatewayConnection;
+use super::sse_block_decoder::SseBlockDecoder;
 
 pub const SSE_RECONNECT_MIN_MS: u64 = 1_000;
 pub const SSE_RECONNECT_MAX_MS: u64 = 10_000;
@@ -297,4 +300,198 @@ impl CoordinatorGatewayClient {
     pub fn is_closed(&self) -> bool {
         self.closed
     }
+}
+
+
+fn parse_sse_http_base(base_url: &str) -> Result<(String, u16, String), GatewayDispatchError> {
+    let Some(rest) = base_url.strip_prefix("http://") else {
+        return Err(GatewayDispatchError::Transport(format!(
+            "unsupported Host gateway SSE scheme in {base_url}"
+        )));
+    };
+    let (authority, base_path) = rest
+        .split_once('/')
+        .map_or((rest, String::new()), |(authority, path)| {
+            (authority, format!("/{}", path.trim_end_matches('/')))
+        });
+    let (host, port) = if let Some(ipv6) = authority.strip_prefix('[') {
+        let Some((host, suffix)) = ipv6.split_once(']') else {
+            return Err(GatewayDispatchError::Transport(
+                "invalid IPv6 Host gateway authority".into(),
+            ));
+        };
+        let port = suffix
+            .strip_prefix(':')
+            .and_then(|value| value.parse::<u16>().ok())
+            .ok_or_else(|| GatewayDispatchError::Transport(
+                "Host gateway URL must include a port".into(),
+            ))?;
+        (host.to_string(), port)
+    } else {
+        let (host, port) = authority.rsplit_once(':').ok_or_else(|| {
+            GatewayDispatchError::Transport("Host gateway URL must include a port".into())
+        })?;
+        let port = port.parse::<u16>().map_err(|_| {
+            GatewayDispatchError::Transport("invalid Host gateway port".into())
+        })?;
+        (host.to_string(), port)
+    };
+    Ok((host, port, base_path))
+}
+
+fn sse_outcome_for_io(error: &std::io::Error) -> ReachabilityOutcome {
+    match error.kind() {
+        std::io::ErrorKind::ConnectionRefused => ReachabilityOutcome::Refused,
+        std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock => ReachabilityOutcome::Timeout,
+        std::io::ErrorKind::NotFound | std::io::ErrorKind::AddrNotAvailable => ReachabilityOutcome::Dns,
+        _ => ReachabilityOutcome::Network,
+    }
+}
+
+fn sse_data(block: &str) -> Option<String> {
+    let data = block
+        .lines()
+        .filter_map(|line| line.strip_prefix("data:").map(str::trim_start))
+        .collect::<Vec<_>>();
+    (!data.is_empty()).then(|| data.join("\n"))
+}
+
+pub fn stream_http_events<Connected, Event, Continue>(
+    connection: &GatewayConnection,
+    on_connected: Connected,
+    mut on_event: Event,
+    should_continue: Continue,
+) -> Result<(), GatewayDispatchError>
+where
+    Connected: FnOnce(),
+    Event: FnMut(Value),
+    Continue: Fn() -> bool,
+{
+    let (host, port, base_path) = parse_sse_http_base(&connection.base_url)?;
+    let mut addresses = format!("{host}:{port}").to_socket_addrs().map_err(|error| {
+        GatewayDispatchError::Unreachable {
+            outcome: ReachabilityOutcome::Dns,
+            message: format!("gateway events unreachable (dns): {error}"),
+        }
+    })?;
+    let socket = addresses.next().ok_or_else(|| GatewayDispatchError::Unreachable {
+        outcome: ReachabilityOutcome::Dns,
+        message: "gateway events unreachable (dns)".into(),
+    })?;
+    let connect_timeout = Duration::from_millis(SSE_CONNECT_TIMEOUT_MS);
+    let mut stream = TcpStream::connect_timeout(&socket, connect_timeout).map_err(|error| {
+        GatewayDispatchError::Unreachable {
+            outcome: sse_outcome_for_io(&error),
+            message: format!("gateway events connect failed: {error}"),
+        }
+    })?;
+    stream
+        .set_write_timeout(Some(connect_timeout))
+        .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
+    stream
+        .set_read_timeout(Some(Duration::from_millis(SSE_STALL_TIMEOUT_MS)))
+        .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
+    let path = format!("{base_path}/events");
+    write!(
+        stream,
+        "GET {path} HTTP/1.1\r\nHost: {host}\r\nAccept: text/event-stream\r\nConnection: keep-alive\r\n"
+    )
+    .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
+    for (name, value) in &connection.headers {
+        write!(stream, "{name}: {value}\r\n")
+            .map_err(|error| GatewayDispatchError::Transport(error.to_string()))?;
+    }
+    write!(stream, "\r\n")
+        .and_then(|_| stream.flush())
+        .map_err(|error| GatewayDispatchError::Unreachable {
+            outcome: sse_outcome_for_io(&error),
+            message: format!("gateway events request failed: {error}"),
+        })?;
+
+    let mut buffered = Vec::with_capacity(4096);
+    let mut chunk = [0_u8; 4096];
+    let header_end = loop {
+        let count = stream.read(&mut chunk).map_err(|error| GatewayDispatchError::Unreachable {
+            outcome: sse_outcome_for_io(&error),
+            message: format!("gateway events handshake failed: {error}"),
+        })?;
+        if count == 0 {
+            return Err(GatewayDispatchError::Unreachable {
+                outcome: ReachabilityOutcome::Network,
+                message: "gateway events ended during handshake".into(),
+            });
+        }
+        buffered.extend_from_slice(&chunk[..count]);
+        if let Some(index) = buffered.windows(4).position(|window| window == b"\r\n\r\n") {
+            break index + 4;
+        }
+        if buffered.len() > 64 * 1024 {
+            return Err(GatewayDispatchError::Transport(
+                "gateway events response headers are too large".into(),
+            ));
+        }
+    };
+    let headers = std::str::from_utf8(&buffered[..header_end]).map_err(|_| {
+        GatewayDispatchError::Transport("gateway events headers are not UTF-8".into())
+    })?;
+    let status = headers
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|value| value.parse::<u16>().ok())
+        .ok_or_else(|| GatewayDispatchError::Transport(
+            "gateway events response has no HTTP status".into(),
+        ))?;
+    if !(200..300).contains(&status) {
+        if status >= 500 {
+            return Err(GatewayDispatchError::Unreachable {
+                outcome: ReachabilityOutcome::Http(status),
+                message: format!("gateway events failed with HTTP {status}"),
+            });
+        }
+        return Err(GatewayDispatchError::Command(
+            super::gateway_errors::SandGatewayCommandError::new(format!(
+                "gateway events failed with HTTP {status}"
+            )),
+        ));
+    }
+
+    on_connected();
+    let mut decoder = SseBlockDecoder::default();
+    let initial = &buffered[header_end..];
+    if !initial.is_empty() {
+        for block in decoder.push_bytes(initial) {
+            if let Some(data) = sse_data(&block) {
+                let value = serde_json::from_str::<Value>(&data).map_err(|error| {
+                    GatewayDispatchError::Transport(format!(
+                        "gateway events contained invalid JSON: {error}"
+                    ))
+                })?;
+                on_event(value);
+            }
+        }
+    }
+    while should_continue() {
+        let count = stream.read(&mut chunk).map_err(|error| GatewayDispatchError::Unreachable {
+            outcome: sse_outcome_for_io(&error),
+            message: format!("gateway events stream failed: {error}"),
+        })?;
+        if count == 0 {
+            return Err(GatewayDispatchError::Unreachable {
+                outcome: ReachabilityOutcome::Network,
+                message: "gateway events stream ended".into(),
+            });
+        }
+        for block in decoder.push_bytes(&chunk[..count]) {
+            if let Some(data) = sse_data(&block) {
+                let value = serde_json::from_str::<Value>(&data).map_err(|error| {
+                    GatewayDispatchError::Transport(format!(
+                        "gateway events contained invalid JSON: {error}"
+                    ))
+                })?;
+                on_event(value);
+            }
+        }
+    }
+    Ok(())
 }
