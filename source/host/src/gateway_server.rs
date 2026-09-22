@@ -601,20 +601,35 @@ fn event_channel(event: &Value) -> Option<&str> {
     event.get("channel").and_then(Value::as_str)
 }
 
-fn serve_events(
-    stream: &mut TcpStream,
-    deps: &GatewayServerDeps,
+fn sse_gzip_enabled(request: &HttpRequest) -> bool {
+    std::env::var(DISABLE_SSE_GZIP_ENV).ok().as_deref() != Some("1")
+        && client_accepts_gzip(request)
+}
+
+fn write_sse_headers(stream: &mut TcpStream, gzip: bool) -> io::Result<()> {
+    write!(
+        stream,
+        "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache, no-transform\r\nConnection: keep-alive\r\n"
+    )?;
+    if gzip {
+        write!(
+            stream,
+            "Content-Encoding: gzip\r\nVary: Accept-Encoding\r\n"
+        )?;
+    }
+    write!(stream, "\r\n")?;
+    stream.flush()
+}
+
+fn serve_event_body<W: Write>(
+    sink: &mut W,
+    receiver: Receiver<Value>,
     stop: &AtomicBool,
     channels: Option<Vec<String>>,
     slim_avatars: bool,
 ) -> io::Result<()> {
-    let receiver = deps.events.subscribe();
-    stream.set_write_timeout(Some(Duration::from_secs(5)))?;
-    write!(
-        stream,
-        "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache, no-transform\r\nConnection: keep-alive\r\n\r\nretry: 1000\n\n"
-    )?;
-    stream.flush()?;
+    sink.write_all(b"retry: 1000\n\n")?;
+    sink.flush()?;
     let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
     while !stop.load(Ordering::Acquire) {
         match receiver.recv_timeout(heartbeat) {
@@ -628,17 +643,38 @@ fn serve_events(
                 let event = if slim_avatars { slim_event(event) } else { event };
                 let encoded = serde_json::to_string(&event)
                     .map_err(|error| io::Error::other(format!("serialize gateway event: {error}")))?;
-                write!(stream, "data: {encoded}\n\n")?;
-                stream.flush()?;
+                write!(sink, "data: {encoded}\n\n")?;
+                sink.flush()?;
             }
             Err(RecvTimeoutError::Timeout) => {
-                write!(stream, ":ping\n\n")?;
-                stream.flush()?;
+                sink.write_all(b":ping\n\n")?;
+                sink.flush()?;
             }
             Err(RecvTimeoutError::Disconnected) => break,
         }
     }
     Ok(())
+}
+
+fn serve_events(
+    stream: &mut TcpStream,
+    deps: &GatewayServerDeps,
+    stop: &AtomicBool,
+    channels: Option<Vec<String>>,
+    slim_avatars: bool,
+    gzip: bool,
+) -> io::Result<()> {
+    let receiver = deps.events.subscribe();
+    stream.set_write_timeout(Some(Duration::from_secs(5)))?;
+    write_sse_headers(stream, gzip)?;
+    if gzip {
+        let mut encoder = GzEncoder::new(stream, Compression::default());
+        let result = serve_event_body(&mut encoder, receiver, stop, channels, slim_avatars);
+        let _ = encoder.try_finish();
+        result
+    } else {
+        serve_event_body(stream, receiver, stop, channels, slim_avatars)
+    }
 }
 
 fn decode_path_component(value: &str) -> Option<String> {
@@ -749,35 +785,49 @@ fn serve_avatar(
     )
 }
 
-fn serve_bridge_requests(
-    stream: &mut TcpStream,
-    bridge: &GatewayBridgeHub,
+fn serve_bridge_body<W: Write>(
+    sink: &mut W,
+    receiver: Receiver<Value>,
     stop: &AtomicBool,
 ) -> io::Result<()> {
-    let receiver = bridge.subscribe_requests();
-    stream.set_write_timeout(Some(Duration::from_secs(5)))?;
-    write!(
-        stream,
-        "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache, no-transform\r\nConnection: keep-alive\r\n\r\nretry: 1000\n\n"
-    )?;
-    stream.flush()?;
+    sink.write_all(b"retry: 1000\n\n")?;
+    sink.flush()?;
     let heartbeat = Duration::from_millis(SSE_HEARTBEAT_MS);
     while !stop.load(Ordering::Acquire) {
         match receiver.recv_timeout(heartbeat) {
             Ok(frame) => {
                 let encoded = serde_json::to_string(&frame)
                     .map_err(|error| io::Error::other(format!("serialize gateway bridge frame: {error}")))?;
-                write!(stream, "data: {encoded}\n\n")?;
-                stream.flush()?;
+                write!(sink, "data: {encoded}\n\n")?;
+                sink.flush()?;
             }
             Err(RecvTimeoutError::Timeout) => {
-                write!(stream, ":ping\n\n")?;
-                stream.flush()?;
+                sink.write_all(b":ping\n\n")?;
+                sink.flush()?;
             }
             Err(RecvTimeoutError::Disconnected) => break,
         }
     }
     Ok(())
+}
+
+fn serve_bridge_requests(
+    stream: &mut TcpStream,
+    bridge: &GatewayBridgeHub,
+    stop: &AtomicBool,
+    gzip: bool,
+) -> io::Result<()> {
+    let receiver = bridge.subscribe_requests();
+    stream.set_write_timeout(Some(Duration::from_secs(5)))?;
+    write_sse_headers(stream, gzip)?;
+    if gzip {
+        let mut encoder = GzEncoder::new(stream, Compression::default());
+        let result = serve_bridge_body(&mut encoder, receiver, stop);
+        let _ = encoder.try_finish();
+        result
+    } else {
+        serve_bridge_body(stream, receiver, stop)
+    }
 }
 
 fn submit_bridge_responses(
@@ -874,7 +924,7 @@ fn handle_connection(
     }
     if local_requests {
         return match deps.local_exec.as_ref() {
-            Some(bridge) => serve_bridge_requests(&mut stream, bridge, stop),
+            Some(bridge) => serve_bridge_requests(&mut stream, bridge, stop, sse_gzip_enabled(&request)),
             None => respond_error(&mut stream, 404, "local-exec channel not enabled"),
         };
     }
@@ -904,7 +954,14 @@ fn handle_connection(
             .headers
             .get(GATEWAY_SLIM_AVATARS_HEADER)
             .is_some_and(|value| value == "1");
-        return serve_events(&mut stream, deps, stop, parse_channels(query), slim_avatars);
+        return serve_events(
+            &mut stream,
+            deps,
+            stop,
+            parse_channels(query),
+            slim_avatars,
+            sse_gzip_enabled(&request),
+        );
     }
     if prepare {
         return match deps.api.prepare_for_upgrade() {
