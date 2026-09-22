@@ -1,30 +1,10 @@
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub struct LocalExecSupervisor {
-    generation: u64,
-    running: bool,
-    restart_count: u32,
-}
-
-impl LocalExecSupervisor {
-    pub fn start(&mut self) -> u64 {
-        self.generation = self.generation.saturating_add(1);
-        self.running = true;
-        self.generation
-    }
-
-    pub fn crash_and_restart(&mut self) -> u64 {
-        self.running = false;
-        self.restart_count = self.restart_count.saturating_add(1);
-        self.start()
-    }
-
-    pub fn stop(&mut self) {
-        self.running = false;
-    }
-
-    pub fn is_running(&self) -> bool { self.running }
-    pub fn restart_count(&self) -> u32 { self.restart_count }
-}
-
 pub mod daemon_files;
 pub mod supervisor;
+
+pub use supervisor::{
+    decide_local_exec_daemon_action, LocalExecDaemonAction, LocalExecDaemonOrigin,
+    LocalExecDaemonState, LocalExecSupervisor, LOCAL_EXEC_DAEMON_DISCOVERY_MISS_LIMIT,
+    LOCAL_EXEC_DAEMON_LIVENESS_INTERVAL_MS, LOCAL_EXEC_DAEMON_READINESS_POLL_MS,
+    LOCAL_EXEC_DAEMON_READINESS_TIMEOUT_MS, LOCAL_EXEC_DAEMON_REFRESH_INTERVAL_MS,
+    LOCAL_EXEC_DAEMON_RESPAWN_LIMIT,
+};

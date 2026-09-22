@@ -628,3 +628,67 @@ fn gateway_client_tracks_endpoint_stream_stall_retry_and_permanent_refusal() {
         None
     );
 }
+
+#[test]
+fn local_exec_supervisor_matches_grok_spawn_adopt_replace_policy() {
+    use mahayana_node_agent_coordinator::local_exec::{
+        decide_local_exec_daemon_action, LocalExecDaemonAction, LocalExecDaemonOrigin,
+        LocalExecDaemonState, LocalExecSupervisor, LOCAL_EXEC_DAEMON_LIVENESS_INTERVAL_MS,
+        LOCAL_EXEC_DAEMON_READINESS_POLL_MS, LOCAL_EXEC_DAEMON_READINESS_TIMEOUT_MS,
+        LOCAL_EXEC_DAEMON_REFRESH_INTERVAL_MS, LOCAL_EXEC_DAEMON_RESPAWN_LIMIT,
+    };
+    use mahayana_node_agent_coordinator::local_exec::daemon_files::LocalExecDaemonDiscovery;
+
+    assert_eq!(LOCAL_EXEC_DAEMON_REFRESH_INTERVAL_MS, 30_000);
+    assert_eq!(LOCAL_EXEC_DAEMON_LIVENESS_INTERVAL_MS, 1_000);
+    assert_eq!(LOCAL_EXEC_DAEMON_READINESS_TIMEOUT_MS, 5_000);
+    assert_eq!(LOCAL_EXEC_DAEMON_READINESS_POLL_MS, 50);
+    assert_eq!(LOCAL_EXEC_DAEMON_RESPAWN_LIMIT, 10);
+    assert_eq!(decide_local_exec_daemon_action(None), LocalExecDaemonAction::Spawn);
+
+    let idle = LocalExecDaemonDiscovery {
+        pid: 41,
+        started_at: 1.0,
+        entry_realpath: Some("/tmp/daemon".into()),
+        generation_token: Some("g-1".into()),
+        inflight_count: Some(0),
+    };
+    assert_eq!(
+        decide_local_exec_daemon_action(Some(&idle)),
+        LocalExecDaemonAction::Replace { pid: 41 }
+    );
+
+    let busy = LocalExecDaemonDiscovery {
+        inflight_count: Some(2),
+        ..idle.clone()
+    };
+    assert_eq!(
+        decide_local_exec_daemon_action(Some(&busy)),
+        LocalExecDaemonAction::Adopt { pid: 41 }
+    );
+
+    let mut supervisor = LocalExecSupervisor::default();
+    assert_eq!(
+        supervisor.reconcile_discovery(Some(&busy)),
+        LocalExecDaemonAction::Adopt { pid: 41 }
+    );
+    assert_eq!(supervisor.state(), &LocalExecDaemonState::Adopting { pid: 41 });
+    supervisor
+        .mark_active(
+            LocalExecDaemonOrigin::Adopted,
+            41,
+            10,
+            "fabushi-local-exec --generation g-1",
+            "/tmp/daemon",
+            "g-1",
+        )
+        .unwrap();
+    assert!(matches!(
+        supervisor.state(),
+        LocalExecDaemonState::Active {
+            origin: LocalExecDaemonOrigin::Adopted,
+            pid: 41,
+            ..
+        }
+    ));
+}
