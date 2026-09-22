@@ -44,6 +44,12 @@ impl HostLockHandle {
     }
 }
 
+impl Drop for HostLockHandle {
+    fn drop(&mut self) {
+        let _ = self.release();
+    }
+}
+
 #[derive(Debug)]
 pub struct HostLockAcquisition {
     pub outcome: HostLockOutcome,
