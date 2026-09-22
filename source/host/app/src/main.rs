@@ -17,6 +17,8 @@ use mahayana_host_runtime::extensions::box_lifecycle::production::{
     ProductionBoxLifecycleClient, ProductionBoxLifecycleClientFactory,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::source_map::extension::start_source_map_extension;
+use mahayana_host_runtime::extensions::source_map::source_map_service::SandSourceMap;
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
 };
@@ -78,6 +80,7 @@ struct ProductionHostExtensions {
     auth: Arc<HostAuthExtension>,
     team_rules: Arc<ProductionTeamRulesResolver>,
     team_rules_renewal_subscription: Option<u64>,
+    source_map: Arc<SandSourceMap>,
     box_lifecycle: Arc<BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>>,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
 }
@@ -150,6 +153,8 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
                 });
         }));
 
+    let source_map = Arc::new(start_source_map_extension());
+
     let factory =
         ProductionBoxLifecycleClientFactory::from_process_env().map_err(|error| error.to_string())?;
     let box_lifecycle = Arc::new(start_box_lifecycle_extension(Arc::clone(&auth), &factory));
@@ -169,6 +174,7 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
         auth,
         team_rules,
         team_rules_renewal_subscription: Some(team_rules_renewal_subscription),
+        source_map,
         box_lifecycle,
         webauthn_proxy,
     })
