@@ -112,7 +112,7 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
     let auth = Arc::new(
         start_host_auth_extension_with_options(
             auth_options,
-            production_user_full_name_fetch(backend_url),
+            production_user_full_name_fetch(backend_url.clone()),
         )
         .map_err(|error| error.to_string())?,
     );
