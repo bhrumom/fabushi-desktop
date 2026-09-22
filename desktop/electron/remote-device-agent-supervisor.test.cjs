@@ -27,6 +27,7 @@ const {
   inheritedNodeExecPath,
   remoteDeviceGatewayUrl,
   remoteDeviceRuntime,
+  retryDelayMs,
   sessionExpirationMs,
   sessionRefreshDelay,
   validAgentSession,
@@ -100,6 +101,7 @@ test('logout stops the app-owned device and removes its access credential', asyn
     }
     const supervisor = new RemoteDeviceAgentSupervisor({
       app: { isPackaged: false, getPath: () => path.join(root, 'data') },
+      enabled: true,
       host: {
         async request() {
           if (!loggedIn) throw new Error('not logged in');
@@ -134,6 +136,48 @@ test('logout stops the app-owned device and removes its access credential', asyn
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('remote helper is disabled by default and does not request account sessions', async () => {
+  let requests = 0;
+  let spawns = 0;
+  const supervisor = new RemoteDeviceAgentSupervisor({
+    app: { isPackaged: false, getPath: () => '/tmp/fabushi-disabled-remote-device' },
+    host: { async request() { requests += 1; throw new Error('should not request'); } },
+    env: { FABUSHI_REMOTE_DEVICE_GATEWAY_URL: 'wss://gateway.example.test/agent' },
+    spawn() { spawns += 1; throw new Error('should not spawn'); },
+  });
+  supervisor.start();
+  await supervisor.sync();
+  assert.equal(supervisor.snapshot().enabled, false);
+  assert.equal(supervisor.snapshot().running, false);
+  assert.equal(requests, 0);
+  assert.equal(spawns, 0);
+  supervisor.close();
+});
+
+test('enabling and disabling remote control is an explicit lifecycle boundary', () => {
+  const supervisor = new RemoteDeviceAgentSupervisor({
+    app: { isPackaged: false, getPath: () => '/tmp/fabushi-toggle-remote-device' },
+    host: { async request() { throw new Error('not logged in'); } },
+    env: {},
+  });
+  supervisor.start();
+  assert.equal(supervisor.snapshot().enabled, false);
+  supervisor.setEnabled(true);
+  assert.equal(supervisor.snapshot().enabled, true);
+  supervisor.setEnabled(false);
+  assert.equal(supervisor.snapshot().enabled, false);
+  assert.equal(supervisor.snapshot().running, false);
+  supervisor.close();
+});
+
+test('remote helper retry policy is exponential and bounded', () => {
+  assert.equal(retryDelayMs(1), 1_000);
+  assert.equal(retryDelayMs(2), 2_000);
+  assert.equal(retryDelayMs(3), 4_000);
+  assert.equal(retryDelayMs(6), 32_000);
+  assert.equal(retryDelayMs(20), 60_000);
 });
 
 test('remote session refresh is expiry-driven instead of fixed interval polling', () => {
