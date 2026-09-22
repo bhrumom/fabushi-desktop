@@ -183,6 +183,10 @@ impl TrayManager {
         now: u64,
         events: &mut Vec<TrayEvent>,
     ) -> ErrorTray {
+        let count = options
+            .dedupe_key
+            .as_ref()
+            .map(|_| options.count.unwrap_or(1));
         let tray = ErrorTray {
             kind: "error".into(),
             id: (inner.create_id)(),
@@ -195,7 +199,7 @@ impl TrayManager {
             raw_detail: options.raw_detail,
             actions: (!options.actions.is_empty()).then_some(options.actions),
             dedupe_key: options.dedupe_key,
-            count: options.dedupe_key.as_ref().map(|_| options.count.unwrap_or(1)),
+            count,
         };
         state.trays.push(tray.clone());
         events.push(TrayEvent::Pushed(tray.clone()));
