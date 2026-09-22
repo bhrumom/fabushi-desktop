@@ -11883,7 +11883,7 @@
       "targetPath": "source/node-agent-coordinator/src/main.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-coordinator",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "bab1c7e9703b6367e556a0c9f9e9d52f3cfd6e73",
       "architecturalRole": "coordinator/process-entry",
       "processOrPackage": "mahayana-coordinator",
@@ -11891,9 +11891,10 @@
         "source/node-agent-coordinator/src/main.rs"
       ],
       "testEvidence": [
-        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/node-agent-coordinator/tests/production_protocol.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Partial parity only: the Rust process entry owns carrier/renderer/control ports, Host process generation, Gateway discovery/SSE, request settlement and crash recovery, but frozen Grok 0.18 main composition also wires HostSupervisor, LocalExec supervisor, MCP OAuth forwarder, WebAuthn provider/signer, InferenceRouter, client-side tool relay, pause propagation and coordinated disposal. Those production integrations must be wired before final status."
     },
     {
       "referencePath": "source/node-agent-coordinator/oauth/mcp-oauth-callback-listener.ts",
