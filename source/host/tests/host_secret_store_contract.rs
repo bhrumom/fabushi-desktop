@@ -1,5 +1,8 @@
 use std::fs;
+use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+static TEST_LOCK: Mutex<()> = Mutex::new(());
 
 use mahayana_host_runtime::host_secret_store::{
     clear_host_machine_id_cache_for_tests, get_or_create_host_machine_id, read_machine_id,
@@ -16,6 +19,7 @@ fn temp_root(label: &str) -> std::path::PathBuf {
 
 #[test]
 fn host_secret_store_reads_writes_and_process_caches_machine_id() {
+    let _guard = TEST_LOCK.lock().expect("test lock");
     clear_host_machine_id_cache_for_tests();
     let root = temp_root("host-secret-store");
     let path = root.join("nested").join("host-secrets.json");
@@ -41,6 +45,7 @@ fn host_secret_store_reads_writes_and_process_caches_machine_id() {
 
 #[test]
 fn host_secret_store_creates_uuid_and_ignores_invalid_json() {
+    let _guard = TEST_LOCK.lock().expect("test lock");
     clear_host_machine_id_cache_for_tests();
     let root = temp_root("host-secret-create");
     fs::create_dir_all(&root).expect("create root");
