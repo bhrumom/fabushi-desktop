@@ -184,9 +184,13 @@ fn project_tool(tool: &RoutedTool) -> Value {
         "description": tool.description.clone().unwrap_or_else(|| {
             format!("{} via {}", tool.tool_name, tool.provider_identifier)
         }),
-        "inputSchema": tool.input_schema.clone().unwrap_or_else(|| {
-            json!({ "type": "object", "additionalProperties": true })
-        }),
+        "inputSchema": tool
+            .input_schema
+            .clone()
+            .filter(Value::is_object)
+            .unwrap_or_else(|| {
+                json!({ "type": "object", "additionalProperties": true })
+            }),
         "annotations": {
             "readOnlyHint": read_only,
             "destructiveHint": !read_only,
