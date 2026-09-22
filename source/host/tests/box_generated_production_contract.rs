@@ -33,13 +33,17 @@ fn encode_varint(mut value: u64, out: &mut Vec<u8>) {
     out.push(value as u8);
 }
 
-fn push_varint(field: u8, value: u64, out: &mut Vec<u8>) {
-    out.push(field << 3);
+fn push_key(field: u32, wire: u8, out: &mut Vec<u8>) {
+    encode_varint((u64::from(field) << 3) | u64::from(wire), out);
+}
+
+fn push_varint(field: u32, value: u64, out: &mut Vec<u8>) {
+    push_key(field, 0, out);
     encode_varint(value, out);
 }
 
-fn push_len(field: u8, value: &[u8], out: &mut Vec<u8>) {
-    out.push((field << 3) | 2);
+fn push_len(field: u32, value: &[u8], out: &mut Vec<u8>) {
+    push_key(field, 2, out);
     encode_varint(value.len() as u64, out);
     out.extend_from_slice(value);
 }
@@ -106,6 +110,15 @@ fn computer_use_success_element() -> Vec<u8> {
 
     let mut client_message = Vec::new();
     push_len(22, &computer_result, &mut client_message);
+
+    let mut element = Vec::new();
+    push_len(1, &client_message, &mut element);
+    element
+}
+
+fn raw_resource_element(field_number: u32, protobuf_result: &[u8]) -> Vec<u8> {
+    let mut client_message = Vec::new();
+    push_len(field_number, protobuf_result, &mut client_message);
 
     let mut element = Vec::new();
     push_len(1, &client_message, &mut element);
@@ -407,6 +420,11 @@ fn production_exec_service_computer_use_has_remote_and_no_monitor_paths() {
             b"computer-contract",
             computer_use_success_element(),
         );
+        serve_exec_response(
+            &listener,
+            b"raw-field-44",
+            raw_resource_element(44, &[0x08, 0x01]),
+        );
     });
 
     let environment = ProductionBoxEnvironment::new("127.0.0.1", port, "secret");
@@ -420,6 +438,13 @@ fn production_exec_service_computer_use_has_remote_and_no_monitor_paths() {
         .execute_computer_use_protobuf(&(), protobuf_args)
         .expect("shipping computer-use ExecService call");
     assert_eq!(result, vec![0x0a, 0x00]);
+
+    let mut raw_args = Vec::new();
+    push_len(1, b"raw-field-44", &mut raw_args);
+    let raw_result = accessor
+        .execute_raw_resource(&(), 44, raw_args)
+        .expect("generic generated ExecService resource binding");
+    assert_eq!(raw_result, vec![0x08, 0x01]);
 
     let mut denied = environment
         .remote_resource_accessor()

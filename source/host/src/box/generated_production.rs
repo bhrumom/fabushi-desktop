@@ -261,6 +261,11 @@ pub enum ProductionExecRequest {
     },
     Read { id: u64, args: ProductionReadArgs },
     ComputerUse { id: u64, protobuf_args: Vec<u8> },
+    RawResource {
+        id: u64,
+        field_number: u32,
+        protobuf_args: Vec<u8>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -285,6 +290,10 @@ pub enum ProductionExecClientMessage {
     Write(WriteExecResult),
     Read(ProductionReadResult),
     ComputerUse(Vec<u8>),
+    RawResource {
+        field_number: u32,
+        protobuf_result: Vec<u8>,
+    },
     Other,
 }
 
@@ -434,6 +443,31 @@ impl ProductionBoxResourceAccessor {
             .ok_or(ProductionBoxExecError::MissingResult("computer-use"))
     }
 
+    pub fn execute_raw_resource<Ctx>(
+        &mut self,
+        ctx: &Ctx,
+        field_number: u32,
+        protobuf_args: Vec<u8>,
+    ) -> Result<Vec<u8>, ProductionBoxExecError> {
+        let messages = self.manager.create_exec_instance(ctx, |id| {
+            ProductionExecRequest::RawResource {
+                id,
+                field_number,
+                protobuf_args,
+            }
+        })?;
+        messages
+            .into_iter()
+            .find_map(|message| match message {
+                ProductionExecClientMessage::RawResource {
+                    field_number: returned_field,
+                    protobuf_result,
+                } if returned_field == field_number => Some(protobuf_result),
+                _ => None,
+            })
+            .ok_or(ProductionBoxExecError::MissingResult("raw-resource"))
+    }
+
     fn execute_shell_raw<Ctx>(
         &mut self,
         ctx: &Ctx,
@@ -565,17 +599,21 @@ impl<Ctx> FileTransferAccessor<Ctx> for ProductionBoxResourceAccessor {
     }
 }
 
-fn encode_uint32_field(field_number: u8, value: u64, out: &mut Vec<u8>) {
-    out.push(field_number << 3);
+fn encode_key(field_number: u32, wire_type: u8, out: &mut Vec<u8>) {
+    encode_varint(((field_number as usize) << 3) | usize::from(wire_type), out);
+}
+
+fn encode_uint32_field(field_number: u32, value: u64, out: &mut Vec<u8>) {
+    encode_key(field_number, 0, out);
     encode_varint(
         usize::try_from(value.min(u64::from(u32::MAX))).unwrap_or(u32::MAX as usize),
         out,
     );
 }
 
-fn encode_bool_field(field_number: u8, value: bool, out: &mut Vec<u8>) {
+fn encode_bool_field(field_number: u32, value: bool, out: &mut Vec<u8>) {
     if value {
-        out.push(field_number << 3);
+        encode_key(field_number, 0, out);
         out.push(1);
     }
 }
@@ -642,8 +680,8 @@ fn encode_write_args(path: &str, file_bytes: &[u8], tool_call_id: &str) -> Vec<u
     body
 }
 
-fn encode_int32_field(field_number: u8, value: i32, out: &mut Vec<u8>) {
-    out.push(field_number << 3);
+fn encode_int32_field(field_number: u32, value: i32, out: &mut Vec<u8>) {
+    encode_key(field_number, 0, out);
     let encoded = value as i64 as u64;
     let encoded = usize::try_from(encoded).unwrap_or(usize::MAX);
     encode_varint(encoded, out);
@@ -695,6 +733,14 @@ pub fn encode_exec_server_message(request: &ProductionExecRequest) -> Vec<u8> {
         ProductionExecRequest::ComputerUse { id, protobuf_args } => {
             encode_uint32_field(1, *id, &mut body);
             encode_len_delimited(22, protobuf_args, &mut body);
+        }
+        ProductionExecRequest::RawResource {
+            id,
+            field_number,
+            protobuf_args,
+        } => {
+            encode_uint32_field(1, *id, &mut body);
+            encode_len_delimited(*field_number, protobuf_args, &mut body);
         }
     }
     body
@@ -936,14 +982,17 @@ fn decode_exec_client_message(
         let key = decode_varint(input, &mut cursor)?;
         let field = key >> 3;
         let wire = (key & 0x07) as u8;
-        if wire == 2 && matches!(field, 2 | 3 | 7 | 22) {
+        if wire == 2 {
             let nested = decode_len_delimited(input, &mut cursor)?;
             return match field {
                 2 => Ok(ProductionExecClientMessage::Shell(decode_shell_result(nested)?)),
                 3 => Ok(ProductionExecClientMessage::Write(decode_write_result(nested)?)),
                 7 => Ok(ProductionExecClientMessage::Read(decode_read_result(nested)?)),
                 22 => Ok(ProductionExecClientMessage::ComputerUse(nested.to_vec())),
-                _ => Ok(ProductionExecClientMessage::Other),
+                _ => Ok(ProductionExecClientMessage::RawResource {
+                    field_number: u32::try_from(field).unwrap_or(u32::MAX),
+                    protobuf_result: nested.to_vec(),
+                }),
             };
         }
         skip_protobuf_field(input, &mut cursor, wire)?;
@@ -1229,8 +1278,8 @@ fn encode_varint(mut value: usize, out: &mut Vec<u8>) {
     out.push(value as u8);
 }
 
-fn encode_len_delimited(field_number: u8, value: &[u8], out: &mut Vec<u8>) {
-    out.push((field_number << 3) | 2);
+fn encode_len_delimited(field_number: u32, value: &[u8], out: &mut Vec<u8>) {
+    encode_key(field_number, 2, out);
     encode_varint(value.len(), out);
     out.extend_from_slice(value);
 }
