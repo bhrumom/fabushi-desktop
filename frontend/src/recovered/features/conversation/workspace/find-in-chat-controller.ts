@@ -14,7 +14,7 @@ export type FindableTranscriptEntry =
         | { readonly type: "slack-draft"; readonly draft: { readonly body: string } }
         | { readonly type: string; readonly [key: string]: unknown };
     }
-  | { readonly id: string; readonly kind: string; readonly [key: string]: unknown };
+  | { readonly id: string; readonly kind: string };
 
 export interface FindInChatScope {
   accountSlot: string | null;
@@ -24,6 +24,11 @@ export interface FindInChatScope {
 export interface FindInChatMatch {
   entryId: string;
   occurrence: number;
+}
+
+export interface FindInChatTranscriptHandle {
+  scrollToEntryWithoutHighlight(entryId: string): boolean;
+  subscribeViewCommits(listener: () => void): () => void;
 }
 
 export interface FindInChatSnapshot {
