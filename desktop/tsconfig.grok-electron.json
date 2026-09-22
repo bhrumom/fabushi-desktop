@@ -58,6 +58,8 @@
     "../source/electron-main/foundations.test.ts",
     "../source/electron-main/coordinator/coordinator-control-server.ts",
     "../source/electron-main/coordinator/coordinator-launcher.ts",
-    "../source/electron-main/coordinator/coordinator-launcher.test.ts"
+    "../source/electron-main/coordinator/coordinator-launcher.test.ts",
+    "../source/electron-main/coordinator/coordinator-executors.ts",
+    "../source/electron-main/coordinator/coordinator-executors.test.ts"
   ]
 }
