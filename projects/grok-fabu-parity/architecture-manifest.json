@@ -9548,12 +9548,20 @@
       "targetPath": "source/host/src/box/box_remote_accessor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "de3ad6b11282a0463a75bbd421514e6ecc328788",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/box_remote_accessor.rs",
+        "source/host/src/box/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_remote_accessor_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port preserves authenticated HTTP/1.1 binary transport composition, endpoint headers, Connect/errno ping classification and latency, remote exec request IDs/control filtering/throw propagation, and resource-accessor construction."
     },
     {
       "referencePath": "source/host/box/box-shell-command.ts",
