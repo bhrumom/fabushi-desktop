@@ -71,6 +71,71 @@ fn cancel_aborts_and_settles_the_request() {
 }
 
 #[test]
+fn waitable_control_calls_resolve_reject_and_settle_on_disconnect() {
+    use std::time::Duration;
+
+    let mut client = ControlPortClient::default();
+    client.handle_frame(CoordinatorFrame::ready());
+
+    let success = client
+        .call_waiting("resolveGatewayConnection", json!({"slot":"host"}))
+        .expect("waitable success call");
+    assert!(matches!(
+        &success.action,
+        ClientAction::Post(CoordinatorFrame::Request { request_id, method, .. })
+            if request_id == &success.request_id && method == "resolveGatewayConnection"
+    ));
+    let success_actions = client.handle_frame(CoordinatorFrame::Reply {
+        request_id: success.request_id.clone(),
+        outcome: ReplyOutcome::Ok {
+            value: json!({"baseUrl":"http://127.0.0.1:1234"}),
+        },
+    });
+    assert!(matches!(
+        success_actions.as_slice(),
+        [ClientAction::Resolve { request_id, .. }] if request_id == &success.request_id
+    ));
+    assert_eq!(
+        success
+            .reply
+            .recv_timeout(Duration::from_millis(100))
+            .expect("success waiter")
+            .expect("success result")["baseUrl"],
+        "http://127.0.0.1:1234"
+    );
+
+    let failed = client
+        .call_waiting("mintLocalExecDaemonCredential", json!({}))
+        .expect("waitable failed call");
+    client.handle_frame(CoordinatorFrame::Reply {
+        request_id: failed.request_id.clone(),
+        outcome: ReplyOutcome::Failed {
+            failure: mahayana_node_agent_coordinator::protocol::Failure::new(
+                "DENIED",
+                "credential denied",
+            ),
+        },
+    });
+    let failure = failed
+        .reply
+        .recv_timeout(Duration::from_millis(100))
+        .expect("failure waiter")
+        .expect_err("expected failed result");
+    assert_eq!(failure.code, "DENIED");
+
+    let disconnected = client
+        .call_waiting("getProcessIdentity", json!({"pid": 7}))
+        .expect("waitable disconnected call");
+    client.handle_port_closed();
+    let failure = disconnected
+        .reply
+        .recv_timeout(Duration::from_millis(100))
+        .expect("disconnect waiter")
+        .expect_err("disconnect must reject");
+    assert_eq!(failure.code, mahayana_node_agent_coordinator::protocol::COORDINATOR_DISCONNECTED);
+}
+
+#[test]
 fn disconnect_rejects_every_pending_control_call() {
     let mut client = ControlPortClient::default();
     client.handle_frame(CoordinatorFrame::ready());
