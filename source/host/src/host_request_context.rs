@@ -40,10 +40,11 @@ where
 
 impl<ResolveTimeZone, ResolveRules, ResolveUserFullName>
     HostRequestContextProvider<ResolveTimeZone, ResolveRules, ResolveUserFullName>
-where
-    ResolveRules: Fn(),
 {
-    pub fn resolve_rules(&self) -> ResolveRules::Output {
+    pub fn resolve_rules<Rules>(&self) -> Rules
+    where
+        ResolveRules: Fn() -> Rules,
+    {
         (self.resolve_rules)()
     }
 }
@@ -56,7 +57,6 @@ pub fn create_host_request_context<ResolveTimeZone, ResolveRules, ResolveUserFul
 ) -> HostRequestContextProvider<ResolveTimeZone, ResolveRules, ResolveUserFullName>
 where
     ResolveTimeZone: Fn() -> Option<String>,
-    ResolveRules: Fn(),
     ResolveUserFullName: Fn() -> Option<String>,
 {
     HostRequestContextProvider {

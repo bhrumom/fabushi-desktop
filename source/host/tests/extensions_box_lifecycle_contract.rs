@@ -38,15 +38,18 @@ struct FakeClient {
     image_update_available: Cell<bool>,
 }
 
-impl BoxLifecycleClient<u64> for Rc<FakeClient> {
+#[derive(Clone)]
+struct TestClient(Rc<FakeClient>);
+
+impl BoxLifecycleClient<u64> for TestClient {
     type Error = &'static str;
 
     fn get_sand_box_run_state<'a>(
         &'a self,
         signal: &'a u64,
     ) -> BoxLifecycleFuture<'a, Result<BoxRunState, Self::Error>> {
-        self.observed_signal.replace(Some(*signal));
-        let available = self.image_update_available.get();
+        self.0.observed_signal.replace(Some(*signal));
+        let available = self.0.image_update_available.get();
         Box::pin(async move {
             Ok(BoxRunState {
                 image_update_available: available,
@@ -58,7 +61,7 @@ impl BoxLifecycleClient<u64> for Rc<FakeClient> {
         &'a self,
         request: RecreateSandBoxRequest,
     ) -> BoxLifecycleFuture<'a, Result<RecreateSandBoxResponse, Self::Error>> {
-        self.recreate_requests.borrow_mut().push(request);
+        self.0.recreate_requests.borrow_mut().push(request);
         Box::pin(async {
             Ok(RecreateSandBoxResponse {
                 started: true,
@@ -74,11 +77,11 @@ struct FakeFactory {
 }
 
 impl BoxLifecycleClientFactory<FakeAuth> for FakeFactory {
-    type Client = Rc<FakeClient>;
+    type Client = TestClient;
 
     fn create_sand_cursor_backend_client(&self, _auth: Rc<FakeAuth>) -> Self::Client {
         self.calls.set(self.calls.get() + 1);
-        Rc::clone(&self.client)
+        TestClient(Rc::clone(&self.client))
     }
 }
 
