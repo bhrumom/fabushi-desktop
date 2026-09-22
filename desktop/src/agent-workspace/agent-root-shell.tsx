@@ -38,7 +38,7 @@ import type { TranscriptEntry } from './transcript-model';
 import { desktopComputerLabel, createDesktopAgentTransport } from '../bridge/agent-host';
 import FabAvatar, { type FabAvatarInputState } from '../ui/avatar/fab-avatar';
 import { FabIconButton } from '../ui/primitives/fab-primitives';
-import MiniAppCompatibilityAdapter from '../features/miniapps/miniapp-compatibility-adapter';
+import PluginsSurface from '../features/plugins/plugins-surface';
 import SettingsCompatibilityAdapter from '../features/settings/settings-compatibility-adapter';
 import ContactsCompatibilityAdapter from '../features/contacts/contacts-compatibility-adapter';
 import TelegramCompatibilityAdapter from '../features/telegram/telegram-compatibility-adapter';
@@ -46,7 +46,7 @@ import PaymentsCompatibilityAdapter from '../features/payments/payments-compatib
 import CallsCompatibilityAdapter from '../features/calls/calls-compatibility-adapter';
 import styles from './agent-root-shell.module.css';
 
-type CompatibilitySurface = 'agents' | 'contacts' | 'telegram' | 'miniapps' | 'payments' | 'calls' | 'settings';
+type CompatibilitySurface = 'agents' | 'plugins' | 'contacts' | 'telegram' | 'payments' | 'calls' | 'settings';
 
 const defaultHostSettings: ProductHostSettings = {
   notifications: true,
@@ -567,8 +567,8 @@ export default function AgentRootShell({
     ? <ContactsCompatibilityAdapter transport={transport} onClose={() => setSurface('agents')} />
     : surface === 'telegram'
       ? <TelegramCompatibilityAdapter transport={transport} onClose={() => setSurface('agents')} />
-      : surface === 'miniapps'
-        ? <MiniAppCompatibilityAdapter transport={transport} onClose={() => setSurface('agents')} />
+      : surface === 'plugins'
+        ? <PluginsSurface mcp={product.mcp} onClose={() => setSurface('agents')} />
         : surface === 'payments'
           ? <PaymentsCompatibilityAdapter transport={transport} onClose={() => setSurface('agents')} />
           : surface === 'calls'
@@ -641,7 +641,7 @@ export default function AgentRootShell({
           setSurface('agents');
           product.network.openNetwork();
         }}
-        onOpenPlugins={() => setSurface('miniapps')}
+        onOpenPlugins={() => setSurface('plugins')}
         onOpenContacts={() => setSurface('contacts')}
         onOpenTelegram={() => setSurface('telegram')}
         onOpenPayments={() => setSurface('payments')}
@@ -661,7 +661,7 @@ export default function AgentRootShell({
         onNewAgent={() => void createAgent()}
         onNetwork={product.network.openNetwork}
         onBroadcast={product.network.openBroadcast}
-        onPlugins={() => setSurface('miniapps')}
+        onPlugins={() => setSurface('plugins')}
         onSettings={() => setSurface('settings')}
         entries={activeEntriesAll}
         onOpenTranscriptEntry={scrollToEntry}
