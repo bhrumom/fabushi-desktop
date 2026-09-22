@@ -40,3 +40,5 @@ pub mod durable_file_policy;
 pub mod sand_user_identity;
 pub mod notify_drain_gate;
 pub mod agents;
+pub mod transcript_mutation_events;
+pub mod selected_image_inputs;

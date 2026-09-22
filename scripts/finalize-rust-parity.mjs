@@ -13,7 +13,13 @@ const extensionContract = "source/host/tests/extensions_turn_execution_contract.
 const localExecContract = "source/host/tests/extensions_local_exec_contract.rs";
 const hostFoundationContract = "source/host/tests/host_foundation_contract.rs";
 const hostStorageContract = "source/host/tests/host_storage_contract.rs";
+const grokSmallFoundationContract = "source/host/tests/grok_small_foundation_parity_contract.rs";
 const completed = new Map([
+  ["source/host/ports/product-analytics.ts", ["source/host/src/ports/product_analytics.rs", grokSmallFoundationContract]],
+  ["source/host/ports/sand-analytics-types.ts", ["source/host/src/ports/sand_analytics_types.rs", grokSmallFoundationContract]],
+  ["source/host/transcript-mutation-events.ts", ["source/host/src/transcript_mutation_events.rs", grokSmallFoundationContract]],
+  ["source/host/selected-image-inputs.ts", ["source/host/src/selected_image_inputs.rs", grokSmallFoundationContract]],
+  ["source/host/extensions/webauthn-proxy/webauthn-proxy-marker.ts", ["source/host/src/extensions/webauthn_proxy/webauthn_proxy_marker.rs", grokSmallFoundationContract]],
   ["source/host/notify-drain-gate.ts", ["source/host/src/notify_drain_gate.rs", hostStorageContract]],
   ["source/host/storage/agent-paths.ts", ["source/host/src/storage/agent_paths.rs", hostStorageContract]],
   ["source/host/agents/settings-file.ts", ["source/host/src/agents/settings_file.rs", hostStorageContract]],
