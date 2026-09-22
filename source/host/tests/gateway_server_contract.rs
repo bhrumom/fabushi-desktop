@@ -125,6 +125,12 @@ fn gateway_health_command_security_and_upgrade_routes_match_grok_contract() {
         "POST /api/noSuchMethod HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
     );
     assert!(unknown.starts_with("HTTP/1.1 404 Not Found"), "{unknown}");
+    assert!(
+        !unknown
+            .to_ascii_lowercase()
+            .contains("x-sand-mint-dedupe:"),
+        "error responses must not carry the successful command dedupe marker: {unknown}"
+    );
 
     let upgrade = request(
         port,
@@ -172,6 +178,12 @@ fn gateway_bearer_auth_is_required_when_configured() {
         "POST /api/getTranscript HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
     );
     assert!(missing.starts_with("HTTP/1.1 401 Unauthorized"), "{missing}");
+    assert!(
+        !missing
+            .to_ascii_lowercase()
+            .contains("x-sand-mint-dedupe:"),
+        "authentication errors must not look like successful minted responses: {missing}"
+    );
 
     let authorized = request(
         port,
