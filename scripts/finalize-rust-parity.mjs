@@ -11,7 +11,7 @@ const runnerContract = "source/host/tests/runner_contract.rs";
 const utilityContract = "source/host/tests/runner_small_modules_contract.rs";
 const extensionContract = "source/host/tests/extensions_turn_execution_contract.rs";
 const completed = new Map([
-  ["source/host/extensions/extension-ids.generated.ts", ["source/host/src/extensions/extension_ids_generated.rs", extensionContract]],
+  ["source/host/extensions/extension-ids.generated.ts", ["source/host/src/extensions/extension_ids.generated.rs", extensionContract]],
   ["source/host/extensions/registry.ts", ["source/host/src/extensions/registry.rs", extensionContract]],
   ["source/host/extensions/turn-execution/extension.ts", ["source/host/src/extensions/turn_execution/extension.rs", extensionContract]],
   ["source/host/extensions/turn-execution/turn-execution-service.ts", ["source/host/src/extensions/turn_execution/turn_execution_service.rs", extensionContract]],
