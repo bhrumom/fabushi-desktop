@@ -228,7 +228,7 @@ fn gateway_carries_explicit_fabushi_extensions_without_widening_unknown_methods(
         let response = request(
             port,
             &format!(
-                "POST /api/{method} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}"
+                "POST /api/{method} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
             ),
         );
         assert!(
