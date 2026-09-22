@@ -151,6 +151,32 @@ test('packaged Computer Use fails closed when the active manifest does not match
   }
 });
 
+test('development Host and Coordinator fallbacks stay in the Grok-shaped source boundaries', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fabushi-grok-runtime-paths-'));
+  try {
+    const electronDir = path.join(root, 'desktop', 'electron');
+    fs.mkdirSync(electronDir, { recursive: true });
+    const host = new MahayanaHostProcess({
+      app: { ...defaultApp, isPackaged: false },
+      env: {},
+      platform: 'linux',
+      electronDir,
+      fs,
+    });
+    assert.equal(
+      host.executablePath(),
+      path.join(root, 'source', 'host', 'app', 'target', 'release', 'mahayana-app-host'),
+    );
+    assert.equal(
+      host.coordinatorExecutablePath(),
+      path.join(root, 'source', 'node-agent-coordinator', 'target', 'release', 'mahayana-node-agent-coordinator'),
+    );
+    assert.equal(host.executablePath().includes(`${path.sep}third_party${path.sep}`), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 class FakeChild extends EventEmitter {
   constructor(pid) {
     super();
