@@ -9,6 +9,7 @@ use std::sync::{
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use serde_json::{Value, json};
 use thiserror::Error;
 
@@ -26,10 +27,113 @@ pub const GATEWAY_WEBAUTHN_RESPONSES_PATH: &str = "/webauthn/responses";
 pub const GATEWAY_AVATARS_PATH: &str = "/avatars";
 pub const GATEWAY_REQUEST_ID_HEADER: &str = "x-sand-request-id";
 pub const GATEWAY_MINT_DEDUPE_HEADER: &str = "x-sand-mint-dedupe";
+pub const GATEWAY_SLIM_AVATARS_HEADER: &str = "x-sand-slim-avatars";
+pub const GATEWAY_TRACEPARENT_HEADER: &str = "traceparent";
 pub const SSE_HEARTBEAT_MS: u64 = 15_000;
 pub const MAX_REQUEST_PAYLOAD_BYTES: usize = 256 * 1024 * 1024;
 pub const MAX_BODY_BYTES: usize = MAX_REQUEST_PAYLOAD_BYTES * 4 / 3 + 64 * 1024;
 const MAX_HEADER_BYTES: usize = 64 * 1024;
+
+const GATEWAY_COMMANDS: &[&str] = &[
+    "getTranscript", "getAgentTranscript", "getAgentTranscriptPage", "openAgentWindowed",
+    "getAgentTranscriptWindow", "openAgentTail", "getAgentTranscriptTail", "getAgentThread",
+    "sendPrompt", "promptAcceptanceStatus", "respondToWidget", "resolveAutoReviewApproval",
+    "resolveLocalToolPermission", "dismissWidget", "submitSecret", "reactToMessage",
+    "appendConnectorCard", "listAgents", "countAgents", "searchAgents", "searchMedia",
+    "createAgent", "kickstartAgent", "requestDiskSaverAudit", "createGroup", "setGroupMembers",
+    "updateAgent", "deleteAgent", "deleteAgents", "duplicateAgent", "setAgentUnread",
+    "setAgentNotificationsEnabled", "setAgentNotifyOnUpdates", "setAgentHiddenFromSidebar",
+    "openAgent", "setWindowFocused", "getAgentMemories", "deleteAgentMemory",
+    "clearAgentMemories", "getAgentAutomations", "listAllAutomations", "isAgentNetworkEnabled",
+    "isGlobalSearchEnabled", "isEgressTunnelAvailable", "getSharingState", "createRoomFromAgent",
+    "createRoomInvite", "joinSharedRoom", "respondToRoomJoinRequest", "createSharedRoom",
+    "addOwnAgentToSharedRoom", "removeOwnAgentFromSharedRoom", "setSharedRoomTyping",
+    "leaveSharedRoom", "setAgentAutomationEnabled", "createAgentAutomation",
+    "updateAgentAutomation", "deleteAgentAutomation", "runAgentAutomationNow",
+    "broadcastToAgents", "getAgentWorkflows", "createAgentWorkflow", "updateAgentWorkflow",
+    "setAgentWorkflowEnabled", "deleteAgentWorkflow", "runAgentWorkflowNow",
+    "importAgentWorkflowText", "importAgentWorkflowUrl", "portAgentLocalSkills",
+    "getConversationOutline", "skillsCatalog", "syncPluginSkills", "getPluginSyncStatus",
+    "getSkillPublishTargets", "publishSkill", "resyncPublishedSkill", "unpublishSkill",
+    "getAgentChannels", "connectChannel", "disconnectChannel", "refreshChannel",
+    "getListenerIntegrations", "getListenerConnectUrl", "getSubagents", "getAsyncTasks",
+    "setAgentAvatarBytes", "getAgentAvatar", "getForeverBoxStatus", "getCloudAgentInfo",
+    "ensureForeverBox", "resetForeverBox", "updateForeverBox", "autoUpdateBoxNow",
+    "snapshotBoxStoreNow", "getBoxStoreStatus", "clearBoxStoreNow", "updateHostNow",
+    "getHostStatus", "setBoxMigrating", "prepareBoxForRecreate", "resumeBoxAfterRecreate",
+    "handBackForeverBox", "startTeachRecording", "stopTeachRecording",
+    "getTeachRecordingStatus", "getTrays", "dismissTray", "clearTrays", "uploadAttachment",
+    "readAttachmentImage", "readAttachmentText", "readAttachmentChunk", "getHostSettings",
+    "setHostSettings", "setBoxSecrets", "getBoxSecretsStatus", "completeMcpOAuth",
+    "requestWebAuthnCeremony", "refreshMcp", "listRoutedMcpTools", "executeRoutedMcpTool",
+    "listBoxMcpServers",
+];
+
+fn is_gateway_command(method: &str) -> bool {
+    GATEWAY_COMMANDS.contains(&method)
+}
+
+fn slim_command_result(method: &str, mut value: Value) -> Value {
+    fn strip_summary(summary: &mut Value) {
+        if let Some(object) = summary.as_object_mut() {
+            if object.contains_key("avatarDataUrl") {
+                object.insert("avatarDataUrl".into(), Value::Null);
+            }
+        }
+    }
+
+    match method {
+        "listAgents" => {
+            if let Some(rows) = value.as_array_mut() {
+                for row in rows {
+                    strip_summary(row);
+                }
+            }
+        }
+        "updateAgent" | "setGroupMembers" | "setAgentAvatarBytes" => strip_summary(&mut value),
+        "createAgent" | "createGroup" | "duplicateAgent" => {
+            if let Some(agent) = value.get_mut("agent") {
+                strip_summary(agent);
+            }
+        }
+        _ => {}
+    }
+    value
+}
+
+fn slim_event(mut event: Value) -> Value {
+    match event.get("channel").and_then(Value::as_str) {
+        Some("agents") => {
+            if let Some(rows) = event
+                .get_mut("payload")
+                .and_then(|payload| payload.get_mut("agents"))
+                .and_then(Value::as_array_mut)
+            {
+                for row in rows {
+                    if let Some(object) = row.as_object_mut() {
+                        if object.contains_key("avatarDataUrl") {
+                            object.insert("avatarDataUrl".into(), Value::Null);
+                        }
+                    }
+                }
+            }
+        }
+        Some("agent-upserted") => {
+            if let Some(object) = event
+                .get_mut("payload")
+                .and_then(|payload| payload.get_mut("agent"))
+                .and_then(Value::as_object_mut)
+            {
+                if object.contains_key("avatarDataUrl") {
+                    object.insert("avatarDataUrl".into(), Value::Null);
+                }
+            }
+        }
+        _ => {}
+    }
+    event
+}
+
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct GatewayHealth {
@@ -313,6 +417,7 @@ fn write_response(
         403 => "Forbidden",
         404 => "Not Found",
         409 => "Conflict",
+        304 => "Not Modified",
         413 => "Payload Too Large",
         500 => "Internal Server Error",
         _ => "Response",
@@ -368,6 +473,7 @@ fn serve_events(
     deps: &GatewayServerDeps,
     stop: &AtomicBool,
     channels: Option<Vec<String>>,
+    slim_avatars: bool,
 ) -> io::Result<()> {
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
     write!(
@@ -386,6 +492,7 @@ fn serve_events(
                 {
                     continue;
                 }
+                let event = if slim_avatars { slim_event(event) } else { event };
                 let encoded = serde_json::to_string(&event)
                     .map_err(|error| io::Error::other(format!("serialize gateway event: {error}")))?;
                 write!(stream, "data: {encoded}\n\n")?;
@@ -399,6 +506,114 @@ fn serve_events(
         }
     }
     Ok(())
+}
+
+fn decode_path_component(value: &str) -> Option<String> {
+    let bytes = value.as_bytes();
+    let mut output = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' {
+            if index + 2 >= bytes.len() {
+                return None;
+            }
+            let digit = |byte: u8| match byte {
+                b'0'..=b'9' => Some(byte - b'0'),
+                b'a'..=b'f' => Some(byte - b'a' + 10),
+                b'A'..=b'F' => Some(byte - b'A' + 10),
+                _ => None,
+            };
+            let high = digit(bytes[index + 1])?;
+            let low = digit(bytes[index + 2])?;
+            output.push((high << 4) | low);
+            index += 3;
+        } else {
+            output.push(bytes[index]);
+            index += 1;
+        }
+    }
+    String::from_utf8(output).ok()
+}
+
+fn query_value<'a>(query: Option<&'a str>, key: &str) -> Option<&'a str> {
+    query?.split('&').find_map(|part| {
+        let (name, value) = part.split_once('=')?;
+        (name == key).then_some(value)
+    })
+}
+
+fn serve_avatar(
+    stream: &mut TcpStream,
+    deps: &GatewayServerDeps,
+    request: &HttpRequest,
+    path: &str,
+    query: Option<&str>,
+) -> io::Result<()> {
+    if request
+        .headers
+        .get("sec-fetch-site")
+        .is_some_and(|value| value.eq_ignore_ascii_case("cross-site"))
+    {
+        return respond_error(stream, 403, "cross-site avatar loads are not allowed");
+    }
+    let encoded_id = path
+        .strip_prefix(&format!("{GATEWAY_AVATARS_PATH}/"))
+        .unwrap_or_default();
+    let Some(agent_id) = decode_path_component(encoded_id).filter(|value| !value.is_empty()) else {
+        return respond_error(stream, 404, "missing agent id");
+    };
+    let avatar = match deps.api.call("getAgentAvatar", json!({ "id": agent_id })) {
+        Ok(value) => value,
+        Err(error) => return respond_error(stream, error.status(), error.to_string()),
+    };
+    let version = avatar.get("version").and_then(Value::as_str);
+    let data_url = avatar.get("dataUrl").and_then(Value::as_str);
+    let (Some(version), Some(data_url)) = (version, data_url) else {
+        return respond_error(stream, 404, "agent has no avatar");
+    };
+    if query_value(query, "v").is_some_and(|requested| requested != version) {
+        return respond_error(stream, 404, "no such avatar version");
+    }
+    let Some(rest) = data_url.strip_prefix("data:") else {
+        return respond_error(stream, 404, "agent has no avatar");
+    };
+    let Some((mime, encoded)) = rest.split_once(";base64,") else {
+        return respond_error(stream, 404, "agent has no avatar");
+    };
+    if mime.is_empty() {
+        return respond_error(stream, 404, "agent has no avatar");
+    }
+    let bytes = match BASE64_STANDARD.decode(encoded) {
+        Ok(bytes) => bytes,
+        Err(_) => return respond_error(stream, 404, "agent has no avatar"),
+    };
+    let etag = format!("\"{version}\"");
+    let immutable = query_value(query, "v").is_some();
+    if request.headers.get("if-none-match").is_some_and(|value| value == &etag) {
+        return write_response(
+            stream,
+            304,
+            mime,
+            &[],
+            &[
+                ("Cache-Control", if immutable { "private, max-age=31536000, immutable" } else { "no-store" }),
+                ("ETag", &etag),
+            ],
+        );
+    }
+    write_response(
+        stream,
+        200,
+        mime,
+        &bytes,
+        &[
+            ("Cache-Control", if immutable { "private, max-age=31536000, immutable" } else { "no-store" }),
+            ("ETag", &etag),
+            ("Content-Disposition", "attachment"),
+            ("X-Content-Type-Options", "nosniff"),
+            ("Content-Security-Policy", "default-src 'none'; sandbox"),
+        ],
+    )
 }
 
 fn handle_connection(
@@ -447,16 +662,16 @@ fn handle_connection(
 
     let events = request.method == "GET" && path == GATEWAY_EVENTS_PATH;
     let prepare = request.method == "POST" && path == GATEWAY_PREPARE_UPGRADE_PATH;
+    let avatar = request.method == "GET" && path.starts_with(&format!("{GATEWAY_AVATARS_PATH}/"));
     let command = request.method == "POST"
         && path
             .strip_prefix(&format!("{GATEWAY_API_PREFIX}/"))
             .is_some_and(|method| !method.is_empty());
-    let known_but_unwired = path.starts_with(&format!("{GATEWAY_AVATARS_PATH}/"))
-        || path == GATEWAY_LOCAL_EXEC_REQUESTS_PATH
+    let known_but_unwired = path == GATEWAY_LOCAL_EXEC_REQUESTS_PATH
         || path == GATEWAY_LOCAL_EXEC_RESPONSES_PATH
         || path == GATEWAY_WEBAUTHN_REQUESTS_PATH
         || path == GATEWAY_WEBAUTHN_RESPONSES_PATH;
-    if !(events || prepare || command || known_but_unwired) {
+    if !(events || prepare || avatar || command || known_but_unwired) {
         return respond_error(
             &mut stream,
             404,
@@ -471,8 +686,15 @@ fn handle_connection(
     if known_but_unwired {
         return respond_error(&mut stream, 404, "gateway bridge channel is not enabled");
     }
+    if avatar {
+        return serve_avatar(&mut stream, deps, &request, path, query);
+    }
     if events {
-        return serve_events(&mut stream, deps, stop, parse_channels(query));
+        let slim_avatars = request
+            .headers
+            .get(GATEWAY_SLIM_AVATARS_HEADER)
+            .is_some_and(|value| value == "1");
+        return serve_events(&mut stream, deps, stop, parse_channels(query), slim_avatars);
     }
     if prepare {
         return match deps.api.prepare_for_upgrade() {
@@ -484,6 +706,9 @@ fn handle_connection(
     let method = path
         .strip_prefix(&format!("{GATEWAY_API_PREFIX}/"))
         .unwrap_or_default();
+    if !is_gateway_command(method) {
+        return respond_error(&mut stream, 404, format!("unknown gateway method: {method}"));
+    }
     let args = if request.body.is_empty() {
         json!({})
     } else {
@@ -495,7 +720,17 @@ fn handle_connection(
         }
     };
     match deps.api.call(method, args) {
-        Ok(value) => respond_json(&mut stream, 200, value),
+        Ok(value) => {
+            let slim = request
+                .headers
+                .get(GATEWAY_SLIM_AVATARS_HEADER)
+                .is_some_and(|value| value == "1");
+            respond_json(
+                &mut stream,
+                200,
+                if slim { slim_command_result(method, value) } else { value },
+            )
+        }
         Err(error) => respond_error(&mut stream, error.status(), error.to_string()),
     }
 }
