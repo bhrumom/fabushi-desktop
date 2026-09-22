@@ -13699,12 +13699,19 @@
       "targetPath": "source/host/src/host_secret_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "1516fb5524d0e91d2c85e6b7ad2a4a16822543b7",
       "architecturalRole": "host/host-secret-store",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/host_secret_store.rs",
+        "source/host/src/host_paths.rs",
+        "source/host/src/lib.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_secret_store_contract.rs"
+      ],
+      "notes": "Rust port preserves process-global machine-id caching, tolerant reads, UUID creation, recursive parent creation and same-directory PID-temporary atomic rename semantics."
     },
     {
       "referencePath": "source/host/local-exec/local-exec-daemon-protocol.ts",
