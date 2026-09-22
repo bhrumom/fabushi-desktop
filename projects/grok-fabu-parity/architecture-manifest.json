@@ -23256,12 +23256,18 @@
       "targetPath": "source/shared/node/cursor-token.ts",
       "targetLanguage": "typescript",
       "owner": "shared",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "4a93d2c0deca69823870b131fc40ab8d34a34b27",
       "architecturalRole": "shared/node",
       "processOrPackage": "shared",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/shared/node/cursor-token.ts"
+      ],
+      "testEvidence": [
+        "source/shared/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/shared/node/egress-tunnel/box-connection.ts",
@@ -24048,24 +24054,36 @@
       "targetPath": "source/shared/rpc/coordinator-port.ts",
       "targetLanguage": "typescript",
       "owner": "shared",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "b79cce9ad413e5e0a775996f29ca7109a44ad208",
       "architecturalRole": "shared/rpc",
       "processOrPackage": "shared",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/shared/rpc/coordinator-port.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-launcher.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/shared/rpc/coordinator.ts",
       "targetPath": "source/shared/rpc/coordinator.ts",
       "targetLanguage": "typescript",
       "owner": "shared",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "ae98402e3b98843b00b51ee7da12f23befabbac6",
       "architecturalRole": "shared/rpc",
       "processOrPackage": "shared",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/shared/rpc/coordinator.ts"
+      ],
+      "testEvidence": [
+        "source/electron-preload/coordinator-port-bridge.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/shared/rpc/dev-controls.ts",
@@ -24084,12 +24102,18 @@
       "targetPath": "source/shared/rpc/main.ts",
       "targetLanguage": "typescript",
       "owner": "shared",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "127cc74ce5152a243590597b274a93acc3c38c4e",
       "architecturalRole": "shared/rpc",
       "processOrPackage": "shared",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/shared/rpc/main.ts"
+      ],
+      "testEvidence": [
+        "source/electron-preload/preload-boundaries.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/shared/rpc/vnc.ts",
@@ -24300,12 +24324,18 @@
       "targetPath": "source/shared/update-track.ts",
       "targetLanguage": "typescript",
       "owner": "shared",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "34733696bf85dcde26c8d2c2cfd1332b946d92fe",
       "architecturalRole": "shared/update-track",
       "processOrPackage": "shared",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/shared/update-track.ts"
+      ],
+      "testEvidence": [
+        "source/shared/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     },
     {
       "referencePath": "source/shared/update.ts",
@@ -24420,12 +24450,18 @@
       "targetPath": "source/shared/write-epoch.ts",
       "targetLanguage": "typescript",
       "owner": "shared",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "39aa4a862aeef6287b84d53eb44517d167796aab",
       "architecturalRole": "shared/write-epoch",
       "processOrPackage": "shared",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/shared/write-epoch.ts"
+      ],
+      "testEvidence": [
+        "source/shared/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
   "generatedAt": "2026-09-22T02:05:46.222Z"
