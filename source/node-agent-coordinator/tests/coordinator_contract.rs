@@ -1243,6 +1243,50 @@ fn webauthn_provider_models_welcome_consent_sign_and_failure_frames() {
 
 
 #[test]
+fn coordinator_inference_router_refreshes_default_provider_without_losing_agent_overrides() {
+    use std::fs;
+
+    use mahayana_node_agent_coordinator::inference_router::{
+        CoordinatorInferenceRouter, InferenceRoute,
+    };
+    use uuid::Uuid;
+
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-coordinator-inference-router-{}",
+        Uuid::new_v4()
+    ));
+    fs::create_dir_all(&root).expect("router temp dir");
+    let settings = root.join("settings.json");
+    fs::write(&settings, r#"{"inferenceProvider":"codex"}"#).expect("codex settings");
+
+    let router = CoordinatorInferenceRouter::new(&settings);
+    let default = router.resolve("builder");
+    assert_eq!(default.provider, "codex");
+    assert_eq!(default.host_slot, "host");
+
+    router
+        .bind_agent(
+            "research",
+            InferenceRoute {
+                provider: "claude-code".into(),
+                host_slot: "host".into(),
+            },
+        )
+        .expect("bind agent route");
+
+    fs::write(&settings, r#"{"router":{"provider":"openrouter"}}"#)
+        .expect("openrouter settings");
+    assert_eq!(router.resolve("builder").provider, "openrouter");
+    assert_eq!(router.resolve("research").provider, "claude-code");
+
+    router.unbind_agent("research").expect("unbind agent route");
+    assert_eq!(router.resolve("research").provider, "openrouter");
+
+    fs::remove_dir_all(root).expect("remove router temp dir");
+}
+
+
+#[test]
 fn inference_router_persists_bounded_transcripts_reactions_and_turn_ids() {
     use std::fs;
 

@@ -234,6 +234,65 @@ impl InferenceRouter {
     }
 }
 
+#[derive(Debug)]
+pub struct CoordinatorInferenceRouter {
+    settings_path: PathBuf,
+    routes: Mutex<InferenceRouter>,
+}
+
+impl CoordinatorInferenceRouter {
+    pub fn new(settings_path: impl Into<PathBuf>) -> Self {
+        Self {
+            settings_path: settings_path.into(),
+            routes: Mutex::new(InferenceRouter::default()),
+        }
+    }
+
+    pub fn settings_path(&self) -> &Path {
+        &self.settings_path
+    }
+
+    pub fn resolve(&self, agent_id: &str) -> InferenceRoute {
+        let configured = configured_inference_provider(&self.settings_path)
+            .unwrap_or(InferenceProvider::Cursor);
+        let fallback = InferenceRoute {
+            provider: configured.as_str().to_string(),
+            host_slot: "host".into(),
+        };
+        let Ok(mut routes) = self.routes.lock() else {
+            return fallback;
+        };
+        routes.set_default(fallback.clone());
+        routes.resolve(agent_id).cloned().unwrap_or(fallback)
+    }
+
+    pub fn bind_agent(
+        &self,
+        agent_id: impl Into<String>,
+        route: InferenceRoute,
+    ) -> Result<(), Failure> {
+        let mut routes = self.routes.lock().map_err(|_| {
+            Failure::new(
+                "INFERENCE_ROUTER_LOCK_FAILED",
+                "Coordinator inference router lock poisoned",
+            )
+        })?;
+        routes.bind_agent(agent_id, route);
+        Ok(())
+    }
+
+    pub fn unbind_agent(&self, agent_id: &str) -> Result<(), Failure> {
+        let mut routes = self.routes.lock().map_err(|_| {
+            Failure::new(
+                "INFERENCE_ROUTER_LOCK_FAILED",
+                "Coordinator inference router lock poisoned",
+            )
+        })?;
+        routes.unbind_agent(agent_id);
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum StoredRole {

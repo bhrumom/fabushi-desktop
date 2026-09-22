@@ -28,9 +28,9 @@ use mahayana_node_agent_coordinator::oauth::mcp_oauth_forwarder::{
 };
 use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::McpOAuthLoopbackRegistry;
 use mahayana_node_agent_coordinator::inference_router::{
-    InferenceProvider, InferenceTaskQueue, InferenceTranscriptFile, RunnerInferenceEvent,
-    StoredEntry, StoredRole, configured_inference_provider as configured_inference_provider_from_settings,
-    parse_runner_inference_event, project_transcript_entry,
+    CoordinatorInferenceRouter, InferenceProvider, InferenceTaskQueue, InferenceTranscriptFile,
+    RunnerInferenceEvent, StoredEntry, StoredRole, parse_runner_inference_event,
+    project_transcript_entry,
 };
 use mahayana_node_agent_coordinator::webauthn::{
     ApprovedWebAuthnConsent, WebAuthnCeremony,
@@ -92,7 +92,7 @@ struct CoordinatorState {
     bootstrap: CoordinatorBootstrap,
     host_bin: PathBuf,
     gateway_discovery_path: PathBuf,
-    inference_settings_path: PathBuf,
+    inference_router: CoordinatorInferenceRouter,
     inference_store: InferenceTranscriptFile,
     inference_store_lock: Mutex<()>,
     inference_queue: InferenceTaskQueue,
@@ -1465,9 +1465,16 @@ fn dispatch_gateway_value(
     }
 }
 
+fn routed_inference_provider(
+    state: &CoordinatorState,
+    agent_id: &str,
+) -> InferenceProvider {
+    let route = state.inference_router.resolve(agent_id);
+    InferenceProvider::parse(&route.provider).unwrap_or(InferenceProvider::Cursor)
+}
+
 fn configured_inference_provider(state: &CoordinatorState) -> InferenceProvider {
-    configured_inference_provider_from_settings(&state.inference_settings_path)
-        .unwrap_or(InferenceProvider::Cursor)
+    routed_inference_provider(state, "")
 }
 
 fn emit_inference_transcript(
@@ -2011,7 +2018,12 @@ fn dispatch_inference_if_handled(
         }
     }
 
-    let provider = configured_inference_provider(state);
+    let inference_agent_id = args
+        .get("agentId")
+        .or_else(|| args.get("id"))
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let provider = routed_inference_provider(state, inference_agent_id);
     if matches!(provider, InferenceProvider::Cursor) {
         return false;
     }
@@ -2045,11 +2057,7 @@ fn dispatch_inference_if_handled(
         return false;
     }
 
-    let agent_id = args
-        .get("agentId")
-        .and_then(Value::as_str)
-        .unwrap_or("")
-        .to_string();
+    let agent_id = inference_agent_id.to_string();
     let queue_key = if agent_id.trim().is_empty() {
         format!("invalid-{}", uuid::Uuid::new_v4())
     } else {
@@ -2402,6 +2410,7 @@ fn main() {
     let inference_data_dir = PathBuf::from(bootstrap.process_config.data_dir.trim());
     let gateway_discovery_path = inference_data_dir.join("gateway.json");
     let inference_settings_path = inference_data_dir.join("settings.json");
+    let inference_router = CoordinatorInferenceRouter::new(inference_settings_path);
     let inference_store =
         InferenceTranscriptFile::new(inference_data_dir.join("inference-router-transcript.json"));
     let gateway_client = CoordinatorGatewayClient::default();
@@ -2410,7 +2419,7 @@ fn main() {
         bootstrap,
         host_bin,
         gateway_discovery_path,
-        inference_settings_path,
+        inference_router,
         inference_store,
         inference_store_lock: Mutex::new(()),
         inference_queue: InferenceTaskQueue::default(),
