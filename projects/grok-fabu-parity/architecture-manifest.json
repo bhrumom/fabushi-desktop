@@ -9592,12 +9592,22 @@
       "targetPath": "source/host/src/box/box_windows.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "3bfdbbe96decb77ff3695a0f7b8bdd73f431e6ea",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/box_windows.rs",
+        "source/host/src/box/box_shell_command.rs",
+        "source/host/src/ports/box.rs",
+        "source/host/src/box/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_windows_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port preserves window guard semantics, owner-token validation, start/stop shell construction via build_host_shell_args, busy-monitor classification, monitor lease touching, env integer parsing, connection keys and primary-window projection. Shipping Box composition remains separately tracked before box-shell-command can become final."
     },
     {
       "referencePath": "source/host/box/exec-daemon-process.ts",

@@ -4,3 +4,4 @@ pub mod box_shell_command;
 pub mod box_mcp;
 pub mod box_store_backend_policy;
 pub mod protected_path_guard;
+pub mod box_windows;
