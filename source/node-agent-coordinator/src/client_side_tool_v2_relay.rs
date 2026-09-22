@@ -38,7 +38,8 @@ pub struct ToolTransportEvent {
     pub message: Option<EncodedToolMessage>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RendererToolEvent {
     pub version: u32,
     pub kind: ToolMessageKind,
