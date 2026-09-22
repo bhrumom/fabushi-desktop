@@ -1,4 +1,5 @@
 use chrono::{SecondsFormat, Utc};
+use mahayana_node_agent_coordinator::carrier::{parse_bootstrap_argument, CoordinatorBootstrap};
 use mahayana_node_agent_coordinator::protocol::{
     CoordinatorFrame, Failure, ReplyOutcome, COORDINATOR_DISCONNECTED,
 };
@@ -34,6 +35,7 @@ struct PendingHostRequest {
 
 #[derive(Debug)]
 struct CoordinatorState {
+    bootstrap: CoordinatorBootstrap,
     host_bin: PathBuf,
     host_stdin: Mutex<Option<ActiveHostStdin>>,
     pending: Mutex<HashMap<String, PendingHostRequest>>,
@@ -316,7 +318,12 @@ fn dispatch_to_host(
                     "protocolVersion": 1,
                     "hostGeneration": generation,
                     "pending": pending,
-                    "hostRunning": state.host_stdin.lock().map(|host| host.is_some()).unwrap_or(false)
+                    "hostRunning": state.host_stdin.lock().map(|host| host.is_some()).unwrap_or(false),
+                    "processConfig": {
+                        "appVersion": state.bootstrap.process_config.app_version,
+                        "isPackaged": state.bootstrap.process_config.is_packaged,
+                        "dataDir": state.bootstrap.process_config.data_dir
+                    }
                 }),
             },
         );
@@ -398,6 +405,15 @@ fn execute_actions(state: &Arc<CoordinatorState>, actions: Vec<ServerAction>) ->
 }
 
 fn main() {
+    let arguments = env::args().collect::<Vec<_>>();
+    let bootstrap = match parse_bootstrap_argument(arguments.iter().map(String::as_str)) {
+        Ok(bootstrap) => bootstrap,
+        Err(detail) => {
+            eprintln!("node-agent-coordinator: {detail}");
+            std::process::exit(2);
+        }
+    };
+
     let host_bin = match env::var_os("MAHAYANA_APP_HOST_BIN").filter(|value| !value.is_empty()) {
         Some(value) => PathBuf::from(value),
         None => {
@@ -407,6 +423,7 @@ fn main() {
     };
 
     let state = Arc::new(CoordinatorState {
+        bootstrap,
         host_bin,
         host_stdin: Mutex::new(None),
         pending: Mutex::new(HashMap::new()),
