@@ -1,4 +1,4 @@
-use crate::box_runtime::box_monitor_layout::display_space_sentence;
+use crate::r#box::box_monitor_layout::display_space_sentence;
 
 use super::sand_browser_use_subagent::{
     SandCustomSubagentType, SandSubagentType, SandSubagentTypeValue,
