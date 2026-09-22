@@ -2,12 +2,22 @@ import {
   reduceComputerRebuildState,
   type ComputerRebuildState,
 } from "./computer-rebuild-model.ts";
+import type { ProductionCoordinatorClient } from "../../../../production/coordinator-client";
 
 export type ComputerRebuildTransportState = "connected" | "down";
 
 export interface ComputerRebuildTransportSource {
   readonly ready: Promise<void>;
   subscribeTransport(listener: (state: unknown) => void): () => void;
+}
+
+export function createComputerRebuildTransportSource(
+  client: Pick<ProductionCoordinatorClient, "ready" | "subscribeTransport">,
+): ComputerRebuildTransportSource {
+  return {
+    ready: client.ready,
+    subscribeTransport: (listener) => client.subscribeTransport(listener),
+  };
 }
 
 export interface ComputerRebuildTransportStore {
