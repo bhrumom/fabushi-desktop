@@ -15743,11 +15743,15 @@
       "referenceBlobSha": "6ed3aa06b089d79ae8ece4c38984acc163ab6962",
       "architecturalRole": "coordinator/gateway",
       "processOrPackage": "mahayana-coordinator",
-      "behavioralEvidence": [],
+      "behavioralEvidence": [
+        "source/node-agent-coordinator/src/gateway/gateway_client.rs",
+        "source/node-agent-coordinator/src/main.rs"
+      ],
       "testEvidence": [
         "source/node-agent-coordinator/tests/coordinator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
-      ]
+      ],
+      "notes": "Partial parity with shipping production wiring: the Rust Coordinator now owns SSE connection state, reconnect/stall classification, authenticated event transport, and Grok setGatewayPaused/setDevGatewayOffline controls. Those controls terminate/suppress the live event stream, gate dispatch state, settle locally on the main-data port, and pause local-exec rather than being forwarded to Host. Remaining frozen parity includes the full sendPrompt accept-return/dedupe path, bounded roster reads, create-agent retry pinning, trace-window command spans, and deadline-policy integration, so this row intentionally remains existing-needs-parity."
     },
     {
       "referencePath": "source/node-agent-coordinator/gateway/gateway-dns-diagnostics.ts",
@@ -35410,5 +35414,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-22T07:49:04.909Z"
+  "generatedAt": "2026-09-22T15:21:25.635Z"
 }

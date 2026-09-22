@@ -186,6 +186,8 @@ pub struct CoordinatorGatewayClient {
     pub state: GatewayClientState,
     pub timing: GatewayClientTiming,
     closed: bool,
+    dev_induced_offline: bool,
+    client_paused: bool,
 }
 
 impl Default for CoordinatorGatewayClient {
@@ -194,6 +196,8 @@ impl Default for CoordinatorGatewayClient {
             state: GatewayClientState::default(),
             timing: GatewayClientTiming::default(),
             closed: false,
+            dev_induced_offline: false,
+            client_paused: false,
         }
     }
 }
@@ -223,11 +227,49 @@ impl CoordinatorGatewayClient {
         Ok(())
     }
 
+    pub fn set_dev_induced_offline(&mut self, induced: bool) -> bool {
+        if self.dev_induced_offline != induced {
+            self.dev_induced_offline = induced;
+            self.state.force_reconnect();
+            if induced {
+                self.state.last_outcome = Some(ReachabilityOutcome::Network);
+            }
+        }
+        self.dev_induced_offline
+    }
+
+    pub fn set_client_paused(&mut self, paused: bool) -> bool {
+        if self.client_paused != paused {
+            self.client_paused = paused;
+            self.state.force_reconnect();
+            if paused {
+                self.state.last_outcome = Some(ReachabilityOutcome::BoxBlocked);
+            }
+        }
+        self.client_paused
+    }
+
+    pub fn is_transport_suppressed(&self) -> bool {
+        self.dev_induced_offline || self.client_paused
+    }
+
     pub fn connection_for_dispatch(&self) -> Result<&GatewayConnection, GatewayDispatchError> {
         if self.closed {
             return Err(GatewayDispatchError::Transport(
                 "gateway client is closed".into(),
             ));
+        }
+        if self.client_paused {
+            return Err(GatewayDispatchError::Unreachable {
+                outcome: ReachabilityOutcome::BoxBlocked,
+                message: "gateway transport is paused by the client".into(),
+            });
+        }
+        if self.dev_induced_offline {
+            return Err(GatewayDispatchError::Unreachable {
+                outcome: ReachabilityOutcome::Network,
+                message: "gateway transport is offline by dev control".into(),
+            });
         }
         if !self.state.connected {
             return Err(GatewayDispatchError::Unreachable {
@@ -257,6 +299,18 @@ impl CoordinatorGatewayClient {
                 "gateway client is closed".into(),
             ));
         }
+        if self.client_paused {
+            return Err(GatewayDispatchError::Unreachable {
+                outcome: ReachabilityOutcome::BoxBlocked,
+                message: "gateway transport is paused by the client".into(),
+            });
+        }
+        if self.dev_induced_offline {
+            return Err(GatewayDispatchError::Unreachable {
+                outcome: ReachabilityOutcome::Network,
+                message: "gateway transport is offline by dev control".into(),
+            });
+        }
         let connection = self.state.connection.as_ref().ok_or_else(|| {
             GatewayDispatchError::Unreachable {
                 outcome: ReachabilityOutcome::Network,
@@ -276,7 +330,7 @@ impl CoordinatorGatewayClient {
         channel: impl Into<String>,
         payload: Value,
     ) -> Option<GatewayEvent> {
-        if self.closed {
+        if self.closed || self.is_transport_suppressed() {
             return None;
         }
         self.state.mark_event(now_ms);

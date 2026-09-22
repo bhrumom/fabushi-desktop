@@ -1739,3 +1739,47 @@ fn gateway_client_streams_real_sse_and_honors_bearer_auth() {
         "{request}"
     );
 }
+
+
+#[test]
+fn gateway_client_pause_and_dev_offline_gate_dispatch_without_closing_client() {
+    use mahayana_node_agent_coordinator::gateway::gateway_client::CoordinatorGatewayClient;
+    use mahayana_node_agent_coordinator::gateway::gateway_reachability::ReachabilityOutcome;
+    use mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::GatewayDispatchError;
+    use mahayana_node_agent_coordinator::gateway::host_supervisor::GatewayConnection;
+    use std::collections::BTreeMap;
+
+    let mut client = CoordinatorGatewayClient::default();
+    client
+        .install_connection(GatewayConnection {
+            base_url: "http://127.0.0.1:43123".into(),
+            headers: BTreeMap::new(),
+        })
+        .unwrap();
+    client.start(1).unwrap();
+
+    assert!(client.set_client_paused(true));
+    assert!(client.is_transport_suppressed());
+    assert!(matches!(
+        client.connection_for_dispatch(),
+        Err(GatewayDispatchError::Unreachable {
+            outcome: ReachabilityOutcome::BoxBlocked,
+            ..
+        })
+    ));
+
+    assert!(!client.set_client_paused(false));
+    client.start(2).unwrap();
+    assert!(client.set_dev_induced_offline(true));
+    assert!(matches!(
+        client.connection_for_dispatch(),
+        Err(GatewayDispatchError::Unreachable {
+            outcome: ReachabilityOutcome::Network,
+            ..
+        })
+    ));
+
+    assert!(!client.set_dev_induced_offline(false));
+    client.start(3).unwrap();
+    assert!(client.connection_for_dispatch().is_ok());
+}

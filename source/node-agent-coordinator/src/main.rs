@@ -743,6 +743,16 @@ fn run_gateway_event_stream(
             state.gateway_events_live.store(false, Ordering::SeqCst);
             return;
         }
+        let transport_suppressed = state
+            .gateway_client
+            .lock()
+            .map(|gateway| gateway.is_transport_suppressed())
+            .unwrap_or(true);
+        if transport_suppressed {
+            state.gateway_events_live.store(false, Ordering::SeqCst);
+            thread::sleep(Duration::from_millis(50));
+            continue;
+        }
 
         let on_connected_state = Arc::clone(&state);
         let on_event_state = Arc::clone(&state);
@@ -773,6 +783,11 @@ fn run_gateway_event_stream(
             move || {
                 !continue_state.closed.load(Ordering::SeqCst)
                     && continue_state.host_generation.load(Ordering::SeqCst) == generation
+                    && continue_state
+                        .gateway_client
+                        .lock()
+                        .map(|gateway| !gateway.is_transport_suppressed())
+                        .unwrap_or(false)
             },
         );
 
@@ -1263,6 +1278,38 @@ fn execute_actions(
                         .and_then(Value::as_bool)
                         .unwrap_or(false);
                     signal_local_exec(state, LocalExecRuntimeCommand::SetPaused(paused));
+                    let paused = state
+                        .gateway_client
+                        .lock()
+                        .map(|mut gateway| gateway.set_client_paused(paused))
+                        .unwrap_or(paused);
+                    state.complete_request(
+                        channel,
+                        &request_id,
+                        ReplyOutcome::Ok {
+                            value: json!({ "paused": paused }),
+                        },
+                    );
+                    continue;
+                }
+                if channel == CarrierChannel::MainData && method == "setDevGatewayOffline" {
+                    let induced = args
+                        .get("induced")
+                        .and_then(Value::as_bool)
+                        .unwrap_or(false);
+                    let induced = state
+                        .gateway_client
+                        .lock()
+                        .map(|mut gateway| gateway.set_dev_induced_offline(induced))
+                        .unwrap_or(induced);
+                    state.complete_request(
+                        channel,
+                        &request_id,
+                        ReplyOutcome::Ok {
+                            value: json!({ "induced": induced }),
+                        },
+                    );
+                    continue;
                 }
                 if let Err(error) =
                     dispatch_to_host(state, channel, request_id.clone(), method, args)
