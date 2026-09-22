@@ -19,6 +19,7 @@ pub enum OAuthForwarderAction {
     StartListener {
         origin: String,
         redirect_url: String,
+        state: String,
     },
     CloseListener {
         origin: String,
@@ -69,6 +70,7 @@ impl McpOAuthForwarderState {
             actions.push(OAuthForwarderAction::StartListener {
                 origin: redirect.origin,
                 redirect_url: payload.redirect_url,
+                state: payload.state,
             });
         }
         Ok(actions)
