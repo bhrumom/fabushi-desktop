@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
+use flate2::read::GzDecoder;
 use mahayana_host_runtime::gateway_config::GatewayServerConfig;
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayBridgeHub, GatewayCommandError, GatewayEventHub, GatewayHealth,
@@ -57,18 +58,22 @@ fn config(token: Option<&str>) -> GatewayServerConfig {
     }
 }
 
-fn request(port: u16, request: &str) -> String {
+fn request_bytes(port: u16, request: &str) -> Vec<u8> {
     let mut stream = TcpStream::connect(("127.0.0.1", port)).expect("connect gateway");
     stream
         .set_read_timeout(Some(Duration::from_secs(2)))
         .expect("read timeout");
     stream.write_all(request.as_bytes()).expect("write request");
     stream.flush().expect("flush request");
-    let mut response = String::new();
+    let mut response = Vec::new();
     stream
-        .read_to_string(&mut response)
+        .read_to_end(&mut response)
         .expect("read gateway response");
     response
+}
+
+fn request(port: u16, request: &str) -> String {
+    String::from_utf8(request_bytes(port, request)).expect("utf8 gateway response")
 }
 
 fn json_body(response: &str) -> Value {
@@ -489,5 +494,57 @@ fn gateway_events_stream_retries_filters_and_delivers_runtime_events() {
     }
 
     drop(stream);
+    server.close();
+}
+
+
+#[test]
+fn gateway_gzips_only_large_successful_command_json_when_requested() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(None),
+        started_at: 1,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let payload = "x".repeat(2_000);
+    let body = serde_json::to_string(&json!({ "payload": payload })).expect("serialize large request");
+    let response = request_bytes(
+        port,
+        &format!(
+            "POST /api/getTranscript HTTP/1.1\r\nHost: 127.0.0.1\r\nAccept-Encoding: br, gzip\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        ),
+    );
+    let header_end = response
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
+        .map(|index| index + 4)
+        .expect("gzip response header");
+    let headers = String::from_utf8(response[..header_end].to_vec()).expect("gzip response headers utf8");
+    let lower = headers.to_ascii_lowercase();
+    assert!(headers.starts_with("HTTP/1.1 200 OK"), "{headers}");
+    assert!(lower.contains("content-encoding: gzip"), "{headers}");
+    assert!(lower.contains("vary: accept-encoding"), "{headers}");
+    assert!(lower.contains("x-sand-mint-dedupe: 1"), "{headers}");
+
+    let mut decoder = GzDecoder::new(&response[header_end..]);
+    let mut decoded = String::new();
+    decoder.read_to_string(&mut decoded).expect("decode gateway gzip");
+    assert_eq!(serde_json::from_str::<Value>(&decoded).expect("decoded JSON"), serde_json::from_str::<Value>(&body).unwrap());
+
+    let small = request(
+        port,
+        "POST /api/getTranscript HTTP/1.1\r\nHost: 127.0.0.1\r\nAccept-Encoding: gzip\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+    );
+    assert!(
+        !small.to_ascii_lowercase().contains("content-encoding: gzip"),
+        "small command responses must stay uncompressed: {small}"
+    );
+
     server.close();
 }
