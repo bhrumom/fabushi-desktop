@@ -119,6 +119,46 @@ fn production_gateway_composes_channel_metadata_and_secrets() {
 }
 
 #[test]
+fn production_gateway_creates_a_real_session_record_for_the_shipping_new_chat_path() {
+    let root = temp_root("create-agent");
+    let agents = root.join("agents");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+
+    let created = dispatch(
+        &runtime,
+        "createAgent",
+        json!({
+            "name": "New chat",
+            "description": "",
+            "origin": "user",
+            "isIntroductionSuppressed": true,
+            "isKickstartRequested": false,
+            "clientNonce": "e2e-create-agent"
+        }),
+    );
+
+    let agent_id = created["agent"]["id"]
+        .as_str()
+        .expect("created agent id")
+        .to_string();
+    assert_eq!(created["agent"]["name"], "New chat");
+    assert_eq!(created["agent"]["isActive"], true);
+    assert_eq!(created["transcript"], json!([]));
+    assert!(runtime.session_db_path(&agent_id).expect("db path").is_file());
+
+    let listed = dispatch(&runtime, "listAgents", json!({}));
+    assert_eq!(listed.as_array().map(Vec::len), Some(1));
+    assert_eq!(listed[0]["id"], agent_id);
+    assert_eq!(listed[0]["name"], "New chat");
+    assert!(!runtime
+        .get_agent_introduction_pending(&agent_id)
+        .expect("introduction state"));
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn production_gateway_cuts_over_safe_agent_lifecycle_mutations_to_rust_session_owner() {
     let root = temp_root("agent-lifecycle");
     let agents = root.join("agents");

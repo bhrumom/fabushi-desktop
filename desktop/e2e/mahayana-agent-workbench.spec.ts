@@ -74,8 +74,20 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   }
 }
 
+  // listAgents is now owned by the shipping Rust Session store. A fresh
+  // FABUSHI_APP_DATA directory is intentionally empty, so create the focused
+  // fixture through the real New -> createAgent -> listAgents path instead of
+  // relying on the retired compatibility Host's synthetic roster.
+  const roster = page.getByRole('region', { name: 'Agent list' });
+  const primary = roster.getByRole('button', { name: 'New chat', exact: true });
+  if (await primary.count() === 0) {
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+  }
+  await expect(primary).toBeVisible({ timeout: 15_000 });
+}
+
 async function openMahayanaConversation(page: Page): Promise<void> {
-  const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: '大乘助手', exact: true });
+  const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true });
   await expect(peer).toBeVisible({ timeout: 15_000 });
   await peer.click();
   await expect(page.getByRole('textbox', { name: 'Prompt' })).toBeVisible();

@@ -4,6 +4,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use serde_json::{Map, Value, json};
 
+use crate::agents::agent_profile::SandAgentProfile;
+
 use super::agent_db_transcript_pages::{TranscriptPageQuery, TranscriptWindowQuery};
 use super::agent_session::SandAgentSessionStore;
 use super::production::ProductionSessionWorkers;
@@ -40,6 +42,42 @@ pub fn dispatch_production_session_gateway_call(
             .list_agents()
             .and_then(|agents| serde_json::to_value(agents).map_err(|error| error.to_string()))
             .map_err(SessionGatewayError::internal),
+        "createAgent" => {
+            parse_create_agent_profile(args).and_then(|profile| {
+                let origin = optional_string(args, "origin")?.unwrap_or("user");
+                let purpose = optional_string(args, "purpose")?;
+                let introduction_suppressed =
+                    optional_bool(args, "isIntroductionSuppressed")?.unwrap_or(false);
+                let record = store
+                    .create_session(Some(&profile), origin, purpose)
+                    .map_err(SessionGatewayError::internal)?;
+                if introduction_suppressed {
+                    session
+                        .set_agent_introduction_pending(&record.id, false)
+                        .map_err(SessionGatewayError::internal)?;
+                }
+                session
+                    .mark_agent_viewed(&record.id, system_now_ms(), false)
+                    .map_err(SessionGatewayError::internal)?;
+                store
+                    .write_active_agent_id(&record.id)
+                    .map_err(|error| SessionGatewayError::internal(error.to_string()))?;
+                let summary = store
+                    .summarize_agent_by_id(&record.id)
+                    .map_err(SessionGatewayError::internal)?
+                    .ok_or_else(|| {
+                        SessionGatewayError::internal(
+                            "failed to summarize newly created agent",
+                        )
+                    })?;
+                let transcript = session
+                    .read_agent_transcript_entries(&record.id)
+                    .map_err(SessionGatewayError::internal)?;
+                serde_json::to_value(summary)
+                    .map_err(|error| SessionGatewayError::internal(error.to_string()))
+                    .map(|agent| json!({ "agent": agent, "transcript": transcript }))
+            })
+        },
         "updateAgent" => required_string(args, "id").and_then(|agent_id| {
             parse_profile_update(args)
                 .and_then(|update| {
@@ -210,6 +248,22 @@ pub fn dispatch_production_session_gateway_call(
     Some(result)
 }
 
+fn parse_create_agent_profile(args: &Value) -> Result<SandAgentProfile, SessionGatewayError> {
+    let name = required_string(args, "name")?;
+    let description = optional_string(args, "description")?.unwrap_or_default();
+    Ok(SandAgentProfile {
+        name: name.to_string(),
+        description: description.to_string(),
+        title: optional_string(args, "title")?.unwrap_or_default().to_string(),
+        avatar_shape: optional_string(args, "avatarShape")?
+            .unwrap_or_default()
+            .to_string(),
+        avatar_color: optional_string(args, "avatarColor")?
+            .unwrap_or_default()
+            .to_string(),
+    })
+}
+
 fn parse_profile_update(args: &Value) -> Result<AgentProfileUpdate, SessionGatewayError> {
     let profile = args
         .get("profile")
@@ -246,6 +300,25 @@ fn object_optional_string<'a>(
         Some(_) => Err(SessionGatewayError::bad(format!(
             "invalid profile.{field}"
         ))),
+    }
+}
+
+fn optional_string<'a>(
+    args: &'a Value,
+    field: &str,
+) -> Result<Option<&'a str>, SessionGatewayError> {
+    match args.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(value)) => Ok(Some(value.as_str())),
+        Some(_) => Err(SessionGatewayError::bad(format!("invalid {field}"))),
+    }
+}
+
+fn optional_bool(args: &Value, field: &str) -> Result<Option<bool>, SessionGatewayError> {
+    match args.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Bool(value)) => Ok(Some(*value)),
+        Some(_) => Err(SessionGatewayError::bad(format!("invalid {field}"))),
     }
 }
 

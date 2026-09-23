@@ -12126,10 +12126,12 @@
         "source/host/tests/agent_session_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/session_gateway_contract.rs"
+        "source/host/tests/session_gateway_contract.rs",
+        "desktop/e2e/grok-parity.spec.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Session facade owns active-agent pointer read/write, root/agent existence, create/open/delete orchestration, roster summaries with active identity, profile/avatar delegation, transcript reads, unread/view/activity/awaiting state, settings mutations, connector channels and Host worker shutdown. Shipping Host Gateway now cuts listAgents, updateAgent, setAgentUnread, setAgentNotifyOnUpdates, setAgentHiddenFromSidebar, getAgentAvatar and setAgentAvatarBytes directly to this Rust owner in addition to transcript/channel commands. Delete closes the per-agent blob worker, clears write-generation state, removes the agent directory and publishes agent-removed. Final is withheld for memory/workflow/automation composition, cached extras/deletion predicates, createAgent nonce/mint serialization and background/fallback semantics, active-session open/switch behavior, and deleteAgent cross-extension interruption/Box/automation/handoff cleanup."
+      "notes": "Rust Session facade owns active-agent pointer read/write, root/agent existence, create/open/delete orchestration, roster summaries with active identity, profile/avatar delegation, transcript reads, unread/view/activity/awaiting state, settings mutations, connector channels and Host worker shutdown. Shipping Host Gateway now cuts listAgents and createAgent (real materialization, active pointer, viewed state, profile summary and empty transcript result) plus updateAgent/unread/settings/avatar paths directly to this Rust owner. Focused Electron acceptance seeds a fresh roster through the real New -> createAgent path instead of compatibility fixtures. Final is withheld for createAgent nonce/mint serialization, kickstart/telemetry, memory/workflow/automation composition, cached extras/deletion predicates, background/fallback semantics, active-session switch behavior, and deleteAgent cross-extension interruption/Box/automation/handoff cleanup."
     },
     {
       "referencePath": "source/host/extensions/session/box-handoff-service.ts",
@@ -12336,7 +12338,7 @@
         "source/host/tests/session_gateway_contract.rs",
         "source/host/tests/agent_session_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state, transcript projection/mutations, profile/avatar mutations, connector/channel composition, roster summaries and conversation capacity. Shipping Host now cuts over countAgents, getAgentTranscript*, getAgentThread and channel list/connect/disconnect/refresh commands directly to ProductionSessionWorkers. Remaining parity includes create/open/update/delete/unread/settings Gateway cutover, full ConversationState proto outlines, workflow composition, box handoff and watcher parity."
+      "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state, transcript projection/mutations, profile/avatar mutations, connector/channel composition, roster summaries and conversation capacity. Shipping Host now cuts countAgents/listAgents/createAgent, getAgentTranscript*, getAgentThread, safe agent mutations and channel list/connect/disconnect/refresh directly to ProductionSessionWorkers; focused Electron acceptance creates the fresh test Agent through this production path. Remaining parity includes createAgent nonce/kickstart/telemetry, full open/delete lifecycle composition, full ConversationState proto outlines, workflow composition, box handoff and watcher parity."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
