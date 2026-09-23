@@ -35,6 +35,21 @@
         ".github/workflows/pr20-verify-once.yml"
       ],
       "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "638a2df9675ec9809ab63c0684222e65f416d0e9",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/draft-state.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 account-scoped composer draft store while adapting a shipping race exposed by real desktop attachment staging: a late persistence restore must not overwrite a draft mutation that occurred while the read was in flight. A monotonic mutation revision fences both pre-read and post-read restore settlement without changing account generation semantics, persistence format, or normal draft equality rules. The explicit .ts model import makes this recovered module executable under the Node 24 strip-types contract-test runner while remaining valid under the desktop Bundler TypeScript configuration."
     }
   ]
 }
