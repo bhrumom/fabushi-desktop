@@ -1,5 +1,6 @@
 pub mod prompt_acceptance_ledger;
 pub mod run_scheduler;
+pub mod runner_registry;
 pub mod send_pipeline;
 pub mod send_turn_dispatch;
 pub mod send_acceptance;

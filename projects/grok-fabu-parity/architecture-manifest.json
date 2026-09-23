@@ -13721,7 +13721,9 @@
         "source/host/src/extensions/transcript/send_thread_stamping.rs",
         "source/host/src/extensions/transcript/send_message_shaping.rs",
         "source/host/src/extensions/session/gateway.rs",
-        "source/host/src/extensions/transcript/send_turn_dispatch.rs"
+        "source/host/src/extensions/transcript/send_turn_dispatch.rs",
+        "source/host/src/extensions/transcript/runner_registry.rs",
+        "source/host/src/extensions/transcript/run_scheduler.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -13729,9 +13731,10 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/transcript_send_echo_contract.rs",
-        "source/host/tests/session_gateway_contract.rs"
+        "source/host/tests/session_gateway_contract.rs",
+        "source/host/tests/runner_routed_provider_contract.rs"
       ],
-      "notes": "Rust run lifecycle is production-composed around shipping sendPrompt and now shares the real per-agent RunScheduler path with send-turn-dispatch: session windows/turn epochs begin at admission, same-agent direct user turns serialize by scheduler generation, request IDs are recorded, terminal settlement releases the next queued turn, and lifecycle state retires after dispatch. Full frozen watchdog interrupt callback/telemetry, named activity holds, live-session retirement, subagent-parent projection and ack-redrive remain non-final."
+      "notes": "Rust run lifecycle remains production-composed around shipping sendPrompt and the per-agent RunScheduler. It now drives the scheduler watchdog through exact-deadline Condvar sleeps: Trip cancels the real agent-owned routed provider via the production Runner registry, Escape releases the queued user turn after grace, and a late predecessor settlement is fenced as a zombie and surfaced as a late-settle watchdog event. Session windows/request IDs/turn epochs still settle on the shipping path. Final remains withheld for named activity holds, active/live-session retirement, subagent-parent run projection, ack-token retirement/redrive and full telemetry sinks."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",
@@ -13756,12 +13759,24 @@
       "targetPath": "source/host/src/extensions/transcript/runner_registry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "4bae8fd7720cb834ca4e37ea416de61188607d34",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/runner_registry.rs",
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_routed_provider_contract.rs",
+        "source/host/tests/transcript_production_composition_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production Runner registry owns agent-to-routed-provider stream identity, per-stream cancellation/retirement, agent-scoped watchdog interruption and Host-shutdown cancellation. Shipping runner.startRoutedProvider registers through this owner and sendPrompt watchdog Trip cancels the real provider stream. Final remains withheld for local compatibility Runner/group-member factory lifecycle, quiesce/upgrade hooks, background/subagent handlers, retry/TTFT/send telemetry and shared transport/profile hooks."
     },
     {
       "referencePath": "source/host/extensions/transcript/sand-ack-obligation-store.ts",
@@ -13931,7 +13946,9 @@
         "source/host/src/extensions/transcript/send_message_shaping.rs",
         "source/host/src/extensions/session/gateway.rs",
         "source/host/src/extensions/transcript/send_acceptance.rs",
-        "source/host/src/extensions/transcript/send_turn_dispatch.rs"
+        "source/host/src/extensions/transcript/send_turn_dispatch.rs",
+        "source/host/src/extensions/transcript/runner_registry.rs",
+        "source/host/src/extensions/transcript/run_scheduler.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -13940,9 +13957,10 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/transcript_send_echo_contract.rs",
         "source/host/tests/session_gateway_contract.rs",
-        "source/host/tests/transcript_send_acceptance_contract.rs"
+        "source/host/tests/transcript_send_acceptance_contract.rs",
+        "source/host/tests/runner_routed_provider_contract.rs"
       ],
-      "notes": "Rust send pipeline is production-composed by ProductionTranscriptRuntime and shipping Host Gateway. Nonce digest admission/coalescing/duplicate replay, durable Session echo before acceptance, failure retry clearing, acceptance lookup, turn epochs and attachment batch identity are present; distinct same-agent nonces now enter the Grok-aligned RunScheduler through send-turn-dispatch and cannot overlap Host dispatch. Full frozen attachment materialization/group fanout/ack obligations/recovery context/Runner dispatch remain non-final."
+      "notes": "Rust send pipeline is production-composed by ProductionTranscriptRuntime and shipping Host Gateway. Nonce digest admission/coalescing/replay, durable Session echo, failure retry clearing, acceptance lookup, turn epochs and attachment batch identity are present; same-agent sends serialize through RunScheduler, and queued sends now escape a wedged predecessor only after watchdog Trip + grace while the real provider is cancelled by agent ownership. Full frozen attachment materialization/group fanout/ack obligations/recovery context/direct Runner dispatch remain non-final."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",
@@ -13978,16 +13996,18 @@
         "source/host/src/extensions/transcript/send_turn_dispatch.rs",
         "source/host/src/extensions/transcript/production_runtime.rs",
         "source/host/src/extensions/transcript/run_scheduler.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/runner_registry.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
         "source/host/tests/transcript_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/runner_routed_provider_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production dispatch now enqueues every direct-user send on the existing Grok-aligned per-agent RunScheduler before compatibility Host dispatch. Distinct nonces for one agent cannot overlap: the active generation owns dispatch until terminal settlement, then the scheduler starts the next user turn and wakes its waiter. Shipping sendPrompt reaches this owner through ProductionTranscriptRuntime in source/host/app/src/main.rs. Final is withheld for direct-run interruption/recovery context, ack-token mint/disarm, workflow/composed-note expansion, Runner invocation and detached-turn error reporting."
+      "notes": "Rust production dispatch serializes direct-user sends on the per-agent RunScheduler and now owns watchdog deadline/Trip/Escape progression. A wedged active generation is interrupted through the production Runner registry; after grace it is moved to the zombie fence and the next user generation starts without allowing a late settle to clobber it. Final remains withheld for direct-run recovery context, ack-token mint/disarm, workflow/composed-note expansion, complete Runner invocation ownership and detached-turn error projection."
     },
     {
       "referencePath": "source/host/extensions/transcript/session-runtime.ts",

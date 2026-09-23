@@ -10,6 +10,16 @@ pub enum RunLane {
     Background,
 }
 
+impl RunLane {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::User => "user",
+            Self::Agent => "agent",
+            Self::Background => "background",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QueuedRun {
     pub task_id: String,
@@ -68,6 +78,16 @@ pub enum WatchdogStage {
     Trip,
     Escape,
     LateSettle,
+}
+
+impl WatchdogStage {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Trip => "trip",
+            Self::Escape => "escape",
+            Self::LateSettle => "late-settle",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -263,6 +283,23 @@ impl RunScheduler {
 
     pub fn get_active_lane(&self, agent_id: &str) -> Option<RunLane> {
         self.active(agent_id).map(|active| active.item.lane)
+    }
+
+    pub fn next_watchdog_delay_ms(&self, agent_id: &str, now_ms: u64) -> Option<u64> {
+        if self.disposed {
+            return None;
+        }
+        let queue = self.queues.get(agent_id)?;
+        let head = queue.pending_user.front()?;
+        let active = queue.active.as_ref()?;
+        let deadline = match active.watchdog_tripped_at_ms {
+            Some(tripped_at) => tripped_at.saturating_add(self.watchdog_grace_ms),
+            None => head
+                .enqueued_at_ms
+                .max(active.started_at_ms)
+                .saturating_add(self.watchdog_ms),
+        };
+        Some(deadline.saturating_sub(now_ms))
     }
 
     pub fn watchdog_tick(&mut self, agent_id: &str, now_ms: u64) -> Option<WatchdogEvent> {

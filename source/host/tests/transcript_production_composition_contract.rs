@@ -7,6 +7,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
+use mahayana_host_runtime::extensions::transcript::run_scheduler::WatchdogStage;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -219,6 +220,100 @@ fn production_send_runtime_serializes_distinct_user_turns_for_the_same_agent() {
     assert!(runtime.is_turn_dispatch_idle("agent-a"));
     assert_eq!(runtime.in_flight_run_count("agent-a"), 0);
     assert_eq!(runtime.current_turn_epoch("agent-a"), 2);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_watchdog_escapes_a_wedged_predecessor_and_fences_late_settlement() {
+    let root = temp_root("watchdog");
+    let runtime = Arc::new(ProductionTranscriptRuntime::with_watchdog(
+        Some(&root),
+        40,
+        25,
+    ));
+    let (first_entered_tx, first_entered_rx) = mpsc::channel();
+    let (release_first_tx, release_first_rx) = mpsc::channel();
+    let (second_entered_tx, second_entered_rx) = mpsc::channel();
+    let saw_trip = Arc::new(AtomicBool::new(false));
+    let saw_escape = Arc::new(AtomicBool::new(false));
+    let saw_late_settle = Arc::new(AtomicBool::new(false));
+
+    let first_runtime = Arc::clone(&runtime);
+    let late_flag = Arc::clone(&saw_late_settle);
+    let first = thread::spawn(move || {
+        let args = serde_json::json!({
+            "agentId": "agent-watchdog",
+            "prompt": "first",
+            "clientNonce": "watchdog-first"
+        });
+        first_runtime.execute_send_with_watchdog(
+            &args,
+            || {
+                first_entered_tx.send(()).expect("signal first");
+                release_first_rx.recv().expect("release first");
+                Ok(serde_json::json!({"accepted":true,"operationId":"op-first"}))
+            },
+            |_| Ok(Some("op-first:user".into())),
+            move |event| {
+                if event.stage == WatchdogStage::LateSettle {
+                    late_flag.store(true, Ordering::SeqCst);
+                }
+                false
+            },
+        )
+    });
+
+    first_entered_rx
+        .recv_timeout(Duration::from_secs(5))
+        .expect("first dispatch entered");
+
+    let second_runtime = Arc::clone(&runtime);
+    let trip_flag = Arc::clone(&saw_trip);
+    let escape_flag = Arc::clone(&saw_escape);
+    let second = thread::spawn(move || {
+        let args = serde_json::json!({
+            "agentId": "agent-watchdog",
+            "prompt": "second",
+            "clientNonce": "watchdog-second"
+        });
+        second_runtime.execute_send_with_watchdog(
+            &args,
+            || {
+                second_entered_tx.send(()).expect("signal second");
+                Ok(serde_json::json!({"accepted":true,"operationId":"op-second"}))
+            },
+            |_| Ok(Some("op-second:user".into())),
+            move |event| {
+                match event.stage {
+                    WatchdogStage::Trip => trip_flag.store(true, Ordering::SeqCst),
+                    WatchdogStage::Escape => escape_flag.store(true, Ordering::SeqCst),
+                    WatchdogStage::LateSettle => {}
+                }
+                false
+            },
+        )
+    });
+
+    second_entered_rx
+        .recv_timeout(Duration::from_secs(3))
+        .expect("watchdog must release the queued user turn");
+    assert!(saw_trip.load(Ordering::SeqCst));
+    assert!(saw_escape.load(Ordering::SeqCst));
+    assert_eq!(
+        second.join().expect("second thread").expect("second result")["operationId"],
+        "op-second"
+    );
+
+    release_first_tx.send(()).expect("release predecessor");
+    assert_eq!(
+        first.join().expect("first thread").expect("first result")["operationId"],
+        "op-first"
+    );
+    assert!(saw_late_settle.load(Ordering::SeqCst));
+    assert!(runtime.is_turn_dispatch_idle("agent-watchdog"));
+    assert_eq!(runtime.in_flight_run_count("agent-watchdog"), 0);
 
     let _ = fs::remove_dir_all(root);
 }

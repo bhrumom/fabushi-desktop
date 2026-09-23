@@ -29,6 +29,8 @@ use mahayana_host_runtime::extensions::session::gateway::{
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
+use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRunnerRegistry;
+use mahayana_host_runtime::extensions::transcript::run_scheduler::WatchdogStage;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
     AgentLifecycleGatewayError, dispatch_production_agent_lifecycle_gateway_call,
 };
@@ -56,8 +58,7 @@ use mahayana_host_runtime::runner_context_production_provider::ProductionRunnerR
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
-    ProductionRoutedProviderCheckpointStore, RoutedProviderTaskRegistry,
-    RoutedToolBridge, RunnerRequestContextSource,
+    ProductionRoutedProviderCheckpointStore, RoutedToolBridge, RunnerRequestContextSource,
 };
 use mahayana_host_runtime::runner::coordinator_tool_relay::{
     CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
@@ -240,7 +241,7 @@ struct UnifiedGatewayApi {
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
     session_workers: Arc<ProductionSessionWorkers>,
-    routed_provider_tasks: Arc<RoutedProviderTaskRegistry>,
+    runner_registry: Arc<TranscriptRunnerRegistry>,
     forever_box: Arc<ForeverBoxService>,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     trays: Arc<HostTraysExtension>,
@@ -356,7 +357,7 @@ fn start_routed_provider_task(
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
     session_workers: Arc<ProductionSessionWorkers>,
-    routed_provider_tasks: Arc<RoutedProviderTaskRegistry>,
+    runner_registry: Arc<TranscriptRunnerRegistry>,
     forever_box: Arc<ForeverBoxService>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
@@ -385,9 +386,9 @@ fn start_routed_provider_task(
         &messages,
     )
     .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
-    let cancellation = routed_provider_tasks.register(&stream_id).map_err(|error| {
-        GatewayCommandError::Internal(error.to_string())
-    })?;
+    let cancellation = runner_registry
+        .register_routed_provider(&agent_id, &stream_id)
+        .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
     if let Some(prepared_session) = session_workers
         .prepare_existing_agent(&agent_id)
         .map_err(|error| {
@@ -415,7 +416,7 @@ fn start_routed_provider_task(
     let worker_events = events.clone();
     let accepted_stream_id = stream_id.clone();
     let worker_stream_id = stream_id.clone();
-    let worker_tasks = Arc::clone(&routed_provider_tasks);
+    let worker_registry = Arc::clone(&runner_registry);
     let worker_cancellation = cancellation.clone();
     let worker_sessions = Arc::clone(&session_workers);
     let spawn = thread::Builder::new()
@@ -484,10 +485,10 @@ fn start_routed_provider_task(
                     })),
                 }
             }
-            worker_tasks.finish(&worker_stream_id);
+            worker_registry.finish_routed_provider(&worker_stream_id);
         });
     if let Err(error) = spawn {
-        routed_provider_tasks.finish(&accepted_stream_id);
+        runner_registry.finish_routed_provider(&accepted_stream_id);
         return Err(GatewayCommandError::Internal(format!(
             "could not start routed provider Runner: {error}"
         )));
@@ -545,7 +546,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.data_dir.clone(),
                 Arc::clone(&self.request_context),
                 Arc::clone(&self.session_workers),
-                Arc::clone(&self.routed_provider_tasks),
+                Arc::clone(&self.runner_registry),
                 Arc::clone(&self.forever_box),
                 args,
             );
@@ -587,7 +588,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 .and_then(serde_json::Value::as_str)
                 .filter(|value| !value.trim().is_empty())
                 .unwrap_or("Runner provider request cancelled");
-            let cancelled = self.routed_provider_tasks.cancel(stream_id, reason);
+            let cancelled = self.runner_registry.cancel_stream(stream_id, reason);
             if cancelled {
                 self.events.publish(serde_json::json!({
                     "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
@@ -608,9 +609,11 @@ impl GatewayApi for UnifiedGatewayApi {
         // worker above streams through the Host event hub.
         if method == "sendPrompt" {
             let durable_args = args.clone();
+            let watchdog_registry = Arc::clone(&self.runner_registry);
+            let watchdog_events = self.events.clone();
             return self
                 .transcript_runtime
-                .execute_send(
+                .execute_send_with_watchdog(
                     &durable_args,
                     || {
                         call_host_lane(&self.host_tx, method, args)
@@ -623,6 +626,28 @@ impl GatewayApi for UnifiedGatewayApi {
                             accepted,
                         )
                         .map_err(map_session_send_error)
+                    },
+                    move |event| {
+                        let interrupted = if event.stage == WatchdogStage::Trip {
+                            watchdog_registry
+                                .interrupt_wedged_run_for_watchdog(&event.agent_id)
+                        } else {
+                            false
+                        };
+                        watchdog_events.publish(serde_json::json!({
+                            "channel": "run-queue-watchdog",
+                            "payload": {
+                                "agentId": event.agent_id,
+                                "stage": event.stage.as_str(),
+                                "activeLane": event.active_lane.as_str(),
+                                "activeSource": event.active_source,
+                                "activeRuntimeMs": event.active_runtime_ms,
+                                "waitingUserAgeMs": event.waiting_user_age_ms,
+                                "ackToken": event.ack_token,
+                                "interrupted": interrupted
+                            }
+                        }));
+                        interrupted
                     },
                 )
                 .map_err(map_production_send_error);
@@ -913,7 +938,7 @@ fn main() {
         BoxHandoffDeps::default(),
     );
     let session_workers = session_extension.store();
-    let routed_provider_tasks = Arc::new(RoutedProviderTaskRegistry::default());
+    let runner_registry = Arc::new(TranscriptRunnerRegistry::default());
 
     let gateway_config = match resolve_gateway_server_config() {
         Ok(config) => config,
@@ -934,7 +959,7 @@ fn main() {
             data_dir: app_data_dir.clone(),
             request_context: runner_request_context,
             session_workers: Arc::clone(&session_workers),
-            routed_provider_tasks: Arc::clone(&routed_provider_tasks),
+            runner_registry: Arc::clone(&runner_registry),
             forever_box: Arc::clone(&forever_box),
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
             trays: Arc::clone(&production_extensions.trays),
@@ -1058,7 +1083,7 @@ fn main() {
     }
     drop(platform_tx);
     drop(gateway_server);
-    routed_provider_tasks.cancel_all("Mahayana Host shutting down");
+    runner_registry.cancel_all("Mahayana Host shutting down");
     routed_tool_relay.cancel_all("Mahayana Host shutting down");
     session_extension.shutdown();
     forever_box.dispose();
@@ -1091,7 +1116,7 @@ mod tests {
         fn assert_send_sync<T: Send + Sync>() {}
         assert_send_sync::<ProductionHostExtensions>();
         assert_send_sync::<ProductionSessionWorkers>();
-        assert_send_sync::<RoutedProviderTaskRegistry>();
+        assert_send_sync::<TranscriptRunnerRegistry>();
     }
 
     #[test]

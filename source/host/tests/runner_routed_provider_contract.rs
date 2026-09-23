@@ -16,6 +16,7 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, ROUTED_MCP_PROTOCOL_VERSION,
     RoutedProviderTaskRegistry, RoutedToolBridge, start_routed_mcp_server,
 };
+use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRunnerRegistry;
 use serde_json::{Value, json};
 
 struct FakeBridge;
@@ -151,4 +152,35 @@ fn production_routed_provider_checkpoint_store_persists_durable_json() {
     assert_eq!(decoded, checkpoint);
 
     fs::remove_dir_all(&root).expect("remove checkpoint fixture");
+}
+
+
+#[test]
+fn transcript_runner_registry_interrupts_only_the_wedged_agents_provider_streams() {
+    let tasks = Arc::new(RoutedProviderTaskRegistry::default());
+    let registry = TranscriptRunnerRegistry::new(Arc::clone(&tasks));
+    let first = registry
+        .register_routed_provider("agent-a", "stream-a-1")
+        .expect("first stream");
+    let second = registry
+        .register_routed_provider("agent-a", "stream-a-2")
+        .expect("second stream");
+    let other = registry
+        .register_routed_provider("agent-b", "stream-b")
+        .expect("other stream");
+
+    assert_eq!(
+        registry.active_stream_ids_for_agent("agent-a"),
+        vec!["stream-a-1".to_string(), "stream-a-2".to_string()]
+    );
+    assert!(registry.interrupt_wedged_run_for_watchdog("agent-a"));
+    assert!(first.is_cancelled());
+    assert!(second.is_cancelled());
+    assert!(!other.is_cancelled());
+    assert!(!registry.interrupt_wedged_run_for_watchdog("missing"));
+
+    registry.finish_routed_provider("stream-a-1");
+    registry.finish_routed_provider("stream-a-2");
+    registry.finish_routed_provider("stream-b");
+    assert_eq!(registry.active_count(), 0);
 }

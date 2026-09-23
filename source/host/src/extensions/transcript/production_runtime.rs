@@ -1,7 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use std::path::Path;
 use std::sync::{Condvar, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Value, json};
 
@@ -10,6 +10,9 @@ use super::prompt_acceptance_ledger::{
     PromptAcceptanceLedger, SendInput,
 };
 use super::run_lifecycle::RunLifecycleState;
+use super::run_scheduler::{
+    RUN_WATCHDOG_DEFAULT_MS, RUN_WATCHDOG_GRACE_DEFAULT_MS, RunSettlement, WatchdogEvent,
+};
 use super::send_pipeline::{
     HOST_ACCOUNT_SLOT, SendBegin, SendEchoIdentity, SendPipelineState,
 };
@@ -46,12 +49,27 @@ pub struct ProductionTranscriptRuntime {
 
 impl ProductionTranscriptRuntime {
     pub fn new(root_dir: Option<&Path>) -> Self {
+        Self::with_watchdog(
+            root_dir,
+            RUN_WATCHDOG_DEFAULT_MS,
+            RUN_WATCHDOG_GRACE_DEFAULT_MS,
+        )
+    }
+
+    pub fn with_watchdog(
+        root_dir: Option<&Path>,
+        watchdog_ms: u64,
+        watchdog_grace_ms: u64,
+    ) -> Self {
         Self {
             state: Mutex::new(RuntimeState {
                 pipeline: SendPipelineState::default(),
                 ledger: PromptAcceptanceLedger::new(root_dir),
                 lifecycle: RunLifecycleState::default(),
-                turn_dispatch: ProductionTurnDispatch::default(),
+                turn_dispatch: ProductionTurnDispatch::with_watchdog(
+                    watchdog_ms,
+                    watchdog_grace_ms,
+                ),
                 completions: HashMap::new(),
                 completion_order: VecDeque::new(),
             }),
@@ -104,6 +122,21 @@ impl ProductionTranscriptRuntime {
     where
         Dispatch: FnOnce() -> Result<Value, ProductionSendError>,
         Persist: Fn(&Value) -> Result<Option<String>, ProductionSendError>,
+    {
+        self.execute_send_with_watchdog(args, dispatch, persist_accepted, |_| false)
+    }
+
+    pub fn execute_send_with_watchdog<Dispatch, Persist, Watchdog>(
+        &self,
+        args: &Value,
+        dispatch: Dispatch,
+        persist_accepted: Persist,
+        on_watchdog: Watchdog,
+    ) -> Result<Value, ProductionSendError>
+    where
+        Dispatch: FnOnce() -> Result<Value, ProductionSendError>,
+        Persist: Fn(&Value) -> Result<Option<String>, ProductionSendError>,
+        Watchdog: Fn(&WatchdogEvent) -> bool,
     {
         let input = parse_send_input(args)?;
         let nonce = optional_non_empty(args, "clientNonce").map(ToOwned::to_owned);
@@ -163,17 +196,36 @@ impl ProductionTranscriptRuntime {
             }
         }
         if let Some(ticket) = turn_ticket.as_ref() {
-            state = self
-                .turn_ready
-                .wait_while(state, |state| {
-                    state.turn_dispatch.active_generation_for(ticket).is_none()
-                })
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            turn_generation = state.turn_dispatch.active_generation_for(ticket);
-            if turn_generation.is_none() {
-                return Err(ProductionSendError::Internal(
-                    "queued user turn lost scheduler ownership".into(),
-                ));
+            loop {
+                if let Some(generation) = state.turn_dispatch.active_generation_for(ticket) {
+                    turn_generation = Some(generation);
+                    break;
+                }
+                let now_ms = system_now_ms();
+                let wait_ms = state
+                    .turn_dispatch
+                    .watchdog_wait_ms(&ticket.agent_id, now_ms)
+                    .unwrap_or(1_000)
+                    .max(1);
+                let (next_state, _) = self
+                    .turn_ready
+                    .wait_timeout(state, Duration::from_millis(wait_ms))
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                state = next_state;
+
+                if let Some(tick) = state
+                    .turn_dispatch
+                    .watchdog_tick(&ticket.agent_id, system_now_ms())
+                {
+                    let event = tick.event;
+                    let escaped = tick.started_next.is_some();
+                    drop(state);
+                    let _ = on_watchdog(&event);
+                    if escaped {
+                        self.turn_ready.notify_all();
+                    }
+                    state = self.lock_state();
+                }
             }
         }
         drop(state);
@@ -244,12 +296,16 @@ impl ProductionTranscriptRuntime {
             pipeline.finish_send(ledger, nonce.as_deref(), succeeded);
         }
         let settled_at_ms = system_now_ms();
+        let mut terminal_watchdog_event = None;
         if let (Some(ticket), Some(generation)) =
             (turn_ticket.as_ref(), turn_generation)
         {
-            let _ = state
+            let (settlement, _) = state
                 .turn_dispatch
                 .settle_and_start_next(ticket, generation, settled_at_ms);
+            if let RunSettlement::ZombieSettled { watchdog, .. } = settlement {
+                terminal_watchdog_event = Some(watchdog);
+            }
         }
         if let Some(agent_id) = agent_id.as_deref() {
             let _ = state.lifecycle.end_session_run(agent_id, settled_at_ms);
@@ -258,6 +314,9 @@ impl ProductionTranscriptRuntime {
             cache_completion(&mut state, client_nonce, result.clone());
         }
         drop(state);
+        if let Some(event) = terminal_watchdog_event.as_ref() {
+            let _ = on_watchdog(event);
+        }
         self.turn_ready.notify_all();
         self.send_settled.notify_all();
         result

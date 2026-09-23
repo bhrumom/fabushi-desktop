@@ -64,9 +64,15 @@ impl RoutedProviderCancellation {
     }
 }
 
+#[derive(Clone)]
+struct ActiveRoutedProviderTask {
+    agent_id: Option<String>,
+    cancellation: RoutedProviderCancellation,
+}
+
 #[derive(Default)]
 pub struct RoutedProviderTaskRegistry {
-    active: Mutex<HashMap<String, RoutedProviderCancellation>>,
+    active: Mutex<HashMap<String, ActiveRoutedProviderTask>>,
 }
 
 impl RoutedProviderTaskRegistry {
@@ -74,6 +80,34 @@ impl RoutedProviderTaskRegistry {
         &self,
         stream_id: &str,
     ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
+        self.register_internal(None, stream_id)
+    }
+
+    pub fn register_for_agent(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+    ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
+        let agent_id = agent_id.trim();
+        if agent_id.is_empty() {
+            return Err(ProviderSessionError::Protocol(
+                "Runner provider agent id is empty".into(),
+            ));
+        }
+        self.register_internal(Some(agent_id.to_string()), stream_id)
+    }
+
+    fn register_internal(
+        &self,
+        agent_id: Option<String>,
+        stream_id: &str,
+    ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
+        let stream_id = stream_id.trim();
+        if stream_id.is_empty() {
+            return Err(ProviderSessionError::Protocol(
+                "Runner provider stream id is empty".into(),
+            ));
+        }
         let mut active = self
             .active
             .lock()
@@ -86,16 +120,60 @@ impl RoutedProviderTaskRegistry {
             )));
         }
         let cancellation = RoutedProviderCancellation::default();
-        active.insert(stream_id.to_string(), cancellation.clone());
+        active.insert(
+            stream_id.to_string(),
+            ActiveRoutedProviderTask {
+                agent_id,
+                cancellation: cancellation.clone(),
+            },
+        );
         Ok(cancellation)
     }
 
     pub fn cancel(&self, stream_id: &str, reason: impl Into<String>) -> bool {
+        let reason = reason.into();
         self.active
             .lock()
             .ok()
             .and_then(|active| active.get(stream_id).cloned())
-            .is_some_and(|cancellation| cancellation.cancel(reason))
+            .is_some_and(|task| task.cancellation.cancel(reason))
+    }
+
+    pub fn cancel_agent(&self, agent_id: &str, reason: impl Into<String>) -> usize {
+        let reason = reason.into();
+        let cancellations = self
+            .active
+            .lock()
+            .map(|active| {
+                active
+                    .values()
+                    .filter(|task| task.agent_id.as_deref() == Some(agent_id))
+                    .map(|task| task.cancellation.clone())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        cancellations
+            .into_iter()
+            .filter(|cancellation| cancellation.cancel(reason.clone()))
+            .count()
+    }
+
+    pub fn active_stream_ids_for_agent(&self, agent_id: &str) -> Vec<String> {
+        let mut streams = self
+            .active
+            .lock()
+            .map(|active| {
+                active
+                    .iter()
+                    .filter_map(|(stream_id, task)| {
+                        (task.agent_id.as_deref() == Some(agent_id))
+                            .then(|| stream_id.clone())
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        streams.sort();
+        streams
     }
 
     pub fn finish(&self, stream_id: &str) {
@@ -108,7 +186,12 @@ impl RoutedProviderTaskRegistry {
         let cancellations = self
             .active
             .lock()
-            .map(|active| active.values().cloned().collect::<Vec<_>>())
+            .map(|active| {
+                active
+                    .values()
+                    .map(|task| task.cancellation.clone())
+                    .collect::<Vec<_>>()
+            })
             .unwrap_or_default();
         for cancellation in cancellations {
             cancellation.cancel(reason.to_string());

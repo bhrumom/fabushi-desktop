@@ -1,11 +1,18 @@
 use super::run_scheduler::{
     QueueAccepted, QueueDequeued, QueuedRun, RunLane, RunScheduler, RunSettlement,
+    WatchdogEvent, WatchdogStage,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UserTurnTicket {
     pub agent_id: String,
     pub task_id: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TurnWatchdogTick {
+    pub event: WatchdogEvent,
+    pub started_next: Option<QueueDequeued>,
 }
 
 #[derive(Debug)]
@@ -24,6 +31,36 @@ impl Default for ProductionTurnDispatch {
 }
 
 impl ProductionTurnDispatch {
+    pub fn with_watchdog(watchdog_ms: u64, watchdog_grace_ms: u64) -> Self {
+        Self {
+            scheduler: RunScheduler::new(watchdog_ms, watchdog_grace_ms),
+            next_task_seq: 0,
+        }
+    }
+}
+
+impl ProductionTurnDispatch {
+    pub fn watchdog_wait_ms(&self, agent_id: &str, now_ms: u64) -> Option<u64> {
+        self.scheduler.next_watchdog_delay_ms(agent_id, now_ms)
+    }
+
+    pub fn watchdog_tick(
+        &mut self,
+        agent_id: &str,
+        now_ms: u64,
+    ) -> Option<TurnWatchdogTick> {
+        let event = self.scheduler.watchdog_tick(agent_id, now_ms)?;
+        let started_next = if event.stage == WatchdogStage::Escape {
+            self.scheduler.start_next(agent_id, now_ms)
+        } else {
+            None
+        };
+        Some(TurnWatchdogTick {
+            event,
+            started_next,
+        })
+    }
+
     pub fn enqueue_user_turn(
         &mut self,
         agent_id: &str,
