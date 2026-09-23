@@ -272,11 +272,12 @@ fn schedule_debounced_notify(
     };
     let state_for_thread = Arc::clone(state);
     let channels_dir = channels_dir.to_path_buf();
+    let channels_dir_for_thread = channels_dir.clone();
     let spawn = thread::Builder::new()
         .name("sand-channel-store-debounce".into())
         .spawn(move || {
             thread::sleep(Duration::from_millis(CHANNEL_CHANGE_DEBOUNCE_MS));
-            let fingerprint = channel_state_fingerprint(&channels_dir);
+            let fingerprint = channel_state_fingerprint(&channels_dir_for_thread);
             let callback = state_for_thread.lock().ok().and_then(|mut state| {
                 if state.generation != generation
                     || state.last_fingerprint.as_ref() == Some(&fingerprint)
