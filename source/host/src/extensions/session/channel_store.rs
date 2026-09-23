@@ -277,7 +277,13 @@ fn schedule_debounced_notify(
         .name("sand-channel-store-debounce".into())
         .spawn(move || {
             thread::sleep(Duration::from_millis(CHANNEL_CHANGE_DEBOUNCE_MS));
+            let first_fingerprint = channel_state_fingerprint(&channels_dir_for_thread);
+            thread::sleep(Duration::from_millis(CHANNEL_CHANGE_DEBOUNCE_MS));
             let fingerprint = channel_state_fingerprint(&channels_dir_for_thread);
+            if first_fingerprint != fingerprint {
+                schedule_debounced_notify(&state_for_thread, &channels_dir_for_thread);
+                return;
+            }
             let callback = state_for_thread.lock().ok().and_then(|mut state| {
                 if state.generation != generation
                     || state.last_fingerprint.as_ref() == Some(&fingerprint)
