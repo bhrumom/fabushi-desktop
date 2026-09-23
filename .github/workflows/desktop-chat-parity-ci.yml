@@ -89,6 +89,26 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - name: Verify Electron runtime installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          verify_electron() {
+            node -e "const fs=require('node:fs'); const electron=require('electron'); if (!electron || !fs.existsSync(electron)) process.exit(1)"
+          }
+          if verify_electron; then
+            exit 0
+          fi
+          for attempt in 1 2 3; do
+            echo "Electron runtime missing after npm ci; reinstall attempt $attempt/3"
+            rm -rf node_modules/electron/dist node_modules/electron/path.txt
+            if node node_modules/electron/install.js && verify_electron; then
+              exit 0
+            fi
+            sleep $((attempt * 10))
+          done
+          echo "Electron runtime installation failed after 3 attempts" >&2
+          exit 1
       - name: Validate production Renderer bridge contracts
         run: |
           node --test electron/coordinator-renderer-port.test.cjs electron/production-renderer-bridge.test.cjs electron/update-state.test.cjs
