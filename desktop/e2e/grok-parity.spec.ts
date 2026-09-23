@@ -1116,7 +1116,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(composer).toHaveCount(1);
       const material = await composer.evaluate((composerElement, peerElement) => {
         if (!(peerElement instanceof HTMLElement)) return null;
-        const composerStyle = getComputedStyle(composer);
+        const composerStyle = getComputedStyle(composerElement);
         const peerStyle = getComputedStyle(peerElement);
         return {
           composerBackground: composerStyle.backgroundColor,
