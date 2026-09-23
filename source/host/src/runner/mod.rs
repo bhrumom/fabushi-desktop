@@ -50,5 +50,6 @@ pub mod box_tool_access;
 pub mod production_turn_run_shell_adapter;
 pub mod turn_agent_composition;
 pub mod production_turn_agent_owner;
+pub mod production_turn_input_projection;
 pub mod sand_agent_runner;
 pub mod system_prompt_assembly;

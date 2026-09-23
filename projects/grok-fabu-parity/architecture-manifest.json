@@ -15201,26 +15201,40 @@
         "source/host/src/runner/turn_agent_composition.rs",
         "source/host/src/runner/sand_agent_runner.rs",
         "source/host/src/runner/turn_run_shell.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/production_turn_input_projection.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/production_turn_input_projection_contract.rs"
       ],
-      "notes": "Shipping Host now constructs a Runner-owned TurnAgentComposition -> ProductionTurnAgentOwner -> SandAgentRunner chain. The owner drives TurnRunShell begin/dispatched and exactly one completed/cancelled/failed terminal settlement, with retryable transport classification and fail-closed prompt validation. The frozen Grok owner still binds a much larger Agent build surface (resource/remote-box accessors, tool host/session, summarization session, static config, disk-pressure/profile/update relays and disposer semantics), so this production slice is real but not yet 1:1 final."
+      "notes": "Shipping Host constructs a Runner-owned TurnAgentComposition -> ProductionTurnAgentOwner -> SandAgentRunner chain. The owner now receives the real gateway streamId through production-turn-input-projection, binds it as TurnOwnerToken.request_id, drives begin/dispatched and exactly one completed/cancelled/failed settlement, and preserves that correlated identity at the terminal boundary. Full frozen Agent build/resource/tool/summarization/static-config/disk-pressure/profile/update/disposer surfaces remain non-final."
     },
     {
       "referencePath": "source/host/runner/production-turn-input-projection.ts",
       "targetPath": "source/host/src/runner/production_turn_input_projection.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "03c5848f87f29ca948bb3b3ec370099fce4d4d7a",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/production_turn_input_projection.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/runner/sand_agent_runner.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/production_turn_input_projection_contract.rs",
+        "source/host/tests/production_turn_agent_owner_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Shipping runner.startRoutedProvider now projects the real streamId into TurnRunOptions.inference_request_id plus currently available recovery/attachment/reply metadata, then ProductionTurnAgentOwner binds that identity into TurnOwnerToken and preserves it through terminal settlement. Final is withheld because the frozen projection also owns generated ConversationAction creation, MCP discovery results, a binary-cloned ConversationStateStructure, ackToken/cancelThisRun/emitUpdate callbacks and exact typed handoff ordering; those surfaces are not yet represented by this Rust provider-path slice."
     },
     {
       "referencePath": "source/host/runner/production-turn-run-shell-adapter.ts",

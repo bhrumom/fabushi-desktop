@@ -6,7 +6,7 @@ use crate::extensions::inference::provider_session::{
 
 use super::production_turn_agent_owner::ProductionTurnAgentOwner;
 use super::routed_provider_runtime::RoutedProviderCancellation;
-use super::TurnRunFinished;
+use super::{TurnRunFinished, TurnRunOptions};
 
 /// Runner-owned shipping facade for provider-backed turns.
 ///
@@ -40,6 +40,17 @@ impl SandAgentRunner {
             .run_routed_provider(data_dir, messages, on_text_delta)
     }
 
+    pub fn run_routed_provider_with_options(
+        &mut self,
+        data_dir: &Path,
+        messages: &[ProviderMessage],
+        options: TurnRunOptions,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+    ) -> Result<String, ProviderSessionError> {
+        self.owner
+            .run_routed_provider_with_options(data_dir, messages, options, on_text_delta)
+    }
+
     pub fn run_with<Execute>(
         &mut self,
         messages: &[ProviderMessage],
@@ -49,5 +60,17 @@ impl SandAgentRunner {
         Execute: FnOnce() -> Result<String, ProviderSessionError>,
     {
         self.owner.run_with(messages, execute)
+    }
+
+    pub fn run_with_options<Execute>(
+        &mut self,
+        messages: &[ProviderMessage],
+        options: TurnRunOptions,
+        execute: Execute,
+    ) -> Result<String, ProviderSessionError>
+    where
+        Execute: FnOnce() -> Result<String, ProviderSessionError>,
+    {
+        self.owner.run_with_options(messages, options, execute)
     }
 }

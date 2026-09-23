@@ -12,7 +12,7 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
 };
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
 use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
-use mahayana_host_runtime::runner::TerminalOutcome;
+use mahayana_host_runtime::runner::{TerminalOutcome, TurnRunOptions};
 use serde_json::Value;
 
 struct EmptyBridge;
@@ -139,4 +139,25 @@ fn shipping_sand_agent_owner_fails_closed_without_user_prompt() {
     assert!(matches!(error, ProviderSessionError::Configuration(_)));
     assert!(!executed);
     assert!(runner.last_finished().is_none());
+}
+
+
+#[test]
+fn shipping_sand_agent_owner_preserves_projected_request_identity_through_terminal_settlement() {
+    let mut runner = runner();
+    let result = runner
+        .run_with_options(
+            &user_messages(),
+            TurnRunOptions {
+                inference_request_id: Some("stream-request-123".into()),
+                ..TurnRunOptions::default()
+            },
+            || Ok("done".into()),
+        )
+        .expect("completed projected turn");
+    assert_eq!(result, "done");
+    let finished = runner.last_finished().expect("terminal settlement");
+    assert_eq!(finished.owner.request_id, "stream-request-123");
+    assert_eq!(finished.owner.generation, 1);
+    assert!(matches!(finished.outcome, TerminalOutcome::Completed));
 }

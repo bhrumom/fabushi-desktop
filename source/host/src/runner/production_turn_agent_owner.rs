@@ -45,12 +45,27 @@ impl ProductionTurnAgentOwner {
         messages: &[ProviderMessage],
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
+        self.run_routed_provider_with_options(
+            data_dir,
+            messages,
+            TurnRunOptions::default(),
+            on_text_delta,
+        )
+    }
+
+    pub fn run_routed_provider_with_options(
+        &mut self,
+        data_dir: &Path,
+        messages: &[ProviderMessage],
+        options: TurnRunOptions,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+    ) -> Result<String, ProviderSessionError> {
         let Self {
             composition,
             shell,
             last_finished,
         } = self;
-        run_owned_turn(shell, last_finished, messages, || {
+        run_owned_turn(shell, last_finished, messages, options, || {
             composition.run(data_dir, messages, on_text_delta)
         })
     }
@@ -65,10 +80,23 @@ impl ProductionTurnAgentOwner {
     where
         Execute: FnOnce() -> Result<String, ProviderSessionError>,
     {
+        self.run_with_options(messages, TurnRunOptions::default(), execute)
+    }
+
+    pub fn run_with_options<Execute>(
+        &mut self,
+        messages: &[ProviderMessage],
+        options: TurnRunOptions,
+        execute: Execute,
+    ) -> Result<String, ProviderSessionError>
+    where
+        Execute: FnOnce() -> Result<String, ProviderSessionError>,
+    {
         run_owned_turn(
             &mut self.shell,
             &mut self.last_finished,
             messages,
+            options,
             execute,
         )
     }
@@ -78,6 +106,7 @@ fn run_owned_turn<Execute>(
     shell: &mut TurnRunShell,
     last_finished: &mut Option<TurnRunFinished>,
     messages: &[ProviderMessage],
+    options: TurnRunOptions,
     execute: Execute,
 ) -> Result<String, ProviderSessionError>
 where
@@ -89,7 +118,7 @@ where
         )
     })?;
     let started = shell
-        .begin_run(prompt, TurnRunOptions::default())
+        .begin_run(prompt, options)
         .map_err(turn_shell_error)?;
     shell
         .mark_dispatched(&started.owner)

@@ -51,6 +51,7 @@ use mahayana_host_runtime::extensions::forever_box::{
 use mahayana_host_runtime::extensions::auth::credential_renewer::RenewalOutcome;
 use mahayana_host_runtime::runner_context_production_provider::ProductionRunnerRequestContextSource;
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
+use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedProviderTaskRegistry,
     RoutedToolBridge, RunnerRequestContextSource,
@@ -375,6 +376,12 @@ fn start_routed_provider_task(
         ))?
         .to_string();
     let messages = decode_provider_messages(&args)?;
+    let turn_input = create_production_turn_input_projection(
+        &args,
+        &stream_id,
+        &messages,
+    )
+    .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
     let cancellation = routed_provider_tasks.register(&stream_id).map_err(|error| {
         GatewayCommandError::Internal(error.to_string())
     })?;
@@ -448,9 +455,10 @@ fn start_routed_provider_task(
             .with_send_message_sink(send_message_sink);
             let owner = ProductionTurnAgentOwner::new(composition);
             let mut runner = SandAgentRunner::new(owner);
-            let result = runner.run_routed_provider(
+            let result = runner.run_routed_provider_with_options(
                 &data_dir,
                 &messages,
+                turn_input.options,
                 &mut on_text_delta,
             );
             if !worker_cancellation.is_cancelled() {
