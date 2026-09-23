@@ -12108,12 +12108,25 @@
       "targetPath": "source/host/src/extensions/session/agent_session.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "6e313c51d96b685d5d4e107e3098982f7073809e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/agent_session.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/session_materialization.rs",
+        "source/host/src/extensions/session/session_profile_files.rs",
+        "source/host/src/extensions/session/session_mutations.rs",
+        "source/host/src/extensions/session/channel_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_session_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Session facade now owns active-agent pointer read/write, root/agent existence, create/open/delete orchestration, roster summaries with active identity, profile/avatar delegation, transcript read delegation, unread/view/activity/awaiting state, settings mutations, connector channels and Host worker shutdown. Delete closes the per-agent blob worker, clears write-generation state, removes the agent directory and publishes agent-removed. Final is withheld for memory/workflow/automation composition, cached extras/deletion predicates, mint serialization/background/fallback session semantics, and full Gateway agent lifecycle cutover."
     },
     {
       "referencePath": "source/host/extensions/session/box-handoff-service.ts",
@@ -12299,7 +12312,8 @@
         "source/host/src/extensions/session/pending_card_sweeps.rs",
         "source/host/src/extensions/session/connector_secret_store.rs",
         "source/host/src/extensions/session/channel_store.rs",
-        "source/host/src/extensions/session/gateway.rs"
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/src/extensions/session/agent_session.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12316,7 +12330,8 @@
         "source/host/tests/pending_card_sweeps_contract.rs",
         "source/host/tests/connector_secret_store_contract.rs",
         "source/host/tests/channel_store_contract.rs",
-        "source/host/tests/session_gateway_contract.rs"
+        "source/host/tests/session_gateway_contract.rs",
+        "source/host/tests/agent_session_contract.rs"
       ],
       "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state, transcript projection/mutations, profile/avatar mutations, connector/channel composition, roster summaries and conversation capacity. Shipping Host now cuts over countAgents, getAgentTranscript*, getAgentThread and channel list/connect/disconnect/refresh commands directly to ProductionSessionWorkers. Remaining parity includes create/open/update/delete/unread/settings Gateway cutover, full ConversationState proto outlines, workflow composition, box handoff and watcher parity."
     },

@@ -9,6 +9,7 @@ pub mod conversation_size_limits;
 pub mod connector_secret_store;
 pub mod channel_store;
 pub mod gateway;
+pub mod agent_session;
 pub mod session_paths;
 pub mod session_recovery;
 pub mod session_maintenance;
