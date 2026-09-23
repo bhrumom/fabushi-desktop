@@ -9331,12 +9331,24 @@
       "targetPath": "source/host/src/agents/agent_clone.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e60798a014e1ed0e267a57fd835968c12adad0a2",
       "architecturalRole": "host/agents",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/agents/agent_clone.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/transcript/agent_lifecycle.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_clone_contract.rs",
+        "source/host/tests/agent_lifecycle_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production port of frozen cloneAgentDir/cloneAgentDisplayName: checkpoints/copies store.db, copies normalized profile/settings/workflow enablement/conventional avatars and automation configs only, rewrites metadata agentId/origin/purpose/transient/conversation/profile state, removes partial targets on failure, and is invoked by shipping transcript lifecycle duplicateAgent through the serialized Session mint queue."
     },
     {
       "referencePath": "source/host/agents/agent-messaging.ts",
@@ -9378,12 +9390,21 @@
       "targetPath": "source/host/src/agents/agent_workflow_enablement.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "b325e52ad1725b6735eec850e44bbba27cf50d38",
       "architecturalRole": "host/agents",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/agents/agent_workflow_enablement.rs",
+        "source/host/src/agents/agent_clone.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_workflow_enablement_contract.rs",
+        "source/host/tests/agent_clone_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust file contract implements frozen enabled-workflows.json path, disabled/default-enabled semantics, legacy enabled preservation, atomic sorted writes, set/forget/enableAll and is used by production agent cloning. Final is withheld until the future Rust workflow store/runtime uses this owner for enablement mutations rather than only clone preservation."
     },
     {
       "referencePath": "source/host/agents/settings-file.ts",
@@ -12134,7 +12155,8 @@
         "source/host/src/extensions/session/channel_store.rs",
         "source/host/src/extensions/session/gateway.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/extensions/transcript/agent_lifecycle.rs"
+        "source/host/src/extensions/transcript/agent_lifecycle.rs",
+        "source/host/src/agents/agent_clone.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_session_contract.rs",
@@ -12143,7 +12165,8 @@
         "source/host/tests/session_gateway_contract.rs",
         "desktop/e2e/grok-parity.spec.ts",
         "desktop/e2e/mahayana-agent-workbench.spec.ts",
-        "source/host/tests/agent_lifecycle_contract.rs"
+        "source/host/tests/agent_lifecycle_contract.rs",
+        "source/host/tests/agent_clone_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust Session facade owns active-agent pointer read/write/clear, root/agent existence, create/open/durable delete orchestration, roster summaries with active identity, profile/avatar delegation, transcript reads, unread/view/activity/awaiting state, settings mutations, connector channels and Host worker shutdown. Shipping Host Gateway cuts listAgents/createAgent/update/unread/settings/avatar and transcript reads to this Rust owner; transcript AgentLifecycle now owns deleteAgent/deleteAgents and delegates durable removal here while preserving/switching the active transcript. Final is withheld for createAgent nonce/mint serialization, kickstart/telemetry, memory/workflow/automation composition, cached extras/deletion predicates, background/fallback semantics, active-session switch behavior, and deleteAgent cross-extension Runner/ack/Box/automation/handoff cleanup."
@@ -12359,7 +12382,8 @@
         "source/host/src/extensions/session/gateway.rs",
         "source/host/src/extensions/session/agent_session.rs",
         "source/host/src/extensions/transcript/agent_lifecycle.rs",
-        "source/host/src/extensions/session/extension.rs"
+        "source/host/src/extensions/session/extension.rs",
+        "source/host/src/agents/agent_clone.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12379,9 +12403,10 @@
         "source/host/tests/session_gateway_contract.rs",
         "source/host/tests/agent_session_contract.rs",
         "desktop/e2e/grok-parity.spec.ts",
-        "source/host/tests/agent_lifecycle_contract.rs"
+        "source/host/tests/agent_lifecycle_contract.rs",
+        "source/host/tests/agent_clone_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels and roster. Shipping prepare_existing_agent performs recovery, backfill/hidden repair and one-time maintenance before Runner inference. Remaining parity is workflows/automations/memory composition, box handoff production deps, watcher/cross-extension cleanup and the remaining Session facade lifecycle features."
+      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels and roster. Shipping prepare_existing_agent performs recovery, backfill/hidden repair and one-time maintenance before Runner inference. Remaining parity is workflows/automations/memory composition, box handoff production deps, watcher/cross-extension cleanup and the remaining Session facade lifecycle features. Production now also exposes the serialized mintAgentWith critical section used by duplicateAgent so cap-check, UUID selection and clone creation cannot race concurrent mints."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
@@ -13371,16 +13396,18 @@
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/agent_lifecycle.rs",
         "source/host/src/extensions/session/agent_session.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/agents/agent_clone.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_lifecycle_contract.rs",
         "source/host/tests/agent_session_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/agent_clone_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production AgentLifecycle now owns shipping deleteAgent/deleteAgents before the Session gateway: it deduplicates batch deletion, delegates durable removal to SandAgentSessionStore, closes per-agent blob workers, clears write-generation state, publishes agent-removed, preserves the active transcript for non-active deletion, and deterministically selects/marks/views an existing successor or clears the active pointer when the active Agent is deleted. Final is withheld until Runner interruption/drain, ack-obligation loss, Box handoff/lease cleanup, automation schedules, sharing/local-permission cleanup, background wake queues, async-task/subagent cleanup and fallback-session creation are all production composed."
+      "notes": "Rust production lifecycle owns durable deleteAgent/deleteAgents active-successor behavior and frozen duplicateAgent cloning through Session's serialized cap-check→mint critical section, AgentDb identity rewrite, activation, transcript snapshot and reindex mutation. Final remains withheld for kickstart/background creation, full cross-extension delete cleanup (Runner/ack/Box/automation/handoff/trays/pending wakes) and exact active-session replacement/roster stamp semantics."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-run-error.ts",

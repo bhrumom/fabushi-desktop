@@ -700,6 +700,43 @@ pub fn read_persisted_agent_name(
         }))
 }
 
+pub fn set_persisted_agent_id(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    agent_id: &str,
+) -> Result<bool, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let Some(raw) = read_kv(&db, "metadata")? else {
+        return Ok(false);
+    };
+    let metadata_bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+    let mut metadata: serde_json::Value = serde_json::from_slice(&metadata_bytes)?;
+    if metadata
+        .get("agentId")
+        .and_then(serde_json::Value::as_str)
+        == Some(agent_id)
+    {
+        return Ok(true);
+    }
+    let Some(object) = metadata.as_object_mut() else {
+        return Ok(false);
+    };
+    object.insert(
+        "agentId".into(),
+        serde_json::Value::String(agent_id.to_string()),
+    );
+    let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
+    let changed = db.execute(SET_KV_SQL, params!["metadata", next_raw])? > 0;
+    if changed {
+        bump_db_write_generation(db_path);
+        notify_agent_db_listeners(
+            db_path,
+            AgentDbListenerChannel::Metadata("agentId".into()),
+        );
+    }
+    Ok(changed)
+}
+
 pub fn set_persisted_agent_name(
     db_path: &Path,
     busy_timeout_ms: u64,

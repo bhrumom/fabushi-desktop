@@ -2,9 +2,11 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use serde_json::{Value, json};
+use serde_json::{Map, Value, json};
 
+use crate::agents::agent_clone::{clone_agent_dir, clone_agent_display_name};
 use crate::extensions::session::agent_session::SandAgentSessionStore;
+use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::session::production::ProductionSessionWorkers;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,6 +34,63 @@ impl ProductionAgentLifecycle {
         Self {
             store: SandAgentSessionStore::new(production),
         }
+    }
+
+    pub fn clone_agent(&self, source_id: &str) -> Result<Value, String> {
+        let summary = self
+            .store
+            .list_agents()?
+            .into_iter()
+            .find(|agent| agent.id == source_id)
+            .ok_or_else(|| "That agent no longer exists.".to_string())?;
+        if summary.is_group {
+            return Err("Groups can't be duplicated yet.".to_string());
+        }
+
+        let source_dir = self.store.get_agent_dir(source_id);
+        let clone_name = clone_agent_display_name(&summary.name);
+        let production = Arc::clone(self.store.production());
+        let new_id = production.mint_agent_with(|new_id| {
+            clone_agent_dir(
+                &source_dir,
+                &production.agents_root().join(new_id),
+                new_id,
+                &clone_name,
+                production.busy_timeout_ms(),
+            )
+            .map_err(|error| error.to_string())?;
+            Ok(new_id.to_string())
+        })?;
+
+        let opened = (|| {
+            let _ = self.store.open_session(&new_id)?;
+            let now = system_now_ms();
+            let _ = self.store.mark_agent_viewed(&new_id, now, false)?;
+            self.store
+                .write_active_agent_id(&new_id)
+                .map_err(|error| error.to_string())?;
+            let mutation = Map::from_iter([
+                (
+                    "kind".to_string(),
+                    Value::String("agent-needs-reindex".to_string()),
+                ),
+                ("agentId".to_string(), Value::String(new_id.clone())),
+            ]);
+            publish_transcript_mutation(&mutation);
+            let agent = self
+                .store
+                .summarize_agent_by_id(&new_id)?
+                .ok_or_else(|| "minted agent could not be summarized".to_string())?;
+            let transcript = self.store.read_agent_transcript_entries(&new_id)?;
+            serde_json::to_value(agent)
+                .map_err(|error| error.to_string())
+                .map(|agent| json!({ "agent": agent, "transcript": transcript }))
+        })();
+
+        if opened.is_err() {
+            let _ = self.store.delete_session(&new_id);
+        }
+        opened
     }
 
     pub fn delete_agent(&self, agent_id: &str) -> Result<Value, String> {
@@ -111,6 +170,11 @@ pub fn dispatch_production_agent_lifecycle_gateway_call(
 ) -> Option<Result<Value, AgentLifecycleGatewayError>> {
     let lifecycle = ProductionAgentLifecycle::new(Arc::clone(production));
     let result = match method {
+        "duplicateAgent" => required_string(args, "id").and_then(|agent_id| {
+            lifecycle
+                .clone_agent(agent_id)
+                .map_err(AgentLifecycleGatewayError::internal)
+        }),
         "deleteAgent" => required_string(args, "id")
             .and_then(|agent_id| {
                 lifecycle

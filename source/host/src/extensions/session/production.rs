@@ -1,6 +1,9 @@
 use std::collections::BTreeMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+
+use uuid::Uuid;
 
 use crate::agent_isolation::{
     AgentWorkerPool, ProductionAgentStoreWorkerBackend, WorkerBlobStore,
@@ -140,6 +143,32 @@ impl ProductionSessionWorkers {
 
     pub fn is_agent_cap_reached(&self) -> Result<bool, String> {
         is_agent_cap_reached(&self.agents_root).map_err(|error| error.to_string())
+    }
+
+    pub fn busy_timeout_ms(&self) -> u64 {
+        self.busy_timeout_ms
+    }
+
+    pub fn mint_agent_with<T>(
+        &self,
+        mint: impl FnOnce(&str) -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.mint_queue.run(|| {
+            fs::create_dir_all(&self.agents_root)
+                .map_err(|error| error.to_string())?;
+            if is_agent_cap_reached(&self.agents_root)
+                .map_err(|error| error.to_string())?
+            {
+                return Err("Agent limit of 50 reached".to_string());
+            }
+            let agent_id = loop {
+                let candidate = Uuid::new_v4().to_string();
+                if !self.agents_root.join(&candidate).exists() {
+                    break candidate;
+                }
+            };
+            mint(&agent_id)
+        })
     }
 
     pub fn materialize_new_session(

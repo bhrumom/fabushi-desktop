@@ -111,6 +111,101 @@ fn deleting_non_active_agent_keeps_active_transcript_and_delete_all_clears_point
 }
 
 #[test]
+fn duplicate_agent_gateway_uses_clone_owner_and_activates_empty_copy() {
+    use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
+    use mahayana_host_runtime::extensions::session::agent_db::{
+        read_persisted_agent_metadata_projection, read_persisted_agent_origin,
+        read_persisted_agent_purpose,
+    };
+
+    let root = temp_root("duplicate");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let source = store
+        .create_session(
+            Some(&SandAgentProfile {
+                name: "Alpha".into(),
+                description: "source".into(),
+                title: String::new(),
+                avatar_shape: String::new(),
+                avatar_color: String::new(),
+            }),
+            "dev",
+            Some("disk-saver"),
+        )
+        .expect("source");
+    production
+        .append_agent_transcript_entries(
+            &source.id,
+            &[json!({
+                "id":"source-entry",
+                "kind":"message",
+                "role":"user",
+                "content":"do not copy chat"
+            })],
+        )
+        .expect("source transcript");
+    store
+        .write_active_agent_id(&source.id)
+        .expect("active source");
+
+    let duplicated = dispatch_production_agent_lifecycle_gateway_call(
+        &production,
+        "duplicateAgent",
+        &json!({"id":source.id}),
+    )
+    .expect("handled")
+    .expect("duplicated");
+
+    let clone_id = duplicated["agent"]["id"]
+        .as_str()
+        .expect("clone id")
+        .to_string();
+    assert_ne!(clone_id, source.id);
+    assert_eq!(duplicated["agent"]["name"], "Alpha copy");
+    assert_eq!(duplicated["transcript"], json!([]));
+    assert_eq!(store.read_active_agent_id().as_deref(), Some(clone_id.as_str()));
+    assert_eq!(
+        read_persisted_agent_metadata_projection(
+            &production.session_db_path(&clone_id).expect("clone db"),
+            500
+        )
+        .expect("metadata")
+        .expect("metadata present")
+        .agent_id,
+        clone_id
+    );
+    assert_eq!(
+        read_persisted_agent_origin(
+            &production.session_db_path(&clone_id).expect("clone db"),
+            500
+        )
+        .expect("origin"),
+        "user"
+    );
+    assert_eq!(
+        read_persisted_agent_purpose(
+            &production.session_db_path(&clone_id).expect("clone db"),
+            500
+        )
+        .expect("purpose"),
+        None
+    );
+    assert_eq!(
+        store.read_agent_transcript_entries(&source.id)
+            .expect("source transcript")
+            .len(),
+        1
+    );
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn shipping_gateway_contract_validates_delete_arguments_and_uses_lifecycle_owner() {
     let root = temp_root("gateway");
     let production = Arc::new(ProductionSessionWorkers::with_agents_root(
