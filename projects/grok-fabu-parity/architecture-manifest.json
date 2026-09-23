@@ -9190,12 +9190,22 @@
       "targetPath": "source/host/src/agent_isolation/conversation_blob_gc.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "97bec5070666dc8c6884e6638129dc0988aaf67f",
       "architecturalRole": "host/agent-isolation",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/build.rs",
+        "source/host/src/agent_isolation/conversation_blob_gc.rs",
+        "source/host/src/agent_isolation/conversation_blob_store.rs",
+        "source/packages/proto/generated/agent/v1/blob-reference-metadata.ts"
+      ],
+      "testEvidence": [
+        "source/host/tests/conversation_blob_store_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Finalized after frozen Grok conversation-blob-gc comparison. Rust now derives the blob-reference graph from the checked-in generated protobuf schema/metadata at build time, walks nested messages and map values, preserves the three intentionally unwalked edges, fails closed on unresolved proto referents, retains recent pending writes, deletes unreachable rows transactionally, applies Grok vacuum thresholds, and truncates WAL. Parent exact SHA 3f5908035337b5b0ec9ef8665ac53de654a468be passed Rust desktop runtime run 35847597116 and Desktop Chat Parity run 35847597159; this manifest/test commit must re-establish the same exact-HEAD gates before serving as a new baseline."
     },
     {
       "referencePath": "source/host/agent-isolation/conversation-blob-store.ts",
@@ -9216,7 +9226,7 @@
         "source/host/tests/agent_worker_pool_lifecycle_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Concrete Rust SQLite store implements get/set/clear, bounded recent-write tracking, legacy adoption, protobuf-wire root scoring, latest-root recovery and SHA-valid stale-checkpoint-root cleanup, and is exercised through the real worker pool. Full blob-reference metadata graph GC remains explicitly fail-closed/skipped, and shipping Host composition has not yet bound this backend."
+      "notes": "Concrete Rust SQLite store implements get/set/clear, bounded recent-write tracking, legacy adoption, protobuf-wire root scoring, SHA-valid stale-checkpoint-root cleanup, and full generated-metadata graph GC through the real worker pool. Final status remains withheld until the remaining quarantine/salvage/resume/replacement recovery semantics are complete."
     },
     {
       "referencePath": "source/host/agent-isolation/legacy-blob-retirement.ts",

@@ -261,6 +261,67 @@ fn production_worker_backend_preserves_fail_closed_gc_on_unresolved_proto_refs()
 }
 
 #[test]
+fn production_worker_backend_retains_recent_pending_writes_until_retention_floor() {
+    let path = test_db_path("conversation-gc-pending-write");
+    let pool = Arc::new(AgentWorkerPool::new(ConversationBlobWorkerBackend::default()));
+    let store = WorkerBlobStore::new(Arc::clone(&pool), "agent-gc-pending", &path, None);
+    let ctx = ();
+
+    let root = Vec::new();
+    let root_id = digest_id(&root);
+    block_on_ready(store.set_blob(&ctx, &root_id, &root)).expect("set root");
+
+    let pending_data = b"recent-pending-write".to_vec();
+    let pending_id = digest_id(&pending_data);
+    block_on_ready(store.set_blob(&ctx, &pending_id, &pending_data)).expect("set pending");
+
+    let first = block_on_ready(pool.collect_conversation_garbage(
+        "agent-gc-pending",
+        &path,
+        &to_hex(&root_id),
+        60_000,
+        None,
+    ))
+    .expect("collect with retention");
+    assert!(matches!(
+        first,
+        ConversationGarbageCollectionOutcome::Collected {
+            deleted_rows: 0,
+            retained_pending_rows: 1,
+            ..
+        }
+    ));
+    assert_eq!(
+        block_on_ready(store.get_blob(&ctx, &pending_id)).expect("pending retained"),
+        Some(pending_data.clone())
+    );
+
+    let second = block_on_ready(pool.collect_conversation_garbage(
+        "agent-gc-pending",
+        &path,
+        &to_hex(&root_id),
+        0,
+        None,
+    ))
+    .expect("collect after retention");
+    assert!(matches!(
+        second,
+        ConversationGarbageCollectionOutcome::Collected {
+            deleted_rows: 1,
+            retained_pending_rows: 0,
+            ..
+        }
+    ));
+    assert_eq!(
+        block_on_ready(store.get_blob(&ctx, &pending_id)).expect("pending collected"),
+        None
+    );
+
+    block_on_ready(pool.close_store(&path));
+    cleanup(&path);
+}
+
+#[test]
 fn production_worker_backend_does_not_retain_intentionally_unwalked_summary_archive_edges() {
     let path = test_db_path("conversation-gc-summary-archive");
     let pool = Arc::new(AgentWorkerPool::new(ConversationBlobWorkerBackend::default()));
