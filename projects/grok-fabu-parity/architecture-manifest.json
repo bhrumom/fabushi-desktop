@@ -12370,7 +12370,7 @@
         "desktop/e2e/grok-parity.spec.ts",
         "source/host/tests/agent_lifecycle_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state, transcript projection/mutations, profile/avatar mutations, connector/channel composition, roster summaries and conversation capacity. Shipping Host cuts countAgents/listAgents/createAgent, getAgentTranscript*, getAgentThread, safe mutations and channel operations directly to ProductionSessionWorkers; transcript AgentLifecycle now composes shipping deleteAgent/deleteAgents over the same durable owner. Remaining parity includes createAgent nonce/kickstart/telemetry, full open/delete cross-extension lifecycle composition, full ConversationState proto outlines, workflow composition, box handoff and watcher parity."
+      "notes": "Production Session owns Host-lifetime workers, Rust materialization with serialized mint ownership, durable recovery/maintenance, AgentDb state, transcript projection/mutations, profile/avatar, channels, roster and conversation capacity. Shipping Host cuts core agent/transcript/channel lifecycle to this Rust owner. Remaining parity includes pruned placeholder/fallback composition, complete ConversationState outlines, workflows/automations/memory, box handoff production deps and watcher/cross-extension cleanup parity."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
@@ -12464,7 +12464,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Real Rust materialization slice owns MAX_AGENTS_PER_USER counting, collision-safe UUID mint, fresh store.db metadata/origin/purpose/introduction seeding, blob-encryption key generation, profile/settings materialization and existing-agent open/repair. Shipping ProductionSessionWorkers now opens existing sessions through this module and exposes list/count/cap/create ownership. Final is withheld until mint serialization, pruned-placeholder reclamation/visibility, automations/workflows/channels/memory composition, agent-store resetFromDb and create/open Gateway command wiring are all production-owned by Rust."
+      "notes": "Rust materialization owns MAX_AGENTS_PER_USER counting, UUID mint, fresh store.db/profile/settings identity, blob key generation and existing-agent open/repair. Shipping ProductionSessionWorkers now owns a Host-lifetime SessionMintQueue that serializes the entire cap-check→mint→materialize critical section, matching frozen mintChain semantics and preventing concurrent createAgent calls from exceeding the cap. Final remains withheld until pruned-placeholder reclamation/visibility, automation/workflow/channel/memory composition, agent-store resetFromDb, fallback-session adoption and remaining Gateway lifecycle behavior are production-owned."
     },
     {
       "referencePath": "source/host/extensions/session/session-mutations.ts",

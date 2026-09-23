@@ -44,8 +44,8 @@ use super::session_maintenance::{
     retire_legacy_store_blobs_once,
 };
 use super::session_materialization::{
-    MaterializedAgentRecord, count_owned_agents, is_agent_cap_reached, list_agent_record_ids,
-    materialize_new_session, open_existing_session,
+    MaterializedAgentRecord, SessionMintQueue, count_owned_agents, is_agent_cap_reached,
+    list_agent_record_ids, materialize_new_session, open_existing_session,
 };
 use super::pending_card_sweeps::{
     expire_pending_auto_review_approval_entries,
@@ -88,6 +88,7 @@ pub struct ProductionSessionWorkers {
     pool: Arc<ProductionAgentWorkerPool>,
     conversation_size_maintenance: ConversationSizeMaintenance,
     conversation_state: SessionConversationState,
+    mint_queue: SessionMintQueue,
     busy_timeout_ms: u64,
 }
 
@@ -110,6 +111,7 @@ impl ProductionSessionWorkers {
             )),
             conversation_size_maintenance: ConversationSizeMaintenance::default(),
             conversation_state: SessionConversationState::new(busy_timeout_ms),
+            mint_queue: SessionMintQueue::default(),
             busy_timeout_ms,
         }
     }
@@ -140,14 +142,16 @@ impl ProductionSessionWorkers {
         origin: &str,
         purpose: Option<&str>,
     ) -> Result<MaterializedAgentRecord, String> {
-        materialize_new_session(
-            &self.agents_root,
-            self.busy_timeout_ms,
-            profile,
-            origin,
-            purpose,
-        )
-        .map_err(|error| error.to_string())
+        self.mint_queue.run(|| {
+            materialize_new_session(
+                &self.agents_root,
+                self.busy_timeout_ms,
+                profile,
+                origin,
+                purpose,
+            )
+            .map_err(|error| error.to_string())
+        })
     }
 
     pub fn read_agent_transcript_entries(

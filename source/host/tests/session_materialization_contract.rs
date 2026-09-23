@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::{Arc, Barrier};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::agents::agent_profile::{
@@ -10,6 +11,7 @@ use mahayana_host_runtime::agents::settings_file::{
 use mahayana_host_runtime::extensions::session::agent_db::{
     read_persisted_agent_name, read_persisted_latest_root_blob_id,
 };
+use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::session_materialization::{
     MAX_AGENTS_PER_USER, SessionMaterializationError, count_owned_agents,
     is_agent_cap_reached, list_agent_record_ids, materialize_new_session,
@@ -136,5 +138,50 @@ fn agent_cap_uses_owned_directory_count_and_blocks_minting() {
         materialize_new_session(&root, 500, None, "user", None),
         Err(SessionMaterializationError::Limit)
     ));
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_mint_queue_serializes_near_cap_create_sessions() {
+    let root = temp_root("mint-queue");
+    fs::create_dir_all(&root).expect("root");
+    for index in 0..(MAX_AGENTS_PER_USER - 1) {
+        fs::create_dir_all(root.join(format!("existing-{index:02}"))).expect("slot");
+    }
+
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let barrier = Arc::new(Barrier::new(3));
+    let mut threads = Vec::new();
+    for index in 0..2 {
+        let workers = Arc::clone(&workers);
+        let barrier = Arc::clone(&barrier);
+        threads.push(std::thread::spawn(move || {
+            barrier.wait();
+            workers.materialize_new_session(
+                Some(&SandAgentProfile {
+                    name: format!("Concurrent {index}"),
+                    description: String::new(),
+                    title: String::new(),
+                    avatar_shape: String::new(),
+                    avatar_color: String::new(),
+                }),
+                "user",
+                None,
+            )
+        }));
+    }
+    barrier.wait();
+
+    let results = threads
+        .into_iter()
+        .map(|thread| thread.join().expect("mint thread"))
+        .collect::<Vec<_>>();
+    assert_eq!(results.iter().filter(|result| result.is_ok()).count(), 1);
+    assert_eq!(results.iter().filter(|result| result.is_err()).count(), 1);
+    assert_eq!(count_owned_agents(&root).expect("final count"), MAX_AGENTS_PER_USER);
+    assert!(is_agent_cap_reached(&root).expect("cap after concurrent mint"));
+
+    workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }

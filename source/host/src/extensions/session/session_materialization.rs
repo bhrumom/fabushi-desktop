@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::{Map, Value};
@@ -22,6 +23,21 @@ use super::session_recovery::{ensure_profile_file, ensure_settings_file};
 
 pub const MAX_AGENTS_PER_USER: usize = 50;
 pub const DEFAULT_AGENT_AUTOMATIONS: &[serde_json::Value] = &[];
+
+#[derive(Default)]
+pub struct SessionMintQueue {
+    lock: Mutex<()>,
+}
+
+impl SessionMintQueue {
+    pub fn run<T>(&self, mint: impl FnOnce() -> T) -> T {
+        let _guard = self
+            .lock
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        mint()
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum SessionMaterializationError {
