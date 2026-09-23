@@ -13297,12 +13297,21 @@
       "targetPath": "source/host/src/extensions/transcript/ack_obligations.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f07018f5ab36f4e02cd3c3a0d89e3052cb74e087",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/sand_ack_obligation_store.rs",
+        "source/host/src/extensions/transcript/ack_obligations.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_ack_obligation_store_contract.rs",
+        "source/host/tests/ack_obligations_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust ack obligation core now implements durable send coalescing, agent-scoped run tokens, fenced fulfillment/rollback, interrupt/redrive counters and the frozen recovery prompt/constants. This exact SHA intentionally remains non-final until production Coordinator -> Host -> Runner token wiring plus boot/idle redrive and telemetry are closed."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-lifecycle.ts",
@@ -13715,12 +13724,21 @@
       "targetPath": "source/host/src/extensions/transcript/sand_ack_obligation_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "ae809cf546794187b8eb9dfc1a5809b87ff28ee7",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/sand_ack_obligation_store.rs",
+        "source/host/src/extensions/transcript/ack_obligations.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_ack_obligation_store_contract.rs",
+        "source/host/tests/ack_obligations_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Frozen durable store semantics are ported to Rust with tolerant coercion, cached reads, coalescing, interrupt/redrive mutation and atomic .part rename persistence. This exact SHA intentionally remains non-final until the next production-composition slice wires the store through Coordinator acceptance and Runner SendMessage acknowledgement."
     },
     {
       "referencePath": "source/host/extensions/transcript/sand-automation-failure.ts",
