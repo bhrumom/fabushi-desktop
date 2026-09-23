@@ -103,7 +103,7 @@ function rgbLuma(value: string): number {
 }
 
 function primaryMahayanaAgentPeer(page: Page) {
-  return page.getByTestId('messenger-sidebar').locator('button[data-agent-id="mahayana-assistant"]');
+  return page.getByTestId('messenger-sidebar').getByRole('button', { name: '大乘助手', exact: true });
 }
 
 test('desktop uses the Fabushi-owned Grok parity surface without a parallel Messenger', async () => {
@@ -1073,7 +1073,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-agent-root-shell', 'true');
       await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-product-shell', 'agent');
       await expect(page.locator('.desktop-mode-switch')).toHaveCount(0);
-      await expect(page.getByTestId('grok-new-agent')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'New', exact: true })).toBeVisible();
       await expect(page.getByTestId('profile-navigation-trigger')).toHaveCount(0);
       await expect(page.locator('[data-testid^="legacy-peer-"]')).toHaveCount(0);
 
@@ -1101,11 +1101,8 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       const input = page.getByTestId('messenger-input');
       await expect(input).toBeVisible();
 
-      const material = await page.evaluate(() => {
-        const inputElement = document.querySelector('[data-testid="messenger-input"]');
-        const composer = inputElement?.closest('[data-testid="grok-agent-composer"]');
-        const peerElement = document.querySelector('#root [data-testid="messenger-sidebar"] button[data-agent-id="mahayana-assistant"]');
-        if (!composer || !peerElement) return null;
+      const material = await page.getByTestId('grok-agent-composer').evaluate((composer, peerElement) => {
+        if (!(peerElement instanceof HTMLElement)) return null;
         const composerStyle = getComputedStyle(composer);
         const peerStyle = getComputedStyle(peerElement);
         return {
@@ -1114,7 +1111,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
           peerBackground: peerStyle.backgroundColor,
           peerRadius: peerStyle.borderRadius,
         };
-      });
+      }, await peer.elementHandle());
 
       expect(material).not.toBeNull();
       expect(rgbLuma(material!.composerBackground)).toBeLessThan(70);

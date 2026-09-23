@@ -173,8 +173,12 @@ export function projectRendererAgent(value: unknown, now = Date.now()): Renderer
 }
 
 export function projectRendererAgents(value: unknown, now = Date.now()): RendererAgent[] {
-  if (!Array.isArray(value)) return [];
-  return value
+  const rows = Array.isArray(value)
+    ? value
+    : isRecord(value) && Array.isArray(value.agents)
+      ? value.agents
+      : [];
+  return rows
     .map((agent) => projectRendererAgent(agent, now))
     .filter((agent): agent is RendererAgent => agent != null)
     .sort((left, right) => right.updatedAt - left.updatedAt);
