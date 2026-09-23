@@ -31,6 +31,26 @@ fn wait_for_changes(changes: &AtomicUsize, at_least: usize) {
     );
 }
 
+fn wait_for_quiet_changes(changes: &AtomicUsize) -> usize {
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let quiet_for = Duration::from_millis(CHANNEL_CHANGE_DEBOUNCE_MS * 3 + 20);
+    let mut observed = changes.load(Ordering::SeqCst);
+    let mut unchanged_since = Instant::now();
+    while Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(10));
+        let current = changes.load(Ordering::SeqCst);
+        if current != observed {
+            observed = current;
+            unchanged_since = Instant::now();
+            continue;
+        }
+        if unchanged_since.elapsed() >= quiet_for {
+            return observed;
+        }
+    }
+    panic!("channel-store watcher did not become quiet");
+}
+
 #[test]
 fn labels_match_frozen_grok_clamping_and_connector_defaults() {
     assert_eq!(label_for("slack", None), "Slack");
@@ -108,7 +128,11 @@ fn file_channel_store_observes_external_filesystem_changes_with_debounce() {
     wait_for_changes(&changes, 1);
     assert_eq!(store.read_label("slack").as_deref(), Some("External Slack"));
 
-    let before = changes.load(Ordering::SeqCst);
+    // notify on macOS can deliver trailing directory-create/write events after
+    // the first debounced callback. Establish a quiet boundary before testing
+    // a distinct burst; the production contract remains a 50 ms trailing-edge
+    // debounce within each burst, matching frozen WatchedDirectory behavior.
+    let before = wait_for_quiet_changes(&changes);
     for label in ["One", "Two", "Three"] {
         fs::write(
             slack_dir.join("connection.json"),
@@ -118,9 +142,9 @@ fn file_channel_store_observes_external_filesystem_changes_with_debounce() {
         thread::sleep(Duration::from_millis(10));
     }
     wait_for_changes(&changes, before + 1);
-    thread::sleep(Duration::from_millis(CHANNEL_CHANGE_DEBOUNCE_MS + 60));
+    let after_burst = wait_for_quiet_changes(&changes);
     assert_eq!(
-        changes.load(Ordering::SeqCst),
+        after_burst,
         before + 1,
         "external burst must collapse to one debounced callback"
     );
