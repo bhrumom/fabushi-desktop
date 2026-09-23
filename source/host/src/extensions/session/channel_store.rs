@@ -193,7 +193,6 @@ impl FileChannelStore {
             let _ = fs::remove_file(&temporary);
             return Err(error.into());
         }
-        self.schedule_notify();
         Ok(true)
     }
 
@@ -209,7 +208,6 @@ impl FileChannelStore {
             Err(error) => return Err(error.into()),
         }
         fs::remove_dir_all(platform_dir)?;
-        self.schedule_notify();
         Ok(true)
     }
 
@@ -319,6 +317,12 @@ fn fingerprint_path(root: &Path, path: &Path, hasher: &mut DefaultHasher) {
         && let Ok(duration) = modified.duration_since(UNIX_EPOCH)
     {
         duration.as_nanos().hash(hasher);
+    }
+    if metadata.is_file() {
+        if let Ok(bytes) = fs::read(path) {
+            bytes.hash(hasher);
+        }
+        return;
     }
     if !metadata.is_dir() {
         return;
