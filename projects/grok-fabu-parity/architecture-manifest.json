@@ -9310,12 +9310,21 @@
       "targetPath": "source/host/src/agents/agent_avatar.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "916a7180d5f408be82de482c607e7d79c746fde5",
       "architecturalRole": "host/agents",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/agents/agent_avatar.rs",
+        "source/host/src/host_paths.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_avatar_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Complete Rust port of frozen Grok agent-avatar: conventional filename/rank policy, PNG/JPEG/GIF/WEBP/SVG sniffing, Sand path reanchoring plus canonical directory containment, legacy-avatar derivation/copy, 5 MiB validated reads, bytes/data-url reads, SHA-256 16-hex versioning, bounded LRU-style cache and per-agent invalidation."
     },
     {
       "referencePath": "source/host/agents/agent-clone.ts",
