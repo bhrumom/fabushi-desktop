@@ -2,7 +2,7 @@ name: Desktop Chat Parity CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, refactor/grok-018-architecture-rebuild]
     paths:
       - "desktop/**"
       - "frontend/apps/web/**"
