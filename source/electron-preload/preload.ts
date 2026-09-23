@@ -94,6 +94,27 @@ function hasDevRestart(env: NodeJS.ProcessEnv): boolean {
   return env.SAND_RESTART_EXIT_CODE != null && env.SAND_RESTART_EXIT_CODE.length > 0;
 }
 
+export function encodeAttachmentBytesForNative(bytes: Uint8Array): string {
+  return Buffer.from(bytes).toString("base64");
+}
+
+export function normalizeStagedAttachmentNativeResult(value: unknown): { ok: true; path: string } | { ok: false; reason: "failed" } {
+  if (value != null && typeof value === "object" && !Array.isArray(value) && "path" in value && typeof value.path === "string" && value.path.length > 0) {
+    return { ok: true, path: value.path };
+  }
+  return { ok: false, reason: "failed" };
+}
+
+export function normalizeCommittedAttachmentNativeResult(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  const paths = value.map((item) => typeof item === "string"
+    ? item
+    : item != null && typeof item === "object" && !Array.isArray(item) && "path" in item && typeof item.path === "string"
+      ? item.path
+      : null);
+  return paths.every((path): path is string => typeof path === "string" && path.length > 0) ? paths : null;
+}
+
 export function createDesktopPreloadBridge(options: {
   readonly ipc: PreloadIpcRenderer;
   readonly webFrame: PreloadWebFrame;
@@ -117,8 +138,10 @@ export function createDesktopPreloadBridge(options: {
     getLinkMetadata: (url: string) => edge("getLinkMetadata", { url }),
     async openExternal(url: string) { await edge("openExternal", { url }); },
     async openCloudAgent(bcId: string) { await edge("openCloudAgent", { bcId }); },
-    stageAttachmentBytes: (filename: string, bytes: Uint8Array) => edge("stageAttachmentBytes", { filename, bytes }),
-    commitStagedAttachments: (paths: readonly string[], filenames: readonly string[]) => edge("commitStagedAttachments", { paths, filenames }),
+    stageAttachmentBytes: async (filename: string, bytes: Uint8Array) => normalizeStagedAttachmentNativeResult(await edge("stageAttachmentBytes", { filename, bytesBase64: encodeAttachmentBytesForNative(bytes) })),
+    commitStagedAttachments: async (paths: readonly string[], filenames: readonly string[]) => normalizeCommittedAttachmentNativeResult(await edge("commitStagedAttachments", {
+      items: paths.map((path, index) => ({ path, ...(filenames[index] ? { name: filenames[index] } : {}) })),
+    })),
     async discardStagedAttachment(path: string) { await edge("discardStagedAttachment", { path }); },
     mcp: {
       list: () => ipc.invoke("sand:mcp-list"),

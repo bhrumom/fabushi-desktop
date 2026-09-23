@@ -56,3 +56,25 @@ test('coordinator broker has a single owner and redelivers replacement ports aft
   assert.deepEqual(seen, ['p1', 'p2']);
   claim.release();
 });
+
+
+test('attachment bridge encodes staging bytes and returns only committed paths', async () => {
+  const calls = [];
+  const bridge = createProductionRendererDesktopBridge({
+    invokeNative: async (method, params) => {
+      calls.push({ method, params });
+      if (method === 'stageAttachmentBytes') return { path: '/staged/agent-notes.txt', name: 'agent-notes.txt', sizeBytes: 3 };
+      if (method === 'commitStagedAttachments') return [{ path: '/committed/id-agent-notes.txt', name: 'agent-notes.txt', sizeBytes: 3 }];
+      return null;
+    },
+    subscribeNative: () => () => {},
+    invokeMahayana: async () => null,
+  });
+  const staged = await bridge.stageAttachmentBytes('agent-notes.txt', new Uint8Array([65, 66, 67]));
+  assert.deepEqual(staged, { ok: true, path: '/staged/agent-notes.txt' });
+  const committed = await bridge.commitStagedAttachments([staged.path], ['agent-notes.txt']);
+  assert.deepEqual(committed, ['/committed/id-agent-notes.txt']);
+  assert.equal(calls[0].params.bytesBase64, 'QUJD');
+  assert.equal('bytes' in calls[0].params, false);
+  assert.deepEqual(calls[1].params, { items: [{ path: '/staged/agent-notes.txt', name: 'agent-notes.txt' }] });
+});

@@ -58,6 +58,23 @@ function wrapTransferredPort(port) {
   };
 }
 
+function encodeAttachmentBytesForNative(bytes) {
+  const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes ?? []);
+  return Buffer.from(view).toString('base64');
+}
+
+function normalizeStagedAttachmentNativeResult(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) && typeof value.path === 'string' && value.path
+    ? { ok: true, path: value.path }
+    : { ok: false, reason: 'failed' };
+}
+
+function normalizeCommittedAttachmentNativeResult(value) {
+  if (!Array.isArray(value)) return null;
+  const paths = value.map((item) => typeof item === 'string' ? item : item && typeof item === 'object' && !Array.isArray(item) && typeof item.path === 'string' ? item.path : null);
+  return paths.every((path) => typeof path === 'string' && path.length > 0) ? paths : null;
+}
+
 function createProductionRendererDesktopBridge({
   invokeNative,
   subscribeNative,
@@ -77,8 +94,10 @@ function createProductionRendererDesktopBridge({
     getLinkMetadata: (url) => native('getLinkMetadata', { url }),
     openExternal: async (url) => { await native('openExternal', { url }); },
     openCloudAgent: async (bcId) => { await native('openCloudAgent', { bcId }); },
-    stageAttachmentBytes: (filename, bytes) => native('stageAttachmentBytes', { filename, bytes }),
-    commitStagedAttachments: (paths, filenames) => native('commitStagedAttachments', { paths, filenames }),
+    stageAttachmentBytes: async (filename, bytes) => normalizeStagedAttachmentNativeResult(await native('stageAttachmentBytes', { filename, bytesBase64: encodeAttachmentBytesForNative(bytes) })),
+    commitStagedAttachments: async (paths, filenames) => normalizeCommittedAttachmentNativeResult(await native('commitStagedAttachments', {
+      items: paths.map((path, index) => ({ path, ...(filenames[index] ? { name: filenames[index] } : {}) })),
+    })),
     discardStagedAttachment: async (path) => { await native('discardStagedAttachment', { path }); },
     mcp: {
       list: () => native('getMcpState'),

@@ -50,6 +50,24 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "Preserves the frozen Grok 0.18 account-scoped composer draft store while adapting a shipping race exposed by real desktop attachment staging: a late persistence restore must not overwrite a draft mutation that occurred while the read was in flight. A monotonic mutation revision fences both pre-read and post-read restore settlement without changing account generation semantics, persistence format, or normal draft equality rules. The explicit .ts model import makes this recovered module executable under the Node 24 strip-types contract-test runner while remaining valid under the desktop Bundler TypeScript configuration."
+    },
+    {
+      "referencePath": "source/electron-preload/preload.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c9b7b30158ab2fa9cde1ac62794115c7ed8efe39",
+      "behavioralEvidence": [
+        "source/electron-preload/preload.ts",
+        "desktop/electron/preload.cjs",
+        "desktop/electron/production-renderer-bridge.cjs"
+      ],
+      "testEvidence": [
+        "source/electron-preload/preload-boundaries.test.ts",
+        "desktop/electron/production-renderer-bridge.test.cjs",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. This keeps binary conversion and native response-shape adaptation in the preload bridge instead of leaking native IPC details into the React renderer."
     }
   ]
 }

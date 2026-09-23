@@ -19,6 +19,11 @@ import {
   MAIN_RPC_METHOD_TABLE,
   isMainMethod,
 } from "./main-rpc-runtime.js";
+import {
+  encodeAttachmentBytesForNative,
+  normalizeCommittedAttachmentNativeResult,
+  normalizeStagedAttachmentNativeResult,
+} from "./preload.js";
 
 test("RPC edge uses Grok channel names, envelopes, and event cleanup", async () => {
   const invoked: Array<{ channel: string; payload: unknown }> = [];
@@ -113,4 +118,19 @@ test("main RPC runtime exposes the frozen shared registry", () => {
   assert.equal(isMainMethod("definitelyNotMain"), false);
   assert.equal(MAIN_RPC_METHOD_TABLE.openExternal.args, "object");
   assert.equal(MAIN_RPC_METHOD_TABLE.getWindowState.args, "none");
+});
+
+
+test("attachment preload bridge normalizes native staging and commit contracts", () => {
+  assert.equal(encodeAttachmentBytesForNative(new Uint8Array([65, 66, 67])), "QUJD");
+  assert.deepEqual(normalizeStagedAttachmentNativeResult({ path: "/staged/agent-notes.txt", name: "agent-notes.txt" }), {
+    ok: true,
+    path: "/staged/agent-notes.txt",
+  });
+  assert.deepEqual(normalizeStagedAttachmentNativeResult(null), { ok: false, reason: "failed" });
+  assert.deepEqual(normalizeCommittedAttachmentNativeResult([
+    { path: "/committed/1-agent-notes.txt", name: "agent-notes.txt" },
+    "/committed/2-plain.txt",
+  ]), ["/committed/1-agent-notes.txt", "/committed/2-plain.txt"]);
+  assert.equal(normalizeCommittedAttachmentNativeResult([{ name: "missing-path.txt" }]), null);
 });
