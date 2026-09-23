@@ -1109,10 +1109,12 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       const peer = primaryMahayanaAgentPeer(page);
       await expect(peer).toBeVisible();
       await peer.click();
-      const input = page.getByTestId('messenger-input');
+      const input = page.getByRole('textbox', { name: 'Prompt' });
       await expect(input).toBeVisible();
 
-      const material = await page.getByTestId('grok-agent-composer').evaluate((composer, peerElement) => {
+      const composer = page.locator('.sand-prompt-shell');
+      await expect(composer).toHaveCount(1);
+      const material = await composer.evaluate((composerElement, peerElement) => {
         if (!(peerElement instanceof HTMLElement)) return null;
         const composerStyle = getComputedStyle(composer);
         const peerStyle = getComputedStyle(peerElement);
@@ -1132,9 +1134,10 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
     });
 
     await test.step('Agent uses one canonical workspace and Agent-scoped attachment draft', async () => {
-      const composer = page.getByTestId('grok-agent-composer');
+      const composer = page.locator('.sand-prompt-shell');
+      const transcript = page.getByRole('log', { name: 'Conversation transcript' });
       await expect(composer).toHaveCount(1);
-      await expect(page.getByTestId('message-list')).toHaveCount(1);
+      await expect(transcript).toHaveCount(1);
 
       const fileInput = composer.locator('input[type="file"]');
       await expect(fileInput).toHaveAttribute('multiple', '');
@@ -1145,13 +1148,13 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       });
       await expect(composer.getByText('agent-notes.txt')).toBeVisible();
 
-      const input = page.getByTestId('messenger-input');
+      const input = page.getByRole('textbox', { name: 'Prompt' });
       await expect(input).toHaveAttribute('contenteditable', 'true');
       await input.fill('Use the attached note.');
-      await page.getByTestId('messenger-send').click();
+      await composer.getByRole('button', { name: 'Send message' }).click();
 
       await expect(composer.getByText('agent-notes.txt')).toHaveCount(0);
-      const firstUserTurn = page.locator('[data-agent-message-role="me"]').filter({ hasText: 'Use the attached note.' });
+      const firstUserTurn = transcript.getByRole('article').filter({ hasText: 'Use the attached note.' });
       await expect(firstUserTurn).toHaveCount(1);
       await expect(firstUserTurn.getByText('agent-notes.txt')).toBeVisible();
 
@@ -1160,9 +1163,9 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
         mimeType: 'text/plain',
         buffer: Buffer.from('Attachment-only Agent submission'),
       });
-      await expect(page.getByTestId('messenger-send')).toBeVisible();
-      await page.getByTestId('messenger-send').click();
-      await expect(page.getByTestId('message-list').getByText('attachment-only.txt')).toBeVisible();
+      await expect(composer.getByRole('button', { name: 'Send message' })).toBeVisible();
+      await composer.getByRole('button', { name: 'Send message' }).click();
+      await expect(transcript.getByText('attachment-only.txt')).toBeVisible();
 
       await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
       const palette = page.getByRole('dialog', { name: 'Command palette' });
