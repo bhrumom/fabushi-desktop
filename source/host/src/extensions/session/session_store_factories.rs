@@ -77,13 +77,14 @@ pub fn automation_store_location_for_db_path(db_path: &Path) -> PathBuf {
 
 pub fn workflow_store_locations_for_db_path(db_path: &Path) -> WorkflowStoreLocations {
     let agent_dir = agent_dir_for_db_path(db_path).to_path_buf();
-    let sand_root = agent_dir
+    let global_workflows_dir = agent_dir
         .parent()
         .and_then(Path::parent)
-        .unwrap_or_else(|| Path::new(""));
+        .unwrap_or_else(|| Path::new(""))
+        .join(WORKFLOWS_DIRNAME);
     WorkflowStoreLocations {
         agent_dir,
-        global_workflows_dir: sand_root.join(WORKFLOWS_DIRNAME),
+        global_workflows_dir,
     }
 }
 
