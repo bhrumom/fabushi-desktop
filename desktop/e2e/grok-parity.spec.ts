@@ -1201,7 +1201,11 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       const palette = page.getByRole('dialog', { name: 'Search' });
       await expect(palette).toBeVisible();
       await palette.getByRole('combobox', { name: 'Search' }).fill('agent-notes.txt');
-      await expect(palette.getByText('agent-notes.txt')).toBeVisible();
+      // The deterministic Host does not advertise global media search. The
+      // shipping Search surface must represent that capability contract instead
+      // of fabricating a local attachment index for this focused chat test.
+      await expect(palette.getByText('Search unavailable', { exact: true })).toBeVisible();
+      await expect(palette.getByRole('tab', { name: 'Files', exact: true })).toHaveCount(0);
       await page.keyboard.press('Escape');
     });
 
