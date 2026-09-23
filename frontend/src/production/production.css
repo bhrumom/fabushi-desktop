@@ -354,3 +354,23 @@ button, textarea, input { font: inherit; }
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
+
+
+/* Org Chart occupies the same recovered titlebar band as WindowChrome.
+ * Keep the header as native drag surface, but place its real close control
+ * above the fixed drag carrier and explicitly opt the control out of dragging.
+ */
+.sand-org-chart__header {
+  position: relative;
+  z-index: 5000;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.sand-org-chart__close {
+  position: relative;
+  z-index: 5001;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
