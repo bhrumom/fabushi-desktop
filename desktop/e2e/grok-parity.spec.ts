@@ -105,7 +105,7 @@ function rgbLuma(value: string): number {
 function primaryMahayanaAgentPeer(page: Page) {
   // The shipping Grok sidebar must keep visible Agents directly reachable;
   // Search is covered separately and is not a fallback for a broken roster.
-  return page.getByTestId('messenger-sidebar').getByRole('button', { name: '大乘助手', exact: true });
+  return page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: '大乘助手', exact: true });
 }
 
 test('desktop uses the Fabushi-owned Grok parity surface without a parallel Messenger', async () => {
@@ -1077,8 +1077,8 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(page.locator('.desktop-mode-switch')).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'New', exact: true })).toBeVisible();
       await expect(primaryMahayanaAgentPeer(page)).toBeVisible();
-      await expect(page.getByTestId('messenger-sidebar').getByRole('button', { name: 'Research Bot', exact: true })).toBeVisible();
-      await expect(page.getByTestId('messenger-sidebar').getByRole('button', { name: 'Incident Bot', exact: true })).toHaveCount(0);
+      await expect(page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Research Bot', exact: true })).toBeVisible();
+      await expect(page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Incident Bot', exact: true })).toHaveCount(0);
       await expect(page.getByTestId('profile-navigation-trigger')).toHaveCount(0);
       await expect(page.locator('[data-testid^="legacy-peer-"]')).toHaveCount(0);
 
