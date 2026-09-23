@@ -1,6 +1,7 @@
 pub mod agent_store_worker;
 pub mod agent_worker_pool;
 pub mod conversation_blob_db;
+pub mod conversation_blob_gc;
 pub mod conversation_blob_store;
 pub mod legacy_blob_retirement;
 pub mod worker_blob_store;
@@ -14,6 +15,7 @@ pub use agent_worker_pool::{
     LegacyBlobRetirementVerdict, DEFAULT_BUSY_TIMEOUT_MS, DEFAULT_IDLE_TIMEOUT_MS,
     DEFAULT_MAX_WORKERS, DEFAULT_SWEEP_INTERVAL_MS,
 };
+pub use conversation_blob_gc::{collect_reachable_blob_hex_ids, ReachableBlobWalk};
 pub use conversation_blob_db::{
     open_configured_conversation_blob_db, open_conversation_blob_db,
     read_conversation_blob_migration_state, remove_sqlite_sidecars, run_quick_check,

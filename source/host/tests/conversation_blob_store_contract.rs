@@ -106,7 +106,7 @@ fn production_worker_backend_persists_blobs_finds_roots_and_closes_sqlite_store(
         ))
         .expect("gc result"),
         ConversationGarbageCollectionOutcome::Skipped {
-            reason: "proto-blob-reference-metadata-not-migrated".into(),
+            reason: "unresolved-refs".into(),
             unresolved_proto_refs: 1,
         }
     );
@@ -154,6 +154,146 @@ fn production_worker_backend_clears_sha_valid_stale_checkpoint_roots() {
     assert_eq!(
         block_on_ready(store.get_blob(&ctx, &retained_id)).expect("read retained"),
         Some(retained_root)
+    );
+
+    block_on_ready(pool.close_store(&path));
+    cleanup(&path);
+}
+
+#[test]
+fn production_worker_backend_collects_unreachable_blobs_from_generated_proto_metadata() {
+    let path = test_db_path("conversation-gc");
+    let pool = Arc::new(AgentWorkerPool::new(ConversationBlobWorkerBackend::default()));
+    let store = WorkerBlobStore::new(Arc::clone(&pool), "agent-gc", &path, None);
+    let ctx = ();
+
+    let reachable_data = b"reachable-json".to_vec();
+    let reachable_id = digest_id(&reachable_data);
+    block_on_ready(store.set_blob(&ctx, &reachable_id, &reachable_data))
+        .expect("set reachable leaf");
+
+    let orphan_data = b"orphan".to_vec();
+    let orphan_id = digest_id(&orphan_data);
+    block_on_ready(store.set_blob(&ctx, &orphan_id, &orphan_data)).expect("set orphan");
+
+    let mut root = Vec::new();
+    push_length_delimited(1, &reachable_id, &mut root);
+    let root_id = digest_id(&root);
+    block_on_ready(store.set_blob(&ctx, &root_id, &root)).expect("set root");
+
+    let outcome = block_on_ready(pool.collect_conversation_garbage(
+        "agent-gc",
+        &path,
+        &to_hex(&root_id),
+        0,
+        None,
+    ))
+    .expect("collect garbage");
+    match outcome {
+        ConversationGarbageCollectionOutcome::Collected {
+            deleted_rows,
+            retained_pending_rows,
+            ..
+        } => {
+            assert_eq!(deleted_rows, 1);
+            assert_eq!(retained_pending_rows, 0);
+        }
+        other => panic!("expected collected outcome, got {other:?}"),
+    }
+
+    assert_eq!(
+        block_on_ready(store.get_blob(&ctx, &root_id)).expect("root retained"),
+        Some(root)
+    );
+    assert_eq!(
+        block_on_ready(store.get_blob(&ctx, &reachable_id)).expect("reachable retained"),
+        Some(reachable_data)
+    );
+    assert_eq!(
+        block_on_ready(store.get_blob(&ctx, &orphan_id)).expect("orphan collected"),
+        None
+    );
+
+    block_on_ready(pool.close_store(&path));
+    cleanup(&path);
+}
+
+#[test]
+fn production_worker_backend_preserves_fail_closed_gc_on_unresolved_proto_refs() {
+    let path = test_db_path("conversation-gc-unresolved");
+    let pool = Arc::new(AgentWorkerPool::new(ConversationBlobWorkerBackend::default()));
+    let store = WorkerBlobStore::new(Arc::clone(&pool), "agent-gc-unresolved", &path, None);
+    let ctx = ();
+
+    let turn_id = vec![0x42; 32];
+    block_on_ready(store.set_blob(&ctx, &turn_id, b"not-a-conversation-turn"))
+        .expect("set malformed proto referent");
+    let orphan_id = digest_id(b"must-survive-skipped-gc");
+    block_on_ready(store.set_blob(&ctx, &orphan_id, b"must-survive-skipped-gc"))
+        .expect("set orphan");
+
+    let mut root = Vec::new();
+    push_length_delimited(8, &turn_id, &mut root);
+    let root_id = digest_id(&root);
+    block_on_ready(store.set_blob(&ctx, &root_id, &root)).expect("set root");
+
+    assert_eq!(
+        block_on_ready(pool.collect_conversation_garbage(
+            "agent-gc-unresolved",
+            &path,
+            &to_hex(&root_id),
+            0,
+            None,
+        ))
+        .expect("gc result"),
+        ConversationGarbageCollectionOutcome::Skipped {
+            reason: "unresolved-refs".into(),
+            unresolved_proto_refs: 1,
+        }
+    );
+    assert_eq!(
+        block_on_ready(store.get_blob(&ctx, &orphan_id)).expect("skipped gc keeps orphan"),
+        Some(b"must-survive-skipped-gc".to_vec())
+    );
+
+    block_on_ready(pool.close_store(&path));
+    cleanup(&path);
+}
+
+#[test]
+fn production_worker_backend_does_not_retain_intentionally_unwalked_summary_archive_edges() {
+    let path = test_db_path("conversation-gc-summary-archive");
+    let pool = Arc::new(AgentWorkerPool::new(ConversationBlobWorkerBackend::default()));
+    let store = WorkerBlobStore::new(Arc::clone(&pool), "agent-gc-summary", &path, None);
+    let ctx = ();
+
+    let archive_data = b"collectable-summary-archive".to_vec();
+    let archive_id = digest_id(&archive_data);
+    block_on_ready(store.set_blob(&ctx, &archive_id, &archive_data)).expect("set archive");
+
+    let mut root = Vec::new();
+    push_length_delimited(11, &archive_id, &mut root);
+    let root_id = digest_id(&root);
+    block_on_ready(store.set_blob(&ctx, &root_id, &root)).expect("set root");
+
+    let outcome = block_on_ready(pool.collect_conversation_garbage(
+        "agent-gc-summary",
+        &path,
+        &to_hex(&root_id),
+        0,
+        None,
+    ))
+    .expect("collect summary archive");
+    assert!(matches!(
+        outcome,
+        ConversationGarbageCollectionOutcome::Collected {
+            deleted_rows: 1,
+            ..
+        }
+    ));
+    assert_eq!(
+        block_on_ready(store.get_blob(&ctx, &archive_id)).expect("archive collected"),
+        None
     );
 
     block_on_ready(pool.close_store(&path));

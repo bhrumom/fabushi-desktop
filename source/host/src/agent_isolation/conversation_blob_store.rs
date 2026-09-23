@@ -10,6 +10,7 @@ use super::agent_worker_pool::{
     AgentBlobWorkerBackend, AgentWorkerFuture, ConversationGarbageCollectionOutcome,
     LegacyBlobRetirementVerdict,
 };
+use super::conversation_blob_gc::collect_reachable_blob_hex_ids;
 use super::conversation_blob_db::{
     open_conversation_blob_db, read_conversation_blob_migration_state,
     set_conversation_blob_migration_state, ConversationBlobDbError,
@@ -20,6 +21,8 @@ use super::legacy_blob_retirement::verify_legacy_blob_retirement;
 const MAX_ROOT_BLOB_BYTES: usize = 8 * 1024 * 1024;
 const MAX_STALE_ROOT_SCAN_BYTES: usize = 64 * 1024 * 1024;
 const MAX_TRACKED_RECENT_WRITES: usize = 16_384;
+const VACUUM_MIN_DELETED_BYTES: u64 = 64 * 1024 * 1024;
+const VACUUM_DELETED_SHARE_DENOMINATOR: u64 = 8;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConversationBlobStoreError {
@@ -241,19 +244,125 @@ impl ConversationBlobStoreDb {
     }
 
     pub fn collect_garbage(
-        &self,
+        &mut self,
         retained_root_id_hex: &str,
-        _pending_write_retention_ms: u64,
+        pending_write_retention_ms: u64,
     ) -> Result<ConversationGarbageCollectionOutcome, ConversationBlobStoreError> {
-        if self.get_blob_by_hex_id(retained_root_id_hex)?.is_none() {
+        let Some(root_bytes) = self.get_blob_by_hex_id(retained_root_id_hex)? else {
             return Ok(ConversationGarbageCollectionOutcome::Skipped {
                 reason: "no-root".into(),
                 unresolved_proto_refs: 0,
             });
+        };
+
+        let mut lookup_error = None;
+        let walk = collect_reachable_blob_hex_ids(&root_bytes, |id| {
+            match self.get_blob_by_hex_id(id) {
+                Ok(value) => value,
+                Err(error) => {
+                    if lookup_error.is_none() {
+                        lookup_error = Some(error);
+                    }
+                    None
+                }
+            }
+        });
+        if let Some(error) = lookup_error {
+            return Err(error);
         }
-        Ok(ConversationGarbageCollectionOutcome::Skipped {
-            reason: "proto-blob-reference-metadata-not-migrated".into(),
-            unresolved_proto_refs: 1,
+        let walk = match walk {
+            Ok(walk) => walk,
+            Err(()) => {
+                return Ok(ConversationGarbageCollectionOutcome::Skipped {
+                    reason: "root-undecodable".into(),
+                    unresolved_proto_refs: 0,
+                });
+            }
+        };
+        if walk.unresolved_proto_refs > 0 {
+            return Ok(ConversationGarbageCollectionOutcome::Skipped {
+                reason: "unresolved-refs".into(),
+                unresolved_proto_refs: walk.unresolved_proto_refs,
+            });
+        }
+
+        let floor = now_ms().saturating_sub(pending_write_retention_ms);
+        let mut deletable = Vec::new();
+        let mut deleted_bytes = 0u64;
+        let mut live_rows = 0usize;
+        let mut live_bytes = 0u64;
+        let mut retained_pending_rows = 0usize;
+        {
+            let mut statement = self
+                .connection
+                .prepare("SELECT id, length(data) FROM blobs")?;
+            let rows = statement.query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+            })?;
+            for row in rows {
+                let (id, raw_len) = row?;
+                let len = raw_len.max(0) as u64;
+                if id == retained_root_id_hex || walk.reachable_hex_ids.contains(&id) {
+                    live_rows += 1;
+                    live_bytes = live_bytes.saturating_add(len);
+                    continue;
+                }
+                if self
+                    .recent_write_ms_by_hex_id
+                    .get(&id)
+                    .is_some_and(|last_write_ms| *last_write_ms > floor)
+                {
+                    retained_pending_rows += 1;
+                    live_rows += 1;
+                    live_bytes = live_bytes.saturating_add(len);
+                    continue;
+                }
+                deleted_bytes = deleted_bytes.saturating_add(len);
+                deletable.push(id);
+            }
+        }
+
+        if !deletable.is_empty() {
+            self.connection.execute_batch("BEGIN IMMEDIATE")?;
+            let delete_result = (|| -> Result<(), rusqlite::Error> {
+                let mut statement = self
+                    .connection
+                    .prepare("DELETE FROM blobs WHERE id = ?1")?;
+                for id in &deletable {
+                    let _ = statement.execute(params![id])?;
+                }
+                Ok(())
+            })();
+            match delete_result {
+                Ok(()) => self.connection.execute_batch("COMMIT")?,
+                Err(error) => {
+                    let _ = self.connection.execute_batch("ROLLBACK");
+                    return Err(error.into());
+                }
+            }
+            for id in &deletable {
+                self.recent_write_ms_by_hex_id.remove(id);
+            }
+        }
+
+        let total_scanned_bytes = deleted_bytes.saturating_add(live_bytes);
+        let vacuumed = deleted_bytes >= VACUUM_MIN_DELETED_BYTES
+            || (deleted_bytes > 0
+                && deleted_bytes.saturating_mul(VACUUM_DELETED_SHARE_DENOMINATOR)
+                    >= total_scanned_bytes);
+        if vacuumed {
+            self.connection.execute_batch("VACUUM")?;
+        }
+        self.connection
+            .execute_batch("PRAGMA wal_checkpoint(TRUNCATE)")?;
+
+        Ok(ConversationGarbageCollectionOutcome::Collected {
+            deleted_rows: deletable.len(),
+            deleted_bytes,
+            live_rows,
+            live_bytes,
+            retained_pending_rows,
+            vacuumed,
         })
     }
 
