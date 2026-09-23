@@ -682,10 +682,17 @@ fn drain_ready_runtime_events(
     stdout: &Mutex<io::Stdout>,
     gateway_events: &GatewayEventHub,
 ) -> io::Result<()> {
+    // Product-local events enqueued by a just-completed command must cross the
+    // exact same Grok projection boundary as events delivered by the background
+    // PUSH worker. Writing this synchronous drain raw creates a second event
+    // protocol and drops compatibility metadata such as attachment contexts.
+    let event_source = host.feature_event_source();
     loop {
-        let event = host.receive_feature_event(Duration::ZERO);
-        match event {
-            Ok(Some(event)) => write_runtime_event(stdout, gateway_events, event)?,
+        match event_source.receive(Duration::ZERO) {
+            Ok(Some(event)) => {
+                let event = event_source.project_grok_gateway_event(&event);
+                write_runtime_event(stdout, gateway_events, event)?;
+            }
             Ok(None) => return Ok(()),
             Err(error) => {
                 eprintln!("failed to drain Mahayana runtime event: {error}");
