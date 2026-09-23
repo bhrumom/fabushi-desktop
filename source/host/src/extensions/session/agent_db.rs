@@ -58,6 +58,14 @@ const KV_PROFILE_SNAPSHOT: &str = "agentProfilePromptSnapshot";
 const KV_ORIGIN: &str = "origin";
 const KV_INTRODUCTION: &str = "introductionPending";
 const KV_PURPOSE: &str = "purpose";
+const KV_PARTNERS: &str = "conversationPartners";
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AgentMetadataProjection {
+    pub agent_id: String,
+    pub created_at: f64,
+    pub latest_root_blob_id: Vec<u8>,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AgentDbSerdeSnapshot {
@@ -117,6 +125,93 @@ pub fn read_persisted_latest_root_blob_id(
         return Ok(Vec::new());
     };
     decode_hex(root_hex).map_err(AgentDbProjectionError::LatestRootHex)
+}
+
+pub fn read_persisted_agent_metadata_projection(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<Option<AgentMetadataProjection>, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let Some(metadata) = read_metadata_json(&db)? else {
+        return Ok(None);
+    };
+    let agent_id = metadata
+        .get("agentId")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let created_at = metadata
+        .get("createdAt")
+        .and_then(serde_json::Value::as_f64)
+        .filter(|value| value.is_finite())
+        .unwrap_or_default();
+    let latest_root_blob_id = metadata
+        .get("latestRootBlobId")
+        .and_then(serde_json::Value::as_str)
+        .map(decode_hex)
+        .transpose()
+        .map_err(AgentDbProjectionError::LatestRootHex)?
+        .unwrap_or_default();
+    Ok(Some(AgentMetadataProjection {
+        agent_id,
+        created_at,
+        latest_root_blob_id,
+    }))
+}
+
+pub fn read_persisted_agent_origin(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<String, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    Ok(if read_kv(&db, KV_ORIGIN)?.as_deref() == Some("dev") {
+        "dev".to_string()
+    } else {
+        "user".to_string()
+    })
+}
+
+pub fn read_persisted_agent_purpose(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<Option<String>, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    Ok(read_kv(&db, KV_PURPOSE)?
+        .filter(|value| valid_agent_purpose(value)))
+}
+
+pub fn read_persisted_conversation_partner_ids(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<Vec<String>, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let Some(raw) = read_kv(&db, KV_PARTNERS)? else {
+        return Ok(Vec::new());
+    };
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(&raw) else {
+        return Ok(Vec::new());
+    };
+    Ok(value
+        .as_array()
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(serde_json::Value::as_str)
+                .map(ToOwned::to_owned)
+                .collect()
+        })
+        .unwrap_or_default())
+}
+
+fn valid_agent_purpose(value: &str) -> bool {
+    let mut chars = value.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    first.is_ascii_lowercase()
+        && chars.all(|ch| {
+            ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '_' || ch == '-'
+        })
 }
 
 pub fn read_persisted_agent_name(

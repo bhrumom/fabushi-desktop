@@ -41,6 +41,8 @@ use super::pending_card_sweeps::{
     expire_pending_auto_review_approval_entries,
     expire_pending_local_tool_permission_ask_entries,
 };
+use super::session_roster::{list_agents, summarize_agent_by_id};
+use super::session_summaries::AgentSummary;
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
@@ -433,6 +435,30 @@ impl ProductionSessionWorkers {
             if_pending_before_ms,
         )
         .map_err(|error| error.to_string())
+    }
+
+    pub fn list_agent_summaries(
+        &self,
+        active_agent_id: Option<&str>,
+    ) -> Result<Vec<AgentSummary>, String> {
+        list_agents(
+            &self.agents_root,
+            self.busy_timeout_ms,
+            active_agent_id,
+        )
+    }
+
+    pub fn summarize_agent_by_id(
+        &self,
+        agent_id: &str,
+        active_agent_id: Option<&str>,
+    ) -> Result<Option<AgentSummary>, String> {
+        summarize_agent_by_id(
+            &self.agents_root,
+            self.busy_timeout_ms,
+            agent_id,
+            active_agent_id,
+        )
     }
 
     pub fn create_agent_blob_store(
