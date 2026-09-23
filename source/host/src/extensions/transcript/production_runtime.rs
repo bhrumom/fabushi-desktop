@@ -167,8 +167,11 @@ impl ProductionTranscriptRuntime {
                     .get("operationId")
                     .and_then(Value::as_str)
                     .map(str::trim)
-                    .filter(|value| !value.is_empty());
-                let echo_entry_id = operation_id.map(|value| format!("{value}:user"));
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned);
+                let echo_entry_id = operation_id
+                    .as_deref()
+                    .map(|value| format!("{value}:user"));
                 let pending = {
                     let RuntimeState {
                         pipeline, ledger, ..
@@ -191,7 +194,7 @@ impl ProductionTranscriptRuntime {
                     pipeline.mark_send_accepted(ledger, Some(client_nonce));
                 }
                 if let (Some(agent_id), Some(operation_id)) =
-                    (agent_id.as_deref(), operation_id)
+                    (agent_id.as_deref(), operation_id.as_deref())
                 {
                     state.lifecycle.record_request_id(agent_id, operation_id);
                 }
