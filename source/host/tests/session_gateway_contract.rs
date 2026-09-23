@@ -2,6 +2,7 @@ use std::fs;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
 };
@@ -123,9 +124,22 @@ fn production_gateway_cuts_over_safe_agent_lifecycle_mutations_to_rust_session_o
     let agents = root.join("agents");
     let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
     let record = runtime
-        .materialize_new_session(None, "user", None)
+        .materialize_new_session(
+            Some(&SandAgentProfile {
+                name: "Fresh Agent".into(),
+                description: String::new(),
+                title: String::new(),
+                avatar_shape: String::new(),
+                avatar_color: String::new(),
+            }),
+            "user",
+            None,
+        )
         .expect("agent");
 
+    // Frozen Grok roster semantics intentionally hide a completely blank
+    // default "Grok" agent. Give this lifecycle fixture a real identity so
+    // listAgents tests the shipping cutover without weakening that filter.
     let listed = dispatch(&runtime, "listAgents", json!({}));
     assert_eq!(listed.as_array().map(Vec::len), Some(1));
     assert_eq!(listed[0]["id"], record.id);
