@@ -118,7 +118,10 @@ fn auth_service_renews_stores_emits_first_credential_and_machine_id() {
     }));
 
     for _ in 0..100 {
-        if service.peek_access_token().is_some() {
+        if service.peek_access_token().is_some()
+            && service.get_last_renewal_event().is_some()
+            && events.lock().unwrap().len() == 1
+        {
             break;
         }
         thread::sleep(Duration::from_millis(5));
@@ -128,7 +131,11 @@ fn auth_service_renews_stores_emits_first_credential_and_machine_id() {
     assert_eq!(service.get_machine_id().unwrap(), "machine-test");
     let last = service.get_last_renewal_event().expect("renewal event");
     assert!(last.is_first_credential);
-    assert_eq!(events.lock().unwrap().len(), 1);
+    assert_eq!(
+        events.lock().unwrap().len(),
+        1,
+        "the subscribed first-renewal listener must observe exactly one event"
+    );
     assert!(service.unsubscribe_from_renewal(subscription));
     assert!(logs.lock().unwrap()[0].contains("sole inference-credential source"));
 
