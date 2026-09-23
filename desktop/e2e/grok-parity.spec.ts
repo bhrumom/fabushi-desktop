@@ -59,18 +59,6 @@ async function completeBrowserLogin(page: Page): Promise<void> {
       && typeof candidate.desktop?.onboarding?.setSeen === 'function';
   }, { timeout: 15_000 });
 
-  // Focused chat E2E exercises the production account -> Coordinator -> Host
-  // path, not the first-run tutorial. Persist the public onboarding preference
-  // before login so the signed-in shell can proceed directly to roster hydration.
-  await page.evaluate(async () => {
-    const candidate = window as unknown as {
-      desktop: {
-        onboarding: { setSeen(seen: boolean): Promise<unknown> };
-      };
-    };
-    await candidate.desktop.onboarding.setSeen(true);
-  });
-
   const accountKind = async (): Promise<string> => page.evaluate(async () => {
     const candidate = window as unknown as {
       desktop: {
@@ -91,6 +79,42 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   }
 
   await expect.poll(accountKind, { timeout: 20_000 }).toBe('logged-in');
+  // Onboarding persistence is account-scoped. Complete the shipping login
+  // transition first, then persist the public preference for the authenticated
+  // account and verify the mirror before recreating the renderer. This avoids
+  // writing into a departing anonymous scope while still exercising the real
+  // cursorAccount -> Electron main -> Coordinator/Host authentication path.
+  await page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        onboarding: {
+          setSeen(seen: boolean): Promise<unknown>;
+        };
+      };
+    };
+    await candidate.desktop.onboarding.setSeen(true);
+  });
+  const onboardingSeen = async (): Promise<boolean> => page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        onboarding: {
+          getSeen(): Promise<boolean>;
+        };
+      };
+    };
+    return (await candidate.desktop.onboarding.getSeen()) === true;
+  });
+  await expect.poll(onboardingSeen, { timeout: 10_000 }).toBe(true);
+
+  // The production renderer resolves onboarding at account/bootstrap boundaries;
+  // reload only the renderer after persisting the authenticated account setting.
+  // Main/Coordinator/Host and the authenticated session remain live.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => {
+    const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown } } };
+    return typeof candidate.desktop?.cursorAccount?.getStatus === 'function';
+  }, { timeout: 15_000 });
+  await expect.poll(accountKind, { timeout: 10_000 }).toBe('logged-in');
   await expect(page.getByRole('main', { name: 'Grok Bot', exact: true })).toBeHidden({ timeout: 10_000 });
 
   const fatal = page.locator('.sand-error-boundary--app');
