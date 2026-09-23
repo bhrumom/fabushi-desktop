@@ -3,6 +3,7 @@ use std::sync::Arc;
 use serde_json::{Value, json};
 
 use crate::extensions::inference::provider_session::ProviderSessionError;
+use crate::r#box::box_file_transfer::{FileTransferAccessor, WriteExecResult};
 use crate::r#box::box_shell_command::{
     HostShellArgsInput, build_host_shell_args,
 };
@@ -11,7 +12,7 @@ use crate::r#box::generated_production::{
     ProductionReadArgs, ProductionReadOutput, ProductionReadResult,
 };
 use crate::runner::box_tool_access::{
-    RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest,
+    RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest, RunnerBoxWriteRequest,
 };
 
 use super::forever_box_service::ForeverBoxService;
@@ -159,4 +160,29 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
             }
         })
     }
+
+    fn execute_write(
+        &self,
+        request: RunnerBoxWriteRequest,
+    ) -> Result<(), ProviderSessionError> {
+        let mut accessor = self.production_accessor()?;
+        let result = accessor
+            .execute_write(&(), &request.path, &request.data, &request.tool_call_id)
+            .map_err(|error| {
+                ProviderSessionError::Tool(format!("Box Write failed: {error}"))
+            })?;
+        match result {
+            WriteExecResult::Success => Ok(()),
+            WriteExecResult::Error { error } => Err(ProviderSessionError::Tool(format!(
+                "Box Write failed: {error}"
+            ))),
+            WriteExecResult::Rejected { reason } => Err(ProviderSessionError::Tool(format!(
+                "Box Write rejected: {reason}"
+            ))),
+            WriteExecResult::Other { case } => Err(ProviderSessionError::Tool(format!(
+                "Box Write failed: {case}"
+            ))),
+        }
+    }
+
 }

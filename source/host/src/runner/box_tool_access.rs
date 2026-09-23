@@ -7,6 +7,7 @@ use crate::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
 
+use super::large_output_spill::{MCP_TEXT_FILE_THRESHOLD_BYTES, is_large_output_spill_enabled, maybe_spill_mcp_text_result};
 use super::routed_provider_runtime::RoutedToolBridge;
 
 pub const RUNNER_BOX_TOOL_PROVIDER: &str = "mahayana-box";
@@ -29,6 +30,13 @@ pub struct RunnerBoxReadRequest {
     pub encoding_hint: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RunnerBoxWriteRequest {
+    pub path: String,
+    pub data: Vec<u8>,
+    pub tool_call_id: String,
+}
+
 /// Host-owned Box resource port consumed by the independent Runner.
 ///
 /// Runner owns the model-facing tool names and schemas. Host supplies only
@@ -44,6 +52,11 @@ pub trait RunnerBoxResourcePort: Send + Sync {
         &self,
         request: RunnerBoxReadRequest,
     ) -> Result<Value, ProviderSessionError>;
+
+    fn execute_write(
+        &self,
+        request: RunnerBoxWriteRequest,
+    ) -> Result<(), ProviderSessionError>;
 }
 
 pub fn runner_box_tool_definitions() -> Vec<RoutedToolDefinition> {
@@ -220,7 +233,17 @@ impl RoutedToolBridge for RunnerBoxToolBridge {
         tool_call_id: &str,
     ) -> Result<Value, ProviderSessionError> {
         if !Self::is_box_tool(tool) {
-            return self.upstream.call_tool(tool, args, tool_call_id);
+            let result = self.upstream.call_tool(tool, args, tool_call_id)?;
+            return Ok(if is_large_output_spill_enabled() {
+                maybe_spill_mcp_text_result(
+                    self.box_resources.as_ref(),
+                    result,
+                    tool_call_id,
+                    MCP_TEXT_FILE_THRESHOLD_BYTES,
+                )
+            } else {
+                result
+            });
         }
         match tool.name.as_str() {
             RUNNER_BOX_SHELL_TOOL_NAME => self

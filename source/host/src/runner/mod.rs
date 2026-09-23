@@ -45,6 +45,7 @@ pub mod start_of_turn_ack_reminder_middleware;
 pub mod turn_shape;
 pub mod routed_provider_runtime;
 pub mod coordinator_tool_relay;
+pub mod large_output_spill;
 pub mod box_tool_access;
 pub mod production_turn_run_shell_adapter;
 pub mod turn_agent_composition;

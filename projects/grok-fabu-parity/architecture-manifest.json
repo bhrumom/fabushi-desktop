@@ -14725,12 +14725,23 @@
       "targetPath": "source/host/src/runner/large_output_spill.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "3d236f89e5e6b2cc1317b0ceddf4620aaddfbe70",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/large_output_spill.rs",
+        "source/host/src/runner/box_tool_access.rs",
+        "source/host/src/extensions/forever_box/runner_tools.rs",
+        "source/host/src/box/generated_production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/large_output_spill_contract.rs",
+        "source/host/tests/runner_box_tool_composition_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Runner now preserves Grok large MCP text spill semantics in the shipping routed-tool path: 40 KB threshold, SAND_DISABLE_LARGE_OUTPUT_SPILL kill switch, 1,000,000-character cap, one .sand/tools output-location replacement, non-text preservation, and fail-open inline fallback. Writes cross RunnerBoxResourcePort into the production ForeverBox accessor and generated ExecService execute_write rather than a test-only filesystem shim."
     },
     {
       "referencePath": "source/host/runner/production-turn-agent-owner.ts",

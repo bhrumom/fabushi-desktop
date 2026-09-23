@@ -6,6 +6,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 use mahayana_host_runtime::runner::box_tool_access::{
     RUNNER_BOX_READ_TOOL_NAME, RUNNER_BOX_SHELL_TOOL_NAME, RUNNER_BOX_TOOL_PROVIDER,
     RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest, RunnerBoxToolBridge,
+    RunnerBoxWriteRequest,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use serde_json::{Value, json};
@@ -39,6 +40,7 @@ impl RoutedToolBridge for Upstream {
 struct BoxPort {
     shells: Mutex<Vec<RunnerBoxShellRequest>>,
     reads: Mutex<Vec<RunnerBoxReadRequest>>,
+    writes: Mutex<Vec<RunnerBoxWriteRequest>>,
 }
 
 impl RunnerBoxResourcePort for BoxPort {
@@ -56,6 +58,14 @@ impl RunnerBoxResourcePort for BoxPort {
     ) -> Result<Value, ProviderSessionError> {
         self.reads.lock().expect("read calls").push(request.clone());
         Ok(json!({"kind":"success","path":request.path}))
+    }
+
+    fn execute_write(
+        &self,
+        request: RunnerBoxWriteRequest,
+    ) -> Result<(), ProviderSessionError> {
+        self.writes.lock().expect("write calls").push(request);
+        Ok(())
     }
 }
 
