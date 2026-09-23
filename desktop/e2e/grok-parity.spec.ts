@@ -1206,10 +1206,11 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       // of fabricating a local attachment index for this focused chat test.
       await expect(palette.getByText('Search unavailable', { exact: true })).toBeVisible();
       await expect(palette.getByRole('tab', { name: 'Files', exact: true })).toHaveCount(0);
-      await page.keyboard.press('Escape');
-      // The command palette owns a full-screen pointer-intercepting backdrop.
-      // Do not advance into Agent info until the shipping dialog has actually
-      // unmounted; otherwise a legitimate close-details click can race it.
+      // Send Escape to the shipping Search combobox itself. The palette owns
+      // the keyboard dismissal contract; targeting the focused control avoids a
+      // page-level key race and lets us wait for the pointer-blocking backdrop
+      // to unmount before opening Agent info.
+      await palette.getByRole('combobox', { name: 'Search' }).press('Escape');
       await expect(palette).toHaveCount(0);
     });
 
