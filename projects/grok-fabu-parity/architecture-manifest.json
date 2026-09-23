@@ -12373,14 +12373,14 @@
         "desktop/e2e/grok-parity.spec.ts",
         "source/host/tests/agent_lifecycle_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, Rust materialization with serialized mint ownership, durable recovery/maintenance, AgentDb state, transcript projection/mutations, profile/avatar, channels, roster, durable ConversationState outline and conversation capacity. Shipping prepare_existing_agent backfills/repairs from any resolvable durable outline without making broken historical roots fatal, and successful root recovery synchronizes the canonical profile name into AgentDb metadata. Remaining parity includes complete ConversationState todo/summary projection, workflows/automations/memory, box handoff production deps and watcher/cross-extension cleanup parity."
+      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels and roster. Shipping prepare_existing_agent performs recovery, backfill/hidden repair and one-time maintenance before Runner inference. Remaining parity is workflows/automations/memory composition, box handoff production deps, watcher/cross-extension cleanup and the remaining Session facade lifecycle features."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
       "targetPath": "source/host/src/extensions/session/session_conversation_state.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "06f93078713bcdc834c325e8f70edfc3a13f8355",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12400,7 +12400,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/session_gateway_contract.rs"
       ],
-      "notes": "Rust Session conversation-state owner provides transcript entries/page/window/tail/thread reads and durable ConversationStateStructure outline resolution with complete-turn fencing. It validates structural refs, decodes agent/shell turn indirection plus user/assistant/thinking/tool/send-message/task/computer-screenshot semantics, drives shipping getConversationOutline, and now feeds production maintenance backfill/hidden-repair. Final is withheld until todo/summary/full ConversationState materialization and open-session disposal parity are represented."
+      "notes": "Final Rust Session conversation-state owner matches the frozen read boundary: transcript entries/page/window/tail/thread reads, complete structural-ref fencing, and durable ConversationState materialization. Production now resolves every turn plus TodoItem id/content/status/timestamps/dependencies and ConversationSummary text before deriving the outline; missing or malformed referenced blobs fail closed. ProductionSessionWorkers exposes both full-state and outline reads, while Rust scoped DB/blob ownership replaces the TypeScript openSession/dispose wrapper without changing observable behavior."
     },
     {
       "referencePath": "source/host/extensions/session/session-diagnostics.ts",
@@ -12448,7 +12448,7 @@
         "source/host/tests/session_extension_contract.rs",
         "source/host/tests/agent_db_metadata_contract.rs"
       ],
-      "notes": "Rust shipping maintenance performs missing-root recovery with structural-ref validation/CAS, durable-outline transcript backfill, one-time hidden recovered-user repair, stale-root cleanup and legacy blob retirement. Recovery now synchronizes the canonical profile.json name back into AgentDb metadata, and Session extension startup composes cleanupLegacyGroupMemberDirs through runSessionMaintenance-style sequential failure isolation. Final remains withheld for operation-level maintenance diagnostic/report parity and complete ConversationState todo/summary materialization."
+      "notes": "Rust shipping maintenance performs missing-root recovery with structural-ref validation/CAS, durable-outline transcript backfill, one-time hidden recovered-user repair, stale-root cleanup and legacy blob retirement. Recovery synchronizes profile.json name into AgentDb metadata; Session extension startup composes cleanupLegacyGroupMemberDirs through sequential failure isolation. Full ConversationState turn/todo/summary materialization is now production-owned; final remains withheld only for operation-level maintenance diagnostic/report parity."
     },
     {
       "referencePath": "source/host/extensions/session/session-materialization.ts",

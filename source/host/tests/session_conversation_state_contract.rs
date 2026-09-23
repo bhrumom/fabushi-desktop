@@ -253,7 +253,24 @@ fn durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semant
     futures::executor::block_on(store.set_blob(&(), &shell_turn_id, &shell_turn_wrapper))
         .expect("shell turn");
 
+    let mut todo = Vec::new();
+    push_string(1, "todo-1", &mut todo);
+    push_string(2, "finish parity", &mut todo);
+    push_varint(3, 2, &mut todo);
+    push_varint(4, 100, &mut todo);
+    push_varint(5, 200, &mut todo);
+    push_string(6, "dependency-a", &mut todo);
+    let todo_id = blob_id(&todo);
+    futures::executor::block_on(store.set_blob(&(), &todo_id, &todo)).expect("todo");
+
+    let mut summary = Vec::new();
+    push_string(1, "conversation summary", &mut summary);
+    let summary_id = blob_id(&summary);
+    futures::executor::block_on(store.set_blob(&(), &summary_id, &summary)).expect("summary");
+
     let mut root_blob = Vec::new();
+    push_bytes(3, &todo_id, &mut root_blob);
+    push_bytes(6, &summary_id, &mut root_blob);
     push_bytes(8, &agent_turn_id, &mut root_blob);
     push_bytes(8, &shell_turn_id, &mut root_blob);
     let root_id = blob_id(&root_blob);
@@ -264,6 +281,20 @@ fn durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semant
         &[],
         &root_id,
     ).expect("root CAS"));
+
+    let resolved = runtime
+        .read_agent_conversation_state(&record.id)
+        .expect("resolved state")
+        .expect("materialized state");
+    assert_eq!(resolved.turns.len(), 2);
+    assert_eq!(resolved.todos.len(), 1);
+    assert_eq!(resolved.todos[0].id, "todo-1");
+    assert_eq!(resolved.todos[0].content, "finish parity");
+    assert_eq!(resolved.todos[0].status, 2);
+    assert_eq!(resolved.todos[0].created_at, 100);
+    assert_eq!(resolved.todos[0].updated_at, 200);
+    assert_eq!(resolved.todos[0].dependencies, vec!["dependency-a".to_string()]);
+    assert_eq!(resolved.summary.as_deref(), Some("conversation summary"));
 
     let outline = runtime.read_agent_outline(&record.id).expect("outline");
     assert_eq!(outline.len(), 6);

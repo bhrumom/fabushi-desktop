@@ -111,6 +111,23 @@ pub struct ConversationOutlineTurn {
     pub items: Vec<ConversationOutlineItem>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConversationTodoItem {
+    pub id: String,
+    pub content: String,
+    pub status: u64,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub dependencies: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ResolvedConversationState {
+    pub turns: Vec<ConversationOutlineTurn>,
+    pub todos: Vec<ConversationTodoItem>,
+    pub summary: Option<String>,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct SessionConversationState {
@@ -218,17 +235,17 @@ impl SessionConversationState {
             .collect())
     }
 
-    pub fn read_agent_outline_turns(
+    pub fn read_agent_conversation_state(
         &self,
         pool: Arc<AgentWorkerPool<ProductionAgentStoreWorkerBackend>>,
         agent_id: &str,
         db_path: &Path,
         blob_db_path: &Path,
-    ) -> Result<Vec<ConversationOutlineTurn>, SessionConversationStateError> {
+    ) -> Result<Option<ResolvedConversationState>, SessionConversationStateError> {
         let root_id = read_persisted_latest_root_blob_id(db_path, self.busy_timeout_ms)
             .map_err(|error| SessionConversationStateError::Blob(error.to_string()))?;
         if root_id.is_empty() {
-            return Ok(Vec::new());
+            return Ok(None);
         }
         let root_blob = block_on_blob(
             Arc::clone(&pool),
@@ -265,10 +282,10 @@ impl SessionConversationState {
             },
         ));
         if !resolves {
-            return Ok(Vec::new());
+            return Ok(None);
         }
 
-        let mut turns = Vec::new();
+        let mut turns = Vec::with_capacity(structure.turns.len());
         for (turn_index, turn_id) in structure.turns.iter().enumerate() {
             let Some(turn_blob) = block_on_blob(
                 Arc::clone(&pool),
@@ -277,23 +294,72 @@ impl SessionConversationState {
                 db_path,
                 turn_id,
             )? else {
-                continue;
+                return Ok(None);
             };
-            if let Some(turn) = decode_outline_turn(
+            let Some(turn) = decode_outline_turn(
                 &pool,
                 agent_id,
                 db_path,
                 blob_db_path,
                 turn_index,
                 &turn_blob,
-            )? {
-                turns.push(turn);
+            )? else {
+                return Ok(None);
+            };
+            turns.push(turn);
+        }
+
+        let mut todos = Vec::with_capacity(structure.todos.len());
+        for todo_id in &structure.todos {
+            let Some(todo_blob) = block_on_blob(
+                Arc::clone(&pool),
+                agent_id,
+                blob_db_path,
+                db_path,
+                todo_id,
+            )? else {
+                return Ok(None);
+            };
+            let Some(todo) = decode_todo_item(&todo_blob) else {
+                return Ok(None);
+            };
+            todos.push(todo);
+        }
+
+        let summary = match structure.summary.as_deref() {
+            Some(summary_id) if !summary_id.is_empty() => {
+                let Some(summary_blob) = block_on_blob(
+                    Arc::clone(&pool),
+                    agent_id,
+                    blob_db_path,
+                    db_path,
+                    summary_id,
+                )? else {
+                    return Ok(None);
+                };
+                Some(first_string_field(&summary_blob, 1).unwrap_or_default())
             }
-        }
-        if turns.len() != structure.turns.len() {
-            return Ok(Vec::new());
-        }
-        Ok(turns)
+            _ => None,
+        };
+
+        Ok(Some(ResolvedConversationState {
+            turns,
+            todos,
+            summary,
+        }))
+    }
+
+    pub fn read_agent_outline_turns(
+        &self,
+        pool: Arc<AgentWorkerPool<ProductionAgentStoreWorkerBackend>>,
+        agent_id: &str,
+        db_path: &Path,
+        blob_db_path: &Path,
+    ) -> Result<Vec<ConversationOutlineTurn>, SessionConversationStateError> {
+        Ok(self
+            .read_agent_conversation_state(pool, agent_id, db_path, blob_db_path)?
+            .map(|state| state.turns)
+            .unwrap_or_default())
     }
 
     pub fn read_agent_recovery_outline_turns(
@@ -425,6 +491,17 @@ fn block_on_blob(
         Some(db_path),
     ))
     .map_err(|error| SessionConversationStateError::Blob(error.to_string()))
+}
+
+fn decode_todo_item(data: &[u8]) -> Option<ConversationTodoItem> {
+    Some(ConversationTodoItem {
+        id: first_string_field(data, 1).unwrap_or_default(),
+        content: first_string_field(data, 2).unwrap_or_default(),
+        status: first_varint_field(data, 3).unwrap_or_default(),
+        created_at: first_varint_field(data, 4).unwrap_or_default() as i64,
+        updated_at: first_varint_field(data, 5).unwrap_or_default() as i64,
+        dependencies: all_string_fields(data, 6),
+    })
 }
 
 fn decode_outline_turn(
@@ -830,6 +907,13 @@ fn all_bytes_fields(data: &[u8], wanted: u64) -> Vec<&[u8]> {
 fn first_string_field(data: &[u8], wanted: u64) -> Option<String> {
     let bytes = first_bytes_field(data, wanted)?;
     std::str::from_utf8(bytes).ok().map(ToOwned::to_owned)
+}
+
+fn all_string_fields(data: &[u8], wanted: u64) -> Vec<String> {
+    all_bytes_fields(data, wanted)
+        .into_iter()
+        .filter_map(|bytes| std::str::from_utf8(bytes).ok().map(ToOwned::to_owned))
+        .collect()
 }
 
 fn first_varint_field(data: &[u8], wanted: u64) -> Option<u64> {
