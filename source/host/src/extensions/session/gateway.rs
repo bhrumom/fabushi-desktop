@@ -5,6 +5,9 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use serde_json::{Map, Value, json};
 
 use crate::agents::agent_profile::SandAgentProfile;
+use crate::extensions::transcript::send_acceptance::{
+    mark_accepted_send_activity, prepare_send_acceptance,
+};
 use crate::extensions::transcript::send_message_shaping::{
     UserAttachmentOptions, UserMessageOptions, create_user_attachment_entry,
     create_user_message, stat_attached_file_size,
@@ -95,6 +98,9 @@ pub fn persist_accepted_send_prompt(
         }
     }
 
+    prepare_send_acceptance(session, agent_id, existing.len(), &prompt)
+        .map_err(SessionGatewayError::internal)?;
+
     let threading = resolve_send_reply_threading(
         &existing,
         optional_string(args, "replyToId")?,
@@ -154,6 +160,8 @@ pub fn persist_accepted_send_prompt(
 
     if !staged.is_empty() {
         session.append_agent_transcript_entries(agent_id, &staged).map_err(SessionGatewayError::internal)?;
+        mark_accepted_send_activity(session, agent_id, system_now_ms())
+            .map_err(SessionGatewayError::internal)?;
     }
     Ok(user_message_id.or(first_echo_id))
 }

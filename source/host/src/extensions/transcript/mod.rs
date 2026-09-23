@@ -1,6 +1,7 @@
 pub mod prompt_acceptance_ledger;
 pub mod run_scheduler;
 pub mod send_pipeline;
+pub mod send_acceptance;
 pub mod run_lifecycle;
 pub mod production_runtime;
 pub mod send_message_shaping;

@@ -13782,12 +13782,24 @@
       "targetPath": "source/host/src/extensions/transcript/send_acceptance.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "0172031fbec71221fbf1136e7637d816a271822a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/send_acceptance.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/agent_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_send_acceptance_contract.rs",
+        "source/host/tests/session_gateway_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production slice now owns frozen default-name detection/72-UTF16-unit prompt seeding, first-send profile preservation, awaiting-user clearing, introduction retirement and accepted-send activity persistence. Shipping persist_accepted_send_prompt invokes these side effects around the authoritative Rust transcript append, whose mutation event is the Host-side accepted-echo notification. Final is withheld for active-vs-offscreen roster emission semantics and bundle-scope durable-append/send-ack tracing span parity."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-group-fanout.ts",
@@ -13855,7 +13867,8 @@
         "source/host/src/extensions/transcript/transcript_entry_ids.rs",
         "source/host/src/extensions/transcript/send_thread_stamping.rs",
         "source/host/src/extensions/transcript/send_message_shaping.rs",
-        "source/host/src/extensions/session/gateway.rs"
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/src/extensions/transcript/send_acceptance.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -13863,7 +13876,8 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/transcript_send_echo_contract.rs",
-        "source/host/tests/session_gateway_contract.rs"
+        "source/host/tests/session_gateway_contract.rs",
+        "source/host/tests/transcript_send_acceptance_contract.rs"
       ],
       "notes": "Rust send pipeline state is now production-composed by ProductionTranscriptRuntime and the shipping Host Gateway. sendPrompt performs nonce digest admission before compatibility dispatch, coalesces concurrent duplicate nonces behind the first real Host result, persists the authoritative Rust Session echo before ledger acceptance, clears failed unaccepted attempts for retry, exposes promptAcceptanceStatus from the same durable ledger, advances per-agent turn epochs, and replays the exact accepted Host result in-process. Full frozen send shaping/threading/attachment materialization/group fanout/ack obligations remain non-final."
     },
