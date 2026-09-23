@@ -68,6 +68,7 @@ use mahayana_host_runtime::runner::coordinator_tool_relay::{
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
 use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
 use mahayana_host_runtime::runner::tools::send_message_tool::SendMessageSink;
+use mahayana_host_runtime::runner::tools::sand_reaction_tool::ReactionSink;
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayCommandError, GatewayCommandReport, GatewayEventHub, GatewayServerDeps, start_gateway_server,
@@ -247,6 +248,43 @@ impl SendMessageSink for ProductionSendMessageSink {
     }
 }
 
+fn reaction_gateway_args(
+    agent_id: &str,
+    message_address: &str,
+    emoji: &str,
+) -> serde_json::Value {
+    serde_json::json!({
+        "agentId": agent_id,
+        "entryId": message_address,
+        "emoji": emoji,
+    })
+}
+
+struct ProductionReactionSink {
+    host_tx: mpsc::Sender<HostLaneRequest>,
+    agent_id: String,
+}
+
+impl ReactionSink for ProductionReactionSink {
+    fn react(
+        &self,
+        message_address: &str,
+        emoji: &str,
+    ) -> Result<(), ProviderSessionError> {
+        call_host_lane(
+            &self.host_tx,
+            "reactToMessage",
+            reaction_gateway_args(&self.agent_id, message_address, emoji),
+        )
+        .map_err(|error| {
+            ProviderSessionError::Tool(format!(
+                "could not react to {message_address}: {error}"
+            ))
+        })?;
+        Ok(())
+    }
+}
+
 struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
     experiments: Arc<HostExperimentsExtension>,
@@ -369,6 +407,7 @@ fn decode_provider_messages(
 fn start_routed_provider_task(
     routed_tool_relay: Arc<CoordinatorToolRelay>,
     events: GatewayEventHub,
+    host_tx: mpsc::Sender<HostLaneRequest>,
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
     session_workers: Arc<ProductionSessionWorkers>,
@@ -477,6 +516,12 @@ fn start_routed_provider_task(
                     agent_id: agent_id.clone(),
                 },
             );
+            let reaction_sink: Arc<dyn ReactionSink> = Arc::new(
+                ProductionReactionSink {
+                    host_tx,
+                    agent_id: agent_id.clone(),
+                },
+            );
             let composition = TurnAgentComposition::new(
                 provider,
                 bridge,
@@ -485,6 +530,7 @@ fn start_routed_provider_task(
                 checkpoint_store,
             )
             .with_box_resources(box_resources)
+            .with_reaction_sink(reaction_sink)
             .with_send_message_sink(send_message_sink);
             let owner = ProductionTurnAgentOwner::new(composition);
             let mut runner = SandAgentRunner::new(owner);
@@ -580,6 +626,7 @@ impl GatewayApi for UnifiedGatewayApi {
             return start_routed_provider_task(
                 Arc::clone(&self.routed_tool_relay),
                 self.events.clone(),
+                self.host_tx.clone(),
                 self.data_dir.clone(),
                 Arc::clone(&self.request_context),
                 Arc::clone(&self.session_workers),
@@ -1182,6 +1229,7 @@ mod tests {
         BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionHostExtensions,
         ProductionRunnerRequestContextSource, UnifiedGatewayApi, decode_provider_messages,
         dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
+        reaction_gateway_args,
     };
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -1226,6 +1274,18 @@ mod tests {
         assert_eq!(messages.len(), 1);
         assert_eq!(messages[0].role, "user");
         assert_eq!(messages[0].content, "hello");
+    }
+
+    #[test]
+    fn reaction_sink_uses_authoritative_host_gateway_payload() {
+        assert_eq!(
+            reaction_gateway_args("agent-a", "t3u", "👍"),
+            serde_json::json!({
+                "agentId": "agent-a",
+                "entryId": "t3u",
+                "emoji": "👍"
+            })
+        );
     }
 
     #[test]

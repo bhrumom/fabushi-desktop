@@ -12,6 +12,7 @@ use super::routed_provider_runtime::{
     RunnerRequestContextSnapshot, run_routed_provider_in_runner,
 };
 use super::tools::send_message_tool::{SendMessageSink, SendMessageToolBridge};
+use super::tools::sand_reaction_tool::{ReactionSink, ReactionToolBridge};
 
 /// Shipping Runner composition for one provider-backed turn.
 ///
@@ -29,6 +30,7 @@ pub struct TurnAgentComposition {
     checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
+    reaction_sink: Option<Arc<dyn ReactionSink>>,
 }
 
 impl TurnAgentComposition {
@@ -47,6 +49,7 @@ impl TurnAgentComposition {
             checkpoint_store,
             box_resources: None,
             send_message_sink: None,
+            reaction_sink: None,
         }
     }
 
@@ -74,6 +77,18 @@ impl TurnAgentComposition {
         self.send_message_sink.is_some()
     }
 
+    pub fn with_reaction_sink(
+        mut self,
+        sink: Arc<dyn ReactionSink>,
+    ) -> Self {
+        self.reaction_sink = Some(sink);
+        self
+    }
+
+    pub fn has_reaction_sink(&self) -> bool {
+        self.reaction_sink.is_some()
+    }
+
     pub fn provider(&self) -> RoutedProvider {
         self.provider
     }
@@ -94,6 +109,13 @@ impl TurnAgentComposition {
                 Arc::clone(box_resources),
             )),
             None => Arc::clone(&self.bridge),
+        };
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.reaction_sink {
+            Some(sink) => Arc::new(ReactionToolBridge::new(
+                bridge,
+                Arc::clone(sink),
+            )),
+            None => bridge,
         };
         let bridge: Arc<dyn RoutedToolBridge> = match &self.send_message_sink {
             Some(sink) => Arc::new(SendMessageToolBridge::new(
