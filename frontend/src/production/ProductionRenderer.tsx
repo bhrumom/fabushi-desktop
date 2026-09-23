@@ -352,7 +352,7 @@ function reconcileAuthoritativeTranscriptBaseline(
   current: readonly ConversationTranscriptEntry[],
   incoming: readonly ConversationTranscriptEntry[],
 ): ConversationTranscriptEntry[] {
-  return incoming.map((entry) => {
+  const baseline = incoming.map((entry) => {
     if (entry.kind !== "message") return entry;
     const previous = current.find((candidate): candidate is TranscriptMessage =>
       candidate.kind === "message"
@@ -363,6 +363,21 @@ function reconcileAuthoritativeTranscriptBaseline(
     );
     return previous == null ? entry : mergeAuthoritativeTranscriptMessage(previous, entry);
   });
+  const unresolvedOptimistic = current.filter((entry): entry is TranscriptMessage =>
+    entry.kind === "message"
+    && entry.role === "user"
+    && entry.clientNonce != null
+    && entry.id.startsWith("pending-")
+    && !incoming.some((incomingEntry) =>
+      incomingEntry.id === entry.id
+      || (
+        incomingEntry.kind === "message"
+        && incomingEntry.clientNonce != null
+        && incomingEntry.clientNonce === entry.clientNonce
+      )
+    )
+  );
+  return [...baseline, ...unresolvedOptimistic];
 }
 
 function reconcileLateInitialTranscriptPage(
