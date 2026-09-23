@@ -224,6 +224,120 @@ function createNativeCapabilityHandlers(deps) {
     return value;
   }
 
+  let accountLoginGeneration = 0;
+  let activeAccountLoginAttemptId = null;
+
+  function accountLoginAttemptId(value) {
+    return cleanString(typeof value === 'string' ? value : value?.attemptId, 240);
+  }
+
+  function accountLoginPollDelayMs(value, fallback = 250) {
+    const candidate = Number(value?.pollAfterMs ?? fallback);
+    if (!Number.isFinite(candidate)) return fallback;
+    return Math.max(25, Math.min(5_000, Math.floor(candidate)));
+  }
+
+  function stopAccountLoginPoll() {
+    accountLoginGeneration += 1;
+    activeAccountLoginAttemptId = null;
+  }
+
+  async function waitForAccountLoginPoll(delayMs) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  function startAccountLoginPoll(attempt) {
+    const attemptId = accountLoginAttemptId(attempt);
+    if (!attemptId) return;
+    if (activeAccountLoginAttemptId === attemptId) return;
+    const generation = ++accountLoginGeneration;
+    activeAccountLoginAttemptId = attemptId;
+    const expiresAtMs = Number(attempt?.expiresAt) > 0
+      ? Number(attempt.expiresAt) * 1_000
+      : Date.now() + 10 * 60 * 1_000;
+    let delayMs = accountLoginPollDelayMs(attempt);
+    let consecutiveFailures = 0;
+
+    void (async () => {
+      while (generation === accountLoginGeneration && activeAccountLoginAttemptId === attemptId) {
+        if (Date.now() >= expiresAtMs) {
+          await setPreference('activeLoginAttempt', null);
+          if (generation !== accountLoginGeneration) return;
+          activeAccountLoginAttemptId = null;
+          broadcastNativeEvent?.('account-auth-changed', {
+            loggedIn: false,
+            errorMessage: 'Account sign-in expired before completion.',
+          });
+          return;
+        }
+
+        await waitForAccountLoginPoll(delayMs);
+        if (generation !== accountLoginGeneration || activeAccountLoginAttemptId !== attemptId) return;
+
+        let result;
+        try {
+          result = await host.request('feature.auth.oauthPoll', { attemptId });
+          consecutiveFailures = 0;
+        } catch (error) {
+          consecutiveFailures += 1;
+          if (consecutiveFailures < 5) {
+            delayMs = Math.min(5_000, Math.max(250, delayMs * 2));
+            continue;
+          }
+          await setPreference('activeLoginAttempt', null);
+          if (generation !== accountLoginGeneration) return;
+          activeAccountLoginAttemptId = null;
+          broadcastNativeEvent?.('account-auth-changed', {
+            loggedIn: false,
+            errorMessage: error instanceof Error ? error.message : String(error),
+          });
+          return;
+        }
+
+        const status = cleanString(result?.status, 80).toLowerCase();
+        if (status === 'pending' || status === 'waiting' || status === 'authorizing') {
+          delayMs = accountLoginPollDelayMs(result, delayMs);
+          continue;
+        }
+
+        if (status === 'cancelled' || status === 'expired' || status === 'failed' || status === 'error') {
+          await setPreference('activeLoginAttempt', null);
+          if (generation !== accountLoginGeneration) return;
+          activeAccountLoginAttemptId = null;
+          broadcastNativeEvent?.('account-auth-changed', {
+            loggedIn: false,
+            errorMessage: cleanString(result?.errorMessage ?? result?.error ?? status, 1000) || 'Account sign-in did not complete.',
+          });
+          return;
+        }
+
+        const candidate = result?.auth && typeof result.auth === 'object' ? result.auth : result;
+        let auth = candidate?.loggedIn === true ? candidate : null;
+        if (auth == null && status === 'completed') {
+          auth = await host.request('feature.auth.status', {}).catch(() => null);
+        }
+        if (auth?.loggedIn === true) {
+          await setPreference('activeLoginAttempt', null);
+          if (generation !== accountLoginGeneration) return;
+          activeAccountLoginAttemptId = null;
+          clearAccountBoundMessagingState?.();
+          broadcastNativeEvent?.('account-auth-changed', auth);
+          return;
+        }
+
+        delayMs = accountLoginPollDelayMs(result, delayMs);
+      }
+    })().catch((error) => {
+      if (generation !== accountLoginGeneration || activeAccountLoginAttemptId !== attemptId) return;
+      activeAccountLoginAttemptId = null;
+      void setPreference('activeLoginAttempt', null);
+      broadcastNativeEvent?.('account-auth-changed', {
+        loggedIn: false,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+    });
+  }
+
   async function featureExecute(command) {
     return host.request('feature.execute', { command });
   }
@@ -952,32 +1066,81 @@ function createNativeCapabilityHandlers(deps) {
     async getAccountAuthStatus() {
       const auth = await host.request('feature.auth.status', {});
       const state = await readNativeState();
+      const activeLoginAttempt = accountLoginAttemptId(state.preferences?.activeLoginAttempt);
+      if (auth?.loggedIn === true) {
+        if (activeLoginAttempt) {
+          stopAccountLoginPoll();
+          await setPreference('activeLoginAttempt', null);
+        }
+        return { ...auth, displayName: state.accountDisplayName ?? null, avatar: state.accountAvatar ?? null };
+      }
+      if (activeLoginAttempt) {
+        startAccountLoginPoll({ attemptId: activeLoginAttempt });
+        return {
+          ...auth,
+          loggingIn: true,
+          attemptId: activeLoginAttempt,
+          displayName: state.accountDisplayName ?? null,
+          avatar: state.accountAvatar ?? null,
+        };
+      }
       return { ...auth, displayName: state.accountDisplayName ?? null, avatar: state.accountAvatar ?? null };
     },
 
     async loginAccount(params) {
+      stopAccountLoginPoll();
       if (params.username != null || params.password != null) {
+        await setPreference('activeLoginAttempt', null);
         const auth = await host.request('feature.auth.passwordLogin', { username: String(params.username ?? ''), password: String(params.password ?? '') });
         if (auth?.loggedIn === true || auth?.auth?.loggedIn === true) clearAccountBoundMessagingState?.();
+        broadcastNativeEvent?.('account-auth-changed', auth?.auth ?? auth);
         return auth;
       }
       const providers = await host.request('feature.auth.providers', {});
       const provider = cleanString(params.provider, 80) || (Array.isArray(providers) ? cleanString(providers[0]?.id ?? providers[0], 80) : '');
       if (!provider) throw new Error('No account login provider is available.');
       const attempt = await host.request('feature.auth.oauthStart', { provider });
-      await setPreference('activeLoginAttempt', attempt?.attemptId ?? null);
-      return attempt;
+      const attemptId = accountLoginAttemptId(attempt);
+      if (!attemptId) throw new Error('Account login did not return an attempt id.');
+      await setPreference('activeLoginAttempt', attemptId);
+
+      const authorizationUrl = cleanString(attempt?.authorizationUrl ?? attempt?.loginUrl, 4096);
+      if (authorizationUrl) {
+        const testUrl = authorizationUrl.startsWith('about:blank#fabushi-test-oauth-');
+        if (!testUrl) {
+          const parsed = new URL(authorizationUrl);
+          if (parsed.protocol !== 'https:' || parsed.username || parsed.password) {
+            await setPreference('activeLoginAttempt', null);
+            throw new Error('Account authorization URL must be HTTPS and credential-free.');
+          }
+          try {
+            await shell.openExternal(parsed.toString());
+          } catch (error) {
+            await setPreference('activeLoginAttempt', null);
+            throw error;
+          }
+        }
+      }
+
+      broadcastNativeEvent?.('account-auth-changed', { kind: 'logging-in' });
+      startAccountLoginPoll(attempt);
+      return { ...attempt, kind: 'logging-in' };
     },
 
     async cancelAccountLogin() {
+      stopAccountLoginPoll();
       await setPreference('activeLoginAttempt', null);
-      return { cancelled: true };
+      const auth = await host.request('feature.auth.status', {}).catch(() => ({ loggedIn: false }));
+      broadcastNativeEvent?.('account-auth-changed', auth);
+      return auth;
     },
 
     async logoutAccount() {
+      stopAccountLoginPoll();
+      await setPreference('activeLoginAttempt', null);
       const auth = await host.request('feature.auth.logout', {});
       clearAccountBoundMessagingState?.();
-      broadcastNativeEvent('account-auth-changed', auth);
+      broadcastNativeEvent?.('account-auth-changed', auth);
       return auth;
     },
 

@@ -44,81 +44,53 @@ async function launchDesktopApp(appDataDir: string) {
 }
 
 async function completeBrowserLogin(page: Page): Promise<void> {
-  const onboardingGate = page.getByTestId('onboarding-gate');
-  const loginGate = page.getByTestId('login-gate');
-  const workspace = page.getByTestId('messenger-workspace');
   const rendererErrors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') rendererErrors.push(message.text());
   });
-  type LoginPhase = 'onboarding' | 'login' | 'ready' | 'fatal' | 'waiting';
 
-  // Read the auth surface in one renderer evaluation. During the HostClient ->
-  // Messenger transition individual locator probes can straddle a destroyed
-  // execution context and wait on navigation even though auth already finished.
-  const readPhase = async (): Promise<LoginPhase> => {
-    try {
-      return await page.evaluate(() => {
-        if (document.querySelector('[data-testid="onboarding-gate"]')) return 'onboarding';
-        if (document.querySelector('[data-testid="login-gate"]')) return 'login';
-        if (document.querySelector('.sand-error-boundary--app')) return 'fatal';
-        const messenger = document.querySelector('[data-testid="messenger-workspace"]');
-        if (messenger?.getAttribute('data-initial-host-hydrated') === 'true') return 'ready';
-        return 'waiting';
-      }) as LoginPhase;
-    } catch {
-      return 'waiting';
-    }
-  };
+  await page.waitForFunction(() => {
+    const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown }; onboarding?: { setSeen?: unknown } } };
+    return typeof candidate.desktop?.cursorAccount?.getStatus === 'function'
+      && typeof candidate.desktop?.onboarding?.setSeen === 'function';
+  }, { timeout: 15_000 });
 
-  for (let phase = 0; phase < 12; phase += 1) {
-    await expect.poll(readPhase, { timeout: 15_000 }).not.toBe('waiting');
-    const currentPhase = await readPhase();
+  // Focused chat E2E exercises the production account -> Coordinator -> Host
+  // path, not the first-run tutorial. Persist the public onboarding preference
+  // before login so the signed-in shell can proceed directly to roster hydration.
+  await page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        onboarding: { setSeen(seen: boolean): Promise<unknown> };
+      };
+    };
+    await candidate.desktop.onboarding.setSeen(true);
+  });
 
-    if (currentPhase === 'fatal') {
-      const fatal = await page.evaluate(async () => {
-        const node = document.querySelector<HTMLElement>('.sand-error-boundary--app');
-        const scriptUrl = Array.from(document.scripts)
-          .map((script) => script.src)
-          .find((source) => /\/assets\/index-[^/]+\.js$/.test(source)) ?? null;
-        let sourceMapText: string | null = null;
-        if (scriptUrl != null) {
-          try {
-            const response = await fetch(`${scriptUrl}.map`);
-            if (response.ok) sourceMapText = await response.text();
-          } catch {
-            // The source map is diagnostic-only and must not change product behavior.
-          }
-        }
-        return {
-          surfaceText: node?.innerText ?? 'unknown renderer failure',
-          scriptUrl,
-          sourceMapText,
-        };
-      });
-      if (fatal.sourceMapText != null) {
-        await test.info().attach('renderer-root-fatal-source-map', {
-          body: fatal.sourceMapText,
-          contentType: 'application/json',
-        });
-      }
-      const consoleDetail = rendererErrors.at(-1) ?? fatal.surfaceText;
-      throw new Error(`renderer root fatal: ${consoleDetail}\nsource=${fatal.scriptUrl ?? 'unknown'}`);
-    }
-    if (currentPhase === 'onboarding') {
-      await page.getByTestId('onboarding-next').click();
-      continue;
-    }
-    if (currentPhase === 'login') {
-      await page.getByTestId('browser-login-start').click();
-      await expect(loginGate).toBeHidden();
-      continue;
-    }
-    if (currentPhase === 'ready') break;
+  const accountKind = async (): Promise<string> => page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        cursorAccount: { getStatus(): Promise<{ kind?: string }> };
+      };
+    };
+    return (await candidate.desktop.cursorAccount.getStatus()).kind ?? 'unknown';
+  });
+
+  const initialKind = await accountKind();
+  if (initialKind === 'logged-out') {
+    const landing = page.locator('main[aria-label="Grok Bot"]');
+    await expect(landing).toBeVisible({ timeout: 15_000 });
+    await landing.getByRole('button', { name: 'Sign in', exact: true }).click();
   }
 
-  await expect(workspace).toHaveAttribute('data-initial-host-hydrated', 'true', { timeout: 15_000 });
-  await expect(workspace).toBeVisible();
+  await expect.poll(accountKind, { timeout: 20_000 }).toBe('logged-in');
+  await expect(page.locator('main[aria-label="Grok Bot"]')).toBeHidden({ timeout: 10_000 });
+
+  const fatal = page.locator('.sand-error-boundary--app');
+  if (await fatal.count()) {
+    const surfaceText = await fatal.first().innerText().catch(() => 'unknown renderer failure');
+    throw new Error(`renderer root fatal: ${rendererErrors.at(-1) ?? surfaceText}`);
+  }
 }
 
 function rgbLuma(value: string): number {

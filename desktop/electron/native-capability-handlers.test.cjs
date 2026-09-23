@@ -29,6 +29,7 @@ async function harness(run, options = {}) {
     quit: () => options.onAppQuit?.(),
   };
   for (const name of ['userData', 'downloads', 'temp']) await fs.mkdir(app.getPath(name), { recursive: true });
+  const nativeEvents = [];
   const handlers = createNativeCapabilityHandlers({
     app,
     autoUpdater: options.autoUpdater ?? {},
@@ -43,15 +44,119 @@ async function harness(run, options = {}) {
     getDesktopUpdateStatus: options.getDesktopUpdateStatus,
     setDesktopUpdateStatus: options.setDesktopUpdateStatus,
     windowForEvent: () => ({}),
-    broadcastNativeEvent: () => {},
+    broadcastNativeEvent: (eventName, payload) => {
+      nativeEvents.push([eventName, payload]);
+      options.broadcastNativeEvent?.(eventName, payload);
+    },
     setDesktopUpdateInstallInProgress: options.setDesktopUpdateInstallInProgress,
   });
   try {
-    await run({ root, app, handlers, getState: () => state });
+    await run({ root, app, handlers, nativeEvents, getState: () => state });
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }
 }
+
+
+test('production renderer account login opens OAuth, polls Host, and broadcasts completion', async () => {
+  const calls = [];
+  const opened = [];
+  let loggedIn = false;
+  const host = {
+    async request(method, params = {}) {
+      calls.push([method, params]);
+      if (method === 'feature.auth.status') {
+        return loggedIn
+          ? { loggedIn: true, provider: 'test', user: { id: 'oauth-user', email: 'oauth@example.test' } }
+          : { loggedIn: false, provider: 'test' };
+      }
+      if (method === 'feature.auth.providers') return [{ id: 'google' }];
+      if (method === 'feature.auth.oauthStart') {
+        return {
+          attemptId: 'test-oauth-google',
+          provider: 'google',
+          authorizationUrl: 'https://auth.example.test/authorize',
+          pollAfterMs: 25,
+        };
+      }
+      if (method === 'feature.auth.oauthPoll') {
+        loggedIn = true;
+        return {
+          attemptId: params.attemptId,
+          status: 'completed',
+          auth: { loggedIn: true, provider: 'test', user: { id: 'oauth-user', email: 'oauth@example.test' } },
+        };
+      }
+      throw new Error(`unexpected Host method ${method}`);
+    },
+  };
+
+  await harness(async ({ handlers, nativeEvents, getState }) => {
+    const started = await handlers.loginAccount({});
+    assert.equal(started.kind, 'logging-in');
+    assert.equal(started.attemptId, 'test-oauth-google');
+    assert.equal(getState().preferences.activeLoginAttempt, 'test-oauth-google');
+    assert.deepEqual(opened, ['https://auth.example.test/authorize']);
+
+    const deadline = Date.now() + 2_000;
+    while (!nativeEvents.some(([name, payload]) => name === 'account-auth-changed' && payload?.loggedIn === true)) {
+      if (Date.now() >= deadline) throw new Error('OAuth completion event was not broadcast.');
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+
+    const status = await handlers.getAccountAuthStatus();
+    assert.equal(status.loggedIn, true);
+    assert.equal(status.user.id, 'oauth-user');
+    assert.equal(getState().preferences.activeLoginAttempt, null);
+    assert.ok(nativeEvents.some(([name, payload]) => name === 'account-auth-changed' && payload?.kind === 'logging-in'));
+    assert.ok(nativeEvents.some(([name, payload]) => name === 'account-auth-changed' && payload?.loggedIn === true));
+  }, {
+    host,
+    shell: { openExternal: async (url) => { opened.push(url); } },
+  });
+
+  assert.ok(calls.some(([method]) => method === 'feature.auth.oauthStart'));
+  assert.ok(calls.some(([method]) => method === 'feature.auth.oauthPoll'));
+});
+
+test('production renderer account login resumes a persisted OAuth attempt after renderer reload', async () => {
+  let loggedIn = false;
+  const host = {
+    async request(method, params = {}) {
+      if (method === 'feature.auth.status') {
+        return loggedIn
+          ? { loggedIn: true, provider: 'test', user: { id: 'resumed-user' } }
+          : { loggedIn: false, provider: 'test' };
+      }
+      if (method === 'feature.auth.oauthPoll') {
+        assert.equal(params.attemptId, 'persisted-attempt');
+        loggedIn = true;
+        return {
+          status: 'completed',
+          auth: { loggedIn: true, provider: 'test', user: { id: 'resumed-user' } },
+        };
+      }
+      throw new Error(`unexpected Host method ${method}`);
+    },
+  };
+
+  await harness(async ({ handlers, nativeEvents }) => {
+    const initial = await handlers.getAccountAuthStatus();
+    assert.equal(initial.loggingIn, true);
+    assert.equal(initial.attemptId, 'persisted-attempt');
+
+    const deadline = Date.now() + 2_000;
+    while (!nativeEvents.some(([name, payload]) => name === 'account-auth-changed' && payload?.loggedIn === true)) {
+      if (Date.now() >= deadline) throw new Error('Persisted OAuth attempt did not resume.');
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+
+    assert.equal((await handlers.getAccountAuthStatus()).loggedIn, true);
+  }, {
+    host,
+    initialState: { preferences: { activeLoginAttempt: 'persisted-attempt' }, clientPersistence: {} },
+  });
+});
 
 
 test('marketplace native capabilities use canonical Feature Host method names', async () => {
