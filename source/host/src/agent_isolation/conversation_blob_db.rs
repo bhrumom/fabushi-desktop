@@ -4,6 +4,11 @@ use std::time::Duration;
 
 use rusqlite::Connection;
 
+use crate::storage::sqlite_busy::{
+    is_sqlite_cant_open_error, is_sqlite_corrupt_error, is_sqlite_io_error,
+};
+pub use crate::storage::sqlite_recovery::remove_sqlite_sidecars;
+
 pub const CONVERSATION_BLOB_SCHEMA: &str = r#"
 CREATE TABLE IF NOT EXISTS blobs (
   id TEXT PRIMARY KEY,
@@ -79,13 +84,6 @@ pub fn run_quick_check(db: &Connection) -> Result<bool, ConversationBlobDbError>
     Ok(result == "ok")
 }
 
-pub fn remove_sqlite_sidecars(db_path: &Path) {
-    for suffix in ["-wal", "-shm", "-journal"] {
-        let sidecar = PathBuf::from(format!("{}{}", db_path.display(), suffix));
-        let _ = fs::remove_file(sidecar);
-    }
-}
-
 pub fn open_conversation_blob_db(
     db_path: &Path,
     busy_timeout_ms: u64,
@@ -114,8 +112,7 @@ pub fn open_conversation_blob_db(
 }
 
 fn sqlite_error_may_be_sidecar_related(error: &rusqlite::Error) -> bool {
-    let text = error.to_string().to_ascii_lowercase();
-    text.contains("disk i/o")
-        || text.contains("unable to open")
-        || text.contains("database disk image is malformed")
+    is_sqlite_io_error(error)
+        || is_sqlite_cant_open_error(error)
+        || is_sqlite_corrupt_error(error)
 }

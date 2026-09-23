@@ -15777,36 +15777,56 @@
       "targetPath": "source/host/src/storage/sqlite_busy.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "df90977272430df8a248897e4afbe07a5536478e",
       "architecturalRole": "host/storage",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/storage/sqlite_busy.rs",
+        "source/host/src/agent_isolation/conversation_blob_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_storage_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust port preserves SQLite primary/extended-code and message classification plus bounded exponential busy retry with injectable delay. The shipping conversation-blob DB consumes these classifiers for sidecar-related reopen decisions. Final is withheld until the new exact-HEAD Rust desktop runtime run succeeds."
     },
     {
       "referencePath": "source/host/storage/sqlite-recovery.ts",
       "targetPath": "source/host/src/storage/sqlite_recovery.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "1f67924404b2ba32235407061d636cf4763694fe",
       "architecturalRole": "host/storage",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/storage/sqlite_recovery.rs",
+        "source/host/src/agent_isolation/conversation_blob_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_storage_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust port implements force/retry removal, sidecar cleanup, corrupt DB quarantine with rename/copy fallback, salvage open, and row-by-row salvage. Production conversation-blob recovery uses the shared sidecar cleanup path. Final is withheld until exact-HEAD Rust desktop runtime verification succeeds."
     },
     {
       "referencePath": "source/host/storage/store-db.ts",
       "targetPath": "source/host/src/storage/store_db.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "d0c68ab8b58a62642f72418622306519a5636b1d",
       "architecturalRole": "host/storage",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/storage/store_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_storage_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust implementation provides write-generation/live-handle accounting, WAL fold detection and checkpointing; sqlite-recovery consumes the canonical sidecar suffixes. It remains non-final because the remaining frozen Sand Agent DB production consumers have not yet been migrated onto this module."
     },
     {
       "referencePath": "source/host/transcript-mirror/conversation-state-binary.ts",
