@@ -1,7 +1,9 @@
 use std::path::Path;
 use std::time::Duration;
 
-use rusqlite::{Connection, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension};
+
+use super::agent_db_schema::GET_KV_SQL;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AgentDbProjectionError {
@@ -38,8 +40,8 @@ pub fn read_persisted_latest_root_blob_id(
 
     let raw = db
         .query_row(
-            "SELECT value FROM kv WHERE key = 'metadata'",
-            [],
+            GET_KV_SQL,
+            params!["metadata"],
             |row| row.get::<_, String>(0),
         )
         .optional()?;
