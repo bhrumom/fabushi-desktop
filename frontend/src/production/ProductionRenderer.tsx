@@ -365,6 +365,21 @@ function reconcileAuthoritativeTranscriptBaseline(
   });
 }
 
+function reconcileLateInitialTranscriptPage(
+  current: readonly ConversationTranscriptEntry[],
+  incoming: readonly ConversationTranscriptEntry[],
+): ConversationTranscriptEntry[] {
+  const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
+  const arrivedWhileLoading = current.filter((currentEntry) => !incoming.some((incomingEntry) => {
+    if (incomingEntry.id === currentEntry.id) return true;
+    return incomingEntry.kind === "message"
+      && currentEntry.kind === "message"
+      && incomingEntry.clientNonce != null
+      && incomingEntry.clientNonce === currentEntry.clientNonce;
+  }));
+  return [...baseline, ...arrivedWhileLoading];
+}
+
 function moveAgentsToSidebarSection(sections: readonly SidebarSection[], agentIds: readonly string[], sectionId: string): SidebarSection[] | null {
   if (!sections.some((section) => section.id === sectionId)) return null;
   const knownAgentIds = new Set(sections.flatMap((section) => section.agentIds));
@@ -2300,7 +2315,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         || transportScopeGenerationRef.current !== transportScopeGeneration
         || accountRef.current?.kind !== "logged-in") return;
       const projectedPage = projectTranscriptPageResult(page, agentName, agentId);
-      setEntriesByAgent((current) => ({ ...current, [agentId]: projectedPage.entries }));
+      setEntriesByAgent((current) => ({
+        ...current,
+        // openAgentTail started only because this Agent had no loaded entries.
+        // Anything present now arrived while the request was in flight and must
+        // survive a stale initial page response.
+        [agentId]: reconcileLateInitialTranscriptPage(current[agentId] ?? [], projectedPage.entries)
+      }));
       transcriptPaginationController.installInitialPage(projectedPage);
       selectionStore.settle(agentId);
       selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
