@@ -13876,12 +13876,20 @@
       "targetPath": "source/host/src/gateway_protocol.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "c439e282a7d0fb074f5bd39121f72dc7cfbf5a77",
       "architecturalRole": "host/gateway-protocol",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/gateway_protocol.rs",
+        "source/host/src/gateway_server.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/gateway_protocol_contract.rs",
+        "source/host/tests/gateway_server_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "The frozen Grok gateway command inventory, empty-body/JSON parsing, prepare-upgrade path, and slim-avatar command/event transforms now live in a dedicated Rust Host protocol module. The shipping GatewayServer imports and executes these functions; Fabushi-only extension commands remain explicitly separated at the server boundary. Final is withheld until exact-HEAD Host verification succeeds and legacy Host compatibility dispatch is no longer required."
     },
     {
       "referencePath": "source/host/gateway-server.ts",

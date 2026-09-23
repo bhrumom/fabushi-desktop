@@ -11,6 +11,7 @@ pub mod host_discovery;
 pub mod host_lock;
 pub mod gateway_config;
 pub mod gateway_command_error;
+pub mod gateway_protocol;
 pub mod gateway_server;
 pub mod runner;
 
