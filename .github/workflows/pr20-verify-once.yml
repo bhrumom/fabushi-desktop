@@ -7,6 +7,7 @@ on:
       - "scripts/check-grok-architecture.mjs"
       - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
       - ".github/workflows/pr20-verify-once.yml"
+      - "desktop/e2e/grok-parity.spec.ts"
   workflow_dispatch:
 
 jobs:
