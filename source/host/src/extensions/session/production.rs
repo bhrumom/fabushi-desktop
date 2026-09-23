@@ -9,8 +9,9 @@ use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::agent_db::{
     AgentDbSerdeSnapshot, read_persisted_agent_serde_snapshot,
-    read_persisted_latest_root_blob_id,
+    read_persisted_latest_root_blob_id, read_persisted_transcript_tail,
 };
+use super::agent_db_transcript_pages::TranscriptPage;
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
@@ -30,6 +31,7 @@ pub struct PreparedAgentBlobStore {
     pub latest_root_blob_id: Option<Vec<u8>>,
     pub persisted_root_blob_id: Vec<u8>,
     pub session_state: AgentDbSerdeSnapshot,
+    pub transcript_tail: TranscriptPage,
 }
 
 /// Shipping Host owner for the Grok session materialization worker boundary.
@@ -114,6 +116,9 @@ impl ProductionSessionWorkers {
         let session_state =
             read_persisted_agent_serde_snapshot(&session_db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?;
+        let transcript_tail =
+            read_persisted_transcript_tail(&session_db_path, self.busy_timeout_ms, 500)
+                .map_err(|error| error.to_string())?;
 
         let latest_root_blob_id = futures::executor::block_on(
             self.pool.find_latest_root_blob_id(
@@ -136,6 +141,7 @@ impl ProductionSessionWorkers {
             latest_root_blob_id,
             persisted_root_blob_id,
             session_state,
+            transcript_tail,
         }))
     }
 

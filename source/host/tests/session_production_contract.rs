@@ -55,6 +55,11 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
             "CREATE TABLE kv (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL
+            ) STRICT;
+            CREATE TABLE transcript_entries (
+                seq INTEGER PRIMARY KEY,
+                id TEXT NOT NULL UNIQUE,
+                entry TEXT NOT NULL
             ) STRICT;",
         )
         .expect("session kv");
@@ -111,6 +116,23 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
             )
             .expect("session state row");
     }
+    for (id, entry) in [
+        (
+            "entry-1",
+            serde_json::json!({"id":"entry-1","kind":"message","role":"user","content":"first"}),
+        ),
+        (
+            "entry-2",
+            serde_json::json!({"id":"entry-2","kind":"notice","text":"second"}),
+        ),
+    ] {
+        connection
+            .execute(
+                "INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
+                rusqlite::params![id, entry.to_string()],
+            )
+            .expect("transcript row");
+    }
     drop(connection);
 
     let runtime = ProductionSessionWorkers::with_agents_root(&root, 500);
@@ -164,6 +186,16 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
         prepared.session_state.memory_prompt_snapshot.as_ref().map(|snapshot| snapshot.render.as_str()),
         Some("memory")
     );
+    assert_eq!(
+        prepared
+            .transcript_tail
+            .entries
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["entry-1", "entry-2"]
+    );
+    assert_eq!(prepared.transcript_tail.next_before_seq, None);
     assert_eq!(runtime.active_worker_count(), 1);
 
     runtime.shutdown();

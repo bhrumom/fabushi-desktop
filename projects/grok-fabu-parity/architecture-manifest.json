@@ -12036,12 +12036,22 @@
       "targetPath": "source/host/src/extensions/session/agent_db_transcript_pages.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e3e161b030330dd5a6c97df576bab55a1b8beb23",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/agent_db_transcript_pages.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_db_transcript_pages_contract.rs",
+        "source/host/tests/session_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust port of frozen Grok agent-db-transcript-pages: page ordering, invalid-entry filtering, pagination cursor selection, main transcript query bounds, window tool/branched filtering, 500/5000 window-limit normalization and tail semantics. The shipping AgentDb boundary invokes the module and ProductionSessionWorkers reads the transcript tail from the real store.db before Runner inference."
     },
     {
       "referencePath": "source/host/extensions/session/agent-db.ts",

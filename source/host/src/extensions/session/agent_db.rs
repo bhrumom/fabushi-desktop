@@ -14,6 +14,9 @@ use super::agent_db_serde::{
     parse_pending_episode_turns, parse_profile, parse_request_records, parse_unread_state,
     resolve_spend_guard_state,
 };
+use super::agent_db_transcript_pages::{
+    TranscriptPage, TranscriptWindowQuery, read_transcript_tail,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum AgentDbProjectionError {
@@ -153,6 +156,35 @@ pub fn read_persisted_agent_serde_snapshot(
         pending_episode_turns: parse_pending_episode_turns(episode.as_deref()),
         memory_prompt_snapshot: parse_memory_prompt_snapshot(memory_snapshot.as_deref()),
     })
+}
+
+pub fn read_persisted_transcript_tail(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    limit: i64,
+) -> Result<TranscriptPage, AgentDbProjectionError> {
+    let agent_dir_name = db_path
+        .parent()
+        .and_then(Path::file_name)
+        .map(|value| value.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let options = DbRecoveryOptions {
+        busy_timeout_ms,
+        ..DbRecoveryOptions::default()
+    };
+    let db = open_configured_db(
+        db_path,
+        &agent_dir_name,
+        &options,
+        live_db_handle_count(db_path) > 0,
+    )?;
+    Ok(read_transcript_tail(
+        &db,
+        TranscriptWindowQuery {
+            before_seq: None,
+            limit,
+        },
+    )?)
 }
 
 fn read_kv(
