@@ -12019,12 +12019,20 @@
       "targetPath": "source/host/src/extensions/session/agent_db.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "bb08a2db255ae213d45930c2a3fe8bb2eaa7b83d",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_db_metadata_contract.rs",
+        "source/host/tests/session_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "A real Rust production slice now opens the existing session store read-only at the Session boundary, projects kv['metadata'] using the frozen AgentMetadataSerde hex -> UTF-8 JSON shape, and reads the persisted latestRootBlobId used by the shipping conversation capacity gate. Full SandAgentDb parity remains: schema ownership, recovery/in-place recovery, metadata writes/CAS, subscriptions, unread/request/episode/memory/profile state, transcript CRUD/paging/threading, clearConversation, legacy retirement and write-generation/live-handle behavior are not yet ported, so this row is intentionally non-final."
     },
     {
       "referencePath": "source/host/extensions/session/agent-session.ts",
@@ -12110,12 +12118,26 @@
       "targetPath": "source/host/src/extensions/session/conversation_size_limits.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "3c4c80b3c605826298281eb0f184a79e3fdaef8f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/conversation_size_limits.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/agent_isolation/agent_worker_pool.rs",
+        "source/host/src/agent_isolation/conversation_blob_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/conversation_size_limits_contract.rs",
+        "source/host/tests/agent_db_metadata_contract.rs",
+        "source/host/tests/session_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust Session port matches the frozen Grok conversation-size gate: 256 MiB soft / 1 GiB hard defaults, env and pinned-config precedence, SAND_CONVERSATION_GC enablement, db+WAL sizing, 60s pending-write retention, 30-minute soft-GC throttling, background soft maintenance, hard turn gating, no-root and fail-closed skipped-GC reporting, and SandConversationTooLargeError only after a successful collection still exceeds the hard cap. The shipping runner.startRoutedProvider path prepares the production Session and gates on the persisted session metadata latestRootBlobId before Runner inference. Exact implementation SHA 573dea373578887b4bd9a391f4baeefeb745cbea passed Rust desktop runtime run 35850052237 and Desktop Chat Parity run 35850052188."
     },
     {
       "referencePath": "source/host/extensions/session/extension.ts",
@@ -12152,17 +12174,22 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/conversation_size_limits.rs",
         "source/host/src/agent_isolation/agent_worker_pool.rs",
         "source/host/src/agent_isolation/worker_blob_store.rs",
         "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
+        "source/host/tests/agent_db_metadata_contract.rs",
+        "source/host/tests/conversation_size_limits_contract.rs",
         "source/host/tests/agent_worker_pool_lifecycle_contract.rs",
         "source/host/tests/conversation_blob_store_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Production Session now owns a Host-lifetime AgentWorkerPool backed by the concrete SQLite ConversationBlobWorkerBackend, derives frozen per-agent store/conversation-blobs paths, creates WorkerBlobStore instances, prepares existing agent stores before routed Runner inference, and closes all workers on shipping Host shutdown. Full Grok Session materialization, recovery, maintenance/metadata-GC, conversation-state and box-handoff composition is still pending, so this module remains non-final."
+      "notes": "Production Session owns a Host-lifetime AgentWorkerPool backed by the concrete SQLite ConversationBlobWorkerBackend, derives frozen per-agent store/conversation-blobs paths, prepares existing agent stores before routed Runner inference, keeps durable blob-scan root discovery available for recovery, projects the persisted session metadata latestRootBlobId, enforces the Grok soft/hard conversation capacity gate before Runner execution, and closes all workers on Host shutdown. Full Grok Session materialization, recovery, transcript repair/backfill, remaining maintenance/metadata, conversation-state, roster/projection and box-handoff composition remain pending, so this module stays existing-needs-parity."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
