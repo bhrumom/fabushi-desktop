@@ -135,6 +135,7 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
   const snapshots = new Map<string, { snapshot: ComposerDraftSnapshot; listeners: Set<() => void> }>();
   let accountSlot: string | null = null;
   let generation = 0;
+  let mutationRevision = 0;
   let disposed = false;
   let writes = Promise.resolve();
 
@@ -166,6 +167,7 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
     writes = writes.then(() => persistence.write(slot, value)).catch(() => {});
   };
   const replace = (agentKey: string, next: { draft: ComposerDraft | null; draftId: string | null; recovery: ComposerDraft | null }) => {
+    mutationRevision += 1;
     if (next.draft == null && next.recovery == null) records.delete(agentKey);
     else records.set(agentKey, { draft: cloneDraft(next.draft), draftId: next.draftId, recovery: cloneDraft(next.recovery) });
     notify(agentKey, { draft: next.draft, recovery: next.recovery });
@@ -237,14 +239,15 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
     async restore(nextAccountSlot) {
       generation += 1;
       const expectedGeneration = generation;
+      const expectedMutationRevision = mutationRevision;
       accountSlot = nextAccountSlot;
       records.clear();
       for (const agentKey of snapshots.keys()) notify(agentKey, EMPTY_SNAPSHOT);
       if (disposed || nextAccountSlot == null) return;
       await writes;
-      if (!isCurrent(expectedGeneration, nextAccountSlot)) return;
+      if (!isCurrent(expectedGeneration, nextAccountSlot) || mutationRevision !== expectedMutationRevision) return;
       const stored = parseEnvelope(await persistence.read(nextAccountSlot));
-      if (!isCurrent(expectedGeneration, nextAccountSlot)) return;
+      if (!isCurrent(expectedGeneration, nextAccountSlot) || mutationRevision !== expectedMutationRevision) return;
       if (stored.kind === "absent") return;
       if (stored.kind === "corrupt" || stored.schemaVersion !== COMPOSER_DRAFT_SLICE.schemaVersion) {
         writes = writes.then(() => persistence.clear(nextAccountSlot)).catch(() => {});

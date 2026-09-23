@@ -24,6 +24,10 @@ import {
   formatRoutineRunTimestamp,
   presentRoutineRunHistory,
 } from "./automations/routines/run-history.ts";
+import {
+  createComposerDraftStateStore,
+  type ComposerDraftPersistence,
+} from "./conversation/workspace/draft-state.ts";
 
 const flush = async (): Promise<void> => {
   await Promise.resolve();
@@ -227,3 +231,49 @@ test("routine history formats status and relative/zoned timestamps", () => {
   assert.equal(presentRoutineRunHistory([], now, "UTC").empty, true);
 });
 
+
+
+test("composer draft restore does not overwrite a staged attachment added while persistence is loading", async () => {
+  let releaseRead!: () => void;
+  let noteReadStarted!: () => void;
+  const readStarted = new Promise<void>((resolve) => { noteReadStarted = resolve; });
+  const readGate = new Promise<void>((resolve) => { releaseRead = resolve; });
+  const persisted = JSON.stringify({
+    schemaVersion: 1,
+    value: {
+      agents: {
+        "agent-1": {
+          draft: { prompt: "persisted draft", attachments: [] },
+          draftId: "persisted-draft-id",
+          recovery: null,
+        },
+      },
+    },
+  });
+  const persistence: ComposerDraftPersistence = {
+    async read(accountSlot) {
+      assert.equal(accountSlot, "account-1");
+      noteReadStarted();
+      await readGate;
+      return persisted;
+    },
+    async write() {},
+    async clear() {},
+  };
+  const store = createComposerDraftStateStore(persistence);
+  const restoring = store.restore("account-1");
+  await readStarted;
+
+  store.setDraft("agent-1", {
+    prompt: "",
+    attachments: [{ path: "/tmp/agent-notes.txt", name: "agent-notes.txt" }],
+  });
+  releaseRead();
+  await restoring;
+
+  assert.deepEqual(store.snapshotsFor("agent-1").get().draft, {
+    prompt: "",
+    attachments: [{ path: "/tmp/agent-notes.txt", name: "agent-notes.txt" }],
+  });
+  store.dispose();
+});
