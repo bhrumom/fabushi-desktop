@@ -9,6 +9,7 @@ on:
       - "projects/desktop-chat-streaming-parity/**"
       - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
       - "scripts/check-grok-architecture.mjs"
+      - ".github/workflows/pr20-verify-once.yml"
       - ".github/workflows/desktop-chat-parity-ci.yml"
       - ".github/workflows/pr20-verify-once.yml"
   workflow_dispatch:
