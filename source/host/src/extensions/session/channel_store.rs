@@ -200,14 +200,19 @@ impl FileChannelStore {
                 let Ok(event) = event else {
                     return;
                 };
-                // Node fs.watch, used by frozen Grok WatchedDirectory, reports
-                // directory/file change notifications but does not surface the
-                // extra open/close access events exposed by notify. Ignoring
-                // Access keeps the Rust watcher on the same 50 ms trailing-edge
-                // debounce contract instead of splitting one write burst when a
-                // late Close(Write) arrives after the data/metadata event.
-                if matches!(event.kind, notify::EventKind::Access(_)) {
-                    return;
+                // Frozen Grok uses Node fs.watch, whose observable contract
+                // is rename/change. notify on macOS additionally emits access,
+                // metadata and catch-all bookkeeping events for one logical
+                // write. Feeding those through a 50 ms trailing debounce can
+                // split a single burst into two callbacks when a late metadata
+                // event arrives after the data event. Keep only create/remove,
+                // data/name modifications and Any (the closest fs.watch
+                // equivalents), and ignore backend-only noise.
+                match event.kind {
+                    notify::EventKind::Access(_)
+                    | notify::EventKind::Modify(notify::event::ModifyKind::Metadata(_))
+                    | notify::EventKind::Other => return,
+                    _ => {}
                 }
                 schedule_debounced_notify(&debounce);
             },
