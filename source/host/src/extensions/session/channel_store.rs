@@ -9,7 +9,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 use std::thread::{self, JoinHandle};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 use serde_json::Value;
@@ -48,7 +48,6 @@ pub enum ChannelStoreError {
 #[derive(Default)]
 struct DebounceState {
     callback: Option<ChannelChangeListener>,
-    generation: u64,
 }
 
 struct WatchWorker {
@@ -105,7 +104,6 @@ impl FileChannelStore {
         let enabled = on_change.is_some();
         if let Ok(mut state) = self.inner.debounce.lock() {
             state.callback = on_change;
-            state.generation = state.generation.saturating_add(1);
         }
         if enabled {
             self.ensure_watcher();
@@ -211,10 +209,6 @@ impl FileChannelStore {
         Ok(true)
     }
 
-    fn schedule_notify(&self) {
-        schedule_debounced_notify(&self.inner.debounce);
-    }
-
     fn ensure_watcher(&self) {
         let Ok(mut slot) = self.inner.watcher.lock() else {
             return;
@@ -226,10 +220,14 @@ impl FileChannelStore {
         let worker_stop = Arc::clone(&stop);
         let channels_dir = self.inner.channels_dir.clone();
         let debounce = Arc::clone(&self.inner.debounce);
+        // Establish the baseline before spawning so a mutation immediately
+        // after set_on_change cannot become the watcher's initial snapshot.
+        let initial_fingerprint = directory_fingerprint(&channels_dir);
         let handle = thread::Builder::new()
             .name("sand-channel-store-watch".into())
             .spawn(move || {
-                let mut fingerprint = directory_fingerprint(&channels_dir);
+                let mut fingerprint = initial_fingerprint;
+                let mut last_change_at: Option<Instant> = None;
                 while !worker_stop.load(Ordering::Acquire) {
                     thread::sleep(Duration::from_millis(CHANNEL_WATCH_POLL_MS));
                     if worker_stop.load(Ordering::Acquire) {
@@ -238,7 +236,21 @@ impl FileChannelStore {
                     let next = directory_fingerprint(&channels_dir);
                     if next != fingerprint {
                         fingerprint = next;
-                        schedule_debounced_notify(&debounce);
+                        last_change_at = Some(Instant::now());
+                        continue;
+                    }
+                    if last_change_at.is_some_and(|changed_at| {
+                        changed_at.elapsed()
+                            >= Duration::from_millis(CHANNEL_CHANGE_DEBOUNCE_MS)
+                    }) {
+                        last_change_at = None;
+                        let callback = debounce
+                            .lock()
+                            .ok()
+                            .and_then(|state| state.callback.as_ref().map(Arc::clone));
+                        if let Some(callback) = callback {
+                            callback();
+                        }
                     }
                 }
             })
@@ -255,43 +267,6 @@ impl FileChannelStore {
             .and_then(|mut slot| slot.take());
         if let Some(worker) = worker {
             worker.stop();
-        }
-    }
-}
-
-fn schedule_debounced_notify(state: &Arc<Mutex<DebounceState>>) {
-    let generation = {
-        let Ok(mut state) = state.lock() else {
-            return;
-        };
-        if state.callback.is_none() {
-            return;
-        }
-        state.generation = state.generation.saturating_add(1);
-        state.generation
-    };
-    let state_for_thread = Arc::clone(state);
-    let spawn = thread::Builder::new()
-        .name("sand-channel-store-debounce".into())
-        .spawn(move || {
-            thread::sleep(Duration::from_millis(CHANNEL_CHANGE_DEBOUNCE_MS));
-            let callback = state_for_thread.lock().ok().and_then(|state| {
-                (state.generation == generation)
-                    .then(|| state.callback.as_ref().map(Arc::clone))
-                    .flatten()
-            });
-            if let Some(callback) = callback {
-                callback();
-            }
-        });
-    if spawn.is_err() {
-        let callback = state.lock().ok().and_then(|state| {
-            (state.generation == generation)
-                .then(|| state.callback.as_ref().map(Arc::clone))
-                .flatten()
-        });
-        if let Some(callback) = callback {
-            callback();
         }
     }
 }
