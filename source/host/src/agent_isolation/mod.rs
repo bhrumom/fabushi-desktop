@@ -20,7 +20,9 @@ pub use conversation_blob_db::{
     open_configured_conversation_blob_db, open_conversation_blob_db,
     read_conversation_blob_migration_state, remove_sqlite_sidecars, run_quick_check,
     set_conversation_blob_migration_state, ConversationBlobDbError,
-    ConversationBlobMigrationState, CONVERSATION_BLOB_ADOPTION_COMPLETE,
+    ConversationBlobDbOptions, ConversationBlobMigrationState, ConversationBlobRecoveryInfo,
+    ConversationBlobRecoveryOutcome, open_conversation_blob_db_with_options,
+    CONVERSATION_BLOB_ADOPTION_COMPLETE,
     CONVERSATION_BLOB_MIGRATION_UNSTARTED, CONVERSATION_BLOB_RECOVERY_REBUILT,
     CONVERSATION_BLOB_SCHEMA,
 };
