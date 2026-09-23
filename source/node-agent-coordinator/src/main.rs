@@ -1254,7 +1254,11 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
 
                 if let Some(event) = value.get("event").filter(|event| event.is_object()) {
                     if !output_state.gateway_events_live.load(Ordering::SeqCst) {
-                        output_state.post_event("runtime", event.clone());
+                        // Host stdout is the fallback for the same projected
+                        // gateway event envelope used by SSE. Decode its channel
+                        // here as well so transcript/agent events retain their
+                        // real family instead of being mislabeled as runtime.
+                        dispatch_gateway_event(&output_state, event.clone());
                     }
                     continue;
                 }
