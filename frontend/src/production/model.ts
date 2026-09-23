@@ -185,14 +185,28 @@ export function projectRendererAgents(value: unknown, now = Date.now()): Rendere
 }
 
 function attachmentFromEntry(entry: Record<string, unknown>): DraftAttachment | null {
-  const path = stringValue(entry.path ?? entry.url ?? entry.source);
+  const path = stringValue(entry.path ?? entry.url ?? entry.source ?? entry.id);
   if (path == null) return null;
+  const size = typeof entry.byteSize === "number"
+    ? entry.byteSize
+    : typeof entry.sizeBytes === "number"
+      ? entry.sizeBytes
+      : undefined;
   return {
     path,
     name: stringValue(entry.fileName ?? entry.name) ?? path.split(/[/\\]/).at(-1) ?? "Attachment",
-    ...(typeof entry.byteSize === "number" ? { size: entry.byteSize } : {}),
+    ...(size === undefined ? {} : { size }),
     ...(typeof entry.mimeType === "string" ? { mimeType: entry.mimeType } : {})
   };
+}
+
+function attachmentsFromEntry(entry: Record<string, unknown>): DraftAttachment[] {
+  if (!Array.isArray(entry.attachments)) return [];
+  return entry.attachments.flatMap((value) => {
+    if (!isRecord(value)) return [];
+    const attachment = attachmentFromEntry(value);
+    return attachment == null ? [] : [attachment];
+  });
 }
 
 export interface ProjectedUserAttachmentGalleryAttachment extends DraftAttachment {
@@ -446,6 +460,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
   }
   const text = messageText(value);
   if (text == null) return null;
+  const attachments = attachmentsFromEntry(value);
   const role = value.kind === "send-message" || value.role === "assistant" ? "assistant" : "user";
   return {
     kind: "message",
@@ -454,6 +469,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     author: role === "assistant" ? agentName : "You",
     text,
     timestampMs,
+    ...(attachments.length === 0 ? {} : { attachments }),
     ...(transcriptRichText(value) === undefined ? {} : { richText: transcriptRichText(value) }),
     delivery: transcriptDelivery(value) ?? "sent",
     ...(typeof value.clientNonce === "string" ? { clientNonce: value.clientNonce } : {}),

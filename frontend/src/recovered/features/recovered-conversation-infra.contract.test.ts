@@ -24,6 +24,7 @@ import {
   formatRoutineRunTimestamp,
   presentRoutineRunHistory,
 } from "./automations/routines/run-history.ts";
+import { projectTranscriptEntry } from "../../production/model.ts";
 
 const flush = async (): Promise<void> => {
   await Promise.resolve();
@@ -225,4 +226,42 @@ test("routine history formats status and relative/zoned timestamps", () => {
     "Running", "Succeeded", "Failed",
   ]);
   assert.equal(presentRoutineRunHistory([], now, "UTC").empty, true);
+});
+
+
+test("production transcript projection preserves attachments on authoritative user echoes", () => {
+  const attachment = {
+    id: "/committed/agent-notes.txt",
+    path: "/committed/agent-notes.txt",
+    name: "agent-notes.txt",
+    mimeType: "text/plain",
+    sizeBytes: 23,
+  };
+  const projected = projectTranscriptEntry({
+    id: "chat-1:user",
+    role: "user",
+    content: "Use the attached note.",
+    clientNonce: "nonce-1",
+    attachments: [attachment],
+  }, 0, "Agent");
+
+  assert.ok(projected != null && projected.kind === "message");
+  assert.equal(projected.text, "Use the attached note.");
+  assert.deepEqual(projected.attachments, [{
+    path: "/committed/agent-notes.txt",
+    name: "agent-notes.txt",
+    size: 23,
+    mimeType: "text/plain",
+  }]);
+
+  const attachmentOnly = projectTranscriptEntry({
+    id: "chat-2:user",
+    role: "user",
+    content: "",
+    clientNonce: "nonce-2",
+    attachments: [{ ...attachment, id: "/committed/attachment-only.txt", path: "/committed/attachment-only.txt", name: "attachment-only.txt" }],
+  }, 1, "Agent");
+  assert.ok(attachmentOnly != null && attachmentOnly.kind === "message");
+  assert.equal(attachmentOnly.text, "");
+  assert.equal(attachmentOnly.attachments?.[0]?.name, "attachment-only.txt");
 });

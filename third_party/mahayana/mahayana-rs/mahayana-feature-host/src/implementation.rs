@@ -246,6 +246,7 @@ struct FeatureState {
     operations: BTreeSet<String>,
     operation_agents: BTreeMap<String, String>,
     operation_client_nonces: BTreeMap<String, String>,
+    operation_attachments: BTreeMap<String, Vec<AttachmentContext>>,
     grok_transcripts: BTreeMap<String, Vec<Value>>,
     background_operations: BTreeMap<String, BackgroundOperationContext>,
     remote_computer_sessions: BTreeMap<String, RemoteComputerLocalSession>,
@@ -280,6 +281,7 @@ impl Default for FeatureState {
             operations: BTreeSet::new(),
             operation_agents: BTreeMap::new(),
             operation_client_nonces: BTreeMap::new(),
+            operation_attachments: BTreeMap::new(),
             grok_transcripts: BTreeMap::new(),
             background_operations: BTreeMap::new(),
             remote_computer_sessions: BTreeMap::new(),
@@ -6496,11 +6498,54 @@ impl FeatureHostController {
                     .get("prompt")
                     .or_else(|| args.get("text"))
                     .and_then(Value::as_str)
-                    .filter(|value| !value.trim().is_empty())
-                    .ok_or_else(|| FeatureHostError::Contract(
-                        "sendPrompt requires prompt".into(),
-                    ))?
+                    .unwrap_or("")
                     .to_string();
+                let attachment_paths = args
+                    .get("attachmentPaths")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_default();
+                let attachment_names = args
+                    .get("attachmentNames")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_default();
+                let attachments = attachment_paths
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(index, value)| {
+                        let path = value.as_str()?.trim();
+                        if path.is_empty() {
+                            return None;
+                        }
+                        let name = attachment_names
+                            .get(index)
+                            .and_then(Value::as_str)
+                            .map(str::trim)
+                            .filter(|value| !value.is_empty())
+                            .map(str::to_string)
+                            .or_else(|| {
+                                Path::new(path)
+                                    .file_name()
+                                    .and_then(|value| value.to_str())
+                                    .map(str::to_string)
+                            })
+                            .unwrap_or_else(|| "Attachment".into());
+                        Some(AttachmentContext {
+                            id: path.to_string(),
+                            name,
+                            mime_type: None,
+                            text: None,
+                            path: Some(path.to_string()),
+                            size_bytes: None,
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                if prompt.trim().is_empty() && attachments.is_empty() {
+                    return Err(FeatureHostError::Contract(
+                        "sendPrompt requires prompt or attachments".into(),
+                    ));
+                }
                 let client_nonce = args
                     .get("clientNonce")
                     .and_then(Value::as_str)
@@ -6518,6 +6563,7 @@ impl FeatureHostController {
                     "agentId": agent_id,
                     "conversationId": conversation_id,
                     "clientMessageId": client_nonce,
+                    "attachments": attachments,
                 }))
                 .map_err(|error| FeatureHostError::Contract(format!(
                     "invalid sendPrompt compatibility request: {error}"
@@ -6621,7 +6667,7 @@ impl FeatureHostController {
                 else {
                     return event.clone();
                 };
-                let (agent_id, client_nonce) = self
+                let (agent_id, client_nonce, attachments) = self
                     .state()
                     .ok()
                     .and_then(|state| {
@@ -6629,10 +6675,14 @@ impl FeatureHostController {
                             (
                                 agent_id,
                                 state.operation_client_nonces.get(operation_id).cloned(),
+                                state.operation_attachments
+                                    .get(operation_id)
+                                    .cloned()
+                                    .unwrap_or_default(),
                             )
                         })
                     })
-                    .unwrap_or_else(|| ("mahayana-assistant".into(), None));
+                    .unwrap_or_else(|| ("mahayana-assistant".into(), None, Vec::new()));
                 let role = event
                     .get("role")
                     .and_then(Value::as_str)
@@ -6646,6 +6696,9 @@ impl FeatureHostController {
                 if role == "user" {
                     if let Some(client_nonce) = client_nonce {
                         entry["clientNonce"] = Value::String(client_nonce);
+                    }
+                    if !attachments.is_empty() {
+                        entry["attachments"] = json!(attachments);
                     }
                 }
                 json!({
@@ -6983,6 +7036,7 @@ impl FeatureHostController {
             state.operations.clear();
             state.operation_agents.clear();
             state.operation_client_nonces.clear();
+            state.operation_attachments.clear();
             state.grok_transcripts.clear();
             state.background_operations.clear();
             state.automations = automations;
@@ -7160,6 +7214,7 @@ impl FeatureHostController {
         state.operations.remove(operation_id);
         state.operation_agents.remove(operation_id);
         state.operation_client_nonces.remove(operation_id);
+        state.operation_attachments.remove(operation_id);
         state.events.push_back(HostEvent::OperationInterrupted {
             timestamp: timestamp(),
             operation_id: operation_id.to_string(),
@@ -7618,6 +7673,7 @@ impl FeatureHostController {
                     state.operations.remove(&operation_id);
                     state.operation_agents.remove(&operation_id);
                     state.operation_client_nonces.remove(&operation_id);
+                    state.operation_attachments.remove(&operation_id);
                     Some(HostEvent::OperationCompleted {
                         timestamp: timestamp(),
                         operation_id,
@@ -7678,6 +7734,8 @@ impl FeatureHostController {
                         .operation_agents
                         .remove(&operation_id)
                         .unwrap_or_else(|| "mahayana-assistant".into());
+                    state.operation_client_nonces.remove(&operation_id);
+                    state.operation_attachments.remove(&operation_id);
                     let agent_name = state
                         .bots
                         .get(&agent_id)
@@ -8310,7 +8368,11 @@ impl FeatureHostController {
         attachments: Vec<AttachmentContext>,
     ) -> Result<CommandAccepted, FeatureHostError> {
         self.require_authenticated_account()?;
-        let text = required(text, "chat text")?;
+        if text.trim().is_empty() && attachments.is_empty() {
+            return Err(FeatureHostError::Contract(
+                "chat.send requires text or attachments".into(),
+            ));
+        }
         let bot_binding = if let Some(requested_agent_id) = agent_id.as_deref() {
             let state = self.state()?;
             find_bot_by_runtime_or_surface_id(&state, requested_agent_id).cloned()
@@ -8459,6 +8521,11 @@ impl FeatureHostController {
             state
                 .operation_client_nonces
                 .insert(operation_id.clone(), client_nonce);
+        }
+        if !attachments.is_empty() {
+            state
+                .operation_attachments
+                .insert(operation_id.clone(), attachments.clone());
         }
         // The renderer owns optimistic user rows by request id. Once Rust has
         // accepted the turn, every production chat event must carry the
@@ -8736,7 +8803,11 @@ impl FeatureHostController {
                 attachments,
                 ..
             } => {
-                let text = required(text, "chat text")?;
+                if text.trim().is_empty() && attachments.is_empty() {
+                    return Err(FeatureHostError::Contract(
+                        "chat.send requires text or attachments".into(),
+                    ));
+                }
                 let operation_id = next_id(&mut state, "chat");
                 let owner_agent_id = agent_id
                     .clone()
@@ -8754,6 +8825,11 @@ impl FeatureHostController {
                         .operation_client_nonces
                         .insert(operation_id.clone(), client_nonce);
                 }
+                if !attachments.is_empty() {
+                    state
+                        .operation_attachments
+                        .insert(operation_id.clone(), attachments.clone());
+                }
                 let timestamp_ms = now_millis();
                 state
                     .grok_transcripts
@@ -8765,6 +8841,7 @@ impl FeatureHostController {
                         "content": text.clone(),
                         "timestampMs": timestamp_ms,
                         "clientNonce": client_message_id.clone(),
+                        "attachments": attachments.clone(),
                     }));
                 state.events.push_back(HostEvent::ChatMessage {
                     timestamp: timestamp(),
