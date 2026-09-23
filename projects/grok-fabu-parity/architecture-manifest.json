@@ -12160,12 +12160,22 @@
       "targetPath": "source/host/src/extensions/session/conversation_recovery.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "74e6ecc01a6d4d2a2b5bac25cf5c104ebf349738",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/conversation_recovery.rs",
+        "source/host/src/agent_isolation/conversation_blob_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/conversation_recovery_contract.rs",
+        "source/host/tests/conversation_blob_store_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of frozen Grok conversation recovery: recovered transcript reconstruction/hidden-artifact matching, complete referenced-blob resolution checks, generated-wire-compatible ConversationStateStructure root scoring and database root selection. The production ConversationBlobStore no longer owns a private duplicate root scorer; find_latest_root_blob_id and stale-root inspection now call the Session recovery module used by the shipping AgentWorkerPool."
     },
     {
       "referencePath": "source/host/extensions/session/conversation-size-limits.ts",

@@ -17,8 +17,10 @@ use super::conversation_blob_db::{
     ConversationBlobMigrationState,
 };
 use super::legacy_blob_retirement::verify_legacy_blob_retirement;
+use crate::extensions::session::conversation_recovery::{
+    find_latest_root_blob_id_in_database, parse_conversation_state_structure,
+};
 
-const MAX_ROOT_BLOB_BYTES: usize = 8 * 1024 * 1024;
 const MAX_STALE_ROOT_SCAN_BYTES: usize = 64 * 1024 * 1024;
 const MAX_TRACKED_RECENT_WRITES: usize = 16_384;
 const VACUUM_MIN_DELETED_BYTES: u64 = 64 * 1024 * 1024;
@@ -145,34 +147,7 @@ impl ConversationBlobStoreDb {
     pub fn find_latest_root_blob_id(
         &self,
     ) -> Result<Option<Vec<u8>>, ConversationBlobStoreError> {
-        let mut present_ids = HashSet::new();
-        {
-            let mut statement = self.connection.prepare("SELECT id FROM blobs")?;
-            let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
-            for id in rows {
-                present_ids.insert(id?);
-            }
-        }
-
-        let mut best: Option<(String, RootScore)> = None;
-        let mut statement = self.connection.prepare("SELECT id, data FROM blobs")?;
-        let rows = statement.query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, Vec<u8>>(1)?))
-        })?;
-        for row in rows {
-            let (id, data) = row?;
-            let Some(score) = score_root_candidate(&data, &present_ids) else {
-                continue;
-            };
-            if best
-                .as_ref()
-                .map(|(_, current)| score.is_better_than(current))
-                .unwrap_or(true)
-            {
-                best = Some((id, score));
-            }
-        }
-        Ok(best.and_then(|(id, _)| from_hex(&id)))
+        Ok(find_latest_root_blob_id_in_database(&self.connection)?)
     }
 
     pub fn clear_stale_checkpoint_roots(
@@ -393,105 +368,6 @@ impl ConversationBlobStoreDb {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct RootScore {
-    turns: usize,
-    root_prompts: usize,
-    bytes: usize,
-}
-
-impl RootScore {
-    fn is_better_than(self, other: &Self) -> bool {
-        self.turns > other.turns
-            || (self.turns == other.turns && self.root_prompts > other.root_prompts)
-            || (self.turns == other.turns
-                && self.root_prompts == other.root_prompts
-                && self.bytes > other.bytes)
-    }
-}
-
-#[derive(Debug, Default)]
-struct MinimalConversationState {
-    turns: Vec<Vec<u8>>,
-    root_prompts: usize,
-}
-
-fn score_root_candidate(data: &[u8], present_ids: &HashSet<String>) -> Option<RootScore> {
-    if data.len() > MAX_ROOT_BLOB_BYTES {
-        return None;
-    }
-    let parsed = parse_conversation_state_structure(data)?;
-    if parsed.turns.is_empty()
-        || parsed
-            .turns
-            .iter()
-            .any(|turn| !present_ids.contains(&to_hex(turn)))
-    {
-        return None;
-    }
-    Some(RootScore {
-        turns: parsed.turns.len(),
-        root_prompts: parsed.root_prompts,
-        bytes: data.len(),
-    })
-}
-
-fn parse_conversation_state_structure(data: &[u8]) -> Option<MinimalConversationState> {
-    let mut position = 0usize;
-    let mut parsed = MinimalConversationState::default();
-    while position < data.len() {
-        let tag = read_varint(data, &mut position)?;
-        let field_number = tag >> 3;
-        let wire_type = (tag & 0x07) as u8;
-        match wire_type {
-            0 => {
-                let _ = read_varint(data, &mut position)?;
-            }
-            1 => {
-                position = position.checked_add(8)?;
-                if position > data.len() {
-                    return None;
-                }
-            }
-            2 => {
-                let length: usize = read_varint(data, &mut position)?.try_into().ok()?;
-                let end = position.checked_add(length)?;
-                if end > data.len() {
-                    return None;
-                }
-                let value = &data[position..end];
-                if field_number == 8 {
-                    parsed.turns.push(value.to_vec());
-                } else if field_number == 1 {
-                    parsed.root_prompts += 1;
-                }
-                position = end;
-            }
-            5 => {
-                position = position.checked_add(4)?;
-                if position > data.len() {
-                    return None;
-                }
-            }
-            _ => return None,
-        }
-    }
-    Some(parsed)
-}
-
-fn read_varint(data: &[u8], position: &mut usize) -> Option<u64> {
-    let mut value = 0u64;
-    for shift in (0..70).step_by(7) {
-        let byte = *data.get(*position)?;
-        *position += 1;
-        value |= u64::from(byte & 0x7f) << shift;
-        if byte & 0x80 == 0 {
-            return Some(value);
-        }
-    }
-    None
-}
-
 fn to_hex(bytes: &[u8]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let mut output = String::with_capacity(bytes.len() * 2);
@@ -502,19 +378,6 @@ fn to_hex(bytes: &[u8]) -> String {
     output
 }
 
-fn from_hex(value: &str) -> Option<Vec<u8>> {
-    if value.len() % 2 != 0 {
-        return None;
-    }
-    let bytes = value.as_bytes();
-    let mut output = Vec::with_capacity(bytes.len() / 2);
-    for index in (0..bytes.len()).step_by(2) {
-        let high = hex_nibble(bytes[index])?;
-        let low = hex_nibble(bytes[index + 1])?;
-        output.push((high << 4) | low);
-    }
-    Some(output)
-}
 
 fn hex_nibble(value: u8) -> Option<u8> {
     match value {
