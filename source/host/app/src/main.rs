@@ -20,6 +20,9 @@ use mahayana_host_runtime::extensions::box_lifecycle::production::{
     ProductionBoxLifecycleClient, ProductionBoxLifecycleClientFactory,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::gateway::{
+    SessionGatewayError, dispatch_production_session_gateway_call,
+};
 use mahayana_host_runtime::extensions::source_map::extension::start_source_map_extension;
 use mahayana_host_runtime::extensions::source_map::source_map_service::SandSourceMap;
 use mahayana_host_runtime::extensions::inference::provider_session::{
@@ -450,6 +453,14 @@ impl GatewayApi for UnifiedGatewayApi {
             return Ok(serde_json::Value::Bool(
                 self.experiments.is_agent_network_enabled(),
             ));
+        }
+        if let Some(result) =
+            dispatch_production_session_gateway_call(&self.session_workers, method, &args)
+        {
+            return result.map_err(|error| match error {
+                SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
+                SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
+            });
         }
         if method == RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD {
             return self

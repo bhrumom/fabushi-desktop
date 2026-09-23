@@ -12087,7 +12087,9 @@
         "source/host/src/extensions/session/agent_db_schema.rs",
         "source/host/src/extensions/session/agent_db_recovery.rs",
         "source/host/src/extensions/session/production.rs",
-        "source/host/src/extensions/session/session_maintenance.rs"
+        "source/host/src/extensions/session/session_maintenance.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_db_metadata_contract.rs",
@@ -12096,9 +12098,10 @@
         "source/host/tests/session_production_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/session_maintenance_contract.rs",
-        "source/host/tests/agent_db_mutation_production_contract.rs"
+        "source/host/tests/agent_db_mutation_production_contract.rs",
+        "source/host/tests/session_gateway_contract.rs"
       ],
-      "notes": "Rust production AgentDb now covers Grok-aligned recovery/schema opening, metadata projection/root CAS, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, maintenance version KV, legacy blob retirement transactions, transcript reads/paging plus append/update/delete and clear-conversation mutation events. Shipping ProductionSessionWorkers owns these write APIs and clears both durable conversation-blobs.db plus session/legacy conversation state. Final is withheld until generic metadata get/set subscriptions, spend-guard/partner/profile-snapshot/transient APIs, full live owner/close/busy behavior and Gateway command cutover are proven."
+      "notes": "Rust production AgentDb covers Grok-aligned recovery/schema opening, metadata projection/root CAS, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, maintenance version KV, legacy blob retirement transactions, transcript reads/paging plus append/update/delete and clear-conversation events. Shipping Gateway transcript read commands now use this Rust ownership path through SessionConversationState. Final is withheld until generic metadata subscriptions, spend-guard/partner/profile-snapshot/transient APIs, full live owner/close/busy behavior and the remaining mutation Gateway commands are cut over."
     },
     {
       "referencePath": "source/host/extensions/session/agent-session.ts",
@@ -12136,15 +12139,18 @@
       "behavioralEvidence": [
         "source/host/src/extensions/session/channel_store.rs",
         "source/host/src/extensions/session/connector_secret_store.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/channel_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/session_gateway_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production slice matches frozen Grok path/layout, safe platform IDs, connector label normalization, config parsing, sorted configured connections, atomic metadata writes and recursive remove. ProductionSessionWorkers now composes channel metadata with the connector secret store for store/list/config/disconnect behavior. Final is withheld only for WatchedDirectory-equivalent external filesystem observation and 50ms debounced onChange semantics; local write/remove callbacks are implemented."
+      "notes": "Rust production slice matches frozen Grok path/layout, safe platform IDs, connector label normalization, config parsing, sorted configured connections, atomic metadata writes and recursive remove. ProductionSessionWorkers composes channel metadata with connector secrets, and Host Gateway getAgentChannels/connectChannel/disconnectChannel/refreshChannel now route directly to this Rust owner. Final is withheld for WatchedDirectory-equivalent external filesystem observation and 50ms debounced onChange semantics."
     },
     {
       "referencePath": "source/host/extensions/session/connector-secret-store.ts",
@@ -12292,7 +12298,8 @@
         "source/host/src/extensions/session/session_conversation_state.rs",
         "source/host/src/extensions/session/pending_card_sweeps.rs",
         "source/host/src/extensions/session/connector_secret_store.rs",
-        "source/host/src/extensions/session/channel_store.rs"
+        "source/host/src/extensions/session/channel_store.rs",
+        "source/host/src/extensions/session/gateway.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12308,9 +12315,10 @@
         "source/host/tests/agent_db_mutation_production_contract.rs",
         "source/host/tests/pending_card_sweeps_contract.rs",
         "source/host/tests/connector_secret_store_contract.rs",
-        "source/host/tests/channel_store_contract.rs"
+        "source/host/tests/channel_store_contract.rs",
+        "source/host/tests/session_gateway_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state ownership, transcript projection/mutations, profile/avatar mutations, connector secrets plus channel metadata composition, roster summaries and conversation capacity before Runner inference. Full Grok Session still needs Gateway create/open/transcript/mutation/channel command cutover, full ConversationState proto derivation/outlines, workflow composition, box handoff and watched-directory parity, so this module remains existing-needs-parity."
+      "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state, transcript projection/mutations, profile/avatar mutations, connector/channel composition, roster summaries and conversation capacity. Shipping Host now cuts over countAgents, getAgentTranscript*, getAgentThread and channel list/connect/disconnect/refresh commands directly to ProductionSessionWorkers. Remaining parity includes create/open/update/delete/unread/settings Gateway cutover, full ConversationState proto outlines, workflow composition, box handoff and watcher parity."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
@@ -12325,16 +12333,19 @@
         "source/host/src/extensions/session/session_conversation_state.rs",
         "source/host/src/extensions/session/agent_db_transcript_pages.rs",
         "source/host/src/extensions/session/agent_db_schema.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_conversation_state_contract.rs",
         "source/host/tests/agent_db_transcript_pages_contract.rs",
         "source/host/tests/session_production_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/session_gateway_contract.rs"
       ],
-      "notes": "Rust Session conversation-state owner now provides corruption-nonrecovering transcript entries/page/window/tail/thread reads, frozen branched-thread root resolution/counts, and production Session routes prepared-agent transcript tail through it. ProductionSessionWorkers exposes all read projections for future Gateway cutover. Final is withheld until ConversationStateStructure blob resolution -> full proto state derivation -> outline projection and openSession disposal semantics are implemented and Gateway getTranscript/getAgentTranscript*/getAgentThread methods route here."
+      "notes": "Rust Session conversation-state owner provides corruption-nonrecovering transcript entries/page/window/tail/thread reads, frozen branched-thread root resolution/counts, and shipping Host Gateway getAgentTranscript/getAgentTranscriptPage/getAgentTranscriptWindow/getAgentTranscriptTail/getAgentThread now cut over directly to ProductionSessionWorkers. Final is withheld until ConversationStateStructure blob resolution -> full proto state derivation -> outline projection and openSession disposal semantics are implemented."
     },
     {
       "referencePath": "source/host/extensions/session/session-diagnostics.ts",
