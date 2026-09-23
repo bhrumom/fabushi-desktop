@@ -12397,7 +12397,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/session_gateway_contract.rs"
       ],
-      "notes": "Rust Session conversation-state owner provides corruption-nonrecovering transcript entries/page/window/tail/thread reads, frozen branched-thread root resolution/counts, and shipping Host Gateway getAgentTranscript/getAgentTranscriptPage/getAgentTranscriptWindow/getAgentTranscriptTail/getAgentThread now cut over directly to ProductionSessionWorkers. Final is withheld until ConversationStateStructure blob resolution -> full proto state derivation -> outline projection and openSession disposal semantics are implemented."
+      "notes": "Rust Session conversation-state owner now provides corruption-nonrecovering transcript entries/page/window/tail/thread reads plus frozen branched-thread semantics and a durable ConversationStateStructure outline resolver. The resolver validates all structural refs, decodes agent/shell turn indirection, user/assistant/thinking/tool/send-message/task/computer-screenshot outline semantics from frozen protobuf wire fields, and shipping getConversationOutline is cut over to ProductionSessionWorkers. Final remains withheld until todo/summary/full ConversationState materialization and maintenance hidden-repair/backfill composition use this resolver directly."
     },
     {
       "referencePath": "source/host/extensions/session/session-diagnostics.ts",

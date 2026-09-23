@@ -6,9 +6,14 @@ use mahayana_host_runtime::extensions::session::agent_db_schema::AGENT_DB_SCHEMA
 use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
     TranscriptPageQuery, TranscriptWindowQuery,
 };
-use mahayana_host_runtime::extensions::session::session_conversation_state::SessionConversationState;
+use mahayana_host_runtime::extensions::session::agent_db::compare_and_set_persisted_latest_root_blob_id;
+use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::session_conversation_state::{
+    ConversationOutlineItem, SessionConversationState,
+};
 use rusqlite::params;
 use serde_json::json;
+use sha2::{Digest, Sha256};
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -125,5 +130,181 @@ fn transcript_read_owner_matches_frozen_page_window_tail_and_thread_semantics() 
             .is_empty()
     );
 
+    let _ = fs::remove_dir_all(root);
+}
+
+
+fn encode_varint(mut value: u64, output: &mut Vec<u8>) {
+    while value >= 0x80 {
+        output.push((value as u8) | 0x80);
+        value >>= 7;
+    }
+    output.push(value as u8);
+}
+
+fn push_bytes(field: u64, value: &[u8], output: &mut Vec<u8>) {
+    encode_varint((field << 3) | 2, output);
+    encode_varint(value.len() as u64, output);
+    output.extend_from_slice(value);
+}
+
+fn push_string(field: u64, value: &str, output: &mut Vec<u8>) {
+    push_bytes(field, value.as_bytes(), output);
+}
+
+fn push_varint(field: u64, value: u64, output: &mut Vec<u8>) {
+    encode_varint(field << 3, output);
+    encode_varint(value, output);
+}
+
+fn blob_id(data: &[u8]) -> Vec<u8> {
+    Sha256::digest(data).to_vec()
+}
+
+#[test]
+fn durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semantics() {
+    let root = temp_root("outline");
+    let agents = root.join("agents");
+    let runtime = std::sync::Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let record = runtime.materialize_new_session(None, "user", None).expect("agent");
+    let store = runtime.create_agent_blob_store(&record.id).expect("blob store");
+
+    let mut user = Vec::new();
+    push_string(1, "[SAND_HIDDEN_PROMPT][SAND_TRUSTED_AUTOMATION_PROMPT]secret", &mut user);
+    push_string(2, "message-1", &mut user);
+    let user_id = blob_id(&user);
+    futures::executor::block_on(store.set_blob(&(), &user_id, &user)).expect("user blob");
+
+    let mut assistant = Vec::new();
+    push_string(1, "assistant text", &mut assistant);
+    let mut assistant_step = Vec::new();
+    push_bytes(1, &assistant, &mut assistant_step);
+    let assistant_step_id = blob_id(&assistant_step);
+    futures::executor::block_on(store.set_blob(&(), &assistant_step_id, &assistant_step))
+        .expect("assistant step");
+
+    let mut thinking = Vec::new();
+    push_string(1, "thinking", &mut thinking);
+    push_varint(2, 17, &mut thinking);
+    let mut thinking_step = Vec::new();
+    push_bytes(3, &thinking, &mut thinking_step);
+    let thinking_step_id = blob_id(&thinking_step);
+    futures::executor::block_on(store.set_blob(&(), &thinking_step_id, &thinking_step))
+        .expect("thinking step");
+
+    let mut send_text = Vec::new();
+    push_string(1, "sent text", &mut send_text);
+    let mut send_args = Vec::new();
+    push_bytes(1, &send_text, &mut send_args);
+    let mut send_call = Vec::new();
+    push_bytes(1, &send_args, &mut send_call);
+    let mut send_tool = Vec::new();
+    push_bytes(55, &send_call, &mut send_tool);
+    let mut send_step = Vec::new();
+    push_bytes(2, &send_tool, &mut send_step);
+    let send_step_id = blob_id(&send_step);
+    futures::executor::block_on(store.set_blob(&(), &send_step_id, &send_step))
+        .expect("send-message step");
+
+    let mut task_args = Vec::new();
+    push_string(1, "  investigate  ", &mut task_args);
+    let mut task_error = Vec::new();
+    push_string(1, "task failed", &mut task_error);
+    let mut task_result = Vec::new();
+    push_bytes(2, &task_error, &mut task_result);
+    let mut task_call = Vec::new();
+    push_bytes(1, &task_args, &mut task_call);
+    push_bytes(2, &task_result, &mut task_call);
+    let mut task_tool = Vec::new();
+    push_bytes(19, &task_call, &mut task_tool);
+    let mut task_step = Vec::new();
+    push_bytes(2, &task_tool, &mut task_step);
+    let task_step_id = blob_id(&task_step);
+    futures::executor::block_on(store.set_blob(&(), &task_step_id, &task_step))
+        .expect("task step");
+
+    let mut agent_turn = Vec::new();
+    push_bytes(1, &user_id, &mut agent_turn);
+    for step in [&assistant_step_id, &thinking_step_id, &send_step_id, &task_step_id] {
+        push_bytes(2, step, &mut agent_turn);
+    }
+    let mut agent_turn_wrapper = Vec::new();
+    push_bytes(1, &agent_turn, &mut agent_turn_wrapper);
+    let agent_turn_id = blob_id(&agent_turn_wrapper);
+    futures::executor::block_on(store.set_blob(&(), &agent_turn_id, &agent_turn_wrapper))
+        .expect("agent turn");
+
+    let mut shell_command = Vec::new();
+    push_string(1, "pwd", &mut shell_command);
+    let shell_command_id = blob_id(&shell_command);
+    futures::executor::block_on(store.set_blob(&(), &shell_command_id, &shell_command))
+        .expect("shell command");
+    let mut shell_output = Vec::new();
+    push_string(1, "/tmp", &mut shell_output);
+    let shell_output_id = blob_id(&shell_output);
+    futures::executor::block_on(store.set_blob(&(), &shell_output_id, &shell_output))
+        .expect("shell output");
+    let mut shell_turn = Vec::new();
+    push_bytes(1, &shell_command_id, &mut shell_turn);
+    push_bytes(2, &shell_output_id, &mut shell_turn);
+    let mut shell_turn_wrapper = Vec::new();
+    push_bytes(2, &shell_turn, &mut shell_turn_wrapper);
+    let shell_turn_id = blob_id(&shell_turn_wrapper);
+    futures::executor::block_on(store.set_blob(&(), &shell_turn_id, &shell_turn_wrapper))
+        .expect("shell turn");
+
+    let mut root_blob = Vec::new();
+    push_bytes(8, &agent_turn_id, &mut root_blob);
+    push_bytes(8, &shell_turn_id, &mut root_blob);
+    let root_id = blob_id(&root_blob);
+    futures::executor::block_on(store.set_blob(&(), &root_id, &root_blob)).expect("root blob");
+    assert!(compare_and_set_persisted_latest_root_blob_id(
+        &record.db_path,
+        500,
+        &[],
+        &root_id,
+    ).expect("root CAS"));
+
+    let outline = runtime.read_agent_outline(&record.id).expect("outline");
+    assert_eq!(outline.len(), 6);
+    assert!(matches!(
+        &outline[0],
+        ConversationOutlineItem::User { id, text, hidden }
+            if id == "outline-user-0" && text == "secret" && *hidden
+    ));
+    assert!(matches!(
+        &outline[1],
+        ConversationOutlineItem::AssistantText { id, text }
+            if id == "outline-0-0" && text == "assistant text"
+    ));
+    assert!(matches!(
+        &outline[2],
+        ConversationOutlineItem::Thinking { id, text, duration_ms }
+            if id == "outline-0-1" && text == "thinking" && *duration_ms == Some(17)
+    ));
+    assert!(matches!(
+        &outline[3],
+        ConversationOutlineItem::SendMessage { id, message }
+            if id == "outline-0-2"
+                && message == &json!({"type":"text","content":"sent text"})
+    ));
+    assert!(matches!(
+        &outline[4],
+        ConversationOutlineItem::ToolCall { id, name, status, summary }
+            if id == "outline-0-3"
+                && name == "Task"
+                && status == "failed"
+                && summary.as_deref() == Some("task failed")
+    ));
+    assert!(matches!(
+        &outline[5],
+        ConversationOutlineItem::ToolCall { id, name, status, summary }
+            if id == "outline-shell-1"
+                && name == "shellToolCall"
+                && status == "done"
+                && summary.as_deref() == Some("pwd")
+    ));
+
+    runtime.shutdown();
     let _ = fs::remove_dir_all(root);
 }

@@ -30,7 +30,9 @@ use super::agent_db_transcript_pages::{
 use super::agent_db_serde::{
     AwaitingUserResponse, EpisodeTurn, SandProfile, SpendGuardState,
 };
-use super::session_conversation_state::{SessionConversationState, TranscriptThread};
+use super::session_conversation_state::{
+    ConversationOutlineItem, SessionConversationState, TranscriptThread,
+};
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
@@ -205,6 +207,22 @@ impl ProductionSessionWorkers {
         let db_path = self.session_db_path(agent_id)?;
         self.conversation_state
             .read_agent_thread(&db_path, root_id)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn read_agent_outline(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<ConversationOutlineItem>, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        let blob_db_path = conversation_blobs_path(&db_path);
+        self.conversation_state
+            .read_agent_outline(
+                Arc::clone(&self.pool),
+                agent_id,
+                &db_path,
+                &blob_db_path,
+            )
             .map_err(|error| error.to_string())
     }
 

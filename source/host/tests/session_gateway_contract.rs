@@ -396,3 +396,24 @@ fn malformed_session_gateway_requests_fail_closed_and_unknown_methods_fall_throu
     .is_none());
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn production_gateway_owns_conversation_outline_for_fresh_agents() {
+    let root = temp_root("conversation-outline");
+    let agents = root.join("agents");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let record = runtime.materialize_new_session(None, "user", None).expect("agent");
+
+    assert_eq!(
+        dispatch(
+            &runtime,
+            "getConversationOutline",
+            json!({"id":record.id}),
+        ),
+        json!([])
+    );
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}

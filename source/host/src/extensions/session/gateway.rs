@@ -339,6 +339,12 @@ pub fn dispatch_production_session_gateway_call(
                     .map_err(SessionGatewayError::internal)
             })
         }),
+        "getConversationOutline" => required_string(args, "id").and_then(|agent_id| {
+            session
+                .read_agent_outline(agent_id)
+                .and_then(|outline| serde_json::to_value(outline).map_err(|error| error.to_string()))
+                .map_err(SessionGatewayError::internal)
+        }),
         "getAgentChannels" | "refreshChannel" => required_string(args, "id").and_then(|agent_id| {
             session
                 .list_agent_channels(agent_id)
