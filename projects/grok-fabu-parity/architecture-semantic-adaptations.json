@@ -32,8 +32,7 @@
         "desktop/e2e/grok-parity.spec.ts",
         "desktop/e2e/mahayana-agent-workbench.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/pr20-verify-once.yml",
-        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
+        ".github/workflows/pr20-verify-once.yml"
       ],
       "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state."
     }
