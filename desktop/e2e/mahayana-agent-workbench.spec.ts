@@ -191,7 +191,7 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
     await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 1_000 });
     await expect(promptInput).toBeVisible();
 
-    const turn = await expectHermesAssistantTurn(page, '收到： 请分析这个任务');
+    const turn = await expectHermesAssistantTurn(page, '收到：请分析这个任务');
     await expect(turn).toHaveCount(1);
     await expect(promptInput).toBeVisible();
   } finally {
