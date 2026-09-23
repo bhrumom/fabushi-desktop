@@ -1184,7 +1184,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await composer.getByRole('button', { name: 'Send message' }).click();
 
       await expect(composer.getByText('agent-notes.txt')).toHaveCount(0);
-      const firstUserTurn = transcript.getByRole('article').filter({ hasText: 'Use the attached note.' });
+      const firstUserTurn = transcript.locator('article[data-role="user"]').filter({ hasText: 'Use the attached note.' });
       await expect(firstUserTurn).toHaveCount(1);
       await expect(firstUserTurn.getByText('agent-notes.txt')).toBeVisible();
 
