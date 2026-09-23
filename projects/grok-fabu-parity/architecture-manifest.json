@@ -12362,12 +12362,24 @@
       "targetPath": "source/host/src/extensions/session/session_recovery.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e35f6c30d040786c1a7e594099e533c0fee166ed",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/session_recovery.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/agents/agent_profile.rs",
+        "source/host/src/agents/settings_file.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/session_recovery_contract.rs",
+        "source/host/tests/session_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of frozen Grok session-recovery: kind-specific recovered transcript comparison, Promise-equivalent cached blob reads with write-through cache/flush forwarding, and missing profile/settings materialization. ProductionSessionWorkers now calls the recovery file helpers on the shipping existing-agent path before Runner inference."
     },
     {
       "referencePath": "source/host/extensions/session/session-roster.ts",

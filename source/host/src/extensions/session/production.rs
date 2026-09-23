@@ -6,7 +6,7 @@ use crate::agent_isolation::{
     create_production_agent_store_worker_backend,
 };
 use crate::agents::agent_profile::{
-    SandAgentProfile, get_sand_profile_path, read_sand_profile_file, write_sand_profile_file,
+    SandAgentProfile, read_sand_profile_file,
 };
 use crate::storage::agent_paths::get_sand_agents_root_dir;
 
@@ -20,6 +20,7 @@ use super::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
 };
 use super::session_paths::get_agent_db_path;
+use super::session_recovery::{ensure_profile_file, ensure_settings_file};
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
@@ -126,23 +127,14 @@ impl ProductionSessionWorkers {
         let persisted_name =
             read_persisted_agent_name(&session_db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?;
-        let agent_dir = session_db_path
-            .parent()
-            .ok_or_else(|| "production session DB path has no agent directory".to_string())?;
-        let profile_path = get_sand_profile_path(agent_dir);
-        if !profile_path.is_file() {
-            write_sand_profile_file(
-                &profile_path,
-                &SandAgentProfile {
-                    name: persisted_name.unwrap_or_else(|| "Grok".to_string()),
-                    description: session_state.profile.description.trim().to_string(),
-                    title: String::new(),
-                    avatar_shape: String::new(),
-                    avatar_color: String::new(),
-                },
-            )
-            .map_err(|error| format!("could not materialize production profile file: {error}"))?;
-        }
+        let profile_path = ensure_profile_file(
+            &session_db_path,
+            persisted_name.as_deref(),
+            &session_state.profile.description,
+        )
+        .map_err(|error| format!("could not materialize production profile file: {error}"))?;
+        let _settings_path = ensure_settings_file(&session_db_path)
+            .map_err(|error| format!("could not materialize production settings file: {error}"))?;
         let profile_file = read_sand_profile_file(&profile_path);
 
         let latest_root_blob_id = futures::executor::block_on(

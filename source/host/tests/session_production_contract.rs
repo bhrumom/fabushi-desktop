@@ -210,6 +210,10 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
     let profile_text = fs::read_to_string(agent_dir.join("profile.json"))
         .expect("materialized profile file");
     assert!(profile_text.ends_with('\n'));
+    assert_eq!(
+        fs::read_to_string(agent_dir.join("settings.json")).expect("materialized settings file"),
+        "{}\n"
+    );
     assert_eq!(runtime.active_worker_count(), 1);
 
     runtime.shutdown();
