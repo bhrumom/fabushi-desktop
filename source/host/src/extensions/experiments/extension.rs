@@ -36,6 +36,7 @@ impl HostExperimentsOptions {
 struct ExperimentsState {
     options: HostExperimentsOptions,
     settings_overrides: Mutex<BTreeMap<String, bool>>,
+    dynamic_config_overrides: Mutex<BTreeMap<String, BTreeMap<String, serde_json::Value>>>,
     listeners: Mutex<BTreeMap<u64, Arc<dyn Fn() + Send + Sync>>>,
     next_listener_id: AtomicU64,
 }
@@ -51,6 +52,7 @@ impl HostExperimentsExtension {
             state: Arc::new(ExperimentsState {
                 options,
                 settings_overrides: Mutex::new(BTreeMap::new()),
+                dynamic_config_overrides: Mutex::new(BTreeMap::new()),
                 listeners: Mutex::new(BTreeMap::new()),
                 next_listener_id: AtomicU64::new(0),
             }),
@@ -87,12 +89,46 @@ impl HostExperimentsExtension {
         self.check_feature_gate("sand_browser_ua_token_kill_switch")
     }
 
+    pub fn get_dynamic_config(
+        &self,
+        name: &str,
+    ) -> BTreeMap<String, serde_json::Value> {
+        let mut config = bundled_dynamic_config_default(name);
+        let overrides = self
+            .state
+            .dynamic_config_overrides
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if let Some(values) = overrides.get(name) {
+            for (key, value) in values {
+                config.insert(key.clone(), value.clone());
+            }
+        }
+        config
+    }
+
     pub fn replace_feature_flag_overrides(&self, overrides: BTreeMap<String, bool>) {
         *self
             .state
             .settings_overrides
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = overrides;
+        self.notify_listeners();
+    }
+
+    pub fn replace_dynamic_config_overrides(
+        &self,
+        overrides: BTreeMap<String, BTreeMap<String, serde_json::Value>>,
+    ) {
+        *self
+            .state
+            .dynamic_config_overrides
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = overrides;
+        self.notify_listeners();
+    }
+
+    fn notify_listeners(&self) {
         let listeners = self
             .state
             .listeners
@@ -159,5 +195,17 @@ fn bundled_feature_gate_default(name: &str) -> bool {
         // Host convenience gates that are already referenced by migrated code.
         "enable_sparse_plugin_clones" | "sand_multitask" | "sand_spotlight" => true,
         _ => false,
+    }
+}
+
+fn bundled_dynamic_config_default(
+    name: &str,
+) -> BTreeMap<String, serde_json::Value> {
+    match name {
+        "grok_bot_conversation_size_limits" => BTreeMap::from([
+            ("soft_limit_mb".into(), serde_json::json!(256)),
+            ("hard_limit_mb".into(), serde_json::json!(1024)),
+        ]),
+        _ => BTreeMap::new(),
     }
 }

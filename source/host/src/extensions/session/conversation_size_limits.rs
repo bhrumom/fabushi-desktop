@@ -60,7 +60,7 @@ pub fn pin_conversation_gc_reporter(reporter: Option<ConversationGcReporter>) {
     }
 }
 
-fn configured_limits() -> ConversationSizeLimits {
+pub fn current_conversation_size_limits() -> ConversationSizeLimits {
     let reader = limits_reader_slot()
         .read()
         .ok()
@@ -99,7 +99,7 @@ pub struct ConversationSizePolicy {
 
 impl ConversationSizePolicy {
     pub fn from_environment() -> Self {
-        let configured = configured_limits();
+        let configured = current_conversation_size_limits();
         let pinned = PINNED_CONVERSATION_GC_ENABLED.load(Ordering::Acquire);
         Self::from_lookup(|name| std::env::var(name).ok(), configured, pinned)
     }

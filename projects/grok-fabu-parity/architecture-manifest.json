@@ -11247,12 +11247,21 @@
       "targetPath": "source/host/src/extensions/experiments/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "a092f9f10f733c4c3c335729b8b500de7a87b267",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/experiments/extension.rs",
+        "source/host/src/extensions/session/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/extensions_experiments_contract.rs",
+        "source/host/tests/session_extension_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Host Experiments owner now preserves frozen extension dependencies, bundled convenience-gate defaults/dev overrides, disposable subscriptions, and getDynamicConfig fallback+live-override merge semantics for grok_bot_conversation_size_limits. Shipping Session consumes that dynamic config through a pinned production reader. Final is withheld for authenticated Statsig bootstrap/cache/poll/auth-renewal, async checkGate/readiness, gate properties, hydrated user identity, experiment/model-config APIs and the full frozen extension return surface."
     },
     {
       "referencePath": "source/host/extensions/extension-ids.generated.ts",
@@ -12383,7 +12392,9 @@
         "source/host/src/extensions/session/box_handoff_service.rs",
         "source/host/app/src/main.rs",
         "source/host/src/extensions/session/session_maintenance.rs",
-        "source/host/src/extensions/settings/settings_service.rs"
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/src/extensions/experiments/extension.rs",
+        "source/host/src/extensions/session/conversation_size_limits.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_extension_contract.rs",
@@ -12392,10 +12403,12 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/session_maintenance_contract.rs",
         "source/host/tests/settings_service_contract.rs",
-        "source/host/tests/session_store_factories_contract.rs"
+        "source/host/tests/session_store_factories_contract.rs",
+        "source/host/tests/extensions_experiments_contract.rs",
+        "source/host/tests/conversation_size_limits_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust SessionExtension owns the production Session store, Box handoff lifetime and live experiment pins. Startup now runs frozen legacy members-directory cleanup through the Session maintenance task runner before exposing the extension. Shipping Session now consumes the live SettingsService timezone resolver for automation/workflow composition. Final remains withheld until dynamic-config size-limit readers and real Computer/telemetry handoff dependencies are injected."
+      "notes": "Shipping Rust SessionExtension owns the production Session store, Box handoff lifetime, live experiment pins, startup legacy members cleanup and the frozen grok_bot_conversation_size_limits dynamic-config reader. Session size policy now reads the live Experiments fallback/override snapshot instead of relying only on environment/default constants. Shipping Session also consumes the live SettingsService timezone resolver for automation/workflow composition. Final remains withheld until real Computer/telemetry Box handoff prepare/screenshot/status/report dependencies replace the current default no-op dependency set."
     },
     {
       "referencePath": "source/host/extensions/session/pending-card-sweeps.ts",

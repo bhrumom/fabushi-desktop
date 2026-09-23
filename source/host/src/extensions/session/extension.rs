@@ -7,7 +7,9 @@ use super::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffRequest, HandoffStartResult, HandoffTrigger,
     PendingHandoff,
 };
-use super::conversation_size_limits::pin_conversation_gc;
+use super::conversation_size_limits::{
+    ConversationSizeLimits, pin_conversation_gc, pin_conversation_size_limits_reader,
+};
 use super::production::ProductionSessionWorkers;
 use super::session_diagnostics::{SessionDiagnostic, report_session_diagnostic};
 use super::session_maintenance::{
@@ -69,6 +71,10 @@ pub fn start_session_extension(
     store: Arc<ProductionSessionWorkers>,
     handoff_deps: BoxHandoffDeps,
 ) -> SessionExtension {
+    let limits_experiments = Arc::clone(&experiments);
+    pin_conversation_size_limits_reader(Some(Arc::new(move || {
+        conversation_size_limits_from_experiments(&limits_experiments)
+    })));
     apply_experiment_pins(&experiments);
     let subscribed_experiments = Arc::clone(&experiments);
     let stop_experiment_subscription = experiments.subscribe(Arc::new(move || {
@@ -109,6 +115,20 @@ pub fn start_session_extension(
         store,
         handoff: BoxHandoffService::new(handoff_deps),
         stop_experiment_subscription: Some(stop_experiment_subscription),
+    }
+}
+
+pub fn conversation_size_limits_from_experiments(
+    experiments: &HostExperimentsExtension,
+) -> ConversationSizeLimits {
+    let config = experiments.get_dynamic_config("grok_bot_conversation_size_limits");
+    ConversationSizeLimits {
+        soft_limit_mb: config
+            .get("soft_limit_mb")
+            .and_then(serde_json::Value::as_f64),
+        hard_limit_mb: config
+            .get("hard_limit_mb")
+            .and_then(serde_json::Value::as_f64),
     }
 }
 
