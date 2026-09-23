@@ -1,11 +1,11 @@
 use std::fs;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
-    AgentLifecycleGatewayError, ProductionAgentLifecycle,
+    AgentDeletionRuntimeDeps, AgentLifecycleGatewayError, ProductionAgentLifecycle,
     dispatch_production_agent_lifecycle_gateway_call,
 };
 use serde_json::json;
@@ -19,6 +19,47 @@ fn temp_root(label: &str) -> std::path::PathBuf {
         "fabushi-agent-lifecycle-{label}-{}-{suffix}",
         std::process::id()
     ))
+}
+
+#[test]
+fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
+    let root = temp_root("runtime-cleanup");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+
+    let calls = Arc::new(Mutex::new(Vec::<String>::new()));
+    let hook = |label: &'static str, calls: Arc<Mutex<Vec<String>>>| {
+        Arc::new(move |agent_id: &str| {
+            calls.lock().expect("calls").push(format!("{label}:{agent_id}"));
+            Ok(())
+        }) as mahayana_host_runtime::extensions::transcript::agent_lifecycle::AgentDeletionHook
+    };
+    let lifecycle = ProductionAgentLifecycle::with_deletion_runtime(
+        Arc::clone(&production),
+        AgentDeletionRuntimeDeps {
+            cancel_runner: Some(hook("runner", Arc::clone(&calls))),
+            forget_ack: Some(hook("ack", Arc::clone(&calls))),
+            release_box: Some(hook("box", Arc::clone(&calls))),
+            forget_handoff: Some(hook("handoff", Arc::clone(&calls))),
+        },
+    );
+
+    lifecycle.delete_agent(&record.id).expect("delete");
+    assert!(!store.agent_dir_exists(&record.id));
+    let expected = vec![
+        format!("runner:{}", record.id),
+        format!("ack:{}", record.id),
+        format!("box:{}", record.id),
+        format!("handoff:{}", record.id),
+    ];
+    assert_eq!(*calls.lock().expect("calls"), expected);
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]

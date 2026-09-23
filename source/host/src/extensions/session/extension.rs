@@ -52,6 +52,10 @@ impl SessionExtension {
         self.handoff.forget(agent_id);
     }
 
+    pub fn handoff_service(&self) -> BoxHandoffService {
+        self.handoff.clone()
+    }
+
     pub fn shutdown(&self) {
         self.store.shutdown();
     }

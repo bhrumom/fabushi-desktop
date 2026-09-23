@@ -34,7 +34,8 @@ use mahayana_host_runtime::extensions::transcript::ack_obligations::AckObligatio
 use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRunnerRegistry;
 use mahayana_host_runtime::extensions::transcript::run_scheduler::WatchdogStage;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
-    AgentLifecycleGatewayError, dispatch_production_agent_lifecycle_gateway_call,
+    AgentDeletionRuntimeDeps, AgentLifecycleGatewayError,
+    dispatch_production_agent_lifecycle_gateway_call_with_runtime,
 };
 use mahayana_host_runtime::extensions::source_map::extension::start_source_map_extension;
 use mahayana_host_runtime::extensions::source_map::source_map_service::SandSourceMap;
@@ -322,6 +323,7 @@ struct UnifiedGatewayApi {
     session_workers: Arc<ProductionSessionWorkers>,
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
+    agent_deletion_runtime: AgentDeletionRuntimeDeps,
     forever_box: Arc<ForeverBoxService>,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     trays: Arc<HostTraysExtension>,
@@ -628,7 +630,12 @@ impl GatewayApi for UnifiedGatewayApi {
                 .map_err(map_production_send_error);
         }
         if let Some(result) =
-            dispatch_production_agent_lifecycle_gateway_call(&self.session_workers, method, &args)
+            dispatch_production_agent_lifecycle_gateway_call_with_runtime(
+                &self.session_workers,
+                &self.agent_deletion_runtime,
+                method,
+                &args,
+            )
         {
             return result.map_err(|error| match error {
                 AgentLifecycleGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
@@ -1093,8 +1100,38 @@ fn main() {
         BoxHandoffDeps::default(),
     );
     let session_workers = session_extension.store();
+    let session_handoff = session_extension.handoff_service();
     let runner_registry = Arc::new(TranscriptRunnerRegistry::default());
     let ack_obligations = Arc::new(AckObligations::new(&app_data_dir));
+    let agent_deletion_runtime = AgentDeletionRuntimeDeps {
+        cancel_runner: Some({
+            let runner_registry = Arc::clone(&runner_registry);
+            Arc::new(move |agent_id| {
+                let _ = runner_registry.cancel_agent(agent_id, "agent deleted");
+                Ok(())
+            })
+        }),
+        forget_ack: Some({
+            let ack_obligations = Arc::clone(&ack_obligations);
+            Arc::new(move |agent_id| {
+                let _ = ack_obligations
+                    .forget_agent(agent_id)
+                    .map_err(|error| error.to_string())?;
+                Ok(())
+            })
+        }),
+        release_box: Some({
+            let forever_box = Arc::clone(&forever_box);
+            Arc::new(move |agent_id| {
+                forever_box.release_agent(agent_id);
+                Ok(())
+            })
+        }),
+        forget_handoff: Some(Arc::new(move |agent_id| {
+            session_handoff.forget(agent_id);
+            Ok(())
+        })),
+    };
 
     let gateway_config = match resolve_gateway_server_config() {
         Ok(config) => config,
@@ -1117,6 +1154,7 @@ fn main() {
             session_workers: Arc::clone(&session_workers),
             runner_registry: Arc::clone(&runner_registry),
             ack_obligations: Arc::clone(&ack_obligations),
+            agent_deletion_runtime,
             forever_box: Arc::clone(&forever_box),
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
             trays: Arc::clone(&production_extensions.trays),

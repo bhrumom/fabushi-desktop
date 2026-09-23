@@ -9,6 +9,38 @@ use crate::extensions::session::agent_session::SandAgentSessionStore;
 use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::session::production::ProductionSessionWorkers;
 
+pub type AgentDeletionHook = Arc<dyn Fn(&str) -> Result<(), String> + Send + Sync + 'static>;
+
+#[derive(Clone, Default)]
+pub struct AgentDeletionRuntimeDeps {
+    pub cancel_runner: Option<AgentDeletionHook>,
+    pub forget_ack: Option<AgentDeletionHook>,
+    pub release_box: Option<AgentDeletionHook>,
+    pub forget_handoff: Option<AgentDeletionHook>,
+}
+
+impl AgentDeletionRuntimeDeps {
+    fn before_delete(&self, agent_id: &str) -> Result<(), String> {
+        if let Some(cancel_runner) = self.cancel_runner.as_ref() {
+            cancel_runner(agent_id)?;
+        }
+        if let Some(forget_ack) = self.forget_ack.as_ref() {
+            forget_ack(agent_id)?;
+        }
+        Ok(())
+    }
+
+    fn after_delete(&self, agent_id: &str) -> Result<(), String> {
+        if let Some(release_box) = self.release_box.as_ref() {
+            release_box(agent_id)?;
+        }
+        if let Some(forget_handoff) = self.forget_handoff.as_ref() {
+            forget_handoff(agent_id)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AgentLifecycleGatewayError {
     BadRequest(String),
@@ -27,12 +59,21 @@ impl AgentLifecycleGatewayError {
 
 pub struct ProductionAgentLifecycle {
     store: SandAgentSessionStore,
+    deletion_runtime: AgentDeletionRuntimeDeps,
 }
 
 impl ProductionAgentLifecycle {
     pub fn new(production: Arc<ProductionSessionWorkers>) -> Self {
+        Self::with_deletion_runtime(production, AgentDeletionRuntimeDeps::default())
+    }
+
+    pub fn with_deletion_runtime(
+        production: Arc<ProductionSessionWorkers>,
+        deletion_runtime: AgentDeletionRuntimeDeps,
+    ) -> Self {
         Self {
             store: SandAgentSessionStore::new(production),
+            deletion_runtime,
         }
     }
 
@@ -114,7 +155,9 @@ impl ProductionAgentLifecycle {
         let active_before = self.store.read_active_agent_id();
 
         for agent_id in &ids {
+            self.deletion_runtime.before_delete(agent_id)?;
             self.store.delete_session(agent_id)?;
+            self.deletion_runtime.after_delete(agent_id)?;
         }
 
         if active_before
@@ -168,7 +211,24 @@ pub fn dispatch_production_agent_lifecycle_gateway_call(
     method: &str,
     args: &Value,
 ) -> Option<Result<Value, AgentLifecycleGatewayError>> {
-    let lifecycle = ProductionAgentLifecycle::new(Arc::clone(production));
+    dispatch_production_agent_lifecycle_gateway_call_with_runtime(
+        production,
+        &AgentDeletionRuntimeDeps::default(),
+        method,
+        args,
+    )
+}
+
+pub fn dispatch_production_agent_lifecycle_gateway_call_with_runtime(
+    production: &Arc<ProductionSessionWorkers>,
+    deletion_runtime: &AgentDeletionRuntimeDeps,
+    method: &str,
+    args: &Value,
+) -> Option<Result<Value, AgentLifecycleGatewayError>> {
+    let lifecycle = ProductionAgentLifecycle::with_deletion_runtime(
+        Arc::clone(production),
+        deletion_runtime.clone(),
+    );
     let result = match method {
         "duplicateAgent" => required_string(args, "id").and_then(|agent_id| {
             lifecycle
