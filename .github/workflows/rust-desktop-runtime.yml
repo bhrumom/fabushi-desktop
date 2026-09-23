@@ -2,7 +2,7 @@ name: Rust desktop runtime
 
 on:
   push:
-    branches: [main, restore/rust-desktop-runtime]
+    branches: [main, restore/rust-desktop-runtime, refactor/grok-018-architecture-rebuild]
     paths:
       - 'desktop/**'
       - 'source/**'
