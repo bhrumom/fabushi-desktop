@@ -92,10 +92,16 @@ fn configured_open_recovers_corrupt_store_and_publishes_reindex() {
             .push(mutation.clone());
     });
 
+    let options = DbRecoveryOptions {
+        on_corruption_recovered: Some(Arc::new(|_| {
+            panic!("callback failures are intentionally ignored");
+        })),
+        ..DbRecoveryOptions::default()
+    };
     let db = open_configured_db(
         &db_path,
         "agent-corrupt",
-        &DbRecoveryOptions::default(),
+        &options,
         false,
     )
     .expect("recover");

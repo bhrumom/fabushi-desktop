@@ -11971,24 +11971,43 @@
       "targetPath": "source/host/src/extensions/session/agent_db_recovery.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "89125e0db2c558a22ce126db45d988eca029a153",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/agent_db_recovery.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/storage/sqlite_recovery.rs",
+        "source/host/src/storage/sqlite_busy.rs",
+        "source/host/src/transcript_mutation_events.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_db_recovery_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust recovery is production-wired into AgentDb opening and reuses the shared SQLite recovery layer for WAL/schema initialization, I/O retry, quick_check, live-handle recovery suppression, quarantine, row-by-row kv/blob/transcript salvage, diagnostics and transcript reindex mutation. Frozen-parity callback failure isolation and the 50ms quarantine removal retry are included in this commit; final status is withheld until this exact implementation SHA passes both required gates."
     },
     {
       "referencePath": "source/host/extensions/session/agent-db-schema.ts",
       "targetPath": "source/host/src/extensions/session/agent_db_schema.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "7902fc9e0020faf32b23a35bb89ac50cc515d999",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/agent_db_schema.rs",
+        "source/host/src/extensions/session/agent_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_db_schema_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Complete Rust port of frozen Grok agent-db-schema: STRICT kv/blobs/transcript tables, partial window/branched indexes, main/divider filters, and every prepared KV/blob/transcript SQL statement. Production agent_db.rs consumes GET_KV_SQL, preventing a parallel query contract. Exact SHA 2b82e9ecfb34c7c3876781819e6fed2edfc243be (which includes this schema unchanged) passed Rust desktop runtime run 35851581733 and Desktop Chat Parity run 35851581644."
     },
     {
       "referencePath": "source/host/extensions/session/agent-db-serde.ts",
@@ -12025,14 +12044,18 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/agent_db_schema.rs",
+        "source/host/src/extensions/session/agent_db_recovery.rs",
         "source/host/src/extensions/session/production.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_db_metadata_contract.rs",
+        "source/host/tests/agent_db_schema_contract.rs",
+        "source/host/tests/agent_db_recovery_contract.rs",
         "source/host/tests/session_production_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "A real Rust production slice now opens the existing session store read-only at the Session boundary, projects kv['metadata'] using the frozen AgentMetadataSerde hex -> UTF-8 JSON shape, and reads the persisted latestRootBlobId used by the shipping conversation capacity gate. Full SandAgentDb parity remains: schema ownership, recovery/in-place recovery, metadata writes/CAS, subscriptions, unread/request/episode/memory/profile state, transcript CRUD/paging/threading, clearConversation, legacy retirement and write-generation/live-handle behavior are not yet ported, so this row is intentionally non-final."
+      "notes": "The Rust production slice now opens store.db through the Grok-aligned schema/recovery path, honors live-handle corruption safety, projects kv['metadata'] using the frozen AgentMetadataSerde hex -> UTF-8 JSON shape, and reads the persisted latestRootBlobId used by the shipping conversation capacity gate. Full SandAgentDb parity remains: metadata writes/CAS, subscriptions, unread/request/episode/memory/profile state, transcript CRUD/paging/threading, clearConversation, legacy retirement and write-generation/live-handle ownership are still pending."
     },
     {
       "referencePath": "source/host/extensions/session/agent-session.ts",

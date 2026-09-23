@@ -189,7 +189,7 @@ pub fn open_configured_db(
 }
 
 pub fn quarantine_corrupt_db(db_path: &Path, agent_dir_name: &str) -> Option<PathBuf> {
-    let result = quarantine_corrupt_sqlite_db(db_path, None, false, 1, 0);
+    let result = quarantine_corrupt_sqlite_db(db_path, None, false, 1, 50);
     if result.rename_error_code.is_none() {
         return result.quarantine_path;
     }
@@ -317,11 +317,14 @@ pub fn recover_corrupt_store_db(
         ],
     );
     if let Some(callback) = options.on_corruption_recovered.as_ref() {
-        callback(&CorruptionRecoveredEvent {
+        let event = CorruptionRecoveredEvent {
             outcome,
             quarantine_path: quarantine_path.clone(),
             salvaged,
-        });
+        };
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            callback(&event)
+        }));
     }
 
     let mut mutation = Map::new();
