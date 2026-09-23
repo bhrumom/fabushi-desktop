@@ -12223,7 +12223,11 @@
         "source/host/src/extensions/transcript/agent_lifecycle.rs",
         "source/host/src/agents/agent_clone.rs",
         "source/host/src/workflows/workflow_store.rs",
-        "source/host/src/workflows/workflow_library.rs"
+        "source/host/src/workflows/workflow_library.rs",
+        "source/host/src/extensions/transcript/runner_registry.rs",
+        "source/host/src/extensions/transcript/ack_obligations.rs",
+        "source/host/src/extensions/forever_box/forever_box_service.rs",
+        "source/host/src/extensions/session/box_handoff_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_session_contract.rs",
@@ -12238,7 +12242,7 @@
         "source/host/tests/session_materialization_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Session facade owns active-agent pointer read/write/clear, root/agent existence, active-aware serialized create/fallback materialization, durable delete orchestration, roster summaries with active identity, profile/avatar delegation, transcript reads, unread/view/activity/awaiting state, settings mutations, connector channels and Host worker shutdown. createAgent now passes the real active agent into cap reclaim; fallback adoption is production-owned. Final is withheld for kickstart/telemetry, memory composition, cached extras/deletion predicates, background semantics, active-session switch behavior, and deleteAgent cross-extension Runner/ack/Box/automation/handoff cleanup."
+      "notes": "Rust Session facade owns active-agent pointer read/write/clear, root/agent existence, active-aware serialized create/fallback materialization, durable delete orchestration, roster summaries with active identity, profile/avatar, transcript, unread/view/activity/awaiting state, settings, connector channels and Host worker shutdown. Shipping deleteAgent composition now supplies Runner cancellation, Ack obligation/token purge, ForeverBox release and handoff forget around durable directory deletion; automation/workflow definitions disappear with that directory. Final is withheld for kickstart/telemetry, memory composition, cached extras/deletion predicates, background semantics, exact active-session switch behavior, and the remaining trays/pending-wake/group-runner drain surfaces."
     },
     {
       "referencePath": "source/host/extensions/session/box-handoff-service.ts",
@@ -13512,16 +13516,18 @@
         "source/host/src/extensions/transcript/ack_obligations.rs",
         "source/host/app/src/main.rs",
         "source/host/src/runner/tools/send_message_tool.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/transcript/agent_lifecycle.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_ack_obligation_store_contract.rs",
         "source/host/tests/ack_obligations_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/agent_lifecycle_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust AckObligations is production-composed across the shipping direct-local send and Runner delivery path: a durable accepted send records/coalesces the obligation only for an existing non-group local Agent; runner.startRoutedProvider mints an agent-scoped run token; the per-turn ProductionSendMessageSink fulfills only after the SendMessage entry is durably appended; worker/spawn terminal paths retire the token; watchdog interruption records the durable interrupt timestamp. The frozen store/token fences and recovery prompt are contract-tested. Final remains withheld for boot/idle redrive scheduling/execution, max-redrive lost telemetry, upgrade quiesce gating, and the remaining queue/ack telemetry surfaces."
+      "notes": "Rust AckObligations is production-composed across accepted send and Runner delivery: durable sends record/coalesce, Runner turns mint scoped tokens, SendMessage fulfills only after durable append, terminal paths retire tokens, and watchdog interruption records interrupts. Agent deletion now removes its durable obligation plus every in-memory reservation token before Session data is deleted. Final remains withheld for boot/idle redrive scheduling/execution, max-redrive lost telemetry, upgrade quiesce gating, and remaining queue/ack telemetry."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-lifecycle.ts",
@@ -13536,17 +13542,23 @@
         "source/host/src/extensions/transcript/agent_lifecycle.rs",
         "source/host/src/extensions/session/agent_session.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/agents/agent_clone.rs"
+        "source/host/src/agents/agent_clone.rs",
+        "source/host/src/extensions/transcript/runner_registry.rs",
+        "source/host/src/extensions/transcript/ack_obligations.rs",
+        "source/host/src/extensions/session/box_handoff_service.rs",
+        "source/host/src/extensions/forever_box/forever_box_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_lifecycle_contract.rs",
         "source/host/tests/agent_session_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/agent_clone_contract.rs"
+        "source/host/tests/agent_clone_contract.rs",
+        "source/host/tests/ack_obligations_contract.rs",
+        "source/host/tests/runner_routed_provider_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production lifecycle owns durable deleteAgent/deleteAgents active-successor behavior and frozen duplicateAgent cloning through Session's serialized cap-check→mint critical section, AgentDb identity rewrite, activation, transcript snapshot and reindex mutation. Final remains withheld for kickstart/background creation, full cross-extension delete cleanup (Runner/ack/Box/automation/handoff/trays/pending wakes) and exact active-session replacement/roster stamp semantics."
+      "notes": "Rust production lifecycle owns durable deleteAgent/deleteAgents active-successor behavior and duplicateAgent cloning. Shipping Host now injects real cross-extension deletion owners: every deleted agent cancels its live routed-provider streams, purges durable Ack obligations and all agent-scoped ack run tokens before directory removal, then releases the ForeverBox window and forgets pending Session handoff state after durable delete; automation/workflow files are removed with the agent directory. Final remains withheld for frozen exclusive-run/background-subagent drain, trays/pending-wake/group-runner cleanup, delete interrupt/lost telemetry, kickstart/background creation, and exact active-session replacement/roster stamp semantics."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-run-error.ts",
@@ -13948,16 +13960,18 @@
         "source/host/src/extensions/transcript/runner_registry.rs",
         "source/host/src/runner/routed_provider_runtime.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/extensions/transcript/production_runtime.rs"
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/src/extensions/transcript/agent_lifecycle.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_routed_provider_contract.rs",
         "source/host/tests/transcript_production_composition_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/agent_lifecycle_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production Runner registry owns agent-to-routed-provider stream identity, per-stream cancellation/retirement, agent-scoped watchdog interruption and Host-shutdown cancellation. Shipping runner.startRoutedProvider registers through this owner and sendPrompt watchdog Trip cancels the real provider stream. Final remains withheld for local compatibility Runner/group-member factory lifecycle, quiesce/upgrade hooks, background/subagent handlers, retry/TTFT/send telemetry and shared transport/profile hooks."
+      "notes": "Rust production Runner registry owns agent-to-routed-provider stream identity, per-stream cancellation/retirement, agent-scoped watchdog interruption, agent-deletion cancellation with the frozen 'agent deleted' reason, and Host-shutdown cancellation. Final remains withheld for local compatibility Runner/group-member factory lifecycle, quiesce/upgrade hooks, exclusive-run/background/subagent draining, retry/TTFT/send telemetry and shared transport/profile hooks."
     },
     {
       "referencePath": "source/host/extensions/transcript/sand-ack-obligation-store.ts",
