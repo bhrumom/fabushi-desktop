@@ -12099,9 +12099,11 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/session_maintenance_contract.rs",
         "source/host/tests/agent_db_mutation_production_contract.rs",
-        "source/host/tests/session_gateway_contract.rs"
+        "source/host/tests/session_gateway_contract.rs",
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust production AgentDb covers Grok-aligned recovery/schema opening, metadata/root CAS, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, automation spend-guard migration, introduction state, conversation partners, profile-prompt snapshots, transient-state reset, newest divider-anchor reads, maintenance version KV, legacy blob retirement transactions, transcript reads/paging plus append/update/delete and clear-conversation events. ProductionSessionWorkers owns these paths. Shipping Gateway transcript read commands use this Rust ownership path through SessionConversationState. Final is withheld until generic metadata subscriptions/listener semantics, complete live owner/close/busy behavior and the remaining mutation Gateway commands are cut over."
+      "notes": "Rust production AgentDb covers Grok-aligned recovery/schema opening, metadata/root CAS, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, automation spend-guard migration, introduction state, conversation partners, profile-prompt snapshots, transient-state reset, newest divider-anchor reads, maintenance version KV, legacy blob retirement transactions, transcript reads/paging plus transactional append/update/delete and clear-conversation events. Shipping Gateway transcript reads use this Rust ownership path; accepted sendPrompt user submissions are now durably appended with the compatibility operationId:user/clientNonce identity before the Gateway acknowledgement returns, so attachment-only and text sends survive authoritative transcript refresh. Final is withheld until generic metadata subscriptions/listener semantics, complete live owner/close/busy behavior and the remaining mutation Gateway commands are cut over."
     },
     {
       "referencePath": "source/host/extensions/session/agent-session.ts",
@@ -12131,7 +12133,7 @@
         "desktop/e2e/mahayana-agent-workbench.spec.ts"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Session facade owns active-agent pointer read/write, root/agent existence, create/open/delete orchestration, roster summaries with active identity, profile/avatar delegation, transcript reads, unread/view/activity/awaiting state, settings mutations, connector channels and Host worker shutdown. Shipping Host Gateway now cuts listAgents and createAgent (real materialization, active pointer, viewed state, profile summary and empty transcript result) plus updateAgent/unread/settings/avatar paths directly to this Rust owner. Focused Electron acceptance seeds a fresh roster through the real New -> createAgent path instead of compatibility fixtures. Final is withheld for createAgent nonce/mint serialization, kickstart/telemetry, memory/workflow/automation composition, cached extras/deletion predicates, background/fallback semantics, active-session switch behavior, and deleteAgent cross-extension interruption/Box/automation/handoff cleanup."
+      "notes": "Rust Session facade owns active-agent pointer read/write, root/agent existence, create/open/delete orchestration, roster summaries with active identity, profile/avatar delegation, transcript reads, unread/view/activity/awaiting state, settings mutations, connector channels and Host worker shutdown. Shipping Host Gateway cuts listAgents/createAgent/update/unread/settings/avatar and transcript reads to this Rust owner; after compatibility Host accepts sendPrompt, the user turn is durably written to the same Rust transcript before acknowledgement, including attachment-only submissions. Final is withheld for createAgent nonce/mint serialization, kickstart/telemetry, memory/workflow/automation composition, cached extras/deletion predicates, background/fallback semantics, active-session switch behavior, and deleteAgent cross-extension interruption/Box/automation/handoff cleanup."
     },
     {
       "referencePath": "source/host/extensions/session/box-handoff-service.ts",
@@ -12336,9 +12338,10 @@
         "source/host/tests/connector_secret_store_contract.rs",
         "source/host/tests/channel_store_contract.rs",
         "source/host/tests/session_gateway_contract.rs",
-        "source/host/tests/agent_session_contract.rs"
+        "source/host/tests/agent_session_contract.rs",
+        "desktop/e2e/grok-parity.spec.ts"
       ],
-      "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state, transcript projection/mutations, profile/avatar mutations, connector/channel composition, roster summaries and conversation capacity. Shipping Host now cuts countAgents/listAgents/createAgent, getAgentTranscript*, getAgentThread, safe agent mutations and channel list/connect/disconnect/refresh directly to ProductionSessionWorkers; focused Electron acceptance creates the fresh test Agent through this production path. Remaining parity includes createAgent nonce/kickstart/telemetry, full open/delete lifecycle composition, full ConversationState proto outlines, workflow composition, box handoff and watcher parity."
+      "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state, transcript projection/mutations, profile/avatar mutations, connector/channel composition, roster summaries and conversation capacity. Shipping Host cuts countAgents/listAgents/createAgent, getAgentTranscript*, getAgentThread, safe agent mutations and channel operations directly to ProductionSessionWorkers; compatibility sendPrompt inference now commits its accepted user turn into this Rust authoritative transcript using the exact operationId:user/clientNonce identity before returning. Remaining parity includes createAgent nonce/kickstart/telemetry, full open/delete lifecycle composition, full ConversationState proto outlines, workflow composition, box handoff and watcher parity."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",

@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -25,6 +26,112 @@ impl SessionGatewayError {
     fn internal(message: impl Into<String>) -> Self {
         Self::Internal(message.into())
     }
+}
+
+pub fn persist_accepted_send_prompt(
+    session: &Arc<ProductionSessionWorkers>,
+    args: &Value,
+    accepted: &Value,
+) -> Result<(), SessionGatewayError> {
+    if accepted.get("accepted").and_then(Value::as_bool) != Some(true) {
+        return Ok(());
+    }
+    let operation_id = accepted
+        .get("operationId")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| {
+            SessionGatewayError::internal(
+                "accepted sendPrompt response is missing operationId",
+            )
+        })?;
+    let agent_id = args
+        .get("agentId")
+        .or_else(|| args.get("id"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| SessionGatewayError::bad("sendPrompt requires agentId"))?;
+    let prompt = args
+        .get("prompt")
+        .or_else(|| args.get("text"))
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+
+    let attachment_paths = args
+        .get("attachmentPaths")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let attachment_names = args
+        .get("attachmentNames")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let attachments = attachment_paths
+        .iter()
+        .enumerate()
+        .filter_map(|(index, value)| {
+            let path = value.as_str()?.trim();
+            if path.is_empty() {
+                return None;
+            }
+            let name = attachment_names
+                .get(index)
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned)
+                .or_else(|| {
+                    Path::new(path)
+                        .file_name()
+                        .and_then(|value| value.to_str())
+                        .map(ToOwned::to_owned)
+                })
+                .unwrap_or_else(|| "Attachment".to_string());
+            Some(json!({
+                "id": path,
+                "name": name,
+                "path": path,
+            }))
+        })
+        .collect::<Vec<_>>();
+    if prompt.trim().is_empty() && attachments.is_empty() {
+        return Err(SessionGatewayError::bad(
+            "sendPrompt requires prompt or attachments",
+        ));
+    }
+
+    let timestamp_ms = args
+        .get("composedAtMs")
+        .or_else(|| args.get("enterEpochMs"))
+        .and_then(Value::as_f64)
+        .filter(|value| value.is_finite())
+        .unwrap_or_else(system_now_ms);
+    let mut entry = json!({
+        "id": format!("{operation_id}:user"),
+        "kind": "message",
+        "role": "user",
+        "content": prompt,
+        "timestampMs": timestamp_ms,
+    });
+    if let Some(client_nonce) = args
+        .get("clientNonce")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        entry["clientNonce"] = Value::String(client_nonce.to_string());
+    }
+    if !attachments.is_empty() {
+        entry["attachments"] = Value::Array(attachments);
+    }
+
+    session
+        .append_agent_transcript_entries(agent_id, &[entry])
+        .map_err(SessionGatewayError::internal)?;
+    Ok(())
 }
 
 pub fn dispatch_production_session_gateway_call(

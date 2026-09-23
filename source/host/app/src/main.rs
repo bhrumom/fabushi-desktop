@@ -22,6 +22,7 @@ use mahayana_host_runtime::extensions::box_lifecycle::production::{
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
+    persist_accepted_send_prompt,
 };
 use mahayana_host_runtime::extensions::source_map::extension::start_source_map_extension;
 use mahayana_host_runtime::extensions::source_map::source_map_service::SandSourceMap;
@@ -536,6 +537,24 @@ impl GatewayApi for UnifiedGatewayApi {
         // UnifiedAppHost owns a QuickJS runtime and is intentionally !Send.
         // Product calls remain on its owner lane while the Runner provider
         // worker above streams through the Host event hub.
+        if method == "sendPrompt" {
+            let durable_args = args.clone();
+            let accepted = call_host_lane(&self.host_tx, method, args)?;
+            persist_accepted_send_prompt(
+                &self.session_workers,
+                &durable_args,
+                &accepted,
+            )
+            .map_err(|error| match error {
+                SessionGatewayError::BadRequest(message) => {
+                    GatewayCommandError::BadRequest(message)
+                }
+                SessionGatewayError::Internal(message) => {
+                    GatewayCommandError::Internal(message)
+                }
+            })?;
+            return Ok(accepted);
+        }
         call_host_lane(&self.host_tx, method, args)
     }
 

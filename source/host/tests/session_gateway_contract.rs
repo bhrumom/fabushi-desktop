@@ -5,6 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
+    persist_accepted_send_prompt,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use serde_json::json;
@@ -242,6 +243,77 @@ fn production_gateway_cuts_over_safe_agent_lifecycle_mutations_to_rust_session_o
     assert!(avatar["dataUrl"]
         .as_str()
         .is_some_and(|value| value.starts_with("data:image/png;base64,")));
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn accepted_send_prompt_is_persisted_into_the_rust_authoritative_transcript() {
+    let root = temp_root("send-prompt-persistence");
+    let agents = root.join("agents");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let record = runtime
+        .materialize_new_session(None, "user", None)
+        .expect("agent");
+
+    persist_accepted_send_prompt(
+        &runtime,
+        &json!({
+            "agentId": record.id,
+            "prompt": "",
+            "attachmentPaths": ["/tmp/attachment-only.txt"],
+            "attachmentNames": ["attachment-only.txt"],
+            "clientNonce": "nonce-attachment-only",
+            "composedAtMs": 1234
+        }),
+        &json!({
+            "accepted": true,
+            "operationId": "operation-attachment-only"
+        }),
+    )
+    .expect("persist accepted sendPrompt");
+
+    let transcript = dispatch(
+        &runtime,
+        "getAgentTranscript",
+        json!({"id":record.id}),
+    );
+    let entries = transcript.as_array().expect("transcript array");
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0]["id"], "operation-attachment-only:user");
+    assert_eq!(entries[0]["kind"], "message");
+    assert_eq!(entries[0]["role"], "user");
+    assert_eq!(entries[0]["content"], "");
+    assert_eq!(entries[0]["clientNonce"], "nonce-attachment-only");
+    assert_eq!(entries[0]["timestampMs"], 1234.0);
+    assert_eq!(entries[0]["attachments"][0]["name"], "attachment-only.txt");
+    assert_eq!(entries[0]["attachments"][0]["path"], "/tmp/attachment-only.txt");
+
+    // The live compatibility event uses the same operationId:user identity.
+    // A duplicate delivery must therefore remain idempotent in AgentDb.
+    persist_accepted_send_prompt(
+        &runtime,
+        &json!({
+            "agentId": record.id,
+            "prompt": "",
+            "attachmentPaths": ["/tmp/attachment-only.txt"],
+            "attachmentNames": ["attachment-only.txt"],
+            "clientNonce": "nonce-attachment-only",
+            "composedAtMs": 1234
+        }),
+        &json!({
+            "accepted": true,
+            "operationId": "operation-attachment-only"
+        }),
+    )
+    .expect("idempotent persistence");
+    assert_eq!(
+        dispatch(&runtime, "getAgentTranscript", json!({"id":record.id}))
+            .as_array()
+            .map(Vec::len),
+        Some(1)
+    );
 
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
