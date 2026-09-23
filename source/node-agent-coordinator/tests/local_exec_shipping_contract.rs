@@ -24,7 +24,11 @@ fn assert_contains(haystack: &str, needle: &str, label: &str) {
 #[test]
 fn shipping_local_exec_chain_is_bound_from_electron_through_the_coordinator_to_the_daemon() {
     let native = read("electron-main/local-exec/local-exec-native.ts");
-    assert_contains(&native, "local-exec-daemon", "main.cjs", "Electron local-exec native bridge");
+    assert_contains(
+        &native,
+        r#""local-exec-daemon", "main.cjs""#,
+        "Electron local-exec native bridge",
+    );
     assert_contains(&native, "export async function spawnLocalExecDaemon", "Electron local-exec native bridge");
     assert_contains(&native, "LOCAL_EXEC_GENERATION_TOKEN_ARG", "Electron local-exec native bridge");
     assert_contains(&native, "LOCAL_EXEC_GENERATION_TOKEN_ENV", "Electron local-exec native bridge");
@@ -58,10 +62,10 @@ fn shipping_local_exec_chain_is_bound_from_electron_through_the_coordinator_to_t
 
     let coordinator = read("node-agent-coordinator/src/main.rs");
     assert_contains(&coordinator, "LocalExecDaemonRuntime::new", "Mahayana Coordinator");
-    assert_contains(&coordinator, ""mintLocalExecDaemonCredential"", "Mahayana Coordinator");
-    assert_contains(&coordinator, ""spawnLocalExecDaemon"", "Mahayana Coordinator");
-    assert_contains(&coordinator, ""getProcessIdentity"", "Mahayana Coordinator");
-    assert_contains(&coordinator, ""terminateProcess"", "Mahayana Coordinator");
+    assert_contains(&coordinator, r#""mintLocalExecDaemonCredential""#, "Mahayana Coordinator");
+    assert_contains(&coordinator, r#""spawnLocalExecDaemon""#, "Mahayana Coordinator");
+    assert_contains(&coordinator, r#""getProcessIdentity""#, "Mahayana Coordinator");
+    assert_contains(&coordinator, r#""terminateProcess""#, "Mahayana Coordinator");
 
     let entry = read("local-exec-daemon/main.ts");
     assert_contains(&entry, "runLocalExecDaemon", "local-exec daemon entry");
