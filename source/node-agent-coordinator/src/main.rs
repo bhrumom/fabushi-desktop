@@ -28,6 +28,7 @@ use mahayana_node_agent_coordinator::oauth::mcp_oauth_forwarder::{
 };
 use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::McpOAuthLoopbackRegistry;
 use mahayana_node_agent_coordinator::inference_router::{
+    host_transcript_method,
     CoordinatorInferenceRouter, InferenceProvider, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, parse_runner_inference_event,
     parse_send_prompt_attachments, project_transcript_entry,
@@ -1991,7 +1992,8 @@ fn merged_local_transcript(
         .get("id")
         .and_then(Value::as_str)
         .unwrap_or("");
-    let mut remote = dispatch_gateway_value(state, method, args.clone())?;
+    let host_method = host_transcript_method(method);
+    let mut remote = dispatch_gateway_value(state, host_method, args.clone())?;
     if agent_id.is_empty() {
         return Ok(remote);
     }

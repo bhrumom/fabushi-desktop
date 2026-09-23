@@ -14,6 +14,16 @@ use crate::protocol::Failure;
 pub const INFERENCE_TRANSCRIPT_SCHEMA_VERSION: u32 = 2;
 pub const INFERENCE_TRANSCRIPT_LIMIT: usize = 200;
 
+/// Normalize renderer-facing transcript aliases before crossing the Host boundary.
+/// The Rust Session gateway owns `getAgentTranscriptTail`; `openAgentTail`
+/// remains a renderer/Coordinator convenience alias and must never leak to Host.
+pub fn host_transcript_method(method: &str) -> &str {
+    match method {
+        "openAgentTail" => "getAgentTranscriptTail",
+        other => other,
+    }
+}
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InferenceProvider {

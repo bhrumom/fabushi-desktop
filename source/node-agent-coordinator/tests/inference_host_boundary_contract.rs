@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_node_agent_coordinator::inference_router::{
     InferenceProvider, RunnerInferenceEvent, configured_inference_provider,
-    parse_runner_inference_event,
+    host_transcript_method, parse_runner_inference_event,
 };
 use serde_json::json;
 
@@ -36,6 +36,13 @@ fn coordinator_provider_selection_is_pure_and_host_runtime_independent() {
         !cargo.contains("mahayana-host-runtime"),
         "Coordinator must not link the Host/Runner implementation crate in-process"
     );
+}
+
+#[test]
+fn renderer_tail_alias_is_normalized_before_host_dispatch() {
+    assert_eq!(host_transcript_method("openAgentTail"), "getAgentTranscriptTail");
+    assert_eq!(host_transcript_method("getAgentTranscriptTail"), "getAgentTranscriptTail");
+    assert_eq!(host_transcript_method("getAgentTranscriptWindow"), "getAgentTranscriptWindow");
 }
 
 #[test]
