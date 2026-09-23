@@ -98,7 +98,6 @@ async function completeBrowserLogin(page: Page): Promise<void> {
     const surfaceText = await fatal.first().innerText().catch(() => 'unknown renderer failure');
     throw new Error(`renderer root fatal: ${rendererErrors.at(-1) ?? surfaceText}`);
   }
-}
 
   // listAgents is now owned by the shipping Rust Session store. A fresh
   // FABUSHI_APP_DATA directory is intentionally empty, so create the focused
