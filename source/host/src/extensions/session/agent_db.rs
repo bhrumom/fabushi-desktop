@@ -1,12 +1,18 @@
 use std::path::Path;
-use std::time::Duration;
 
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{OptionalExtension, params};
 
+use crate::storage::store_db::live_db_handle_count;
+
+use super::agent_db_recovery::{
+    AgentDbRecoveryError, DbRecoveryOptions, open_configured_db,
+};
 use super::agent_db_schema::GET_KV_SQL;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AgentDbProjectionError {
+    #[error("agent session database open/recovery error: {0}")]
+    Recovery(#[from] AgentDbRecoveryError),
     #[error("agent session sqlite error: {0}")]
     Sqlite(#[from] rusqlite::Error),
     #[error("agent metadata hex is invalid: {0}")]
@@ -23,20 +29,21 @@ pub fn read_persisted_latest_root_blob_id(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<Vec<u8>, AgentDbProjectionError> {
-    let db = Connection::open(db_path)?;
-    db.busy_timeout(Duration::from_millis(busy_timeout_ms))?;
-
-    let has_kv = db
-        .query_row(
-            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'kv' LIMIT 1",
-            [],
-            |row| row.get::<_, i64>(0),
-        )
-        .optional()?
-        .is_some();
-    if !has_kv {
-        return Ok(Vec::new());
-    }
+    let agent_dir_name = db_path
+        .parent()
+        .and_then(Path::file_name)
+        .map(|value| value.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let options = DbRecoveryOptions {
+        busy_timeout_ms,
+        ..DbRecoveryOptions::default()
+    };
+    let db = open_configured_db(
+        db_path,
+        &agent_dir_name,
+        &options,
+        live_db_handle_count(db_path) > 0,
+    )?;
 
     let raw = db
         .query_row(
