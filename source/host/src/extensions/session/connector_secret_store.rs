@@ -61,7 +61,7 @@ impl SandConnectorSecretStore {
                     kind: "connector_secrets_unreadable".into(),
                     metadata: BTreeMap::from([
                         ("agentId".into(), Value::String(agent_id.to_string())),
-                        ("errorClass".into(), Value::String(error.classify().to_string())),
+                        ("errorClass".into(), Value::String(format!("{:?}", error.classify()))),
                     ]),
                 });
                 SecretRecord::new()
