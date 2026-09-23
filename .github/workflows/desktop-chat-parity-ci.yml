@@ -10,6 +10,7 @@ on:
       - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
       - "scripts/check-grok-architecture.mjs"
       - ".github/workflows/desktop-chat-parity-ci.yml"
+      - ".github/workflows/pr20-verify-once.yml"
   workflow_dispatch:
 
 permissions:
