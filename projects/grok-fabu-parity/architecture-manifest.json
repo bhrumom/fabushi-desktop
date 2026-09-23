@@ -12122,7 +12122,8 @@
         "source/host/src/extensions/session/session_mutations.rs",
         "source/host/src/extensions/session/channel_store.rs",
         "source/host/src/extensions/session/gateway.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/agent_lifecycle.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_session_contract.rs",
@@ -12130,10 +12131,11 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/session_gateway_contract.rs",
         "desktop/e2e/grok-parity.spec.ts",
-        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        "source/host/tests/agent_lifecycle_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Session facade owns active-agent pointer read/write, root/agent existence, create/open/delete orchestration, roster summaries with active identity, profile/avatar delegation, transcript reads, unread/view/activity/awaiting state, settings mutations, connector channels and Host worker shutdown. Shipping Host Gateway cuts listAgents/createAgent/update/unread/settings/avatar and transcript reads to this Rust owner; after compatibility Host accepts sendPrompt, the user turn is durably written to the same Rust transcript before acknowledgement, including attachment-only submissions. Final is withheld for createAgent nonce/mint serialization, kickstart/telemetry, memory/workflow/automation composition, cached extras/deletion predicates, background/fallback semantics, active-session switch behavior, and deleteAgent cross-extension interruption/Box/automation/handoff cleanup."
+      "notes": "Rust Session facade owns active-agent pointer read/write/clear, root/agent existence, create/open/durable delete orchestration, roster summaries with active identity, profile/avatar delegation, transcript reads, unread/view/activity/awaiting state, settings mutations, connector channels and Host worker shutdown. Shipping Host Gateway cuts listAgents/createAgent/update/unread/settings/avatar and transcript reads to this Rust owner; transcript AgentLifecycle now owns deleteAgent/deleteAgents and delegates durable removal here while preserving/switching the active transcript. Final is withheld for createAgent nonce/mint serialization, kickstart/telemetry, memory/workflow/automation composition, cached extras/deletion predicates, background/fallback semantics, active-session switch behavior, and deleteAgent cross-extension Runner/ack/Box/automation/handoff cleanup."
     },
     {
       "referencePath": "source/host/extensions/session/box-handoff-service.ts",
@@ -12342,7 +12344,8 @@
         "source/host/src/extensions/session/connector_secret_store.rs",
         "source/host/src/extensions/session/channel_store.rs",
         "source/host/src/extensions/session/gateway.rs",
-        "source/host/src/extensions/session/agent_session.rs"
+        "source/host/src/extensions/session/agent_session.rs",
+        "source/host/src/extensions/transcript/agent_lifecycle.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12361,9 +12364,10 @@
         "source/host/tests/channel_store_contract.rs",
         "source/host/tests/session_gateway_contract.rs",
         "source/host/tests/agent_session_contract.rs",
-        "desktop/e2e/grok-parity.spec.ts"
+        "desktop/e2e/grok-parity.spec.ts",
+        "source/host/tests/agent_lifecycle_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state, transcript projection/mutations, profile/avatar mutations, connector/channel composition, roster summaries and conversation capacity. Shipping Host cuts countAgents/listAgents/createAgent, getAgentTranscript*, getAgentThread, safe agent mutations and channel operations directly to ProductionSessionWorkers; compatibility sendPrompt inference now commits its accepted user turn into this Rust authoritative transcript using the exact operationId:user/clientNonce identity before returning. Remaining parity includes createAgent nonce/kickstart/telemetry, full open/delete lifecycle composition, full ConversationState proto outlines, workflow composition, box handoff and watcher parity."
+      "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state, transcript projection/mutations, profile/avatar mutations, connector/channel composition, roster summaries and conversation capacity. Shipping Host cuts countAgents/listAgents/createAgent, getAgentTranscript*, getAgentThread, safe mutations and channel operations directly to ProductionSessionWorkers; transcript AgentLifecycle now composes shipping deleteAgent/deleteAgents over the same durable owner. Remaining parity includes createAgent nonce/kickstart/telemetry, full open/delete cross-extension lifecycle composition, full ConversationState proto outlines, workflow composition, box handoff and watcher parity."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
@@ -13329,12 +13333,23 @@
       "targetPath": "source/host/src/extensions/transcript/agent_lifecycle.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "2c7f328eca7a7d4e41d71a0762cdc9e66795be4e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/agent_lifecycle.rs",
+        "source/host/src/extensions/session/agent_session.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_lifecycle_contract.rs",
+        "source/host/tests/agent_session_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production AgentLifecycle now owns shipping deleteAgent/deleteAgents before the Session gateway: it deduplicates batch deletion, delegates durable removal to SandAgentSessionStore, closes per-agent blob workers, clears write-generation state, publishes agent-removed, preserves the active transcript for non-active deletion, and deterministically selects/marks/views an existing successor or clears the active pointer when the active Agent is deleted. Final is withheld until Runner interruption/drain, ack-obligation loss, Box handoff/lease cleanup, automation schedules, sharing/local-permission cleanup, background wake queues, async-task/subagent cleanup and fallback-session creation are all production composed."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-run-error.ts",

@@ -29,6 +29,9 @@ use mahayana_host_runtime::extensions::session::gateway::{
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
+use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
+    AgentLifecycleGatewayError, dispatch_production_agent_lifecycle_gateway_call,
+};
 use mahayana_host_runtime::extensions::source_map::extension::start_source_map_extension;
 use mahayana_host_runtime::extensions::source_map::source_map_service::SandSourceMap;
 use mahayana_host_runtime::extensions::inference::provider_session::{
@@ -512,6 +515,14 @@ impl GatewayApi for UnifiedGatewayApi {
                 .transcript_runtime
                 .prompt_acceptance_status(&args)
                 .map_err(map_production_send_error);
+        }
+        if let Some(result) =
+            dispatch_production_agent_lifecycle_gateway_call(&self.session_workers, method, &args)
+        {
+            return result.map_err(|error| match error {
+                AgentLifecycleGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
+                AgentLifecycleGatewayError::Internal(message) => GatewayCommandError::Internal(message),
+            });
         }
         if let Some(result) =
             dispatch_production_session_gateway_call(&self.session_workers, method, &args)

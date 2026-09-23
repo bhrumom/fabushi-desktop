@@ -101,6 +101,14 @@ impl SandAgentSessionStore {
         Ok(())
     }
 
+    pub fn clear_active_agent_id(&self) -> io::Result<()> {
+        match fs::remove_file(self.active_agent_pointer_path()) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(error),
+        }
+    }
+
     pub fn list_agent_record_ids(&self) -> Result<Vec<String>, String> {
         self.production.list_agent_record_ids()
     }
