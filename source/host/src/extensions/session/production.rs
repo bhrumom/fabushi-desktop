@@ -29,6 +29,9 @@ use super::conversation_size_limits::{
 };
 use super::session_paths::{get_agent_db_path, get_connector_secrets_root};
 use super::connector_secret_store::SandConnectorSecretStore;
+use super::channel_store::{
+    ChannelConfig, ChannelConnection, FileChannelStore, get_agent_channels_dir,
+};
 use super::session_maintenance::{
     clear_stale_checkpoint_roots_once, recover_conversation_root_if_missing,
     retire_legacy_store_blobs_once,
@@ -198,6 +201,40 @@ impl ProductionSessionWorkers {
         SandConnectorSecretStore::new(get_connector_secrets_root(Some(&self.agents_root)))
     }
 
+    pub fn open_channel_store(&self, agent_id: &str) -> FileChannelStore {
+        FileChannelStore::new(get_agent_channels_dir(&self.agents_root.join(agent_id)))
+    }
+
+    pub fn list_agent_channels(&self, agent_id: &str) -> Result<Vec<ChannelConnection>, String> {
+        Ok(self
+            .open_channel_store(agent_id)
+            .list_connections()
+            .into_iter()
+            .filter(|connection| {
+                self.connector_secret_store()
+                    .get_secret(agent_id, &connection.platform, "token")
+                    .is_some()
+            })
+            .collect())
+    }
+
+    pub fn list_channel_configs(&self, agent_id: &str) -> Result<Vec<ChannelConfig>, String> {
+        let store = self.open_channel_store(agent_id);
+        let secrets = self.connector_secret_store();
+        let mut configs = Vec::new();
+        for platform in store.list_platforms() {
+            let Some(token) = secrets.get_secret(agent_id, &platform, "token") else {
+                continue;
+            };
+            configs.push(ChannelConfig {
+                label: store.read_label(&platform).unwrap_or_else(|| platform.clone()),
+                platform,
+                token,
+            });
+        }
+        Ok(configs)
+    }
+
     pub fn store_connector_credential(
         &self,
         agent_id: &str,
@@ -205,8 +242,15 @@ impl ProductionSessionWorkers {
         field: &str,
         value: &str,
     ) -> Result<bool, String> {
-        self.connector_secret_store()
+        let stored = self
+            .connector_secret_store()
             .set_secret(agent_id, platform, field, value)
+            .map_err(|error| error.to_string())?;
+        if !stored {
+            return Ok(false);
+        }
+        self.open_channel_store(agent_id)
+            .write_metadata(platform, "")
             .map_err(|error| error.to_string())
     }
 
@@ -228,6 +272,16 @@ impl ProductionSessionWorkers {
     ) -> Result<bool, String> {
         self.connector_secret_store()
             .remove_agent_platform(agent_id, platform)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn disconnect_channel(&self, agent_id: &str, platform: &str) -> Result<bool, String> {
+        let _ = self
+            .connector_secret_store()
+            .remove_agent_platform(agent_id, platform)
+            .map_err(|error| error.to_string())?;
+        self.open_channel_store(agent_id)
+            .remove(platform)
             .map_err(|error| error.to_string())
     }
 
