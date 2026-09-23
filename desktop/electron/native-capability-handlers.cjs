@@ -26,6 +26,31 @@ function cleanString(value, limit = 4096) {
   return String(value ?? '').replace(/\0/g, '').trim().slice(0, limit);
 }
 
+function normalizeHostSidebarSections(value) {
+  if (!Array.isArray(value)) return [];
+  const seenSectionIds = new Set();
+  const sections = [];
+  for (const candidate of value) {
+    const section = recordValue(candidate);
+    if (section == null) continue;
+    const id = cleanString(section.id, 160);
+    const name = cleanString(section.name, 240);
+    if (!id || !name || seenSectionIds.has(id)) continue;
+    seenSectionIds.add(id);
+    const agentIds = Array.isArray(section.agentIds)
+      ? [...new Set(section.agentIds.map((agentId) => cleanString(agentId, 160)).filter(Boolean))].slice(0, 500)
+      : [];
+    sections.push({
+      id,
+      name,
+      agentIds,
+      isCollapsed: section.isCollapsed === true,
+    });
+    if (sections.length >= 30) break;
+  }
+  return sections;
+}
+
 function externalReleaseManifest(value) {
   const release = value && typeof value === 'object' && !Array.isArray(value) ? value : null;
   const manifest = release?.protocol === 'mahayana.external-release.v1'
@@ -959,13 +984,13 @@ function createNativeCapabilityHandlers(deps) {
       return setPreference('hostPinnedAgents', [...new Set(ids)].slice(0, 100));
     },
 
-    getHostSidebarSections() {
-      return getPreference('hostSidebarSections', ['agents', 'groups', 'automations', 'skills']);
+    async getHostSidebarSections() {
+      return normalizeHostSidebarSections(await getPreference('hostSidebarSections', []));
     },
 
     async setHostSidebarSections(params) {
-      const sections = Array.isArray(params.sections) ? params.sections.map((value) => cleanString(value, 80)).filter(Boolean) : [];
-      return setPreference('hostSidebarSections', [...new Set(sections)].slice(0, 30));
+      const sections = normalizeHostSidebarSections(params.sections);
+      return setPreference('hostSidebarSections', sections);
     },
 
     async getAvailableModels() {
