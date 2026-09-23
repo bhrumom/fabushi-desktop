@@ -12432,7 +12432,7 @@
       "targetPath": "source/host/src/extensions/session/session_maintenance.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "c2ac48a32a712eae193a693c7c7d33ee2a4c750b",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12442,7 +12442,8 @@
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/extensions/session/conversation_recovery.rs",
         "source/host/src/extensions/session/session_conversation_state.rs",
-        "source/host/src/extensions/session/extension.rs"
+        "source/host/src/extensions/session/extension.rs",
+        "source/host/src/extensions/session/session_diagnostics.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_maintenance_contract.rs",
@@ -12454,7 +12455,8 @@
         "source/host/tests/session_extension_contract.rs",
         "source/host/tests/agent_db_metadata_contract.rs"
       ],
-      "notes": "Rust shipping maintenance performs missing-root recovery with structural-ref validation/CAS, durable-outline transcript backfill, one-time hidden recovered-user repair, stale-root cleanup and legacy blob retirement. Recovery synchronizes profile.json name into AgentDb metadata; Session extension startup composes cleanupLegacyGroupMemberDirs through sequential failure isolation. Full ConversationState turn/todo/summary materialization is now production-owned; final remains withheld only for operation-level maintenance diagnostic/report parity."
+      "notes": "Final Rust port of frozen Grok Session maintenance. Shipping production owns missing-root recovery with ConversationRecoveryScanError semantics, full structural-ref validation/CAS, recovered transcript backfill/profile-name synchronization, hidden-artifact repair, stale-root cleanup, legacy blob retirement, members-directory cleanup and ordered maintenance task isolation. Operation failures now publish the frozen maintenance diagnostic family/kinds with agentId/errorClass through the shared Session diagnostics reporter; recovery scan failures are reported and rethrown while ordinary maintenance failures degrade to false/0 exactly as the frozen contract.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/session/session-materialization.ts",

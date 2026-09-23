@@ -11,12 +11,15 @@ use mahayana_host_runtime::extensions::session::agent_db::{
 };
 use mahayana_host_runtime::extensions::session::agent_db_schema::AGENT_DB_SCHEMA;
 use mahayana_host_runtime::extensions::session::conversation_recovery::OutlineItem;
+use mahayana_host_runtime::extensions::session::session_diagnostics::{
+    pin_session_diagnostics_reporter, SessionDiagnostic,
+};
 use mahayana_host_runtime::extensions::session::session_maintenance::{
     HIDDEN_ENTRY_REPAIR_VERSION, STALE_ROOT_CLEANUP_VERSION, backfill_transcript,
-    backfill_transcript_from_outline, clear_stale_checkpoint_roots_once,
-    pin_stale_root_gc, recover_conversation_root_if_missing,
-    repair_hidden_transcript_entries_once, run_session_maintenance,
-    sync_recovered_profile_name,
+    backfill_transcript_from_outline, cleanup_legacy_group_member_dirs,
+    clear_stale_checkpoint_roots_once, pin_stale_root_gc,
+    recover_conversation_root_if_missing, repair_hidden_transcript_entries_once,
+    run_session_maintenance, sync_recovered_profile_name,
 };
 use rusqlite::params;
 use sha2::{Digest, Sha256};
@@ -386,4 +389,45 @@ fn run_session_maintenance_reports_failure_and_continues_in_order() {
         *reports.lock().expect("reports"),
         vec![(0, "first failed".to_string())]
     );
+}
+
+
+#[test]
+fn legacy_member_cleanup_reports_frozen_maintenance_diagnostic_shape() {
+    use std::sync::Mutex;
+
+    let root = temp_root("member-cleanup-diagnostic");
+    let agent_dir = root.join("agent-diag");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    fs::write(agent_dir.join("members"), b"not-a-directory").expect("members file");
+
+    let reports = Arc::new(Mutex::new(Vec::<SessionDiagnostic>::new()));
+    let reports_for_callback = Arc::clone(&reports);
+    pin_session_diagnostics_reporter(Some(Arc::new(move |report| {
+        reports_for_callback
+            .lock()
+            .expect("diagnostic reports")
+            .push(report.clone());
+    })));
+
+    let failures = cleanup_legacy_group_member_dirs(&root, "members");
+    pin_session_diagnostics_reporter(None);
+
+    assert_eq!(failures.len(), 1);
+    let reports = reports.lock().expect("reports");
+    let report = reports
+        .iter()
+        .find(|report| report.kind == "member_cleanup_failed")
+        .expect("member cleanup diagnostic");
+    assert_eq!(report.family, "maintenance");
+    assert_eq!(
+        report.metadata.get("agentId").and_then(serde_json::Value::as_str),
+        Some("agent-diag")
+    );
+    assert_eq!(
+        report.metadata.get("errorClass").and_then(serde_json::Value::as_str),
+        Some("Error")
+    );
+
+    let _ = fs::remove_dir_all(root);
 }
