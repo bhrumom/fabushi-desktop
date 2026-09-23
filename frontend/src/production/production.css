@@ -332,19 +332,19 @@ button, textarea, input { font: inherit; }
 }
 
 
-/* WindowChrome's recovered drag layer intentionally spans the top 52px.
- * Fabushi composes Agent collaboration actions into that recovered sidebar
- * header. Raise the whole header above the fixed drag carrier, keep the header
- * itself draggable, and punch explicit native no-drag holes for real controls.
+/* WindowChrome's recovered drag carrier starts after the live sidebar width.
+ * The sidebar is a size-query container (and therefore its own stacking context),
+ * so a fixed drag layer must not geometrically overlap its real header controls.
+ * The header owns its own drag surface; interactive controls carve no-drag holes.
  */
+.sand-cover-drag {
+  left: var(--fabushi-sidebar-width, 0px);
+}
 .sand-agents-sidebar__header {
-  position: relative;
-  z-index: 5000;
   -webkit-app-region: drag;
   app-region: drag;
 }
 .sand-agents-sidebar__header button {
-  position: relative;
   pointer-events: auto;
   -webkit-app-region: no-drag;
   app-region: no-drag;

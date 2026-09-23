@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ErrorInfo, type ReactNode } from "react";
+import { Component, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
 import type { CoordinatorPortBridge, CursorAuthStatus, DesktopAutoReviewInstructions, DesktopBridge, SidebarSection, ThemePreference } from "../recovered/contracts/desktop-bridge";
 import computerEntrypoint from "../recovered/features/computer/overlay/entrypoint";
 import { ConversationComposer } from "../recovered/features/conversation/workspace/composer";
@@ -1351,6 +1351,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (pending != null) uiLayoutStore.setSidebarLayout(pending);
   }, [uiLayoutStore]);
   const renderedSidebarLayout = sidebarResizePreview ?? sidebarLayout;
+  const renderedSidebarWidth = renderedSidebarLayout.isCollapsed ? SIDEBAR_LAYOUT_BOUNDS.collapsedWidth : renderedSidebarLayout.expandedWidth;
   const activeDraftSnapshotStore = useMemo(
     () => composerDraftStore.snapshotsFor(activeAgentId),
     [activeAgentId, composerDraftStore]
@@ -3439,7 +3440,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L132101-L132102
   return (
-    <div className="sand-shell" data-agent-root-shell="true" data-empty={activeAgent == null ? true : undefined} data-loading={showRootLoading || undefined} data-product-shell="agent" data-runtime={bridge == null ? "browser" : "electron"} data-theme={RUNTIME_THEME_CLASS[resolvedTheme]} data-testid="messenger-workspace" style={{ height: "100%", position: "relative", width: "100%" }}>
+    <div className="sand-shell" data-agent-root-shell="true" data-empty={activeAgent == null ? true : undefined} data-loading={showRootLoading || undefined} data-product-shell="agent" data-runtime={bridge == null ? "browser" : "electron"} data-theme={RUNTIME_THEME_CLASS[resolvedTheme]} data-testid="messenger-workspace" style={{ "--fabushi-sidebar-width": `${renderedSidebarWidth}px`, height: "100%", position: "relative", width: "100%" } as CSSProperties}>
       <WorkspaceIndicator isFullscreen={windowFullscreen} label={workspaceRoute == null ? activeAgent?.name ?? null : null} />
       {bridge == null ? null : <WindowStatusBadge isFullscreen={windowFullscreen} transport={transport} />}
       <RootShellNotificationHost bridge={bridge} client={client} />
@@ -3458,7 +3459,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       {account?.kind === "logged-in" && !computerInfoOpen && !computer.isOpen && computerRebuildBannerInput.kind !== "reconnecting" ? <ComputerRebuildProgressBanner input={computerRebuildBannerInput} onRestore={restoreComputerProgress} /> : null}
       {bridge == null ? null : <WindowChrome bridge={bridge} isFullscreen={windowFullscreen} isMaximized={windowMaximized} />}
       <RootShellLoading isVisible={showRootLoading} />
-      <div style={{ display: "grid", gridTemplateColumns: `${renderedSidebarLayout.isCollapsed ? SIDEBAR_LAYOUT_BOUNDS.collapsedWidth : renderedSidebarLayout.expandedWidth}px minmax(0, 1fr)`, height: "100%", minHeight: 0, width: "100%" }}>
+      <div style={{ display: "grid", gridTemplateColumns: `${renderedSidebarWidth}px minmax(0, 1fr)`, height: "100%", minHeight: 0, width: "100%" }}>
         <div style={{ display: "grid", gridTemplateRows: "minmax(0, 1fr) auto auto auto", minHeight: 0 }}>
           <div style={{ display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", minHeight: 0 }}>
             {connectionController == null ? null : <CoordinatorConnectionHost controller={connectionController} />}
