@@ -207,8 +207,14 @@ fn production_send_runtime_serializes_distinct_user_turns_for_the_same_agent() {
     assert_eq!(runtime.queued_turn_count("agent-a"), 1);
 
     release_first_tx.send(()).expect("release first");
-    assert_eq!(first.join().expect("first thread"), "op-first");
-    assert_eq!(second.join().expect("second thread"), "op-second");
+    assert_eq!(
+        first.join().expect("first thread")["operationId"],
+        "op-first"
+    );
+    assert_eq!(
+        second.join().expect("second thread")["operationId"],
+        "op-second"
+    );
     assert!(second_entered.load(Ordering::SeqCst));
     assert!(runtime.is_turn_dispatch_idle("agent-a"));
     assert_eq!(runtime.in_flight_run_count("agent-a"), 0);
