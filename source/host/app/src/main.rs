@@ -338,11 +338,22 @@ fn start_routed_provider_task(
     let cancellation = routed_provider_tasks.register(&stream_id).map_err(|error| {
         GatewayCommandError::Internal(error.to_string())
     })?;
-    session_workers.prepare_existing_agent(&agent_id).map_err(|error| {
-        GatewayCommandError::Internal(format!(
-            "could not prepare production session worker state for {agent_id}: {error}"
-        ))
-    })?;
+    if let Some(prepared_session) = session_workers
+        .prepare_existing_agent(&agent_id)
+        .map_err(|error| {
+            GatewayCommandError::Internal(format!(
+                "could not prepare production session worker state for {agent_id}: {error}"
+            ))
+        })?
+    {
+        session_workers
+            .ensure_capacity_for_turn(&prepared_session)
+            .map_err(|error| {
+                GatewayCommandError::Internal(format!(
+                    "conversation capacity gate rejected {agent_id}: {error}"
+                ))
+            })?;
+    }
     let checkpoint_store = Arc::new(
         ProductionRoutedProviderCheckpointStore::new(
             &data_dir,

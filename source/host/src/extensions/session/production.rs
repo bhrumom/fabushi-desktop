@@ -8,6 +8,9 @@ use crate::agent_isolation::{
 use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::conversation_blobs_path::conversation_blobs_path;
+use super::conversation_size_limits::{
+    ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
+};
 use super::session_paths::get_agent_db_path;
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
@@ -17,6 +20,7 @@ pub type ProductionWorkerBlobStore = WorkerBlobStore<ProductionAgentStoreWorkerB
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PreparedAgentBlobStore {
+    pub agent_id: String,
     pub session_db_path: PathBuf,
     pub blob_db_path: PathBuf,
     pub latest_root_blob_id: Option<Vec<u8>>,
@@ -31,6 +35,7 @@ pub struct PreparedAgentBlobStore {
 pub struct ProductionSessionWorkers {
     agents_root: PathBuf,
     pool: Arc<ProductionAgentWorkerPool>,
+    conversation_size_maintenance: ConversationSizeMaintenance,
 }
 
 impl ProductionSessionWorkers {
@@ -50,6 +55,7 @@ impl ProductionSessionWorkers {
             pool: Arc::new(AgentWorkerPool::new(
                 create_production_agent_store_worker_backend(busy_timeout_ms),
             )),
+            conversation_size_maintenance: ConversationSizeMaintenance::default(),
         }
     }
 
@@ -109,10 +115,32 @@ impl ProductionSessionWorkers {
         }
 
         Ok(Some(PreparedAgentBlobStore {
+            agent_id: agent_id.to_string(),
             session_db_path,
             blob_db_path: store.blob_db_path.clone(),
             latest_root_blob_id,
         }))
+    }
+
+    pub fn ensure_capacity_for_turn(
+        &self,
+        prepared: &PreparedAgentBlobStore,
+    ) -> Result<(), String> {
+        let Some(root_id) = prepared.latest_root_blob_id.as_deref() else {
+            return Ok(());
+        };
+        self.conversation_size_maintenance
+            .ensure_conversation_capacity_for_turn(
+                Arc::clone(&self.pool),
+                ConversationGcTarget::from_root(
+                    prepared.agent_id.clone(),
+                    prepared.blob_db_path.clone(),
+                    prepared.session_db_path.clone(),
+                    root_id,
+                ),
+                ConversationSizePolicy::from_environment(),
+            )
+            .map_err(|error| error.to_string())
     }
 
     pub fn active_worker_count(&self) -> usize {
