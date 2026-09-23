@@ -49,10 +49,10 @@ pub fn rebuild_transcript_entries_from_state(
             match item {
                 OutlineItem::User {
                     id,
-                    hidden,
+                    hidden: false,
                     text,
                     timestamp_ms,
-                } if !hidden => {
+                } => {
                     entry.insert("kind".into(), Value::String("message".into()));
                     entry.insert(
                         "id".into(),
