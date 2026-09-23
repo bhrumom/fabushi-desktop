@@ -672,3 +672,49 @@ test('desktop update click downloads a GitHub release and schedules replacement 
   assert.equal(installationInProgress, true);
   assert.equal(appQuitCount, 1);
 });
+
+
+test('Sidebar sections round-trip structured Grok state at the native edge', async () => {
+  await harness(async ({ handlers, getState }) => {
+    assert.deepEqual(await handlers.getHostSidebarSections(), []);
+
+    const saved = await handlers.setHostSidebarSections({
+      sections: [
+        {
+          id: 'section-focused',
+          name: 'Focused work',
+          agentIds: ['agent:a', 'agent:a', 'agent:b'],
+          isCollapsed: true,
+        },
+        {
+          id: 'section-empty',
+          name: 'Empty',
+          agentIds: [],
+          isCollapsed: false,
+        },
+      ],
+    });
+
+    assert.deepEqual(saved, [
+      {
+        id: 'section-focused',
+        name: 'Focused work',
+        agentIds: ['agent:a', 'agent:b'],
+        isCollapsed: true,
+      },
+      {
+        id: 'section-empty',
+        name: 'Empty',
+        agentIds: [],
+        isCollapsed: false,
+      },
+    ]);
+    assert.deepEqual(await handlers.getHostSidebarSections(), saved);
+    assert.deepEqual(getState().preferences.hostSidebarSections, saved);
+  }, {
+    initialState: {
+      preferences: { hostSidebarSections: ['agents', 'groups', 'automations', 'skills'] },
+      clientPersistence: {},
+    },
+  });
+});
