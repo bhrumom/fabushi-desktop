@@ -10,9 +10,12 @@ use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::agent_db::{
     AgentDbSerdeSnapshot, read_persisted_agent_serde_snapshot,
-    read_persisted_latest_root_blob_id, read_persisted_transcript_tail,
+    read_persisted_latest_root_blob_id,
 };
-use super::agent_db_transcript_pages::TranscriptPage;
+use super::agent_db_transcript_pages::{
+    TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
+};
+use super::session_conversation_state::{SessionConversationState, TranscriptThread};
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
@@ -54,6 +57,7 @@ pub struct ProductionSessionWorkers {
     agents_root: PathBuf,
     pool: Arc<ProductionAgentWorkerPool>,
     conversation_size_maintenance: ConversationSizeMaintenance,
+    conversation_state: SessionConversationState,
     busy_timeout_ms: u64,
 }
 
@@ -75,6 +79,7 @@ impl ProductionSessionWorkers {
                 create_production_agent_store_worker_backend(busy_timeout_ms),
             )),
             conversation_size_maintenance: ConversationSizeMaintenance::default(),
+            conversation_state: SessionConversationState::new(busy_timeout_ms),
             busy_timeout_ms,
         }
     }
@@ -113,6 +118,60 @@ impl ProductionSessionWorkers {
             purpose,
         )
         .map_err(|error| error.to_string())
+    }
+
+    pub fn read_agent_transcript_entries(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        self.conversation_state
+            .read_agent_transcript_entries(&db_path)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn read_agent_transcript_page(
+        &self,
+        agent_id: &str,
+        query: TranscriptPageQuery,
+    ) -> Result<TranscriptPage, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        self.conversation_state
+            .read_agent_transcript_page(&db_path, query)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn read_agent_transcript_window(
+        &self,
+        agent_id: &str,
+        query: TranscriptWindowQuery,
+    ) -> Result<TranscriptWindow<std::collections::BTreeMap<String, usize>>, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        self.conversation_state
+            .read_agent_transcript_window(&db_path, query)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn read_agent_transcript_tail(
+        &self,
+        agent_id: &str,
+        query: TranscriptWindowQuery,
+    ) -> Result<TranscriptPage, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        self.conversation_state
+            .read_agent_transcript_tail(&db_path, query)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn read_agent_thread(
+        &self,
+        agent_id: &str,
+        root_id: &str,
+    ) -> Result<TranscriptThread, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        self.conversation_state
+            .read_agent_thread(&db_path, root_id)
+            .map_err(|error| error.to_string())
     }
 
     pub fn create_agent_blob_store(
@@ -163,9 +222,16 @@ impl ProductionSessionWorkers {
         let session_state =
             read_persisted_agent_serde_snapshot(&session_db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?;
-        let transcript_tail =
-            read_persisted_transcript_tail(&session_db_path, self.busy_timeout_ms, 500)
-                .map_err(|error| error.to_string())?;
+        let transcript_tail = self
+            .conversation_state
+            .read_agent_transcript_tail(
+                &session_db_path,
+                TranscriptWindowQuery {
+                    before_seq: None,
+                    limit: 500,
+                },
+            )
+            .map_err(|error| error.to_string())?;
         let profile_file = Some(materialized.profile.clone());
 
         let latest_root_blob_id = futures::executor::block_on(
