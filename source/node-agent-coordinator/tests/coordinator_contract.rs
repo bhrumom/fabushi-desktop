@@ -1365,6 +1365,7 @@ fn inference_router_persists_bounded_transcripts_reactions_and_turn_ids() {
         rich_text: Some("{\"type\":\"doc\"}".into()),
         id: "t501u".into(),
         client_nonce: Some("nonce-501".into()),
+        attachments: Vec::new(),
         reactions: Vec::new(),
         timestamp_ms: 501,
     };
