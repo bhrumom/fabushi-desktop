@@ -43,6 +43,10 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedProviderTaskRegistry,
     RoutedToolBridge, RunnerRequestContextSnapshot, RunnerRequestContextSource,
 };
+use mahayana_host_runtime::runner::coordinator_tool_relay::{
+    CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
+    RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
+};
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
 use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
@@ -204,6 +208,7 @@ const RUNNER_INFERENCE_EVENT_CHANNEL: &str = "runner-inference";
 struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
     events: GatewayEventHub,
+    routed_tool_relay: Arc<CoordinatorToolRelay>,
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
     session_workers: Arc<ProductionSessionWorkers>,
@@ -232,14 +237,16 @@ fn call_host_lane(
 }
 
 #[derive(Clone)]
-struct HostLaneRoutedToolBridge {
-    host_tx: mpsc::Sender<HostLaneRequest>,
+struct CoordinatorRoutedToolBridge {
+    relay: Arc<CoordinatorToolRelay>,
     agent_id: String,
 }
 
-impl RoutedToolBridge for HostLaneRoutedToolBridge {
+impl RoutedToolBridge for CoordinatorRoutedToolBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
-        let value = call_host_lane(&self.host_tx, "listRoutedMcpTools", serde_json::json!({}))
+        let value = self
+            .relay
+            .request(ROUTED_TOOL_LIST_METHOD, serde_json::json!({}))
             .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
         decode_routed_tools(value)
     }
@@ -250,19 +257,19 @@ impl RoutedToolBridge for HostLaneRoutedToolBridge {
         args: serde_json::Value,
         tool_call_id: &str,
     ) -> Result<serde_json::Value, ProviderSessionError> {
-        call_host_lane(
-            &self.host_tx,
-            "executeRoutedMcpTool",
-            serde_json::json!({
-                "providerIdentifier": tool.provider_identifier,
-                "name": tool.name,
-                "toolName": tool.tool_name,
-                "args": args,
-                "toolCallId": tool_call_id,
-                "agentId": self.agent_id,
-            }),
-        )
-        .map_err(|error| ProviderSessionError::Tool(error.to_string()))
+        self.relay
+            .request(
+                ROUTED_TOOL_EXECUTE_METHOD,
+                serde_json::json!({
+                    "providerIdentifier": tool.provider_identifier,
+                    "name": tool.name,
+                    "toolName": tool.tool_name,
+                    "args": args,
+                    "toolCallId": tool_call_id,
+                    "agentId": self.agent_id,
+                }),
+            )
+            .map_err(|error| ProviderSessionError::Tool(error.to_string()))
     }
 }
 
@@ -315,7 +322,7 @@ fn decode_provider_messages(
 }
 
 fn start_routed_provider_task(
-    host_tx: mpsc::Sender<HostLaneRequest>,
+    routed_tool_relay: Arc<CoordinatorToolRelay>,
     events: GatewayEventHub,
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
@@ -367,8 +374,8 @@ fn start_routed_provider_task(
     let spawn = thread::Builder::new()
         .name(format!("mahayana-runner-provider-{agent_id}"))
         .spawn(move || {
-            let bridge: Arc<dyn RoutedToolBridge> = Arc::new(HostLaneRoutedToolBridge {
-                host_tx,
+            let bridge: Arc<dyn RoutedToolBridge> = Arc::new(CoordinatorRoutedToolBridge {
+                relay: routed_tool_relay,
                 agent_id: agent_id.clone(),
             });
             let box_resources = Arc::new(ForeverBoxRunnerResourcePort::new(
@@ -443,9 +450,15 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        if method == RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD {
+            return self
+                .routed_tool_relay
+                .resolve(&args)
+                .map_err(|error| GatewayCommandError::BadRequest(error.to_string()));
+        }
         if method == RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD {
             return start_routed_provider_task(
-                self.host_tx.clone(),
+                Arc::clone(&self.routed_tool_relay),
                 self.events.clone(),
                 self.data_dir.clone(),
                 Arc::clone(&self.request_context),
@@ -759,10 +772,12 @@ fn main() {
     };
     let gateway_started_at = started_at_ms();
     let gateway_events = GatewayEventHub::default();
+    let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
             events: gateway_events.clone(),
+            routed_tool_relay: Arc::clone(&routed_tool_relay),
             data_dir: app_data_dir.clone(),
             request_context: runner_request_context,
             session_workers: Arc::clone(&session_workers),
@@ -889,6 +904,7 @@ fn main() {
     drop(platform_tx);
     drop(gateway_server);
     routed_provider_tasks.cancel_all("Mahayana Host shutting down");
+    routed_tool_relay.cancel_all("Mahayana Host shutting down");
     session_workers.shutdown();
     forever_box.dispose();
     if let Err(error) = clear_gateway_discovery(&gateway_discovery_path) {

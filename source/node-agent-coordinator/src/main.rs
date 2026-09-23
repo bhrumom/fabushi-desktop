@@ -52,6 +52,10 @@ use mahayana_node_agent_coordinator::protocol::{
 use mahayana_node_agent_coordinator::renderer_port_server::{
     RendererPortServer, ServerAction,
 };
+use mahayana_node_agent_coordinator::runner_tool_relay::{
+    RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD, RUNNER_TOOL_REQUEST_EVENT_CHANNEL,
+    execute_runner_tool_request, runner_tool_resolution_failure,
+};
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::{env, fs};
@@ -909,6 +913,54 @@ fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
     let now_ms = coordinator_now_ms();
     if let Ok(mut gateway) = state.gateway_client.lock() {
         let _ = gateway.accept_event(now_ms, channel.clone(), payload.clone());
+    }
+
+    if channel == RUNNER_TOOL_REQUEST_EVENT_CHANNEL {
+        let request_id = payload
+            .get("requestId")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string);
+        let relay_state = Arc::clone(state);
+        let relay_payload = payload;
+        let spawn = thread::Builder::new()
+            .name("mahayana-coordinator-runner-tool-relay".into())
+            .spawn(move || {
+                let resolution = match execute_runner_tool_request(
+                    &relay_payload,
+                    |method, args| control_command(&relay_state, method, args),
+                ) {
+                    Ok(resolution) => resolution,
+                    Err(failure) => {
+                        let Some(request_id) = request_id.as_deref() else {
+                            eprintln!(
+                                "runner tool relay rejected malformed request: {}: {}",
+                                failure.code, failure.message
+                            );
+                            return;
+                        };
+                        runner_tool_resolution_failure(
+                            request_id,
+                            format!("{}: {}", failure.code, failure.message),
+                        )
+                    }
+                };
+                if let Err(failure) = dispatch_gateway_value(
+                    &relay_state,
+                    RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
+                    resolution,
+                ) {
+                    eprintln!(
+                        "runner tool relay could not settle Host request: {}: {}",
+                        failure.code, failure.message
+                    );
+                }
+            });
+        if let Err(error) = spawn {
+            eprintln!("runner tool relay worker could not start: {error}");
+        }
+        return;
     }
 
     if channel == "runner-inference" {

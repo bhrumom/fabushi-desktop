@@ -15,6 +15,7 @@ pub mod oauth;
 pub mod protocol;
 pub mod renderer_port_server;
 pub mod routed_mcp_bridge;
+pub mod runner_tool_relay;
 pub mod supervisor;
 pub mod telemetry;
 pub mod webauthn;
