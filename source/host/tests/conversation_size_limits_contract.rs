@@ -8,7 +8,7 @@ use mahayana_host_runtime::agent_isolation::{
 use mahayana_host_runtime::extensions::session::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeLimits, ConversationSizeMaintenance,
     ConversationSizePolicy, HARD_LIMIT_DEFAULT_BYTES, SOFT_LIMIT_DEFAULT_BYTES,
-    SandConversationTooLargeError,
+    SandConversationTooLargeError, run_conversation_gc,
 };
 use rusqlite::params;
 use sha2::{Digest, Sha256};
@@ -188,6 +188,31 @@ fn hard_turn_gate_rejects_only_after_successful_gc_stays_over_cap() {
             ..
         })
     ));
+    futures::executor::block_on(pool.close_all());
+    cleanup(&blob_db);
+    cleanup(&session_db);
+}
+
+
+#[test]
+fn empty_persisted_root_returns_no_root_verdict() {
+    let blob_db = path("capacity-no-root");
+    let session_db = path("capacity-no-root-session");
+    let pool = Arc::new(AgentWorkerPool::new(
+        create_production_agent_store_worker_backend(5_000),
+    ));
+    let target = ConversationGcTarget {
+        agent_id: "agent-no-root".into(),
+        blob_db_path: blob_db.clone(),
+        legacy_blob_db_path: session_db.clone(),
+        retained_root_id_hex: String::new(),
+    };
+
+    assert_eq!(
+        run_conversation_gc(pool.as_ref(), &target).expect("no-root verdict"),
+        None
+    );
+
     futures::executor::block_on(pool.close_all());
     cleanup(&blob_db);
     cleanup(&session_db);

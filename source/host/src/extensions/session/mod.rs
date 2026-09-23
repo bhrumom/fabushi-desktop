@@ -1,3 +1,4 @@
+pub mod agent_db;
 pub mod conversation_blobs_path;
 pub mod conversation_size_limits;
 pub mod session_paths;

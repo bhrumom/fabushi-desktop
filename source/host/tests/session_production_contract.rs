@@ -6,6 +6,10 @@ use mahayana_host_runtime::extensions::session::session_paths::{
     CONVERSATION_BLOBS_FILENAME, STORE_FILENAME,
 };
 
+fn to_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -46,6 +50,30 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
     fs::create_dir_all(&agent_dir).expect("agent directory");
     let session_db_path = agent_dir.join(STORE_FILENAME);
     let connection = rusqlite::Connection::open(&session_db_path).expect("session sqlite");
+    connection
+        .execute_batch(
+            "CREATE TABLE kv (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            ) STRICT;",
+        )
+        .expect("session kv");
+    let persisted_root = vec![0xaa, 0xbb, 0xcc];
+    let metadata = serde_json::to_vec(&serde_json::json!({
+        "agentId": "agent-live",
+        "latestRootBlobId": to_hex(&persisted_root),
+        "name": "Agent Live",
+        "mode": "default",
+        "isRunEverything": false,
+        "createdAt": 1
+    }))
+    .expect("metadata json");
+    connection
+        .execute(
+            "INSERT INTO kv (key, value) VALUES ('metadata', ?1)",
+            rusqlite::params![to_hex(&metadata)],
+        )
+        .expect("metadata row");
     drop(connection);
 
     let runtime = ProductionSessionWorkers::with_agents_root(&root, 500);
@@ -69,6 +97,7 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
         prepared.blob_db_path,
         agent_dir.join(CONVERSATION_BLOBS_FILENAME)
     );
+    assert_eq!(prepared.persisted_root_blob_id, vec![0xaa, 0xbb, 0xcc]);
     assert_eq!(runtime.active_worker_count(), 1);
 
     runtime.shutdown();

@@ -221,7 +221,7 @@ impl ConversationSizeMaintenance {
                     Ok(verdict) => report_conversation_gc_verdict(
                         "soft_schedule",
                         &target,
-                        Some(&verdict),
+                        verdict.as_ref(),
                         false,
                     ),
                     Err(error) => {
@@ -267,14 +267,14 @@ impl ConversationSizeMaintenance {
             }
         };
 
-        match verdict {
-            ConversationGarbageCollectionOutcome::Collected { .. } => {
+        match &verdict {
+            Some(ConversationGarbageCollectionOutcome::Collected { .. }) => {
                 let after = measure_conversation_blob_bytes(&target.blob_db_path);
                 let still_over_cap = after >= policy.hard_limit_bytes;
                 report_conversation_gc_verdict(
                     "turn_gate",
                     &target,
-                    Some(&verdict),
+                    verdict.as_ref(),
                     still_over_cap,
                 );
                 if still_over_cap {
@@ -284,8 +284,13 @@ impl ConversationSizeMaintenance {
                     });
                 }
             }
-            ConversationGarbageCollectionOutcome::Skipped { .. } => {
-                report_conversation_gc_verdict("turn_gate", &target, Some(&verdict), false);
+            Some(ConversationGarbageCollectionOutcome::Skipped { .. }) | None => {
+                report_conversation_gc_verdict(
+                    "turn_gate",
+                    &target,
+                    verdict.as_ref(),
+                    false,
+                );
             }
         }
         Ok(())
@@ -329,7 +334,10 @@ pub fn measure_conversation_blob_bytes(blob_db_path: &Path) -> u64 {
 pub fn run_conversation_gc(
     pool: &AgentWorkerPool<ProductionAgentStoreWorkerBackend>,
     target: &ConversationGcTarget,
-) -> Result<ConversationGarbageCollectionOutcome, String> {
+) -> Result<Option<ConversationGarbageCollectionOutcome>, String> {
+    if target.retained_root_id_hex.is_empty() {
+        return Ok(None);
+    }
     futures::executor::block_on(pool.collect_conversation_garbage(
         &target.agent_id,
         &target.blob_db_path,
@@ -337,6 +345,7 @@ pub fn run_conversation_gc(
         GC_PENDING_WRITE_RETENTION_MS,
         Some(&target.legacy_blob_db_path),
     ))
+    .map(Some)
     .map_err(|error| error.to_string())
 }
 
