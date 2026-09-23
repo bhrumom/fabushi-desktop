@@ -37,11 +37,11 @@ use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxService, start_forever_box_extension,
 };
 use mahayana_host_runtime::extensions::auth::credential_renewer::RenewalOutcome;
-use mahayana_host_runtime::host_request_context::create_host_request_context;
+use mahayana_host_runtime::runner_context_production_provider::ProductionRunnerRequestContextSource;
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedProviderTaskRegistry,
-    RoutedToolBridge, RunnerRequestContextSnapshot, RunnerRequestContextSource,
+    RoutedToolBridge, RunnerRequestContextSource,
 };
 use mahayana_host_runtime::runner::coordinator_tool_relay::{
     CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
@@ -97,28 +97,6 @@ impl Drop for ProductionHostExtensions {
     fn drop(&mut self) {
         if let Some(subscription) = self.team_rules_renewal_subscription.take() {
             self.auth.service().unsubscribe_from_renewal(subscription);
-        }
-    }
-}
-
-struct ProductionRunnerRequestContextSource {
-    auth: Arc<HostAuthExtension>,
-    team_rules: Arc<ProductionTeamRulesResolver>,
-    transcripts_folder: PathBuf,
-}
-
-impl RunnerRequestContextSource for ProductionRunnerRequestContextSource {
-    fn resolve(&self) -> RunnerRequestContextSnapshot {
-        let rules = self.team_rules.resolve_rules();
-        let provider = create_host_request_context(
-            self.transcripts_folder.to_string_lossy().into_owned(),
-            || None,
-            || rules.clone(),
-            || self.auth.get_user_full_name(),
-        );
-        RunnerRequestContextSnapshot {
-            context: provider.resolve(),
-            rules: provider.resolve_rules(),
         }
     }
 }
@@ -755,11 +733,11 @@ fn main() {
         ForeverBoxExtensionOptions::from_process_env(),
     );
     let runner_request_context: Arc<dyn RunnerRequestContextSource> =
-        Arc::new(ProductionRunnerRequestContextSource {
-            auth: Arc::clone(&production_extensions.auth),
-            team_rules: Arc::clone(&production_extensions.team_rules),
-            transcripts_folder: app_data_dir.join("transcripts"),
-        });
+        Arc::new(ProductionRunnerRequestContextSource::new(
+            Arc::clone(&production_extensions.auth),
+            Arc::clone(&production_extensions.team_rules),
+            app_data_dir.join("transcripts"),
+        ));
     let session_workers = Arc::new(ProductionSessionWorkers::production());
     let routed_provider_tasks = Arc::new(RoutedProviderTaskRegistry::default());
 

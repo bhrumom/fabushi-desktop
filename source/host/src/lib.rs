@@ -46,5 +46,6 @@ pub mod agents;
 pub mod transcript_mutation_events;
 pub mod selected_image_inputs;
 pub mod host_request_context;
+pub mod runner_context_production_provider;
 pub mod agent_isolation;
 pub mod host_secret_store;
