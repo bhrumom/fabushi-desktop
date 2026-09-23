@@ -38,8 +38,11 @@ fn active_agent_pointer_roster_and_settings_are_owned_by_session_facade() {
     store.write_active_agent_id(&second.id).expect("active pointer");
     assert_eq!(store.read_active_agent_id().as_deref(), Some(second.id.as_str()));
 
+    assert_eq!(store.count_owned_agents().expect("owned agents"), 2);
     let agents_list = store.list_agents().expect("roster");
-    assert_eq!(agents_list.len(), 2);
+    // Frozen Grok roster semantics hide blank non-active agents without a durable
+    // footprint; the active blank agent remains visible.
+    assert_eq!(agents_list.len(), 1);
     assert_eq!(
         agents_list.iter().filter(|agent| agent.is_active).count(),
         1
