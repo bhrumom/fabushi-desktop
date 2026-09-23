@@ -9390,21 +9390,25 @@
       "targetPath": "source/host/src/agents/agent_workflow_enablement.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b325e52ad1725b6735eec850e44bbba27cf50d38",
       "architecturalRole": "host/agents",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/agents/agent_workflow_enablement.rs",
-        "source/host/src/agents/agent_clone.rs"
+        "source/host/src/workflows/workflow_store.rs",
+        "source/host/src/extensions/session/session_store_factories.rs",
+        "source/host/src/extensions/session/production.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_workflow_enablement_contract.rs",
-        "source/host/tests/agent_clone_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/workflow_store_contract.rs",
+        "source/host/tests/session_store_factories_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust file contract implements frozen enabled-workflows.json path, disabled/default-enabled semantics, legacy enabled preservation, atomic sorted writes, set/forget/enableAll and is used by production agent cloning. Final is withheld until the future Rust workflow store/runtime uses this owner for enablement mutations rather than only clone preservation."
+      "notes": "Frozen workflow enablement contract is fully owned by Rust: enabled-workflows.json path, default-enabled/disabled semantics, legacy enabled preservation, sorted atomic writes, set/forget/enableAll. Shipping FileWorkflowStore owns and invokes this exact owner for create/migration, per-agent enable/disable, list filtering and removal cleanup; dedicated store integration coverage proves the production mutation path."
     },
     {
       "referencePath": "source/host/agents/settings-file.ts",

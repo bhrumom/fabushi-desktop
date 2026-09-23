@@ -7,3 +7,56 @@ fn root(label:&str)->std::path::PathBuf{let n=SystemTime::now().duration_since(U
 #[test]fn global_library_crud_and_legacy_rename(){let root=root("library");let library=GlobalWorkflowLibrary::new(&root);let spec=WorkflowSpec{name:"Review PR".into(),description:"review".into(),body:"Read the diff".into(),trigger:None,source_ref:None};let first=library.create(&spec).unwrap().unwrap();assert_eq!(first.id,"review-pr");let second=library.create(&spec).unwrap().unwrap();assert_eq!(second.id,"review-pr-2");fs::write(library.folder(&first.id).join("helper.sh"),"echo hi").unwrap();assert_eq!(library.get(&first.id).unwrap().helper_scripts,vec!["helper.sh"]);assert!(library.remove(&second.id).unwrap());let legacy=library.folder("legacy");fs::create_dir_all(&legacy).unwrap();fs::write(legacy.join(LEGACY_WORKFLOW_FILENAME),"---\nname: Legacy\n---\nbody\n").unwrap();library.rename_legacy_recipe_files();assert!(legacy.join(WORKFLOW_FILENAME).is_file());let _=fs::remove_dir_all(root);}
 #[test]fn store_projects_automation_and_migrates_legacy(){let root=root("store");let agent=root.join("agents/a");let global=root.join("workflows");let legacy=agent.join("workflows/old");fs::create_dir_all(&legacy).unwrap();fs::write(legacy.join(LEGACY_WORKFLOW_FILENAME),"---\nname: Old\n---\nLegacy body\n").unwrap();assert!(agent_has_workflows(&agent));let store=FileWorkflowStore::new(&agent,&global);assert!(global.join("old/SKILL.md").is_file());let created=store.create(&WorkflowSpec{name:"Daily".into(),description:String::new(),body:"Do daily".into(),trigger:Some(WorkflowTrigger{schedule:"0 9 * * 1-5".into(),is_enabled:true}),source_ref:None}).unwrap().unwrap();assert_eq!(created.source,"automation");assert!(store.list_all().iter().any(|w|w.id==created.id));let _=fs::remove_dir_all(root);}
 #[test]fn racy_mtime_boundary(){assert!(mtime_tick_could_still_hide_an_edit(9_000,10_999));assert!(!mtime_tick_could_still_hide_an_edit(9_000,11_000));}
+
+
+#[test]
+fn workflow_store_routes_enablement_mutations_through_agent_owner() {
+    let root = root("enablement-owner");
+    let agent = root.join("agents/a");
+    let global = root.join("global-workflows");
+    let store = FileWorkflowStore::new(&agent, &global);
+    let created = store
+        .create(&WorkflowSpec {
+            name: "Enablement proof".into(),
+            description: String::new(),
+            body: "Do the thing".into(),
+            trigger: None,
+            source_ref: None,
+        })
+        .expect("create workflow")
+        .expect("workflow record");
+
+    assert!(created.is_enabled_for_agent);
+    let disabled = store
+        .set_enabled_for_agent(&created.id, false)
+        .expect("disable workflow")
+        .expect("disabled record");
+    assert!(!disabled.is_enabled_for_agent);
+    assert!(!store.list().iter().any(|row| row.id == created.id));
+
+    let enablement_path = agent.join("enabled-workflows.json");
+    let value: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(&enablement_path).expect("enablement file"),
+    )
+    .expect("enablement json");
+    assert_eq!(value["disabled"], serde_json::json!([created.id.clone()]));
+
+    let reenabled = store
+        .set_enabled_for_agent(&created.id, true)
+        .expect("reenable workflow")
+        .expect("reenabled record");
+    assert!(reenabled.is_enabled_for_agent);
+    assert!(store.list().iter().any(|row| row.id == created.id));
+
+    store
+        .set_enabled_for_agent(&created.id, false)
+        .expect("disable before remove");
+    assert!(store.remove(&created.id).expect("remove workflow"));
+    let value: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(&enablement_path).expect("enablement file after remove"),
+    )
+    .expect("enablement json");
+    assert_eq!(value["disabled"], serde_json::json!([]));
+
+    let _ = fs::remove_dir_all(root);
+}
