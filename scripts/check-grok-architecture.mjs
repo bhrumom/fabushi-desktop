@@ -26,7 +26,7 @@ const manifestBase = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 const semanticAdaptationsPath = path.join(root, 'projects/grok-fabu-parity/architecture-semantic-adaptations.json');
 const semanticAdaptations = fs.existsSync(semanticAdaptationsPath)
   ? JSON.parse(fs.readFileSync(semanticAdaptationsPath, 'utf8'))
-  : { schemaVersion: 1, adaptations: [] };
+  : { schemaVersion: 1, adaptations: [] }; // evidence-locked semantic ports only
 
 if (semanticAdaptations.schemaVersion !== 1 || !Array.isArray(semanticAdaptations.adaptations)) {
   fail('invalid architecture semantic-adaptations registry');
