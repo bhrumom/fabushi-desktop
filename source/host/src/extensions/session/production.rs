@@ -42,7 +42,8 @@ use super::connector_secret_store::SandConnectorSecretStore;
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
 use super::session_store_factories::channel_store_for_db_path;
 use super::session_maintenance::{
-    clear_stale_checkpoint_roots_once, recover_conversation_root_if_missing,
+    backfill_transcript_from_outline, clear_stale_checkpoint_roots_once,
+    recover_conversation_root_if_missing, repair_hidden_transcript_entries_once,
     retire_legacy_store_blobs_once,
 };
 use super::session_materialization::{
@@ -757,6 +758,31 @@ impl ProductionSessionWorkers {
             &session_db_path,
             &store.blob_db_path,
             self.busy_timeout_ms,
+        )?;
+        let recovery_turns = self
+            .conversation_state
+            .read_agent_recovery_outline_turns(
+                Arc::clone(&self.pool),
+                agent_id,
+                &session_db_path,
+                &store.blob_db_path,
+            )
+            .map_err(|error| error.to_string())?;
+        if !recovery_turns.is_empty() {
+            let _ = backfill_transcript_from_outline(
+                &session_db_path,
+                self.busy_timeout_ms,
+                &recovery_turns,
+            )?;
+        }
+        let recovery_outline = recovery_turns
+            .iter()
+            .flat_map(|turn| turn.iter().cloned())
+            .collect::<Vec<_>>();
+        let _ = repair_hidden_transcript_entries_once(
+            &session_db_path,
+            self.busy_timeout_ms,
+            &recovery_outline,
         )?;
         let persisted_root_blob_id =
             read_persisted_latest_root_blob_id(&session_db_path, self.busy_timeout_ms)

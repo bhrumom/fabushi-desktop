@@ -305,6 +305,20 @@ fn durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semant
                 && summary.as_deref() == Some("pwd")
     ));
 
+    let prepared = runtime
+        .prepare_existing_agent(&record.id)
+        .expect("prepare existing agent")
+        .expect("prepared agent");
+    assert_eq!(
+        prepared
+            .transcript_tail
+            .entries
+            .iter()
+            .map(|entry| entry.get("kind").and_then(serde_json::Value::as_str).unwrap_or(""))
+            .collect::<Vec<_>>(),
+        vec!["send-message", "tool-call", "tool-call"]
+    );
+
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
 }

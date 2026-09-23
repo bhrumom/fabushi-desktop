@@ -10,13 +10,15 @@ use crate::storage::store_db::{
 
 use super::agent_db::{
     append_persisted_transcript_entries, compare_and_set_persisted_latest_root_blob_id,
-    has_persisted_legacy_conversation_blobs, legacy_blob_retirement_version,
+    delete_persisted_transcript_entry, has_persisted_legacy_conversation_blobs,
+    hidden_entry_repair_version, legacy_blob_retirement_version,
     read_persisted_latest_root_blob_id, read_persisted_transcript_entries,
-    retire_persisted_legacy_conversation_blobs, set_stale_root_cleanup_version,
-    stale_root_cleanup_version,
+    retire_persisted_legacy_conversation_blobs, set_hidden_entry_repair_version,
+    set_stale_root_cleanup_version, stale_root_cleanup_version,
 };
 use super::conversation_recovery::{
-    conversation_structure_fully_resolves, parse_conversation_state_structure,
+    OutlineItem, conversation_structure_fully_resolves, parse_conversation_state_structure,
+    rebuild_transcript_entries_from_state, select_hidden_artifact_entry_ids,
 };
 use super::session_recovery::transcript_entry_matches_recovered;
 
@@ -69,6 +71,65 @@ pub fn backfill_transcript(
         &rebuilt[persisted.len()..],
     )
     .map_err(|error| error.to_string())
+}
+
+pub fn backfill_transcript_from_outline(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    turns: &[Vec<OutlineItem>],
+) -> Result<usize, String> {
+    let rebuilt = rebuild_transcript_entries_from_state(turns);
+    backfill_transcript(db_path, busy_timeout_ms, &rebuilt)
+}
+
+pub fn repair_hidden_transcript_entries_once(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    outline: &[OutlineItem],
+) -> Result<usize, String> {
+    if hidden_entry_repair_version(db_path, busy_timeout_ms)
+        .map_err(|error| error.to_string())?
+        >= HIDDEN_ENTRY_REPAIR_VERSION
+    {
+        return Ok(0);
+    }
+    let entries = read_persisted_transcript_entries(db_path, busy_timeout_ms)
+        .map_err(|error| error.to_string())?;
+    let has_recovered_user = entries.iter().any(|entry| {
+        entry.get("kind").and_then(serde_json::Value::as_str) == Some("message")
+            && entry.get("role").and_then(serde_json::Value::as_str) == Some("user")
+            && entry
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|id| id.starts_with("recovered-"))
+    });
+    if !has_recovered_user {
+        let _ = set_hidden_entry_repair_version(
+            db_path,
+            busy_timeout_ms,
+            HIDDEN_ENTRY_REPAIR_VERSION,
+        )
+        .map_err(|error| error.to_string())?;
+        return Ok(0);
+    }
+    if outline.is_empty() {
+        return Ok(0);
+    }
+    let ids = select_hidden_artifact_entry_ids(&entries, outline);
+    for id in &ids {
+        if !delete_persisted_transcript_entry(db_path, busy_timeout_ms, id)
+            .map_err(|error| error.to_string())?
+        {
+            return Ok(0);
+        }
+    }
+    let _ = set_hidden_entry_repair_version(
+        db_path,
+        busy_timeout_ms,
+        HIDDEN_ENTRY_REPAIR_VERSION,
+    )
+    .map_err(|error| error.to_string())?;
+    Ok(ids.len())
 }
 
 pub fn find_latest_durable_root_blob_id(

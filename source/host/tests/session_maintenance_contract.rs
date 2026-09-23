@@ -6,12 +6,16 @@ use mahayana_host_runtime::agent_isolation::{
     AgentWorkerPool, ConversationBlobWorkerBackend, WorkerBlobStore,
 };
 use mahayana_host_runtime::extensions::session::agent_db::{
-    read_persisted_latest_root_blob_id, stale_root_cleanup_version,
+    hidden_entry_repair_version, read_persisted_latest_root_blob_id,
+    read_persisted_transcript_entries, stale_root_cleanup_version,
 };
 use mahayana_host_runtime::extensions::session::agent_db_schema::AGENT_DB_SCHEMA;
+use mahayana_host_runtime::extensions::session::conversation_recovery::OutlineItem;
 use mahayana_host_runtime::extensions::session::session_maintenance::{
-    STALE_ROOT_CLEANUP_VERSION, backfill_transcript, clear_stale_checkpoint_roots_once,
+    HIDDEN_ENTRY_REPAIR_VERSION, STALE_ROOT_CLEANUP_VERSION, backfill_transcript,
+    backfill_transcript_from_outline, clear_stale_checkpoint_roots_once,
     pin_stale_root_gc, recover_conversation_root_if_missing,
+    repair_hidden_transcript_entries_once,
 };
 use rusqlite::params;
 use sha2::{Digest, Sha256};
@@ -205,6 +209,122 @@ fn transcript_backfill_only_appends_a_matching_recovered_tail() {
     ];
     assert_eq!(backfill_transcript(&db_path, 500, &rebuilt).expect("backfill"), 1);
     assert_eq!(backfill_transcript(&db_path, 500, &rebuilt).expect("idempotent"), 0);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn outline_backfill_and_hidden_repair_match_frozen_maintenance_contract() {
+    let root = temp_root("outline-maintenance");
+    let agent_dir = root.join("agent-d");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    create_store_db(&db_path, "agent-d");
+    let db = rusqlite::Connection::open(&db_path).expect("db");
+    db.execute(
+        "INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
+        params![
+            "recovered-outline-user-hidden",
+            serde_json::json!({
+                "id":"recovered-outline-user-hidden",
+                "kind":"message",
+                "role":"user",
+                "content":"hidden"
+            }).to_string()
+        ],
+    )
+    .expect("hidden recovered row");
+    drop(db);
+
+    let turns = vec![vec![
+        OutlineItem::User {
+            id: "outline-user-hidden".into(),
+            hidden: true,
+            text: "hidden".into(),
+            timestamp_ms: None,
+        },
+        OutlineItem::SendMessage {
+            id: "outline-send".into(),
+            message: serde_json::json!({"type":"text","content":"reply"}),
+            timestamp_ms: None,
+        },
+        OutlineItem::ToolCall {
+            id: "outline-tool".into(),
+            name: "Task".into(),
+            status: "done".into(),
+            summary: Some("summary".into()),
+            timestamp_ms: None,
+        },
+    ]];
+
+    assert_eq!(
+        backfill_transcript_from_outline(&db_path, 500, &turns).expect("outline backfill"),
+        0,
+        "a mismatched persisted prefix must not append a tail"
+    );
+    let outline = turns.iter().flatten().cloned().collect::<Vec<_>>();
+    assert_eq!(
+        repair_hidden_transcript_entries_once(&db_path, 500, &outline)
+            .expect("hidden repair"),
+        1
+    );
+    assert_eq!(
+        hidden_entry_repair_version(&db_path, 500).expect("repair version"),
+        HIDDEN_ENTRY_REPAIR_VERSION
+    );
+    assert!(
+        read_persisted_transcript_entries(&db_path, 500)
+            .expect("transcript after repair")
+            .is_empty()
+    );
+    assert_eq!(
+        repair_hidden_transcript_entries_once(&db_path, 500, &[])
+            .expect("idempotent hidden repair"),
+        0
+    );
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn outline_backfill_serializes_visible_user_send_and_tool_items() {
+    let root = temp_root("outline-backfill");
+    let agent_dir = root.join("agent-e");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    create_store_db(&db_path, "agent-e");
+
+    let turns = vec![vec![
+        OutlineItem::User {
+            id: "outline-user-0".into(),
+            hidden: false,
+            text: "hello".into(),
+            timestamp_ms: None,
+        },
+        OutlineItem::SendMessage {
+            id: "outline-send".into(),
+            message: serde_json::json!({"type":"text","content":"reply"}),
+            timestamp_ms: None,
+        },
+        OutlineItem::ToolCall {
+            id: "outline-tool".into(),
+            name: "Task".into(),
+            status: "done".into(),
+            summary: Some("summary".into()),
+            timestamp_ms: None,
+        },
+    ]];
+
+    assert_eq!(
+        backfill_transcript_from_outline(&db_path, 500, &turns).expect("backfill"),
+        3
+    );
+    let entries = read_persisted_transcript_entries(&db_path, 500).expect("entries");
+    assert_eq!(entries.len(), 3);
+    assert_eq!(entries[0]["id"], "recovered-outline-user-0");
+    assert_eq!(entries[1]["kind"], "send-message");
+    assert_eq!(entries[2]["name"], "Task");
 
     let _ = fs::remove_dir_all(root);
 }

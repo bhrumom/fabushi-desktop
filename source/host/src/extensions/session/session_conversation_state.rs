@@ -22,8 +22,8 @@ use super::agent_db_transcript_pages::{
     read_transcript_page, read_transcript_tail, read_transcript_window,
 };
 use super::conversation_recovery::{
-    ConversationStructureRefs, conversation_structure_fully_resolves,
-    parse_conversation_state_structure,
+    ConversationStructureRefs, OutlineItem as RecoveryOutlineItem,
+    conversation_structure_fully_resolves, parse_conversation_state_structure,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -76,6 +76,32 @@ pub enum ConversationOutlineItem {
         #[serde(skip_serializing_if = "Option::is_none")]
         summary: Option<String>,
     },
+}
+
+impl ConversationOutlineItem {
+    fn to_recovery_item(&self) -> Option<RecoveryOutlineItem> {
+        match self {
+            Self::User { id, text, hidden } => Some(RecoveryOutlineItem::User {
+                id: id.clone(),
+                hidden: *hidden,
+                text: text.clone(),
+                timestamp_ms: None,
+            }),
+            Self::SendMessage { id, message } => Some(RecoveryOutlineItem::SendMessage {
+                id: id.clone(),
+                message: message.clone(),
+                timestamp_ms: None,
+            }),
+            Self::ToolCall { id, name, status, summary } => Some(RecoveryOutlineItem::ToolCall {
+                id: id.clone(),
+                name: name.clone(),
+                status: status.clone(),
+                summary: summary.clone(),
+                timestamp_ms: None,
+            }),
+            Self::AssistantText { .. } | Self::Thinking { .. } => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -264,7 +290,29 @@ impl SessionConversationState {
                 turns.push(turn);
             }
         }
+        if turns.len() != structure.turns.len() {
+            return Ok(Vec::new());
+        }
         Ok(turns)
+    }
+
+    pub fn read_agent_recovery_outline_turns(
+        &self,
+        pool: Arc<AgentWorkerPool<ProductionAgentStoreWorkerBackend>>,
+        agent_id: &str,
+        db_path: &Path,
+        blob_db_path: &Path,
+    ) -> Result<Vec<Vec<RecoveryOutlineItem>>, SessionConversationStateError> {
+        Ok(self
+            .read_agent_outline_turns(pool, agent_id, db_path, blob_db_path)?
+            .into_iter()
+            .map(|turn| {
+                turn.items
+                    .iter()
+                    .filter_map(ConversationOutlineItem::to_recovery_item)
+                    .collect::<Vec<_>>()
+            })
+            .collect())
     }
 }
 
