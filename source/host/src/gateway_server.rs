@@ -14,8 +14,10 @@ use flate2::{Compression, write::GzEncoder};
 use rustls::{ServerConfig, ServerConnection, StreamOwned};
 use serde_json::{Value, json};
 use subtle::ConstantTimeEq;
-use thiserror::Error;
-
+use crate::gateway_command_error::{
+    GatewayCommandErrorClassification, classify_gateway_command_error,
+};
+pub use crate::gateway_command_error::GatewayCommandError;
 use crate::gateway_config::{GatewayServerConfig, GatewayTlsConfig, is_loopback_host};
 
 pub const GATEWAY_API_PREFIX: &str = "/api";
@@ -176,29 +178,6 @@ pub struct GatewayHealth {
     pub last_busy_at_ms: Option<u64>,
 }
 
-#[derive(Debug, Error)]
-pub enum GatewayCommandError {
-    #[error("unknown gateway method: {0}")]
-    UnknownMethod(String),
-    #[error("{0}")]
-    BadRequest(String),
-    #[error("{0}")]
-    Conflict(String),
-    #[error("{0}")]
-    Internal(String),
-}
-
-impl GatewayCommandError {
-    fn status(&self) -> u16 {
-        match self {
-            Self::UnknownMethod(_) => 404,
-            Self::BadRequest(_) => 400,
-            Self::Conflict(_) => 409,
-            Self::Internal(_) => 500,
-        }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GatewayCommandReport {
     pub method: String,
@@ -207,6 +186,9 @@ pub struct GatewayCommandReport {
     pub traceparent: Option<String>,
     pub status: u16,
     pub error: Option<String>,
+    pub reason: Option<String>,
+    pub error_class: Option<String>,
+    pub errno: Option<String>,
 }
 
 pub trait GatewayApi: Send + Sync + 'static {
@@ -805,7 +787,17 @@ fn command_report(
     started: Instant,
     status: u16,
     error: Option<String>,
+    classification: Option<GatewayCommandErrorClassification>,
 ) -> GatewayCommandReport {
+    let (reason, error_class, errno) = classification
+        .map(|value| {
+            (
+                Some(value.reason.to_string()),
+                Some(value.error_class),
+                value.errno,
+            )
+        })
+        .unwrap_or((None, None, None));
     GatewayCommandReport {
         method: method.to_string(),
         duration_ms: started.elapsed().as_millis().min(u64::MAX as u128) as u64,
@@ -821,6 +813,9 @@ fn command_report(
             .cloned(),
         status,
         error,
+        reason,
+        error_class,
+        errno,
     }
 }
 
@@ -1213,7 +1208,7 @@ fn handle_connection(
     match deps.api.call(method, args) {
         Ok(value) => {
             deps.api
-                .on_command_complete(command_report(&request, method, started, 200, None));
+                .on_command_complete(command_report(&request, method, started, 200, None, None));
             let slim = request
                 .headers
                 .get(GATEWAY_SLIM_AVATARS_HEADER)
@@ -1228,12 +1223,14 @@ fn handle_connection(
         Err(error) => {
             let status = error.status();
             if status >= 500 {
+                let classification = classify_gateway_command_error(&error);
                 deps.api.on_command_error(command_report(
                     &request,
                     method,
                     started,
                     status,
                     Some(error.to_string()),
+                    Some(classification),
                 ));
             }
             respond_error(&mut stream, status, error.to_string())

@@ -759,6 +759,9 @@ fn gateway_command_telemetry_preserves_request_trace_and_server_error_semantics(
         reports[1].1.error.as_deref(),
         Some("synthetic internal failure")
     );
+    assert_eq!(reports[1].1.reason.as_deref(), Some("application"));
+    assert_eq!(reports[1].1.error_class.as_deref(), Some("GatewayCommandError"));
+    assert_eq!(reports[1].1.errno, None);
 
     server.close();
 }

@@ -539,6 +539,15 @@ fn log_gateway_command_report(kind: &str, report: &GatewayCommandReport) {
     if let Some(error) = report.error.as_deref() {
         value["error"] = serde_json::Value::String(error.to_string());
     }
+    if let Some(reason) = report.reason.as_deref() {
+        value["reason"] = serde_json::Value::String(reason.to_string());
+    }
+    if let Some(error_class) = report.error_class.as_deref() {
+        value["errorClass"] = serde_json::Value::String(error_class.to_string());
+    }
+    if let Some(errno) = report.errno.as_deref() {
+        value["errno"] = serde_json::Value::String(errno.to_string());
+    }
     eprintln!("mahayana-host-gateway-command {value}");
 }
 
