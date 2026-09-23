@@ -778,7 +778,7 @@ impl ProductionSessionWorkers {
                 )
                 .unwrap_or_default()
         };
-        if recovered_root && !recovery_turns.is_empty() {
+        if !recovery_turns.is_empty() {
             let _ = backfill_transcript_from_outline(
                 &session_db_path,
                 self.busy_timeout_ms,
