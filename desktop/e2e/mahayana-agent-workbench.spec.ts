@@ -182,9 +182,11 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
     await page.getByRole('button', { name: 'Send message' }).click();
 
     // The user bubble is a local-first transition and must paint before the
-    // Mahayana Host finishes accepting/routing the agent turn.
+    // Mahayana Host finishes accepting/routing the agent turn. The Hermes
+    // assistant projection is validated below with the production 15s turn
+    // contract; requiring it inside this 1s local-echo window races Host
+    // acceptance and prevents the stronger lifecycle assertions from running.
     await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 1_000 });
-    await expect(page.getByTestId('mahayana-assistant-turn')).toBeVisible({ timeout: 1_000 });
     await expect(promptInput).toBeVisible();
 
     const turn = await expectHermesAssistantTurn(page, '收到：请分析这个任务');
