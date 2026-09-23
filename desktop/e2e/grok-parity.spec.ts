@@ -1234,18 +1234,25 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
     await test.step('Agent sidebar supports modifier selection and account-scoped sections', async () => {
       const peer = primaryMahayanaAgentPeer(page);
       await peer.click({ modifiers: [process.platform === 'darwin' ? 'Meta' : 'Control'] });
-      const selectionBar = page.getByTestId('agent-selection-bar');
-      await expect(selectionBar).toBeVisible();
-      await expect(selectionBar).toContainText('1 selected');
+      // The recovered Grok 0.18 sidebar exposes selection through pressed
+      // Agent rows plus the accessible Move/Clear action header; the retired
+      // agent-selection-bar + Create section dialog are not shipping contracts.
+      await expect(peer).toHaveAttribute('aria-pressed', 'true');
+      const moveSelected = page.getByRole('button', { name: 'Move selected agent to section' });
+      await expect(moveSelected).toBeVisible();
 
-      await selectionBar.getByRole('button', { name: 'Section' }).click();
-      const sectionDialog = page.getByRole('dialog', { name: 'Create section' });
-      await expect(sectionDialog).toBeVisible();
-      await sectionDialog.getByLabel('Section name').fill('Focused work');
-      await sectionDialog.getByRole('button', { name: 'Create' }).click();
+      await moveSelected.click();
+      const moveMenu = page.getByRole('menu', { name: 'Move to section' });
+      await expect(moveMenu).toBeVisible();
+      await moveMenu.getByRole('menuitem', { name: 'New section' }).click();
+      const renameSection = page.getByLabel('Rename section');
+      await expect(renameSection).toBeVisible();
+      await renameSection.fill('Focused work');
+      await renameSection.press('Enter');
       const focusedWork = page.locator('[data-section-id]').filter({ hasText: 'Focused work' });
       await expect(focusedWork).toBeVisible();
-      await expect(selectionBar).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Clear selection' })).toHaveCount(0);
+      await expect(peer).toHaveAttribute('aria-pressed', 'false');
 
       // Pinning is a presentation dimension, not section ownership. The Agent
       // stays under Pinned while pinned, then must project back into the section
