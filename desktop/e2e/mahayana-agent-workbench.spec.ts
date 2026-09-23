@@ -75,7 +75,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
 }
 
 async function openMahayanaConversation(page: Page): Promise<void> {
-  const peer = page.getByTestId('messenger-sidebar').getByRole('button', { name: '大乘助手', exact: true });
+  const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: '大乘助手', exact: true });
   await expect(peer).toBeVisible({ timeout: 15_000 });
   await peer.click();
   await expect(page.getByTestId('messenger-input')).toBeVisible();
