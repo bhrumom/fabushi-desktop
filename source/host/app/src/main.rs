@@ -26,6 +26,9 @@ use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
     persist_accepted_send_prompt,
 };
+use mahayana_host_runtime::extensions::transcript::production_runtime::{
+    ProductionSendError, ProductionTranscriptRuntime,
+};
 use mahayana_host_runtime::extensions::source_map::extension::start_source_map_extension;
 use mahayana_host_runtime::extensions::source_map::source_map_service::SandSourceMap;
 use mahayana_host_runtime::extensions::inference::provider_session::{
@@ -207,6 +210,7 @@ struct UnifiedGatewayApi {
     forever_box: Arc<ForeverBoxService>,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     trays: Arc<HostTraysExtension>,
+    transcript_runtime: ProductionTranscriptRuntime,
 }
 
 fn call_host_lane(
@@ -457,6 +461,12 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.experiments.is_agent_network_enabled(),
             ));
         }
+        if method == "promptAcceptanceStatus" {
+            return self
+                .transcript_runtime
+                .prompt_acceptance_status(&args)
+                .map_err(map_production_send_error);
+        }
         if let Some(result) =
             dispatch_production_session_gateway_call(&self.session_workers, method, &args)
         {
@@ -541,21 +551,24 @@ impl GatewayApi for UnifiedGatewayApi {
         // worker above streams through the Host event hub.
         if method == "sendPrompt" {
             let durable_args = args.clone();
-            let accepted = call_host_lane(&self.host_tx, method, args)?;
-            persist_accepted_send_prompt(
-                &self.session_workers,
-                &durable_args,
-                &accepted,
-            )
-            .map_err(|error| match error {
-                SessionGatewayError::BadRequest(message) => {
-                    GatewayCommandError::BadRequest(message)
-                }
-                SessionGatewayError::Internal(message) => {
-                    GatewayCommandError::Internal(message)
-                }
-            })?;
-            return Ok(accepted);
+            return self
+                .transcript_runtime
+                .execute_send(
+                    &durable_args,
+                    || {
+                        call_host_lane(&self.host_tx, method, args)
+                            .map_err(map_gateway_send_error)
+                    },
+                    |accepted| {
+                        persist_accepted_send_prompt(
+                            &self.session_workers,
+                            &durable_args,
+                            accepted,
+                        )
+                        .map_err(map_session_send_error)
+                    },
+                )
+                .map_err(map_production_send_error);
         }
         call_host_lane(&self.host_tx, method, args)
     }
@@ -566,6 +579,33 @@ impl GatewayApi for UnifiedGatewayApi {
 
     fn on_command_error(&self, report: GatewayCommandReport) {
         log_gateway_command_report("error", &report);
+    }
+}
+
+fn map_gateway_send_error(error: GatewayCommandError) -> ProductionSendError {
+    match error {
+        GatewayCommandError::BadRequest(message) => ProductionSendError::BadRequest(message),
+        GatewayCommandError::Conflict(message) => ProductionSendError::Conflict(message),
+        GatewayCommandError::UnknownMethod(message) | GatewayCommandError::Internal(message) => {
+            ProductionSendError::Internal(message)
+        }
+    }
+}
+
+fn map_session_send_error(error: SessionGatewayError) -> ProductionSendError {
+    match error {
+        SessionGatewayError::BadRequest(message) => ProductionSendError::BadRequest(message),
+        SessionGatewayError::Internal(message) => ProductionSendError::Internal(message),
+    }
+}
+
+fn map_production_send_error(error: ProductionSendError) -> GatewayCommandError {
+    match error {
+        ProductionSendError::BadRequest(message) => GatewayCommandError::BadRequest(message),
+        ProductionSendError::Conflict(message) | ProductionSendError::Rejected(message) => {
+            GatewayCommandError::Conflict(message)
+        }
+        ProductionSendError::Internal(message) => GatewayCommandError::Internal(message),
     }
 }
 
@@ -841,6 +881,7 @@ fn main() {
             forever_box: Arc::clone(&forever_box),
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
             trays: Arc::clone(&production_extensions.trays),
+            transcript_runtime: ProductionTranscriptRuntime::new(Some(&app_data_dir)),
         }),
         events: gateway_events.clone(),
         local_exec: None,

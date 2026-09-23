@@ -13662,8 +13662,17 @@
       "referenceBlobSha": "4daf49c779d9f740d2edd3bceecd5b38d930d4e6",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_production_composition_contract.rs",
+        "source/host/tests/transcript_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust run lifecycle state is now production-composed around the real shipping sendPrompt Host call: a per-agent synchronous send window begins before dispatch, turn epochs advance through the Rust send pipeline, accepted operation IDs are recorded, and the window is retired on success/failure before coalesced waiters are released. Full frozen scheduler telemetry/activity-hold/live-session retirement/subagent-parent/ack-redrive lifecycle and Runner terminal-event ownership remain non-final."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",
@@ -13826,8 +13835,17 @@
       "referenceBlobSha": "b2dcfe29a3b23035bb9d5f7890bd846d01a6e592",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_production_composition_contract.rs",
+        "source/host/tests/transcript_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust send pipeline state is now production-composed by ProductionTranscriptRuntime and the shipping Host Gateway. sendPrompt performs nonce digest admission before compatibility dispatch, coalesces concurrent duplicate nonces behind the first real Host result, persists the authoritative Rust Session echo before ledger acceptance, clears failed unaccepted attempts for retry, exposes promptAcceptanceStatus from the same durable ledger, advances per-agent turn epochs, and replays the exact accepted Host result in-process. Full frozen send shaping/threading/attachment materialization/group fanout/ack obligations remain non-final."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",
