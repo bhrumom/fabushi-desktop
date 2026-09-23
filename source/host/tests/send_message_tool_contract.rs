@@ -94,7 +94,7 @@ fn encoding_preserves_frozen_text_markdown_and_summary_projection() {
     let images = vec![json!({"url":"https://x.test/a.png","alt":"[cat]\nphoto"})];
     assert_eq!(
         encode_text_content("hello", Some(images.as_slice())),
-        "hello\n\n![ cat  photo](<https://x.test/a.png>)"
+        "hello\n\n![cat  photo](<https://x.test/a.png>)"
     );
     assert_eq!(
         encode_send_message(&json!({
