@@ -324,6 +324,10 @@ fn accepted_send_prompt_is_persisted_into_the_rust_authoritative_transcript() {
     );
 
 
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
 #[test]
 fn accepted_send_prompt_uses_frozen_entry_ids_and_reply_fork_stamping() {
     let root = temp_root("send-prompt-threading");
@@ -365,9 +369,6 @@ fn accepted_send_prompt_uses_frozen_entry_ids_and_reply_fork_stamping() {
     assert_eq!(entries[1]["timestampMs"], 2000.0);
     assert_eq!(entries[1]["sentWhileOfflineAtMs"], 2000.0);
 
-    runtime.shutdown();
-    let _ = fs::remove_dir_all(root);
-}
 
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
