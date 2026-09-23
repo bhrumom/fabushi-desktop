@@ -1160,7 +1160,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       const orgChart = page.getByRole('main').filter({ has: page.getByRole('heading', { name: 'Org chart' }) });
       await expect(orgChart.getByRole('heading', { name: 'Org chart' })).toBeVisible();
       await expect(orgChart.getByRole('region', { name: 'Agent network' })).toBeVisible();
-      await expect(orgChart.getByText(/\d+ agents · \d+ groups · \d+ message links/)).toBeVisible();
+      await expect(orgChart.getByText(/\d+ agents? · \d+ groups? · \d+ message links?/)).toBeVisible();
       await orgChart.getByRole('button', { name: 'Close org chart' }).click();
       await expect(page.getByRole('heading', { name: 'Org chart' })).toHaveCount(0);
     });
