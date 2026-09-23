@@ -10716,19 +10716,25 @@
       "targetPath": "source/host/src/extensions/browser_ua/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "79754801d2105180ef556346f5df4d15990709ac",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/browser_ua/extension.rs",
         "source/host/src/extensions/browser_ua/mod.rs",
-        "source/host/src/extensions/registry.rs"
+        "source/host/src/extensions/registry.rs",
+        "source/host/src/extensions/auth/extension.rs",
+        "source/host/src/extensions/experiments/extension.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
-        "source/host/tests/extensions_browser_ua_contract.rs"
+        "source/host/tests/extensions_browser_ua_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "BrowserUa dependency/subscription behavior is implemented and contract-tested, but final status is withheld until the production Auth and Experiments extensions are migrated and Host bootstrap starts this extension with those real dependencies."
+      "notes": "Final Rust production port. HostAuthExtension and HostExperimentsExtension implement the frozen BrowserUa dependency APIs; shipping source/host/app starts BrowserUa against those real production dependencies, keeps its subscription runtime alive for the Host lifetime, and explicitly stops it during shutdown. Owner-stamp renewal and kill-switch marker reconciliation remain covered by the BrowserUa contract tests; no compatibility bootstrap is used.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/browser-ua/ua-owner-stamp-service.ts",

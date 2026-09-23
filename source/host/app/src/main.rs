@@ -55,6 +55,9 @@ use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxService, start_forever_box_extension,
 };
 use mahayana_host_runtime::extensions::auth::credential_renewer::RenewalOutcome;
+use mahayana_host_runtime::extensions::browser_ua::{
+    BrowserUaExtensionRuntime, BrowserUaHostLog, start_browser_ua_extension,
+};
 use mahayana_host_runtime::runner_context_production_provider::ProductionRunnerRequestContextSource;
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
@@ -102,6 +105,27 @@ fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     fs::create_dir_all(app_data_dir.join("feature-host/runtime/workspace"))
 }
 
+
+struct ProductionBrowserUaLog;
+
+impl BrowserUaHostLog for ProductionBrowserUaLog {
+    fn log(&self, message: &str) {
+        eprintln!("mahayana-host-browser-ua {message}");
+    }
+}
+
+fn start_production_browser_ua(
+    auth: Arc<HostAuthExtension>,
+    experiments: Arc<HostExperimentsExtension>,
+) -> BrowserUaExtensionRuntime {
+    start_browser_ua_extension(
+        auth,
+        experiments,
+        Arc::new(ProductionBrowserUaLog),
+        None,
+        None,
+    )
+}
 
 struct ProductionHostExtensions {
     auth: Arc<HostAuthExtension>,
@@ -191,6 +215,8 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
         webauthn_proxy,
     })
 }
+
+
 
 enum HostLaneRequest {
     Stdin(String),
@@ -1039,6 +1065,10 @@ fn main() {
             return;
         }
     };
+    let browser_ua_runtime = start_production_browser_ua(
+        Arc::clone(&production_extensions.auth),
+        Arc::clone(&production_extensions.experiments),
+    );
     let lifecycle: Arc<dyn ForeverBoxLifecycle> =
         production_extensions.box_lifecycle.clone();
     let forever_box = start_forever_box_extension(
@@ -1208,6 +1238,7 @@ fn main() {
     runner_registry.cancel_all("Mahayana Host shutting down");
     routed_tool_relay.cancel_all("Mahayana Host shutting down");
     session_extension.shutdown();
+    browser_ua_runtime.stop();
     forever_box.dispose();
     if let Err(error) = clear_gateway_discovery(&gateway_discovery_path) {
         eprintln!(
@@ -1226,13 +1257,20 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::{
-        BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionHostExtensions,
-        ProductionRunnerRequestContextSource, UnifiedGatewayApi, decode_provider_messages,
+        BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionBrowserUaLog,
+        ProductionHostExtensions, ProductionRunnerRequestContextSource, UnifiedGatewayApi,
+        decode_provider_messages,
         dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
         reaction_gateway_args,
     };
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn production_browser_ua_log_is_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<ProductionBrowserUaLog>();
+    }
 
     #[test]
     fn shipping_production_extension_graph_is_send_sync() {
