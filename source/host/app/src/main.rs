@@ -61,6 +61,7 @@ use mahayana_host_runtime::runner::coordinator_tool_relay::{
 };
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
 use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
+use mahayana_host_runtime::runner::tools::send_message_tool::SendMessageSink;
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayCommandError, GatewayCommandReport, GatewayEventHub, GatewayServerDeps, start_gateway_server,
@@ -197,6 +198,35 @@ enum HostLaneRequest {
 const RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD: &str = "runner.startRoutedProvider";
 const RUNNER_CANCEL_ROUTED_PROVIDER_GATEWAY_METHOD: &str = "runner.cancelRoutedProvider";
 const RUNNER_INFERENCE_EVENT_CHANNEL: &str = "runner-inference";
+
+struct ProductionSendMessageSink {
+    sessions: Arc<ProductionSessionWorkers>,
+    agent_id: String,
+}
+
+impl SendMessageSink for ProductionSendMessageSink {
+    fn send_message(
+        &self,
+        message: serde_json::Value,
+        timestamp_ms: u64,
+        tool_call_id: &str,
+    ) -> Result<Option<String>, ProviderSessionError> {
+        let entry_id = format!("runner-send:{tool_call_id}");
+        let entry = serde_json::json!({
+            "id": entry_id.clone(),
+            "kind": "send-message",
+            "message": message,
+            "timestampMs": timestamp_ms,
+        });
+        self.sessions
+            .append_agent_transcript_entries(&self.agent_id, &[entry])
+            .map_err(|error| ProviderSessionError::Tool(format!(
+                "could not persist SendMessage for {}: {error}",
+                self.agent_id
+            )))?;
+        Ok(Some(entry_id))
+    }
+}
 
 struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
@@ -377,6 +407,7 @@ fn start_routed_provider_task(
     let worker_stream_id = stream_id.clone();
     let worker_tasks = Arc::clone(&routed_provider_tasks);
     let worker_cancellation = cancellation.clone();
+    let worker_sessions = Arc::clone(&session_workers);
     let spawn = thread::Builder::new()
         .name(format!("mahayana-runner-provider-{agent_id}"))
         .spawn(move || {
@@ -386,7 +417,7 @@ fn start_routed_provider_task(
             });
             let box_resources = Arc::new(ForeverBoxRunnerResourcePort::new(
                 Arc::clone(&forever_box),
-                agent_id,
+                agent_id.clone(),
             ));
             let delta_events = worker_events.clone();
             let delta_stream_id = stream_id.clone();
@@ -400,6 +431,12 @@ fn start_routed_provider_task(
                     }
                 }));
             };
+            let send_message_sink: Arc<dyn SendMessageSink> = Arc::new(
+                ProductionSendMessageSink {
+                    sessions: worker_sessions,
+                    agent_id: agent_id.clone(),
+                },
+            );
             let composition = TurnAgentComposition::new(
                 provider,
                 bridge,
@@ -407,7 +444,8 @@ fn start_routed_provider_task(
                 cancellation,
                 checkpoint_store,
             )
-            .with_box_resources(box_resources);
+            .with_box_resources(box_resources)
+            .with_send_message_sink(send_message_sink);
             let owner = ProductionTurnAgentOwner::new(composition);
             let mut runner = SandAgentRunner::new(owner);
             let result = runner.run_routed_provider(

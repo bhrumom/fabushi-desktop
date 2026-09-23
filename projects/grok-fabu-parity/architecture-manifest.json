@@ -15853,36 +15853,63 @@
       "targetPath": "source/host/src/runner/tools/send_message_encoding.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "e1b89713a0620ba10956cb402ac5f2f725d38bd2",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/send_message_encoding.rs",
+        "source/host/src/runner/tools/send_message_tool.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/send_message_tool_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port covers frozen markdown-image escaping/text projection plus text/attachment/widget/cloud-agent/secret/permission/approval/local-permission/connector/listener/email/slack summaries. Shipping SendMessageToolBridge executes the encoding path before persistence. Final is withheld until box-media download/image persistence and attachment ingest resolution are production wired."
     },
     {
       "referencePath": "source/host/runner/tools/send-message-schema.ts",
       "targetPath": "source/host/src/runner/tools/send_message_schema.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "b76db1b1777032725de2ef6edaabd8d3ea6e2cdd",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/send_message_schema.rs",
+        "source/host/src/runner/tools/send_message_tool.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/send_message_tool_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen SendMessage type fences, URL scheme validation, field/type refinement and tool JSON schema. Shipping SendMessageToolBridge parses and validates every first-party tool call through this module. Final is withheld until the complete frozen sandWidgetSchema descriptions/constraints are mirrored byte-for-behavior rather than the current structural widget object contract."
     },
     {
       "referencePath": "source/host/runner/tools/send-message-tool.ts",
       "targetPath": "source/host/src/runner/tools/send_message_tool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "7c61afc1da3193859080822ffbd8b8e111e2acbd",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/send_message_tool.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/send_message_tool_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Shipping Runner exposes SendMessage as a first-party RoutedToolBridge tool ahead of delegated MCP tools. Calls are schema-validated, normalized/encoded, and durably appended as send-message entries to the authoritative Rust Session transcript using stable runner-send:<toolCallId> identity. Final is withheld for attachment ingest/Box media persistence, cloud-agent title lookup, external channel delivery, pending-user-selection blocking from live Session state, and the exact generated proto interaction-handler partial/final tool-call surface."
     },
     {
       "referencePath": "source/host/runner/tools/tool-input-error.ts",
@@ -15948,14 +15975,16 @@
         "source/host/src/runner/production_turn_agent_owner.rs",
         "source/host/src/runner/sand_agent_runner.rs",
         "source/host/src/runner/routed_provider_runtime.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/tools/send_message_tool.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/send_message_tool_contract.rs"
       ],
-      "notes": "A real shipping TurnAgentComposition now owns provider selection, routed Host tool bridge, request-context projection, cancellation and durable checkpoint store, and invokes the independent Runner routed-provider runtime. The frozen Grok composition also builds the full Agent/tool-session/resource-projection/MCP/static-config stream graph; those Agent construction surfaces are not yet represented by this Rust slice, so the mapping remains non-final."
+      "notes": "A real shipping TurnAgentComposition now owns provider selection, routed Host tool bridge, request-context projection, cancellation and durable checkpoint store, and invokes the independent Runner routed-provider runtime. The frozen Grok composition also builds the full Agent/tool-session/resource-projection/MCP/static-config stream graph; those Agent construction surfaces are not yet represented by this Rust slice, so the mapping remains non-final. Shipping TurnAgentComposition now wraps the delegated MCP/box tool bridge with the first-party SendMessage tool and a Host-injected Session sink, so user-visible Runner tool output is durably transcript-owned rather than prose-only."
     },
     {
       "referencePath": "source/host/runner/turn-memory.ts",

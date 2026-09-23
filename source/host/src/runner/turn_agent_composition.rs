@@ -11,6 +11,7 @@ use super::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedProviderRun, RoutedToolBridge,
     RunnerRequestContextSnapshot, run_routed_provider_in_runner,
 };
+use super::tools::send_message_tool::{SendMessageSink, SendMessageToolBridge};
 
 /// Shipping Runner composition for one provider-backed turn.
 ///
@@ -27,6 +28,7 @@ pub struct TurnAgentComposition {
     cancellation: RoutedProviderCancellation,
     checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
+    send_message_sink: Option<Arc<dyn SendMessageSink>>,
 }
 
 impl TurnAgentComposition {
@@ -44,6 +46,7 @@ impl TurnAgentComposition {
             cancellation,
             checkpoint_store,
             box_resources: None,
+            send_message_sink: None,
         }
     }
 
@@ -57,6 +60,18 @@ impl TurnAgentComposition {
 
     pub fn has_box_resources(&self) -> bool {
         self.box_resources.is_some()
+    }
+
+    pub fn with_send_message_sink(
+        mut self,
+        sink: Arc<dyn SendMessageSink>,
+    ) -> Self {
+        self.send_message_sink = Some(sink);
+        self
+    }
+
+    pub fn has_send_message_sink(&self) -> bool {
+        self.send_message_sink.is_some()
     }
 
     pub fn provider(&self) -> RoutedProvider {
@@ -79,6 +94,13 @@ impl TurnAgentComposition {
                 Arc::clone(box_resources),
             )),
             None => Arc::clone(&self.bridge),
+        };
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.send_message_sink {
+            Some(sink) => Arc::new(SendMessageToolBridge::new(
+                bridge,
+                Arc::clone(sink),
+            )),
+            None => bridge,
         };
         run_routed_provider_in_runner(
             RoutedProviderRun {
