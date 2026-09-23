@@ -1210,29 +1210,25 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
     });
 
     await test.step('Agent settings are an Agent-owned secondary surface', async () => {
-      await page.getByTestId('conversation-info-toggle').click();
-      const overlays = page.getByTestId('agent-overlays');
-      await expect(overlays).toBeVisible();
-      await overlays.getByTestId('agent-settings-toggle').click();
-      const settings = overlays.getByRole('region', { name: 'Agent settings' });
+      // The shipping recovered-Grok header opens Agent Settings from the Agent
+      // identity itself. The retired AgentOverlays test ids are not part of the
+      // production renderer contract anymore.
+      await page.getByRole('button', { name: 'View agent settings' }).click();
+      const settings = page.getByRole('region', { name: 'Agent settings' });
       await expect(settings).toBeVisible();
       await expect(settings.getByLabel('Agent name')).toHaveValue(/.+/);
       await expect(settings.getByLabel('Agent description')).toBeVisible();
       await expect(settings.getByRole('switch')).toBeVisible();
-      await overlays.getByTestId('bot-computer-toggle').click();
+
+      // Computer is a sibling info pane in the recovered Grok header. Switching
+      // to it closes Agent Settings rather than nesting another legacy overlay.
+      await page.getByRole('button', { name: "Grok Bot's Computer" }).click();
       await expect(settings).toHaveCount(0);
-      await expect(overlays.getByTestId('bot-computer-panel')).toBeVisible();
-
-      const takeover = overlays.getByTestId('agent-computer-takeover');
-      await expect(takeover.getByRole('button', { name: 'Take Control' })).toBeVisible();
-      await takeover.getByRole('button', { name: 'Take Control' }).click();
-      await expect(takeover).toContainText('You have control');
-      await expect(takeover.getByRole('button', { name: 'Release Control' })).toBeVisible();
-      await takeover.getByRole('button', { name: 'Release Control' }).click();
-      await expect(takeover.getByRole('button', { name: 'Take Control' })).toBeVisible();
-
-      await overlays.getByRole('button', { name: 'Close Agent info' }).click();
-      await expect(overlays).toHaveCount(0);
+      const details = page.getByRole('complementary', { name: 'Conversation details' });
+      await expect(details).toBeVisible();
+      await expect(details.getByRole('region', { name: 'Computer preview' })).toBeVisible();
+      await details.getByRole('button', { name: 'Close details' }).click();
+      await expect(details).toBeHidden();
     });
 
     await test.step('Agent sidebar supports modifier selection and account-scoped sections', async () => {
