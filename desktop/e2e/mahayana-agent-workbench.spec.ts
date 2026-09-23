@@ -113,7 +113,13 @@ async function openMahayanaConversation(page: Page): Promise<void> {
   const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true });
   await expect(peer).toBeVisible({ timeout: 15_000 });
   await peer.click();
-  await expect(page.getByRole('textbox', { name: 'Prompt' })).toBeVisible();
+  const prompt = page.getByRole('textbox', { name: 'Prompt' });
+  await expect(prompt).toBeVisible();
+  // New -> createAgent -> refreshRoster -> openAgent is a real shipping async
+  // transition. The production composer intentionally remains non-editable
+  // while that transition owns the busy state, so acceptance must wait for
+  // the same actionable contract a user sees instead of racing visibility.
+  await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
 }
 
 async function createSelfHostedBotAcceptanceChannel(page: Page): Promise<{ conversationId: string; peerTestId: string }> {
