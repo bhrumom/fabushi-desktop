@@ -7,7 +7,7 @@ use mahayana_host_runtime::extensions::session::agent_db::{
     read_persisted_agent_serde_snapshot, read_persisted_latest_root_blob_id,
 };
 use mahayana_host_runtime::extensions::session::agent_db_serde::{
-    AwaitingUserResponse, EpisodeTurn, SandProfile,
+    AwaitingUserResponse, EpisodeTurn, SandProfile, SpendGuardState,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
@@ -60,6 +60,47 @@ fn production_session_owns_agent_db_state_mutations_and_transcript_lifecycle() {
     assert_eq!(state.unread_state.last_activity_at, 100.0);
     assert!(state.unread_state.is_manually_unread);
     assert_eq!(state.unread_state.unread_count, 1.0);
+
+    assert!(workers.get_agent_introduction_pending(&agent_id).expect("intro pending"));
+    assert!(workers
+        .set_agent_introduction_pending(&agent_id, false)
+        .expect("clear intro pending"));
+    assert!(!workers
+        .get_agent_introduction_pending(&agent_id)
+        .expect("intro cleared"));
+
+    let spend_guard = SpendGuardState {
+        nudged_at_ms: Some(42.0),
+        snoozed_until_ms: Some(84.0),
+        opted_out: true,
+        card_entry_ids: vec!["card-a".into()],
+        paused_automation_ids: vec!["auto-a".into()],
+    };
+    assert!(workers
+        .set_agent_automation_spend_guard_state(&agent_id, &spend_guard)
+        .expect("set spend guard"));
+    assert_eq!(
+        workers
+            .get_agent_automation_spend_guard_state(&agent_id)
+            .expect("get spend guard"),
+        spend_guard
+    );
+
+    assert!(!workers
+        .add_agent_conversation_partner(&agent_id, &agent_id)
+        .expect("reject self partner"));
+    assert!(workers
+        .add_agent_conversation_partner(&agent_id, " partner-b ")
+        .expect("add partner"));
+    assert!(!workers
+        .add_agent_conversation_partner(&agent_id, "partner-b")
+        .expect("dedupe partner"));
+    assert_eq!(
+        workers
+            .get_agent_conversation_partner_ids(&agent_id)
+            .expect("partners"),
+        vec!["partner-b".to_string()]
+    );
 
     assert!(!workers
         .mark_agent_viewed(&agent_id, 300.0, true)
@@ -138,6 +179,19 @@ fn production_session_owns_agent_db_state_mutations_and_transcript_lifecycle() {
         )
         .expect("memory snapshot"));
 
+    assert!(workers
+        .set_agent_profile_prompt_snapshot(
+            &agent_id,
+            &serde_json::json!({"render":"profile","version":3}),
+        )
+        .expect("profile prompt snapshot"));
+    assert_eq!(
+        workers
+            .get_agent_profile_prompt_snapshot(&agent_id)
+            .expect("read profile prompt snapshot"),
+        Some(serde_json::json!({"render":"profile","version":3}))
+    );
+
     let state = read_persisted_agent_serde_snapshot(&db_path, 500).expect("mutated state");
     assert_eq!(state.request_ids.len(), 2);
     assert_eq!(state.request_ids[0].id, "request-1");
@@ -208,6 +262,34 @@ fn production_session_owns_agent_db_state_mutations_and_transcript_lifecycle() {
             .expect("read transcript")
             .len(),
         1
+    );
+
+    assert_eq!(
+        workers
+            .get_agent_newest_divider_anchor_timestamp_ms(&agent_id)
+            .expect("newest divider anchor"),
+        0.0
+    );
+
+    assert!(workers
+        .clear_agent_transient_state(&agent_id)
+        .expect("clear transient state"));
+    let transient_cleared =
+        read_persisted_agent_serde_snapshot(&db_path, 500).expect("transient cleared state");
+    assert_eq!(transient_cleared.unread_state.unread_count, 0.0);
+    assert_eq!(
+        transient_cleared.spend_guard_state,
+        SpendGuardState::default()
+    );
+    assert!(transient_cleared.awaiting_user_response.is_none());
+    assert!(transient_cleared.request_ids.is_empty());
+    assert!(transient_cleared.pending_episode_turns.is_empty());
+    assert!(transient_cleared.memory_prompt_snapshot.is_none());
+    assert!(
+        workers
+            .get_agent_profile_prompt_snapshot(&agent_id)
+            .expect("profile snapshot cleared by transient reset")
+            .is_none()
     );
 
     let store = workers.create_agent_blob_store(&agent_id).expect("blob store");

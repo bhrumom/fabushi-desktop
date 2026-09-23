@@ -20,7 +20,7 @@ use super::agent_db_serde::{
     SandProfile, SpendGuardState, UnreadState, parse_awaiting_state,
     parse_memory_prompt_snapshot, parse_pending_episode_turns, parse_profile,
     parse_request_records, parse_transcript_entry, parse_unread_state,
-    resolve_spend_guard_state,
+    resolve_spend_guard_state, serialize_spend_guard_state,
 };
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptWindowQuery, read_transcript_tail,
@@ -171,6 +171,14 @@ pub fn read_persisted_agent_origin(
     })
 }
 
+pub fn read_persisted_introduction_pending(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<bool, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    Ok(read_kv(&db, KV_INTRODUCTION)?.as_deref() == Some("1"))
+}
+
 pub fn read_persisted_agent_purpose(
     db_path: &Path,
     busy_timeout_ms: u64,
@@ -201,6 +209,48 @@ pub fn read_persisted_conversation_partner_ids(
                 .collect()
         })
         .unwrap_or_default())
+}
+
+pub fn add_persisted_conversation_partner(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    partner_id: &str,
+) -> Result<bool, AgentDbProjectionError> {
+    let id = partner_id.trim();
+    if id.is_empty() {
+        return Ok(false);
+    }
+    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
+    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let own_id = read_metadata_json(&transaction)?
+        .and_then(|metadata| metadata.get("agentId").and_then(serde_json::Value::as_str).map(ToOwned::to_owned))
+        .unwrap_or_default();
+    if id == own_id {
+        transaction.rollback()?;
+        return Ok(false);
+    }
+    let current = transaction
+        .query_row(GET_KV_SQL, params![KV_PARTNERS], |row| row.get::<_, String>(0))
+        .optional()?;
+    let mut values = current
+        .as_deref()
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+        .and_then(|value| value.as_array().cloned())
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|value| value.as_str().map(ToOwned::to_owned))
+        .collect::<std::collections::BTreeSet<_>>();
+    if !values.insert(id.to_string()) {
+        transaction.rollback()?;
+        return Ok(false);
+    }
+    transaction.execute(
+        SET_KV_SQL,
+        params![KV_PARTNERS, serde_json::to_string(&values.into_iter().collect::<Vec<_>>())?],
+    )?;
+    transaction.commit()?;
+    bump_db_write_generation(db_path);
+    Ok(true)
 }
 
 fn valid_agent_purpose(value: &str) -> bool {
@@ -475,6 +525,75 @@ pub fn delete_persisted_transcript_entry(
     Ok(changed)
 }
 
+pub fn read_persisted_automation_spend_guard_state(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<SpendGuardState, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let state = read_kv(&db, KV_SPEND_GUARD)?;
+    let legacy = read_kv(&db, KV_SPEND_GUARD_LEGACY)?;
+    Ok(resolve_spend_guard_state(state.as_deref(), legacy.as_deref()))
+}
+
+pub fn set_persisted_automation_spend_guard_state(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    state: &SpendGuardState,
+) -> Result<bool, AgentDbProjectionError> {
+    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
+    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let changed = if let Some(raw) = serialize_spend_guard_state(state) {
+        transaction.execute(SET_KV_SQL, params![KV_SPEND_GUARD, raw])? > 0
+    } else {
+        transaction.execute(DELETE_KV_SQL, params![KV_SPEND_GUARD])? > 0
+    };
+    let legacy_changed =
+        transaction.execute(DELETE_KV_SQL, params![KV_SPEND_GUARD_LEGACY])? > 0;
+    transaction.commit()?;
+    if changed || legacy_changed {
+        bump_db_write_generation(db_path);
+    }
+    Ok(changed || legacy_changed)
+}
+
+pub fn read_persisted_agent_profile_prompt_snapshot(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let Some(raw) = read_kv(&db, KV_PROFILE_SNAPSHOT)? else {
+        return Ok(None);
+    };
+    Ok(serde_json::from_str::<serde_json::Value>(&raw).ok())
+}
+
+pub fn clear_persisted_transient_state(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<bool, AgentDbProjectionError> {
+    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
+    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let mut changed = false;
+    for key in [
+        KV_UNREAD,
+        KV_SPEND_GUARD_LEGACY,
+        KV_SPEND_GUARD,
+        KV_AWAITING,
+        KV_LATEST_REQUEST_ID,
+        KV_REQUEST_IDS,
+        KV_EPISODE,
+        KV_MEMORY_SNAPSHOT,
+        KV_PROFILE_SNAPSHOT,
+    ] {
+        changed |= transaction.execute(DELETE_KV_SQL, params![key])? > 0;
+    }
+    transaction.commit()?;
+    if changed {
+        bump_db_write_generation(db_path);
+    }
+    Ok(changed)
+}
+
 pub fn read_persisted_agent_serde_snapshot(
     db_path: &Path,
     busy_timeout_ms: u64,
@@ -636,6 +755,14 @@ fn newest_divider_anchor_timestamp_ms(
         .flatten()
         .filter(|value| value.is_finite() && *value > 0.0)
         .unwrap_or_default())
+}
+
+pub fn read_persisted_newest_divider_anchor_timestamp_ms(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<f64, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    Ok(newest_divider_anchor_timestamp_ms(&db)?)
 }
 
 pub fn mark_persisted_unread(

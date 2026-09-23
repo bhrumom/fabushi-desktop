@@ -9,19 +9,27 @@ use crate::agents::agent_profile::SandAgentProfile;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::agent_db::{
-    AgentDbSerdeSnapshot, append_persisted_transcript_entries, clear_persisted_conversation,
-    clear_persisted_memory_prompt_snapshot, delete_persisted_transcript_entry,
+    AgentDbSerdeSnapshot, add_persisted_conversation_partner,
+    append_persisted_transcript_entries, clear_persisted_agent_profile_prompt_snapshot,
+    clear_persisted_conversation, clear_persisted_memory_prompt_snapshot,
+    clear_persisted_transient_state, delete_persisted_transcript_entry,
     mark_persisted_activity, mark_persisted_read, mark_persisted_unread,
-    mark_persisted_viewed, read_persisted_agent_serde_snapshot,
-    read_persisted_latest_root_blob_id, record_persisted_episode_turn,
-    record_persisted_request_id, set_persisted_awaiting_user_response,
-    set_persisted_awaiting_user_response_for_tab, set_persisted_memory_prompt_snapshot,
+    mark_persisted_viewed, read_persisted_agent_profile_prompt_snapshot,
+    read_persisted_agent_serde_snapshot, read_persisted_automation_spend_guard_state,
+    read_persisted_conversation_partner_ids, read_persisted_introduction_pending,
+    read_persisted_latest_root_blob_id, read_persisted_newest_divider_anchor_timestamp_ms,
+    record_persisted_episode_turn, record_persisted_request_id,
+    set_persisted_agent_profile_prompt_snapshot, set_persisted_automation_spend_guard_state,
+    set_persisted_awaiting_user_response, set_persisted_awaiting_user_response_for_tab,
+    set_persisted_introduction_pending, set_persisted_memory_prompt_snapshot,
     set_persisted_sand_profile, update_persisted_transcript_entry,
 };
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
-use super::agent_db_serde::{AwaitingUserResponse, EpisodeTurn, SandProfile};
+use super::agent_db_serde::{
+    AwaitingUserResponse, EpisodeTurn, SandProfile, SpendGuardState,
+};
 use super::session_conversation_state::{SessionConversationState, TranscriptThread};
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::conversation_size_limits::{
@@ -340,6 +348,73 @@ impl ProductionSessionWorkers {
         .map_err(|error| error.to_string())
     }
 
+    pub fn get_agent_introduction_pending(&self, agent_id: &str) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        read_persisted_introduction_pending(&db_path, self.busy_timeout_ms)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn set_agent_introduction_pending(
+        &self,
+        agent_id: &str,
+        pending: bool,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        set_persisted_introduction_pending(&db_path, self.busy_timeout_ms, pending)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn get_agent_automation_spend_guard_state(
+        &self,
+        agent_id: &str,
+    ) -> Result<SpendGuardState, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        read_persisted_automation_spend_guard_state(&db_path, self.busy_timeout_ms)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn set_agent_automation_spend_guard_state(
+        &self,
+        agent_id: &str,
+        state: &SpendGuardState,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        set_persisted_automation_spend_guard_state(&db_path, self.busy_timeout_ms, state)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn get_agent_conversation_partner_ids(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<String>, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        read_persisted_conversation_partner_ids(&db_path, self.busy_timeout_ms)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn add_agent_conversation_partner(
+        &self,
+        agent_id: &str,
+        partner_id: &str,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        add_persisted_conversation_partner(
+            &db_path,
+            self.busy_timeout_ms,
+            partner_id,
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    pub fn get_agent_newest_divider_anchor_timestamp_ms(
+        &self,
+        agent_id: &str,
+    ) -> Result<f64, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        read_persisted_newest_divider_anchor_timestamp_ms(&db_path, self.busy_timeout_ms)
+            .map_err(|error| error.to_string())
+    }
+
     pub fn set_agent_awaiting_user_response(
         &self,
         agent_id: &str,
@@ -411,6 +486,37 @@ impl ProductionSessionWorkers {
     pub fn clear_agent_memory_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
         clear_persisted_memory_prompt_snapshot(&db_path, self.busy_timeout_ms)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn get_agent_profile_prompt_snapshot(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<serde_json::Value>, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        read_persisted_agent_profile_prompt_snapshot(&db_path, self.busy_timeout_ms)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn set_agent_profile_prompt_snapshot(
+        &self,
+        agent_id: &str,
+        snapshot: &serde_json::Value,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        set_persisted_agent_profile_prompt_snapshot(&db_path, self.busy_timeout_ms, snapshot)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn clear_agent_profile_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        clear_persisted_agent_profile_prompt_snapshot(&db_path, self.busy_timeout_ms)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn clear_agent_transient_state(&self, agent_id: &str) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        clear_persisted_transient_state(&db_path, self.busy_timeout_ms)
             .map_err(|error| error.to_string())
     }
 

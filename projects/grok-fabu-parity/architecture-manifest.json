@@ -12101,7 +12101,7 @@
         "source/host/tests/agent_db_mutation_production_contract.rs",
         "source/host/tests/session_gateway_contract.rs"
       ],
-      "notes": "Rust production AgentDb covers Grok-aligned recovery/schema opening, metadata projection/root CAS, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, maintenance version KV, legacy blob retirement transactions, transcript reads/paging plus append/update/delete and clear-conversation events. Shipping Gateway transcript read commands now use this Rust ownership path through SessionConversationState. Final is withheld until generic metadata subscriptions, spend-guard/partner/profile-snapshot/transient APIs, full live owner/close/busy behavior and the remaining mutation Gateway commands are cut over."
+      "notes": "Rust production AgentDb covers Grok-aligned recovery/schema opening, metadata/root CAS, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, automation spend-guard migration, introduction state, conversation partners, profile-prompt snapshots, transient-state reset, newest divider-anchor reads, maintenance version KV, legacy blob retirement transactions, transcript reads/paging plus append/update/delete and clear-conversation events. ProductionSessionWorkers owns these paths. Shipping Gateway transcript read commands use this Rust ownership path through SessionConversationState. Final is withheld until generic metadata subscriptions/listener semantics, complete live owner/close/busy behavior and the remaining mutation Gateway commands are cut over."
     },
     {
       "referencePath": "source/host/extensions/session/agent-session.ts",
