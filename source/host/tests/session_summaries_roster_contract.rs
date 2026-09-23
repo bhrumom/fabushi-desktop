@@ -50,6 +50,11 @@ fn production_roster_projects_profile_transcript_unread_and_settings() {
         .expect("append");
     workers.mark_agent_activity(&record.id, 100.0).expect("activity");
     workers.set_agent_unread(&record.id, true, 101.0).expect("unread");
+    fs::write(
+        root.join(&record.id).join("avatar.png"),
+        [137, 80, 78, 71, 13, 10, 26, 10, 0],
+    )
+    .expect("avatar");
 
     let summary = workers
         .summarize_agent_by_id(&record.id, Some(&record.id))
@@ -64,12 +69,26 @@ fn production_roster_projects_profile_transcript_unread_and_settings() {
     assert_eq!(summary.origin, "dev");
     assert_eq!(summary.purpose.as_deref(), Some("research"));
     assert!(summary.is_active);
+    assert!(
+        summary
+            .avatar_data_url
+            .as_deref()
+            .is_some_and(|value| value.starts_with("data:image/png;base64,"))
+    );
+    assert!(
+        summary
+            .avatar_version
+            .as_deref()
+            .is_some_and(|value| value.len() == 16)
+    );
 
     let listed = workers
         .list_agent_summaries(Some(&record.id))
         .expect("list summaries");
     assert_eq!(listed.len(), 1);
     assert_eq!(listed[0].id, record.id);
+    assert_eq!(listed[0].avatar_data_url, summary.avatar_data_url);
+    assert_eq!(listed[0].avatar_version, summary.avatar_version);
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);

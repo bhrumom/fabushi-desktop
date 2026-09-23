@@ -5,6 +5,9 @@ use std::time::UNIX_EPOCH;
 use serde::Serialize;
 use serde_json::Value;
 
+use crate::agents::agent_avatar::{
+    read_avatar_within_dir, resolve_derived_avatar_filename,
+};
 use crate::agents::agent_profile::{
     SandAgentProfile, get_sand_profile_path, read_sand_profile_file,
 };
@@ -295,6 +298,14 @@ pub fn build_summary(
     summary.title = identity.title;
     summary.avatar_shape = non_empty(Some(&identity.avatar_shape));
     summary.avatar_color = non_empty(Some(&identity.avatar_color));
+    let avatar = resolve_derived_avatar_filename(
+        agent_dir,
+        extras.and_then(|extras| extras.legacy_avatar_path.as_deref()),
+    )
+    .as_deref()
+    .and_then(|candidate| read_avatar_within_dir(agent_dir, candidate));
+    summary.avatar_data_url = avatar.as_ref().map(|avatar| avatar.data_url.clone());
+    summary.avatar_version = avatar.map(|avatar| avatar.version);
     summary.created_at = extras.map(|extras| extras.created_at).unwrap_or(summary.created_at);
     summary.updated_at = extras.map(|extras| extras.updated_at).unwrap_or(summary.updated_at);
     summary.last_entry = extras.and_then(|extras| extras.last_entry.clone());

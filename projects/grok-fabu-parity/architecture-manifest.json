@@ -12428,7 +12428,9 @@
         "source/host/src/agents/agent_clone.rs",
         "source/host/src/automations/automation_store.rs",
         "source/host/src/workflows/workflow_store.rs",
-        "source/host/src/workflows/workflow_library.rs"
+        "source/host/src/workflows/workflow_library.rs",
+        "source/host/src/extensions/session/session_summaries.rs",
+        "source/host/src/agents/agent_avatar.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12451,9 +12453,10 @@
         "source/host/tests/agent_lifecycle_contract.rs",
         "source/host/tests/agent_clone_contract.rs",
         "source/host/tests/automation_store_contract.rs",
-        "source/host/tests/workflow_store_contract.rs"
+        "source/host/tests/workflow_store_contract.rs",
+        "source/host/tests/session_summaries_roster_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels, automations, workflows and roster. Shipping Session now also owns frozen cap-time pruned-placeholder reclaim and fallback-session adoption through the same mint critical section, preserving the active agent and closing DB/blob owners before reclaim. Remaining parity is memory composition, box handoff production deps, watcher/cross-extension cleanup and the remaining Session facade lifecycle features."
+      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels, automations, workflows and roster. Shipping Session now also owns frozen cap-time pruned-placeholder reclaim and fallback-session adoption through the same mint critical section, preserving the active agent and closing DB/blob owners before reclaim. Remaining parity is memory composition, box handoff production deps, watcher/cross-extension cleanup and the remaining Session facade lifecycle features. Production roster/summary now also projects the canonical cached avatar data URL/version from the Rust avatar owner instead of leaving the frozen readAvatar hook unwired."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
@@ -12753,16 +12756,18 @@
         "source/host/src/extensions/session/production.rs",
         "source/host/src/automations/automation_store.rs",
         "source/host/src/workflows/workflow_store.rs",
-        "source/host/src/workflows/workflow_library.rs"
+        "source/host/src/workflows/workflow_library.rs",
+        "source/host/src/agents/agent_avatar.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_projection_contract.rs",
         "source/host/tests/session_summaries_roster_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/automation_store_contract.rs",
-        "source/host/tests/workflow_store_contract.rs"
+        "source/host/tests/workflow_store_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust production summary path now loads metadata/unread/awaiting/origin/purpose/partners/transcript state, seeds activity from persisted root + mtime, ensures profile/settings, projects frozen last-entry/message semantics, unread fields and blank-agent filtering. ProductionSessionWorkers exposes summarize/list. Final is withheld until avatar read/cache, memory/automation/workflow durable-footprint providers, group/remote-room composition and cached extras invalidation are production wired. Production automation durable-footprint composition is now Rust-owned: dbPath factories create FileAutomationStore and roster/recovery/summary preserve agents with valid routine definitions even when store.db is missing. Production workflow durable-footprint composition is now Rust-owned: Session constructs FileWorkflowStore, migrates legacy per-agent workflows, projects routine-backed workflows, and roster recovery preserves workflow-bearing agents without store.db."
+      "notes": "Rust production summary path loads metadata/unread/awaiting/origin/purpose/partners/transcript state, seeds activity from persisted root + mtime, ensures profile/settings, projects frozen last-entry/message semantics, unread fields and blank-agent filtering. Frozen readAvatar composition is now production-wired to the canonical Rust avatar owner: conventional/legacy filenames are resolved inside the agent directory, validated, MIME-sniffed, cached by fingerprint, and projected as avatarDataUrl/avatarVersion in both summarizeAgentById and roster list results. Production automation/workflow durable footprints are also composed. Final is withheld for memory durable-footprint provider, group/remote-room composition and cached-extras/deletion-predicate invalidation."
     },
     {
       "referencePath": "source/host/extensions/settings/extension.ts",
