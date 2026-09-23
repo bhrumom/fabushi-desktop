@@ -2,7 +2,7 @@
 
 Status: active  
 Owner: Fabushi desktop / Agent runtime  
-Last updated: 2026-09-22  
+Last updated: 2026-09-23  
 Related project: `projects/grok-fabu-parity`  
 Related task / issue / PR: 2026-09-22 packaged-app regression report; spec PR created from canonical main `20644cf5aa2f5777cc350ece32edeb0cb90f88d7`
 
@@ -95,11 +95,13 @@ Any older `IMPLEMENTED` or `COMPLETE` label in `projects/grok-fabu-parity/PARITY
 
 The target is to rebuild Fabushi desktop so that its **overall architecture, process boundaries, module ownership, protocols, runtime state machines, failure semantics, folder/domain structure, and observable product behavior are equivalent to Grok Bot 0.18** at the frozen reference baseline `b-nnett/grok-bot-0.18-reconstructed@a9f633e09d49a85829b8236331b9e21f7e612634`.
 
-The implementation must proceed module by module across the Grok Bot code tree, but **language parity is not a requirement**. The architectural role of each Grok module is normative; the implementation language is selected by technical fit.
+The implementation must proceed module by module across the Grok Bot code tree, but **language parity is not a requirement and one-to-one physical file copying is not a requirement**. The architectural role and observable product effect of each Grok module are normative; the implementation language and exact target-file granularity are selected by technical fit.
+
+The canonical migration rule is: **per-source-file audit/disposition + per-product-responsibility desktop implementation**. Every frozen Grok source file must be accounted for in the architecture manifest, but the Fabushi target tree does not need the same file count. One Grok file may split across multiple Fabushi files, and multiple Grok files may converge into one implementation module, provided no Grok architectural boundary or product responsibility is collapsed or lost.
 
 Required principles:
 
-- every source-bearing Grok module must have a tracked Fabushi counterpart, or an explicit evidence-backed `not-applicable` classification;
+- every source-bearing Grok module must be individually audited and dispositioned, while every product-relevant responsibility must have a real Fabushi desktop implementation, an evidenced existing equivalent, or an explicit evidence-backed platform/non-code `not-applicable` classification;
 - the **relative source/domain folder architecture must mirror Grok Bot**, preserving the same major boundaries such as `frontend/`, `source/electron-main/`, `source/electron-preload/`, `source/node-agent-coordinator/`, `source/host/`, `source/shared/`, and `source/packages/`;
 - Mahayana may and should implement the **Grok Node Agent Coordinator architectural role** where Rust is a strong fit. The fact that Grok names the folder `node-agent-coordinator` does not require Node as the implementation language;
 - the coordinator/host split must remain real even if both are implemented in Rust: Coordinator, Host, Runner, renderer bridge, MCP routing, local execution, persistence, and native capabilities must not be collapsed into one opaque monolith;
@@ -108,13 +110,16 @@ Required principles:
 - Fabushi code, services, compatibility layers, product surfaces, or background processes that have no Grok counterpart must be removed from the canonical desktop implementation unless this spec explicitly approves a Fabushi-specific extension boundary;
 - the final shipped desktop application must not retain a second parallel legacy Fabushi runtime beside the Grok-shaped architecture;
 - Fabushi branding, service endpoints, signing identity, account implementation details, and approved native capabilities may differ through narrow adapters, but those differences must not create a different desktop orchestration architecture;
-- ordinary chat, Agents, creation flow, Plugins/connectors/MCP, process lifecycle, retry/recovery, power behavior, and UI interaction must match the approved Grok reference behavior.
+- ordinary chat, Agents, creation flow, Plugins/connectors/MCP, process lifecycle, retry/recovery, power behavior, and UI interaction must match the approved Grok reference behavior;
+- no-op mirror files, placeholder counterparts, or manifest-only status changes are not parity evidence; every completed mapping must demonstrate production wiring and the corresponding desktop product effect.
 
 The desired end state is therefore: **Grok Bot 0.18’s architecture and product behavior under Fabushi identity, implemented with the best-fit language at each boundary, with Mahayana serving as the Rust implementation of Grok-equivalent coordinator/host/runtime roles where appropriate.**
 
 ## 3. Non-goals / out of scope
 
 - Keeping the current Fabushi desktop architecture merely because it already exists.
+- Requiring every Grok source file to become a unique Fabushi target file merely to match file counts.
+- Creating no-op, placeholder, or empty compatibility files solely to satisfy a one-to-one source-tree mapping.
 - Requiring every Grok TypeScript/JavaScript file to become Rust when TypeScript/React is objectively the better implementation boundary for Electron or browser UI.
 - Requiring Grok’s `node-agent-coordinator` to remain Node. The folder/domain name is architectural provenance; Mahayana may implement that role in Rust.
 - Collapsing Coordinator + Host + Runner + renderer state into one Mahayana binary simply because Rust can implement all of them.
@@ -178,9 +183,9 @@ The desired end state is therefore: **Grok Bot 0.18’s architecture and product
 ### Architecture / Grok-equivalent structure with best-fit languages
 
 - **ARCH-001 — Frozen Grok source baseline.** All structural comparisons and parity decisions use `b-nnett/grok-bot-0.18-reconstructed@a9f633e09d49a85829b8236331b9e21f7e612634`. A baseline change requires a spec update and a new complete mapping.
-- **ARCH-002 — Complete module inventory.** Generate and check in a machine-readable architecture manifest covering every source-bearing Grok path. Each row records the Grok path/blob SHA, architectural role, Fabushi target path, implementation language, owning process/crate/package, status, and behavioral evidence. No source module may be silently skipped.
-- **ARCH-003 — Folder/domain parity.** The canonical Fabushi source tree must mirror Grok Bot’s major relative domain hierarchy and nested feature ownership: `frontend/`, `source/electron-main/`, `source/electron-preload/`, `source/node-agent-coordinator/`, `source/host/`, `source/shared/`, and `source/packages/`. File extensions may differ by implementation language.
-- **ARCH-004 — Module-by-module counterpart.** Each executable Grok module must map to one or more explicit Fabushi implementation modules that preserve its responsibility, input/output contract, state machine, failure behavior, process ownership, and dependency direction. A many-to-one mapping is allowed only when it does not collapse a reference architectural boundary and is justified in the manifest.
+- **ARCH-002 — Complete module inventory.** Generate and check in a machine-readable architecture manifest covering every source-bearing Grok path. Each row records the Grok path/blob SHA, source responsibility, desktop-visible effect, platform delta, Fabushi target path(s) or explicit disposition, implementation language, owning process/crate/package, status, replacement behavior where applicable, and behavioral/test evidence. No source module may be silently skipped. Manifest completeness is an audit requirement, not a target-file-count requirement.
+- **ARCH-003 — Folder/domain parity.** The canonical Fabushi source tree must preserve Grok Bot’s major relative domain hierarchy and nested feature ownership: `frontend/`, `source/electron-main/`, `source/electron-preload/`, `source/node-agent-coordinator/`, `source/host/`, `source/shared/`, and `source/packages/`. File extensions and internal file granularity may differ by implementation language when ownership and dependency direction remain equivalent.
+- **ARCH-004 — Module-by-module responsibility mapping.** Each executable Grok module must map to one or more explicit Fabushi implementation modules, or to an evidenced existing equivalent, that preserve its responsibility, input/output contract, state machine, failure behavior, process ownership, dependency direction, and observable desktop effect. Many-to-one and one-to-many mappings are allowed when they do not collapse a reference architectural boundary and are justified in the manifest.
 - **ARCH-005 — Best-fit language policy.** Architecture is normative; language is an implementation choice. Default targets are:
   - `frontend/**` -> React + TypeScript for DOM/UI/state projection;
   - `source/electron-main/**` -> TypeScript for Electron-native APIs, with Rust services behind typed IPC where appropriate;
@@ -198,7 +203,7 @@ The desired end state is therefore: **Grok Bot 0.18’s architecture and product
 - **ARCH-012 — State-ownership parity.** Submission, operation/run identity, transcript/checkpoint, retry/cancel, connector state, account state, process lifecycle, and renderer projection ownership must follow the corresponding Grok architecture rather than current Fabushi compatibility behavior.
 - **ARCH-013 — Remove non-Grok code.** Any shipping Fabushi subsystem without a reference counterpart or approved extension must be deleted after required data migration. Git history is the archive; a parallel legacy implementation is not allowed to remain enabled or compiled into the production path.
 - **ARCH-014 — No shadow architecture.** After cutover there is exactly one canonical implementation for each reference subsystem. Migration adapters must have explicit removal criteria and fail the final architecture gate if still required for normal operation.
-- **ARCH-015 — Automated architecture gate.** CI compares the frozen Grok inventory against the Fabushi architecture manifest and canonical tree. Completion requires zero unmapped executable reference modules, zero unauthorized extra shipping modules, and zero unjustified boundary collapses.
+- **ARCH-015 — Automated architecture gate.** CI compares the frozen Grok inventory against the Fabushi architecture manifest and canonical tree. Completion requires zero unclassified reference modules, zero required product responsibilities without a real production implementation/equivalent, zero unauthorized extra shipping modules, and zero unjustified boundary collapses. The gate must not require equal source/target file counts.
 - **ARCH-016 — Language substitution test.** A language change is accepted only if contract tests demonstrate equivalent behavior and the change does not alter the reference process/module boundary. “Implemented in Rust” is never by itself evidence of parity.
 - **ARCH-017 — Migration safety.** User data needed by the retained Grok-equivalent product must be migrated before legacy paths are deleted. Data belonging only to removed Fabushi-only features may be exported/backed up, but the feature implementation itself does not remain in the shipping architecture.
 
@@ -557,16 +562,22 @@ A machine-readable manifest is mandatory. Minimum fields:
 reference_path
 reference_blob_sha
 reference_role
+desktop_effect
+platform_delta
 target_path
+related_target_paths
 target_language
 target_process_or_package
 status
+replacement_behavior
 behavioral_evidence
 test_evidence
 notes
 ```
 
-Allowed final statuses are `implemented`, `not-applicable-noncode`, and `removed-extra`. `pending`, `compatibility-only`, or `unmapped` blocks completion.
+Allowed final statuses are `implemented`, `equivalent`, `not-applicable-platform`, `not-applicable-noncode`, and `removed-extra`. `pending`, `compatibility-only`, or `unmapped` blocks completion.
+
+`not-applicable-platform` applies only when the reference implementation mechanism genuinely has no desktop-platform counterpart for the supported Fabushi target. It may not be used to drop a still-required user-visible Grok capability. If the product effect still matters, `replacement_behavior` is mandatory.
 
 ## 9. Constraints and non-functional requirements
 
@@ -652,7 +663,7 @@ The implementation and tests must cover:
 
 ### Phase 0 — Freeze and enumerate Grok 0.18
 
-Generate the complete source/module inventory from `a9f633e09d49a85829b8236331b9e21f7e612634`. Establish the architecture manifest before implementation. Every source-bearing Grok module gets a row; every current Fabushi shipping module is classified as mapped-to-Grok, approved extension, or extra-to-remove.
+Generate the complete source/module inventory from `a9f633e09d49a85829b8236331b9e21f7e612634`. Establish the architecture manifest before implementation. Every source-bearing Grok module gets a row describing its responsibility, desktop effect, platform delta, and target/disposition; every current Fabushi shipping module is classified as mapped-to-Grok, approved extension, or extra-to-remove. The inventory is an exhaustive audit index, not a requirement to create one Fabushi file per Grok file.
 
 ### Phase 1 — Create the mirrored architectural tree
 
@@ -848,8 +859,8 @@ On the packaged candidate:
 - **AC-06:** Latency artifacts meet PERF-001 through PERF-005 and report p50/p95, not only eventual completion.
 - **AC-07:** Plugins/connectors/MCP reproduce the mapped Grok catalog/auth/account/server/tool behavior in the packaged app.
 - **AC-08:** The approved New/+ reference journey is reproduced and verified by side-by-side video/screenshots.
-- **AC-09:** The complete frozen Grok source/module inventory has an architecture-manifest row; there are zero silently skipped executable modules.
-- **AC-10:** Every executable Grok module has an implemented Fabushi counterpart or explicitly justified non-code/platform exception; final manifest has no `pending`, `compatibility-only`, or `unmapped` rows.
+- **AC-09:** The complete frozen Grok source/module inventory has exactly one architecture-manifest row per reference item; there are zero silently skipped executable modules. This is an audit-completeness criterion, not a one-to-one target-file criterion.
+- **AC-10:** Every product-relevant Grok responsibility has a real production-wired Fabushi desktop implementation or evidenced existing equivalent; platform/non-code exceptions are explicitly justified and cannot remove a still-required product effect. Final manifest has no `pending`, `compatibility-only`, or `unmapped` rows.
 - **AC-11:** The canonical Fabushi domain/folder architecture mirrors Grok’s major boundaries and passes the automated architecture gate.
 - **AC-12:** Mahayana Coordinator implements the Grok `node-agent-coordinator` architectural role with independent protocol, supervision, cancellation, reconnect/resync, routing, and crash-settlement tests.
 - **AC-13:** Mahayana Coordinator and Mahayana Host/Runner remain distinct ownership boundaries; Host restart/recovery does not require renderer-side operation guessing.
@@ -860,7 +871,8 @@ On the packaged candidate:
 - **AC-18:** No credentials/secrets appear in renderer state, logs, traces, or evidence bundles.
 - **AC-19:** Required retained user data survives migration; data for removed Fabushi-only features has an explicit export/backup decision.
 - **AC-20:** Exact-HEAD GitHub Actions tests, signed packaged acceptance, merge SHA, and canonical-main release are all separately recorded.
-- **AC-21:** A final mapping report lists every Grok reference module, its Fabushi target, implementation language, owning process/package, and test evidence, plus every deleted Fabushi-only source path.
+- **AC-21:** A final mapping report lists every Grok reference module, its responsibility/effect, Fabushi target path(s) or reviewed disposition, implementation language, owning process/package, replacement behavior where applicable, and test evidence, plus every deleted Fabushi-only source path.
+- **AC-22 — Grok Bot desktop effect:** The exact packaged app demonstrates the same core Agent product effect as the approved Grok Bot 0.18 reference: a durable user turn progresses through acceptance → preparing/thinking → real tool/MCP/Runner activity when invoked → live tool state → continued inference → incremental transcript streaming → terminal completion/failure. Renderer reload, Coordinator reconnect, or temporary network loss during an active durable run must resynchronize that same run without silent loss or duplicate execution when the reference architecture would keep the run alive. Platform differences must be explicit adaptations, not unacknowledged feature reduction.
 
 ## 14. Release / migration / rollback
 
@@ -976,7 +988,7 @@ The evidence must make it possible to answer “where did this turn spend time?�
 | ARCH-001..017 | blocked | Current Fabushi tree/process model is not yet Grok-equivalent; Mahayana Coordinator, Host/Runner boundary parity, architecture manifest, language-fit decisions, removal, and structural gates remain incomplete. |
 | POWER-001..009 | blocked | Process-level measurement and demand-driven lifecycle work not yet completed. |
 | OBS-001..005 | blocked | Required parity evidence bundle not yet produced. |
-| AC-01..21 | blocked | This document defines the recovery gate; no implementation completion is claimed. |
+| AC-01..22 | blocked | This document defines the recovery gate; no implementation completion is claimed. |
 
 Allowed statuses: `passed`, `blocked`, `not-applicable`.
 
