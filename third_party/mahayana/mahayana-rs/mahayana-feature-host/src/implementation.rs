@@ -6569,7 +6569,7 @@ impl FeatureHostController {
                     let messages = match self.runtime()?.execute(
                         RuntimeCommand::ConversationHistory {
                             conversation_id: ConversationId(conversation_id),
-                            limit: Some(limit),
+                            limit: Some(limit.min(500) as u32),
                         },
                     )? {
                         RuntimeResponse::History { data } => data,
