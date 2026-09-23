@@ -1097,12 +1097,12 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
 
     await test.step('Agent Network is the Agent-domain group surface', async () => {
       await page.getByRole('button', { name: 'Agent network' }).click();
-      const network = page.getByTestId('grok-agent-network');
-      await expect(network).toBeVisible();
-      await expect(network.getByRole('button', { name: 'Create from selected' })).toBeVisible();
-      await expect(network.getByText(/agents · \d+ groups/)).toBeVisible();
-      await network.getByRole('button', { name: 'Close Agent network' }).click();
-      await expect(network).toBeHidden();
+      const orgChart = page.getByRole('main').filter({ has: page.getByRole('heading', { name: 'Org chart' }) });
+      await expect(orgChart.getByRole('heading', { name: 'Org chart' })).toBeVisible();
+      await expect(orgChart.getByRole('region', { name: 'Agent network' })).toBeVisible();
+      await expect(orgChart.getByText(/\d+ agents · \d+ groups · \d+ message links/)).toBeVisible();
+      await orgChart.getByRole('button', { name: 'Close org chart' }).click();
+      await expect(page.getByRole('heading', { name: 'Org chart' })).toHaveCount(0);
     });
 
     await test.step('Agent conversation and composer expose dark low-contrast material', async () => {
