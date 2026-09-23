@@ -197,9 +197,19 @@ impl FileChannelStore {
         let debounce = Arc::clone(&self.inner.debounce);
         let Ok(mut watcher) = notify::recommended_watcher(
             move |event: notify::Result<notify::Event>| {
-                if event.is_ok() {
-                    schedule_debounced_notify(&debounce);
+                let Ok(event) = event else {
+                    return;
+                };
+                // Node fs.watch, used by frozen Grok WatchedDirectory, reports
+                // directory/file change notifications but does not surface the
+                // extra open/close access events exposed by notify. Ignoring
+                // Access keeps the Rust watcher on the same 50 ms trailing-edge
+                // debounce contract instead of splitting one write burst when a
+                // late Close(Write) arrives after the data/metadata event.
+                if matches!(event.kind, notify::EventKind::Access(_)) {
+                    return;
                 }
+                schedule_debounced_notify(&debounce);
             },
         ) else {
             return;
