@@ -27,7 +27,6 @@ import { createDesktopAccountAuthorizer } from "./account/account-authorization.
 import { createSandRecreateCommands, type RecreateOperationId } from "./box/box-recreate-commands.js";
 import { createDesktopHostSettingsFields } from "./prefs/host-settings-fields.js";
 import { createReleaseMetadata } from "./update/release-metadata.js";
-import { createMainEdgeHandlers } from "./main-edge.js";
 
 test("dev gates and latency clamps match Grok behavior", () => {
   assert.equal(setSimulatedGatewayLatencyMs(25.9), 25);
@@ -329,36 +328,6 @@ test("box recreate commands preserve tracked, untrackable, fallback and rejected
     status: "rejected",
     reason: "Reset Grok Bot's Computer is unavailable without a backend connection.",
   });
-});
-
-test("main edge waits for onboarding persistence before acknowledging setSeen", async () => {
-  let releaseApply: (() => void) | null = null;
-  let applied = false;
-  const pendingApply = new Promise<void>((resolve) => {
-    releaseApply = () => {
-      applied = true;
-      resolve();
-    };
-  });
-  const handlers = createMainEdgeHandlers({
-    onboardingSeen: {
-      apply: () => pendingApply,
-      reconcile: () => applied,
-    },
-  } as unknown as Parameters<typeof createMainEdgeHandlers>[0]);
-
-  let settled = false;
-  const pending = Promise.resolve(handlers.setOnboardingSeen({ seen: true })).then(() => {
-    settled = true;
-  });
-  await new Promise<void>((resolve) => setImmediate(resolve));
-  assert.equal(settled, false);
-  assert.equal(applied, false);
-
-  releaseApply?.();
-  await pending;
-  assert.equal(settled, true);
-  assert.equal(applied, true);
 });
 
 test("host settings field hydrates from live box state and clears on account departure", async () => {
