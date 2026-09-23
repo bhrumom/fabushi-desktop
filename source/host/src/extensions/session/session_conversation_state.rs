@@ -267,7 +267,6 @@ impl SessionConversationState {
         Ok(turns)
     }
 }
-}
 
 fn read_entries(db: &Connection) -> Result<Vec<Value>, SessionConversationStateError> {
     let mut statement = db.prepare(LIST_TRANSCRIPT_ENTRIES_SQL)?;
