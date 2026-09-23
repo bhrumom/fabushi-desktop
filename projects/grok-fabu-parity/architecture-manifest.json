@@ -11415,7 +11415,7 @@
       "targetPath": "source/host/src/extensions/inference/provider_session.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "3cc86ef260f8d08b5c4bd00bb69a62546884ddcf",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -11436,7 +11436,7 @@
         "source/host/tests/runner_routed_provider_contract.rs",
         "source/host/tests/runner_request_context_contract.rs"
       ],
-      "notes": "Provider execution now has a Runner-owned Rust composition and Host gateway entrypoint with per-run streaming events and Host-lane routed MCP tool calls; Claude Code uses a Runner-owned loopback MCP server. This entry remains non-final until Coordinator switches off its in-process host-runtime dependency and the full Host/Runner production chain passes exact-HEAD CI."
+      "notes": "Final parity at exact tested implementation HEAD b690dc688b9d2bd05b99a90b6c3e88908357389b: the Coordinator no longer links or calls an in-process Host runtime; non-Cursor provider turns cross the authenticated Host gateway via runner.startRoutedProvider/runner.cancelRoutedProvider, where the shipping Host composes ProductionTurnAgentOwner -> TurnAgentComposition -> SandAgentRunner and ProviderSession with routed MCP relay, cancellation, streaming, retry/watchdog and checkpoint/resume. Rust desktop runtime run 35805756749 passed the shipping Host check, independent Coordinator contract and independent Host/Runner contract."
     },
     {
       "referencePath": "source/host/extensions/inference/sand-labeling.ts",
@@ -14529,7 +14529,7 @@
       "targetPath": "source/host/src/runner_context_production_provider.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "09cf4103efe84953f1e5a211cce920dc3cc80cc4",
       "architecturalRole": "host/runner-context-production-provider",
       "processOrPackage": "mahayana-host",
@@ -14544,7 +14544,7 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-adaptation",
-      "notes": "Production wiring is now extracted from the shipping Host into the mapped Rust module: Host Auth user identity, managed team rules, timezone/OS context and transcript location are projected through RunnerRequestContextSource into the independent Runner. Language adaptation: Grok's Node module carries a silent logger in its keyed Context; Rust does not transport that JS logger object across the Host/Runner boundary, so logging remains process-local and the immutable request-context snapshot is the production equivalent. Final is withheld until this exact implementation HEAD passes Host/Runner contracts and Rust desktop runtime."
+      "notes": "Final parity at exact tested implementation HEAD b690dc688b9d2bd05b99a90b6c3e88908357389b: shipping Host constructs ProductionRunnerRequestContextSource from production Auth, managed team rules and transcript storage, then projects the immutable request-context snapshot into the independent Runner. Rust intentionally keeps the Grok Node silent logger process-local rather than transporting a JS keyed Context across the Host/Runner boundary. Rust desktop runtime run 35805756749 passed the shipping Host check, independent Coordinator contract and independent Host/Runner contract."
     },
     {
       "referencePath": "source/host/runner-production-bridge.ts",
