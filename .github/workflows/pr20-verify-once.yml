@@ -1,0 +1,25 @@
+name: PR20 Verify Once
+
+on:
+  workflow_dispatch:
+
+jobs:
+  architecture-inventory:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Bind exact tested HEAD
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+        working-directory: desktop
+      - name: Check Grok architecture inventory
+        run: node scripts/check-grok-architecture.mjs
+      - name: Typecheck and build renderer
+        run: npm run build:renderer
+        working-directory: desktop
