@@ -1259,22 +1259,26 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(page.getByRole('button', { name: 'Clear selection' })).toHaveCount(0);
       await expect(peer).toHaveAttribute('aria-pressed', 'false');
 
-      // Pinning is a presentation dimension, not section ownership. The Agent
-      // stays under Pinned while pinned, then must project back into the section
-      // that was just persisted when it is unpinned. This guards the original
-      // 35522950977 failure instead of merely asserting that an empty header exists.
-      const focusedAgentRow = focusedWork.locator('button[data-agent-key="agent:mahayana-assistant"]');
+      // Pinning is a presentation dimension, not section ownership. First prove
+      // the selected Agent is actually projected into the newly persisted section.
+      // Then pin it through the recovered Grok row context menu, prove the section
+      // projection disappears while pinned, and finally unpin it and prove the
+      // original section ownership is restored. This guards the original
+      // 35522950977 regression without assuming fixture-specific initial pin state.
+      const focusedAgentRow = focusedWork.getByRole('button', { name: '大乘助手', exact: true });
+      await expect(focusedAgentRow).toBeVisible();
+
+      await focusedAgentRow.click({ button: 'right' });
+      const agentActions = page.getByRole('menu', { name: 'Agent actions' });
+      await expect(agentActions).toBeVisible();
+      await agentActions.getByRole('menuitem', { name: 'Pin' }).click();
       await expect(peer).toHaveAttribute('data-pinned', 'true');
       await expect(focusedAgentRow).toHaveCount(0);
 
-      // Grok's recovered row actions are a context menu owned by the Agent row;
-      // data-pinned is on the button itself rather than its preview compositor.
       await peer.click({ button: 'right' });
-      const agentActions = page.getByRole('menu', { name: 'Agent actions' });
       await expect(agentActions).toBeVisible();
       await agentActions.getByRole('menuitem', { name: 'Unpin' }).click();
       await expect(peer).not.toHaveAttribute('data-pinned', 'true');
-      await expect(focusedAgentRow).toHaveCount(1);
       await expect(focusedAgentRow).toBeVisible();
     });
   } finally {
