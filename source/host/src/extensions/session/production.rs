@@ -22,7 +22,7 @@ pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 pub type ProductionAgentWorkerPool = AgentWorkerPool<ProductionAgentStoreWorkerBackend>;
 pub type ProductionWorkerBlobStore = WorkerBlobStore<ProductionAgentStoreWorkerBackend>;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PreparedAgentBlobStore {
     pub agent_id: String,
     pub session_db_path: PathBuf,
