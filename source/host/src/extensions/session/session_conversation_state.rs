@@ -41,75 +41,13 @@ pub struct TranscriptThread {
     pub entries: Vec<Value>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(tag = "kind")]
-pub enum ConversationOutlineItem {
-    #[serde(rename = "user")]
-    User {
-        id: String,
-        text: String,
-        #[serde(skip_serializing_if = "std::ops::Not::not")]
-        hidden: bool,
-    },
-    #[serde(rename = "assistant-text")]
-    AssistantText {
-        id: String,
-        text: String,
-    },
-    #[serde(rename = "thinking")]
-    Thinking {
-        id: String,
-        text: String,
-        #[serde(rename = "durationMs", skip_serializing_if = "Option::is_none")]
-        duration_ms: Option<u64>,
-    },
-    #[serde(rename = "send-message")]
-    SendMessage {
-        id: String,
-        message: Value,
-    },
-    #[serde(rename = "tool-call")]
-    ToolCall {
-        id: String,
-        name: String,
-        status: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        summary: Option<String>,
-    },
-}
-
-impl ConversationOutlineItem {
-    fn to_recovery_item(&self) -> Option<RecoveryOutlineItem> {
-        match self {
-            Self::User { id, text, hidden } => Some(RecoveryOutlineItem::User {
-                id: id.clone(),
-                hidden: *hidden,
-                text: text.clone(),
-                timestamp_ms: None,
-            }),
-            Self::SendMessage { id, message } => Some(RecoveryOutlineItem::SendMessage {
-                id: id.clone(),
-                message: message.clone(),
-                timestamp_ms: None,
-            }),
-            Self::ToolCall { id, name, status, summary } => Some(RecoveryOutlineItem::ToolCall {
-                id: id.clone(),
-                name: name.clone(),
-                status: status.clone(),
-                summary: summary.clone(),
-                timestamp_ms: None,
-            }),
-            Self::AssistantText { .. } | Self::Thinking { .. } => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ConversationOutlineTurn {
-    pub raw_user_text: String,
-    pub user_message_id: String,
-    pub items: Vec<ConversationOutlineItem>,
-}
+pub use crate::runner::conversation_outline::{
+    OutlineItem as ConversationOutlineItem, OutlineTurn as ConversationOutlineTurn,
+};
+use crate::runner::conversation_outline::{
+    ConversationTurnInput, OutlineStep, OutlineToolCall, TaskToolCall,
+    derive_outline_turns_from_conversation_state,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -375,10 +313,34 @@ impl SessionConversationState {
             .map(|turn| {
                 turn.items
                     .iter()
-                    .filter_map(ConversationOutlineItem::to_recovery_item)
+                    .filter_map(to_recovery_item)
                     .collect::<Vec<_>>()
             })
             .collect())
+    }
+}
+
+fn to_recovery_item(item: &ConversationOutlineItem) -> Option<RecoveryOutlineItem> {
+    match item {
+        ConversationOutlineItem::User { id, text, hidden } => Some(RecoveryOutlineItem::User {
+            id: id.clone(),
+            hidden: *hidden,
+            text: text.clone(),
+            timestamp_ms: None,
+        }),
+        ConversationOutlineItem::SendMessage { id, message } => Some(RecoveryOutlineItem::SendMessage {
+            id: id.clone(),
+            message: message.clone(),
+            timestamp_ms: None,
+        }),
+        ConversationOutlineItem::ToolCall { id, name, status, summary } => Some(RecoveryOutlineItem::ToolCall {
+            id: id.clone(),
+            name: name.clone(),
+            status: status.clone(),
+            summary: summary.clone(),
+            timestamp_ms: None,
+        }),
+        ConversationOutlineItem::AssistantText { .. } | ConversationOutlineItem::Thinking { .. } => None,
     }
 }
 
@@ -464,19 +426,6 @@ fn resolve_branch_root(
 }
 
 
-const SAND_HIDDEN_PROMPT_MARKER: &str = "[SAND_HIDDEN_PROMPT]";
-const SAND_TRUSTED_AUTOMATION_PROMPT_MARKER: &str = "[SAND_TRUSTED_AUTOMATION_PROMPT]";
-
-fn strip_hidden_marker(text: &str) -> String {
-    let without_hidden = text
-        .strip_prefix(SAND_HIDDEN_PROMPT_MARKER)
-        .unwrap_or(text);
-    without_hidden
-        .strip_prefix(SAND_TRUSTED_AUTOMATION_PROMPT_MARKER)
-        .unwrap_or(without_hidden)
-        .to_string()
-}
-
 fn block_on_blob(
     pool: Arc<AgentWorkerPool<ProductionAgentStoreWorkerBackend>>,
     agent_id: &str,
@@ -558,18 +507,8 @@ fn decode_agent_outline_turn(
     };
     let raw_user_text = first_string_field(&user_blob, 1).unwrap_or_default();
     let user_message_id = first_string_field(&user_blob, 2).unwrap_or_default();
-    let hidden = raw_user_text.starts_with(SAND_HIDDEN_PROMPT_MARKER);
-    let user_text = strip_hidden_marker(&raw_user_text);
-    let mut items = Vec::new();
-    if !user_text.trim().is_empty() {
-        items.push(ConversationOutlineItem::User {
-            id: format!("outline-user-{turn_index}"),
-            text: user_text,
-            hidden,
-        });
-    }
-
-    for (step_index, step_id) in all_bytes_fields(data, 2).into_iter().enumerate() {
+    let mut steps = Vec::new();
+    for step_id in all_bytes_fields(data, 2) {
         let Some(step_blob) = block_on_blob(
             Arc::clone(pool),
             agent_id,
@@ -579,15 +518,41 @@ fn decode_agent_outline_turn(
         )? else {
             continue;
         };
-        if let Some(item) = decode_step(&step_blob, &format!("outline-{turn_index}-{step_index}")) {
-            items.push(item);
+        if let Some(step) = decode_outline_step_input(&step_blob) {
+            steps.push(step);
         }
     }
-    Ok(Some(ConversationOutlineTurn {
-        raw_user_text,
-        user_message_id,
-        items,
+    Ok(derive_outline_turns_from_conversation_state(&[
+        ConversationTurnInput::Agent {
+            raw_user_text,
+            user_message_id,
+            steps,
+        },
+    ])
+    .into_iter()
+    .next()
+    .map(|mut turn| {
+        for item in &mut turn.items {
+            rewrite_outline_item_turn_index(item, turn_index);
+        }
+        turn
     }))
+}
+
+fn rewrite_outline_item_turn_index(item: &mut ConversationOutlineItem, turn_index: usize) {
+    match item {
+        ConversationOutlineItem::User { id, .. } => {
+            *id = format!("outline-user-{turn_index}");
+        }
+        ConversationOutlineItem::AssistantText { id, .. }
+        | ConversationOutlineItem::Thinking { id, .. }
+        | ConversationOutlineItem::SendMessage { id, .. }
+        | ConversationOutlineItem::ToolCall { id, .. } => {
+            if let Some(suffix) = id.strip_prefix("outline-0-") {
+                *id = format!("outline-{turn_index}-{suffix}");
+            }
+        }
+    }
 }
 
 fn decode_shell_outline_turn(
@@ -619,100 +584,93 @@ fn decode_shell_outline_turn(
         blob_db_path,
         db_path,
         output_id,
-    )?.is_none() {
+    )?
+    .is_none()
+    {
         return Ok(None);
     }
     let command = first_string_field(&command_blob, 1).unwrap_or_default();
-    Ok(Some(ConversationOutlineTurn {
-        raw_user_text: String::new(),
-        user_message_id: String::new(),
-        items: vec![ConversationOutlineItem::ToolCall {
-            id: format!("outline-shell-{turn_index}"),
-            name: "shellToolCall".into(),
-            status: "done".into(),
-            summary: (!command.is_empty()).then_some(command),
-        }],
+    Ok(derive_outline_turns_from_conversation_state(&[
+        ConversationTurnInput::Shell { command },
+    ])
+    .into_iter()
+    .next()
+    .map(|mut turn| {
+        if let Some(ConversationOutlineItem::ToolCall { id, .. }) = turn.items.first_mut() {
+            *id = format!("outline-shell-{turn_index}");
+        }
+        turn
     }))
 }
 
-fn decode_step(data: &[u8], id: &str) -> Option<ConversationOutlineItem> {
+fn decode_outline_step_input(data: &[u8]) -> Option<OutlineStep> {
     let (field, payload) = last_oneof_bytes(data, &[1, 2, 3])?;
     match field {
-        1 => {
-            let text = first_string_field(payload, 1).unwrap_or_default();
-            (!text.is_empty()).then(|| ConversationOutlineItem::AssistantText {
-                id: id.to_string(),
-                text,
-            })
-        }
-        3 => {
-            let text = first_string_field(payload, 1).unwrap_or_default();
-            if text.is_empty() {
-                return None;
-            }
-            let duration_ms = first_varint_field(payload, 2).filter(|value| *value > 0);
-            Some(ConversationOutlineItem::Thinking {
-                id: id.to_string(),
-                text,
-                duration_ms,
-            })
-        }
-        2 => decode_tool_call(payload, id),
+        1 => Some(OutlineStep::AssistantMessage {
+            text: first_string_field(payload, 1).unwrap_or_default(),
+        }),
+        3 => Some(OutlineStep::ThinkingMessage {
+            text: first_string_field(payload, 1).unwrap_or_default(),
+            duration_ms: first_varint_field(payload, 2).unwrap_or_default(),
+        }),
+        2 => decode_outline_tool_call_input(payload).map(|tool_call| OutlineStep::ToolCall {
+            tool_call,
+            event: "toolCallCompleted".into(),
+        }),
         _ => None,
     }
 }
 
-fn decode_tool_call(data: &[u8], id: &str) -> Option<ConversationOutlineItem> {
+fn decode_outline_tool_call_input(data: &[u8]) -> Option<OutlineToolCall> {
     let (field, payload) = last_tool_oneof(data)?;
+    let case = tool_case_name(field)?.to_string();
+    let mut tool_call = OutlineToolCall {
+        case: Some(case),
+        ..OutlineToolCall::default()
+    };
+
     if field == 55 {
-        let message = decode_send_message(payload)?;
-        return Some(ConversationOutlineItem::SendMessage {
-            id: id.to_string(),
-            message,
-        });
+        tool_call.send_message = decode_send_message(payload);
+        return Some(tool_call);
     }
 
-    let mut name = tool_case_name(field)?.to_string();
-    let mut status = "done".to_string();
-    let mut summary = None;
     if field == 19 {
-        name = "Task".into();
         let args = first_bytes_field(payload, 1);
         let result = first_bytes_field(payload, 2);
-        if let Some(result) = result {
-            if let Some(error_payload) = last_oneof_bytes(result, &[1, 2])
-                .filter(|(case, _)| *case == 2)
-                .map(|(_, payload)| payload)
-            {
-                let error = first_string_field(error_payload, 1).unwrap_or_default();
-                if !error.is_empty() {
-                    summary = Some(error);
-                }
-                status = "failed".into();
-            }
-        }
-        if summary.is_none() {
-            if let Some(args) = args {
-                summary = first_string_field(args, 1)
-                    .map(|value| value.trim().to_string())
-                    .filter(|value| !value.is_empty())
-                    .or_else(|| {
-                        first_string_field(args, 2)
-                            .map(|value| value.trim().to_string())
-                            .filter(|value| !value.is_empty())
-                    });
-            }
-        }
-    } else if field == 30 && computer_use_is_single_screenshot(payload) {
-        name = "Screenshot".into();
+        let error = result
+            .and_then(|result| last_oneof_bytes(result, &[1, 2]))
+            .filter(|(case, _)| *case == 2)
+            .map(|(_, payload)| first_string_field(payload, 1).unwrap_or_default())
+            .filter(|value| !value.is_empty());
+        tool_call.task = Some(TaskToolCall {
+            description: args
+                .and_then(|args| first_string_field(args, 1))
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty()),
+            prompt: args
+                .and_then(|args| first_string_field(args, 2))
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty()),
+            error,
+        });
+    } else if field == 30 {
+        let args = first_bytes_field(payload, 1);
+        tool_call.computer_action_cases = args
+            .map(|args| {
+                all_bytes_fields(args, 2)
+                    .into_iter()
+                    .map(|action| {
+                        last_oneof_bytes(action, &[1,2,3,4,5,6,7,8,9,10,11])
+                            .map(|(case, _)| if case == 10 { "screenshot" } else { "other" })
+                            .unwrap_or("other")
+                            .to_string()
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
     }
 
-    Some(ConversationOutlineItem::ToolCall {
-        id: id.to_string(),
-        name,
-        status,
-        summary,
-    })
+    Some(tool_call)
 }
 
 fn decode_send_message(data: &[u8]) -> Option<Value> {
@@ -733,16 +691,6 @@ fn decode_send_message(data: &[u8]) -> Option<Value> {
         }
         _ => None,
     }
-}
-
-fn computer_use_is_single_screenshot(data: &[u8]) -> bool {
-    let Some(args) = first_bytes_field(data, 1) else {
-        return false;
-    };
-    let actions = all_bytes_fields(args, 2);
-    actions.len() == 1
-        && last_oneof_bytes(actions[0], &[1,2,3,4,5,6,7,8,9,10,11])
-            .is_some_and(|(case, _)| case == 10)
 }
 
 fn last_tool_oneof(data: &[u8]) -> Option<(u64, &[u8])> {

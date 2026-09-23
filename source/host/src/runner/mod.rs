@@ -2,6 +2,7 @@ pub mod tools;
 pub mod video_container;
 pub mod site_visit_tracking;
 pub mod sand_prompt_markers;
+pub mod conversation_outline;
 pub mod clock_skew_guard;
 pub mod agent_state;
 mod checkpoint;

@@ -15286,12 +15286,23 @@
       "targetPath": "source/host/src/runner/conversation_outline.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e450325e9358b9c02fe192d80e9aba52ed5cc2a8",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/conversation_outline.rs",
+        "source/host/src/extensions/session/session_conversation_state.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/conversation_outline_contract.rs",
+        "source/host/tests/session_conversation_state_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Runner port owns frozen conversation-outline semantics: hidden/trusted marker stripping, assistant/thinking projection, send-message text/attachment projection, Task summary/error/status, Computer screenshot naming, tool activity argument filtering/truncation, shell turns and flattened/turn outlines. Shipping Session remains the durable protobuf/blob decoder but now delegates the user/step/tool outline projection to this Runner module before transcript recovery and production reads, restoring the Grok responsibility boundary without a duplicate runtime."
     },
     {
       "referencePath": "source/host/runner/conversation-state.ts",
