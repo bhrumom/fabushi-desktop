@@ -752,23 +752,33 @@ impl ProductionSessionWorkers {
         let store = self.create_agent_blob_store(agent_id)?;
         let session_db_path = materialized.db_path.clone();
 
-        let _ = recover_conversation_root_if_missing(
+        let recovered_root = recover_conversation_root_if_missing(
             Arc::clone(&self.pool),
             agent_id,
             &session_db_path,
             &store.blob_db_path,
             self.busy_timeout_ms,
         )?;
-        let recovery_turns = self
-            .conversation_state
-            .read_agent_recovery_outline_turns(
-                Arc::clone(&self.pool),
-                agent_id,
-                &session_db_path,
-                &store.blob_db_path,
-            )
-            .map_err(|error| error.to_string())?;
-        if !recovery_turns.is_empty() {
+        let recovery_turns = if recovered_root {
+            self.conversation_state
+                .read_agent_recovery_outline_turns(
+                    Arc::clone(&self.pool),
+                    agent_id,
+                    &session_db_path,
+                    &store.blob_db_path,
+                )
+                .map_err(|error| error.to_string())?
+        } else {
+            self.conversation_state
+                .read_agent_recovery_outline_turns(
+                    Arc::clone(&self.pool),
+                    agent_id,
+                    &session_db_path,
+                    &store.blob_db_path,
+                )
+                .unwrap_or_default()
+        };
+        if recovered_root && !recovery_turns.is_empty() {
             let _ = backfill_transcript_from_outline(
                 &session_db_path,
                 self.busy_timeout_ms,
