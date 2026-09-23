@@ -881,6 +881,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [pluginQuery, setPluginQuery] = useState("");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [account, setAccount] = useState<CursorAuthStatus | null>(null);
+  const applyAccountStatus = useCallback((status: CursorAuthStatus) => {
+    // Browser OAuth can finish and emit logged-in before the initiating login()
+    // promise resolves its earlier logging-in acknowledgement. Preserve the
+    // newer authenticated state instead of regressing the shipping surface.
+    setAccount((current) => current?.kind === "logged-in" && status.kind === "logging-in"
+      ? current
+      : status);
+  }, []);
   const [sandAccess, setSandAccess] = useState(SAND_ACCESS_UNKNOWN);
   const [accessFirstBox, setAccessFirstBox] = useState(INITIAL_FIRST_BOX_GATE);
   const [privacyBlocked, setPrivacyBlocked] = useState(false);
@@ -2687,6 +2695,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (bridge == null) return;
     let active = true;
     const observeAccount = (status: CursorAuthStatus) => {
+      if (status.kind === "logging-in" && accountRef.current?.kind === "logged-in") return;
       accountObservationGenerationRef.current += 1;
       const identity = status.kind === "logged-in" ? `logged-in:${status.authId ?? status.email ?? "account"}` : status.kind;
       const identityChanged = accountIdentityRef.current != null && accountIdentityRef.current !== identity;
@@ -2742,7 +2751,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         setAsyncTasksAgentId(null);
         asyncTasksReturnFocusRef.current = null;
       }
-      setAccount(status);
+      applyAccountStatus(status);
       if (identityChanged) void bridge.onboarding.getSeen().then((seen) => resolveOnboarding(status, seen)).catch(() => {});
     };
     const initialAccountObservationGeneration = accountObservationGenerationRef.current;
@@ -2777,7 +2786,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     applyRootShellTheme(bridge.theme.initial.resolved);
     void bridge.deepLinksReady().catch((error: unknown) => setNotice(error instanceof Error ? error.message : String(error)));
     return () => { active = false; stopAccount(); stopTheme(); themeInstaller?.dispose(); stopWindow(); stopFocus(); stopDeepLink(); stopOnboarding(); stopSkip(); stopFeedback(); stopAbout(); };
-  }, [bridge, client, groupMembersRoot, localToolPermissionScopeGate, openAgent, resolveOnboarding, selectionStore, sharedRoomProvider]);
+  }, [applyAccountStatus, bridge, client, groupMembersRoot, localToolPermissionScopeGate, openAgent, resolveOnboarding, selectionStore, sharedRoomProvider]);
 
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L537
   useEffect(() => {
@@ -3423,7 +3432,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L132101-L132102
   return (
-    <div className="sand-shell" data-empty={activeAgent == null ? true : undefined} data-loading={showRootLoading || undefined} data-runtime={bridge == null ? "browser" : "electron"} data-theme={RUNTIME_THEME_CLASS[resolvedTheme]} style={{ height: "100%", position: "relative", width: "100%" }}>
+    <div className="sand-shell" data-agent-root-shell="true" data-empty={activeAgent == null ? true : undefined} data-loading={showRootLoading || undefined} data-product-shell="agent" data-runtime={bridge == null ? "browser" : "electron"} data-theme={RUNTIME_THEME_CLASS[resolvedTheme]} data-testid="messenger-workspace" style={{ height: "100%", position: "relative", width: "100%" }}>
       <WorkspaceIndicator isFullscreen={windowFullscreen} label={workspaceRoute == null ? activeAgent?.name ?? null : null} />
       {bridge == null ? null : <WindowStatusBadge isFullscreen={windowFullscreen} transport={transport} />}
       <RootShellNotificationHost bridge={bridge} client={client} />
@@ -3681,7 +3690,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         bridge={bridge}
         isVisible={accessCoverComposition.isVisible}
       /> : null}
-      {showSignIn && bridge != null && account != null ? <SignInLanding account={account} bridge={bridge} onStatus={setAccount} /> : null}
+      {showSignIn && bridge != null && account != null ? <SignInLanding account={account} bridge={bridge} onStatus={applyAccountStatus} /> : null}
       {onboardingOpen && account?.kind === "logged-in" && bridge != null ? <SignedInOnboarding
         accountSlot={account.authId ?? account.email ?? "account"}
         bridge={bridge}
