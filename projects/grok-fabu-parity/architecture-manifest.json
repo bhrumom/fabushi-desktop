@@ -13837,7 +13837,7 @@
       "targetPath": "source/host/src/gateway_command_error.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "1bc4d7e52095ca94db6e4ce74fa399cf6278b7c8",
       "architecturalRole": "host/gateway-command-error",
       "processOrPackage": "mahayana-host",
@@ -13851,7 +13851,8 @@
         "source/host/tests/gateway_server_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Grok gateway command error classification is now a dedicated Rust Host module. The shipping GatewayServer owns GatewayCommandError from this module, classifies server failures before telemetry handoff, and the shipping Host process logs reason/errorClass/errno together with request/trace context. Final is withheld until this exact HEAD passes the Rust desktop runtime workflow."
+      "notes": "Final parity: the dedicated Rust Host classifier is owned by the shipping GatewayServer, emits reason/errorClass/errno with request/trace context from the shipping Host process, and its gateway command/server contracts passed on exact implementation HEAD 25cf9e3913b33acb2a0b0beb3aa03f25fcff99d2 in Rust desktop runtime run 35804870494.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/gateway-config.ts",
@@ -15844,7 +15845,7 @@
       "targetPath": "source/host/src/storage/sqlite_busy.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "df90977272430df8a248897e4afbe07a5536478e",
       "architecturalRole": "host/storage",
       "processOrPackage": "mahayana-host",
@@ -15856,14 +15857,15 @@
         "source/host/tests/host_storage_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust port preserves SQLite primary/extended-code and message classification plus bounded exponential busy retry with injectable delay. The shipping conversation-blob DB consumes these classifiers for sidecar-related reopen decisions. Final is withheld until the new exact-HEAD Rust desktop runtime run succeeds."
+      "notes": "Final parity: the Rust Host preserves SQLite primary/extended-code and message classification plus bounded exponential busy retry with injectable delay; the shipping conversation-blob DB consumes the classifier and host_storage_contract passed on exact implementation HEAD 25cf9e3913b33acb2a0b0beb3aa03f25fcff99d2 in Rust desktop runtime run 35804870494.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/storage/sqlite-recovery.ts",
       "targetPath": "source/host/src/storage/sqlite_recovery.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "1f67924404b2ba32235407061d636cf4763694fe",
       "architecturalRole": "host/storage",
       "processOrPackage": "mahayana-host",
@@ -15875,7 +15877,8 @@
         "source/host/tests/host_storage_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust port implements force/retry removal, sidecar cleanup, corrupt DB quarantine with rename/copy fallback, salvage open, and row-by-row salvage. Production conversation-blob recovery uses the shared sidecar cleanup path. Final is withheld until exact-HEAD Rust desktop runtime verification succeeds."
+      "notes": "Final parity: the Rust Host implements force/retry removal, sidecar cleanup, corrupt DB quarantine with rename/copy fallback, salvage open and row-by-row salvage; production conversation-blob recovery consumes the shared path and host_storage_contract passed on exact implementation HEAD 25cf9e3913b33acb2a0b0beb3aa03f25fcff99d2 in Rust desktop runtime run 35804870494.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/storage/store-db.ts",
