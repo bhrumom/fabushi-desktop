@@ -1,8 +1,10 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use mahayana_host_runtime::extensions::session::session_store_factories::{
-    NO_SESSION_MEMORY, automation_store_for_db_path, automation_store_location_for_db_path,
-    channel_store_for_db_path, workflow_store_for_db_path, workflow_store_locations_for_db_path,
+    NO_SESSION_MEMORY, automation_store_for_db_path, automation_store_for_db_path_with_time_zone_resolver,
+    automation_store_location_for_db_path, channel_store_for_db_path, workflow_store_for_db_path,
+    workflow_store_for_db_path_with_time_zone_resolver, workflow_store_locations_for_db_path,
 };
 
 #[test]
@@ -49,4 +51,24 @@ fn no_session_memory_matches_frozen_unavailable_store_contract() {
     assert!(!memory.remove_memory());
     memory.clear_memories();
     assert!(!NO_SESSION_MEMORY.agent_has_content(Path::new("/tmp/agent")));
+}
+
+
+#[test]
+fn timezone_resolver_is_forwarded_to_automation_and_workflow_stores() {
+    let db = Path::new("/tmp/sand/agents/agent-a/store.db");
+    let resolver = Arc::new(|| Some("America/Los_Angeles".to_string()));
+    let automation =
+        automation_store_for_db_path_with_time_zone_resolver(db, resolver.clone());
+    assert_eq!(
+        automation.resolved_user_time_zone().as_deref(),
+        Some("America/Los_Angeles")
+    );
+
+    let workflow =
+        workflow_store_for_db_path_with_time_zone_resolver(db, resolver);
+    assert_eq!(
+        workflow.automations.resolved_user_time_zone().as_deref(),
+        Some("America/Los_Angeles")
+    );
 }

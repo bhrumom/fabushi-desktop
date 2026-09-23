@@ -1,14 +1,15 @@
-use std::fs;use std::path::{Path,PathBuf};use std::time::{SystemTime,UNIX_EPOCH};
+use std::fs;use std::path::{Path,PathBuf};use std::sync::Arc;use std::time::{SystemTime,UNIX_EPOCH};
 use serde_json::json;
 use crate::agents::agent_workflow_enablement::AgentWorkflowEnablement;
 use crate::automations::automation::{AutomationRecord,AutomationSpec};
-use crate::automations::automation_store::{FileAutomationStore,get_agent_automations_dir};
+use crate::automations::automation_store::{FileAutomationStore,UserTimeZoneResolver,get_agent_automations_dir};
 use super::workflow_library::{GlobalWorkflowLibrary,GlobalWorkflowRecord,LEGACY_WORKFLOW_FILENAME,WorkflowSpec,WorkflowTrigger,clamp_workflow_body,clamp_workflow_name,parse_workflow_file};
 pub const LEGACY_WORKFLOWS_DIRNAME:&str="workflows";
 #[derive(Debug,Clone,PartialEq)]pub struct WorkflowRecord{pub id:String,pub name:String,pub description:String,pub body:String,pub trigger:Option<WorkflowTrigger>,pub source:String,pub source_ref:Option<String>,pub is_enabled_for_agent:bool,pub created_at:f64,pub last_run_at:Option<f64>,pub next_run_at:Option<f64>,pub helper_scripts:Vec<String>,pub file_path:PathBuf}
 pub struct FileWorkflowStore{agent_dir:PathBuf,pub library:GlobalWorkflowLibrary,pub enablement:AgentWorkflowEnablement,pub automations:FileAutomationStore}
 impl FileWorkflowStore{
- pub fn new(agent_dir:impl Into<PathBuf>,global_dir:impl Into<PathBuf>)->Self{let agent_dir=agent_dir.into();let v=Self{library:GlobalWorkflowLibrary::new(global_dir),enablement:AgentWorkflowEnablement::new(agent_dir.clone()),automations:FileAutomationStore::new(get_agent_automations_dir(&agent_dir)),agent_dir};v.migrate_legacy_per_agent_workflows();v}
+ pub fn new(agent_dir:impl Into<PathBuf>,global_dir:impl Into<PathBuf>)->Self{Self::with_user_time_zone_resolver(agent_dir,global_dir,Arc::new(||None))}
+ pub fn with_user_time_zone_resolver(agent_dir:impl Into<PathBuf>,global_dir:impl Into<PathBuf>,resolve_user_time_zone:UserTimeZoneResolver)->Self{let agent_dir=agent_dir.into();let v=Self{library:GlobalWorkflowLibrary::new(global_dir),enablement:AgentWorkflowEnablement::new(agent_dir.clone()),automations:FileAutomationStore::with_user_time_zone_resolver(get_agent_automations_dir(&agent_dir),resolve_user_time_zone),agent_dir};v.migrate_legacy_per_agent_workflows();v}
  pub fn get_location(&self)->&Path{self.library.get_location()}
  fn skill_to_workflow(&self,r:GlobalWorkflowRecord)->WorkflowRecord{WorkflowRecord{id:r.id.clone(),name:r.name,description:r.description,body:r.body,trigger:None,source:"workflow".into(),source_ref:r.source_ref,is_enabled_for_agent:self.enablement.is_enabled(&r.id),created_at:r.created_at,last_run_at:None,next_run_at:None,helper_scripts:r.helper_scripts,file_path:r.file_path}}
  fn automation_to_workflow(&self,a:AutomationRecord)->WorkflowRecord{WorkflowRecord{id:a.id,name:a.name,description:String::new(),body:a.prompt,trigger:Some(WorkflowTrigger{schedule:a.schedule,is_enabled:a.is_enabled}),source:"automation".into(),source_ref:None,is_enabled_for_agent:true,created_at:a.created_at,last_run_at:a.last_run_at,next_run_at:a.next_run_at,helper_scripts:Vec::new(),file_path:a.file_path}}

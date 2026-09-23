@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-use crate::automations::automation_store::{FileAutomationStore, get_agent_automations_dir};
+use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, get_agent_automations_dir};
 use crate::workflows::workflow_store::FileWorkflowStore;
 use super::channel_store::{FileChannelStore, get_agent_channels_dir};
 
@@ -78,7 +78,17 @@ pub fn automation_store_location_for_db_path(db_path: &Path) -> PathBuf {
 }
 
 pub fn automation_store_for_db_path(db_path: &Path) -> FileAutomationStore {
-    FileAutomationStore::new(get_agent_automations_dir(agent_dir_for_db_path(db_path)))
+    automation_store_for_db_path_with_time_zone_resolver(db_path, std::sync::Arc::new(|| None))
+}
+
+pub fn automation_store_for_db_path_with_time_zone_resolver(
+    db_path: &Path,
+    resolve_user_time_zone: UserTimeZoneResolver,
+) -> FileAutomationStore {
+    FileAutomationStore::with_user_time_zone_resolver(
+        get_agent_automations_dir(agent_dir_for_db_path(db_path)),
+        resolve_user_time_zone,
+    )
 }
 
 pub fn workflow_store_locations_for_db_path(db_path: &Path) -> WorkflowStoreLocations {
@@ -95,8 +105,19 @@ pub fn workflow_store_locations_for_db_path(db_path: &Path) -> WorkflowStoreLoca
 }
 
 pub fn workflow_store_for_db_path(db_path: &Path) -> FileWorkflowStore {
+    workflow_store_for_db_path_with_time_zone_resolver(db_path, std::sync::Arc::new(|| None))
+}
+
+pub fn workflow_store_for_db_path_with_time_zone_resolver(
+    db_path: &Path,
+    resolve_user_time_zone: UserTimeZoneResolver,
+) -> FileWorkflowStore {
     let locations = workflow_store_locations_for_db_path(db_path);
-    FileWorkflowStore::new(locations.agent_dir, locations.global_workflows_dir)
+    FileWorkflowStore::with_user_time_zone_resolver(
+        locations.agent_dir,
+        locations.global_workflows_dir,
+        resolve_user_time_zone,
+    )
 }
 
 pub fn channel_store_for_db_path(db_path: &Path) -> FileChannelStore {

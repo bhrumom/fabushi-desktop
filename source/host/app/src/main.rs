@@ -22,6 +22,7 @@ use mahayana_host_runtime::extensions::box_lifecycle::production::{
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::box_handoff_service::BoxHandoffDeps;
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
+use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
     persist_accepted_send_prompt,
@@ -1082,9 +1083,13 @@ fn main() {
             Arc::clone(&production_extensions.team_rules),
             app_data_dir.join("transcripts"),
         ));
+    let settings_extension = start_settings_extension();
+    let settings_for_session = Arc::clone(&settings_extension);
     let session_extension = start_session_extension(
         Arc::clone(&production_extensions.experiments),
-        Arc::new(ProductionSessionWorkers::production()),
+        Arc::new(ProductionSessionWorkers::production_with_user_time_zone_resolver(
+            Arc::new(move || settings_for_session.get_user_time_zone()),
+        )),
         BoxHandoffDeps::default(),
     );
     let session_workers = session_extension.store();

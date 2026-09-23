@@ -7,6 +7,7 @@ pub mod turn_execution;
 pub mod local_exec;
 
 pub mod session;
+pub mod settings;
 pub mod memory;
 pub mod box_store_sync;
 pub mod cloud_agents;

@@ -9488,15 +9488,20 @@
         "source/host/src/automations/automation_store.rs",
         "source/host/src/extensions/session/session_store_factories.rs",
         "source/host/src/extensions/session/production.rs",
-        "source/host/src/extensions/session/session_roster.rs"
+        "source/host/src/extensions/session/session_roster.rs",
+        "source/host/src/automations/automation_schedule.rs",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/automation_store_contract.rs",
         "source/host/tests/session_store_factories_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/automation_schedule_contract.rs",
+        "source/host/tests/settings_service_contract.rs"
       ],
-      "notes": "Rust FileAutomationStore owns on-disk automation.json/runs.json parsing, validation, atomic CRUD, unique ids, enablement, notices and bounded run history. Shipping Session creates it through the dbPath factory and roster recovery now treats valid automations as a durable footprint. Final is withheld for filesystem watcher/debounce and timezone-aware nextRunAt scheduling."
+      "notes": "Rust FileAutomationStore owns on-disk automation.json/runs.json parsing, validation, atomic CRUD, unique ids, enablement, notices and bounded run history. Shipping Session creates it through the dbPath factory. Timezone-aware nextRunAt now covers frozen @every/cron/alias/CRON_TZ behavior and consumes the live SettingsService resolver; list/get derive next-run while listDefinitions does not. Final remains withheld for frozen filesystem watcher/debounce semantics and any remaining schedule edge-case parity."
     },
     {
       "referencePath": "source/host/automations/automation-trigger.ts",
@@ -12373,17 +12378,20 @@
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/session/box_handoff_service.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/extensions/session/session_maintenance.rs"
+        "source/host/src/extensions/session/session_maintenance.rs",
+        "source/host/src/extensions/settings/settings_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_extension_contract.rs",
         "source/host/tests/box_handoff_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/session_maintenance_contract.rs"
+        "source/host/tests/session_maintenance_contract.rs",
+        "source/host/tests/settings_service_contract.rs",
+        "source/host/tests/session_store_factories_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust SessionExtension owns the production Session store, Box handoff lifetime and live experiment pins. Startup now runs frozen legacy members-directory cleanup through the Session maintenance task runner before exposing the extension. Final remains withheld until settings/time-zone and dynamic-config size-limit readers plus real Computer/telemetry handoff dependencies are injected."
+      "notes": "Shipping Rust SessionExtension owns the production Session store, Box handoff lifetime and live experiment pins. Startup now runs frozen legacy members-directory cleanup through the Session maintenance task runner before exposing the extension. Shipping Session now consumes the live SettingsService timezone resolver for automation/workflow composition. Final remains withheld until dynamic-config size-limit readers and real Computer/telemetry handoff dependencies are injected."
     },
     {
       "referencePath": "source/host/extensions/session/pending-card-sweeps.ts",
@@ -12439,7 +12447,9 @@
         "source/host/src/workflows/workflow_store.rs",
         "source/host/src/workflows/workflow_library.rs",
         "source/host/src/extensions/session/session_summaries.rs",
-        "source/host/src/agents/agent_avatar.rs"
+        "source/host/src/agents/agent_avatar.rs",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/src/automations/automation_schedule.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12463,9 +12473,12 @@
         "source/host/tests/agent_clone_contract.rs",
         "source/host/tests/automation_store_contract.rs",
         "source/host/tests/workflow_store_contract.rs",
-        "source/host/tests/session_summaries_roster_contract.rs"
+        "source/host/tests/session_summaries_roster_contract.rs",
+        "source/host/tests/settings_service_contract.rs",
+        "source/host/tests/automation_schedule_contract.rs",
+        "source/host/tests/session_store_factories_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels, automations, workflows and roster. Shipping Session now also owns frozen cap-time pruned-placeholder reclaim and fallback-session adoption through the same mint critical section, preserving the active agent and closing DB/blob owners before reclaim. Remaining parity is memory composition, box handoff production deps, watcher/cross-extension cleanup and the remaining Session facade lifecycle features. Production roster/summary now also projects the canonical cached avatar data URL/version from the Rust avatar owner instead of leaving the frozen readAvatar hook unwired."
+      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels, automations, workflows and roster. Shipping Session now also owns frozen cap-time pruned-placeholder reclaim and fallback-session adoption through the same mint critical section, preserving the active agent and closing DB/blob owners before reclaim. Remaining parity is memory composition, box handoff production deps, watcher/cross-extension cleanup and the remaining Session facade lifecycle features. Production roster/summary now also projects the canonical cached avatar data URL/version from the Rust avatar owner instead of leaving the frozen readAvatar hook unwired. Shipping Session store factories now receive a live SettingsService timezone resolver; automation/workflow records derive nextRunAt with frozen timezone semantics."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
@@ -12728,28 +12741,31 @@
       "targetPath": "source/host/src/extensions/session/session_store_factories.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "28e7b3603793a6b4ecc0ac0c888da920a2d8f5c4",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/session/session_store_factories.rs",
         "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/app/src/main.rs",
         "source/host/src/extensions/session/channel_store.rs",
         "source/host/src/automations/automation_store.rs",
-        "source/host/src/workflows/workflow_store.rs",
-        "source/host/src/workflows/workflow_library.rs"
+        "source/host/src/workflows/workflow_store.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_store_factories_contract.rs",
+        "source/host/tests/automation_schedule_contract.rs",
+        "source/host/tests/settings_service_contract.rs",
         "source/host/tests/channel_store_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/automation_store_contract.rs",
-        "source/host/tests/workflow_store_contract.rs"
+        "source/host/tests/workflow_store_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Session factory owner now preserves the frozen dbPath→agentDir automations/channels locations, agentDir→sandRoot global-workflows location, NO_SESSION_MEMORY unavailable-store semantics, and the shipping ProductionSessionWorkers channel store is created through this factory. Final is withheld because FileAutomationStore/FileWorkflowStore and timezone-aware automation/workflow composition do not yet have Rust production owners. Production automation durable-footprint composition is now Rust-owned: dbPath factories create FileAutomationStore and roster/recovery/summary preserve agents with valid routine definitions even when store.db is missing. Production workflow durable-footprint composition is now Rust-owned: Session constructs FileWorkflowStore, migrates legacy per-agent workflows, projects routine-backed workflows, and roster recovery preserves workflow-bearing agents without store.db."
+      "notes": "Frozen Session store-factory contract is fully mapped in Rust: dbPath→agentDir automation/channel paths, agentDir→sandRoot global workflow path, unavailable NO_SESSION_MEMORY semantics, and resolveUserTimeZone forwarding into both automation and workflow stores. Shipping Host SettingsService supplies the live resolver through ProductionSessionWorkers."
     },
     {
       "referencePath": "source/host/extensions/session/session-summaries.ts",
@@ -12785,24 +12801,43 @@
       "targetPath": "source/host/src/extensions/settings/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "1dd8525934550481b41b31f8e02c9e599343d17f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/settings/extension.rs",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/settings_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust Settings extension now has the frozen extension identity/dependency boundary and a shipping Host-owned SettingsService instance. Final is withheld until the full SettingsService surface is ported and all dependent Host extensions consume it through extension composition instead of only the Session timezone path."
     },
     {
       "referencePath": "source/host/extensions/settings/settings-service.ts",
       "targetPath": "source/host/src/extensions/settings/settings_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "160658a5b81320d002fd76e53f988b2f52ffc703",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/settings_service_contract.rs",
+        "source/host/tests/session_store_factories_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Real Rust production slice of frozen SettingsService: canonical settings.json ownership, IANA timezone validation, detected/override precedence, atomic unknown-field-preserving persistence, effective-timezone subscriptions and generic change notifications. Shipping Host starts the settings owner and injects a live resolver into Session automation/workflow stores. Final is withheld for the remaining notification/MCP/model/auto-review/local-permission/WebAuthn/sidebar/account-scope/inference usage fields and listeners."
     },
     {
       "referencePath": "source/host/extensions/source-map/extension.ts",
@@ -16791,7 +16826,9 @@
         "source/host/src/automations/automation_store.rs",
         "source/host/src/extensions/session/session_store_factories.rs",
         "source/host/src/extensions/session/production.rs",
-        "source/host/src/extensions/session/session_roster.rs"
+        "source/host/src/extensions/session/session_roster.rs",
+        "source/host/src/automations/automation_schedule.rs",
+        "source/host/src/extensions/settings/settings_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/workflow_store_contract.rs",
@@ -16799,9 +16836,11 @@
         "source/host/tests/automation_store_contract.rs",
         "source/host/tests/session_store_factories_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/automation_schedule_contract.rs",
+        "source/host/tests/settings_service_contract.rs"
       ],
-      "notes": "Rust FileWorkflowStore owns user workflow + automation projection, per-agent enablement, CRUD, Markdown/live-source import and legacy per-agent migration. Production Session exposes the factory and roster recovery now treats workflow durable footprint as content. Final is withheld for managed/plugin skill cache aggregation/watchers, published-plugin editing, local-skill port completeness, and timezone-aware automation schedule composition."
+      "notes": "Rust FileWorkflowStore owns user workflow + automation projection, per-agent enablement, CRUD, Markdown/live-source import and legacy per-agent migration. Its embedded automation store now receives the live Session timezone resolver so triggered workflows derive timezone-aware nextRunAt. Final is withheld for managed/plugin skill cache aggregation/watchers, published-plugin editing and local-skill port completeness."
     },
     {
       "referencePath": "source/internal/host-extensions.ts",

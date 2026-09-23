@@ -45,9 +45,10 @@ use super::session_paths::{get_agent_db_path, get_connector_secrets_root};
 use super::connector_secret_store::SandConnectorSecretStore;
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
 use super::session_store_factories::{
-    automation_store_for_db_path, channel_store_for_db_path, workflow_store_for_db_path,
+    automation_store_for_db_path_with_time_zone_resolver, channel_store_for_db_path,
+    workflow_store_for_db_path_with_time_zone_resolver,
 };
-use crate::automations::automation_store::{FileAutomationStore, agent_has_automations};
+use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, agent_has_automations};
 use crate::workflows::workflow_store::{FileWorkflowStore, agent_has_workflows};
 use super::session_maintenance::{
     backfill_transcript_from_outline, clear_stale_checkpoint_roots_once,
@@ -108,20 +109,40 @@ pub struct ProductionSessionWorkers {
     conversation_state: SessionConversationState,
     mint_queue: SessionMintQueue,
     db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
+    user_time_zone_resolver: UserTimeZoneResolver,
     busy_timeout_ms: u64,
 }
 
 impl ProductionSessionWorkers {
     pub fn production() -> Self {
-        Self::with_agents_root(
+        Self::production_with_user_time_zone_resolver(Arc::new(|| None))
+    }
+
+    pub fn production_with_user_time_zone_resolver(
+        user_time_zone_resolver: UserTimeZoneResolver,
+    ) -> Self {
+        Self::with_agents_root_and_user_time_zone_resolver(
             get_sand_agents_root_dir(None),
             PRODUCTION_BLOB_BUSY_TIMEOUT_MS,
+            user_time_zone_resolver,
         )
     }
 
     pub fn with_agents_root(
         agents_root: impl Into<PathBuf>,
         busy_timeout_ms: u64,
+    ) -> Self {
+        Self::with_agents_root_and_user_time_zone_resolver(
+            agents_root,
+            busy_timeout_ms,
+            Arc::new(|| None),
+        )
+    }
+
+    pub fn with_agents_root_and_user_time_zone_resolver(
+        agents_root: impl Into<PathBuf>,
+        busy_timeout_ms: u64,
+        user_time_zone_resolver: UserTimeZoneResolver,
     ) -> Self {
         Self {
             agents_root: agents_root.into(),
@@ -132,6 +153,7 @@ impl ProductionSessionWorkers {
             conversation_state: SessionConversationState::new(busy_timeout_ms),
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
+            user_time_zone_resolver,
             busy_timeout_ms,
         }
     }
@@ -383,7 +405,10 @@ impl ProductionSessionWorkers {
 
     pub fn open_automation_store(&self, agent_id: &str) -> Result<FileAutomationStore, String> {
         let db_path = self.session_db_path(agent_id)?;
-        Ok(automation_store_for_db_path(&db_path))
+        Ok(automation_store_for_db_path_with_time_zone_resolver(
+            &db_path,
+            Arc::clone(&self.user_time_zone_resolver),
+        ))
     }
 
     pub fn agent_has_automations(&self, agent_id: &str) -> Result<bool, String> {
@@ -396,7 +421,10 @@ impl ProductionSessionWorkers {
 
     pub fn open_workflow_store(&self, agent_id: &str) -> Result<FileWorkflowStore, String> {
         let db_path = self.session_db_path(agent_id)?;
-        Ok(workflow_store_for_db_path(&db_path))
+        Ok(workflow_store_for_db_path_with_time_zone_resolver(
+            &db_path,
+            Arc::clone(&self.user_time_zone_resolver),
+        ))
     }
 
     pub fn agent_has_workflows(&self, agent_id: &str) -> Result<bool, String> {
