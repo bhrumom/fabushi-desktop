@@ -1198,9 +1198,9 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(transcript.getByText('attachment-only.txt')).toBeVisible();
 
       await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
-      const palette = page.getByRole('dialog', { name: 'Command palette' });
+      const palette = page.getByRole('dialog', { name: 'Search' });
       await expect(palette).toBeVisible();
-      await page.getByPlaceholder('Search agents or run a command').fill('agent-notes.txt');
+      await palette.getByRole('combobox', { name: 'Search' }).fill('agent-notes.txt');
       await expect(palette.getByText('agent-notes.txt')).toBeVisible();
       await page.keyboard.press('Escape');
     });
