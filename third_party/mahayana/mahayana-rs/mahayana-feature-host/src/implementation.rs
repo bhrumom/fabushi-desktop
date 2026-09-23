@@ -245,6 +245,8 @@ struct FeatureState {
     pending_approvals: BTreeMap<String, PendingApproval>,
     operations: BTreeSet<String>,
     operation_agents: BTreeMap<String, String>,
+    operation_client_nonces: BTreeMap<String, String>,
+    grok_transcripts: BTreeMap<String, Vec<Value>>,
     background_operations: BTreeMap<String, BackgroundOperationContext>,
     remote_computer_sessions: BTreeMap<String, RemoteComputerLocalSession>,
     remote_computer_device_secrets: BTreeMap<String, String>,
@@ -277,6 +279,8 @@ impl Default for FeatureState {
             pending_approvals: BTreeMap::new(),
             operations: BTreeSet::new(),
             operation_agents: BTreeMap::new(),
+            operation_client_nonces: BTreeMap::new(),
+            grok_transcripts: BTreeMap::new(),
             background_operations: BTreeMap::new(),
             remote_computer_sessions: BTreeMap::new(),
             remote_computer_device_secrets: BTreeMap::new(),
@@ -6322,6 +6326,369 @@ impl FeatureHostController {
         Ok(matching_ids.len())
     }
 
+
+    /// Transitional Grok Host gateway adapter used by the shipping Host process while
+    /// Session/Transcript parity is moved into source/host. It deliberately reuses the
+    /// existing FeatureHost-owned Bot/runtime state instead of creating a second Agent
+    /// runtime. Callers treat None as "not owned by this compatibility adapter".
+    pub fn grok_gateway_call(
+        &self,
+        method: &str,
+        args: Value,
+    ) -> Result<Option<Value>, FeatureHostError> {
+        match method {
+            "listAgents" => {
+                let state = self.state()?;
+                let agents = state
+                    .bots
+                    .values()
+                    .map(project_grok_agent)
+                    .collect::<Vec<_>>();
+                Ok(Some(Value::Array(agents)))
+            }
+            "countAgents" => Ok(Some(json!(self.state()?.bots.len()))),
+            "createAgent" => {
+                let name = args
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                    .unwrap_or("New chat");
+                let description = args
+                    .get("description")
+                    .and_then(Value::as_str)
+                    .unwrap_or("");
+                let command: FeatureCommand = serde_json::from_value(json!({
+                    "type": "bot.create",
+                    "requestId": format!("grok-create-agent-{}", now_millis()),
+                    "name": name,
+                    "description": description,
+                }))
+                .map_err(|error| FeatureHostError::Contract(format!(
+                    "invalid createAgent compatibility request: {error}"
+                )))?;
+                self.execute(command)?;
+                let state = self.state()?;
+                let id = format!("agent-{}", state.sequence);
+                let bot = state.bots.get(&id).ok_or_else(|| {
+                    FeatureHostError::Contract(
+                        "createAgent completed without a FeatureHost Bot projection".into(),
+                    )
+                })?;
+                Ok(Some(json!({ "agent": project_grok_agent(bot) })))
+            }
+            "updateAgent" => {
+                let requested_id = args
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                    .ok_or_else(|| FeatureHostError::Contract(
+                        "updateAgent requires id".into(),
+                    ))?;
+                let surface_id = {
+                    let state = self.state()?;
+                    find_bot_by_runtime_or_surface_id(&state, requested_id)
+                        .map(|bot| bot.id.clone())
+                        .ok_or_else(|| FeatureHostError::Contract(format!(
+                            "unknown Agent: {requested_id}"
+                        )))?
+                };
+                let profile = args.get("profile").and_then(Value::as_object);
+                let mut command = json!({
+                    "type": "bot.update",
+                    "requestId": format!("grok-update-agent-{}", now_millis()),
+                    "id": surface_id,
+                });
+                if let Some(profile) = profile {
+                    for field in [
+                        "name",
+                        "description",
+                        "title",
+                        "avatarShape",
+                        "avatarColor",
+                        "notificationsEnabled",
+                        "notifyOnUpdates",
+                        "unread",
+                    ] {
+                        if let Some(value) = profile.get(field) {
+                            command[field] = value.clone();
+                        }
+                    }
+                    if let Some(value) = profile.get("avatarDataUrl") {
+                        command["avatar"] = value.clone();
+                    }
+                }
+                let command: FeatureCommand = serde_json::from_value(command)
+                    .map_err(|error| FeatureHostError::Contract(format!(
+                        "invalid updateAgent compatibility request: {error}"
+                    )))?;
+                self.execute(command)?;
+                let state = self.state()?;
+                let bot = state.bots.get(&surface_id).ok_or_else(|| {
+                    FeatureHostError::Contract(format!("unknown Agent after update: {surface_id}"))
+                })?;
+                Ok(Some(project_grok_agent(bot)))
+            }
+            "setAgentHiddenFromSidebar" => {
+                let requested_id = args
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                    .ok_or_else(|| FeatureHostError::Contract(
+                        "setAgentHiddenFromSidebar requires id".into(),
+                    ))?;
+                let hidden = args
+                    .get("isHidden")
+                    .or_else(|| args.get("hidden"))
+                    .and_then(Value::as_bool)
+                    .ok_or_else(|| FeatureHostError::Contract(
+                        "setAgentHiddenFromSidebar requires isHidden".into(),
+                    ))?;
+                let surface_id = {
+                    let state = self.state()?;
+                    find_bot_by_runtime_or_surface_id(&state, requested_id)
+                        .map(|bot| bot.id.clone())
+                        .ok_or_else(|| FeatureHostError::Contract(format!(
+                            "unknown Agent: {requested_id}"
+                        )))?
+                };
+                let command: FeatureCommand = serde_json::from_value(json!({
+                    "type": "bot.setHidden",
+                    "requestId": format!("grok-hide-agent-{}", now_millis()),
+                    "id": surface_id,
+                    "hidden": hidden,
+                }))
+                .map_err(|error| FeatureHostError::Contract(format!(
+                    "invalid hide-Agent compatibility request: {error}"
+                )))?;
+                self.execute(command)?;
+                Ok(Some(Value::Bool(true)))
+            }
+            "openAgent"
+            | "openAgentTail"
+            | "getAgentTranscriptTail"
+            | "getAgentTranscriptWindow" => {
+                let requested_id = args
+                    .get("id")
+                    .or_else(|| args.get("agentId"))
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                    .ok_or_else(|| FeatureHostError::Contract(format!(
+                        "{method} requires id"
+                    )))?;
+                let limit = args
+                    .get("limit")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(200)
+                    .clamp(1, 2000) as usize;
+                Ok(Some(self.grok_transcript_page(requested_id, limit)?))
+            }
+            "sendPrompt" => {
+                let agent_id = args
+                    .get("agentId")
+                    .or_else(|| args.get("id"))
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                    .ok_or_else(|| FeatureHostError::Contract(
+                        "sendPrompt requires agentId".into(),
+                    ))?
+                    .to_string();
+                let prompt = args
+                    .get("prompt")
+                    .or_else(|| args.get("text"))
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                    .ok_or_else(|| FeatureHostError::Contract(
+                        "sendPrompt requires prompt".into(),
+                    ))?
+                    .to_string();
+                let client_nonce = args
+                    .get("clientNonce")
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                    .map(str::to_string);
+                let conversation_id = {
+                    let state = self.state()?;
+                    find_bot_by_runtime_or_surface_id(&state, &agent_id)
+                        .and_then(|bot| bot.conversation_id.clone())
+                };
+                let command: FeatureCommand = serde_json::from_value(json!({
+                    "type": "chat.send",
+                    "requestId": format!("grok-send-prompt-{}", now_millis()),
+                    "text": prompt,
+                    "agentId": agent_id,
+                    "conversationId": conversation_id,
+                    "clientMessageId": client_nonce,
+                }))
+                .map_err(|error| FeatureHostError::Contract(format!(
+                    "invalid sendPrompt compatibility request: {error}"
+                )))?;
+                let accepted = self.execute(command)?;
+                Ok(Some(json!({
+                    "accepted": true,
+                    "operationId": accepted.operation_id,
+                    "clientNonce": client_nonce,
+                })))
+            }
+            _ => Ok(None),
+        }
+    }
+
+    fn grok_transcript_page(
+        &self,
+        requested_id: &str,
+        limit: usize,
+    ) -> Result<Value, FeatureHostError> {
+        let (surface_id, conversation_id) = {
+            let state = self.state()?;
+            let bot = find_bot_by_runtime_or_surface_id(&state, requested_id)
+                .ok_or_else(|| FeatureHostError::Contract(format!(
+                    "unknown Agent: {requested_id}"
+                )))?;
+            (bot.id.clone(), bot.conversation_id.clone())
+        };
+        match self.config.mode {
+            HostMode::Test => {
+                let state = self.state()?;
+                let entries = state
+                    .grok_transcripts
+                    .get(&surface_id)
+                    .or_else(|| state.grok_transcripts.get(requested_id))
+                    .map(|entries| {
+                        let start = entries.len().saturating_sub(limit);
+                        entries[start..].to_vec()
+                    })
+                    .unwrap_or_default();
+                Ok(json!({ "entries": entries }))
+            }
+            HostMode::Production => {
+                #[cfg(feature = "production")]
+                {
+                    self.require_authenticated_account()?;
+                    let conversation_id = conversation_id
+                        .unwrap_or_else(|| format!("codex:agent:{requested_id}"));
+                    let messages = match self.runtime()?.execute(
+                        RuntimeCommand::ConversationHistory {
+                            conversation_id: ConversationId(conversation_id),
+                            limit: Some(limit),
+                        },
+                    )? {
+                        RuntimeResponse::History { data } => data,
+                        other => {
+                            return Err(unexpected_response(
+                                "grok transcript compatibility",
+                                other,
+                            ))
+                        }
+                    };
+                    let entries = messages
+                        .into_iter()
+                        .map(|message| {
+                            json!({
+                                "id": message.id.0,
+                                "role": match message.role {
+                                    RuntimeMessageRole::User => "user",
+                                    _ => "assistant",
+                                },
+                                "content": message.text,
+                                "timestampMs": message.created_at_ms,
+                            })
+                        })
+                        .collect::<Vec<_>>();
+                    Ok(json!({ "entries": entries }))
+                }
+                #[cfg(not(feature = "production"))]
+                {
+                    let _ = conversation_id;
+                    Err(FeatureHostError::ProductionUnavailable)
+                }
+            }
+        }
+    }
+
+    /// Project FeatureHost events onto the Grok gateway event families expected
+    /// by the recovered renderer. Events without a Grok equivalent remain raw
+    /// runtime events and are still available to Fabushi extension consumers.
+    pub fn project_grok_gateway_event(&self, event: &Value) -> Value {
+        let Some(kind) = event.get("type").and_then(Value::as_str) else {
+            return event.clone();
+        };
+        match kind {
+            "chat.message" => {
+                let Some(operation_id) = event
+                    .get("operationId")
+                    .and_then(Value::as_str)
+                    .filter(|value| !value.trim().is_empty())
+                else {
+                    return event.clone();
+                };
+                let (agent_id, client_nonce) = self
+                    .state()
+                    .ok()
+                    .and_then(|state| {
+                        state.operation_agents.get(operation_id).cloned().map(|agent_id| {
+                            (
+                                agent_id,
+                                state.operation_client_nonces.get(operation_id).cloned(),
+                            )
+                        })
+                    })
+                    .unwrap_or_else(|| ("mahayana-assistant".into(), None));
+                let role = event
+                    .get("role")
+                    .and_then(Value::as_str)
+                    .unwrap_or("assistant");
+                let mut entry = json!({
+                    "id": format!("{operation_id}:{role}"),
+                    "role": role,
+                    "content": event.get("text").cloned().unwrap_or(Value::String(String::new())),
+                    "timestampMs": now_millis(),
+                });
+                if role == "user" {
+                    if let Some(client_nonce) = client_nonce {
+                        entry["clientNonce"] = Value::String(client_nonce);
+                    }
+                }
+                json!({
+                    "channel": "transcript",
+                    "payload": {
+                        "type": "appended",
+                        "agentId": agent_id,
+                        "entry": entry,
+                    }
+                })
+            }
+            "bot.changed" => {
+                let Some(bot) = event.get("bot").cloned() else {
+                    return event.clone();
+                };
+                serde_json::from_value::<BotSummary>(bot)
+                    .ok()
+                    .map(|bot| json!({
+                        "channel": "agent-upserted",
+                        "payload": project_grok_agent(&bot),
+                    }))
+                    .unwrap_or_else(|| event.clone())
+            }
+            "bot.listed" => {
+                let agents = event
+                    .get("bots")
+                    .and_then(Value::as_array)
+                    .map(|bots| {
+                        bots.iter()
+                            .filter_map(|bot| serde_json::from_value::<BotSummary>(bot.clone()).ok())
+                            .map(|bot| project_grok_agent(&bot))
+                            .collect::<Vec<_>>()
+                    })
+                    .unwrap_or_default();
+                json!({
+                    "channel": "agents",
+                    "payload": { "agents": agents },
+                })
+            }
+            _ => event.clone(),
+        }
+    }
+
     pub fn receive(&self) -> Result<Option<HostEvent>, FeatureHostError> {
         self.receive_with_timeout(Duration::ZERO)
     }
@@ -6615,6 +6982,8 @@ impl FeatureHostController {
             state.pending_approvals.clear();
             state.operations.clear();
             state.operation_agents.clear();
+            state.operation_client_nonces.clear();
+            state.grok_transcripts.clear();
             state.background_operations.clear();
             state.automations = automations;
             state.bots = bots;
@@ -6790,6 +7159,7 @@ impl FeatureHostController {
         let mut state = self.state()?;
         state.operations.remove(operation_id);
         state.operation_agents.remove(operation_id);
+        state.operation_client_nonces.remove(operation_id);
         state.events.push_back(HostEvent::OperationInterrupted {
             timestamp: timestamp(),
             operation_id: operation_id.to_string(),
@@ -7247,6 +7617,7 @@ impl FeatureHostController {
                     let mut state = self.state()?;
                     state.operations.remove(&operation_id);
                     state.operation_agents.remove(&operation_id);
+                    state.operation_client_nonces.remove(&operation_id);
                     Some(HostEvent::OperationCompleted {
                         timestamp: timestamp(),
                         operation_id,
@@ -8064,7 +8435,7 @@ impl FeatureHostController {
         let response = self.runtime()?.execute(RuntimeCommand::SendMessage {
             conversation_id,
             text: runtime_text,
-            client_message_id: client_message_id.or_else(|| Some(request_id.clone())),
+            client_message_id: client_message_id.clone().or_else(|| Some(request_id.clone())),
             retry_of_client_message_id: retry_of_message_id,
             inference_provider: runtime_inference_provider,
             hidden: false,
@@ -8081,6 +8452,14 @@ impl FeatureHostController {
                 .clone()
                 .unwrap_or_else(|| "mahayana-assistant".into()),
         );
+        if let Some(client_nonce) = client_message_id
+            .clone()
+            .filter(|value| !value.trim().is_empty())
+        {
+            state
+                .operation_client_nonces
+                .insert(operation_id.clone(), client_nonce);
+        }
         // The renderer owns optimistic user rows by request id. Once Rust has
         // accepted the turn, every production chat event must carry the
         // authoritative runtime operation id so concurrent Agents can never
@@ -8351,6 +8730,7 @@ impl FeatureHostController {
             FeatureCommand::ChatSend {
                 text,
                 agent_id,
+                client_message_id,
                 mode,
                 model,
                 attachments,
@@ -8358,6 +8738,34 @@ impl FeatureHostController {
             } => {
                 let text = required(text, "chat text")?;
                 let operation_id = next_id(&mut state, "chat");
+                let owner_agent_id = agent_id
+                    .clone()
+                    .filter(|id| !id.trim().is_empty())
+                    .unwrap_or_else(|| "mahayana-assistant".into());
+                state.operations.insert(operation_id.clone());
+                state
+                    .operation_agents
+                    .insert(operation_id.clone(), owner_agent_id.clone());
+                if let Some(client_nonce) = client_message_id
+                    .clone()
+                    .filter(|value| !value.trim().is_empty())
+                {
+                    state
+                        .operation_client_nonces
+                        .insert(operation_id.clone(), client_nonce);
+                }
+                let timestamp_ms = now_millis();
+                state
+                    .grok_transcripts
+                    .entry(owner_agent_id.clone())
+                    .or_default()
+                    .push(json!({
+                        "id": format!("{operation_id}:user"),
+                        "role": "user",
+                        "content": text.clone(),
+                        "timestampMs": timestamp_ms,
+                        "clientNonce": client_message_id.clone(),
+                    }));
                 state.events.push_back(HostEvent::ChatMessage {
                     timestamp: timestamp(),
                     role: MessageRole::User,
@@ -8396,6 +8804,16 @@ impl FeatureHostController {
                     .filter(|id| id != "mahayana-assistant")
                     .map(|id| format!("{id}机器人收到：{text}"))
                     .unwrap_or_else(|| format!("收到：{text}"));
+                state
+                    .grok_transcripts
+                    .entry(owner_agent_id)
+                    .or_default()
+                    .push(json!({
+                        "id": format!("{operation_id}:assistant"),
+                        "role": "assistant",
+                        "content": response_text.clone(),
+                        "timestampMs": timestamp_ms.saturating_add(1),
+                    }));
                 // Exercise the real CJK streaming shape in the deterministic
                 // desktop Host: one visible character can arrive per delta.
                 // The renderer must coalesce these without producing one line
@@ -8614,6 +9032,27 @@ impl FeatureHostController {
             .lock()
             .map_err(|_| FeatureHostError::StatePoisoned)
     }
+}
+
+
+fn project_grok_agent(bot: &BotSummary) -> Value {
+    json!({
+        "id": bot.id.clone(),
+        "name": bot.name.clone(),
+        "description": bot.description.clone(),
+        "title": bot.title.clone(),
+        "avatarDataUrl": bot.avatar.clone(),
+        "avatarShape": bot.avatar_shape.clone(),
+        "avatarColor": bot.avatar_color.clone(),
+        "notificationsEnabled": bot.notifications_enabled,
+        "notifyOnUpdatesEnabled": bot.notify_on_updates,
+        "hasUnread": bot.unread,
+        "unreadCount": if bot.unread { 1 } else { 0 },
+        "isHiddenFromSidebar": bot.hidden,
+        "updatedAt": now_millis(),
+        "createdAt": 0,
+        "isGroup": false,
+    })
 }
 
 fn transcript_cards_from_metadata(metadata: &Value) -> Vec<TranscriptCard> {

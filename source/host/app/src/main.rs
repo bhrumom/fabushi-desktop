@@ -595,6 +595,16 @@ fn dispatch_gateway_call(
     method: &str,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
+    match host.grok_gateway_call(method, args.clone()) {
+        Ok(Some(result)) => return Ok(result),
+        Ok(None) => {}
+        Err(error) => {
+            return Err(GatewayCommandError::Internal(format!(
+                "Mahayana Host Grok compatibility dispatch failed for {method}: {error}"
+            )));
+        }
+    }
+
     if let Some(result) = dispatch_box_environment_call(method, &args, |update| {
         forever_box
             .apply_environment(update)
@@ -804,6 +814,7 @@ fn main() {
     let _event_worker = thread::spawn(move || loop {
         match event_source.receive(Duration::from_secs(30)) {
             Ok(Some(event)) => {
+                let event = event_source.project_grok_gateway_event(&event);
                 if write_runtime_event(&event_stdout, &event_gateway, event).is_err() {
                     break;
                 }

@@ -109,6 +109,10 @@ impl FeatureEventSource {
             })
             .transpose()
     }
+
+    pub fn project_grok_gateway_event(&self, event: &Value) -> Value {
+        self.feature.project_grok_gateway_event(event)
+    }
 }
 
 /// Lightweight platform-only request lane used by desktop. Network-backed
@@ -261,6 +265,16 @@ impl AppHost {
         timeout: Duration,
     ) -> Result<Option<Value>, AppHostError> {
         self.feature_event_source().receive(timeout)
+    }
+
+    pub fn grok_gateway_call(
+        &self,
+        method: &str,
+        args: Value,
+    ) -> Result<Option<Value>, AppHostError> {
+        self.feature
+            .grok_gateway_call(method, args)
+            .map_err(|error| AppHostError::Operation(error.to_string()))
     }
 
     pub fn dispatch(&self, request: HostRequest) -> HostResponse {

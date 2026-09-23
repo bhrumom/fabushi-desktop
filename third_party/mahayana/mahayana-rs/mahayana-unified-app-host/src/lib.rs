@@ -209,6 +209,14 @@ impl UnifiedAppHost {
         self.app.receive_feature_event(timeout)
     }
 
+    pub fn grok_gateway_call(
+        &self,
+        method: &str,
+        args: Value,
+    ) -> Result<Option<Value>, AppHostError> {
+        self.app.grok_gateway_call(method, args)
+    }
+
     pub fn dispatch(&self, request: HostRequest) -> HostResponse {
         if !request.method.starts_with("harness.") {
             return self.app.dispatch(request);
