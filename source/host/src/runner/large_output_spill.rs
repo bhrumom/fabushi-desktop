@@ -88,7 +88,7 @@ pub fn maybe_spill_mcp_text_result(
                 materialized.push(json!({
                     "type": "text",
                     "text": "",
-                    "outputLocation": output_location,
+                    "outputLocation": output_location.clone(),
                 }));
                 emitted = true;
             }
