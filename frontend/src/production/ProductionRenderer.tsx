@@ -918,6 +918,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [transport, setTransport] = useState<TransportState>("connecting");
   const [agents, setAgents] = useState<RendererAgent[]>([]);
   const [pinnedAgentIds, setPinnedAgentIds] = useState<string[]>([]);
+  const [selectedSidebarAgentIds, setSelectedSidebarAgentIds] = useState<string[]>([]);
+  const sidebarSelectionAnchorRef = useRef<string | null>(null);
   const [hasLoadedAgents, setHasLoadedAgents] = useState(false);
   const activeAgentId = useSyncExternalStore(
     selectionStore.subscribe,
@@ -3273,6 +3275,45 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const moveAgentsToNewSection = useCallback((agentIds: readonly string[]) => {
     return sidebarSectionsStore.commands.create(agentIds);
   }, [sidebarSectionsStore]);
+
+  const clearSidebarAgentSelection = useCallback(() => {
+    sidebarSelectionAnchorRef.current = null;
+    setSelectedSidebarAgentIds([]);
+  }, []);
+  const toggleSidebarAgentSelection = useCallback((agentId: string) => {
+    setSelectedSidebarAgentIds((current) => {
+      const next = current.includes(agentId)
+        ? current.filter((candidate) => candidate !== agentId)
+        : [...current, agentId];
+      sidebarSelectionAnchorRef.current = next.length === 0 ? null : agentId;
+      return next;
+    });
+  }, []);
+  const rangeSelectSidebarAgent = useCallback((agentId: string) => {
+    const ordered = visibleAgents.map((agent) => agent.id);
+    const anchorId = sidebarSelectionAnchorRef.current;
+    const anchorIndex = anchorId == null ? -1 : ordered.indexOf(anchorId);
+    const targetIndex = ordered.indexOf(agentId);
+    if (anchorIndex < 0 || targetIndex < 0) {
+      sidebarSelectionAnchorRef.current = agentId;
+      setSelectedSidebarAgentIds([agentId]);
+      return;
+    }
+    const start = Math.min(anchorIndex, targetIndex);
+    const end = Math.max(anchorIndex, targetIndex);
+    const range = ordered.slice(start, end + 1);
+    setSelectedSidebarAgentIds((current) => [...new Set([...current, ...range])]);
+  }, [visibleAgents]);
+  const moveSelectedSidebarAgentsToSection = useCallback((agentIds: readonly string[], sectionId: string) => {
+    moveAgentsToSection(agentIds, sectionId);
+    clearSidebarAgentSelection();
+  }, [clearSidebarAgentSelection, moveAgentsToSection]);
+  const moveSelectedSidebarAgentsToNewSection = useCallback((agentIds: readonly string[]) => {
+    const sectionId = moveAgentsToNewSection(agentIds);
+    if (sectionId != null) clearSidebarAgentSelection();
+    return sectionId;
+  }, [clearSidebarAgentSelection, moveAgentsToNewSection]);
+
   const requestDeleteSection = useCallback((section: { id: string; name: string }, confirmation: SidebarSectionDeleteTarget["confirmation"]) => {
     setDeleteSection({ id: section.id, name: section.name, confirmation });
   }, []);
@@ -3565,7 +3606,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         <div style={{ display: "grid", gridTemplateRows: "minmax(0, 1fr) auto auto auto", minHeight: 0 }}>
           <div style={{ display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", minHeight: 0 }}>
             {connectionController == null ? null : <CoordinatorConnectionHost controller={connectionController} />}
-            <ConversationSidebar activeAgentId={activeAgentId} agents={visibleAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => void duplicateAgent(agentId)} onHideAgent={(agentId) => void hideAgent(agentId)} onNewChat={() => void createAgent()} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={sidebarProfileAction.onSelect} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? openAsyncTasks : undefined} onShowFullConversation={openConversationOutline} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => void renameAgent(agentId, name)} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup })} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => void setAgentUnread(agentId, isUnread)} onTogglePin={toggleAgentPin} />
+            <ConversationSidebar activeAgentId={activeAgentId} agents={visibleAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => void duplicateAgent(agentId)} onHideAgent={(agentId) => void hideAgent(agentId)} onNewChat={() => void createAgent()} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={sidebarProfileAction.onSelect} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? openAsyncTasks : undefined} onShowFullConversation={openConversationOutline} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => void renameAgent(agentId, name)} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup })} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => void setAgentUnread(agentId, isUnread)} onTogglePin={toggleAgentPin} />
           </div>
           {hiddenAgents.length > 0 && visibleAgents.length > 0 ? <SandButton aria-haspopup="dialog" onClick={() => setOverlay("hidden-chats")} size="sm" variant="secondary"><span>{UI_TEXT.hiddenBots}</span><SandBadge aria-label={`${hiddenAgents.length} hidden bots`}>{hiddenAgents.length}</SandBadge></SandButton> : null}
           {/* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2602084 (s0n Plugins footer button/icon/text composition) */}
