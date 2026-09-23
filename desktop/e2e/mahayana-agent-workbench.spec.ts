@@ -139,30 +139,31 @@ async function emitBotInvocationRequested(
 }
 
 async function expectHermesAssistantTurn(page: Page, expectedText: string): Promise<Locator> {
-  const turn = page.getByTestId('mahayana-assistant-turn').last();
-  await expect(turn).toBeVisible({ timeout: 15_000 });
-  await expect(turn).toHaveAttribute('data-status', 'completed', { timeout: 15_000 });
+  const transcript = page.getByRole('log', { name: 'Conversation transcript' });
+  const matchingTurns = transcript.locator('article[data-role="assistant"]').filter({ hasText: expectedText });
+  await expect(matchingTurns).toHaveCount(1, { timeout: 15_000 });
 
-  // Routine success belongs in the normal transcript now. The legacy Workbench
-  // can remain mounted for migration-only exceptional states, but it must not
-  // become the visible success surface again.
+  const turn = matchingTurns.first();
+  await expect(turn).toBeVisible();
+  const message = turn.getByRole('group', { name: 'Agent message' });
+  await expect(message).toBeVisible();
+  const body = message.locator('.sand-message-prose');
+  await expect(body).toContainText(expectedText);
+  await expect(body).not.toContainText('chat-response');
+
+  // Routine success belongs in the recovered Grok transcript. The retired
+  // Mahayana turn/Workbench presentation must not reappear as a parallel
+  // success surface, and no operation-scoped thinking/tool row may remain
+  // pending after the final assistant message has settled.
+  await expect(page.getByTestId('mahayana-assistant-turn')).toHaveCount(0);
   await expect(page.getByTestId('agent-workbench')).toBeHidden();
+  await expect(transcript.locator('[data-kind="thinking"]')).toHaveCount(0);
+  await expect(transcript.locator('[data-kind="tool-call"][data-status="pending"]')).toHaveCount(0);
 
-  await expect.poll(async () => turn.locator('[data-part-kind="reasoning"]').count()).toBeGreaterThanOrEqual(1);
-  await expect(turn.locator('[data-part-kind="reasoning"]').first()).toBeVisible();
-  await expect(turn).not.toContainText('chat-response');
-
-  await expect.poll(async () => turn.locator('[data-part-kind="tool"]').count()).toBeGreaterThanOrEqual(1);
-  await expect.poll(async () => turn.locator('[data-part-kind="tool"][data-status="completed"]').count()).toBeGreaterThanOrEqual(1);
-  const textParts = turn.locator('[data-part-kind="text"]');
-  await expect(textParts.last()).toContainText(expectedText);
-
-  // This fixture ends with one canonical assistant body. Token-sized legacy
-  // deltas must coalesce into that body, and the late final chat.message must
-  // reconcile into it rather than creating another paragraph/reply.
-  await expect(textParts).toHaveCount(1);
-  const body = (await textParts.allTextContents()).join('');
-  expect(body.split(expectedText).length - 1).toBe(1);
+  // Token-sized runtime deltas and the late final message must reconcile into
+  // one canonical assistant body rather than producing duplicate replies.
+  const bodyText = (await body.allTextContents()).join('');
+  expect(bodyText.split(expectedText).length - 1).toBe(1);
   return turn;
 }
 
@@ -191,8 +192,6 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
 
     const turn = await expectHermesAssistantTurn(page, '收到：请分析这个任务');
     await expect(turn).toHaveCount(1);
-    await expect(page.getByTestId('agent-thinking')).toHaveCount(0);
-    await expect(page.getByTestId('agent-run')).toBeHidden();
     await expect(promptInput).toBeVisible();
   } finally {
     await app?.close().catch(() => undefined);
