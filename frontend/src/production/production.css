@@ -338,7 +338,12 @@ button, textarea, input { font: inherit; }
  * The header owns its own drag surface; interactive controls carve no-drag holes.
  */
 .sand-cover-drag {
-  left: var(--fabushi-sidebar-width, 0px);
+  /* The recovered StyleX drag utility carries higher selector specificity and
+   * writes left: 0. This adaptation must win geometrically so the fixed drag
+   * carrier starts after the live Fabushi sidebar rather than covering its
+   * real header controls.
+   */
+  left: var(--fabushi-sidebar-width, 0px) !important;
 }
 .sand-agents-sidebar__header {
   -webkit-app-region: drag;
