@@ -17,8 +17,8 @@ use super::agent_db::{
 };
 use super::conversation_recovery::{
     conversation_structure_fully_resolves, parse_conversation_state_structure,
-    transcript_entry_matches_recovered,
 };
+use super::session_recovery::transcript_entry_matches_recovered;
 
 pub const LEGACY_BLOB_RETIREMENT_VERSION: u64 = 1;
 pub const STALE_ROOT_CLEANUP_VERSION: u64 = 1;
