@@ -43,6 +43,12 @@ use super::pending_card_sweeps::{
 };
 use super::session_roster::{list_agents, summarize_agent_by_id};
 use super::session_summaries::AgentSummary;
+use super::session_profile_files::{
+    AgentAvatarResponse, AgentProfileUpdate, get_agent_avatar as get_profile_avatar,
+    get_agent_avatar_png as get_profile_avatar_png,
+    get_agent_profile_text as read_agent_profile_text, write_agent_profile_update,
+};
+use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_bytes;
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
@@ -435,6 +441,73 @@ impl ProductionSessionWorkers {
             if_pending_before_ms,
         )
         .map_err(|error| error.to_string())
+    }
+
+    pub fn get_agent_profile_text(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<SandAgentProfile>, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        let agent_dir = db_path
+            .parent()
+            .ok_or_else(|| "agent database has no parent directory".to_string())?;
+        Ok(read_agent_profile_text(agent_dir))
+    }
+
+    pub fn update_agent_profile(
+        &self,
+        agent_id: &str,
+        update: &AgentProfileUpdate,
+        active_agent_id: Option<&str>,
+    ) -> Result<Option<AgentSummary>, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        let agent_dir = db_path
+            .parent()
+            .ok_or_else(|| "agent database has no parent directory".to_string())?;
+        write_agent_profile_update(agent_dir, update)
+            .map_err(|error| error.to_string())?;
+        self.summarize_agent_by_id(agent_id, active_agent_id)
+    }
+
+    pub fn get_agent_avatar(
+        &self,
+        agent_id: &str,
+    ) -> Result<AgentAvatarResponse, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        let agent_dir = db_path
+            .parent()
+            .ok_or_else(|| "agent database has no parent directory".to_string())?;
+        Ok(get_profile_avatar(
+            agent_dir,
+            &db_path,
+            self.busy_timeout_ms,
+        ))
+    }
+
+    pub fn get_agent_avatar_png(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<Vec<u8>>, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        let agent_dir = db_path
+            .parent()
+            .ok_or_else(|| "agent database has no parent directory".to_string())?;
+        Ok(get_profile_avatar_png(
+            agent_dir,
+            &db_path,
+            self.busy_timeout_ms,
+        ))
+    }
+
+    pub fn set_agent_avatar_bytes(
+        &self,
+        agent_id: &str,
+        png_bytes: Option<&[u8]>,
+        active_agent_id: Option<&str>,
+    ) -> Result<Option<AgentSummary>, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        mutate_agent_avatar_bytes(&db_path, self.busy_timeout_ms, png_bytes)?;
+        self.summarize_agent_by_id(agent_id, active_agent_id)
     }
 
     pub fn list_agent_summaries(

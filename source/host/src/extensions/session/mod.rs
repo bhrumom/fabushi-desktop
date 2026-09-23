@@ -15,6 +15,8 @@ pub mod session_conversation_state;
 pub mod session_projection;
 pub mod session_summaries;
 pub mod session_roster;
+pub mod session_profile_files;
+pub mod session_mutations;
 pub mod session_diagnostics;
 pub mod pending_card_sweeps;
 pub mod production;

@@ -12396,12 +12396,21 @@
       "targetPath": "source/host/src/extensions/session/session_mutations.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "43766f3f3157ffc48f5ff49009c8a3e527211191",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/session_mutations.rs",
+        "source/host/src/agents/agent_avatar.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/session_profile_mutations_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust mutation slice fully owns canonical avatar replacement/removal, conventional-avatar cleanup, legacy SandProfile avatar pointer clearing and cache invalidation; ProductionSessionWorkers exposes setAgentAvatarBytes with summary refresh. Missing-DB durable recovery is ported as a host-parameterized helper but final is withheld until roster deletion/live-handle/memory-workflow footprint composition invokes it in production."
     },
     {
       "referencePath": "source/host/extensions/session/session-paths.ts",
@@ -12429,12 +12438,24 @@
       "targetPath": "source/host/src/extensions/session/session_profile_files.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "013d71abe7262989bbb620da5de8f82e493ef327",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/session_profile_files.rs",
+        "source/host/src/agents/agent_avatar.rs",
+        "source/host/src/agents/agent_profile.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/session_profile_mutations_contract.rs",
+        "source/host/tests/agent_avatar_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Complete Rust port of frozen Grok session profile-files: profile-name fallback and optional-field preservation, profile text projection, derived conventional avatar resolution with legacy DB avatar fallback, PNG byte reads and basename behavior. ProductionSessionWorkers exposes get/update profile and avatar read commands; update returns the production summary path."
     },
     {
       "referencePath": "source/host/extensions/session/session-projection.ts",
