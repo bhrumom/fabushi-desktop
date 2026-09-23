@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::gateway::{
@@ -19,7 +20,7 @@ fn temp_root(label: &str) -> std::path::PathBuf {
 }
 
 fn dispatch(
-    runtime: &ProductionSessionWorkers,
+    runtime: &Arc<ProductionSessionWorkers>,
     method: &str,
     args: serde_json::Value,
 ) -> serde_json::Value {
@@ -32,7 +33,7 @@ fn dispatch(
 fn production_gateway_reads_transcript_pages_and_counts_agents_without_compat_host() {
     let root = temp_root("transcript");
     let agents = root.join("agents");
-    let runtime = ProductionSessionWorkers::with_agents_root(&agents, 500);
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
     let record = runtime
         .materialize_new_session(None, "user", None)
         .expect("agent");
@@ -85,7 +86,7 @@ fn production_gateway_reads_transcript_pages_and_counts_agents_without_compat_ho
 fn production_gateway_composes_channel_metadata_and_secrets() {
     let root = temp_root("channels");
     let agents = root.join("agents");
-    let runtime = ProductionSessionWorkers::with_agents_root(&agents, 500);
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
     let record = runtime
         .materialize_new_session(None, "user", None)
         .expect("agent");
@@ -117,9 +118,85 @@ fn production_gateway_composes_channel_metadata_and_secrets() {
 }
 
 #[test]
+fn production_gateway_cuts_over_safe_agent_lifecycle_mutations_to_rust_session_owner() {
+    let root = temp_root("agent-lifecycle");
+    let agents = root.join("agents");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let record = runtime
+        .materialize_new_session(None, "user", None)
+        .expect("agent");
+
+    let listed = dispatch(&runtime, "listAgents", json!({}));
+    assert_eq!(listed.as_array().map(Vec::len), Some(1));
+    assert_eq!(listed[0]["id"], record.id);
+
+    let updated = dispatch(
+        &runtime,
+        "updateAgent",
+        json!({
+            "id": record.id,
+            "profile": {
+                "name": "  Lifecycle Agent  ",
+                "description": "  production gateway  ",
+                "title": "  Operator  ",
+                "avatarShape": " rounded ",
+                "avatarColor": " violet "
+            }
+        }),
+    );
+    assert_eq!(updated["name"], "Lifecycle Agent");
+    assert_eq!(updated["description"], "production gateway");
+    assert_eq!(updated["title"], "Operator");
+
+    assert_eq!(
+        dispatch(
+            &runtime,
+            "setAgentUnread",
+            json!({"id": record.id, "isUnread": true, "atMs": 1234}),
+        ),
+        serde_json::Value::Null
+    );
+    assert_eq!(
+        dispatch(
+            &runtime,
+            "setAgentNotifyOnUpdates",
+            json!({"id": record.id, "isEnabled": false}),
+        ),
+        serde_json::Value::Null
+    );
+    assert_eq!(
+        dispatch(
+            &runtime,
+            "setAgentHiddenFromSidebar",
+            json!({"id": record.id, "isHidden": true}),
+        ),
+        serde_json::Value::Null
+    );
+    let mutated = dispatch(&runtime, "listAgents", json!({}));
+    assert_eq!(mutated[0]["hasUnread"], true);
+    assert_eq!(mutated[0]["notifyOnUpdatesEnabled"], false);
+    assert_eq!(mutated[0]["isHiddenFromSidebar"], true);
+
+    let png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z2S8AAAAASUVORK5CYII=";
+    let _summary = dispatch(
+        &runtime,
+        "setAgentAvatarBytes",
+        json!({"id": record.id, "pngBase64": png}),
+    );
+    let avatar = dispatch(&runtime, "getAgentAvatar", json!({"id": record.id}));
+    assert!(avatar["version"].as_str().is_some_and(|value| !value.is_empty()));
+    assert!(avatar["dataUrl"]
+        .as_str()
+        .is_some_and(|value| value.starts_with("data:image/png;base64,")));
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn malformed_session_gateway_requests_fail_closed_and_unknown_methods_fall_through() {
     let root = temp_root("bad-request");
-    let runtime = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
     assert_eq!(
         dispatch_production_session_gateway_call(
             &runtime,
