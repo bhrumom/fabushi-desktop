@@ -159,20 +159,37 @@ fn service_deduplicates_pending_requests_captures_snapshot_and_reports() {
 #[test]
 fn stale_snapshot_cannot_overwrite_a_new_handoff() {
     let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let reports = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let (first_started_tx, first_started_rx) = std::sync::mpsc::sync_channel(1);
+    let (release_first_tx, release_first_rx) = std::sync::mpsc::sync_channel(1);
+    let release_first_rx = Arc::new(Mutex::new(release_first_rx));
+
     let service = BoxHandoffService::new(BoxHandoffDeps {
         grab_screenshot: Some({
             let calls = Arc::clone(&calls);
+            let release_first_rx = Arc::clone(&release_first_rx);
             Arc::new(move |_| {
                 let call = calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 if call == 0 {
-                    thread::sleep(Duration::from_millis(80));
+                    first_started_tx.send(()).expect("signal first capture");
+                    release_first_rx
+                        .lock()
+                        .expect("release receiver")
+                        .recv_timeout(Duration::from_secs(1))
+                        .expect("release first capture");
                     Ok(Some(ScreenshotPayload::Base64("b2xk".into())))
                 } else {
                     Ok(None)
                 }
             })
         }),
-        timeout_ms: Some(200),
+        report: Some({
+            let reports = Arc::clone(&reports);
+            Arc::new(move |_| {
+                reports.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            })
+        }),
+        timeout_ms: Some(500),
         ..BoxHandoffDeps::default()
     });
 
@@ -186,13 +203,23 @@ fn stale_snapshot_cannot_overwrite_a_new_handoff() {
         service.start(request()),
         HandoffStartResult::Started { .. }
     ));
+    first_started_rx
+        .recv_timeout(Duration::from_secs(1))
+        .expect("first capture entered screenshot callback");
+
     service.forget("agent-race");
     let second_id = match service.start(request()) {
         HandoffStartResult::Started { request_id } => request_id,
         other => panic!("expected second start, got {other:?}"),
     };
+    release_first_tx.send(()).expect("release stale capture");
 
-    thread::sleep(Duration::from_millis(150));
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while reports.load(std::sync::atomic::Ordering::SeqCst) < 2 {
+        assert!(Instant::now() < deadline, "both capture attempts did not settle");
+        thread::sleep(Duration::from_millis(5));
+    }
+
     let pending = service.get("agent-race").expect("second pending");
     assert_eq!(pending.request_id, second_id);
     assert_eq!(pending.snapshot_data_url, None);
