@@ -70,6 +70,12 @@ const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
     "feature.auth.logout",
     "feature.interrupt",
     "feature.approval.resolve",
+    // Internal Coordinator -> Host -> Runner methods. These are explicit
+    // Fabushi architecture extensions and must never widen the runner.*
+    // namespace generically.
+    "runner.startRoutedProvider",
+    "runner.cancelRoutedProvider",
+    "runner.resolveRoutedToolRequest",
 ];
 
 

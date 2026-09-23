@@ -33,6 +33,15 @@ impl GatewayApi for TestApi {
                 "method": method,
                 "args": args,
             })),
+            method if matches!(
+                method,
+                "runner.startRoutedProvider"
+                    | "runner.cancelRoutedProvider"
+                    | "runner.resolveRoutedToolRequest"
+            ) => Ok(json!({
+                "method": method,
+                "args": args,
+            })),
             "conflict" => Err(GatewayCommandError::Conflict("conflict".into())),
             other => Err(GatewayCommandError::UnknownMethod(other.to_string())),
         }
@@ -347,6 +356,52 @@ fn gateway_carries_explicit_fabushi_extensions_without_widening_unknown_methods(
         );
         assert_eq!(json_body(&response)["method"], method);
     }
+}
+
+#[test]
+fn gateway_admits_only_explicit_internal_runner_methods() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(None),
+        started_at: 1,
+    })
+    .expect("gateway server");
+
+    for method in [
+        "runner.startRoutedProvider",
+        "runner.cancelRoutedProvider",
+        "runner.resolveRoutedToolRequest",
+    ] {
+        let response = request(
+            server.port(),
+            &format!(
+                "POST /api/{method} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+            ),
+        );
+        assert!(
+            response.starts_with("HTTP/1.1 200 OK"),
+            "{method} was not admitted through the explicit internal Runner boundary: {response}"
+        );
+        assert_eq!(json_body(&response)["method"], method);
+    }
+
+    let denied = request(
+        server.port(),
+        "POST /api/runner.anythingElse HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+    );
+    assert!(
+        denied.starts_with("HTTP/1.1 404 Not Found"),
+        "the runner namespace must stay fail-closed: {denied}"
+    );
+    assert_eq!(
+        json_body(&denied)["error"],
+        "unknown gateway method: runner.anythingElse"
+    );
+
+    server.close();
 }
 
 #[test]
