@@ -9,12 +9,19 @@ use crate::agents::agent_profile::SandAgentProfile;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::agent_db::{
-    AgentDbSerdeSnapshot, read_persisted_agent_serde_snapshot,
-    read_persisted_latest_root_blob_id,
+    AgentDbSerdeSnapshot, append_persisted_transcript_entries, clear_persisted_conversation,
+    clear_persisted_memory_prompt_snapshot, delete_persisted_transcript_entry,
+    mark_persisted_activity, mark_persisted_read, mark_persisted_unread,
+    mark_persisted_viewed, read_persisted_agent_serde_snapshot,
+    read_persisted_latest_root_blob_id, record_persisted_episode_turn,
+    record_persisted_request_id, set_persisted_awaiting_user_response,
+    set_persisted_awaiting_user_response_for_tab, set_persisted_memory_prompt_snapshot,
+    set_persisted_sand_profile, update_persisted_transcript_entry,
 };
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
+use super::agent_db_serde::{AwaitingUserResponse, EpisodeTurn, SandProfile};
 use super::session_conversation_state::{SessionConversationState, TranscriptThread};
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::conversation_size_limits::{
@@ -171,6 +178,188 @@ impl ProductionSessionWorkers {
         let db_path = self.session_db_path(agent_id)?;
         self.conversation_state
             .read_agent_thread(&db_path, root_id)
+            .map_err(|error| error.to_string())
+    }
+
+    fn existing_session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        if !db_path.is_file() {
+            return Err(format!("Agent missing: {agent_id}"));
+        }
+        Ok(db_path)
+    }
+
+    pub fn set_agent_sand_profile(
+        &self,
+        agent_id: &str,
+        profile: &SandProfile,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        set_persisted_sand_profile(&db_path, self.busy_timeout_ms, profile)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn mark_agent_activity(&self, agent_id: &str, at: f64) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        mark_persisted_activity(&db_path, self.busy_timeout_ms, at)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn mark_agent_viewed(
+        &self,
+        agent_id: &str,
+        at: f64,
+        preserve_manual_unread: bool,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        mark_persisted_viewed(
+            &db_path,
+            self.busy_timeout_ms,
+            at,
+            preserve_manual_unread,
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    pub fn set_agent_unread(
+        &self,
+        agent_id: &str,
+        unread: bool,
+        at: f64,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        if unread {
+            mark_persisted_unread(&db_path, self.busy_timeout_ms, at)
+        } else {
+            mark_persisted_read(&db_path, self.busy_timeout_ms, at)
+        }
+        .map_err(|error| error.to_string())
+    }
+
+    pub fn set_agent_awaiting_user_response(
+        &self,
+        agent_id: &str,
+        state: Option<&AwaitingUserResponse>,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        set_persisted_awaiting_user_response(&db_path, self.busy_timeout_ms, state)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn set_agent_awaiting_user_response_for_tab(
+        &self,
+        agent_id: &str,
+        tab_id: &str,
+        state: Option<&AwaitingUserResponse>,
+        if_since_before: Option<f64>,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        set_persisted_awaiting_user_response_for_tab(
+            &db_path,
+            self.busy_timeout_ms,
+            tab_id,
+            state,
+            if_since_before,
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    pub fn record_agent_request_id(
+        &self,
+        agent_id: &str,
+        request_id: &str,
+        at: f64,
+        prompt: Option<&str>,
+        source: Option<&str>,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        record_persisted_request_id(
+            &db_path,
+            self.busy_timeout_ms,
+            request_id,
+            at,
+            prompt,
+            source,
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    pub fn record_agent_episode_turn(
+        &self,
+        agent_id: &str,
+        turn: &EpisodeTurn,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        record_persisted_episode_turn(&db_path, self.busy_timeout_ms, turn)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn set_agent_memory_prompt_snapshot(
+        &self,
+        agent_id: &str,
+        snapshot: &serde_json::Value,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        set_persisted_memory_prompt_snapshot(&db_path, self.busy_timeout_ms, snapshot)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn clear_agent_memory_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        clear_persisted_memory_prompt_snapshot(&db_path, self.busy_timeout_ms)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn append_agent_transcript_entries(
+        &self,
+        agent_id: &str,
+        entries: &[serde_json::Value],
+    ) -> Result<usize, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        append_persisted_transcript_entries(&db_path, self.busy_timeout_ms, entries)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn update_agent_transcript_entry(
+        &self,
+        agent_id: &str,
+        entry_id: &str,
+        next: &serde_json::Value,
+    ) -> Result<Option<serde_json::Value>, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        update_persisted_transcript_entry(
+            &db_path,
+            self.busy_timeout_ms,
+            entry_id,
+            next,
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    pub fn delete_agent_transcript_entry(
+        &self,
+        agent_id: &str,
+        entry_id: &str,
+    ) -> Result<bool, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        delete_persisted_transcript_entry(
+            &db_path,
+            self.busy_timeout_ms,
+            entry_id,
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    pub fn clear_agent_conversation(&self, agent_id: &str) -> Result<bool, String> {
+        let store = self.create_agent_blob_store(agent_id)?;
+        let db_path = self.existing_session_db_path(agent_id)?;
+        futures::executor::block_on(self.pool.clear_blobs(
+            agent_id,
+            &store.blob_db_path,
+            store.legacy_blob_db_path.as_deref(),
+        ))
+        .map_err(|error| error.to_string())?;
+        clear_persisted_conversation(&db_path, self.busy_timeout_ms)
             .map_err(|error| error.to_string())
     }
 

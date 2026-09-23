@@ -12086,9 +12086,10 @@
         "source/host/tests/agent_db_recovery_contract.rs",
         "source/host/tests/session_production_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/session_maintenance_contract.rs"
+        "source/host/tests/session_maintenance_contract.rs",
+        "source/host/tests/agent_db_mutation_production_contract.rs"
       ],
-      "notes": "Rust production AgentDb now covers Grok-aligned recovery/schema opening, metadata projection plus latestRoot compare-and-set, write-generation bumps, maintenance version KV, legacy blob presence/retirement transactions, serde state, transcript reads/paging plus transactional recovery backfill append/delete mutation events. Shipping Session consumes these operations for durable-root recovery/stale cleanup/legacy-retirement before Runner inference. Full SandAgentDb parity still requires generic metadata set/subscriptions, unread/request/episode/profile mutation APIs, complete transcript update/thread APIs, clearConversation and live owner lifecycle before this row can be final."
+      "notes": "Rust production AgentDb now covers Grok-aligned recovery/schema opening, metadata projection/root CAS, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, maintenance version KV, legacy blob retirement transactions, transcript reads/paging plus append/update/delete and clear-conversation mutation events. Shipping ProductionSessionWorkers owns these write APIs and clears both durable conversation-blobs.db plus session/legacy conversation state. Final is withheld until generic metadata get/set subscriptions, spend-guard/partner/profile-snapshot/transient APIs, full live owner/close/busy behavior and Gateway command cutover are proven."
     },
     {
       "referencePath": "source/host/extensions/session/agent-session.ts",
@@ -12259,9 +12260,10 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/session_materialization_contract.rs",
         "source/host/tests/session_maintenance_contract.rs",
-        "source/host/tests/session_conversation_state_contract.rs"
+        "source/host/tests/session_conversation_state_contract.rs",
+        "source/host/tests/agent_db_mutation_production_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, serde projection, Session conversation-state transcript reads and conversation capacity before Runner inference. Full Grok Session still needs Gateway create/open/transcript command cutover, full ConversationState proto derivation/outlines, complete SandAgentDb mutation ownership, roster/projection, workflow/channel composition and box handoff, so this module remains existing-needs-parity."
+      "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state ownership, transcript projection/mutations and conversation capacity before Runner inference. Full Grok Session still needs Gateway create/open/transcript/mutation command cutover, full ConversationState proto derivation/outlines, roster/projection, workflow/channel composition and box handoff, so this module remains existing-needs-parity."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
