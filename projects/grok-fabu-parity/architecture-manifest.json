@@ -12014,12 +12014,22 @@
       "targetPath": "source/host/src/extensions/session/agent_db_serde.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "d2f6449eeb846161ee4b43ac7406e4d0667f68b8",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/agent_db_serde.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_db_serde_contract.rs",
+        "source/host/tests/session_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust port of frozen Grok agent-db-serde. The shipping AgentDb projection owns transcript/profile/unread/spend-guard/awaiting/request-history/memory/episode normalization, including legacy request-id and spend-guard fallbacks; ProductionSessionWorkers materializes the parsed session state before Runner inference. Contract coverage exercises malformed-value filtering and the real production SQLite path."
     },
     {
       "referencePath": "source/host/extensions/session/agent-db-transcript-pages.ts",

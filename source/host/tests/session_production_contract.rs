@@ -74,6 +74,43 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
             rusqlite::params![to_hex(&metadata)],
         )
         .expect("metadata row");
+    for (key, value) in [
+        (
+            "sandProfile",
+            r#"{"description":"Shipping profile","avatarPath":"/tmp/avatar.png"}"#,
+        ),
+        (
+            "unreadState",
+            r#"{"lastActivityAt":123,"lastViewedAt":"bad","isManuallyUnread":true,"unreadCount":2.9}"#,
+        ),
+        (
+            "automationSpendGuardState",
+            r#"{"nudgedAtMs":42,"snoozedUntilMs":-1,"optedOut":true,"cardEntryIds":["card","",2],"pausedAutomationIds":["auto"]}"#,
+        ),
+        (
+            "awaitingUserResponse",
+            r#"{"tabId":"tab-1","reason":7,"since":44}"#,
+        ),
+        (
+            "requestIds",
+            r#"[{"id":" request-1 ","at":9,"prompt":"hello","source":"turn"},{"id":"   ","at":3}]"#,
+        ),
+        (
+            "episodePending",
+            r#"[{"ts":5,"user":"question","agent":"answer"},{"ts":7,"user":"","agent":""}]"#,
+        ),
+        (
+            "memoryPromptSnapshot",
+            r#"{"render":"memory","compactionEpoch":3}"#,
+        ),
+    ] {
+        connection
+            .execute(
+                "INSERT INTO kv (key, value) VALUES (?1, ?2)",
+                rusqlite::params![key, value],
+            )
+            .expect("session state row");
+    }
     drop(connection);
 
     let runtime = ProductionSessionWorkers::with_agents_root(&root, 500);
@@ -98,6 +135,35 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
         agent_dir.join(CONVERSATION_BLOBS_FILENAME)
     );
     assert_eq!(prepared.persisted_root_blob_id, vec![0xaa, 0xbb, 0xcc]);
+    assert_eq!(prepared.session_state.profile.description, "Shipping profile");
+    assert_eq!(
+        prepared.session_state.profile.avatar_path.as_deref(),
+        Some("/tmp/avatar.png")
+    );
+    assert_eq!(prepared.session_state.unread_state.last_activity_at, 123.0);
+    assert_eq!(prepared.session_state.unread_state.last_viewed_at, 0.0);
+    assert!(prepared.session_state.unread_state.is_manually_unread);
+    assert_eq!(prepared.session_state.unread_state.unread_count, 2.0);
+    assert_eq!(prepared.session_state.spend_guard_state.nudged_at_ms, Some(42.0));
+    assert_eq!(prepared.session_state.spend_guard_state.snoozed_until_ms, None);
+    assert!(prepared.session_state.spend_guard_state.opted_out);
+    assert_eq!(
+        prepared.session_state.spend_guard_state.card_entry_ids,
+        vec!["card".to_string()]
+    );
+    assert_eq!(
+        prepared.session_state.awaiting_user_response.as_ref().map(|state| state.tab_id.as_str()),
+        Some("tab-1")
+    );
+    assert_eq!(prepared.session_state.request_ids.len(), 1);
+    assert_eq!(prepared.session_state.request_ids[0].id, "request-1");
+    assert_eq!(prepared.session_state.request_ids[0].source.as_deref(), Some("turn"));
+    assert_eq!(prepared.session_state.pending_episode_turns.len(), 1);
+    assert_eq!(prepared.session_state.pending_episode_turns[0].agent, "answer");
+    assert_eq!(
+        prepared.session_state.memory_prompt_snapshot.as_ref().map(|snapshot| snapshot.render.as_str()),
+        Some("memory")
+    );
     assert_eq!(runtime.active_worker_count(), 1);
 
     runtime.shutdown();
