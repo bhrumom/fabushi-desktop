@@ -957,6 +957,18 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   pinnedAgentIdsRef.current = pinnedAgentIds;
   entriesByAgentRef.current = entriesByAgent;
 
+  const reconcileCompleteRosterSelection = useCallback((projected: readonly RendererAgent[]) => {
+    const allAgentIds = projected.map((agent) => agent.id);
+    const selectionBeforeReconcile = selectionStore.get().currentAgentId;
+    completeRosterAgentIdsRef.current = allAgentIds;
+    selectionStore.reconcile({ agentIds: allAgentIds, isRosterComplete: true });
+    if (selectionBeforeReconcile != null) return;
+    const firstVisibleAgentId = projected.find((agent) => !agent.isHidden)?.id ?? null;
+    if (firstVisibleAgentId == null || selectionStore.get().currentAgentId === firstVisibleAgentId) return;
+    selectionStore.select(firstVisibleAgentId);
+    selectionStore.settle(firstVisibleAgentId);
+  }, [selectionStore]);
+
   const [hiddenChatsMutationController] = useState(() => createHiddenChatsMutationController({
     call: (input) => client == null
       ? Promise.reject(new Error("coordinator is unavailable for setAgentHiddenFromSidebar"))
@@ -1631,7 +1643,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const sidebarSectionsWriteFailure = useSyncExternalStore(sidebarSectionsStore.subscribe, sidebarSectionsStore.getWriteFailure, sidebarSectionsStore.getWriteFailure);
   const collapsedSectionIds = useSyncExternalStore(sidebarCollapseStore.subscribe, sidebarCollapseStore.getCollapsedSectionIds, sidebarCollapseStore.getCollapsedSectionIds);
   const sidebarSections = useMemo(() => sidebarSectionRecords?.map((section) => ({ ...section, isCollapsed: collapsedSectionIds.includes(section.id) })) ?? null, [collapsedSectionIds, sidebarSectionRecords]);
-  const projectedSidebarSections = useMemo(() => sidebarSections == null ? undefined : projectSidebarSections({ agents: visibleAgents, pinnedIds: pinnedAgentIds, sections: sidebarSections }), [pinnedAgentIds, sidebarSections, visibleAgents]);
+  const projectedSidebarSections = useMemo(() => sidebarSections == null || sidebarSections.length === 0 ? undefined : projectSidebarSections({ agents: visibleAgents, pinnedIds: pinnedAgentIds, sections: sidebarSections }), [pinnedAgentIds, sidebarSections, visibleAgents]);
 
   useEffect(() => {
     if (sidebarSectionsWriteFailure != null) setNotice(sidebarSectionsWriteFailure.code);
@@ -2165,8 +2177,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setRosterLoadFailed(false);
       setRosterFailure(null);
       setAgents(projected);
-      completeRosterAgentIdsRef.current = projected.map((agent) => agent.id);
-      selectionStore.reconcile({ agentIds: projected.map((agent) => agent.id), isRosterComplete: true });
+      reconcileCompleteRosterSelection(projected);
       setHasLoadedAgents(true);
     } catch (error) {
       if (!isCurrent()) return;
@@ -2179,7 +2190,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     } finally {
       if (isCurrent()) setIsRosterRetrying(false);
     }
-  }, [client, selectionStore]);
+  }, [client, reconcileCompleteRosterSelection]);
 
   const [connectionController] = useState(() => client == null
     ? null
@@ -2332,8 +2343,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setRosterLoadFailed(false);
       setRosterFailure(null);
       setAgents(projected);
-      completeRosterAgentIdsRef.current = projected.map((agent) => agent.id);
-      selectionStore.reconcile({ agentIds: projected.map((agent) => agent.id), isRosterComplete: true });
+      reconcileCompleteRosterSelection(projected);
       setHasLoadedAgents(true);
     });
     const stopUpsert = client.subscribe("agent-upserted", (value) => {
@@ -2428,7 +2438,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (clientLifecycleGenerationRef.current === lifecycleGeneration) client.dispose();
       });
     };
-  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, pinnedAccountKey, reactionRoot, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot]);
+  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot]);
 
   useEffect(() => {
     if (bridge == null || account?.kind !== "logged-in") {
@@ -2452,13 +2462,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const accountSlot = account?.kind === "logged-in" ? pinnedAccountKey : null;
     void selectionStore.restore(accountSlot).then(() => {
       if (!active || accountSlot == null) return;
-      selectionStore.reconcile({
-        agentIds: agentsRef.current.map((agent) => agent.id),
-        isRosterComplete: hasLoadedAgentsRef.current
-      });
+      if (hasLoadedAgentsRef.current) reconcileCompleteRosterSelection(agentsRef.current);
     });
     return () => { active = false; };
-  }, [account?.kind, pinnedAccountKey, selectionStore]);
+  }, [account?.kind, pinnedAccountKey, reconcileCompleteRosterSelection, selectionStore]);
 
   useEffect(() => {
     const accountSlot = account?.kind === "logged-in" ? pinnedAccountKey : null;

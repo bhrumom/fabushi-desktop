@@ -1074,14 +1074,19 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-product-shell', 'agent');
       await expect(page.locator('.desktop-mode-switch')).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'New', exact: true })).toBeVisible();
+      await expect(primaryMahayanaAgentPeer(page)).toBeVisible();
+      await expect(page.getByTestId('messenger-sidebar').getByRole('button', { name: 'Research Bot', exact: true })).toBeVisible();
+      await expect(page.getByTestId('messenger-sidebar').getByRole('button', { name: 'Incident Bot', exact: true })).toHaveCount(0);
       await expect(page.getByTestId('profile-navigation-trigger')).toHaveCount(0);
       await expect(page.locator('[data-testid^="legacy-peer-"]')).toHaveCount(0);
 
       await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
-      await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
-      await expect(page.getByPlaceholder('Search agents or run a command')).toBeFocused();
+      const search = page.getByRole('dialog', { name: 'Search' });
+      await expect(search).toBeVisible();
+      await expect(search.getByRole('combobox', { name: 'Search' })).toBeFocused();
+      await expect(search.getByRole('option', { name: '大乘助手 Agent', exact: true })).toBeVisible();
       await page.keyboard.press('Escape');
-      await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeHidden();
+      await expect(search).toBeHidden();
     });
 
     await test.step('Agent Network is the Agent-domain group surface', async () => {
