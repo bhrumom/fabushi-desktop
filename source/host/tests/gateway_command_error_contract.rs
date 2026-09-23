@@ -3,7 +3,7 @@ use std::io;
 use mahayana_host_runtime::gateway_command_error::{
     GatewayCommandError, classify_gateway_command_error,
 };
-use mahayana_host_runtime::ports::box::{
+use mahayana_host_runtime::ports::r#box::{
     SandBoxDaemonUnreachableError, SandBoxNoMonitorAvailableError,
 };
 
