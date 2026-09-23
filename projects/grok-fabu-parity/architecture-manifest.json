@@ -15996,20 +15996,23 @@
       "targetPath": "source/host/src/runner/tools/send_message_schema.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "b76db1b1777032725de2ef6edaabd8d3ea6e2cdd",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/tools/send_message_schema.rs",
-        "source/host/src/runner/tools/send_message_tool.rs"
+        "source/host/src/runner/tools/send_message_tool.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/send_message_tool_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port of the frozen SendMessage type fences, URL scheme validation, field/type refinement and tool JSON schema. Shipping SendMessageToolBridge parses and validates every first-party tool call through this module. Final is withheld until the complete frozen sandWidgetSchema descriptions/constraints are mirrored byte-for-behavior rather than the current structural widget object contract."
+      "notes": "Final Rust port of frozen SendMessage schema. Shipping Runner parses and validates every first-party SendMessage call through the exact type fences, attachment URL rules, secret requirements, and full sandWidget choice contract: trimmed prompt/help/options, 1-6 choices, non-empty label/value/description, default|primary|danger style, boolean allowCustom/dismissOnMoveOn, and unknown-field stripping matching Zod object semantics. The generated routed-tool JSON schema exposes the same widget constraints and the production SendMessageToolBridge consumes this owner before durable Session persistence."
     },
     {
       "referencePath": "source/host/runner/tools/send-message-tool.ts",

@@ -8,7 +8,8 @@ use mahayana_host_runtime::runner::tools::send_message_encoding::{
     encode_markdown_image_destination, encode_send_message, encode_text_content,
 };
 use mahayana_host_runtime::runner::tools::send_message_schema::{
-    parse_send_message_input, refine_send_message, validate_send_message,
+    parse_send_message_input, refine_send_message, send_message_input_schema,
+    validate_send_message,
 };
 use mahayana_host_runtime::runner::tools::send_message_tool::{
     SAND_SEND_MESSAGE_TOOL_NAME, SendMessageSink, SendMessageToolBridge,
@@ -83,6 +84,88 @@ fn schema_matches_frozen_type_fences_and_attachment_schemes() {
     }))
     .expect("parse");
     assert!(validate_send_message(&attachment).is_err());
+}
+
+#[test]
+fn widget_schema_matches_frozen_choice_contract_and_normalization() {
+    let valid = parse_send_message_input(&json!({
+        "type":"widget",
+        "widget":{
+            "prompt":"  Which environment?  ",
+            "helpText":"  Pick one  ",
+            "options":[
+                {
+                    "label":"  Production  ",
+                    "value":"  prod  ",
+                    "description":"  User-facing production  ",
+                    "style":"danger",
+                    "ignored":"strip me"
+                },
+                {"label":"  Staging  ","style":"primary"}
+            ],
+            "allowCustom":true,
+            "dismissOnMoveOn":false,
+            "ignored":"strip me"
+        }
+    }))
+    .expect("parse widget");
+    assert!(validate_send_message(&valid).is_ok());
+    let widget = valid.widget.expect("normalized widget");
+    assert_eq!(widget["prompt"], "Which environment?");
+    assert_eq!(widget["helpText"], "Pick one");
+    assert_eq!(widget["options"][0]["label"], "Production");
+    assert_eq!(widget["options"][0]["value"], "prod");
+    assert!(widget.get("ignored").is_none());
+    assert!(widget["options"][0].get("ignored").is_none());
+
+    let invalid = parse_send_message_input(&json!({
+        "type":"widget",
+        "widget":{
+            "prompt":" ",
+            "options":[
+                {"label":" ","value":" ","style":"loud"}
+            ],
+            "allowCustom":"yes"
+        }
+    }))
+    .expect("parse invalid widget");
+    let issues = validate_send_message(&invalid).expect_err("invalid widget rejected");
+    assert!(issues.iter().any(|issue| issue.path == vec!["widget","prompt"]));
+    assert!(issues.iter().any(|issue| issue.path == vec!["widget","options","0","label"]));
+    assert!(issues.iter().any(|issue| issue.path == vec!["widget","options","0","value"]));
+    assert!(issues.iter().any(|issue| issue.path == vec!["widget","options","0","style"]));
+    assert!(issues.iter().any(|issue| issue.path == vec!["widget","allowCustom"]));
+
+    let too_many = parse_send_message_input(&json!({
+        "type":"widget",
+        "widget":{
+            "prompt":"Choose",
+            "options":[
+                {"label":"1"},{"label":"2"},{"label":"3"},{"label":"4"},
+                {"label":"5"},{"label":"6"},{"label":"7"}
+            ]
+        }
+    }))
+    .expect("parse oversized widget");
+    assert!(validate_send_message(&too_many).expect_err("max six options")
+        .iter()
+        .any(|issue| issue.path == vec!["widget","options"]));
+}
+
+#[test]
+fn generated_send_message_schema_exposes_frozen_widget_constraints() {
+    let schema = send_message_input_schema();
+    let widget = &schema["properties"]["widget"];
+    assert_eq!(widget["required"], json!(["prompt","options"]));
+    assert_eq!(widget["additionalProperties"], false);
+    assert_eq!(widget["properties"]["options"]["minItems"], 1);
+    assert_eq!(widget["properties"]["options"]["maxItems"], 6);
+    assert_eq!(
+        widget["properties"]["options"]["items"]["properties"]["style"]["enum"],
+        json!(["default","primary","danger"])
+    );
+    assert_eq!(widget["properties"]["allowCustom"]["type"], "boolean");
+    assert_eq!(widget["properties"]["dismissOnMoveOn"]["type"], "boolean");
 }
 
 #[test]

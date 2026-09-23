@@ -88,8 +88,52 @@ impl SendMessageInput {
                 secret.description = Some(description.trim().to_string());
             }
         }
+        if let Some(widget) = self.widget.take() {
+            self.widget = Some(normalize_widget(widget));
+        }
         self
     }
+}
+
+fn normalize_widget(value: Value) -> Value {
+    let Some(object) = value.as_object() else {
+        return value;
+    };
+    let mut normalized = serde_json::Map::new();
+    for key in ["prompt", "helpText", "options", "allowCustom", "dismissOnMoveOn"] {
+        let Some(raw) = object.get(key) else { continue; };
+        let next = match key {
+            "prompt" | "helpText" => raw
+                .as_str()
+                .map(|value| Value::String(value.trim().to_string()))
+                .unwrap_or_else(|| raw.clone()),
+            "options" => raw.as_array().map(|options| {
+                Value::Array(options.iter().map(normalize_widget_option).collect())
+            }).unwrap_or_else(|| raw.clone()),
+            _ => raw.clone(),
+        };
+        normalized.insert(key.to_string(), next);
+    }
+    Value::Object(normalized)
+}
+
+fn normalize_widget_option(value: &Value) -> Value {
+    let Some(object) = value.as_object() else {
+        return value.clone();
+    };
+    let mut normalized = serde_json::Map::new();
+    for key in ["label", "value", "description", "style"] {
+        let Some(raw) = object.get(key) else { continue; };
+        let next = if matches!(key, "label" | "value" | "description") {
+            raw.as_str()
+                .map(|value| Value::String(value.trim().to_string()))
+                .unwrap_or_else(|| raw.clone())
+        } else {
+            raw.clone()
+        };
+        normalized.insert(key.to_string(), next);
+    }
+    Value::Object(normalized)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -119,6 +163,112 @@ fn issue(field: &str, message: impl Into<String>) -> SendMessageIssue {
         path: vec![field.to_string()],
         message: message.into(),
     }
+}
+
+fn widget_issue(path: Vec<String>, message: impl Into<String>) -> SendMessageIssue {
+    SendMessageIssue {
+        path,
+        message: message.into(),
+    }
+}
+
+fn validate_widget(widget: &Value) -> Vec<SendMessageIssue> {
+    let mut issues = Vec::new();
+    let Some(object) = widget.as_object() else {
+        issues.push(widget_issue(vec!["widget".into()], "widget must be an object"));
+        return issues;
+    };
+
+    match object.get("prompt") {
+        Some(Value::String(prompt)) if !prompt.is_empty() => {}
+        _ => issues.push(widget_issue(
+            vec!["widget".into(), "prompt".into()],
+            "widget prompt must be a non-empty string",
+        )),
+    }
+
+    if let Some(help_text) = object.get("helpText") {
+        if !help_text.as_str().is_some_and(|value| !value.is_empty()) {
+            issues.push(widget_issue(
+                vec!["widget".into(), "helpText".into()],
+                "widget helpText must be a non-empty string when provided",
+            ));
+        }
+    }
+
+    let options = match object.get("options") {
+        Some(Value::Array(options)) if (1..=6).contains(&options.len()) => Some(options),
+        Some(Value::Array(options)) => {
+            issues.push(widget_issue(
+                vec!["widget".into(), "options".into()],
+                format!("widget options must contain between 1 and 6 choices; got {}", options.len()),
+            ));
+            Some(options)
+        }
+        _ => {
+            issues.push(widget_issue(
+                vec!["widget".into(), "options".into()],
+                "widget options must be an array with between 1 and 6 choices",
+            ));
+            None
+        }
+    };
+
+    if let Some(options) = options {
+        for (index, option) in options.iter().enumerate() {
+            let prefix = vec!["widget".into(), "options".into(), index.to_string()];
+            let Some(option) = option.as_object() else {
+                let mut path = prefix.clone();
+                issues.push(widget_issue(path, "widget option must be an object"));
+                continue;
+            };
+            match option.get("label") {
+                Some(Value::String(label)) if !label.is_empty() => {}
+                _ => {
+                    let mut path = prefix.clone();
+                    path.push("label".into());
+                    issues.push(widget_issue(path, "widget option label must be a non-empty string"));
+                }
+            }
+            for key in ["value", "description"] {
+                if let Some(raw) = option.get(key) {
+                    if !raw.as_str().is_some_and(|value| !value.is_empty()) {
+                        let mut path = prefix.clone();
+                        path.push(key.into());
+                        issues.push(widget_issue(
+                            path,
+                            format!("widget option {key} must be a non-empty string when provided"),
+                        ));
+                    }
+                }
+            }
+            if let Some(style) = option.get("style") {
+                if !style.as_str().is_some_and(|style| {
+                    matches!(style, "default" | "primary" | "danger")
+                }) {
+                    let mut path = prefix.clone();
+                    path.push("style".into());
+                    issues.push(widget_issue(
+                        path,
+                        "widget option style must be default, primary, or danger",
+                    ));
+                }
+            }
+        }
+    }
+
+    for key in ["allowCustom", "dismissOnMoveOn"] {
+        if let Some(raw) = object.get(key) {
+            if !raw.is_boolean() {
+                issues.push(widget_issue(
+                    vec!["widget".into(), key.into()],
+                    format!("widget {key} must be a boolean when provided"),
+                ));
+            }
+        }
+    }
+
+    issues
 }
 
 pub fn refine_send_message(value: &SendMessageInput) -> Vec<SendMessageIssue> {
@@ -209,8 +359,9 @@ pub fn refine_send_message(value: &SendMessageInput) -> Vec<SendMessageIssue> {
 pub fn validate_send_message(value: &SendMessageInput) -> Result<(), Vec<SendMessageIssue>> {
     let mut issues = refine_send_message(value);
     match value.message_type {
-        SendMessageType::Widget if value.widget.is_none() => {
-            issues.push(issue("widget", "widget is required when type is widget"));
+        SendMessageType::Widget => match value.widget.as_ref() {
+            None => issues.push(issue("widget", "widget is required when type is widget")),
+            Some(widget) => issues.extend(validate_widget(widget)),
         }
         SendMessageType::CursorAgent if !provided_string(&value.bc_id) => {
             issues.push(issue("bcId", "bcId is required when type is cursor-agent"));
@@ -258,7 +409,33 @@ pub fn send_message_input_schema() -> Value {
             "alt": {"type": "string"},
             "reply_to": {"type": "string"},
             "channel": {"type": "string"},
-            "widget": {"type": "object"},
+            "widget": {
+                "type": "object",
+                "required": ["prompt", "options"],
+                "additionalProperties": false,
+                "properties": {
+                    "prompt": {"type": "string", "minLength": 1},
+                    "helpText": {"type": "string", "minLength": 1},
+                    "options": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 6,
+                        "items": {
+                            "type": "object",
+                            "required": ["label"],
+                            "additionalProperties": false,
+                            "properties": {
+                                "label": {"type": "string", "minLength": 1},
+                                "value": {"type": "string", "minLength": 1},
+                                "description": {"type": "string", "minLength": 1},
+                                "style": {"type": "string", "enum": ["default", "primary", "danger"]}
+                            }
+                        }
+                    },
+                    "allowCustom": {"type": "boolean"},
+                    "dismissOnMoveOn": {"type": "boolean"}
+                }
+            },
             "bcId": {"type": "string"},
             "secret": {
                 "type": "object",
