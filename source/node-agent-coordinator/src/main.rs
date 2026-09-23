@@ -30,7 +30,7 @@ use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::McpOAut
 use mahayana_node_agent_coordinator::inference_router::{
     CoordinatorInferenceRouter, InferenceProvider, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, parse_runner_inference_event,
-    project_transcript_entry,
+    parse_send_prompt_attachments, project_transcript_entry,
 };
 use mahayana_node_agent_coordinator::webauthn::{
     ApprovedWebAuthnConsent, WebAuthnCeremony,
@@ -1684,6 +1684,7 @@ fn record_inference_error(
         rich_text: None,
         id: format!("t{timestamp_ms}s0"),
         client_nonce: None,
+        attachments: Vec::new(),
         reactions: Vec::new(),
         timestamp_ms,
     };
@@ -1775,11 +1776,12 @@ fn execute_local_inference(
         .filter(|value| !value.is_empty())
         .map(str::to_string)
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let attachments = parse_send_prompt_attachments(&args)?;
 
-    if agent_id.is_empty() || prompt.is_empty() {
+    if agent_id.is_empty() || (prompt.is_empty() && attachments.is_empty()) {
         return Err(Failure::new(
             "INFERENCE_ROUTER_INVALID_PROMPT",
-            "local inference routing requires an agentId and prompt",
+            "local inference routing requires an agentId and prompt or attachment",
         ));
     }
 
@@ -1806,6 +1808,7 @@ fn execute_local_inference(
             rich_text,
             id: format!("t{turn}u"),
             client_nonce: Some(client_nonce),
+            attachments,
             reactions: Vec::new(),
             timestamp_ms,
         };
@@ -1954,6 +1957,7 @@ fn execute_local_inference(
         rich_text: None,
         id: assistant_id,
         client_nonce: None,
+        attachments: Vec::new(),
         reactions: Vec::new(),
         timestamp_ms: assistant_timestamp_ms,
     };

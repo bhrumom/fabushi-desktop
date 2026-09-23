@@ -306,6 +306,63 @@ pub struct StoredReaction {
     pub by: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StoredAttachment {
+    pub path: String,
+    pub name: String,
+}
+
+pub fn parse_send_prompt_attachments(args: &Value) -> Result<Vec<StoredAttachment>, Failure> {
+    let paths = match args.get("attachmentPaths") {
+        None => &[][..],
+        Some(Value::Array(paths)) => paths.as_slice(),
+        Some(_) => {
+            return Err(Failure::new(
+                "INFERENCE_ROUTER_INVALID_ATTACHMENTS",
+                "attachmentPaths must be an array",
+            ));
+        }
+    };
+    let names = match args.get("attachmentNames") {
+        None => &[][..],
+        Some(Value::Array(names)) => names.as_slice(),
+        Some(_) => {
+            return Err(Failure::new(
+                "INFERENCE_ROUTER_INVALID_ATTACHMENTS",
+                "attachmentNames must be an array",
+            ));
+        }
+    };
+    if paths.is_empty() && names.is_empty() {
+        return Ok(Vec::new());
+    }
+    if paths.len() != names.len() {
+        return Err(Failure::new(
+            "INFERENCE_ROUTER_INVALID_ATTACHMENTS",
+            "attachmentPaths and attachmentNames must have the same length",
+        ));
+    }
+    paths
+        .iter()
+        .zip(names)
+        .map(|(path, name)| {
+            let path = path.as_str().unwrap_or("").trim();
+            let name = name.as_str().unwrap_or("").trim();
+            if path.is_empty() || name.is_empty() {
+                return Err(Failure::new(
+                    "INFERENCE_ROUTER_INVALID_ATTACHMENTS",
+                    "attachment paths and names must be non-empty strings",
+                ));
+            }
+            Ok(StoredAttachment {
+                path: path.to_string(),
+                name: name.to_string(),
+            })
+        })
+        .collect()
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StoredEntry {
@@ -317,6 +374,8 @@ pub struct StoredEntry {
     pub id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub client_nonce: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub attachments: Vec<StoredAttachment>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub reactions: Vec<StoredReaction>,
     pub timestamp_ms: u64,
@@ -454,6 +513,10 @@ pub fn project_transcript_entry(entry: &StoredEntry) -> Value {
             }
             if let Some(client_nonce) = &entry.client_nonce {
                 value["clientNonce"] = Value::String(client_nonce.clone());
+            }
+            if !entry.attachments.is_empty() {
+                value["attachments"] =
+                    serde_json::to_value(&entry.attachments).unwrap_or(Value::Null);
             }
             if !entry.reactions.is_empty() {
                 value["reactions"] = serde_json::to_value(&entry.reactions).unwrap_or(Value::Null);
