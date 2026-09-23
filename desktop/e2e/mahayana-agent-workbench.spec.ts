@@ -78,7 +78,7 @@ async function openMahayanaConversation(page: Page): Promise<void> {
   const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: '大乘助手', exact: true });
   await expect(peer).toBeVisible({ timeout: 15_000 });
   await peer.click();
-  await expect(page.getByTestId('messenger-input')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Prompt' })).toBeVisible();
 }
 
 async function createSelfHostedBotAcceptanceChannel(page: Page): Promise<{ conversationId: string; peerTestId: string }> {
@@ -177,20 +177,21 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
     await openMahayanaConversation(page);
 
     const prompt = '请分析这个任务，规划步骤，调用工具并给出最终结果。';
-    await page.getByTestId('messenger-input').fill(prompt);
-    await page.getByTestId('messenger-send').click();
+    const promptInput = page.getByRole('textbox', { name: 'Prompt' });
+    await promptInput.fill(prompt);
+    await page.getByRole('button', { name: 'Send message' }).click();
 
     // The user bubble is a local-first transition and must paint before the
     // Mahayana Host finishes accepting/routing the agent turn.
     await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 1_000 });
     await expect(page.getByTestId('mahayana-assistant-turn')).toBeVisible({ timeout: 1_000 });
-    await expect(page.getByTestId('messenger-input')).toBeVisible();
+    await expect(promptInput).toBeVisible();
 
     const turn = await expectHermesAssistantTurn(page, '收到：请分析这个任务');
     await expect(turn).toHaveCount(1);
     await expect(page.getByTestId('agent-thinking')).toHaveCount(0);
     await expect(page.getByTestId('agent-run')).toBeHidden();
-    await expect(page.getByTestId('messenger-input')).toBeVisible();
+    await expect(promptInput).toBeVisible();
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });
