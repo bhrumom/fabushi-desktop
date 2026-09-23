@@ -1,5 +1,6 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::agent_isolation::{
     AgentWorkerPool, ProductionAgentStoreWorkerBackend, WorkerBlobStore,
@@ -9,7 +10,7 @@ use crate::agents::agent_profile::SandAgentProfile;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::agent_db::{
-    AgentDbSerdeSnapshot, add_persisted_conversation_partner,
+    AgentDbSerdeSnapshot, SandAgentDb, add_persisted_conversation_partner,
     append_persisted_transcript_entries, clear_persisted_agent_profile_prompt_snapshot,
     clear_persisted_conversation, clear_persisted_memory_prompt_snapshot,
     clear_persisted_transient_state, delete_persisted_transcript_entry,
@@ -92,6 +93,7 @@ pub struct ProductionSessionWorkers {
     conversation_size_maintenance: ConversationSizeMaintenance,
     conversation_state: SessionConversationState,
     mint_queue: SessionMintQueue,
+    db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
     busy_timeout_ms: u64,
 }
 
@@ -115,6 +117,7 @@ impl ProductionSessionWorkers {
             conversation_size_maintenance: ConversationSizeMaintenance::default(),
             conversation_state: SessionConversationState::new(busy_timeout_ms),
             mint_queue: SessionMintQueue::default(),
+            db_owners: Mutex::new(BTreeMap::new()),
             busy_timeout_ms,
         }
     }
@@ -145,7 +148,7 @@ impl ProductionSessionWorkers {
         origin: &str,
         purpose: Option<&str>,
     ) -> Result<MaterializedAgentRecord, String> {
-        self.mint_queue.run(|| {
+        let record = self.mint_queue.run(|| {
             materialize_new_session(
                 &self.agents_root,
                 self.busy_timeout_ms,
@@ -154,7 +157,9 @@ impl ProductionSessionWorkers {
                 purpose,
             )
             .map_err(|error| error.to_string())
-        })
+        })?;
+        let _ = self.open_agent_db_owner(&record.id)?;
+        Ok(record)
     }
 
     pub fn read_agent_transcript_entries(
@@ -339,6 +344,52 @@ impl ProductionSessionWorkers {
         }
         Ok(db_path)
     }
+
+    pub fn open_agent_db_owner(
+        &self,
+        agent_id: &str,
+    ) -> Result<Arc<SandAgentDb>, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        let mut owners = self
+            .db_owners
+            .lock()
+            .map_err(|_| "agent db owner map poisoned".to_string())?;
+        if let Some(owner) = owners.get(agent_id) {
+            return Ok(Arc::clone(owner));
+        }
+        let owner = Arc::new(
+            SandAgentDb::open(&db_path, self.busy_timeout_ms)
+                .map_err(|error| error.to_string())?,
+        );
+        owners.insert(agent_id.to_string(), Arc::clone(&owner));
+        Ok(owner)
+    }
+
+    pub fn close_agent_db_owner(
+        &self,
+        agent_id: &str,
+        checkpoint: bool,
+    ) -> bool {
+        let owner = self
+            .db_owners
+            .lock()
+            .ok()
+            .and_then(|mut owners| owners.remove(agent_id));
+        if let Some(owner) = owner {
+            owner.close(checkpoint);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn active_agent_db_owner_count(&self) -> usize {
+        self.db_owners
+            .lock()
+            .map(|owners| owners.len())
+            .unwrap_or_default()
+    }
+
 
     pub fn set_agent_sand_profile(
         &self,
@@ -765,6 +816,7 @@ impl ProductionSessionWorkers {
         else {
             return Ok(None);
         };
+        let _db_owner = self.open_agent_db_owner(agent_id)?;
         let store = self.create_agent_blob_store(agent_id)?;
         let session_db_path = materialized.db_path.clone();
 
@@ -898,6 +950,14 @@ impl ProductionSessionWorkers {
     }
 
     pub fn shutdown(&self) {
+        let owners = self
+            .db_owners
+            .lock()
+            .map(|mut owners| std::mem::take(&mut *owners).into_values().collect::<Vec<_>>())
+            .unwrap_or_default();
+        for owner in owners {
+            owner.close(false);
+        }
         futures::executor::block_on(self.pool.close_all());
     }
 

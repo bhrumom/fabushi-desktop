@@ -12097,7 +12097,8 @@
         "source/host/src/extensions/session/gateway.rs",
         "source/host/app/src/main.rs",
         "source/host/src/extensions/session/session_roster.rs",
-        "source/host/src/extensions/session/session_mutations.rs"
+        "source/host/src/extensions/session/session_mutations.rs",
+        "source/host/src/extensions/session/agent_session.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_db_metadata_contract.rs",
@@ -12110,9 +12111,10 @@
         "source/host/tests/session_gateway_contract.rs",
         "desktop/e2e/grok-parity.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/session_summaries_roster_contract.rs"
+        "source/host/tests/session_summaries_roster_contract.rs",
+        "source/host/tests/agent_db_owner_contract.rs"
       ],
-      "notes": "Rust production AgentDb covers Grok-aligned recovery/schema opening, metadata/root CAS, canonical profile-name metadata mutation, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, spend-guard migration, introduction/partner/profile-prompt state, transcript operations and minimal missing-db schema reseed used by production roster recovery. Shipping Gateway and Session use this Rust owner. Final remains withheld until generic metadata subscriptions/listener semantics, complete live owner/close/busy behavior, and remaining mutation Gateway commands are cut over."
+      "notes": "Rust production AgentDb now covers the frozen persistent API surface plus a real Host-lifetime SandAgentDb RAII owner. Owners hold/register one live SQLite handle per live agent, seed missing default metadata, release/checkpoint idempotently, drop locked writes with an onBusyError callback, attempt one in-place corruption recovery only when no other handle owns the DB, and expose metadata/profile/awaiting subscriptions. Shipping metadata latestRoot/name, profile, awaiting and clearConversation mutations notify the shared owner listener registry. ProductionSessionWorkers opens owners for create/open, holds them across turns, closes per-agent on delete and drains all on Host shutdown. The row remains existing-needs-parity until the remaining generic metadata mutation/listener call sites and all frozen owner-routed mutation surfaces are proven through the full Gateway/session composition."
     },
     {
       "referencePath": "source/host/extensions/session/agent-session.ts",

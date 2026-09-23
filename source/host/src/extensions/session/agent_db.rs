@@ -1,12 +1,21 @@
-use std::path::Path;
+use std::collections::{BTreeMap, HashMap};
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex, OnceLock};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use rusqlite::{OptionalExtension, params};
+use uuid::Uuid;
 
-use crate::storage::store_db::{bump_db_write_generation, live_db_handle_count};
+use crate::storage::sqlite_busy::{is_sqlite_busy_error, is_sqlite_corrupt_error};
+use crate::storage::store_db::{
+    bump_db_write_generation, live_db_handle_count, register_live_db_handle,
+    release_live_db_handle,
+};
 use crate::transcript_mutation_events::publish_transcript_mutation;
 
 use super::agent_db_recovery::{
-    AgentDbRecoveryError, DbRecoveryOptions, open_configured_db,
+    AgentDbRecoveryError, DbRecoveryOptions, open_configured_db, recover_corrupt_store_db,
 };
 use super::agent_db_schema::{
     CLEAR_BLOBS_SQL, CLEAR_TRANSCRIPT_ENTRIES_SQL, COMPARE_AND_SET_KV_SQL, DELETE_KV_SQL,
@@ -40,6 +49,8 @@ pub enum AgentDbProjectionError {
     MetadataJson(#[from] serde_json::Error),
     #[error("latestRootBlobId hex is invalid: {0}")]
     LatestRootHex(String),
+    #[error("agent db owner mutex poisoned")]
+    OwnerPoisoned,
 }
 
 const KV_PROFILE: &str = "sandProfile";
@@ -77,6 +88,415 @@ pub struct AgentDbSerdeSnapshot {
     pub pending_episode_turns: Vec<EpisodeTurn>,
     pub memory_prompt_snapshot: Option<MemoryPromptSnapshot>,
 }
+
+pub type AgentDbListener = Arc<dyn Fn() + Send + Sync + 'static>;
+pub type AgentDbBusyCallback = Arc<dyn Fn(&str, &str) + Send + Sync + 'static>;
+
+#[derive(Clone)]
+pub struct SandAgentDbOptions {
+    pub recovery: DbRecoveryOptions,
+    pub on_busy_error: Option<AgentDbBusyCallback>,
+}
+
+impl Default for SandAgentDbOptions {
+    fn default() -> Self {
+        Self {
+            recovery: DbRecoveryOptions::default(),
+            on_busy_error: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum AgentDbListenerChannel {
+    Metadata(String),
+    Profile,
+    Awaiting,
+}
+
+type AgentDbListenerKey = (PathBuf, AgentDbListenerChannel);
+type AgentDbListenerMap = HashMap<AgentDbListenerKey, BTreeMap<u64, AgentDbListener>>;
+
+fn agent_db_listener_registry() -> &'static Mutex<AgentDbListenerMap> {
+    static REGISTRY: OnceLock<Mutex<AgentDbListenerMap>> = OnceLock::new();
+    REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn next_agent_db_listener_id() -> u64 {
+    static NEXT: AtomicU64 = AtomicU64::new(1);
+    NEXT.fetch_add(1, Ordering::Relaxed)
+}
+
+fn resolve_agent_db_path(path: &Path) -> PathBuf {
+    if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join(path)
+    }
+}
+
+fn notify_agent_db_listeners(
+    db_path: &Path,
+    channel: AgentDbListenerChannel,
+) {
+    let key = (resolve_agent_db_path(db_path), channel);
+    let listeners = agent_db_listener_registry()
+        .lock()
+        .ok()
+        .and_then(|registry| {
+            registry
+                .get(&key)
+                .map(|listeners| listeners.values().cloned().collect::<Vec<_>>())
+        })
+        .unwrap_or_default();
+    for listener in listeners {
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| listener()));
+    }
+}
+
+pub struct AgentDbSubscription {
+    key: AgentDbListenerKey,
+    id: u64,
+    active: bool,
+}
+
+impl AgentDbSubscription {
+    pub fn unsubscribe(mut self) {
+        self.remove();
+    }
+
+    fn remove(&mut self) {
+        if !self.active {
+            return;
+        }
+        if let Ok(mut registry) = agent_db_listener_registry().lock() {
+            if let Some(listeners) = registry.get_mut(&self.key) {
+                listeners.remove(&self.id);
+                if listeners.is_empty() {
+                    registry.remove(&self.key);
+                }
+            }
+        }
+        self.active = false;
+    }
+}
+
+impl Drop for AgentDbSubscription {
+    fn drop(&mut self) {
+        self.remove();
+    }
+}
+
+fn subscribe_agent_db_listener(
+    db_path: &Path,
+    channel: AgentDbListenerChannel,
+    listener: AgentDbListener,
+) -> AgentDbSubscription {
+    let key = (resolve_agent_db_path(db_path), channel);
+    let id = next_agent_db_listener_id();
+    agent_db_listener_registry()
+        .lock()
+        .expect("agent db listener registry poisoned")
+        .entry(key.clone())
+        .or_default()
+        .insert(id, listener);
+    AgentDbSubscription {
+        key,
+        id,
+        active: true,
+    }
+}
+
+/// Long-lived Rust owner for the frozen Grok SandAgentDb lifecycle boundary.
+///
+/// Production keeps one owner per live agent. The held SQLite connection
+/// registers the live-handle fence used by corruption recovery and maintenance,
+/// while existing projection helpers remain the single persistence implementation.
+pub struct SandAgentDb {
+    db_path: PathBuf,
+    agent_dir_name: String,
+    options: SandAgentDbOptions,
+    connection: Mutex<Option<rusqlite::Connection>>,
+    recovered: AtomicBool,
+    handle_registered: AtomicBool,
+    closed: AtomicBool,
+}
+
+impl SandAgentDb {
+    pub fn open(
+        db_path: impl AsRef<Path>,
+        busy_timeout_ms: u64,
+    ) -> Result<Self, AgentDbProjectionError> {
+        let mut options = SandAgentDbOptions::default();
+        options.recovery.busy_timeout_ms = busy_timeout_ms;
+        Self::open_with_options(db_path, options)
+    }
+
+    pub fn open_with_options(
+        db_path: impl AsRef<Path>,
+        options: SandAgentDbOptions,
+    ) -> Result<Self, AgentDbProjectionError> {
+        let db_path = resolve_agent_db_path(db_path.as_ref());
+        let agent_dir_name = db_path
+            .parent()
+            .and_then(Path::file_name)
+            .map(|value| value.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let connection = open_configured_db(
+            &db_path,
+            &agent_dir_name,
+            &options.recovery,
+            live_db_handle_count(&db_path) > 0,
+        )?;
+        register_live_db_handle(&db_path);
+        let owner = Self {
+            db_path,
+            agent_dir_name,
+            options,
+            connection: Mutex::new(Some(connection)),
+            recovered: AtomicBool::new(false),
+            handle_registered: AtomicBool::new(true),
+            closed: AtomicBool::new(false),
+        };
+        if let Err(error) = owner.seed_default_metadata_if_missing() {
+            owner.close(false);
+            return Err(error);
+        }
+        Ok(owner)
+    }
+
+    pub fn db_path(&self) -> &Path {
+        &self.db_path
+    }
+
+    pub fn is_closed(&self) -> bool {
+        self.closed.load(Ordering::Acquire)
+    }
+
+    pub fn read_kv(&self, key: &str) -> Result<Option<String>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(None);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(None);
+        };
+        Ok(read_kv(db, key)?)
+    }
+
+    pub fn write_kv(
+        &self,
+        key: &str,
+        value: &str,
+    ) -> Result<bool, AgentDbProjectionError> {
+        self.run_write(&format!("writeKv:{key}"), |db| {
+            db.execute(SET_KV_SQL, params![key, value]).map(|changes| changes > 0)
+        })
+    }
+
+    pub fn delete_kv(&self, key: &str) -> Result<bool, AgentDbProjectionError> {
+        self.run_write(&format!("deleteKv:{key}"), |db| {
+            db.execute(DELETE_KV_SQL, params![key]).map(|changes| changes > 0)
+        })
+    }
+
+    pub fn subscribe_metadata(
+        &self,
+        key: impl Into<String>,
+        listener: AgentDbListener,
+    ) -> AgentDbSubscription {
+        subscribe_agent_db_listener(
+            &self.db_path,
+            AgentDbListenerChannel::Metadata(key.into()),
+            listener,
+        )
+    }
+
+    pub fn subscribe_sand_profile(
+        &self,
+        listener: AgentDbListener,
+    ) -> AgentDbSubscription {
+        subscribe_agent_db_listener(
+            &self.db_path,
+            AgentDbListenerChannel::Profile,
+            listener,
+        )
+    }
+
+    pub fn subscribe_awaiting_user_response(
+        &self,
+        listener: AgentDbListener,
+    ) -> AgentDbSubscription {
+        subscribe_agent_db_listener(
+            &self.db_path,
+            AgentDbListenerChannel::Awaiting,
+            listener,
+        )
+    }
+
+    pub fn close(&self, checkpoint: bool) {
+        if self
+            .handle_registered
+            .swap(false, Ordering::AcqRel)
+        {
+            release_live_db_handle(&self.db_path);
+        }
+        if self.closed.swap(true, Ordering::AcqRel) {
+            return;
+        }
+        let Ok(mut guard) = self.connection.lock() else {
+            return;
+        };
+        let Some(db) = guard.take() else {
+            return;
+        };
+        if checkpoint {
+            let _ = db.query_row(
+                "PRAGMA wal_checkpoint(TRUNCATE)",
+                [],
+                |row| Ok((row.get::<_, i64>(1)?, row.get::<_, i64>(2)?)),
+            );
+        }
+        drop(db);
+    }
+
+    fn seed_default_metadata_if_missing(&self) -> Result<(), AgentDbProjectionError> {
+        if self.read_kv("metadata")?.is_some() {
+            return Ok(());
+        }
+        let created_at = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis()
+            .min(u64::MAX as u128) as u64;
+        let first = Uuid::new_v4();
+        let second = Uuid::new_v4();
+        let blob_encryption_key = first
+            .as_bytes()
+            .iter()
+            .chain(second.as_bytes().iter())
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        let metadata = serde_json::json!({
+            "agentId": self.agent_dir_name,
+            "latestRootBlobId": "",
+            "name": "New Agent",
+            "mode": "default",
+            "isRunEverything": false,
+            "createdAt": created_at,
+            "blobEncryptionKey": blob_encryption_key,
+        });
+        let raw = encode_hex(&serde_json::to_vec(&metadata)?);
+        let _ = self.write_kv("metadata", &raw)?;
+        Ok(())
+    }
+
+    fn run_write<F>(
+        &self,
+        operation: &str,
+        mut write: F,
+    ) -> Result<bool, AgentDbProjectionError>
+    where
+        F: FnMut(&rusqlite::Connection) -> Result<bool, rusqlite::Error>,
+    {
+        if self.is_closed() {
+            return Ok(false);
+        }
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(false);
+        };
+        match write(db) {
+            Ok(changed) => {
+                if changed {
+                    bump_db_write_generation(&self.db_path);
+                }
+                return Ok(changed);
+            }
+            Err(error) if is_sqlite_busy_error(&error) => {
+                let message = error.to_string();
+                drop(guard);
+                if let Some(callback) = self.options.on_busy_error.as_ref() {
+                    callback(operation, &message);
+                }
+                return Ok(false);
+            }
+            Err(error)
+                if self.options.recovery.recover_on_corruption
+                    && !self.recovered.load(Ordering::Acquire)
+                    && is_sqlite_corrupt_error(&error) =>
+            {
+                let own_handle = usize::from(
+                    self.handle_registered.load(Ordering::Acquire),
+                );
+                if live_db_handle_count(&self.db_path).saturating_sub(own_handle) > 0 {
+                    return Err(error.into());
+                }
+                let cause = error.to_string();
+                let old = guard.take();
+                drop(old);
+                match recover_corrupt_store_db(
+                    &self.db_path,
+                    &self.agent_dir_name,
+                    &self.options.recovery,
+                    &cause,
+                ) {
+                    Ok(recovered) => {
+                        *guard = Some(recovered);
+                        self.recovered.store(true, Ordering::Release);
+                    }
+                    Err(recovery_error) => {
+                        self.closed.store(true, Ordering::Release);
+                        if self
+                            .handle_registered
+                            .swap(false, Ordering::AcqRel)
+                        {
+                            release_live_db_handle(&self.db_path);
+                        }
+                        return Err(recovery_error.into());
+                    }
+                }
+            }
+            Err(error) => return Err(error.into()),
+        }
+
+        let Some(db) = guard.as_ref() else {
+            return Ok(false);
+        };
+        match write(db) {
+            Ok(changed) => {
+                if changed {
+                    bump_db_write_generation(&self.db_path);
+                }
+                Ok(changed)
+            }
+            Err(error) if is_sqlite_busy_error(&error) => {
+                let message = error.to_string();
+                drop(guard);
+                if let Some(callback) = self.options.on_busy_error.as_ref() {
+                    callback(operation, &message);
+                }
+                Ok(false)
+            }
+            Err(error) => Err(error.into()),
+        }
+    }
+}
+
+impl Drop for SandAgentDb {
+    fn drop(&mut self) {
+        self.close(false);
+    }
+}
+
 
 fn open_projection_db(
     db_path: &Path,
@@ -310,6 +730,10 @@ pub fn set_persisted_agent_name(
     let changed = db.execute(SET_KV_SQL, params!["metadata", next_raw])? > 0;
     if changed {
         bump_db_write_generation(db_path);
+        notify_agent_db_listeners(
+            db_path,
+            AgentDbListenerChannel::Metadata("name".into()),
+        );
     }
     Ok(changed)
 }
@@ -406,6 +830,10 @@ pub fn compare_and_set_persisted_latest_root_blob_id(
     )? == 1;
     if changed {
         bump_db_write_generation(db_path);
+        notify_agent_db_listeners(
+            db_path,
+            AgentDbListenerChannel::Metadata("latestRootBlobId".into()),
+        );
     }
     Ok(changed)
 }
@@ -718,6 +1146,7 @@ pub fn set_persisted_sand_profile(
     let wrote = db.execute(SET_KV_SQL, params![KV_PROFILE, raw])? > 0;
     if wrote {
         bump_db_write_generation(db_path);
+        notify_agent_db_listeners(db_path, AgentDbListenerChannel::Profile);
     }
     Ok(wrote)
 }
@@ -891,6 +1320,7 @@ pub fn set_persisted_awaiting_user_response(
     };
     if wrote {
         bump_db_write_generation(db_path);
+        notify_agent_db_listeners(db_path, AgentDbListenerChannel::Awaiting);
     }
     Ok(wrote)
 }
@@ -1188,6 +1618,11 @@ pub fn clear_persisted_conversation(
         serde_json::Value::String(agent_id_for_db_path(db_path)),
     );
     publish_transcript_mutation(&mutation);
+    notify_agent_db_listeners(db_path, AgentDbListenerChannel::Awaiting);
+    notify_agent_db_listeners(
+        db_path,
+        AgentDbListenerChannel::Metadata("latestRootBlobId".into()),
+    );
     Ok(true)
 }
 

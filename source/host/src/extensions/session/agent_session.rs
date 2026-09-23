@@ -137,6 +137,7 @@ impl SandAgentSessionStore {
     pub fn delete_session(&self, agent_id: &str) -> Result<(), String> {
         let db_path = self.production.session_db_path(agent_id)?;
         let blob_path = conversation_blobs_path(&db_path);
+        let _ = self.production.close_agent_db_owner(agent_id, false);
         futures::executor::block_on(self.production.worker_pool().close_store(&blob_path));
         delete_sand_agent_db_write_generation(&db_path);
         match fs::remove_dir_all(self.get_agent_dir(agent_id)) {

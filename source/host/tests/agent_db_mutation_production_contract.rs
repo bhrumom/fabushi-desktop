@@ -42,6 +42,7 @@ fn production_session_owns_agent_db_state_mutations_and_transcript_lifecycle() {
         .expect("materialize");
     let agent_id = created.id;
     let db_path = created.db_path;
+    assert_eq!(workers.active_agent_db_owner_count(), 1);
 
     assert!(workers
         .set_agent_sand_profile(
@@ -329,5 +330,6 @@ fn production_session_owns_agent_db_state_mutations_and_transcript_lifecycle() {
     subscription.unsubscribe();
 
     workers.shutdown();
+    assert_eq!(workers.active_agent_db_owner_count(), 0);
     let _ = fs::remove_dir_all(root);
 }
