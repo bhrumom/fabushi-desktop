@@ -37,9 +37,8 @@ use super::conversation_size_limits::{
 };
 use super::session_paths::{get_agent_db_path, get_connector_secrets_root};
 use super::connector_secret_store::SandConnectorSecretStore;
-use super::channel_store::{
-    ChannelConfig, ChannelConnection, FileChannelStore, get_agent_channels_dir,
-};
+use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
+use super::session_store_factories::channel_store_for_db_path;
 use super::session_maintenance::{
     clear_stale_checkpoint_roots_once, recover_conversation_root_if_missing,
     retire_legacy_store_blobs_once,
@@ -209,13 +208,14 @@ impl ProductionSessionWorkers {
         SandConnectorSecretStore::new(get_connector_secrets_root(Some(&self.agents_root)))
     }
 
-    pub fn open_channel_store(&self, agent_id: &str) -> FileChannelStore {
-        FileChannelStore::new(get_agent_channels_dir(&self.agents_root.join(agent_id)))
+    pub fn open_channel_store(&self, agent_id: &str) -> Result<FileChannelStore, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        Ok(channel_store_for_db_path(&db_path))
     }
 
     pub fn list_agent_channels(&self, agent_id: &str) -> Result<Vec<ChannelConnection>, String> {
         Ok(self
-            .open_channel_store(agent_id)
+            .open_channel_store(agent_id)?
             .list_connections()
             .into_iter()
             .filter(|connection| {
@@ -227,7 +227,7 @@ impl ProductionSessionWorkers {
     }
 
     pub fn list_channel_configs(&self, agent_id: &str) -> Result<Vec<ChannelConfig>, String> {
-        let store = self.open_channel_store(agent_id);
+        let store = self.open_channel_store(agent_id)?;
         let secrets = self.connector_secret_store();
         let mut configs = Vec::new();
         for platform in store.list_platforms() {
@@ -257,7 +257,7 @@ impl ProductionSessionWorkers {
         if !stored {
             return Ok(false);
         }
-        self.open_channel_store(agent_id)
+        self.open_channel_store(agent_id)?
             .write_metadata(platform, "")
             .map_err(|error| error.to_string())
     }
@@ -288,7 +288,7 @@ impl ProductionSessionWorkers {
             .connector_secret_store()
             .remove_agent_platform(agent_id, platform)
             .map_err(|error| error.to_string())?;
-        self.open_channel_store(agent_id)
+        self.open_channel_store(agent_id)?
             .remove(platform)
             .map_err(|error| error.to_string())
     }

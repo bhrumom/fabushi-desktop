@@ -18,6 +18,7 @@ pub mod session_materialization;
 pub mod session_conversation_state;
 pub mod session_projection;
 pub mod session_summaries;
+pub mod session_store_factories;
 pub mod session_roster;
 pub mod session_profile_files;
 pub mod session_mutations;

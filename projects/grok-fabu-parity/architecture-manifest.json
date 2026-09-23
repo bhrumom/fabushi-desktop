@@ -12597,12 +12597,23 @@
       "targetPath": "source/host/src/extensions/session/session_store_factories.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "28e7b3603793a6b4ecc0ac0c888da920a2d8f5c4",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/session_store_factories.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/channel_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/session_store_factories_contract.rs",
+        "source/host/tests/channel_store_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Session factory owner now preserves the frozen dbPath→agentDir automations/channels locations, agentDir→sandRoot global-workflows location, NO_SESSION_MEMORY unavailable-store semantics, and the shipping ProductionSessionWorkers channel store is created through this factory. Final is withheld because FileAutomationStore/FileWorkflowStore and timezone-aware automation/workflow composition do not yet have Rust production owners."
     },
     {
       "referencePath": "source/host/extensions/session/session-summaries.ts",
