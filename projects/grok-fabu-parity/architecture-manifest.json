@@ -11917,12 +11917,21 @@
       "targetPath": "source/host/src/extensions/memory/memory_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "b3800aec1c20dddd426c774c4f9394f241fa012c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/memory/memory_service.rs",
+        "source/host/src/extensions/session/session_roster.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/memory_service_contract.rs",
+        "source/host/tests/session_summaries_roster_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Real Rust durable-footprint slice of frozen MemoryService: canonical memory/profile/log paths, markdown fact parsing/normalization and agentMemoryHasContent semantics are owned by the Host Memory extension. Shipping Session roster now includes durable memory when deciding whether a missing/blank store.db agent must survive and be reseeded. Final is withheld until FileMemoryStore recall/list/add/remove/clear, origin/tombstone/synthesis state, shared user/project stores, watchers, subscriptions and synthesis lifecycle are ported."
     },
     {
       "referencePath": "source/host/extensions/memory/memory-synthesis-service.ts",
@@ -12701,16 +12710,18 @@
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/automations/automation_store.rs",
         "source/host/src/workflows/workflow_store.rs",
-        "source/host/src/workflows/workflow_library.rs"
+        "source/host/src/workflows/workflow_library.rs",
+        "source/host/src/extensions/memory/memory_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_summaries_roster_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/automation_store_contract.rs",
-        "source/host/tests/workflow_store_contract.rs"
+        "source/host/tests/workflow_store_contract.rs",
+        "source/host/tests/memory_service_contract.rs"
       ],
-      "notes": "Rust production roster walks agent directories, builds/degrades summaries, sorts by updatedAt, and now routes missing store.db agents through session-mutations recovery with profile/quarantined durable-footprint checks, live-handle fencing, and minimal schema reseed. Final remains withheld until deletion predicates, memory/automation/workflow durable footprints, diagnostics, and extras-cache pruning are fully production composed. Production automation durable-footprint composition is now Rust-owned: dbPath factories create FileAutomationStore and roster/recovery/summary preserve agents with valid routine definitions even when store.db is missing. Production workflow durable-footprint composition is now Rust-owned: Session constructs FileWorkflowStore, migrates legacy per-agent workflows, projects routine-backed workflows, and roster recovery preserves workflow-bearing agents without store.db."
+      "notes": "Rust production roster walks agent directories, builds/degrades summaries, sorts by updatedAt, and now routes missing store.db agents through session-mutations recovery with profile/quarantined durable-footprint checks, live-handle fencing, and minimal schema reseed. Final remains withheld until deletion predicates, memory/automation/workflow durable footprints, diagnostics, and extras-cache pruning are fully production composed. Production automation durable-footprint composition is now Rust-owned: dbPath factories create FileAutomationStore and roster/recovery/summary preserve agents with valid routine definitions even when store.db is missing. Production workflow durable-footprint composition is now Rust-owned: Session constructs FileWorkflowStore, migrates legacy per-agent workflows, projects routine-backed workflows, and roster recovery preserves workflow-bearing agents without store.db. Durable-footprint recovery now includes real Host MemoryService disk content in addition to automation/workflow footprints; remaining parity is deletion predicates, diagnostics/cache pruning and other explicitly noted lifecycle composition."
     },
     {
       "referencePath": "source/host/extensions/session/session-store-factories.ts",

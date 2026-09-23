@@ -115,7 +115,17 @@ fn production_roster_recovers_profile_only_and_quarantined_missing_databases() {
     .expect("profile");
     assert!(!profile_agent.join("store.db").exists());
 
-    let quarantined_agent = root.join("quarantined-only");
+    let memory_agent = root.join("memory-only");
+    let memory_dir = memory_agent.join("memory");
+    fs::create_dir_all(&memory_dir).expect("memory dir");
+    fs::write(
+        memory_dir.join("profile.md"),
+        "# About the user\n\n- (2026-09-24) Durable memory survives database loss\n",
+    )
+    .expect("memory profile");
+    assert!(!memory_agent.join("store.db").exists());
+
+        let quarantined_agent = root.join("quarantined-only");
     fs::create_dir_all(&quarantined_agent).expect("quarantine dir");
     fs::write(
         quarantined_agent.join("store.db.corrupt-20260924"),
@@ -134,6 +144,9 @@ fn production_roster_recovers_profile_only_and_quarantined_missing_databases() {
 
     assert!(listed.iter().any(|summary| summary.id == "quarantined-only"));
     assert!(quarantined_agent.join("store.db").is_file());
+
+    assert!(listed.iter().any(|summary| summary.id == "memory-only"));
+    assert!(memory_agent.join("store.db").is_file());
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);

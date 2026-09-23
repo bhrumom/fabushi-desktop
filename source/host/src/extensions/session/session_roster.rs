@@ -5,6 +5,7 @@ use std::path::Path;
 use crate::storage::store_db::live_db_handle_count;
 use crate::automations::automation_store::agent_has_automations;
 use crate::workflows::workflow_store::agent_has_workflows;
+use crate::extensions::memory::memory_service::agent_memory_has_content;
 
 use super::agent_db::reseed_minimal_persisted_agent_db_if_missing;
 use super::session_mutations::recover_agent_with_missing_db;
@@ -16,9 +17,9 @@ use super::session_summaries::{
 
 fn durable_footprint(agent_dir: &Path) -> DurableFootprint {
     DurableFootprint {
+        has_memory: agent_memory_has_content(agent_dir),
         has_automations: agent_has_automations(agent_dir),
         has_workflows: agent_has_workflows(agent_dir),
-        ..DurableFootprint::default()
     }
 }
 
