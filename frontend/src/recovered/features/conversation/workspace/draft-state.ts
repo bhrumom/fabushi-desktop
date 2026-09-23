@@ -1,5 +1,5 @@
 import type { AgentDesktopBridge } from "../../../contracts/desktop-bridge";
-import { areComposerDraftsEqual, parseComposerDraft, type ComposerDraft } from "./model";
+import { areComposerDraftsEqual, parseComposerDraft, type ComposerDraft } from "./model.ts";
 
 // Immutable root: ef4e9831b65d39633f09c9ad0c083b98b7ebf52e3bb558182aee5bde31f876fa
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4769359 (composer-drafts slice metadata)
