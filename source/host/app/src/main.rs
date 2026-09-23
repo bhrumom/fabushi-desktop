@@ -20,7 +20,9 @@ use mahayana_host_runtime::extensions::box_lifecycle::production::{
     ProductionBoxLifecycleClient, ProductionBoxLifecycleClientFactory,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
-use mahayana_host_runtime::extensions::session::box_handoff_service::BoxHandoffDeps;
+use mahayana_host_runtime::extensions::session::box_handoff_service::{
+    BoxHandoffDeps, BoxHandoffService, HandoffTrigger, PendingHandoff, ScreenshotPayload,
+};
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
@@ -54,7 +56,7 @@ use mahayana_host_runtime::extensions::trays::extension::{
 };
 use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxRunnerResourcePort,
-    ForeverBoxService, start_forever_box_extension,
+    BoxStatus, ForeverBoxService, start_forever_box_extension,
 };
 use mahayana_host_runtime::extensions::auth::credential_renewer::RenewalOutcome;
 use mahayana_host_runtime::extensions::browser_ua::{
@@ -325,9 +327,54 @@ struct UnifiedGatewayApi {
     ack_obligations: Arc<AckObligations>,
     agent_deletion_runtime: AgentDeletionRuntimeDeps,
     forever_box: Arc<ForeverBoxService>,
+    session_handoff: BoxHandoffService,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     trays: Arc<HostTraysExtension>,
     transcript_runtime: ProductionTranscriptRuntime,
+}
+
+fn project_forever_box_status(
+    status: &BoxStatus,
+    handoff: Option<&PendingHandoff>,
+) -> serde_json::Value {
+    let windows = status.windows.as_ref().map(|windows| {
+        windows
+            .iter()
+            .map(|window| {
+                serde_json::json!({
+                    "windowIndex": window.window_index,
+                    "vncUrl": window.vnc_url,
+                })
+            })
+            .collect::<Vec<_>>()
+    });
+    let handoff = handoff.map(|pending| {
+        serde_json::json!({
+            "requestId": pending.request_id,
+            "instruction": pending.instruction,
+            "snapshotDataUrl": pending.snapshot_data_url,
+        })
+    });
+    serde_json::json!({
+        "agentId": status.agent_id,
+        "state": status.state,
+        "vncUrl": status.vnc_url,
+        "windows": windows,
+        "imageUpdateAvailable": status.image_update_available,
+        "pull": status.pull_percent.map(|percent| serde_json::json!({ "percent": percent })),
+        "handoff": handoff,
+    })
+}
+
+fn required_box_agent_id<'a>(
+    method: &str,
+    args: &'a serde_json::Value,
+) -> Result<&'a str, GatewayCommandError> {
+    args.get("id")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| GatewayCommandError::BadRequest(format!("{method} requires id")))
 }
 
 fn call_host_lane(
@@ -649,6 +696,36 @@ impl GatewayApi for UnifiedGatewayApi {
                 SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
                 SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
             });
+        }
+        if method == "getForeverBoxStatus" {
+            let agent_id = required_box_agent_id(method, &args)?;
+            let status = self.forever_box.get_status(agent_id);
+            let handoff = self.session_handoff.get(agent_id);
+            return Ok(project_forever_box_status(&status, handoff.as_ref()));
+        }
+        if method == "ensureForeverBox" {
+            let agent_id = required_box_agent_id(method, &args)?;
+            let status = self
+                .forever_box
+                .ensure(agent_id)
+                .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+            let handoff = self.session_handoff.get(agent_id);
+            return Ok(project_forever_box_status(&status, handoff.as_ref()));
+        }
+        if method == "handBackForeverBox" {
+            let agent_id = required_box_agent_id(method, &args)?;
+            let trigger = args
+                .get("trigger")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .unwrap_or("button");
+            self.session_handoff
+                .end(agent_id, HandoffTrigger::Name(trigger.to_string()))
+                .map_err(GatewayCommandError::Internal)?;
+            let status = self.forever_box.get_status(agent_id);
+            let handoff = self.session_handoff.get(agent_id);
+            return Ok(project_forever_box_status(&status, handoff.as_ref()));
         }
         if method == RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD {
             return self
@@ -1090,14 +1167,53 @@ fn main() {
             Arc::clone(&production_extensions.team_rules),
             app_data_dir.join("transcripts"),
         ));
+    let gateway_events = GatewayEventHub::default();
     let settings_extension = start_settings_extension();
     let settings_for_session = Arc::clone(&settings_extension);
+    let handoff_prepare_box = Arc::clone(&forever_box);
+    let handoff_screenshot_box = Arc::clone(&forever_box);
+    let handoff_status_box = Arc::clone(&forever_box);
+    let handoff_status_events = gateway_events.clone();
+    let handoff_deps = BoxHandoffDeps {
+        prepare: Some(Arc::new(move |request| {
+            handoff_prepare_box
+                .ensure(&request.agent_id)
+                .map(|_| ())
+                .map_err(|error| error.to_string())
+        })),
+        grab_screenshot: Some(Arc::new(move |agent_id| {
+            handoff_screenshot_box
+                .capture_screenshot(agent_id)
+                .map(|bytes| bytes.map(ScreenshotPayload::Bytes))
+                .map_err(|error| error.to_string())
+        })),
+        on_status_changed: Some(Arc::new(move |agent_id, pending| {
+            let status = handoff_status_box.get_status(agent_id);
+            handoff_status_events.publish(serde_json::json!({
+                "channel": "forever-box",
+                "payload": project_forever_box_status(&status, pending.as_ref()),
+            }));
+        })),
+        report_box_help: Some(Arc::new(|event| {
+            eprintln!("mahayana-host-box-help {}", event);
+        })),
+        track_event: Some(Arc::new(|name, properties| {
+            eprintln!(
+                "mahayana-host-product-event name={} properties={}",
+                name, properties
+            );
+        })),
+        report: Some(Arc::new(|event| {
+            eprintln!("mahayana-host-box-handoff {}", event);
+        })),
+        ..BoxHandoffDeps::default()
+    };
     let session_extension = start_session_extension(
         Arc::clone(&production_extensions.experiments),
         Arc::new(ProductionSessionWorkers::production_with_user_time_zone_resolver(
             Arc::new(move || settings_for_session.get_user_time_zone()),
         )),
-        BoxHandoffDeps::default(),
+        handoff_deps,
     );
     let session_workers = session_extension.store();
     let session_handoff = session_extension.handoff_service();
@@ -1127,10 +1243,13 @@ fn main() {
                 Ok(())
             })
         }),
-        forget_handoff: Some(Arc::new(move |agent_id| {
-            session_handoff.forget(agent_id);
-            Ok(())
-        })),
+        forget_handoff: Some({
+            let handoff = session_handoff.clone();
+            Arc::new(move |agent_id| {
+                handoff.forget(agent_id);
+                Ok(())
+            })
+        }),
     };
 
     let gateway_config = match resolve_gateway_server_config() {
@@ -1141,7 +1260,6 @@ fn main() {
         }
     };
     let gateway_started_at = started_at_ms();
-    let gateway_events = GatewayEventHub::default();
     let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: Arc::new(UnifiedGatewayApi {
@@ -1156,6 +1274,7 @@ fn main() {
             ack_obligations: Arc::clone(&ack_obligations),
             agent_deletion_runtime,
             forever_box: Arc::clone(&forever_box),
+            session_handoff: session_handoff.clone(),
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
             trays: Arc::clone(&production_extensions.trays),
             transcript_runtime: ProductionTranscriptRuntime::new(Some(&app_data_dir)),
@@ -1304,8 +1423,10 @@ mod tests {
         ProductionHostExtensions, ProductionRunnerRequestContextSource, UnifiedGatewayApi,
         decode_provider_messages,
         dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
-        reaction_gateway_args,
+        project_forever_box_status, reaction_gateway_args,
     };
+    use mahayana_host_runtime::extensions::forever_box::BoxStatus;
+    use mahayana_host_runtime::extensions::session::box_handoff_service::PendingHandoff;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -1366,6 +1487,30 @@ mod tests {
                 "entryId": "t3u",
                 "emoji": "👍"
             })
+        );
+    }
+
+    #[test]
+    fn forever_box_status_projection_carries_pending_handoff_for_renderer() {
+        let status = BoxStatus {
+            agent_id: "agent-a".into(),
+            state: "running".into(),
+            vnc_url: Some("http://127.0.0.1/vnc.html".into()),
+            windows: None,
+            image_update_available: Some(true),
+            pull_percent: None,
+        };
+        let handoff = PendingHandoff {
+            request_id: "request-a".into(),
+            instruction: "Sign in".into(),
+            snapshot_data_url: Some("data:image/webp;base64,YWJj".into()),
+        };
+        let projected = project_forever_box_status(&status, Some(&handoff));
+        assert_eq!(projected["agentId"], "agent-a");
+        assert_eq!(projected["handoff"]["requestId"], "request-a");
+        assert_eq!(
+            projected["handoff"]["snapshotDataUrl"],
+            "data:image/webp;base64,YWJj"
         );
     }
 

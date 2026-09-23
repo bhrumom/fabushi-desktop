@@ -88,7 +88,8 @@ pub type GrabScreenshot =
 pub type HandoffStartedCallback = Arc<dyn Fn(HandoffStartedEvent) + Send + Sync>;
 pub type HandoffEndedCallback =
     Arc<dyn Fn(HandoffEndedEvent) -> Result<(), String> + Send + Sync>;
-pub type HandoffStatusCallback = Arc<dyn Fn(&str) + Send + Sync>;
+pub type HandoffStatusCallback =
+    Arc<dyn Fn(&str, Option<PendingHandoff>) + Send + Sync>;
 pub type TelemetryReportCallback = Arc<dyn Fn(Value) + Send + Sync>;
 pub type TrackEventCallback = Arc<dyn Fn(&str, Value) + Send + Sync>;
 
@@ -200,7 +201,7 @@ impl BoxHandoffService {
 
     fn notify_status(&self, agent_id: &str) {
         if let Some(on_status_changed) = self.deps.on_status_changed.as_ref() {
-            on_status_changed(agent_id);
+            on_status_changed(agent_id, self.get(agent_id));
         }
     }
 

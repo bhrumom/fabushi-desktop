@@ -11360,15 +11360,17 @@
         "source/host/src/extensions/forever_box/host_box.rs",
         "source/host/src/extensions/forever_box/extension.rs",
         "source/host/src/extensions/box_lifecycle/production.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/session/box_handoff_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/extensions_forever_box_contract.rs",
         "source/host/tests/box_generated_production_contract.rs",
         "source/host/tests/extensions_box_lifecycle_production_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_handoff_service_contract.rs"
       ],
-      "notes": "Final: ForeverBox owns HostBox plus the production lifecycle service, recreate/update/auto-update state, environment/MCP/resource access and disposal. The shipping Host constructs this exact graph and the Runner resource contract reaches the authenticated ExecService through it."
+      "notes": "Final: ForeverBox owns HostBox plus the production lifecycle service, recreate/update/auto-update state, environment/MCP/resource access, generated ComputerUse screenshot capture and disposal. Shipping Session handoff now calls this screenshot owner directly; the Host constructs this exact graph and Runner resources reach authenticated ExecService through it."
     },
     {
       "referencePath": "source/host/extensions/forever-box/host-box.ts",
@@ -12256,15 +12258,18 @@
       "behavioralEvidence": [
         "source/host/src/extensions/session/box_handoff_service.rs",
         "source/host/src/extensions/session/extension.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/forever_box/forever_box_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/box_handoff_service_contract.rs",
         "source/host/tests/session_extension_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/extensions_forever_box_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host-owned handoff service now implements frozen pending/request isolation, already-pending semantics, hand-back resolution defaults, asynchronous screenshot timeout/base64 projection, stale-request fencing, status callbacks and telemetry normalization. The shipping Session extension owns the service for the Host lifetime. Final is withheld until the production Computer owner injects real prepare/screenshot/status/telemetry callbacks rather than the current no-op dependency set."
+      "notes": "Rust Host-owned handoff service implements frozen pending/request isolation, duplicate fencing, hand-back defaults, async screenshot timeout/base64 projection, stale-request fencing, status callbacks and telemetry normalization. Shipping Session now injects real production deps: prepare calls ForeverBox.ensure, screenshot calls ForeverBox's generated ComputerUse screenshot owner, status changes publish the renderer's forever-box payload with the current handoff, and get/ensure/handBackForeverBox are owned by the Rust Host Gateway. Final remains withheld only for replacing structured Host log projections with the frozen analytics/brain telemetry owners and proving those telemetry/report semantics end-to-end."
     },
     {
       "referencePath": "source/host/extensions/session/channel-store.ts",
@@ -12398,7 +12403,8 @@
         "source/host/src/extensions/session/session_maintenance.rs",
         "source/host/src/extensions/settings/settings_service.rs",
         "source/host/src/extensions/experiments/extension.rs",
-        "source/host/src/extensions/session/conversation_size_limits.rs"
+        "source/host/src/extensions/session/conversation_size_limits.rs",
+        "source/host/src/extensions/forever_box/forever_box_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_extension_contract.rs",
@@ -12409,10 +12415,11 @@
         "source/host/tests/settings_service_contract.rs",
         "source/host/tests/session_store_factories_contract.rs",
         "source/host/tests/extensions_experiments_contract.rs",
-        "source/host/tests/conversation_size_limits_contract.rs"
+        "source/host/tests/conversation_size_limits_contract.rs",
+        "source/host/tests/extensions_forever_box_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust SessionExtension owns the production Session store, Box handoff lifetime, live experiment pins, startup legacy members cleanup and the frozen grok_bot_conversation_size_limits dynamic-config reader. Session size policy now reads the live Experiments fallback/override snapshot instead of relying only on environment/default constants. Shipping Session also consumes the live SettingsService timezone resolver for automation/workflow composition. Final remains withheld until real Computer/telemetry Box handoff prepare/screenshot/status/report dependencies replace the current default no-op dependency set."
+      "notes": "Shipping Rust SessionExtension owns the production Session store, Box handoff lifetime, experiment pins, startup maintenance, conversation-size dynamic config and live Settings timezone. Its handoff dependencies are no longer defaults: shipping Host injects ForeverBox prepare/screenshot and forever-box status publication through the real Gateway. Final remains withheld for exact frozen telemetry/analytics owner composition for Box handoff reporting."
     },
     {
       "referencePath": "source/host/extensions/session/pending-card-sweeps.ts",

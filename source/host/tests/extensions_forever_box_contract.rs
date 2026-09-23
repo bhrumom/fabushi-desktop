@@ -6,6 +6,9 @@ use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxLifecycle, ForeverBoxService, HostBox,
     is_host_bundle_auto_update_enabled, is_image_auto_update_enabled,
 };
+use mahayana_host_runtime::extensions::forever_box::forever_box_service::{
+    decode_computer_use_screenshot_base64, encode_computer_use_screenshot_request,
+};
 use mahayana_host_runtime::r#box::production::ProductionBoxEnvironment;
 
 #[derive(Default)]
@@ -136,4 +139,23 @@ fn forever_box_auto_update_preserves_reference_skip_reasons() {
             .as_deref(),
         Some("auto-update-disabled")
     );
+}
+
+
+#[test]
+fn forever_box_screenshot_codec_matches_generated_computer_use_contract() {
+    assert_eq!(
+        encode_computer_use_screenshot_request("t"),
+        vec![0x0a, 0x01, b't', 0x12, 0x02, 0x52, 0x00]
+    );
+
+    let encoded_result = vec![
+        0x0a, 0x06, // ComputerUseResult.success
+        0x1a, 0x04, b'Y', b'W', b'J', b'j', // ComputerUseSuccess.screenshot
+    ];
+    assert_eq!(
+        decode_computer_use_screenshot_base64(&encoded_result).as_deref(),
+        Some("YWJj")
+    );
+    assert_eq!(decode_computer_use_screenshot_base64(&[0x12, 0x00]), None);
 }

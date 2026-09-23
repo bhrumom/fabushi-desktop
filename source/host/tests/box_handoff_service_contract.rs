@@ -60,7 +60,7 @@ fn service_deduplicates_pending_requests_captures_snapshot_and_reports() {
         })),
         on_status_changed: Some({
             let statuses = Arc::clone(&statuses);
-            Arc::new(move |agent_id| {
+            Arc::new(move |agent_id, _pending| {
                 statuses.lock().expect("statuses").push(agent_id.to_string());
             })
         }),

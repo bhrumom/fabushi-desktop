@@ -5,6 +5,8 @@ use std::sync::{
 };
 use std::thread;
 
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
+
 use crate::extensions::box_lifecycle::{
     BoxLifecycleClient, BoxLifecycleService, RecreateSandBoxResponse,
 };
@@ -150,6 +152,36 @@ impl ForeverBoxService {
             .map_err(|error| ForeverBoxServiceError::Box(error.to_string()))
     }
 
+    pub fn capture_screenshot(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<Vec<u8>>, ForeverBoxServiceError> {
+        let mut ready = self
+            .box_
+            .ensure_ready(agent_id)
+            .map_err(|error| ForeverBoxServiceError::Box(error.to_string()))?;
+        let request = encode_computer_use_screenshot_request(&format!(
+            "sand-box-handoff-screenshot-{agent_id}"
+        ));
+        let response = ready
+            .remote_accessor
+            .execute_computer_use_protobuf(&(), request)
+            .map_err(|error| ForeverBoxServiceError::Box(error.to_string()))?;
+        let Some(encoded) = decode_computer_use_screenshot_base64(&response) else {
+            return Ok(None);
+        };
+        let payload = encoded
+            .strip_prefix("data:")
+            .and_then(|value| value.split_once(',').map(|(_, body)| body))
+            .unwrap_or(encoded.as_str());
+        let bytes = BASE64_STANDARD
+            .decode(payload)
+            .map_err(|error| ForeverBoxServiceError::Box(format!(
+                "computer screenshot base64 decode failed: {error}"
+            )))?;
+        Ok((!bytes.is_empty()).then_some(bytes))
+    }
+
     pub fn reset(&self, agent_id: &str) -> Result<BoxStatus, ForeverBoxServiceError> {
         self.recreate(agent_id, false, None)
     }
@@ -267,4 +299,100 @@ impl ForeverBoxService {
     pub fn host_bundle_auto_update_enabled(&self) -> bool {
         self.host_bundle_auto_update_enabled
     }
+}
+
+pub fn encode_computer_use_screenshot_request(tool_call_id: &str) -> Vec<u8> {
+    let mut action = Vec::new();
+    push_length_delimited_field(10, &[], &mut action);
+    let mut request = Vec::new();
+    push_length_delimited_field(1, tool_call_id.as_bytes(), &mut request);
+    push_length_delimited_field(2, &action, &mut request);
+    request
+}
+
+pub fn decode_computer_use_screenshot_base64(payload: &[u8]) -> Option<String> {
+    let mut outer = 0usize;
+    while outer < payload.len() {
+        let tag = read_proto_varint(payload, &mut outer)?;
+        let field = tag >> 3;
+        let wire = (tag & 0x07) as u8;
+        if field == 1 && wire == 2 {
+            let success = read_proto_bytes(payload, &mut outer)?;
+            let mut inner = 0usize;
+            while inner < success.len() {
+                let tag = read_proto_varint(success, &mut inner)?;
+                let field = tag >> 3;
+                let wire = (tag & 0x07) as u8;
+                if field == 3 && wire == 2 {
+                    return String::from_utf8(read_proto_bytes(success, &mut inner)?.to_vec())
+                        .ok()
+                        .filter(|value| !value.is_empty());
+                }
+                skip_proto_field(success, &mut inner, wire)?;
+            }
+            return None;
+        }
+        skip_proto_field(payload, &mut outer, wire)?;
+    }
+    None
+}
+
+fn push_proto_varint(mut value: u64, output: &mut Vec<u8>) {
+    while value >= 0x80 {
+        output.push((value as u8) | 0x80);
+        value >>= 7;
+    }
+    output.push(value as u8);
+}
+
+fn push_length_delimited_field(field: u64, value: &[u8], output: &mut Vec<u8>) {
+    push_proto_varint((field << 3) | 2, output);
+    push_proto_varint(value.len() as u64, output);
+    output.extend_from_slice(value);
+}
+
+fn read_proto_varint(data: &[u8], position: &mut usize) -> Option<u64> {
+    let mut value = 0u64;
+    for shift in (0..70).step_by(7) {
+        let byte = *data.get(*position)?;
+        *position += 1;
+        value |= u64::from(byte & 0x7f) << shift;
+        if byte & 0x80 == 0 {
+            return Some(value);
+        }
+    }
+    None
+}
+
+fn read_proto_bytes<'a>(data: &'a [u8], position: &mut usize) -> Option<&'a [u8]> {
+    let length: usize = read_proto_varint(data, position)?.try_into().ok()?;
+    let end = position.checked_add(length)?;
+    let value = data.get(*position..end)?;
+    *position = end;
+    Some(value)
+}
+
+fn skip_proto_field(data: &[u8], position: &mut usize, wire: u8) -> Option<()> {
+    match wire {
+        0 => {
+            let _ = read_proto_varint(data, position)?;
+        }
+        1 => {
+            *position = position.checked_add(8)?;
+            if *position > data.len() {
+                return None;
+            }
+        }
+        2 => {
+            let _ = read_proto_bytes(data, position)?;
+        }
+        5 => {
+            *position = position.checked_add(4)?;
+            if *position > data.len() {
+                return None;
+            }
+        }
+        _ => return None,
+    }
+    Some(())
 }
