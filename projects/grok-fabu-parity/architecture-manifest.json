@@ -11971,7 +11971,7 @@
       "targetPath": "source/host/src/extensions/session/agent_db_recovery.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "89125e0db2c558a22ce126db45d988eca029a153",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -11987,7 +11987,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust recovery is production-wired into AgentDb opening and reuses the shared SQLite recovery layer for WAL/schema initialization, I/O retry, quick_check, live-handle recovery suppression, quarantine, row-by-row kv/blob/transcript salvage, diagnostics and transcript reindex mutation. Frozen-parity callback failure isolation and the 50ms quarantine removal retry are included in this commit; final status is withheld until this exact implementation SHA passes both required gates."
+      "notes": "Rust recovery is production-wired into AgentDb opening and reuses the shared SQLite recovery layer for WAL/schema initialization, I/O retry, quick_check, live-handle recovery suppression, quarantine, row-by-row kv/blob/transcript salvage, diagnostics and transcript reindex mutation. Frozen-parity callback failure isolation and the 50ms quarantine removal retry are included. Exact implementation SHA b9d2e53fbb58f97716f3224ac39dbec95f262a54 passed Rust desktop runtime 35852060637 and Desktop Chat Parity 35852060739."
     },
     {
       "referencePath": "source/host/extensions/session/agent-db-schema.ts",
