@@ -1263,13 +1263,17 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       // stays under Pinned while pinned, then must project back into the section
       // that was just persisted when it is unpinned. This guards the original
       // 35522950977 failure instead of merely asserting that an empty header exists.
-      const pinnedRow = peer.locator('..');
       const focusedAgentRow = focusedWork.locator('button[data-agent-key="agent:mahayana-assistant"]');
-      await expect(pinnedRow).toHaveAttribute('data-pinned', 'true');
+      await expect(peer).toHaveAttribute('data-pinned', 'true');
       await expect(focusedAgentRow).toHaveCount(0);
-      await pinnedRow.hover();
-      await pinnedRow.getByRole('button', { name: /大乘助手 actions/ }).click();
-      await page.getByRole('menuitem', { name: 'Unpin' }).click();
+
+      // Grok's recovered row actions are a context menu owned by the Agent row;
+      // data-pinned is on the button itself rather than its preview compositor.
+      await peer.click({ button: 'right' });
+      const agentActions = page.getByRole('menu', { name: 'Agent actions' });
+      await expect(agentActions).toBeVisible();
+      await agentActions.getByRole('menuitem', { name: 'Unpin' }).click();
+      await expect(peer).not.toHaveAttribute('data-pinned', 'true');
       await expect(focusedAgentRow).toHaveCount(1);
       await expect(focusedAgentRow).toBeVisible();
     });
