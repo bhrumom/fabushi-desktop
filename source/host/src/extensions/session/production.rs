@@ -44,7 +44,7 @@ use super::session_store_factories::channel_store_for_db_path;
 use super::session_maintenance::{
     backfill_transcript_from_outline, clear_stale_checkpoint_roots_once,
     recover_conversation_root_if_missing, repair_hidden_transcript_entries_once,
-    retire_legacy_store_blobs_once,
+    retire_legacy_store_blobs_once, sync_recovered_profile_name,
 };
 use super::session_materialization::{
     MaterializedAgentRecord, SessionMintQueue, count_owned_agents, is_agent_cap_reached,
@@ -759,6 +759,13 @@ impl ProductionSessionWorkers {
             &store.blob_db_path,
             self.busy_timeout_ms,
         )?;
+        if recovered_root {
+            let _ = sync_recovered_profile_name(
+                &session_db_path,
+                self.busy_timeout_ms,
+                &materialized.profile.name,
+            )?;
+        }
         let recovery_turns = if recovered_root {
             self.conversation_state
                 .read_agent_recovery_outline_turns(

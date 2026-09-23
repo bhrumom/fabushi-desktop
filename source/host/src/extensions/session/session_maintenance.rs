@@ -12,8 +12,9 @@ use super::agent_db::{
     append_persisted_transcript_entries, compare_and_set_persisted_latest_root_blob_id,
     delete_persisted_transcript_entry, has_persisted_legacy_conversation_blobs,
     hidden_entry_repair_version, legacy_blob_retirement_version,
-    read_persisted_latest_root_blob_id, read_persisted_transcript_entries,
-    retire_persisted_legacy_conversation_blobs, set_hidden_entry_repair_version,
+    read_persisted_agent_name, read_persisted_latest_root_blob_id,
+    read_persisted_transcript_entries, retire_persisted_legacy_conversation_blobs,
+    set_hidden_entry_repair_version, set_persisted_agent_name,
     set_stale_root_cleanup_version, stale_root_cleanup_version,
 };
 use super::conversation_recovery::{
@@ -47,6 +48,40 @@ pub fn is_legacy_store_blob_retirement_enabled() -> bool {
 
 pub fn pin_stale_root_gc(enabled: bool) {
     STALE_ROOT_GC.store(enabled, Ordering::Release);
+}
+
+pub type SessionMaintenanceTask = Box<dyn FnOnce() -> Result<(), String>>;
+
+pub fn run_session_maintenance<F>(
+    tasks: Vec<SessionMaintenanceTask>,
+    mut report: F,
+)
+where
+    F: FnMut(&str, usize),
+{
+    for (index, task) in tasks.into_iter().enumerate() {
+        if let Err(error) = task() {
+            report(&error, index);
+        }
+    }
+}
+
+pub fn sync_recovered_profile_name(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    profile_name: &str,
+) -> Result<bool, String> {
+    let profile_name = profile_name.trim();
+    if profile_name.is_empty()
+        || read_persisted_agent_name(db_path, busy_timeout_ms)
+            .map_err(|error| error.to_string())?
+            .as_deref()
+            == Some(profile_name)
+    {
+        return Ok(false);
+    }
+    set_persisted_agent_name(db_path, busy_timeout_ms, profile_name)
+        .map_err(|error| error.to_string())
 }
 
 pub fn backfill_transcript(

@@ -280,6 +280,40 @@ pub fn read_persisted_agent_name(
         }))
 }
 
+pub fn set_persisted_agent_name(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    name: &str,
+) -> Result<bool, AgentDbProjectionError> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Ok(false);
+    }
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let Some(raw) = read_kv(&db, "metadata")? else {
+        return Ok(false);
+    };
+    let metadata_bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+    let mut metadata: serde_json::Value = serde_json::from_slice(&metadata_bytes)?;
+    if metadata
+        .get("name")
+        .and_then(serde_json::Value::as_str)
+        .is_some_and(|current| current == name)
+    {
+        return Ok(false);
+    }
+    let Some(object) = metadata.as_object_mut() else {
+        return Ok(false);
+    };
+    object.insert("name".into(), serde_json::Value::String(name.to_string()));
+    let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
+    let changed = db.execute(SET_KV_SQL, params!["metadata", next_raw])? > 0;
+    if changed {
+        bump_db_write_generation(db_path);
+    }
+    Ok(changed)
+}
+
 pub fn reseed_minimal_persisted_agent_db_if_missing(
     db_path: &Path,
     busy_timeout_ms: u64,

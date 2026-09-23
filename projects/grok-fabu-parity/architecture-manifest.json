@@ -12106,7 +12106,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/session_summaries_roster_contract.rs"
       ],
-      "notes": "Rust production AgentDb covers Grok-aligned recovery/schema opening, metadata/root CAS, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, spend-guard migration, introduction/partner/profile-prompt state, transcript operations and minimal missing-db schema reseed used by production roster recovery. Shipping Gateway and Session use this Rust owner. Final remains withheld until generic metadata subscriptions/listener semantics, complete live owner/close/busy behavior, and remaining mutation Gateway commands are cut over."
+      "notes": "Rust production AgentDb covers Grok-aligned recovery/schema opening, metadata/root CAS, canonical profile-name metadata mutation, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, spend-guard migration, introduction/partner/profile-prompt state, transcript operations and minimal missing-db schema reseed used by production roster recovery. Shipping Gateway and Session use this Rust owner. Final remains withheld until generic metadata subscriptions/listener semantics, complete live owner/close/busy behavior, and remaining mutation Gateway commands are cut over."
     },
     {
       "referencePath": "source/host/extensions/session/agent-session.ts",
@@ -12290,16 +12290,18 @@
         "source/host/src/extensions/session/extension.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/session/box_handoff_service.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/session/session_maintenance.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_extension_contract.rs",
         "source/host/tests/box_handoff_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/session_maintenance_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping app now starts one Rust SessionExtension owner instead of constructing ProductionSessionWorkers directly. It owns worker shutdown, the Box handoff service, and live experiment subscriptions for stale-root GC, legacy blob retirement and conversation GC. Final is withheld until Rust settings/time-zone and dynamic-config size-limit readers are available and real Computer/telemetry handoff deps are injected."
+      "notes": "Shipping Rust SessionExtension owns the production Session store, Box handoff lifetime and live experiment pins. Startup now runs frozen legacy members-directory cleanup through the Session maintenance task runner before exposing the extension. Final remains withheld until settings/time-zone and dynamic-config size-limit readers plus real Computer/telemetry handoff dependencies are injected."
     },
     {
       "referencePath": "source/host/extensions/session/pending-card-sweeps.ts",
@@ -12348,7 +12350,8 @@
         "source/host/src/extensions/session/channel_store.rs",
         "source/host/src/extensions/session/gateway.rs",
         "source/host/src/extensions/session/agent_session.rs",
-        "source/host/src/extensions/transcript/agent_lifecycle.rs"
+        "source/host/src/extensions/transcript/agent_lifecycle.rs",
+        "source/host/src/extensions/session/extension.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12370,7 +12373,7 @@
         "desktop/e2e/grok-parity.spec.ts",
         "source/host/tests/agent_lifecycle_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, Rust materialization with serialized mint ownership, durable recovery/maintenance, AgentDb state, transcript projection/mutations, profile/avatar, channels, roster, durable ConversationState outline and conversation capacity. Shipping prepare_existing_agent now runs missing-root recovery, outline-derived transcript backfill and hidden-artifact repair before Runner inference. Remaining parity includes complete ConversationState todo/summary projection, workflows/automations/memory, box handoff production deps and watcher/cross-extension cleanup parity."
+      "notes": "Production Session owns Host-lifetime workers, Rust materialization with serialized mint ownership, durable recovery/maintenance, AgentDb state, transcript projection/mutations, profile/avatar, channels, roster, durable ConversationState outline and conversation capacity. Shipping prepare_existing_agent backfills/repairs from any resolvable durable outline without making broken historical roots fatal, and successful root recovery synchronizes the canonical profile name into AgentDb metadata. Remaining parity includes complete ConversationState todo/summary projection, workflows/automations/memory, box handoff production deps and watcher/cross-extension cleanup parity."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
@@ -12432,7 +12435,8 @@
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/extensions/session/conversation_recovery.rs",
-        "source/host/src/extensions/session/session_conversation_state.rs"
+        "source/host/src/extensions/session/session_conversation_state.rs",
+        "source/host/src/extensions/session/extension.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_maintenance_contract.rs",
@@ -12440,9 +12444,11 @@
         "source/host/tests/conversation_blob_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/session_conversation_state_contract.rs"
+        "source/host/tests/session_conversation_state_contract.rs",
+        "source/host/tests/session_extension_contract.rs",
+        "source/host/tests/agent_db_metadata_contract.rs"
       ],
-      "notes": "Rust shipping maintenance now performs missing-root recovery with structural-ref validation/CAS, stale-root cleanup, legacy blob retirement, recovered transcript backfill from the durable ConversationState outline, and one-time hidden recovered-user artifact repair. ProductionSessionWorkers invokes these before returning the prepared transcript to Runner. Final is withheld for profile-name synchronization, diagnostic/report parity, cleanupLegacyGroupMemberDirs/runSessionMaintenance startup composition, and full ConversationState todo/summary materialization."
+      "notes": "Rust shipping maintenance performs missing-root recovery with structural-ref validation/CAS, durable-outline transcript backfill, one-time hidden recovered-user repair, stale-root cleanup and legacy blob retirement. Recovery now synchronizes the canonical profile.json name back into AgentDb metadata, and Session extension startup composes cleanupLegacyGroupMemberDirs through runSessionMaintenance-style sequential failure isolation. Final remains withheld for operation-level maintenance diagnostic/report parity and complete ConversationState todo/summary materialization."
     },
     {
       "referencePath": "source/host/extensions/session/session-materialization.ts",

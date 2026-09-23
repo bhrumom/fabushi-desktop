@@ -36,6 +36,10 @@ fn session_extension_owns_store_handoff_and_experiment_pin_lifecycle() {
                 .into(),
         ),
     }));
+    let legacy_members = root.join("agent-legacy").join("members");
+    fs::create_dir_all(&legacy_members).expect("legacy member dir");
+    fs::write(legacy_members.join("stale.json"), b"stale").expect("legacy member file");
+
     let store = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
     let extension = start_session_extension(
         Arc::clone(&experiments),
@@ -44,6 +48,10 @@ fn session_extension_owns_store_handoff_and_experiment_pin_lifecycle() {
     );
 
     assert_eq!(extension.store().agents_root(), root.as_path());
+    assert!(
+        !legacy_members.exists(),
+        "Session startup maintenance must remove the frozen legacy members directory"
+    );
     assert!(is_legacy_store_blob_retirement_enabled());
 
     let started = extension.start_handoff(HandoffRequest {

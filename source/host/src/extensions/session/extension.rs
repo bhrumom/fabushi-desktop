@@ -9,8 +9,10 @@ use super::box_handoff_service::{
 };
 use super::conversation_size_limits::pin_conversation_gc;
 use super::production::ProductionSessionWorkers;
+use super::session_diagnostics::{SessionDiagnostic, report_session_diagnostic};
 use super::session_maintenance::{
-    pin_legacy_store_blob_retirement, pin_stale_root_gc,
+    cleanup_legacy_group_member_dirs, default_legacy_member_dirname,
+    pin_legacy_store_blob_retirement, pin_stale_root_gc, run_session_maintenance,
 };
 
 pub const SESSION_EXTENSION_ID: &str = "session";
@@ -72,6 +74,36 @@ pub fn start_session_extension(
     let stop_experiment_subscription = experiments.subscribe(Arc::new(move || {
         apply_experiment_pins(&subscribed_experiments);
     }));
+
+    let maintenance_root = store.agents_root().to_path_buf();
+    run_session_maintenance(
+        vec![Box::new(move || {
+            for (agent_id, error_class) in cleanup_legacy_group_member_dirs(
+                &maintenance_root,
+                default_legacy_member_dirname(),
+            ) {
+                report_session_diagnostic(&SessionDiagnostic {
+                    family: "maintenance".into(),
+                    kind: "member_cleanup_failed".into(),
+                    metadata: std::collections::BTreeMap::from([
+                        ("agentId".into(), serde_json::Value::String(agent_id)),
+                        ("errorClass".into(), serde_json::Value::String(error_class)),
+                    ]),
+                });
+            }
+            Ok(())
+        })],
+        |error, index| {
+            report_session_diagnostic(&SessionDiagnostic {
+                family: "maintenance".into(),
+                kind: "startup_task_failed".into(),
+                metadata: std::collections::BTreeMap::from([
+                    ("index".into(), serde_json::json!(index)),
+                    ("errorClass".into(), serde_json::Value::String(error.to_string())),
+                ]),
+            });
+        },
+    );
 
     SessionExtension {
         store,

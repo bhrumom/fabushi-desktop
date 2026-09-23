@@ -15,7 +15,8 @@ use mahayana_host_runtime::extensions::session::session_maintenance::{
     HIDDEN_ENTRY_REPAIR_VERSION, STALE_ROOT_CLEANUP_VERSION, backfill_transcript,
     backfill_transcript_from_outline, clear_stale_checkpoint_roots_once,
     pin_stale_root_gc, recover_conversation_root_if_missing,
-    repair_hidden_transcript_entries_once,
+    repair_hidden_transcript_entries_once, run_session_maintenance,
+    sync_recovered_profile_name,
 };
 use rusqlite::params;
 use sha2::{Digest, Sha256};
@@ -327,4 +328,62 @@ fn outline_backfill_serializes_visible_user_send_and_tool_items() {
     assert_eq!(entries[2]["name"], "Task");
 
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn recovered_profile_name_sync_matches_frozen_recovery_contract() {
+    let root = temp_root("profile-name-sync");
+    let agent_dir = root.join("agent-profile");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    create_store_db(&db_path, "agent-profile");
+
+    assert!(sync_recovered_profile_name(&db_path, 500, "  Profile Wins  ")
+        .expect("sync profile name"));
+    assert!(!sync_recovered_profile_name(&db_path, 500, "Profile Wins")
+        .expect("idempotent sync"));
+    assert!(!sync_recovered_profile_name(&db_path, 500, "   ")
+        .expect("blank profile ignored"));
+
+    use mahayana_host_runtime::extensions::session::agent_db::read_persisted_agent_name;
+    assert_eq!(
+        read_persisted_agent_name(&db_path, 500)
+            .expect("read synced name")
+            .as_deref(),
+        Some("Profile Wins")
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn run_session_maintenance_reports_failure_and_continues_in_order() {
+    use std::sync::Mutex;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    let ran = Arc::new(AtomicUsize::new(0));
+    let reports = Arc::new(Mutex::new(Vec::<(usize, String)>::new()));
+    let ran_second = Arc::clone(&ran);
+    let reports_for_callback = Arc::clone(&reports);
+
+    run_session_maintenance(
+        vec![
+            Box::new(|| Err("first failed".to_string())),
+            Box::new(move || {
+                ran_second.fetch_add(1, Ordering::SeqCst);
+                Ok(())
+            }),
+        ],
+        move |error, index| {
+            reports_for_callback
+                .lock()
+                .expect("reports")
+                .push((index, error.to_string()));
+        },
+    );
+
+    assert_eq!(ran.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        *reports.lock().expect("reports"),
+        vec![(0, "first failed".to_string())]
+    );
 }
