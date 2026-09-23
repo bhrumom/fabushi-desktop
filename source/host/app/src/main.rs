@@ -20,6 +20,8 @@ use mahayana_host_runtime::extensions::box_lifecycle::production::{
     ProductionBoxLifecycleClient, ProductionBoxLifecycleClientFactory,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::box_handoff_service::BoxHandoffDeps;
+use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
     persist_accepted_send_prompt,
@@ -808,7 +810,12 @@ fn main() {
             Arc::clone(&production_extensions.team_rules),
             app_data_dir.join("transcripts"),
         ));
-    let session_workers = Arc::new(ProductionSessionWorkers::production());
+    let session_extension = start_session_extension(
+        Arc::clone(&production_extensions.experiments),
+        Arc::new(ProductionSessionWorkers::production()),
+        BoxHandoffDeps::default(),
+    );
+    let session_workers = session_extension.store();
     let routed_provider_tasks = Arc::new(RoutedProviderTaskRegistry::default());
 
     let gateway_config = match resolve_gateway_server_config() {
@@ -955,7 +962,7 @@ fn main() {
     drop(gateway_server);
     routed_provider_tasks.cancel_all("Mahayana Host shutting down");
     routed_tool_relay.cancel_all("Mahayana Host shutting down");
-    session_workers.shutdown();
+    session_extension.shutdown();
     forever_box.dispose();
     if let Err(error) = clear_gateway_discovery(&gateway_discovery_path) {
         eprintln!(

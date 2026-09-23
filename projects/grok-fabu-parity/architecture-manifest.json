@@ -12140,12 +12140,22 @@
       "targetPath": "source/host/src/extensions/session/box_handoff_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "bd8c0ed4d7f35eb1558f1824f364bfcc74ccc889",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/box_handoff_service.rs",
+        "source/host/src/extensions/session/extension.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_handoff_service_contract.rs",
+        "source/host/tests/session_extension_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Host-owned handoff service now implements frozen pending/request isolation, already-pending semantics, hand-back resolution defaults, asynchronous screenshot timeout/base64 projection, stale-request fencing, status callbacks and telemetry normalization. The shipping Session extension owns the service for the Host lifetime. Final is withheld until the production Computer owner injects real prepare/screenshot/status/telemetry callbacks rather than the current no-op dependency set."
     },
     {
       "referencePath": "source/host/extensions/session/channel-store.ts",
@@ -12267,12 +12277,24 @@
       "targetPath": "source/host/src/extensions/session/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "c0ddf9582a9bcb74017042f40c7900c404044536",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/extension.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/box_handoff_service.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/session_extension_contract.rs",
+        "source/host/tests/box_handoff_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Shipping app now starts one Rust SessionExtension owner instead of constructing ProductionSessionWorkers directly. It owns worker shutdown, the Box handoff service, and live experiment subscriptions for stale-root GC, legacy blob retirement and conversation GC. Final is withheld until Rust settings/time-zone and dynamic-config size-limit readers are available and real Computer/telemetry handoff deps are injected."
     },
     {
       "referencePath": "source/host/extensions/session/pending-card-sweeps.ts",
