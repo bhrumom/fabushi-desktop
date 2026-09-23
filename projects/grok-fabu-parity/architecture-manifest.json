@@ -13335,15 +13335,19 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/sand_ack_obligation_store.rs",
-        "source/host/src/extensions/transcript/ack_obligations.rs"
+        "source/host/src/extensions/transcript/ack_obligations.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/tools/send_message_tool.rs",
+        "source/host/src/extensions/session/production.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_ack_obligation_store_contract.rs",
         "source/host/tests/ack_obligations_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust ack obligation core now implements durable send coalescing, agent-scoped run tokens, fenced fulfillment/rollback, interrupt/redrive counters and the frozen recovery prompt/constants. This exact SHA intentionally remains non-final until production Coordinator -> Host -> Runner token wiring plus boot/idle redrive and telemetry are closed."
+      "notes": "Rust AckObligations is production-composed across the shipping direct-local send and Runner delivery path: a durable accepted send records/coalesces the obligation only for an existing non-group local Agent; runner.startRoutedProvider mints an agent-scoped run token; the per-turn ProductionSendMessageSink fulfills only after the SendMessage entry is durably appended; worker/spawn terminal paths retire the token; watchdog interruption records the durable interrupt timestamp. The frozen store/token fences and recovery prompt are contract-tested. Final remains withheld for boot/idle redrive scheduling/execution, max-redrive lost telemetry, upgrade quiesce gating, and the remaining queue/ack telemetry surfaces."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-lifecycle.ts",
@@ -13723,7 +13727,8 @@
         "source/host/src/extensions/session/gateway.rs",
         "source/host/src/extensions/transcript/send_turn_dispatch.rs",
         "source/host/src/extensions/transcript/runner_registry.rs",
-        "source/host/src/extensions/transcript/run_scheduler.rs"
+        "source/host/src/extensions/transcript/run_scheduler.rs",
+        "source/host/src/extensions/transcript/ack_obligations.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -13734,7 +13739,7 @@
         "source/host/tests/session_gateway_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs"
       ],
-      "notes": "Rust run lifecycle remains production-composed around shipping sendPrompt and the per-agent RunScheduler. It now drives the scheduler watchdog through exact-deadline Condvar sleeps: Trip cancels the real agent-owned routed provider via the production Runner registry, Escape releases the queued user turn after grace, and a late predecessor settlement is fenced as a zombie and surfaced as a late-settle watchdog event. Session windows/request IDs/turn epochs still settle on the shipping path. Final remains withheld for named activity holds, active/live-session retirement, subagent-parent run projection, ack-token retirement/redrive and full telemetry sinks."
+      "notes": "Rust run lifecycle is production-composed around shipping sendPrompt and the per-agent RunScheduler. Exact-deadline watchdog sleeps Trip-cancel the real agent-owned routed provider, persist the ack-obligation interrupt timestamp, Escape the wedged predecessor after grace, release the queued user turn, and fence late settlement as a zombie event. Direct-local accepted sends have durable ack obligations with per-turn Runner tokens retired on terminal worker paths. Final remains withheld for boot/idle ack redrive, named activity holds, active/live-session retirement, subagent-parent run projection and full queue/turn telemetry sinks."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",
@@ -13783,21 +13788,23 @@
       "targetPath": "source/host/src/extensions/transcript/sand_ack_obligation_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "ae809cf546794187b8eb9dfc1a5809b87ff28ee7",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/sand_ack_obligation_store.rs",
-        "source/host/src/extensions/transcript/ack_obligations.rs"
+        "source/host/src/extensions/transcript/ack_obligations.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_ack_obligation_store_contract.rs",
         "source/host/tests/ack_obligations_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Frozen durable store semantics are ported to Rust with tolerant coercion, cached reads, coalescing, interrupt/redrive mutation and atomic .part rename persistence. This exact SHA intentionally remains non-final until the next production-composition slice wires the store through Coordinator acceptance and Runner SendMessage acknowledgement."
+      "notes": "Final Rust port of the frozen durable ack-obligation store: tolerant coercion, cached reads, send coalescing, interrupt/redrive mutation, clear/restore, and atomic .part rename persistence. The shipping Host uses this store through AckObligations for accepted direct-local sends, Runner turn tokens, SendMessage fulfillment, watchdog interrupt persistence and token retirement; standalone store/manager contracts plus exact-HEAD Rust and Desktop Chat gates provide evidence."
     },
     {
       "referencePath": "source/host/extensions/transcript/sand-automation-failure.ts",

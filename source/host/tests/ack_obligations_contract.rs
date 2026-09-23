@@ -80,3 +80,33 @@ fn ack_redrive_constants_and_prompt_keep_the_frozen_recovery_contract() {
     assert!(prompt.contains("NEVER guess"));
     assert!(prompt.contains("ask them to resend"));
 }
+
+
+#[test]
+fn accepted_send_can_be_recorded_before_the_runner_mints_its_turn_token() {
+    let root = temp_root("split");
+    let ack = AckObligations::new(&root);
+
+    let first = ack.record_send("agent-a", 10.0).expect("record first");
+    let second = ack.record_send("agent-a", 20.0).expect("coalesce second");
+    assert!(first.created);
+    assert!(!second.created);
+    assert_eq!(second.obligation.coalesced_count, 2.0);
+
+    let token = ack
+        .mint_ack_run_token("agent-a")
+        .expect("mint token")
+        .expect("pending obligation token");
+    assert!(ack
+        .fulfill_ack_obligation("agent-a", &token)
+        .expect("fulfill recorded send"));
+    assert!(ack.store().get("agent-a").is_none());
+    assert!(ack.retire_ack_run_token("agent-a", Some(&token)));
+
+    assert_eq!(
+        ack.mint_ack_run_token("agent-a").expect("no token"),
+        None
+    );
+
+    let _ = fs::remove_dir_all(root);
+}

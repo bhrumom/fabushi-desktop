@@ -51,6 +51,36 @@ impl AckObligations {
         &self.store
     }
 
+    pub fn record_send(
+        &self,
+        agent_id: &str,
+        at_ms: f64,
+    ) -> io::Result<RecordSendOutcome> {
+        self.store.record_send(agent_id, at_ms)
+    }
+
+    pub fn mint_ack_run_token(
+        &self,
+        agent_id: &str,
+    ) -> io::Result<Option<String>> {
+        let Some(recorded) = self.store.get(agent_id) else {
+            return Ok(None);
+        };
+        let ack_token = Uuid::new_v4().to_string();
+        self.reservations
+            .lock()
+            .map_err(|_| io::Error::other("ack reservation registry poisoned"))?
+            .insert(
+                ack_token.clone(),
+                ReservationState {
+                    agent_id: agent_id.to_string(),
+                    previous: Some(recorded.clone()),
+                    recorded,
+                },
+            );
+        Ok(Some(ack_token))
+    }
+
     pub fn record_send_and_mint_token(
         &self,
         agent_id: &str,
