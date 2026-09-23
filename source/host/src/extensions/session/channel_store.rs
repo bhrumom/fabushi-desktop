@@ -44,6 +44,7 @@ pub enum ChannelStoreError {
 struct DebounceState {
     callback: Option<ChannelChangeListener>,
     generation: u64,
+    last_fingerprint: Option<Vec<(String, Vec<u8>)>>,
 }
 
 struct ChannelWatchInner {
@@ -74,9 +75,11 @@ impl FileChannelStore {
 
     pub fn set_on_change(&self, on_change: Option<ChannelChangeListener>) {
         let enabled = on_change.is_some();
+        let baseline = enabled.then(|| channel_state_fingerprint(&self.inner.channels_dir));
         if let Ok(mut state) = self.inner.debounce.lock() {
             state.callback = on_change;
             state.generation = state.generation.saturating_add(1);
+            state.last_fingerprint = baseline;
         }
         if enabled {
             self.ensure_watcher();
@@ -180,7 +183,10 @@ impl FileChannelStore {
             .map(|slot| slot.is_some())
             .unwrap_or(false);
         if !watching {
-            schedule_debounced_notify(&self.inner.debounce);
+            schedule_debounced_notify(
+                &self.inner.debounce,
+                &self.inner.channels_dir,
+            );
         }
     }
 
@@ -195,6 +201,7 @@ impl FileChannelStore {
             return;
         }
         let debounce = Arc::clone(&self.inner.debounce);
+        let channels_dir = self.inner.channels_dir.clone();
         let Ok(mut watcher) = notify::recommended_watcher(
             move |event: notify::Result<notify::Event>| {
                 let Ok(event) = event else {
@@ -214,7 +221,7 @@ impl FileChannelStore {
                     | notify::EventKind::Other => return,
                     _ => {}
                 }
-                schedule_debounced_notify(&debounce);
+                schedule_debounced_notify(&debounce, &channels_dir);
             },
         ) else {
             return;
@@ -226,7 +233,33 @@ impl FileChannelStore {
     }
 }
 
-fn schedule_debounced_notify(state: &Arc<Mutex<DebounceState>>) {
+fn channel_state_fingerprint(channels_dir: &Path) -> Vec<(String, Vec<u8>)> {
+    let Ok(entries) = fs::read_dir(channels_dir) else {
+        return Vec::new();
+    };
+    let mut fingerprint = entries
+        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            let kind = entry.file_type().ok()?;
+            if !kind.is_dir() {
+                return None;
+            }
+            let platform = entry.file_name().into_string().ok()?;
+            if !is_safe_folder_id(&platform) {
+                return None;
+            }
+            let bytes = fs::read(entry.path().join(CHANNEL_CONFIG_FILENAME)).ok()?;
+            Some((platform, bytes))
+        })
+        .collect::<Vec<_>>();
+    fingerprint.sort_by(|left, right| left.0.cmp(&right.0));
+    fingerprint
+}
+
+fn schedule_debounced_notify(
+    state: &Arc<Mutex<DebounceState>>,
+    channels_dir: &Path,
+) {
     let generation = {
         let Ok(mut state) = state.lock() else {
             return;
@@ -238,24 +271,35 @@ fn schedule_debounced_notify(state: &Arc<Mutex<DebounceState>>) {
         state.generation
     };
     let state_for_thread = Arc::clone(state);
+    let channels_dir = channels_dir.to_path_buf();
     let spawn = thread::Builder::new()
         .name("sand-channel-store-debounce".into())
         .spawn(move || {
             thread::sleep(Duration::from_millis(CHANNEL_CHANGE_DEBOUNCE_MS));
-            let callback = state_for_thread.lock().ok().and_then(|state| {
-                (state.generation == generation)
-                    .then(|| state.callback.as_ref().map(Arc::clone))
-                    .flatten()
+            let fingerprint = channel_state_fingerprint(&channels_dir);
+            let callback = state_for_thread.lock().ok().and_then(|mut state| {
+                if state.generation != generation
+                    || state.last_fingerprint.as_ref() == Some(&fingerprint)
+                {
+                    return None;
+                }
+                state.last_fingerprint = Some(fingerprint);
+                state.callback.as_ref().map(Arc::clone)
             });
             if let Some(callback) = callback {
                 callback();
             }
         });
     if spawn.is_err() {
-        let callback = state.lock().ok().and_then(|state| {
-            (state.generation == generation)
-                .then(|| state.callback.as_ref().map(Arc::clone))
-                .flatten()
+        let fingerprint = channel_state_fingerprint(channels_dir.as_path());
+        let callback = state.lock().ok().and_then(|mut state| {
+            if state.generation != generation
+                || state.last_fingerprint.as_ref() == Some(&fingerprint)
+            {
+                return None;
+            }
+            state.last_fingerprint = Some(fingerprint);
+            state.callback.as_ref().map(Arc::clone)
         });
         if let Some(callback) = callback {
             callback();
