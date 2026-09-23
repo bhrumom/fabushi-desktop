@@ -11,11 +11,13 @@ use mahayana_host_runtime::agents::settings_file::{
 use mahayana_host_runtime::extensions::session::agent_db::{
     read_persisted_agent_name, read_persisted_latest_root_blob_id,
 };
-use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::production::{
+    FallbackSession, ProductionSessionWorkers,
+};
 use mahayana_host_runtime::extensions::session::session_materialization::{
     MAX_AGENTS_PER_USER, SessionMaterializationError, count_owned_agents,
-    is_agent_cap_reached, list_agent_record_ids, materialize_new_session,
-    open_existing_session,
+    is_agent_cap_reached, list_agent_record_ids, list_pruned_placeholder_ids,
+    materialize_new_session, open_existing_session,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -181,6 +183,105 @@ fn production_mint_queue_serializes_near_cap_create_sessions() {
     assert_eq!(results.iter().filter(|result| result.is_err()).count(), 1);
     assert_eq!(count_owned_agents(&root).expect("final count"), MAX_AGENTS_PER_USER);
     assert!(is_agent_cap_reached(&root).expect("cap after concurrent mint"));
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn pruned_placeholder_selection_preserves_active_and_visible_agents() {
+    use std::collections::BTreeSet;
+
+    let root = temp_root("pruned-placeholders");
+    let active = materialize_new_session(&root, 500, None, "user", None)
+        .expect("active session");
+    let visible = materialize_new_session(&root, 500, None, "user", None)
+        .expect("visible session");
+    let pruned = materialize_new_session(&root, 500, None, "user", None)
+        .expect("pruned session");
+
+    let visible_ids = BTreeSet::from([visible.id.clone()]);
+    assert_eq!(
+        list_pruned_placeholder_ids(
+            &root,
+            Some(active.id.as_str()),
+            &visible_ids,
+        )
+        .expect("placeholder ids"),
+        vec![pruned.id.clone()]
+    );
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_fallback_adopts_existing_session_when_cap_remains_full() {
+    let root = temp_root("fallback-adopt");
+    let existing = materialize_new_session(&root, 500, None, "user", None)
+        .expect("existing session");
+    for index in 0..(MAX_AGENTS_PER_USER - 1) {
+        fs::create_dir_all(root.join(format!("slot-{index:02}"))).expect("slot");
+    }
+    assert_eq!(count_owned_agents(&root).expect("owned count"), MAX_AGENTS_PER_USER);
+
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let fallback = workers
+        .create_fallback_session(Some(existing.id.as_str()))
+        .expect("fallback adoption");
+    match fallback {
+        FallbackSession::Existing(prepared) => assert_eq!(prepared.agent_id, existing.id),
+        FallbackSession::Created(record) => panic!("unexpected fallback mint: {}", record.id),
+    }
+    assert_eq!(count_owned_agents(&root).expect("count after adoption"), MAX_AGENTS_PER_USER);
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_cap_reclaim_removes_invisible_placeholder_before_mint() {
+    let root = temp_root("cap-reclaim");
+    let active = materialize_new_session(
+        &root,
+        500,
+        Some(&SandAgentProfile {
+            name: "Active".into(),
+            description: "visible".into(),
+            title: String::new(),
+            avatar_shape: String::new(),
+            avatar_color: String::new(),
+        }),
+        "user",
+        None,
+    )
+    .expect("active session");
+    let placeholder = materialize_new_session(&root, 500, None, "user", None)
+        .expect("placeholder session");
+    for index in 0..(MAX_AGENTS_PER_USER - 2) {
+        fs::create_dir_all(root.join(format!("slot-{index:02}"))).expect("slot");
+    }
+    assert_eq!(count_owned_agents(&root).expect("owned count"), MAX_AGENTS_PER_USER);
+
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let created = workers
+        .materialize_new_session_with_active(
+            Some(&SandAgentProfile {
+                name: "After reclaim".into(),
+                description: String::new(),
+                title: String::new(),
+                avatar_shape: String::new(),
+                avatar_color: String::new(),
+            }),
+            "user",
+            None,
+            Some(active.id.as_str()),
+        )
+        .expect("mint after reclaim");
+
+    assert!(!root.join(&placeholder.id).exists());
+    assert!(root.join(&created.id).exists());
+    assert_eq!(count_owned_agents(&root).expect("final count"), MAX_AGENTS_PER_USER);
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);

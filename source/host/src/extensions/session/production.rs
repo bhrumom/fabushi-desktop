@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -55,8 +55,9 @@ use super::session_maintenance::{
     retire_legacy_store_blobs_once, sync_recovered_profile_name,
 };
 use super::session_materialization::{
-    MaterializedAgentRecord, SessionMintQueue, count_owned_agents, is_agent_cap_reached,
-    list_agent_record_ids, materialize_new_session, open_existing_session,
+    MAX_AGENTS_PER_USER, MaterializedAgentRecord, SessionMintQueue, count_owned_agents,
+    is_agent_cap_reached, list_agent_record_ids, list_pruned_placeholder_ids,
+    materialize_new_session, open_existing_session,
 };
 use super::pending_card_sweeps::{
     expire_pending_auto_review_approval_entries,
@@ -86,6 +87,12 @@ pub struct PreparedAgentBlobStore {
     pub session_state: AgentDbSerdeSnapshot,
     pub transcript_tail: TranscriptPage,
     pub profile_file: Option<SandAgentProfile>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FallbackSession {
+    Existing(PreparedAgentBlobStore),
+    Created(MaterializedAgentRecord),
 }
 
 /// Shipping Host owner for the Grok session materialization worker boundary.
@@ -149,6 +156,47 @@ impl ProductionSessionWorkers {
         is_agent_cap_reached(&self.agents_root).map_err(|error| error.to_string())
     }
 
+    pub fn reclaim_pruned_placeholders(
+        &self,
+        active_agent_id: Option<&str>,
+    ) -> Result<Vec<String>, String> {
+        let visible_agent_ids = self
+            .list_agent_summaries(active_agent_id)?
+            .into_iter()
+            .map(|summary| summary.id)
+            .collect::<BTreeSet<_>>();
+        let candidates = list_pruned_placeholder_ids(
+            &self.agents_root,
+            active_agent_id,
+            &visible_agent_ids,
+        )
+        .map_err(|error| error.to_string())?;
+        let mut reclaimed = Vec::new();
+        for agent_id in candidates {
+            let db_path = self.session_db_path(&agent_id)?;
+            let blob_path = conversation_blobs_path(&db_path);
+            let _ = self.close_agent_db_owner(&agent_id, false);
+            futures::executor::block_on(self.pool.close_store(&blob_path));
+            match fs::remove_dir_all(self.agents_root.join(&agent_id)) {
+                Ok(()) => reclaimed.push(agent_id),
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => return Err(error.to_string()),
+            }
+        }
+        Ok(reclaimed)
+    }
+
+    pub fn is_agent_cap_reached_after_reclaim(
+        &self,
+        active_agent_id: Option<&str>,
+    ) -> Result<bool, String> {
+        if self.count_owned_agents()? < MAX_AGENTS_PER_USER {
+            return Ok(false);
+        }
+        let _ = self.reclaim_pruned_placeholders(active_agent_id)?;
+        Ok(self.count_owned_agents()? >= MAX_AGENTS_PER_USER)
+    }
+
     pub fn busy_timeout_ms(&self) -> u64 {
         self.busy_timeout_ms
     }
@@ -181,7 +229,20 @@ impl ProductionSessionWorkers {
         origin: &str,
         purpose: Option<&str>,
     ) -> Result<MaterializedAgentRecord, String> {
+        self.materialize_new_session_with_active(profile, origin, purpose, None)
+    }
+
+    pub fn materialize_new_session_with_active(
+        &self,
+        profile: Option<&SandAgentProfile>,
+        origin: &str,
+        purpose: Option<&str>,
+        active_agent_id: Option<&str>,
+    ) -> Result<MaterializedAgentRecord, String> {
         let record = self.mint_queue.run(|| {
+            if self.is_agent_cap_reached_after_reclaim(active_agent_id)? {
+                return Err(format!("Agent limit of {MAX_AGENTS_PER_USER} reached"));
+            }
             materialize_new_session(
                 &self.agents_root,
                 self.busy_timeout_ms,
@@ -193,6 +254,36 @@ impl ProductionSessionWorkers {
         })?;
         let _ = self.open_agent_db_owner(&record.id)?;
         Ok(record)
+    }
+
+    pub fn create_fallback_session(
+        &self,
+        active_agent_id: Option<&str>,
+    ) -> Result<FallbackSession, String> {
+        let result = self.mint_queue.run(|| {
+            if self.is_agent_cap_reached_after_reclaim(active_agent_id)? {
+                for agent_id in self.list_agent_record_ids()? {
+                    match self.prepare_existing_agent(&agent_id) {
+                        Ok(Some(prepared)) => return Ok(FallbackSession::Existing(prepared)),
+                        Ok(None) | Err(_) => continue,
+                    }
+                }
+                return Err(format!("Agent limit of {MAX_AGENTS_PER_USER} reached"));
+            }
+            materialize_new_session(
+                &self.agents_root,
+                self.busy_timeout_ms,
+                None,
+                "user",
+                None,
+            )
+            .map(FallbackSession::Created)
+            .map_err(|error| error.to_string())
+        })?;
+        if let FallbackSession::Created(record) = &result {
+            let _ = self.open_agent_db_owner(&record.id)?;
+        }
+        Ok(result)
     }
 
     pub fn read_agent_transcript_entries(

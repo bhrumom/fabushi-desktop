@@ -123,8 +123,21 @@ impl SandAgentSessionStore {
         origin: &str,
         purpose: Option<&str>,
     ) -> Result<MaterializedAgentRecord, String> {
+        let active = self.read_active_agent_id();
         self.production
-            .materialize_new_session(profile, origin, purpose)
+            .materialize_new_session_with_active(
+                profile,
+                origin,
+                purpose,
+                active.as_deref(),
+            )
+    }
+
+    pub fn create_fallback_session(
+        &self,
+    ) -> Result<super::production::FallbackSession, String> {
+        let active = self.read_active_agent_id();
+        self.production.create_fallback_session(active.as_deref())
     }
 
     pub fn open_session(

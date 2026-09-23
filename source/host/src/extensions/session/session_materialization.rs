@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -81,6 +82,26 @@ pub fn count_owned_agents(root_dir: &Path) -> Result<usize, io::Error> {
 
 pub fn is_agent_cap_reached(root_dir: &Path) -> Result<bool, io::Error> {
     Ok(count_owned_agents(root_dir)? >= MAX_AGENTS_PER_USER)
+}
+
+pub fn list_pruned_placeholder_ids(
+    root_dir: &Path,
+    active_agent_id: Option<&str>,
+    visible_agent_ids: &BTreeSet<String>,
+) -> Result<Vec<String>, io::Error> {
+    let mut candidates = Vec::new();
+    for agent_id in list_agent_record_ids(root_dir)? {
+        if active_agent_id == Some(agent_id.as_str()) || visible_agent_ids.contains(&agent_id) {
+            continue;
+        }
+        let Ok(db_path) = get_agent_db_path(root_dir, &agent_id) else {
+            continue;
+        };
+        if db_path.is_file() {
+            candidates.push(agent_id);
+        }
+    }
+    Ok(candidates)
 }
 
 pub fn agent_exists(root_dir: &Path, agent_id: &str) -> bool {
