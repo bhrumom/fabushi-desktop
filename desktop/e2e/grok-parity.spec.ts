@@ -106,6 +106,31 @@ function rgbLuma(value: string): number {
   return components[0] * 0.2126 + components[1] * 0.7152 + components[2] * 0.0722;
 }
 
+function parseComputedColor(value: string): { r: number; g: number; b: number; a: number } | null {
+  if (value.trim().toLowerCase() === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+  const components = value.match(/[\d.]+/g)?.map(Number) ?? [];
+  if (components.length < 3) return null;
+  const srgbFunction = /^color\(srgb\s/i.test(value);
+  const scale = srgbFunction ? 255 : 1;
+  const alphaRaw = components[3] ?? 1;
+  return {
+    r: components[0] * scale,
+    g: components[1] * scale,
+    b: components[2] * scale,
+    a: Math.max(0, Math.min(1, alphaRaw > 1 ? alphaRaw / 100 : alphaRaw)),
+  };
+}
+
+function compositedLuma(foreground: string, background: string): number {
+  const front = parseComputedColor(foreground);
+  const back = parseComputedColor(background);
+  if (front == null || back == null) return 255;
+  const r = front.r * front.a + back.r * (1 - front.a);
+  const g = front.g * front.a + back.g * (1 - front.a);
+  const b = front.b * front.a + back.b * (1 - front.a);
+  return r * 0.2126 + g * 0.7152 + b * 0.0722;
+}
+
 function primaryMahayanaAgentPeer(page: Page) {
   // The shipping Grok sidebar must keep visible Agents directly reachable;
   // Search is covered separately and is not a fallback for a broken roster.
@@ -1123,13 +1148,18 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
           composerRadius: composerStyle.borderRadius,
           peerBackground: peerStyle.backgroundColor,
           peerRadius: peerStyle.borderRadius,
+          bodyBackground: getComputedStyle(document.body).backgroundColor,
         };
       }, await peer.elementHandle());
 
       expect(material).not.toBeNull();
-      expect(rgbLuma(material!.composerBackground)).toBeLessThan(70);
+      // Frozen Grok uses translucent token surfaces here
+      // (--cursor-bg-input-surface -> --cursor-bg-quaternary). Validate the
+      // visible material after alpha compositing over the dark workspace instead
+      // of treating the translucent foreground RGB as an opaque pixel.
+      expect(compositedLuma(material!.composerBackground, material!.bodyBackground)).toBeLessThan(70);
       expect(parseFloat(material!.composerRadius)).toBeGreaterThanOrEqual(14);
-      expect(rgbLuma(material!.peerBackground)).toBeLessThan(80);
+      expect(compositedLuma(material!.peerBackground, material!.bodyBackground)).toBeLessThan(80);
       expect(parseFloat(material!.peerRadius)).toBeGreaterThanOrEqual(10);
     });
 
