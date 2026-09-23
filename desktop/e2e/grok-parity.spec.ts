@@ -1253,7 +1253,7 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(renameSection).toBeVisible();
       await renameSection.fill('Focused work');
       await renameSection.press('Enter');
-      const focusedWork = page.locator('[data-section-id]').filter({ hasText: 'Focused work' });
+      const focusedWork = page.locator('.sand-agents-section[data-section-id]').filter({ hasText: 'Focused work' });
       await expect(focusedWork).toBeVisible();
       await expect(page.getByRole('button', { name: 'Clear selection' })).toHaveCount(0);
       await expect(peer).toHaveAttribute('aria-pressed', 'false');
