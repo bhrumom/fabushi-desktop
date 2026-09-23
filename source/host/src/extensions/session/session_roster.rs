@@ -2,10 +2,14 @@ use std::cmp::Ordering;
 use std::fs;
 use std::path::Path;
 
+use crate::storage::store_db::live_db_handle_count;
+
+use super::agent_db::reseed_minimal_persisted_agent_db_if_missing;
+use super::session_mutations::recover_agent_with_missing_db;
 use super::session_paths::get_agent_db_path;
 use super::session_summaries::{
     AgentSummary, DurableFootprint, build_summary, file_mtime_ms,
-    load_agent_db_extras, minimal_agent_summary,
+    load_agent_db_extras,
 };
 
 pub fn list_agents(
@@ -28,14 +32,18 @@ pub fn list_agents(
             .map_err(|error| error.to_string())?;
         let mtime_ms = file_mtime_ms(&db_path);
         if !db_path.is_file() {
-            let profile_path = entry.path().join("profile.json");
-            if profile_path.is_file() {
-                summaries.push(minimal_agent_summary(
-                    &dir_name,
-                    &db_path,
-                    file_mtime_ms(&profile_path),
-                    active_agent_id,
-                ));
+            if let Some(summary) = recover_agent_with_missing_db(
+                &db_path,
+                &dir_name,
+                active_agent_id,
+                DurableFootprint::default(),
+                live_db_handle_count(&db_path) > 0,
+                |path| {
+                    reseed_minimal_persisted_agent_db_if_missing(path, busy_timeout_ms)
+                        .map_err(|error| error.to_string())
+                },
+            )? {
+                summaries.push(summary);
             }
             continue;
         }
@@ -86,16 +94,17 @@ pub fn summarize_agent_by_id(
         .map_err(|error| error.to_string())?;
     let mtime_ms = file_mtime_ms(&db_path);
     if !db_path.is_file() {
-        let profile_path = root_dir.join(agent_id).join("profile.json");
-        if !profile_path.is_file() {
-            return Ok(None);
-        }
-        return Ok(Some(minimal_agent_summary(
-            agent_id,
+        return recover_agent_with_missing_db(
             &db_path,
-            file_mtime_ms(&profile_path),
+            agent_id,
             active_agent_id,
-        )));
+            DurableFootprint::default(),
+            live_db_handle_count(&db_path) > 0,
+            |path| {
+                reseed_minimal_persisted_agent_db_if_missing(path, busy_timeout_ms)
+                    .map_err(|error| error.to_string())
+            },
+        );
     }
     let extras = load_agent_db_extras(
         &db_path,

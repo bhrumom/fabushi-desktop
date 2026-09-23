@@ -280,6 +280,19 @@ pub fn read_persisted_agent_name(
         }))
 }
 
+pub fn reseed_minimal_persisted_agent_db_if_missing(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<(), AgentDbProjectionError> {
+    if db_path.is_file() {
+        return Ok(());
+    }
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    drop(db);
+    bump_db_write_generation(db_path);
+    Ok(())
+}
+
 pub fn initialize_persisted_agent_record(
     db_path: &Path,
     busy_timeout_ms: u64,

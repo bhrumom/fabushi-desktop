@@ -12089,7 +12089,9 @@
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/session/session_maintenance.rs",
         "source/host/src/extensions/session/gateway.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/session/session_roster.rs",
+        "source/host/src/extensions/session/session_mutations.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_db_metadata_contract.rs",
@@ -12101,9 +12103,10 @@
         "source/host/tests/agent_db_mutation_production_contract.rs",
         "source/host/tests/session_gateway_contract.rs",
         "desktop/e2e/grok-parity.spec.ts",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/session_summaries_roster_contract.rs"
       ],
-      "notes": "Rust production AgentDb covers Grok-aligned recovery/schema opening, metadata/root CAS, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, automation spend-guard migration, introduction state, conversation partners, profile-prompt snapshots, transient-state reset, newest divider-anchor reads, maintenance version KV, legacy blob retirement transactions, transcript reads/paging plus transactional append/update/delete and clear-conversation events. Shipping Gateway transcript reads use this Rust ownership path; accepted sendPrompt user submissions are now durably appended with the compatibility operationId:user/clientNonce identity before the Gateway acknowledgement returns, so attachment-only and text sends survive authoritative transcript refresh. Final is withheld until generic metadata subscriptions/listener semantics, complete live owner/close/busy behavior and the remaining mutation Gateway commands are cut over."
+      "notes": "Rust production AgentDb covers Grok-aligned recovery/schema opening, metadata/root CAS, fresh-record seeding, write-generation bumps, profile/unread/awaiting/request/episode/memory mutations, spend-guard migration, introduction/partner/profile-prompt state, transcript operations and minimal missing-db schema reseed used by production roster recovery. Shipping Gateway and Session use this Rust owner. Final remains withheld until generic metadata subscriptions/listener semantics, complete live owner/close/busy behavior, and remaining mutation Gateway commands are cut over."
     },
     {
       "referencePath": "source/host/extensions/session/agent-session.ts",
@@ -12476,13 +12479,16 @@
         "source/host/src/extensions/session/session_mutations.rs",
         "source/host/src/agents/agent_avatar.rs",
         "source/host/src/extensions/session/agent_db.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/session_roster.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_profile_mutations_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/session_summaries_roster_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust mutation slice fully owns canonical avatar replacement/removal, conventional-avatar cleanup, legacy SandProfile avatar pointer clearing and cache invalidation; ProductionSessionWorkers exposes setAgentAvatarBytes with summary refresh. Missing-DB durable recovery is ported as a host-parameterized helper but final is withheld until roster deletion/live-handle/memory-workflow footprint composition invokes it in production."
+      "notes": "Rust mutation slice owns canonical avatar replacement/removal and missing-DB durable recovery. Shipping roster now invokes recoverAgentWithMissingDb semantics for profile/quarantined durable agents, uses the real live-handle registry to avoid reseeding under an active owner, and reseeds the minimal AgentDb schema through the production AgentDb owner. Final remains withheld until memory/automation/workflow durable-footprint composition and deletion predicates are production-owned."
     },
     {
       "referencePath": "source/host/extensions/session/session-paths.ts",
@@ -12588,13 +12594,16 @@
       "behavioralEvidence": [
         "source/host/src/extensions/session/session_roster.rs",
         "source/host/src/extensions/session/session_summaries.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/session_mutations.rs",
+        "source/host/src/extensions/session/agent_db.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_summaries_roster_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust production roster walks agent directories, handles missing DB/profile fallback, builds/degrades summaries and sorts by updatedAt through ProductionSessionWorkers. Final is withheld until deletion predicates, missing-DB durable recovery/reseed, diagnostics and extras-cache pruning are fully production composed."
+      "notes": "Rust production roster walks agent directories, builds/degrades summaries, sorts by updatedAt, and now routes missing store.db agents through session-mutations recovery with profile/quarantined durable-footprint checks, live-handle fencing, and minimal schema reseed. Final remains withheld until deletion predicates, memory/automation/workflow durable footprints, diagnostics, and extras-cache pruning are fully production composed."
     },
     {
       "referencePath": "source/host/extensions/session/session-store-factories.ts",
