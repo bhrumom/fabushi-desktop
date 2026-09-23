@@ -12163,7 +12163,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Final Rust port of frozen Grok FileChannelStore: canonical layout/config parsing, safe platform IDs, label normalization, atomic writes/removal, sorted configured connections, shared external filesystem observation and 50ms debounce semantics. Internal mutations and external changes converge on one debounced callback. ProductionSessionWorkers composes channel metadata with connector secrets, and shipping Host Gateway getAgentChannels/connectChannel/disconnectChannel/refreshChannel routes to this Rust owner."
+      "notes": "Final Rust port of frozen Grok FileChannelStore: canonical layout/config parsing, safe platform IDs, label normalization, atomic writes/removal, sorted configured connections, event-driven recursive filesystem observation via notify::RecommendedWatcher and 50ms debounce semantics. Internal mutations converge on the same watcher event stream, with direct debounced fallback only if watcher startup is unavailable. ProductionSessionWorkers composes channel metadata with connector secrets, and shipping Host Gateway getAgentChannels/connectChannel/disconnectChannel/refreshChannel routes to this Rust owner."
     },
     {
       "referencePath": "source/host/extensions/session/connector-secret-store.ts",
