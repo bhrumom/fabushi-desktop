@@ -12077,16 +12077,18 @@
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/extensions/session/agent_db_schema.rs",
         "source/host/src/extensions/session/agent_db_recovery.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/session_maintenance.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_db_metadata_contract.rs",
         "source/host/tests/agent_db_schema_contract.rs",
         "source/host/tests/agent_db_recovery_contract.rs",
         "source/host/tests/session_production_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/session_maintenance_contract.rs"
       ],
-      "notes": "The Rust production slice now opens store.db through the Grok-aligned schema/recovery path, honors live-handle corruption safety, projects kv['metadata'] using the frozen AgentMetadataSerde hex -> UTF-8 JSON shape, and reads the persisted latestRootBlobId used by the shipping conversation capacity gate. Full SandAgentDb parity remains: metadata writes/CAS, subscriptions, unread/request/episode/memory/profile state, transcript CRUD/paging/threading, clearConversation, legacy retirement and write-generation/live-handle ownership are still pending."
+      "notes": "Rust production AgentDb now covers Grok-aligned recovery/schema opening, metadata projection plus latestRoot compare-and-set, write-generation bumps, maintenance version KV, legacy blob presence/retirement transactions, serde state, transcript reads/paging plus transactional recovery backfill append/delete mutation events. Shipping Session consumes these operations for durable-root recovery/stale cleanup/legacy-retirement before Runner inference. Full SandAgentDb parity still requires generic metadata set/subscriptions, unread/request/episode/profile mutation APIs, complete transcript update/thread APIs, clearConversation and live owner lifecycle before this row can be final."
     },
     {
       "referencePath": "source/host/extensions/session/agent-session.ts",
@@ -12291,12 +12293,24 @@
       "targetPath": "source/host/src/extensions/session/session_maintenance.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "c2ac48a32a712eae193a693c7c7d33ee2a4c750b",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/session_maintenance.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/conversation_recovery.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/session_maintenance_contract.rs",
+        "source/host/tests/session_production_contract.rs",
+        "source/host/tests/conversation_blob_store_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Real Rust production slice: missing-root recovery validates ConversationStateStructure turn/todo/summary refs through AgentWorkerPool then CAS-persist the recovered root; stale-root cleanup and legacy blob retirement retain Grok generation/live-handle race gates and feature pins; transcript backfill preserves recovered-prefix matching. Shipping ProductionSessionWorkers invokes recovery and gated maintenance before Runner inference. Final is withheld until full derived ConversationState backfill/profile-name synchronization, hidden recovered-entry repair, diagnostics/reporting and cleanup composition are all wired."
     },
     {
       "referencePath": "source/host/extensions/session/session-materialization.ts",

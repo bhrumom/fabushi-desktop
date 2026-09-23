@@ -201,7 +201,19 @@ pub fn is_better_root(candidate: RootScore, best: Option<RootScore>) -> bool {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct MinimalConversationState {
     pub turns: Vec<Vec<u8>>,
+    pub todos: Vec<Vec<u8>>,
+    pub summary: Option<Vec<u8>>,
     pub root_prompts: usize,
+}
+
+impl MinimalConversationState {
+    pub fn refs(&self) -> ConversationStructureRefs {
+        ConversationStructureRefs {
+            turns: self.turns.clone(),
+            todos: self.todos.clone(),
+            summary: self.summary.clone(),
+        }
+    }
 }
 
 pub fn score_root_candidate(
@@ -270,12 +282,14 @@ pub fn parse_conversation_state_structure(
         if field_number == 0 {
             return None;
         }
-        if wire_type == 2 && (field_number == 1 || field_number == 8) {
+        if wire_type == 2 && matches!(field_number, 1 | 3 | 6 | 8) {
             let value = read_bytes(data, &mut position)?;
-            if field_number == 8 {
-                parsed.turns.push(value.to_vec());
-            } else {
-                parsed.root_prompts = parsed.root_prompts.saturating_add(1);
+            match field_number {
+                1 => parsed.root_prompts = parsed.root_prompts.saturating_add(1),
+                3 => parsed.todos.push(value.to_vec()),
+                6 => parsed.summary = Some(value.to_vec()),
+                8 => parsed.turns.push(value.to_vec()),
+                _ => unreachable!(),
             }
             continue;
         }

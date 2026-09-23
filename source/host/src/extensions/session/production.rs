@@ -21,6 +21,10 @@ use super::conversation_size_limits::{
 };
 use super::session_paths::get_agent_db_path;
 use super::session_recovery::{ensure_profile_file, ensure_settings_file};
+use super::session_maintenance::{
+    clear_stale_checkpoint_roots_once, recover_conversation_root_if_missing,
+    retire_legacy_store_blobs_once,
+};
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
@@ -115,6 +119,13 @@ impl ProductionSessionWorkers {
             return Ok(None);
         }
 
+        let _ = recover_conversation_root_if_missing(
+            Arc::clone(&self.pool),
+            agent_id,
+            &session_db_path,
+            &store.blob_db_path,
+            self.busy_timeout_ms,
+        )?;
         let persisted_root_blob_id =
             read_persisted_latest_root_blob_id(&session_db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?;
@@ -150,6 +161,20 @@ impl ProductionSessionWorkers {
             let _ = futures::executor::block_on(store.get_blob(&(), blob_id))
                 .map_err(|error| error.to_string())?;
         }
+        let _ = clear_stale_checkpoint_roots_once(
+            Arc::clone(&self.pool),
+            agent_id,
+            &session_db_path,
+            &store.blob_db_path,
+            self.busy_timeout_ms,
+        )?;
+        let _ = retire_legacy_store_blobs_once(
+            Arc::clone(&self.pool),
+            agent_id,
+            &session_db_path,
+            &store.blob_db_path,
+            self.busy_timeout_ms,
+        )?;
 
         Ok(Some(PreparedAgentBlobStore {
             agent_id: agent_id.to_string(),

@@ -2,17 +2,21 @@ use std::path::Path;
 
 use rusqlite::{OptionalExtension, params};
 
-use crate::storage::store_db::live_db_handle_count;
+use crate::storage::store_db::{bump_db_write_generation, live_db_handle_count};
+use crate::transcript_mutation_events::publish_transcript_mutation;
 
 use super::agent_db_recovery::{
     AgentDbRecoveryError, DbRecoveryOptions, open_configured_db,
 };
-use super::agent_db_schema::GET_KV_SQL;
+use super::agent_db_schema::{
+    CLEAR_BLOBS_SQL, COMPARE_AND_SET_KV_SQL, DELETE_TRANSCRIPT_ENTRY_SQL, GET_KV_SQL,
+    HAS_LEGACY_BLOB_SQL, INSERT_TRANSCRIPT_ENTRY_SQL, LIST_TRANSCRIPT_ENTRIES_SQL, SET_KV_SQL,
+};
 use super::agent_db_serde::{
     AwaitingUserResponse, EpisodeTurn, MemoryPromptSnapshot, RequestRecord, SandProfile,
     SpendGuardState, UnreadState, parse_awaiting_state, parse_memory_prompt_snapshot,
     parse_pending_episode_turns, parse_profile, parse_request_records, parse_unread_state,
-    resolve_spend_guard_state,
+    resolve_spend_guard_state, parse_transcript_entry,
 };
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptWindowQuery, read_transcript_tail,
@@ -43,6 +47,9 @@ const KV_EPISODE: &str = "episodePending";
 const KV_MEMORY_SNAPSHOT: &str = "memoryPromptSnapshot";
 const KV_SPEND_GUARD: &str = "automationSpendGuardState";
 const KV_SPEND_GUARD_LEGACY: &str = "automationSpendGuardNudgedAt";
+const KV_HIDDEN_REPAIR: &str = "hiddenEntryRepairVersion";
+const KV_STALE_ROOT_CLEANUP: &str = "staleRootCleanupVersion";
+const KV_LEGACY_BLOB_RETIREMENT: &str = "legacyStoreBlobRetirementVersion";
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AgentDbSerdeSnapshot {
@@ -118,6 +125,223 @@ pub fn read_persisted_agent_name(
                 .filter(|value| !value.is_empty())
                 .map(ToOwned::to_owned)
         }))
+}
+
+pub fn compare_and_set_persisted_latest_root_blob_id(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    expected_root: &[u8],
+    next_root: &[u8],
+) -> Result<bool, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let Some(raw) = read_kv(&db, "metadata")? else {
+        return Ok(false);
+    };
+    let metadata_bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+    let metadata_json = String::from_utf8(metadata_bytes)?;
+    let mut metadata: serde_json::Value = serde_json::from_str(&metadata_json)?;
+    let current_root = metadata
+        .get("latestRootBlobId")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default();
+    if current_root != encode_hex(expected_root) {
+        return Ok(false);
+    }
+    let Some(object) = metadata.as_object_mut() else {
+        return Ok(false);
+    };
+    object.insert(
+        "latestRootBlobId".into(),
+        serde_json::Value::String(encode_hex(next_root)),
+    );
+    let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
+    let changed = db.execute(
+        COMPARE_AND_SET_KV_SQL,
+        params![next_raw, "metadata", raw],
+    )? == 1;
+    if changed {
+        bump_db_write_generation(db_path);
+    }
+    Ok(changed)
+}
+
+pub fn read_persisted_version(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    key: &str,
+) -> Result<u64, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    Ok(read_kv(&db, key)?
+        .and_then(|value| value.parse::<u64>().ok())
+        .filter(|value| *value > 0)
+        .unwrap_or_default())
+}
+
+pub fn write_persisted_version(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    key: &str,
+    version: u64,
+) -> Result<bool, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let changed = db.execute(SET_KV_SQL, params![key, version.to_string()])? > 0;
+    if changed {
+        bump_db_write_generation(db_path);
+    }
+    Ok(changed)
+}
+
+pub fn stale_root_cleanup_version(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<u64, AgentDbProjectionError> {
+    read_persisted_version(db_path, busy_timeout_ms, KV_STALE_ROOT_CLEANUP)
+}
+
+pub fn set_stale_root_cleanup_version(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    version: u64,
+) -> Result<bool, AgentDbProjectionError> {
+    write_persisted_version(db_path, busy_timeout_ms, KV_STALE_ROOT_CLEANUP, version)
+}
+
+pub fn hidden_entry_repair_version(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<u64, AgentDbProjectionError> {
+    read_persisted_version(db_path, busy_timeout_ms, KV_HIDDEN_REPAIR)
+}
+
+pub fn set_hidden_entry_repair_version(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    version: u64,
+) -> Result<bool, AgentDbProjectionError> {
+    write_persisted_version(db_path, busy_timeout_ms, KV_HIDDEN_REPAIR, version)
+}
+
+pub fn legacy_blob_retirement_version(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<u64, AgentDbProjectionError> {
+    read_persisted_version(db_path, busy_timeout_ms, KV_LEGACY_BLOB_RETIREMENT)
+}
+
+pub fn has_persisted_legacy_conversation_blobs(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<bool, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    Ok(db
+        .query_row(HAS_LEGACY_BLOB_SQL, [], |_| Ok(()))
+        .optional()?
+        .is_some())
+}
+
+pub fn retire_persisted_legacy_conversation_blobs(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    version: u64,
+) -> Result<bool, AgentDbProjectionError> {
+    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
+    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    transaction.execute(CLEAR_BLOBS_SQL, [])?;
+    transaction.execute(
+        SET_KV_SQL,
+        params![KV_LEGACY_BLOB_RETIREMENT, version.to_string()],
+    )?;
+    transaction.commit()?;
+    bump_db_write_generation(db_path);
+    Ok(true)
+}
+
+pub fn read_persisted_transcript_entries(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let mut statement = db.prepare(LIST_TRANSCRIPT_ENTRIES_SQL)?;
+    let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
+    let mut entries = Vec::new();
+    for row in rows {
+        let raw = row?;
+        if let Some(entry) = parse_transcript_entry(&raw) {
+            entries.push(entry);
+        }
+    }
+    Ok(entries)
+}
+
+pub fn append_persisted_transcript_entries(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    entries: &[serde_json::Value],
+) -> Result<usize, AgentDbProjectionError> {
+    if entries.is_empty() {
+        return Ok(0);
+    }
+    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
+    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let mut inserted = Vec::new();
+    {
+        let mut statement = transaction.prepare(INSERT_TRANSCRIPT_ENTRY_SQL)?;
+        for entry in entries {
+            let Some(id) = entry.get("id").and_then(serde_json::Value::as_str) else {
+                continue;
+            };
+            if entry.get("kind").and_then(serde_json::Value::as_str).is_none() {
+                continue;
+            }
+            if statement.execute(params![id, entry.to_string()])? > 0 {
+                inserted.push(entry.clone());
+            }
+        }
+    }
+    transaction.commit()?;
+    if !inserted.is_empty() {
+        bump_db_write_generation(db_path);
+        let mut mutation = serde_json::Map::new();
+        mutation.insert("kind".into(), serde_json::Value::String("entries-upserted".into()));
+        mutation.insert(
+            "agentId".into(),
+            serde_json::Value::String(
+                db_path.parent()
+                    .and_then(Path::file_name)
+                    .map(|value| value.to_string_lossy().into_owned())
+                    .unwrap_or_default(),
+            ),
+        );
+        mutation.insert("entries".into(), serde_json::Value::Array(inserted.clone()));
+        publish_transcript_mutation(&mutation);
+    }
+    Ok(inserted.len())
+}
+
+pub fn delete_persisted_transcript_entry(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    entry_id: &str,
+) -> Result<bool, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let changed = db.execute(DELETE_TRANSCRIPT_ENTRY_SQL, params![entry_id])? > 0;
+    if changed {
+        bump_db_write_generation(db_path);
+        let mut mutation = serde_json::Map::new();
+        mutation.insert("kind".into(), serde_json::Value::String("entry-deleted".into()));
+        mutation.insert(
+            "agentId".into(),
+            serde_json::Value::String(
+                db_path.parent()
+                    .and_then(Path::file_name)
+                    .map(|value| value.to_string_lossy().into_owned())
+                    .unwrap_or_default(),
+            ),
+        );
+        mutation.insert("entryId".into(), serde_json::Value::String(entry_id.to_string()));
+        publish_transcript_mutation(&mutation);
+    }
+    Ok(changed)
 }
 
 pub fn read_persisted_agent_serde_snapshot(
@@ -214,6 +438,10 @@ fn read_kv(
 ) -> Result<Option<String>, rusqlite::Error> {
     db.query_row(GET_KV_SQL, params![key], |row| row.get::<_, String>(0))
         .optional()
+}
+
+fn encode_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 fn decode_hex(raw: &str) -> Result<Vec<u8>, String> {
