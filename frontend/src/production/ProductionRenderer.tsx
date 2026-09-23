@@ -2411,7 +2411,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (existing.some((entry) => entry.kind === "message" && entry.id === projected.id)) return current;
         const pendingId = resolvedNonce == null ? null : `pending-${resolvedNonce}`;
         const pending = pendingId == null ? null : existing.find((entry): entry is TranscriptMessage => entry.kind === "message" && entry.id === pendingId);
-        if (pending != null && projectedMessage != null && projectedAttachments.length > 0 && projectedMessage.text.length === 0) {
+        if (pending != null && projectedMessage != null) {
           const mergedAttachments = [...(pending.attachments ?? [])];
           for (const attachment of projectedAttachments) {
             const index = mergedAttachments.findIndex((candidate) => candidate.path === attachment.path);
@@ -2419,12 +2419,18 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             else mergedAttachments[index] = { ...mergedAttachments[index], ...attachment };
           }
           const hasAcknowledgement = resolvedNonce != null && acknowledgementController.getSnapshot().records.some((record) => record.nonce === resolvedNonce);
-          const merged = { ...pending, attachments: mergedAttachments, ...(hasAcknowledgement ? {} : { id: projected.id, delivery: "sent" as const }) };
+          const merged = {
+            ...pending,
+            ...projectedMessage,
+            id: hasAcknowledgement ? pending.id : projected.id,
+            text: projectedMessage.text.length > 0 ? projectedMessage.text : pending.text,
+            attachments: mergedAttachments,
+            clientNonce: projectedMessage.clientNonce ?? pending.clientNonce,
+            ...(hasAcknowledgement ? { delivery: pending.delivery } : { delivery: "sent" as const }),
+          };
           return { ...current, [ownerId]: existing.map((entry) => entry.kind === "message" && entry.id === pendingId ? merged : entry) };
         }
-        return { ...current, [ownerId]: pendingId != null && pending != null
-          ? existing.map((entry) => entry.kind === "message" && entry.id === pendingId ? projected : entry)
-          : [...existing, projected] };
+        return { ...current, [ownerId]: [...existing, projected] };
       });
       }
     }) ?? null;
