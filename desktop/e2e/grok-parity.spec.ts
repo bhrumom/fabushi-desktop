@@ -1207,6 +1207,10 @@ test('desktop uses the Fabushi-owned Grok parity surface without a parallel Mess
       await expect(palette.getByText('Search unavailable', { exact: true })).toBeVisible();
       await expect(palette.getByRole('tab', { name: 'Files', exact: true })).toHaveCount(0);
       await page.keyboard.press('Escape');
+      // The command palette owns a full-screen pointer-intercepting backdrop.
+      // Do not advance into Agent info until the shipping dialog has actually
+      // unmounted; otherwise a legitimate close-details click can race it.
+      await expect(palette).toHaveCount(0);
     });
 
     await test.step('Agent settings are an Agent-owned secondary surface', async () => {
