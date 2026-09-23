@@ -319,6 +319,52 @@ function optimisticAcknowledgementEntries(nonce: string, attachments: readonly {
   ];
 }
 
+function mergeTranscriptAttachments(
+  current: readonly DraftAttachment[] | undefined,
+  incoming: readonly DraftAttachment[] | undefined
+): DraftAttachment[] {
+  const merged = [...(current ?? [])];
+  for (const attachment of incoming ?? []) {
+    const index = merged.findIndex((candidate) => candidate.path === attachment.path);
+    if (index < 0) merged.push(attachment);
+    else merged[index] = { ...merged[index], ...attachment };
+  }
+  return merged;
+}
+
+function mergeAuthoritativeTranscriptMessage(
+  current: TranscriptMessage,
+  incoming: TranscriptMessage,
+  options: { preserveCurrentId?: boolean } = {}
+): TranscriptMessage {
+  return {
+    ...current,
+    ...incoming,
+    id: options.preserveCurrentId ? current.id : incoming.id,
+    text: incoming.text.length > 0 ? incoming.text : current.text,
+    attachments: mergeTranscriptAttachments(current.attachments, incoming.attachments),
+    clientNonce: incoming.clientNonce ?? current.clientNonce,
+    delivery: incoming.delivery ?? current.delivery,
+  };
+}
+
+function reconcileAuthoritativeTranscriptBaseline(
+  current: readonly ConversationTranscriptEntry[],
+  incoming: readonly ConversationTranscriptEntry[],
+): ConversationTranscriptEntry[] {
+  return incoming.map((entry) => {
+    if (entry.kind !== "message") return entry;
+    const previous = current.find((candidate): candidate is TranscriptMessage =>
+      candidate.kind === "message"
+      && (
+        candidate.id === entry.id
+        || (entry.clientNonce != null && candidate.clientNonce === entry.clientNonce)
+      )
+    );
+    return previous == null ? entry : mergeAuthoritativeTranscriptMessage(previous, entry);
+  });
+}
+
 function moveAgentsToSidebarSection(sections: readonly SidebarSection[], agentIds: readonly string[], sectionId: string): SidebarSection[] | null {
   if (!sections.some((section) => section.id === sectionId)) return null;
   const knownAgentIds = new Set(sections.flatMap((section) => section.agentIds));
@@ -2369,7 +2415,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             },
           });
         }
-        setEntriesByAgent((current) => ({ ...current, [ownerId]: projectedEntries }));
+        setEntriesByAgent((current) => ({
+          ...current,
+          [ownerId]: reconcileAuthoritativeTranscriptBaseline(current[ownerId] ?? [], projectedEntries)
+        }));
       },
       onUpdated: ({ agentId: ownerId, after: event }) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
@@ -2379,7 +2428,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         setEntriesByAgent((current) => {
           const existing = current[ownerId] ?? [];
           if (!existing.some((entry) => entry.id === projected.id)) return current;
-          return { ...current, [ownerId]: existing.map((entry) => entry.id === projected.id ? projected : entry) };
+          return {
+            ...current,
+            [ownerId]: existing.map((entry) =>
+              entry.id === projected.id && entry.kind === "message" && projected.kind === "message"
+                ? mergeAuthoritativeTranscriptMessage(entry, projected)
+                : entry.id === projected.id ? projected : entry
+            )
+          };
         });
       },
       onCleared: (ownerId) => {
@@ -2408,28 +2464,32 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const projectedAttachments = projectedMessage?.attachments ?? [];
       setEntriesByAgent((current) => {
         const existing = current[ownerId] ?? [];
-        if (existing.some((entry) => entry.kind === "message" && entry.id === projected.id)) return current;
         const pendingId = resolvedNonce == null ? null : `pending-${resolvedNonce}`;
-        const pending = pendingId == null ? null : existing.find((entry): entry is TranscriptMessage => entry.kind === "message" && entry.id === pendingId);
-        if (pending != null && projectedMessage != null) {
-          const mergedAttachments = [...(pending.attachments ?? [])];
-          for (const attachment of projectedAttachments) {
-            const index = mergedAttachments.findIndex((candidate) => candidate.path === attachment.path);
-            if (index < 0) mergedAttachments.push(attachment);
-            else mergedAttachments[index] = { ...mergedAttachments[index], ...attachment };
-          }
-          const hasAcknowledgement = resolvedNonce != null && acknowledgementController.getSnapshot().records.some((record) => record.nonce === resolvedNonce);
-          const merged = {
-            ...pending,
-            ...projectedMessage,
-            id: hasAcknowledgement ? pending.id : projected.id,
-            text: projectedMessage.text.length > 0 ? projectedMessage.text : pending.text,
-            attachments: mergedAttachments,
-            clientNonce: projectedMessage.clientNonce ?? pending.clientNonce,
-            ...(hasAcknowledgement ? { delivery: pending.delivery } : { delivery: "sent" as const }),
+        const correlated = projectedMessage == null ? null : existing.find((entry): entry is TranscriptMessage =>
+          entry.kind === "message"
+          && (
+            entry.id === projected.id
+            || (pendingId != null && entry.id === pendingId)
+            || (resolvedNonce != null && entry.clientNonce === resolvedNonce)
+          )
+        );
+        if (correlated != null && projectedMessage != null) {
+          const isAttachmentEcho = "sourceKind" in projectedMessage && projectedMessage.sourceKind === "user-attachment";
+          const merged = mergeAuthoritativeTranscriptMessage(correlated, projectedMessage, {
+            preserveCurrentId: isAttachmentEcho,
+          });
+          const reconciled = {
+            ...merged,
+            ...(isAttachmentEcho ? { delivery: correlated.delivery } : { delivery: "sent" as const }),
           };
-          return { ...current, [ownerId]: existing.map((entry) => entry.kind === "message" && entry.id === pendingId ? merged : entry) };
+          return {
+            ...current,
+            [ownerId]: existing.map((entry) =>
+              entry.kind === "message" && entry.id === correlated.id ? reconciled : entry
+            )
+          };
         }
+        if (existing.some((entry) => entry.id === projected.id)) return current;
         return { ...current, [ownerId]: [...existing, projected] };
       });
       }
