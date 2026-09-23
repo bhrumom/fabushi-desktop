@@ -284,7 +284,7 @@ pub fn dispatch_production_session_gateway_call(
                 })
                 .map_err(SessionGatewayError::internal)
         }),
-        "getAgentTranscriptTail" => required_string(args, "id").and_then(|agent_id| {
+        "openAgentTail" | "getAgentTranscriptTail" => required_string(args, "id").and_then(|agent_id| {
             let query = TranscriptWindowQuery {
                 before_seq: optional_i64(args, "beforeSeq"),
                 limit: optional_i64(args, "limit").unwrap_or(500),

@@ -80,6 +80,16 @@ fn production_gateway_reads_transcript_pages_and_counts_agents_without_compat_ho
     );
     assert_eq!(tail["entries"].as_array().map(Vec::len), Some(1));
 
+    // The shipping Renderer reloads a selected Agent through openAgentTail.
+    // Rust-created Agents must stay on the same Session owner instead of
+    // falling through to the compatibility Host roster.
+    let opened_tail = dispatch(
+        &runtime,
+        "openAgentTail",
+        json!({"id":record.id,"limit":1}),
+    );
+    assert_eq!(opened_tail, tail);
+
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
 }
