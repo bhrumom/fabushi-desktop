@@ -13625,6 +13625,43 @@ mod tests {
     }
 
     #[test]
+    fn grok_send_prompt_projects_attachment_context_into_user_transcript_event() {
+        let controller = controller();
+        let _ = drain(&controller);
+
+        let accepted = controller
+            .grok_gateway_call(
+                "sendPrompt",
+                json!({
+                    "agentId": "mahayana-assistant",
+                    "prompt": "Use the attached note.",
+                    "clientNonce": "attachment-nonce",
+                    "attachmentPaths": ["/tmp/agent-notes.txt"],
+                    "attachmentNames": ["agent-notes.txt"],
+                }),
+            )
+            .expect("sendPrompt compatibility call")
+            .expect("sendPrompt response");
+        assert_eq!(accepted["accepted"], true);
+
+        let projected_user = drain(&controller)
+            .into_iter()
+            .filter_map(|event| serde_json::to_value(event).ok())
+            .map(|event| controller.project_grok_gateway_event(&event))
+            .find(|event| {
+                event["channel"] == "transcript"
+                    && event["payload"]["type"] == "appended"
+                    && event["payload"]["entry"]["role"] == "user"
+            })
+            .expect("projected user transcript event");
+
+        let entry = &projected_user["payload"]["entry"];
+        assert_eq!(entry["clientNonce"], "attachment-nonce");
+        assert_eq!(entry["attachments"][0]["name"], "agent-notes.txt");
+        assert_eq!(entry["attachments"][0]["path"], "/tmp/agent-notes.txt");
+    }
+
+    #[test]
     fn browser_login_platform_maps_native_surfaces_to_mobile() {
         assert_eq!(browser_login_platform(SurfacePlatform::Ios), "mobile");
         assert_eq!(browser_login_platform(SurfacePlatform::Android), "mobile");
