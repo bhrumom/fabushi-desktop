@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use mahayana_host_runtime::extensions::session::session_store_factories::{
-    NO_SESSION_MEMORY, automation_store_location_for_db_path, channel_store_for_db_path,
-    workflow_store_locations_for_db_path,
+    NO_SESSION_MEMORY, automation_store_for_db_path, automation_store_location_for_db_path,
+    channel_store_for_db_path, workflow_store_locations_for_db_path,
 };
 
 #[test]
@@ -11,6 +11,10 @@ fn frozen_store_factory_paths_follow_db_agent_and_sand_roots() {
 
     assert_eq!(
         automation_store_location_for_db_path(db),
+        Path::new("/tmp/sand/agents/agent-a/automations")
+    );
+    assert_eq!(
+        automation_store_for_db_path(db).get_location(),
         Path::new("/tmp/sand/agents/agent-a/automations")
     );
 

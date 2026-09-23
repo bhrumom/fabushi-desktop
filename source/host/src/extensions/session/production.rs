@@ -44,7 +44,10 @@ use super::conversation_size_limits::{
 use super::session_paths::{get_agent_db_path, get_connector_secrets_root};
 use super::connector_secret_store::SandConnectorSecretStore;
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
-use super::session_store_factories::channel_store_for_db_path;
+use super::session_store_factories::{
+    automation_store_for_db_path, channel_store_for_db_path,
+};
+use crate::automations::automation_store::{FileAutomationStore, agent_has_automations};
 use super::session_maintenance::{
     backfill_transcript_from_outline, clear_stale_checkpoint_roots_once,
     recover_conversation_root_if_missing, repair_hidden_transcript_entries_once,
@@ -284,6 +287,19 @@ impl ProductionSessionWorkers {
     pub fn open_channel_store(&self, agent_id: &str) -> Result<FileChannelStore, String> {
         let db_path = self.session_db_path(agent_id)?;
         Ok(channel_store_for_db_path(&db_path))
+    }
+
+    pub fn open_automation_store(&self, agent_id: &str) -> Result<FileAutomationStore, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        Ok(automation_store_for_db_path(&db_path))
+    }
+
+    pub fn agent_has_automations(&self, agent_id: &str) -> Result<bool, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        let agent_dir = db_path
+            .parent()
+            .ok_or_else(|| "agent database has no parent directory".to_string())?;
+        Ok(agent_has_automations(agent_dir))
     }
 
     pub fn list_agent_channels(&self, agent_id: &str) -> Result<Vec<ChannelConnection>, String> {

@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
+use crate::automations::automation_store::{FileAutomationStore, get_agent_automations_dir};
 use super::channel_store::{FileChannelStore, get_agent_channels_dir};
 
 pub const AUTOMATIONS_DIRNAME: &str = "automations";
@@ -73,6 +74,10 @@ fn agent_dir_for_db_path(db_path: &Path) -> &Path {
 
 pub fn automation_store_location_for_db_path(db_path: &Path) -> PathBuf {
     agent_dir_for_db_path(db_path).join(AUTOMATIONS_DIRNAME)
+}
+
+pub fn automation_store_for_db_path(db_path: &Path) -> FileAutomationStore {
+    FileAutomationStore::new(get_agent_automations_dir(agent_dir_for_db_path(db_path)))
 }
 
 pub fn workflow_store_locations_for_db_path(db_path: &Path) -> WorkflowStoreLocations {
