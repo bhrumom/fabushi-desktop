@@ -22,7 +22,84 @@ function gitBlobSha(content) {
     .digest('hex');
 }
 
-const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+const manifestBase = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+const semanticAdaptationsPath = path.join(root, 'projects/grok-fabu-parity/architecture-semantic-adaptations.json');
+const semanticAdaptations = fs.existsSync(semanticAdaptationsPath)
+  ? JSON.parse(fs.readFileSync(semanticAdaptationsPath, 'utf8'))
+  : { schemaVersion: 1, adaptations: [] };
+
+if (semanticAdaptations.schemaVersion !== 1 || !Array.isArray(semanticAdaptations.adaptations)) {
+  fail('invalid architecture semantic-adaptations registry');
+}
+
+const adaptationRefs = new Set();
+const baseRowsByReference = new Map((manifestBase.modules ?? []).map((row) => [row.referencePath, row]));
+for (const adaptation of semanticAdaptations.adaptations) {
+  if (
+    typeof adaptation.referencePath !== 'string'
+    || typeof adaptation.expectedBaseParityMode !== 'string'
+    || typeof adaptation.parityMode !== 'string'
+    || typeof adaptation.targetBlobSha !== 'string'
+    || typeof adaptation.rationale !== 'string'
+    || !Array.isArray(adaptation.behavioralEvidence)
+    || !Array.isArray(adaptation.testEvidence)
+  ) {
+    fail(`incomplete semantic adaptation: ${JSON.stringify(adaptation)}`);
+    continue;
+  }
+  if (adaptationRefs.has(adaptation.referencePath)) {
+    fail(`duplicate semantic adaptation for ${adaptation.referencePath}`);
+    continue;
+  }
+  adaptationRefs.add(adaptation.referencePath);
+  const baseRow = baseRowsByReference.get(adaptation.referencePath);
+  if (baseRow == null) {
+    fail(`semantic adaptation has no manifest row: ${adaptation.referencePath}`);
+    continue;
+  }
+  if (baseRow.status !== 'implemented') {
+    fail(`semantic adaptation cannot finalize non-implemented row: ${adaptation.referencePath} is ${baseRow.status}`);
+  }
+  if (baseRow.parityMode !== adaptation.expectedBaseParityMode) {
+    fail(`semantic adaptation base mode changed for ${adaptation.referencePath}: expected ${adaptation.expectedBaseParityMode}, found ${baseRow.parityMode}`);
+  }
+  if (!['typescript-port', 'rust-adaptation'].includes(adaptation.parityMode)) {
+    fail(`unsupported semantic adaptation mode ${adaptation.parityMode} for ${adaptation.referencePath}`);
+  }
+  if (!/^[0-9a-f]{40}$/.test(adaptation.targetBlobSha)) {
+    fail(`semantic adaptation requires targetBlobSha for ${adaptation.referencePath}`);
+  }
+  if (adaptation.rationale.trim() === '') {
+    fail(`semantic adaptation requires rationale for ${adaptation.referencePath}`);
+  }
+  if (adaptation.behavioralEvidence.length === 0 || adaptation.testEvidence.length === 0) {
+    fail(`semantic adaptation requires behavioral and test evidence for ${adaptation.referencePath}`);
+  }
+  const target = path.resolve(root, baseRow.targetPath);
+  if (!target.startsWith(root + path.sep) || !fs.existsSync(target)) {
+    fail(`semantic adaptation target missing: ${baseRow.targetPath}`);
+  } else {
+    const actualTargetBlobSha = gitBlobSha(fs.readFileSync(target));
+    if (actualTargetBlobSha !== adaptation.targetBlobSha) {
+      fail(`semantic adaptation target drifted: ${baseRow.targetPath} expected ${adaptation.targetBlobSha}, found ${actualTargetBlobSha}`);
+    }
+  }
+}
+
+const manifest = {
+  ...manifestBase,
+  modules: (manifestBase.modules ?? []).map((row) => {
+    const adaptation = semanticAdaptations.adaptations.find((candidate) => candidate.referencePath === row.referencePath);
+    if (adaptation == null) return row;
+    return {
+      ...row,
+      parityMode: adaptation.parityMode,
+      behavioralEvidence: adaptation.behavioralEvidence,
+      testEvidence: adaptation.testEvidence,
+      notes: adaptation.rationale,
+    };
+  }),
+};
 if (manifest.schemaVersion !== 3) fail(`unsupported schemaVersion ${manifest.schemaVersion}`);
 if (manifest.frozenReference?.commit !== 'a9f633e09d49a85829b8236331b9e21f7e612634') {
   fail('frozen Grok reference SHA changed');
