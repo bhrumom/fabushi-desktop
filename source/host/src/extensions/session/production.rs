@@ -27,7 +27,8 @@ use super::conversation_blobs_path::conversation_blobs_path;
 use super::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
 };
-use super::session_paths::get_agent_db_path;
+use super::session_paths::{get_agent_db_path, get_connector_secrets_root};
+use super::connector_secret_store::SandConnectorSecretStore;
 use super::session_maintenance::{
     clear_stale_checkpoint_roots_once, recover_conversation_root_if_missing,
     retire_legacy_store_blobs_once,
@@ -182,6 +183,43 @@ impl ProductionSessionWorkers {
         let db_path = self.session_db_path(agent_id)?;
         self.conversation_state
             .read_agent_thread(&db_path, root_id)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn connector_secret_store(&self) -> SandConnectorSecretStore {
+        SandConnectorSecretStore::new(get_connector_secrets_root(Some(&self.agents_root)))
+    }
+
+    pub fn store_connector_credential(
+        &self,
+        agent_id: &str,
+        platform: &str,
+        field: &str,
+        value: &str,
+    ) -> Result<bool, String> {
+        self.connector_secret_store()
+            .set_secret(agent_id, platform, field, value)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn get_connector_secret(
+        &self,
+        agent_id: &str,
+        platform: &str,
+        field: &str,
+    ) -> Result<Option<String>, String> {
+        Ok(self
+            .connector_secret_store()
+            .get_secret(agent_id, platform, field))
+    }
+
+    pub fn remove_connector_platform_secret(
+        &self,
+        agent_id: &str,
+        platform: &str,
+    ) -> Result<bool, String> {
+        self.connector_secret_store()
+            .remove_agent_platform(agent_id, platform)
             .map_err(|error| error.to_string())
     }
 

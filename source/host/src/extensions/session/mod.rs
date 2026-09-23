@@ -6,6 +6,7 @@ pub mod agent_db_schema;
 pub mod conversation_blobs_path;
 pub mod conversation_recovery;
 pub mod conversation_size_limits;
+pub mod connector_secret_store;
 pub mod session_paths;
 pub mod session_recovery;
 pub mod session_maintenance;

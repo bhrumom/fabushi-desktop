@@ -12132,12 +12132,23 @@
       "targetPath": "source/host/src/extensions/session/connector_secret_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "5c27ec6b67e3df3f069a874201417642763c5c7c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/connector_secret_store.rs",
+        "source/host/src/extensions/session/session_paths.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/storage/folder_id.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/connector_secret_store_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Complete Rust port of frozen Grok connector secret store: safe folder validation, JSON object merge/read semantics, atomic temp-file replacement, non-ENOENT unreadable diagnostics, non-empty string retrieval and per-agent/platform removal. ProductionSessionWorkers exposes canonical-root store/get/remove credential ownership."
     },
     {
       "referencePath": "source/host/extensions/session/conversation-blobs-path.ts",
@@ -12260,7 +12271,8 @@
         "source/host/src/extensions/session/session_materialization.rs",
         "source/host/src/extensions/session/session_maintenance.rs",
         "source/host/src/extensions/session/session_conversation_state.rs",
-        "source/host/src/extensions/session/pending_card_sweeps.rs"
+        "source/host/src/extensions/session/pending_card_sweeps.rs",
+        "source/host/src/extensions/session/connector_secret_store.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12274,7 +12286,8 @@
         "source/host/tests/session_maintenance_contract.rs",
         "source/host/tests/session_conversation_state_contract.rs",
         "source/host/tests/agent_db_mutation_production_contract.rs",
-        "source/host/tests/pending_card_sweeps_contract.rs"
+        "source/host/tests/pending_card_sweeps_contract.rs",
+        "source/host/tests/connector_secret_store_contract.rs"
       ],
       "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state ownership, transcript projection/mutations and conversation capacity before Runner inference. Full Grok Session still needs Gateway create/open/transcript/mutation command cutover, full ConversationState proto derivation/outlines, roster/projection, workflow/channel composition and box handoff, so this module remains existing-needs-parity."
     },
