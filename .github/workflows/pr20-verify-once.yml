@@ -1,6 +1,12 @@
 name: PR20 Verify Once
 
 on:
+  push:
+    branches: [refactor/grok-018-architecture-rebuild]
+    paths:
+      - "scripts/check-grok-architecture.mjs"
+      - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
+      - ".github/workflows/pr20-verify-once.yml"
   workflow_dispatch:
 
 jobs:
