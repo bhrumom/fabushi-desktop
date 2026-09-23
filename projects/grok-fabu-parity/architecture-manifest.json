@@ -12145,7 +12145,7 @@
       "targetPath": "source/host/src/extensions/session/channel_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "4db53de04b71620d4f4b93ec4cccd57ae61eba6c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12158,12 +12158,12 @@
       ],
       "testEvidence": [
         "source/host/tests/channel_store_contract.rs",
+        "source/host/tests/session_gateway_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/session_gateway_contract.rs"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production slice matches frozen Grok path/layout, safe platform IDs, connector label normalization, config parsing, sorted configured connections, atomic metadata writes and recursive remove. ProductionSessionWorkers composes channel metadata with connector secrets, and Host Gateway getAgentChannels/connectChannel/disconnectChannel/refreshChannel now route directly to this Rust owner. Final is withheld for WatchedDirectory-equivalent external filesystem observation and 50ms debounced onChange semantics."
+      "notes": "Final Rust port of frozen Grok FileChannelStore: canonical layout/config parsing, safe platform IDs, label normalization, atomic writes/removal, sorted configured connections, shared external filesystem observation and 50ms debounce semantics. Internal mutations and external changes converge on one debounced callback. ProductionSessionWorkers composes channel metadata with connector secrets, and shipping Host Gateway getAgentChannels/connectChannel/disconnectChannel/refreshChannel routes to this Rust owner."
     },
     {
       "referencePath": "source/host/extensions/session/connector-secret-store.ts",

@@ -1,10 +1,11 @@
 use std::fs;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::thread;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::channel_store::{
-    FileChannelStore, get_agent_channels_dir, label_for,
+    CHANNEL_CHANGE_DEBOUNCE_MS, FileChannelStore, get_agent_channels_dir, label_for,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 
@@ -17,6 +18,17 @@ fn temp_root(label: &str) -> std::path::PathBuf {
         "fabushi-channel-store-{label}-{}-{suffix}",
         std::process::id()
     ))
+}
+
+fn wait_for_changes(changes: &AtomicUsize, at_least: usize) {
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while changes.load(Ordering::SeqCst) < at_least && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(10));
+    }
+    assert!(
+        changes.load(Ordering::SeqCst) >= at_least,
+        "timed out waiting for channel-store change {at_least}"
+    );
 }
 
 #[test]
@@ -35,7 +47,7 @@ fn labels_match_frozen_grok_clamping_and_connector_defaults() {
 }
 
 #[test]
-fn file_channel_store_writes_lists_and_removes_safe_platforms() {
+fn file_channel_store_debounces_internal_mutations_and_keeps_frozen_file_contract() {
     let root = temp_root("file");
     let store = FileChannelStore::new(root.join("channels"));
     let changes = Arc::new(AtomicUsize::new(0));
@@ -55,13 +67,66 @@ fn file_channel_store_writes_lists_and_removes_safe_platforms() {
     let connections = store.list_connections();
     assert_eq!(connections.len(), 2);
     assert_eq!(connections[0].status, "configured");
-    assert_eq!(changes.load(Ordering::SeqCst), 2);
+
+    wait_for_changes(&changes, 1);
+    thread::sleep(Duration::from_millis(CHANNEL_CHANGE_DEBOUNCE_MS + 40));
+    assert_eq!(
+        changes.load(Ordering::SeqCst),
+        1,
+        "two writes in one debounce window must collapse"
+    );
 
     assert!(store.remove("slack").expect("remove slack"));
     assert!(!store.remove("slack").expect("remove absent slack"));
     assert_eq!(store.list_platforms(), vec!["discord".to_string()]);
-    assert_eq!(changes.load(Ordering::SeqCst), 3);
+    wait_for_changes(&changes, 2);
 
+    store.set_on_change(None);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn file_channel_store_observes_external_filesystem_changes_with_debounce() {
+    let root = temp_root("watch");
+    let channels = root.join("channels");
+    let store = FileChannelStore::new(&channels);
+    let changes = Arc::new(AtomicUsize::new(0));
+    store.set_on_change(Some({
+        let changes = Arc::clone(&changes);
+        Arc::new(move || {
+            changes.fetch_add(1, Ordering::SeqCst);
+        })
+    }));
+
+    let slack_dir = channels.join("slack");
+    fs::create_dir_all(&slack_dir).expect("external platform dir");
+    fs::write(
+        slack_dir.join("connection.json"),
+        "{\n  \"label\": \"External Slack\"\n}\n",
+    )
+    .expect("external config");
+    wait_for_changes(&changes, 1);
+    assert_eq!(store.read_label("slack").as_deref(), Some("External Slack"));
+
+    let before = changes.load(Ordering::SeqCst);
+    for label in ["One", "Two", "Three"] {
+        fs::write(
+            slack_dir.join("connection.json"),
+            format!("{{\n  \"label\": \"{label}\"\n}}\n"),
+        )
+        .expect("external burst");
+        thread::sleep(Duration::from_millis(10));
+    }
+    wait_for_changes(&changes, before + 1);
+    thread::sleep(Duration::from_millis(CHANNEL_CHANGE_DEBOUNCE_MS + 60));
+    assert_eq!(
+        changes.load(Ordering::SeqCst),
+        before + 1,
+        "external burst must collapse to one debounced callback"
+    );
+    assert_eq!(store.read_label("slack").as_deref(), Some("Three"));
+
+    store.set_on_change(None);
     let _ = fs::remove_dir_all(root);
 }
 

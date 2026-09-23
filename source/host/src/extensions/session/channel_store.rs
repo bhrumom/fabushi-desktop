@@ -1,9 +1,15 @@
+use std::collections::hash_map::DefaultHasher;
 use std::fs;
+use std::hash::{Hash, Hasher};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process;
-use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+};
+use std::thread::{self, JoinHandle};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 use serde_json::Value;
@@ -13,6 +19,7 @@ use crate::storage::folder_id::is_safe_folder_id;
 pub const CHANNELS_DIRNAME: &str = "channels";
 pub const CHANNEL_CONFIG_FILENAME: &str = "connection.json";
 pub const CHANNEL_CHANGE_DEBOUNCE_MS: u64 = 50;
+const CHANNEL_WATCH_POLL_MS: u64 = 25;
 
 pub type ChannelChangeListener = Arc<dyn Fn() + Send + Sync + 'static>;
 
@@ -38,38 +45,84 @@ pub enum ChannelStoreError {
     Json(#[from] serde_json::Error),
 }
 
+#[derive(Default)]
+struct DebounceState {
+    callback: Option<ChannelChangeListener>,
+    generation: u64,
+}
+
+struct WatchWorker {
+    stop: Arc<AtomicBool>,
+    handle: Option<JoinHandle<()>>,
+}
+
+impl WatchWorker {
+    fn stop(mut self) {
+        self.stop.store(true, Ordering::Release);
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join();
+        }
+    }
+}
+
+struct ChannelWatchInner {
+    channels_dir: PathBuf,
+    debounce: Arc<Mutex<DebounceState>>,
+    watcher: Mutex<Option<WatchWorker>>,
+}
+
+impl Drop for ChannelWatchInner {
+    fn drop(&mut self) {
+        if let Ok(slot) = self.watcher.get_mut() {
+            if let Some(worker) = slot.take() {
+                worker.stop();
+            }
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct FileChannelStore {
-    channels_dir: PathBuf,
-    on_change: Arc<Mutex<Option<ChannelChangeListener>>>,
+    inner: Arc<ChannelWatchInner>,
 }
 
 impl FileChannelStore {
     pub fn new(channels_dir: impl Into<PathBuf>) -> Self {
         Self {
-            channels_dir: channels_dir.into(),
-            on_change: Arc::new(Mutex::new(None)),
+            inner: Arc::new(ChannelWatchInner {
+                channels_dir: channels_dir.into(),
+                debounce: Arc::new(Mutex::new(DebounceState::default())),
+                watcher: Mutex::new(None),
+            }),
         }
     }
 
     pub fn get_location(&self) -> &Path {
-        &self.channels_dir
+        &self.inner.channels_dir
     }
 
     pub fn set_on_change(&self, on_change: Option<ChannelChangeListener>) {
-        if let Ok(mut slot) = self.on_change.lock() {
-            *slot = on_change;
+        let enabled = on_change.is_some();
+        if let Ok(mut state) = self.inner.debounce.lock() {
+            state.callback = on_change;
+            state.generation = state.generation.saturating_add(1);
+        }
+        if enabled {
+            self.ensure_watcher();
+        } else {
+            self.stop_watcher();
         }
     }
 
     pub fn config_path(&self, platform: &str) -> PathBuf {
-        self.channels_dir
+        self.inner
+            .channels_dir
             .join(platform)
             .join(CHANNEL_CONFIG_FILENAME)
     }
 
     pub fn list_platforms(&self) -> Vec<String> {
-        let Ok(entries) = fs::read_dir(&self.channels_dir) else {
+        let Ok(entries) = fs::read_dir(&self.inner.channels_dir) else {
             return Vec::new();
         };
         let mut platforms = entries
@@ -140,7 +193,7 @@ impl FileChannelStore {
             let _ = fs::remove_file(&temporary);
             return Err(error.into());
         }
-        self.notify();
+        self.schedule_notify();
         Ok(true)
     }
 
@@ -148,7 +201,7 @@ impl FileChannelStore {
         if !is_safe_folder_id(platform) {
             return Ok(false);
         }
-        let platform_dir = self.channels_dir.join(platform);
+        let platform_dir = self.inner.channels_dir.join(platform);
         match fs::metadata(&platform_dir) {
             Ok(metadata) if metadata.is_dir() => {}
             Ok(_) => return Ok(false),
@@ -156,19 +209,130 @@ impl FileChannelStore {
             Err(error) => return Err(error.into()),
         }
         fs::remove_dir_all(platform_dir)?;
-        self.notify();
+        self.schedule_notify();
         Ok(true)
     }
 
-    fn notify(&self) {
-        let callback = self
-            .on_change
+    fn schedule_notify(&self) {
+        schedule_debounced_notify(&self.inner.debounce);
+    }
+
+    fn ensure_watcher(&self) {
+        let Ok(mut slot) = self.inner.watcher.lock() else {
+            return;
+        };
+        if slot.is_some() {
+            return;
+        }
+        let stop = Arc::new(AtomicBool::new(false));
+        let worker_stop = Arc::clone(&stop);
+        let channels_dir = self.inner.channels_dir.clone();
+        let debounce = Arc::clone(&self.inner.debounce);
+        let handle = thread::Builder::new()
+            .name("sand-channel-store-watch".into())
+            .spawn(move || {
+                let mut fingerprint = directory_fingerprint(&channels_dir);
+                while !worker_stop.load(Ordering::Acquire) {
+                    thread::sleep(Duration::from_millis(CHANNEL_WATCH_POLL_MS));
+                    if worker_stop.load(Ordering::Acquire) {
+                        break;
+                    }
+                    let next = directory_fingerprint(&channels_dir);
+                    if next != fingerprint {
+                        fingerprint = next;
+                        schedule_debounced_notify(&debounce);
+                    }
+                }
+            })
+            .ok();
+        *slot = Some(WatchWorker { stop, handle });
+    }
+
+    fn stop_watcher(&self) {
+        let worker = self
+            .inner
+            .watcher
             .lock()
             .ok()
-            .and_then(|slot| slot.as_ref().map(Arc::clone));
+            .and_then(|mut slot| slot.take());
+        if let Some(worker) = worker {
+            worker.stop();
+        }
+    }
+}
+
+fn schedule_debounced_notify(state: &Arc<Mutex<DebounceState>>) {
+    let generation = {
+        let Ok(mut state) = state.lock() else {
+            return;
+        };
+        if state.callback.is_none() {
+            return;
+        }
+        state.generation = state.generation.saturating_add(1);
+        state.generation
+    };
+    let state_for_thread = Arc::clone(state);
+    let spawn = thread::Builder::new()
+        .name("sand-channel-store-debounce".into())
+        .spawn(move || {
+            thread::sleep(Duration::from_millis(CHANNEL_CHANGE_DEBOUNCE_MS));
+            let callback = state_for_thread.lock().ok().and_then(|state| {
+                (state.generation == generation)
+                    .then(|| state.callback.as_ref().map(Arc::clone))
+                    .flatten()
+            });
+            if let Some(callback) = callback {
+                callback();
+            }
+        });
+    if spawn.is_err() {
+        let callback = state.lock().ok().and_then(|state| {
+            (state.generation == generation)
+                .then(|| state.callback.as_ref().map(Arc::clone))
+                .flatten()
+        });
         if let Some(callback) = callback {
             callback();
         }
+    }
+}
+
+fn directory_fingerprint(root: &Path) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    fingerprint_path(root, root, &mut hasher);
+    hasher.finish()
+}
+
+fn fingerprint_path(root: &Path, path: &Path, hasher: &mut DefaultHasher) {
+    let relative = path.strip_prefix(root).unwrap_or(path);
+    relative.hash(hasher);
+    let Ok(metadata) = fs::symlink_metadata(path) else {
+        "missing".hash(hasher);
+        return;
+    };
+    metadata.len().hash(hasher);
+    metadata.file_type().is_dir().hash(hasher);
+    metadata.file_type().is_file().hash(hasher);
+    metadata.file_type().is_symlink().hash(hasher);
+    if let Ok(modified) = metadata.modified()
+        && let Ok(duration) = modified.duration_since(UNIX_EPOCH)
+    {
+        duration.as_nanos().hash(hasher);
+    }
+    if !metadata.is_dir() {
+        return;
+    }
+    let Ok(entries) = fs::read_dir(path) else {
+        return;
+    };
+    let mut children = entries
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .collect::<Vec<_>>();
+    children.sort();
+    for child in children {
+        fingerprint_path(root, &child, hasher);
     }
 }
 
