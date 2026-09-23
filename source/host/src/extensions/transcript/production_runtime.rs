@@ -98,7 +98,7 @@ impl ProductionTranscriptRuntime {
     ) -> Result<Value, ProductionSendError>
     where
         Dispatch: FnOnce() -> Result<Value, ProductionSendError>,
-        Persist: Fn(&Value) -> Result<(), ProductionSendError>,
+        Persist: Fn(&Value) -> Result<Option<String>, ProductionSendError>,
     {
         let input = parse_send_input(args)?;
         let nonce = optional_non_empty(args, "clientNonce").map(ToOwned::to_owned);
@@ -147,10 +147,12 @@ impl ProductionTranscriptRuntime {
         drop(state);
 
         let mut result = dispatch();
+        let mut persisted_echo_entry_id = None;
         if let Ok(value) = result.as_ref() {
             if value.get("accepted").and_then(Value::as_bool) == Some(true) {
-                if let Err(error) = persist_accepted(value) {
-                    result = Err(error);
+                match persist_accepted(value) {
+                    Ok(echo_entry_id) => persisted_echo_entry_id = echo_entry_id,
+                    Err(error) => result = Err(error),
                 }
             }
         }
@@ -169,9 +171,7 @@ impl ProductionTranscriptRuntime {
                     .map(str::trim)
                     .filter(|value| !value.is_empty())
                     .map(ToOwned::to_owned);
-                let echo_entry_id = operation_id
-                    .as_deref()
-                    .map(|value| format!("{value}:user"));
+                let echo_entry_id = persisted_echo_entry_id.clone();
                 let pending = {
                     let RuntimeState {
                         pipeline, ledger, ..

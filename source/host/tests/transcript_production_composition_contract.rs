@@ -41,7 +41,7 @@ fn production_send_runtime_persists_acceptance_and_replays_nonce_without_redispa
             },
             |_| {
                 persisted.fetch_add(1, Ordering::SeqCst);
-                Ok(())
+                Ok(Some("t0u".to_string()))
             },
         )
         .expect("first send");
@@ -58,7 +58,7 @@ fn production_send_runtime_persists_acceptance_and_replays_nonce_without_redispa
                 dispatches.fetch_add(1, Ordering::SeqCst);
                 Ok(serde_json::json!({"accepted": true, "operationId": "wrong"}))
             },
-            |_| Ok(()),
+            |_| Ok(Some("t0u".to_string())),
         )
         .expect("replayed send");
     assert_eq!(replay["operationId"], "op-a");
@@ -72,6 +72,7 @@ fn production_send_runtime_persists_acceptance_and_replays_nonce_without_redispa
         .expect("acceptance status");
     assert_eq!(status["outcome"], "found");
     assert_eq!(status["record"]["status"], "accepted");
+    assert_eq!(status["record"]["echoEntryId"], "t0u");
 
     let _ = fs::remove_dir_all(root);
 }
@@ -89,7 +90,7 @@ fn production_send_runtime_clears_failed_unaccepted_nonce_for_retry() {
     let first = runtime.execute_send(
         &args,
         || Err(ProductionSendError::Internal("transport failed".into())),
-        |_| Ok(()),
+        |_| Ok(Some("t0u".to_string())),
     );
     assert!(first.is_err());
 
@@ -97,7 +98,7 @@ fn production_send_runtime_clears_failed_unaccepted_nonce_for_retry() {
         .execute_send(
             &args,
             || Ok(serde_json::json!({"accepted": true, "operationId": "op-retry"})),
-            |_| Ok(()),
+            |_| Ok(Some("t0u".to_string())),
         )
         .expect("retry dispatch");
     assert_eq!(second["operationId"], "op-retry");
@@ -117,7 +118,7 @@ fn production_send_runtime_rejects_nonce_digest_reuse() {
         .execute_send(
             &first,
             || Ok(serde_json::json!({"accepted": true, "operationId": "op-one"})),
-            |_| Ok(()),
+            |_| Ok(Some("t0u".to_string())),
         )
         .expect("first");
 
@@ -130,7 +131,7 @@ fn production_send_runtime_rejects_nonce_digest_reuse() {
         runtime.execute_send(
             &mismatch,
             || Ok(serde_json::json!({"accepted": true, "operationId": "op-two"})),
-            |_| Ok(()),
+            |_| Ok(Some("t0u".to_string())),
         ),
         Err(ProductionSendError::Conflict(_))
     ));

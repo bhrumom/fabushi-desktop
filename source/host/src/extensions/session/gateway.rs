@@ -1,4 +1,3 @@
-use std::path::Path;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -6,6 +5,15 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use serde_json::{Map, Value, json};
 
 use crate::agents::agent_profile::SandAgentProfile;
+use crate::extensions::transcript::send_message_shaping::{
+    UserAttachmentOptions, UserMessageOptions, create_user_attachment_entry,
+    create_user_message, stat_attached_file_size,
+};
+use crate::extensions::transcript::send_thread_stamping::resolve_send_reply_threading;
+use crate::extensions::transcript::transcript_entry_ids::{
+    TranscriptEntryIdKind, next_entry_id,
+};
+use uuid::Uuid;
 
 use super::agent_db_transcript_pages::{TranscriptPageQuery, TranscriptWindowQuery};
 use super::agent_session::SandAgentSessionStore;
@@ -32,20 +40,10 @@ pub fn persist_accepted_send_prompt(
     session: &Arc<ProductionSessionWorkers>,
     args: &Value,
     accepted: &Value,
-) -> Result<(), SessionGatewayError> {
+) -> Result<Option<String>, SessionGatewayError> {
     if accepted.get("accepted").and_then(Value::as_bool) != Some(true) {
-        return Ok(());
+        return Ok(None);
     }
-    let operation_id = accepted
-        .get("operationId")
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .ok_or_else(|| {
-            SessionGatewayError::internal(
-                "accepted sendPrompt response is missing operationId",
-            )
-        })?;
     let agent_id = args
         .get("agentId")
         .or_else(|| args.get("id"))
@@ -57,81 +55,107 @@ pub fn persist_accepted_send_prompt(
         .get("prompt")
         .or_else(|| args.get("text"))
         .and_then(Value::as_str)
-        .unwrap_or_default();
-
+        .unwrap_or_default()
+        .trim()
+        .to_string();
     let attachment_paths = args
         .get("attachmentPaths")
         .and_then(Value::as_array)
-        .cloned()
+        .map(|values| values.iter().filter_map(Value::as_str).map(str::to_string).collect::<Vec<_>>())
         .unwrap_or_default();
-    let attachment_names = args
-        .get("attachmentNames")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    let attachments = attachment_paths
-        .iter()
-        .enumerate()
-        .filter_map(|(index, value)| {
-            let path = value.as_str()?.trim();
-            if path.is_empty() {
-                return None;
-            }
-            let name = attachment_names
-                .get(index)
-                .and_then(Value::as_str)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(ToOwned::to_owned)
-                .or_else(|| {
-                    Path::new(path)
-                        .file_name()
-                        .and_then(|value| value.to_str())
-                        .map(ToOwned::to_owned)
-                })
-                .unwrap_or_else(|| "Attachment".to_string());
-            Some(json!({
-                "id": path,
-                "name": name,
-                "path": path,
-            }))
-        })
-        .collect::<Vec<_>>();
-    if prompt.trim().is_empty() && attachments.is_empty() {
-        return Err(SessionGatewayError::bad(
-            "sendPrompt requires prompt or attachments",
-        ));
+    if prompt.is_empty() && attachment_paths.is_empty() {
+        return Err(SessionGatewayError::bad("sendPrompt requires prompt or attachments"));
     }
 
-    let timestamp_ms = args
-        .get("composedAtMs")
-        .or_else(|| args.get("enterEpochMs"))
-        .and_then(Value::as_f64)
-        .filter(|value| value.is_finite())
-        .unwrap_or_else(system_now_ms);
-    let mut entry = json!({
-        "id": format!("{operation_id}:user"),
-        "kind": "message",
-        "role": "user",
-        "content": prompt,
-        "timestampMs": timestamp_ms,
-    });
-    if let Some(client_nonce) = args
-        .get("clientNonce")
-        .and_then(Value::as_str)
+    let attachment_names = args.get("attachmentNames").and_then(Value::as_array).cloned().unwrap_or_default();
+    let client_nonce = optional_string(args, "clientNonce")?
         .map(str::trim)
         .filter(|value| !value.is_empty())
-    {
-        entry["clientNonce"] = Value::String(client_nonce.to_string());
-    }
-    if !attachments.is_empty() {
-        entry["attachments"] = Value::Array(attachments);
+        .map(ToOwned::to_owned);
+    let mut existing = session
+        .read_agent_transcript_entries(agent_id)
+        .map_err(SessionGatewayError::internal)?;
+
+    if let Some(client_nonce) = client_nonce.as_deref() {
+        let existing_echo = existing
+            .iter()
+            .find(|entry| {
+                entry.get("clientNonce").and_then(Value::as_str) == Some(client_nonce)
+                    && entry.get("kind").and_then(Value::as_str) == Some("message")
+                    && entry.get("role").and_then(Value::as_str) == Some("user")
+            })
+            .or_else(|| existing.iter().find(|entry| {
+                entry.get("clientNonce").and_then(Value::as_str) == Some(client_nonce)
+            }))
+            .and_then(|entry| entry.get("id"))
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned);
+        if existing_echo.is_some() {
+            return Ok(existing_echo);
+        }
     }
 
-    session
-        .append_agent_transcript_entries(agent_id, &[entry])
-        .map_err(SessionGatewayError::internal)?;
-    Ok(())
+    let threading = resolve_send_reply_threading(
+        &existing,
+        optional_string(args, "replyToId")?,
+        optional_bool(args, "isFork")?.unwrap_or(false),
+    );
+    let batch_id = (!attachment_paths.is_empty()).then(|| Uuid::new_v4().to_string());
+    let mut staged = Vec::new();
+    let mut first_echo_id = None;
+
+    for (index, file_path) in attachment_paths.iter().enumerate() {
+        let id = next_entry_id(&existing, TranscriptEntryIdKind::UserAttachment);
+        let file_name = attachment_names
+            .get(index)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned);
+        let entry = create_user_attachment_entry(
+            id.clone(),
+            file_path.clone(),
+            UserAttachmentOptions {
+                file_name,
+                batch_id: batch_id.clone(),
+                client_nonce: client_nonce.clone(),
+                byte_size: stat_attached_file_size(file_path),
+                reply_to: threading.reply_to_id.clone(),
+                branched: threading.is_fork,
+            },
+        );
+        first_echo_id.get_or_insert_with(|| id.clone());
+        existing.push(entry.clone());
+        staged.push(entry);
+    }
+
+    let append_user_message = optional_bool(args, "appendUserMessage")?.unwrap_or(true);
+    let mut user_message_id = None;
+    if append_user_message && !prompt.is_empty() {
+        let id = next_entry_id(&existing, TranscriptEntryIdKind::UserMessage);
+        let entry = create_user_message(
+            id.clone(),
+            prompt,
+            UserMessageOptions {
+                composed_at_ms: optional_f64(args, "composedAtMs"),
+                rich_text: optional_string(args, "richText")?.map(ToOwned::to_owned),
+                reply_to: threading.reply_to_id.clone(),
+                batch_id: batch_id.clone(),
+                branched: threading.is_fork,
+                client_nonce: client_nonce.clone(),
+            },
+            system_now_ms(),
+        );
+        user_message_id = Some(id.clone());
+        first_echo_id.get_or_insert_with(|| id.clone());
+        existing.push(entry.clone());
+        staged.push(entry);
+    }
+
+    if !staged.is_empty() {
+        session.append_agent_transcript_entries(agent_id, &staged).map_err(SessionGatewayError::internal)?;
+    }
+    Ok(user_message_id.or(first_echo_id))
 }
 
 pub fn dispatch_production_session_gateway_call(

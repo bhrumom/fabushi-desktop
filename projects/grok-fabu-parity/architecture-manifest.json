@@ -13664,13 +13664,19 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/production_runtime.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/transcript_entry_ids.rs",
+        "source/host/src/extensions/transcript/send_thread_stamping.rs",
+        "source/host/src/extensions/transcript/send_message_shaping.rs",
+        "source/host/src/extensions/session/gateway.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
         "source/host/tests/transcript_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/transcript_send_echo_contract.rs",
+        "source/host/tests/session_gateway_contract.rs"
       ],
       "notes": "Rust run lifecycle state is now production-composed around the real shipping sendPrompt Host call: a per-agent synchronous send window begins before dispatch, turn epochs advance through the Rust send pipeline, accepted operation IDs are recorded, and the window is retired on success/failure before coalesced waiters are released. Full frozen scheduler telemetry/activity-hold/live-session retirement/subagent-parent/ack-redrive lifecycle and Runner terminal-event ownership remain non-final."
     },
@@ -13800,12 +13806,20 @@
       "targetPath": "source/host/src/extensions/transcript/send_message_shaping.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "7a8cc4a98a26b1ac25231b64c2ce3c79e617f23c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/send_message_shaping.rs",
+        "source/host/src/extensions/session/gateway.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_send_echo_contract.rs",
+        "source/host/tests/session_gateway_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Production Rust slice now owns user-message/user-attachment/send-message shaping, reply-to protected/threadable reconstruction, quote generation, box request stamping and attached file sizes. Shipping durable send echoes use these builders. Remaining frozen parity includes reaction toggling, composed-offline note formatting, widget prompt summaries, image/video MIME channel split, selected-video/inbound-image loading and image dimension projection; row remains non-final."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-not-persisted-error.ts",
@@ -13837,13 +13851,19 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/production_runtime.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/transcript_entry_ids.rs",
+        "source/host/src/extensions/transcript/send_thread_stamping.rs",
+        "source/host/src/extensions/transcript/send_message_shaping.rs",
+        "source/host/src/extensions/session/gateway.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
         "source/host/tests/transcript_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/transcript_send_echo_contract.rs",
+        "source/host/tests/session_gateway_contract.rs"
       ],
       "notes": "Rust send pipeline state is now production-composed by ProductionTranscriptRuntime and the shipping Host Gateway. sendPrompt performs nonce digest admission before compatibility dispatch, coalesces concurrent duplicate nonces behind the first real Host result, persists the authoritative Rust Session echo before ledger acceptance, clears failed unaccepted attempts for retry, exposes promptAcceptanceStatus from the same durable ledger, advances per-agent turn epochs, and replays the exact accepted Host result in-process. Full frozen send shaping/threading/attachment materialization/group fanout/ack obligations remain non-final."
     },
@@ -13852,12 +13872,21 @@
       "targetPath": "source/host/src/extensions/transcript/send_thread_stamping.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e456861460d0ef5b3ab6009010b972e785701668",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/send_thread_stamping.rs",
+        "source/host/src/extensions/session/gateway.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_send_echo_contract.rs",
+        "source/host/tests/session_gateway_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Full Rust port of frozen Grok reply-thread stamping: real-target resolution, reply quote context, fork gating, AI reply target validation and automatic reply threading with protected message-type behavior. Shipping accepted send persistence resolves replyTo/fork against the authoritative Rust transcript before durable append."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-turn-dispatch.ts",
@@ -13900,12 +13929,21 @@
       "targetPath": "source/host/src/extensions/transcript/transcript_entry_ids.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "871818218cac836c26ac4ad7864e0e6245598e36",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/transcript_entry_ids.rs",
+        "source/host/src/extensions/session/gateway.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_send_echo_contract.rs",
+        "source/host/tests/session_gateway_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Full Rust port of frozen Grok transcript entry ID ownership: boot turn, user/attachment/assistant/send counters, trailing-group boundaries and collision probing. Shipping accepted send persistence now mints authoritative user and attachment IDs through this module; contract tests cover all ID families."
     },
     {
       "referencePath": "source/host/extensions/transcript/transcript-hub.ts",

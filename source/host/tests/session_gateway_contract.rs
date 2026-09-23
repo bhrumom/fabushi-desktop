@@ -291,17 +291,15 @@ fn accepted_send_prompt_is_persisted_into_the_rust_authoritative_transcript() {
     );
     let entries = transcript.as_array().expect("transcript array");
     assert_eq!(entries.len(), 1);
-    assert_eq!(entries[0]["id"], "operation-attachment-only:user");
-    assert_eq!(entries[0]["kind"], "message");
-    assert_eq!(entries[0]["role"], "user");
-    assert_eq!(entries[0]["content"], "");
+    assert_eq!(entries[0]["id"], "t0ua0");
+    assert_eq!(entries[0]["kind"], "user-attachment");
+    assert_eq!(entries[0]["file_path"], "/tmp/attachment-only.txt");
+    assert_eq!(entries[0]["file_name"], "attachment-only.txt");
     assert_eq!(entries[0]["clientNonce"], "nonce-attachment-only");
-    assert_eq!(entries[0]["timestampMs"], 1234.0);
-    assert_eq!(entries[0]["attachments"][0]["name"], "attachment-only.txt");
-    assert_eq!(entries[0]["attachments"][0]["path"], "/tmp/attachment-only.txt");
+    assert!(entries[0]["batchId"].as_str().is_some_and(|value| !value.is_empty()));
 
-    // The live compatibility event uses the same operationId:user identity.
-    // A duplicate delivery must therefore remain idempotent in AgentDb.
+    // Production nonce admission normally coalesces this before persistence.
+    // The persistence boundary itself also remains idempotent by clientNonce.
     persist_accepted_send_prompt(
         &runtime,
         &json!({
@@ -324,6 +322,52 @@ fn accepted_send_prompt_is_persisted_into_the_rust_authoritative_transcript() {
             .map(Vec::len),
         Some(1)
     );
+
+
+#[test]
+fn accepted_send_prompt_uses_frozen_entry_ids_and_reply_fork_stamping() {
+    let root = temp_root("send-prompt-threading");
+    let agents = root.join("agents");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let record = runtime.materialize_new_session(None, "user", None).expect("agent");
+
+    let first = persist_accepted_send_prompt(
+        &runtime,
+        &json!({"agentId":record.id,"prompt":"first","clientNonce":"nonce-first","composedAtMs":1000}),
+        &json!({"accepted":true,"operationId":"operation-first"}),
+    ).expect("first send");
+    assert_eq!(first.as_deref(), Some("t0u"));
+
+    let second = persist_accepted_send_prompt(
+        &runtime,
+        &json!({
+            "agentId":record.id,
+            "prompt":" reply ",
+            "richText":"**reply**",
+            "replyToId":"t0u",
+            "isFork":true,
+            "clientNonce":"nonce-reply",
+            "composedAtMs":2000
+        }),
+        &json!({"accepted":true,"operationId":"operation-reply"}),
+    ).expect("reply send");
+    assert_eq!(second.as_deref(), Some("t1u"));
+
+    let transcript = dispatch(&runtime, "getAgentTranscript", json!({"id":record.id}));
+    let entries = transcript.as_array().expect("transcript array");
+    assert_eq!(entries.len(), 2);
+    assert_eq!(entries[0]["id"], "t0u");
+    assert_eq!(entries[1]["id"], "t1u");
+    assert_eq!(entries[1]["content"], "reply");
+    assert_eq!(entries[1]["richText"], "**reply**");
+    assert_eq!(entries[1]["replyTo"], "t0u");
+    assert_eq!(entries[1]["branched"], true);
+    assert_eq!(entries[1]["timestampMs"], 2000.0);
+    assert_eq!(entries[1]["sentWhileOfflineAtMs"], 2000.0);
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
 
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
