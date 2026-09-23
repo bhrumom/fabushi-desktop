@@ -11,6 +11,9 @@ use mahayana_host_runtime::extensions::auth::extension::{
     HostAuthExtension, start_host_auth_extension_with_options,
 };
 use mahayana_host_runtime::extensions::auth::user_full_name_service::production_user_full_name_fetch;
+use mahayana_host_runtime::extensions::experiments::{
+    HostExperimentsExtension, start_host_experiments_extension,
+};
 use mahayana_host_runtime::extensions::box_lifecycle::box_lifecycle_service::BoxLifecycleService;
 use mahayana_host_runtime::extensions::box_lifecycle::extension::start_box_lifecycle_extension;
 use mahayana_host_runtime::extensions::box_lifecycle::production::{
@@ -85,6 +88,7 @@ fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
 
 struct ProductionHostExtensions {
     auth: Arc<HostAuthExtension>,
+    experiments: Arc<HostExperimentsExtension>,
     team_rules: Arc<ProductionTeamRulesResolver>,
     team_rules_renewal_subscription: Option<u64>,
     source_map: Arc<SandSourceMap>,
@@ -118,6 +122,7 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
         )
         .map_err(|error| error.to_string())?,
     );
+    let experiments = Arc::new(start_host_experiments_extension());
     let team_rules = Arc::new(ProductionTeamRulesResolver::new(
         backend_url,
         Arc::clone(&auth),
@@ -160,6 +165,7 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
 
     Ok(ProductionHostExtensions {
         auth,
+        experiments,
         team_rules,
         team_rules_renewal_subscription: Some(team_rules_renewal_subscription),
         source_map,
@@ -185,6 +191,7 @@ const RUNNER_INFERENCE_EVENT_CHANNEL: &str = "runner-inference";
 
 struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
+    experiments: Arc<HostExperimentsExtension>,
     events: GatewayEventHub,
     routed_tool_relay: Arc<CoordinatorToolRelay>,
     data_dir: PathBuf,
@@ -428,6 +435,11 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        if method == "isAgentNetworkEnabled" {
+            return Ok(serde_json::Value::Bool(
+                self.experiments.is_agent_network_enabled(),
+            ));
+        }
         if method == RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD {
             return self
                 .routed_tool_relay
@@ -764,6 +776,7 @@ fn main() {
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
+            experiments: Arc::clone(&production_extensions.experiments),
             events: gateway_events.clone(),
             routed_tool_relay: Arc::clone(&routed_tool_relay),
             data_dir: app_data_dir.clone(),

@@ -14,6 +14,7 @@ pub mod trays;
 pub mod source_map;
 pub mod webauthn_proxy;
 pub mod browser_ua;
+pub mod experiments;
 pub mod box_lifecycle;
 pub mod inference;
 

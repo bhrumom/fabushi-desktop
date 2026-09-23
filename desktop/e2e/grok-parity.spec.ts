@@ -38,6 +38,10 @@ async function launchDesktopApp(appDataDir: string) {
       ...process.env,
       FABUSHI_APP_DATA: appDataDir,
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
+      // Agent Network is a frozen Grok feature gate whose bundled default is OFF.
+      // This focused parity test opts in through the same dev override contract
+      // used by SandExperimentService instead of changing the production default.
+      SAND_FEATURE_GATE_OVERRIDES: 'sand_agent_network=1',
       MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
     },
   });
