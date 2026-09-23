@@ -12244,7 +12244,7 @@
         "source/host/tests/session_materialization_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Session facade owns active-agent pointer read/write/clear, root/agent existence, active-aware serialized create/fallback materialization, durable delete orchestration, roster summaries with active identity, profile/avatar, transcript, unread/view/activity/awaiting state, settings, connector channels and Host worker shutdown. Shipping deleteAgent composition now supplies Runner cancellation, Ack obligation/token purge, ForeverBox release and handoff forget around durable directory deletion; automation/workflow definitions disappear with that directory. Final is withheld for kickstart/telemetry, memory composition, cached extras/deletion predicates, background semantics, exact active-session switch behavior, and the remaining trays/pending-wake/group-runner drain surfaces."
+      "notes": "Rust Session facade owns active-agent pointer read/write/clear, root/agent existence, active-aware serialized create/fallback materialization, durable delete orchestration, roster summaries with active identity, profile/avatar, transcript, unread/view/activity/awaiting state, settings, connector channels and Host worker shutdown. Shipping deleteAgent composition now supplies Runner cancellation, Ack obligation/token purge, ForeverBox release and handoff forget around durable directory deletion; automation/workflow definitions disappear with that directory. Final is withheld for kickstart/telemetry, memory composition, cached extras/deletion predicates, background semantics, exact active-session switch behavior, and the remaining trays/pending-wake/group-runner drain surfaces. Durable delete now raises the production deletion fence before DB/blob owner shutdown and directory removal, then releases it on success or error."
     },
     {
       "referencePath": "source/host/extensions/session/box-handoff-service.ts",
@@ -12506,7 +12506,7 @@
         "source/host/tests/automation_schedule_contract.rs",
         "source/host/tests/session_store_factories_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels, automations, workflows and roster. Shipping Session now also owns frozen cap-time pruned-placeholder reclaim and fallback-session adoption through the same mint critical section, preserving the active agent and closing DB/blob owners before reclaim. Remaining parity is memory composition, box handoff production deps, watcher/cross-extension cleanup and the remaining Session facade lifecycle features. Production roster/summary now also projects the canonical cached avatar data URL/version from the Rust avatar owner instead of leaving the frozen readAvatar hook unwired. Shipping Session store factories now receive a live SettingsService timezone resolver; automation/workflow records derive nextRunAt with frozen timezone semantics."
+      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels, automations, workflows and roster. Shipping Session now also owns frozen cap-time pruned-placeholder reclaim and fallback-session adoption through the same mint critical section, preserving the active agent and closing DB/blob owners before reclaim. Remaining parity is memory composition, box handoff production deps, watcher/cross-extension cleanup and the remaining Session facade lifecycle features. Production roster/summary now also projects the canonical cached avatar data URL/version from the Rust avatar owner instead of leaving the frozen readAvatar hook unwired. Shipping Session store factories now receive a live SettingsService timezone resolver; automation/workflow records derive nextRunAt with frozen timezone semantics. Production Session now owns the deleting-agent set consumed by roster, summary and missing-DB recovery."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
@@ -12618,7 +12618,7 @@
       "targetPath": "source/host/src/extensions/session/session_mutations.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "43766f3f3157ffc48f5ff49009c8a3e527211191",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12630,7 +12630,8 @@
         "source/host/src/extensions/session/session_roster.rs",
         "source/host/src/automations/automation_store.rs",
         "source/host/src/workflows/workflow_store.rs",
-        "source/host/src/workflows/workflow_library.rs"
+        "source/host/src/workflows/workflow_library.rs",
+        "source/host/src/extensions/session/agent_session.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_profile_mutations_contract.rs",
@@ -12640,7 +12641,8 @@
         "source/host/tests/automation_store_contract.rs",
         "source/host/tests/workflow_store_contract.rs"
       ],
-      "notes": "Rust mutation slice owns canonical avatar replacement/removal and missing-DB durable recovery. Shipping roster now invokes recoverAgentWithMissingDb semantics for profile/quarantined durable agents, uses the real live-handle registry to avoid reseeding under an active owner, and reseeds the minimal AgentDb schema through the production AgentDb owner. Final remains withheld until memory/automation/workflow durable-footprint composition and deletion predicates are production-owned. Production automation durable-footprint composition is now Rust-owned: dbPath factories create FileAutomationStore and roster/recovery/summary preserve agents with valid routine definitions even when store.db is missing. Production workflow durable-footprint composition is now Rust-owned: Session constructs FileWorkflowStore, migrates legacy per-agent workflows, projects routine-backed workflows, and roster recovery preserves workflow-bearing agents without store.db."
+      "notes": "Final Rust port of frozen Grok session mutations. Avatar replacement/removal owns conventional-file cleanup, canonical PNG persistence, legacy DB avatar-pointer clearing and avatar cache invalidation; ProductionSessionWorkers composes the post-mutation summary. Missing-store recovery fences agents being deleted both before durable-footprint evaluation and again before reseed, honors live DB ownership, and preserves profile/quarantined/Memory/Automation/Workflow durable footprints. Production Session owns the deletion fence so roster/summarize cannot reseed or resurrect an agent during durable delete.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/session/session-paths.ts",
@@ -12762,7 +12764,7 @@
         "source/host/tests/workflow_store_contract.rs",
         "source/host/tests/memory_service_contract.rs"
       ],
-      "notes": "Rust production roster walks agent directories, builds/degrades summaries, sorts by updatedAt, and now routes missing store.db agents through session-mutations recovery with profile/quarantined durable-footprint checks, live-handle fencing, and minimal schema reseed. Final remains withheld until deletion predicates, memory/automation/workflow durable footprints, diagnostics, and extras-cache pruning are fully production composed. Production automation durable-footprint composition is now Rust-owned: dbPath factories create FileAutomationStore and roster/recovery/summary preserve agents with valid routine definitions even when store.db is missing. Production workflow durable-footprint composition is now Rust-owned: Session constructs FileWorkflowStore, migrates legacy per-agent workflows, projects routine-backed workflows, and roster recovery preserves workflow-bearing agents without store.db. Durable-footprint recovery now includes real Host MemoryService disk content in addition to automation/workflow footprints; remaining parity is deletion predicates, diagnostics/cache pruning and other explicitly noted lifecycle composition."
+      "notes": "Rust production roster walks agent directories, builds/degrades summaries, sorts by updatedAt, and now routes missing store.db agents through session-mutations recovery with profile/quarantined durable-footprint checks, live-handle fencing, and minimal schema reseed. Final remains withheld until deletion predicates, memory/automation/workflow durable footprints, diagnostics, and extras-cache pruning are fully production composed. Production automation durable-footprint composition is now Rust-owned: dbPath factories create FileAutomationStore and roster/recovery/summary preserve agents with valid routine definitions even when store.db is missing. Production workflow durable-footprint composition is now Rust-owned: Session constructs FileWorkflowStore, migrates legacy per-agent workflows, projects routine-backed workflows, and roster recovery preserves workflow-bearing agents without store.db. Durable-footprint recovery now includes real Host MemoryService disk content in addition to automation/workflow footprints; remaining parity is deletion predicates, diagnostics/cache pruning and other explicitly noted lifecycle composition. Production roster now consumes the Session deletion fence before directory work and again after DB extras load/recovery, preventing deleted agents from being reseeded or reintroduced during concurrent list/summarize."
     },
     {
       "referencePath": "source/host/extensions/session/session-store-factories.ts",

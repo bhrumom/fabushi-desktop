@@ -161,6 +161,7 @@ fn missing_db_recovery_delegates_reseed_only_for_durable_agent_footprint() {
         Some("agent-c"),
         DurableFootprint::default(),
         false,
+        || false,
         |path| {
             reseeded = true;
             seed_db(path, "agent-c");
@@ -172,5 +173,49 @@ fn missing_db_recovery_delegates_reseed_only_for_durable_agent_footprint() {
     assert!(reseeded);
     assert_eq!(summary.id, "agent-c");
     assert!(summary.is_active);
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn missing_db_recovery_fences_deletion_before_reseed_and_summary_revival() {
+    let root = temp_root("recover-delete-fence");
+    let agent = root.join("agent-delete");
+    fs::create_dir_all(&agent).expect("agent dir");
+    write_sand_profile_file(
+        get_sand_profile_path(&agent),
+        &SandAgentProfile {
+            name: "Deleting".into(),
+            description: String::new(),
+            title: String::new(),
+            avatar_shape: String::new(),
+            avatar_color: String::new(),
+        },
+    )
+    .expect("profile");
+    let db_path = agent.join("store.db");
+    let mut checks = 0usize;
+    let mut reseeded = false;
+    let summary = recover_agent_with_missing_db(
+        &db_path,
+        "agent-delete",
+        None,
+        DurableFootprint::default(),
+        false,
+        || {
+            checks += 1;
+            checks >= 2
+        },
+        |path| {
+            reseeded = true;
+            seed_db(path, "agent-delete");
+            Ok(())
+        },
+    )
+    .expect("recovery result");
+    assert!(summary.is_none());
+    assert!(!reseeded);
+    assert!(!db_path.exists());
+    assert_eq!(checks, 2);
     let _ = fs::remove_dir_all(root);
 }

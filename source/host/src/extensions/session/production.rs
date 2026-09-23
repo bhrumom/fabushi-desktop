@@ -109,6 +109,7 @@ pub struct ProductionSessionWorkers {
     conversation_state: SessionConversationState,
     mint_queue: SessionMintQueue,
     db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
+    deleting_agents: Mutex<BTreeSet<String>>,
     user_time_zone_resolver: UserTimeZoneResolver,
     busy_timeout_ms: u64,
 }
@@ -153,6 +154,7 @@ impl ProductionSessionWorkers {
             conversation_state: SessionConversationState::new(busy_timeout_ms),
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
+            deleting_agents: Mutex::new(BTreeSet::new()),
             user_time_zone_resolver,
             busy_timeout_ms,
         }
@@ -568,6 +570,25 @@ impl ProductionSessionWorkers {
             .unwrap_or_default()
     }
 
+    pub fn begin_agent_delete(&self, agent_id: &str) {
+        if let Ok(mut deleting) = self.deleting_agents.lock() {
+            deleting.insert(agent_id.to_string());
+        }
+    }
+
+    pub fn end_agent_delete(&self, agent_id: &str) {
+        if let Ok(mut deleting) = self.deleting_agents.lock() {
+            deleting.remove(agent_id);
+        }
+    }
+
+    pub fn is_agent_being_deleted(&self, agent_id: &str) -> bool {
+        self.deleting_agents
+            .lock()
+            .map(|deleting| deleting.contains(agent_id))
+            .unwrap_or(false)
+    }
+
 
     pub fn set_agent_sand_profile(
         &self,
@@ -942,10 +963,12 @@ impl ProductionSessionWorkers {
         &self,
         active_agent_id: Option<&str>,
     ) -> Result<Vec<AgentSummary>, String> {
+        let is_deleting = |agent_id: &str| self.is_agent_being_deleted(agent_id);
         list_agents(
             &self.agents_root,
             self.busy_timeout_ms,
             active_agent_id,
+            &is_deleting,
         )
     }
 
@@ -954,11 +977,13 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         active_agent_id: Option<&str>,
     ) -> Result<Option<AgentSummary>, String> {
+        let is_deleting = |candidate: &str| self.is_agent_being_deleted(candidate);
         summarize_agent_by_id(
             &self.agents_root,
             self.busy_timeout_ms,
             agent_id,
             active_agent_id,
+            &is_deleting,
         )
     }
 

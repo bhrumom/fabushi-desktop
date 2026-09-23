@@ -27,6 +27,7 @@ pub fn list_agents(
     root_dir: &Path,
     busy_timeout_ms: u64,
     active_agent_id: Option<&str>,
+    is_agent_being_deleted: &dyn Fn(&str) -> bool,
 ) -> Result<Vec<AgentSummary>, String> {
     let entries = match fs::read_dir(root_dir) {
         Ok(entries) => entries,
@@ -39,6 +40,9 @@ pub fn list_agents(
             continue;
         }
         let dir_name = entry.file_name().to_string_lossy().into_owned();
+        if is_agent_being_deleted(&dir_name) {
+            continue;
+        }
         let db_path = get_agent_db_path(root_dir, &dir_name)
             .map_err(|error| error.to_string())?;
         let mtime_ms = file_mtime_ms(&db_path);
@@ -50,6 +54,7 @@ pub fn list_agents(
                 active_agent_id,
                 footprint,
                 live_db_handle_count(&db_path) > 0,
+                || is_agent_being_deleted(&dir_name),
                 |path| {
                     reseed_minimal_persisted_agent_db_if_missing(path, busy_timeout_ms)
                         .map_err(|error| error.to_string())
@@ -65,24 +70,36 @@ pub fn list_agents(
             &dir_name,
             mtime_ms,
         ) {
-            Ok(extras) => build_summary(
-                Some(&extras),
-                &db_path,
-                &dir_name,
-                mtime_ms,
-                active_agent_id,
-                false,
-                footprint,
-            )?,
-            Err(_) => build_summary(
-                None,
-                &db_path,
-                &dir_name,
-                mtime_ms,
-                active_agent_id,
-                true,
-                footprint,
-            )?,
+            Ok(extras) => {
+                if is_agent_being_deleted(&dir_name) {
+                    None
+                } else {
+                    build_summary(
+                        Some(&extras),
+                        &db_path,
+                        &dir_name,
+                        mtime_ms,
+                        active_agent_id,
+                        false,
+                        footprint,
+                    )?
+                }
+            }
+            Err(_) => {
+                if is_agent_being_deleted(&dir_name) {
+                    None
+                } else {
+                    build_summary(
+                        None,
+                        &db_path,
+                        &dir_name,
+                        mtime_ms,
+                        active_agent_id,
+                        true,
+                        footprint,
+                    )?
+                }
+            }
         };
         if let Some(summary) = summary {
             summaries.push(summary);
@@ -101,7 +118,11 @@ pub fn summarize_agent_by_id(
     busy_timeout_ms: u64,
     agent_id: &str,
     active_agent_id: Option<&str>,
+    is_agent_being_deleted: &dyn Fn(&str) -> bool,
 ) -> Result<Option<AgentSummary>, String> {
+    if is_agent_being_deleted(agent_id) {
+        return Ok(None);
+    }
     let db_path = get_agent_db_path(root_dir, agent_id)
         .map_err(|error| error.to_string())?;
     let mtime_ms = file_mtime_ms(&db_path);
@@ -113,6 +134,7 @@ pub fn summarize_agent_by_id(
             active_agent_id,
             footprint,
             live_db_handle_count(&db_path) > 0,
+            || is_agent_being_deleted(agent_id),
             |path| {
                 reseed_minimal_persisted_agent_db_if_missing(path, busy_timeout_ms)
                     .map_err(|error| error.to_string())
@@ -125,6 +147,9 @@ pub fn summarize_agent_by_id(
         agent_id,
         mtime_ms,
     )?;
+    if is_agent_being_deleted(agent_id) {
+        return Ok(None);
+    }
     build_summary(
         Some(&extras),
         &db_path,

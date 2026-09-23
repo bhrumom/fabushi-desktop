@@ -52,23 +52,28 @@ pub fn set_agent_avatar_bytes(
     Ok(())
 }
 
-pub fn recover_agent_with_missing_db<F>(
+pub fn recover_agent_with_missing_db<F, D>(
     db_path: &Path,
     dir_name: &str,
     active_agent_id: Option<&str>,
     footprint: DurableFootprint,
     has_live_db_handle: bool,
+    mut is_agent_being_deleted: D,
     mut reseed_minimal_store_db_if_missing: F,
 ) -> Result<Option<AgentSummary>, String>
 where
     F: FnMut(&Path) -> Result<(), String>,
+    D: FnMut() -> bool,
 {
+    if is_agent_being_deleted() {
+        return Ok(None);
+    }
     let agent_dir = db_path
         .parent()
         .ok_or_else(|| "agent database has no parent directory".to_string())?;
     let intact = agent_dir.join("profile.json").is_file()
         || agent_has_durable_footprint(agent_dir, footprint);
-    if !intact {
+    if !intact || is_agent_being_deleted() {
         return Ok(None);
     }
     let mtime_ms = if has_live_db_handle {

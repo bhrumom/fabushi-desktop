@@ -190,3 +190,45 @@ fn production_roster_does_not_reseed_missing_db_while_live_handle_is_registered(
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn production_roster_excludes_agents_while_delete_fence_is_active() {
+    let root = temp_root("delete-fence");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let record = workers
+        .materialize_new_session(None, "user", None)
+        .expect("materialize");
+    assert!(
+        workers
+            .summarize_agent_by_id(&record.id, None)
+            .expect("summary")
+            .is_some()
+    );
+
+    workers.begin_agent_delete(&record.id);
+    assert!(
+        workers
+            .summarize_agent_by_id(&record.id, None)
+            .expect("fenced summary")
+            .is_none()
+    );
+    assert!(
+        workers
+            .list_agent_summaries(None)
+            .expect("fenced roster")
+            .iter()
+            .all(|summary| summary.id != record.id)
+    );
+
+    workers.end_agent_delete(&record.id);
+    assert!(
+        workers
+            .summarize_agent_by_id(&record.id, None)
+            .expect("restored summary")
+            .is_some()
+    );
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
