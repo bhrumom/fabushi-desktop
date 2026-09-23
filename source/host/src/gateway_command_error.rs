@@ -64,7 +64,7 @@ fn known_errno_in_text(text: &str) -> Option<String> {
     let upper = text.to_ascii_uppercase();
     KNOWN
         .iter()
-        .find(|errno| upper.contains(**errno))
+        .find(|errno| upper.contains(*errno))
         .map(|errno| (*errno).to_string())
 }
 
