@@ -334,12 +334,17 @@ button, textarea, input { font: inherit; }
 
 /* WindowChrome's recovered drag layer intentionally spans the top 52px.
  * Fabushi composes Agent collaboration actions into that recovered sidebar
- * header, so those real controls must sit above the drag carrier and opt out of
- * the native drag region instead of relying on force-click behavior in tests.
+ * header. Raise the whole header above the fixed drag carrier, keep the header
+ * itself draggable, and punch explicit native no-drag holes for real controls.
  */
-.sand-agents-sidebar__header button {
+.sand-agents-sidebar__header {
   position: relative;
   z-index: 5000;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.sand-agents-sidebar__header button {
+  position: relative;
   pointer-events: auto;
   -webkit-app-region: no-drag;
   app-region: no-drag;
