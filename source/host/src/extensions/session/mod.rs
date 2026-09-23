@@ -12,4 +12,5 @@ pub mod session_maintenance;
 pub mod session_materialization;
 pub mod session_conversation_state;
 pub mod session_diagnostics;
+pub mod pending_card_sweeps;
 pub mod production;

@@ -36,6 +36,10 @@ use super::session_materialization::{
     MaterializedAgentRecord, count_owned_agents, is_agent_cap_reached, list_agent_record_ids,
     materialize_new_session, open_existing_session,
 };
+use super::pending_card_sweeps::{
+    expire_pending_auto_review_approval_entries,
+    expire_pending_local_tool_permission_ask_entries,
+};
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
@@ -361,6 +365,36 @@ impl ProductionSessionWorkers {
         .map_err(|error| error.to_string())?;
         clear_persisted_conversation(&db_path, self.busy_timeout_ms)
             .map_err(|error| error.to_string())
+    }
+
+    pub fn expire_pending_auto_review_approvals(
+        &self,
+        agent_id: &str,
+        only_request_id: Option<&str>,
+    ) -> Result<Vec<String>, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        expire_pending_auto_review_approval_entries(
+            &db_path,
+            self.busy_timeout_ms,
+            only_request_id,
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    pub fn expire_pending_local_tool_permission_asks(
+        &self,
+        agent_id: &str,
+        only_request_id: Option<&str>,
+        if_pending_before_ms: Option<f64>,
+    ) -> Result<Vec<String>, String> {
+        let db_path = self.existing_session_db_path(agent_id)?;
+        expire_pending_local_tool_permission_ask_entries(
+            &db_path,
+            self.busy_timeout_ms,
+            only_request_id,
+            if_pending_before_ms,
+        )
+        .map_err(|error| error.to_string())
     }
 
     pub fn create_agent_blob_store(

@@ -12223,12 +12223,23 @@
       "targetPath": "source/host/src/extensions/session/pending_card_sweeps.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "33e51a9d43d4f0ed16f611b83143f749ae3424b8",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/pending_card_sweeps.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/pending_card_sweeps_contract.rs",
+        "source/host/tests/agent_db_mutation_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Complete Rust port of frozen Grok pending-card sweeps: auto-review approval and local-tool-permission pending entries settle to expired with request-id targeting and optional pending-before cutoff. The module persists through the production AgentDb transcript mutation path and is directly exposed by ProductionSessionWorkers; contract coverage verifies targeted, bulk and cutoff behavior."
     },
     {
       "referencePath": "source/host/extensions/session/production.ts",
@@ -12248,7 +12259,8 @@
         "source/host/app/src/main.rs",
         "source/host/src/extensions/session/session_materialization.rs",
         "source/host/src/extensions/session/session_maintenance.rs",
-        "source/host/src/extensions/session/session_conversation_state.rs"
+        "source/host/src/extensions/session/session_conversation_state.rs",
+        "source/host/src/extensions/session/pending_card_sweeps.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12261,7 +12273,8 @@
         "source/host/tests/session_materialization_contract.rs",
         "source/host/tests/session_maintenance_contract.rs",
         "source/host/tests/session_conversation_state_contract.rs",
-        "source/host/tests/agent_db_mutation_production_contract.rs"
+        "source/host/tests/agent_db_mutation_production_contract.rs",
+        "source/host/tests/pending_card_sweeps_contract.rs"
       ],
       "notes": "Production Session owns Host-lifetime workers, Rust materialization, durable recovery/maintenance, AgentDb read/write state ownership, transcript projection/mutations and conversation capacity before Runner inference. Full Grok Session still needs Gateway create/open/transcript/mutation command cutover, full ConversationState proto derivation/outlines, roster/projection, workflow/channel composition and box handoff, so this module remains existing-needs-parity."
     },
