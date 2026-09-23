@@ -92,7 +92,7 @@ jobs:
       - name: Validate production Renderer bridge contracts
         run: |
           node --test electron/coordinator-renderer-port.test.cjs electron/production-renderer-bridge.test.cjs electron/update-state.test.cjs
-          node --test --test-name-pattern="desktop update bridge projects legacy" electron/native-capability-handlers.test.cjs
+          node --test --test-name-pattern="desktop update bridge projects legacy|Sidebar sections round-trip structured Grok state at the native edge" electron/native-capability-handlers.test.cjs
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
