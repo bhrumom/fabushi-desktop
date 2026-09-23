@@ -103,6 +103,8 @@ function rgbLuma(value: string): number {
 }
 
 function primaryMahayanaAgentPeer(page: Page) {
+  // The shipping Grok sidebar must keep visible Agents directly reachable;
+  // Search is covered separately and is not a fallback for a broken roster.
   return page.getByTestId('messenger-sidebar').getByRole('button', { name: '大乘助手', exact: true });
 }
 
