@@ -355,6 +355,27 @@ button, textarea, input { font: inherit; }
   app-region: no-drag;
 }
 
+/*
+ * ConversationAgentHeader occupies the same 52px recovered titlebar band as
+ * WindowChrome. Keep the non-interactive header surface draggable, but lift it
+ * above the fixed carrier and carve its real controls back out of the native
+ * drag region so they receive pointer input.
+ */
+.sand-chat-header {
+  position: relative;
+  z-index: 5000;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.sand-chat-header :is(button, a, input, [role="button"]) {
+  position: relative;
+  z-index: 5001;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 
 /* Org Chart occupies the same recovered titlebar band as WindowChrome.
  * Keep the header as native drag surface, but place its real close control
