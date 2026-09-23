@@ -140,12 +140,13 @@ async function emitBotInvocationRequested(
 
 async function expectHermesAssistantTurn(page: Page, expectedText: string): Promise<Locator> {
   const transcript = page.getByRole('log', { name: 'Conversation transcript' });
-  const matchingTurns = transcript.locator('[role="article"][data-role="assistant"]').filter({ hasText: expectedText });
-  await expect(matchingTurns).toHaveCount(1, { timeout: 15_000 });
+  const matchingMessages = transcript.getByRole('group', { name: 'Agent message' }).filter({ hasText: expectedText });
+  await expect(matchingMessages).toHaveCount(1, { timeout: 15_000 });
 
-  const turn = matchingTurns.first();
+  const message = matchingMessages.first();
+  await expect(message).toBeVisible();
+  const turn = message.locator('xpath=ancestor::*[@role="article" and @data-role="assistant"][1]');
   await expect(turn).toBeVisible();
-  const message = turn.getByRole('group', { name: 'Agent message' });
   await expect(message).toBeVisible();
   const body = message.locator('.sand-message-prose');
   await expect(body).toContainText(expectedText);
