@@ -72,6 +72,25 @@ fn failed_enqueue_rollback_restores_previous_obligation_only_if_reservation_is_c
 }
 
 #[test]
+fn deleting_agent_forgets_durable_obligation_and_every_scoped_run_token() {
+    let root = temp_root("forget-agent");
+    let ack = AckObligations::new(&root);
+    let a1 = ack.record_send_and_mint_token("agent-a", 10.0).expect("a1");
+    let a2 = ack.record_send_and_mint_token("agent-a", 20.0).expect("a2");
+    let b = ack.record_send_and_mint_token("agent-b", 30.0).expect("b");
+
+    assert!(ack.forget_agent("agent-a").expect("forget a"));
+    assert!(ack.store().get("agent-a").is_none());
+    assert!(ack.store().get("agent-b").is_some());
+    assert!(!ack.retire_ack_run_token("agent-a", Some(&a1.ack_token)));
+    assert!(!ack.retire_ack_run_token("agent-a", Some(&a2.ack_token)));
+    assert!(ack.fulfill_ack_obligation("agent-b", &b.ack_token).expect("fulfill b"));
+    assert!(ack.retire_ack_run_token("agent-b", Some(&b.ack_token)));
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn ack_redrive_constants_and_prompt_keep_the_frozen_recovery_contract() {
     assert_eq!(MAX_ACK_REDRIVES, 3);
     assert_eq!(ACK_REDRIVE_IDLE_DELAY_MS, 5_000);

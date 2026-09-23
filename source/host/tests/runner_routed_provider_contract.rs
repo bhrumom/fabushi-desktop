@@ -110,6 +110,26 @@ fn runner_provider_registry_cancels_by_stream_and_retires_finished_runs() {
 
 
 #[test]
+fn transcript_runner_registry_cancels_all_streams_for_deleted_agent_with_reason() {
+    let tasks = Arc::new(RoutedProviderTaskRegistry::default());
+    let registry = TranscriptRunnerRegistry::new(Arc::clone(&tasks));
+    let first = registry.register_routed_provider("agent-a", "delete-a-1").expect("a1");
+    let second = registry.register_routed_provider("agent-a", "delete-a-2").expect("a2");
+    let other = registry.register_routed_provider("agent-b", "delete-b").expect("b");
+
+    assert_eq!(registry.cancel_agent("agent-a", "agent deleted"), 2);
+    assert!(first.is_cancelled());
+    assert!(second.is_cancelled());
+    assert_eq!(first.reason().as_deref(), Some("agent deleted"));
+    assert_eq!(second.reason().as_deref(), Some("agent deleted"));
+    assert!(!other.is_cancelled());
+
+    registry.finish_routed_provider("delete-a-1");
+    registry.finish_routed_provider("delete-a-2");
+    registry.finish_routed_provider("delete-b");
+}
+
+#[test]
 fn production_routed_provider_checkpoint_store_persists_durable_json() {
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)

@@ -43,6 +43,10 @@ impl TranscriptRunnerRegistry {
             > 0
     }
 
+    pub fn cancel_agent(&self, agent_id: &str, reason: impl Into<String>) -> usize {
+        self.routed_provider_tasks.cancel_agent(agent_id, reason)
+    }
+
     pub fn active_stream_ids_for_agent(&self, agent_id: &str) -> Vec<String> {
         self.routed_provider_tasks
             .active_stream_ids_for_agent(agent_id)

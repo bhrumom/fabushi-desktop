@@ -168,6 +168,17 @@ impl AckObligations {
         self.store.clear(agent_id)
     }
 
+    pub fn forget_agent(&self, agent_id: &str) -> io::Result<bool> {
+        let cleared = self.store.clear(agent_id)?;
+        let mut reservations = self
+            .reservations
+            .lock()
+            .map_err(|_| io::Error::other("ack reservation registry poisoned"))?;
+        let before = reservations.len();
+        reservations.retain(|_, reservation| reservation.agent_id != agent_id);
+        Ok(cleared || reservations.len() != before)
+    }
+
     fn token_matches_agent(&self, agent_id: &str, ack_token: &str) -> io::Result<bool> {
         Ok(self
             .reservations
