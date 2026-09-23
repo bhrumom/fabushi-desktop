@@ -1,6 +1,8 @@
 use std::fs;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::{Arc, mpsc};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
@@ -135,5 +137,82 @@ fn production_send_runtime_rejects_nonce_digest_reuse() {
         ),
         Err(ProductionSendError::Conflict(_))
     ));
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_send_runtime_serializes_distinct_user_turns_for_the_same_agent() {
+    let root = temp_root("same-agent-queue");
+    let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let (first_entered_tx, first_entered_rx) = mpsc::channel();
+    let (release_first_tx, release_first_rx) = mpsc::channel();
+    let second_entered = Arc::new(AtomicBool::new(false));
+
+    let first_runtime = Arc::clone(&runtime);
+    let first = thread::spawn(move || {
+        let args = serde_json::json!({
+            "agentId": "agent-a",
+            "prompt": "first",
+            "clientNonce": "nonce-first"
+        });
+        first_runtime
+            .execute_send(
+                &args,
+                || {
+                    first_entered_tx.send(()).expect("signal first dispatch");
+                    release_first_rx.recv().expect("release first dispatch");
+                    Ok(serde_json::json!({
+                        "accepted": true,
+                        "operationId": "op-first"
+                    }))
+                },
+                |_| Ok(Some("op-first:user".to_string())),
+            )
+            .expect("first queued send")
+    });
+
+    first_entered_rx
+        .recv_timeout(Duration::from_secs(5))
+        .expect("first dispatch entered");
+
+    let second_runtime = Arc::clone(&runtime);
+    let second_entered_flag = Arc::clone(&second_entered);
+    let second = thread::spawn(move || {
+        let args = serde_json::json!({
+            "agentId": "agent-a",
+            "prompt": "second",
+            "clientNonce": "nonce-second"
+        });
+        second_runtime
+            .execute_send(
+                &args,
+                || {
+                    second_entered_flag.store(true, Ordering::SeqCst);
+                    Ok(serde_json::json!({
+                        "accepted": true,
+                        "operationId": "op-second"
+                    }))
+                },
+                |_| Ok(Some("op-second:user".to_string())),
+            )
+            .expect("second queued send")
+    });
+
+    thread::sleep(Duration::from_millis(150));
+    assert!(
+        !second_entered.load(Ordering::SeqCst),
+        "second same-agent dispatch must remain queued behind the active user turn"
+    );
+    assert_eq!(runtime.queued_turn_count("agent-a"), 1);
+
+    release_first_tx.send(()).expect("release first");
+    assert_eq!(first.join().expect("first thread"), "op-first");
+    assert_eq!(second.join().expect("second thread"), "op-second");
+    assert!(second_entered.load(Ordering::SeqCst));
+    assert!(runtime.is_turn_dispatch_idle("agent-a"));
+    assert_eq!(runtime.in_flight_run_count("agent-a"), 0);
+    assert_eq!(runtime.current_turn_epoch("agent-a"), 2);
+
     let _ = fs::remove_dir_all(root);
 }

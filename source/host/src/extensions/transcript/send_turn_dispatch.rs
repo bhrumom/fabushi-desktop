@@ -1,0 +1,88 @@
+use super::run_scheduler::{
+    QueueAccepted, QueueDequeued, QueuedRun, RunLane, RunScheduler, RunSettlement,
+};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UserTurnTicket {
+    pub agent_id: String,
+    pub task_id: String,
+}
+
+#[derive(Debug)]
+pub struct ProductionTurnDispatch {
+    scheduler: RunScheduler,
+    next_task_seq: u64,
+}
+
+impl Default for ProductionTurnDispatch {
+    fn default() -> Self {
+        Self {
+            scheduler: RunScheduler::default(),
+            next_task_seq: 0,
+        }
+    }
+}
+
+impl ProductionTurnDispatch {
+    pub fn enqueue_user_turn(
+        &mut self,
+        agent_id: &str,
+        client_nonce: Option<&str>,
+        accepted_at_ms: u64,
+        now_ms: u64,
+    ) -> Result<(UserTurnTicket, QueueAccepted), &'static str> {
+        self.next_task_seq = self.next_task_seq.saturating_add(1);
+        let nonce = client_nonce
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or("no-nonce");
+        let task_id = format!("send:{agent_id}:{}:{nonce}", self.next_task_seq);
+        let accepted = self.scheduler.enqueue(
+            agent_id.to_string(),
+            QueuedRun {
+                task_id: task_id.clone(),
+                lane: RunLane::User,
+                source: "turn".to_string(),
+                enqueued_at_ms: now_ms,
+                accepted_at_ms: Some(accepted_at_ms),
+                ack_token: None,
+            },
+        )?;
+        if self.scheduler.active(agent_id).is_none() {
+            let _ = self.scheduler.start_next(agent_id, now_ms);
+        }
+        Ok((
+            UserTurnTicket {
+                agent_id: agent_id.to_string(),
+                task_id,
+            },
+            accepted,
+        ))
+    }
+
+    pub fn active_generation_for(&self, ticket: &UserTurnTicket) -> Option<u64> {
+        let active = self.scheduler.active(&ticket.agent_id)?;
+        (active.item.task_id == ticket.task_id).then_some(active.generation)
+    }
+
+    pub fn settle_and_start_next(
+        &mut self,
+        ticket: &UserTurnTicket,
+        generation: u64,
+        now_ms: u64,
+    ) -> (RunSettlement, Option<QueueDequeued>) {
+        let settlement = self
+            .scheduler
+            .settle(&ticket.agent_id, generation, now_ms);
+        let next = self.scheduler.start_next(&ticket.agent_id, now_ms);
+        (settlement, next)
+    }
+
+    pub fn queued_task_ids(&self, agent_id: &str) -> Vec<String> {
+        self.scheduler.queued_task_ids(agent_id)
+    }
+
+    pub fn is_idle(&self, agent_id: &str) -> bool {
+        self.scheduler.is_idle(agent_id)
+    }
+}

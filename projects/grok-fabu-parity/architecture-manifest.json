@@ -13688,7 +13688,8 @@
         "source/host/src/extensions/transcript/transcript_entry_ids.rs",
         "source/host/src/extensions/transcript/send_thread_stamping.rs",
         "source/host/src/extensions/transcript/send_message_shaping.rs",
-        "source/host/src/extensions/session/gateway.rs"
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/src/extensions/transcript/send_turn_dispatch.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -13698,7 +13699,7 @@
         "source/host/tests/transcript_send_echo_contract.rs",
         "source/host/tests/session_gateway_contract.rs"
       ],
-      "notes": "Rust run lifecycle state is now production-composed around the real shipping sendPrompt Host call: a per-agent synchronous send window begins before dispatch, turn epochs advance through the Rust send pipeline, accepted operation IDs are recorded, and the window is retired on success/failure before coalesced waiters are released. Full frozen scheduler telemetry/activity-hold/live-session retirement/subagent-parent/ack-redrive lifecycle and Runner terminal-event ownership remain non-final."
+      "notes": "Rust run lifecycle is production-composed around shipping sendPrompt and now shares the real per-agent RunScheduler path with send-turn-dispatch: session windows/turn epochs begin at admission, same-agent direct user turns serialize by scheduler generation, request IDs are recorded, terminal settlement releases the next queued turn, and lifecycle state retires after dispatch. Full frozen watchdog interrupt callback/telemetry, named activity holds, live-session retirement, subagent-parent projection and ack-redrive remain non-final."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",
@@ -13897,7 +13898,8 @@
         "source/host/src/extensions/transcript/send_thread_stamping.rs",
         "source/host/src/extensions/transcript/send_message_shaping.rs",
         "source/host/src/extensions/session/gateway.rs",
-        "source/host/src/extensions/transcript/send_acceptance.rs"
+        "source/host/src/extensions/transcript/send_acceptance.rs",
+        "source/host/src/extensions/transcript/send_turn_dispatch.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -13908,7 +13910,7 @@
         "source/host/tests/session_gateway_contract.rs",
         "source/host/tests/transcript_send_acceptance_contract.rs"
       ],
-      "notes": "Rust send pipeline state is now production-composed by ProductionTranscriptRuntime and the shipping Host Gateway. sendPrompt performs nonce digest admission before compatibility dispatch, coalesces concurrent duplicate nonces behind the first real Host result, persists the authoritative Rust Session echo before ledger acceptance, clears failed unaccepted attempts for retry, exposes promptAcceptanceStatus from the same durable ledger, advances per-agent turn epochs, and replays the exact accepted Host result in-process. Full frozen send shaping/threading/attachment materialization/group fanout/ack obligations remain non-final."
+      "notes": "Rust send pipeline is production-composed by ProductionTranscriptRuntime and shipping Host Gateway. Nonce digest admission/coalescing/duplicate replay, durable Session echo before acceptance, failure retry clearing, acceptance lookup, turn epochs and attachment batch identity are present; distinct same-agent nonces now enter the Grok-aligned RunScheduler through send-turn-dispatch and cannot overlap Host dispatch. Full frozen attachment materialization/group fanout/ack obligations/recovery context/Runner dispatch remain non-final."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",
@@ -13936,12 +13938,24 @@
       "targetPath": "source/host/src/extensions/transcript/send_turn_dispatch.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "bf9d48c949d4e0a7f5592141f0c1f7011433b391",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/send_turn_dispatch.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/src/extensions/transcript/run_scheduler.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_production_composition_contract.rs",
+        "source/host/tests/transcript_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production dispatch now enqueues every direct-user send on the existing Grok-aligned per-agent RunScheduler before compatibility Host dispatch. Distinct nonces for one agent cannot overlap: the active generation owns dispatch until terminal settlement, then the scheduler starts the next user turn and wakes its waiter. Shipping sendPrompt reaches this owner through ProductionTranscriptRuntime in source/host/app/src/main.rs. Final is withheld for direct-run interruption/recovery context, ack-token mint/disarm, workflow/composed-note expansion, Runner invocation and detached-turn error reporting."
     },
     {
       "referencePath": "source/host/extensions/transcript/session-runtime.ts",

@@ -13,6 +13,7 @@ use super::run_lifecycle::RunLifecycleState;
 use super::send_pipeline::{
     HOST_ACCOUNT_SLOT, SendBegin, SendEchoIdentity, SendPipelineState,
 };
+use super::send_turn_dispatch::{ProductionTurnDispatch, UserTurnTicket};
 
 const COMPLETION_CACHE_MAX: usize = 256;
 
@@ -32,6 +33,7 @@ struct RuntimeState {
     pipeline: SendPipelineState,
     ledger: PromptAcceptanceLedger,
     lifecycle: RunLifecycleState,
+    turn_dispatch: ProductionTurnDispatch,
     completions: HashMap<String, Result<Value, ProductionSendError>>,
     completion_order: VecDeque<String>,
 }
@@ -39,6 +41,7 @@ struct RuntimeState {
 pub struct ProductionTranscriptRuntime {
     state: Mutex<RuntimeState>,
     send_settled: Condvar,
+    turn_ready: Condvar,
 }
 
 impl ProductionTranscriptRuntime {
@@ -48,10 +51,12 @@ impl ProductionTranscriptRuntime {
                 pipeline: SendPipelineState::default(),
                 ledger: PromptAcceptanceLedger::new(root_dir),
                 lifecycle: RunLifecycleState::default(),
+                turn_dispatch: ProductionTurnDispatch::default(),
                 completions: HashMap::new(),
                 completion_order: VecDeque::new(),
             }),
             send_settled: Condvar::new(),
+            turn_ready: Condvar::new(),
         }
     }
 
@@ -103,6 +108,8 @@ impl ProductionTranscriptRuntime {
         let input = parse_send_input(args)?;
         let nonce = optional_non_empty(args, "clientNonce").map(ToOwned::to_owned);
         let agent_id = input.agent_id.clone();
+        let mut turn_ticket: Option<UserTurnTicket> = None;
+        let mut turn_generation: Option<u64> = None;
 
         let mut state = self.lock_state();
         loop {
@@ -135,13 +142,38 @@ impl ProductionTranscriptRuntime {
                 }
                 SendBegin::Dispatch { .. } => {
                     if let Some(agent_id) = agent_id.as_deref() {
+                        let accepted_at_ms = system_now_ms();
                         state
                             .lifecycle
-                            .begin_session_run(agent_id, system_now_ms(), false);
+                            .begin_session_run(agent_id, accepted_at_ms, false);
                         state.pipeline.next_turn_epoch(agent_id);
+                        let (ticket, _) = state
+                            .turn_dispatch
+                            .enqueue_user_turn(
+                                agent_id,
+                                nonce.as_deref(),
+                                accepted_at_ms,
+                                accepted_at_ms,
+                            )
+                            .map_err(|error| ProductionSendError::Internal(error.to_string()))?;
+                        turn_ticket = Some(ticket);
                     }
                     break;
                 }
+            }
+        }
+        if let Some(ticket) = turn_ticket.as_ref() {
+            state = self
+                .turn_ready
+                .wait_while(state, |state| {
+                    state.turn_dispatch.active_generation_for(ticket).is_none()
+                })
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            turn_generation = state.turn_dispatch.active_generation_for(ticket);
+            if turn_generation.is_none() {
+                return Err(ProductionSendError::Internal(
+                    "queued user turn lost scheduler ownership".into(),
+                ));
             }
         }
         drop(state);
@@ -211,13 +243,22 @@ impl ProductionTranscriptRuntime {
             } = &mut *state;
             pipeline.finish_send(ledger, nonce.as_deref(), succeeded);
         }
+        let settled_at_ms = system_now_ms();
+        if let (Some(ticket), Some(generation)) =
+            (turn_ticket.as_ref(), turn_generation)
+        {
+            let _ = state
+                .turn_dispatch
+                .settle_and_start_next(ticket, generation, settled_at_ms);
+        }
         if let Some(agent_id) = agent_id.as_deref() {
-            let _ = state.lifecycle.end_session_run(agent_id, system_now_ms());
+            let _ = state.lifecycle.end_session_run(agent_id, settled_at_ms);
         }
         if let Some(client_nonce) = nonce.as_deref() {
             cache_completion(&mut state, client_nonce, result.clone());
         }
         drop(state);
+        self.turn_ready.notify_all();
         self.send_settled.notify_all();
         result
     }
@@ -228,6 +269,17 @@ impl ProductionTranscriptRuntime {
 
     pub fn in_flight_run_count(&self, agent_id: &str) -> u64 {
         self.lock_state().lifecycle.in_flight_count(agent_id)
+    }
+
+    pub fn queued_turn_count(&self, agent_id: &str) -> usize {
+        self.lock_state()
+            .turn_dispatch
+            .queued_task_ids(agent_id)
+            .len()
+    }
+
+    pub fn is_turn_dispatch_idle(&self, agent_id: &str) -> bool {
+        self.lock_state().turn_dispatch.is_idle(agent_id)
     }
 
     fn lock_state(&self) -> std::sync::MutexGuard<'_, RuntimeState> {
