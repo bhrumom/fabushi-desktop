@@ -55,10 +55,10 @@ pub struct AgentDbSerdeSnapshot {
     pub memory_prompt_snapshot: Option<MemoryPromptSnapshot>,
 }
 
-pub fn read_persisted_latest_root_blob_id(
+fn open_projection_db(
     db_path: &Path,
     busy_timeout_ms: u64,
-) -> Result<Vec<u8>, AgentDbProjectionError> {
+) -> Result<rusqlite::Connection, AgentDbProjectionError> {
     let agent_dir_name = db_path
         .parent()
         .and_then(Path::file_name)
@@ -68,27 +68,33 @@ pub fn read_persisted_latest_root_blob_id(
         busy_timeout_ms,
         ..DbRecoveryOptions::default()
     };
-    let db = open_configured_db(
+    Ok(open_configured_db(
         db_path,
         &agent_dir_name,
         &options,
         live_db_handle_count(db_path) > 0,
-    )?;
+    )?)
+}
 
-    let raw = db
-        .query_row(
-            GET_KV_SQL,
-            params!["metadata"],
-            |row| row.get::<_, String>(0),
-        )
-        .optional()?;
-    let Some(raw) = raw else {
-        return Ok(Vec::new());
+fn read_metadata_json(
+    db: &rusqlite::Connection,
+) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+    let Some(raw) = read_kv(db, "metadata")? else {
+        return Ok(None);
     };
-
     let metadata_bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
     let metadata_json = String::from_utf8(metadata_bytes)?;
-    let metadata: serde_json::Value = serde_json::from_str(&metadata_json)?;
+    Ok(Some(serde_json::from_str(&metadata_json)?))
+}
+
+pub fn read_persisted_latest_root_blob_id(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<Vec<u8>, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    let Some(metadata) = read_metadata_json(&db)? else {
+        return Ok(Vec::new());
+    };
     let Some(root_hex) = metadata
         .get("latestRootBlobId")
         .and_then(serde_json::Value::as_str)
@@ -98,6 +104,21 @@ pub fn read_persisted_latest_root_blob_id(
     decode_hex(root_hex).map_err(AgentDbProjectionError::LatestRootHex)
 }
 
+pub fn read_persisted_agent_name(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<Option<String>, AgentDbProjectionError> {
+    let db = open_projection_db(db_path, busy_timeout_ms)?;
+    Ok(read_metadata_json(&db)?
+        .and_then(|metadata| {
+            metadata
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned)
+        }))
+}
 
 pub fn read_persisted_agent_serde_snapshot(
     db_path: &Path,

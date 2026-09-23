@@ -9346,12 +9346,23 @@
       "targetPath": "source/host/src/agents/agent_profile.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "4551139409729e6ad234e952c94c38757620bc9f",
       "architecturalRole": "host/agents",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/agents/agent_profile.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/agent_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_profile_contract.rs",
+        "source/host/tests/session_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust translation of frozen Grok profile JSON parsing, legacy avatar-field normalization, atomic pretty JSON writes and canonical profile path. Shipping ProductionSessionWorkers now materializes a missing profile.json from persisted Agent metadata/profile state before Runner inference and returns the parsed profile in prepared session state."
     },
     {
       "referencePath": "source/host/agents/agent-workflow-enablement.ts",

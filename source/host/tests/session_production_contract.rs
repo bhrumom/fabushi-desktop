@@ -196,6 +196,20 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
         vec!["entry-1", "entry-2"]
     );
     assert_eq!(prepared.transcript_tail.next_before_seq, None);
+    assert_eq!(
+        prepared.profile_file.as_ref().map(|profile| profile.name.as_str()),
+        Some("Agent Live")
+    );
+    assert_eq!(
+        prepared
+            .profile_file
+            .as_ref()
+            .map(|profile| profile.description.as_str()),
+        Some("Shipping profile")
+    );
+    let profile_text = fs::read_to_string(agent_dir.join("profile.json"))
+        .expect("materialized profile file");
+    assert!(profile_text.ends_with('\n'));
     assert_eq!(runtime.active_worker_count(), 1);
 
     runtime.shutdown();
