@@ -127,6 +127,51 @@ pub fn read_persisted_agent_name(
         }))
 }
 
+pub fn initialize_persisted_agent_record(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+    agent_id: &str,
+    origin: &str,
+    purpose: Option<&str>,
+    created_at_ms: u64,
+    blob_encryption_key_hex: &str,
+) -> Result<(), AgentDbProjectionError> {
+    let mut db = open_projection_db(db_path, busy_timeout_ms)?;
+    let transaction = db.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let existing = transaction
+        .query_row(GET_KV_SQL, params!["metadata"], |row| row.get::<_, String>(0))
+        .optional()?;
+    if existing.is_none() {
+        let metadata = serde_json::json!({
+            "agentId": agent_id,
+            "latestRootBlobId": "",
+            "name": "New Agent",
+            "mode": "default",
+            "isRunEverything": false,
+            "createdAt": created_at_ms,
+            "blobEncryptionKey": blob_encryption_key_hex,
+        });
+        transaction.execute(
+            SET_KV_SQL,
+            params!["metadata", encode_hex(&serde_json::to_vec(&metadata)?)],
+        )?;
+    }
+    transaction.execute(
+        SET_KV_SQL,
+        params!["origin", if origin == "dev" { "dev" } else { "user" }],
+    )?;
+    transaction.execute(
+        SET_KV_SQL,
+        params!["introductionPending", "1"],
+    )?;
+    if let Some(purpose) = purpose.map(str::trim).filter(|value| !value.is_empty()) {
+        transaction.execute(SET_KV_SQL, params!["purpose", purpose])?;
+    }
+    transaction.commit()?;
+    bump_db_write_generation(db_path);
+    Ok(())
+}
+
 pub fn compare_and_set_persisted_latest_root_blob_id(
     db_path: &Path,
     busy_timeout_ms: u64,

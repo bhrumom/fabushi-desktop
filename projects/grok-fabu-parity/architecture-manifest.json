@@ -12244,7 +12244,9 @@
         "source/host/src/extensions/session/conversation_size_limits.rs",
         "source/host/src/agent_isolation/agent_worker_pool.rs",
         "source/host/src/agent_isolation/worker_blob_store.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/session/session_materialization.rs",
+        "source/host/src/extensions/session/session_maintenance.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12253,9 +12255,11 @@
         "source/host/tests/agent_worker_pool_lifecycle_contract.rs",
         "source/host/tests/conversation_blob_store_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/session_materialization_contract.rs",
+        "source/host/tests/session_maintenance_contract.rs"
       ],
-      "notes": "Production Session owns a Host-lifetime AgentWorkerPool backed by the concrete SQLite ConversationBlobWorkerBackend, derives frozen per-agent store/conversation-blobs paths, prepares existing agent stores before routed Runner inference, keeps durable blob-scan root discovery available for recovery, projects the persisted session metadata latestRootBlobId, enforces the Grok soft/hard conversation capacity gate before Runner execution, and closes all workers on Host shutdown. Full Grok Session materialization, recovery, transcript repair/backfill, remaining maintenance/metadata, conversation-state, roster/projection and box-handoff composition remain pending, so this module stays existing-needs-parity."
+      "notes": "Production Session owns a Host-lifetime AgentWorkerPool and now routes existing-agent open through Rust session materialization, durable-root recovery, stale-root/legacy maintenance, persisted serde/transcript projection and conversation capacity enforcement before Runner inference. It also exposes Rust-owned list/count/cap/new-session materialization. Full Grok Session still needs create/open Gateway cutover, mint serialization/placeholder reclaim, complete SandAgentDb ownership, conversation-state/roster/projection, workflow/channel composition and box handoff, so this module remains existing-needs-parity."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
@@ -12317,12 +12321,24 @@
       "targetPath": "source/host/src/extensions/session/session_materialization.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "8bf343ad69fb47f68d51fce6baddbffb9d58448b",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/session/session_materialization.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/agents/agent_profile.rs",
+        "source/host/src/agents/settings_file.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/session_materialization_contract.rs",
+        "source/host/tests/session_production_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Real Rust materialization slice owns MAX_AGENTS_PER_USER counting, collision-safe UUID mint, fresh store.db metadata/origin/purpose/introduction seeding, blob-encryption key generation, profile/settings materialization and existing-agent open/repair. Shipping ProductionSessionWorkers now opens existing sessions through this module and exposes list/count/cap/create ownership. Final is withheld until mint serialization, pruned-placeholder reclamation/visibility, automations/workflows/channels/memory composition, agent-store resetFromDb and create/open Gateway command wiring are all production-owned by Rust."
     },
     {
       "referencePath": "source/host/extensions/session/session-mutations.ts",

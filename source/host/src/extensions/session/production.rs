@@ -5,13 +5,11 @@ use crate::agent_isolation::{
     AgentWorkerPool, ProductionAgentStoreWorkerBackend, WorkerBlobStore,
     create_production_agent_store_worker_backend,
 };
-use crate::agents::agent_profile::{
-    SandAgentProfile, read_sand_profile_file,
-};
+use crate::agents::agent_profile::SandAgentProfile;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::agent_db::{
-    AgentDbSerdeSnapshot, read_persisted_agent_name, read_persisted_agent_serde_snapshot,
+    AgentDbSerdeSnapshot, read_persisted_agent_serde_snapshot,
     read_persisted_latest_root_blob_id, read_persisted_transcript_tail,
 };
 use super::agent_db_transcript_pages::TranscriptPage;
@@ -20,10 +18,13 @@ use super::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
 };
 use super::session_paths::get_agent_db_path;
-use super::session_recovery::{ensure_profile_file, ensure_settings_file};
 use super::session_maintenance::{
     clear_stale_checkpoint_roots_once, recover_conversation_root_if_missing,
     retire_legacy_store_blobs_once,
+};
+use super::session_materialization::{
+    MaterializedAgentRecord, count_owned_agents, is_agent_cap_reached, list_agent_record_ids,
+    materialize_new_session, open_existing_session,
 };
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
@@ -86,6 +87,34 @@ impl ProductionSessionWorkers {
         get_agent_db_path(&self.agents_root, agent_id).map_err(|error| error.to_string())
     }
 
+    pub fn list_agent_record_ids(&self) -> Result<Vec<String>, String> {
+        list_agent_record_ids(&self.agents_root).map_err(|error| error.to_string())
+    }
+
+    pub fn count_owned_agents(&self) -> Result<usize, String> {
+        count_owned_agents(&self.agents_root).map_err(|error| error.to_string())
+    }
+
+    pub fn is_agent_cap_reached(&self) -> Result<bool, String> {
+        is_agent_cap_reached(&self.agents_root).map_err(|error| error.to_string())
+    }
+
+    pub fn materialize_new_session(
+        &self,
+        profile: Option<&SandAgentProfile>,
+        origin: &str,
+        purpose: Option<&str>,
+    ) -> Result<MaterializedAgentRecord, String> {
+        materialize_new_session(
+            &self.agents_root,
+            self.busy_timeout_ms,
+            profile,
+            origin,
+            purpose,
+        )
+        .map_err(|error| error.to_string())
+    }
+
     pub fn create_agent_blob_store(
         &self,
         agent_id: &str,
@@ -109,15 +138,17 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Option<PreparedAgentBlobStore>, String> {
-        let store = self.create_agent_blob_store(agent_id)?;
-        let session_db_path = store
-            .legacy_blob_db_path
-            .as_ref()
-            .cloned()
-            .ok_or_else(|| "production session store is missing its session DB path".to_string())?;
-        if !session_db_path.is_file() {
+        let Some(materialized) = open_existing_session(
+            &self.agents_root,
+            self.busy_timeout_ms,
+            agent_id,
+        )
+        .map_err(|error| error.to_string())?
+        else {
             return Ok(None);
-        }
+        };
+        let store = self.create_agent_blob_store(agent_id)?;
+        let session_db_path = materialized.db_path.clone();
 
         let _ = recover_conversation_root_if_missing(
             Arc::clone(&self.pool),
@@ -135,18 +166,7 @@ impl ProductionSessionWorkers {
         let transcript_tail =
             read_persisted_transcript_tail(&session_db_path, self.busy_timeout_ms, 500)
                 .map_err(|error| error.to_string())?;
-        let persisted_name =
-            read_persisted_agent_name(&session_db_path, self.busy_timeout_ms)
-                .map_err(|error| error.to_string())?;
-        let profile_path = ensure_profile_file(
-            &session_db_path,
-            persisted_name.as_deref(),
-            &session_state.profile.description,
-        )
-        .map_err(|error| format!("could not materialize production profile file: {error}"))?;
-        let _settings_path = ensure_settings_file(&session_db_path)
-            .map_err(|error| format!("could not materialize production settings file: {error}"))?;
-        let profile_file = read_sand_profile_file(&profile_path);
+        let profile_file = Some(materialized.profile.clone());
 
         let latest_root_blob_id = futures::executor::block_on(
             self.pool.find_latest_root_blob_id(

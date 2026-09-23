@@ -9,5 +9,6 @@ pub mod conversation_size_limits;
 pub mod session_paths;
 pub mod session_recovery;
 pub mod session_maintenance;
+pub mod session_materialization;
 pub mod session_diagnostics;
 pub mod production;
