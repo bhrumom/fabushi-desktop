@@ -152,7 +152,9 @@ fn provider_routes_real_worker_blob_store_through_shared_journal() {
         .expect("commit");
 
     let jsonl = fs::read_to_string(
-        transcripts_dir.join(format!("{}.jsonl", session.record.id)),
+        transcripts_dir
+            .join(&session.record.id)
+            .join(format!("{}.jsonl", session.record.id)),
     )
     .expect("jsonl");
     assert!(jsonl.contains("hello from production provider"));
