@@ -255,8 +255,20 @@ fn production_session_open_owns_frozen_soft_gc_schedule_wiring() {
     let orphan_id = Sha256::digest(&orphan).to_vec();
     futures::executor::block_on(store.set_blob(&(), &reachable_id, &reachable))
         .expect("reachable blob");
-    futures::executor::block_on(store.set_blob(&(), &orphan_id, &orphan))
-        .expect("orphan blob");
+
+    // Model an orphan left by an older Host generation rather than a fresh
+    // in-flight write. Frozen Grok keeps fresh blob writes protected for
+    // GC_PENDING_WRITE_RETENTION_MS, so writing this through WorkerBlobStore
+    // would correctly retain it and make this soft-GC wiring test invalid.
+    let orphan_db = rusqlite::Connection::open(&store.blob_db_path)
+        .expect("open conversation blob db for historical orphan");
+    orphan_db
+        .execute(
+            "INSERT INTO blobs (id, data) VALUES (?1, ?2)",
+            rusqlite::params![to_hex(&orphan_id), &orphan],
+        )
+        .expect("historical orphan blob");
+    drop(orphan_db);
 
     let mut root_blob = Vec::new();
     push_len(1, &reachable_id, &mut root_blob);
