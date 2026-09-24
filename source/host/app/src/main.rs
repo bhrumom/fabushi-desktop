@@ -440,6 +440,81 @@ impl ReactionSink for ProductionReactionSink {
     }
 }
 
+struct RoutedTurnLeaseGuard {
+    runtime: Arc<ProductionTranscriptRuntime>,
+    agent_id: String,
+    stream_id: String,
+    events: GatewayEventHub,
+    settled: bool,
+}
+
+impl RoutedTurnLeaseGuard {
+    fn new(
+        runtime: Arc<ProductionTranscriptRuntime>,
+        agent_id: String,
+        stream_id: String,
+        events: GatewayEventHub,
+    ) -> Self {
+        Self {
+            runtime,
+            agent_id,
+            stream_id,
+            events,
+            settled: false,
+        }
+    }
+
+    fn settle(&mut self) {
+        if self.settled {
+            return;
+        }
+        self.settled = true;
+        if let Ok(Some(settlement)) = self.runtime.settle_routed_turn(
+            &self.agent_id,
+            &self.stream_id,
+            started_at_ms(),
+        ) {
+            if let Some(watchdog) = settlement.watchdog {
+                self.events.publish(serde_json::json!({
+                    "channel": "run-queue-watchdog",
+                    "payload": {
+                        "agentId": watchdog.agent_id,
+                        "stage": watchdog.stage.as_str(),
+                        "activeLane": watchdog.active_lane.as_str(),
+                        "activeSource": watchdog.active_source,
+                        "activeRuntimeMs": watchdog.active_runtime_ms,
+                        "waitingUserAgeMs": watchdog.waiting_user_age_ms,
+                        "ackToken": watchdog.ack_token,
+                        "interrupted": false
+                    }
+                }));
+            }
+            if let Some(next) = settlement.next {
+                self.events.publish(serde_json::json!({
+                    "channel": "run-queue-dequeued",
+                    "payload": {
+                        "agentId": next.agent_id,
+                        "lane": next.lane.as_str(),
+                        "source": next.source,
+                        "queueWaitMs": next.queue_wait_ms,
+                        "acceptedToRunMs": next.accepted_to_run_ms,
+                        "jumpedBackground": next.jumped_background,
+                        "depthUser": next.depth_user,
+                        "depthAgent": next.depth_agent,
+                        "depthBackground": next.depth_background
+                    }
+                }));
+            }
+        }
+    }
+}
+
+impl Drop for RoutedTurnLeaseGuard {
+    fn drop(&mut self) {
+        self.settle();
+    }
+}
+
 struct UnifiedGatewayApi {
     host_tx: mpsc::Sender<HostLaneRequest>,
     experiments: Arc<HostExperimentsExtension>,
@@ -800,6 +875,15 @@ fn start_routed_provider_task(
             "runner.startRoutedProvider requires streamId".into()
         ))?
         .to_string();
+    transcript_runtime
+        .require_routed_turn_lease(&agent_id, &stream_id)
+        .map_err(map_production_send_error)?;
+    let routed_turn_lease_guard = RoutedTurnLeaseGuard::new(
+        Arc::clone(&transcript_runtime),
+        agent_id.clone(),
+        stream_id.clone(),
+        events.clone(),
+    );
     let messages = decode_provider_messages(&args)?;
     let turn_input = create_production_turn_input_projection(
         &args,
@@ -919,6 +1003,7 @@ fn start_routed_provider_task(
     let spawn = thread::Builder::new()
         .name(format!("mahayana-runner-provider-{agent_id}"))
         .spawn(move || {
+            let mut worker_routed_turn_lease = routed_turn_lease_guard;
             let observation_events = worker_events.clone();
             let observation: TurnObservationHandle = TurnObservation::shared(
                 agent_id.clone(),
@@ -1064,6 +1149,7 @@ fn start_routed_provider_task(
                 &agent_id,
                 worker_ack_token.as_deref(),
             );
+            worker_routed_turn_lease.settle();
             let _ = worker_transcript_runtime
                 .retire_idle_live_session(&worker_retire_sessions, &agent_id);
 

@@ -1860,6 +1860,7 @@ fn execute_local_inference(
     let mut acceptance_args = args.clone();
     if let Some(object) = acceptance_args.as_object_mut() {
         object.insert("clientNonce".into(), Value::String(client_nonce.clone()));
+        object.insert("streamId".into(), Value::String(stream_id.clone()));
     }
     let host_acceptance = parse_host_routed_prompt_acceptance(
         &dispatch_gateway_value(

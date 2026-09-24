@@ -53,11 +53,25 @@ pub struct RoutedSendAcceptance {
     pub context: PersistedSendContext,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RoutedTurnLease {
+    agent_id: String,
+    ticket: UserTurnTicket,
+    generation: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RoutedTurnSettlement {
+    pub watchdog: Option<WatchdogEvent>,
+    pub next: Option<QueueDequeued>,
+}
+
 struct RuntimeState {
     pipeline: SendPipelineState,
     ledger: PromptAcceptanceLedger,
     lifecycle: RunLifecycleState,
     turn_dispatch: ProductionTurnDispatch,
+    routed_turn_leases: HashMap<String, RoutedTurnLease>,
     completions: HashMap<String, Result<Value, ProductionSendError>>,
     completion_order: VecDeque<String>,
 }
@@ -99,6 +113,7 @@ impl ProductionTranscriptRuntime {
                     watchdog_ms,
                     watchdog_grace_ms,
                 ),
+                routed_turn_leases: HashMap::new(),
                 completions: HashMap::new(),
                 completion_order: VecDeque::new(),
             }),
@@ -255,14 +270,60 @@ impl ProductionTranscriptRuntime {
         Persist: Fn(&Value) -> Result<Persisted, ProductionSendError>,
         Persisted: Into<PersistedSendContext>,
     {
+        self.accept_routed_send_with_queue_observers(
+            args,
+            persist_accepted,
+            |_| false,
+            |_| {},
+            |_| {},
+        )
+    }
+
+    pub fn accept_routed_send_with_queue_observers<
+        Persist,
+        Persisted,
+        Watchdog,
+        QueueAcceptedObserver,
+        QueueDequeuedObserver,
+    >(
+        &self,
+        args: &Value,
+        persist_accepted: Persist,
+        on_watchdog: Watchdog,
+        on_queue_accepted: QueueAcceptedObserver,
+        on_queue_dequeued: QueueDequeuedObserver,
+    ) -> Result<RoutedSendAcceptance, ProductionSendError>
+    where
+        Persist: Fn(&Value) -> Result<Persisted, ProductionSendError>,
+        Persisted: Into<PersistedSendContext>,
+        Watchdog: Fn(&WatchdogEvent) -> bool,
+        QueueAcceptedObserver: Fn(&QueueAccepted),
+        QueueDequeuedObserver: Fn(&QueueDequeued),
+    {
         let input = parse_send_input(args)?;
         if input.prompt.trim().is_empty() && input.attachment_paths.is_empty() {
             return Err(ProductionSendError::BadRequest(
                 "routed send requires prompt or attachments".into(),
             ));
         }
+        let stream_id = optional_non_empty(args, "streamId")
+            .ok_or_else(|| {
+                ProductionSendError::BadRequest(
+                    "routed send requires streamId for Host queue ownership".into(),
+                )
+            })?
+            .to_string();
         let nonce = optional_non_empty(args, "clientNonce").map(ToOwned::to_owned);
         let agent_id = input.agent_id.clone();
+        let is_ack_redrive = optional_bool(args, "ackRedrive")?.unwrap_or(false)
+            && optional_non_empty(args, "requestSource") == Some("handoff-resume");
+        let dispatch_lane = if is_ack_redrive {
+            RunLane::Background
+        } else {
+            RunLane::User
+        };
+        let dispatch_source = if is_ack_redrive { "ack-redrive" } else { "turn" };
+        let dispatch_ack_token = optional_non_empty(args, "ackToken");
         let is_fork = optional_bool(args, "isFork")?.unwrap_or(false);
         let accepted = json!({ "accepted": true, "routed": true });
 
@@ -347,6 +408,10 @@ impl ProductionTranscriptRuntime {
                     }
 
                     if let Some(agent_id) = agent_id.as_deref() {
+                        let accepted_at_ms = system_now_ms();
+                        state
+                            .lifecycle
+                            .begin_session_run(agent_id, accepted_at_ms, false);
                         let epoch = state.pipeline.next_turn_epoch(agent_id);
                         state.pipeline.register_recovery_turn(
                             agent_id,
@@ -354,7 +419,103 @@ impl ProductionTranscriptRuntime {
                             &context,
                             is_fork,
                         );
+                        let (ticket, queue_accepted, queue_dequeued) =
+                            match state.turn_dispatch.enqueue_turn_with_start(
+                                agent_id,
+                                nonce.as_deref(),
+                                accepted_at_ms,
+                                accepted_at_ms,
+                                dispatch_lane,
+                                dispatch_source,
+                                dispatch_ack_token,
+                            ) {
+                                Ok(value) => value,
+                                Err(error) => {
+                                    let _ = state.lifecycle.end_session_run(
+                                        agent_id,
+                                        system_now_ms(),
+                                    );
+                                    let RuntimeState {
+                                        pipeline, ledger, ..
+                                    } = &mut *state;
+                                    pipeline.finish_send(ledger, nonce.as_deref(), false);
+                                    drop(state);
+                                    self.turn_ready.notify_all();
+                                    self.send_settled.notify_all();
+                                    return Err(ProductionSendError::Internal(
+                                        error.to_string(),
+                                    ));
+                                }
+                            };
+
+                        drop(state);
+                        on_queue_accepted(&queue_accepted);
+                        if let Some(event) = queue_dequeued.as_ref() {
+                            on_queue_dequeued(event);
+                        }
+                        state = self.lock_state();
+
+                        let generation = loop {
+                            if let Some(generation) =
+                                state.turn_dispatch.active_generation_for(&ticket)
+                            {
+                                break generation;
+                            }
+                            let now_ms = system_now_ms();
+                            let wait_ms = state
+                                .turn_dispatch
+                                .watchdog_wait_ms(agent_id, now_ms)
+                                .unwrap_or(1_000)
+                                .max(1);
+                            let (next_state, _) = self
+                                .turn_ready
+                                .wait_timeout(state, Duration::from_millis(wait_ms))
+                                .unwrap_or_else(|poisoned| poisoned.into_inner());
+                            state = next_state;
+                            if let Some(tick) =
+                                state.turn_dispatch.watchdog_tick(agent_id, system_now_ms())
+                            {
+                                let event = tick.event;
+                                let started_next = tick.started_next;
+                                let escaped = started_next.is_some();
+                                drop(state);
+                                let _ = on_watchdog(&event);
+                                if let Some(event) = started_next.as_ref() {
+                                    on_queue_dequeued(event);
+                                }
+                                if escaped {
+                                    self.turn_ready.notify_all();
+                                }
+                                state = self.lock_state();
+                            }
+                        };
+
+                        if state.routed_turn_leases.contains_key(&stream_id) {
+                            let _ = state
+                                .turn_dispatch
+                                .settle_and_start_next(&ticket, generation, system_now_ms());
+                            let _ = state.lifecycle.end_session_run(agent_id, system_now_ms());
+                            let RuntimeState {
+                                pipeline, ledger, ..
+                            } = &mut *state;
+                            pipeline.finish_send(ledger, nonce.as_deref(), false);
+                            drop(state);
+                            self.turn_ready.notify_all();
+                            self.send_settled.notify_all();
+                            return Err(ProductionSendError::Conflict(format!(
+                                "routed stream already owns a Host turn lease: {stream_id}"
+                            )));
+                        }
+                        state.routed_turn_leases.insert(
+                            stream_id.clone(),
+                            RoutedTurnLease {
+                                agent_id: agent_id.to_string(),
+                                ticket,
+                                generation,
+                            },
+                        );
                     }
+
                     {
                         let RuntimeState {
                             pipeline, ledger, ..
@@ -371,6 +532,61 @@ impl ProductionTranscriptRuntime {
                 }
             }
         }
+    }
+
+    pub fn require_routed_turn_lease(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+    ) -> Result<(), ProductionSendError> {
+        let state = self.lock_state();
+        match state.routed_turn_leases.get(stream_id) {
+            Some(lease) if lease.agent_id == agent_id => Ok(()),
+            Some(_) => Err(ProductionSendError::Conflict(format!(
+                "routed stream lease agent mismatch: {stream_id}"
+            ))),
+            None => Err(ProductionSendError::Rejected(format!(
+                "routed provider stream has no admitted Host turn lease: {stream_id}"
+            ))),
+        }
+    }
+
+    pub fn settle_routed_turn(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+        now_ms: u64,
+    ) -> Result<Option<RoutedTurnSettlement>, ProductionSendError> {
+        let mut state = self.lock_state();
+        let Some(lease) = state.routed_turn_leases.remove(stream_id) else {
+            return Ok(None);
+        };
+        if lease.agent_id != agent_id {
+            state
+                .routed_turn_leases
+                .insert(stream_id.to_string(), lease);
+            return Err(ProductionSendError::Conflict(format!(
+                "routed stream lease agent mismatch: {stream_id}"
+            )));
+        }
+        let (settlement, next) = state
+            .turn_dispatch
+            .settle_and_start_next(&lease.ticket, lease.generation, now_ms);
+        let watchdog = match settlement {
+            RunSettlement::ZombieSettled { watchdog, .. } => Some(watchdog),
+            RunSettlement::ActiveSettled { .. } | RunSettlement::Unknown => None,
+        };
+        let _ = state.lifecycle.end_session_run(agent_id, now_ms);
+        drop(state);
+        self.turn_ready.notify_all();
+        Ok(Some(RoutedTurnSettlement { watchdog, next }))
+    }
+
+    pub fn has_routed_turn_lease(&self, agent_id: &str, stream_id: &str) -> bool {
+        self.lock_state()
+            .routed_turn_leases
+            .get(stream_id)
+            .is_some_and(|lease| lease.agent_id == agent_id)
     }
 
     pub fn execute_send<Dispatch, Persist, Persisted>(
