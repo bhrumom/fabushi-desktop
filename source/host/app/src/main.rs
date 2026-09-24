@@ -35,6 +35,7 @@ use mahayana_host_runtime::extensions::session::gateway::{
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
+use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManager;
 use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use mahayana_host_runtime::extensions::transcript::profile_watch::ProductionProfileWatch;
 use mahayana_host_runtime::extensions::transcript::send_message_shaping::shape_send_prompt_media_args;
@@ -446,6 +447,7 @@ struct UnifiedGatewayApi {
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     trays: Arc<HostTraysExtension>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
+    transcript_manager: Arc<TranscriptManager>,
     telemetry_logs: HostStructuredLogTelemetry,
 }
 
@@ -1067,7 +1069,7 @@ impl GatewayApi for UnifiedGatewayApi {
         }
         if method == "promptAcceptanceStatus" {
             return self
-                .transcript_runtime
+                .transcript_manager
                 .prompt_acceptance_status(&args)
                 .map_err(map_production_send_error);
         }
@@ -1078,13 +1080,8 @@ impl GatewayApi for UnifiedGatewayApi {
                 .ok_or_else(|| GatewayCommandError::BadRequest(
                     "setWindowFocused requires isFocused".into()
                 ))?;
-            self.transcript_runtime
-                .session_runtime()
-                .set_window_focused(
-                    &self.session_workers,
-                    is_focused,
-                    started_at_ms() as f64,
-                )
+            self.transcript_manager
+                .set_window_focused(is_focused, started_at_ms() as f64)
                 .map_err(GatewayCommandError::Internal)?;
             return Ok(serde_json::Value::Null);
         }
@@ -1097,12 +1094,8 @@ impl GatewayApi for UnifiedGatewayApi {
                 .ok_or_else(|| GatewayCommandError::BadRequest(
                     "openAgent requires id".into()
                 ))?;
-            return self.transcript_runtime
-                .switch_agent(
-                    &self.session_workers,
-                    agent_id,
-                    started_at_ms() as f64,
-                )
+            return self.transcript_manager
+                .switch_agent(agent_id, started_at_ms() as f64)
                 .map(serde_json::Value::Array)
                 .map_err(GatewayCommandError::Internal);
         }
@@ -1117,7 +1110,7 @@ impl GatewayApi for UnifiedGatewayApi {
                     "getAsyncTasks requires id".into()
                 ))?;
             return serde_json::to_value(
-                self.transcript_runtime.get_async_tasks(agent_id, &[])
+                self.transcript_manager.get_async_tasks(agent_id, &[])
             )
             .map_err(|error| GatewayCommandError::Internal(error.to_string()));
         }
@@ -1140,7 +1133,7 @@ impl GatewayApi for UnifiedGatewayApi {
                             self.transcript_runtime
                                 .session_runtime()
                                 .mark_agent_deleted(agent_id);
-                            self.transcript_runtime.clear_agent_durable_recovery(agent_id);
+                            self.transcript_manager.clear_agent_durable_recovery(agent_id);
                         }
                     }
                     "deleteAgents" => {
@@ -1149,7 +1142,7 @@ impl GatewayApi for UnifiedGatewayApi {
                                 self.transcript_runtime
                                     .session_runtime()
                                     .mark_agent_deleted(agent_id);
-                                self.transcript_runtime.clear_agent_durable_recovery(agent_id);
+                                self.transcript_manager.clear_agent_durable_recovery(agent_id);
                             }
                         }
                     }
@@ -1166,7 +1159,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
             })?;
             if method == "listAgents" {
-                self.transcript_runtime.decorate_agent_summaries(&mut value);
+                self.transcript_manager.decorate_agent_summaries(&mut value);
             }
             return Ok(value);
         }
@@ -1781,8 +1774,12 @@ fn main() {
     );
     let session_workers = session_extension.store();
     let session_handoff = session_extension.handoff_service();
-    let runner_registry = Arc::new(TranscriptRunnerRegistry::default());
-    let ack_obligations = Arc::new(AckObligations::new(&app_data_dir));
+    let transcript_manager = Arc::new(TranscriptManager::new(
+        &app_data_dir,
+        Arc::clone(&session_workers),
+    ));
+    let runner_registry = transcript_manager.runner_registry();
+    let ack_obligations = transcript_manager.ack_obligations();
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
         cancel_runner: Some({
             let runner_registry = Arc::clone(&runner_registry);
@@ -1825,7 +1822,7 @@ fn main() {
     };
     let gateway_started_at = started_at_ms();
     let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
-    let transcript_runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&app_data_dir)));
+    let transcript_runtime = transcript_manager.transcript_runtime();
     let roster_event_hub = gateway_events.clone();
     let roster_emit = Arc::new(ProductionRosterEmit::new(
         Arc::clone(&session_workers),
@@ -1884,6 +1881,7 @@ fn main() {
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
             trays: Arc::clone(&production_extensions.trays),
             transcript_runtime: Arc::clone(&transcript_runtime),
+            transcript_manager: Arc::clone(&transcript_manager),
             telemetry_logs: host_telemetry.logs.clone(),
         });
     let gateway_server = match start_gateway_server(GatewayServerDeps {

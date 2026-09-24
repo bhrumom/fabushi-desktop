@@ -14180,7 +14180,8 @@
         "source/host/src/runner/turn_agent_composition.rs",
         "source/host/src/extensions/telemetry/host_telemetry_service.rs",
         "source/host/src/extensions/telemetry/queue_telemetry_mappers.rs",
-        "source/host/src/extensions/transcript/session_runtime.rs"
+        "source/host/src/extensions/transcript/session_runtime.rs",
+        "source/host/src/extensions/transcript/transcript_manager.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14197,7 +14198,8 @@
         "source/host/tests/host_telemetry_service_contract.rs",
         "source/host/tests/extensions_operational_telemetry_contract.rs",
         "source/host/tests/transcript_session_runtime_contract.rs",
-        "source/host/tests/ack_obligations_contract.rs"
+        "source/host/tests/ack_obligations_contract.rs",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
       "notes": "Shipping ProductionTranscriptRuntime owns user/provider run counts, visible running/composing/retrying activity, request IDs and queue/watchdog settlement. Live-session retirement now follows the frozen two-stage lifecycle: openAgent retires an old idle session immediately, while a session that was still running at switch time is fenced until real provider terminal and then releases its production AgentStore/DB/blob-worker owners. Durable ack redrive now uses per-Agent +5s boot/idle schedules rather than a global batch trigger; new sends/fulfillment/deletion clear only that Agent schedule. Final remains withheld for subagent-parent projection and group/remote-member run accounting."
     },
@@ -14448,7 +14450,8 @@
         "source/host/src/runner/production_turn_input_projection.rs",
         "source/host/src/extensions/transcript/send_pipeline.rs",
         "source/host/src/extensions/transcript/turn_runtime.rs",
-        "source/host/src/runner/conversation_state.rs"
+        "source/host/src/runner/conversation_state.rs",
+        "source/host/src/extensions/transcript/transcript_manager.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14461,7 +14464,8 @@
         "source/host/tests/runner_routed_provider_contract.rs",
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
         "source/host/tests/production_turn_input_projection_contract.rs",
-        "source/host/tests/turn_runtime_recovery_contract.rs"
+        "source/host/tests/turn_runtime_recovery_contract.rs",
+        "source/host/tests/transcript_manager_contract.rs"
       ],
       "notes": "Production Rust send pipeline owns nonce admission/coalescing/replay, durable Session echo, acceptance state, queue/watchdog dispatch, turn epochs and attachment batch identity. Frozen latestRecoverySends/recoveryBreakEpochs are now populated from the authoritative durable user echo, and shipping turn-runtime suppresses a stale queued plain-text turn only when the newest durable recent-user sequence satisfies the exact SandAgentRunner wouldRecoverViaPrepend ordering/confirmed contract. Superseded user intent remains durable. Final remains withheld for group fanout, complete direct Runner invocation ownership, remaining ack/recovery guard composition, generated Agent confirmed-watermark side effect, and full generated Agent media consumption."
     },
@@ -14599,12 +14603,25 @@
       "targetPath": "source/host/src/extensions/transcript/transcript_manager.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "ba7d44283613ad8f74486a21b8cb62850304c923",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/transcript_manager.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/src/extensions/transcript/runner_registry.rs",
+        "source/host/src/extensions/transcript/ack_obligations.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_manager_contract.rs",
+        "source/host/tests/transcript_production_composition_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust TranscriptManager is now the shipping composition root for the shared Session workers, ProductionTranscriptRuntime, TranscriptRunnerRegistry and AckObligations. Host main no longer constructs those transcript owners independently, and promptAcceptanceStatus/openAgent/setWindowFocused/getAsyncTasks/roster decoration/durable-recovery cleanup now enter through the manager facade. Final remains withheld until the remaining frozen delegated domains (automation/background wakes/group/shared rooms/widgets/workflows/client-side-tool-v2), attachment/memory/content-search setters, lifecycle observers and exact dispose/onStop extension composition are ported."
     },
     {
       "referencePath": "source/host/extensions/transcript/transcript-store.ts",
