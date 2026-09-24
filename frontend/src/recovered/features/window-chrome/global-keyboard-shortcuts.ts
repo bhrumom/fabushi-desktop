@@ -152,6 +152,20 @@ function hotkeyMatches(event: KeyboardShortcutEvent, hotkey: string): boolean {
   return hotkey.split(",").some((candidate) => chordMatches(event, candidate.trim()));
 }
 
+function preventedEscapeBelongsToRootSearch(target: EventTarget | null | undefined): boolean {
+  if (target == null || typeof target !== "object") return false;
+  const candidate = target as EventTarget & {
+    closest?: (selector: string) => {
+      querySelector?: (selector: string) => unknown;
+    } | null;
+  };
+  if (typeof candidate.closest !== "function") return false;
+  const dialog = candidate.closest('[role="dialog"][aria-label="Search"]');
+  if (dialog == null) return false;
+  return typeof dialog.querySelector !== "function"
+    || dialog.querySelector('[aria-label="Back"]') == null;
+}
+
 export function resolveGlobalShortcutAction(
   event: KeyboardShortcutEvent,
   actions: readonly GlobalShortcutAction[],
@@ -198,7 +212,14 @@ export function createGlobalKeyboardShortcutController(
   const keydown = (keyboardEvent: KeyboardEvent): void => {
     const event = keyboardEvent as unknown as KeyboardShortcutEvent;
     if (event.key === "Escape") {
-      if (currentOverlay.isArmed && !currentOverlay.isOverlayStacked && !event.defaultPrevented) {
+      if (
+        currentOverlay.isArmed
+        && !currentOverlay.isOverlayStacked
+        && (
+          !event.defaultPrevented
+          || preventedEscapeBelongsToRootSearch(event.target)
+        )
+      ) {
         currentOverlay.close();
       }
       return;

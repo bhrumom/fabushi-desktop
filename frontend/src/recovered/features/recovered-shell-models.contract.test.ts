@@ -179,6 +179,28 @@ test("global shortcut controller reference-counts listener and honors unstacked 
   listener?.(keyboardEvent("Escape") as unknown as KeyboardEvent);
   assert.deepEqual(calls, ["close"]);
 
+  const rootSearchInput = {
+    closest: (selector: string) => selector.includes('role="dialog"')
+      ? { querySelector: () => null }
+      : null,
+  } as unknown as EventTarget;
+  listener?.(keyboardEvent("Escape", {
+    defaultPrevented: true,
+    target: rootSearchInput,
+  }) as unknown as KeyboardEvent);
+  assert.deepEqual(calls, ["close", "close"]);
+
+  const nestedSearchInput = {
+    closest: (selector: string) => selector.includes('role="dialog"')
+      ? { querySelector: () => ({ ariaLabel: "Back" }) }
+      : null,
+  } as unknown as EventTarget;
+  listener?.(keyboardEvent("Escape", {
+    defaultPrevented: true,
+    target: nestedSearchInput,
+  }) as unknown as KeyboardEvent);
+  assert.deepEqual(calls, ["close", "close"]);
+
   listener?.(keyboardEvent(",", { ctrlKey: true }) as unknown as KeyboardEvent);
   assert.deepEqual(calls, ["close", "settings"]);
 
