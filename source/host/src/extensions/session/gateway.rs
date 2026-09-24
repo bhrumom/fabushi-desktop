@@ -43,13 +43,55 @@ impl SessionGatewayError {
     }
 }
 
+fn recent_recovery_user_messages(
+    entries: &[Value],
+) -> Vec<crate::runner::conversation_state::RecoveryUserMessage> {
+    entries
+        .iter()
+        .filter(|entry| {
+            entry.get("kind").and_then(Value::as_str) == Some("message")
+                && entry.get("role").and_then(Value::as_str) == Some("user")
+                && entry.get("fromAgent").is_none_or(Value::is_null)
+                && entry.get("channel").is_none_or(Value::is_null)
+        })
+        .filter_map(|entry| {
+            let id = entry.get("id").and_then(Value::as_str)?.trim();
+            if id.is_empty() {
+                return None;
+            }
+            Some(crate::runner::conversation_state::RecoveryUserMessage {
+                id: id.to_string(),
+                text: entry
+                    .get("content")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_string(),
+                confirmed: entry.get("confirmed").and_then(Value::as_bool),
+            })
+        })
+        .collect()
+}
+
 pub fn persist_accepted_send_prompt(
     session: &Arc<ProductionSessionWorkers>,
     args: &Value,
     accepted: &Value,
 ) -> Result<Option<String>, SessionGatewayError> {
+    Ok(
+        persist_accepted_send_prompt_context(session, args, accepted)?
+            .echo_entry_id
+    )
+}
+
+pub fn persist_accepted_send_prompt_context(
+    session: &Arc<ProductionSessionWorkers>,
+    args: &Value,
+    accepted: &Value,
+) -> Result<crate::extensions::transcript::send_pipeline::PersistedSendContext, SessionGatewayError> {
+    use crate::extensions::transcript::send_pipeline::PersistedSendContext;
+
     if accepted.get("accepted").and_then(Value::as_bool) != Some(true) {
-        return Ok(None);
+        return Ok(PersistedSendContext::default());
     }
     let agent_id = args
         .get("agentId")
@@ -84,21 +126,32 @@ pub fn persist_accepted_send_prompt(
         .map_err(SessionGatewayError::internal)?;
 
     if let Some(client_nonce) = client_nonce.as_deref() {
-        let existing_echo = existing
+        let existing_user_message_id = existing
             .iter()
             .find(|entry| {
                 entry.get("clientNonce").and_then(Value::as_str) == Some(client_nonce)
                     && entry.get("kind").and_then(Value::as_str) == Some("message")
                     && entry.get("role").and_then(Value::as_str) == Some("user")
             })
-            .or_else(|| existing.iter().find(|entry| {
-                entry.get("clientNonce").and_then(Value::as_str) == Some(client_nonce)
-            }))
             .and_then(|entry| entry.get("id"))
             .and_then(Value::as_str)
             .map(ToOwned::to_owned);
-        if existing_echo.is_some() {
-            return Ok(existing_echo);
+        let existing_echo_id = existing_user_message_id.clone().or_else(|| {
+            existing
+                .iter()
+                .find(|entry| {
+                    entry.get("clientNonce").and_then(Value::as_str) == Some(client_nonce)
+                })
+                .and_then(|entry| entry.get("id"))
+                .and_then(Value::as_str)
+                .map(ToOwned::to_owned)
+        });
+        if existing_echo_id.is_some() {
+            return Ok(PersistedSendContext {
+                echo_entry_id: existing_echo_id,
+                user_message_id: existing_user_message_id,
+                recent_user_messages: recent_recovery_user_messages(&existing),
+            });
         }
     }
 
@@ -169,7 +222,11 @@ pub fn persist_accepted_send_prompt(
         mark_accepted_send_activity(session, agent_id, system_now_ms())
             .map_err(SessionGatewayError::internal)?;
     }
-    Ok(user_message_id.or(first_echo_id))
+    Ok(PersistedSendContext {
+        echo_entry_id: user_message_id.clone().or(first_echo_id),
+        user_message_id,
+        recent_user_messages: recent_recovery_user_messages(&existing),
+    })
 }
 
 pub fn dispatch_production_session_gateway_call(

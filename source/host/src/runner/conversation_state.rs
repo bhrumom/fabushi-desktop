@@ -12,6 +12,34 @@ pub struct RecentUserMessage {
     pub text: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecoveryUserMessage {
+    pub id: String,
+    pub text: String,
+    pub confirmed: Option<bool>,
+}
+
+pub fn would_recover_via_prepend(
+    recent_user_messages: &[RecoveryUserMessage],
+    current_message_id: &str,
+    message_id: &str,
+) -> bool {
+    let Some(current_index) = recent_user_messages
+        .iter()
+        .position(|message| message.id == current_message_id)
+    else {
+        return false;
+    };
+    let Some(target_index) = recent_user_messages
+        .iter()
+        .position(|message| message.id == message_id)
+    else {
+        return false;
+    };
+    target_index <= current_index
+        && recent_user_messages[target_index].confirmed != Some(true)
+}
+
 pub fn select_unconfirmed_user_messages(
     recent_user_messages: &[RecentUserMessage],
     current_message_id: Option<&str>,

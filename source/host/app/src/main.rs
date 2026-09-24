@@ -30,7 +30,7 @@ use mahayana_host_runtime::extensions::session::extension::start_session_extensi
 use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
-    persist_accepted_send_prompt,
+    persist_accepted_send_prompt_context,
 };
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
@@ -1296,7 +1296,7 @@ impl GatewayApi for UnifiedGatewayApi {
                             .map_err(map_gateway_send_error)
                     },
                     |accepted| {
-                        let persisted = persist_accepted_send_prompt(
+                        let persisted = persist_accepted_send_prompt_context(
                             &self.session_workers,
                             &durable_args,
                             accepted,

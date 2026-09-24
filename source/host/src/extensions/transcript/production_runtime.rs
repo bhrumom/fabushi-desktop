@@ -25,8 +25,9 @@ use super::run_scheduler::{
     RunLane, RunSettlement, WatchdogEvent,
 };
 use super::send_pipeline::{
-    HOST_ACCOUNT_SLOT, SendBegin, SendEchoIdentity, SendPipelineState,
+    HOST_ACCOUNT_SLOT, PersistedSendContext, SendBegin, SendEchoIdentity, SendPipelineState,
 };
+use super::turn_runtime::{QueuedTurnRecoveryCheck, should_supersede_stale_turn};
 use super::send_turn_dispatch::{ProductionTurnDispatch, UserTurnTicket};
 use super::upgrade_recreate_resume::{
     UpgradeQuiesceSummary, UpgradeRecreateResume,
@@ -235,7 +236,7 @@ impl ProductionTranscriptRuntime {
         })
     }
 
-    pub fn execute_send<Dispatch, Persist>(
+    pub fn execute_send<Dispatch, Persist, Persisted>(
         &self,
         args: &Value,
         dispatch: Dispatch,
@@ -243,12 +244,13 @@ impl ProductionTranscriptRuntime {
     ) -> Result<Value, ProductionSendError>
     where
         Dispatch: FnOnce() -> Result<Value, ProductionSendError>,
-        Persist: Fn(&Value) -> Result<Option<String>, ProductionSendError>,
+        Persist: Fn(&Value) -> Result<Persisted, ProductionSendError>,
+        Persisted: Into<PersistedSendContext>,
     {
         self.execute_send_with_watchdog(args, dispatch, persist_accepted, |_| false)
     }
 
-    pub fn execute_send_with_watchdog<Dispatch, Persist, Watchdog>(
+    pub fn execute_send_with_watchdog<Dispatch, Persist, Persisted, Watchdog>(
         &self,
         args: &Value,
         dispatch: Dispatch,
@@ -257,13 +259,14 @@ impl ProductionTranscriptRuntime {
     ) -> Result<Value, ProductionSendError>
     where
         Dispatch: FnOnce() -> Result<Value, ProductionSendError>,
-        Persist: Fn(&Value) -> Result<Option<String>, ProductionSendError>,
+        Persist: Fn(&Value) -> Result<Persisted, ProductionSendError>,
+        Persisted: Into<PersistedSendContext>,
         Watchdog: Fn(&WatchdogEvent) -> bool,
     {
         self.execute_send_with_queue_observers(args, dispatch, persist_accepted, on_watchdog, |_| {}, |_| {})
     }
 
-    pub fn execute_send_with_queue_observers<Dispatch, Persist, Watchdog, QueueAcceptedObserver, QueueDequeuedObserver>(
+    pub fn execute_send_with_queue_observers<Dispatch, Persist, Persisted, Watchdog, QueueAcceptedObserver, QueueDequeuedObserver>(
         &self,
         args: &Value,
         dispatch: Dispatch,
@@ -274,7 +277,8 @@ impl ProductionTranscriptRuntime {
     ) -> Result<Value, ProductionSendError>
     where
         Dispatch: FnOnce() -> Result<Value, ProductionSendError>,
-        Persist: Fn(&Value) -> Result<Option<String>, ProductionSendError>,
+        Persist: Fn(&Value) -> Result<Persisted, ProductionSendError>,
+        Persisted: Into<PersistedSendContext>,
         Watchdog: Fn(&WatchdogEvent) -> bool,
         QueueAcceptedObserver: Fn(&QueueAccepted),
         QueueDequeuedObserver: Fn(&QueueDequeued),
@@ -291,11 +295,27 @@ impl ProductionTranscriptRuntime {
         };
         let dispatch_source = if is_ack_redrive { "ack-redrive" } else { "turn" };
         let dispatch_ack_token = optional_non_empty(args, "ackToken");
+        let is_fork = optional_bool(args, "isFork")?.unwrap_or(false);
+        let has_reply_context = optional_non_empty(args, "replyToId").is_some()
+            || args.get("replyContext").is_some_and(|value| !value.is_null());
+        let attachment_count = input.attachment_paths.len();
+        let image_count = args
+            .get("selectedImages")
+            .and_then(Value::as_array)
+            .map(Vec::len)
+            .unwrap_or_default();
+        let video_count = args
+            .get("selectedVideos")
+            .and_then(Value::as_array)
+            .map(Vec::len)
+            .unwrap_or_default();
         let mut turn_ticket: Option<UserTurnTicket> = None;
         let mut turn_generation: Option<u64> = None;
+        let mut turn_epoch: Option<u64> = None;
         let mut queue_accepted_event: Option<QueueAccepted> = None;
         let mut queue_dequeued_event: Option<QueueDequeued> = None;
         let mut persisted_echo_entry_id: Option<String> = None;
+        let mut persisted_send_context = PersistedSendContext::default();
 
         let mut state = self.lock_state();
         loop {
@@ -333,8 +353,10 @@ impl ProductionTranscriptRuntime {
                     // admission or provider execution fails afterwards.
                     let synthetic_acceptance = json!({ "accepted": true });
                     match persist_accepted(&synthetic_acceptance) {
-                        Ok(echo_entry_id) => {
-                            persisted_echo_entry_id = echo_entry_id;
+                        Ok(persisted) => {
+                            persisted_send_context = persisted.into();
+                            persisted_echo_entry_id =
+                                persisted_send_context.echo_entry_id.clone();
                         }
                         Err(error) => {
                             let failure = Err(error.clone());
@@ -388,7 +410,14 @@ impl ProductionTranscriptRuntime {
                         state
                             .lifecycle
                             .begin_session_run(agent_id, accepted_at_ms, false);
-                        state.pipeline.next_turn_epoch(agent_id);
+                        let epoch = state.pipeline.next_turn_epoch(agent_id);
+                        state.pipeline.register_recovery_turn(
+                            agent_id,
+                            epoch,
+                            &persisted_send_context,
+                            is_fork,
+                        );
+                        turn_epoch = Some(epoch);
                         let (ticket, accepted, started) = state
                             .turn_dispatch
                             .enqueue_turn_with_start(
@@ -457,9 +486,35 @@ impl ProductionTranscriptRuntime {
                 }
             }
         }
+        let suppress_stale_turn = match (agent_id.as_deref(), turn_epoch) {
+            (Some(agent_id), Some(epoch)) => should_supersede_stale_turn(
+                QueuedTurnRecoveryCheck {
+                    epoch,
+                    current_epoch: state.pipeline.current_turn_epoch(agent_id),
+                    recovery_break_epoch: state.pipeline.recovery_break_epoch(agent_id),
+                    prompt: &input.prompt,
+                    context: &persisted_send_context,
+                    latest_recovery: state.pipeline.latest_recovery_send(agent_id),
+                    is_fork,
+                    has_reply_context,
+                    attachment_count,
+                    image_count,
+                    video_count,
+                },
+            ),
+            _ => false,
+        };
         drop(state);
 
-        let mut result = dispatch();
+        let mut result = if suppress_stale_turn {
+            Ok(json!({
+                "accepted": true,
+                "superseded": true,
+                "echoEntryId": persisted_send_context.echo_entry_id,
+            }))
+        } else {
+            dispatch()
+        };
 
         let mut state = self.lock_state();
         let accepted = result

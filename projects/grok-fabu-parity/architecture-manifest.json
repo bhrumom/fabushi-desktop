@@ -14436,7 +14436,10 @@
         "source/host/src/extensions/transcript/run_scheduler.rs",
         "source/node-agent-coordinator/src/inference_router.rs",
         "source/node-agent-coordinator/src/main.rs",
-        "source/host/src/runner/production_turn_input_projection.rs"
+        "source/host/src/runner/production_turn_input_projection.rs",
+        "source/host/src/extensions/transcript/send_pipeline.rs",
+        "source/host/src/extensions/transcript/turn_runtime.rs",
+        "source/host/src/runner/conversation_state.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14448,9 +14451,10 @@
         "source/host/tests/transcript_send_acceptance_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs",
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
-        "source/host/tests/production_turn_input_projection_contract.rs"
+        "source/host/tests/production_turn_input_projection_contract.rs",
+        "source/host/tests/turn_runtime_recovery_contract.rs"
       ],
-      "notes": "Rust send pipeline is production-composed by ProductionTranscriptRuntime and shipping Host Gateway. Nonce admission/coalescing/replay, durable Session echo, failure retry clearing, acceptance lookup, turn epochs and attachment batch identity are present; same-agent sends serialize through RunScheduler with watchdog escape. Durable addressed user admission now occurs immediately after nonce admission and before per-agent queue/Host-Runner dispatch, with pending acceptance recorded against that real echo identity; provider/Host failure leaves the durable user intent while clearing unaccepted nonce state, matching frozen recovery prerequisites. Shipping Host performs frozen media materialization before Coordinator dispatch. Independent Coordinator direct user sends supersede accepted/in-admission provider streams. Final remains withheld for exact recovery epoch/prepend suppression, group fanout, direct Runner dispatch ownership, remaining ack/recovery guard composition, and full generated Agent media consumption."
+      "notes": "Production Rust send pipeline owns nonce admission/coalescing/replay, durable Session echo, acceptance state, queue/watchdog dispatch, turn epochs and attachment batch identity. Frozen latestRecoverySends/recoveryBreakEpochs are now populated from the authoritative durable user echo, and shipping turn-runtime suppresses a stale queued plain-text turn only when the newest durable recent-user sequence satisfies the exact SandAgentRunner wouldRecoverViaPrepend ordering/confirmed contract. Superseded user intent remains durable. Final remains withheld for group fanout, complete direct Runner invocation ownership, remaining ack/recovery guard composition, generated Agent confirmed-watermark side effect, and full generated Agent media consumption."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",
@@ -14620,12 +14624,24 @@
       "targetPath": "source/host/src/extensions/transcript/turn_runtime.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "af5c98f64f25396925da8d462e6a6d72d1adaf43",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/turn_runtime.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/src/extensions/transcript/send_pipeline.rs",
+        "source/host/src/runner/conversation_state.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/turn_runtime_recovery_contract.rs",
+        "source/host/tests/transcript_production_composition_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Real shipping slice of frozen TurnRuntime: queued-turn recovery suppression uses current/recovery-break epochs, durable message identity/history, no-media/no-fork/no-reply/raw-text guards, latest recovery epoch and exact SandAgentRunner prepend ordering/confirmed semantics before Host dispatch. A three-send production contract proves the middle stale turn remains durably accepted but never dispatches while the newest turn proceeds. Final remains withheld for update projection, request/usage lifecycle, reply nudges/empty-delivery telemetry, tool diagnostics/status settlement, reactions, automation emission and generated Agent confirmed-watermark side effect."
     },
     {
       "referencePath": "source/host/extensions/transcript/upgrade-recreate-resume.ts",

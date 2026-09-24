@@ -3,6 +3,7 @@ pub mod run_scheduler;
 pub mod runner_registry;
 pub mod send_pipeline;
 pub mod send_turn_dispatch;
+pub mod turn_runtime;
 pub mod send_acceptance;
 pub mod run_lifecycle;
 pub mod group_chat_orchestrator;

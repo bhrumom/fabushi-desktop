@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use uuid::Uuid;
 
+use crate::runner::conversation_state::RecoveryUserMessage;
+
 use super::prompt_acceptance_ledger::{
     AcceptanceRecord, PromptAcceptanceError, PromptAcceptanceLedger, SendAdmission, SendInput,
     send_input_digest,
@@ -30,6 +32,30 @@ pub struct SendEchoIdentity {
     pub echo_entry_id: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PersistedSendContext {
+    pub echo_entry_id: Option<String>,
+    pub user_message_id: Option<String>,
+    pub recent_user_messages: Vec<RecoveryUserMessage>,
+}
+
+impl From<Option<String>> for PersistedSendContext {
+    fn from(echo_entry_id: Option<String>) -> Self {
+        Self {
+            echo_entry_id,
+            user_message_id: None,
+            recent_user_messages: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecoverySend {
+    pub epoch: u64,
+    pub message_id: String,
+    pub recent_user_messages: Vec<RecoveryUserMessage>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct InFlightSend {
     digest: String,
@@ -39,6 +65,8 @@ struct InFlightSend {
 pub struct SendPipelineState {
     in_flight: HashMap<String, InFlightSend>,
     turn_epochs: HashMap<String, u64>,
+    latest_recovery_sends: HashMap<String, RecoverySend>,
+    recovery_break_epochs: HashMap<String, u64>,
     attachment_batch_ids: HashMap<String, String>,
 }
 
@@ -160,6 +188,45 @@ impl SendPipelineState {
 
     pub fn current_turn_epoch(&self, agent_id: &str) -> u64 {
         self.turn_epochs.get(agent_id).copied().unwrap_or(0)
+    }
+
+    pub fn register_recovery_turn(
+        &mut self,
+        agent_id: &str,
+        epoch: u64,
+        context: &PersistedSendContext,
+        is_fork: bool,
+    ) {
+        let message_id = context
+            .user_message_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        if !is_fork && !context.recent_user_messages.is_empty() {
+            if let Some(message_id) = message_id {
+                self.latest_recovery_sends.insert(
+                    agent_id.to_string(),
+                    RecoverySend {
+                        epoch,
+                        message_id: message_id.to_string(),
+                        recent_user_messages: context.recent_user_messages.clone(),
+                    },
+                );
+                return;
+            }
+        }
+        self.recovery_break_epochs.insert(agent_id.to_string(), epoch);
+    }
+
+    pub fn latest_recovery_send(&self, agent_id: &str) -> Option<&RecoverySend> {
+        self.latest_recovery_sends.get(agent_id)
+    }
+
+    pub fn recovery_break_epoch(&self, agent_id: &str) -> u64 {
+        self.recovery_break_epochs
+            .get(agent_id)
+            .copied()
+            .unwrap_or_default()
     }
 
     pub fn claim_attachment_batch_id(&mut self, agent_id: &str) -> String {

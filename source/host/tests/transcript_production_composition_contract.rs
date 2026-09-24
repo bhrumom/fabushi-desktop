@@ -7,6 +7,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
+use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
+use mahayana_host_runtime::runner::conversation_state::RecoveryUserMessage;
 use mahayana_host_runtime::extensions::transcript::run_scheduler::{
     QueueAccepted, QueueDequeued, RunLane, WatchdogStage,
 };
@@ -481,5 +483,124 @@ fn production_runtime_quiesce_reports_running_agents_and_blocks_until_resume() {
     assert!(!runtime.is_quiescing_for_upgrade());
     runtime.end_provider_run("agent-a");
     runtime.end_provider_run("agent-b");
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn stale_queued_user_turn_is_superseded_when_latest_turn_can_recover_via_prepend() {
+    let root = temp_root("recovery-prepend");
+    let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let (first_entered_tx, first_entered_rx) = mpsc::channel();
+    let (release_first_tx, release_first_rx) = mpsc::channel();
+    let (second_persisted_tx, second_persisted_rx) = mpsc::channel();
+    let (third_persisted_tx, third_persisted_rx) = mpsc::channel();
+    let second_dispatched = Arc::new(AtomicBool::new(false));
+    let third_dispatched = Arc::new(AtomicBool::new(false));
+
+    let first_runtime = Arc::clone(&runtime);
+    let first = thread::spawn(move || {
+        let args = serde_json::json!({
+            "agentId":"agent-recovery",
+            "prompt":"first",
+            "clientNonce":"recovery-first"
+        });
+        first_runtime.execute_send(
+            &args,
+            || {
+                first_entered_tx.send(()).expect("first entered");
+                release_first_rx.recv().expect("release first");
+                Ok(serde_json::json!({"accepted":true,"operationId":"op-first"}))
+            },
+            |_| Ok(PersistedSendContext {
+                echo_entry_id: Some("msg-1".into()),
+                user_message_id: Some("msg-1".into()),
+                recent_user_messages: vec![
+                    RecoveryUserMessage { id:"msg-1".into(), text:"first".into(), confirmed:None },
+                ],
+            }),
+        ).expect("first send")
+    });
+    first_entered_rx.recv_timeout(Duration::from_secs(5)).expect("first active");
+
+    let second_runtime = Arc::clone(&runtime);
+    let second_dispatched_flag = Arc::clone(&second_dispatched);
+    let second = thread::spawn(move || {
+        let args = serde_json::json!({
+            "agentId":"agent-recovery",
+            "prompt":"second",
+            "clientNonce":"recovery-second"
+        });
+        second_runtime.execute_send(
+            &args,
+            move || {
+                second_dispatched_flag.store(true, Ordering::SeqCst);
+                Ok(serde_json::json!({"accepted":true,"operationId":"op-second"}))
+            },
+            move |_| {
+                second_persisted_tx.send(()).expect("second persisted");
+                Ok(PersistedSendContext {
+                    echo_entry_id: Some("msg-2".into()),
+                    user_message_id: Some("msg-2".into()),
+                    recent_user_messages: vec![
+                        RecoveryUserMessage { id:"msg-1".into(), text:"first".into(), confirmed:None },
+                        RecoveryUserMessage { id:"msg-2".into(), text:"second".into(), confirmed:None },
+                    ],
+                })
+            },
+        ).expect("second send")
+    });
+    second_persisted_rx.recv_timeout(Duration::from_secs(5)).expect("second persisted signal");
+
+    let third_runtime = Arc::clone(&runtime);
+    let third_dispatched_flag = Arc::clone(&third_dispatched);
+    let third = thread::spawn(move || {
+        let args = serde_json::json!({
+            "agentId":"agent-recovery",
+            "prompt":"third",
+            "clientNonce":"recovery-third"
+        });
+        third_runtime.execute_send(
+            &args,
+            move || {
+                third_dispatched_flag.store(true, Ordering::SeqCst);
+                Ok(serde_json::json!({"accepted":true,"operationId":"op-third"}))
+            },
+            move |_| {
+                third_persisted_tx.send(()).expect("third persisted");
+                Ok(PersistedSendContext {
+                    echo_entry_id: Some("msg-3".into()),
+                    user_message_id: Some("msg-3".into()),
+                    recent_user_messages: vec![
+                        RecoveryUserMessage { id:"msg-1".into(), text:"first".into(), confirmed:None },
+                        RecoveryUserMessage { id:"msg-2".into(), text:"second".into(), confirmed:None },
+                        RecoveryUserMessage { id:"msg-3".into(), text:"third".into(), confirmed:None },
+                    ],
+                })
+            },
+        ).expect("third send")
+    });
+    third_persisted_rx.recv_timeout(Duration::from_secs(5)).expect("third persisted signal");
+
+    for _ in 0..100 {
+        if runtime.current_turn_epoch("agent-recovery") == 3 {
+            break;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    assert_eq!(runtime.current_turn_epoch("agent-recovery"), 3);
+
+    release_first_tx.send(()).expect("release first");
+    assert_eq!(first.join().expect("first thread")["operationId"], "op-first");
+    let second_result = second.join().expect("second thread");
+    assert_eq!(second_result["accepted"], true);
+    assert_eq!(second_result["superseded"], true);
+    assert!(!second_dispatched.load(Ordering::SeqCst));
+    let third_result = third.join().expect("third thread");
+    assert_eq!(third_result["operationId"], "op-third");
+    assert!(third_dispatched.load(Ordering::SeqCst));
+    assert!(runtime.is_turn_dispatch_idle("agent-recovery"));
+    assert_eq!(runtime.in_flight_run_count("agent-recovery"), 0);
+
     let _ = fs::remove_dir_all(root);
 }
