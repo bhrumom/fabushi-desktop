@@ -412,6 +412,38 @@ fn production_send_runtime_emits_shipping_queue_observers() {
 }
 
 #[test]
+fn production_roster_projection_uses_process_epoch_and_monotonic_snapshot_sequence() {
+    let root = temp_root("roster-stamps");
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    let epoch = runtime.roster_process_epoch().to_string();
+    assert!(!epoch.is_empty());
+
+    let mut first = serde_json::json!([
+        {"id":"agent-a","name":"A"},
+        {"id":"agent-b","name":"B"}
+    ]);
+    runtime.decorate_agent_summaries(&mut first);
+    assert_eq!(first[0]["snapshotEpoch"], epoch);
+    assert_eq!(first[1]["snapshotEpoch"], epoch);
+    assert_eq!(first[0]["snapshotSeq"], 1);
+    assert_eq!(first[1]["snapshotSeq"], 1);
+
+    let mut second = serde_json::json!([{"id":"agent-a","name":"A"}]);
+    runtime.decorate_agent_summaries(&mut second);
+    assert_eq!(second[0]["snapshotEpoch"], epoch);
+    assert_eq!(second[0]["snapshotSeq"], 2);
+
+    let roster_stamp = runtime.next_replica_stamp("roster");
+    assert_eq!(roster_stamp.replica_key, "roster");
+    assert_eq!(roster_stamp.epoch, epoch);
+    assert_eq!(roster_stamp.sequence, 1);
+    let transcript_stamp = runtime.next_replica_stamp("transcript:agent-a");
+    assert_eq!(transcript_stamp.sequence, 1);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn production_runtime_quiesce_reports_running_agents_and_blocks_until_resume() {
     let root = temp_root("upgrade-quiesce");
     let runtime = ProductionTranscriptRuntime::new(Some(&root));

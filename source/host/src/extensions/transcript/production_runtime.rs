@@ -1,5 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Condvar, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -16,6 +17,7 @@ use super::run_lifecycle::RunLifecycleState;
 use super::sand_pending_wake_store::SandPendingWakeStore;
 use super::sand_upgrade_resume_store::SandUpgradeResumeStore;
 use super::session_runtime::SessionRuntime;
+use super::replica_writer::HostReplicaWriter;
 use super::run_scheduler::{
     QueueAccepted, QueueDequeued, RUN_WATCHDOG_DEFAULT_MS, RUN_WATCHDOG_GRACE_DEFAULT_MS,
     RunLane, RunSettlement, WatchdogEvent,
@@ -59,6 +61,8 @@ pub struct ProductionTranscriptRuntime {
     upgrade_resume_store: Option<SandUpgradeResumeStore>,
     upgrade_recreate_resume: UpgradeRecreateResume,
     session_runtime: SessionRuntime,
+    replica_writer: HostReplicaWriter,
+    roster_snapshot_seq: AtomicU64,
 }
 
 impl ProductionTranscriptRuntime {
@@ -95,6 +99,8 @@ impl ProductionTranscriptRuntime {
             upgrade_resume_store,
             upgrade_recreate_resume: UpgradeRecreateResume::default(),
             session_runtime: SessionRuntime::new(),
+            replica_writer: HostReplicaWriter::new(),
+            roster_snapshot_seq: AtomicU64::new(0),
         }
     }
 
@@ -472,6 +478,11 @@ impl ProductionTranscriptRuntime {
     }
 
     pub fn decorate_agent_summaries(&self, value: &mut Value) {
+        let snapshot_epoch = self.replica_writer.process_epoch().to_string();
+        let snapshot_seq = self
+            .roster_snapshot_seq
+            .fetch_add(1, Ordering::SeqCst)
+            .saturating_add(1);
         let state = self.lock_state();
         let Some(rows) = value.as_array_mut() else {
             return;
@@ -504,7 +515,26 @@ impl ProductionTranscriptRuntime {
                 Value::Null
             };
             object.insert("currentActivity".into(), current_activity);
+            object.insert(
+                "snapshotEpoch".into(),
+                Value::String(snapshot_epoch.clone()),
+            );
+            object.insert(
+                "snapshotSeq".into(),
+                Value::Number(snapshot_seq.into()),
+            );
         }
+    }
+
+    pub fn roster_process_epoch(&self) -> &str {
+        self.replica_writer.process_epoch()
+    }
+
+    pub fn next_replica_stamp(
+        &self,
+        replica_key: &str,
+    ) -> super::replica_writer::ReplicaStamp {
+        self.replica_writer.next_stamp(replica_key)
     }
 
     pub fn current_turn_epoch(&self, agent_id: &str) -> u64 {
