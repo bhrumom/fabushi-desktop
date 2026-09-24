@@ -1,13 +1,29 @@
 use std::fs;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::conversation_size_limits::ConversationSizePolicy;
+use sha2::{Digest, Sha256};
 use mahayana_host_runtime::extensions::session::session_paths::{
     CONVERSATION_BLOBS_FILENAME, STORE_FILENAME,
 };
 
 fn to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+fn encode_varint(mut value: u64, output: &mut Vec<u8>) {
+    while value >= 0x80 {
+        output.push((value as u8) | 0x80);
+        value >>= 7;
+    }
+    output.push(value as u8);
+}
+
+fn push_len(field: u64, value: &[u8], output: &mut Vec<u8>) {
+    encode_varint((field << 3) | 2, output);
+    encode_varint(value.len() as u64, output);
+    output.extend_from_slice(value);
 }
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -218,5 +234,72 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
 
     runtime.shutdown();
     assert_eq!(runtime.active_worker_count(), 0);
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_session_open_owns_frozen_soft_gc_schedule_wiring() {
+    let root = temp_root("soft-gc");
+    let runtime = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let record = runtime
+        .materialize_new_session(None, "user", None)
+        .expect("materialized agent");
+    let store = runtime
+        .create_agent_blob_store(&record.id)
+        .expect("blob store");
+
+    let reachable = vec![0x41; 256];
+    let reachable_id = Sha256::digest(&reachable).to_vec();
+    let orphan = vec![0x52; 512];
+    let orphan_id = Sha256::digest(&orphan).to_vec();
+    futures::executor::block_on(store.set_blob(&(), &reachable_id, &reachable))
+        .expect("reachable blob");
+    futures::executor::block_on(store.set_blob(&(), &orphan_id, &orphan))
+        .expect("orphan blob");
+
+    let mut root_blob = Vec::new();
+    push_len(1, &reachable_id, &mut root_blob);
+    let root_id = Sha256::digest(&root_blob).to_vec();
+    futures::executor::block_on(store.set_blob(&(), &root_id, &root_blob))
+        .expect("root blob");
+    let db = runtime.open_agent_db_owner(&record.id).expect("db owner");
+    assert!(db
+        .compare_and_set_latest_root_blob_id(&[], &root_id)
+        .expect("persist root"));
+
+    let prepared = runtime
+        .prepare_existing_agent(&record.id)
+        .expect("prepare")
+        .expect("prepared");
+    assert_eq!(prepared.persisted_root_blob_id, root_id);
+
+    assert!(runtime.schedule_conversation_size_maintenance(
+        &prepared,
+        ConversationSizePolicy {
+            enabled: true,
+            soft_limit_bytes: 1,
+            hard_limit_bytes: 64 * 1024 * 1024,
+        },
+    ));
+
+    let mut orphan_collected = false;
+    for _ in 0..200 {
+        if futures::executor::block_on(store.get_blob(&(), &orphan_id))
+            .expect("orphan read")
+            .is_none()
+        {
+            orphan_collected = true;
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    assert!(orphan_collected, "scheduled production soft GC did not collect orphan");
+    assert_eq!(
+        futures::executor::block_on(store.get_blob(&(), &root_id)).expect("root read"),
+        Some(root_blob)
+    );
+
+    runtime.shutdown();
     let _ = fs::remove_dir_all(root);
 }

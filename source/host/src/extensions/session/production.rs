@@ -1296,7 +1296,7 @@ impl ProductionSessionWorkers {
             self.busy_timeout_ms,
         )?;
 
-        Ok(Some(PreparedAgentBlobStore {
+        let prepared = PreparedAgentBlobStore {
             agent_id: agent_id.to_string(),
             session_db_path,
             blob_db_path: store.blob_db_path.clone(),
@@ -1305,7 +1305,30 @@ impl ProductionSessionWorkers {
             session_state,
             transcript_tail,
             profile_file,
-        }))
+        };
+        let _ = self.schedule_conversation_size_maintenance(
+            &prepared,
+            ConversationSizePolicy::from_environment(),
+        );
+        Ok(Some(prepared))
+    }
+
+    pub fn schedule_conversation_size_maintenance(
+        &self,
+        prepared: &PreparedAgentBlobStore,
+        policy: ConversationSizePolicy,
+    ) -> bool {
+        self.conversation_size_maintenance
+            .schedule_conversation_size_maintenance(
+                Arc::clone(&self.pool),
+                ConversationGcTarget::from_root(
+                    prepared.agent_id.clone(),
+                    prepared.blob_db_path.clone(),
+                    prepared.session_db_path.clone(),
+                    &prepared.persisted_root_blob_id,
+                ),
+                policy,
+            )
     }
 
     pub fn ensure_capacity_for_turn(
