@@ -13917,16 +13917,19 @@
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/box_request_entries.rs",
         "source/host/src/extensions/transcript/box_handoff_resume.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/runner/tools/box_help_tool.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/box_request_entries_contract.rs",
         "source/host/tests/box_handoff_resume_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/box_help_tool_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust owner now restores the frozen unresolved send-message box-request recognition, same-agent supersede decision, and durable requestId-specific boxResolution mutation through ProductionSessionWorkers. BoxHandoffResume consumes this owner on the shipping handback path. Final remains withheld because the shipping SendMessage/TranscriptManager path does not yet invoke track_box_request_entry when a new request card is appended, so prior active requests are not yet automatically dismissed at card creation and in-memory activeBoxRequest identity is not yet the authoritative live owner."
+      "notes": "Rust owner restores unresolved box-request recognition, same-agent supersede decisions and durable requestId-specific resolution. Shipping request_box_help now creates the frozen stamped boxRequestId/boxInstruction card and handBackForeverBox resolves it. Final remains withheld because new-card production still appends directly rather than invoking the stateful tracker, so automatic dismissal of a previously tracked same-Agent request and authoritative activeBoxRequest identity remain to wire."
     },
     {
       "referencePath": "source/host/extensions/transcript/channel-delivery-unregistered-error.ts",
@@ -14244,7 +14247,9 @@
         "source/host/src/extensions/telemetry/queue_telemetry_mappers.rs",
         "source/host/src/extensions/transcript/session_runtime.rs",
         "source/host/src/extensions/transcript/transcript_manager.rs",
-        "source/node-agent-coordinator/src/main.rs"
+        "source/node-agent-coordinator/src/main.rs",
+        "source/host/src/runner/tools/box_help_tool.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14263,7 +14268,9 @@
         "source/host/tests/transcript_session_runtime_contract.rs",
         "source/host/tests/ack_obligations_contract.rs",
         "source/host/tests/transcript_manager_contract.rs",
-        "source/host/tests/routed_send_acceptance_contract.rs"
+        "source/host/tests/routed_send_acceptance_contract.rs",
+        "source/host/tests/box_help_tool_contract.rs",
+        "source/host/tests/production_turn_agent_owner_contract.rs"
       ],
       "notes": "Shipping ProductionTranscriptRuntime owns user/provider run counts, visible running/composing/retrying activity, request IDs and queue/watchdog settlement. Non-Cursor routed provider turns now hold the same Session run window from durable Host admission through actual Runner terminal via a stream-keyed RunScheduler lease; spawn/start errors release the lease fail-closed, and terminal settlement wakes the next turn. Live-session retirement remains fenced until both the routed lease and provider run are settled. Durable ack redrive uses per-Agent +5s boot/idle schedules. Final remains withheld for subagent-parent projection and group/remote-member run accounting."
     },
@@ -14535,9 +14542,10 @@
         "source/host/tests/transcript_manager_contract.rs",
         "source/host/tests/production_agent_checkpoint_contract.rs",
         "source/host/tests/routed_send_acceptance_contract.rs",
-        "source/host/tests/gateway_server_contract.rs"
+        "source/host/tests/gateway_server_contract.rs",
+        "source/host/tests/turn_settle_checkpoint_contract.rs"
       ],
-      "notes": "Production Rust send pipeline owns nonce admission/coalescing/replay, durable Session echo, acceptance/recovery state, queue/watchdog dispatch, turn epochs, attachment batch identity, recovery sends/break epochs and stale queued-turn suppression. Non-Cursor Coordinator admission now carries the final streamId into runner.acceptRoutedPrompt; Host acquires and retains a per-Agent RunScheduler lease keyed by that stream before runner.startRoutedProvider is allowed, and the lease is released only on real Runner terminal/spawn-error cleanup. A queued routed send cannot become active before the prior Runner terminal, and terminal settlement starts/wakes the next queued turn. Durable ack obligation creation remains Host-owned. Final remains withheld for group fanout, the remaining ack/recovery guard composition, generated Agent confirmed-watermark side effect and full generated Agent media consumption."
+      "notes": "Production Rust send pipeline owns nonce admission/coalescing/replay, durable Session echo, acceptance/recovery state, queue/watchdog dispatch, turn epochs, attachment batch identity, recovery sends/break epochs and stale queued-turn suppression. Non-Cursor Coordinator admission carries streamId into runner.acceptRoutedPrompt and Host retains a per-Agent RunScheduler lease through real Runner terminal. Durable ack obligations remain Host-owned. Generated Agent checkpoint settlement now atomically advances latestRootBlobId and confirms the exact user echo; missing echo aborts root advancement. Final remains withheld for real group/shared-room fanout, remaining ack/recovery guard composition and full generated Agent media consumption."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",
@@ -16499,12 +16507,25 @@
       "targetPath": "source/host/src/runner/tools/box_help_tool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "89233c562c53c380f4ec8dc397090236e58342f0",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/box_help_tool.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/session/box_handoff_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_help_tool_contract.rs",
+        "source/host/tests/production_turn_agent_owner_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust first-party request_box_help is composed into shipping provider turns. It normalizes frozen telemetry domains, starts BoxHandoffService, emits the stamped user-visible request card, fulfills the durable ack obligation, ends provider continuation with a dedicated waiting-user cancellation, and ProductionTurnAgentOwner settles that cancellation as WaitingUser. Host emits a terminal waitingUser completion so the renderer cannot retain a dangling turn."
     },
     {
       "referencePath": "source/host/runner/tools/communicate-tool.ts",
@@ -16915,14 +16936,16 @@
         "source/host/src/runner/routed_provider_runtime.rs",
         "source/host/app/src/main.rs",
         "source/host/src/runner/tools/send_message_tool.rs",
-        "source/host/src/runner/tools/sand_reaction_tool.rs"
+        "source/host/src/runner/tools/sand_reaction_tool.rs",
+        "source/host/src/runner/tools/box_help_tool.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
         "source/host/tests/runner_routed_provider_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/send_message_tool_contract.rs",
-        "source/host/tests/sand_reaction_tool_contract.rs"
+        "source/host/tests/sand_reaction_tool_contract.rs",
+        "source/host/tests/box_help_tool_contract.rs"
       ],
       "notes": "A real shipping TurnAgentComposition now owns provider selection, routed Host tool bridge, request-context projection, cancellation and durable checkpoint store, and invokes the independent Runner routed-provider runtime. The frozen Grok composition also builds the full Agent/tool-session/resource-projection/MCP/static-config stream graph; those Agent construction surfaces are not yet represented by this Rust slice, so the mapping remains non-final. Shipping TurnAgentComposition now wraps the delegated MCP/box tool bridge with the first-party SendMessage tool and a Host-injected Session sink, so user-visible Runner tool output is durably transcript-owned rather than prose-only. Shipping TurnAgentComposition also inserts the frozen ReactToMessage first-party tool and routes its authoritative mutation through the Host reaction gateway; the broader frozen Agent/tool-session/resource/subagent graph remains non-final."
     },

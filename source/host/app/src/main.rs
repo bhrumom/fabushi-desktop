@@ -23,8 +23,8 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::extensions::memory::extension::HostMemoryExtension;
 use mahayana_host_runtime::extensions::memory::production::start_production_memory_extension;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
-    BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffTrigger, PendingHandoff,
-    ScreenshotPayload, decide_box_hand_back,
+    BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
+    HandoffTelemetry, HandoffTrigger, PendingHandoff, ScreenshotPayload, decide_box_hand_back,
 };
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
@@ -118,6 +118,7 @@ use mahayana_host_runtime::attachment_paths::{
 use mahayana_host_runtime::runner::tools::send_message_encoding::{
     image_mime_from_path, resolve_box_media_attachment,
 };
+use mahayana_host_runtime::runner::tools::box_help_tool::{BoxHelpOutcome, BoxHelpRequest};
 use mahayana_host_runtime::runner::tools::send_message_tool::{
     ResolvedAttachmentSource, SendMessageSink, file_path_from_file_url,
 };
@@ -297,6 +298,7 @@ const RUNNER_INFERENCE_EVENT_CHANNEL: &str = "runner-inference";
 struct ProductionSendMessageSink {
     sessions: Arc<ProductionSessionWorkers>,
     forever_box: Arc<ForeverBoxService>,
+    session_handoff: BoxHandoffService,
     ack_obligations: Arc<AckObligations>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     ack_token: Option<String>,
@@ -315,9 +317,75 @@ impl ProductionSendMessageSink {
         let path = persist_agent_media_bytes(agent_dir, source_name, bytes, kind).ok()?;
         file_url_for_path(path)
     }
+
+    fn fulfill_ack_obligation(&self) {
+        if let Some(ack_token) = self.ack_token.as_deref() {
+            if let Err(error) = self
+                .ack_obligations
+                .fulfill_ack_obligation(&self.agent_id, ack_token)
+            {
+                eprintln!(
+                    "mahayana-host-ack fulfill_failed agent={} error={error}",
+                    self.agent_id
+                );
+            }
+        }
+    }
 }
 
 impl SendMessageSink for ProductionSendMessageSink {
+    fn request_box_help(
+        &self,
+        request: BoxHelpRequest,
+        timestamp_ms: u64,
+        tool_call_id: &str,
+    ) -> Result<BoxHelpOutcome, ProviderSessionError> {
+        let outcome = self.session_handoff.start(HandoffRequest {
+            agent_id: self.agent_id.clone(),
+            instruction: request.instruction.clone(),
+            telemetry: HandoffTelemetry {
+                reason: request.reason,
+                domain: request.domain,
+                idp_domain: request.idp_domain,
+            },
+        });
+        match outcome {
+            HandoffStartResult::AlreadyPending { request_id, instruction } => {
+                Ok(BoxHelpOutcome::AlreadyPending { request_id, instruction })
+            }
+            HandoffStartResult::Started { request_id } => {
+                let entry = serde_json::json!({
+                    "id": format!("runner-box-help:{tool_call_id}"),
+                    "kind": "send-message",
+                    "message": {
+                        "type": "text",
+                        "content": request.instruction.clone(),
+                    },
+                    "timestampMs": timestamp_ms,
+                    "boxRequestId": request_id.clone(),
+                    "boxInstruction": request.instruction,
+                });
+                if let Err(error) = self.sessions.append_agent_transcript_entries(
+                    &self.agent_id,
+                    &[entry],
+                ) {
+                    self.session_handoff.forget(&self.agent_id);
+                    return Err(ProviderSessionError::Tool(format!(
+                        "could not persist request_box_help for {}: {error}",
+                        self.agent_id
+                    )));
+                }
+                self.fulfill_ack_obligation();
+                self.transcript_runtime.track_runner_activity_update(
+                    &self.agent_id,
+                    &ActivityUpdate::SendMessage,
+                    started_at_ms(),
+                );
+                Ok(BoxHelpOutcome::Started { request_id })
+            }
+        }
+    }
+
     fn resolve_attachment_source(
         &self,
         source_url: &str,
@@ -387,17 +455,7 @@ impl SendMessageSink for ProductionSendMessageSink {
                 "could not persist SendMessage for {}: {error}",
                 self.agent_id
             )))?;
-        if let Some(ack_token) = self.ack_token.as_deref() {
-            if let Err(error) = self
-                .ack_obligations
-                .fulfill_ack_obligation(&self.agent_id, ack_token)
-            {
-                eprintln!(
-                    "mahayana-host-ack fulfill_failed agent={} error={error}",
-                    self.agent_id
-                );
-            }
-        }
+        self.fulfill_ack_obligation();
         self.transcript_runtime.track_runner_activity_update(
             &self.agent_id,
             &ActivityUpdate::SendMessage,
@@ -858,6 +916,7 @@ fn start_routed_provider_task(
     ack_obligations: Arc<AckObligations>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     forever_box: Arc<ForeverBoxService>,
+    session_handoff: BoxHandoffService,
     trays: Arc<HostTraysExtension>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
@@ -1067,6 +1126,7 @@ fn start_routed_provider_task(
                 ProductionSendMessageSink {
                     sessions: worker_sessions,
                     forever_box: Arc::clone(&forever_box),
+                    session_handoff: session_handoff.clone(),
                     ack_obligations: Arc::clone(&worker_ack_obligations),
                     transcript_runtime: Arc::clone(&worker_transcript_runtime),
                     ack_token: worker_ack_token.clone(),
@@ -1136,6 +1196,10 @@ fn start_routed_provider_task(
                 turn_input.options,
                 &mut on_text_delta,
             );
+            let waiting_user = matches!(
+                runner.last_finished().map(|finished| &finished.outcome),
+                Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
+            );
 
             // A terminal inference event is the renderer-visible completion
             // boundary. Do not publish it until the Host has actually settled
@@ -1157,7 +1221,17 @@ fn start_routed_provider_task(
             let _ = worker_transcript_runtime
                 .retire_idle_live_session(&worker_retire_sessions, &agent_id);
 
-            if !worker_cancellation.is_cancelled() {
+            if waiting_user {
+                worker_events.publish(serde_json::json!({
+                    "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+                    "payload": {
+                        "streamId": stream_id,
+                        "type": "completed",
+                        "content": "",
+                        "waitingUser": true
+                    }
+                }));
+            } else if !worker_cancellation.is_cancelled() {
                 match result {
                     Ok(content) => worker_events.publish(serde_json::json!({
                         "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
@@ -1454,6 +1528,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.ack_obligations),
                 Arc::clone(&self.transcript_runtime),
                 Arc::clone(&self.forever_box),
+                self.session_handoff.clone(),
                 Arc::clone(&self.trays),
                 args,
             );
