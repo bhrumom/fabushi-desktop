@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     RoutedProviderCheckpoint,
 };
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
-    ProductionTurnRunShellAdapter, RoutedProviderAttemptExecutor,
+    ProductionTurnRunShellAdapter, ProviderRetryEvent, RoutedProviderAttemptExecutor,
     RoutedProviderCheckpointStore,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
@@ -197,6 +197,47 @@ fn production_turn_adapter_retries_before_output() {
     assert_eq!(executor.attempts, 2);
     assert_eq!(executor.resumes, vec![None, None]);
     assert_eq!(deltas, vec!["done".to_string()]);
+}
+
+#[test]
+fn production_turn_adapter_emits_retry_event_before_next_attempt() {
+    let adapter = ProductionTurnRunShellAdapter {
+        policy: policy(2),
+        watchdog_poll_interval: Duration::from_millis(1),
+    };
+    let cancellation = RoutedProviderCancellation::default();
+    let store = FakeStore::default();
+    let mut executor = FakeExecutor::new(VecDeque::from([
+        Behavior::FailBeforeOutput,
+        Behavior::Success {
+            delta: "done",
+            accumulated: "done",
+            result: "done",
+        },
+    ]));
+    let mut retries = Vec::<ProviderRetryEvent>::new();
+
+    let result = adapter
+        .run_with_retry(
+            &cancellation,
+            &store,
+            &mut executor,
+            &mut |_delta, _| {},
+            &mut |event| retries.push(event.clone()),
+        )
+        .expect("retry event path");
+
+    assert_eq!(result, "done");
+    assert_eq!(
+        retries,
+        vec![ProviderRetryEvent {
+            attempt: 1,
+            next_attempt: 2,
+            delay_ms: 0,
+            resume_from_checkpoint: false,
+            watchdog_expired: false,
+        }]
+    );
 }
 
 #[test]
