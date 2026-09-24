@@ -16553,17 +16553,14 @@
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
-        "source/host/src/runner/turn_run_shell.rs",
-        "source/host/src/runner/production_turn_input_projection.rs"
+        "source/host/src/runner/turn_run_shell.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_contract.rs",
-        ".github/workflows/grok-rust-parity-finalize.yml",
-        "source/host/tests/production_turn_input_projection_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/grok-rust-parity-finalize.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust translation of the frozen turn shell with owner-generation, terminal settlement, quiesce/waiting-user and pre-dispatch supersede gates. Recovery-shaped turns now use the real Coordinator-projected current message identity/history and reject fork/reply/attachment turns even when prompt text matches."
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/runner/turn-settle.ts",
