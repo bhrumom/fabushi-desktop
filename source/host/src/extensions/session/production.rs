@@ -63,7 +63,7 @@ use super::pending_card_sweeps::{
     expire_pending_auto_review_approval_entries,
     expire_pending_local_tool_permission_ask_entries,
 };
-use super::session_roster::{list_agents, summarize_agent_by_id};
+use super::session_roster::{RosterExtrasCache, list_agents, summarize_agent_by_id};
 use super::session_summaries::AgentSummary;
 use super::session_profile_files::{
     AgentAvatarResponse, AgentProfileUpdate, get_agent_avatar as get_profile_avatar,
@@ -109,6 +109,7 @@ pub struct ProductionSessionWorkers {
     mint_queue: SessionMintQueue,
     db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
     deleting_agents: Mutex<BTreeSet<String>>,
+    roster_extras_cache: RosterExtrasCache,
     user_time_zone_resolver: UserTimeZoneResolver,
     busy_timeout_ms: u64,
 }
@@ -154,6 +155,7 @@ impl ProductionSessionWorkers {
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
             deleting_agents: Mutex::new(BTreeSet::new()),
+            roster_extras_cache: RosterExtrasCache::default(),
             user_time_zone_resolver,
             busy_timeout_ms,
         }
@@ -558,6 +560,10 @@ impl ProductionSessionWorkers {
         }
     }
 
+    pub fn roster_extras_cache_entry_count(&self) -> usize {
+        self.roster_extras_cache.entry_count()
+    }
+
     pub fn active_agent_db_owner_count(&self) -> usize {
         self.db_owners
             .lock()
@@ -566,6 +572,7 @@ impl ProductionSessionWorkers {
     }
 
     pub fn begin_agent_delete(&self, agent_id: &str) {
+        self.roster_extras_cache.remove(agent_id);
         if let Ok(mut deleting) = self.deleting_agents.lock() {
             deleting.insert(agent_id.to_string());
         }
@@ -934,6 +941,7 @@ impl ProductionSessionWorkers {
             self.busy_timeout_ms,
             active_agent_id,
             &is_deleting,
+            &self.roster_extras_cache,
         )
     }
 
@@ -949,6 +957,7 @@ impl ProductionSessionWorkers {
             agent_id,
             active_agent_id,
             &is_deleting,
+            &self.roster_extras_cache,
         )
     }
 

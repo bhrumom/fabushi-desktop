@@ -232,3 +232,39 @@ fn production_roster_excludes_agents_while_delete_fence_is_active() {
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn production_roster_cache_tracks_generation_and_prunes_removed_agents() {
+    let root = temp_root("extras-cache");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let first = workers
+        .materialize_new_session(None, "user", None)
+        .expect("first agent");
+    let second = workers
+        .materialize_new_session(None, "user", None)
+        .expect("second agent");
+
+    let _ = workers.list_agent_summaries(None).expect("prime roster cache");
+    assert_eq!(workers.roster_extras_cache_entry_count(), 2);
+
+    workers
+        .mark_agent_activity(&first.id, 123.0)
+        .expect("activity mutation");
+    let refreshed = workers
+        .summarize_agent_by_id(&first.id, None)
+        .expect("refreshed summary")
+        .expect("first summary");
+    assert_eq!(refreshed.last_activity_at, 123.0);
+
+    workers.begin_agent_delete(&second.id);
+    assert_eq!(workers.roster_extras_cache_entry_count(), 1);
+    workers.end_agent_delete(&second.id);
+    fs::remove_dir_all(root.join(&second.id)).expect("remove second agent");
+    let listed = workers.list_agent_summaries(None).expect("pruned roster");
+    assert!(listed.iter().all(|summary| summary.id != second.id));
+    assert_eq!(workers.roster_extras_cache_entry_count(), 1);
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
