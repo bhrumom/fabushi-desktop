@@ -87,6 +87,9 @@ use mahayana_host_runtime::runner_production_bridge::{
 use mahayana_host_runtime::runner::sand_action_audit::{
     ActionAuditRecord, ActionAuditSink,
 };
+use mahayana_host_runtime::runner::turn_observation::{
+    TurnObservation, TurnObservationHandle,
+};
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedToolBridge, RunnerRequestContextSource,
 };
@@ -853,6 +856,19 @@ fn start_routed_provider_task(
     let spawn = thread::Builder::new()
         .name(format!("mahayana-runner-provider-{agent_id}"))
         .spawn(move || {
+            let observation_events = worker_events.clone();
+            let observation: TurnObservationHandle = TurnObservation::shared(
+                agent_id.clone(),
+                Some(Arc::new(move |event| {
+                    observation_events.publish(serde_json::json!({
+                        "channel": "runner-turn-observation",
+                        "payload": event,
+                    }));
+                })),
+            );
+            if let Ok(mut observation) = observation.lock() {
+                observation.turn_started(started_at_ms());
+            }
             let bridge: Arc<dyn RoutedToolBridge> = Arc::new(CoordinatorRoutedToolBridge {
                 relay: routed_tool_relay,
                 transcript_runtime: Arc::clone(&worker_transcript_runtime),
@@ -866,7 +882,19 @@ fn start_routed_provider_task(
             let delta_stream_id = stream_id.clone();
             let delta_runtime = Arc::clone(&worker_transcript_runtime);
             let delta_agent_id = agent_id.clone();
+            let delta_observation = Arc::clone(&observation);
             let mut on_text_delta = move |delta: &str, accumulated: &str| {
+                if !delta.is_empty() {
+                    if let Ok(mut observation) = delta_observation.lock() {
+                        let _ = observation.observe_first_token(
+                            "text",
+                            None,
+                            None,
+                            Some(provider.as_str()),
+                            turn_input.options.is_fork,
+                        );
+                    }
+                }
                 delta_runtime.track_runner_activity_update(
                     &delta_agent_id,
                     &ActivityUpdate::TextDelta {
@@ -901,13 +929,23 @@ fn start_routed_provider_task(
             );
             let retry_runtime = Arc::clone(&worker_transcript_runtime);
             let retry_agent_id = agent_id.clone();
+            let retry_observation = Arc::clone(&observation);
             let retry_sink: Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync> =
-                Arc::new(move |_event: &ProviderRetryEvent| {
+                Arc::new(move |event: &ProviderRetryEvent| {
                     retry_runtime.track_runner_activity_update(
                         &retry_agent_id,
                         &ActivityUpdate::Retrying,
                         started_at_ms(),
                     );
+                    if let Ok(observation) = retry_observation.lock() {
+                        observation.report_turn_retry(serde_json::json!({
+                            "attempt": event.attempt,
+                            "nextAttempt": event.next_attempt,
+                            "delayMs": event.delay_ms,
+                            "resumeFromCheckpoint": event.resume_from_checkpoint,
+                            "watchdogExpired": event.watchdog_expired,
+                        }));
+                    }
                 });
             let audit_events = worker_events.clone();
             let action_audit_sink: Arc<dyn ActionAuditSink> = Arc::new(
@@ -934,6 +972,7 @@ fn start_routed_provider_task(
                         turn_id: Some(stream_id.clone()),
                         sink: action_audit_sink,
                     }),
+                    observation: Some(Arc::clone(&observation)),
                 },
             );
             let owner = ProductionTurnAgentOwner::new(composition);

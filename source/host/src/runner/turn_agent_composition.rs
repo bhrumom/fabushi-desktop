@@ -14,6 +14,7 @@ use super::routed_provider_runtime::{
     RunnerRequestContextSnapshot, run_routed_provider_in_runner,
 };
 use super::sand_action_audit::{AuditedRoutedToolBridge, RoutedMcpAuditConfig};
+use super::turn_observation::{ObservedRoutedToolBridge, TurnObservationHandle};
 use super::tools::send_message_tool::{SendMessageSink, SendMessageToolBridge};
 use super::tools::sand_reaction_tool::{ReactionSink, ReactionToolBridge};
 
@@ -36,6 +37,7 @@ pub struct TurnAgentComposition {
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     action_audit: Option<RoutedMcpAuditConfig>,
+    observation: Option<TurnObservationHandle>,
 }
 
 impl TurnAgentComposition {
@@ -57,6 +59,7 @@ impl TurnAgentComposition {
             send_message_sink: None,
             reaction_sink: None,
             action_audit: None,
+            observation: None,
         }
     }
 
@@ -113,6 +116,18 @@ impl TurnAgentComposition {
         self.action_audit.is_some()
     }
 
+    pub fn with_observation(
+        mut self,
+        observation: TurnObservationHandle,
+    ) -> Self {
+        self.observation = Some(observation);
+        self
+    }
+
+    pub fn has_observation(&self) -> bool {
+        self.observation.is_some()
+    }
+
     pub fn provider(&self) -> RoutedProvider {
         self.provider
     }
@@ -152,6 +167,13 @@ impl TurnAgentComposition {
             Some(sink) => Arc::new(SendMessageToolBridge::new(
                 bridge,
                 Arc::clone(sink),
+            )),
+            None => bridge,
+        };
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.observation {
+            Some(observation) => Arc::new(ObservedRoutedToolBridge::new(
+                bridge,
+                Arc::clone(observation),
             )),
             None => bridge,
         };

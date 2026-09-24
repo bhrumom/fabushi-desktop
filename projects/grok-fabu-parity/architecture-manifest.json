@@ -16773,12 +16773,23 @@
       "targetPath": "source/host/src/runner/turn_observation.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "de104874d44d96d80bcf876fec91e6188e164d0d",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/turn_observation.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/turn_observation_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production slice now owns turn start, one-shot first-token, retry, routed-tool start/completion/failure, AwaitShell observation, recent-activity cap/dedup and cross-clock timing sanitization. The shipping Host creates one TurnObservation per real routed provider turn, final TurnAgentComposition wraps all first-party/delegated tools with ObservedRoutedToolBridge, and observation events publish through the production Gateway event hub. Final remains withheld for frozen async-task registry projection, real MCP 15-minute stall expiry/diagnostics, complete dispatch trace/span attributes, pending-await unwind integration and subagent/shell/cloud background registries."
     },
     {
       "referencePath": "source/host/runner/turn-run-shell.ts",

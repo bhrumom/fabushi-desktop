@@ -12,6 +12,7 @@ use crate::runner::sand_action_audit::{ActionAuditSink, RoutedMcpAuditConfig};
 use crate::runner::tools::sand_reaction_tool::ReactionSink;
 use crate::runner::tools::send_message_tool::SendMessageSink;
 use crate::runner::turn_agent_composition::TurnAgentComposition;
+use crate::runner::turn_observation::TurnObservationHandle;
 
 /// Typed production half of the frozen Host -> Runner turn bridge.
 ///
@@ -37,6 +38,7 @@ pub struct ProductionRunnerCompositionInput {
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
     pub action_audit: Option<ProductionActionAuditInput>,
+    pub observation: Option<TurnObservationHandle>,
 }
 
 pub fn create_production_runner_composition(
@@ -67,6 +69,9 @@ pub fn create_production_runner_composition(
     }
     if let Some(send_message_sink) = input.send_message_sink {
         composition = composition.with_send_message_sink(send_message_sink);
+    }
+    if let Some(observation) = input.observation {
+        composition = composition.with_observation(observation);
     }
     composition
 }
