@@ -68,6 +68,22 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. This keeps binary conversion and native response-shape adaptation in the preload bridge instead of leaking native IPC details into the React renderer."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "597ccedc5401a3762fca10c7ca2206fff362bc2b",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/composer.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 TipTap composer structure while adapting the shipping scope-switch transaction fence to the real ProseMirror browser-input contract. In the shipping Electron renderer, ordinary contenteditable typing is not guaranteed to carry transaction.getMeta(\"uiEvent\"), so the frozen fence could keep accepting DOM edits while suppressing every onChange after opening a newly materialized Agent: the prompt appeared on screen but the React draft remained empty and the Send message action never rendered. The adaptation keeps stale pre-scope transactions fenced, releases ownership on the browser beforeinput event before TipTap creates the real user-edit transaction, and explicitly releases the same fence for voice/dictation insertText commands. It does not alter Agent identity, draft persistence, submission, or Coordinator/Host ownership; focused Electron acceptance proves a pure-text turn reaches the canonical recovered composer and shipping Mahayana path."
     }
   ]
 }
