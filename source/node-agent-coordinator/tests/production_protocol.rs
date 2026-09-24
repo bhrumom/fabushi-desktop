@@ -76,6 +76,8 @@ mod unix {
                             let crash_path = crash_path.clone();
                             let handler_stop = Arc::clone(&worker_stop);
                             let oauth_completion = Arc::clone(&worker_oauth_completion);
+                            let oauth_completion_attempts =
+                                Arc::clone(&worker_oauth_completion_attempts);
                             let webauthn_batches = Arc::clone(&worker_webauthn_batches);
                             thread::spawn(move || {
                                 let _ = serve_fake_gateway(
@@ -85,7 +87,7 @@ mod unix {
                                     handler_stop.as_ref(),
                                     oauth_callback_port,
                                     oauth_completion.as_ref(),
-                                    worker_oauth_completion_attempts.as_ref(),
+                                    oauth_completion_attempts.as_ref(),
                                     webauthn_batches.as_ref(),
                                 );
                             });
