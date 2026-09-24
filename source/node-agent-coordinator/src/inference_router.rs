@@ -24,6 +24,41 @@ pub fn host_transcript_method(method: &str) -> &str {
     }
 }
 
+/// Project the sendPrompt fields that materially define one user turn across
+/// Coordinator -> Host -> Runner without linking the Coordinator to Host types.
+/// The current message id is minted by the Coordinator's durable inference
+/// transcript before the Runner starts, so recovery/supersede decisions never
+/// have to invent a post-dispatch identity.
+pub fn project_runner_turn_context(
+    send_args: &Value,
+    message_id: &str,
+    recent_user_messages: Vec<Value>,
+) -> Value {
+    let mut projected = serde_json::Map::new();
+    if !message_id.trim().is_empty() {
+        projected.insert("messageId".into(), Value::String(message_id.to_string()));
+    }
+    projected.insert(
+        "recentUserMessages".into(),
+        Value::Array(recent_user_messages),
+    );
+    for field in [
+        "attachmentPaths",
+        "selectedImages",
+        "selectedVideos",
+        "replyContext",
+        "isFork",
+        "richText",
+        "composedAtMs",
+        "enterEpochMs",
+    ] {
+        if let Some(value) = send_args.get(field) {
+            projected.insert(field.to_string(), value.clone());
+        }
+    }
+    Value::Object(projected)
+}
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InferenceProvider {
