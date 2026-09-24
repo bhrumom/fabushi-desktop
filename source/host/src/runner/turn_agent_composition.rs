@@ -18,6 +18,9 @@ use super::turn_observation::{ObservedRoutedToolBridge, TurnObservationHandle};
 use super::tools::box_help_tool::BoxHelpToolBridge;
 use super::tools::send_message_tool::{SendMessageSink, SendMessageToolBridge};
 use super::tools::sand_reaction_tool::{ReactionSink, ReactionToolBridge};
+use super::tools::sand_agent_management_tools::{
+    AgentManagementSink, AgentManagementToolBridge,
+};
 
 /// Shipping Runner composition for one provider-backed turn.
 ///
@@ -37,6 +40,7 @@ pub struct TurnAgentComposition {
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
+    agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
     action_audit: Option<RoutedMcpAuditConfig>,
     observation: Option<TurnObservationHandle>,
 }
@@ -59,6 +63,7 @@ impl TurnAgentComposition {
             box_resources: None,
             send_message_sink: None,
             reaction_sink: None,
+            agent_management_sink: None,
             action_audit: None,
             observation: None,
         }
@@ -106,6 +111,18 @@ impl TurnAgentComposition {
 
     pub fn has_reaction_sink(&self) -> bool {
         self.reaction_sink.is_some()
+    }
+
+    pub fn with_agent_management_sink(
+        mut self,
+        sink: Arc<dyn AgentManagementSink>,
+    ) -> Self {
+        self.agent_management_sink = Some(sink);
+        self
+    }
+
+    pub fn has_agent_management_sink(&self) -> bool {
+        self.agent_management_sink.is_some()
     }
 
     pub fn with_action_audit(mut self, config: RoutedMcpAuditConfig) -> Self {
@@ -159,6 +176,13 @@ impl TurnAgentComposition {
         };
         let bridge: Arc<dyn RoutedToolBridge> = match &self.reaction_sink {
             Some(sink) => Arc::new(ReactionToolBridge::new(
+                bridge,
+                Arc::clone(sink),
+            )),
+            None => bridge,
+        };
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.agent_management_sink {
+            Some(sink) => Arc::new(AgentManagementToolBridge::new(
                 bridge,
                 Arc::clone(sink),
             )),

@@ -20,6 +20,12 @@ use mahayana_host_runtime::extensions::box_lifecycle::production::{
     ProductionBoxLifecycleClient, ProductionBoxLifecycleClientFactory,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
+use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
+use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
+use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
+    AgentWakeRequest, ProductionAgentToAgentMessaging,
+};
 use mahayana_host_runtime::extensions::memory::extension::HostMemoryExtension;
 use mahayana_host_runtime::extensions::memory::production::start_production_memory_extension;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
@@ -125,6 +131,9 @@ use mahayana_host_runtime::runner::tools::send_message_tool::{
 };
 use mahayana_host_runtime::selected_image_inputs::read_image_file_dimensions;
 use mahayana_host_runtime::runner::tools::sand_reaction_tool::ReactionSink;
+use mahayana_host_runtime::runner::tools::sand_agent_management_tools::{
+    AgentManagementRecord, AgentManagementSink,
+};
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
     GatewayApi, GatewayCommandError, GatewayCommandReport, GatewayEventHub, GatewayServerDeps, start_gateway_server,
@@ -512,6 +521,82 @@ fn reaction_gateway_args(
         "entryId": message_address,
         "emoji": emoji,
     })
+}
+
+struct ProductionAgentManagementSink {
+    sessions: Arc<ProductionSessionWorkers>,
+    messaging: Arc<ProductionAgentToAgentMessaging>,
+    agent_id: String,
+}
+
+impl AgentManagementSink for ProductionAgentManagementSink {
+    fn self_agent_id(&self) -> &str {
+        &self.agent_id
+    }
+
+    fn send_to_agent(
+        &self,
+        target_id: &str,
+        message: &str,
+        images: &[AgentMessageImage],
+        priority: bool,
+    ) -> Result<String, ProviderSessionError> {
+        self.messaging
+            .send_to_agent(&self.agent_id, target_id, message, images, priority)
+            .map_err(ProviderSessionError::Tool)
+    }
+
+    fn create_agent(
+        &self,
+        name: &str,
+        description: &str,
+    ) -> Result<AgentManagementRecord, ProviderSessionError> {
+        let profile = SandAgentProfile {
+            name: name.trim().to_string(),
+            description: description.trim().to_string(),
+            title: String::new(),
+            avatar_shape: String::new(),
+            avatar_color: String::new(),
+        };
+        let record = self
+            .sessions
+            .materialize_new_session(Some(&profile), "user", None)
+            .map_err(ProviderSessionError::Tool)?;
+        Ok(AgentManagementRecord {
+            id: record.id,
+            name: record.profile.name,
+        })
+    }
+
+    fn update_agent(
+        &self,
+        agent_id: &str,
+        name: Option<&str>,
+        description: Option<&str>,
+    ) -> Result<Option<AgentManagementRecord>, ProviderSessionError> {
+        let Some(current) = self
+            .sessions
+            .get_agent_profile_text(agent_id)
+            .map_err(ProviderSessionError::Tool)?
+        else {
+            return Ok(None);
+        };
+        let update = AgentProfileUpdate {
+            name: name.unwrap_or(&current.name).to_string(),
+            description: description.unwrap_or(&current.description).to_string(),
+            title: None,
+            avatar_shape: None,
+            avatar_color: None,
+        };
+        let updated = self
+            .sessions
+            .update_agent_profile(agent_id, &update, None)
+            .map_err(ProviderSessionError::Tool)?;
+        Ok(updated.map(|summary| AgentManagementRecord {
+            id: summary.id,
+            name: summary.name,
+        }))
+    }
 }
 
 struct ProductionReactionSink {
@@ -1159,6 +1244,27 @@ fn start_routed_provider_task(
                     }
                 }));
             };
+            let agent_wake_events = worker_events.clone();
+            let priority_registry = Arc::clone(&worker_registry);
+            let agent_messaging = Arc::new(ProductionAgentToAgentMessaging::new(
+                Arc::clone(&worker_sessions),
+                Arc::new(move |request: &AgentWakeRequest| {
+                    agent_wake_events.publish(serde_json::json!({
+                        "channel": "agent-inbound-wake-request",
+                        "payload": request,
+                    }));
+                }),
+                Some(Arc::new(move |target_agent_id: &str, reason: &str| {
+                    priority_registry.cancel_agent(target_agent_id, reason)
+                })),
+            ));
+            let agent_management_sink: Arc<dyn AgentManagementSink> = Arc::new(
+                ProductionAgentManagementSink {
+                    sessions: Arc::clone(&worker_sessions),
+                    messaging: agent_messaging,
+                    agent_id: agent_id.clone(),
+                },
+            );
             let send_message_sink: Arc<dyn SendMessageSink> = Arc::new(
                 ProductionSendMessageSink {
                     sessions: worker_sessions,
@@ -1223,7 +1329,8 @@ fn start_routed_provider_task(
                     }),
                     observation: Some(Arc::clone(&observation)),
                 },
-            );
+            )
+            .with_agent_management_sink(agent_management_sink);
             let owner = ProductionTurnAgentOwner::new(composition)
                 .with_agent_state_checkpoint_sink(agent_state_checkpoint_sink);
             let mut runner = SandAgentRunner::new(owner);

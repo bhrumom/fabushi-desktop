@@ -13,6 +13,7 @@ pub mod sand_pending_wake_store;
 pub mod sand_upgrade_resume_store;
 pub mod upgrade_recreate_resume;
 pub mod ack_obligations;
+pub mod agent_to_agent_messaging;
 pub mod async_task_union;
 pub mod production_runtime;
 pub mod transcript_manager;

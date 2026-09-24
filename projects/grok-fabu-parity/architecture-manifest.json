@@ -9413,12 +9413,23 @@
       "targetPath": "source/host/src/agents/agent_messaging.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "35742b07afa42604b1f50615b9c7e2563d6e8f9c",
       "architecturalRole": "host/agents",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/agents/agent_messaging.rs",
+        "source/host/src/extensions/transcript/agent_to_agent_messaging.rs",
+        "source/host/src/runner/tools/sand_agent_management_tools.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_messaging_contract.rs",
+        "source/host/tests/agent_to_agent_messaging_contract.rs",
+        "source/host/tests/sand_agent_management_tools_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen agent messaging constants, UTF-16 clamp semantics, teammate/group directory projection, inbound agent wake prompt, broadcast wake prompt and mentioned-agent context. Production AgentToAgentMessaging and the first-party Runner agent-management tool family consume this module."
     },
     {
       "referencePath": "source/host/agents/agent-profile.ts",
@@ -13778,12 +13789,25 @@
       "targetPath": "source/host/src/extensions/transcript/agent_to_agent_messaging.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "3e4a1d70c52bb5a32f19df11046510ff7f7301ca",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/agent_to_agent_messaging.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/tools/sand_agent_management_tools.rs",
+        "source/host/src/runner/turn_agent_composition.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/agent_to_agent_messaging_contract.rs",
+        "source/host/tests/sand_agent_management_tools_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Real production slice: 1:1 SendToAgent performs durable sender/recipient transcript writes, conversation-partner persistence, recipient activity and priority cancellation through the live TranscriptRunnerRegistry. Group targets get a durable text-only group post. Every delivery emits an agent-inbound-wake-request on the shipping Host event hub with the frozen hidden prompt. Final remains withheld until Coordinator consumes that wake request into the background Agent run lane, priority interruption also fences queued non-user work exactly like Grok, and group member fanout/redrive/selected-image materialization are fully wired."
     },
     {
       "referencePath": "source/host/extensions/transcript/async-task-union.ts",
@@ -16602,12 +16626,25 @@
       "targetPath": "source/host/src/runner/tools/sand_agent_management_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "e08dc0a4203c4574454061ce1fd8ee830bb18e73",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/sand_agent_management_tools.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/agent_to_agent_messaging.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_agent_management_tools_contract.rs",
+        "source/host/tests/agent_to_agent_messaging_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Shipping Runner now inserts SendToAgent, CreateAgent and UpdateAgent as first-party tools. CreateAgent materializes a real Session agent; UpdateAgent merges profile fields through Session; SendToAgent calls the durable production messaging service with URL validation and priority. Final remains withheld because SendToAgent recipient wake/fanout is not yet consumed by Coordinator into a fresh background run and the frozen image source materialization path is not yet shared with this tool."
     },
     {
       "referencePath": "source/host/runner/tools/sand-browser-driver-source.ts",
@@ -16945,7 +16982,9 @@
         "source/host/app/src/main.rs",
         "source/host/src/runner/tools/send_message_tool.rs",
         "source/host/src/runner/tools/sand_reaction_tool.rs",
-        "source/host/src/runner/tools/box_help_tool.rs"
+        "source/host/src/runner/tools/box_help_tool.rs",
+        "source/host/src/runner/tools/sand_agent_management_tools.rs",
+        "source/host/src/extensions/transcript/agent_to_agent_messaging.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
@@ -16953,9 +16992,11 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/send_message_tool_contract.rs",
         "source/host/tests/sand_reaction_tool_contract.rs",
-        "source/host/tests/box_help_tool_contract.rs"
+        "source/host/tests/box_help_tool_contract.rs",
+        "source/host/tests/sand_agent_management_tools_contract.rs",
+        "source/host/tests/agent_to_agent_messaging_contract.rs"
       ],
-      "notes": "A real shipping TurnAgentComposition now owns provider selection, routed Host tool bridge, request-context projection, cancellation and durable checkpoint store, and invokes the independent Runner routed-provider runtime. The frozen Grok composition also builds the full Agent/tool-session/resource-projection/MCP/static-config stream graph; those Agent construction surfaces are not yet represented by this Rust slice, so the mapping remains non-final. Shipping TurnAgentComposition now wraps the delegated MCP/box tool bridge with the first-party SendMessage tool and a Host-injected Session sink, so user-visible Runner tool output is durably transcript-owned rather than prose-only. Shipping TurnAgentComposition also inserts the frozen ReactToMessage first-party tool and routes its authoritative mutation through the Host reaction gateway; the broader frozen Agent/tool-session/resource/subagent graph remains non-final."
+      "notes": "A real shipping TurnAgentComposition now owns provider selection, routed Host tool bridge, request-context projection, cancellation and durable checkpoint store, and invokes the independent Runner routed-provider runtime. The frozen Grok composition also builds the full Agent/tool-session/resource-projection/MCP/static-config stream graph; those Agent construction surfaces are not yet represented by this Rust slice, so the mapping remains non-final. Shipping TurnAgentComposition now wraps the delegated MCP/box tool bridge with the first-party SendMessage tool and a Host-injected Session sink, so user-visible Runner tool output is durably transcript-owned rather than prose-only. Shipping TurnAgentComposition also inserts the frozen ReactToMessage first-party tool and routes its authoritative mutation through the Host reaction gateway; the broader frozen Agent/tool-session/resource/subagent graph remains non-final. Shipping TurnAgentComposition now also inserts the frozen SendToAgent/CreateAgent/UpdateAgent first-party tool family against real Session/Host services; full generated Agent/resource/subagent composition remains non-final."
     },
     {
       "referencePath": "source/host/runner/turn-memory.ts",
