@@ -750,6 +750,192 @@ impl SandAgentDb {
         })
     }
 
+
+    pub fn get_agent_origin(&self) -> Result<String, AgentDbProjectionError> {
+        Ok(if self.read_kv(KV_ORIGIN)?.as_deref() == Some("dev") {
+            "dev".to_string()
+        } else {
+            "user".to_string()
+        })
+    }
+
+    pub fn set_agent_origin(&self, origin: &str) -> Result<bool, AgentDbProjectionError> {
+        self.write_kv(KV_ORIGIN, if origin == "dev" { "dev" } else { "user" })
+    }
+
+    pub fn get_agent_purpose(&self) -> Result<Option<String>, AgentDbProjectionError> {
+        Ok(self
+            .read_kv(KV_PURPOSE)?
+            .filter(|value| valid_agent_purpose(value)))
+    }
+
+    pub fn set_agent_purpose(&self, purpose: &str) -> Result<bool, AgentDbProjectionError> {
+        self.write_kv(KV_PURPOSE, purpose)
+    }
+
+    pub fn clear_agent_purpose(&self) -> Result<bool, AgentDbProjectionError> {
+        self.delete_kv(KV_PURPOSE)
+    }
+
+    pub fn get_conversation_partner_ids(
+        &self,
+    ) -> Result<Vec<String>, AgentDbProjectionError> {
+        let Some(raw) = self.read_kv(KV_PARTNERS)? else {
+            return Ok(Vec::new());
+        };
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(&raw) else {
+            return Ok(Vec::new());
+        };
+        Ok(value
+            .as_array()
+            .map(|items| {
+                items
+                    .iter()
+                    .filter_map(serde_json::Value::as_str)
+                    .map(ToOwned::to_owned)
+                    .collect()
+            })
+            .unwrap_or_default())
+    }
+
+    pub fn add_conversation_partner(
+        &self,
+        partner_id: &str,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let id = partner_id.trim();
+        if id.is_empty() {
+            return Ok(false);
+        }
+        let own_id = self
+            .read_kv("metadata")?
+            .and_then(|raw| decode_hex(&raw).ok())
+            .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
+            .and_then(|metadata| {
+                metadata
+                    .get("agentId")
+                    .and_then(serde_json::Value::as_str)
+                    .map(ToOwned::to_owned)
+            })
+            .unwrap_or_default();
+        if id == own_id {
+            return Ok(false);
+        }
+        let mut values = self
+            .get_conversation_partner_ids()?
+            .into_iter()
+            .collect::<std::collections::BTreeSet<_>>();
+        if !values.insert(id.to_string()) {
+            return Ok(false);
+        }
+        let raw = serde_json::Value::Array(
+            values
+                .into_iter()
+                .map(serde_json::Value::String)
+                .collect(),
+        )
+        .to_string();
+        self.write_kv(KV_PARTNERS, &raw)
+    }
+
+    pub fn append_transcript_entries(
+        &self,
+        entries: &[serde_json::Value],
+    ) -> Result<usize, AgentDbProjectionError> {
+        if entries.is_empty() {
+            return Ok(0);
+        }
+        let inserted = self.run_write_value("appendTranscriptEntries", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<Vec<serde_json::Value>, rusqlite::Error> {
+                let mut inserted = Vec::new();
+                {
+                    let mut statement = db.prepare(INSERT_TRANSCRIPT_ENTRY_SQL)?;
+                    for entry in entries {
+                        let Some(id) = entry.get("id").and_then(serde_json::Value::as_str) else {
+                            continue;
+                        };
+                        if entry.get("kind").and_then(serde_json::Value::as_str).is_none() {
+                            continue;
+                        }
+                        if statement.execute(params![id, entry.to_string()])? > 0 {
+                            inserted.push(entry.clone());
+                        }
+                    }
+                }
+                Ok(inserted)
+            })();
+            match result {
+                Ok(inserted) => {
+                    db.execute_batch("COMMIT")?;
+                    let changed = !inserted.is_empty();
+                    Ok((inserted, changed))
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })?;
+        if !inserted.is_empty() {
+            publish_entries_upserted(&self.db_path, inserted.clone());
+        }
+        Ok(inserted.len())
+    }
+
+    pub fn update_transcript_entry(
+        &self,
+        entry_id: &str,
+        next: &serde_json::Value,
+    ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+        let updated = self.run_write_value("updateTranscriptEntry", |db| {
+            let present = db
+                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?
+                .is_some();
+            if !present {
+                return Ok((None, false));
+            }
+            let changed = db.execute(
+                UPDATE_TRANSCRIPT_ENTRY_SQL,
+                params![next.to_string(), entry_id],
+            )? > 0;
+            Ok((changed.then(|| next.clone()), changed))
+        })?;
+        if let Some(entry) = updated.as_ref() {
+            publish_entries_upserted(&self.db_path, vec![entry.clone()]);
+        }
+        Ok(updated)
+    }
+
+    pub fn delete_transcript_entry(
+        &self,
+        entry_id: &str,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let committed = self.run_write("deleteTranscriptEntry", |db| {
+            db.execute(DELETE_TRANSCRIPT_ENTRY_SQL, params![entry_id])?;
+            Ok(true)
+        })?;
+        if committed {
+            let mut mutation = serde_json::Map::new();
+            mutation.insert(
+                "kind".into(),
+                serde_json::Value::String("entry-deleted".into()),
+            );
+            mutation.insert(
+                "agentId".into(),
+                serde_json::Value::String(self.agent_dir_name.clone()),
+            );
+            mutation.insert(
+                "entryId".into(),
+                serde_json::Value::String(entry_id.to_string()),
+            );
+            publish_transcript_mutation(&mutation);
+        }
+        Ok(committed)
+    }
+
     pub fn clear_conversation(&self) -> Result<bool, AgentDbProjectionError> {
         if self.is_closed() {
             return Ok(false);
@@ -892,22 +1078,36 @@ impl SandAgentDb {
     where
         F: FnMut(&rusqlite::Connection) -> Result<bool, rusqlite::Error>,
     {
+        self.run_write_value(operation, |db| {
+            write(db).map(|changed| (changed, changed))
+        })
+    }
+
+    fn run_write_value<T, F>(
+        &self,
+        operation: &str,
+        mut write: F,
+    ) -> Result<T, AgentDbProjectionError>
+    where
+        T: Default,
+        F: FnMut(&rusqlite::Connection) -> Result<(T, bool), rusqlite::Error>,
+    {
         if self.is_closed() {
-            return Ok(false);
+            return Ok(T::default());
         }
         let mut guard = self
             .connection
             .lock()
             .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
         let Some(db) = guard.as_ref() else {
-            return Ok(false);
+            return Ok(T::default());
         };
         match write(db) {
-            Ok(changed) => {
+            Ok((value, changed)) => {
                 if changed {
                     bump_db_write_generation(&self.db_path);
                 }
-                return Ok(changed);
+                return Ok(value);
             }
             Err(error) if is_sqlite_busy_error(&error) => {
                 let message = error.to_string();
@@ -915,7 +1115,7 @@ impl SandAgentDb {
                 if let Some(callback) = self.options.on_busy_error.as_ref() {
                     callback(operation, &message);
                 }
-                return Ok(false);
+                return Ok(T::default());
             }
             Err(error)
                 if self.options.recovery.recover_on_corruption
@@ -957,14 +1157,14 @@ impl SandAgentDb {
         }
 
         let Some(db) = guard.as_ref() else {
-            return Ok(false);
+            return Ok(T::default());
         };
         match write(db) {
-            Ok(changed) => {
+            Ok((value, changed)) => {
                 if changed {
                     bump_db_write_generation(&self.db_path);
                 }
-                Ok(changed)
+                Ok(value)
             }
             Err(error) if is_sqlite_busy_error(&error) => {
                 let message = error.to_string();
@@ -972,11 +1172,12 @@ impl SandAgentDb {
                 if let Some(callback) = self.options.on_busy_error.as_ref() {
                     callback(operation, &message);
                 }
-                Ok(false)
+                Ok(T::default())
             }
             Err(error) => Err(error.into()),
         }
     }
+
 }
 
 impl Drop for SandAgentDb {

@@ -670,8 +670,8 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Vec<String>, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        read_persisted_conversation_partner_ids(&db_path, self.busy_timeout_ms)
+        self.open_agent_db_owner(agent_id)?
+            .get_conversation_partner_ids()
             .map_err(|error| error.to_string())
     }
 
@@ -680,13 +680,9 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         partner_id: &str,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        add_persisted_conversation_partner(
-            &db_path,
-            self.busy_timeout_ms,
-            partner_id,
-        )
-        .map_err(|error| error.to_string())
+        self.open_agent_db_owner(agent_id)?
+            .add_conversation_partner(partner_id)
+            .map_err(|error| error.to_string())
     }
 
     pub fn get_agent_newest_divider_anchor_timestamp_ms(
@@ -795,8 +791,8 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         entries: &[serde_json::Value],
     ) -> Result<usize, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        append_persisted_transcript_entries(&db_path, self.busy_timeout_ms, entries)
+        self.open_agent_db_owner(agent_id)?
+            .append_transcript_entries(entries)
             .map_err(|error| error.to_string())
     }
 
@@ -806,14 +802,9 @@ impl ProductionSessionWorkers {
         entry_id: &str,
         next: &serde_json::Value,
     ) -> Result<Option<serde_json::Value>, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        update_persisted_transcript_entry(
-            &db_path,
-            self.busy_timeout_ms,
-            entry_id,
-            next,
-        )
-        .map_err(|error| error.to_string())
+        self.open_agent_db_owner(agent_id)?
+            .update_transcript_entry(entry_id, next)
+            .map_err(|error| error.to_string())
     }
 
     pub fn delete_agent_transcript_entry(
@@ -821,13 +812,9 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         entry_id: &str,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        delete_persisted_transcript_entry(
-            &db_path,
-            self.busy_timeout_ms,
-            entry_id,
-        )
-        .map_err(|error| error.to_string())
+        self.open_agent_db_owner(agent_id)?
+            .delete_transcript_entry(entry_id)
+            .map_err(|error| error.to_string())
     }
 
     pub fn clear_agent_conversation(&self, agent_id: &str) -> Result<bool, String> {

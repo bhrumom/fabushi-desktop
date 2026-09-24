@@ -241,3 +241,103 @@ fn owner_routes_unread_request_episode_snapshot_and_spend_guard_mutations() {
     owner.close(false);
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn owner_routes_partner_origin_purpose_and_transcript_mutations() {
+    let root = temp_root("transcript-owner");
+    let agent_dir = root.join("agent-transcript");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+
+    assert_eq!(owner.get_agent_origin().expect("default origin"), "user");
+    assert!(owner.set_agent_origin("dev").expect("set origin"));
+    assert_eq!(owner.get_agent_origin().expect("dev origin"), "dev");
+
+    assert!(owner.set_agent_purpose("research").expect("purpose"));
+    assert_eq!(
+        owner.get_agent_purpose().expect("purpose read").as_deref(),
+        Some("research")
+    );
+    assert!(owner.clear_agent_purpose().expect("clear purpose"));
+    assert!(owner.get_agent_purpose().expect("purpose cleared").is_none());
+
+    assert!(!owner
+        .add_conversation_partner("agent-transcript")
+        .expect("reject self"));
+    assert!(owner
+        .add_conversation_partner(" partner-b ")
+        .expect("partner"));
+    assert!(!owner
+        .add_conversation_partner("partner-b")
+        .expect("partner dedupe"));
+    assert_eq!(
+        owner.get_conversation_partner_ids().expect("partners"),
+        vec!["partner-b".to_string()]
+    );
+
+    assert_eq!(
+        owner
+            .append_transcript_entries(&[
+                serde_json::json!({
+                    "id":"entry-1",
+                    "kind":"message",
+                    "role":"user",
+                    "content":"hello"
+                }),
+                serde_json::json!({
+                    "id":"entry-2",
+                    "kind":"notice",
+                    "text":"notice"
+                }),
+            ])
+            .expect("append"),
+        2
+    );
+    assert_eq!(
+        owner
+            .append_transcript_entries(&[
+                serde_json::json!({
+                    "id":"entry-1",
+                    "kind":"message",
+                    "role":"user",
+                    "content":"duplicate"
+                }),
+            ])
+            .expect("duplicate append"),
+        0
+    );
+    assert_eq!(
+        owner
+            .update_transcript_entry(
+                "entry-1",
+                &serde_json::json!({
+                    "id":"entry-1",
+                    "kind":"message",
+                    "role":"user",
+                    "content":"edited"
+                }),
+            )
+            .expect("update")
+            .and_then(|entry| entry.get("content").cloned()),
+        Some(serde_json::Value::String("edited".into()))
+    );
+    assert!(owner
+        .update_transcript_entry(
+            "missing",
+            &serde_json::json!({
+                "id":"missing",
+                "kind":"message",
+                "role":"user",
+                "content":"missing"
+            }),
+        )
+        .expect("missing update")
+        .is_none());
+    assert!(owner.delete_transcript_entry("entry-2").expect("delete"));
+    assert!(owner.delete_transcript_entry("entry-2").expect("idempotent committed delete"));
+
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
