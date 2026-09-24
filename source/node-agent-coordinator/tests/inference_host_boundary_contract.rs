@@ -59,6 +59,10 @@ fn coordinator_projects_durable_turn_context_without_host_linkage() {
             "richText":"**hello**",
             "composedAtMs":10,
             "enterEpochMs":20,
+            "requestSource":"handoff-resume",
+            "ackRedrive":true,
+            "ackRedriveTrigger":"idle",
+            "redriveAttempts":2,
             "ignored":"not-forwarded"
         }),
         "t7u",
@@ -77,6 +81,10 @@ fn coordinator_projects_durable_turn_context_without_host_linkage() {
     assert_eq!(projected["richText"], "**hello**");
     assert_eq!(projected["composedAtMs"], 10);
     assert_eq!(projected["enterEpochMs"], 20);
+    assert_eq!(projected["requestSource"], "handoff-resume");
+    assert_eq!(projected["ackRedrive"], true);
+    assert_eq!(projected["ackRedriveTrigger"], "idle");
+    assert_eq!(projected["redriveAttempts"], 2);
     assert!(projected.get("ignored").is_none());
 }
 

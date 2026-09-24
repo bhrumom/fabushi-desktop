@@ -13715,7 +13715,9 @@
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/transcript/agent_lifecycle.rs",
         "source/host/src/extensions/transcript/production_runtime.rs",
-        "source/host/src/extensions/transcript/upgrade_recreate_resume.rs"
+        "source/host/src/extensions/transcript/upgrade_recreate_resume.rs",
+        "source/node-agent-coordinator/src/inference_router.rs",
+        "source/host/src/extensions/telemetry/turn_empty_delivery_telemetry.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_ack_obligation_store_contract.rs",
@@ -13725,10 +13727,11 @@
         "source/host/tests/agent_lifecycle_contract.rs",
         "source/host/tests/ack_redrive_production_contract.rs",
         "source/host/tests/transcript_production_composition_contract.rs",
-        "source/host/tests/upgrade_recreate_resume_contract.rs"
+        "source/host/tests/upgrade_recreate_resume_contract.rs",
+        "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust AckObligations is production-composed across accepted send and Runner delivery: durable sends record/coalesce, provider turns mint scoped tokens, SendMessage fulfills only after durable append, terminal paths retire tokens, watchdog interruption records interrupts, and agent deletion purges durable/in-memory state. Frozen timer ownership is now preserved: every pending boot obligation gets its own +5s schedule, idle Agents arm independently, and send/fulfill/delete cancels only that Agent timer; the Host worker executes only due idle schedules and re-enters shipping sendPrompt with appendUserMessage=false. Final remains withheld for turn-empty-delivery/agent-error telemetry and direct Runner recent-user-message construction."
+      "notes": "Rust AckObligations is production-composed across accepted send and Runner delivery: durable sends record/coalesce, provider turns mint scoped tokens, SendMessage fulfills only after durable append, terminal paths retire tokens, watchdog interruption records interrupts, and agent deletion purges durable/in-memory state. Frozen timer ownership is preserved with per-Agent boot/idle schedules. Ack redrive now also carries requestSource/ackRedrive context and authoritative recentUserMessages across Coordinator -> Host -> Runner; if a successful redrive reaches Runner terminal while the durable obligation is still outstanding, shipping Host emits the existing sand.turn.empty_delivery structured telemetry with request id, tool-call count, stream-output flag, duration and redrive attempts. Final remains withheld for frozen ack-redrive Agent-error structured telemetry parity."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-lifecycle.ts",

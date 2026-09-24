@@ -8,6 +8,7 @@ use uuid::Uuid;
 use super::sand_ack_obligation_store::{
     AckObligation, RecordSendOutcome, SandAckObligationStore,
 };
+use crate::extensions::telemetry::turn_empty_delivery_telemetry::TurnEmptyDeliveryReport;
 
 pub const MAX_ACK_REDRIVES: u64 = 3;
 pub const ACK_REDRIVE_IDLE_DELAY_MS: u64 = 5_000;
@@ -66,10 +67,49 @@ pub fn build_ack_redrive_send_args(
         "skipAckObligation": true,
         "ackRedrive": true,
         "ackRedriveTrigger": trigger.as_str(),
+        "redriveAttempts": obligation.redrive_attempts,
         "clientNonce": format!(
             "ack-redrive:{agent_id}:{}:{now_ms}",
             obligation.redrive_attempts as u64,
         ),
+    })
+}
+
+pub fn build_ack_redrive_empty_delivery_report(
+    obligation: Option<&AckObligation>,
+    conversation_id: &str,
+    request_id: Option<&str>,
+    request_source: Option<&str>,
+    tool_call_count: u64,
+    stream_output_produced: bool,
+    duration_ms: u64,
+) -> Option<TurnEmptyDeliveryReport> {
+    let obligation = obligation?;
+    let request_id = request_id
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
+    let request_source = request_source
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
+    Some(TurnEmptyDeliveryReport {
+        conversation_id: conversation_id.to_string(),
+        request_id,
+        source: "ack_redrive".into(),
+        request_source,
+        reply_nudge_attempts: None,
+        redrive_attempts: Some(
+            obligation
+                .redrive_attempts
+                .max(0.0)
+                .floor()
+                .min(i64::MAX as f64) as i64,
+        ),
+        tool_call_count: tool_call_count.min(i64::MAX as u64) as i64,
+        stream_output_produced,
+        duration_ms: duration_ms as f64,
+        ack_outstanding: true,
     })
 }
 

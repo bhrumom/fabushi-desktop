@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     ACK_REDRIVE_IDLE_DELAY_MS, MAX_ACK_REDRIVES, AckObligations, AckRedriveTrigger,
-    build_ack_redrive_prompt,
+    build_ack_redrive_empty_delivery_report, build_ack_redrive_prompt,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -171,6 +171,57 @@ fn redrive_timers_are_per_agent_boot_and_idle_schedules_and_new_sends_cancel_the
         .fulfill_ack_obligation("agent-b", &token)
         .expect("fulfill"));
     assert!(ack.redrive_schedule("agent-b").is_none());
+
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn ack_redrive_empty_delivery_report_only_exists_while_delivery_is_still_owed() {
+    let root = temp_root("empty-delivery");
+    let ack = AckObligations::new(&root);
+    ack.record_send("agent-a", 10.0).expect("record send");
+    ack.record_redrive_attempt("agent-a").expect("redrive attempt");
+
+    let obligation = ack.store().get("agent-a");
+    let report = build_ack_redrive_empty_delivery_report(
+        obligation.as_ref(),
+        "agent-a",
+        Some("stream-1"),
+        Some("handoff-resume"),
+        3,
+        true,
+        250,
+    )
+    .expect("outstanding delivery report");
+    assert_eq!(report.conversation_id, "agent-a");
+    assert_eq!(report.request_id.as_deref(), Some("stream-1"));
+    assert_eq!(report.source, "ack_redrive");
+    assert_eq!(report.request_source.as_deref(), Some("handoff-resume"));
+    assert_eq!(report.redrive_attempts, Some(1));
+    assert_eq!(report.tool_call_count, 3);
+    assert!(report.stream_output_produced);
+    assert_eq!(report.duration_ms, 250.0);
+    assert!(report.ack_outstanding);
+
+    let token = ack
+        .mint_ack_run_token("agent-a")
+        .expect("mint")
+        .expect("token");
+    assert!(ack
+        .fulfill_ack_obligation("agent-a", &token)
+        .expect("fulfill"));
+    let cleared = ack.store().get("agent-a");
+    assert!(build_ack_redrive_empty_delivery_report(
+        cleared.as_ref(),
+        "agent-a",
+        Some("stream-2"),
+        Some("handoff-resume"),
+        0,
+        false,
+        100,
+    )
+    .is_none());
 
     let _ = fs::remove_dir_all(root);
 }

@@ -49,7 +49,8 @@ use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
 };
 use mahayana_host_runtime::extensions::transcript::box_request_entries::resolve_box_request_entry;
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
-    AckObligations, AckRedrivePreparation, build_ack_redrive_send_args,
+    AckObligations, AckRedrivePreparation, build_ack_redrive_empty_delivery_report,
+    build_ack_redrive_send_args,
 };
 use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRunnerRegistry;
 use mahayana_host_runtime::extensions::transcript::run_scheduler::WatchdogStage;
@@ -74,6 +75,7 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
     queue_accepted_telemetry, queue_dequeued_telemetry, queue_watchdog_telemetry,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
+use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::turn_empty_delivery_telemetry;
 use mahayana_host_runtime::extensions::telemetry::extension::start_host_telemetry_extension;
 use mahayana_host_runtime::extensions::trays::extension::{
     HostTraysExtension, start_trays_extension,
@@ -1040,6 +1042,7 @@ fn start_routed_provider_task(
     forever_box: Arc<ForeverBoxService>,
     session_handoff: BoxHandoffService,
     trays: Arc<HostTraysExtension>,
+    telemetry_logs: HostStructuredLogTelemetry,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
@@ -1060,6 +1063,16 @@ fn start_routed_provider_task(
             "runner.startRoutedProvider requires streamId".into()
         ))?
         .to_string();
+    let request_source = args
+        .get("requestSource")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
+    let is_ack_redrive = args
+        .get("ackRedrive")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false);
     transcript_runtime
         .require_routed_turn_lease(&agent_id, &stream_id)
         .map_err(map_production_send_error)?;
@@ -1184,6 +1197,9 @@ fn start_routed_provider_task(
     let worker_transcript_runtime = Arc::clone(&transcript_runtime);
     let worker_ack_token = ack_token.clone();
     let worker_trays = Arc::clone(&trays);
+    let worker_telemetry_logs = telemetry_logs.clone();
+    let worker_request_source = request_source.clone();
+    let worker_is_ack_redrive = is_ack_redrive;
     let spawn_error_agent_id = agent_id.clone();
     let spawn = thread::Builder::new()
         .name(format!("mahayana-runner-provider-{agent_id}"))
@@ -1199,8 +1215,9 @@ fn start_routed_provider_task(
                     }));
                 })),
             );
+            let runner_started_at_ms = started_at_ms();
             if let Ok(mut observation) = observation.lock() {
-                observation.turn_started(started_at_ms());
+                observation.turn_started(runner_started_at_ms);
             }
             let bridge: Arc<dyn RoutedToolBridge> = Arc::new(CoordinatorRoutedToolBridge {
                 relay: routed_tool_relay,
@@ -1344,6 +1361,37 @@ fn start_routed_provider_task(
                 runner.last_finished().map(|finished| &finished.outcome),
                 Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
             );
+            if worker_is_ack_redrive
+                && !waiting_user
+                && !worker_cancellation.is_cancelled()
+                && result.is_ok()
+            {
+                let observed_tool_call_count = observation
+                    .lock()
+                    .map(|observation| observation.observed_tool_call_count())
+                    .unwrap_or_default();
+                let stream_output_produced = result
+                    .as_ref()
+                    .ok()
+                    .is_some_and(|content| !content.is_empty());
+                let obligation = worker_ack_obligations.store().get(&agent_id);
+                if let Some(report) = build_ack_redrive_empty_delivery_report(
+                    obligation.as_ref(),
+                    &agent_id,
+                    Some(&worker_stream_id),
+                    worker_request_source.as_deref(),
+                    observed_tool_call_count,
+                    stream_output_produced,
+                    started_at_ms().saturating_sub(runner_started_at_ms),
+                ) {
+                    let projection = turn_empty_delivery_telemetry(&report);
+                    if let Err(error) = worker_telemetry_logs.report_projection(&projection) {
+                        eprintln!(
+                            "mahayana-host-ack empty_delivery_telemetry_failed agent={agent_id} error={error}"
+                        );
+                    }
+                }
+            }
 
             // A terminal inference event is the renderer-visible completion
             // boundary. Do not publish it until the Host has actually settled
@@ -1677,6 +1725,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.forever_box),
                 self.session_handoff.clone(),
                 Arc::clone(&self.trays),
+                self.telemetry_logs.clone(),
                 args,
             );
         }

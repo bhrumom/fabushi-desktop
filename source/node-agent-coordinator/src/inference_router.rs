@@ -50,6 +50,10 @@ pub fn project_runner_turn_context(
         "richText",
         "composedAtMs",
         "enterEpochMs",
+        "requestSource",
+        "ackRedrive",
+        "ackRedriveTrigger",
+        "redriveAttempts",
     ] {
         if let Some(value) = send_args.get(field) {
             projected.insert(field.to_string(), value.clone());
