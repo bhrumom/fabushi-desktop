@@ -2,6 +2,7 @@ use std::fs;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse;
 use mahayana_host_runtime::extensions::session::conversation_size_limits::ConversationSizePolicy;
 use sha2::{Digest, Sha256};
 use mahayana_host_runtime::extensions::session::session_paths::{
@@ -310,6 +311,54 @@ fn production_session_open_owns_frozen_soft_gc_schedule_wiring() {
     assert_eq!(
         futures::executor::block_on(store.get_blob(&(), &root_id)).expect("root read"),
         Some(root_blob)
+    );
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_session_exposes_durable_awaiting_user_state_for_runner_send_guard() {
+    let root = temp_root("awaiting-send-guard");
+    let runtime = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let record = runtime
+        .materialize_new_session(None, "user", None)
+        .expect("materialize session");
+    assert!(
+        runtime
+            .get_agent_awaiting_user_response(&record.id)
+            .expect("read initial awaiting")
+            .is_none()
+    );
+
+    let awaiting = AwaitingUserResponse {
+        tab_id: "tab-1".into(),
+        reason: "widget".into(),
+        since: 123.0,
+    };
+    assert!(
+        runtime
+            .set_agent_awaiting_user_response(&record.id, Some(&awaiting))
+            .expect("set awaiting")
+    );
+    assert_eq!(
+        runtime
+            .get_agent_awaiting_user_response(&record.id)
+            .expect("read awaiting"),
+        Some(awaiting)
+    );
+
+    assert!(
+        runtime
+            .set_agent_awaiting_user_response(&record.id, None)
+            .expect("clear awaiting")
+    );
+    assert!(
+        runtime
+            .get_agent_awaiting_user_response(&record.id)
+            .expect("read cleared awaiting")
+            .is_none()
     );
 
     runtime.shutdown();

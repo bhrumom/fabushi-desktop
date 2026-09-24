@@ -16870,10 +16870,11 @@
       "testEvidence": [
         "source/host/tests/send_message_tool_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/session_production_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Runner exposes SendMessage as a first-party RoutedToolBridge ahead of delegated MCP tools. Calls are schema-validated, normalized/encoded and durably appended to the authoritative Rust Session transcript. Text images and standalone file:// attachments pass through frozen resolveAttachmentSource ordering: local Host ingest first, ForeverBox fallback second, stable filename preservation and agent-owned media persistence. Frozen readMediaDimensions parity is now production-wired: resolved local/persisted image URLs are inspected and width/height are stamped on both text-inline images and standalone image attachments before transcript persistence. Final remains withheld for cloud-agent title lookup, https file-vs-media classification, external channel delivery, live awaiting-user-selection state, and the exact generated proto interaction-handler partial/final tool-call surface."
+      "notes": "Shipping Runner exposes SendMessage as a first-party RoutedToolBridge ahead of delegated MCP tools. Calls are schema-validated, normalized/encoded and durably appended to the authoritative Rust Session transcript. Text images and standalone file:// attachments pass through frozen resolveAttachmentSource ordering: local Host ingest first, ForeverBox fallback second, stable filename preservation and agent-owned media persistence. Frozen readMediaDimensions parity is production-wired: resolved local/persisted image URLs are inspected and width/height are stamped on text-inline images and standalone image attachments. Frozen awaiting-user fencing is now production-wired too: ProductionSendMessageSink reads the durable Session awaitingUserResponse state and rejects new user-visible output with the exact frozen error while a widget/box handoff is pending. Final remains withheld for cloud-agent title lookup, https file-vs-media classification, external channel delivery, and the exact generated proto interaction-handler partial/final tool-call surface."
     },
     {
       "referencePath": "source/host/runner/tools/tool-input-error.ts",

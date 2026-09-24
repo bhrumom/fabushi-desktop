@@ -336,6 +336,14 @@ impl ProductionSendMessageSink {
 }
 
 impl SendMessageSink for ProductionSendMessageSink {
+    fn is_awaiting_user_selection(&self) -> bool {
+        self.sessions
+            .get_agent_awaiting_user_response(&self.agent_id)
+            .ok()
+            .flatten()
+            .is_some()
+    }
+
     fn request_box_help(
         &self,
         request: BoxHelpRequest,

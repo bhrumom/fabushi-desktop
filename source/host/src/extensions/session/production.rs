@@ -905,6 +905,15 @@ impl ProductionSessionWorkers {
             .map_err(|error| error.to_string())
     }
 
+    pub fn get_agent_awaiting_user_response(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<AwaitingUserResponse>, String> {
+        self.open_agent_db_owner(agent_id)?
+            .get_awaiting_user_response()
+            .map_err(|error| error.to_string())
+    }
+
     pub fn set_agent_awaiting_user_response(
         &self,
         agent_id: &str,

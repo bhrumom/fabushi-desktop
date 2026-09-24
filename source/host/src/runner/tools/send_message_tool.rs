@@ -21,7 +21,7 @@ use super::sand_secret_request::{clamp_secret_description, clamp_secret_label};
 
 pub const SAND_SEND_MESSAGE_TOOL_NAME: &str = "SendMessage";
 pub const SAND_AWAITING_USER_SEND_MESSAGE_BLOCKED: &str =
-    "Cannot send another user-facing message while the current user selection is still pending.";
+    "This turn is already waiting on the user (you sent a question widget or handed the box back to them), so this message was not delivered. Wait for the user — their response arrives as the next message — then say this on your next turn.";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResolvedAttachmentSource {

@@ -16,8 +16,8 @@ use mahayana_host_runtime::runner::tools::send_message_schema::{
     validate_send_message,
 };
 use mahayana_host_runtime::runner::tools::send_message_tool::{
-    ResolvedAttachmentSource, SAND_SEND_MESSAGE_TOOL_NAME, SendMessageSink,
-    SendMessageToolBridge,
+    ResolvedAttachmentSource, SAND_AWAITING_USER_SEND_MESSAGE_BLOCKED,
+    SAND_SEND_MESSAGE_TOOL_NAME, SendMessageSink, SendMessageToolBridge,
 };
 use serde_json::{Value, json};
 
@@ -58,6 +58,42 @@ impl SendMessageSink for Sink {
     ) -> Result<Option<String>, ProviderSessionError> {
         self.messages.lock().expect("messages").push(message);
         Ok(Some(format!("runner-send:{tool_call_id}")))
+    }
+}
+
+struct AwaitingSink;
+
+impl SendMessageSink for AwaitingSink {
+    fn is_awaiting_user_selection(&self) -> bool {
+        true
+    }
+
+    fn send_message(
+        &self,
+        _message: Value,
+        _timestamp_ms: u64,
+        _tool_call_id: &str,
+    ) -> Result<Option<String>, ProviderSessionError> {
+        panic!("awaiting-user guard must reject before persistence")
+    }
+}
+
+#[test]
+fn send_message_guard_rejects_when_shipping_state_is_waiting_on_user() {
+    let bridge = SendMessageToolBridge::new(Arc::new(Delegate), Arc::new(AwaitingSink));
+    let tool = bridge.list_tools().expect("tools").remove(0);
+    let error = bridge
+        .call_tool(
+            &tool,
+            json!({"type":"text","content":"must wait"}),
+            "awaiting-call",
+        )
+        .expect_err("awaiting-user send must be blocked");
+    match error {
+        ProviderSessionError::Tool(message) => {
+            assert_eq!(message, SAND_AWAITING_USER_SEND_MESSAGE_BLOCKED);
+        }
+        other => panic!("unexpected error: {other:?}"),
     }
 }
 
