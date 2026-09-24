@@ -5344,7 +5344,7 @@
       "targetPath": "source/box-exec-daemon/src/server.rs",
       "targetLanguage": "rust",
       "owner": "box-exec",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "c2f9f7ac4428d124bfab5898f006a574737c4cbf",
       "architecturalRole": "box-exec-daemon",
       "processOrPackage": "box-exec",
@@ -5357,7 +5357,7 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Real standalone Rust production server now owns Bearer-authenticated Connect/protobuf ControlService Ping/GetCapabilities/UpdateEnvironmentVariables/LoadMcpServers and ExecService read/shell/shell-stream/background-shell/stdin routes with frozen field numbers, workspace/terminal path confinement, symlink read rejection, environment replacement, terminal transcript files, process-group stop and raw-wire contract tests. Final is intentionally withheld because shellStream currently buffers process output before writing Connect envelopes instead of forwarding stdout/stderr incrementally while the child is running, and request-abort propagation to foreground processes is not yet wire-equivalent to the frozen AbortSignal path."
+      "notes": "Standalone Rust production server owns Bearer-authenticated Connect/protobuf ControlService and ExecService routes with frozen field numbers, path/symlink confinement, environment replacement, background terminal files and process-group stop. shellStream now writes Start/stdout/stderr/Exit Connect envelopes incrementally through chunked HTTP as child pipes produce data instead of buffering to process completion. A per-request client-disconnect monitor propagates connection EOF into an AbortSignal-equivalent AtomicBool consumed by foreground shell and shellStream loops, killing the process group and setting aborted semantics. Raw-wire, pre-exit streaming and disconnect-abort contracts are embedded in the independent box-exec daemon test suite."
     },
     {
       "referencePath": "source/electron-dev-controls/main.ts",

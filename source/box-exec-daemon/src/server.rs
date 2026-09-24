@@ -5,7 +5,7 @@ use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
@@ -519,6 +519,12 @@ struct ProcessOutcome {
 }
 
 #[derive(Debug)]
+enum ShellPipeEvent {
+    Stdout(Vec<u8>),
+    Stderr(Vec<u8>),
+}
+
+#[derive(Debug)]
 struct PathRejectedError(String);
 
 impl std::fmt::Display for PathRejectedError {
@@ -741,6 +747,15 @@ impl BoxExecRuntime {
     }
 
     pub fn shell(&self, args: &ShellArgs) -> ShellResult {
+        let abort = AtomicBool::new(false);
+        self.shell_with_abort(args, &abort)
+    }
+
+    fn shell_with_abort(
+        &self,
+        args: &ShellArgs,
+        abort: &AtomicBool,
+    ) -> ShellResult {
         let cwd = match self.resolve_path(&args.working_directory) {
             Ok(cwd) => cwd,
             Err(error) => {
@@ -754,7 +769,7 @@ impl BoxExecRuntime {
             }
         };
         let timeout = (args.timeout > 0).then_some(args.timeout as u64);
-        let outcome = match self.run_process(&args.command, &cwd, timeout) {
+        let outcome = match self.run_process(&args.command, &cwd, timeout, abort) {
             Ok(outcome) => outcome,
             Err(error) => {
                 return ShellResult {
@@ -809,75 +824,192 @@ impl BoxExecRuntime {
         }
     }
 
-    fn shell_stream_buffered(&self, args: &ShellArgs) -> Vec<ShellStream> {
-        let mut events = vec![ShellStream {
-            event: Some(shell_stream::Event::Start(ShellStreamStart {})),
-        }];
-        let cwd = match self.resolve_path(&args.working_directory) {
-            Ok(cwd) => cwd,
-            Err(error) => {
-                events.push(ShellStream {
-                    event: Some(shell_stream::Event::Stderr(ShellStreamStderr {
-                        data: error,
-                    })),
-                });
-                events.push(ShellStream {
-                    event: Some(shell_stream::Event::Exit(ShellStreamExit {
-                        code: 1,
-                        cwd: args.working_directory.clone(),
-                        aborted: false,
-                        local_execution_time_ms: Some(0),
-                    })),
-                });
-                return events;
+    fn shell_stream_live<F>(
+        &self,
+        id: u32,
+        exec_id: &str,
+        args: &ShellArgs,
+        abort: &AtomicBool,
+        emit: &mut F,
+    ) -> Result<(), String>
+    where
+        F: FnMut(ExecStreamElement) -> Result<(), String>,
+    {
+        let cwd = self.resolve_path(&args.working_directory)?;
+        emit(client_message(
+            id,
+            exec_id,
+            exec_client_message::Message::ShellStream(ShellStream {
+                event: Some(shell_stream::Event::Start(ShellStreamStart {})),
+            }),
+            None,
+        ))?;
+
+        let mut child = self.spawn_shell(&args.command, &cwd)?;
+        let pid = child.id();
+        self.foreground_pids
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(pid);
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| "shell stream stdout was unavailable".to_string())?;
+        let stderr = child
+            .stderr
+            .take()
+            .ok_or_else(|| "shell stream stderr was unavailable".to_string())?;
+        let (events_tx, events_rx) = mpsc::channel::<ShellPipeEvent>();
+        let stdout_worker = spawn_stream_pipe(
+            stdout,
+            events_tx.clone(),
+            false,
+        );
+        let stderr_worker = spawn_stream_pipe(
+            stderr,
+            events_tx,
+            true,
+        );
+        let started = Instant::now();
+        let timeout_ms = (args.timeout > 0).then_some(args.timeout as u64);
+        let mut kill_requested = false;
+        let mut status = None;
+        let mut stream_error = None::<String>;
+
+        while status.is_none() {
+            while let Ok(event) = events_rx.try_recv() {
+                let stream = match event {
+                    ShellPipeEvent::Stdout(bytes) => ShellStream {
+                        event: Some(shell_stream::Event::Stdout(ShellStreamStdout {
+                            data: String::from_utf8_lossy(&bytes).into_owned(),
+                        })),
+                    },
+                    ShellPipeEvent::Stderr(bytes) => ShellStream {
+                        event: Some(shell_stream::Event::Stderr(ShellStreamStderr {
+                            data: String::from_utf8_lossy(&bytes).into_owned(),
+                        })),
+                    },
+                };
+                if let Err(error) = emit(client_message(
+                    id,
+                    exec_id,
+                    exec_client_message::Message::ShellStream(stream),
+                    None,
+                )) {
+                    abort.store(true, Ordering::Release);
+                    stream_error = Some(error);
+                    kill_process_group(pid);
+                    kill_requested = true;
+                    break;
+                }
             }
-        };
-        let outcome = match self.run_process(
-            &args.command,
-            &cwd,
-            (args.timeout > 0).then_some(args.timeout as u64),
-        ) {
-            Ok(outcome) => outcome,
-            Err(error) => {
-                events.push(ShellStream {
-                    event: Some(shell_stream::Event::Stderr(ShellStreamStderr {
-                        data: error,
-                    })),
-                });
-                events.push(ShellStream {
-                    event: Some(shell_stream::Event::Exit(ShellStreamExit {
-                        code: 1,
-                        cwd: args.working_directory.clone(),
-                        aborted: false,
-                        local_execution_time_ms: Some(0),
-                    })),
-                });
-                return events;
+            if stream_error.is_some() {
+                status = child.wait().ok();
+                break;
             }
+            match child.try_wait().map_err(|error| error.to_string())? {
+                Some(done) => {
+                    status = Some(done);
+                    break;
+                }
+                None => {}
+            }
+            if !kill_requested
+                && (abort.load(Ordering::Acquire)
+                    || self.stopping.load(Ordering::Acquire)
+                    || timeout_ms.is_some_and(|timeout| {
+                        started.elapsed() >= Duration::from_millis(timeout)
+                    }))
+            {
+                kill_process_group(pid);
+                kill_requested = true;
+            }
+            match events_rx.recv_timeout(Duration::from_millis(10)) {
+                Ok(event) => {
+                    let stream = match event {
+                        ShellPipeEvent::Stdout(bytes) => ShellStream {
+                            event: Some(shell_stream::Event::Stdout(ShellStreamStdout {
+                                data: String::from_utf8_lossy(&bytes).into_owned(),
+                            })),
+                        },
+                        ShellPipeEvent::Stderr(bytes) => ShellStream {
+                            event: Some(shell_stream::Event::Stderr(ShellStreamStderr {
+                                data: String::from_utf8_lossy(&bytes).into_owned(),
+                            })),
+                        },
+                    };
+                    if let Err(error) = emit(client_message(
+                        id,
+                        exec_id,
+                        exec_client_message::Message::ShellStream(stream),
+                        None,
+                    )) {
+                        abort.store(true, Ordering::Release);
+                        stream_error = Some(error);
+                        kill_process_group(pid);
+                        kill_requested = true;
+                    }
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
+                Err(mpsc::RecvTimeoutError::Disconnected) => {}
+            }
+        }
+
+        let _ = stdout_worker.join();
+        let _ = stderr_worker.join();
+        while let Ok(event) = events_rx.try_recv() {
+            if stream_error.is_some() {
+                break;
+            }
+            let stream = match event {
+                ShellPipeEvent::Stdout(bytes) => ShellStream {
+                    event: Some(shell_stream::Event::Stdout(ShellStreamStdout {
+                        data: String::from_utf8_lossy(&bytes).into_owned(),
+                    })),
+                },
+                ShellPipeEvent::Stderr(bytes) => ShellStream {
+                    event: Some(shell_stream::Event::Stderr(ShellStreamStderr {
+                        data: String::from_utf8_lossy(&bytes).into_owned(),
+                    })),
+                },
+            };
+            if let Err(error) = emit(client_message(
+                id,
+                exec_id,
+                exec_client_message::Message::ShellStream(stream),
+                None,
+            )) {
+                abort.store(true, Ordering::Release);
+                stream_error = Some(error);
+            }
+        }
+        self.foreground_pids
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(&pid);
+
+        if let Some(error) = stream_error {
+            return Err(error);
+        }
+        let status = match status {
+            Some(status) => status,
+            None => child.wait().map_err(|error| error.to_string())?,
         };
-        if !outcome.stdout.is_empty() {
-            events.push(ShellStream {
-                event: Some(shell_stream::Event::Stdout(ShellStreamStdout {
-                    data: outcome.stdout,
+        emit(client_message(
+            id,
+            exec_id,
+            exec_client_message::Message::ShellStream(ShellStream {
+                event: Some(shell_stream::Event::Exit(ShellStreamExit {
+                    code: status.code().unwrap_or(1).max(0) as u32,
+                    cwd: args.working_directory.clone(),
+                    aborted: abort.load(Ordering::Acquire),
+                    local_execution_time_ms: Some(saturating_i32(
+                        started.elapsed().as_millis().min(u64::MAX as u128) as u64,
+                    )),
                 })),
-            });
-        }
-        if !outcome.stderr.is_empty() {
-            events.push(ShellStream {
-                event: Some(shell_stream::Event::Stderr(ShellStreamStderr {
-                    data: outcome.stderr,
-                })),
-            });
-        }
-        events.push(ShellStream {
-            event: Some(shell_stream::Event::Exit(ShellStreamExit {
-                code: outcome.code.max(0) as u32,
-                cwd: args.working_directory.clone(),
-                aborted: outcome.aborted,
-                local_execution_time_ms: Some(saturating_i32(outcome.elapsed_ms)),
-            })),
-        });
-        events
+            }),
+            None,
+        ))
     }
 
     pub fn spawn_background(
@@ -1019,85 +1151,100 @@ impl BoxExecRuntime {
         }
     }
 
-    pub fn execute(&self, request: ExecServerMessage) -> Vec<ExecStreamElement> {
-        let mut output = Vec::new();
+    pub fn execute_with_emitter<F>(
+        &self,
+        request: ExecServerMessage,
+        abort: &AtomicBool,
+        mut emit: F,
+    ) -> Result<(), String>
+    where
+        F: FnMut(ExecStreamElement) -> Result<(), String>,
+    {
         let id = request.id;
         let exec_id = request.exec_id.clone();
-        let message = request.message;
-        match message {
+        match request.message {
             Some(exec_server_message::Message::ReadArgs(args)) => {
-                output.push(client_message(
+                emit(client_message(
                     id,
                     &exec_id,
                     exec_client_message::Message::ReadResult(self.read(&args)),
                     None,
-                ));
+                ))?;
             }
             Some(exec_server_message::Message::RedactedReadArgs(args)) => {
-                output.push(client_message(
+                emit(client_message(
                     id,
                     &exec_id,
                     exec_client_message::Message::RedactedReadResult(self.read(&args)),
                     None,
-                ));
+                ))?;
             }
             Some(exec_server_message::Message::ShellArgs(args)) => {
                 let started = Instant::now();
-                let result = self.shell(&args);
-                output.push(client_message(
+                let result = self.shell_with_abort(&args, abort);
+                emit(client_message(
                     id,
                     &exec_id,
                     exec_client_message::Message::ShellResult(result),
                     Some(saturating_i32(started.elapsed().as_millis() as u64)),
-                ));
+                ))?;
             }
             Some(exec_server_message::Message::MiniSweAgentBashArgs(args)) => {
                 let started = Instant::now();
-                let result = self.shell(&args);
-                output.push(client_message(
+                let result = self.shell_with_abort(&args, abort);
+                emit(client_message(
                     id,
                     &exec_id,
                     exec_client_message::Message::MiniSweAgentBashResult(result),
                     Some(saturating_i32(started.elapsed().as_millis() as u64)),
-                ));
+                ))?;
             }
             Some(exec_server_message::Message::ShellStreamArgs(args)) => {
-                for event in self.shell_stream_buffered(&args) {
-                    output.push(client_message(
-                        id,
-                        &exec_id,
-                        exec_client_message::Message::ShellStream(event),
-                        None,
-                    ));
+                if let Err(error) =
+                    self.shell_stream_live(id, &exec_id, &args, abort, &mut emit)
+                {
+                    if abort.load(Ordering::Acquire) {
+                        return Err(error);
+                    }
+                    emit(thrown(id, error, "BOX_EXEC_DAEMON_ERROR"))?;
                 }
             }
             Some(exec_server_message::Message::BackgroundShellSpawnArgs(args)) => {
-                output.push(client_message(
+                emit(client_message(
                     id,
                     &exec_id,
                     exec_client_message::Message::BackgroundShellSpawnResult(
                         self.spawn_background(&args),
                     ),
                     None,
-                ));
+                ))?;
             }
             Some(exec_server_message::Message::WriteShellStdinArgs(args)) => {
-                output.push(client_message(
+                emit(client_message(
                     id,
                     &exec_id,
                     exec_client_message::Message::WriteShellStdinResult(
                         self.write_stdin(&args),
                     ),
                     None,
-                ));
+                ))?;
             }
-            None => output.push(thrown(
+            None => emit(thrown(
                 id,
                 "Unsupported ExecServerMessage case: unset",
                 "BOX_EXEC_UNSUPPORTED",
-            )),
+            ))?,
         }
-        output.push(close(id));
+        emit(close(id))
+    }
+
+    pub fn execute(&self, request: ExecServerMessage) -> Vec<ExecStreamElement> {
+        let abort = AtomicBool::new(false);
+        let mut output = Vec::new();
+        let _ = self.execute_with_emitter(request, &abort, |element| {
+            output.push(element);
+            Ok(())
+        });
         output
     }
 
@@ -1152,6 +1299,7 @@ impl BoxExecRuntime {
         command: &str,
         cwd: &Path,
         timeout_ms: Option<u64>,
+        abort: &AtomicBool,
     ) -> Result<ProcessOutcome, String> {
         let mut child = self.spawn_shell(command, cwd)?;
         let pid = child.id();
@@ -1171,18 +1319,26 @@ impl BoxExecRuntime {
         let stderr_worker = thread::spawn(move || read_all(stderr));
         let started = Instant::now();
         let mut timed_out = false;
+        let mut kill_requested = false;
         let status = loop {
             if let Some(status) = child.try_wait().map_err(|error| error.to_string())? {
                 break status;
             }
-            if timeout_ms.is_some_and(|timeout| {
-                started.elapsed() >= Duration::from_millis(timeout)
-            }) {
+            if !kill_requested
+                && timeout_ms.is_some_and(|timeout| {
+                    started.elapsed() >= Duration::from_millis(timeout)
+                })
+            {
                 timed_out = true;
                 kill_process_group(pid);
+                kill_requested = true;
             }
-            if self.stopping.load(Ordering::Acquire) {
+            if !kill_requested
+                && (abort.load(Ordering::Acquire)
+                    || self.stopping.load(Ordering::Acquire))
+            {
                 kill_process_group(pid);
+                kill_requested = true;
             }
             thread::sleep(Duration::from_millis(10));
         };
@@ -1204,9 +1360,11 @@ impl BoxExecRuntime {
             stderr: String::from_utf8_lossy(&stderr).into_owned(),
             elapsed_ms: started.elapsed().as_millis().min(u64::MAX as u128) as u64,
             timed_out,
-            aborted: self.stopping.load(Ordering::Acquire),
+            aborted: abort.load(Ordering::Acquire)
+                || self.stopping.load(Ordering::Acquire),
         })
     }
+
 }
 
 enum ReadFailure {
@@ -1413,7 +1571,7 @@ fn serve_connection(
         "/agent.v1.ExecService/Exec" => {
             let request = ExecServerMessage::decode(request.body.as_slice())
                 .map_err(|error| error.to_string())?;
-            write_connect_stream(&mut stream, runtime.execute(request))
+            write_connect_stream(&mut stream, runtime, request)
         }
         _ => write_http_response(
             &mut stream,
@@ -1505,20 +1663,106 @@ fn write_proto_response<M: ProstMessage>(
 
 fn write_connect_stream(
     stream: &mut TcpStream,
-    messages: Vec<ExecStreamElement>,
+    runtime: Arc<BoxExecRuntime>,
+    request: ExecServerMessage,
 ) -> Result<(), String> {
-    let mut body = Vec::new();
-    for message in messages {
-        push_connect_envelope(0, &message.encode_to_vec(), &mut body);
-    }
-    push_connect_envelope(0x02, b"{}", &mut body);
-    write_http_response(
+    write!(
         stream,
-        200,
-        "application/connect+proto",
-        &body,
-        &[("Connect-Protocol-Version", "1")],
+        "HTTP/1.1 200 OK\r\nContent-Type: application/connect+proto\r\nTransfer-Encoding: chunked\r\nConnection: close\r\nConnect-Protocol-Version: 1\r\n\r\n"
     )
+    .map_err(|error| error.to_string())?;
+    stream.flush().map_err(|error| error.to_string())?;
+
+    let abort = Arc::new(AtomicBool::new(false));
+    let monitor_done = Arc::new(AtomicBool::new(false));
+    let monitor = spawn_disconnect_monitor(
+        stream,
+        Arc::clone(&abort),
+        Arc::clone(&monitor_done),
+    );
+    let emitter_abort = Arc::clone(&abort);
+    let execution = runtime.execute_with_emitter(
+        request,
+        abort.as_ref(),
+        |message| {
+            let payload = message.encode_to_vec();
+            if let Err(error) = write_connect_chunk(stream, 0, &payload) {
+                emitter_abort.store(true, Ordering::Release);
+                return Err(error);
+            }
+            Ok(())
+        },
+    );
+
+    let finish = if execution.is_ok() && !abort.load(Ordering::Acquire) {
+        write_connect_chunk(stream, 0x02, b"{}")
+            .and_then(|()| {
+                stream
+                    .write_all(b"0\r\n\r\n")
+                    .map_err(|error| error.to_string())
+            })
+            .and_then(|()| stream.flush().map_err(|error| error.to_string()))
+    } else {
+        execution
+    };
+    monitor_done.store(true, Ordering::Release);
+    if let Some(monitor) = monitor {
+        let _ = monitor.join();
+    }
+    finish
+}
+
+fn write_connect_chunk(
+    stream: &mut TcpStream,
+    flags: u8,
+    payload: &[u8],
+) -> Result<(), String> {
+    let mut envelope = Vec::with_capacity(payload.len().saturating_add(5));
+    push_connect_envelope(flags, payload, &mut envelope);
+    write!(stream, "{:X}\r\n", envelope.len())
+        .map_err(|error| error.to_string())?;
+    stream
+        .write_all(&envelope)
+        .map_err(|error| error.to_string())?;
+    stream
+        .write_all(b"\r\n")
+        .map_err(|error| error.to_string())?;
+    stream.flush().map_err(|error| error.to_string())
+}
+
+fn spawn_disconnect_monitor(
+    stream: &TcpStream,
+    abort: Arc<AtomicBool>,
+    done: Arc<AtomicBool>,
+) -> Option<JoinHandle<()>> {
+    let monitor = stream.try_clone().ok()?;
+    let _ = monitor.set_read_timeout(Some(Duration::from_millis(50)));
+    thread::Builder::new()
+        .name("box-exec-daemon-abort-watch".into())
+        .spawn(move || {
+            let mut byte = [0_u8; 1];
+            while !done.load(Ordering::Acquire) {
+                match monitor.peek(&mut byte) {
+                    Ok(0) => {
+                        abort.store(true, Ordering::Release);
+                        break;
+                    }
+                    Ok(_) => {}
+                    Err(error)
+                        if matches!(
+                            error.kind(),
+                            std::io::ErrorKind::WouldBlock
+                                | std::io::ErrorKind::TimedOut
+                                | std::io::ErrorKind::Interrupted
+                        ) => {}
+                    Err(_) => {
+                        abort.store(true, Ordering::Release);
+                        break;
+                    }
+                }
+            }
+        })
+        .ok()
 }
 
 fn push_connect_envelope(flags: u8, payload: &[u8], output: &mut Vec<u8>) {
@@ -1655,6 +1899,37 @@ fn read_all<R: Read>(mut reader: R) -> Vec<u8> {
     let mut output = Vec::new();
     let _ = reader.read_to_end(&mut output);
     output
+}
+
+fn spawn_stream_pipe<R>(
+    mut reader: R,
+    sender: mpsc::Sender<ShellPipeEvent>,
+    stderr: bool,
+) -> JoinHandle<()>
+where
+    R: Read + Send + 'static,
+{
+    thread::spawn(move || {
+        let mut buffer = [0_u8; 8192];
+        loop {
+            match reader.read(&mut buffer) {
+                Ok(0) => break,
+                Ok(count) => {
+                    let bytes = buffer[..count].to_vec();
+                    let event = if stderr {
+                        ShellPipeEvent::Stderr(bytes)
+                    } else {
+                        ShellPipeEvent::Stdout(bytes)
+                    };
+                    if sender.send(event).is_err() {
+                        break;
+                    }
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(_) => break,
+            }
+        }
+    })
 }
 
 fn path_within(root: &Path, target: &Path) -> bool {
@@ -1833,6 +2108,118 @@ mod tests {
     }
 
     #[test]
+    fn shell_stream_emits_stdout_before_child_finishes() {
+        let (_root, runtime) = runtime();
+        let done_path = runtime.workspace_root.join("stream-done");
+        let request = ExecServerMessage {
+            id: 42,
+            exec_id: "stream-live".into(),
+            message: Some(exec_server_message::Message::ShellStreamArgs(ShellArgs {
+                command: "printf first; sleep 0.4; touch stream-done; printf second".into(),
+                working_directory: "/workspace".into(),
+                timeout: 5_000,
+                tool_call_id: "stream-tool".into(),
+            })),
+        };
+        let abort = AtomicBool::new(false);
+        let mut saw_first_before_done = false;
+        let mut saw_exit = false;
+        runtime
+            .execute_with_emitter(request, &abort, |element| {
+                if let Some(exec_stream_element::Element::ExecClientMessage(message)) =
+                    element.element
+                {
+                    if let Some(exec_client_message::Message::ShellStream(stream)) =
+                        message.message
+                    {
+                        match stream.event {
+                            Some(shell_stream::Event::Stdout(stdout))
+                                if stdout.data.contains("first") =>
+                            {
+                                saw_first_before_done = !done_path.exists();
+                            }
+                            Some(shell_stream::Event::Exit(_)) => saw_exit = true,
+                            _ => {}
+                        }
+                    }
+                }
+                Ok(())
+            })
+            .expect("stream execution");
+        assert!(saw_first_before_done, "stdout was buffered until after child completion");
+        assert!(saw_exit);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn disconnect_aborts_foreground_shell_process_group() {
+        let root = tempfile::tempdir().expect("root");
+        let workspace = root.path().join("workspace");
+        fs::create_dir_all(&workspace).expect("workspace");
+        let handle = start_box_exec_daemon(BoxExecDaemonOptions {
+            host: Some("127.0.0.1".into()),
+            port: Some(0),
+            auth_token: Some("secret".into()),
+            workspace_root: workspace.clone(),
+            terminals_directory: Some(root.path().join("terminals")),
+            environment: Some(std::env::vars().collect()),
+        })
+        .expect("daemon");
+        let request = ExecServerMessage {
+            id: 77,
+            exec_id: "abort-wire".into(),
+            message: Some(exec_server_message::Message::ShellArgs(ShellArgs {
+                command: "echo $ > abort-pid.txt; sleep 10".into(),
+                working_directory: "/workspace".into(),
+                timeout: 0,
+                tool_call_id: "abort-tool".into(),
+            })),
+        };
+        let body = request.encode_to_vec();
+        let mut stream = TcpStream::connect(("127.0.0.1", handle.port)).expect("connect");
+        write!(
+            stream,
+            "POST /agent.v1.ExecService/Exec HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer secret\r\nContent-Type: application/proto\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            body.len()
+        )
+        .expect("headers");
+        stream.write_all(&body).expect("body");
+        stream.flush().expect("flush");
+
+        let pid_path = workspace.join("abort-pid.txt");
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while !pid_path.exists() {
+            assert!(Instant::now() < deadline, "foreground shell never started");
+            thread::sleep(Duration::from_millis(10));
+        }
+        let pid = fs::read_to_string(&pid_path)
+            .expect("pid")
+            .trim()
+            .to_string();
+        drop(stream);
+
+        let deadline = Instant::now() + Duration::from_secs(3);
+        let mut exited = false;
+        while Instant::now() < deadline {
+            let alive = Command::new("kill")
+                .args(["-0", &pid])
+                .status()
+                .map(|status| status.success())
+                .unwrap_or(false);
+            if !alive {
+                exited = true;
+                break;
+            }
+            thread::sleep(Duration::from_millis(20));
+        }
+        if !exited {
+            let _ = handle.stop();
+        }
+        assert!(exited, "client disconnect did not abort foreground process group");
+        handle.stop().expect("stop");
+    }
+
+    #[test]
     fn authenticated_connect_routes_ping_and_exec_read_with_frozen_wire_tags() {
         let root = tempfile::tempdir().expect("root");
         let workspace = root.path().join("workspace");
@@ -1872,6 +2259,12 @@ mod tests {
             "/agent.v1.ExecService/Exec",
             "secret",
             &request.encode_to_vec(),
+        );
+        assert!(
+            std::str::from_utf8(&response)
+                .ok()
+                .is_some_and(|value| value.to_ascii_lowercase().contains("transfer-encoding: chunked")),
+            "Exec response must be a live chunked Connect stream"
         );
         let body = http_body(&response);
         assert!(body.len() > 5);
@@ -1963,6 +2356,14 @@ mod tests {
         let Ok(headers) = std::str::from_utf8(&response[..body_offset]) else {
             return false;
         };
+        if headers.lines().any(|line| {
+            line.split_once(':').is_some_and(|(name, value)| {
+                name.eq_ignore_ascii_case("transfer-encoding")
+                    && value.trim().eq_ignore_ascii_case("chunked")
+            })
+        }) {
+            return chunked_body_complete(&response[body_offset..]);
+        }
         let Some(content_length) = headers.lines().find_map(|line| {
             let (name, value) = line.split_once(':')?;
             name.eq_ignore_ascii_case("content-length")
@@ -1974,12 +2375,77 @@ mod tests {
         response.len() >= body_offset.saturating_add(content_length)
     }
 
-    fn http_body(response: &[u8]) -> &[u8] {
+    fn chunked_body_complete(body: &[u8]) -> bool {
+        let mut cursor = 0usize;
+        loop {
+            let Some(line_end) = body[cursor..]
+                .windows(2)
+                .position(|window| window == b"\r\n")
+                .map(|offset| cursor + offset)
+            else {
+                return false;
+            };
+            let Ok(size_text) = std::str::from_utf8(&body[cursor..line_end]) else {
+                return false;
+            };
+            let Ok(size) = usize::from_str_radix(size_text.trim(), 16) else {
+                return false;
+            };
+            cursor = line_end + 2;
+            if size == 0 {
+                return body.get(cursor..cursor + 2) == Some(b"\r\n");
+            }
+            let Some(data_end) = cursor.checked_add(size) else {
+                return false;
+            };
+            if body.len() < data_end.saturating_add(2)
+                || body.get(data_end..data_end + 2) != Some(b"\r\n")
+            {
+                return false;
+            }
+            cursor = data_end + 2;
+        }
+    }
+
+    fn http_body(response: &[u8]) -> Vec<u8> {
         let offset = response
             .windows(4)
             .position(|window| window == b"\r\n\r\n")
             .expect("header end")
             + 4;
-        &response[offset..]
+        let headers = std::str::from_utf8(&response[..offset]).expect("headers");
+        let body = &response[offset..];
+        if !headers.lines().any(|line| {
+            line.split_once(':').is_some_and(|(name, value)| {
+                name.eq_ignore_ascii_case("transfer-encoding")
+                    && value.trim().eq_ignore_ascii_case("chunked")
+            })
+        }) {
+            return body.to_vec();
+        }
+
+        let mut output = Vec::new();
+        let mut cursor = 0usize;
+        loop {
+            let line_end = body[cursor..]
+                .windows(2)
+                .position(|window| window == b"\r\n")
+                .map(|relative| cursor + relative)
+                .expect("chunk size line");
+            let size = usize::from_str_radix(
+                std::str::from_utf8(&body[cursor..line_end])
+                    .expect("chunk size")
+                    .trim(),
+                16,
+            )
+            .expect("chunk size hex");
+            cursor = line_end + 2;
+            if size == 0 {
+                break;
+            }
+            output.extend_from_slice(&body[cursor..cursor + size]);
+            cursor += size + 2;
+        }
+        output
     }
 }
