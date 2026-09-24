@@ -14926,12 +14926,23 @@
       "targetPath": "source/host/src/host_event_bus.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "dbe99026a47ac91a82de03b83e1f74d93a05e533",
       "architecturalRole": "host/host-event-bus",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/host_event_bus.rs",
+        "source/host/src/gateway_server.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_event_bus_contract.rs",
+        "source/host/tests/gateway_server_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production owner for frozen SandHostEventBus. gateway_server::GatewayEventHub is now an alias of SandHostEventBus, so shipping Runner deltas, routed-tool requests, ack/watchdog, Box handoff and SSE subscribers all use this bus rather than a parallel event hub. It preserves stream fanout, callback subscribe/unsubscribe, capability topic registration, handler-failure isolation/reporting and reject-on-failure dispatch."
     },
     {
       "referencePath": "source/host/host-gateway-api.ts",

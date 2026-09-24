@@ -230,33 +230,7 @@ impl GatewayBridgeHub {
     }
 }
 
-#[derive(Clone, Default)]
-pub struct GatewayEventHub {
-    subscribers: Arc<Mutex<Vec<Sender<Value>>>>,
-}
-
-impl GatewayEventHub {
-    pub fn publish(&self, event: Value) {
-        if let Ok(mut subscribers) = self.subscribers.lock() {
-            subscribers.retain(|subscriber| subscriber.send(event.clone()).is_ok());
-        }
-    }
-
-    pub fn subscribe(&self) -> Receiver<Value> {
-        let (sender, receiver) = mpsc::channel();
-        if let Ok(mut subscribers) = self.subscribers.lock() {
-            subscribers.push(sender);
-        }
-        receiver
-    }
-
-    pub fn subscriber_count(&self) -> usize {
-        self.subscribers
-            .lock()
-            .map(|subscribers| subscribers.len())
-            .unwrap_or_default()
-    }
-}
+pub type GatewayEventHub = crate::host_event_bus::SandHostEventBus;
 
 #[derive(Clone)]
 pub struct GatewayServerDeps {

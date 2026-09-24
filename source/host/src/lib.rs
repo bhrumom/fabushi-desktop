@@ -13,6 +13,7 @@ pub mod gateway_config;
 pub mod gateway_command_error;
 pub mod gateway_protocol;
 pub mod gateway_server;
+pub mod host_event_bus;
 pub mod runner;
 pub mod runner_production_bridge;
 
