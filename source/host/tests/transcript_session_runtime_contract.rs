@@ -61,6 +61,7 @@ fn focus_and_switch_follow_frozen_active_session_viewed_semantics() {
     let entries = runtime
         .switch_agent(&sessions, &second.id, 400.0)
         .expect("switch");
+    assert!(runtime.is_live_session(&second.id));
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0]["id"], "second-1");
     assert_eq!(runtime.get_entries(), entries);
@@ -134,6 +135,50 @@ fn opening_the_already_active_agent_does_not_rewrite_viewed_state() {
         .get_unread_state()
         .expect("unread");
     assert_eq!(unread.last_viewed_at, 0.0);
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_open_session_once_reuses_real_db_and_agent_store_owners_and_fences_deleted_agents() {
+    let root = temp_root("open-once");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&sessions));
+    let agent = store.create_session(None, "user", None).expect("agent");
+
+    // Reset creation-time owners so this contract observes SessionRuntime's
+    // shipping open ownership rather than materialization side effects.
+    sessions.close_agent_store_owner(&agent.id, true);
+    sessions.close_agent_db_owner(&agent.id, true);
+    assert_eq!(sessions.active_agent_store_owner_count(), 0);
+    assert_eq!(sessions.active_agent_db_owner_count(), 0);
+
+    let runtime = SessionRuntime::new();
+    runtime
+        .resolve_background_session(&sessions, &agent.id)
+        .expect("first open");
+    assert!(runtime.is_live_session(&agent.id));
+    assert_eq!(runtime.live_session_count(), 1);
+    assert_eq!(sessions.active_agent_store_owner_count(), 1);
+    assert_eq!(sessions.active_agent_db_owner_count(), 1);
+
+    runtime
+        .resolve_background_session(&sessions, &agent.id)
+        .expect("deduped second open");
+    assert_eq!(runtime.live_session_count(), 1);
+    assert_eq!(sessions.active_agent_store_owner_count(), 1);
+    assert_eq!(sessions.active_agent_db_owner_count(), 1);
+
+    runtime.mark_agent_deleted(&agent.id);
+    assert!(!runtime.is_live_session(&agent.id));
+    assert!(
+        runtime
+            .resolve_background_session(&sessions, &agent.id)
+            .expect_err("deleted agent must be fenced")
+            .contains("no longer exists")
+    );
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);

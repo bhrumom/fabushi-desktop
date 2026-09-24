@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 use serde_json::Value;
@@ -25,6 +26,9 @@ pub struct SessionRuntime {
     focus: Mutex<WindowFocusState>,
     transcript: TranscriptStore,
     in_memory_transcript_agent_id: Mutex<Option<String>>,
+    live_sessions: Mutex<HashSet<String>>,
+    session_open_lock: Mutex<()>,
+    deleted_agent_ids: Mutex<HashSet<String>>,
 }
 
 impl SessionRuntime {
@@ -34,6 +38,100 @@ impl SessionRuntime {
 
     pub fn get_entries(&self) -> Vec<TranscriptEntry> {
         self.transcript.get_transcript()
+    }
+
+    pub fn is_live_session(&self, agent_id: &str) -> bool {
+        self.live_sessions
+            .lock()
+            .map(|sessions| sessions.contains(agent_id))
+            .unwrap_or(false)
+    }
+
+    pub fn live_session_count(&self) -> usize {
+        self.live_sessions
+            .lock()
+            .map(|sessions| sessions.len())
+            .unwrap_or_default()
+    }
+
+    pub fn mark_agent_deleted(&self, agent_id: &str) {
+        if let Ok(mut deleted) = self.deleted_agent_ids.lock() {
+            deleted.insert(agent_id.to_string());
+        }
+        if let Ok(mut sessions) = self.live_sessions.lock() {
+            sessions.remove(agent_id);
+        }
+    }
+
+    pub fn clear_agent_deleted(&self, agent_id: &str) {
+        if let Ok(mut deleted) = self.deleted_agent_ids.lock() {
+            deleted.remove(agent_id);
+        }
+    }
+
+    pub fn is_agent_gone(
+        &self,
+        sessions: &Arc<ProductionSessionWorkers>,
+        agent_id: &str,
+    ) -> bool {
+        if self
+            .deleted_agent_ids
+            .lock()
+            .map(|deleted| deleted.contains(agent_id))
+            .unwrap_or(false)
+        {
+            return true;
+        }
+        !SandAgentSessionStore::new(Arc::clone(sessions)).agent_exists(agent_id)
+    }
+
+    pub fn open_session_once(
+        &self,
+        sessions: &Arc<ProductionSessionWorkers>,
+        agent_id: &str,
+    ) -> Result<(), String> {
+        if self.is_live_session(agent_id) {
+            return Ok(());
+        }
+        if self.is_agent_gone(sessions, agent_id) {
+            return Err(format!("Agent {agent_id} no longer exists"));
+        }
+
+        // The frozen JS runtime deduplicates concurrent Promise opens. The Host
+        // lane is synchronous, so a single production open lock provides the
+        // same ownership guarantee while still allowing per-agent DB/AgentStore
+        // owners to live in ProductionSessionWorkers.
+        let _open = self
+            .session_open_lock
+            .lock()
+            .map_err(|_| "transcript session open lock poisoned".to_string())?;
+        if self.is_live_session(agent_id) {
+            return Ok(());
+        }
+        if self.is_agent_gone(sessions, agent_id) {
+            return Err(format!("Agent {agent_id} no longer exists"));
+        }
+
+        let opened = sessions
+            .open_materialized_session(agent_id)?
+            .ok_or_else(|| format!("Agent {agent_id} no longer exists"))?;
+        drop(opened);
+        self.live_sessions
+            .lock()
+            .map_err(|_| "transcript live session map poisoned".to_string())?
+            .insert(agent_id.to_string());
+        Ok(())
+    }
+
+    pub fn resolve_background_session(
+        &self,
+        sessions: &Arc<ProductionSessionWorkers>,
+        agent_id: &str,
+    ) -> Result<(), String> {
+        if self.is_agent_gone(sessions, agent_id) {
+            return Err(format!("Agent {agent_id} no longer exists"));
+        }
+        self.open_session_once(sessions, agent_id)
     }
 
     pub fn set_active_transcript(
@@ -137,6 +235,7 @@ impl SessionRuntime {
         now_ms: f64,
     ) -> Result<Vec<Value>, String> {
         let store = SandAgentSessionStore::new(Arc::clone(sessions));
+        self.open_session_once(sessions, agent_id)?;
         let current = store.read_active_agent_id();
         if current.as_deref() == Some(agent_id) {
             if self.has_loaded_agent(agent_id) {
