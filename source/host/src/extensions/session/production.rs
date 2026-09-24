@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 use crate::agent_isolation::{
-    AgentWorkerPool, ProductionAgentStoreWorkerBackend, WorkerBlobStore,
+    AgentWorkerPool, ProductionAgentStoreWorkerBackend,
     create_production_agent_store_worker_backend,
 };
 use crate::agents::agent_profile::SandAgentProfile;
@@ -72,11 +72,11 @@ use super::session_profile_files::{
     get_agent_profile_text as read_agent_profile_text, write_agent_profile_update,
 };
 use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_bytes;
+use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
 pub type ProductionAgentWorkerPool = AgentWorkerPool<ProductionAgentStoreWorkerBackend>;
-pub type ProductionWorkerBlobStore = WorkerBlobStore<ProductionAgentStoreWorkerBackend>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PreparedAgentBlobStore {
@@ -100,7 +100,7 @@ pub struct ProductionMaterializedSession {
     pub record: MaterializedAgentRecord,
     pub prepared: PreparedAgentBlobStore,
     pub db: Arc<SandAgentDb>,
-    pub agent_store: ProductionWorkerBlobStore,
+    pub agent_store: ProductionAgentStore,
     pub memory: FileMemoryStore,
     pub automations: FileAutomationStore,
     pub workflows: FileWorkflowStore,
@@ -396,7 +396,9 @@ impl ProductionSessionWorkers {
         prepared: PreparedAgentBlobStore,
     ) -> Result<ProductionMaterializedSession, String> {
         let db = self.open_agent_db_owner(&record.id)?;
-        let agent_store = self.create_agent_blob_store(&record.id)?;
+        let blob_store = self.create_agent_blob_store(&record.id)?;
+        let agent_store = ProductionAgentStore::new(Arc::clone(&db), blob_store);
+        let _ = agent_store.try_reset_from_db();
         let memory = self
             .memory_service
             .create_agent_store(self.agents_root.join(&record.id));
@@ -1110,7 +1112,7 @@ impl ProductionSessionWorkers {
         agent_id: &str,
     ) -> Result<ProductionWorkerBlobStore, String> {
         let session_db_path = self.session_db_path(agent_id)?;
-        Ok(WorkerBlobStore::new(
+        Ok(ProductionWorkerBlobStore::new(
             Arc::clone(&self.pool),
             agent_id,
             conversation_blobs_path(&session_db_path),

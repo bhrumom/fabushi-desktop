@@ -12284,7 +12284,8 @@
         "source/host/src/extensions/session/box_handoff_service.rs",
         "source/host/src/extensions/transcript/session_runtime.rs",
         "source/host/src/extensions/memory/memory_service.rs",
-        "source/host/src/extensions/memory/extension.rs"
+        "source/host/src/extensions/memory/extension.rs",
+        "source/host/src/extensions/session/production_agent_store.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_session_contract.rs",
@@ -12299,10 +12300,11 @@
         "source/host/tests/session_materialization_contract.rs",
         "source/host/tests/transcript_session_runtime_contract.rs",
         "source/host/tests/memory_service_contract.rs",
-        "source/host/tests/memory_extension_contract.rs"
+        "source/host/tests/memory_extension_contract.rs",
+        "source/host/tests/production_agent_store_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Session facade owns active-agent pointer read/write/clear, root/agent existence, active-aware serialized create/fallback materialization, durable delete orchestration, roster summaries with active identity, profile/avatar, transcript, unread/view/activity/awaiting state, settings, connector channels and Host worker shutdown. Shipping Transcript SessionRuntime now owns exact focus-aware openAgent switching against this facade: old-session viewed preservation, new-session viewed settlement and durable active-pointer replacement are production wired. Shipping deleteAgent composition supplies Runner cancellation, Ack obligation/token purge, ForeverBox release and handoff forget around durable directory deletion; automation/workflow definitions disappear with that directory. Final is withheld for kickstart/telemetry, memory composition, cached extras/deletion predicates, background semantics, and the remaining trays/pending-wake/group-runner drain surfaces. Durable delete raises the production deletion fence before DB/blob owner shutdown and directory removal, then releases it on success or error. Production Session materialization now injects a real agent-scoped Rust FileMemoryStore from MemoryService instead of the unavailable-memory fallback; full Memory synthesis/watch/shared-store lifecycle remains non-final. The real Host Memory extension is now a single production owner injected into Session materialization; no Session-local unavailable-memory owner remains."
+      "notes": "Rust Session facade owns active-agent pointer read/write/clear, root/agent existence, active-aware serialized create/fallback materialization, durable delete orchestration, roster summaries with active identity, profile/avatar, transcript, unread/view/activity/awaiting state, settings, connector channels and Host worker shutdown. Shipping Transcript SessionRuntime now owns exact focus-aware openAgent switching against this facade: old-session viewed preservation, new-session viewed settlement and durable active-pointer replacement are production wired. Shipping deleteAgent composition supplies Runner cancellation, Ack obligation/token purge, ForeverBox release and handoff forget around durable directory deletion; automation/workflow definitions disappear with that directory. Final is withheld for kickstart/telemetry, memory composition, cached extras/deletion predicates, background semantics, and the remaining trays/pending-wake/group-runner drain surfaces. Durable delete raises the production deletion fence before DB/blob owner shutdown and directory removal, then releases it on success or error. Production Session materialization now injects a real agent-scoped Rust FileMemoryStore from MemoryService instead of the unavailable-memory fallback; full Memory synthesis/watch/shared-store lifecycle remains non-final. The real Host Memory extension is now a single production owner injected into Session materialization; no Session-local unavailable-memory owner remains. Shipping materialization now composes a real Rust ProductionAgentStore over the live SandAgentDb + WorkerBlobStore checkpoint owners; Runner checkpoint/mirror adapter and broader typed AgentStore surfaces remain non-final."
     },
     {
       "referencePath": "source/host/extensions/session/box-handoff-service.ts",
@@ -12545,7 +12547,8 @@
         "source/host/src/extensions/telemetry/host_telemetry_service.rs",
         "source/host/src/extensions/telemetry/extension.rs",
         "source/host/src/extensions/memory/memory_service.rs",
-        "source/host/src/extensions/memory/extension.rs"
+        "source/host/src/extensions/memory/extension.rs",
+        "source/host/src/extensions/session/production_agent_store.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12576,9 +12579,10 @@
         "source/host/tests/agent_db_owner_contract.rs",
         "source/host/tests/host_telemetry_service_contract.rs",
         "source/host/tests/memory_service_contract.rs",
-        "source/host/tests/memory_extension_contract.rs"
+        "source/host/tests/memory_extension_contract.rs",
+        "source/host/tests/production_agent_store_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels, automations, workflows and roster. Shipping Session now also owns frozen cap-time pruned-placeholder reclaim and fallback-session adoption through the same mint critical section, preserving the active agent and closing DB/blob owners before reclaim. Remaining parity is memory composition, watcher/cross-extension cleanup and the remaining Session facade lifecycle features. Production roster/summary now also projects the canonical cached avatar data URL/version from the Rust avatar owner instead of leaving the frozen readAvatar hook unwired. Shipping Session store factories now receive a live SettingsService timezone resolver; automation/workflow records derive nextRunAt with frozen timezone semantics. Production Session now owns the deleting-agent set consumed by roster, summary and missing-DB recovery. Host-lifetime SandAgentDb ownership now directly executes profile, awaiting-user-response and clearConversation mutations; these shipping paths no longer reopen SQLite projection connections. Host-lifetime AgentDb ownership now also executes unread/activity/viewed/read, introduction, spend guard, request/episode, prompt-snapshot and transient-state mutations.\nProduction Session now routes conversation-partner and transcript append/update/delete mutations through the Host-lifetime SandAgentDb owner alongside the existing unread/request/episode/snapshot mutation paths.\nShipping transcript entries/page/window/tail/thread reads now use the Host-lifetime SandAgentDb owner; prepareExistingAgent reuses that same live owner for transcript tail instead of opening a second SQLite reader.\nFrozen Box handoff production deps are now complete at the Session boundary: ForeverBox screenshot/prepare, Host lifecycle events, status publication, structured-log reportBoxHelp and product analytics trackEvent all use production owners. Shipping Session create/open now traverse a unified ProductionMaterializedSession bundle (DB owner, AgentStore/blob store, memory handle, automation/workflow/channel stores, prepared state and resetFromDb projection) before the facade returns its legacy projection. Production Session materialization now injects a real agent-scoped Rust FileMemoryStore from MemoryService instead of the unavailable-memory fallback; full Memory synthesis/watch/shared-store lifecycle remains non-final. The real Host Memory extension is now a single production owner injected into Session materialization; no Session-local unavailable-memory owner remains."
+      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels, automations, workflows and roster. Shipping Session now also owns frozen cap-time pruned-placeholder reclaim and fallback-session adoption through the same mint critical section, preserving the active agent and closing DB/blob owners before reclaim. Remaining parity is memory composition, watcher/cross-extension cleanup and the remaining Session facade lifecycle features. Production roster/summary now also projects the canonical cached avatar data URL/version from the Rust avatar owner instead of leaving the frozen readAvatar hook unwired. Shipping Session store factories now receive a live SettingsService timezone resolver; automation/workflow records derive nextRunAt with frozen timezone semantics. Production Session now owns the deleting-agent set consumed by roster, summary and missing-DB recovery. Host-lifetime SandAgentDb ownership now directly executes profile, awaiting-user-response and clearConversation mutations; these shipping paths no longer reopen SQLite projection connections. Host-lifetime AgentDb ownership now also executes unread/activity/viewed/read, introduction, spend guard, request/episode, prompt-snapshot and transient-state mutations.\nProduction Session now routes conversation-partner and transcript append/update/delete mutations through the Host-lifetime SandAgentDb owner alongside the existing unread/request/episode/snapshot mutation paths.\nShipping transcript entries/page/window/tail/thread reads now use the Host-lifetime SandAgentDb owner; prepareExistingAgent reuses that same live owner for transcript tail instead of opening a second SQLite reader.\nFrozen Box handoff production deps are now complete at the Session boundary: ForeverBox screenshot/prepare, Host lifecycle events, status publication, structured-log reportBoxHelp and product analytics trackEvent all use production owners. Shipping Session create/open now traverse a unified ProductionMaterializedSession bundle (DB owner, AgentStore/blob store, memory handle, automation/workflow/channel stores, prepared state and resetFromDb projection) before the facade returns its legacy projection. Production Session materialization now injects a real agent-scoped Rust FileMemoryStore from MemoryService instead of the unavailable-memory fallback; full Memory synthesis/watch/shared-store lifecycle remains non-final. The real Host Memory extension is now a single production owner injected into Session materialization; no Session-local unavailable-memory owner remains. Shipping materialization now composes a real Rust ProductionAgentStore over the live SandAgentDb + WorkerBlobStore checkpoint owners; Runner checkpoint/mirror adapter and broader typed AgentStore surfaces remain non-final."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
@@ -12678,7 +12682,8 @@
         "source/host/src/extensions/session/session_diagnostics.rs",
         "source/host/src/extensions/memory/memory_service.rs",
         "source/host/src/extensions/memory/extension.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/session/production_agent_store.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_materialization_contract.rs",
@@ -12687,9 +12692,10 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/workflow_store_contract.rs",
         "source/host/tests/memory_service_contract.rs",
-        "source/host/tests/memory_extension_contract.rs"
+        "source/host/tests/memory_extension_contract.rs",
+        "source/host/tests/production_agent_store_contract.rs"
       ],
-      "notes": "Rust materialization owns MAX_AGENTS_PER_USER counting, UUID mint, fresh store.db/profile/settings identity, blob key generation, pruned-placeholder reclaim and fallback adoption. Shipping create/open Session facades now compose one ProductionMaterializedSession containing the Host-lifetime SandAgentDb owner, WorkerBlobStore, default injectable memory handle, automation/workflow/channel stores, prepared Session state and resetFromDb conversation projection; public Gateway return shapes remain unchanged. Final remains withheld for durable long-lived bundle caching/disposal, full Memory extension injection, AgentStore checkpoint-owner unification and the remaining lifecycle/background composition. Production Session materialization now injects a real agent-scoped Rust FileMemoryStore from MemoryService instead of the unavailable-memory fallback; full Memory synthesis/watch/shared-store lifecycle remains non-final. The real Host Memory extension is now a single production owner injected into Session materialization; no Session-local unavailable-memory owner remains."
+      "notes": "Rust materialization owns MAX_AGENTS_PER_USER counting, UUID mint, fresh store.db/profile/settings identity, blob key generation, pruned-placeholder reclaim and fallback adoption. Shipping create/open Session facades now compose one ProductionMaterializedSession containing the Host-lifetime SandAgentDb owner, WorkerBlobStore, default injectable memory handle, automation/workflow/channel stores, prepared Session state and resetFromDb conversation projection; public Gateway return shapes remain unchanged. Final remains withheld for durable long-lived bundle caching/disposal, full Memory extension injection, AgentStore checkpoint-owner unification and the remaining lifecycle/background composition. Production Session materialization now injects a real agent-scoped Rust FileMemoryStore from MemoryService instead of the unavailable-memory fallback; full Memory synthesis/watch/shared-store lifecycle remains non-final. The real Host Memory extension is now a single production owner injected into Session materialization; no Session-local unavailable-memory owner remains. Shipping materialization now composes a real Rust ProductionAgentStore over the live SandAgentDb + WorkerBlobStore checkpoint owners; Runner checkpoint/mirror adapter and broader typed AgentStore surfaces remain non-final."
     },
     {
       "referencePath": "source/host/extensions/session/session-mutations.ts",
@@ -16628,16 +16634,18 @@
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
-        "source/host/src/runner/turn_settle.rs"
+        "source/host/src/runner/turn_settle.rs",
+        "source/host/src/extensions/session/production_agent_store.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_contract.rs",
         ".github/workflows/grok-rust-parity-finalize.yml",
         "source/host/tests/turn_settle_checkpoint_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/production_agent_store_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Corrected prior false-final status. Rust now preserves existing exactly-once terminal settlement and adds the frozen checkpoint transaction seam: journal prepare precedes durable Agent checkpoint, durable failure best-effort aborts the prepared journal, successful durable checkpoint commits using latestRootBlobId, and disabled persistence invokes skip. Still non-final because shipping ProductionTurnAgentOwner/Agent checkpoint composition does not yet supply the mirror/provider and the broader frozen turn-settle profile/token-details/labeling semantics remain to be ported. Automatic Rust cargo finalization is explicitly forbidden for this row until those production ownership requirements are satisfied."
+      "notes": "Corrected prior false-final status. Rust now preserves existing exactly-once terminal settlement and adds the frozen checkpoint transaction seam: journal prepare precedes durable Agent checkpoint, durable failure best-effort aborts the prepared journal, successful durable checkpoint commits using latestRootBlobId, and disabled persistence invokes skip. Still non-final because shipping ProductionTurnAgentOwner/Agent checkpoint composition does not yet supply the mirror/provider and the broader frozen turn-settle profile/token-details/labeling semantics remain to be ported. Automatic Rust cargo finalization is explicitly forbidden for this row until those production ownership requirements are satisfied. Shipping materialization now composes a real Rust ProductionAgentStore over the live SandAgentDb + WorkerBlobStore checkpoint owners; Runner checkpoint/mirror adapter and broader typed AgentStore surfaces remain non-final."
     },
     {
       "referencePath": "source/host/runner/turn-shape.ts",
@@ -19295,22 +19303,28 @@
     },
     {
       "referencePath": "source/packages/agent-kv/agent-store.ts",
-      "targetPath": "source/packages/agent-kv/agent-store.ts",
-      "targetLanguage": "typescript",
-      "owner": "packages",
-      "status": "implemented",
+      "targetPath": "source/host/src/extensions/session/production_agent_store.rs",
+      "targetLanguage": "rust",
+      "owner": "mahayana-host",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "265d68aad68bd7196687d9db3a7ebb7904ba1fc8",
       "architecturalRole": "package/agent-kv",
-      "processOrPackage": "packages",
+      "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/packages/agent-kv/agent-store.ts"
+        "source/host/src/extensions/session/production_agent_store.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/agent_isolation/worker_blob_store.rs",
+        "source/host/src/transcript_mirror/conversation_state_binary.rs"
       ],
       "testEvidence": [
-        "scripts/check-grok-architecture.mjs",
-        ".github/workflows/grok-architecture-migrate.yml"
+        "source/host/tests/production_agent_store_contract.rs",
+        "source/host/tests/session_materialization_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "parityMode": "reference-copy",
-      "notes": "Byte-identical frozen Grok 0.18 source restored at the mapped production path; Git blob SHA is enforced by the architecture gate."
+      "parityMode": "rust-port",
+      "notes": "Corrected prior false-final reference-copy mapping: the byte-identical TypeScript copy is not imported by shipping production. Rust ProductionAgentStore is now the live AgentStore2 checkpoint owner inside every ProductionMaterializedSession: generated-wire-compatible ConversationStateStructure validation, SHA-256 content root, WorkerBlobStore persistence, SandAgentDb latestRootBlobId metadata advancement and fail-closed tryResetFromDb are production wired. Final remains withheld for full typed metadata subscription surface, generated ConversationState derive/getFullConversation, subagent-state resolution and the Runner turn-settle/transcript-mirror checkpoint adapter."
     },
     {
       "referencePath": "source/packages/agent-kv/blob-not-found-error.ts",
