@@ -16,7 +16,10 @@ mod turn_run_shell;
 
 pub use checkpoint::AttemptCheckpoint;
 pub use stream_attempt::{
-    AttemptProgress, RetryDecision, StreamAttemptPolicy, StreamWatchdog,
+    AttemptProgress, OuterCheckpointDisposition, OuterStreamFuture,
+    OuterStreamPersistence, RetryDecision, StreamAttemptPolicy,
+    StreamCancelReason, StreamWatchdog, persist_outer_stream_checkpoint,
+    persist_outer_stream_final_state, release_outer_stream_persistence,
 };
 pub use transient_stream_error::{StreamFailureKind, TransientStreamError};
 pub use turn_settle::{

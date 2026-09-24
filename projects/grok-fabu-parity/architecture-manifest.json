@@ -16100,19 +16100,22 @@
       "targetPath": "source/host/src/runner/stream_attempt.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f70bf389878a26ce079ecb93b2b733e7091f2107",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
-        "source/host/src/runner/stream_attempt.rs"
+        "source/host/src/runner/stream_attempt.rs",
+        "source/host/src/runner/production_turn_run_shell_adapter.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_contract.rs",
-        ".github/workflows/grok-rust-parity-finalize.yml"
+        "source/host/tests/stream_attempt_outer_lifecycle_contract.rs",
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
+      "notes": "Corrected a false-final manifest state. Rust retains retry policy/watchdog and shipping provider retry/resume via ProductionTurnRunShellAdapter, and now ports the frozen outer generation-gated checkpoint/final persistence contract including prepare->persist->note ordering, disk-pressure/automation hooks, awaiting-user and forced-upgrade cancellation reasons, stale-generation fencing and explicit finally release. Final remains withheld because the frozen generic createStreamAttempt owner still requires per-attempt cancel contexts, concurrent checkpoint-operation draining, resettable first-token deadline hooks, accepted-resume checkpoint capture and retry telemetry; inactive-turn-agent-stream is not yet production-composed."
     },
     {
       "referencePath": "source/host/runner/subagent-runtime.ts",
