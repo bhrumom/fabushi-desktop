@@ -19,9 +19,9 @@ use super::agent_db::{
     clear_persisted_transient_state, delete_persisted_transcript_entry,
     mark_persisted_activity, mark_persisted_read, mark_persisted_unread,
     mark_persisted_viewed, read_persisted_agent_profile_prompt_snapshot,
-    read_persisted_agent_serde_snapshot, read_persisted_automation_spend_guard_state,
+    read_persisted_automation_spend_guard_state,
     read_persisted_conversation_partner_ids, read_persisted_introduction_pending,
-    read_persisted_latest_root_blob_id, read_persisted_newest_divider_anchor_timestamp_ms,
+    read_persisted_newest_divider_anchor_timestamp_ms,
     record_persisted_episode_turn, record_persisted_request_id,
     set_persisted_agent_profile_prompt_snapshot, set_persisted_automation_spend_guard_state,
     set_persisted_introduction_pending, set_persisted_memory_prompt_snapshot,
@@ -1037,12 +1037,12 @@ impl ProductionSessionWorkers {
             self.busy_timeout_ms,
             &recovery_outline,
         )?;
-        let persisted_root_blob_id =
-            read_persisted_latest_root_blob_id(&session_db_path, self.busy_timeout_ms)
-                .map_err(|error| error.to_string())?;
-        let session_state =
-            read_persisted_agent_serde_snapshot(&session_db_path, self.busy_timeout_ms)
-                .map_err(|error| error.to_string())?;
+        let persisted_root_blob_id = db_owner
+            .get_latest_root_blob_id()
+            .map_err(|error| error.to_string())?;
+        let session_state = db_owner
+            .serde_snapshot()
+            .map_err(|error| error.to_string())?;
         let transcript_tail = db_owner
             .get_transcript_tail(TranscriptWindowQuery {
                 before_seq: None,

@@ -12172,7 +12172,7 @@
       "targetPath": "source/host/src/extensions/session/agent_db.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "bb08a2db255ae213d45930c2a3fe8bb2eaa7b83d",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12202,7 +12202,7 @@
         "source/host/tests/session_summaries_roster_contract.rs",
         "source/host/tests/agent_db_owner_contract.rs"
       ],
-      "notes": "Rust production AgentDb covers the frozen persistent API surface plus a real Host-lifetime SandAgentDb RAII owner. Owners hold/register one live SQLite handle per live agent, seed missing default metadata, release/checkpoint idempotently, drop locked writes with an onBusyError callback, and attempt one in-place corruption recovery only when no other handle owns the DB. Shipping profile, unread/activity/viewed/read state, awaiting-user-response, introduction, automation spend guard, request history, episode turns, memory/profile prompt snapshots, transient-state cleanup, conversation partners, origin/purpose, transcript append/update/delete plus entries/page/window/tail/thread reads, and clearConversation now execute directly on the Host-lifetime owner; ProductionSessionWorkers routes those Gateway/session reads and mutations through the owner map. The row stays existing-needs-parity only for remaining generic metadata CAS/mutation/listener coverage and final audit of recovery/offline projection helpers versus the live owner boundary."
+      "notes": "Final Rust SandAgentDb owner parity: Host-lifetime owner covers frozen lifecycle/recovery/busy-write semantics; generic KV plus metadata read/get/set/subscription and latestRoot CAS; profile/unread/awaiting/request/origin/purpose/repair versions/spend guard/episode/snapshots/partners; legacy blob presence and retirement; transcript single/batch append/update/delete plus entries/page/window/tail/thread/main reads and clearConversation. Main transcript filtering now preserves frozen orphan-branch behavior and getThread requires an existing root. Production prepareExistingAgent reads latestRoot and serde state through the already-live SandAgentDb owner; offline projection helpers remain confined to recovery/maintenance/migration boundaries instead of opening a second shipping read owner."
     },
     {
       "referencePath": "source/host/extensions/session/agent-session.ts",

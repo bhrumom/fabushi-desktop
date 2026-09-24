@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_db::{
-    SandAgentDb, SandAgentDbOptions, compare_and_set_persisted_latest_root_blob_id,
+    SandAgentDb, SandAgentDbOptions,
 };
 use mahayana_host_runtime::extensions::session::agent_db_recovery::DbRecoveryOptions;
 use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
@@ -62,13 +62,9 @@ fn owner_registers_live_handle_notifies_shipping_mutations_and_releases_on_close
         })
     });
 
-    assert!(compare_and_set_persisted_latest_root_blob_id(
-        &db_path,
-        50,
-        &[],
-        &[0xaa, 0xbb],
-    )
-    .expect("root cas"));
+    assert!(owner
+        .compare_and_set_latest_root_blob_id(&[], &[0xaa, 0xbb])
+        .expect("root cas"));
     assert!(owner
         .set_sand_profile(&SandProfile {
             description: "profile".into(),
@@ -433,6 +429,165 @@ fn owner_routes_partner_origin_purpose_and_transcript_mutations() {
             .collect::<Vec<_>>(),
         vec!["entry-1", "branch-1"]
     );
+
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn owner_closes_generic_metadata_versions_and_legacy_blob_surface() {
+    let root = temp_root("metadata-surface");
+    let agent_dir = root.join("agent-metadata");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+
+    assert_eq!(
+        owner
+            .get_metadata("agentId")
+            .expect("agent id metadata")
+            .and_then(|value| value.as_str().map(ToOwned::to_owned))
+            .as_deref(),
+        Some("agent-metadata")
+    );
+    let name_hits = Arc::new(AtomicUsize::new(0));
+    let _name_sub = owner.subscribe_metadata("name", {
+        let hits = Arc::clone(&name_hits);
+        Arc::new(move || {
+            hits.fetch_add(1, Ordering::SeqCst);
+        })
+    });
+    assert!(owner
+        .set_metadata("name", serde_json::Value::String("Renamed".into()))
+        .expect("set name"));
+    assert_eq!(name_hits.load(Ordering::SeqCst), 1);
+    assert!(owner
+        .set_metadata("name", serde_json::Value::String("Renamed".into()))
+        .expect("idempotent set name"));
+    assert_eq!(name_hits.load(Ordering::SeqCst), 1);
+
+    let root_hits = Arc::new(AtomicUsize::new(0));
+    let _root_sub = owner.subscribe_metadata("latestRootBlobId", {
+        let hits = Arc::clone(&root_hits);
+        Arc::new(move || {
+            hits.fetch_add(1, Ordering::SeqCst);
+        })
+    });
+    assert!(owner
+        .compare_and_set_latest_root_blob_id(&[], &[0xaa, 0xbb])
+        .expect("root cas"));
+    assert!(!owner
+        .compare_and_set_latest_root_blob_id(&[], &[0xcc])
+        .expect("stale root cas"));
+    assert_eq!(owner.get_latest_root_blob_id().expect("latest root"), vec![0xaa, 0xbb]);
+    assert_eq!(root_hits.load(Ordering::SeqCst), 1);
+
+    assert!(owner.set_hidden_entry_repair_version(2).expect("hidden version"));
+    assert_eq!(owner.get_hidden_entry_repair_version().expect("hidden version read"), 2);
+    assert!(owner.set_stale_root_cleanup_version(3).expect("stale version"));
+    assert_eq!(owner.get_stale_root_cleanup_version().expect("stale version read"), 3);
+
+    let legacy = rusqlite::Connection::open(&db_path).expect("legacy writer");
+    legacy
+        .execute(
+            "INSERT INTO blobs (id, data) VALUES (?1, ?2)",
+            rusqlite::params!["aa", vec![1_u8, 2, 3]],
+        )
+        .expect("legacy blob");
+    drop(legacy);
+    assert!(owner.has_legacy_conversation_blobs().expect("legacy present"));
+    assert!(owner
+        .retire_legacy_conversation_blobs(4)
+        .expect("retire legacy blobs"));
+    assert!(!owner.has_legacy_conversation_blobs().expect("legacy retired"));
+    assert_eq!(
+        owner
+            .get_legacy_blob_retirement_version()
+            .expect("legacy version"),
+        4
+    );
+
+    let snapshot = owner.serde_snapshot().expect("serde snapshot");
+    assert!(snapshot.request_ids.is_empty());
+
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn owner_matches_frozen_main_transcript_and_missing_thread_semantics() {
+    let root = temp_root("main-transcript");
+    let agent_dir = root.join("agent-main");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+
+    for entry in [
+        serde_json::json!({
+            "id":"root",
+            "kind":"message",
+            "role":"user",
+            "content":"root"
+        }),
+        serde_json::json!({
+            "id":"branch",
+            "kind":"message",
+            "role":"assistant",
+            "content":"branch",
+            "replyTo":"root",
+            "branched":true
+        }),
+        serde_json::json!({
+            "id":"nested",
+            "kind":"message",
+            "role":"assistant",
+            "content":"nested",
+            "replyTo":"branch",
+            "branched":true
+        }),
+        serde_json::json!({
+            "id":"orphan",
+            "kind":"message",
+            "role":"assistant",
+            "content":"orphan",
+            "replyTo":"missing-root",
+            "branched":true
+        }),
+    ] {
+        assert!(owner.append_transcript_entry(&entry).expect("append entry"));
+    }
+    assert!(!owner
+        .append_transcript_entry(&serde_json::json!({
+            "id":"root",
+            "kind":"message",
+            "role":"user",
+            "content":"duplicate"
+        }))
+        .expect("duplicate append"));
+
+    assert_eq!(
+        owner
+            .get_main_transcript_entries()
+            .expect("main transcript")
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["root", "orphan"]
+    );
+    assert_eq!(
+        owner
+            .get_thread_entries("root")
+            .expect("root thread")
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["root", "branch", "nested"]
+    );
+    assert!(owner
+        .get_thread_entries("missing-root")
+        .expect("missing root thread")
+        .is_empty());
 
     owner.close(false);
     let _ = fs::remove_dir_all(root);

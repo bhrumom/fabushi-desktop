@@ -306,6 +306,125 @@ impl SandAgentDb {
         })
     }
 
+    pub fn read_metadata(&self) -> Result<serde_json::Value, AgentDbProjectionError> {
+        let Some(raw) = self.read_kv("metadata")? else {
+            return Ok(default_agent_metadata(&self.agent_dir_name));
+        };
+        let bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+        Ok(serde_json::from_slice(&bytes)?)
+    }
+
+    pub fn get_metadata(
+        &self,
+        key: &str,
+    ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+        Ok(self
+            .read_metadata()?
+            .as_object()
+            .and_then(|metadata| metadata.get(key).cloned()))
+    }
+
+    pub fn set_metadata(
+        &self,
+        key: &str,
+        value: serde_json::Value,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(false);
+        }
+        let Some(raw) = self.read_kv("metadata")? else {
+            return Ok(false);
+        };
+        let bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+        let mut metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
+        let Some(object) = metadata.as_object_mut() else {
+            return Ok(false);
+        };
+        if object.get(key) == Some(&value) {
+            return Ok(true);
+        }
+        object.insert(key.to_string(), value);
+        let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
+        let changed = self.run_write(&format!("setMetadata:{key}"), |db| {
+            db.execute(
+                COMPARE_AND_SET_KV_SQL,
+                params![next_raw, "metadata", raw],
+            )
+            .map(|changes| changes == 1)
+        })?;
+        if changed {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata(key.to_string()),
+            );
+        }
+        Ok(changed)
+    }
+
+    pub fn compare_and_set_latest_root_blob_id(
+        &self,
+        expected_root: &[u8],
+        next_root: &[u8],
+    ) -> Result<bool, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(false);
+        }
+        let Some(raw) = self.read_kv("metadata")? else {
+            return Ok(false);
+        };
+        let bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+        let mut metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
+        let current = metadata
+            .get("latestRootBlobId")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+        if current != encode_hex(expected_root) {
+            return Ok(false);
+        }
+        let Some(object) = metadata.as_object_mut() else {
+            return Ok(false);
+        };
+        object.insert(
+            "latestRootBlobId".into(),
+            serde_json::Value::String(encode_hex(next_root)),
+        );
+        let next_raw = encode_hex(&serde_json::to_vec(&metadata)?);
+        let changed = self.run_write("compareAndSetLatestRootBlobId", |db| {
+            db.execute(
+                COMPARE_AND_SET_KV_SQL,
+                params![next_raw, "metadata", raw],
+            )
+            .map(|changes| changes == 1)
+        })?;
+        if changed {
+            notify_agent_db_listeners(
+                &self.db_path,
+                AgentDbListenerChannel::Metadata("latestRootBlobId".into()),
+            );
+        }
+        Ok(changed)
+    }
+
+    pub fn get_latest_root_blob_id(&self) -> Result<Vec<u8>, AgentDbProjectionError> {
+        let root = self
+            .get_metadata("latestRootBlobId")?
+            .and_then(|value| value.as_str().map(ToOwned::to_owned))
+            .unwrap_or_default();
+        decode_hex(&root).map_err(AgentDbProjectionError::LatestRootHex)
+    }
+
+    pub fn serde_snapshot(&self) -> Result<AgentDbSerdeSnapshot, AgentDbProjectionError> {
+        Ok(AgentDbSerdeSnapshot {
+            profile: self.get_sand_profile()?,
+            unread_state: self.get_unread_state()?,
+            spend_guard_state: self.get_automation_spend_guard_state()?,
+            awaiting_user_response: self.get_awaiting_user_response()?,
+            request_ids: self.get_request_ids()?,
+            pending_episode_turns: self.get_pending_episode_turns()?,
+            memory_prompt_snapshot: self.get_memory_prompt_snapshot()?,
+        })
+    }
+
     pub fn subscribe_metadata(
         &self,
         key: impl Into<String>,
@@ -532,6 +651,84 @@ impl SandAgentDb {
         } else {
             self.delete_kv(KV_INTRODUCTION)
         }
+    }
+
+    fn read_version(&self, key: &str) -> Result<u64, AgentDbProjectionError> {
+        Ok(self
+            .read_kv(key)?
+            .and_then(|value| value.parse::<u64>().ok())
+            .filter(|value| *value > 0)
+            .unwrap_or_default())
+    }
+
+    pub fn get_hidden_entry_repair_version(&self) -> Result<u64, AgentDbProjectionError> {
+        self.read_version(KV_HIDDEN_REPAIR)
+    }
+
+    pub fn set_hidden_entry_repair_version(
+        &self,
+        version: u64,
+    ) -> Result<bool, AgentDbProjectionError> {
+        self.write_kv(KV_HIDDEN_REPAIR, &version.to_string())
+    }
+
+    pub fn get_stale_root_cleanup_version(&self) -> Result<u64, AgentDbProjectionError> {
+        self.read_version(KV_STALE_ROOT_CLEANUP)
+    }
+
+    pub fn set_stale_root_cleanup_version(
+        &self,
+        version: u64,
+    ) -> Result<bool, AgentDbProjectionError> {
+        self.write_kv(KV_STALE_ROOT_CLEANUP, &version.to_string())
+    }
+
+    pub fn get_legacy_blob_retirement_version(&self) -> Result<u64, AgentDbProjectionError> {
+        self.read_version(KV_LEGACY_BLOB_RETIREMENT)
+    }
+
+    pub fn has_legacy_conversation_blobs(&self) -> Result<bool, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(false);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(false);
+        };
+        Ok(db
+            .query_row(HAS_LEGACY_BLOB_SQL, [], |_| Ok(()))
+            .optional()?
+            .is_some())
+    }
+
+    pub fn retire_legacy_conversation_blobs(
+        &self,
+        version: u64,
+    ) -> Result<bool, AgentDbProjectionError> {
+        self.run_write("retireLegacyConversationBlobs", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<(), rusqlite::Error> {
+                db.execute(CLEAR_BLOBS_SQL, [])?;
+                db.execute(
+                    SET_KV_SQL,
+                    params![KV_LEGACY_BLOB_RETIREMENT, version.to_string()],
+                )?;
+                Ok(())
+            })();
+            match result {
+                Ok(()) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(true)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })
     }
 
     pub fn get_automation_spend_guard_state(
@@ -838,6 +1035,13 @@ impl SandAgentDb {
         self.write_kv(KV_PARTNERS, &raw)
     }
 
+    pub fn append_transcript_entry(
+        &self,
+        entry: &serde_json::Value,
+    ) -> Result<bool, AgentDbProjectionError> {
+        Ok(self.append_transcript_entries(std::slice::from_ref(entry))? > 0)
+    }
+
     pub fn append_transcript_entries(
         &self,
         entries: &[serde_json::Value],
@@ -1082,14 +1286,20 @@ impl SandAgentDb {
         let Some(db) = guard.as_ref() else {
             return Ok(Vec::new());
         };
-        let root = read_transcript_entry_from_db(db, root_id)?;
+        let Some(root) = read_transcript_entry_from_db(db, root_id)? else {
+            return Ok(Vec::new());
+        };
         let branched = read_branched_entries_from_db(db)?;
-        let mut entries = Vec::new();
-        if let Some(root) = root {
-            entries.push(root);
-        }
+        let mut entries = vec![root];
         entries.extend(thread_descendants_from_entries(root_id, &branched));
         Ok(entries)
+    }
+
+    pub fn get_main_transcript_entries(
+        &self,
+    ) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+        let entries = self.get_transcript_entries()?;
+        Ok(main_transcript_entries_from_entries(&entries))
     }
 
     pub fn clear_conversation(&self) -> Result<bool, AgentDbProjectionError> {
@@ -1199,28 +1409,7 @@ impl SandAgentDb {
         if self.read_kv("metadata")?.is_some() {
             return Ok(());
         }
-        let created_at = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis()
-            .min(u64::MAX as u128) as u64;
-        let first = Uuid::new_v4();
-        let second = Uuid::new_v4();
-        let blob_encryption_key = first
-            .as_bytes()
-            .iter()
-            .chain(second.as_bytes().iter())
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>();
-        let metadata = serde_json::json!({
-            "agentId": self.agent_dir_name,
-            "latestRootBlobId": "",
-            "name": "New Agent",
-            "mode": "default",
-            "isRunEverything": false,
-            "createdAt": created_at,
-            "blobEncryptionKey": blob_encryption_key,
-        });
+        let metadata = default_agent_metadata(&self.agent_dir_name);
         let raw = encode_hex(&serde_json::to_vec(&metadata)?);
         let _ = self.write_kv("metadata", &raw)?;
         Ok(())
@@ -1342,6 +1531,31 @@ impl Drop for SandAgentDb {
     }
 }
 
+
+fn default_agent_metadata(agent_dir_name: &str) -> serde_json::Value {
+    let created_at = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+        .min(u64::MAX as u128) as u64;
+    let first = Uuid::new_v4();
+    let second = Uuid::new_v4();
+    let blob_encryption_key = first
+        .as_bytes()
+        .iter()
+        .chain(second.as_bytes().iter())
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    serde_json::json!({
+        "agentId": agent_dir_name,
+        "latestRootBlobId": "",
+        "name": "New Agent",
+        "mode": "default",
+        "isRunEverything": false,
+        "createdAt": created_at,
+        "blobEncryptionKey": blob_encryption_key,
+    })
+}
 
 fn open_projection_db(
     db_path: &Path,
@@ -2633,6 +2847,71 @@ fn resolve_branch_root_from_entries(
         let Some(parent) = branched_by_id.get(parent_id) else {
             return Some(parent_id.to_string());
         };
+        if !seen.insert(parent_id.to_string()) {
+            return None;
+        }
+        current = parent;
+    }
+}
+
+fn main_transcript_entries_from_entries(
+    entries: &[serde_json::Value],
+) -> Vec<serde_json::Value> {
+    let by_id = entries
+        .iter()
+        .filter_map(|entry| {
+            Some((
+                entry.get("id")?.as_str()?.to_string(),
+                entry,
+            ))
+        })
+        .collect::<HashMap<_, _>>();
+    let is_thread_message = |entry: &serde_json::Value| {
+        is_main_branched_entry(entry)
+            && resolve_main_branch_root(entry, &by_id).is_some()
+    };
+    if !entries.iter().any(is_thread_message) {
+        return entries.to_vec();
+    }
+    entries
+        .iter()
+        .filter(|entry| !is_thread_message(entry))
+        .cloned()
+        .collect()
+}
+
+fn is_main_branched_entry(entry: &serde_json::Value) -> bool {
+    matches!(
+        entry.get("kind").and_then(serde_json::Value::as_str),
+        Some("message" | "send-message" | "user-attachment" | "notice")
+    ) && entry.get("branched").and_then(serde_json::Value::as_bool) == Some(true)
+}
+
+fn main_entry_reply_to(entry: &serde_json::Value) -> Option<&str> {
+    if !matches!(
+        entry.get("kind").and_then(serde_json::Value::as_str),
+        Some("message" | "send-message" | "user-attachment" | "notice")
+    ) {
+        return None;
+    }
+    entry.get("replyTo").and_then(serde_json::Value::as_str)
+}
+
+fn resolve_main_branch_root(
+    entry: &serde_json::Value,
+    by_id: &HashMap<String, &serde_json::Value>,
+) -> Option<String> {
+    let mut current = entry;
+    let mut seen = std::collections::HashSet::new();
+    if let Some(id) = current.get("id").and_then(serde_json::Value::as_str) {
+        seen.insert(id.to_string());
+    }
+    loop {
+        let parent_id = main_entry_reply_to(current)?;
+        let parent = by_id.get(parent_id)?;
+        if !is_main_branched_entry(parent) {
+            return Some(parent_id.to_string());
+        }
         if !seen.insert(parent_id.to_string()) {
             return None;
         }
