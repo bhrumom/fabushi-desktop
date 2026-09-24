@@ -140,3 +140,104 @@ fn owner_drops_busy_writes_and_reports_the_operation() {
     assert_eq!(live_db_handle_count(&db_path), 0);
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn owner_routes_unread_request_episode_snapshot_and_spend_guard_mutations() {
+    let root = temp_root("state");
+    let agent_dir = root.join("agent-state");
+    fs::create_dir_all(&agent_dir).expect("agent dir");
+    let db_path = agent_dir.join("store.db");
+    let owner = SandAgentDb::open(&db_path, 50).expect("owner");
+
+    assert!(owner.mark_activity(10.0).expect("activity"));
+    let unread = owner.get_unread_state().expect("unread after activity");
+    assert_eq!(unread.last_activity_at, 10.0);
+    assert_eq!(unread.unread_count, 1.0);
+
+    assert!(owner.mark_viewed(12.0, false).expect("viewed"));
+    assert!(owner.mark_unread(20.0).expect("manual unread"));
+    let unread = owner.get_unread_state().expect("manual unread state");
+    assert!(unread.is_manually_unread);
+    assert_eq!(unread.unread_count, 1.0);
+    assert!(owner.mark_read(21.0).expect("read"));
+    assert!(!owner.get_unread_state().expect("read state").is_manually_unread);
+
+    assert!(owner.set_introduction_pending(true).expect("intro"));
+    assert!(owner.get_introduction_pending().expect("intro state"));
+
+    let spend = mahayana_host_runtime::extensions::session::agent_db_serde::SpendGuardState {
+        nudged_at_ms: Some(42.0),
+        snoozed_until_ms: None,
+        opted_out: true,
+        card_entry_ids: vec!["card-a".into()],
+        paused_automation_ids: vec!["auto-a".into()],
+    };
+    assert!(owner
+        .set_automation_spend_guard_state(&spend)
+        .expect("spend guard"));
+    assert_eq!(
+        owner.get_automation_spend_guard_state().expect("spend state"),
+        spend
+    );
+
+    assert!(owner
+        .record_request_id(" request-1 ", 30.0, Some(" prompt "), Some("turn"))
+        .expect("request"));
+    assert!(!owner
+        .record_request_id("request-1", 31.0, None, None)
+        .expect("duplicate request"));
+    let requests = owner.get_request_ids().expect("requests");
+    assert_eq!(requests.len(), 1);
+    assert_eq!(requests[0].id, "request-1");
+    assert_eq!(requests[0].prompt.as_deref(), Some("prompt"));
+
+    assert!(owner
+        .record_episode_turn(&mahayana_host_runtime::extensions::session::agent_db_serde::EpisodeTurn {
+            ts: 40.0,
+            user: "question".into(),
+            agent: "answer".into(),
+        })
+        .expect("episode"));
+    assert_eq!(owner.get_pending_episode_turns().expect("episodes").len(), 1);
+
+    assert!(owner
+        .set_memory_prompt_snapshot(&serde_json::json!({
+            "render": "memory",
+            "compactionEpoch": 2
+        }))
+        .expect("memory snapshot"));
+    assert_eq!(
+        owner
+            .get_memory_prompt_snapshot()
+            .expect("memory snapshot read")
+            .map(|snapshot| snapshot.render),
+        Some("memory".into())
+    );
+
+    assert!(owner
+        .set_agent_profile_prompt_snapshot(&serde_json::json!({"name":"Agent"}))
+        .expect("profile snapshot"));
+    assert_eq!(
+        owner
+            .get_agent_profile_prompt_snapshot()
+            .expect("profile snapshot read"),
+        Some(serde_json::json!({"name":"Agent"}))
+    );
+
+    assert!(owner.clear_transient_state().expect("clear transient"));
+    assert_eq!(owner.get_unread_state().expect("cleared unread").unread_count, 0.0);
+    assert!(owner.get_request_ids().expect("cleared requests").is_empty());
+    assert!(owner.get_pending_episode_turns().expect("cleared episodes").is_empty());
+    assert!(owner
+        .get_memory_prompt_snapshot()
+        .expect("cleared memory snapshot")
+        .is_none());
+    assert!(owner
+        .get_agent_profile_prompt_snapshot()
+        .expect("cleared profile snapshot")
+        .is_none());
+
+    owner.close(false);
+    let _ = fs::remove_dir_all(root);
+}

@@ -600,8 +600,8 @@ impl ProductionSessionWorkers {
     }
 
     pub fn mark_agent_activity(&self, agent_id: &str, at: f64) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        mark_persisted_activity(&db_path, self.busy_timeout_ms, at)
+        self.open_agent_db_owner(agent_id)?
+            .mark_activity(at)
             .map_err(|error| error.to_string())
     }
 
@@ -611,14 +611,9 @@ impl ProductionSessionWorkers {
         at: f64,
         preserve_manual_unread: bool,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        mark_persisted_viewed(
-            &db_path,
-            self.busy_timeout_ms,
-            at,
-            preserve_manual_unread,
-        )
-        .map_err(|error| error.to_string())
+        self.open_agent_db_owner(agent_id)?
+            .mark_viewed(at, preserve_manual_unread)
+            .map_err(|error| error.to_string())
     }
 
     pub fn set_agent_unread(
@@ -627,18 +622,18 @@ impl ProductionSessionWorkers {
         unread: bool,
         at: f64,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
+        let owner = self.open_agent_db_owner(agent_id)?;
         if unread {
-            mark_persisted_unread(&db_path, self.busy_timeout_ms, at)
+            owner.mark_unread(at)
         } else {
-            mark_persisted_read(&db_path, self.busy_timeout_ms, at)
+            owner.mark_read(at)
         }
         .map_err(|error| error.to_string())
     }
 
     pub fn get_agent_introduction_pending(&self, agent_id: &str) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        read_persisted_introduction_pending(&db_path, self.busy_timeout_ms)
+        self.open_agent_db_owner(agent_id)?
+            .get_introduction_pending()
             .map_err(|error| error.to_string())
     }
 
@@ -647,8 +642,8 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         pending: bool,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        set_persisted_introduction_pending(&db_path, self.busy_timeout_ms, pending)
+        self.open_agent_db_owner(agent_id)?
+            .set_introduction_pending(pending)
             .map_err(|error| error.to_string())
     }
 
@@ -656,8 +651,8 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<SpendGuardState, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        read_persisted_automation_spend_guard_state(&db_path, self.busy_timeout_ms)
+        self.open_agent_db_owner(agent_id)?
+            .get_automation_spend_guard_state()
             .map_err(|error| error.to_string())
     }
 
@@ -666,8 +661,8 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         state: &SpendGuardState,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        set_persisted_automation_spend_guard_state(&db_path, self.busy_timeout_ms, state)
+        self.open_agent_db_owner(agent_id)?
+            .set_automation_spend_guard_state(state)
             .map_err(|error| error.to_string())
     }
 
@@ -698,8 +693,8 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<f64, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        read_persisted_newest_divider_anchor_timestamp_ms(&db_path, self.busy_timeout_ms)
+        self.open_agent_db_owner(agent_id)?
+            .get_newest_divider_anchor_timestamp_ms()
             .map_err(|error| error.to_string())
     }
 
@@ -733,16 +728,9 @@ impl ProductionSessionWorkers {
         prompt: Option<&str>,
         source: Option<&str>,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        record_persisted_request_id(
-            &db_path,
-            self.busy_timeout_ms,
-            request_id,
-            at,
-            prompt,
-            source,
-        )
-        .map_err(|error| error.to_string())
+        self.open_agent_db_owner(agent_id)?
+            .record_request_id(request_id, at, prompt, source)
+            .map_err(|error| error.to_string())
     }
 
     pub fn record_agent_episode_turn(
@@ -750,8 +738,8 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         turn: &EpisodeTurn,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        record_persisted_episode_turn(&db_path, self.busy_timeout_ms, turn)
+        self.open_agent_db_owner(agent_id)?
+            .record_episode_turn(turn)
             .map_err(|error| error.to_string())
     }
 
@@ -760,14 +748,14 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         snapshot: &serde_json::Value,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        set_persisted_memory_prompt_snapshot(&db_path, self.busy_timeout_ms, snapshot)
+        self.open_agent_db_owner(agent_id)?
+            .set_memory_prompt_snapshot(snapshot)
             .map_err(|error| error.to_string())
     }
 
     pub fn clear_agent_memory_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        clear_persisted_memory_prompt_snapshot(&db_path, self.busy_timeout_ms)
+        self.open_agent_db_owner(agent_id)?
+            .clear_memory_prompt_snapshot()
             .map_err(|error| error.to_string())
     }
 
@@ -775,8 +763,8 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Option<serde_json::Value>, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        read_persisted_agent_profile_prompt_snapshot(&db_path, self.busy_timeout_ms)
+        self.open_agent_db_owner(agent_id)?
+            .get_agent_profile_prompt_snapshot()
             .map_err(|error| error.to_string())
     }
 
@@ -785,20 +773,20 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         snapshot: &serde_json::Value,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        set_persisted_agent_profile_prompt_snapshot(&db_path, self.busy_timeout_ms, snapshot)
+        self.open_agent_db_owner(agent_id)?
+            .set_agent_profile_prompt_snapshot(snapshot)
             .map_err(|error| error.to_string())
     }
 
     pub fn clear_agent_profile_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        clear_persisted_agent_profile_prompt_snapshot(&db_path, self.busy_timeout_ms)
+        self.open_agent_db_owner(agent_id)?
+            .clear_agent_profile_prompt_snapshot()
             .map_err(|error| error.to_string())
     }
 
     pub fn clear_agent_transient_state(&self, agent_id: &str) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        clear_persisted_transient_state(&db_path, self.busy_timeout_ms)
+        self.open_agent_db_owner(agent_id)?
+            .clear_transient_state()
             .map_err(|error| error.to_string())
     }
 
