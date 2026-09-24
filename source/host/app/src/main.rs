@@ -875,6 +875,42 @@ impl GatewayApi for UnifiedGatewayApi {
                 .prompt_acceptance_status(&args)
                 .map_err(map_production_send_error);
         }
+        if method == "setWindowFocused" {
+            let is_focused = args
+                .get("isFocused")
+                .and_then(serde_json::Value::as_bool)
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "setWindowFocused requires isFocused".into()
+                ))?;
+            self.transcript_runtime
+                .session_runtime()
+                .set_window_focused(
+                    &self.session_workers,
+                    is_focused,
+                    started_at_ms() as f64,
+                )
+                .map_err(GatewayCommandError::Internal)?;
+            return Ok(serde_json::Value::Null);
+        }
+        if method == "openAgent" {
+            let agent_id = args
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "openAgent requires id".into()
+                ))?;
+            return self.transcript_runtime
+                .session_runtime()
+                .switch_agent(
+                    &self.session_workers,
+                    agent_id,
+                    started_at_ms() as f64,
+                )
+                .map(serde_json::Value::Array)
+                .map_err(GatewayCommandError::Internal);
+        }
         if method == "getAsyncTasks" {
             let agent_id = args
                 .get("id")

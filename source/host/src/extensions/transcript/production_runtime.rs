@@ -15,6 +15,7 @@ use super::prompt_acceptance_ledger::{
 use super::run_lifecycle::RunLifecycleState;
 use super::sand_pending_wake_store::SandPendingWakeStore;
 use super::sand_upgrade_resume_store::SandUpgradeResumeStore;
+use super::session_runtime::SessionRuntime;
 use super::run_scheduler::{
     RUN_WATCHDOG_DEFAULT_MS, RUN_WATCHDOG_GRACE_DEFAULT_MS, RunLane, RunSettlement,
     WatchdogEvent,
@@ -57,6 +58,7 @@ pub struct ProductionTranscriptRuntime {
     pending_wake_store: Option<SandPendingWakeStore>,
     upgrade_resume_store: Option<SandUpgradeResumeStore>,
     upgrade_recreate_resume: UpgradeRecreateResume,
+    session_runtime: SessionRuntime,
 }
 
 impl ProductionTranscriptRuntime {
@@ -92,7 +94,12 @@ impl ProductionTranscriptRuntime {
             pending_wake_store,
             upgrade_resume_store,
             upgrade_recreate_resume: UpgradeRecreateResume::default(),
+            session_runtime: SessionRuntime::new(),
         }
+    }
+
+    pub fn session_runtime(&self) -> &SessionRuntime {
+        &self.session_runtime
     }
 
     pub fn pending_wake_store(&self) -> Option<&SandPendingWakeStore> {

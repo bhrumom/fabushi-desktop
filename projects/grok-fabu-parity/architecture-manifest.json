@@ -12229,7 +12229,8 @@
         "source/host/src/extensions/transcript/runner_registry.rs",
         "source/host/src/extensions/transcript/ack_obligations.rs",
         "source/host/src/extensions/forever_box/forever_box_service.rs",
-        "source/host/src/extensions/session/box_handoff_service.rs"
+        "source/host/src/extensions/session/box_handoff_service.rs",
+        "source/host/src/extensions/transcript/session_runtime.rs"
       ],
       "testEvidence": [
         "source/host/tests/agent_session_contract.rs",
@@ -12241,10 +12242,11 @@
         "source/host/tests/agent_lifecycle_contract.rs",
         "source/host/tests/agent_clone_contract.rs",
         "source/host/tests/workflow_store_contract.rs",
-        "source/host/tests/session_materialization_contract.rs"
+        "source/host/tests/session_materialization_contract.rs",
+        "source/host/tests/transcript_session_runtime_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Session facade owns active-agent pointer read/write/clear, root/agent existence, active-aware serialized create/fallback materialization, durable delete orchestration, roster summaries with active identity, profile/avatar, transcript, unread/view/activity/awaiting state, settings, connector channels and Host worker shutdown. Shipping deleteAgent composition now supplies Runner cancellation, Ack obligation/token purge, ForeverBox release and handoff forget around durable directory deletion; automation/workflow definitions disappear with that directory. Final is withheld for kickstart/telemetry, memory composition, cached extras/deletion predicates, background semantics, exact active-session switch behavior, and the remaining trays/pending-wake/group-runner drain surfaces. Durable delete now raises the production deletion fence before DB/blob owner shutdown and directory removal, then releases it on success or error."
+      "notes": "Rust Session facade owns active-agent pointer read/write/clear, root/agent existence, active-aware serialized create/fallback materialization, durable delete orchestration, roster summaries with active identity, profile/avatar, transcript, unread/view/activity/awaiting state, settings, connector channels and Host worker shutdown. Shipping Transcript SessionRuntime now owns exact focus-aware openAgent switching against this facade: old-session viewed preservation, new-session viewed settlement and durable active-pointer replacement are production wired. Shipping deleteAgent composition supplies Runner cancellation, Ack obligation/token purge, ForeverBox release and handoff forget around durable directory deletion; automation/workflow definitions disappear with that directory. Final is withheld for kickstart/telemetry, memory composition, cached extras/deletion predicates, background semantics, and the remaining trays/pending-wake/group-runner drain surfaces. Durable delete raises the production deletion fence before DB/blob owner shutdown and directory removal, then releases it on success or error."
     },
     {
       "referencePath": "source/host/extensions/session/box-handoff-service.ts",
@@ -14317,12 +14319,24 @@
       "targetPath": "source/host/src/extensions/transcript/session_runtime.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "18659d48c81749ddc92a5f1e25e9df86e4ca8dec",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/session_runtime.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/session/agent_session.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_session_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Shipping Rust Transcript runtime now owns frozen active-window focus state and openAgent switching semantics: focus transition marks the active Agent viewed only when activity is newer and not manually unread; switching while focused marks the previous Agent viewed with manual-unread preservation, marks the next Agent viewed, reads its authoritative transcript, and durably updates the active pointer. Final is withheld for liveSessions/openSessionOnce, deferred windowed activation/catch-up, in-memory transcript projection, roster activation events, desktop-contact freshness and remaining lifecycle composition."
     },
     {
       "referencePath": "source/host/extensions/transcript/shared-rooms.ts",
