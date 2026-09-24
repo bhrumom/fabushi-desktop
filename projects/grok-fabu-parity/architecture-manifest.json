@@ -15778,12 +15778,20 @@
       "targetPath": "source/host/src/runner/background_work.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "7b0742fa89eb580f49d76fc06f7577c74fe42c31",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/background_work.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/background_work_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port now owns the frozen background-work core: reviving work registry, wakeup ack/nack/suppress/completion semantics, quiet-origin propagation, shell terminal footer parsing, rewatch constants, subagent title derivation and steer-prompt formatting. It remains existing-needs-parity until cloud-agent/shell rewatch production watchers and pending-wake callbacks are composed into the shipping Runner/subagent runtime."
     },
     {
       "referencePath": "source/host/runner/bot-block-detection.ts",
