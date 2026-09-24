@@ -19,7 +19,11 @@ pub use stream_attempt::{
     AttemptProgress, RetryDecision, StreamAttemptPolicy, StreamWatchdog,
 };
 pub use transient_stream_error::{StreamFailureKind, TransientStreamError};
-pub use turn_settle::{TerminalOutcome, TurnSettlement};
+pub use turn_settle::{
+    DurableTurnCheckpointStore, TerminalOutcome, TranscriptCheckpointMirror,
+    TurnCheckpointFuture, TurnCheckpointPersistenceError, TurnSettlement,
+    persist_checkpoint_with_mirror,
+};
 pub use turn_run_shell::{
     CheckpointBoundary, TurnCancellation, TurnOwnerToken, TurnRunFinished,
     TurnRunOptions, TurnRunShell, TurnRunShellError, TurnRunStarted,

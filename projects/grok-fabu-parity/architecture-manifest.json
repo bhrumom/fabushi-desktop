@@ -16400,7 +16400,7 @@
       "targetPath": "source/host/src/runner/turn_settle.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "implemented",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "115972a4a22b240464f1834314cb52d4c99fe9e6",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -16409,10 +16409,12 @@
       ],
       "testEvidence": [
         "source/host/tests/runner_contract.rs",
-        ".github/workflows/grok-rust-parity-finalize.yml"
+        ".github/workflows/grok-rust-parity-finalize.yml",
+        "source/host/tests/turn_settle_checkpoint_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
+      "notes": "Corrected prior false-final status. Rust now preserves existing exactly-once terminal settlement and adds the frozen checkpoint transaction seam: journal prepare precedes durable Agent checkpoint, durable failure best-effort aborts the prepared journal, successful durable checkpoint commits using latestRootBlobId, and disabled persistence invokes skip. Still non-final because shipping ProductionTurnAgentOwner/Agent checkpoint composition does not yet supply the mirror/provider and the broader frozen turn-settle profile/token-details/labeling semantics remain to be ported."
     },
     {
       "referencePath": "source/host/runner/turn-shape.ts",
@@ -16755,12 +16757,19 @@
       "targetPath": "source/host/src/transcript_mirror/transcript_journal_codec.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "e5a0c17c3c218c1b5628f86fd4258ec9b5002009",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/transcript_mirror/transcript_journal_codec.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_journal_codec_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port covers frozen SHA/checkpoint identity, byte equality, file identity, deferred/pending checkpoint validation, zero-progress-safe positioned writes, and legacy JSONL text/tool envelopes. Kept non-final until FileTranscriptMirror production WAL/replay/atomic-install ownership consumes this codec on the shipping checkpoint path."
     },
     {
       "referencePath": "source/host/transcript-mirror/transcript-mirror-router.ts",
