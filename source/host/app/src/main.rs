@@ -76,11 +76,16 @@ use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use mahayana_host_runtime::extensions::telemetry::turn_empty_delivery_telemetry::turn_empty_delivery_telemetry;
+use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::{
+    AgentErrorReport, agent_error_detail_telemetry, agent_error_telemetry,
+};
 use mahayana_host_runtime::extensions::telemetry::extension::start_host_telemetry_extension;
 use mahayana_host_runtime::extensions::trays::extension::{
     HostTraysExtension, start_trays_extension,
 };
 use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
+use mahayana_host_runtime::extensions::transcript::turn_runtime::classify_agent_error;
+use mahayana_host_runtime::ports::telemetry::sand_error_detail;
 use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxRunnerResourcePort,
     BoxStatus, ForeverBoxService, start_forever_box_extension,
@@ -1435,6 +1440,32 @@ fn start_routed_provider_task(
                     })),
                     Err(error) => {
                         let message = error.to_string();
+                        if worker_is_ack_redrive {
+                            let report = AgentErrorReport {
+                                source: "ack_redrive".into(),
+                                conversation_id: agent_id.clone(),
+                                request_id: Some(worker_stream_id.clone()),
+                                error: classify_agent_error(&error),
+                                detail: Some(sand_error_detail(&error)),
+                            };
+                            let summary = agent_error_telemetry(&report);
+                            if let Err(telemetry_error) =
+                                worker_telemetry_logs.report_projection(&summary)
+                            {
+                                eprintln!(
+                                    "mahayana-host-ack agent_error_telemetry_failed agent={agent_id} error={telemetry_error}"
+                                );
+                            }
+                            if let Some(detail) = agent_error_detail_telemetry(&report) {
+                                if let Err(telemetry_error) =
+                                    worker_telemetry_logs.report_projection(&detail)
+                                {
+                                    eprintln!(
+                                        "mahayana-host-ack agent_error_detail_telemetry_failed agent={agent_id} error={telemetry_error}"
+                                    );
+                                }
+                            }
+                        }
                         worker_trays.push_error(provider_failure_tray(
                             &agent_id,
                             &message,

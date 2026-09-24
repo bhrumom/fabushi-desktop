@@ -13703,7 +13703,7 @@
       "targetPath": "source/host/src/extensions/transcript/ack_obligations.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f07018f5ab36f4e02cd3c3a0d89e3052cb74e087",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -13717,7 +13717,9 @@
         "source/host/src/extensions/transcript/production_runtime.rs",
         "source/host/src/extensions/transcript/upgrade_recreate_resume.rs",
         "source/node-agent-coordinator/src/inference_router.rs",
-        "source/host/src/extensions/telemetry/turn_empty_delivery_telemetry.rs"
+        "source/host/src/extensions/telemetry/turn_empty_delivery_telemetry.rs",
+        "source/host/src/extensions/telemetry/agent_error_telemetry.rs",
+        "source/host/src/extensions/transcript/turn_runtime.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_ack_obligation_store_contract.rs",
@@ -13728,10 +13730,11 @@
         "source/host/tests/ack_redrive_production_contract.rs",
         "source/host/tests/transcript_production_composition_contract.rs",
         "source/host/tests/upgrade_recreate_resume_contract.rs",
-        "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs"
+        "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+        "source/host/tests/agent_error_telemetry_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust AckObligations is production-composed across accepted send and Runner delivery: durable sends record/coalesce, provider turns mint scoped tokens, SendMessage fulfills only after durable append, terminal paths retire tokens, watchdog interruption records interrupts, and agent deletion purges durable/in-memory state. Frozen timer ownership is preserved with per-Agent boot/idle schedules. Ack redrive now also carries requestSource/ackRedrive context and authoritative recentUserMessages across Coordinator -> Host -> Runner; if a successful redrive reaches Runner terminal while the durable obligation is still outstanding, shipping Host emits the existing sand.turn.empty_delivery structured telemetry with request id, tool-call count, stream-output flag, duration and redrive attempts. Final remains withheld for frozen ack-redrive Agent-error structured telemetry parity."
+      "notes": "Rust AckObligations is production-composed across accepted send and Runner delivery: durable sends record/coalesce, provider turns mint scoped tokens, SendMessage fulfills only after durable append, terminal paths retire tokens, watchdog interruption records interrupts, and agent deletion purges durable/in-memory state. Frozen per-Agent boot/idle redrive schedules and max-redrive loss semantics are preserved. Ack redrive carries authoritative recentUserMessages across Coordinator -> Host -> Runner; successful empty delivery emits sand.turn.empty_delivery. Failed ack-redrive Runner turns now emit the frozen sand.agent.error summary plus sand.agent.error.detail with source=ack_redrive, conversation/request identity, registered SAND agent error classification and bounded detail before the existing failure Tray/event path. This closes the frozen ack-obligation production contract."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-lifecycle.ts",
@@ -14774,17 +14777,19 @@
         "source/host/src/runner/conversation_state.rs",
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/extensions/session/production_agent_store.rs",
-        "source/host/src/runner/production_agent_checkpoint.rs"
+        "source/host/src/runner/production_agent_checkpoint.rs",
+        "source/host/src/extensions/telemetry/agent_error_telemetry.rs"
       ],
       "testEvidence": [
         "source/host/tests/turn_runtime_recovery_contract.rs",
         "source/host/tests/transcript_production_composition_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/production_agent_checkpoint_contract.rs"
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        "source/host/tests/agent_error_telemetry_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Real shipping slice of frozen TurnRuntime: queued-turn recovery suppression uses current/recovery-break epochs, durable message identity/history, no-media/no-fork/no-reply/raw-text guards, latest recovery epoch and exact SandAgentRunner prepend ordering/confirmed semantics before Host dispatch. Successful Agent checkpoint settlement now sets the durable transcript confirmed watermark atomically with latestRootBlobId, so later recovery decisions observe real generated-state confirmation. Final remains withheld for update projection, request/usage lifecycle, reply nudges/empty-delivery telemetry, tool diagnostics/status settlement, reactions and automation emission."
+      "notes": "Real shipping slice of frozen TurnRuntime: queued-turn recovery suppression uses current/recovery-break epochs, durable message identity/history, no-media/no-fork/no-reply/raw-text guards, latest recovery epoch and exact SandAgentRunner prepend ordering/confirmed semantics before Host dispatch. Successful Agent checkpoint settlement now sets the durable transcript confirmed watermark atomically with latestRootBlobId, so later recovery decisions observe real generated-state confirmation. Final remains withheld for update projection, request/usage lifecycle, reply nudges/empty-delivery telemetry, tool diagnostics/status settlement, reactions and automation emission. Rust turn runtime now also owns the frozen Agent-error family classifier used by ack-redrive structured telemetry; broader TurnRuntime finality remains gated by the remaining frozen turn/session/tool lifecycle surfaces."
     },
     {
       "referencePath": "source/host/extensions/transcript/upgrade-recreate-resume.ts",
