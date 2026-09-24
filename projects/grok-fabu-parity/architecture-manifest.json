@@ -12671,7 +12671,7 @@
       "targetPath": "source/host/src/extensions/session/session_materialization.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "8bf343ad69fb47f68d51fce6baddbffb9d58448b",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12701,7 +12701,8 @@
         "source/host/tests/production_agent_store_contract.rs",
         "source/host/tests/agent_session_contract.rs"
       ],
-      "notes": "Rust materialization owns MAX_AGENTS_PER_USER counting, UUID mint, fresh store.db/profile/settings identity, blob key generation, pruned-placeholder reclaim and fallback adoption. Shipping create/open Session facades now compose one ProductionMaterializedSession containing the Host-lifetime SandAgentDb owner, WorkerBlobStore, default injectable memory handle, automation/workflow/channel stores, prepared Session state and resetFromDb conversation projection; public Gateway return shapes remain unchanged. Final remains withheld for durable long-lived bundle caching/disposal, full Memory extension injection, AgentStore checkpoint-owner unification and the remaining lifecycle/background composition. Production Session materialization now injects a real agent-scoped Rust FileMemoryStore from MemoryService instead of the unavailable-memory fallback; full Memory synthesis/watch/shared-store lifecycle remains non-final. The real Host Memory extension is now a single production owner injected into Session materialization; no Session-local unavailable-memory owner remains. Shipping materialization now composes a real Rust ProductionAgentStore over the live SandAgentDb + WorkerBlobStore checkpoint owners; Runner checkpoint/mirror adapter and broader typed AgentStore surfaces remain non-final. Production Session now keeps exactly one Host-lifetime ProductionAgentStore checkpoint owner per agent across create/open facade projections; delete, cap-time reclaim and Host shutdown explicitly release that owner before DB/blob worker teardown, and owner reuse/release is covered by materialization and delete contracts."
+      "notes": "Final Rust port of frozen Session materialization. It owns serialized UUID minting, 50-agent cap/reclaim, create/open/fallback materialization, store.db/profile/settings initialization and repair, the production blob worker pool, Host-lifetime SandAgentDb + ProductionAgentStore checkpoint owners, Memory/Automation/Workflow/Channel bundle composition, AgentStore reset + Session maintenance on open, and explicit reclaim/delete/shutdown disposal. Contracts cover identity initialization, repair, cap, concurrent mint serialization, pruned-placeholder selection/reclaim, fallback adoption/diagnostics, full production bundle composition/reset, and AgentStore owner reuse/release. Exact parent SHA 6d34b8fbcaa20b26f5351a59202f621d6a3a8500 passed Rust desktop runtime run 35997345561 and Desktop Chat Parity run 35997345664.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/session/session-mutations.ts",
