@@ -6,7 +6,9 @@ use crate::extensions::inference::provider_session::{
 };
 
 use super::box_tool_access::{RunnerBoxResourcePort, RunnerBoxToolBridge};
-use super::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
+use super::production_turn_run_shell_adapter::{
+    ProviderRetryEvent, RoutedProviderCheckpointStore,
+};
 use super::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedProviderRun, RoutedToolBridge,
     RunnerRequestContextSnapshot, run_routed_provider_in_runner,
@@ -28,6 +30,7 @@ pub struct TurnAgentComposition {
     request_context: RunnerRequestContextSnapshot,
     cancellation: RoutedProviderCancellation,
     checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
+    retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
@@ -47,10 +50,19 @@ impl TurnAgentComposition {
             request_context,
             cancellation,
             checkpoint_store,
+            retry_sink: None,
             box_resources: None,
             send_message_sink: None,
             reaction_sink: None,
         }
+    }
+
+    pub fn with_retry_sink(
+        mut self,
+        sink: Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>,
+    ) -> Self {
+        self.retry_sink = Some(sink);
+        self
     }
 
     pub fn with_box_resources(
@@ -133,6 +145,7 @@ impl TurnAgentComposition {
                 request_context: self.request_context.clone(),
                 cancellation: self.cancellation.clone(),
                 checkpoint_store: Arc::clone(&self.checkpoint_store),
+                retry_sink: self.retry_sink.clone(),
             },
             on_text_delta,
         )
