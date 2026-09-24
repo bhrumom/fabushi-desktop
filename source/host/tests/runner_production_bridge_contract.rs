@@ -70,6 +70,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
             send_message_sink: None,
             reaction_sink: None,
             action_audit: None,
+            observation: None,
         },
     );
 
