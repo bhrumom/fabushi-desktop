@@ -16965,14 +16965,16 @@
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/transcript_mirror/transcript_journal_codec.rs"
+        "source/host/src/transcript_mirror/transcript_journal_codec.rs",
+        "source/host/src/transcript_mirror/transcript_mirror.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_journal_codec_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/transcript_mirror_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port covers frozen SHA/checkpoint identity, byte equality, file identity, deferred/pending checkpoint validation, zero-progress-safe positioned writes, and legacy JSONL text/tool envelopes. Kept non-final until FileTranscriptMirror production WAL/replay/atomic-install ownership consumes this codec on the shipping checkpoint path."
+      "notes": "Rust port covers frozen SHA/checkpoint identity, byte equality, file identity, deferred/pending checkpoint validation, zero-progress-safe positioned writes, and legacy JSONL text/tool envelopes. FileTranscriptMirror now consumes the codec for production-shaped WAL/replay/atomic-install behavior. Kept non-final until the occurrence deriver and production provider route shipping Agent checkpoints through the journal."
     },
     {
       "referencePath": "source/host/transcript-mirror/transcript-mirror-router.ts",
@@ -16984,11 +16986,13 @@
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/transcript_mirror/transcript_mirror_router.rs"
+        "source/host/src/transcript_mirror/transcript_mirror_router.rs",
+        "source/host/src/transcript_mirror/transcript_mirror.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_router_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/transcript_mirror_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust port owns frozen sticky journal/legacy routing, concurrent first-route selection without split claims, existing-marker precedence over the experiment flag, legacy pending replacement, observational legacy commit failures, abort cleanup, and skip semantics that never claim a new journal but recover an already-owned journal before skipping. Final is withheld until FileTranscriptMirror and the production provider consume this router on the shipping Agent checkpoint path."
@@ -16998,12 +17002,23 @@
       "targetPath": "source/host/src/transcript_mirror/transcript_mirror.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "e85e9ce0eab850ffce57c5773ed9d77069f48a11",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/transcript_mirror/transcript_mirror.rs",
+        "source/host/src/transcript_mirror/transcript_journal_codec.rs",
+        "source/host/src/transcript_mirror/transcript_mirror_router.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_mirror_contract.rs",
+        "source/host/tests/transcript_journal_codec_contract.rs",
+        "source/host/tests/transcript_mirror_router_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust FileTranscriptMirror ports frozen safe paths, journal ownership marker, per-conversation serialization, atomic file install/fsync, canonical file identity fencing, pending WAL prepare/commit/abort/replay, deferred cursor persistence, skip semantics, unique occurrence validation and outcome reporting. It implements the Rust TranscriptJournalPort consumed by the sticky router. Final is withheld until the generated occurrence deriver and production provider feed real ConversationStateStructure Agent checkpoints on the shipping Runner path."
     },
     {
       "referencePath": "source/host/transcript-mirror/transcript-occurrence-deriver.ts",
