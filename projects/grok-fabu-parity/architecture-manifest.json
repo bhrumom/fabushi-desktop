@@ -9273,12 +9273,21 @@
       "targetPath": "source/host/src/agent_isolation/transcript_mirror_worker.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "1d04618f55ad604863115b1ca1f4ffc23469d2d0",
       "architecturalRole": "host/agent-isolation",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/agent_isolation/transcript_mirror_worker.rs",
+        "source/host/src/transcript_mirror/legacy_transcript_mirror.rs",
+        "source/host/src/transcript_mirror/conversation_state_binary.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_mirror_worker_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust worker owns frozen read-only multi-SQLite blob lookup, 5s busy timeout, ConversationStateStructure decode and full legacy mirror write. Final is withheld until TranscriptMirrorOffloadPool owns sharding/coalescing/lifecycle and the shipping production provider invokes the worker path."
     },
     {
       "referencePath": "source/host/agent-isolation/worker-blob-store.ts",
@@ -16911,12 +16920,20 @@
       "targetPath": "source/host/src/transcript_mirror/legacy_transcript_mirror.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "511685e09bb11c8ff8e6018a8adeda1a95624ca6",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/transcript_mirror/legacy_transcript_mirror.rs",
+        "source/host/src/transcript_mirror/conversation_state_binary.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/legacy_transcript_mirror_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port owns frozen observational legacy JSONL projection: summary-archive/root-prompt hydration, oversize/binary placeholders, context/thinking stripping, tool-use formatting, monotonic full writes and incremental append semantics. Final is withheld until the offload pool and production transcript provider route shipping Runner checkpoints through this mirror."
     },
     {
       "referencePath": "source/host/transcript-mirror/production-provider.ts",

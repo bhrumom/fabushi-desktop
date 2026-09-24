@@ -4,6 +4,7 @@ pub mod conversation_blob_db;
 pub mod conversation_blob_gc;
 pub mod conversation_blob_store;
 pub mod legacy_blob_retirement;
+pub mod transcript_mirror_worker;
 pub mod worker_blob_store;
 
 pub use agent_store_worker::{
