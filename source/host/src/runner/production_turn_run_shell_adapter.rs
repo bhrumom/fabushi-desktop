@@ -41,6 +41,15 @@ pub trait RoutedProviderAttemptExecutor {
     ) -> Result<String, ProviderSessionError>;
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProviderRetryEvent {
+    pub attempt: u32,
+    pub next_attempt: u32,
+    pub delay_ms: u64,
+    pub resume_from_checkpoint: bool,
+    pub watchdog_expired: bool,
+}
+
 #[derive(Debug, Clone)]
 pub struct ProductionTurnRunShellAdapter {
     pub policy: StreamAttemptPolicy,
@@ -63,6 +72,23 @@ impl ProductionTurnRunShellAdapter {
         checkpoint_store: &dyn RoutedProviderCheckpointStore,
         executor: &mut dyn RoutedProviderAttemptExecutor,
         on_text_delta: &mut dyn FnMut(&str, &str),
+    ) -> Result<String, ProviderSessionError> {
+        self.run_with_retry(
+            cancellation,
+            checkpoint_store,
+            executor,
+            on_text_delta,
+            &mut |_| {},
+        )
+    }
+
+    pub fn run_with_retry(
+        &self,
+        cancellation: &RoutedProviderCancellation,
+        checkpoint_store: &dyn RoutedProviderCheckpointStore,
+        executor: &mut dyn RoutedProviderAttemptExecutor,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+        on_retry: &mut dyn FnMut(&ProviderRetryEvent),
     ) -> Result<String, ProviderSessionError> {
         let mut attempt = 1_u32;
         let mut resume_from: Option<RoutedProviderCheckpoint> = None;
@@ -160,6 +186,7 @@ impl ProductionTurnRunShellAdapter {
                         true,
                         cancellation,
                         resume_from.as_ref(),
+                        on_retry,
                     )? {
                         return Err(error);
                     }
@@ -180,6 +207,7 @@ impl ProductionTurnRunShellAdapter {
                         timed_out,
                         cancellation,
                         resume_from.as_ref(),
+                        on_retry,
                     )? {
                         return Err(error);
                     }
@@ -196,14 +224,15 @@ impl ProductionTurnRunShellAdapter {
         watchdog_expired: bool,
         cancellation: &RoutedProviderCancellation,
         accepted_resume: Option<&RoutedProviderCheckpoint>,
+        on_retry: &mut dyn FnMut(&ProviderRetryEvent),
     ) -> Result<bool, ProviderSessionError> {
         let transient =
             classify_provider_failure(error, watchdog_expired);
         let decision = self
             .policy
             .retry_decision(*attempt, progress, &transient);
-        let delay = match decision {
-            RetryDecision::RetryAfter(delay) => delay,
+        let (delay, resume_from_checkpoint) = match decision {
+            RetryDecision::RetryAfter(delay) => (delay, false),
             RetryDecision::ResumeAfter {
                 delay,
                 checkpoint: _,
@@ -211,12 +240,20 @@ impl ProductionTurnRunShellAdapter {
                 if accepted_resume.is_none() {
                     return Ok(false);
                 }
-                delay
+                (delay, true)
             }
             RetryDecision::Fail => return Ok(false),
         };
+        let next_attempt = attempt.saturating_add(1);
+        on_retry(&ProviderRetryEvent {
+            attempt: *attempt,
+            next_attempt,
+            delay_ms: delay.as_millis().min(u64::MAX as u128) as u64,
+            resume_from_checkpoint,
+            watchdog_expired,
+        });
         sleep_with_cancellation(delay, cancellation)?;
-        *attempt = attempt.saturating_add(1);
+        *attempt = next_attempt;
         Ok(true)
     }
 }
