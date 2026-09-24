@@ -14,6 +14,10 @@ const localExecContract = "source/host/tests/extensions_local_exec_contract.rs";
 const hostFoundationContract = "source/host/tests/host_foundation_contract.rs";
 const hostStorageContract = "source/host/tests/host_storage_contract.rs";
 const grokSmallFoundationContract = "source/host/tests/grok_small_foundation_parity_contract.rs";
+const manualFinalizationRequired = new Set([
+  "source/host/runner/turn-settle.ts",
+]);
+
 const completed = new Map([
   ["source/host/ports/product-analytics.ts", ["source/host/src/ports/product_analytics.rs", grokSmallFoundationContract]],
   ["source/host/ports/sand-analytics-types.ts", ["source/host/src/ports/sand_analytics_types.rs", grokSmallFoundationContract]],
@@ -51,7 +55,6 @@ const completed = new Map([
   ["source/host/runner/tool-call-identity.ts", ["source/host/src/runner/tool_call_identity.rs", runnerContract]],
   ["source/host/runner/transient-stream-error.ts", ["source/host/src/runner/transient_stream_error.rs", runnerContract]],
   ["source/host/runner/turn-run-shell.ts", ["source/host/src/runner/turn_run_shell.rs", runnerContract]],
-  ["source/host/runner/turn-settle.ts", ["source/host/src/runner/turn_settle.rs", runnerContract]],
   ["source/host/runner/turn-usage.ts", ["source/host/src/runner/turn_usage.rs", runnerContract]],
   ["source/host/runner/agent-state.ts", ["source/host/src/runner/agent_state.rs", utilityContract]],
   ["source/host/runner/clock-skew-guard.ts", ["source/host/src/runner/clock_skew_guard.rs", utilityContract]],
@@ -63,6 +66,14 @@ const completed = new Map([
   ["source/host/runner/tools/sand-secret-request.ts", ["source/host/src/runner/tools/sand_secret_request.rs", utilityContract]],
   ["source/host/runner/tools/tool-input-error.ts", ["source/host/src/runner/tools/tool_input_error.rs", utilityContract]],
 ]);
+
+for (const referencePath of manualFinalizationRequired) {
+  if (completed.has(referencePath)) {
+    throw new Error(
+      `manual-finalization row cannot be auto-promoted by cargo coverage alone: ${referencePath}`
+    );
+  }
+}
 
 const touched = [];
 for (const row of manifest.modules) {
