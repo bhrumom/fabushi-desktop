@@ -1011,3 +1011,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Persistence uses the existing production transaction boundary: routed transcript mirror prepare -> \`ProductionAgentStore\` durable checkpoint/latestRootBlobId advance -> mirror commit. The \`sand_new_transcript_journal\` experiment controls journal vs legacy routing exactly at the shipping path.
 - This is intentionally not full SandAgentRunner parity. Generated tool-call state, complete Agent resources/subagents/computer state, canonical generated Rust tool JSON bindings and broader settle/profile/memory semantics remain non-final and must stay represented as \`existing-needs-parity\`/planned rows.
 
+### 2026-09-25 atomic generated-Agent confirmation watermark
+
+- Direct user turns no longer advance Agent \`latestRootBlobId\` and the transcript recovery watermark as two independent writes.
+- After content-addressed checkpoint blobs are written, the long-lived \`SandAgentDb\` owner opens one \`BEGIN IMMEDIATE\` transaction, verifies the expected prior root and addressed user entry, advances \`latestRootBlobId\`, and writes \`confirmed: true\` on that exact durable user transcript entry before commit.
+- The turn-scoped durable checkpoint wrapper is used only when the shipping run carries a real \`messageId\`; background/redrive turns without an addressed transcript message retain the normal AgentStore checkpoint path.
+- Contract coverage proves both success and the failure invariant: a missing addressed user entry rejects the durable checkpoint and does not advance the Agent root.
+

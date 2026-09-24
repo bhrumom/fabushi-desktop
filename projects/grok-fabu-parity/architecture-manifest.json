@@ -14474,7 +14474,10 @@
         "source/host/src/extensions/transcript/send_pipeline.rs",
         "source/host/src/extensions/transcript/turn_runtime.rs",
         "source/host/src/runner/conversation_state.rs",
-        "source/host/src/extensions/transcript/transcript_manager.rs"
+        "source/host/src/extensions/transcript/transcript_manager.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production_agent_store.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14488,9 +14491,10 @@
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
         "source/host/tests/production_turn_input_projection_contract.rs",
         "source/host/tests/turn_runtime_recovery_contract.rs",
-        "source/host/tests/transcript_manager_contract.rs"
+        "source/host/tests/transcript_manager_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs"
       ],
-      "notes": "Production Rust send pipeline owns nonce admission/coalescing/replay, durable Session echo, acceptance state, queue/watchdog dispatch, turn epochs and attachment batch identity. Frozen latestRecoverySends/recoveryBreakEpochs are now populated from the authoritative durable user echo, and shipping turn-runtime suppresses a stale queued plain-text turn only when the newest durable recent-user sequence satisfies the exact SandAgentRunner wouldRecoverViaPrepend ordering/confirmed contract. Superseded user intent remains durable. Final remains withheld for group fanout, complete direct Runner invocation ownership, remaining ack/recovery guard composition, generated Agent confirmed-watermark side effect, and full generated Agent media consumption."
+      "notes": "Production Rust send pipeline owns nonce admission/coalescing/replay, durable Session echo, acceptance state, queue/watchdog dispatch, turn epochs and attachment batch identity. Frozen latestRecoverySends/recoveryBreakEpochs are populated from the authoritative durable user echo, and successful shipping Agent checkpoints now atomically advance latestRootBlobId and mark the exact user transcript entry confirmed:true in the same SandAgentDb IMMEDIATE transaction; queued recovery therefore consumes a real generated-Agent confirmation watermark rather than an inferred flag. Final remains withheld for group fanout, complete direct Runner invocation ownership, remaining ack/recovery guard composition, and full generated Agent media consumption."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",
@@ -14683,16 +14687,20 @@
         "source/host/src/extensions/transcript/turn_runtime.rs",
         "source/host/src/extensions/transcript/production_runtime.rs",
         "source/host/src/extensions/transcript/send_pipeline.rs",
-        "source/host/src/runner/conversation_state.rs"
+        "source/host/src/runner/conversation_state.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production_agent_store.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs"
       ],
       "testEvidence": [
         "source/host/tests/turn_runtime_recovery_contract.rs",
         "source/host/tests/transcript_production_composition_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/production_agent_checkpoint_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Real shipping slice of frozen TurnRuntime: queued-turn recovery suppression uses current/recovery-break epochs, durable message identity/history, no-media/no-fork/no-reply/raw-text guards, latest recovery epoch and exact SandAgentRunner prepend ordering/confirmed semantics before Host dispatch. A three-send production contract proves the middle stale turn remains durably accepted but never dispatches while the newest turn proceeds. Final remains withheld for update projection, request/usage lifecycle, reply nudges/empty-delivery telemetry, tool diagnostics/status settlement, reactions, automation emission and generated Agent confirmed-watermark side effect."
+      "notes": "Real shipping slice of frozen TurnRuntime: queued-turn recovery suppression uses current/recovery-break epochs, durable message identity/history, no-media/no-fork/no-reply/raw-text guards, latest recovery epoch and exact SandAgentRunner prepend ordering/confirmed semantics before Host dispatch. Successful Agent checkpoint settlement now sets the durable transcript confirmed watermark atomically with latestRootBlobId, so later recovery decisions observe real generated-state confirmation. Final remains withheld for update projection, request/usage lifecycle, reply nudges/empty-delivery telemetry, tool diagnostics/status settlement, reactions and automation emission."
     },
     {
       "referencePath": "source/host/extensions/transcript/upgrade-recreate-resume.ts",
@@ -15942,7 +15950,9 @@
         "source/host/src/runner/turn_run_shell.rs",
         "source/host/app/src/main.rs",
         "source/host/src/runner/production_turn_input_projection.rs",
-        "source/host/src/runner/production_agent_checkpoint.rs"
+        "source/host/src/runner/production_agent_checkpoint.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/production_agent_store.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
@@ -15952,7 +15962,7 @@
         "source/host/tests/production_agent_checkpoint_contract.rs",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Shipping ProductionTurnAgentOwner now gates terminal Completed settlement on a Runner-owned AgentStateCheckpointSink. Successful provider text is converted to canonical agent.v1 UserMessage/ConversationStep/AgentConversationTurnStructure/ConversationStateStructure wire, content-addressed into the production WorkerBlobStore, then committed through transcript mirror prepare -> ProductionAgentStore durable root -> mirror commit. Checkpoint failure becomes the same turn's non-retryable failed terminal outcome. Full frozen Agent build/resource/tool/summarization/static-config/disk-pressure/profile/update/disposer surfaces remain non-final."
+      "notes": "Shipping ProductionTurnAgentOwner gates terminal Completed settlement on a Runner-owned AgentStateCheckpointSink. Successful provider text is converted to canonical agent.v1 wire and committed through mirror prepare -> ProductionAgentStore durable root -> mirror commit. Direct-user turns use a turn-scoped durable store that atomically advances latestRootBlobId and marks the addressed transcript user entry confirmed:true in one SandAgentDb transaction; missing/stale message identity aborts root advancement. Checkpoint failure becomes the same turn's non-retryable failed terminal outcome. Full frozen Agent build/resource/tool/summarization/static-config/disk-pressure/profile/update/disposer surfaces remain non-final."
     },
     {
       "referencePath": "source/host/runner/production-turn-input-projection.ts",
@@ -19659,13 +19669,15 @@
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/agent_isolation/worker_blob_store.rs",
-        "source/host/src/transcript_mirror/conversation_state_binary.rs"
+        "source/host/src/transcript_mirror/conversation_state_binary.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_agent_store_contract.rs",
         "source/host/tests/session_materialization_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/production_agent_checkpoint_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Corrected prior false-final reference-copy mapping: the byte-identical TypeScript copy is not imported by shipping production. Rust ProductionAgentStore is now the live AgentStore2 checkpoint owner inside every ProductionMaterializedSession: generated-wire-compatible ConversationStateStructure validation, SHA-256 content root, WorkerBlobStore persistence, SandAgentDb latestRootBlobId metadata advancement and fail-closed tryResetFromDb are production wired. Final remains withheld for full typed metadata subscription surface, generated ConversationState derive/getFullConversation, subagent-state resolution and the Runner turn-settle/transcript-mirror checkpoint adapter."

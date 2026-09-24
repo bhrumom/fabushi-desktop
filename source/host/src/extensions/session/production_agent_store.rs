@@ -97,6 +97,48 @@ impl ProductionAgentStore {
     /// The async owner is the production checkpoint path. The synchronous
     /// wrapper remains for legacy synchronous callers, but Runner settle must
     /// await this method so it never nests a LocalPool executor.
+    /// Shipping direct-user checkpoint boundary. Blob bytes are content
+    /// addressed first; then SandAgentDb advances latestRootBlobId and the
+    /// transcript recovery watermark in one IMMEDIATE SQLite transaction.
+    pub async fn handle_checkpoint_bytes_and_confirm_user_message_async(
+        &self,
+        checkpoint: &[u8],
+        message_id: &str,
+    ) -> Result<Vec<u8>, String> {
+        decode_conversation_state_recovery_fields(checkpoint)
+            .map_err(|error| format!("invalid ConversationStateStructure checkpoint: {error}"))?;
+
+        let root_blob_id = Sha256::digest(checkpoint).to_vec();
+        self.blob_store
+            .set_blob(&(), &root_blob_id, checkpoint)
+            .await
+            .map_err(|error| error.to_string())?;
+
+        let expected_root = self.latest_root_blob_id();
+        let confirmed = self
+            .db
+            .commit_checkpoint_root_and_confirm_user_message(
+                &expected_root,
+                &root_blob_id,
+                message_id,
+            )
+            .map_err(|error| error.to_string())?;
+        if confirmed.is_none() {
+            return Err(
+                "latestRootBlobId and confirmed user transcript entry were not committed atomically"
+                    .into(),
+            );
+        }
+
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|_| "production AgentStore checkpoint state poisoned".to_string())?;
+        state.latest_root_blob_id = root_blob_id.clone();
+        state.checkpoint_bytes = Some(checkpoint.to_vec());
+        Ok(root_blob_id)
+    }
+
     pub async fn handle_checkpoint_bytes_async(
         &self,
         checkpoint: &[u8],

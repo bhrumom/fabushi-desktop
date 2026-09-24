@@ -13,7 +13,8 @@ use crate::transcript_mirror::production_provider::{
 };
 
 use super::{
-    TurnRunOptions, persist_checkpoint_with_mirror,
+    DurableTurnCheckpointStore, TurnCheckpointFuture, TurnRunOptions,
+    persist_checkpoint_with_mirror,
 };
 
 pub trait AgentStateCheckpointSink: Send + Sync {
@@ -95,6 +96,35 @@ pub fn build_text_turn_checkpoint(
         turn_id,
         turn_bytes,
         state_bytes,
+    }
+}
+
+struct ConfirmingAgentCheckpointStore<'a> {
+    store: &'a ProductionAgentStore,
+    message_id: &'a str,
+}
+
+impl DurableTurnCheckpointStore<ProductionTranscriptCheckpoint>
+    for ConfirmingAgentCheckpointStore<'_>
+{
+    fn handle_checkpoint<'a>(
+        &'a self,
+        checkpoint: &'a ProductionTranscriptCheckpoint,
+    ) -> TurnCheckpointFuture<'a, Result<(), String>> {
+        Box::pin(async move {
+            self.store
+                .handle_checkpoint_bytes_and_confirm_user_message_async(
+                    &checkpoint.state_bytes,
+                    self.message_id,
+                )
+                .await
+                .map(|_| ())
+        })
+    }
+
+    fn latest_root_blob_id(&self) -> Option<String> {
+        let root = self.store.latest_root_blob_id();
+        (!root.is_empty()).then(|| hex_id(&root))
     }
 }
 
@@ -217,23 +247,51 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
                         "Runner produced invalid ConversationStateStructure: {error}"
                     ))
                 })?;
-        futures::executor::block_on(persist_checkpoint_with_mirror(
-            Some(self.transcript_mirror.as_ref()),
-            Some(self.agent_store.as_ref()),
-            &self.agent_id,
-            &checkpoint,
-            &self.blob_store,
-            true,
-            false,
-            self.transcript_persistence_enabled,
-            |_| {
-                Err(
-                    "production AgentStore is required for shipping Runner checkpoint"
-                        .to_string(),
-                )
-            },
-        ))
-        .map_err(|error| {
+        let persist_result = if let Some(confirmed_message_id) = options
+            .message_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            let confirming_store = ConfirmingAgentCheckpointStore {
+                store: self.agent_store.as_ref(),
+                message_id: confirmed_message_id,
+            };
+            futures::executor::block_on(persist_checkpoint_with_mirror(
+                Some(self.transcript_mirror.as_ref()),
+                Some(&confirming_store),
+                &self.agent_id,
+                &checkpoint,
+                &self.blob_store,
+                true,
+                false,
+                self.transcript_persistence_enabled,
+                |_| {
+                    Err(
+                        "production AgentStore is required for shipping Runner checkpoint"
+                            .to_string(),
+                    )
+                },
+            ))
+        } else {
+            futures::executor::block_on(persist_checkpoint_with_mirror(
+                Some(self.transcript_mirror.as_ref()),
+                Some(self.agent_store.as_ref()),
+                &self.agent_id,
+                &checkpoint,
+                &self.blob_store,
+                true,
+                false,
+                self.transcript_persistence_enabled,
+                |_| {
+                    Err(
+                        "production AgentStore is required for shipping Runner checkpoint"
+                            .to_string(),
+                    )
+                },
+            ))
+        };
+        persist_result.map_err(|error| {
             ProviderSessionError::Protocol(format!(
                 "Runner Agent checkpoint transaction failed: {error}"
             ))
@@ -241,6 +299,10 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
         *prior = artifacts.state_bytes;
         Ok(())
     }
+}
+
+fn hex_id(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
 fn push_length_delimited(field_number: u64, value: &[u8], output: &mut Vec<u8>) {

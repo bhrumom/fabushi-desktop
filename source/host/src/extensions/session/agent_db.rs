@@ -361,6 +361,129 @@ impl SandAgentDb {
         Ok(changed)
     }
 
+    /// Atomically advances the durable Agent root and marks the addressed
+    /// user transcript entry as confirmed. Conversation blobs are written
+    /// before this call; metadata + recovery watermark must commit together.
+    pub fn commit_checkpoint_root_and_confirm_user_message(
+        &self,
+        expected_root: &[u8],
+        next_root: &[u8],
+        entry_id: &str,
+    ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+        let entry_id = entry_id.trim();
+        if self.is_closed() || entry_id.is_empty() {
+            return Ok(None);
+        }
+        let mut guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(None);
+        };
+
+        db.execute_batch("BEGIN IMMEDIATE")?;
+        let transaction = (|| -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+            let raw_metadata = db
+                .query_row(GET_KV_SQL, params!["metadata"], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?;
+            let Some(raw_metadata) = raw_metadata else {
+                return Ok(None);
+            };
+            let bytes =
+                decode_hex(&raw_metadata).map_err(AgentDbProjectionError::MetadataHex)?;
+            let mut metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
+            let current_root = metadata
+                .get("latestRootBlobId")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default();
+            if current_root != encode_hex(expected_root) {
+                return Ok(None);
+            }
+
+            let raw_entry = db
+                .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+                    row.get::<_, String>(0)
+                })
+                .optional()?;
+            let Some(mut entry) = raw_entry
+                .as_deref()
+                .and_then(parse_transcript_entry)
+            else {
+                return Ok(None);
+            };
+            if entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+                || entry.get("role").and_then(serde_json::Value::as_str) != Some("user")
+            {
+                return Ok(None);
+            }
+            let Some(entry_object) = entry.as_object_mut() else {
+                return Ok(None);
+            };
+            entry_object.insert("confirmed".into(), serde_json::Value::Bool(true));
+
+            let Some(metadata_object) = metadata.as_object_mut() else {
+                return Ok(None);
+            };
+            metadata_object.insert(
+                "latestRootBlobId".into(),
+                serde_json::Value::String(encode_hex(next_root)),
+            );
+            let next_metadata = encode_hex(&serde_json::to_vec(&metadata)?);
+            if db.execute(
+                COMPARE_AND_SET_KV_SQL,
+                params![next_metadata, "metadata", raw_metadata],
+            )? != 1
+            {
+                return Ok(None);
+            }
+            if db.execute(
+                UPDATE_TRANSCRIPT_ENTRY_SQL,
+                params![entry.to_string(), entry_id],
+            )? != 1
+            {
+                return Ok(None);
+            }
+            Ok(Some(entry))
+        })();
+
+        let confirmed = match transaction {
+            Ok(Some(entry)) => {
+                db.execute_batch("COMMIT")?;
+                entry
+            }
+            Ok(None) => {
+                let _ = db.execute_batch("ROLLBACK");
+                return Ok(None);
+            }
+            Err(error) => {
+                let _ = db.execute_batch("ROLLBACK");
+                if let AgentDbProjectionError::Sqlite(sqlite) = &error {
+                    if is_sqlite_busy_error(sqlite) {
+                        if let Some(callback) = self.options.on_busy_error.as_ref() {
+                            callback(
+                                "commitCheckpointRootAndConfirmUserMessage",
+                                &sqlite.to_string(),
+                            );
+                        }
+                        return Ok(None);
+                    }
+                }
+                return Err(error);
+            }
+        };
+        drop(guard);
+        bump_db_write_generation(&self.db_path);
+        notify_agent_db_listeners(
+            &self.db_path,
+            AgentDbListenerChannel::Metadata("latestRootBlobId".into()),
+        );
+        publish_entries_upserted(&self.db_path, vec![confirmed.clone()]);
+        Ok(Some(confirmed))
+    }
+
     pub fn compare_and_set_latest_root_blob_id(
         &self,
         expected_root: &[u8],

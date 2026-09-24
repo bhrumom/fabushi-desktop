@@ -81,6 +81,16 @@ fn production_sink_commits_real_agent_wire_through_mirror_and_agent_store() {
             .create_agent_blob_store(&session.record.id)
             .expect("blob store"),
     );
+    session
+        .db
+        .append_transcript_entry(&serde_json::json!({
+            "id": "message-1",
+            "kind": "message",
+            "role": "user",
+            "content": "hello checkpoint",
+            "confirmed": false
+        }))
+        .expect("durable user echo");
     let prior = session.agent_store.latest_checkpoint_bytes().unwrap_or_default();
     let provider = ProductionTranscriptMirrorProvider::new(
         &transcripts_dir,
@@ -126,6 +136,14 @@ fn production_sink_commits_real_agent_wire_through_mirror_and_agent_store() {
         decode_transcript_mirror_conversation_state(&state).expect("decoded state");
     assert_eq!(decoded.turns.len(), 1);
     assert!(!session.agent_store.latest_root_blob_id().is_empty());
+    assert_eq!(
+        session
+            .db
+            .get_transcript_entry_by_id("message-1")
+            .expect("read user echo")
+            .and_then(|entry| entry.get("confirmed").and_then(serde_json::Value::as_bool)),
+        Some(true)
+    );
 
     let jsonl = fs::read_to_string(
         transcripts_dir
@@ -135,6 +153,66 @@ fn production_sink_commits_real_agent_wire_through_mirror_and_agent_store() {
     .expect("journal transcript");
     assert!(jsonl.contains("hello checkpoint"));
     assert!(jsonl.contains("assistant checkpoint"));
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn missing_confirmed_message_aborts_root_advance() {
+    let root = temp_root("missing-confirm");
+    let agents_root = root.join("agents");
+    let transcripts_dir = root.join("transcripts");
+    let sessions = ProductionSessionWorkers::with_agents_root(&agents_root, 500);
+    let session = sessions
+        .materialize_session_with_active(None, "user", None, None)
+        .expect("session");
+    let blob_store = Arc::new(
+        sessions
+            .create_agent_blob_store(&session.record.id)
+            .expect("blob store"),
+    );
+    let prior = session.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+    let prior_root = session.agent_store.latest_root_blob_id();
+    let provider = ProductionTranscriptMirrorProvider::new(
+        &transcripts_dir,
+        GeneratedTranscriptOccurrenceCodec::new(
+            RejectGeneratedToolJsonProjection,
+        ),
+    );
+    let mirror = Arc::new(
+        provider
+            .route_for_session(
+                Arc::clone(&blob_store),
+                &prior,
+                Arc::new(|| Ok(true)),
+            )
+            .expect("route"),
+    );
+    let sink = ProductionAgentStateCheckpointSink::new(
+        session.record.id.clone(),
+        Arc::clone(&session.agent_store),
+        blob_store,
+        mirror,
+        prior,
+        true,
+    )
+    .expect("sink");
+    let error = sink
+        .checkpoint_text_turn(
+            &user_messages(),
+            &TurnRunOptions {
+                inference_request_id: Some("request-missing".into()),
+                message_id: Some("missing-message".into()),
+                recent_message_text: Some("hello checkpoint".into()),
+                ..TurnRunOptions::default()
+            },
+            "assistant checkpoint",
+        )
+        .expect_err("missing user echo must reject checkpoint");
+    assert!(error.to_string().contains("were not committed atomically"));
+    assert_eq!(session.agent_store.latest_root_blob_id(), prior_root);
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
