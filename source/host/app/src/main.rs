@@ -75,6 +75,9 @@ use mahayana_host_runtime::sand_activity::ActivityUpdate;
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::ProviderRetryEvent;
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
+use mahayana_host_runtime::runner_production_bridge::{
+    ProductionRunnerCompositionInput, create_production_runner_composition,
+};
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedToolBridge, RunnerRequestContextSource,
 };
@@ -83,7 +86,6 @@ use mahayana_host_runtime::runner::coordinator_tool_relay::{
     RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
 };
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
-use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
 use mahayana_host_runtime::runner::tools::send_message_tool::SendMessageSink;
 use mahayana_host_runtime::runner::tools::sand_reaction_tool::ReactionSink;
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
@@ -798,17 +800,19 @@ fn start_routed_provider_task(
                         started_at_ms(),
                     );
                 });
-            let composition = TurnAgentComposition::new(
-                provider,
-                bridge,
-                resolved_request_context,
-                cancellation,
-                checkpoint_store,
-            )
-            .with_retry_sink(retry_sink)
-            .with_box_resources(box_resources)
-            .with_reaction_sink(reaction_sink)
-            .with_send_message_sink(send_message_sink);
+            let composition = create_production_runner_composition(
+                ProductionRunnerCompositionInput {
+                    provider,
+                    bridge,
+                    request_context: resolved_request_context,
+                    cancellation,
+                    checkpoint_store,
+                    retry_sink: Some(retry_sink),
+                    box_resources: Some(box_resources),
+                    send_message_sink: Some(send_message_sink),
+                    reaction_sink: Some(reaction_sink),
+                },
+            );
             let owner = ProductionTurnAgentOwner::new(composition);
             let mut runner = SandAgentRunner::new(owner);
             let result = runner.run_routed_provider_with_options(
