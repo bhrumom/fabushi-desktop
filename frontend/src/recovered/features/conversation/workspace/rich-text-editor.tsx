@@ -732,15 +732,6 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
         "aria-multiline": "true",
         role: "textbox"
       },
-      handleDOMEvents: {
-        beforeinput: () => {
-          // A real browser edit is the ownership handoff from the old scope to
-          // the newly selected Agent. Release the scope fence before TipTap
-          // creates the corresponding transaction so onUpdate can persist it.
-          scopeFence.current = null;
-          return false;
-        }
-      },
       handleKeyDown: (_view, event) => {
         if (event.isComposing) return false;
         if (event.key === "Escape") {
@@ -778,11 +769,13 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
           clearFence.current = null;
         }
       }
-      // Scope changes may leave queued transactions from the previous Agent.
-      // Keep those fenced until an actual editor DOM edit begins. ProseMirror
-      // does not guarantee a `uiEvent` transaction meta for ordinary typing,
-      // so using that meta here can swallow every real keystroke indefinitely.
-      if (scopeFence.current != null) return;
+      const scopedFence = scopeFence.current;
+      if (scopedFence != null) {
+        if (JSON.stringify(current.getJSON()) === scopedFence.before) return;
+        if (transaction.getMeta("sand-field-cleared") === true) return;
+        if (transaction.getMeta("uiEvent") == null) return;
+        scopeFence.current = null;
+      }
       const text = promptEditorText(current);
       const json = current.isEmpty ? undefined : JSON.stringify(current.getJSON());
       callbacks.current.onChange({ prompt: text, ...(json == null ? {} : { richText: json }) });
@@ -867,9 +860,6 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
       },
       restore: (value) => { editor.commands.setContent(promptEditorContent(value.prompt, value.richText), { emitUpdate: false }); editor.commands.focus("end"); },
       insertText: (value) => {
-        // Dictation/voice insertion is also a user-owned edit even though it is
-        // applied through editor commands rather than a DOM beforeinput event.
-        scopeFence.current = null;
         const before = editor.state.doc.textBetween(0, editor.state.selection.from, "\n");
         const needsSpace = before.length > 0 && !/\s$/.test(before) && !/^\s/.test(value);
         editor.chain().focus().insertContent(`${needsSpace ? " " : ""}${value}`).run();
