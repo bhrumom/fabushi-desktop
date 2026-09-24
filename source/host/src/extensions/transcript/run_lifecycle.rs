@@ -1,5 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
+use crate::sand_activity::{
+    ActivityTransition, ActivityUpdate, AgentActivity, NAMED_ACTIVITY_MAX_HOLD_MS,
+    NamedActivityHoldState, SEND_MESSAGE_TOOL_CALL_OUTLINE_NAME, resolve_named_activity_hold,
+};
+
 use super::run_scheduler::RunLane;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,6 +47,9 @@ pub struct RunLifecycleState {
     composing: HashSet<String>,
     retrying: HashSet<String>,
     activity: HashMap<String, String>,
+    structured_activity: HashMap<String, AgentActivity>,
+    activity_holds: HashMap<String, NamedActivityHoldState>,
+    provider_run_counts: HashMap<String, u64>,
     last_request_id: HashMap<String, String>,
     turn_request_ids: HashMap<String, HashSet<String>>,
     turn_ended_seq: HashMap<String, u64>,
@@ -71,9 +79,9 @@ impl RunLifecycleState {
         agent_id: &str,
         now_ms: u64,
     ) -> Option<RunWindowCompleted> {
-        self.set_composing(agent_id, false);
-        self.set_retrying(agent_id, false);
-        self.activity.remove(agent_id);
+        if self.provider_run_count(agent_id) == 0 {
+            self.clear_visible_run_state(agent_id);
+        }
 
         let state = self.sessions.get_mut(agent_id)?;
         if state.in_flight > 1 {
@@ -97,11 +105,52 @@ impl RunLifecycleState {
     }
 
     pub fn running_agent_ids(&self) -> HashSet<String> {
-        self.sessions
+        let mut running = self.sessions
             .iter()
             .filter(|(_, state)| state.in_flight > 0)
             .map(|(agent_id, _)| agent_id.clone())
-            .collect()
+            .collect::<HashSet<_>>();
+        running.extend(
+            self.provider_run_counts
+                .iter()
+                .filter(|(_, count)| **count > 0)
+                .map(|(agent_id, _)| agent_id.clone()),
+        );
+        running
+    }
+
+    pub fn begin_provider_run(&mut self, agent_id: &str) {
+        if agent_id.trim().is_empty() {
+            return;
+        }
+        let count = self.provider_run_counts.entry(agent_id.to_string()).or_default();
+        *count = count.saturating_add(1);
+        self.active_run_session = Some(agent_id.to_string());
+    }
+
+    pub fn end_provider_run(&mut self, agent_id: &str) {
+        let mut remove = false;
+        if let Some(count) = self.provider_run_counts.get_mut(agent_id) {
+            *count = count.saturating_sub(1);
+            remove = *count == 0;
+        }
+        if remove {
+            self.provider_run_counts.remove(agent_id);
+        }
+        if self.provider_run_count(agent_id) == 0 && self.in_flight_count(agent_id) == 0 {
+            self.clear_visible_run_state(agent_id);
+            if self.active_run_session.as_deref() == Some(agent_id) {
+                self.active_run_session = None;
+            }
+        }
+    }
+
+    pub fn provider_run_count(&self, agent_id: &str) -> u64 {
+        self.provider_run_counts.get(agent_id).copied().unwrap_or_default()
+    }
+
+    pub fn is_running(&self, agent_id: &str) -> bool {
+        self.in_flight_count(agent_id) > 0 || self.provider_run_count(agent_id) > 0
     }
 
     pub fn active_run_session(&self) -> Option<&str> {
@@ -201,5 +250,72 @@ impl RunLifecycleState {
 
     pub fn activity(&self, agent_id: &str) -> Option<&str> {
         self.activity.get(agent_id).map(String::as_str)
+    }
+
+    pub fn structured_activity(&self, agent_id: &str) -> Option<&AgentActivity> {
+        self.structured_activity.get(agent_id)
+    }
+
+    pub fn track_activity_from_update(
+        &mut self,
+        agent_id: &str,
+        update: &ActivityUpdate,
+        now_ms: u64,
+    ) {
+        let prior = self.activity_holds.get(agent_id).cloned().unwrap_or_default();
+        let (transition, state) = resolve_named_activity_hold(
+            update,
+            &prior,
+            now_ms,
+            NAMED_ACTIVITY_MAX_HOLD_MS,
+        );
+        if state == NamedActivityHoldState::default() {
+            self.activity_holds.remove(agent_id);
+        } else {
+            self.activity_holds.insert(agent_id.to_string(), state);
+        }
+        match transition {
+            ActivityTransition::Keep => {}
+            ActivityTransition::Clear => {
+                self.structured_activity.remove(agent_id);
+            }
+            ActivityTransition::Set(activity) => {
+                self.structured_activity.insert(agent_id.to_string(), activity);
+            }
+        }
+    }
+
+    pub fn track_composing_from_update(&mut self, agent_id: &str, update: &ActivityUpdate) {
+        match update {
+            ActivityUpdate::ToolCall { name, status, .. }
+                if name == SEND_MESSAGE_TOOL_CALL_OUTLINE_NAME =>
+            {
+                self.set_composing(agent_id, status == "pending");
+            }
+            ActivityUpdate::SendMessage | ActivityUpdate::TurnEnded => {
+                self.set_composing(agent_id, false);
+            }
+            _ => {}
+        }
+    }
+
+    pub fn track_retrying_from_update(&mut self, agent_id: &str, update: &ActivityUpdate) {
+        match update {
+            ActivityUpdate::Retrying => self.set_retrying(agent_id, true),
+            ActivityUpdate::TextDelta { .. }
+            | ActivityUpdate::ThinkingDelta
+            | ActivityUpdate::ToolCall { .. }
+            | ActivityUpdate::SendMessage
+            | ActivityUpdate::TurnEnded => self.set_retrying(agent_id, false),
+            ActivityUpdate::Other { .. } => {}
+        }
+    }
+
+    fn clear_visible_run_state(&mut self, agent_id: &str) {
+        self.set_composing(agent_id, false);
+        self.set_retrying(agent_id, false);
+        self.activity.remove(agent_id);
+        self.structured_activity.remove(agent_id);
+        self.activity_holds.remove(agent_id);
     }
 }

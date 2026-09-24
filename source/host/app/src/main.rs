@@ -66,6 +66,7 @@ use mahayana_host_runtime::extensions::browser_ua::{
     BrowserUaExtensionRuntime, BrowserUaHostLog, start_browser_ua_extension,
 };
 use mahayana_host_runtime::runner_context_production_provider::ProductionRunnerRequestContextSource;
+use mahayana_host_runtime::sand_activity::ActivityUpdate;
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
@@ -242,6 +243,7 @@ const RUNNER_INFERENCE_EVENT_CHANNEL: &str = "runner-inference";
 struct ProductionSendMessageSink {
     sessions: Arc<ProductionSessionWorkers>,
     ack_obligations: Arc<AckObligations>,
+    transcript_runtime: Arc<ProductionTranscriptRuntime>,
     ack_token: Option<String>,
     agent_id: String,
 }
@@ -277,6 +279,11 @@ impl SendMessageSink for ProductionSendMessageSink {
                 );
             }
         }
+        self.transcript_runtime.track_runner_activity_update(
+            &self.agent_id,
+            &ActivityUpdate::SendMessage,
+            started_at_ms(),
+        );
         Ok(Some(entry_id))
     }
 }
@@ -333,7 +340,7 @@ struct UnifiedGatewayApi {
     session_handoff: BoxHandoffService,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     trays: Arc<HostTraysExtension>,
-    transcript_runtime: ProductionTranscriptRuntime,
+    transcript_runtime: Arc<ProductionTranscriptRuntime>,
 }
 
 fn project_forever_box_status(
@@ -401,6 +408,7 @@ fn call_host_lane(
 #[derive(Clone)]
 struct CoordinatorRoutedToolBridge {
     relay: Arc<CoordinatorToolRelay>,
+    transcript_runtime: Arc<ProductionTranscriptRuntime>,
     agent_id: String,
 }
 
@@ -419,7 +427,23 @@ impl RoutedToolBridge for CoordinatorRoutedToolBridge {
         args: serde_json::Value,
         tool_call_id: &str,
     ) -> Result<serde_json::Value, ProviderSessionError> {
-        self.relay
+        let activity_args = serde_json::json!({
+            "providerIdentifier": tool.provider_identifier,
+            "serverIdentifier": tool.provider_identifier,
+        })
+        .to_string();
+        self.transcript_runtime.track_runner_activity_update(
+            &self.agent_id,
+            &ActivityUpdate::ToolCall {
+                id: tool_call_id.to_string(),
+                name: "mcpToolCall".into(),
+                status: "pending".into(),
+                args: Some(activity_args.clone()),
+                summary: tool.description.clone(),
+            },
+            started_at_ms(),
+        );
+        let result = self.relay
             .request(
                 ROUTED_TOOL_EXECUTE_METHOD,
                 serde_json::json!({
@@ -431,7 +455,19 @@ impl RoutedToolBridge for CoordinatorRoutedToolBridge {
                     "agentId": self.agent_id,
                 }),
             )
-            .map_err(|error| ProviderSessionError::Tool(error.to_string()))
+            .map_err(|error| ProviderSessionError::Tool(error.to_string()));
+        self.transcript_runtime.track_runner_activity_update(
+            &self.agent_id,
+            &ActivityUpdate::ToolCall {
+                id: tool_call_id.to_string(),
+                name: "mcpToolCall".into(),
+                status: if result.is_ok() { "completed" } else { "failed" }.into(),
+                args: Some(activity_args),
+                summary: tool.description.clone(),
+            },
+            started_at_ms(),
+        );
+        result
     }
 }
 
@@ -492,6 +528,7 @@ fn start_routed_provider_task(
     session_workers: Arc<ProductionSessionWorkers>,
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
+    transcript_runtime: Arc<ProductionTranscriptRuntime>,
     forever_box: Arc<ForeverBoxService>,
     trays: Arc<HostTraysExtension>,
     args: serde_json::Value,
@@ -537,15 +574,20 @@ fn start_routed_provider_task(
                 ))
             })?;
     }
+    transcript_runtime.begin_provider_run(&agent_id);
     let ack_token = ack_obligations
         .mint_ack_run_token(&agent_id)
-        .map_err(|error| GatewayCommandError::Internal(format!(
-            "could not mint ack run token for {agent_id}: {error}"
-        )))?;
+        .map_err(|error| {
+            transcript_runtime.end_provider_run(&agent_id);
+            GatewayCommandError::Internal(format!(
+                "could not mint ack run token for {agent_id}: {error}"
+            ))
+        })?;
     let cancellation = runner_registry
         .register_routed_provider(&agent_id, &stream_id)
         .map_err(|error| {
             ack_obligations.retire_ack_run_token(&agent_id, ack_token.as_deref());
+            transcript_runtime.end_provider_run(&agent_id);
             GatewayCommandError::Internal(error.to_string())
         })?;
     let checkpoint_store = Arc::new(
@@ -563,6 +605,7 @@ fn start_routed_provider_task(
     let worker_cancellation = cancellation.clone();
     let worker_sessions = Arc::clone(&session_workers);
     let worker_ack_obligations = Arc::clone(&ack_obligations);
+    let worker_transcript_runtime = Arc::clone(&transcript_runtime);
     let worker_ack_token = ack_token.clone();
     let worker_trays = Arc::clone(&trays);
     let spawn_error_agent_id = agent_id.clone();
@@ -571,6 +614,7 @@ fn start_routed_provider_task(
         .spawn(move || {
             let bridge: Arc<dyn RoutedToolBridge> = Arc::new(CoordinatorRoutedToolBridge {
                 relay: routed_tool_relay,
+                transcript_runtime: Arc::clone(&worker_transcript_runtime),
                 agent_id: agent_id.clone(),
             });
             let box_resources = Arc::new(ForeverBoxRunnerResourcePort::new(
@@ -579,7 +623,16 @@ fn start_routed_provider_task(
             ));
             let delta_events = worker_events.clone();
             let delta_stream_id = stream_id.clone();
-            let mut on_text_delta = move |_delta: &str, accumulated: &str| {
+            let delta_runtime = Arc::clone(&worker_transcript_runtime);
+            let delta_agent_id = agent_id.clone();
+            let mut on_text_delta = move |delta: &str, accumulated: &str| {
+                delta_runtime.track_runner_activity_update(
+                    &delta_agent_id,
+                    &ActivityUpdate::TextDelta {
+                        text: delta.to_string(),
+                    },
+                    started_at_ms(),
+                );
                 delta_events.publish(serde_json::json!({
                     "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
                     "payload": {
@@ -593,6 +646,7 @@ fn start_routed_provider_task(
                 ProductionSendMessageSink {
                     sessions: worker_sessions,
                     ack_obligations: Arc::clone(&worker_ack_obligations),
+                    transcript_runtime: Arc::clone(&worker_transcript_runtime),
                     ack_token: worker_ack_token.clone(),
                     agent_id: agent_id.clone(),
                 },
@@ -649,6 +703,12 @@ fn start_routed_provider_task(
                     },
                 }
             }
+            worker_transcript_runtime.track_runner_activity_update(
+                &agent_id,
+                &ActivityUpdate::TurnEnded,
+                started_at_ms(),
+            );
+            worker_transcript_runtime.end_provider_run(&agent_id);
             worker_registry.finish_routed_provider(&worker_stream_id);
             worker_ack_obligations.retire_ack_run_token(
                 &agent_id,
@@ -656,6 +716,7 @@ fn start_routed_provider_task(
             );
         });
     if let Err(error) = spawn {
+        transcript_runtime.end_provider_run(&spawn_error_agent_id);
         runner_registry.finish_routed_provider(&accepted_stream_id);
         ack_obligations.retire_ack_run_token(
             &spawn_error_agent_id,
@@ -738,10 +799,14 @@ impl GatewayApi for UnifiedGatewayApi {
         if let Some(result) =
             dispatch_production_session_gateway_call(&self.session_workers, method, &args)
         {
-            return result.map_err(|error| match error {
+            let mut value = result.map_err(|error| match error {
                 SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
                 SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
-            });
+            })?;
+            if method == "listAgents" {
+                self.transcript_runtime.decorate_agent_summaries(&mut value);
+            }
+            return Ok(value);
         }
         if method == "getForeverBoxStatus" {
             let agent_id = required_box_agent_id(method, &args)?;
@@ -789,6 +854,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.session_workers),
                 Arc::clone(&self.runner_registry),
                 Arc::clone(&self.ack_obligations),
+                Arc::clone(&self.transcript_runtime),
                 Arc::clone(&self.forever_box),
                 Arc::clone(&self.trays),
                 args,
@@ -1337,6 +1403,7 @@ fn main() {
     };
     let gateway_started_at = started_at_ms();
     let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
+    let transcript_runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&app_data_dir)));
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
@@ -1353,7 +1420,7 @@ fn main() {
             session_handoff: session_handoff.clone(),
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
             trays: Arc::clone(&production_extensions.trays),
-            transcript_runtime: ProductionTranscriptRuntime::new(Some(&app_data_dir)),
+            transcript_runtime: Arc::clone(&transcript_runtime),
         }),
         events: gateway_events.clone(),
         local_exec: None,

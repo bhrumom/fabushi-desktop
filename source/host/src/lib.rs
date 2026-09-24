@@ -31,6 +31,7 @@ pub use runner::{
     turn_usage_from_turn_ended,
 };
 
+pub mod sand_activity;
 pub mod sand_quiet_work_origin;
 pub mod sha256;
 pub mod storage;

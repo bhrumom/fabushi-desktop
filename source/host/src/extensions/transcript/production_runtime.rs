@@ -5,6 +5,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Value, json};
 
+use crate::sand_activity::{ActivityUpdate, AgentActivity};
+
 use super::async_task_union::{AsyncTask, merge_async_tasks};
 use super::prompt_acceptance_ledger::{
     AcceptanceLookup, AcceptanceRecord, AcceptanceStatus, PromptAcceptanceError,
@@ -365,6 +367,62 @@ impl ProductionTranscriptRuntime {
         self.turn_ready.notify_all();
         self.send_settled.notify_all();
         result
+    }
+
+    pub fn begin_provider_run(&self, agent_id: &str) {
+        self.lock_state().lifecycle.begin_provider_run(agent_id);
+    }
+
+    pub fn end_provider_run(&self, agent_id: &str) {
+        self.lock_state().lifecycle.end_provider_run(agent_id);
+    }
+
+    pub fn track_runner_activity_update(
+        &self,
+        agent_id: &str,
+        update: &ActivityUpdate,
+        now_ms: u64,
+    ) {
+        let mut state = self.lock_state();
+        state.lifecycle.track_activity_from_update(agent_id, update, now_ms);
+        state.lifecycle.track_composing_from_update(agent_id, update);
+        state.lifecycle.track_retrying_from_update(agent_id, update);
+    }
+
+    pub fn decorate_agent_summaries(&self, value: &mut Value) {
+        let state = self.lock_state();
+        let Some(rows) = value.as_array_mut() else {
+            return;
+        };
+        for row in rows {
+            let Some(object) = row.as_object_mut() else {
+                continue;
+            };
+            let Some(agent_id) = object.get("id").and_then(Value::as_str).map(str::to_string) else {
+                continue;
+            };
+            let running = state.lifecycle.is_running(&agent_id);
+            object.insert("isRunning".into(), Value::Bool(running));
+            object.insert("isRunningTurn".into(), Value::Bool(running));
+            object.insert(
+                "isComposingMessage".into(),
+                Value::Bool(running && state.lifecycle.is_composing(&agent_id)),
+            );
+            object.insert(
+                "isRetrying".into(),
+                Value::Bool(running && state.lifecycle.is_retrying(&agent_id)),
+            );
+            let current_activity = if running {
+                state
+                    .lifecycle
+                    .structured_activity(&agent_id)
+                    .and_then(|activity| serde_json::to_value(activity).ok())
+                    .unwrap_or(Value::Null)
+            } else {
+                Value::Null
+            };
+            object.insert("currentActivity".into(), current_activity);
+        }
     }
 
     pub fn current_turn_epoch(&self, agent_id: &str) -> u64 {
