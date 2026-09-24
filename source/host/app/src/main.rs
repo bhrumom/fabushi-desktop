@@ -944,6 +944,26 @@ fn start_routed_provider_task(
                 turn_input.options,
                 &mut on_text_delta,
             );
+
+            // A terminal inference event is the renderer-visible completion
+            // boundary. Do not publish it until the Host has actually settled
+            // the run: otherwise the UI can render the final assistant turn
+            // while the registry/live session still owns the provider, and an
+            // immediate app quit races that cleanup path.
+            worker_transcript_runtime.track_runner_activity_update(
+                &agent_id,
+                &ActivityUpdate::TurnEnded,
+                started_at_ms(),
+            );
+            worker_transcript_runtime.end_provider_run(&agent_id);
+            worker_registry.finish_routed_provider(&worker_stream_id);
+            worker_ack_obligations.retire_ack_run_token(
+                &agent_id,
+                worker_ack_token.as_deref(),
+            );
+            let _ = worker_transcript_runtime
+                .retire_idle_live_session(&worker_retire_sessions, &agent_id);
+
             if !worker_cancellation.is_cancelled() {
                 match result {
                     Ok(content) => worker_events.publish(serde_json::json!({
@@ -972,19 +992,6 @@ fn start_routed_provider_task(
                     },
                 }
             }
-            worker_transcript_runtime.track_runner_activity_update(
-                &agent_id,
-                &ActivityUpdate::TurnEnded,
-                started_at_ms(),
-            );
-            worker_transcript_runtime.end_provider_run(&agent_id);
-            worker_registry.finish_routed_provider(&worker_stream_id);
-            worker_ack_obligations.retire_ack_run_token(
-                &agent_id,
-                worker_ack_token.as_deref(),
-            );
-            let _ = worker_transcript_runtime
-                .retire_idle_live_session(&worker_retire_sessions, &agent_id);
         });
     if let Err(error) = spawn {
         transcript_runtime.end_provider_run(&spawn_error_agent_id);
