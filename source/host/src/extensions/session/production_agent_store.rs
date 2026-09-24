@@ -93,7 +93,11 @@ impl ProductionAgentStore {
 
     /// Frozen AgentStore2.handleCheckpoint semantics:
     /// protobuf bytes -> SHA-256 blob id -> blob write -> metadata root update.
-    pub fn handle_checkpoint_bytes(
+    ///
+    /// The async owner is the production checkpoint path. The synchronous
+    /// wrapper remains for legacy synchronous callers, but Runner settle must
+    /// await this method so it never nests a LocalPool executor.
+    pub async fn handle_checkpoint_bytes_async(
         &self,
         checkpoint: &[u8],
     ) -> Result<Vec<u8>, String> {
@@ -101,11 +105,10 @@ impl ProductionAgentStore {
             .map_err(|error| format!("invalid ConversationStateStructure checkpoint: {error}"))?;
 
         let root_blob_id = Sha256::digest(checkpoint).to_vec();
-        futures::executor::block_on(
-            self.blob_store
-                .set_blob(&(), &root_blob_id, checkpoint),
-        )
-        .map_err(|error| error.to_string())?;
+        self.blob_store
+            .set_blob(&(), &root_blob_id, checkpoint)
+            .await
+            .map_err(|error| error.to_string())?;
 
         let advanced = self
             .db
@@ -125,6 +128,15 @@ impl ProductionAgentStore {
         state.latest_root_blob_id = root_blob_id.clone();
         state.checkpoint_bytes = Some(checkpoint.to_vec());
         Ok(root_blob_id)
+    }
+
+    pub fn handle_checkpoint_bytes(
+        &self,
+        checkpoint: &[u8],
+    ) -> Result<Vec<u8>, String> {
+        futures::executor::block_on(
+            self.handle_checkpoint_bytes_async(checkpoint),
+        )
     }
 
     pub fn latest_root_blob_id(&self) -> Vec<u8> {

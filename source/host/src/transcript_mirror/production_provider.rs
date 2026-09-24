@@ -272,7 +272,8 @@ impl DurableTurnCheckpointStore<ProductionTranscriptCheckpoint>
         checkpoint: &'a ProductionTranscriptCheckpoint,
     ) -> TurnCheckpointFuture<'a, Result<(), String>> {
         Box::pin(async move {
-            self.handle_checkpoint_bytes(&checkpoint.state_bytes)
+            self.handle_checkpoint_bytes_async(&checkpoint.state_bytes)
+                .await
                 .map(|_| ())
         })
     }
