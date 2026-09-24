@@ -36,8 +36,7 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
-    ACK_REDRIVE_IDLE_DELAY_MS, AckObligations, AckRedrivePreparation, AckRedriveTrigger,
-    build_ack_redrive_send_args,
+    AckObligations, AckRedrivePreparation, build_ack_redrive_send_args,
 };
 use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRunnerRegistry;
 use mahayana_host_runtime::extensions::transcript::run_scheduler::WatchdogStage;
@@ -382,24 +381,26 @@ fn start_ack_redrive_worker(
     thread::Builder::new()
         .name("mahayana-ack-redrive".into())
         .spawn(move || {
-            let mut trigger = AckRedriveTrigger::Boot;
+            let _ = ack_obligations.arm_boot_redrives(started_at_ms());
             while !stop.load(Ordering::Acquire) {
-                let mut slept = 0u64;
-                while slept < ACK_REDRIVE_IDLE_DELAY_MS && !stop.load(Ordering::Acquire) {
-                    let slice = (ACK_REDRIVE_IDLE_DELAY_MS - slept).min(100);
-                    thread::sleep(Duration::from_millis(slice));
-                    slept = slept.saturating_add(slice);
-                }
-                if stop.load(Ordering::Acquire) {
-                    break;
-                }
-
                 if api.transcript_runtime.is_quiescing_for_upgrade() {
-                    trigger = AckRedriveTrigger::Idle;
+                    thread::sleep(Duration::from_millis(100));
                     continue;
                 }
 
-                for obligation in ack_obligations.pending_obligations() {
+                let now_ms = started_at_ms();
+                let obligations = ack_obligations.pending_obligations();
+                for obligation in &obligations {
+                    let agent_id = obligation.agent_id.as_str();
+                    let active = !runner_registry.active_stream_ids_for_agent(agent_id).is_empty()
+                        || api.transcript_runtime.is_agent_running(agent_id);
+                    if !active && ack_obligations.redrive_schedule(agent_id).is_none() {
+                        let _ = ack_obligations
+                            .schedule_ack_redrive_after_idle(agent_id, now_ms);
+                    }
+                }
+
+                for obligation in obligations {
                     if stop.load(Ordering::Acquire)
                         || api.transcript_runtime.is_quiescing_for_upgrade()
                     {
@@ -411,6 +412,11 @@ fn start_ack_redrive_worker(
                     {
                         continue;
                     }
+                    let Some(trigger) =
+                        ack_obligations.take_due_redrive(&agent_id, now_ms)
+                    else {
+                        continue;
+                    };
                     let agent_exists = session_workers
                         .session_db_path(&agent_id)
                         .is_ok_and(|path| path.is_file());
@@ -443,14 +449,14 @@ fn start_ack_redrive_worker(
                             }));
                         }
                         Ok(AckRedrivePreparation::Ready(bumped)) => {
-                            let now_ms = started_at_ms();
+                            let send_now_ms = started_at_ms();
                             events.publish(serde_json::json!({
                                 "channel": "ack-obligation",
                                 "payload": {
                                     "agentId": agent_id,
                                     "outcome": "redrive",
                                     "reason": trigger.as_str(),
-                                    "ageMs": now_ms as f64 - bumped.created_at_ms,
+                                    "ageMs": send_now_ms as f64 - bumped.created_at_ms,
                                     "coalescedCount": bumped.coalesced_count,
                                     "redriveAttempts": bumped.redrive_attempts,
                                 }
@@ -459,7 +465,7 @@ fn start_ack_redrive_worker(
                                 &agent_id,
                                 &bumped,
                                 trigger,
-                                now_ms,
+                                send_now_ms,
                             );
                             if let Err(error) = api.call("sendPrompt", args) {
                                 eprintln!(
@@ -484,11 +490,16 @@ fn start_ack_redrive_worker(
                         }
                     }
                 }
-                trigger = AckRedriveTrigger::Idle;
+
+                let mut slept = 0u64;
+                while slept < 100 && !stop.load(Ordering::Acquire) {
+                    let slice = (100 - slept).min(25);
+                    thread::sleep(Duration::from_millis(slice));
+                    slept = slept.saturating_add(slice);
+                }
             }
         })
 }
-
 
 fn project_forever_box_status(
     status: &BoxStatus,
@@ -726,6 +737,10 @@ fn start_routed_provider_task(
         .mint_ack_run_token(&agent_id)
         .map_err(|error| {
             transcript_runtime.end_provider_run(&agent_id);
+            let _ = transcript_runtime.retire_idle_live_session(
+                &session_workers,
+                &agent_id,
+            );
             GatewayCommandError::Internal(format!(
                 "could not mint ack run token for {agent_id}: {error}"
             ))
@@ -735,6 +750,10 @@ fn start_routed_provider_task(
         .map_err(|error| {
             ack_obligations.retire_ack_run_token(&agent_id, ack_token.as_deref());
             transcript_runtime.end_provider_run(&agent_id);
+            let _ = transcript_runtime.retire_idle_live_session(
+                &session_workers,
+                &agent_id,
+            );
             GatewayCommandError::Internal(error.to_string())
         })?;
     let checkpoint_store = Arc::new(
@@ -751,6 +770,7 @@ fn start_routed_provider_task(
     let worker_registry = Arc::clone(&runner_registry);
     let worker_cancellation = cancellation.clone();
     let worker_sessions = Arc::clone(&session_workers);
+    let worker_retire_sessions = Arc::clone(&session_workers);
     let worker_ack_obligations = Arc::clone(&ack_obligations);
     let worker_transcript_runtime = Arc::clone(&transcript_runtime);
     let worker_ack_token = ack_token.clone();
@@ -888,6 +908,8 @@ fn start_routed_provider_task(
                 &agent_id,
                 worker_ack_token.as_deref(),
             );
+            let _ = worker_transcript_runtime
+                .retire_idle_live_session(&worker_retire_sessions, &agent_id);
         });
     if let Err(error) = spawn {
         transcript_runtime.end_provider_run(&spawn_error_agent_id);
@@ -896,6 +918,8 @@ fn start_routed_provider_task(
             &spawn_error_agent_id,
             ack_token.as_deref(),
         );
+        let _ = transcript_runtime
+            .retire_idle_live_session(&session_workers, &spawn_error_agent_id);
         return Err(GatewayCommandError::Internal(format!(
             "could not start routed provider Runner: {error}"
         )));
@@ -990,12 +1014,18 @@ impl GatewayApi for UnifiedGatewayApi {
                 match method {
                     "deleteAgent" => {
                         if let Some(agent_id) = args.get("id").and_then(serde_json::Value::as_str) {
+                            self.transcript_runtime
+                                .session_runtime()
+                                .mark_agent_deleted(agent_id);
                             self.transcript_runtime.clear_agent_durable_recovery(agent_id);
                         }
                     }
                     "deleteAgents" => {
                         if let Some(ids) = args.get("ids").and_then(serde_json::Value::as_array) {
                             for agent_id in ids.iter().filter_map(serde_json::Value::as_str) {
+                                self.transcript_runtime
+                                    .session_runtime()
+                                    .mark_agent_deleted(agent_id);
                                 self.transcript_runtime.clear_agent_durable_recovery(agent_id);
                             }
                         }

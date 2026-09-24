@@ -1,7 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Condvar, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Value, json};
@@ -136,6 +136,18 @@ impl ProductionTranscriptRuntime {
             }
         }
         Ok(entries)
+    }
+
+    pub fn retire_idle_live_session(
+        &self,
+        sessions: &Arc<ProductionSessionWorkers>,
+        agent_id: &str,
+    ) -> Result<bool, String> {
+        if self.lock_state().lifecycle.is_running(agent_id) {
+            return Ok(false);
+        }
+        self.session_runtime
+            .retire_inactive_session(sessions, agent_id)
     }
 
     pub fn pending_wake_store(&self) -> Option<&SandPendingWakeStore> {

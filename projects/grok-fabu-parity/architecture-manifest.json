@@ -13695,7 +13695,7 @@
         "source/host/tests/upgrade_recreate_resume_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust AckObligations is production-composed across accepted send and Runner delivery: durable sends record/coalesce, provider turns mint scoped tokens, SendMessage fulfills only after durable append, terminal paths retire tokens, watchdog interruption records interrupts, and agent deletion purges durable/in-memory state. Host runs a real 5s boot/idle redrive loop over durable obligations; active Agents are deferred, missing Agents and >=3 attempts settle lost, attempts are durably bumped, and hidden recovery sends re-enter the shipping UnifiedGatewayApi sendPrompt path with appendUserMessage=false and ack re-recording suppressed. ProductionTranscriptRuntime maps recovery sends onto RunLane::Background/source=ack-redrive and the shared transcript upgrade owner now suppresses redrive scheduling while /prepare-upgrade has quiesced the Host. Final remains withheld for turn-empty-delivery/agent-error telemetry and direct Runner recent-user-message construction."
+      "notes": "Rust AckObligations is production-composed across accepted send and Runner delivery: durable sends record/coalesce, provider turns mint scoped tokens, SendMessage fulfills only after durable append, terminal paths retire tokens, watchdog interruption records interrupts, and agent deletion purges durable/in-memory state. Frozen timer ownership is now preserved: every pending boot obligation gets its own +5s schedule, idle Agents arm independently, and send/fulfill/delete cancels only that Agent timer; the Host worker executes only due idle schedules and re-enters shipping sendPrompt with appendUserMessage=false. Final remains withheld for turn-empty-delivery/agent-error telemetry and direct Runner recent-user-message construction."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-lifecycle.ts",
@@ -14140,9 +14140,10 @@
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
         "source/host/tests/host_telemetry_service_contract.rs",
         "source/host/tests/extensions_operational_telemetry_contract.rs",
-        "source/host/tests/transcript_session_runtime_contract.rs"
+        "source/host/tests/transcript_session_runtime_contract.rs",
+        "source/host/tests/ack_obligations_contract.rs"
       ],
-      "notes": "Shipping ProductionTranscriptRuntime owns user/provider run counts, visible running/composing/retrying activity, request IDs, queue/watchdog settlement and now gates live-session retirement: openAgent retires the prior production DB/AgentStore/worker only when RunLifecycle reports no user or provider run. Final remains withheld for exact post-run idle retirement of sessions kept alive during a switch, per-Agent ack-redrive timing, boot redrive semantics, subagent-parent projection and group/remote-member run accounting."
+      "notes": "Shipping ProductionTranscriptRuntime owns user/provider run counts, visible running/composing/retrying activity, request IDs and queue/watchdog settlement. Live-session retirement now follows the frozen two-stage lifecycle: openAgent retires an old idle session immediately, while a session that was still running at switch time is fenced until real provider terminal and then releases its production AgentStore/DB/blob-worker owners. Durable ack redrive now uses per-Agent +5s boot/idle schedules rather than a global batch trigger; new sends/fulfillment/deletion clear only that Agent schedule. Final remains withheld for subagent-parent projection and group/remote-member run accounting."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",
@@ -14473,7 +14474,7 @@
         "source/host/tests/transcript_store_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust Transcript runtime owns active-window focus, active TranscriptStore projection, openAgent switching, liveSessions/openSessionOnce/background-session ownership and production retirement of inactive idle live Sessions. openAgent now routes through ProductionTranscriptRuntime so RunLifecycle user/provider activity fences retirement; an idle old live session flushes AgentStore, checkpoints SandAgentDb and closes its conversation worker after the active pointer has moved. Final remains withheld for deferred openAgentWindowed/openAgentTail activation + catch-up emission, idle-settlement retirement for sessions that were still running at switch time, boot ensureSession/fallback ordering, roster activation events and desktop-contact freshness."
+      "notes": "Shipping Rust Transcript runtime owns active-window focus, active TranscriptStore projection, openAgent switching, liveSessions/openSessionOnce/background-session ownership and production retirement of inactive live Sessions. openAgent retires an idle prior Session immediately; if it was running, provider terminal performs the deferred retirement after RunLifecycle becomes idle. deleteAgent/deleteAgents fence the live-session cache. Final remains withheld for deferred openAgentWindowed/openAgentTail activation + catch-up emission, boot ensureSession/fallback ordering, roster activation events and desktop-contact freshness."
     },
     {
       "referencePath": "source/host/extensions/transcript/shared-rooms.ts",

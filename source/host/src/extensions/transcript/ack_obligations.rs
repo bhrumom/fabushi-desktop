@@ -35,6 +35,12 @@ impl AckRedriveTrigger {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AckRedriveSchedule {
+    pub trigger: AckRedriveTrigger,
+    pub due_at_ms: u64,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum AckRedrivePreparation {
     Missing,
@@ -84,6 +90,7 @@ struct ReservationState {
 pub struct AckObligations {
     store: SandAckObligationStore,
     reservations: Mutex<HashMap<String, ReservationState>>,
+    redrive_schedules: Mutex<HashMap<String, AckRedriveSchedule>>,
 }
 
 impl AckObligations {
@@ -91,6 +98,7 @@ impl AckObligations {
         Self {
             store: SandAckObligationStore::new(root_dir),
             reservations: Mutex::new(HashMap::new()),
+            redrive_schedules: Mutex::new(HashMap::new()),
         }
     }
 
@@ -103,6 +111,7 @@ impl AckObligations {
         agent_id: &str,
         at_ms: f64,
     ) -> io::Result<RecordSendOutcome> {
+        self.clear_redrive_timer(agent_id);
         self.store.record_send(agent_id, at_ms)
     }
 
@@ -133,6 +142,7 @@ impl AckObligations {
         agent_id: &str,
         at_ms: f64,
     ) -> io::Result<AckReservation> {
+        self.clear_redrive_timer(agent_id);
         let previous = self.store.get(agent_id);
         let RecordSendOutcome {
             obligation,
@@ -161,7 +171,11 @@ impl AckObligations {
         if !self.token_matches_agent(agent_id, ack_token)? {
             return Ok(false);
         }
-        self.store.clear(agent_id)
+        let cleared = self.store.clear(agent_id)?;
+        if cleared {
+            self.clear_redrive_timer(agent_id);
+        }
+        Ok(cleared)
     }
 
     pub fn rollback_ack_reservation(&self, agent_id: &str, ack_token: &str) -> io::Result<bool> {
@@ -215,6 +229,73 @@ impl AckObligations {
         self.store.list()
     }
 
+    pub fn arm_redrive_timer(
+        &self,
+        agent_id: &str,
+        trigger: AckRedriveTrigger,
+        now_ms: u64,
+    ) -> bool {
+        if agent_id.trim().is_empty() || self.store.get(agent_id).is_none() {
+            return false;
+        }
+        let Ok(mut schedules) = self.redrive_schedules.lock() else {
+            return false;
+        };
+        schedules.insert(
+            agent_id.to_string(),
+            AckRedriveSchedule {
+                trigger,
+                due_at_ms: now_ms.saturating_add(ACK_REDRIVE_IDLE_DELAY_MS),
+            },
+        );
+        true
+    }
+
+    pub fn arm_boot_redrives(&self, now_ms: u64) -> usize {
+        let mut armed = 0usize;
+        for obligation in self.pending_obligations() {
+            if self.arm_redrive_timer(&obligation.agent_id, AckRedriveTrigger::Boot, now_ms) {
+                armed = armed.saturating_add(1);
+            }
+        }
+        armed
+    }
+
+    pub fn schedule_ack_redrive_after_idle(&self, agent_id: &str, now_ms: u64) -> bool {
+        if self.redrive_schedule(agent_id).is_some() {
+            return false;
+        }
+        self.arm_redrive_timer(agent_id, AckRedriveTrigger::Idle, now_ms)
+    }
+
+    pub fn redrive_schedule(&self, agent_id: &str) -> Option<AckRedriveSchedule> {
+        self.redrive_schedules
+            .lock()
+            .ok()
+            .and_then(|schedules| schedules.get(agent_id).copied())
+    }
+
+    pub fn take_due_redrive(
+        &self,
+        agent_id: &str,
+        now_ms: u64,
+    ) -> Option<AckRedriveTrigger> {
+        let mut schedules = self.redrive_schedules.lock().ok()?;
+        let schedule = schedules.get(agent_id).copied()?;
+        if schedule.due_at_ms > now_ms {
+            return None;
+        }
+        schedules.remove(agent_id);
+        Some(schedule.trigger)
+    }
+
+    pub fn clear_redrive_timer(&self, agent_id: &str) -> bool {
+        self.redrive_schedules
+            .lock()
+            .map(|mut schedules| schedules.remove(agent_id).is_some())
+            .unwrap_or(false)
+    }
+
     pub fn prepare_redrive(
         &self,
         agent_id: &str,
@@ -238,10 +319,12 @@ impl AckObligations {
     }
 
     pub fn clear_lost(&self, agent_id: &str) -> io::Result<bool> {
+        self.clear_redrive_timer(agent_id);
         self.store.clear(agent_id)
     }
 
     pub fn forget_agent(&self, agent_id: &str) -> io::Result<bool> {
+        self.clear_redrive_timer(agent_id);
         let cleared = self.store.clear(agent_id)?;
         let mut reservations = self
             .reservations

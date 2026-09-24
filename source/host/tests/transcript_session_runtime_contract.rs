@@ -223,3 +223,45 @@ fn production_switch_retires_only_an_inactive_idle_live_session() {
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn provider_terminal_retires_session_that_was_running_when_user_switched_away() {
+    let root = temp_root("retire-after-provider");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&sessions));
+    let active = store.create_session(None, "user", None).expect("active");
+    let background = store.create_session(None, "user", None).expect("background");
+
+    for id in [&active.id, &background.id] {
+        sessions.close_agent_store_owner(id, true);
+        sessions.close_agent_db_owner(id, true);
+    }
+    store.write_active_agent_id(&active.id).expect("active pointer");
+
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    runtime
+        .session_runtime()
+        .resolve_background_session(&sessions, &background.id)
+        .expect("open background live session");
+    assert!(runtime.session_runtime().is_live_session(&background.id));
+    assert_eq!(sessions.active_agent_store_owner_count(), 1);
+    assert_eq!(sessions.active_agent_db_owner_count(), 1);
+
+    runtime.begin_provider_run(&background.id);
+    assert!(!runtime
+        .retire_idle_live_session(&sessions, &background.id)
+        .expect("running session retained"));
+    assert!(runtime.session_runtime().is_live_session(&background.id));
+
+    runtime.end_provider_run(&background.id);
+    assert!(runtime
+        .retire_idle_live_session(&sessions, &background.id)
+        .expect("terminal retirement"));
+    assert!(!runtime.session_runtime().is_live_session(&background.id));
+    assert_eq!(sessions.active_agent_store_owner_count(), 0);
+    assert_eq!(sessions.active_agent_db_owner_count(), 0);
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}

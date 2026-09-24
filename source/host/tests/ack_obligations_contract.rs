@@ -2,7 +2,8 @@ use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
-    ACK_REDRIVE_IDLE_DELAY_MS, MAX_ACK_REDRIVES, AckObligations, build_ack_redrive_prompt,
+    ACK_REDRIVE_IDLE_DELAY_MS, MAX_ACK_REDRIVES, AckObligations, AckRedriveTrigger,
+    build_ack_redrive_prompt,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -126,6 +127,50 @@ fn accepted_send_can_be_recorded_before_the_runner_mints_its_turn_token() {
         ack.mint_ack_run_token("agent-a").expect("no token"),
         None
     );
+
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn redrive_timers_are_per_agent_boot_and_idle_schedules_and_new_sends_cancel_them() {
+    let root = temp_root("redrive-timers");
+    let ack = AckObligations::new(&root);
+    ack.record_send("agent-a", 10.0).expect("record a");
+    ack.record_send("agent-b", 20.0).expect("record b");
+
+    assert_eq!(ack.arm_boot_redrives(1_000), 2);
+    let a = ack.redrive_schedule("agent-a").expect("boot a");
+    let b = ack.redrive_schedule("agent-b").expect("boot b");
+    assert_eq!(a.trigger, AckRedriveTrigger::Boot);
+    assert_eq!(b.trigger, AckRedriveTrigger::Boot);
+    assert_eq!(a.due_at_ms, 1_000 + ACK_REDRIVE_IDLE_DELAY_MS);
+    assert_eq!(b.due_at_ms, 1_000 + ACK_REDRIVE_IDLE_DELAY_MS);
+    assert_eq!(ack.take_due_redrive("agent-a", a.due_at_ms - 1), None);
+    assert_eq!(
+        ack.take_due_redrive("agent-a", a.due_at_ms),
+        Some(AckRedriveTrigger::Boot)
+    );
+    assert!(ack.redrive_schedule("agent-a").is_none());
+    assert!(ack.redrive_schedule("agent-b").is_some());
+
+    assert!(ack.schedule_ack_redrive_after_idle("agent-a", 8_000));
+    assert!(!ack.schedule_ack_redrive_after_idle("agent-a", 9_000));
+    let idle = ack.redrive_schedule("agent-a").expect("idle schedule");
+    assert_eq!(idle.trigger, AckRedriveTrigger::Idle);
+    assert_eq!(idle.due_at_ms, 8_000 + ACK_REDRIVE_IDLE_DELAY_MS);
+
+    ack.record_send("agent-a", 30.0).expect("new send clears timer");
+    assert!(ack.redrive_schedule("agent-a").is_none());
+
+    let token = ack
+        .mint_ack_run_token("agent-b")
+        .expect("mint")
+        .expect("token");
+    assert!(ack
+        .fulfill_ack_obligation("agent-b", &token)
+        .expect("fulfill"));
+    assert!(ack.redrive_schedule("agent-b").is_none());
 
     let _ = fs::remove_dir_all(root);
 }
