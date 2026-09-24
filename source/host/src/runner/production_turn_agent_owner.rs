@@ -1,9 +1,11 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
 };
 
+use super::production_agent_checkpoint::AgentStateCheckpointSink;
 use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::TurnAgentComposition;
 use super::{
@@ -20,6 +22,7 @@ pub struct ProductionTurnAgentOwner {
     composition: TurnAgentComposition,
     shell: TurnRunShell,
     last_finished: Option<TurnRunFinished>,
+    agent_state_checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
 }
 
 impl ProductionTurnAgentOwner {
@@ -28,7 +31,16 @@ impl ProductionTurnAgentOwner {
             composition,
             shell: TurnRunShell::default(),
             last_finished: None,
+            agent_state_checkpoint_sink: None,
         }
+    }
+
+    pub fn with_agent_state_checkpoint_sink(
+        mut self,
+        sink: Arc<dyn AgentStateCheckpointSink>,
+    ) -> Self {
+        self.agent_state_checkpoint_sink = Some(sink);
+        self
     }
 
     pub fn cancellation(&self) -> RoutedProviderCancellation {
@@ -64,10 +76,16 @@ impl ProductionTurnAgentOwner {
             composition,
             shell,
             last_finished,
+            agent_state_checkpoint_sink,
         } = self;
-        run_owned_turn(shell, last_finished, messages, options, || {
-            composition.run(data_dir, messages, on_text_delta)
-        })
+        run_owned_turn(
+            shell,
+            last_finished,
+            agent_state_checkpoint_sink.as_deref(),
+            messages,
+            options,
+            || composition.run(data_dir, messages, on_text_delta),
+        )
     }
 
     /// Contract seam used by independent lifecycle tests. The shipping path
@@ -95,6 +113,7 @@ impl ProductionTurnAgentOwner {
         run_owned_turn(
             &mut self.shell,
             &mut self.last_finished,
+            self.agent_state_checkpoint_sink.as_deref(),
             messages,
             options,
             execute,
@@ -105,6 +124,7 @@ impl ProductionTurnAgentOwner {
 fn run_owned_turn<Execute>(
     shell: &mut TurnRunShell,
     last_finished: &mut Option<TurnRunFinished>,
+    agent_state_checkpoint_sink: Option<&dyn AgentStateCheckpointSink>,
     messages: &[ProviderMessage],
     options: TurnRunOptions,
     execute: Execute,
@@ -117,6 +137,7 @@ where
             "Runner production turn requires a non-empty user prompt.".into(),
         )
     })?;
+    let checkpoint_options = options.clone();
     let started = shell
         .begin_run(prompt, options)
         .map_err(turn_shell_error)?;
@@ -124,7 +145,16 @@ where
         .mark_dispatched(&started.owner)
         .map_err(turn_shell_error)?;
 
-    let result = execute();
+    let mut result = execute();
+    if let (Ok(content), Some(sink)) = (&result, agent_state_checkpoint_sink) {
+        if let Err(error) = sink.checkpoint_text_turn(
+            messages,
+            &checkpoint_options,
+            content,
+        ) {
+            result = Err(error);
+        }
+    }
     let settlement = match &result {
         Ok(_) => shell.finish_completed(&started.owner),
         Err(ProviderSessionError::Cancelled(_)) => {

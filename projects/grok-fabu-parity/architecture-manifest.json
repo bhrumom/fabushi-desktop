@@ -9285,7 +9285,7 @@
       "targetPath": "source/host/src/agent_isolation/transcript_mirror_offload.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f927cb28ab6b42795177e4712f052da61fcecc66",
       "architecturalRole": "host/agent-isolation",
       "processOrPackage": "mahayana-host",
@@ -9293,24 +9293,28 @@
         "source/host/src/agent_isolation/transcript_mirror_offload.rs",
         "source/host/src/agent_isolation/transcript_mirror_worker.rs",
         "source/host/src/transcript_mirror/legacy_transcript_mirror.rs",
-        "source/host/src/transcript_mirror/production_provider.rs"
+        "source/host/src/transcript_mirror/production_provider.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_offload_contract.rs",
         "source/host/tests/transcript_mirror_worker_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/legacy_transcript_mirror_contract.rs",
-        "source/host/tests/transcript_mirror_production_provider_contract.rs"
+        "source/host/tests/transcript_mirror_production_provider_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust now ports the complete frozen offload layer: UTF-16/i32 sharding, lazy long-lived workers, same-conversation serialization/coalescing, plus OffloadingTranscriptMirror incremental-first behavior, inline full fallback, WorkerBlobStore full offload, root-prompt cursor advancement and fail-open stale diagnostics for unavailable/failed worker writes. Final remains withheld only until production-provider composes this wrapper with FileTranscriptMirror/generated occurrence decoding and the shipping Runner Agent checkpoint path."
+      "notes": "Final Rust port: UTF-16/i32 sharding, lazy long-lived workers, same-conversation serialization/coalescing, incremental-first/full fallback semantics, WorkerBlobStore offload and stale fail-open diagnostics are production composed. The shipping routed-provider Runner now commits real canonical Agent text-turn checkpoints through ProductionTranscriptMirrorProvider, which routes legacy writes through this offload pool."
     },
     {
       "referencePath": "source/host/agent-isolation/transcript-mirror-worker.ts",
       "targetPath": "source/host/src/agent_isolation/transcript_mirror_worker.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "1d04618f55ad604863115b1ca1f4ffc23469d2d0",
       "architecturalRole": "host/agent-isolation",
       "processOrPackage": "mahayana-host",
@@ -9319,16 +9323,20 @@
         "source/host/src/transcript_mirror/legacy_transcript_mirror.rs",
         "source/host/src/transcript_mirror/conversation_state_binary.rs",
         "source/host/src/agent_isolation/transcript_mirror_offload.rs",
-        "source/host/src/transcript_mirror/production_provider.rs"
+        "source/host/src/transcript_mirror/production_provider.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_worker_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/transcript_mirror_offload_contract.rs",
-        "source/host/tests/transcript_mirror_production_provider_contract.rs"
+        "source/host/tests/transcript_mirror_production_provider_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust worker owns frozen read-only multi-SQLite blob lookup, ConversationStateStructure decode and full legacy mirror write. The production OffloadingTranscriptMirror now routes WorkerBlobStore fallback through TranscriptMirrorOffloadPool and this worker. Final remains withheld until production-provider routes shipping Runner Agent checkpoints through the wrapper."
+      "notes": "Final Rust port: read-only multi-SQLite blob lookup, ConversationStateStructure decode and full legacy mirror writes are production composed behind TranscriptMirrorOffloadPool. The shipping routed-provider checkpoint transaction now exercises this worker through ProductionTranscriptMirrorProvider whenever the sticky route selects legacy."
     },
     {
       "referencePath": "source/host/agent-isolation/worker-blob-store.ts",
@@ -15933,15 +15941,18 @@
         "source/host/src/runner/sand_agent_runner.rs",
         "source/host/src/runner/turn_run_shell.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/runner/production_turn_input_projection.rs"
+        "source/host/src/runner/production_turn_input_projection.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/production_turn_input_projection_contract.rs"
+        "source/host/tests/production_turn_input_projection_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Shipping Host constructs a Runner-owned TurnAgentComposition -> ProductionTurnAgentOwner -> SandAgentRunner chain. The owner now receives the real gateway streamId through production-turn-input-projection, binds it as TurnOwnerToken.request_id, drives begin/dispatched and exactly one completed/cancelled/failed settlement, and preserves that correlated identity at the terminal boundary. Full frozen Agent build/resource/tool/summarization/static-config/disk-pressure/profile/update/disposer surfaces remain non-final."
+      "notes": "Shipping ProductionTurnAgentOwner now gates terminal Completed settlement on a Runner-owned AgentStateCheckpointSink. Successful provider text is converted to canonical agent.v1 UserMessage/ConversationStep/AgentConversationTurnStructure/ConversationStateStructure wire, content-addressed into the production WorkerBlobStore, then committed through transcript mirror prepare -> ProductionAgentStore durable root -> mirror commit. Checkpoint failure becomes the same turn's non-retryable failed terminal outcome. Full frozen Agent build/resource/tool/summarization/static-config/disk-pressure/profile/update/disposer surfaces remain non-final."
     },
     {
       "referencePath": "source/host/runner/production-turn-input-projection.ts",
@@ -16091,7 +16102,8 @@
         "source/host/src/runner/production_turn_run_shell_adapter.rs",
         "source/host/src/runner/routed_provider_runtime.rs",
         "source/host/src/extensions/inference/provider_session.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_agent_owner_contract.rs",
@@ -16099,9 +16111,11 @@
         "source/host/tests/runner_routed_provider_contract.rs",
         "source/host/tests/inference_provider_session_contract.rs",
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Shipping Host now routes provider-backed turns through SandAgentRunner -> ProductionTurnAgentOwner -> TurnAgentComposition -> routed-provider lifecycle. The path has correlated cancellation, async cancel polling for silent HTTP I/O, Claude child ownership, first-output watchdog/retry, durable checkpoint/resume and terminal settlement. Exact implementation HEAD 7560ed956ce2b13593d2581e87f8bfad035120c4 passed Rust desktop runtime run 35776427009 after a non-reproducing loopback BrokenPipe retry. Full Grok SandAgentRunner parity still requires the complete Agent session/action/resource/toolset/attachments/subagents/computer-use/quiesce/await-user lifecycle, so this mapping remains existing-needs-parity."
+      "notes": "Shipping SandAgentRunner now reaches a real generated-wire Agent checkpoint transaction before terminal completion: the owner injects ProductionAgentStateCheckpointSink, which preserves the prior ConversationStateStructure byte image, appends a field-8 turn reference, stores canonical user/assistant/turn blobs, and advances AgentStore latestRootBlobId through the production transcript mirror. Full Grok Agent session/action/resource/toolset/attachments/subagents/computer-use/quiesce/await-user lifecycle and tool-step checkpoint projection remain non-final."
     },
     {
       "referencePath": "source/host/runner/sand-auto-review-classifier-run.ts",
@@ -17263,22 +17277,26 @@
       "targetPath": "source/host/src/transcript_mirror/legacy_transcript_mirror.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "511685e09bb11c8ff8e6018a8adeda1a95624ca6",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/transcript_mirror/legacy_transcript_mirror.rs",
         "source/host/src/transcript_mirror/conversation_state_binary.rs",
-        "source/host/src/transcript_mirror/production_provider.rs"
+        "source/host/src/transcript_mirror/production_provider.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/legacy_transcript_mirror_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/transcript_mirror_production_provider_contract.rs"
+        "source/host/tests/transcript_mirror_production_provider_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port owns frozen observational legacy JSONL projection: summary-archive/root-prompt hydration, oversize/binary placeholders, context/thinking stripping, tool-use formatting, monotonic full writes and incremental append semantics. Final is withheld until the offload pool and production transcript provider route shipping Runner checkpoints through this mirror."
+      "notes": "Final Rust port of frozen observational legacy JSONL projection: summary/root hydration, oversize/binary placeholders, context/thinking stripping, tool formatting, monotonic full writes and incremental append semantics. It is now on the shipping routed-provider Agent checkpoint path through the production routed mirror."
     },
     {
       "referencePath": "source/host/transcript-mirror/production-provider.ts",
@@ -17297,7 +17315,10 @@
         "source/host/src/agent_isolation/transcript_mirror_worker.rs",
         "source/host/src/extensions/session/production_agent_store.rs",
         "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
-        "source/host/src/runner/turn_settle.rs"
+        "source/host/src/runner/turn_settle.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs",
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_production_provider_contract.rs",
@@ -17307,17 +17328,18 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/generated_occurrence_codec_contract.rs",
-        "source/host/tests/turn_settle_checkpoint_contract.rs"
+        "source/host/tests/turn_settle_checkpoint_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production provider preserves the frozen dual-view checkpoint boundary and now directly implements Runner turn-settle's TranscriptCheckpointMirror over the real RoutedTranscriptMirror. ProductionTranscriptCheckpoint retains the exact ConversationStateStructure bytes, and the same settle transaction drives mirror prepare/abort/commit around the real ProductionAgentStore durable checkpoint. The production contract exercises a materialized Session, WorkerBlobStore, AgentStore latestRootBlobId advancement and canonical JSONL commit. Final remains withheld because generated-occurrence-codec is not yet backed by canonical generated agent.v1 Rust bindings and shipping SandAgentRunner still does not originate real Agent ConversationStateStructure checkpoints."
+      "notes": "The production provider is now invoked by the actual runner.startRoutedProvider shipping path. Each turn recovers the prior Agent state into the routed mirror, uses the sand_new_transcript_journal gate, and successful text turns execute mirror prepare -> durable AgentStore checkpoint -> mirror commit before terminal completion. The generated text-only checkpoint uses canonical agent.v1 wire and real content-addressed blobs. Final remains withheld because generated tool-call JSON still lacks canonical Rust agent.v1 bindings and the shipping checkpoint projector does not yet serialize the full generated Agent tool/resource/subagent state."
     },
     {
       "referencePath": "source/host/transcript-mirror/transcript-journal-codec.ts",
       "targetPath": "source/host/src/transcript_mirror/transcript_journal_codec.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "e5a0c17c3c218c1b5628f86fd4258ec9b5002009",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
@@ -17325,40 +17347,48 @@
         "source/host/src/transcript_mirror/transcript_journal_codec.rs",
         "source/host/src/transcript_mirror/transcript_mirror.rs",
         "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs",
-        "source/host/src/transcript_mirror/production_provider.rs"
+        "source/host/src/transcript_mirror/production_provider.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_journal_codec_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/transcript_mirror_contract.rs",
         "source/host/tests/transcript_occurrence_deriver_contract.rs",
-        "source/host/tests/transcript_mirror_production_provider_contract.rs"
+        "source/host/tests/transcript_mirror_production_provider_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port covers frozen SHA/checkpoint identity, byte equality, file identity, deferred/pending checkpoint validation, zero-progress-safe positioned writes, and legacy JSONL text/tool envelopes. FileTranscriptMirror now consumes the codec for production-shaped WAL/replay/atomic-install behavior. Kept non-final until the occurrence deriver and production provider route shipping Agent checkpoints through the journal."
+      "notes": "Final Rust port of frozen journal identity, byte/file equality, deferred/pending validation, zero-progress-safe positioned writes and legacy JSONL envelopes. FileTranscriptMirror consumes it on the real shipping Agent checkpoint transaction; generated tool JSON parity remains owned by generated-occurrence-codec rather than this codec mapping."
     },
     {
       "referencePath": "source/host/transcript-mirror/transcript-mirror-router.ts",
       "targetPath": "source/host/src/transcript_mirror/transcript_mirror_router.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "3e9065ef29d442f6fbc5e66e89a1bb2058b46729",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/transcript_mirror/transcript_mirror_router.rs",
         "source/host/src/transcript_mirror/transcript_mirror.rs",
-        "source/host/src/transcript_mirror/production_provider.rs"
+        "source/host/src/transcript_mirror/production_provider.rs",
+        "source/host/src/runner/production_agent_checkpoint.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_router_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/transcript_mirror_contract.rs",
-        "source/host/tests/transcript_mirror_production_provider_contract.rs"
+        "source/host/tests/transcript_mirror_production_provider_contract.rs",
+        "source/host/tests/production_agent_checkpoint_contract.rs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port owns frozen sticky journal/legacy routing, concurrent first-route selection without split claims, existing-marker precedence over the experiment flag, legacy pending replacement, observational legacy commit failures, abort cleanup, and skip semantics that never claim a new journal but recover an already-owned journal before skipping. Final is withheld until FileTranscriptMirror and the production provider consume this router on the shipping Agent checkpoint path."
+      "notes": "Final Rust port of frozen sticky journal/legacy routing, concurrent first-route selection, existing-marker precedence, legacy pending replacement, observational legacy failures, abort cleanup and skip recovery semantics. runner.startRoutedProvider now supplies the real sand_new_transcript_journal gate and commits canonical Agent text-turn checkpoints through this router."
     },
     {
       "referencePath": "source/host/transcript-mirror/transcript-mirror.ts",

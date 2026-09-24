@@ -80,6 +80,15 @@ use mahayana_host_runtime::extensions::browser_ua::{
 use mahayana_host_runtime::runner_context_production_provider::ProductionRunnerRequestContextSource;
 use mahayana_host_runtime::sand_activity::ActivityUpdate;
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
+use mahayana_host_runtime::runner::production_agent_checkpoint::{
+    AgentStateCheckpointSink, ProductionAgentStateCheckpointSink,
+};
+use mahayana_host_runtime::transcript_mirror::generated_occurrence_codec::{
+    GeneratedTranscriptOccurrenceCodec, RejectGeneratedToolJsonProjection,
+};
+use mahayana_host_runtime::transcript_mirror::production_provider::{
+    ProductionTranscriptMirrorProvider,
+};
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::ProviderRetryEvent;
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner_production_bridge::{
@@ -763,6 +772,7 @@ fn start_routed_provider_task(
     host_tx: mpsc::Sender<HostLaneRequest>,
     data_dir: PathBuf,
     request_context: Arc<dyn RunnerRequestContextSource>,
+    experiments: Arc<HostExperimentsExtension>,
     session_workers: Arc<ProductionSessionWorkers>,
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
@@ -812,6 +822,55 @@ fn start_routed_provider_task(
                 ))
             })?;
     }
+
+    let agent_store = session_workers
+        .open_agent_store_owner(&agent_id)
+        .map_err(|error| GatewayCommandError::Internal(format!(
+            "could not open production AgentStore for {agent_id}: {error}"
+        )))?;
+    let blob_store = Arc::new(
+        session_workers
+            .create_agent_blob_store(&agent_id)
+            .map_err(|error| GatewayCommandError::Internal(format!(
+                "could not open production Agent blob store for {agent_id}: {error}"
+            )))?,
+    );
+    let prior_state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
+    let transcript_provider = ProductionTranscriptMirrorProvider::new(
+        data_dir.join("transcripts"),
+        GeneratedTranscriptOccurrenceCodec::new(
+            RejectGeneratedToolJsonProjection,
+        ),
+    );
+    let journal_experiments = Arc::clone(&experiments);
+    let transcript_mirror = Arc::new(
+        transcript_provider
+            .route_for_session(
+                Arc::clone(&blob_store),
+                &prior_state_bytes,
+                Arc::new(move || Ok(
+                    journal_experiments
+                        .check_feature_gate("sand_new_transcript_journal")
+                )),
+            )
+            .map_err(|error| GatewayCommandError::Internal(format!(
+                "could not create production transcript mirror for {agent_id}: {error}"
+            )))?,
+    );
+    let agent_state_checkpoint_sink: Arc<dyn AgentStateCheckpointSink> = Arc::new(
+        ProductionAgentStateCheckpointSink::new(
+            agent_id.clone(),
+            agent_store,
+            blob_store,
+            transcript_mirror,
+            prior_state_bytes,
+            true,
+        )
+        .map_err(|error| GatewayCommandError::Internal(format!(
+            "could not initialize production Agent checkpoint sink for {agent_id}: {error}"
+        )))?,
+    );
+
     transcript_runtime.begin_provider_run(&agent_id);
     let ack_token = ack_obligations
         .mint_ack_run_token(&agent_id)
@@ -978,7 +1037,8 @@ fn start_routed_provider_task(
                     observation: Some(Arc::clone(&observation)),
                 },
             );
-            let owner = ProductionTurnAgentOwner::new(composition);
+            let owner = ProductionTurnAgentOwner::new(composition)
+                .with_agent_state_checkpoint_sink(agent_state_checkpoint_sink);
             let mut runner = SandAgentRunner::new(owner);
             let result = runner.run_routed_provider_with_options(
                 &data_dir,
@@ -1205,6 +1265,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.host_tx.clone(),
                 self.data_dir.clone(),
                 Arc::clone(&self.request_context),
+                Arc::clone(&self.experiments),
                 Arc::clone(&self.session_workers),
                 Arc::clone(&self.runner_registry),
                 Arc::clone(&self.ack_obligations),

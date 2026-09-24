@@ -1002,3 +1002,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Forbidden legacy roots `desktop/src`, `desktop/electron`, `frontend/apps/web`, and `third_party/mahayana` are still present.
 - Exact-HEAD workflow runs `35937158440` (Rust desktop runtime) and `35937158480` (Desktop Chat Parity CI) both ended `action_required` before any job was created, so they are not test evidence.
 - This documentation-only commit exists solely to retrigger both exact-HEAD workflows under the active PR branch; it does not advance any compliance item to passed.
+
+### 2026-09-25 shipping Agent checkpoint cutover
+
+- Starting exact HEAD for this slice: \`2e027d98bce470266f1f7f554c0214fea7b868b1\`.
+- The shipping \`runner.startRoutedProvider\` path now prepares a Runner-owned Agent-state checkpoint sink before launching the turn. A provider-success result is not allowed to settle \`completed\` until the sink succeeds.
+- The checkpoint projection uses canonical frozen \`agent.v1\` wire field numbers for \`UserMessage\`, \`ConversationStep(assistant_message)\`, \`AgentConversationTurnStructure\`, \`ConversationTurnStructure\` and \`ConversationStateStructure.turns\`. Content-addressed user/step/turn blobs are written first; the prior root wire image is preserved byte-for-byte and a legal repeated field 8 is appended.
+- Persistence uses the existing production transaction boundary: routed transcript mirror prepare -> \`ProductionAgentStore\` durable checkpoint/latestRootBlobId advance -> mirror commit. The \`sand_new_transcript_journal\` experiment controls journal vs legacy routing exactly at the shipping path.
+- This is intentionally not full SandAgentRunner parity. Generated tool-call state, complete Agent resources/subagents/computer state, canonical generated Rust tool JSON bindings and broader settle/profile/memory semantics remain non-final and must stay represented as \`existing-needs-parity\`/planned rows.
+
