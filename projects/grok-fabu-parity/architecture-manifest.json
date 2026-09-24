@@ -14053,24 +14053,44 @@
       "targetPath": "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "0f6225aa658c41b3e44dd5c43f460987701745d6",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/durable_recovery_stores_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production slice ports frozen marker coercion, quiet automation origin, key-based upsert, has/clear/prune semantics and part-file replacement. ProductionTranscriptRuntime owns the store under app_data_dir and successful agent deletion clears its durable markers. Final remains withheld until background/subagent/shell completion paths persist and rearm these markers with frozen telemetry/recreate semantics."
     },
     {
       "referencePath": "source/host/extensions/transcript/sand-upgrade-resume-store.ts",
       "targetPath": "source/host/src/extensions/transcript/sand_upgrade_resume_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "6123ddd0fd6bbcb815544a89c14c746438691fbe",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/sand_upgrade_resume_store.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/durable_recovery_stores_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production slice ports frozen resume-marker coercion, per-agent upsert, read/clear/clearAll and durable part-file replacement. ProductionTranscriptRuntime owns the store under app_data_dir and successful agent deletion clears its marker. Final remains withheld until upgrade quiesce, running-agent capture, resumeAfterRecreate and automation/background-revival resume paths consume the store."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-acceptance.ts",

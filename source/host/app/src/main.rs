@@ -695,10 +695,28 @@ impl GatewayApi for UnifiedGatewayApi {
                 &args,
             )
         {
-            return result.map_err(|error| match error {
+            let result = result.map_err(|error| match error {
                 AgentLifecycleGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
                 AgentLifecycleGatewayError::Internal(message) => GatewayCommandError::Internal(message),
             });
+            if result.is_ok() {
+                match method {
+                    "deleteAgent" => {
+                        if let Some(agent_id) = args.get("id").and_then(serde_json::Value::as_str) {
+                            self.transcript_runtime.clear_agent_durable_recovery(agent_id);
+                        }
+                    }
+                    "deleteAgents" => {
+                        if let Some(ids) = args.get("ids").and_then(serde_json::Value::as_array) {
+                            for agent_id in ids.iter().filter_map(serde_json::Value::as_str) {
+                                self.transcript_runtime.clear_agent_durable_recovery(agent_id);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            return result;
         }
         if let Some(result) =
             dispatch_production_session_gateway_call(&self.session_workers, method, &args)

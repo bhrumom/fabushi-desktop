@@ -10,6 +10,8 @@ use super::prompt_acceptance_ledger::{
     PromptAcceptanceLedger, SendInput,
 };
 use super::run_lifecycle::RunLifecycleState;
+use super::sand_pending_wake_store::SandPendingWakeStore;
+use super::sand_upgrade_resume_store::SandUpgradeResumeStore;
 use super::run_scheduler::{
     RUN_WATCHDOG_DEFAULT_MS, RUN_WATCHDOG_GRACE_DEFAULT_MS, RunSettlement, WatchdogEvent,
 };
@@ -45,6 +47,8 @@ pub struct ProductionTranscriptRuntime {
     state: Mutex<RuntimeState>,
     send_settled: Condvar,
     turn_ready: Condvar,
+    pending_wake_store: Option<SandPendingWakeStore>,
+    upgrade_resume_store: Option<SandUpgradeResumeStore>,
 }
 
 impl ProductionTranscriptRuntime {
@@ -61,6 +65,8 @@ impl ProductionTranscriptRuntime {
         watchdog_ms: u64,
         watchdog_grace_ms: u64,
     ) -> Self {
+        let pending_wake_store = root_dir.map(SandPendingWakeStore::new);
+        let upgrade_resume_store = root_dir.map(SandUpgradeResumeStore::new);
         Self {
             state: Mutex::new(RuntimeState {
                 pipeline: SendPipelineState::default(),
@@ -75,6 +81,25 @@ impl ProductionTranscriptRuntime {
             }),
             send_settled: Condvar::new(),
             turn_ready: Condvar::new(),
+            pending_wake_store,
+            upgrade_resume_store,
+        }
+    }
+
+    pub fn pending_wake_store(&self) -> Option<&SandPendingWakeStore> {
+        self.pending_wake_store.as_ref()
+    }
+
+    pub fn upgrade_resume_store(&self) -> Option<&SandUpgradeResumeStore> {
+        self.upgrade_resume_store.as_ref()
+    }
+
+    pub fn clear_agent_durable_recovery(&self, agent_id: &str) {
+        if let Some(store) = self.pending_wake_store.as_ref() {
+            store.clear_agent(agent_id);
+        }
+        if let Some(store) = self.upgrade_resume_store.as_ref() {
+            store.clear(agent_id);
         }
     }
 
