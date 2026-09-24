@@ -38,6 +38,7 @@ pub mod host_diagnostics;
 pub mod r#box;
 pub mod automations;
 pub mod workflows;
+pub mod groups;
 pub mod attachment_paths;
 pub mod ports;
 pub mod durable_file_policy;

@@ -5,6 +5,13 @@ use mahayana_host_runtime::agents::agent_profile::{
     SandAgentProfile, write_sand_profile_file,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::groups::group_store::{
+    GROUP_CONFIG_VERSION, SandGroupConfig, write_sand_group_config,
+};
+use mahayana_host_runtime::groups::remote_room_store::{
+    REMOTE_ROOM_CONFIG_VERSION, RemoteRoomMember, SandRemoteRoomConfig,
+    write_sand_remote_room_config,
+};
 use mahayana_host_runtime::storage::store_db::{
     register_live_db_handle, release_live_db_handle,
 };
@@ -264,6 +271,72 @@ fn production_roster_cache_tracks_generation_and_prunes_removed_agents() {
     let listed = workers.list_agent_summaries(None).expect("pruned roster");
     assert!(listed.iter().all(|summary| summary.id != second.id));
     assert_eq!(workers.roster_extras_cache_entry_count(), 1);
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_roster_projects_group_and_remote_room_durable_owners() {
+    let root = temp_root("group-room-summary");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let record = workers
+        .materialize_new_session(None, "user", None)
+        .expect("materialize group");
+    let agent_dir = root.join(&record.id);
+
+    write_sand_group_config(
+        &agent_dir,
+        &SandGroupConfig {
+            version: GROUP_CONFIG_VERSION,
+            member_ids: vec!["member-a".into(), "member-b".into()],
+            remote_members: None,
+            shared_room_id: Some("shared-room-1".into()),
+        },
+    )
+    .expect("group config");
+    write_sand_remote_room_config(
+        &agent_dir,
+        &SandRemoteRoomConfig {
+            version: REMOTE_ROOM_CONFIG_VERSION,
+            room_id: "remote-room-1".into(),
+            host_auth_id: "host-auth".into(),
+            host_name: "Room Host".into(),
+            host_avatar_url: None,
+            members: vec![RemoteRoomMember {
+                kind: "human".into(),
+                auth_id: "guest-auth".into(),
+                agent_id: String::new(),
+                display_name: "Guest".into(),
+                avatar_url: None,
+            }],
+            is_revoked: None,
+        },
+    )
+    .expect("remote room config");
+
+    let summary = workers
+        .summarize_agent_by_id(&record.id, None)
+        .expect("summary")
+        .expect("group summary");
+    assert!(summary.is_group);
+    assert_eq!(summary.member_ids, vec!["member-a", "member-b"]);
+    let remote_room = summary.remote_room.expect("remote room summary");
+    assert_eq!(remote_room.room_id, "remote-room-1");
+    assert_eq!(remote_room.host_name, "Room Host");
+    assert_eq!(remote_room.members.len(), 1);
+
+    let serialized = serde_json::to_value(
+        workers
+            .summarize_agent_by_id(&record.id, None)
+            .expect("serialized summary")
+            .expect("serialized group summary"),
+    )
+    .expect("summary json");
+    assert_eq!(serialized["isGroup"], true);
+    assert_eq!(serialized["memberIds"], json!(["member-a", "member-b"]));
+    assert_eq!(serialized["remoteRoom"]["roomId"], "remote-room-1");
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);

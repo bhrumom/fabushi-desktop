@@ -12813,7 +12813,7 @@
       "targetPath": "source/host/src/extensions/session/session_summaries.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f77c4fd529cee6e0d6c12cd5e9c77ff989de12a7",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12825,7 +12825,11 @@
         "source/host/src/automations/automation_store.rs",
         "source/host/src/workflows/workflow_store.rs",
         "source/host/src/workflows/workflow_library.rs",
-        "source/host/src/agents/agent_avatar.rs"
+        "source/host/src/agents/agent_avatar.rs",
+        "source/host/src/extensions/session/session_roster.rs",
+        "source/host/src/extensions/memory/memory_service.rs",
+        "source/host/src/groups/group_store.rs",
+        "source/host/src/groups/remote_room_store.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_projection_contract.rs",
@@ -12833,9 +12837,11 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/automation_store_contract.rs",
         "source/host/tests/workflow_store_contract.rs",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/groups_store_contract.rs"
       ],
-      "notes": "Rust production summary path loads metadata/unread/awaiting/origin/purpose/partners/transcript state, seeds activity from persisted root + mtime, ensures profile/settings, projects frozen last-entry/message semantics, unread fields and blank-agent filtering. Frozen readAvatar composition is now production-wired to the canonical Rust avatar owner: conventional/legacy filenames are resolved inside the agent directory, validated, MIME-sniffed, cached by fingerprint, and projected as avatarDataUrl/avatarVersion in both summarizeAgentById and roster list results. Production automation/workflow durable footprints are also composed. Final is withheld for memory durable-footprint provider, group/remote-room composition and cached-extras/deletion-predicate invalidation."
+      "notes": "Rust production summary matches the frozen Session summary responsibilities: metadata/unread/awaiting/origin/purpose/partners/transcript projection, mtime activity seeding, profile/settings and canonical avatar projection, unread/blank filtering, quarantined-store + memory + automation + workflow durable footprints, generation/DB/WAL extras-cache invalidation with deletion fences, and durable group/member/remote-room composition from the canonical Rust group stores. Production roster contracts cover memory-only recovery, delete fencing, cache invalidation, group membership and remote-room JSON output.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/settings/extension.ts",
@@ -14700,24 +14706,44 @@
       "targetPath": "source/host/src/groups/group_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "f94e013260fb503893771128840087c6628aef3a",
       "architecturalRole": "host/groups",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/groups/group_store.rs",
+        "source/host/src/extensions/session/session_summaries.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/groups_store_contract.rs",
+        "source/host/tests/session_summaries_roster_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen durable group.json owner: local and remote member normalization/deduplication/caps, shared-room identity, tolerant read defaults, pretty newline writes and group-directory detection. Shipping Session summary reads this production file owner."
     },
     {
       "referencePath": "source/host/groups/remote-room-store.ts",
       "targetPath": "source/host/src/groups/remote_room_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "247103afdd89caedbbac0ee984baff08a9fc55c0",
       "architecturalRole": "host/groups",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/groups/remote_room_store.rs",
+        "source/host/src/extensions/session/session_summaries.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/groups_store_contract.rs",
+        "source/host/tests/session_summaries_roster_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen durable remote-room.json owner: room/host validation, member normalization and 24-member cap, host/member fallbacks, revoked state, pretty newline writes and remote-room-directory detection. Shipping Session summary reads this production file owner."
     },
     {
       "referencePath": "source/host/groups/xuser.ts",

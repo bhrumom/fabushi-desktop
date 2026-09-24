@@ -14,6 +14,10 @@ use crate::agents::agent_profile::{
 use crate::agents::settings_file::{
     get_sand_settings_path, read_sand_settings_file,
 };
+use crate::groups::group_store::read_sand_group_config;
+use crate::groups::remote_room_store::{
+    SandRemoteRoomConfig, read_sand_remote_room_config,
+};
 
 use super::agent_db::{
     AgentMetadataProjection, mark_persisted_activity, read_persisted_agent_metadata_projection,
@@ -79,6 +83,8 @@ pub struct AgentSummary {
     pub purpose: Option<String>,
     pub is_group: bool,
     pub member_ids: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub remote_room: Option<SandRemoteRoomConfig>,
     pub conversation_partner_ids: Vec<String>,
 }
 
@@ -219,6 +225,7 @@ pub fn minimal_agent_summary(
         purpose: None,
         is_group: false,
         member_ids: Vec::new(),
+        remote_room: None,
         conversation_partner_ids: Vec::new(),
     }
 }
@@ -272,8 +279,13 @@ pub fn build_summary(
     } else {
         identity.name.trim().to_string()
     };
-    let has_identity =
-        name != "Grok" || !identity.description.trim().is_empty() || !identity.title.is_empty();
+    let group_config = read_sand_group_config(agent_dir);
+    let remote_room = read_sand_remote_room_config(agent_dir);
+    let is_group = group_config.is_some();
+    let has_identity = is_group
+        || name != "Grok"
+        || !identity.description.trim().is_empty()
+        || !identity.title.is_empty();
 
     if extras.is_some_and(|extras| !extras.has_transcript)
         && !base.is_active
@@ -338,6 +350,11 @@ pub fn build_summary(
         .map(|extras| extras.origin.clone())
         .unwrap_or_else(|| "user".to_string());
     summary.purpose = extras.and_then(|extras| extras.purpose.clone());
+    summary.is_group = is_group;
+    summary.member_ids = group_config
+        .map(|config| config.member_ids)
+        .unwrap_or_default();
+    summary.remote_room = remote_room;
     summary.conversation_partner_ids = extras
         .map(|extras| extras.conversation_partner_ids.clone())
         .unwrap_or_default();
