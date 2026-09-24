@@ -1,9 +1,19 @@
 use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
 
+use serde_json::{Map, Value};
+
+use crate::host_diagnostics::{HostDiagnostic, report_host_diagnostic};
+use crate::transcript_mirror::legacy_transcript_mirror::{
+    LegacyFileTranscriptMirror, LegacyTranscriptBlobStore, LegacyTranscriptState,
+};
+
+use super::agent_worker_pool::AgentBlobWorkerBackend;
+use super::worker_blob_store::WorkerBlobStore;
 use super::transcript_mirror_worker::{
     TranscriptMirrorWorkerJob, run_transcript_mirror_worker_job,
 };
@@ -378,4 +388,169 @@ fn worker_index_for(conversation_id: &str, max_workers: usize) -> usize {
             .wrapping_add(i32::from(code_unit));
     }
     (i64::from(hash).abs() as usize) % max_workers
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OffloadingTranscriptMirrorOptions {
+    pub blob_db_paths: Vec<PathBuf>,
+    pub transcripts_dir: PathBuf,
+}
+
+pub struct OffloadingTranscriptMirror {
+    inline: LegacyFileTranscriptMirror,
+    pool: Arc<TranscriptMirrorOffloadPool>,
+    options: OffloadingTranscriptMirrorOptions,
+    previous_root_prompt_count: Mutex<usize>,
+    write_lane: Mutex<()>,
+}
+
+impl OffloadingTranscriptMirror {
+    pub fn for_transcripts_dir(
+        pool: Arc<TranscriptMirrorOffloadPool>,
+        options: OffloadingTranscriptMirrorOptions,
+        previous_root_prompt_count: usize,
+    ) -> Self {
+        Self {
+            inline: LegacyFileTranscriptMirror::new(&options.transcripts_dir),
+            pool,
+            options,
+            previous_root_prompt_count: Mutex::new(previous_root_prompt_count),
+            write_lane: Mutex::new(()),
+        }
+    }
+
+    pub fn previous_root_prompt_count(&self) -> usize {
+        self.previous_root_prompt_count
+            .lock()
+            .map(|value| *value)
+            .unwrap_or_default()
+    }
+
+    pub fn write_inline<Store: LegacyTranscriptBlobStore>(
+        &self,
+        conversation_id: &str,
+        state: &LegacyTranscriptState,
+        blob_store: &Store,
+    ) -> Result<(), String> {
+        let _lane = self
+            .write_lane
+            .lock()
+            .map_err(|_| "transcript mirror write lane is poisoned".to_string())?;
+        let previous = self.previous_root_prompt_count();
+        match self
+            .inline
+            .write_incremental(conversation_id, state, blob_store, previous)
+            .map_err(|error| error.to_string())?
+        {
+            Some(count) => {
+                self.set_previous_root_prompt_count(count);
+                return Ok(());
+            }
+            None => {}
+        }
+
+        let written = self
+            .inline
+            .write_full(conversation_id, state, blob_store)
+            .map_err(|error| error.to_string())?;
+        if written {
+            self.set_previous_root_prompt_count(state.root_prompt_messages_json.len());
+        } else {
+            warn_stale_mirror(conversation_id, "full-write-failed", None);
+        }
+        Ok(())
+    }
+
+    pub fn write_worker<Backend>(
+        &self,
+        conversation_id: &str,
+        state: &LegacyTranscriptState,
+        blob_store: &WorkerBlobStore<Backend>,
+        state_blob_id: Option<&[u8]>,
+    ) -> Result<(), String>
+    where
+        Backend: AgentBlobWorkerBackend + 'static,
+    {
+        let _lane = self
+            .write_lane
+            .lock()
+            .map_err(|_| "transcript mirror write lane is poisoned".to_string())?;
+        let previous = self.previous_root_prompt_count();
+        match self
+            .inline
+            .write_incremental(conversation_id, state, blob_store, previous)
+            .map_err(|error| error.to_string())?
+        {
+            Some(count) => {
+                self.set_previous_root_prompt_count(count);
+                return Ok(());
+            }
+            None => {}
+        }
+
+        let Some(state_blob_id) = state_blob_id.filter(|value| !value.is_empty()) else {
+            warn_stale_mirror(conversation_id, "worker-unavailable", None);
+            return Ok(());
+        };
+
+        let result = self.pool.write(TranscriptMirrorWorkerJob {
+            conversation_id: conversation_id.to_string(),
+            state_blob_id: state_blob_id.to_vec(),
+            blob_db_paths: self.options.blob_db_paths.clone(),
+            transcripts_dir: self.options.transcripts_dir.clone(),
+        });
+        match result {
+            Ok(true) => {
+                self.set_previous_root_prompt_count(state.root_prompt_messages_json.len());
+            }
+            Ok(false) => {
+                warn_stale_mirror(conversation_id, "worker-write-failed", None);
+            }
+            Err(error) => {
+                warn_stale_mirror(conversation_id, "worker-write-failed", Some("Error"));
+                let _ = error;
+            }
+        }
+        Ok(())
+    }
+
+    fn set_previous_root_prompt_count(&self, count: usize) {
+        if let Ok(mut previous) = self.previous_root_prompt_count.lock() {
+            *previous = count;
+        }
+    }
+}
+
+impl<Backend> LegacyTranscriptBlobStore for WorkerBlobStore<Backend>
+where
+    Backend: AgentBlobWorkerBackend + 'static,
+{
+    fn get_blob(&self, blob_id: &[u8]) -> Result<Option<Vec<u8>>, String> {
+        futures::executor::block_on(WorkerBlobStore::get_blob(self, &(), blob_id))
+            .map_err(|_| "worker blob read failed".to_string())
+    }
+}
+
+fn warn_stale_mirror(
+    conversation_id: &str,
+    reason: &str,
+    error_class: Option<&str>,
+) {
+    let mut fields = Map::new();
+    fields.insert(
+        "agentId".into(),
+        Value::String(conversation_id.to_string()),
+    );
+    fields.insert("reason".into(), Value::String(reason.to_string()));
+    if let Some(error_class) = error_class {
+        fields.insert(
+            "errorClass".into(),
+            Value::String(error_class.to_string()),
+        );
+    }
+    report_host_diagnostic(&HostDiagnostic {
+        kind: "transcript_mirror_stale".into(),
+        fields,
+    });
 }

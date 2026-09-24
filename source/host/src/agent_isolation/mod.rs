@@ -33,8 +33,8 @@ pub use conversation_blob_store::{
 };
 pub use legacy_blob_retirement::verify_legacy_blob_retirement;
 pub use transcript_mirror_offload::{
-    DEFAULT_MIRROR_WORKERS, TranscriptMirrorOffloadPool, TranscriptMirrorOffloadPoolOptions,
-    TranscriptMirrorWorkerFn,
+    DEFAULT_MIRROR_WORKERS, OffloadingTranscriptMirror, OffloadingTranscriptMirrorOptions,
+    TranscriptMirrorOffloadPool, TranscriptMirrorOffloadPoolOptions, TranscriptMirrorWorkerFn,
 };
 pub use transcript_mirror_worker::TranscriptMirrorWorkerJob;
 pub use worker_blob_store::WorkerBlobStore;
