@@ -485,3 +485,81 @@ fn session_facade_delegates_transcript_and_channel_owners_without_duplication() 
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn session_facade_owns_workflow_import_local_skill_port_and_cross_agent_automation_projection() {
+    let root = temp_root("facade-imports");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let first = store.create_session(None, "user", None).expect("first agent");
+    let second = store.create_session(None, "user", None).expect("second agent");
+
+    let markdown = store
+        .import_agent_workflow_markdown(
+            &first.id,
+            "---\nname: Imported markdown\n---\nDo the imported thing.\n",
+            None,
+        )
+        .expect("markdown import");
+    assert_eq!(markdown.result.imported.len(), 1);
+    assert!(markdown.result.skipped.is_empty());
+
+    let live = store
+        .import_agent_workflow_source(
+            &first.id,
+            "https://example.test/SKILL.md",
+            Some("Live skill"),
+        )
+        .expect("live source import");
+    assert_eq!(live.result.imported.len(), 1);
+    assert!(live.result.skipped.is_empty());
+    assert!(live
+        .workflows
+        .iter()
+        .any(|workflow| workflow.source_ref.as_deref() == Some("https://example.test/SKILL.md")));
+
+    let home = root.join("home");
+    let cwd = root.join("cwd");
+    fs::create_dir_all(&home).expect("home");
+    fs::create_dir_all(cwd.join(".cursor/rules")).expect("rules dir");
+    fs::write(home.join("CLAUDE.md"), "# Claude memory\n").expect("home skill");
+    fs::write(cwd.join(".cursor/rules/review.md"), "# Review\n").expect("rule");
+    let local = store
+        .port_agent_local_skills_from(&first.id, &home, &cwd)
+        .expect("local skill port");
+    assert_eq!(local.result.imported.len(), 2);
+    assert!(local.result.skipped.is_empty());
+
+    for (agent_id, name) in [
+        (&first.id, "First daily"),
+        (&second.id, "Second daily"),
+    ] {
+        store
+            .create_agent_automation(
+                agent_id,
+                &AutomationSpec {
+                    name: name.into(),
+                    prompt: "Do work".into(),
+                    trigger: serde_json::json!({"type":"cron","schedule":"0 9 * * *"}),
+                    is_enabled: Some(true),
+                },
+            )
+            .expect("automation");
+    }
+    let all = store.list_all_automations().expect("all automations");
+    assert_eq!(all.len(), 2);
+    assert!(all.iter().any(|row| row.agent_id == first.id));
+    assert!(all.iter().any(|row| row.agent_id == second.id));
+    assert_eq!(
+        store
+            .list_all_automation_definitions()
+            .expect("all definitions")
+            .len(),
+        2
+    );
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}

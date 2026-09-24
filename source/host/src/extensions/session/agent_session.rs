@@ -15,7 +15,10 @@ use crate::extensions::memory::memory_service::FileMemoryStore;
 use crate::automations::automation::{AUTOMATION_UI_LIMIT, AutomationRecord, AutomationSpec};
 use crate::automations::automation_store::FileAutomationStore;
 use crate::workflows::workflow_library::WorkflowSpec;
-use crate::workflows::workflow_store::{FileWorkflowStore, WorkflowRecord};
+use crate::workflows::workflow_store::{
+    FileWorkflowStore, WorkflowImportBatch, WorkflowImportResult, WorkflowImportSkipped,
+    WorkflowRecord,
+};
 
 use super::agent_db_serde::AwaitingUserResponse;
 use super::agent_db_transcript_pages::{
@@ -37,6 +40,18 @@ pub fn resolve_profile_name(
     current: Option<&SandAgentProfile>,
 ) -> String {
     resolve_profile_name_impl(trimmed_name, current)
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AgentAutomationEntry {
+    pub agent_id: String,
+    pub automation: AutomationRecord,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct WorkflowImportResponse {
+    pub workflows: Vec<WorkflowRecord>,
+    pub result: WorkflowImportBatch,
 }
 
 pub struct SandAgentSessionStore {
@@ -564,6 +579,114 @@ impl SandAgentSessionStore {
         let store = self.workflow_store_for(agent_id)?;
         let _ = store.remove(workflow_id)?;
         Ok(surface_workflows(&store))
+    }
+
+    pub fn import_agent_workflow_markdown(
+        &self,
+        agent_id: &str,
+        markdown: &str,
+        fallback_name: Option<&str>,
+    ) -> Result<WorkflowImportResponse, String> {
+        let store = self.workflow_store_for(agent_id)?;
+        let result = match store.import_markdown(markdown, fallback_name)? {
+            Some((id, name)) => WorkflowImportBatch {
+                imported: vec![WorkflowImportResult { id, name }],
+                skipped: Vec::new(),
+            },
+            None => WorkflowImportBatch {
+                imported: Vec::new(),
+                skipped: vec![WorkflowImportSkipped {
+                    source: "pasted skill".into(),
+                    reason: "empty or invalid".into(),
+                }],
+            },
+        };
+        Ok(WorkflowImportResponse {
+            workflows: surface_workflows(&store),
+            result,
+        })
+    }
+
+    pub fn import_agent_workflow_source(
+        &self,
+        agent_id: &str,
+        source: &str,
+        fallback_name: Option<&str>,
+    ) -> Result<WorkflowImportResponse, String> {
+        let store = self.workflow_store_for(agent_id)?;
+        let result = match store.import_live_source(source, fallback_name)? {
+            Some((id, name)) => WorkflowImportBatch {
+                imported: vec![WorkflowImportResult { id, name }],
+                skipped: Vec::new(),
+            },
+            None => WorkflowImportBatch {
+                imported: Vec::new(),
+                skipped: vec![WorkflowImportSkipped {
+                    source: source.to_string(),
+                    reason: "could not link".into(),
+                }],
+            },
+        };
+        Ok(WorkflowImportResponse {
+            workflows: surface_workflows(&store),
+            result,
+        })
+    }
+
+    pub fn port_agent_local_skills_from(
+        &self,
+        agent_id: &str,
+        home_dir: &Path,
+        cwd: &Path,
+    ) -> Result<WorkflowImportResponse, String> {
+        let store = self.workflow_store_for(agent_id)?;
+        let result = store.port_local_skills(home_dir, cwd)?;
+        Ok(WorkflowImportResponse {
+            workflows: surface_workflows(&store),
+            result,
+        })
+    }
+
+    pub fn port_agent_local_skills(
+        &self,
+        agent_id: &str,
+    ) -> Result<WorkflowImportResponse, String> {
+        let home = std::env::var_os("HOME")
+            .or_else(|| std::env::var_os("USERPROFILE"))
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from("."));
+        let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        self.port_agent_local_skills_from(agent_id, &home, &cwd)
+    }
+
+    pub fn list_all_automations_from(
+        &self,
+        definitions_only: bool,
+    ) -> Result<Vec<AgentAutomationEntry>, String> {
+        let mut result = Vec::new();
+        for agent_id in self.list_agent_ids()? {
+            let Ok(store) = self.automation_store_for(&agent_id) else {
+                continue;
+            };
+            let automations = if definitions_only {
+                store.list_definitions()
+            } else {
+                store.list()
+            };
+            result.extend(automations.into_iter().map(|automation| AgentAutomationEntry {
+                agent_id: agent_id.clone(),
+                automation,
+            }));
+        }
+        Ok(result)
+    }
+
+    pub fn list_all_automations(&self) -> Result<Vec<AgentAutomationEntry>, String> {
+        self.list_all_automations_from(false)
+    }
+
+    pub fn list_all_automation_definitions(&self) -> Result<Vec<AgentAutomationEntry>, String> {
+        self.list_all_automations_from(true)
     }
 
     fn write_settings(&self, agent_id: &str, update: Map<String, Value>) -> Result<(), String> {

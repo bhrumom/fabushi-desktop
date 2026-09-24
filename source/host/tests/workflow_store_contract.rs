@@ -60,3 +60,38 @@ fn workflow_store_routes_enablement_mutations_through_agent_owner() {
 
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn local_skill_discovery_and_port_match_frozen_sources() {
+    use mahayana_host_runtime::workflows::workflow_store::discover_local_skill_files;
+
+    let root = root("local-skills");
+    let home = root.join("home");
+    let cwd = root.join("cwd");
+    fs::create_dir_all(home.join(".claude")).unwrap();
+    fs::create_dir_all(cwd.join(".cursor/rules")).unwrap();
+    fs::write(home.join("CLAUDE.md"), "# Home memory\n").unwrap();
+    fs::write(cwd.join("AGENTS.md"), "# Agents memory\n").unwrap();
+    fs::write(cwd.join(".cursor/rules/REVIEW.MDC"), "# Review rule\n").unwrap();
+    fs::write(cwd.join(".cursor/rules/ignore.txt"), "ignore").unwrap();
+
+    let discovered = discover_local_skill_files(&home, &cwd);
+    assert_eq!(discovered.len(), 3);
+    assert!(discovered.iter().any(|row| row.fallback_name == "Claude memory"));
+    assert!(discovered.iter().any(|row| row.fallback_name == "Agents memory"));
+    assert!(discovered.iter().any(|row| row.fallback_name == "REVIEW"));
+    assert!(!discovered.iter().any(|row| row.label.ends_with("ignore.txt")));
+
+    let store = FileWorkflowStore::new(root.join("agent"), root.join("global"));
+    let result = store.port_local_skills(&home, &cwd).expect("port local skills");
+    assert_eq!(result.imported.len(), 3);
+    assert!(result.skipped.is_empty());
+    assert_eq!(store.list_all().len(), 3);
+    assert!(store
+        .list_all()
+        .iter()
+        .all(|workflow| workflow.source_ref.as_deref().is_some()));
+
+    let _ = fs::remove_dir_all(root);
+}
