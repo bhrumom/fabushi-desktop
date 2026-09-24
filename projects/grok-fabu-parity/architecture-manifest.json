@@ -13610,12 +13610,22 @@
       "targetPath": "source/host/src/extensions/transcript/async_task_union.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e60b7cac543338347cb09b566f6069225b170a86",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/async_task_union.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/async_task_union_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of frozen async-task union: durable wake labels, ledger-only detail, kind/id live ownership de-duplication, stable startedAt/id ordering and frontend-compatible projection. Shipping getAsyncTasks now reads the production durable pending-wake ledger through ProductionTranscriptRuntime; planned roster/Runner projection can supply live tasks into the same merge boundary without changing this module."
     },
     {
       "referencePath": "source/host/extensions/transcript/automation-event-fires.ts",
@@ -14060,15 +14070,17 @@
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
         "source/host/src/extensions/transcript/production_runtime.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/async_task_union.rs"
       ],
       "testEvidence": [
         "source/host/tests/durable_recovery_stores_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/async_task_union_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production slice ports frozen marker coercion, quiet automation origin, key-based upsert, has/clear/prune semantics and part-file replacement. ProductionTranscriptRuntime owns the store under app_data_dir and successful agent deletion clears its durable markers. Final remains withheld until background/subagent/shell completion paths persist and rearm these markers with frozen telemetry/recreate semantics."
+      "notes": "Rust production slice ports frozen marker coercion, quiet automation origin, key-based upsert, has/clear/prune semantics and part-file replacement. ProductionTranscriptRuntime owns the store under app_data_dir; getAsyncTasks now projects its durable ledger into the shipping frontend-compatible async-task union, and successful agent deletion clears durable markers. Final remains withheld until background/subagent/shell completion paths persist and rearm these markers with frozen telemetry/recreate semantics."
     },
     {
       "referencePath": "source/host/extensions/transcript/sand-upgrade-resume-store.ts",

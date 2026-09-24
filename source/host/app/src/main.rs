@@ -687,6 +687,21 @@ impl GatewayApi for UnifiedGatewayApi {
                 .prompt_acceptance_status(&args)
                 .map_err(map_production_send_error);
         }
+        if method == "getAsyncTasks" {
+            let agent_id = args
+                .get("id")
+                .or_else(|| args.get("agentId"))
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "getAsyncTasks requires id".into()
+                ))?;
+            return serde_json::to_value(
+                self.transcript_runtime.get_async_tasks(agent_id, &[])
+            )
+            .map_err(|error| GatewayCommandError::Internal(error.to_string()));
+        }
         if let Some(result) =
             dispatch_production_agent_lifecycle_gateway_call_with_runtime(
                 &self.session_workers,

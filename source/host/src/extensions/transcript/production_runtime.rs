@@ -5,6 +5,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Value, json};
 
+use super::async_task_union::{AsyncTask, merge_async_tasks};
 use super::prompt_acceptance_ledger::{
     AcceptanceLookup, AcceptanceRecord, AcceptanceStatus, PromptAcceptanceError,
     PromptAcceptanceLedger, SendInput,
@@ -101,6 +102,25 @@ impl ProductionTranscriptRuntime {
         if let Some(store) = self.upgrade_resume_store.as_ref() {
             store.clear(agent_id);
         }
+    }
+
+    pub fn get_async_tasks(
+        &self,
+        agent_id: &str,
+        live_tasks: &[AsyncTask],
+    ) -> Vec<AsyncTask> {
+        let markers = self
+            .pending_wake_store
+            .as_ref()
+            .map(|store| {
+                store
+                    .list_pending()
+                    .into_iter()
+                    .filter(|marker| marker.agent_id == agent_id)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        merge_async_tasks(live_tasks, &markers)
     }
 
     pub fn prompt_acceptance_status(
