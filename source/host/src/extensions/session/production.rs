@@ -44,10 +44,10 @@ use super::session_paths::{get_agent_db_path, get_connector_secrets_root};
 use super::connector_secret_store::SandConnectorSecretStore;
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
 use super::session_store_factories::{
-    NO_SESSION_MEMORY, UnavailableMemoryStore,
     automation_store_for_db_path_with_time_zone_resolver, channel_store_for_db_path,
     workflow_store_for_db_path_with_time_zone_resolver,
 };
+use crate::extensions::memory::memory_service::{FileMemoryStore, MemoryService};
 use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, agent_has_automations};
 use crate::workflows::workflow_store::{FileWorkflowStore, agent_has_workflows};
 use super::session_maintenance::{
@@ -101,7 +101,7 @@ pub struct ProductionMaterializedSession {
     pub prepared: PreparedAgentBlobStore,
     pub db: Arc<SandAgentDb>,
     pub agent_store: ProductionWorkerBlobStore,
-    pub memory: UnavailableMemoryStore,
+    pub memory: FileMemoryStore,
     pub automations: FileAutomationStore,
     pub workflows: FileWorkflowStore,
     pub channels: FileChannelStore,
@@ -133,6 +133,7 @@ pub struct ProductionSessionWorkers {
     pool: Arc<ProductionAgentWorkerPool>,
     conversation_size_maintenance: ConversationSizeMaintenance,
     conversation_state: SessionConversationState,
+    memory_service: MemoryService,
     mint_queue: SessionMintQueue,
     db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
     deleting_agents: Mutex<BTreeSet<String>>,
@@ -172,8 +173,10 @@ impl ProductionSessionWorkers {
         busy_timeout_ms: u64,
         user_time_zone_resolver: UserTimeZoneResolver,
     ) -> Self {
+        let agents_root = agents_root.into();
         Self {
-            agents_root: agents_root.into(),
+            memory_service: MemoryService::new(agents_root.clone()),
+            agents_root,
             pool: Arc::new(AgentWorkerPool::new(
                 create_production_agent_store_worker_backend(busy_timeout_ms),
             )),
@@ -359,7 +362,9 @@ impl ProductionSessionWorkers {
     ) -> Result<ProductionMaterializedSession, String> {
         let db = self.open_agent_db_owner(&record.id)?;
         let agent_store = self.create_agent_blob_store(&record.id)?;
-        let memory = NO_SESSION_MEMORY.create_agent_store();
+        let memory = self
+            .memory_service
+            .create_agent_store(self.agents_root.join(&record.id));
         let automations = self.open_automation_store(&record.id)?;
         let workflows = self.open_workflow_store(&record.id)?;
         let channels = self.open_channel_store(&record.id)?;

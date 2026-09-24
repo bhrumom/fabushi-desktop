@@ -2,8 +2,8 @@ use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::memory::memory_service::{
-    MemoryKind, agent_memory_has_content, get_agent_memory_dir, normalize_memory_content,
-    parse_facts,
+    FileMemoryStore, MemoryKind, MemoryService, agent_memory_has_content,
+    get_agent_memory_dir, memory_id_for, normalize_memory_content, parse_facts,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -56,5 +56,66 @@ fn durable_memory_content_requires_a_valid_fact_in_profile_or_log() {
     .expect("fact");
     assert!(agent_memory_has_content(&agent));
 
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn file_memory_store_round_trips_recall_dedupe_remove_and_clear() {
+    let root = temp_root("store");
+    let agent = root.join("agent");
+    let store = FileMemoryStore::new(get_agent_memory_dir(&agent));
+    let day_one = chrono::DateTime::parse_from_rfc3339("2026-09-23T00:00:00Z")
+        .expect("day one")
+        .timestamp_millis();
+    let day_two = chrono::DateTime::parse_from_rfc3339("2026-09-24T00:00:00Z")
+        .expect("day two")
+        .timestamp_millis();
+
+    let profile = store
+        .add_memory("  User   likes tea  ", day_one, MemoryKind::Profile)
+        .expect("add profile")
+        .expect("new profile");
+    let recent = store
+        .add_memory("Planning a release", day_two, MemoryKind::Log)
+        .expect("add recent")
+        .expect("new recent");
+    assert_eq!(profile.id, memory_id_for("User likes tea"));
+    assert_eq!(recent.id, memory_id_for("Planning a release"));
+    assert!(
+        store
+            .add_memory("user likes TEA", day_two, MemoryKind::Log)
+            .expect("dedupe")
+            .is_none()
+    );
+
+    let recalled = store.recall(20);
+    assert_eq!(recalled.profile, vec![profile.clone()]);
+    assert_eq!(recalled.recent, vec![recent.clone()]);
+    assert_eq!(store.list_memories(10), vec![profile.clone(), recent.clone()]);
+    assert_eq!(store.count_memories(), 2);
+    assert!(store.has_memories());
+
+    assert!(store.remove_memory_by_content("planning A release").expect("remove"));
+    assert!(!store.remove_memory("missing").expect("missing remove"));
+    assert_eq!(store.list_memories(10), vec![profile]);
+
+    store.clear_memories().expect("clear");
+    assert!(!store.has_memories());
+    assert_eq!(store.recall(20).profile, Vec::new());
+    assert_eq!(store.recall(20).recent, Vec::new());
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn memory_service_creates_real_agent_scoped_store() {
+    let root = temp_root("service");
+    let service = MemoryService::new(&root);
+    let agent_dir = root.join("agent-a");
+    let store = service.create_agent_store(&agent_dir);
+    assert_eq!(service.agents_root_dir(), root.as_path());
+    assert_eq!(store.get_location(), agent_dir.join("memory"));
+    assert!(!service.agent_has_content(&agent_dir));
     let _ = fs::remove_dir_all(root);
 }

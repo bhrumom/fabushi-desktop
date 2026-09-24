@@ -162,7 +162,8 @@ fn production_materialized_session_composes_shipping_resources_and_reset_view() 
     assert_eq!(session.agent_store.blob_db_path, agent_dir.join("conversation-blobs.db"));
     assert_eq!(session.automations.get_location(), agent_dir.join("automations"));
     assert_eq!(session.channels.get_location(), agent_dir.join("channels"));
-    assert_eq!(session.memory.get_location(), None);
+    assert_eq!(session.memory.get_location(), agent_dir.join("memory"));
+    assert!(!session.memory.has_memories());
     assert!(session.conversation_state().is_none());
     assert_eq!(workers.active_agent_db_owner_count(), 1);
 
