@@ -1413,11 +1413,15 @@ fn start_routed_provider_task(
         )))?,
     );
 
-    transcript_runtime.begin_provider_run(&agent_id);
+    let is_group_member_turn = args
+        .get("groupMemberTurn")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false);
+    transcript_runtime.begin_provider_run_with_kind(&agent_id, is_group_member_turn);
     let ack_token = ack_obligations
         .mint_ack_run_token(&agent_id)
         .map_err(|error| {
-            transcript_runtime.end_provider_run(&agent_id);
+            transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
             let _ = transcript_runtime.retire_idle_live_session(
                 &session_workers,
                 &agent_id,
@@ -1430,7 +1434,7 @@ fn start_routed_provider_task(
         .register_routed_provider(&agent_id, &stream_id)
         .map_err(|error| {
             ack_obligations.retire_ack_run_token(&agent_id, ack_token.as_deref());
-            transcript_runtime.end_provider_run(&agent_id);
+            transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
             let _ = transcript_runtime.retire_idle_live_session(
                 &session_workers,
                 &agent_id,
@@ -1662,7 +1666,7 @@ fn start_routed_provider_task(
                 &ActivityUpdate::TurnEnded,
                 started_at_ms(),
             );
-            worker_transcript_runtime.end_provider_run(&agent_id);
+            worker_transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
             worker_registry.finish_routed_provider(&worker_stream_id);
             worker_ack_obligations.retire_ack_run_token(
                 &agent_id,
@@ -1738,7 +1742,10 @@ fn start_routed_provider_task(
             }
         });
     if let Err(error) = spawn {
-        transcript_runtime.end_provider_run(&spawn_error_agent_id);
+        transcript_runtime.end_provider_run_with_kind(
+            &spawn_error_agent_id,
+            is_group_member_turn,
+        );
         runner_registry.finish_routed_provider(&accepted_stream_id);
         ack_obligations.retire_ack_run_token(
             &spawn_error_agent_id,

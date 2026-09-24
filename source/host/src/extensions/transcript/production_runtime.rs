@@ -85,6 +85,7 @@ struct RoutedTurnLease {
     agent_id: String,
     ticket: UserTurnTicket,
     generation: u64,
+    is_group_member_turn: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -500,9 +501,10 @@ impl ProductionTranscriptRuntime {
                             ) {
                                 Ok(value) => value,
                                 Err(error) => {
-                                    let _ = state.lifecycle.end_session_run(
+                                    let _ = state.lifecycle.end_session_run_with_kind(
                                         agent_id,
                                         system_now_ms(),
+                                        is_group_member_turn,
                                     );
                                     let RuntimeState {
                                         pipeline, ledger, ..
@@ -563,7 +565,11 @@ impl ProductionTranscriptRuntime {
                             let _ = state
                                 .turn_dispatch
                                 .settle_and_start_next(&ticket, generation, system_now_ms());
-                            let _ = state.lifecycle.end_session_run(agent_id, system_now_ms());
+                            let _ = state.lifecycle.end_session_run_with_kind(
+                                agent_id,
+                                system_now_ms(),
+                                is_group_member_turn,
+                            );
                             let RuntimeState {
                                 pipeline, ledger, ..
                             } = &mut *state;
@@ -581,6 +587,7 @@ impl ProductionTranscriptRuntime {
                                 agent_id: agent_id.to_string(),
                                 ticket,
                                 generation,
+                                is_group_member_turn,
                             },
                         );
                     }
@@ -645,7 +652,11 @@ impl ProductionTranscriptRuntime {
             RunSettlement::ZombieSettled { watchdog, .. } => Some(watchdog),
             RunSettlement::ActiveSettled { .. } | RunSettlement::Unknown => None,
         };
-        let _ = state.lifecycle.end_session_run(agent_id, now_ms);
+        let _ = state.lifecycle.end_session_run_with_kind(
+            agent_id,
+            now_ms,
+            lease.is_group_member_turn,
+        );
         drop(state);
         self.turn_ready.notify_all();
         Ok(Some(RoutedTurnSettlement { watchdog, next }))
@@ -1002,11 +1013,23 @@ impl ProductionTranscriptRuntime {
     }
 
     pub fn begin_provider_run(&self, agent_id: &str) {
-        self.lock_state().lifecycle.begin_provider_run(agent_id);
+        self.begin_provider_run_with_kind(agent_id, false);
+    }
+
+    pub fn begin_provider_run_with_kind(&self, agent_id: &str, is_group_member_turn: bool) {
+        self.lock_state()
+            .lifecycle
+            .begin_provider_run_with_kind(agent_id, is_group_member_turn);
     }
 
     pub fn end_provider_run(&self, agent_id: &str) {
-        self.lock_state().lifecycle.end_provider_run(agent_id);
+        self.end_provider_run_with_kind(agent_id, false);
+    }
+
+    pub fn end_provider_run_with_kind(&self, agent_id: &str, is_group_member_turn: bool) {
+        self.lock_state()
+            .lifecycle
+            .end_provider_run_with_kind(agent_id, is_group_member_turn);
     }
 
     pub fn track_runner_activity_update(

@@ -36,6 +36,7 @@ pub struct ExclusiveRunRequest {
 #[derive(Debug, Default, Clone)]
 struct SessionRun {
     in_flight: u64,
+    turn_worthy_in_flight: u64,
     window_started_at_ms: Option<u64>,
     turn_worthy_begins: u64,
 }
@@ -60,6 +61,7 @@ pub struct RunLifecycleState {
     structured_activity: HashMap<String, AgentActivity>,
     activity_holds: HashMap<String, NamedActivityHoldState>,
     provider_run_counts: HashMap<String, u64>,
+    provider_turn_worthy_counts: HashMap<String, u64>,
     last_request_id: HashMap<String, String>,
     turn_request_ids: HashMap<String, HashSet<String>>,
     turn_ended_seq: HashMap<String, u64>,
@@ -80,6 +82,7 @@ impl RunLifecycleState {
         state.in_flight = state.in_flight.saturating_add(1);
         if !is_group_member_turn {
             state.turn_worthy_begins = state.turn_worthy_begins.saturating_add(1);
+            state.turn_worthy_in_flight = state.turn_worthy_in_flight.saturating_add(1);
         }
         self.active_run_session = Some(agent_id);
     }
@@ -89,11 +92,23 @@ impl RunLifecycleState {
         agent_id: &str,
         now_ms: u64,
     ) -> Option<RunWindowCompleted> {
+        self.end_session_run_with_kind(agent_id, now_ms, false)
+    }
+
+    pub fn end_session_run_with_kind(
+        &mut self,
+        agent_id: &str,
+        now_ms: u64,
+        is_group_member_turn: bool,
+    ) -> Option<RunWindowCompleted> {
         if self.provider_run_count(agent_id) == 0 {
             self.clear_visible_run_state(agent_id);
         }
 
         let state = self.sessions.get_mut(agent_id)?;
+        if !is_group_member_turn {
+            state.turn_worthy_in_flight = state.turn_worthy_in_flight.saturating_sub(1);
+        }
         if state.in_flight > 1 {
             state.in_flight -= 1;
             return None;
@@ -130,15 +145,38 @@ impl RunLifecycleState {
     }
 
     pub fn begin_provider_run(&mut self, agent_id: &str) {
+        self.begin_provider_run_with_kind(agent_id, false);
+    }
+
+    pub fn begin_provider_run_with_kind(
+        &mut self,
+        agent_id: &str,
+        is_group_member_turn: bool,
+    ) {
         if agent_id.trim().is_empty() {
             return;
         }
         let count = self.provider_run_counts.entry(agent_id.to_string()).or_default();
         *count = count.saturating_add(1);
+        if !is_group_member_turn {
+            let turn_count = self
+                .provider_turn_worthy_counts
+                .entry(agent_id.to_string())
+                .or_default();
+            *turn_count = turn_count.saturating_add(1);
+        }
         self.active_run_session = Some(agent_id.to_string());
     }
 
     pub fn end_provider_run(&mut self, agent_id: &str) {
+        self.end_provider_run_with_kind(agent_id, false);
+    }
+
+    pub fn end_provider_run_with_kind(
+        &mut self,
+        agent_id: &str,
+        is_group_member_turn: bool,
+    ) {
         let mut remove = false;
         if let Some(count) = self.provider_run_counts.get_mut(agent_id) {
             *count = count.saturating_sub(1);
@@ -146,6 +184,16 @@ impl RunLifecycleState {
         }
         if remove {
             self.provider_run_counts.remove(agent_id);
+        }
+        if !is_group_member_turn {
+            let mut remove_turn = false;
+            if let Some(count) = self.provider_turn_worthy_counts.get_mut(agent_id) {
+                *count = count.saturating_sub(1);
+                remove_turn = *count == 0;
+            }
+            if remove_turn {
+                self.provider_turn_worthy_counts.remove(agent_id);
+            }
         }
         if self.provider_run_count(agent_id) == 0 && self.in_flight_count(agent_id) == 0 {
             self.clear_visible_run_state(agent_id);
@@ -159,8 +207,22 @@ impl RunLifecycleState {
         self.provider_run_counts.get(agent_id).copied().unwrap_or_default()
     }
 
+    pub fn provider_turn_worthy_count(&self, agent_id: &str) -> u64 {
+        self.provider_turn_worthy_counts
+            .get(agent_id)
+            .copied()
+            .unwrap_or_default()
+    }
+
     pub fn is_running(&self, agent_id: &str) -> bool {
         self.in_flight_count(agent_id) > 0 || self.provider_run_count(agent_id) > 0
+    }
+
+    pub fn is_turn_worthy_running(&self, agent_id: &str) -> bool {
+        self.sessions
+            .get(agent_id)
+            .is_some_and(|state| state.turn_worthy_in_flight > 0)
+            || self.provider_turn_worthy_count(agent_id) > 0
     }
 
     pub fn active_run_session(&self) -> Option<&str> {
@@ -173,8 +235,8 @@ impl RunLifecycleState {
         has_running_subagent: bool,
         active_remote_member_id: Option<&str>,
     ) -> RunStateProjection {
-        let is_running_turn = self.is_running(agent_id);
-        let is_running = is_running_turn || has_running_subagent;
+        let is_running = self.is_running(agent_id) || has_running_subagent;
+        let is_running_turn = self.is_turn_worthy_running(agent_id);
         RunStateProjection {
             is_running,
             is_running_turn,

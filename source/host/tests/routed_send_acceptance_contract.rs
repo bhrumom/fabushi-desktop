@@ -177,6 +177,13 @@ fn group_member_routed_admission_projects_running_without_user_turn_badge() {
     assert_eq!(roster[0]["isRunningTurn"], false);
     assert_eq!(runtime.active_turn_source("member-a").as_deref(), Some("group-member"));
 
+    runtime.begin_provider_run_with_kind("member-a", true);
+    let mut provider_roster = serde_json::json!([{"id":"member-a"}]);
+    runtime.decorate_agent_summaries(&mut provider_roster);
+    assert_eq!(provider_roster[0]["isRunning"], true);
+    assert_eq!(provider_roster[0]["isRunningTurn"], false);
+    runtime.end_provider_run_with_kind("member-a", true);
+
     runtime
         .settle_routed_turn("member-a", "group-member-stream", 50_000)
         .expect("settlement")
