@@ -133,6 +133,7 @@ use mahayana_host_runtime::host_initial_transcript_load::{
 };
 use mahayana_host_runtime::host_paths::{get_gateway_discovery_path, get_host_lock_path};
 use mahayana_host_runtime::r#box::box_env::BoxEnvironmentUpdate;
+use mahayana_host_runtime::r#box::exec_daemon_process::start_managed_box_exec_daemon_from_process_env;
 use mahayana_host_runtime::r#box::production::{
     BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionBoxEnvironment,
 };
@@ -1882,6 +1883,15 @@ fn main() {
         }
     };
 
+    let mut box_exec_daemon =
+        match start_managed_box_exec_daemon_from_process_env(&app_data_dir) {
+            Ok(daemon) => daemon,
+            Err(error) => {
+                eprintln!("failed to start managed Grok box exec-daemon: {error}");
+                return;
+            }
+        };
+
     let production_extensions = match start_production_host_extensions() {
         Ok(extensions) => extensions,
         Err(error) => {
@@ -2230,6 +2240,11 @@ fn main() {
     session_extension.shutdown();
     browser_ua_runtime.stop();
     forever_box.dispose();
+    if let Some(daemon) = box_exec_daemon.as_mut() {
+        if let Err(error) = daemon.close() {
+            eprintln!("failed to stop managed Grok box exec-daemon cleanly: {error}");
+        }
+    }
     if let Err(error) = clear_gateway_discovery(&gateway_discovery_path) {
         eprintln!(
             "failed to clear Mahayana Host gateway discovery at {}: {error}",

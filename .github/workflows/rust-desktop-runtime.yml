@@ -91,6 +91,13 @@ jobs:
       - name: Test independent Grok box exec daemon contract
         shell: bash
         run: cargo test --manifest-path source/box-exec-daemon/Cargo.toml
+      - name: Test shipping Host box exec daemon supervisor
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --manifest-path source/box-exec-daemon/Cargo.toml --bin box-exec-daemon
+          FABUSHI_BOX_EXEC_DAEMON_TEST_BIN="$GITHUB_WORKSPACE/source/box-exec-daemon/target/debug/box-exec-daemon" \
+            cargo test --manifest-path source/host/Cargo.toml --test box_exec_daemon_process_contract
       - name: Test independent Mahayana Host Runner contract
         shell: bash
         run: cargo test --manifest-path source/host/Cargo.toml

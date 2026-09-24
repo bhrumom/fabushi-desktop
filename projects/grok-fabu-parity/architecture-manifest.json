@@ -9877,12 +9877,23 @@
       "targetPath": "source/host/src/box/exec_daemon_process.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "019842240dc631ceb293e02477e39a48ccf3ebe2",
       "architecturalRole": "host/box",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/box/exec_daemon_process.rs",
+        "source/host/app/src/main.rs",
+        "source/box-exec-daemon/src/main.rs",
+        "source/box-exec-daemon/src/server.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_exec_daemon_process_contract.rs",
+        "source/box-exec-daemon/src/server.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port owns the frozen exec-daemon child-process boundary. The shipping Mahayana Host now starts the managed sibling box-exec-daemon after acquiring the Host lock and before production extensions/ForeverBox consume the loopback endpoint; SAND_STANDALONE_BOX_EXEC_DAEMON preserves the external-daemon escape hatch. The owned child is explicitly closed after ForeverBox disposal and also has Drop fail-safe cleanup for every early-return path. Exact-HEAD CI builds the real independent daemon binary and injects it into the Host supervisor contract, proving contaminated-port rejection, authenticated generated Ping readiness and child shutdown rather than skipping when a test binary is absent."
     },
     {
       "referencePath": "source/host/box/generated-production.ts",
