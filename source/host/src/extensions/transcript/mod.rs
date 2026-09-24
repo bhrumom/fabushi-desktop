@@ -25,6 +25,7 @@ pub mod transcript_hub;
 pub mod transcript_store;
 pub mod replica_writer;
 pub mod roster_emit;
+pub mod roster_search;
 pub mod profile_watch;
 
 pub mod channel_delivery_unregistered_error;

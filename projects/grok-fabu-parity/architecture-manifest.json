@@ -14137,12 +14137,21 @@
       "targetPath": "source/host/src/extensions/transcript/roster_search.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "4cc9ef9af442b3a47aa653ddeaa22d65b2d45df9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/roster_search.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/roster_search_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust production slice implements the frozen linear roster-search fallback: normalized query, newest-first per-agent scan, hidden outbound-peer exclusion, 5 matches per agent, 30/60 snippet windows, timestamp fallback to AgentSummary.updatedAt, global timestamp sort/limit. Shipping Session Gateway now dispatches searchAgents against durable agent transcripts. Final is withheld until the Grok content-search index fast path and searchMedia filtering are implemented and production-wired."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-lifecycle.ts",

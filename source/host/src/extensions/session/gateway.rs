@@ -17,6 +17,9 @@ use crate::extensions::transcript::send_message_shaping::{
     create_user_message, stat_attached_file_size,
 };
 use crate::extensions::transcript::send_thread_stamping::resolve_send_reply_threading;
+use crate::extensions::transcript::roster_search::{
+    AGENT_CONTENT_SEARCH_MAX_RESULTS, search_agents_linear,
+};
 use crate::extensions::transcript::transcript_entry_ids::{
     TranscriptEntryIdKind, next_entry_id,
 };
@@ -244,6 +247,16 @@ pub fn dispatch_production_session_gateway_call(
             .list_agents()
             .and_then(|agents| serde_json::to_value(agents).map_err(|error| error.to_string()))
             .map_err(SessionGatewayError::internal),
+        "searchAgents" => optional_string(args, "query").and_then(|query| {
+            let limit = args
+                .get("limit")
+                .and_then(Value::as_u64)
+                .and_then(|value| usize::try_from(value).ok())
+                .unwrap_or(AGENT_CONTENT_SEARCH_MAX_RESULTS);
+            search_agents_linear(session, query.unwrap_or_default(), limit)
+                .and_then(|matches| serde_json::to_value(matches).map_err(|error| error.to_string()))
+                .map_err(SessionGatewayError::internal)
+        }),
         "createGroup" => {
             required_string(args, "name").and_then(|name| {
                 let description = optional_string(args, "description")?.unwrap_or_default();
