@@ -5,7 +5,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_db::{
     SandAgentDb, SandAgentDbOptions, compare_and_set_persisted_latest_root_blob_id,
-    set_persisted_awaiting_user_response, set_persisted_sand_profile,
 };
 use mahayana_host_runtime::extensions::session::agent_db_recovery::DbRecoveryOptions;
 use mahayana_host_runtime::extensions::session::agent_db_serde::{
@@ -67,29 +66,32 @@ fn owner_registers_live_handle_notifies_shipping_mutations_and_releases_on_close
         &[0xaa, 0xbb],
     )
     .expect("root cas"));
-    assert!(set_persisted_sand_profile(
-        &db_path,
-        50,
-        &SandProfile {
+    assert!(owner
+        .set_sand_profile(&SandProfile {
             description: "profile".into(),
             avatar_path: Some("/tmp/avatar.png".into()),
-        },
-    )
-    .expect("profile"));
-    assert!(set_persisted_awaiting_user_response(
-        &db_path,
-        50,
-        Some(&AwaitingUserResponse {
+        })
+        .expect("profile"));
+    assert!(owner
+        .set_awaiting_user_response(Some(&AwaitingUserResponse {
             tab_id: "tab-a".into(),
             reason: "approval".into(),
             since: 1.0,
-        }),
-    )
-    .expect("awaiting"));
+        }))
+        .expect("awaiting"));
 
     assert_eq!(metadata_hits.load(Ordering::SeqCst), 1);
     assert_eq!(profile_hits.load(Ordering::SeqCst), 1);
     assert_eq!(awaiting_hits.load(Ordering::SeqCst), 1);
+
+    assert!(owner.clear_conversation().expect("clear conversation"));
+    assert!(owner
+        .get_awaiting_user_response()
+        .expect("awaiting after clear")
+        .is_none());
+    assert_eq!(metadata_hits.load(Ordering::SeqCst), 2);
+    assert_eq!(profile_hits.load(Ordering::SeqCst), 1);
+    assert_eq!(awaiting_hits.load(Ordering::SeqCst), 2);
 
     owner.close(true);
     assert!(owner.is_closed());

@@ -15,7 +15,7 @@ use crate::storage::agent_paths::get_sand_agents_root_dir;
 use super::agent_db::{
     AgentDbSerdeSnapshot, SandAgentDb, add_persisted_conversation_partner,
     append_persisted_transcript_entries, clear_persisted_agent_profile_prompt_snapshot,
-    clear_persisted_conversation, clear_persisted_memory_prompt_snapshot,
+    clear_persisted_memory_prompt_snapshot,
     clear_persisted_transient_state, delete_persisted_transcript_entry,
     mark_persisted_activity, mark_persisted_read, mark_persisted_unread,
     mark_persisted_viewed, read_persisted_agent_profile_prompt_snapshot,
@@ -24,9 +24,8 @@ use super::agent_db::{
     read_persisted_latest_root_blob_id, read_persisted_newest_divider_anchor_timestamp_ms,
     record_persisted_episode_turn, record_persisted_request_id,
     set_persisted_agent_profile_prompt_snapshot, set_persisted_automation_spend_guard_state,
-    set_persisted_awaiting_user_response, set_persisted_awaiting_user_response_for_tab,
     set_persisted_introduction_pending, set_persisted_memory_prompt_snapshot,
-    set_persisted_sand_profile, update_persisted_transcript_entry,
+    update_persisted_transcript_entry,
 };
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
@@ -595,8 +594,8 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         profile: &SandProfile,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        set_persisted_sand_profile(&db_path, self.busy_timeout_ms, profile)
+        self.open_agent_db_owner(agent_id)?
+            .set_sand_profile(profile)
             .map_err(|error| error.to_string())
     }
 
@@ -709,8 +708,8 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         state: Option<&AwaitingUserResponse>,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        set_persisted_awaiting_user_response(&db_path, self.busy_timeout_ms, state)
+        self.open_agent_db_owner(agent_id)?
+            .set_awaiting_user_response(state)
             .map_err(|error| error.to_string())
     }
 
@@ -721,15 +720,9 @@ impl ProductionSessionWorkers {
         state: Option<&AwaitingUserResponse>,
         if_since_before: Option<f64>,
     ) -> Result<bool, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        set_persisted_awaiting_user_response_for_tab(
-            &db_path,
-            self.busy_timeout_ms,
-            tab_id,
-            state,
-            if_since_before,
-        )
-        .map_err(|error| error.to_string())
+        self.open_agent_db_owner(agent_id)?
+            .set_awaiting_user_response_for_tab(tab_id, state, if_since_before)
+            .map_err(|error| error.to_string())
     }
 
     pub fn record_agent_request_id(
@@ -858,7 +851,8 @@ impl ProductionSessionWorkers {
             store.legacy_blob_db_path.as_deref(),
         ))
         .map_err(|error| error.to_string())?;
-        clear_persisted_conversation(&db_path, self.busy_timeout_ms)
+        self.open_agent_db_owner(agent_id)?
+            .clear_conversation()
             .map_err(|error| error.to_string())
     }
 

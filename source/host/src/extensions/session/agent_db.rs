@@ -339,6 +339,160 @@ impl SandAgentDb {
         )
     }
 
+    pub fn get_sand_profile(&self) -> Result<SandProfile, AgentDbProjectionError> {
+        Ok(parse_profile(self.read_kv(KV_PROFILE)?.as_deref()))
+    }
+
+    pub fn set_sand_profile(
+        &self,
+        profile: &SandProfile,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if self.get_sand_profile()? == *profile {
+            return Ok(true);
+        }
+        let raw = serde_json::json!({
+            "description": profile.description.clone(),
+            "avatarPath": profile.avatar_path.clone(),
+        })
+        .to_string();
+        let wrote = self.write_kv(KV_PROFILE, &raw)?;
+        if wrote {
+            notify_agent_db_listeners(&self.db_path, AgentDbListenerChannel::Profile);
+        }
+        Ok(wrote)
+    }
+
+    pub fn get_awaiting_user_response(
+        &self,
+    ) -> Result<Option<AwaitingUserResponse>, AgentDbProjectionError> {
+        Ok(parse_awaiting_state(self.read_kv(KV_AWAITING)?.as_deref()))
+    }
+
+    pub fn set_awaiting_user_response(
+        &self,
+        state: Option<&AwaitingUserResponse>,
+    ) -> Result<bool, AgentDbProjectionError> {
+        if self.get_awaiting_user_response()?.as_ref() == state {
+            return Ok(false);
+        }
+        let wrote = if let Some(state) = state {
+            let raw = serde_json::json!({
+                "tabId": state.tab_id.clone(),
+                "reason": state.reason.clone(),
+                "since": state.since,
+            })
+            .to_string();
+            self.write_kv(KV_AWAITING, &raw)?
+        } else {
+            self.delete_kv(KV_AWAITING)?
+        };
+        if wrote {
+            notify_agent_db_listeners(&self.db_path, AgentDbListenerChannel::Awaiting);
+        }
+        Ok(wrote)
+    }
+
+    pub fn set_awaiting_user_response_for_tab(
+        &self,
+        tab_id: &str,
+        state: Option<&AwaitingUserResponse>,
+        if_since_before: Option<f64>,
+    ) -> Result<bool, AgentDbProjectionError> {
+        let current = self.get_awaiting_user_response()?;
+        if current.as_ref().is_some_and(|current| current.tab_id != tab_id) {
+            return Ok(false);
+        }
+        if state.is_none()
+            && (current.is_none()
+                || if_since_before.is_some_and(|before| {
+                    current.as_ref().is_some_and(|current| current.since >= before)
+                }))
+        {
+            return Ok(false);
+        }
+        if state.is_some_and(|state| state.tab_id != tab_id) {
+            return Ok(false);
+        }
+        self.set_awaiting_user_response(state)
+    }
+
+    pub fn clear_conversation(&self) -> Result<bool, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(false);
+        }
+        let raw_metadata = self.read_kv("metadata")?;
+        let next_metadata = if let Some(raw) = raw_metadata.as_deref() {
+            let bytes = decode_hex(raw).map_err(AgentDbProjectionError::MetadataHex)?;
+            let mut metadata: serde_json::Value =
+                serde_json::from_slice(&bytes).map_err(AgentDbProjectionError::MetadataJson)?;
+            if let Some(object) = metadata.as_object_mut() {
+                object.insert(
+                    "latestRootBlobId".into(),
+                    serde_json::Value::String(String::new()),
+                );
+                object.insert(
+                    "currentPlanUri".into(),
+                    serde_json::Value::String(String::new()),
+                );
+            }
+            Some(encode_hex(&serde_json::to_vec(&metadata)?))
+        } else {
+            None
+        };
+
+        let committed = self.run_write("clearConversation", |db| {
+            db.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<(), rusqlite::Error> {
+                db.execute(CLEAR_BLOBS_SQL, [])?;
+                db.execute(CLEAR_TRANSCRIPT_ENTRIES_SQL, [])?;
+                for key in [
+                    KV_AWAITING,
+                    KV_LATEST_REQUEST_ID,
+                    KV_REQUEST_IDS,
+                    KV_EPISODE,
+                    KV_MEMORY_SNAPSHOT,
+                    KV_PROFILE_SNAPSHOT,
+                ] {
+                    db.execute(DELETE_KV_SQL, params![key])?;
+                }
+                if let Some(next_metadata) = next_metadata.as_deref() {
+                    db.execute(SET_KV_SQL, params!["metadata", next_metadata])?;
+                }
+                Ok(())
+            })();
+            match result {
+                Ok(()) => {
+                    db.execute_batch("COMMIT")?;
+                    Ok(true)
+                }
+                Err(error) => {
+                    let _ = db.execute_batch("ROLLBACK");
+                    Err(error)
+                }
+            }
+        })?;
+        if !committed {
+            return Ok(false);
+        }
+
+        let mut mutation = serde_json::Map::new();
+        mutation.insert(
+            "kind".into(),
+            serde_json::Value::String("conversation-cleared".into()),
+        );
+        mutation.insert(
+            "agentId".into(),
+            serde_json::Value::String(self.agent_dir_name.clone()),
+        );
+        publish_transcript_mutation(&mutation);
+        notify_agent_db_listeners(&self.db_path, AgentDbListenerChannel::Awaiting);
+        notify_agent_db_listeners(
+            &self.db_path,
+            AgentDbListenerChannel::Metadata("latestRootBlobId".into()),
+        );
+        Ok(true)
+    }
+
     pub fn close(&self, checkpoint: bool) {
         if self
             .handle_registered
