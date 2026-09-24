@@ -23,6 +23,9 @@ use super::send_pipeline::{
     HOST_ACCOUNT_SLOT, SendBegin, SendEchoIdentity, SendPipelineState,
 };
 use super::send_turn_dispatch::{ProductionTurnDispatch, UserTurnTicket};
+use super::upgrade_recreate_resume::{
+    UpgradeQuiesceSummary, UpgradeRecreateResume,
+};
 
 const COMPLETION_CACHE_MAX: usize = 256;
 
@@ -53,6 +56,7 @@ pub struct ProductionTranscriptRuntime {
     turn_ready: Condvar,
     pending_wake_store: Option<SandPendingWakeStore>,
     upgrade_resume_store: Option<SandUpgradeResumeStore>,
+    upgrade_recreate_resume: UpgradeRecreateResume,
 }
 
 impl ProductionTranscriptRuntime {
@@ -87,6 +91,7 @@ impl ProductionTranscriptRuntime {
             turn_ready: Condvar::new(),
             pending_wake_store,
             upgrade_resume_store,
+            upgrade_recreate_resume: UpgradeRecreateResume::default(),
         }
     }
 
@@ -96,6 +101,20 @@ impl ProductionTranscriptRuntime {
 
     pub fn upgrade_resume_store(&self) -> Option<&SandUpgradeResumeStore> {
         self.upgrade_resume_store.as_ref()
+    }
+
+    pub fn quiesce_for_upgrade(&self) -> UpgradeQuiesceSummary {
+        let running_turns = self.lock_state().lifecycle.running_agent_ids().len();
+        self.upgrade_recreate_resume
+            .quiesce_for_upgrade(running_turns)
+    }
+
+    pub fn is_quiescing_for_upgrade(&self) -> bool {
+        self.upgrade_recreate_resume.is_quiescing_for_upgrade()
+    }
+
+    pub fn resume_after_recreate(&self) {
+        self.upgrade_recreate_resume.resume_after_recreate();
     }
 
     pub fn clear_agent_durable_recovery(&self, agent_id: &str) {

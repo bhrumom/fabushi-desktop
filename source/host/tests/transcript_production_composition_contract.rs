@@ -375,3 +375,24 @@ fn ack_redrive_send_uses_background_lane_and_source() {
     assert!(runtime.is_turn_dispatch_idle("agent-redrive"));
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn production_runtime_quiesce_reports_running_agents_and_blocks_until_resume() {
+    let root = temp_root("upgrade-quiesce");
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    assert!(!runtime.is_quiescing_for_upgrade());
+
+    runtime.begin_provider_run("agent-a");
+    runtime.begin_provider_run("agent-b");
+    let summary = runtime.quiesce_for_upgrade();
+    assert!(summary.quiescing);
+    assert_eq!(summary.running_turns, 2);
+    assert!(runtime.is_quiescing_for_upgrade());
+
+    runtime.resume_after_recreate();
+    assert!(!runtime.is_quiescing_for_upgrade());
+    runtime.end_provider_run("agent-a");
+    runtime.end_provider_run("agent-b");
+    let _ = fs::remove_dir_all(root);
+}

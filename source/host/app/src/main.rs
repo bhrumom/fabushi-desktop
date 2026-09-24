@@ -372,8 +372,15 @@ fn start_ack_redrive_worker(
                     break;
                 }
 
+                if api.transcript_runtime.is_quiescing_for_upgrade() {
+                    trigger = AckRedriveTrigger::Idle;
+                    continue;
+                }
+
                 for obligation in ack_obligations.pending_obligations() {
-                    if stop.load(Ordering::Acquire) {
+                    if stop.load(Ordering::Acquire)
+                        || api.transcript_runtime.is_quiescing_for_upgrade()
+                    {
                         break;
                     }
                     let agent_id = obligation.agent_id.clone();
@@ -1119,6 +1126,14 @@ impl GatewayApi for UnifiedGatewayApi {
                 .map_err(map_production_send_error);
         }
         call_host_lane(&self.host_tx, method, args)
+    }
+
+    fn prepare_for_upgrade(&self) -> Result<serde_json::Value, GatewayCommandError> {
+        let summary = self.transcript_runtime.quiesce_for_upgrade();
+        Ok(serde_json::json!({
+            "quiescing": summary.quiescing,
+            "runningTurns": summary.running_turns,
+        }))
     }
 
     fn on_command_complete(&self, report: GatewayCommandReport) {
