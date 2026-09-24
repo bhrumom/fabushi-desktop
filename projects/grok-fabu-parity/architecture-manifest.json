@@ -9885,15 +9885,18 @@
         "source/host/src/box/exec_daemon_process.rs",
         "source/host/app/src/main.rs",
         "source/box-exec-daemon/src/main.rs",
-        "source/box-exec-daemon/src/server.rs"
+        "source/box-exec-daemon/src/server.rs",
+        "desktop/package.json",
+        "desktop/scripts/stage-host.mjs"
       ],
       "testEvidence": [
         "source/host/tests/box_exec_daemon_process_contract.rs",
         "source/box-exec-daemon/src/server.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port owns the frozen exec-daemon child-process boundary. The shipping Mahayana Host now starts the managed sibling box-exec-daemon after acquiring the Host lock and before production extensions/ForeverBox consume the loopback endpoint; SAND_STANDALONE_BOX_EXEC_DAEMON preserves the external-daemon escape hatch. The owned child is explicitly closed after ForeverBox disposal and also has Drop fail-safe cleanup for every early-return path. Exact-HEAD CI builds the real independent daemon binary and injects it into the Host supervisor contract, proving contaminated-port rejection, authenticated generated Ping readiness and child shutdown rather than skipping when a test binary is absent."
+      "notes": "Rust port owns the frozen exec-daemon child-process boundary. The shipping Mahayana Host now starts the managed sibling box-exec-daemon after acquiring the Host lock and before production extensions/ForeverBox consume the loopback endpoint; SAND_STANDALONE_BOX_EXEC_DAEMON preserves the external-daemon escape hatch. The owned child is explicitly closed after ForeverBox disposal and also has Drop fail-safe cleanup for every early-return path. Exact-HEAD CI builds the real independent daemon binary and injects it into the Host supervisor contract, proving contaminated-port rejection, authenticated generated Ping readiness and child shutdown rather than skipping when a test binary is absent. Desktop build:host/build:host:ci now build the daemon and the single stage-host packaging path copies the platform-specific sibling into desktop/resources/bin beside mahayana-app-host, so deterministic E2E and release packaging exercise the same managed-child layout instead of exiting the Host when the sibling is absent."
     },
     {
       "referencePath": "source/host/box/generated-production.ts",
