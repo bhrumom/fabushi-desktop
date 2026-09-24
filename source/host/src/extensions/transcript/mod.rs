@@ -23,6 +23,8 @@ pub mod transcript_entry_ids;
 pub mod transcript_hub;
 pub mod transcript_store;
 pub mod replica_writer;
+pub mod roster_emit;
+pub mod profile_watch;
 
 pub mod channel_delivery_unregistered_error;
 pub mod send_not_persisted_error;

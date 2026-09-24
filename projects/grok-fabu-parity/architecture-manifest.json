@@ -14035,12 +14035,26 @@
       "targetPath": "source/host/src/extensions/transcript/profile_watch.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "24338d49e659fcc1eb07e4b447d76da32ab8c37f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/profile_watch.rs",
+        "source/host/src/extensions/transcript/roster_emit.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/agents/agent_avatar.rs",
+        "source/host/src/agents/agent_profile.rs",
+        "source/host/src/agents/settings_file.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/profile_watch_contract.rs",
+        "source/host/tests/roster_emit_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Real production watcher: Rust notify watches the agents root, follows active-agent.json, filters the frozen profile.json/settings.json/conventional-avatar family, debounces for 50 ms, invalidates avatar cache, pushes roster updates, profile-changed notifications and name-change timeline payloads. Final remains withheld until the broader Rust transcript event projection owns the exact frozen timeline-event ordering/subscription surface rather than publishing the name-change payload directly on the Gateway event hub."
     },
     {
       "referencePath": "source/host/extensions/transcript/prompt-acceptance-ledger.ts",
@@ -14088,12 +14102,23 @@
       "targetPath": "source/host/src/extensions/transcript/roster_emit.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "d3ee1585947ac33e3cf6ec79b17186fa9e384ba7",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/roster_emit.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/roster_emit_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust shipping roster emitter reuses ProductionSessionWorkers summaries, ProductionTranscriptRuntime run-state/snapshot projection and the existing HostReplicaWriter. It emits the frozen complete `agents` and incremental `agent-upserted` payloads with activeAgentId, roster replica ordering and complete-roster coverage; incremental emission falls back to a full roster until its cache is seeded. Host profile-watch production composition owns the event sink."
     },
     {
       "referencePath": "source/host/extensions/transcript/roster-projection.ts",
