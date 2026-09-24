@@ -23,6 +23,7 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffTrigger, PendingHandoff, ScreenshotPayload,
 };
+use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse;
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
@@ -51,6 +52,7 @@ use mahayana_host_runtime::extensions::webauthn_proxy::extension::{
 use mahayana_host_runtime::extensions::telemetry::webauthn_proxy_telemetry::{
     WebAuthnProxyReport, webauthn_proxy_telemetry,
 };
+use mahayana_host_runtime::extensions::telemetry::extension::start_host_telemetry_extension;
 use mahayana_host_runtime::extensions::trays::extension::{
     HostTraysExtension, start_trays_extension,
 };
@@ -1215,10 +1217,26 @@ fn main() {
     let gateway_events = GatewayEventHub::default();
     let settings_extension = start_settings_extension();
     let settings_for_session = Arc::clone(&settings_extension);
+    let host_telemetry = match start_host_telemetry_extension(&app_data_dir) {
+        Ok(telemetry) => telemetry,
+        Err(error) => {
+            eprintln!("failed to start Mahayana Host telemetry extension: {error}");
+            return;
+        }
+    };
+    let session_workers = Arc::new(
+        ProductionSessionWorkers::production_with_user_time_zone_resolver(
+            Arc::new(move || settings_for_session.get_user_time_zone()),
+        ),
+    );
     let handoff_prepare_box = Arc::clone(&forever_box);
     let handoff_screenshot_box = Arc::clone(&forever_box);
     let handoff_status_box = Arc::clone(&forever_box);
     let handoff_status_events = gateway_events.clone();
+    let handoff_started_events = gateway_events.clone();
+    let handoff_ended_events = gateway_events.clone();
+    let handoff_logs = host_telemetry.logs.clone();
+    let handoff_analytics = host_telemetry.analytics.clone();
     let handoff_deps = BoxHandoffDeps {
         prepare: Some(Arc::new(move |request| {
             handoff_prepare_box
@@ -1239,25 +1257,38 @@ fn main() {
                 "payload": project_forever_box_status(&status, pending.as_ref()),
             }));
         })),
-        report_box_help: Some(Arc::new(|event| {
-            eprintln!("mahayana-host-box-help {}", event);
+        on_started: Some(Arc::new(move |event| {
+            handoff_started_events.publish(serde_json::json!({
+                "channel": "session.box-handoff-started",
+                "payload": {
+                    "agentId": event.agent_id,
+                    "instruction": event.instruction,
+                },
+            }));
         })),
-        track_event: Some(Arc::new(|name, properties| {
-            eprintln!(
-                "mahayana-host-product-event name={} properties={}",
-                name, properties
-            );
+        on_ended: Some(Arc::new(move |event| {
+            handoff_ended_events.publish(serde_json::json!({
+                "channel": "session.box-handoff-ended",
+                "payload": {
+                    "agentId": event.agent_id,
+                    "requestId": event.request_id,
+                    "resolution": event.resolution,
+                    "trigger": event.trigger,
+                },
+            }));
+            Ok(())
         })),
-        report: Some(Arc::new(|event| {
-            eprintln!("mahayana-host-box-handoff {}", event);
+        report_box_help: Some(Arc::new(move |event| {
+            let _ = handoff_logs.report_box_help(&event);
+        })),
+        track_event: Some(Arc::new(move |name, properties| {
+            let _ = handoff_analytics.track_event(name, &properties);
         })),
         ..BoxHandoffDeps::default()
     };
     let session_extension = start_session_extension(
         Arc::clone(&production_extensions.experiments),
-        Arc::new(ProductionSessionWorkers::production_with_user_time_zone_resolver(
-            Arc::new(move || settings_for_session.get_user_time_zone()),
-        )),
+        Arc::clone(&session_workers),
         handoff_deps,
     );
     let session_workers = session_extension.store();

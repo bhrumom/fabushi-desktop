@@ -12251,7 +12251,7 @@
       "targetPath": "source/host/src/extensions/session/box_handoff_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "bd8c0ed4d7f35eb1558f1824f364bfcc74ccc889",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12259,17 +12259,20 @@
         "source/host/src/extensions/session/box_handoff_service.rs",
         "source/host/src/extensions/session/extension.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/extensions/forever_box/forever_box_service.rs"
+        "source/host/src/extensions/forever_box/forever_box_service.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/src/extensions/telemetry/extension.rs"
       ],
       "testEvidence": [
         "source/host/tests/box_handoff_service_contract.rs",
         "source/host/tests/session_extension_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/extensions_forever_box_contract.rs",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/host_telemetry_service_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust Host-owned handoff service implements frozen pending/request isolation, duplicate fencing, hand-back defaults, async screenshot timeout/base64 projection, stale-request fencing, status callbacks and telemetry normalization. Shipping Session now injects real production deps: prepare calls ForeverBox.ensure, screenshot calls ForeverBox's generated ComputerUse screenshot owner, status changes publish the renderer's forever-box payload with the current handoff, and get/ensure/handBackForeverBox are owned by the Rust Host Gateway. Final remains withheld only for replacing structured Host log projections with the frozen analytics/brain telemetry owners and proving those telemetry/report semantics end-to-end."
+      "notes": "Final Rust port of frozen BoxHandoffService: pending/request isolation, duplicate fencing, hand-back defaults, async screenshot timeout/base64 projection, stale-request fencing, status callbacks and exact telemetry normalization. Shipping production deps now match the frozen owner boundary: prepare/screenshot use ForeverBox, start/end emit Host lifecycle events, status publishes forever-box state, reportBoxHelp routes to the telemetry structured-log owner, and sand.box_help routes to product analytics. The optional generic report callback remains absent in production exactly as in frozen createSessionProductionExtras."
     },
     {
       "referencePath": "source/host/extensions/session/channel-store.ts",
@@ -12391,7 +12394,7 @@
       "targetPath": "source/host/src/extensions/session/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "c0ddf9582a9bcb74017042f40c7900c404044536",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12404,7 +12407,9 @@
         "source/host/src/extensions/settings/settings_service.rs",
         "source/host/src/extensions/experiments/extension.rs",
         "source/host/src/extensions/session/conversation_size_limits.rs",
-        "source/host/src/extensions/forever_box/forever_box_service.rs"
+        "source/host/src/extensions/forever_box/forever_box_service.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/src/extensions/telemetry/extension.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_extension_contract.rs",
@@ -12416,10 +12421,11 @@
         "source/host/tests/session_store_factories_contract.rs",
         "source/host/tests/extensions_experiments_contract.rs",
         "source/host/tests/conversation_size_limits_contract.rs",
-        "source/host/tests/extensions_forever_box_contract.rs"
+        "source/host/tests/extensions_forever_box_contract.rs",
+        "source/host/tests/host_telemetry_service_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust SessionExtension owns the production Session store, Box handoff lifetime, experiment pins, startup maintenance, conversation-size dynamic config and live Settings timezone. Its handoff dependencies are no longer defaults: shipping Host injects ForeverBox prepare/screenshot and forever-box status publication through the real Gateway. Final remains withheld for exact frozen telemetry/analytics owner composition for Box handoff reporting."
+      "notes": "Final Rust Session extension lifecycle: production Session store ownership, Box handoff lifetime, experiment pins, startup maintenance, conversation-size dynamic config and live Settings timezone. Handoff deps are production-owned and now use the telemetry extension API rather than Host stderr; started/ended/status lifecycle events are projected at the Host boundary for Transcript/AutoReview consumers. Stop/dispose closes Session workers and experiment subscriptions."
     },
     {
       "referencePath": "source/host/extensions/session/pending-card-sweeps.ts",
@@ -12477,7 +12483,9 @@
         "source/host/src/extensions/session/session_summaries.rs",
         "source/host/src/agents/agent_avatar.rs",
         "source/host/src/extensions/settings/settings_service.rs",
-        "source/host/src/automations/automation_schedule.rs"
+        "source/host/src/automations/automation_schedule.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/src/extensions/telemetry/extension.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_production_contract.rs",
@@ -12505,9 +12513,10 @@
         "source/host/tests/settings_service_contract.rs",
         "source/host/tests/automation_schedule_contract.rs",
         "source/host/tests/session_store_factories_contract.rs",
-        "source/host/tests/agent_db_owner_contract.rs"
+        "source/host/tests/agent_db_owner_contract.rs",
+        "source/host/tests/host_telemetry_service_contract.rs"
       ],
-      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels, automations, workflows and roster. Shipping Session now also owns frozen cap-time pruned-placeholder reclaim and fallback-session adoption through the same mint critical section, preserving the active agent and closing DB/blob owners before reclaim. Remaining parity is memory composition, box handoff production deps, watcher/cross-extension cleanup and the remaining Session facade lifecycle features. Production roster/summary now also projects the canonical cached avatar data URL/version from the Rust avatar owner instead of leaving the frozen readAvatar hook unwired. Shipping Session store factories now receive a live SettingsService timezone resolver; automation/workflow records derive nextRunAt with frozen timezone semantics. Production Session now owns the deleting-agent set consumed by roster, summary and missing-DB recovery. Host-lifetime SandAgentDb ownership now directly executes profile, awaiting-user-response and clearConversation mutations; these shipping paths no longer reopen SQLite projection connections. Host-lifetime AgentDb ownership now also executes unread/activity/viewed/read, introduction, spend guard, request/episode, prompt-snapshot and transient-state mutations.\nProduction Session now routes conversation-partner and transcript append/update/delete mutations through the Host-lifetime SandAgentDb owner alongside the existing unread/request/episode/snapshot mutation paths.\nShipping transcript entries/page/window/tail/thread reads now use the Host-lifetime SandAgentDb owner; prepareExistingAgent reuses that same live owner for transcript tail instead of opening a second SQLite reader."
+      "notes": "Production Session owns Host-lifetime workers, serialized materialization, durable recovery/maintenance, AgentDb state, full ConversationState turn/todo/summary materialization, transcript projection/mutations, profile/avatar, channels, automations, workflows and roster. Shipping Session now also owns frozen cap-time pruned-placeholder reclaim and fallback-session adoption through the same mint critical section, preserving the active agent and closing DB/blob owners before reclaim. Remaining parity is memory composition, watcher/cross-extension cleanup and the remaining Session facade lifecycle features. Production roster/summary now also projects the canonical cached avatar data URL/version from the Rust avatar owner instead of leaving the frozen readAvatar hook unwired. Shipping Session store factories now receive a live SettingsService timezone resolver; automation/workflow records derive nextRunAt with frozen timezone semantics. Production Session now owns the deleting-agent set consumed by roster, summary and missing-DB recovery. Host-lifetime SandAgentDb ownership now directly executes profile, awaiting-user-response and clearConversation mutations; these shipping paths no longer reopen SQLite projection connections. Host-lifetime AgentDb ownership now also executes unread/activity/viewed/read, introduction, spend guard, request/episode, prompt-snapshot and transient-state mutations.\nProduction Session now routes conversation-partner and transcript append/update/delete mutations through the Host-lifetime SandAgentDb owner alongside the existing unread/request/episode/snapshot mutation paths.\nShipping transcript entries/page/window/tail/thread reads now use the Host-lifetime SandAgentDb owner; prepareExistingAgent reuses that same live owner for transcript tail instead of opening a second SQLite reader.\nFrozen Box handoff production deps are now complete at the Session boundary: ForeverBox screenshot/prepare, Host lifecycle events, status publication, structured-log reportBoxHelp and product analytics trackEvent all use production owners."
     },
     {
       "referencePath": "source/host/extensions/session/session-conversation-state.ts",
@@ -12966,12 +12975,19 @@
       "targetPath": "source/host/src/extensions/telemetry/analytics_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "4ea2919cfcc54b1c549f856188538ae032c5a522",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/analytics_service.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_telemetry_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust telemetry slice now owns product analytics event sanitization and a durable Host product-event ingress used by shipping Session Box handoff. Final remains withheld for the complete frozen TelemetryService facade, automation-run wrapper, Statsig activation/gating and backend analytics transport."
     },
     {
       "referencePath": "source/host/extensions/telemetry/auto-review-approval-telemetry.ts",
@@ -13147,12 +13163,19 @@
       "targetPath": "source/host/src/extensions/telemetry/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "04322eb289dc8f6d41c10d9922571f7611dba858",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/extension.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_telemetry_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now starts a telemetry extension before Session and injects its logs/analytics owners into production Session handoff composition. Final remains withheld for the frozen extension dependency graph, HostTelemetryService start/dispose lifecycle, experiment diagnostics pinning, lifecycle progress and full telemetry transport."
     },
     {
       "referencePath": "source/host/extensions/telemetry/host-crash-marker.ts",
@@ -13240,12 +13263,18 @@
       "targetPath": "source/host/src/extensions/telemetry/host_telemetry_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "67367ddf770ee26c18a7204b5fe85e9406480425",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_telemetry_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host telemetry service now owns durable thread-safe JSONL ingress and exposes separate structured-log and product-analytics owners to shipping Host extensions. This is real production ownership for Box handoff telemetry; final remains withheld for auth/experiments/inference integration, tracing, activation, box-log shipping, health forwarding, fatal flush and backend transport."
     },
     {
       "referencePath": "source/host/extensions/telemetry/host-tracing.ts",
@@ -13454,12 +13483,19 @@
       "targetPath": "source/host/src/extensions/telemetry/structured_log_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "5e19374e02f4984899ea48f06b1d70798bd17418",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/structured_log_telemetry.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_telemetry_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust structured-log slice now implements the exact frozen sand.box_help projection and durable Host structured-log ingress used by shipping Session. Final remains withheld for the complete structured-log event surface, identity hold/flush policies, confirmed shipping transport and disposal semantics."
     },
     {
       "referencePath": "source/host/extensions/telemetry/turn-empty-delivery-telemetry.ts",

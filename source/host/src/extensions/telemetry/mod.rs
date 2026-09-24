@@ -31,3 +31,8 @@ pub mod sand_error_tags;
 pub mod memory_synthesis_telemetry;
 pub mod journal_outcome_telemetry;
 pub mod webauthn_proxy_telemetry;
+
+pub mod analytics_service;
+pub mod extension;
+pub mod host_telemetry_service;
+pub mod structured_log_telemetry;
