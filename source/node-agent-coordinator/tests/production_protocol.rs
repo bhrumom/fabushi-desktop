@@ -16,7 +16,7 @@ mod unix {
     use std::process::{Command, Stdio};
     use std::sync::{
         Arc, Mutex,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         mpsc,
     };
     use std::thread;
@@ -37,6 +37,7 @@ mod unix {
         token: String,
         oauth_callback_port: u16,
         oauth_completion: Arc<Mutex<Option<Value>>>,
+        oauth_completion_attempts: Arc<AtomicUsize>,
         webauthn_batches: Arc<Mutex<Vec<Value>>>,
         stop: Arc<AtomicBool>,
         worker: Option<thread::JoinHandle<()>>,
@@ -58,12 +59,14 @@ mod unix {
                 .port();
             drop(oauth_callback_probe);
             let oauth_completion = Arc::new(Mutex::new(None));
+            let oauth_completion_attempts = Arc::new(AtomicUsize::new(0));
             let webauthn_batches = Arc::new(Mutex::new(Vec::new()));
             let crash_path = data_dir.join("fake-host-crash");
             let stop = Arc::new(AtomicBool::new(false));
             let worker_stop = Arc::clone(&stop);
             let worker_token = token.clone();
             let worker_oauth_completion = Arc::clone(&oauth_completion);
+            let worker_oauth_completion_attempts = Arc::clone(&oauth_completion_attempts);
             let worker_webauthn_batches = Arc::clone(&webauthn_batches);
             let worker = thread::spawn(move || {
                 while !worker_stop.load(Ordering::Acquire) {
@@ -82,6 +85,7 @@ mod unix {
                                     handler_stop.as_ref(),
                                     oauth_callback_port,
                                     oauth_completion.as_ref(),
+                                    oauth_completion_attempts.as_ref(),
                                     webauthn_batches.as_ref(),
                                 );
                             });
@@ -103,6 +107,7 @@ mod unix {
                 token,
                 oauth_callback_port,
                 oauth_completion,
+                oauth_completion_attempts,
                 webauthn_batches,
                 stop,
                 worker: Some(worker),
@@ -119,6 +124,10 @@ mod unix {
 
         fn oauth_callback_port(&self) -> u16 {
             self.oauth_callback_port
+        }
+
+        fn oauth_completion_attempts(&self) -> usize {
+            self.oauth_completion_attempts.load(Ordering::Acquire)
         }
 
         fn wait_for_oauth_completion(&self) -> Value {
@@ -182,6 +191,7 @@ mod unix {
         stop: &AtomicBool,
         oauth_callback_port: u16,
         oauth_completion: &Mutex<Option<Value>>,
+        oauth_completion_attempts: &AtomicUsize,
         webauthn_batches: &Mutex<Vec<Value>>,
     ) -> io::Result<()> {
         stream.set_read_timeout(Some(Duration::from_secs(2)))?;
@@ -344,6 +354,14 @@ mod unix {
                 r#"{"accepted":true}"#,
             ),
             ("POST", "/api/completeMcpOAuth") => {
+                let attempt = oauth_completion_attempts.fetch_add(1, Ordering::AcqRel);
+                if attempt == 0 {
+                    return write_fake_response(
+                        &mut stream,
+                        503,
+                        r#"{"error":"transient oauth completion failure"}"#,
+                    );
+                }
                 let payload = serde_json::from_slice::<Value>(&request[header_end..total])
                     .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
                 *oauth_completion
@@ -368,6 +386,7 @@ mod unix {
             401 => "Unauthorized",
             404 => "Not Found",
             431 => "Request Header Fields Too Large",
+            503 => "Service Unavailable",
             _ => "Response",
         };
         write!(
@@ -843,6 +862,11 @@ exit 17
                 "state": "state-live"
             }),
             "Coordinator did not forward the browser callback to completeMcpOAuth"
+        );
+        assert_eq!(
+            gateway.oauth_completion_attempts(),
+            2,
+            "shipping Coordinator did not retry one transient OAuth completion failure"
         );
 
         send(

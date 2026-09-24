@@ -685,22 +685,51 @@ fn complete_oauth_callback(
     callback: OAuthCallback,
 ) -> Result<(), Failure> {
     let generation = state.host_generation.load(Ordering::SeqCst);
-    let connection = wait_for_gateway_connection(state, generation).map_err(|error| {
+    let payload = json!({
+        "code": callback.code,
+        "state": callback.state,
+    });
+    let mut last_failure = None;
+    for attempt in 0..2 {
+        let connection = match wait_for_gateway_connection(state, generation) {
+            Ok(connection) => connection,
+            Err(error) => {
+                let failure = Failure::new(
+                    "MCP_OAUTH_COMPLETION_UNAVAILABLE",
+                    format!("Host gateway unavailable during OAuth completion: {error}"),
+                );
+                if attempt == 0 {
+                    last_failure = Some(failure);
+                    thread::sleep(Duration::from_millis(25));
+                    continue;
+                }
+                return Err(failure);
+            }
+        };
+        match dispatch_http_json(&connection, "completeMcpOAuth", payload.clone()) {
+            Ok(_) => return Ok(()),
+            Err(error) => {
+                let retryable = matches!(
+                    error,
+                    GatewayDispatchError::Unreachable { .. }
+                        | GatewayDispatchError::Transport(_)
+                );
+                let failure = failure_for(&error);
+                if attempt == 0 && retryable {
+                    last_failure = Some(failure);
+                    thread::sleep(Duration::from_millis(25));
+                    continue;
+                }
+                return Err(failure);
+            }
+        }
+    }
+    Err(last_failure.unwrap_or_else(|| {
         Failure::new(
             "MCP_OAUTH_COMPLETION_UNAVAILABLE",
-            format!("Host gateway unavailable during OAuth completion: {error}"),
+            "OAuth completion exhausted its bounded Host gateway retry",
         )
-    })?;
-    dispatch_http_json(
-        &connection,
-        "completeMcpOAuth",
-        json!({
-            "code": callback.code,
-            "state": callback.state,
-        }),
-    )
-    .map(|_| ())
-    .map_err(|error| failure_for(&error))
+    }))
 }
 
 fn apply_oauth_actions(state: &Arc<CoordinatorState>, actions: Vec<OAuthForwarderAction>) {
