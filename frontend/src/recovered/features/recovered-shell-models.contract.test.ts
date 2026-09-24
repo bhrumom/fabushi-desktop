@@ -202,7 +202,7 @@ test("global shortcut controller reference-counts listener and honors unstacked 
   assert.deepEqual(calls, ["close", "close"]);
 
   listener?.(keyboardEvent(",", { ctrlKey: true }) as unknown as KeyboardEvent);
-  assert.deepEqual(calls, ["close", "settings"]);
+  assert.deepEqual(calls, ["close", "close", "settings"]);
 
   offA();
   assert.equal(removes, 0);
