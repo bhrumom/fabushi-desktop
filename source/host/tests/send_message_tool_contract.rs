@@ -246,6 +246,10 @@ struct ResolvingSink {
 }
 
 impl SendMessageSink for ResolvingSink {
+    fn read_media_dimensions(&self, resolved_url: &str) -> Option<(u32, u32)> {
+        resolved_url.ends_with(".png").then_some((640, 480))
+    }
+
     fn resolve_attachment_source(
         &self,
         source_url: &str,
@@ -338,16 +342,32 @@ fn send_message_bridge_resolves_text_images_and_standalone_attachments_before_pe
         }),
         "attachment-call",
     ).expect("attachment message");
+    bridge.call_tool(
+        &tool,
+        json!({
+            "type":"attachment",
+            "url":"file:///workspace/standalone.png",
+            "alt":"standalone"
+        }),
+        "image-attachment-call",
+    ).expect("standalone image attachment");
 
     let messages = sink.messages.lock().expect("messages");
     assert_eq!(messages[0]["images"][0]["url"], "file:///persisted/cat.png");
+    assert_eq!(messages[0]["images"][0]["width"], 640);
+    assert_eq!(messages[0]["images"][0]["height"], 480);
     assert_eq!(messages[1]["url"], "file:///persisted/report.pdf");
     assert_eq!(messages[1]["file_name"], "report.pdf");
+    assert!(messages[1].get("width").is_none());
+    assert_eq!(messages[2]["url"], "file:///persisted/standalone.png");
+    assert_eq!(messages[2]["width"], 640);
+    assert_eq!(messages[2]["height"], 480);
     assert_eq!(
         sink.sources.lock().expect("sources").as_slice(),
         &[
             "file:///workspace/cat.png".to_string(),
-            "file:///workspace/report.pdf".to_string()
+            "file:///workspace/report.pdf".to_string(),
+            "file:///workspace/standalone.png".to_string()
         ]
     );
 }

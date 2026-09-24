@@ -123,6 +123,7 @@ use mahayana_host_runtime::runner::tools::box_help_tool::{BoxHelpOutcome, BoxHel
 use mahayana_host_runtime::runner::tools::send_message_tool::{
     ResolvedAttachmentSource, SendMessageSink, file_path_from_file_url,
 };
+use mahayana_host_runtime::selected_image_inputs::read_image_file_dimensions;
 use mahayana_host_runtime::runner::tools::sand_reaction_tool::ReactionSink;
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
@@ -455,6 +456,13 @@ impl SendMessageSink for ProductionSendMessageSink {
         )
         .unwrap_or_else(|| source_url.to_string());
         Ok(ResolvedAttachmentSource { url: resolved, file_name })
+    }
+
+    fn read_media_dimensions(&self, resolved_url: &str) -> Option<(u32, u32)> {
+        let path = file_path_from_file_url(resolved_url)?;
+        let path = path.to_str()?;
+        let dimensions = read_image_file_dimensions(path)?;
+        Some((dimensions.width, dimensions.height))
     }
 
     fn send_message(

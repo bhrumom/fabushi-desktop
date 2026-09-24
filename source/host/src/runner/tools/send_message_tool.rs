@@ -71,6 +71,10 @@ pub trait SendMessageSink: Send + Sync {
         Ok(identity_attachment_source(source_url))
     }
 
+    fn read_media_dimensions(&self, _resolved_url: &str) -> Option<(u32, u32)> {
+        None
+    }
+
     fn send_message(
         &self,
         message: Value,
@@ -120,10 +124,16 @@ fn build_sand_send_message(
                     .iter()
                     .map(|image| {
                         let source = sink.resolve_attachment_source(&image.url, tool_call_id)?;
-                        Ok::<_, ProviderSessionError>(json!({
+                        let dimensions = sink.read_media_dimensions(&source.url);
+                        let mut image_value = json!({
                             "url": source.url,
                             "alt": image.alt,
-                        }))
+                        });
+                        if let Some((width, height)) = dimensions {
+                            image_value["width"] = Value::Number(width.into());
+                            image_value["height"] = Value::Number(height.into());
+                        }
+                        Ok::<_, ProviderSessionError>(image_value)
                     })
                     .collect::<Result<Vec<_>, _>>()?;
                 value["images"] = Value::Array(resolved);
@@ -142,6 +152,10 @@ fn build_sand_send_message(
             });
             if let Some(file_name) = source.file_name {
                 value["file_name"] = Value::String(file_name);
+            }
+            if let Some((width, height)) = sink.read_media_dimensions(&source.url) {
+                value["width"] = Value::Number(width.into());
+                value["height"] = Value::Number(height.into());
             }
             value
         },

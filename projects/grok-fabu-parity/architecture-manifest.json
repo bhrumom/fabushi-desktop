@@ -16864,7 +16864,8 @@
         "source/host/src/runner/turn_agent_composition.rs",
         "source/host/app/src/main.rs",
         "source/host/src/extensions/session/production.rs",
-        "source/host/src/attachment_paths.rs"
+        "source/host/src/attachment_paths.rs",
+        "source/host/src/selected_image_inputs.rs"
       ],
       "testEvidence": [
         "source/host/tests/send_message_tool_contract.rs",
@@ -16872,7 +16873,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Runner exposes SendMessage as a first-party RoutedToolBridge ahead of delegated MCP tools. Calls are schema-validated, normalized/encoded and durably appended to the authoritative Rust Session transcript. Text images and standalone file:// attachments now pass through frozen resolveAttachmentSource ordering: local Host ingest first, ForeverBox fallback second, stable filename preservation and agent-owned media persistence. Final remains withheld for cloud-agent title lookup, https file-vs-media classification, media dimensions, external channel delivery, live awaiting-user-selection state, and the exact generated proto interaction-handler partial/final tool-call surface."
+      "notes": "Shipping Runner exposes SendMessage as a first-party RoutedToolBridge ahead of delegated MCP tools. Calls are schema-validated, normalized/encoded and durably appended to the authoritative Rust Session transcript. Text images and standalone file:// attachments pass through frozen resolveAttachmentSource ordering: local Host ingest first, ForeverBox fallback second, stable filename preservation and agent-owned media persistence. Frozen readMediaDimensions parity is now production-wired: resolved local/persisted image URLs are inspected and width/height are stamped on both text-inline images and standalone image attachments before transcript persistence. Final remains withheld for cloud-agent title lookup, https file-vs-media classification, external channel delivery, live awaiting-user-selection state, and the exact generated proto interaction-handler partial/final tool-call surface."
     },
     {
       "referencePath": "source/host/runner/tools/tool-input-error.ts",
