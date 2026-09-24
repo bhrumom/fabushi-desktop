@@ -401,3 +401,54 @@ fn production_fallback_reports_failed_adoption_and_continues_to_valid_session() 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn production_materialization_reuses_host_lifetime_agent_store_owner_until_explicit_release() {
+    let root = temp_root("agent-store-owner");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let first = workers
+        .materialize_session_with_active(None, "user", None, None)
+        .expect("materialized session");
+    let agent_id = first.record.id.clone();
+    let first_owner = Arc::clone(&first.agent_store);
+
+    assert_eq!(workers.active_agent_store_owner_count(), 1);
+    drop(first);
+    assert_eq!(
+        workers.active_agent_store_owner_count(),
+        1,
+        "materialized facade projection must not own the checkpoint lifetime"
+    );
+
+    let reopened = workers
+        .open_materialized_session(&agent_id)
+        .expect("open materialized session")
+        .expect("existing session");
+    assert!(
+        Arc::ptr_eq(&first_owner, &reopened.agent_store),
+        "create/open must share one Host-lifetime ProductionAgentStore owner"
+    );
+    assert_eq!(workers.active_agent_store_owner_count(), 1);
+    drop(reopened);
+
+    assert!(workers.close_agent_store_owner(&agent_id, true));
+    assert_eq!(workers.active_agent_store_owner_count(), 0);
+
+    let reopened_after_release = workers
+        .open_materialized_session(&agent_id)
+        .expect("reopen after owner release")
+        .expect("existing session");
+    assert!(
+        !Arc::ptr_eq(&first_owner, &reopened_after_release.agent_store),
+        "explicit release must force a new checkpoint owner"
+    );
+    assert_eq!(workers.active_agent_store_owner_count(), 1);
+    drop(reopened_after_release);
+    drop(first_owner);
+
+    workers.shutdown();
+    assert_eq!(workers.active_agent_store_owner_count(), 0);
+    assert_eq!(workers.active_agent_db_owner_count(), 0);
+    let _ = fs::remove_dir_all(root);
+}

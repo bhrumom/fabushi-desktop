@@ -100,7 +100,7 @@ pub struct ProductionMaterializedSession {
     pub record: MaterializedAgentRecord,
     pub prepared: PreparedAgentBlobStore,
     pub db: Arc<SandAgentDb>,
-    pub agent_store: ProductionAgentStore,
+    pub agent_store: Arc<ProductionAgentStore>,
     pub memory: FileMemoryStore,
     pub automations: FileAutomationStore,
     pub workflows: FileWorkflowStore,
@@ -136,6 +136,7 @@ pub struct ProductionSessionWorkers {
     memory_service: Arc<MemoryService>,
     mint_queue: SessionMintQueue,
     db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
+    agent_store_owners: Mutex<BTreeMap<String, Arc<ProductionAgentStore>>>,
     deleting_agents: Mutex<BTreeSet<String>>,
     roster_extras_cache: RosterExtrasCache,
     user_time_zone_resolver: UserTimeZoneResolver,
@@ -215,6 +216,7 @@ impl ProductionSessionWorkers {
             conversation_state: SessionConversationState::new(busy_timeout_ms),
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
+            agent_store_owners: Mutex::new(BTreeMap::new()),
             deleting_agents: Mutex::new(BTreeSet::new()),
             roster_extras_cache: RosterExtrasCache::default(),
             user_time_zone_resolver,
@@ -269,6 +271,7 @@ impl ProductionSessionWorkers {
         for agent_id in candidates {
             let db_path = self.session_db_path(&agent_id)?;
             let blob_path = conversation_blobs_path(&db_path);
+            let _ = self.close_agent_store_owner(&agent_id, false);
             let _ = self.close_agent_db_owner(&agent_id, false);
             futures::executor::block_on(self.pool.close_store(&blob_path));
             match fs::remove_dir_all(self.agents_root.join(&agent_id)) {
@@ -400,9 +403,7 @@ impl ProductionSessionWorkers {
         prepared: PreparedAgentBlobStore,
     ) -> Result<ProductionMaterializedSession, String> {
         let db = self.open_agent_db_owner(&record.id)?;
-        let blob_store = self.create_agent_blob_store(&record.id)?;
-        let agent_store = ProductionAgentStore::new(Arc::clone(&db), blob_store);
-        let _ = agent_store.try_reset_from_db();
+        let agent_store = self.open_agent_store_owner(&record.id)?;
         let memory = self
             .memory_service
             .create_agent_store(self.agents_root.join(&record.id));
@@ -708,6 +709,63 @@ impl ProductionSessionWorkers {
         } else {
             false
         }
+    }
+
+    pub fn open_agent_store_owner(
+        &self,
+        agent_id: &str,
+    ) -> Result<Arc<ProductionAgentStore>, String> {
+        if let Some(owner) = self
+            .agent_store_owners
+            .lock()
+            .map_err(|_| "agent store owner map poisoned".to_string())?
+            .get(agent_id)
+            .cloned()
+        {
+            return Ok(owner);
+        }
+
+        let db = self.open_agent_db_owner(agent_id)?;
+        let blob_store = self.create_agent_blob_store(agent_id)?;
+        let candidate = Arc::new(ProductionAgentStore::new(db, blob_store));
+        let _ = candidate.try_reset_from_db();
+
+        let mut owners = self
+            .agent_store_owners
+            .lock()
+            .map_err(|_| "agent store owner map poisoned".to_string())?;
+        if let Some(owner) = owners.get(agent_id) {
+            return Ok(Arc::clone(owner));
+        }
+        owners.insert(agent_id.to_string(), Arc::clone(&candidate));
+        Ok(candidate)
+    }
+
+    pub fn close_agent_store_owner(
+        &self,
+        agent_id: &str,
+        flush: bool,
+    ) -> bool {
+        let owner = self
+            .agent_store_owners
+            .lock()
+            .ok()
+            .and_then(|mut owners| owners.remove(agent_id));
+        if let Some(owner) = owner {
+            if flush {
+                owner.flush();
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn active_agent_store_owner_count(&self) -> usize {
+        self.agent_store_owners
+            .lock()
+            .map(|owners| owners.len())
+            .unwrap_or_default()
     }
 
     pub fn roster_extras_cache_entry_count(&self) -> usize {
@@ -1273,12 +1331,22 @@ impl ProductionSessionWorkers {
     }
 
     pub fn shutdown(&self) {
-        let owners = self
+        let agent_stores = self
+            .agent_store_owners
+            .lock()
+            .map(|mut owners| std::mem::take(&mut *owners).into_values().collect::<Vec<_>>())
+            .unwrap_or_default();
+        for owner in &agent_stores {
+            owner.flush();
+        }
+        drop(agent_stores);
+
+        let db_owners = self
             .db_owners
             .lock()
             .map(|mut owners| std::mem::take(&mut *owners).into_values().collect::<Vec<_>>())
             .unwrap_or_default();
-        for owner in owners {
+        for owner in db_owners {
             owner.close(false);
         }
         futures::executor::block_on(self.pool.close_all());

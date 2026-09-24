@@ -184,6 +184,7 @@ impl SandAgentSessionStore {
         let result = (|| {
             let db_path = self.production.session_db_path(agent_id)?;
             let blob_path = conversation_blobs_path(&db_path);
+            let _ = self.production.close_agent_store_owner(agent_id, false);
             let _ = self.production.close_agent_db_owner(agent_id, false);
             futures::executor::block_on(self.production.worker_pool().close_store(&blob_path));
             delete_sand_agent_db_write_generation(&db_path);

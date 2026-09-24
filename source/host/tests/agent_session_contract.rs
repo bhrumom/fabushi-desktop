@@ -80,6 +80,7 @@ fn delete_session_closes_owned_blob_store_clears_directory_and_publishes_removal
         .create_session(None, "user", None)
         .expect("agent");
     let _ = store.open_session(&record.id).expect("open existing");
+    assert_eq!(production.active_agent_store_owner_count(), 1);
     let removals = Arc::new(AtomicUsize::new(0));
     let subscription = subscribe_transcript_mutations({
         let removals = Arc::clone(&removals);
@@ -96,6 +97,7 @@ fn delete_session_closes_owned_blob_store_clears_directory_and_publishes_removal
     store.delete_session(&record.id).expect("delete");
     assert!(!store.agent_dir_exists(&record.id));
     assert!(!store.agent_exists(&record.id));
+    assert_eq!(production.active_agent_store_owner_count(), 0);
     assert_eq!(removals.load(Ordering::SeqCst), 1);
 
     subscription.unsubscribe();
