@@ -4,6 +4,7 @@ pub mod conversation_blob_db;
 pub mod conversation_blob_gc;
 pub mod conversation_blob_store;
 pub mod legacy_blob_retirement;
+pub mod transcript_mirror_offload;
 pub mod transcript_mirror_worker;
 pub mod worker_blob_store;
 
@@ -31,4 +32,9 @@ pub use conversation_blob_store::{
     ConversationBlobStoreDb, ConversationBlobStoreError, ConversationBlobWorkerBackend,
 };
 pub use legacy_blob_retirement::verify_legacy_blob_retirement;
+pub use transcript_mirror_offload::{
+    DEFAULT_MIRROR_WORKERS, TranscriptMirrorOffloadPool, TranscriptMirrorOffloadPoolOptions,
+    TranscriptMirrorWorkerFn,
+};
+pub use transcript_mirror_worker::TranscriptMirrorWorkerJob;
 pub use worker_blob_store::WorkerBlobStore;

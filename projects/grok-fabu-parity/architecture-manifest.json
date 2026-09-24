@@ -9261,12 +9261,21 @@
       "targetPath": "source/host/src/agent_isolation/transcript_mirror_offload.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f927cb28ab6b42795177e4712f052da61fcecc66",
       "architecturalRole": "host/agent-isolation",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/agent_isolation/transcript_mirror_offload.rs",
+        "source/host/src/agent_isolation/transcript_mirror_worker.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_mirror_offload_contract.rs",
+        "source/host/tests/transcript_mirror_worker_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production primitive ports frozen UTF-16/i32 conversation sharding, lazy long-lived workers, same-conversation serialization, newest-checkpoint coalescing with all queued waiters following the newest result, closed-pool rejection and worker lifecycle. The pool invokes the real Rust transcript mirror worker job. Final is withheld until OffloadingTranscriptMirror incremental/full fallback and source/host/transcript-mirror/production-provider.ts are ported and the shipping Runner Agent checkpoint path consumes the provider."
     },
     {
       "referencePath": "source/host/agent-isolation/transcript-mirror-worker.ts",
@@ -9280,14 +9289,16 @@
       "behavioralEvidence": [
         "source/host/src/agent_isolation/transcript_mirror_worker.rs",
         "source/host/src/transcript_mirror/legacy_transcript_mirror.rs",
-        "source/host/src/transcript_mirror/conversation_state_binary.rs"
+        "source/host/src/transcript_mirror/conversation_state_binary.rs",
+        "source/host/src/agent_isolation/transcript_mirror_offload.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_worker_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/transcript_mirror_offload_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust worker owns frozen read-only multi-SQLite blob lookup, 5s busy timeout, ConversationStateStructure decode and full legacy mirror write. Final is withheld until TranscriptMirrorOffloadPool owns sharding/coalescing/lifecycle and the shipping production provider invokes the worker path."
+      "notes": "Rust worker owns frozen read-only multi-SQLite blob lookup, 5s busy timeout, ConversationStateStructure decode and full legacy mirror write. TranscriptMirrorOffloadPool now supplies frozen sharding/coalescing/lifecycle and invokes this real worker job. Final is withheld until the offloading mirror wrapper and shipping production provider route Runner Agent checkpoints through the pool."
     },
     {
       "referencePath": "source/host/agent-isolation/worker-blob-store.ts",
