@@ -16973,12 +16973,22 @@
       "targetPath": "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "e8a0b1f2474f766079484c792dd4ac04c27119c4",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
+        "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs",
+        "source/host/src/transcript_mirror/production_provider.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/generated_occurrence_codec_contract.rs",
+        "source/host/tests/transcript_mirror_production_provider_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust codec now decodes the frozen agent.v1 ConversationTurnStructure, UserMessage and ConversationStep outer wire contracts, including the complete frozen ToolCall oneof field-number/name table. Tool args/result JSON fails closed behind a mandatory GeneratedToolJsonProjection collaborator instead of guessing imported generated schemas. Final remains withheld until canonical generated agent.v1 Rust bindings (including imported tool messages) provide exact protobuf fromBinary/toJson behavior and the shipping production provider uses that collaborator."
     },
     {
       "referencePath": "source/host/transcript-mirror/legacy-transcript-mirror.ts",
@@ -17017,7 +17027,8 @@
         "source/host/src/transcript_mirror/transcript_mirror_router.rs",
         "source/host/src/agent_isolation/transcript_mirror_offload.rs",
         "source/host/src/agent_isolation/transcript_mirror_worker.rs",
-        "source/host/src/extensions/session/production_agent_store.rs"
+        "source/host/src/extensions/session/production_agent_store.rs",
+        "source/host/src/transcript_mirror/generated_occurrence_codec.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_production_provider_contract.rs",
@@ -17025,7 +17036,8 @@
         "source/host/tests/transcript_mirror_router_contract.rs",
         "source/host/tests/transcript_mirror_offload_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/generated_occurrence_codec_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust production provider now preserves the frozen dual-view checkpoint boundary: one complete ConversationStateStructure projection feeds a shared FileTranscriptMirror journal plus per-session OffloadingTranscriptMirror legacy path, reusing the real Production WorkerBlobStore and sticky router. The provider contract exercises real Session materialization, WorkerBlobStore reads and canonical JSONL commit. Final remains withheld because generated-occurrence-codec is not yet backed by the canonical generated agent.v1 Rust bindings and the shipping Runner still emits provider retry checkpoints rather than real Agent ConversationStateStructure checkpoints."
