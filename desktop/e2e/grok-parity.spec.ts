@@ -36,6 +36,10 @@ async function launchDesktopApp(appDataDir: string) {
       : { args: [appRoot] }),
     env: {
       ...process.env,
+      // Focused Electron acceptance must opt out of production background
+      // persistence so Playwright app.close() reaches the real before-quit
+      // cleanup path instead of being converted into a hidden-window session.
+      FABUSHI_E2E: '1',
       FABUSHI_APP_DATA: appDataDir,
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
       // Agent Network is a frozen Grok feature gate whose bundled default is OFF.
