@@ -2,6 +2,8 @@ use serde_json::{Value, json};
 
 use crate::extensions::session::production::ProductionSessionWorkers;
 
+use super::box_request_entries::resolve_box_request_entry;
+
 pub const BOX_HANDOFF_RESUME_PROMPT: &str =
     "[The user handed the box back to you. Please continue your task — start with the read-only Screenshot tool to see the current state of the box desktop.]";
 pub const BOX_HANDOFF_DISMISSED_PROMPT: &str =
@@ -50,50 +52,8 @@ pub fn settle_box_handoff_state(
     let awaiting_cleared = sessions
         .set_agent_awaiting_user_response(agent_id, None)
         .unwrap_or(false);
-
-    let entries = match sessions.read_agent_transcript_entries(agent_id) {
-        Ok(entries) => entries,
-        Err(error) => {
-            return Ok(BoxHandoffSettlement {
-                awaiting_cleared,
-                resolved_entry: {
-                    let _ = error;
-                    None
-                },
-            });
-        }
-    };
-
-    let Some(target) = entries.into_iter().find(|entry| {
-        entry.get("kind").and_then(Value::as_str) == Some("send-message")
-            && entry.get("boxRequestId").and_then(Value::as_str) == Some(request_id)
-            && entry.get("boxResolution").is_none_or(Value::is_null)
-    }) else {
-        return Ok(BoxHandoffSettlement {
-            awaiting_cleared,
-            resolved_entry: None,
-        });
-    };
-
-    let Some(entry_id) = target.get("id").and_then(Value::as_str).map(ToOwned::to_owned) else {
-        return Ok(BoxHandoffSettlement {
-            awaiting_cleared,
-            resolved_entry: None,
-        });
-    };
-    let Some(mut object) = target.as_object().cloned() else {
-        return Ok(BoxHandoffSettlement {
-            awaiting_cleared,
-            resolved_entry: None,
-        });
-    };
-    object.insert(
-        "boxResolution".into(),
-        Value::String(resolution.to_string()),
-    );
-    let next = Value::Object(object);
-    let resolved_entry = sessions
-        .update_agent_transcript_entry(agent_id, &entry_id, &next)?;
+    let resolved_entry =
+        resolve_box_request_entry(sessions, agent_id, request_id, resolution)?;
     Ok(BoxHandoffSettlement {
         awaiting_cleared,
         resolved_entry,
