@@ -114,6 +114,8 @@ fn provider_routes_real_worker_blob_store_through_shared_journal() {
             .create_agent_blob_store(&session.record.id)
             .expect("blob store"),
     );
+    futures::executor::block_on(store.set_blob(&(), &[0x01], &[0x01]))
+        .expect("turn blob");
     futures::executor::block_on(store.set_blob(&(), &[0x09], b"user"))
         .expect("user blob");
 
