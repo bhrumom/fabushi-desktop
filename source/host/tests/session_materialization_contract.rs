@@ -294,8 +294,20 @@ fn production_cap_reclaim_removes_invisible_placeholder_before_mint() {
 #[test]
 fn production_fallback_reports_failed_adoption_and_continues_to_valid_session() {
     let root = temp_root("fallback-diagnostic");
-    let existing = materialize_new_session(&root, 500, None, "user", None)
-        .expect("valid existing session");
+    let existing = materialize_new_session(
+        &root,
+        500,
+        Some(&SandAgentProfile {
+            name: "Visible Fallback".into(),
+            description: "keeps the durable session visible during cap reclaim".into(),
+            title: String::new(),
+            avatar_shape: String::new(),
+            avatar_color: String::new(),
+        }),
+        "user",
+        None,
+    )
+    .expect("valid existing session");
 
     let corrupt_id = "000-corrupt";
     let corrupt_dir = root.join(corrupt_id);
