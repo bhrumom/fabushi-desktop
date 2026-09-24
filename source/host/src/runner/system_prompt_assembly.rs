@@ -2,11 +2,22 @@ use serde_json::Value;
 
 use crate::host_request_context::HostRequestContext;
 
+use super::system_prompt::{
+    SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, build_sand_base_system_prompt,
+};
+
 pub fn render_request_context_system_prompt(
     context: &HostRequestContext,
     rules: Option<&[Value]>,
 ) -> String {
-    let mut sections = Vec::new();
+    // CloudAgent is not yet part of the production Rust TurnAgentComposition.
+    // Select the frozen disabled variant instead of advertising a tool the
+    // shipping Runner cannot actually execute. The exact enabled variant is
+    // available from system_prompt.rs for the later CloudAgent cutover.
+    let mut sections = vec![
+        build_sand_base_system_prompt(false).to_string(),
+        SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION.to_string(),
+    ];
 
     if let Some(time_zone) = context
         .time_zone

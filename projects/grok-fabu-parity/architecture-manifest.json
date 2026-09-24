@@ -16419,25 +16419,36 @@
       "behavioralEvidence": [
         "source/host/src/runner/system_prompt_assembly.rs",
         "source/host/src/runner/routed_provider_runtime.rs",
-        "source/host/src/extensions/inference/provider_session.rs"
+        "source/host/src/extensions/inference/provider_session.rs",
+        "source/host/src/runner/system_prompt.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_request_context_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/system_prompt_contract.rs"
       ],
-      "notes": "Rust Runner now owns the recovered request-context system-prompt slice: timezone, user identity, and loaded team-rule sections are projected into all routed providers as a true system message. The full Grok system-prompt assembly (memory, automations, workflows, channels, profile snapshots and remaining feature sections) is not yet ported, so this mapping is existing-needs-parity rather than final."
+      "notes": "Shipping Rust assembly now prepends the exact frozen Grok base system prompt (CloudAgent-disabled variant until that tool is production-composed), its explicit disabled section, timezone, user identity and team-rule sections into every routed-provider system message. Remaining assembly parity is memory/automations/workflows/channels/profile snapshots and other feature-dependent sections, so this mapping remains existing-needs-parity."
     },
     {
       "referencePath": "source/host/runner/system-prompt.ts",
       "targetPath": "source/host/src/runner/system_prompt.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "2939d3e6e30505f303b3e6a1d0143750558bef81",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/system_prompt.rs",
+        "source/host/src/runner/system_prompt_assembly.rs",
+        "source/host/src/runner/routed_provider_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/system_prompt_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port is generated directly from frozen Grok Bot 0.18 system-prompt.ts at reference blob 2939d3e6e30505f303b3e6a1d0143750558bef81: both 58,230-character CloudAgent-enabled and 52,385-character CloudAgent-disabled base prompts are preserved byte-for-byte after JS evaluation, together with reply-reminder, attachment-size/note, reply-context/message-address, media-review and subagent-safety helpers plus exported feature sections. Shipping routed-provider system-message assembly now prepends the frozen disabled variant and explicit disabled section because CloudAgent is not yet production-composed in the Rust TurnAgentComposition, avoiding false tool claims while retaining the exact enabled variant for cutover. Cargo contracts cover both prompt variants and helper semantics."
     },
     {
       "referencePath": "source/host/runner/tool-call-identity.ts",
