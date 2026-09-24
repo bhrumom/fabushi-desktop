@@ -59,6 +59,137 @@ pub fn project_runner_turn_context(
     Value::Object(projected)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InferenceStreamSupersede {
+    None,
+    DeferredUntilAccepted { stream_id: String },
+    CancelNow { stream_id: String },
+}
+
+#[derive(Debug, Clone)]
+struct ActiveInferenceStream {
+    stream_id: String,
+    accepted: bool,
+    supersede_requested: bool,
+}
+
+#[derive(Debug, Default)]
+pub struct ActiveInferenceStreamRegistry {
+    by_agent: Mutex<HashMap<String, ActiveInferenceStream>>,
+}
+
+impl ActiveInferenceStreamRegistry {
+    pub fn begin(&self, agent_id: &str, stream_id: &str) -> Result<(), Failure> {
+        let agent_id = agent_id.trim();
+        let stream_id = stream_id.trim();
+        if agent_id.is_empty() || stream_id.is_empty() {
+            return Err(Failure::new(
+                "INFERENCE_ACTIVE_STREAM_INVALID",
+                "active inference stream requires non-empty agent and stream ids",
+            ));
+        }
+        let mut active = self.by_agent.lock().map_err(|_| {
+            Failure::new(
+                "INFERENCE_ACTIVE_STREAM_LOCK_FAILED",
+                "active inference stream registry lock poisoned",
+            )
+        })?;
+        if let Some(existing) = active.get(agent_id) {
+            return Err(Failure::new(
+                "INFERENCE_ACTIVE_STREAM_CONFLICT",
+                format!(
+                    "agent {agent_id} already owns inference stream {}",
+                    existing.stream_id
+                ),
+            ));
+        }
+        active.insert(
+            agent_id.to_string(),
+            ActiveInferenceStream {
+                stream_id: stream_id.to_string(),
+                accepted: false,
+                supersede_requested: false,
+            },
+        );
+        Ok(())
+    }
+
+    pub fn request_supersede(&self, agent_id: &str) -> InferenceStreamSupersede {
+        let agent_id = agent_id.trim();
+        if agent_id.is_empty() {
+            return InferenceStreamSupersede::None;
+        }
+        let Ok(mut active) = self.by_agent.lock() else {
+            return InferenceStreamSupersede::None;
+        };
+        let Some(stream) = active.get_mut(agent_id) else {
+            return InferenceStreamSupersede::None;
+        };
+        if stream.accepted {
+            InferenceStreamSupersede::CancelNow {
+                stream_id: stream.stream_id.clone(),
+            }
+        } else {
+            stream.supersede_requested = true;
+            InferenceStreamSupersede::DeferredUntilAccepted {
+                stream_id: stream.stream_id.clone(),
+            }
+        }
+    }
+
+    pub fn mark_accepted(&self, agent_id: &str, stream_id: &str) -> Result<bool, Failure> {
+        let mut active = self.by_agent.lock().map_err(|_| {
+            Failure::new(
+                "INFERENCE_ACTIVE_STREAM_LOCK_FAILED",
+                "active inference stream registry lock poisoned",
+            )
+        })?;
+        let stream = active.get_mut(agent_id).ok_or_else(|| {
+            Failure::new(
+                "INFERENCE_ACTIVE_STREAM_MISSING",
+                format!("agent {agent_id} has no active inference stream"),
+            )
+        })?;
+        if stream.stream_id != stream_id {
+            return Err(Failure::new(
+                "INFERENCE_ACTIVE_STREAM_STALE",
+                format!(
+                    "agent {agent_id} active stream changed from {stream_id} to {}",
+                    stream.stream_id
+                ),
+            ));
+        }
+        stream.accepted = true;
+        Ok(stream.supersede_requested)
+    }
+
+    pub fn finish(&self, agent_id: &str, stream_id: &str) -> bool {
+        let Ok(mut active) = self.by_agent.lock() else {
+            return false;
+        };
+        let matches = active
+            .get(agent_id)
+            .is_some_and(|stream| stream.stream_id == stream_id);
+        if matches {
+            active.remove(agent_id);
+        }
+        matches
+    }
+
+    pub fn current_stream_id(&self, agent_id: &str) -> Option<String> {
+        self.by_agent
+            .lock()
+            .ok()
+            .and_then(|active| active.get(agent_id).map(|stream| stream.stream_id.clone()))
+    }
+}
+
+pub fn is_direct_user_send(send_args: &Value) -> bool {
+    let automation = send_args.get("automationWake");
+    let group = send_args.get("groupContext");
+    automation.is_none_or(Value::is_null) && group.is_none_or(Value::is_null)
+}
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InferenceProvider {

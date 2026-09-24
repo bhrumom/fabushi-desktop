@@ -29,9 +29,11 @@ use mahayana_node_agent_coordinator::oauth::mcp_oauth_forwarder::{
 use mahayana_node_agent_coordinator::oauth::mcp_oauth_loopback_registry::McpOAuthLoopbackRegistry;
 use mahayana_node_agent_coordinator::inference_router::{
     host_transcript_method,
-    CoordinatorInferenceRouter, InferenceProvider, InferenceTaskQueue, InferenceTranscriptFile,
-    RunnerInferenceEvent, StoredEntry, StoredRole, parse_runner_inference_event,
-    parse_send_prompt_attachments, project_runner_turn_context, project_transcript_entry,
+    ActiveInferenceStreamRegistry, CoordinatorInferenceRouter, InferenceProvider,
+    InferenceStreamSupersede, InferenceTaskQueue, InferenceTranscriptFile,
+    RunnerInferenceEvent, StoredEntry, StoredRole, is_direct_user_send,
+    parse_runner_inference_event, parse_send_prompt_attachments,
+    project_runner_turn_context, project_transcript_entry,
 };
 use mahayana_node_agent_coordinator::webauthn::{
     ApprovedWebAuthnConsent, WebAuthnCeremony,
@@ -101,6 +103,7 @@ struct CoordinatorState {
     inference_store: InferenceTranscriptFile,
     inference_store_lock: Mutex<()>,
     inference_queue: InferenceTaskQueue,
+    active_inference_streams: ActiveInferenceStreamRegistry,
     inference_streams: Mutex<HashMap<String, Sender<Value>>>,
     host_stdin: Mutex<Option<ActiveHostStdin>>,
     gateway_client: Mutex<CoordinatorGatewayClient>,
@@ -1579,6 +1582,20 @@ fn project_inference_activity(
         .collect()
 }
 
+struct ActiveInferenceStreamGuard {
+    state: Arc<CoordinatorState>,
+    agent_id: String,
+    stream_id: String,
+}
+
+impl Drop for ActiveInferenceStreamGuard {
+    fn drop(&mut self) {
+        self.state
+            .active_inference_streams
+            .finish(&self.agent_id, &self.stream_id);
+    }
+}
+
 struct InferenceActivityGuard {
     state: Arc<CoordinatorState>,
     agent_id: String,
@@ -1790,6 +1807,19 @@ fn execute_local_inference(
         ));
     }
 
+    // Register the turn before any Host transcript read/admission delay. A
+    // newer direct user send can therefore supersede this turn even while the
+    // Host has not yet accepted its provider stream.
+    let stream_id = uuid::Uuid::new_v4().to_string();
+    state
+        .active_inference_streams
+        .begin(&agent_id, &stream_id)?;
+    let _active_stream = ActiveInferenceStreamGuard {
+        state: Arc::clone(&state),
+        agent_id: agent_id.clone(),
+        stream_id: stream_id.clone(),
+    };
+
     let remote = dispatch_gateway_value(
         &state,
         "getAgentTranscriptTail",
@@ -1859,7 +1889,6 @@ fn execute_local_inference(
 
     let assistant_timestamp_ms = coordinator_now_ms();
     let assistant_id = format!("t{turn}s0");
-    let stream_id = uuid::Uuid::new_v4().to_string();
     let (stream_tx, stream_rx) = mpsc::channel::<Value>();
     {
         let mut streams = state.inference_streams.lock().map_err(|_| {
@@ -1895,6 +1924,16 @@ fn execute_local_inference(
                 "INFERENCE_RUNNER_REJECTED",
                 "Host Runner did not accept the routed provider request",
             ));
+        }
+        if state
+            .active_inference_streams
+            .mark_accepted(&agent_id, &stream_id)?
+        {
+            cancel_runner_stream_best_effort(
+                &state,
+                &stream_id,
+                "Superseded by a newer user message before Runner acceptance settled",
+            );
         }
 
         let started = Instant::now();
@@ -2142,6 +2181,17 @@ fn dispatch_inference_if_handled(
     }
 
     let agent_id = inference_agent_id.to_string();
+    if is_direct_user_send(&args) {
+        if let InferenceStreamSupersede::CancelNow { stream_id } =
+            state.active_inference_streams.request_supersede(&agent_id)
+        {
+            cancel_runner_stream_best_effort(
+                state,
+                &stream_id,
+                "Superseded by a newer user message",
+            );
+        }
+    }
     let queue_key = if agent_id.trim().is_empty() {
         format!("invalid-{}", uuid::Uuid::new_v4())
     } else {
@@ -2507,6 +2557,7 @@ fn main() {
         inference_store,
         inference_store_lock: Mutex::new(()),
         inference_queue: InferenceTaskQueue::default(),
+        active_inference_streams: ActiveInferenceStreamRegistry::default(),
         inference_streams: Mutex::new(HashMap::new()),
         host_stdin: Mutex::new(None),
         gateway_client: Mutex::new(gateway_client),

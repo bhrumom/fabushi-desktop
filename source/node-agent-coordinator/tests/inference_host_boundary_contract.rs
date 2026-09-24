@@ -3,8 +3,9 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_node_agent_coordinator::inference_router::{
-    InferenceProvider, RunnerInferenceEvent, configured_inference_provider,
-    host_transcript_method, parse_runner_inference_event, project_runner_turn_context,
+    ActiveInferenceStreamRegistry, InferenceProvider, InferenceStreamSupersede,
+    RunnerInferenceEvent, configured_inference_provider, host_transcript_method,
+    is_direct_user_send, parse_runner_inference_event, project_runner_turn_context,
 };
 use serde_json::json;
 
@@ -76,6 +77,54 @@ fn coordinator_projects_durable_turn_context_without_host_linkage() {
     assert_eq!(projected["composedAtMs"], 10);
     assert_eq!(projected["enterEpochMs"], 20);
     assert!(projected.get("ignored").is_none());
+}
+
+#[test]
+fn active_inference_stream_supersede_fences_start_accept_and_stale_finish() {
+    let registry = ActiveInferenceStreamRegistry::default();
+    registry.begin("agent-a", "stream-1").expect("begin stream");
+    assert_eq!(
+        registry.request_supersede("agent-a"),
+        InferenceStreamSupersede::DeferredUntilAccepted {
+            stream_id: "stream-1".into(),
+        }
+    );
+    assert!(registry
+        .mark_accepted("agent-a", "stream-1")
+        .expect("accept stream"));
+    assert_eq!(
+        registry.request_supersede("agent-a"),
+        InferenceStreamSupersede::CancelNow {
+            stream_id: "stream-1".into(),
+        }
+    );
+    assert!(registry.finish("agent-a", "stream-1"));
+    assert_eq!(registry.current_stream_id("agent-a"), None);
+
+    registry.begin("agent-a", "stream-2").expect("next stream");
+    assert!(!registry.finish("agent-a", "stale-stream"));
+    assert_eq!(
+        registry.current_stream_id("agent-a").as_deref(),
+        Some("stream-2")
+    );
+    assert!(registry.finish("agent-a", "stream-2"));
+}
+
+#[test]
+fn only_direct_user_sends_supersede_the_active_provider_turn() {
+    assert!(is_direct_user_send(&json!({"prompt":"hello"})));
+    assert!(is_direct_user_send(&json!({
+        "prompt":"fork still direct",
+        "isFork":true
+    })));
+    assert!(!is_direct_user_send(&json!({
+        "prompt":"automation",
+        "automationWake":{"id":"auto-1"}
+    })));
+    assert!(!is_direct_user_send(&json!({
+        "prompt":"group",
+        "groupContext":{"groupId":"g-1"}
+    })));
 }
 
 #[test]
