@@ -1,5 +1,6 @@
 use uuid::Uuid;
 
+use super::conversation_state::RecentUserMessage;
 use super::{TerminalOutcome, TurnSettlement};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -19,6 +20,8 @@ pub struct TurnRunOptions {
     pub inference_request_id: Option<String>,
     pub message_id: Option<String>,
     pub recent_message_text: Option<String>,
+    pub recent_user_messages: Vec<RecentUserMessage>,
+    pub is_fork: bool,
     pub attachment_count: usize,
     pub image_count: usize,
     pub video_count: usize,
@@ -100,15 +103,24 @@ impl TurnRunShell {
             request_id,
             generation: self.next_generation,
         };
+        let current_message_text = options
+            .message_id
+            .as_deref()
+            .and_then(|message_id| {
+                options
+                    .recent_user_messages
+                    .iter()
+                    .find(|message| message.id == message_id)
+                    .map(|message| message.text.as_str())
+            })
+            .or(options.recent_message_text.as_deref());
         let recovery_shaped = options.message_id.is_some()
+            && !options.is_fork
             && options.attachment_count == 0
             && options.image_count == 0
             && options.video_count == 0
             && !options.has_reply_context
-            && options
-                .recent_message_text
-                .as_deref()
-                .is_some_and(|text| text == trimmed);
+            && current_message_text.is_some_and(|text| text.trim() == trimmed);
         self.active = Some(ActiveRun {
             owner: owner.clone(),
             dispatched: false,
