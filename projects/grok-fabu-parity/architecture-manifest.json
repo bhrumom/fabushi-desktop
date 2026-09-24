@@ -12588,7 +12588,7 @@
         "source/host/tests/memory_service_contract.rs",
         "source/host/tests/memory_extension_contract.rs",
         "source/host/tests/production_agent_store_contract.rs",
-        "source/host/tests/box_handoff_production_contract.rs"
+        "source/host/tests/box_handoff_service_contract.rs"
       ],
       "notes": "Final frozen production composition audit. ProductionSessionWorkers owns the Host-lifetime worker pool, serialized materialization, real SandAgentDb/ProductionAgentStore/Memory/automation/workflow/channel owners, ConversationState projection, durable recovery/backfill/hidden repair/stale-root/legacy-retirement maintenance and materialization-time soft-GC scheduling. SessionExtension owns the frozen experiment/dynamic-config pins and Box handoff lifetime; Host production deps supply ForeverBox screenshot/prepare, lifecycle events and telemetry. The soft-GC contract runs against the real conversation-blobs SQLite store and verifies scheduled orphan collection. Incomplete typed AgentStore/Runner behavior remains tracked by its own manifest rows rather than duplicated in this composition module.",
       "parityMode": "rust-port"
