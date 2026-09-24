@@ -44,6 +44,7 @@ use super::session_paths::{get_agent_db_path, get_connector_secrets_root};
 use super::connector_secret_store::SandConnectorSecretStore;
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
 use super::session_store_factories::{
+    NO_SESSION_MEMORY, UnavailableMemoryStore,
     automation_store_for_db_path_with_time_zone_resolver, channel_store_for_db_path,
     workflow_store_for_db_path_with_time_zone_resolver,
 };
@@ -93,6 +94,32 @@ pub struct PreparedAgentBlobStore {
 pub enum FallbackSession {
     Existing(PreparedAgentBlobStore),
     Created(MaterializedAgentRecord),
+}
+
+pub struct ProductionMaterializedSession {
+    pub record: MaterializedAgentRecord,
+    pub prepared: PreparedAgentBlobStore,
+    pub db: Arc<SandAgentDb>,
+    pub agent_store: ProductionWorkerBlobStore,
+    pub memory: UnavailableMemoryStore,
+    pub automations: FileAutomationStore,
+    pub workflows: FileWorkflowStore,
+    pub channels: FileChannelStore,
+    conversation_state: Option<ResolvedConversationState>,
+}
+
+impl ProductionMaterializedSession {
+    pub fn conversation_state(&self) -> Option<&ResolvedConversationState> {
+        self.conversation_state.as_ref()
+    }
+
+    pub fn reset_from_db(
+        &mut self,
+        owner: &ProductionSessionWorkers,
+    ) -> Result<bool, String> {
+        self.conversation_state = owner.read_agent_conversation_state(&self.record.id)?;
+        Ok(self.conversation_state.is_some())
+    }
 }
 
 /// Shipping Host owner for the Grok session materialization worker boundary.
@@ -323,6 +350,69 @@ impl ProductionSessionWorkers {
             let _ = self.open_agent_db_owner(&record.id)?;
         }
         Ok(result)
+    }
+
+    pub fn compose_materialized_session(
+        &self,
+        record: MaterializedAgentRecord,
+        prepared: PreparedAgentBlobStore,
+    ) -> Result<ProductionMaterializedSession, String> {
+        let db = self.open_agent_db_owner(&record.id)?;
+        let agent_store = self.create_agent_blob_store(&record.id)?;
+        let memory = NO_SESSION_MEMORY.create_agent_store();
+        let automations = self.open_automation_store(&record.id)?;
+        let workflows = self.open_workflow_store(&record.id)?;
+        let channels = self.open_channel_store(&record.id)?;
+        let conversation_state = self.read_agent_conversation_state(&record.id)?;
+        Ok(ProductionMaterializedSession {
+            record,
+            prepared,
+            db,
+            agent_store,
+            memory,
+            automations,
+            workflows,
+            channels,
+            conversation_state,
+        })
+    }
+
+    pub fn materialize_session_with_active(
+        &self,
+        profile: Option<&SandAgentProfile>,
+        origin: &str,
+        purpose: Option<&str>,
+        active_agent_id: Option<&str>,
+    ) -> Result<ProductionMaterializedSession, String> {
+        let record = self.materialize_new_session_with_active(
+            profile,
+            origin,
+            purpose,
+            active_agent_id,
+        )?;
+        let prepared = self
+            .prepare_existing_agent(&record.id)?
+            .ok_or_else(|| "newly materialized session disappeared before composition".to_string())?;
+        self.compose_materialized_session(record, prepared)
+    }
+
+    pub fn open_materialized_session(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<ProductionMaterializedSession>, String> {
+        let Some(prepared) = self.prepare_existing_agent(agent_id)? else {
+            return Ok(None);
+        };
+        let profile = prepared
+            .profile_file
+            .clone()
+            .ok_or_else(|| "prepared session is missing its profile".to_string())?;
+        let record = MaterializedAgentRecord {
+            id: agent_id.to_string(),
+            db_path: prepared.session_db_path.clone(),
+            profile,
+        };
+        Ok(Some(self.compose_materialized_session(record, prepared)?))
     }
 
     pub fn read_agent_transcript_entries(

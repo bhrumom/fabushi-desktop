@@ -125,12 +125,13 @@ impl SandAgentSessionStore {
     ) -> Result<MaterializedAgentRecord, String> {
         let active = self.read_active_agent_id();
         self.production
-            .materialize_new_session_with_active(
+            .materialize_session_with_active(
                 profile,
                 origin,
                 purpose,
                 active.as_deref(),
             )
+            .map(|session| session.record)
     }
 
     pub fn create_fallback_session(
@@ -144,7 +145,9 @@ impl SandAgentSessionStore {
         &self,
         agent_id: &str,
     ) -> Result<Option<PreparedAgentBlobStore>, String> {
-        self.production.prepare_existing_agent(agent_id)
+        self.production
+            .open_materialized_session(agent_id)
+            .map(|session| session.map(|session| session.prepared))
     }
 
     pub fn delete_session(&self, agent_id: &str) -> Result<(), String> {

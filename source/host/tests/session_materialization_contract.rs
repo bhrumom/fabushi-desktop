@@ -149,6 +149,36 @@ fn agent_cap_uses_owned_directory_count_and_blocks_minting() {
 
 
 #[test]
+fn production_materialized_session_composes_shipping_resources_and_reset_view() {
+    let root = temp_root("composed-session");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let session = workers
+        .materialize_session_with_active(None, "user", None, None)
+        .expect("compose materialized session");
+
+    let agent_dir = root.join(&session.record.id);
+    assert_eq!(session.prepared.agent_id, session.record.id);
+    assert_eq!(session.agent_store.agent_id, session.record.id);
+    assert_eq!(session.agent_store.blob_db_path, agent_dir.join("conversation-blobs.db"));
+    assert_eq!(session.automations.get_location(), agent_dir.join("automations"));
+    assert_eq!(session.channels.get_location(), agent_dir.join("channels"));
+    assert_eq!(session.memory.get_location(), None);
+    assert!(session.conversation_state().is_none());
+    assert_eq!(workers.active_agent_db_owner_count(), 1);
+
+    let mut reopened = workers
+        .open_materialized_session(&session.record.id)
+        .expect("open composed session")
+        .expect("existing session");
+    assert!(!reopened.reset_from_db(&workers).expect("reset empty conversation"));
+    assert_eq!(reopened.record.id, session.record.id);
+    assert_eq!(reopened.prepared.session_db_path, session.record.db_path);
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn production_mint_queue_serializes_near_cap_create_sessions() {
     let root = temp_root("mint-queue");
     fs::create_dir_all(&root).expect("root");
