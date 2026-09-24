@@ -12932,7 +12932,7 @@
       "targetPath": "source/host/src/extensions/settings/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "1dd8525934550481b41b31f8e02c9e599343d17f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12942,11 +12942,13 @@
         "source/host/app/src/main.rs"
       ],
       "testEvidence": [
+        "source/host/tests/settings_extension_contract.rs",
         "source/host/tests/settings_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Settings extension now has the frozen extension identity/dependency boundary and a shipping Host-owned SettingsService instance. Final is withheld until the full SettingsService surface is ported and all dependent Host extensions consume it through extension composition instead of only the Session timezone path."
+      "notes": "Final frozen extension parity only: Rust preserves HostExtensions.Settings identity, zero dependencies, and start() construction of the production SettingsService. Shipping Host main starts this exact extension owner and injects the same Arc into Session. Remaining SettingsService behavior stays independently tracked by source/host/extensions/settings/settings-service.ts and is not hidden by this final extension row.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/settings/settings-service.ts",
