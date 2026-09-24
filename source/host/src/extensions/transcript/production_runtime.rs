@@ -295,6 +295,7 @@ impl ProductionTranscriptRuntime {
         let mut turn_generation: Option<u64> = None;
         let mut queue_accepted_event: Option<QueueAccepted> = None;
         let mut queue_dequeued_event: Option<QueueDequeued> = None;
+        let mut persisted_echo_entry_id: Option<String> = None;
 
         let mut state = self.lock_state();
         loop {
@@ -326,6 +327,62 @@ impl ProductionTranscriptRuntime {
                     return Ok(replay_record(&record));
                 }
                 SendBegin::Dispatch { .. } => {
+                    // Frozen Grok durably appends the addressed user echo before
+                    // the run enters the per-agent execution queue. This makes
+                    // accepted user intent recoverable even if Host/Runner
+                    // admission or provider execution fails afterwards.
+                    let synthetic_acceptance = json!({ "accepted": true });
+                    match persist_accepted(&synthetic_acceptance) {
+                        Ok(echo_entry_id) => {
+                            persisted_echo_entry_id = echo_entry_id;
+                        }
+                        Err(error) => {
+                            let failure = Err(error.clone());
+                            {
+                                let RuntimeState {
+                                    pipeline, ledger, ..
+                                } = &mut *state;
+                                pipeline.finish_send(ledger, nonce.as_deref(), false);
+                            }
+                            if let Some(client_nonce) = nonce.as_deref() {
+                                cache_completion(&mut state, client_nonce, failure.clone());
+                            }
+                            drop(state);
+                            self.send_settled.notify_all();
+                            return failure;
+                        }
+                    }
+
+                    if let Some(client_nonce) = nonce.as_deref() {
+                        let pending = {
+                            let RuntimeState {
+                                pipeline, ledger, ..
+                            } = &mut *state;
+                            pipeline.record_pending_acceptance(
+                                ledger,
+                                client_nonce,
+                                SendEchoIdentity {
+                                    agent_id: agent_id.clone().unwrap_or_default(),
+                                    echo_entry_id: persisted_echo_entry_id.clone(),
+                                },
+                            )
+                        };
+                        if let Err(error) = pending {
+                            let error = map_acceptance_error(error);
+                            let failure = Err(error.clone());
+                            {
+                                let RuntimeState {
+                                    pipeline, ledger, ..
+                                } = &mut *state;
+                                pipeline.finish_send(ledger, nonce.as_deref(), false);
+                            }
+                            cache_completion(&mut state, client_nonce, failure.clone());
+                            drop(state);
+                            self.send_settled.notify_all();
+                            return failure;
+                        }
+                    }
+
                     if let Some(agent_id) = agent_id.as_deref() {
                         let accepted_at_ms = system_now_ms();
                         state
@@ -403,15 +460,6 @@ impl ProductionTranscriptRuntime {
         drop(state);
 
         let mut result = dispatch();
-        let mut persisted_echo_entry_id = None;
-        if let Ok(value) = result.as_ref() {
-            if value.get("accepted").and_then(Value::as_bool) == Some(true) {
-                match persist_accepted(value) {
-                    Ok(echo_entry_id) => persisted_echo_entry_id = echo_entry_id,
-                    Err(error) => result = Err(error),
-                }
-            }
-        }
 
         let mut state = self.lock_state();
         let accepted = result
@@ -420,35 +468,19 @@ impl ProductionTranscriptRuntime {
             .is_some_and(|value| value.get("accepted").and_then(Value::as_bool) == Some(true));
 
         if accepted {
-            if let (Some(client_nonce), Some(value)) = (nonce.as_deref(), result.as_ref().ok()) {
+            if let Some(client_nonce) = nonce.as_deref() {
+                let RuntimeState {
+                    pipeline, ledger, ..
+                } = &mut *state;
+                pipeline.mark_send_accepted(ledger, Some(client_nonce));
+            }
+            if let Some(value) = result.as_ref().ok() {
                 let operation_id = value
                     .get("operationId")
                     .and_then(Value::as_str)
                     .map(str::trim)
                     .filter(|value| !value.is_empty())
                     .map(ToOwned::to_owned);
-                let echo_entry_id = persisted_echo_entry_id.clone();
-                let pending = {
-                    let RuntimeState {
-                        pipeline, ledger, ..
-                    } = &mut *state;
-                    pipeline.record_pending_acceptance(
-                        ledger,
-                        client_nonce,
-                        SendEchoIdentity {
-                            agent_id: agent_id.clone().unwrap_or_default(),
-                            echo_entry_id,
-                        },
-                    )
-                };
-                if let Err(error) = pending {
-                    result = Err(map_acceptance_error(error));
-                } else {
-                    let RuntimeState {
-                        pipeline, ledger, ..
-                    } = &mut *state;
-                    pipeline.mark_send_accepted(ledger, Some(client_nonce));
-                }
                 if let (Some(agent_id), Some(operation_id)) =
                     (agent_id.as_deref(), operation_id.as_deref())
                 {

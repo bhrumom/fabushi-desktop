@@ -38,6 +38,11 @@ fn production_send_runtime_persists_acceptance_and_replays_nonce_without_redispa
         .execute_send(
             &args,
             || {
+                assert_eq!(
+                    persisted.load(Ordering::SeqCst),
+                    1,
+                    "durable user echo must be persisted before turn dispatch"
+                );
                 dispatches.fetch_add(1, Ordering::SeqCst);
                 Ok(serde_json::json!({
                     "accepted": true,
@@ -92,21 +97,37 @@ fn production_send_runtime_clears_failed_unaccepted_nonce_for_retry() {
         "clientNonce": "nonce-retry"
     });
 
+    let persist_count = AtomicUsize::new(0);
     let first = runtime.execute_send(
         &args,
-        || Err(ProductionSendError::Internal("transport failed".into())),
-        |_| Ok(Some("t0u".to_string())),
+        || {
+            assert_eq!(
+                persist_count.load(Ordering::SeqCst),
+                1,
+                "failed provider dispatch must still follow durable user admission"
+            );
+            Err(ProductionSendError::Internal("transport failed".into()))
+        },
+        |_| {
+            persist_count.fetch_add(1, Ordering::SeqCst);
+            Ok(Some("t0u".to_string()))
+        },
     );
     assert!(first.is_err());
+    assert_eq!(persist_count.load(Ordering::SeqCst), 1);
 
     let second = runtime
         .execute_send(
             &args,
             || Ok(serde_json::json!({"accepted": true, "operationId": "op-retry"})),
-            |_| Ok(Some("t0u".to_string())),
+            |_| {
+                persist_count.fetch_add(1, Ordering::SeqCst);
+                Ok(Some("t0u".to_string()))
+            },
         )
         .expect("retry dispatch");
     assert_eq!(second["operationId"], "op-retry");
+    assert_eq!(persist_count.load(Ordering::SeqCst), 2);
     let _ = fs::remove_dir_all(root);
 }
 
