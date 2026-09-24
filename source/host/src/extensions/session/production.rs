@@ -313,9 +313,8 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
-        let db_path = self.session_db_path(agent_id)?;
-        self.conversation_state
-            .read_agent_transcript_entries(&db_path)
+        self.open_agent_db_owner(agent_id)?
+            .get_transcript_entries()
             .map_err(|error| error.to_string())
     }
 
@@ -324,9 +323,8 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptPageQuery,
     ) -> Result<TranscriptPage, String> {
-        let db_path = self.session_db_path(agent_id)?;
-        self.conversation_state
-            .read_agent_transcript_page(&db_path, query)
+        self.open_agent_db_owner(agent_id)?
+            .get_transcript_page(query)
             .map_err(|error| error.to_string())
     }
 
@@ -335,9 +333,8 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptWindowQuery,
     ) -> Result<TranscriptWindow<std::collections::BTreeMap<String, usize>>, String> {
-        let db_path = self.session_db_path(agent_id)?;
-        self.conversation_state
-            .read_agent_transcript_window(&db_path, query)
+        self.open_agent_db_owner(agent_id)?
+            .get_transcript_window(query)
             .map_err(|error| error.to_string())
     }
 
@@ -346,9 +343,8 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptWindowQuery,
     ) -> Result<TranscriptPage, String> {
-        let db_path = self.session_db_path(agent_id)?;
-        self.conversation_state
-            .read_agent_transcript_tail(&db_path, query)
+        self.open_agent_db_owner(agent_id)?
+            .get_transcript_tail(query)
             .map_err(|error| error.to_string())
     }
 
@@ -357,9 +353,9 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         root_id: &str,
     ) -> Result<TranscriptThread, String> {
-        let db_path = self.session_db_path(agent_id)?;
-        self.conversation_state
-            .read_agent_thread(&db_path, root_id)
+        self.open_agent_db_owner(agent_id)?
+            .get_thread_entries(root_id)
+            .map(|entries| TranscriptThread { entries })
             .map_err(|error| error.to_string())
     }
 
@@ -988,7 +984,7 @@ impl ProductionSessionWorkers {
         else {
             return Ok(None);
         };
-        let _db_owner = self.open_agent_db_owner(agent_id)?;
+        let db_owner = self.open_agent_db_owner(agent_id)?;
         let store = self.create_agent_blob_store(agent_id)?;
         let session_db_path = materialized.db_path.clone();
 
@@ -1047,15 +1043,11 @@ impl ProductionSessionWorkers {
         let session_state =
             read_persisted_agent_serde_snapshot(&session_db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?;
-        let transcript_tail = self
-            .conversation_state
-            .read_agent_transcript_tail(
-                &session_db_path,
-                TranscriptWindowQuery {
-                    before_seq: None,
-                    limit: 500,
-                },
-            )
+        let transcript_tail = db_owner
+            .get_transcript_tail(TranscriptWindowQuery {
+                before_seq: None,
+                limit: 500,
+            })
             .map_err(|error| error.to_string())?;
         let profile_file = Some(materialized.profile.clone());
 

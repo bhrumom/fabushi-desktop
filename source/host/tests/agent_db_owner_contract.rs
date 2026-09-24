@@ -7,6 +7,9 @@ use mahayana_host_runtime::extensions::session::agent_db::{
     SandAgentDb, SandAgentDbOptions, compare_and_set_persisted_latest_root_blob_id,
 };
 use mahayana_host_runtime::extensions::session::agent_db_recovery::DbRecoveryOptions;
+use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
+    TranscriptPageQuery, TranscriptWindowQuery,
+};
 use mahayana_host_runtime::extensions::session::agent_db_serde::{
     AwaitingUserResponse, SandProfile,
 };
@@ -337,6 +340,99 @@ fn owner_routes_partner_origin_purpose_and_transcript_mutations() {
         .is_none());
     assert!(owner.delete_transcript_entry("entry-2").expect("delete"));
     assert!(owner.delete_transcript_entry("entry-2").expect("idempotent committed delete"));
+    assert_eq!(
+        owner
+            .append_transcript_entries(&[
+                serde_json::json!({
+                    "id":"branch-1",
+                    "kind":"message",
+                    "role":"assistant",
+                    "content":"branch",
+                    "replyTo":"entry-1",
+                    "branched":true
+                }),
+            ])
+            .expect("append branch"),
+        1
+    );
+
+    assert_eq!(
+        owner
+            .get_transcript_entries()
+            .expect("owner transcript entries")
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["entry-1", "branch-1"]
+    );
+    let page = owner
+        .get_transcript_page(TranscriptPageQuery {
+            before_seq: None,
+            since_ms: None,
+            until_ms: i64::MAX,
+            limit: 10,
+        })
+        .expect("owner transcript page");
+    assert_eq!(
+        page.entries
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["entry-1"]
+    );
+    let window = owner
+        .get_transcript_window(TranscriptWindowQuery {
+            before_seq: None,
+            limit: 10,
+        })
+        .expect("owner transcript window");
+    assert_eq!(
+        window
+            .entries
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["entry-1"]
+    );
+    assert_eq!(window.thread_counts.get("entry-1"), Some(&1));
+    let tail = owner
+        .get_transcript_tail(TranscriptWindowQuery {
+            before_seq: None,
+            limit: 10,
+        })
+        .expect("owner transcript tail");
+    assert_eq!(
+        tail.entries
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["entry-1", "branch-1"]
+    );
+    assert_eq!(
+        owner
+            .get_transcript_entry_by_id("entry-1")
+            .expect("entry by id")
+            .and_then(|entry| entry.get("content").cloned()),
+        Some(serde_json::Value::String("edited".into()))
+    );
+    assert_eq!(
+        owner
+            .get_branched_entries()
+            .expect("branched entries")
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["branch-1"]
+    );
+    assert_eq!(
+        owner
+            .get_thread_entries("entry-1")
+            .expect("thread entries")
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["entry-1", "branch-1"]
+    );
 
     owner.close(false);
     let _ = fs::remove_dir_all(root);

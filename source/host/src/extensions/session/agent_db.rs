@@ -20,8 +20,8 @@ use super::agent_db_recovery::{
 use super::agent_db_schema::{
     CLEAR_BLOBS_SQL, CLEAR_TRANSCRIPT_ENTRIES_SQL, COMPARE_AND_SET_KV_SQL, DELETE_KV_SQL,
     DELETE_TRANSCRIPT_ENTRY_SQL, GET_KV_SQL, GET_TRANSCRIPT_ENTRY_SQL, HAS_LEGACY_BLOB_SQL,
-    INSERT_TRANSCRIPT_ENTRY_SQL, LIST_TRANSCRIPT_ENTRIES_SQL, NEWEST_DIVIDER_ANCHOR_TIMESTAMP_SQL,
-    SET_KV_SQL, UPDATE_TRANSCRIPT_ENTRY_SQL,
+    INSERT_TRANSCRIPT_ENTRY_SQL, LIST_BRANCHED_ENTRIES_SQL, LIST_TRANSCRIPT_ENTRIES_SQL,
+    NEWEST_DIVIDER_ANCHOR_TIMESTAMP_SQL, SET_KV_SQL, UPDATE_TRANSCRIPT_ENTRY_SQL,
 };
 use super::agent_db_serde::{
     AwaitingUserResponse, EPISODE_PENDING_MAX, EPISODE_TURN_TEXT_CAP, EpisodeTurn,
@@ -32,7 +32,8 @@ use super::agent_db_serde::{
     resolve_spend_guard_state, serialize_spend_guard_state,
 };
 use super::agent_db_transcript_pages::{
-    TranscriptPage, TranscriptWindowQuery, read_transcript_tail,
+    TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
+    read_transcript_page, read_transcript_tail, read_transcript_window,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -934,6 +935,161 @@ impl SandAgentDb {
             publish_transcript_mutation(&mutation);
         }
         Ok(committed)
+    }
+
+
+    pub fn get_transcript_entries(
+        &self,
+    ) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(Vec::new());
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(Vec::new());
+        };
+        Ok(read_transcript_entries_from_db(db)?)
+    }
+
+    pub fn get_transcript_page(
+        &self,
+        query: TranscriptPageQuery,
+    ) -> Result<TranscriptPage, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(TranscriptPage {
+                entries: Vec::new(),
+                next_before_seq: None,
+            });
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(TranscriptPage {
+                entries: Vec::new(),
+                next_before_seq: None,
+            });
+        };
+        Ok(read_transcript_page(db, query)?)
+    }
+
+    pub fn get_transcript_window(
+        &self,
+        query: TranscriptWindowQuery,
+    ) -> Result<TranscriptWindow<BTreeMap<String, usize>>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(TranscriptWindow {
+                entries: Vec::new(),
+                next_before_seq: None,
+                thread_counts: BTreeMap::new(),
+            });
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(TranscriptWindow {
+                entries: Vec::new(),
+                next_before_seq: None,
+                thread_counts: BTreeMap::new(),
+            });
+        };
+        let branched = read_branched_entries_from_db(db)?;
+        let counts = branch_reply_counts_from_entries(&branched);
+        Ok(read_transcript_window(db, query, |entries| {
+            entries
+                .iter()
+                .filter_map(|entry| {
+                    let id = entry.get("id").and_then(serde_json::Value::as_str)?;
+                    counts.get(id).copied().map(|count| (id.to_string(), count))
+                })
+                .collect()
+        })?)
+    }
+
+    pub fn get_transcript_tail(
+        &self,
+        query: TranscriptWindowQuery,
+    ) -> Result<TranscriptPage, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(TranscriptPage {
+                entries: Vec::new(),
+                next_before_seq: None,
+            });
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(TranscriptPage {
+                entries: Vec::new(),
+                next_before_seq: None,
+            });
+        };
+        Ok(read_transcript_tail(db, query)?)
+    }
+
+    pub fn get_transcript_entry_by_id(
+        &self,
+        entry_id: &str,
+    ) -> Result<Option<serde_json::Value>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(None);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(None);
+        };
+        Ok(read_transcript_entry_from_db(db, entry_id)?)
+    }
+
+    pub fn get_branched_entries(
+        &self,
+    ) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(Vec::new());
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(Vec::new());
+        };
+        Ok(read_branched_entries_from_db(db)?)
+    }
+
+    pub fn get_thread_entries(
+        &self,
+        root_id: &str,
+    ) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Ok(Vec::new());
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Ok(Vec::new());
+        };
+        let root = read_transcript_entry_from_db(db, root_id)?;
+        let branched = read_branched_entries_from_db(db)?;
+        let mut entries = Vec::new();
+        if let Some(root) = root {
+            entries.push(root);
+        }
+        entries.extend(thread_descendants_from_entries(root_id, &branched));
+        Ok(entries)
     }
 
     pub fn clear_conversation(&self) -> Result<bool, AgentDbProjectionError> {
@@ -2377,6 +2533,111 @@ fn delete_persisted_kv(
         bump_db_write_generation(db_path);
     }
     Ok(wrote)
+}
+
+
+fn read_transcript_entries_from_db(
+    db: &rusqlite::Connection,
+) -> Result<Vec<serde_json::Value>, rusqlite::Error> {
+    let mut statement = db.prepare(LIST_TRANSCRIPT_ENTRIES_SQL)?;
+    let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
+    let mut entries = Vec::new();
+    for row in rows {
+        if let Some(entry) = parse_transcript_entry(&row?) {
+            entries.push(entry);
+        }
+    }
+    Ok(entries)
+}
+
+fn read_transcript_entry_from_db(
+    db: &rusqlite::Connection,
+    entry_id: &str,
+) -> Result<Option<serde_json::Value>, rusqlite::Error> {
+    let raw = db
+        .query_row(GET_TRANSCRIPT_ENTRY_SQL, params![entry_id], |row| {
+            row.get::<_, String>(0)
+        })
+        .optional()?;
+    Ok(raw.as_deref().and_then(parse_transcript_entry))
+}
+
+fn read_branched_entries_from_db(
+    db: &rusqlite::Connection,
+) -> Result<Vec<serde_json::Value>, rusqlite::Error> {
+    let mut statement = db.prepare(LIST_BRANCHED_ENTRIES_SQL)?;
+    let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
+    let mut entries = Vec::new();
+    for row in rows {
+        if let Some(entry) = parse_transcript_entry(&row?) {
+            entries.push(entry);
+        }
+    }
+    Ok(entries)
+}
+
+fn branch_reply_counts_from_entries(
+    branched: &[serde_json::Value],
+) -> HashMap<String, usize> {
+    let by_id = branched
+        .iter()
+        .filter_map(|entry| {
+            Some((
+                entry.get("id")?.as_str()?.to_string(),
+                entry,
+            ))
+        })
+        .collect::<HashMap<_, _>>();
+    let mut counts = HashMap::new();
+    for entry in branched {
+        if let Some(root) = resolve_branch_root_from_entries(entry, &by_id) {
+            *counts.entry(root).or_insert(0) += 1;
+        }
+    }
+    counts
+}
+
+fn thread_descendants_from_entries(
+    root_id: &str,
+    branched: &[serde_json::Value],
+) -> Vec<serde_json::Value> {
+    let by_id = branched
+        .iter()
+        .filter_map(|entry| {
+            Some((
+                entry.get("id")?.as_str()?.to_string(),
+                entry,
+            ))
+        })
+        .collect::<HashMap<_, _>>();
+    branched
+        .iter()
+        .filter(|entry| {
+            resolve_branch_root_from_entries(entry, &by_id).as_deref() == Some(root_id)
+        })
+        .cloned()
+        .collect()
+}
+
+fn resolve_branch_root_from_entries(
+    entry: &serde_json::Value,
+    branched_by_id: &HashMap<String, &serde_json::Value>,
+) -> Option<String> {
+    let mut current = entry;
+    let mut seen = std::collections::HashSet::new();
+    if let Some(id) = current.get("id").and_then(serde_json::Value::as_str) {
+        seen.insert(id.to_string());
+    }
+    loop {
+        let parent_id = current.get("replyTo").and_then(serde_json::Value::as_str)?;
+        let Some(parent) = branched_by_id.get(parent_id) else {
+            return Some(parent_id.to_string());
+        };
+        if !seen.insert(parent_id.to_string()) {
+            return None;
+        }
+        current = parent;
+    }
 }
 
 fn publish_entries_upserted(db_path: &Path, entries: Vec<serde_json::Value>) {
