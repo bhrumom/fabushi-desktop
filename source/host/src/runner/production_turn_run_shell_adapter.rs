@@ -101,10 +101,10 @@ impl ProductionTurnRunShellAdapter {
             let first_output_seen = Arc::new(AtomicBool::new(false));
             let attempt_done = Arc::new(AtomicBool::new(false));
             let watchdog_expired = Arc::new(AtomicBool::new(false));
-            let watchdog_timeout = self
-                .policy
-                .first_output_timeout
-                .saturating_mul(1_u32 << attempt.saturating_sub(1).min(8));
+            let watchdog_timeout = first_output_timeout_for_attempt(
+                self.policy.first_output_timeout,
+                attempt,
+            );
             let watchdog = spawn_first_output_watchdog(
                 watchdog_timeout,
                 self.watchdog_poll_interval,
@@ -260,6 +260,13 @@ impl ProductionTurnRunShellAdapter {
         *attempt = next_attempt;
         Ok(true)
     }
+}
+
+pub fn first_output_timeout_for_attempt(
+    base: Duration,
+    attempt: u32,
+) -> Duration {
+    base.saturating_mul(1_u32 << attempt.saturating_sub(1).min(8))
 }
 
 fn cancelled_error(
