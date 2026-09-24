@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_node_agent_coordinator::inference_router::{
     InferenceProvider, RunnerInferenceEvent, configured_inference_provider,
-    host_transcript_method, parse_runner_inference_event,
+    host_transcript_method, parse_runner_inference_event, project_runner_turn_context,
 };
 use serde_json::json;
 
@@ -43,6 +43,39 @@ fn renderer_tail_alias_is_normalized_before_host_dispatch() {
     assert_eq!(host_transcript_method("openAgentTail"), "getAgentTranscriptTail");
     assert_eq!(host_transcript_method("getAgentTranscriptTail"), "getAgentTranscriptTail");
     assert_eq!(host_transcript_method("getAgentTranscriptWindow"), "getAgentTranscriptWindow");
+}
+
+#[test]
+fn coordinator_projects_durable_turn_context_without_host_linkage() {
+    let projected = project_runner_turn_context(
+        &json!({
+            "attachmentPaths":["/tmp/a"],
+            "selectedImages":[{"id":"image"}],
+            "selectedVideos":[{"id":"video"}],
+            "replyContext":{"id":"reply"},
+            "isFork":true,
+            "richText":"**hello**",
+            "composedAtMs":10,
+            "enterEpochMs":20,
+            "ignored":"not-forwarded"
+        }),
+        "t7u",
+        vec![
+            json!({"id":"t6u","text":"older"}),
+            json!({"id":"t7u","text":"current","richText":"**current**"}),
+        ],
+    );
+    assert_eq!(projected["messageId"], "t7u");
+    assert_eq!(projected["recentUserMessages"].as_array().unwrap().len(), 2);
+    assert_eq!(projected["attachmentPaths"], json!(["/tmp/a"]));
+    assert_eq!(projected["selectedImages"][0]["id"], "image");
+    assert_eq!(projected["selectedVideos"][0]["id"], "video");
+    assert_eq!(projected["replyContext"]["id"], "reply");
+    assert_eq!(projected["isFork"], true);
+    assert_eq!(projected["richText"], "**hello**");
+    assert_eq!(projected["composedAtMs"], 10);
+    assert_eq!(projected["enterEpochMs"], 20);
+    assert!(projected.get("ignored").is_none());
 }
 
 #[test]
