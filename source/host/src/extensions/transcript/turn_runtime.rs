@@ -1,6 +1,6 @@
 use crate::extensions::inference::provider_session::ProviderSessionError;
 use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
-use crate::runner::transient_stream_error::{StreamFailureKind, TransientStreamError};
+use crate::runner::{StreamFailureKind, TransientStreamError};
 use crate::runner::would_recover_via_prepend;
 
 use super::send_pipeline::{PersistedSendContext, RecoverySend};
