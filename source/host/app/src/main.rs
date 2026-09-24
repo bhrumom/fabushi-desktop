@@ -41,6 +41,13 @@ use mahayana_host_runtime::extensions::session::gateway::{
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
+use mahayana_host_runtime::extensions::transcript::group_chat_glue::GroupChatGlue;
+use mahayana_host_runtime::extensions::transcript::group_chat_orchestrator::GroupMemberTurnRequest;
+use mahayana_host_runtime::extensions::transcript::send_group_fanout::{
+    GroupMemberTurnExecutor, LocalGroupFanoutDisposition, collect_new_member_send_messages,
+    dispatch_local_group_send,
+};
+use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
 use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManager;
 use mahayana_host_runtime::extensions::transcript::extension::start_transcript_extension;
 use mahayana_host_runtime::extensions::transcript::send_message_shaping::shape_send_prompt_media_args;
@@ -62,6 +69,7 @@ use mahayana_host_runtime::extensions::source_map::extension::start_source_map_e
 use mahayana_host_runtime::extensions::source_map::source_map_service::SandSourceMap;
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
+    configured_routed_provider,
 };
 use mahayana_host_runtime::extensions::managed_setup::team_rules::ProductionTeamRulesResolver;
 use mahayana_host_runtime::extensions::webauthn_proxy::extension::{
@@ -172,7 +180,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     // The desktop product owns this fallback workspace.  It must exist before
@@ -724,6 +732,252 @@ struct UnifiedGatewayApi {
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     transcript_manager: Arc<TranscriptManager>,
     telemetry_logs: HostStructuredLogTelemetry,
+}
+
+#[derive(Clone)]
+struct GroupMemberRunnerDeps {
+    routed_tool_relay: Arc<CoordinatorToolRelay>,
+    events: GatewayEventHub,
+    host_tx: mpsc::Sender<HostLaneRequest>,
+    data_dir: PathBuf,
+    request_context: Arc<dyn RunnerRequestContextSource>,
+    experiments: Arc<HostExperimentsExtension>,
+    session_workers: Arc<ProductionSessionWorkers>,
+    runner_registry: Arc<TranscriptRunnerRegistry>,
+    ack_obligations: Arc<AckObligations>,
+    transcript_runtime: Arc<ProductionTranscriptRuntime>,
+    forever_box: Arc<ForeverBoxService>,
+    session_handoff: BoxHandoffService,
+    trays: Arc<HostTraysExtension>,
+    telemetry_logs: HostStructuredLogTelemetry,
+}
+
+impl UnifiedGatewayApi {
+    fn group_member_runner_deps(&self) -> GroupMemberRunnerDeps {
+        GroupMemberRunnerDeps {
+            routed_tool_relay: Arc::clone(&self.routed_tool_relay),
+            events: self.events.clone(),
+            host_tx: self.host_tx.clone(),
+            data_dir: self.data_dir.clone(),
+            request_context: Arc::clone(&self.request_context),
+            experiments: Arc::clone(&self.experiments),
+            session_workers: Arc::clone(&self.session_workers),
+            runner_registry: Arc::clone(&self.runner_registry),
+            ack_obligations: Arc::clone(&self.ack_obligations),
+            transcript_runtime: Arc::clone(&self.transcript_runtime),
+            forever_box: Arc::clone(&self.forever_box),
+            session_handoff: self.session_handoff.clone(),
+            trays: Arc::clone(&self.trays),
+            telemetry_logs: self.telemetry_logs.clone(),
+        }
+    }
+
+    fn preempt_group_member_runs_for_direct_send(&self, args: &serde_json::Value) {
+        let request_source = args
+            .get("requestSource")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        let is_direct = matches!(request_source, None | Some("turn"))
+            && args.get("automationWake").is_none_or(serde_json::Value::is_null)
+            && args.get("groupContext").is_none_or(serde_json::Value::is_null);
+        if !is_direct {
+            return;
+        }
+        let Some(agent_id) = args
+            .get("agentId")
+            .or_else(|| args.get("id"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        else {
+            return;
+        };
+        for stream_id in self
+            .runner_registry
+            .active_stream_ids_for_agent(agent_id)
+            .into_iter()
+            .filter(|stream_id| stream_id.starts_with("group-member-"))
+        {
+            let _ = self.runner_registry.cancel_stream(
+                &stream_id,
+                "direct user message preempted group member turn",
+            );
+        }
+    }
+
+    fn dispatch_local_group_send_if_supported(
+        &self,
+        args: &serde_json::Value,
+    ) -> Result<Option<serde_json::Value>, ProductionSendError> {
+        let Some(agent_id) = args
+            .get("agentId")
+            .or_else(|| args.get("id"))
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        else {
+            return Ok(None);
+        };
+        if !GroupChatGlue::new(Arc::clone(&self.session_workers)).is_group_agent_id(agent_id) {
+            return Ok(None);
+        }
+        let Some(provider) = configured_routed_provider(&self.data_dir.join("settings.json")) else {
+            return Ok(None);
+        };
+        if provider == RoutedProvider::Cursor {
+            return Ok(None);
+        }
+
+        let deps = self.group_member_runner_deps();
+        let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
+            run_local_group_member_turn(deps.clone(), provider, request)
+        });
+        let epoch = self.transcript_runtime.current_turn_epoch(agent_id);
+        match dispatch_local_group_send(
+            Arc::clone(&self.session_workers),
+            Arc::clone(&self.transcript_runtime),
+            agent_id,
+            epoch,
+            executor,
+        )
+        .map_err(ProductionSendError::Internal)?
+        {
+            LocalGroupFanoutDisposition::NotGroup
+            | LocalGroupFanoutDisposition::DeferredRemote { .. } => Ok(None),
+            LocalGroupFanoutDisposition::Completed {
+                posted_messages,
+                member_failures,
+            } => Ok(Some(serde_json::json!({
+                "accepted": true,
+                "groupFanout": true,
+                "postedMessages": posted_messages,
+                "memberFailureCount": member_failures.len(),
+            }))),
+        }
+    }
+}
+
+fn run_local_group_member_turn(
+    deps: GroupMemberRunnerDeps,
+    provider: RoutedProvider,
+    request: GroupMemberTurnRequest,
+) -> Result<Vec<String>, String> {
+    if provider == RoutedProvider::Cursor {
+        return Err("Cursor group member turns remain on the compatibility path".into());
+    }
+    let member_id = request.member.id.clone();
+    let before = deps
+        .session_workers
+        .read_agent_transcript_entries(&member_id)?;
+    let stream_id = format!("group-member-{}", uuid::Uuid::new_v4());
+    let client_nonce = format!("group-member:{}:{}", member_id, uuid::Uuid::new_v4());
+    let admission_args = serde_json::json!({
+        "agentId": member_id,
+        "prompt": request.prompt,
+        "clientNonce": client_nonce,
+        "streamId": stream_id,
+        "appendUserMessage": false,
+        "requestSource": "group-member",
+        "groupMemberTurn": true,
+        "skipAckObligation": true,
+    });
+    deps.transcript_runtime
+        .accept_routed_send(&admission_args, |_| {
+            Ok::<_, ProductionSendError>(PersistedSendContext::default())
+        })
+        .map_err(|error| error.to_string())?;
+
+    let receiver = deps.events.subscribe();
+    let runner_args = serde_json::json!({
+        "provider": provider.as_str(),
+        "agentId": member_id,
+        "streamId": stream_id,
+        "requestSource": "group-member",
+        "groupMemberTurn": true,
+        "messages": [
+            {
+                "role": "system",
+                "content": request.system_prompt,
+            },
+            {
+                "role": "user",
+                "content": request.prompt,
+            }
+        ],
+    });
+    start_routed_provider_task(
+        deps.routed_tool_relay,
+        deps.events.clone(),
+        deps.host_tx,
+        deps.data_dir,
+        deps.request_context,
+        deps.experiments,
+        Arc::clone(&deps.session_workers),
+        Arc::clone(&deps.runner_registry),
+        deps.ack_obligations,
+        deps.transcript_runtime,
+        deps.forever_box,
+        deps.session_handoff,
+        deps.trays,
+        deps.telemetry_logs,
+        runner_args,
+    )
+    .map_err(|error| error.to_string())?;
+
+    let deadline = Instant::now() + Duration::from_secs(30 * 60);
+    loop {
+        let now = Instant::now();
+        if now >= deadline {
+            let _ = deps.runner_registry.cancel_stream(
+                &stream_id,
+                "group member turn timed out",
+            );
+            return Err(format!("group member turn timed out: {member_id}"));
+        }
+        let wait = deadline
+            .saturating_duration_since(now)
+            .min(Duration::from_millis(250));
+        match receiver.recv_timeout(wait) {
+            Ok(event) => {
+                if event.get("channel").and_then(serde_json::Value::as_str)
+                    != Some(RUNNER_INFERENCE_EVENT_CHANNEL)
+                {
+                    continue;
+                }
+                let Some(payload) = event.get("payload") else {
+                    continue;
+                };
+                if payload
+                    .get("streamId")
+                    .and_then(serde_json::Value::as_str)
+                    != Some(stream_id.as_str())
+                {
+                    continue;
+                }
+                match payload.get("type").and_then(serde_json::Value::as_str) {
+                    Some("completed") => break,
+                    Some("failed" | "cancelled") => {
+                        return Err(payload
+                            .get("message")
+                            .and_then(serde_json::Value::as_str)
+                            .unwrap_or("group member Runner failed")
+                            .to_string());
+                    }
+                    _ => {}
+                }
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => continue,
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                return Err("Host event bus disconnected during group member turn".into());
+            }
+        }
+    }
+
+    let after = deps
+        .session_workers
+        .read_agent_transcript_entries(&member_id)?;
+    Ok(collect_new_member_send_messages(&before, &after))
 }
 
 fn start_ack_redrive_worker(
@@ -1671,6 +1925,7 @@ impl GatewayApi for UnifiedGatewayApi {
             return Ok(project_forever_box_status(&status, handoff.as_ref()));
         }
         if method == RUNNER_ACCEPT_ROUTED_PROMPT_GATEWAY_METHOD {
+            self.preempt_group_member_runs_for_direct_send(&args);
             let durable_args = args.clone();
             let acceptance = self
                 .transcript_runtime
@@ -1817,6 +2072,7 @@ impl GatewayApi for UnifiedGatewayApi {
         // Product calls remain on its owner lane while the Runner provider
         // worker above streams through the Host event hub.
         if method == "sendPrompt" {
+            self.preempt_group_member_runs_for_direct_send(&args);
             let durable_args = args.clone();
             let runner_args = shape_send_prompt_media_args(&args);
             let watchdog_registry = Arc::clone(&self.runner_registry);
@@ -1830,6 +2086,11 @@ impl GatewayApi for UnifiedGatewayApi {
                 .execute_send_with_queue_observers(
                     &durable_args,
                     || {
+                        if let Some(group_result) =
+                            self.dispatch_local_group_send_if_supported(&durable_args)?
+                        {
+                            return Ok(group_result);
+                        }
                         call_host_lane(&self.host_tx, method, runner_args)
                             .map_err(map_gateway_send_error)
                     },

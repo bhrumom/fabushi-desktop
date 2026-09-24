@@ -148,3 +148,39 @@ fn routed_prompt_queue_lease_blocks_the_next_turn_until_runner_terminal() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn group_member_routed_admission_projects_running_without_user_turn_badge() {
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-routed-group-member-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    let args = serde_json::json!({
+        "agentId": "member-a",
+        "prompt": "hidden group prompt",
+        "clientNonce": "group-member-nonce",
+        "streamId": "group-member-stream",
+        "requestSource": "group-member",
+        "groupMemberTurn": true,
+    });
+    runtime
+        .accept_routed_send(&args, |_| {
+            Ok::<_, ProductionSendError>(PersistedSendContext::default())
+        })
+        .expect("group member admission");
+
+    let mut roster = serde_json::json!([{"id":"member-a"}]);
+    runtime.decorate_agent_summaries(&mut roster);
+    assert_eq!(roster[0]["isRunning"], true);
+    assert_eq!(roster[0]["isRunningTurn"], false);
+    assert_eq!(runtime.active_turn_source("member-a").as_deref(), Some("group-member"));
+
+    runtime
+        .settle_routed_turn("member-a", "group-member-stream", 50_000)
+        .expect("settlement")
+        .expect("lease");
+    assert_eq!(runtime.in_flight_run_count("member-a"), 0);
+    let _ = std::fs::remove_dir_all(root);
+}

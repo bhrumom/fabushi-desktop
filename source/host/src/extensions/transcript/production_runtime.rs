@@ -57,8 +57,9 @@ pub struct RoutedSendAcceptance {
 pub fn classify_send_dispatch(
     args: &Value,
 ) -> Result<(RunLane, &'static str), ProductionSendError> {
-    let is_handoff_resume =
-        optional_non_empty(args, "requestSource") == Some("handoff-resume");
+    let request_source = optional_non_empty(args, "requestSource");
+    let is_handoff_resume = request_source == Some("handoff-resume");
+    let is_group_member = request_source == Some("group-member");
     let is_ack_redrive =
         optional_bool(args, "ackRedrive")?.unwrap_or(false) && is_handoff_resume;
     Ok((
@@ -71,6 +72,8 @@ pub fn classify_send_dispatch(
             "ack-redrive"
         } else if is_handoff_resume {
             "handoff-resume"
+        } else if is_group_member {
+            "group-member"
         } else {
             "turn"
         },
@@ -385,6 +388,8 @@ impl ProductionTranscriptRuntime {
         let (dispatch_lane, dispatch_source) = classify_send_dispatch(args)?;
         let dispatch_ack_token = optional_non_empty(args, "ackToken");
         let is_fork = optional_bool(args, "isFork")?.unwrap_or(false);
+        let is_group_member_turn =
+            optional_bool(args, "groupMemberTurn")?.unwrap_or(false);
         let accepted = json!({ "accepted": true, "routed": true });
 
         let mut state = self.lock_state();
@@ -471,7 +476,11 @@ impl ProductionTranscriptRuntime {
                         let accepted_at_ms = system_now_ms();
                         state
                             .lifecycle
-                            .begin_session_run(agent_id, accepted_at_ms, false);
+                            .begin_session_run(
+                                agent_id,
+                                accepted_at_ms,
+                                is_group_member_turn,
+                            );
                         let epoch = state.pipeline.next_turn_epoch(agent_id);
                         state.pipeline.register_recovery_turn(
                             agent_id,

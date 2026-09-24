@@ -14071,16 +14071,20 @@
         "source/host/src/extensions/session/gateway.rs",
         "source/host/src/extensions/session/agent_session.rs",
         "source/host/src/groups/group_store.rs",
-        "source/host/src/groups/group_chat.rs"
+        "source/host/src/groups/group_chat.rs",
+        "source/host/src/extensions/transcript/send_group_fanout.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_gateway_contract.rs",
         "source/host/tests/group_chat_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/send_group_fanout_contract.rs",
+        "source/host/tests/routed_send_acceptance_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust Session Gateway now owns createGroup and setGroupMembers ahead of the compatibility Host: stable member dedupe/caps, nested-group rejection, existing-member filtering, duplicate-group reuse, group.json persistence, active pointer, refreshed AgentSummary and transcript response all use the real ProductionSessionWorkers/SandAgentSessionStore owners. Final remains withheld for local/remote member Runner turns, streaming preview/reaction delivery, shared-room guardrails, remote-turn projection, redrive/preemption and group orchestration wiring."
+      "notes": "Shipping Rust Session Gateway owns createGroup/setGroupMembers and group config. Local non-Cursor group sends are now production-wired through GroupChatOrchestrator into real per-member SandAgentRunner turns with durable room SendMessage projection and direct-DM cancellation. Final remains withheld for Cursor member-run parity, remote/shared-room delegates, shared-room guardrails/publication, streaming preview/reactions, and three-attempt DM-preemption redrive parity."
     },
     {
       "referencePath": "source/host/extensions/transcript/group-chat-orchestrator.ts",
@@ -14282,7 +14286,8 @@
         "source/node-agent-coordinator/src/main.rs",
         "source/host/src/runner/tools/box_help_tool.rs",
         "source/host/src/runner/production_turn_agent_owner.rs",
-        "source/host/src/extensions/transcript/sand_pending_wake_store.rs"
+        "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
+        "source/host/src/extensions/transcript/send_group_fanout.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14305,7 +14310,7 @@
         "source/host/tests/box_help_tool_contract.rs",
         "source/host/tests/production_turn_agent_owner_contract.rs"
       ],
-      "notes": "Shipping ProductionTranscriptRuntime owns user/provider run counts, visible running/composing/retrying activity, request IDs and queue/watchdog settlement. Non-Cursor routed provider turns hold the same Session run window from durable Host admission through actual Runner terminal via a stream-keyed RunScheduler lease; spawn/start errors release the lease fail-closed, and terminal settlement wakes the next turn. Durable pending-wake Subagent markers now project the frozen parent-state distinction isRunning=true/isRunningTurn=false after process restart through the real roster decoration path. Live-session retirement remains fenced until both the routed lease and provider run are settled. Final remains withheld for live Runner subagent-source fanout plus group/remote-member run accounting and activeRemoteMemberId production wiring."
+      "notes": "Production Rust owns user/provider run counts, composing/retrying/activity, request IDs, queue/watchdog settlement, non-Cursor routed-provider leases, durable Subagent pending-wake projection, and now real local non-Cursor group-member run accounting via groupMemberTurn routed leases plus direct-DM cancellation. Final remains withheld for live Runner subagent-source fanout and remote-member activeRemoteMemberId production wiring."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",
@@ -14488,16 +14493,19 @@
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/send_group_fanout.rs",
         "source/host/src/extensions/transcript/group_chat_orchestrator.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs"
       ],
       "testEvidence": [
         "source/host/tests/send_group_fanout_contract.rs",
         "source/host/tests/group_chat_orchestrator_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/routed_send_acceptance_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Production Rust local-group fanout owner now reads durable room history, resolves real local Session agents, executes the frozen bounded GroupChatOrchestrator through an injected member-turn executor, and durably appends authored SendMessage entries to the room transcript with turn-epoch cancellation. It deliberately defers shared-room/remote-member groups rather than faking them. Final requires Host wiring to the real Runner executor plus Cursor and remote/shared-room fanout."
+      "notes": "Production Rust local-group fanout now runs on the shipping Host path for non-Cursor providers: the outer room send owns the room turn epoch, each local member gets a real Host routed turn lease marked groupMemberTurn, the existing SandAgentRunner/TurnAgentComposition executes the member with frozen group system+turn prompts, direct user admission cancels active group-member streams, and only new SendMessage(text) tool outputs are durably posted back to the room transcript. Cursor stays on the compatibility path; remote/shared-room fanout remains deferred. Final requires Cursor-native group member execution, remote/shared-room fanout/publication, and frozen redrive/reaction/stream-preview semantics."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-message-shaping.ts",
@@ -14571,7 +14579,8 @@
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/extensions/session/production_agent_store.rs",
         "source/host/src/runner/production_agent_checkpoint.rs",
-        "source/host/src/extensions/transcript/box_request_entries.rs"
+        "source/host/src/extensions/transcript/box_request_entries.rs",
+        "source/host/src/extensions/transcript/send_group_fanout.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14590,9 +14599,10 @@
         "source/host/tests/routed_send_acceptance_contract.rs",
         "source/host/tests/gateway_server_contract.rs",
         "source/host/tests/turn_settle_checkpoint_contract.rs",
-        "source/host/tests/box_request_entries_contract.rs"
+        "source/host/tests/box_request_entries_contract.rs",
+        "source/host/tests/send_group_fanout_contract.rs"
       ],
-      "notes": "Production Rust send pipeline owns nonce admission/coalescing/replay, durable Session echo, acceptance/recovery state, queue/watchdog dispatch, turn epochs, attachment batch identity, recovery sends/break epochs and stale queued-turn suppression. Non-Cursor Coordinator admission carries streamId into runner.acceptRoutedPrompt and Host retains a per-Agent RunScheduler lease through real Runner terminal. Durable ack obligations remain Host-owned. Generated Agent checkpoint settlement atomically advances latestRootBlobId and confirms the exact user echo. The frozen stateful BoxRequestEntries owner is now composed into SendPipelineState and the shipping request_box_help path. Final remains withheld for real group/shared-room fanout, remaining ack/recovery guard composition and full generated Agent media consumption."
+      "notes": "Shipping Rust owns nonce admission/coalescing, durable Session echo, queue/watchdog, turn epochs, attachment batch identity, recovery sends, ack obligations, checkpoint settlement, BoxRequestEntries, and now real local non-Cursor group fanout through per-member Runner leases and durable room SendMessage projection. Final remains withheld for Cursor/remote/shared-room fanout, remaining ack/recovery guard composition, and full generated Agent media consumption."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",

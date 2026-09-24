@@ -263,6 +263,32 @@ fn transcript_entry_to_group_message(entry: Value) -> Option<GroupMessage> {
     }
 }
 
+pub fn collect_new_member_send_messages(
+    before: &[Value],
+    after: &[Value],
+) -> Vec<String> {
+    let before_ids = before
+        .iter()
+        .filter_map(|entry| entry.get("id").and_then(Value::as_str))
+        .collect::<std::collections::HashSet<_>>();
+    after
+        .iter()
+        .filter(|entry| {
+            entry
+                .get("id")
+                .and_then(Value::as_str)
+                .is_some_and(|id| !before_ids.contains(id))
+        })
+        .filter(|entry| entry.get("kind").and_then(Value::as_str) == Some("send-message"))
+        .filter_map(|entry| entry.get("message"))
+        .filter(|message| message.get("type").and_then(Value::as_str) == Some("text"))
+        .filter_map(|message| message.get("content").and_then(Value::as_str))
+        .map(str::trim)
+        .filter(|content| !content.is_empty())
+        .map(ToOwned::to_owned)
+        .collect()
+}
+
 fn now_ms() -> f64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
