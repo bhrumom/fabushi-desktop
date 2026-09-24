@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
 use mahayana_host_runtime::extensions::transcript::send_pipeline::PersistedSendContext;
-use mahayana_host_runtime::runner::conversation_state::RecoveryUserMessage;
+use mahayana_host_runtime::runner::RecoveryUserMessage;
 use mahayana_host_runtime::extensions::transcript::run_scheduler::{
     QueueAccepted, QueueDequeued, RunLane, WatchdogStage,
 };
