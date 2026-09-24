@@ -139,7 +139,7 @@ impl GroupOrchestratorDeps for LocalGroupFanoutDeps {
         }
     }
 
-    fn finalize_member_turn(&self) {}
+    fn finalize_member_turn(&self, _member: &GroupMember) {}
 
     fn is_shared_room(&self) -> bool {
         false
