@@ -1,5 +1,5 @@
 use std::fs;
-use std::sync::{Arc, Barrier};
+use std::sync::{Arc, Barrier, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::agents::agent_profile::{
@@ -13,6 +13,9 @@ use mahayana_host_runtime::extensions::session::agent_db::{
 };
 use mahayana_host_runtime::extensions::session::production::{
     FallbackSession, ProductionSessionWorkers,
+};
+use mahayana_host_runtime::extensions::session::session_diagnostics::{
+    SessionDiagnostic, pin_session_diagnostics_reporter,
 };
 use mahayana_host_runtime::extensions::session::session_materialization::{
     MAX_AGENTS_PER_USER, SessionMaterializationError, count_owned_agents,
@@ -283,6 +286,67 @@ fn production_cap_reclaim_removes_invisible_placeholder_before_mint() {
     assert!(root.join(&created.id).exists());
     assert_eq!(count_owned_agents(&root).expect("final count"), MAX_AGENTS_PER_USER);
 
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_fallback_reports_failed_adoption_and_continues_to_valid_session() {
+    let root = temp_root("fallback-diagnostic");
+    let existing = materialize_new_session(&root, 500, None, "user", None)
+        .expect("valid existing session");
+
+    let corrupt_id = "000-corrupt";
+    let corrupt_dir = root.join(corrupt_id);
+    fs::create_dir_all(&corrupt_dir).expect("corrupt agent dir");
+    let corrupt_db = corrupt_dir.join("store.db");
+    let empty_db = rusqlite::Connection::open(&corrupt_db).expect("empty sqlite");
+    drop(empty_db);
+
+    for index in 0..(MAX_AGENTS_PER_USER - 2) {
+        fs::create_dir_all(root.join(format!("slot-{index:02}"))).expect("cap slot");
+    }
+    assert_eq!(
+        count_owned_agents(&root).expect("owned count"),
+        MAX_AGENTS_PER_USER
+    );
+
+    let reports = Arc::new(Mutex::new(Vec::<SessionDiagnostic>::new()));
+    let captured = Arc::clone(&reports);
+    pin_session_diagnostics_reporter(Some(Arc::new(move |report| {
+        captured
+            .lock()
+            .expect("diagnostic capture")
+            .push(report.clone());
+    })));
+
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let fallback = workers
+        .create_fallback_session(Some(corrupt_id))
+        .expect("fallback after corrupt adoption");
+    match fallback {
+        FallbackSession::Existing(prepared) => assert_eq!(prepared.agent_id, existing.id),
+        FallbackSession::Created(record) => panic!("unexpected fallback mint: {}", record.id),
+    }
+
+    let snapshot = reports.lock().expect("diagnostic snapshot").clone();
+    assert!(snapshot.iter().any(|report| {
+        report.family == "materialize"
+            && report.kind == "fallback_adopt_failed"
+            && report
+                .metadata
+                .get("agentId")
+                .and_then(serde_json::Value::as_str)
+                == Some(corrupt_id)
+            && report
+                .metadata
+                .get("errorClass")
+                .and_then(serde_json::Value::as_str)
+                == Some("String")
+    }));
+
+    pin_session_diagnostics_reporter(None);
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }

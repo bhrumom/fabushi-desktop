@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -19,6 +19,7 @@ use super::agent_db::{
     AgentDbProjectionError, initialize_persisted_agent_record, read_persisted_agent_name,
     read_persisted_agent_serde_snapshot,
 };
+use super::session_diagnostics::{SessionDiagnostic, report_session_diagnostic};
 use super::session_paths::get_agent_db_path;
 use super::session_recovery::{ensure_profile_file, ensure_settings_file};
 
@@ -52,6 +53,21 @@ pub enum SessionMaterializationError {
     Database(#[from] AgentDbProjectionError),
     #[error("session materialization path error: {0}")]
     Path(String),
+}
+
+pub fn report_materialization_failure(
+    kind: &str,
+    agent_id: &str,
+    error_class: &str,
+) {
+    let mut metadata = BTreeMap::new();
+    metadata.insert("agentId".into(), Value::String(agent_id.to_string()));
+    metadata.insert("errorClass".into(), Value::String(error_class.to_string()));
+    report_session_diagnostic(&SessionDiagnostic {
+        family: "materialize".into(),
+        kind: kind.to_string(),
+        metadata,
+    });
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -157,7 +173,15 @@ pub fn materialize_new_session(
     })();
 
     if result.is_err() {
-        let _ = fs::remove_dir_all(&agent_dir);
+        if let Err(cleanup_error) = fs::remove_dir_all(&agent_dir) {
+            if cleanup_error.kind() != io::ErrorKind::NotFound {
+                report_materialization_failure(
+                    "mint_cleanup_failed",
+                    &agent_id,
+                    &format!("io::{:?}", cleanup_error.kind()),
+                );
+            }
+        }
     }
     result
 }

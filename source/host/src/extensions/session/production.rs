@@ -57,7 +57,7 @@ use super::session_maintenance::{
 use super::session_materialization::{
     MAX_AGENTS_PER_USER, MaterializedAgentRecord, SessionMintQueue, count_owned_agents,
     is_agent_cap_reached, list_agent_record_ids, list_pruned_placeholder_ids,
-    materialize_new_session, open_existing_session,
+    materialize_new_session, open_existing_session, report_materialization_failure,
 };
 use super::pending_card_sweeps::{
     expire_pending_auto_review_approval_entries,
@@ -205,7 +205,13 @@ impl ProductionSessionWorkers {
             match fs::remove_dir_all(self.agents_root.join(&agent_id)) {
                 Ok(()) => reclaimed.push(agent_id),
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-                Err(error) => return Err(error.to_string()),
+                Err(error) => {
+                    report_materialization_failure(
+                        "placeholder_reclaim_failed",
+                        &agent_id,
+                        &format!("io::{:?}", error.kind()),
+                    );
+                }
             }
         }
         Ok(reclaimed)
@@ -290,7 +296,15 @@ impl ProductionSessionWorkers {
                 for agent_id in self.list_agent_record_ids()? {
                     match self.prepare_existing_agent(&agent_id) {
                         Ok(Some(prepared)) => return Ok(FallbackSession::Existing(prepared)),
-                        Ok(None) | Err(_) => continue,
+                        Ok(None) => continue,
+                        Err(_) => {
+                            report_materialization_failure(
+                                "fallback_adopt_failed",
+                                &agent_id,
+                                "String",
+                            );
+                            continue;
+                        }
                     }
                 }
                 return Err(format!("Agent limit of {MAX_AGENTS_PER_USER} reached"));

@@ -12612,7 +12612,8 @@
         "source/host/src/agents/settings_file.rs",
         "source/host/src/workflows/workflow_store.rs",
         "source/host/src/workflows/workflow_library.rs",
-        "source/host/src/extensions/session/agent_session.rs"
+        "source/host/src/extensions/session/agent_session.rs",
+        "source/host/src/extensions/session/session_diagnostics.rs"
       ],
       "testEvidence": [
         "source/host/tests/session_materialization_contract.rs",
@@ -12621,7 +12622,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/workflow_store_contract.rs"
       ],
-      "notes": "Rust materialization owns MAX_AGENTS_PER_USER counting, UUID mint, fresh store.db/profile/settings identity, blob key generation and existing-agent open/repair. Shipping ProductionSessionWorkers owns the Host-lifetime SessionMintQueue, frozen pruned-placeholder reclaim using the actual visible roster boundary, active-agent preservation, and createFallbackSession semantics: cap-full fallback adopts the first openable durable session; cap-available fallback mints a fresh user session. Final remains withheld for automation/workflow/channel/memory composition into one MaterializedSession object, agent-store resetFromDb, diagnostics/report callbacks and remaining Gateway lifecycle behavior."
+      "notes": "Rust materialization owns MAX_AGENTS_PER_USER counting, UUID mint, fresh store.db/profile/settings identity, blob key generation and existing-agent open/repair. Shipping ProductionSessionWorkers owns the Host-lifetime SessionMintQueue, frozen pruned-placeholder reclaim using the actual visible roster boundary, active-agent preservation, and createFallbackSession semantics: cap-full fallback adopts the first openable durable session; cap-available fallback mints a fresh user session. Frozen materialize diagnostics are now production-wired: failed mint cleanup, placeholder reclaim and fallback adoption publish SessionDiagnostic family=materialize and the reclaim/adoption loops continue rather than aborting or silently swallowing the failure. Final remains withheld for automation/workflow/channel/memory composition into one MaterializedSession object, agent-store resetFromDb, and remaining Gateway lifecycle behavior."
     },
     {
       "referencePath": "source/host/extensions/session/session-mutations.ts",
