@@ -11,6 +11,7 @@ use mahayana_host_runtime::agents::settings_file::{
 use mahayana_host_runtime::extensions::session::agent_db::{
     read_persisted_agent_name, read_persisted_latest_root_blob_id,
 };
+use mahayana_host_runtime::extensions::session::agent_db_schema::AGENT_DB_SCHEMA;
 use mahayana_host_runtime::extensions::session::production::{
     FallbackSession, ProductionSessionWorkers,
 };
@@ -313,8 +314,15 @@ fn production_fallback_reports_failed_adoption_and_continues_to_valid_session() 
     let corrupt_dir = root.join(corrupt_id);
     fs::create_dir_all(&corrupt_dir).expect("corrupt agent dir");
     let corrupt_db = corrupt_dir.join("store.db");
-    let empty_db = rusqlite::Connection::open(&corrupt_db).expect("empty sqlite");
-    drop(empty_db);
+    let corrupt = rusqlite::Connection::open(&corrupt_db).expect("corrupt sqlite");
+    corrupt.execute_batch(AGENT_DB_SCHEMA).expect("corrupt schema");
+    corrupt
+        .execute(
+            "INSERT INTO kv (key, value) VALUES ('metadata', 'not-hex')",
+            [],
+        )
+        .expect("invalid metadata row");
+    drop(corrupt);
 
     for index in 0..(MAX_AGENTS_PER_USER - 2) {
         fs::create_dir_all(root.join(format!("slot-{index:02}"))).expect("cap slot");
