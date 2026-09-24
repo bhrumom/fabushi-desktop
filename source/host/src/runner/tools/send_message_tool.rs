@@ -1,5 +1,8 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use url::Url;
 
 use serde_json::{Value, json};
 
@@ -19,9 +22,41 @@ pub const SAND_SEND_MESSAGE_TOOL_NAME: &str = "SendMessage";
 pub const SAND_AWAITING_USER_SEND_MESSAGE_BLOCKED: &str =
     "Cannot send another user-facing message while the current user selection is still pending.";
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResolvedAttachmentSource {
+    pub url: String,
+    pub file_name: Option<String>,
+}
+
+pub fn file_path_from_file_url(raw: &str) -> Option<PathBuf> {
+    let url = Url::parse(raw).ok()?;
+    if url.scheme() != "file" {
+        return None;
+    }
+    url.to_file_path().ok()
+}
+
+pub fn identity_attachment_source(raw: &str) -> ResolvedAttachmentSource {
+    let file_name = file_path_from_file_url(raw)
+        .and_then(|path| path.file_name().map(|value| value.to_string_lossy().into_owned()))
+        .filter(|value| !value.is_empty());
+    ResolvedAttachmentSource {
+        url: raw.to_string(),
+        file_name,
+    }
+}
+
 pub trait SendMessageSink: Send + Sync {
     fn is_awaiting_user_selection(&self) -> bool {
         false
+    }
+
+    fn resolve_attachment_source(
+        &self,
+        source_url: &str,
+        _tool_call_id: &str,
+    ) -> Result<ResolvedAttachmentSource, ProviderSessionError> {
+        Ok(identity_attachment_source(source_url))
     }
 
     fn send_message(
@@ -55,7 +90,11 @@ pub fn send_message_tool_definition() -> RoutedToolDefinition {
     }
 }
 
-fn build_sand_send_message(input: &SendMessageInput) -> Result<Value, ProviderSessionError> {
+fn build_sand_send_message(
+    input: &SendMessageInput,
+    sink: &dyn SendMessageSink,
+    tool_call_id: &str,
+) -> Result<Value, ProviderSessionError> {
     let reply = input.reply_to.as_deref().filter(|value| !value.is_empty());
     let channel = input.channel.as_deref().filter(|value| !value.is_empty());
     let message = match input.message_type {
@@ -65,16 +104,35 @@ fn build_sand_send_message(input: &SendMessageInput) -> Result<Value, ProviderSe
                 "content": input.content.as_deref().unwrap_or_default()
             });
             if let Some(images) = input.images.as_ref().filter(|images| !images.is_empty()) {
-                value["images"] = serde_json::to_value(images)
-                    .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+                let resolved = images
+                    .iter()
+                    .map(|image| {
+                        let source = sink.resolve_attachment_source(&image.url, tool_call_id)?;
+                        Ok::<_, ProviderSessionError>(json!({
+                            "url": source.url,
+                            "alt": image.alt,
+                        }))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                value["images"] = Value::Array(resolved);
             }
             value
         }
-        SendMessageType::Attachment => json!({
-            "type": "attachment",
-            "url": input.url.as_deref().unwrap_or_default(),
-            "alt": input.alt.as_deref()
-        }),
+        SendMessageType::Attachment => {
+            let source = sink.resolve_attachment_source(
+                input.url.as_deref().unwrap_or_default(),
+                tool_call_id,
+            )?;
+            let mut value = json!({
+                "type": "attachment",
+                "url": source.url,
+                "alt": input.alt.as_deref()
+            });
+            if let Some(file_name) = source.file_name {
+                value["file_name"] = Value::String(file_name);
+            }
+            value
+        },
         SendMessageType::Widget => json!({
             "type": "widget",
             "widget": input.widget.clone().unwrap_or(Value::Null)
@@ -154,7 +212,7 @@ impl RoutedToolBridge for SendMessageToolBridge {
             ));
         }
 
-        let message = build_sand_send_message(&input)?;
+        let message = build_sand_send_message(&input, self.sink.as_ref(), tool_call_id)?;
         let _encoded = encode_send_message(&message).map_err(ProviderSessionError::Tool)?;
         let timestamp_ms = SystemTime::now()
             .duration_since(UNIX_EPOCH)

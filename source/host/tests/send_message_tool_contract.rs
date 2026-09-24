@@ -4,15 +4,20 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
+use mahayana_host_runtime::attachment_paths::{
+    AgentMediaKind, persist_agent_media_bytes,
+};
 use mahayana_host_runtime::runner::tools::send_message_encoding::{
     encode_markdown_image_destination, encode_send_message, encode_text_content,
+    image_mime_from_path, resolve_box_media_attachment,
 };
 use mahayana_host_runtime::runner::tools::send_message_schema::{
     parse_send_message_input, refine_send_message, send_message_input_schema,
     validate_send_message,
 };
 use mahayana_host_runtime::runner::tools::send_message_tool::{
-    SAND_SEND_MESSAGE_TOOL_NAME, SendMessageSink, SendMessageToolBridge,
+    ResolvedAttachmentSource, SAND_SEND_MESSAGE_TOOL_NAME, SendMessageSink,
+    SendMessageToolBridge,
 };
 use serde_json::{Value, json};
 
@@ -231,4 +236,148 @@ fn send_message_bridge_is_first_party_and_delegates_other_tools() {
         )
         .expect("delegate");
     assert_eq!(delegated["delegated"], true);
+}
+
+
+#[derive(Default)]
+struct ResolvingSink {
+    messages: Mutex<Vec<Value>>,
+    sources: Mutex<Vec<String>>,
+}
+
+impl SendMessageSink for ResolvingSink {
+    fn resolve_attachment_source(
+        &self,
+        source_url: &str,
+        _tool_call_id: &str,
+    ) -> Result<ResolvedAttachmentSource, ProviderSessionError> {
+        self.sources.lock().expect("sources").push(source_url.to_string());
+        let file_name = source_url
+            .rsplit('/')
+            .next()
+            .filter(|value| !value.is_empty())
+            .map(str::to_string);
+        Ok(ResolvedAttachmentSource {
+            url: source_url.replace("file:///workspace/", "file:///persisted/"),
+            file_name,
+        })
+    }
+
+    fn send_message(
+        &self,
+        message: Value,
+        _timestamp_ms: u64,
+        tool_call_id: &str,
+    ) -> Result<Option<String>, ProviderSessionError> {
+        self.messages.lock().expect("messages").push(message);
+        Ok(Some(format!("runner-send:{tool_call_id}")))
+    }
+}
+
+#[test]
+fn box_media_resolution_matches_frozen_root_desktop_and_image_fences() {
+    assert_eq!(image_mime_from_path("/workspace/a.PNG"), Some("image/png"));
+    assert_eq!(image_mime_from_path("/workspace/a.heic"), None);
+    assert_eq!(
+        resolve_box_media_attachment(
+            "/workspace/a.png",
+            true,
+            |_| Some(vec![1, 2, 3]),
+            |bytes, mime| Some(format!("image:{mime}:{}", bytes.len())),
+            |name, bytes| Some(format!("media:{name}:{}", bytes.len())),
+        ),
+        Some("image:image/png:3".to_string())
+    );
+    assert_eq!(
+        resolve_box_media_attachment(
+            "/workspace/movie.mp4",
+            true,
+            |_| Some(vec![1, 2]),
+            |_bytes, _mime| Some("wrong".to_string()),
+            |name, bytes| Some(format!("media:{name}:{}", bytes.len())),
+        ),
+        Some("media:movie.mp4:2".to_string())
+    );
+    assert!(resolve_box_media_attachment(
+        "/tmp/not-box.png",
+        true,
+        |_| Some(vec![1]),
+        |_bytes, _mime| Some("image".into()),
+        |_name, _bytes| Some("media".into()),
+    ).is_none());
+    assert!(resolve_box_media_attachment(
+        "/workspace/a.png",
+        false,
+        |_| Some(vec![1]),
+        |_bytes, _mime| Some("image".into()),
+        |_name, _bytes| Some("media".into()),
+    ).is_none());
+}
+
+#[test]
+fn send_message_bridge_resolves_text_images_and_standalone_attachments_before_persisting() {
+    let sink = Arc::new(ResolvingSink::default());
+    let bridge = SendMessageToolBridge::new(Arc::new(Delegate), sink.clone());
+    let tool = bridge.list_tools().expect("tools").remove(0);
+
+    bridge.call_tool(
+        &tool,
+        json!({
+            "type":"text",
+            "content":"look",
+            "images":[{"url":"file:///workspace/cat.png","alt":"cat"}]
+        }),
+        "image-call",
+    ).expect("image message");
+    bridge.call_tool(
+        &tool,
+        json!({
+            "type":"attachment",
+            "url":"file:///workspace/report.pdf",
+            "alt":"report"
+        }),
+        "attachment-call",
+    ).expect("attachment message");
+
+    let messages = sink.messages.lock().expect("messages");
+    assert_eq!(messages[0]["images"][0]["url"], "file:///persisted/cat.png");
+    assert_eq!(messages[1]["url"], "file:///persisted/report.pdf");
+    assert_eq!(messages[1]["file_name"], "report.pdf");
+    assert_eq!(
+        sink.sources.lock().expect("sources").as_slice(),
+        &[
+            "file:///workspace/cat.png".to_string(),
+            "file:///workspace/report.pdf".to_string()
+        ]
+    );
+}
+
+#[test]
+fn agent_media_persistence_is_atomic_and_separates_images_from_attachments() {
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-send-message-media-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let image = persist_agent_media_bytes(
+        &root,
+        "/workspace/folder/cat.png",
+        b"png-bytes",
+        AgentMediaKind::Image,
+    ).expect("persist image");
+    let file = persist_agent_media_bytes(
+        &root,
+        "/workspace/folder/report.pdf",
+        b"pdf-bytes",
+        AgentMediaKind::Attachment,
+    ).expect("persist attachment");
+    assert_eq!(image.parent().and_then(|value| value.file_name()).and_then(|value| value.to_str()), Some("assets"));
+    assert_eq!(file.parent().and_then(|value| value.file_name()).and_then(|value| value.to_str()), Some("attachments"));
+    assert!(image.file_name().and_then(|value| value.to_str()).is_some_and(|value| value.ends_with("-cat.png")));
+    assert!(file.file_name().and_then(|value| value.to_str()).is_some_and(|value| value.ends_with("-report.pdf")));
+    assert_eq!(std::fs::read(&image).expect("image bytes"), b"png-bytes");
+    assert_eq!(std::fs::read(&file).expect("file bytes"), b"pdf-bytes");
+    assert!(!root.join("assets").read_dir().expect("assets").any(|entry| {
+        entry.ok().and_then(|entry| entry.file_name().into_string().ok()).is_some_and(|name| name.ends_with(".tmp"))
+    }));
+    let _ = std::fs::remove_dir_all(root);
 }

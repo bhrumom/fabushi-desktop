@@ -16609,14 +16609,17 @@
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/tools/send_message_encoding.rs",
-        "source/host/src/runner/tools/send_message_tool.rs"
+        "source/host/src/runner/tools/send_message_tool.rs",
+        "source/host/src/attachment_paths.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/send_message_tool_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port covers frozen markdown-image escaping/text projection plus text/attachment/widget/cloud-agent/secret/permission/approval/local-permission/connector/listener/email/slack summaries. Shipping SendMessageToolBridge executes the encoding path before persistence. Final is withheld until box-media download/image persistence and attachment ingest resolution are production wired."
+      "notes": "Rust ports the frozen SendMessage encoding surface, including markdown-image escaping/text projection, attachment/widget/cloud-agent/secret/permission/approval/local-permission/connector/listener/email/slack summaries, image MIME classification and resolveBoxMediaAttachment root/desktop/download/persist semantics. Shipping ProductionSendMessageSink now performs frozen source resolution order for file:// inputs: local Host ingest into the agent media store first, then ForeverBox download fallback, returning durable file:// URLs consumed by the Electron attachment edge. The row remains existing-needs-parity only because the generated SendMessageArgs/ToolCall wrapper is not yet sourced from canonical generated Rust agent.v1 bindings."
     },
     {
       "referencePath": "source/host/runner/tools/send-message-schema.ts",
@@ -16654,7 +16657,8 @@
         "source/host/src/runner/tools/send_message_tool.rs",
         "source/host/src/runner/turn_agent_composition.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/attachment_paths.rs"
       ],
       "testEvidence": [
         "source/host/tests/send_message_tool_contract.rs",
@@ -16662,7 +16666,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Runner exposes SendMessage as a first-party RoutedToolBridge tool ahead of delegated MCP tools. Calls are schema-validated, normalized/encoded, and durably appended as send-message entries to the authoritative Rust Session transcript using stable runner-send:<toolCallId> identity. Final is withheld for attachment ingest/Box media persistence, cloud-agent title lookup, external channel delivery, pending-user-selection blocking from live Session state, and the exact generated proto interaction-handler partial/final tool-call surface."
+      "notes": "Shipping Runner exposes SendMessage as a first-party RoutedToolBridge ahead of delegated MCP tools. Calls are schema-validated, normalized/encoded and durably appended to the authoritative Rust Session transcript. Text images and standalone file:// attachments now pass through frozen resolveAttachmentSource ordering: local Host ingest first, ForeverBox fallback second, stable filename preservation and agent-owned media persistence. Final remains withheld for cloud-agent title lookup, https file-vs-media classification, media dimensions, external channel delivery, live awaiting-user-selection state, and the exact generated proto interaction-handler partial/final tool-call surface."
     },
     {
       "referencePath": "source/host/runner/tools/tool-input-error.ts",

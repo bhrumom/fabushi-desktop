@@ -188,3 +188,49 @@ pub fn is_box_root_path(path: &str) -> bool {
         .iter()
         .any(|root| path == *root || path.starts_with(&format!("{root}/")))
 }
+
+
+pub fn image_mime_from_path(path: &str) -> Option<&'static str> {
+    let extension = std::path::Path::new(path)
+        .extension()?
+        .to_str()?
+        .to_ascii_lowercase();
+    match extension.as_str() {
+        "avif" => Some("image/avif"),
+        "bmp" => Some("image/bmp"),
+        "gif" => Some("image/gif"),
+        "ico" => Some("image/x-icon"),
+        "jpeg" | "jpg" => Some("image/jpeg"),
+        "png" => Some("image/png"),
+        "svg" => Some("image/svg+xml"),
+        "webp" => Some("image/webp"),
+        _ => None,
+    }
+}
+
+pub fn resolve_box_media_attachment<Download, PersistImage, PersistMedia>(
+    box_path: &str,
+    remote_box_has_desktop: bool,
+    download: Download,
+    persist_image: PersistImage,
+    persist_media_bytes: PersistMedia,
+) -> Option<String>
+where
+    Download: FnOnce(&str) -> Option<Vec<u8>>,
+    PersistImage: FnOnce(&[u8], &str) -> Option<String>,
+    PersistMedia: FnOnce(&str, &[u8]) -> Option<String>,
+{
+    if !remote_box_has_desktop || !is_box_root_path(box_path) {
+        return None;
+    }
+    let data = download(box_path)?;
+    if let Some(mime) = image_mime_from_path(box_path) {
+        return persist_image(&data, mime);
+    }
+    let name = std::path::Path::new(box_path)
+        .file_name()
+        .and_then(|value| value.to_str())
+        .filter(|value| !value.is_empty())
+        .unwrap_or("attachment");
+    persist_media_bytes(name, &data)
+}

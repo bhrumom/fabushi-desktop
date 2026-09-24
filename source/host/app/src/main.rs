@@ -94,7 +94,15 @@ use mahayana_host_runtime::runner::coordinator_tool_relay::{
     RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
 };
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
-use mahayana_host_runtime::runner::tools::send_message_tool::SendMessageSink;
+use mahayana_host_runtime::attachment_paths::{
+    AgentMediaKind, file_url_for_path, persist_agent_media_bytes,
+};
+use mahayana_host_runtime::runner::tools::send_message_encoding::{
+    image_mime_from_path, resolve_box_media_attachment,
+};
+use mahayana_host_runtime::runner::tools::send_message_tool::{
+    ResolvedAttachmentSource, SendMessageSink, file_path_from_file_url,
+};
 use mahayana_host_runtime::runner::tools::sand_reaction_tool::ReactionSink;
 use mahayana_host_runtime::gateway_config::{gateway_scheme, resolve_gateway_server_config};
 use mahayana_host_runtime::gateway_server::{
@@ -268,13 +276,78 @@ const RUNNER_INFERENCE_EVENT_CHANNEL: &str = "runner-inference";
 
 struct ProductionSendMessageSink {
     sessions: Arc<ProductionSessionWorkers>,
+    forever_box: Arc<ForeverBoxService>,
     ack_obligations: Arc<AckObligations>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     ack_token: Option<String>,
     agent_id: String,
 }
 
+impl ProductionSendMessageSink {
+    fn persist_media_bytes(
+        &self,
+        source_name: &str,
+        bytes: &[u8],
+        kind: AgentMediaKind,
+    ) -> Option<String> {
+        let db_path = self.sessions.session_db_path(&self.agent_id).ok()?;
+        let agent_dir = db_path.parent()?;
+        let path = persist_agent_media_bytes(agent_dir, source_name, bytes, kind).ok()?;
+        file_url_for_path(path)
+    }
+}
+
 impl SendMessageSink for ProductionSendMessageSink {
+    fn resolve_attachment_source(
+        &self,
+        source_url: &str,
+        _tool_call_id: &str,
+    ) -> Result<ResolvedAttachmentSource, ProviderSessionError> {
+        let Some(source_path) = file_path_from_file_url(source_url) else {
+            return Ok(ResolvedAttachmentSource {
+                url: source_url.to_string(),
+                file_name: None,
+            });
+        };
+        let file_name = source_path
+            .file_name()
+            .map(|value| value.to_string_lossy().into_owned())
+            .filter(|value| !value.is_empty());
+        let source_path_text = source_path.to_string_lossy().into_owned();
+
+        if let Ok(bytes) = fs::read(&source_path) {
+            let kind = if image_mime_from_path(&source_path_text).is_some() {
+                AgentMediaKind::Image
+            } else {
+                AgentMediaKind::Attachment
+            };
+            if let Some(url) = self.persist_media_bytes(&source_path_text, &bytes, kind) {
+                return Ok(ResolvedAttachmentSource { url, file_name });
+            }
+        }
+
+        let status = self.forever_box.get_status(&self.agent_id);
+        let remote_box_has_desktop = status.vnc_url.is_some()
+            || status.windows.as_ref().is_some_and(|windows| !windows.is_empty());
+        let resolved = resolve_box_media_attachment(
+            &source_path_text,
+            remote_box_has_desktop,
+            |path| self.forever_box.box_().download_file(&self.agent_id, path).ok(),
+            |bytes, _mime| self.persist_media_bytes(
+                &source_path_text,
+                bytes,
+                AgentMediaKind::Image,
+            ),
+            |name, bytes| self.persist_media_bytes(
+                name,
+                bytes,
+                AgentMediaKind::Attachment,
+            ),
+        )
+        .unwrap_or_else(|| source_url.to_string());
+        Ok(ResolvedAttachmentSource { url: resolved, file_name })
+    }
+
     fn send_message(
         &self,
         message: serde_json::Value,
@@ -812,6 +885,7 @@ fn start_routed_provider_task(
             let send_message_sink: Arc<dyn SendMessageSink> = Arc::new(
                 ProductionSendMessageSink {
                     sessions: worker_sessions,
+                    forever_box: Arc::clone(&forever_box),
                     ack_obligations: Arc::clone(&worker_ack_obligations),
                     transcript_runtime: Arc::clone(&worker_transcript_runtime),
                     ack_token: worker_ack_token.clone(),
