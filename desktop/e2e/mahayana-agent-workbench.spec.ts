@@ -225,8 +225,14 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
 
     const prompt = '请分析这个任务，规划步骤，调用工具并给出最终结果。';
     const promptInput = page.getByRole('textbox', { name: 'Prompt' });
-    await promptInput.fill(prompt);
-    await page.getByRole('button', { name: 'Send message' }).click();
+    await promptInput.click();
+    // The recovered TipTap editor fences scope-switch transactions until it
+    // observes a real UI edit. pressSequentially exercises the same input
+    // contract as a user instead of mutating contenteditable DOM via fill().
+    await promptInput.pressSequentially(prompt);
+    const send = page.getByRole('button', { name: 'Send message' });
+    await expect(send).toBeVisible();
+    await send.click();
 
     // The user bubble is a local-first transition and must paint before the
     // Mahayana Host finishes accepting/routing the agent turn. The Hermes
