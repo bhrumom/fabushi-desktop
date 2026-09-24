@@ -14425,15 +14425,17 @@
         "source/host/src/extensions/transcript/production_runtime.rs",
         "source/host/app/src/main.rs",
         "source/host/src/extensions/session/agent_session.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/transcript/transcript_store.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_session_runtime_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/transcript_store_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust Transcript runtime now owns frozen active-window focus state and openAgent switching semantics: focus transition marks the active Agent viewed only when activity is newer and not manually unread; switching while focused marks the previous Agent viewed with manual-unread preservation, marks the next Agent viewed, reads its authoritative transcript, and durably updates the active pointer. Final is withheld for liveSessions/openSessionOnce, deferred windowed activation/catch-up, in-memory transcript projection, roster activation events, desktop-contact freshness and remaining lifecycle composition."
+      "notes": "Shipping Rust Transcript runtime now owns frozen active-window focus state and openAgent switching semantics: focus transition marks the active Agent viewed only when activity is newer and not manually unread; switching while focused marks the previous Agent viewed with manual-unread preservation, marks the next Agent viewed, reads its authoritative transcript, and durably updates the active pointer. Final is withheld for liveSessions/openSessionOnce, deferred windowed activation/catch-up, in-memory transcript projection, roster activation events, desktop-contact freshness and remaining lifecycle composition. Active transcript projection is now production-owned by TranscriptStore: openAgent loads authoritative DB entries into the store, same-agent opens reuse the loaded projection, and switching replaces it. Broader liveSessions/openSessionOnce/deferred activation semantics remain non-final."
     },
     {
       "referencePath": "source/host/extensions/transcript/shared-rooms.ts",
@@ -14473,12 +14475,23 @@
       "targetPath": "source/host/src/extensions/transcript/transcript_hub.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "0f14e3f187f96a102ed3f31a6749b10632301e81",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/transcript_hub.rs",
+        "source/host/src/extensions/transcript/transcript_store.rs",
+        "source/host/src/extensions/transcript/session_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_store_contract.rs",
+        "source/host/tests/transcript_session_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of frozen transcript shared contracts: exact unattached-runner message, TranscriptEntry JSON shape helpers, disposable scheduling clock. SessionRuntime/TranscriptStore consume the shared entry contract in the shipping Host."
     },
     {
       "referencePath": "source/host/extensions/transcript/transcript-manager.ts",
@@ -14497,12 +14510,22 @@
       "targetPath": "source/host/src/extensions/transcript/transcript_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "1cccb30b807f389463663e2ad97a3af472ffd254",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/transcript_store.rs",
+        "source/host/src/extensions/transcript/session_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_store_contract.rs",
+        "source/host/tests/transcript_session_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of frozen active transcript cache with copy-on-set/get, append/update/remove/clear semantics. Shipping SessionRuntime loads the authoritative DB snapshot on active-agent activation, preserves the loaded in-memory projection for same-agent opens, and replaces it on agent switches."
     },
     {
       "referencePath": "source/host/extensions/transcript/turn-runtime.ts",

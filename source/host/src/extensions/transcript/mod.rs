@@ -18,6 +18,8 @@ pub mod agent_run_error;
 pub mod send_message_shaping;
 pub mod send_thread_stamping;
 pub mod transcript_entry_ids;
+pub mod transcript_hub;
+pub mod transcript_store;
 
 pub mod channel_delivery_unregistered_error;
 pub mod send_not_persisted_error;

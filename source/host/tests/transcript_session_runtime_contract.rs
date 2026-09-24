@@ -27,6 +27,12 @@ fn focus_and_switch_follow_frozen_active_session_viewed_semantics() {
     store
         .write_active_agent_id(&first.id)
         .expect("seed active pointer");
+    sessions
+        .append_agent_transcript_entries(
+            &second.id,
+            &[serde_json::json!({"id":"second-1","kind":"message","role":"user","content":"hello"})],
+        )
+        .expect("second transcript");
 
     sessions
         .mark_agent_activity(&first.id, 100.0)
@@ -55,7 +61,13 @@ fn focus_and_switch_follow_frozen_active_session_viewed_semantics() {
     let entries = runtime
         .switch_agent(&sessions, &second.id, 400.0)
         .expect("switch");
-    assert!(entries.is_empty());
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0]["id"], "second-1");
+    assert_eq!(runtime.get_entries(), entries);
+    runtime.append_entry(serde_json::json!({"id":"local","kind":"notice","text":"local"}));
+    assert_eq!(runtime.get_entries().len(), 2);
+    assert!(runtime.remove_entry("local"));
+    assert_eq!(runtime.get_entries().len(), 1);
     assert_eq!(
         store.read_active_agent_id().as_deref(),
         Some(second.id.as_str())
@@ -97,11 +109,25 @@ fn opening_the_already_active_agent_does_not_rewrite_viewed_state() {
     sessions
         .mark_agent_activity(&agent.id, 100.0)
         .expect("activity");
+    sessions
+        .append_agent_transcript_entries(
+            &agent.id,
+            &[serde_json::json!({"id":"same-1","kind":"message","role":"user","content":"seed"})],
+        )
+        .expect("same transcript");
 
     let runtime = SessionRuntime::new();
-    let _ = runtime
+    let first_snapshot = runtime
         .switch_agent(&sessions, &agent.id, 900.0)
         .expect("same active");
+    assert_eq!(first_snapshot.len(), 1);
+    assert_eq!(runtime.get_entries(), first_snapshot);
+    runtime.append_entry(serde_json::json!({"id":"memory-only","kind":"notice","text":"cached"}));
+    let second_snapshot = runtime
+        .switch_agent(&sessions, &agent.id, 901.0)
+        .expect("same active cached");
+    assert_eq!(second_snapshot.len(), 2);
+    assert_eq!(second_snapshot[1]["id"], "memory-only");
     let unread = sessions
         .open_agent_db_owner(&agent.id)
         .expect("owner")

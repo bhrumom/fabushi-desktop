@@ -5,6 +5,9 @@ use serde_json::Value;
 use crate::extensions::session::agent_session::SandAgentSessionStore;
 use crate::extensions::session::production::ProductionSessionWorkers;
 
+use super::transcript_hub::TranscriptEntry;
+use super::transcript_store::TranscriptStore;
+
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 struct WindowFocusState {
     is_focused: bool,
@@ -20,11 +23,63 @@ struct WindowFocusState {
 #[derive(Default)]
 pub struct SessionRuntime {
     focus: Mutex<WindowFocusState>,
+    transcript: TranscriptStore,
+    in_memory_transcript_agent_id: Mutex<Option<String>>,
 }
 
 impl SessionRuntime {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn get_entries(&self) -> Vec<TranscriptEntry> {
+        self.transcript.get_transcript()
+    }
+
+    pub fn set_active_transcript(
+        &self,
+        agent_id: &str,
+        entries: &[TranscriptEntry],
+    ) {
+        self.transcript.set_transcript(entries);
+        if let Ok(mut owner) = self.in_memory_transcript_agent_id.lock() {
+            *owner = Some(agent_id.to_string());
+        }
+    }
+
+    pub fn clear_active_transcript(&self, agent_id: Option<&str>) {
+        self.transcript.clear_transcript();
+        if let Ok(mut owner) = self.in_memory_transcript_agent_id.lock() {
+            *owner = agent_id.map(ToOwned::to_owned);
+        }
+    }
+
+    pub fn append_entry(&self, entry: TranscriptEntry) {
+        self.transcript.append_entry(entry);
+    }
+
+    pub fn update_entry<F>(
+        &self,
+        id: &str,
+        update: F,
+    ) -> Option<TranscriptEntry>
+    where
+        F: FnOnce(&TranscriptEntry) -> TranscriptEntry,
+    {
+        self.transcript.update_entry(id, update)
+    }
+
+    pub fn remove_entry(&self, id: &str) -> bool {
+        self.transcript.remove_entry(id)
+    }
+
+    fn has_loaded_agent(&self, agent_id: &str) -> bool {
+        self.in_memory_transcript_agent_id
+            .lock()
+            .ok()
+            .and_then(|owner| owner.clone())
+            .as_deref()
+            == Some(agent_id)
     }
 
     pub fn is_window_focused(&self) -> bool {
@@ -84,7 +139,12 @@ impl SessionRuntime {
         let store = SandAgentSessionStore::new(Arc::clone(sessions));
         let current = store.read_active_agent_id();
         if current.as_deref() == Some(agent_id) {
-            return sessions.read_agent_transcript_entries(agent_id);
+            if self.has_loaded_agent(agent_id) {
+                return Ok(self.get_entries());
+            }
+            let entries = sessions.read_agent_transcript_entries(agent_id)?;
+            self.set_active_transcript(agent_id, &entries);
+            return Ok(entries);
         }
 
         if self.is_window_focused() {
@@ -95,6 +155,7 @@ impl SessionRuntime {
 
         sessions.mark_agent_viewed(agent_id, now_ms, false)?;
         let entries = sessions.read_agent_transcript_entries(agent_id)?;
+        self.set_active_transcript(agent_id, &entries);
         store
             .write_active_agent_id(agent_id)
             .map_err(|error| error.to_string())?;
