@@ -16696,12 +16696,23 @@
       "targetPath": "source/host/src/transcript_mirror/conversation_state_binary.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "6484934f9c8fb758a7acadb693f043005e8c2497",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/transcript_mirror/conversation_state_binary.rs",
+        "source/host/src/extensions/session/conversation_recovery.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_mirror_conversation_state_binary_contract.rs",
+        "source/host/tests/conversation_recovery_contract.rs",
+        "source/host/tests/session_maintenance_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen transcript-mirror ConversationStateStructure decoder and summary-archive message-id decoder. The same decoder now owns the shipping Session durable-root recovery projection (root prompts/turns/todos/summary), removing the prior duplicate protobuf parser; transcript mirror fields additionally preserve summaryArchives field 13 and frozen unknown-field/group error behavior."
     },
     {
       "referencePath": "source/host/transcript-mirror/generated-occurrence-codec.ts",

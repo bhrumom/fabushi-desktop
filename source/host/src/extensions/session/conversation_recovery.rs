@@ -3,6 +3,7 @@ use std::future::Future;
 
 use rusqlite::Connection;
 use serde_json::{Map, Value};
+use crate::transcript_mirror::conversation_state_binary::decode_conversation_state_recovery_fields;
 
 pub const MAX_ROOT_BLOB_BYTES: usize = 8 * 1024 * 1024;
 pub const REBUILT_ENTRY_ID_PREFIX: &str = "recovered-";
@@ -273,94 +274,13 @@ pub fn find_latest_root_blob_id_in_database(
 pub fn parse_conversation_state_structure(
     data: &[u8],
 ) -> Option<MinimalConversationState> {
-    let mut position = 0usize;
-    let mut parsed = MinimalConversationState::default();
-    while position < data.len() {
-        let tag = read_varint(data, &mut position)?;
-        let field_number = tag >> 3;
-        let wire_type = (tag & 0x07) as u8;
-        if field_number == 0 {
-            return None;
-        }
-        if wire_type == 2 && matches!(field_number, 1 | 3 | 6 | 8) {
-            let value = read_bytes(data, &mut position)?;
-            match field_number {
-                1 => parsed.root_prompts = parsed.root_prompts.saturating_add(1),
-                3 => parsed.todos.push(value.to_vec()),
-                6 => parsed.summary = Some(value.to_vec()),
-                8 => parsed.turns.push(value.to_vec()),
-                _ => unreachable!(),
-            }
-            continue;
-        }
-        skip_field(data, &mut position, wire_type, field_number)?;
-    }
-    Some(parsed)
-}
-
-fn read_varint(data: &[u8], position: &mut usize) -> Option<u64> {
-    let mut value = 0u64;
-    for shift in (0..70).step_by(7) {
-        let byte = *data.get(*position)?;
-        *position += 1;
-        value |= u64::from(byte & 0x7f) << shift;
-        if byte & 0x80 == 0 {
-            return Some(value);
-        }
-    }
-    None
-}
-
-fn read_bytes<'a>(data: &'a [u8], position: &mut usize) -> Option<&'a [u8]> {
-    let length: usize = read_varint(data, position)?.try_into().ok()?;
-    let end = position.checked_add(length)?;
-    let value = data.get(*position..end)?;
-    *position = end;
-    Some(value)
-}
-
-fn skip_field(
-    data: &[u8],
-    position: &mut usize,
-    wire_type: u8,
-    field_number: u64,
-) -> Option<()> {
-    match wire_type {
-        0 => {
-            let _ = read_varint(data, position)?;
-        }
-        1 => {
-            *position = position.checked_add(8)?;
-            if *position > data.len() {
-                return None;
-            }
-        }
-        2 => {
-            let length: usize = read_varint(data, position)?.try_into().ok()?;
-            *position = position.checked_add(length)?;
-            if *position > data.len() {
-                return None;
-            }
-        }
-        3 => loop {
-            let tag = read_varint(data, position)?;
-            let nested_field = tag >> 3;
-            let nested_wire = (tag & 0x07) as u8;
-            if nested_wire == 4 {
-                return (nested_field == field_number).then_some(());
-            }
-            skip_field(data, position, nested_wire, nested_field)?;
-        },
-        4 => return None,
-        5 => {
-            *position = position.checked_add(4)?;
-            if *position > data.len() {
-                return None;
-            }
-        }
-        _ => return None,
-    }
-    Some(())
+    let decoded = decode_conversation_state_recovery_fields(data).ok()?;
+    Some(MinimalConversationState {
+        turns: decoded.turns,
+        todos: decoded.todos,
+        summary: decoded.summary,
+        root_prompts: decoded.root_prompt_messages_json.len(),
+    })
 }
 
 fn finite_number(value: f64) -> Option<f64> {
