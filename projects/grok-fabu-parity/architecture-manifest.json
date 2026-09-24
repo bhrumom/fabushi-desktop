@@ -13999,7 +13999,10 @@
         "source/host/src/extensions/transcript/run_scheduler.rs",
         "source/host/src/extensions/transcript/ack_obligations.rs",
         "source/host/src/extensions/transcript/run_lifecycle.rs",
-        "source/host/src/sand_activity.rs"
+        "source/host/src/sand_activity.rs",
+        "source/host/src/runner/production_turn_run_shell_adapter.rs",
+        "source/host/src/runner/routed_provider_runtime.rs",
+        "source/host/src/runner/turn_agent_composition.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14011,9 +14014,10 @@
         "source/host/tests/runner_routed_provider_contract.rs",
         "source/host/tests/sand_activity_contract.rs",
         "source/host/tests/run_lifecycle_activity_production_contract.rs",
-        "source/host/tests/ack_redrive_production_contract.rs"
+        "source/host/tests/ack_redrive_production_contract.rs",
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs"
       ],
-      "notes": "Rust run lifecycle is production-composed around shipping sendPrompt/RunScheduler and live provider-run activity. Routed-provider text/MCP-tool/SendMessage/terminal events feed frozen named-activity hold state and listAgents run-state projection. Exact-deadline watchdog Trip-cancels the real provider, persists ack interrupt, Escape-releases queued user turns and fences late settlement. Durable ack obligations now receive Host-owned 5s boot/idle redrive scanning through the shipping sendPrompt path. Final remains withheld for exact background-lane redrive scheduling/quiesce semantics, provider-internal retry events, active/live-session retirement, subagent-parent/group remote-member projection and full queue/turn telemetry sinks."
+      "notes": "Rust run lifecycle is production-composed around shipping sendPrompt/RunScheduler and live provider-run activity. Routed-provider text/MCP-tool/SendMessage/terminal events feed frozen named-activity hold state and listAgents run-state projection. Provider-internal retry/resume decisions now emit a structured Runner-owned retry event before backoff; RoutedProviderRun and TurnAgentComposition carry that event to the shipping Host, which projects ActivityUpdate::Retrying without taking ownership of retry policy. Exact-deadline watchdog Trip-cancels the real provider, persists ack interrupt, Escape-releases queued user turns and fences late settlement. Durable ack obligations receive Host-owned boot/idle redrive scanning through the background lane. Final remains withheld for exact per-agent idle/boot redrive timer semantics, active/live-session retirement, subagent-parent/group remote-member projection and full queue/turn telemetry sinks."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",
@@ -15669,7 +15673,8 @@
         "source/host/src/runner/production_turn_run_shell_adapter.rs",
         "source/host/src/runner/routed_provider_runtime.rs",
         "source/host/src/extensions/inference/provider_session.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/turn_agent_composition.rs"
       ],
       "testEvidence": [
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
@@ -15677,7 +15682,7 @@
         "source/host/tests/inference_provider_session_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "The shipping routed-provider path now enters ProductionTurnRunShellAdapter for bounded retry/backoff, first-output watchdog, cancellation, durable checkpoint-before-resume and tool-only checkpoint progress. Provider attempts use run_routed_provider_text_with_lifecycle and the Host supplies a per-agent/per-stream durable checkpoint store. This Rust target currently covers the provider-attempt lifecycle nested inside the frozen adapter; the full Grok prepared-turn/Agent stream/session/settle/context-linking adapter remains to be ported before final."
+      "notes": "Shipping routed-provider path enters ProductionTurnRunShellAdapter for bounded retry/backoff, first-output watchdog, cancellation, durable checkpoint-before-resume and tool-only checkpoint progress. Provider retry/resume decisions now surface a structured Runner-owned retry event before backoff and the shipping Host consumes that event only for lifecycle projection. The full frozen prepared-turn/Agent stream/session/settle/context-linking adapter remains to be ported before final."
     },
     {
       "referencePath": "source/host/runner/prompt-collector-glue.ts",
