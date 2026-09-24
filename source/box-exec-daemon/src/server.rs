@@ -1927,8 +1927,51 @@ mod tests {
         stream.write_all(body).expect("body");
         stream.flush().expect("flush");
         let mut response = Vec::new();
-        stream.read_to_end(&mut response).expect("response");
+        let mut chunk = [0_u8; 4096];
+        loop {
+            if http_response_complete(&response) {
+                break;
+            }
+            match stream.read(&mut chunk) {
+                Ok(0) => break,
+                Ok(count) => response.extend_from_slice(&chunk[..count]),
+                Err(error)
+                    if error.kind() == std::io::ErrorKind::ConnectionReset
+                        && http_response_complete(&response) =>
+                {
+                    break;
+                }
+                Err(error) => panic!("response: {error:?}"),
+            }
+        }
+        assert!(
+            http_response_complete(&response),
+            "incomplete HTTP response: {} bytes",
+            response.len()
+        );
         response
+    }
+
+    fn http_response_complete(response: &[u8]) -> bool {
+        let Some(header_index) = response
+            .windows(4)
+            .position(|window| window == b"\r\n\r\n")
+        else {
+            return false;
+        };
+        let body_offset = header_index + 4;
+        let Ok(headers) = std::str::from_utf8(&response[..body_offset]) else {
+            return false;
+        };
+        let Some(content_length) = headers.lines().find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.eq_ignore_ascii_case("content-length")
+                .then(|| value.trim().parse::<usize>().ok())
+                .flatten()
+        }) else {
+            return false;
+        };
+        response.len() >= body_offset.saturating_add(content_length)
     }
 
     fn http_body(response: &[u8]) -> &[u8] {
