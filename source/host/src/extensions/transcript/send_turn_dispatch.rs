@@ -61,12 +61,15 @@ impl ProductionTurnDispatch {
         })
     }
 
-    pub fn enqueue_user_turn(
+    pub fn enqueue_turn(
         &mut self,
         agent_id: &str,
         client_nonce: Option<&str>,
         accepted_at_ms: u64,
         now_ms: u64,
+        lane: RunLane,
+        source: &str,
+        ack_token: Option<&str>,
     ) -> Result<(UserTurnTicket, QueueAccepted), &'static str> {
         self.next_task_seq = self.next_task_seq.saturating_add(1);
         let nonce = client_nonce
@@ -78,11 +81,11 @@ impl ProductionTurnDispatch {
             agent_id.to_string(),
             QueuedRun {
                 task_id: task_id.clone(),
-                lane: RunLane::User,
-                source: "turn".to_string(),
+                lane,
+                source: source.to_string(),
                 enqueued_at_ms: now_ms,
                 accepted_at_ms: Some(accepted_at_ms),
-                ack_token: None,
+                ack_token: ack_token.map(ToOwned::to_owned),
             },
         )?;
         if self.scheduler.active(agent_id).is_none() {
@@ -95,6 +98,24 @@ impl ProductionTurnDispatch {
             },
             accepted,
         ))
+    }
+
+    pub fn enqueue_user_turn(
+        &mut self,
+        agent_id: &str,
+        client_nonce: Option<&str>,
+        accepted_at_ms: u64,
+        now_ms: u64,
+    ) -> Result<(UserTurnTicket, QueueAccepted), &'static str> {
+        self.enqueue_turn(
+            agent_id,
+            client_nonce,
+            accepted_at_ms,
+            now_ms,
+            RunLane::User,
+            "turn",
+            None,
+        )
     }
 
     pub fn active_generation_for(&self, ticket: &UserTurnTicket) -> Option<u64> {
@@ -117,6 +138,14 @@ impl ProductionTurnDispatch {
 
     pub fn queued_task_ids(&self, agent_id: &str) -> Vec<String> {
         self.scheduler.queued_task_ids(agent_id)
+    }
+
+    pub fn active_lane(&self, agent_id: &str) -> Option<RunLane> {
+        self.scheduler.get_active_lane(agent_id)
+    }
+
+    pub fn active_source(&self, agent_id: &str) -> Option<&str> {
+        self.scheduler.active(agent_id).map(|active| active.item.source.as_str())
     }
 
     pub fn is_idle(&self, agent_id: &str) -> bool {

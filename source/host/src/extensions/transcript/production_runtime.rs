@@ -16,7 +16,8 @@ use super::run_lifecycle::RunLifecycleState;
 use super::sand_pending_wake_store::SandPendingWakeStore;
 use super::sand_upgrade_resume_store::SandUpgradeResumeStore;
 use super::run_scheduler::{
-    RUN_WATCHDOG_DEFAULT_MS, RUN_WATCHDOG_GRACE_DEFAULT_MS, RunSettlement, WatchdogEvent,
+    RUN_WATCHDOG_DEFAULT_MS, RUN_WATCHDOG_GRACE_DEFAULT_MS, RunLane, RunSettlement,
+    WatchdogEvent,
 };
 use super::send_pipeline::{
     HOST_ACCOUNT_SLOT, SendBegin, SendEchoIdentity, SendPipelineState,
@@ -188,6 +189,15 @@ impl ProductionTranscriptRuntime {
         let input = parse_send_input(args)?;
         let nonce = optional_non_empty(args, "clientNonce").map(ToOwned::to_owned);
         let agent_id = input.agent_id.clone();
+        let is_ack_redrive = optional_bool(args, "ackRedrive")?.unwrap_or(false)
+            && optional_non_empty(args, "requestSource") == Some("handoff-resume");
+        let dispatch_lane = if is_ack_redrive {
+            RunLane::Background
+        } else {
+            RunLane::User
+        };
+        let dispatch_source = if is_ack_redrive { "ack-redrive" } else { "turn" };
+        let dispatch_ack_token = optional_non_empty(args, "ackToken");
         let mut turn_ticket: Option<UserTurnTicket> = None;
         let mut turn_generation: Option<u64> = None;
 
@@ -229,11 +239,14 @@ impl ProductionTranscriptRuntime {
                         state.pipeline.next_turn_epoch(agent_id);
                         let (ticket, _) = state
                             .turn_dispatch
-                            .enqueue_user_turn(
+                            .enqueue_turn(
                                 agent_id,
                                 nonce.as_deref(),
                                 accepted_at_ms,
                                 accepted_at_ms,
+                                dispatch_lane,
+                                dispatch_source,
+                                dispatch_ack_token,
                             )
                             .map_err(|error| ProductionSendError::Internal(error.to_string()))?;
                         turn_ticket = Some(ticket);
@@ -438,6 +451,17 @@ impl ProductionTranscriptRuntime {
             .turn_dispatch
             .queued_task_ids(agent_id)
             .len()
+    }
+
+    pub fn active_turn_lane(&self, agent_id: &str) -> Option<RunLane> {
+        self.lock_state().turn_dispatch.active_lane(agent_id)
+    }
+
+    pub fn active_turn_source(&self, agent_id: &str) -> Option<String> {
+        self.lock_state()
+            .turn_dispatch
+            .active_source(agent_id)
+            .map(ToOwned::to_owned)
     }
 
     pub fn is_turn_dispatch_idle(&self, agent_id: &str) -> bool {

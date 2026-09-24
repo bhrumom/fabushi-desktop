@@ -7,7 +7,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
-use mahayana_host_runtime::extensions::transcript::run_scheduler::WatchdogStage;
+use mahayana_host_runtime::extensions::transcript::run_scheduler::{
+    RunLane, WatchdogStage,
+};
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -315,5 +317,61 @@ fn production_watchdog_escapes_a_wedged_predecessor_and_fences_late_settlement()
     assert!(runtime.is_turn_dispatch_idle("agent-watchdog"));
     assert_eq!(runtime.in_flight_run_count("agent-watchdog"), 0);
 
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn ack_redrive_send_uses_background_lane_and_source() {
+    let root = temp_root("ack-redrive-lane");
+    let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+
+    let worker_runtime = Arc::clone(&runtime);
+    let worker = thread::spawn(move || {
+        let args = serde_json::json!({
+            "agentId": "agent-redrive",
+            "prompt": "[System recovery]",
+            "clientNonce": "ack-redrive:agent-redrive:1:123",
+            "requestSource": "handoff-resume",
+            "ackRedrive": true,
+            "appendUserMessage": false,
+            "hidden": true,
+            "skipAckObligation": true
+        });
+        worker_runtime.execute_send_with_watchdog(
+            &args,
+            || {
+                entered_tx.send(()).expect("signal redrive dispatch");
+                release_rx.recv().expect("release redrive dispatch");
+                Ok(serde_json::json!({
+                    "accepted": true,
+                    "operationId": "op-redrive"
+                }))
+            },
+            |_| Ok(None),
+            |_| false,
+        )
+    });
+
+    entered_rx
+        .recv_timeout(Duration::from_secs(5))
+        .expect("redrive dispatch entered");
+    assert_eq!(
+        runtime.active_turn_lane("agent-redrive"),
+        Some(RunLane::Background)
+    );
+    assert_eq!(
+        runtime.active_turn_source("agent-redrive").as_deref(),
+        Some("ack-redrive")
+    );
+
+    release_tx.send(()).expect("release redrive");
+    assert_eq!(
+        worker.join().expect("redrive worker").expect("redrive result")["operationId"],
+        "op-redrive"
+    );
+    assert!(runtime.is_turn_dispatch_idle("agent-redrive"));
     let _ = fs::remove_dir_all(root);
 }

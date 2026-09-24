@@ -13579,10 +13579,11 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/host/tests/agent_lifecycle_contract.rs",
-        "source/host/tests/ack_redrive_production_contract.rs"
+        "source/host/tests/ack_redrive_production_contract.rs",
+        "source/host/tests/transcript_production_composition_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust AckObligations is production-composed across accepted send and Runner delivery: durable sends record/coalesce, Runner turns mint scoped tokens, SendMessage fulfills only after durable append, terminal paths retire tokens, watchdog interruption records interrupts, and agent deletion purges durable/in-memory state. Host now runs a real 5s boot/idle redrive loop over durable obligations: active Agents are deferred, missing Agents and >=3 attempts settle lost, attempts are durably bumped, and hidden recovery sends re-enter the same shipping UnifiedGatewayApi sendPrompt path with appendUserMessage=false and ack re-recording suppressed. Gateway ack-obligation events expose redrive/lost/error outcomes. Final remains withheld for exact frozen background RunLane scheduling, upgrade-quiesce gating, turn-empty-delivery/agent-error telemetry and direct Runner recent-user-message construction."
+      "notes": "Rust AckObligations is production-composed across accepted send and Runner delivery: durable sends record/coalesce, provider turns mint scoped tokens, SendMessage fulfills only after durable append, terminal paths retire tokens, watchdog interruption records interrupts, and agent deletion purges durable/in-memory state. Host runs a real 5s boot/idle redrive loop over durable obligations; active Agents are deferred, missing Agents and >=3 attempts settle lost, attempts are durably bumped, and hidden recovery sends re-enter the shipping UnifiedGatewayApi sendPrompt path with appendUserMessage=false and ack re-recording suppressed. ProductionTranscriptRuntime now maps those recovery sends onto RunLane::Background/source=ack-redrive while ordinary direct sends stay RunLane::User/source=turn, preserving frozen scheduler priority. Final remains withheld for upgrade-quiesce gating, turn-empty-delivery/agent-error telemetry and direct Runner recent-user-message construction."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-lifecycle.ts",
@@ -14307,7 +14308,7 @@
         "source/host/tests/runner_routed_provider_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production dispatch serializes direct-user sends on the per-agent RunScheduler and now owns watchdog deadline/Trip/Escape progression. A wedged active generation is interrupted through the production Runner registry; after grace it is moved to the zombie fence and the next user generation starts without allowing a late settle to clobber it. Final remains withheld for direct-run recovery context, ack-token mint/disarm, workflow/composed-note expansion, complete Runner invocation ownership and detached-turn error projection."
+      "notes": "Rust production dispatch serializes sends on the per-agent RunScheduler and owns watchdog deadline/Trip/Escape progression. Shipping sendPrompt now supplies explicit lane/source identity: direct user sends are User/turn while Ack redrive recovery is Background/ack-redrive, so queued user work retains frozen priority over recovery work. A wedged active generation is interrupted through the production Runner registry; after grace it is moved to the zombie fence and the next generation starts without allowing a late settle to clobber it. Final remains withheld for direct-run recovery context, workflow/composed-note expansion, complete Runner invocation ownership and detached-turn error projection."
     },
     {
       "referencePath": "source/host/extensions/transcript/session-runtime.ts",
