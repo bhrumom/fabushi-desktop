@@ -14123,7 +14123,8 @@
         "source/host/src/runner/routed_provider_runtime.rs",
         "source/host/src/runner/turn_agent_composition.rs",
         "source/host/src/extensions/telemetry/host_telemetry_service.rs",
-        "source/host/src/extensions/telemetry/queue_telemetry_mappers.rs"
+        "source/host/src/extensions/telemetry/queue_telemetry_mappers.rs",
+        "source/host/src/extensions/transcript/session_runtime.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14138,9 +14139,10 @@
         "source/host/tests/ack_redrive_production_contract.rs",
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
         "source/host/tests/host_telemetry_service_contract.rs",
-        "source/host/tests/extensions_operational_telemetry_contract.rs"
+        "source/host/tests/extensions_operational_telemetry_contract.rs",
+        "source/host/tests/transcript_session_runtime_contract.rs"
       ],
-      "notes": "Rust run lifecycle is production-composed around shipping sendPrompt/RunScheduler and live provider-run activity. Routed-provider text/MCP-tool/SendMessage/terminal events feed frozen named-activity hold state and listAgents run-state projection; Runner-owned retry events project retry state without moving retry policy into Host. Exact-deadline watchdog Trip cancels the real provider and persists ack interrupt; Escape releases queued user turns, retires the scheduler ack token, and late settlement is fenced. Queue accepted/dequeued/watchdog events now flow from the shipping scheduler through ProductionTranscriptRuntime observers into the Host structured telemetry sink, with frozen `late_settle` spelling and numeric jumpedBackground semantics. Durable ack obligations receive Host-owned boot/idle redrive scanning. Final remains withheld for exact per-agent idle/boot redrive timer semantics, active/live-session retirement, and subagent-parent/group remote-member projection."
+      "notes": "Shipping ProductionTranscriptRuntime owns user/provider run counts, visible running/composing/retrying activity, request IDs, queue/watchdog settlement and now gates live-session retirement: openAgent retires the prior production DB/AgentStore/worker only when RunLifecycle reports no user or provider run. Final remains withheld for exact post-run idle retirement of sessions kept alive during a switch, per-Agent ack-redrive timing, boot redrive semantics, subagent-parent projection and group/remote-member run accounting."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",
@@ -14471,7 +14473,7 @@
         "source/host/tests/transcript_store_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Shipping Rust Transcript runtime owns frozen active-window focus state, active TranscriptStore projection and openAgent switching. This slice additionally ports liveSessions/openSessionOnce/background-session ownership: openAgent and background resolution materialize through the real ProductionSessionWorkers DB/AgentStore owner maps exactly once per live Agent, reuse those owners, and fence deleted/missing Agents before opening. Final remains withheld for deferred openAgentWindowed/openAgentTail activation + catch-up emission, active/live-session retirement coordinated with RunLifecycle, boot ensureSession/fallback ordering, roster activation events and desktop-contact freshness."
+      "notes": "Shipping Rust Transcript runtime owns active-window focus, active TranscriptStore projection, openAgent switching, liveSessions/openSessionOnce/background-session ownership and production retirement of inactive idle live Sessions. openAgent now routes through ProductionTranscriptRuntime so RunLifecycle user/provider activity fences retirement; an idle old live session flushes AgentStore, checkpoints SandAgentDb and closes its conversation worker after the active pointer has moved. Final remains withheld for deferred openAgentWindowed/openAgentTail activation + catch-up emission, idle-settlement retirement for sessions that were still running at switch time, boot ensureSession/fallback ordering, roster activation events and desktop-contact freshness."
     },
     {
       "referencePath": "source/host/extensions/transcript/shared-rooms.ts",

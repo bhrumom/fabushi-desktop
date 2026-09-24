@@ -134,6 +134,34 @@ impl SessionRuntime {
         self.open_session_once(sessions, agent_id)
     }
 
+    pub fn retire_inactive_session(
+        &self,
+        sessions: &Arc<ProductionSessionWorkers>,
+        agent_id: &str,
+    ) -> Result<bool, String> {
+        let store = SandAgentSessionStore::new(Arc::clone(sessions));
+        if store.read_active_agent_id().as_deref() == Some(agent_id) {
+            return Ok(false);
+        }
+        let removed = self
+            .live_sessions
+            .lock()
+            .map_err(|_| "transcript live session map poisoned".to_string())?
+            .remove(agent_id);
+        if !removed {
+            return Ok(false);
+        }
+
+        let db_path = sessions.session_db_path(agent_id)?;
+        let blob_path = crate::extensions::session::conversation_blobs_path::conversation_blobs_path(
+            &db_path,
+        );
+        let _ = sessions.close_agent_store_owner(agent_id, true);
+        let _ = sessions.close_agent_db_owner(agent_id, true);
+        futures::executor::block_on(sessions.worker_pool().close_store(&blob_path));
+        Ok(true)
+    }
+
     pub fn set_active_transcript(
         &self,
         agent_id: &str,

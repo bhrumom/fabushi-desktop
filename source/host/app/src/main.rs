@@ -951,7 +951,6 @@ impl GatewayApi for UnifiedGatewayApi {
                     "openAgent requires id".into()
                 ))?;
             return self.transcript_runtime
-                .session_runtime()
                 .switch_agent(
                     &self.session_workers,
                     agent_id,

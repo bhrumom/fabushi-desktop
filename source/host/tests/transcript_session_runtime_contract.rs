@@ -4,6 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionTranscriptRuntime;
 use mahayana_host_runtime::extensions::transcript::session_runtime::SessionRuntime;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -179,6 +180,45 @@ fn production_open_session_once_reuses_real_db_and_agent_store_owners_and_fences
             .expect_err("deleted agent must be fenced")
             .contains("no longer exists")
     );
+
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_switch_retires_only_an_inactive_idle_live_session() {
+    let root = temp_root("retire-idle");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&sessions));
+    let first = store.create_session(None, "user", None).expect("first");
+    let second = store.create_session(None, "user", None).expect("second");
+    sessions.close_agent_store_owner(&first.id, true);
+    sessions.close_agent_db_owner(&first.id, true);
+    sessions.close_agent_store_owner(&second.id, true);
+    sessions.close_agent_db_owner(&second.id, true);
+
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    runtime
+        .session_runtime()
+        .resolve_background_session(&sessions, &first.id)
+        .expect("open first live session");
+    store.write_active_agent_id(&first.id).expect("active first");
+    assert!(runtime.session_runtime().is_live_session(&first.id));
+
+    runtime
+        .switch_agent(&sessions, &second.id, 500.0)
+        .expect("switch to second");
+    assert!(!runtime.session_runtime().is_live_session(&first.id));
+    assert!(runtime.session_runtime().is_live_session(&second.id));
+    assert_eq!(
+        store.read_active_agent_id().as_deref(),
+        Some(second.id.as_str())
+    );
+
+    // The retired first owner is gone while the active second owner stays live.
+    assert_eq!(sessions.active_agent_store_owner_count(), 1);
+    assert_eq!(sessions.active_agent_db_owner_count(), 1);
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);

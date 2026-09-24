@@ -6,6 +6,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Value, json};
 
+use crate::extensions::session::agent_session::SandAgentSessionStore;
+use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::sand_activity::{ActivityUpdate, AgentActivity};
 
 use super::async_task_union::{AsyncTask, merge_async_tasks};
@@ -106,6 +108,34 @@ impl ProductionTranscriptRuntime {
 
     pub fn session_runtime(&self) -> &SessionRuntime {
         &self.session_runtime
+    }
+
+    pub fn switch_agent(
+        &self,
+        sessions: &std::sync::Arc<ProductionSessionWorkers>,
+        agent_id: &str,
+        now_ms: f64,
+    ) -> Result<Vec<Value>, String> {
+        let store = SandAgentSessionStore::new(std::sync::Arc::clone(sessions));
+        let previous = store.read_active_agent_id();
+        let entries = self
+            .session_runtime
+            .switch_agent(sessions, agent_id, now_ms)?;
+        if let Some(previous) = previous
+            .as_deref()
+            .filter(|previous| *previous != agent_id)
+        {
+            let should_retire = {
+                let state = self.lock_state();
+                !state.lifecycle.is_running(previous)
+            };
+            if should_retire {
+                let _ = self
+                    .session_runtime
+                    .retire_inactive_session(sessions, previous)?;
+            }
+        }
+        Ok(entries)
     }
 
     pub fn pending_wake_store(&self) -> Option<&SandPendingWakeStore> {
