@@ -54,6 +54,7 @@ use mahayana_host_runtime::extensions::telemetry::webauthn_proxy_telemetry::{
 use mahayana_host_runtime::extensions::trays::extension::{
     HostTraysExtension, start_trays_extension,
 };
+use mahayana_host_runtime::extensions::transcript::agent_run_error::provider_failure_tray;
 use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxRunnerResourcePort,
     BoxStatus, ForeverBoxService, start_forever_box_extension,
@@ -490,6 +491,7 @@ fn start_routed_provider_task(
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
     forever_box: Arc<ForeverBoxService>,
+    trays: Arc<HostTraysExtension>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
@@ -560,6 +562,7 @@ fn start_routed_provider_task(
     let worker_sessions = Arc::clone(&session_workers);
     let worker_ack_obligations = Arc::clone(&ack_obligations);
     let worker_ack_token = ack_token.clone();
+    let worker_trays = Arc::clone(&trays);
     let spawn_error_agent_id = agent_id.clone();
     let spawn = thread::Builder::new()
         .name(format!("mahayana-runner-provider-{agent_id}"))
@@ -626,14 +629,22 @@ fn start_routed_provider_task(
                             "content": content
                         }
                     })),
-                    Err(error) => worker_events.publish(serde_json::json!({
-                        "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
-                        "payload": {
-                            "streamId": stream_id,
-                            "type": "failed",
-                            "message": error.to_string()
-                        }
-                    })),
+                    Err(error) => {
+                        let message = error.to_string();
+                        worker_trays.push_error(provider_failure_tray(
+                            &agent_id,
+                            &message,
+                            started_at_ms() as i64,
+                        ));
+                        worker_events.publish(serde_json::json!({
+                            "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+                            "payload": {
+                                "streamId": stream_id,
+                                "type": "failed",
+                                "message": message
+                            }
+                        }))
+                    },
                 }
             }
             worker_registry.finish_routed_provider(&worker_stream_id);
@@ -744,6 +755,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 Arc::clone(&self.runner_registry),
                 Arc::clone(&self.ack_obligations),
                 Arc::clone(&self.forever_box),
+                Arc::clone(&self.trays),
                 args,
             );
         }

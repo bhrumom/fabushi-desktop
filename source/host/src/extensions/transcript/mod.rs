@@ -9,6 +9,7 @@ pub mod sand_ack_obligation_store;
 pub mod ack_obligations;
 pub mod production_runtime;
 pub mod agent_lifecycle;
+pub mod agent_run_error;
 pub mod send_message_shaping;
 pub mod send_thread_stamping;
 pub mod transcript_entry_ids;
