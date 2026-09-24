@@ -73,10 +73,9 @@ where
     Backend::Error: std::fmt::Display,
 {
     fn get_blob(&self, id: &[u8]) -> Result<Option<Vec<u8>>, String> {
-        futures::executor::block_on(
-            WorkerBlobStore::get_blob(self.as_ref(), &(), id),
-        )
-        .map_err(|error| error.to_string())
+        self.as_ref()
+            .get_blob_blocking(id)
+            .map_err(|error| error.to_string())
     }
 }
 

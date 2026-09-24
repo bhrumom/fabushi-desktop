@@ -37,19 +37,24 @@ where
         self.legacy_blob_db_path.as_deref()
     }
 
+    pub fn get_blob_blocking(
+        &self,
+        blob_id: &[u8],
+    ) -> Result<Option<Vec<u8>>, AgentWorkerPoolError<Backend::Error>> {
+        self.pool.get_blob_blocking(
+            &self.agent_id,
+            &self.blob_db_path,
+            blob_id,
+            self.legacy_blob_db_path(),
+        )
+    }
+
     pub async fn get_blob<Ctx>(
         &self,
         _ctx: &Ctx,
         blob_id: &[u8],
     ) -> Result<Option<Vec<u8>>, AgentWorkerPoolError<Backend::Error>> {
-        self.pool
-            .get_blob(
-                &self.agent_id,
-                &self.blob_db_path,
-                blob_id,
-                self.legacy_blob_db_path(),
-            )
-            .await
+        self.get_blob_blocking(blob_id)
     }
 
     pub async fn set_blob<Ctx>(

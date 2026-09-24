@@ -516,7 +516,7 @@ where
         self.inner.backend.as_ref()
     }
 
-    pub async fn get_blob(
+    pub fn get_blob_blocking(
         &self,
         agent_id: &str,
         blob_db_path: &Path,
@@ -529,6 +529,21 @@ where
             .and_then(|connection| connection.send_get(blob_id));
         self.release(blob_db_path);
         result
+    }
+
+    pub async fn get_blob(
+        &self,
+        agent_id: &str,
+        blob_db_path: &Path,
+        blob_id: &[u8],
+        legacy_blob_db_path: Option<&Path>,
+    ) -> Result<Option<Vec<u8>>, AgentWorkerPoolError<Backend::Error>> {
+        self.get_blob_blocking(
+            agent_id,
+            blob_db_path,
+            blob_id,
+            legacy_blob_db_path,
+        )
     }
 
     pub async fn set_blob(
