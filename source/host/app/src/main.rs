@@ -36,8 +36,7 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
 use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManager;
-use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
-use mahayana_host_runtime::extensions::transcript::profile_watch::ProductionProfileWatch;
+use mahayana_host_runtime::extensions::transcript::extension::start_transcript_extension;
 use mahayana_host_runtime::extensions::transcript::send_message_shaping::shape_send_prompt_media_args;
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     AckObligations, AckRedrivePreparation, build_ack_redrive_send_args,
@@ -1774,10 +1773,18 @@ fn main() {
     );
     let session_workers = session_extension.store();
     let session_handoff = session_extension.handoff_service();
-    let transcript_manager = Arc::new(TranscriptManager::new(
+    let transcript_event_hub = gateway_events.clone();
+    let transcript_extension = start_transcript_extension(
         &app_data_dir,
         Arc::clone(&session_workers),
-    ));
+        Arc::new(move |event| transcript_event_hub.publish(event)),
+    );
+    if let Some(error) = transcript_extension.profile_watch_error() {
+        eprintln!(
+            "[sand-host] profile watcher unavailable; roster RPC remains authoritative: {error}"
+        );
+    }
+    let transcript_manager = transcript_extension.manager();
     let runner_registry = transcript_manager.runner_registry();
     let ack_obligations = transcript_manager.ack_obligations();
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
@@ -1823,22 +1830,6 @@ fn main() {
     let gateway_started_at = started_at_ms();
     let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
     let transcript_runtime = transcript_manager.transcript_runtime();
-    let roster_event_hub = gateway_events.clone();
-    let roster_emit = Arc::new(ProductionRosterEmit::new(
-        Arc::clone(&session_workers),
-        Arc::clone(&transcript_runtime),
-        Arc::new(move |event| roster_event_hub.publish(event)),
-    ));
-    let _profile_watch = match ProductionProfileWatch::start(
-        Arc::clone(&session_workers),
-        Arc::clone(&roster_emit),
-    ) {
-        Ok(watch) => Some(watch),
-        Err(error) => {
-            eprintln!("[sand-host] profile watcher unavailable; roster RPC remains authoritative: {error}");
-            None
-        }
-    };
     match load_initial_transcript_resiliently(|| {
         ensure_initial_transcript_loaded(&session_workers, transcript_runtime.session_runtime())
     }) {

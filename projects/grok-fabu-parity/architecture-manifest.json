@@ -13953,12 +13953,27 @@
       "targetPath": "source/host/src/extensions/transcript/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "4ed6c3f8d9171684561fe009b9794689ea9f7792",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/extension.rs",
+        "source/host/src/extensions/transcript/transcript_manager.rs",
+        "source/host/src/extensions/transcript/roster_emit.rs",
+        "source/host/src/extensions/transcript/profile_watch.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_extension_contract.rs",
+        "source/host/tests/transcript_manager_contract.rs",
+        "source/host/tests/profile_watch_contract.rs",
+        "source/host/tests/roster_emit_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust TranscriptExtension now owns the shipping TranscriptManager creation plus roster-event projection and active profile/settings/avatar watcher lifecycle. Host main consumes start_transcript_extension rather than manually constructing manager/roster/profile-watch owners, and watcher failure remains fail-open/inspectable while roster RPC stays authoritative. Final remains withheld until frozen attachment/content-search/memory/telemetry/trays/turn-execution dependency setters, outline debounce policy, lifecycle/listener observers, automation config event bridge and complete delegated transcript domains are composed through this extension."
     },
     {
       "referencePath": "source/host/extensions/transcript/group-chat-glue.ts",
@@ -14612,13 +14627,15 @@
         "source/host/src/extensions/transcript/production_runtime.rs",
         "source/host/src/extensions/transcript/runner_registry.rs",
         "source/host/src/extensions/transcript/ack_obligations.rs",
-        "source/host/app/src/main.rs"
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/transcript/extension.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_manager_contract.rs",
         "source/host/tests/transcript_production_composition_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/transcript_extension_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust TranscriptManager is now the shipping composition root for the shared Session workers, ProductionTranscriptRuntime, TranscriptRunnerRegistry and AckObligations. Host main no longer constructs those transcript owners independently, and promptAcceptanceStatus/openAgent/setWindowFocused/getAsyncTasks/roster decoration/durable-recovery cleanup now enter through the manager facade. Final remains withheld until the remaining frozen delegated domains (automation/background wakes/group/shared rooms/widgets/workflows/client-side-tool-v2), attachment/memory/content-search setters, lifecycle observers and exact dispose/onStop extension composition are ported."

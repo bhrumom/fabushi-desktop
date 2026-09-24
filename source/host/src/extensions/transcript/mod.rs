@@ -16,6 +16,7 @@ pub mod ack_obligations;
 pub mod async_task_union;
 pub mod production_runtime;
 pub mod transcript_manager;
+pub mod extension;
 pub mod session_runtime;
 pub mod agent_lifecycle;
 pub mod agent_run_error;
