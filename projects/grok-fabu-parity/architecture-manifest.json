@@ -15896,12 +15896,22 @@
       "targetPath": "source/host/src/runner/box_reference_docs.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e59361d761c872c4f6e5a193b3d27437b0aaebcd",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/box_reference_docs.rs",
+        "source/host/src/extensions/forever_box/extension.rs",
+        "source/host/src/host_paths.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_reference_docs_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port preserves the frozen debugging/app-UI reference document contents, canonical /home/box/reference paths, data-root alias creation, atomic same-directory file replacement and forced removal of the legacy reference directory. The shipping ForeverBox extension provisions these prompt artifacts on real in-box Host startup and reports a Host diagnostic if filesystem provisioning fails."
     },
     {
       "referencePath": "source/host/runner/clock-skew-guard.ts",

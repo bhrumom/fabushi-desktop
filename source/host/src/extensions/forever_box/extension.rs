@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use crate::host_diagnostics::{HostDiagnostic, report_host_diagnostic};
 use crate::host_paths::get_sand_root_dir;
+use crate::runner::box_reference_docs::provision_sand_box_prompt_artifacts;
 use crate::r#box::box_store_backend_policy::{
     is_box_store_copy_in_enabled, is_box_store_sync_enabled,
 };
@@ -99,6 +100,18 @@ pub fn start_forever_box_extension(
                 .unwrap_or_default(),
         });
     });
+    if options.is_in_box {
+        if let Err(error) = provision_sand_box_prompt_artifacts() {
+            report_host_diagnostic(&HostDiagnostic {
+                kind: "box_reference_docs_provision_failed".into(),
+                fields: serde_json::json!({ "error": error.to_string() })
+                    .as_object()
+                    .cloned()
+                    .unwrap_or_default(),
+            });
+        }
+    }
+
     let watch = start_disk_pressure_watch(DiskPressureWatchDeps {
         is_in_box: options.is_in_box,
         root_dir: get_sand_root_dir(),

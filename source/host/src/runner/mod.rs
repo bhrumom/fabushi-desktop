@@ -58,6 +58,7 @@ pub mod routed_provider_runtime;
 pub mod coordinator_tool_relay;
 pub mod large_output_spill;
 pub mod box_tool_access;
+pub mod box_reference_docs;
 pub mod production_turn_run_shell_adapter;
 pub mod turn_agent_composition;
 pub mod production_turn_agent_owner;
