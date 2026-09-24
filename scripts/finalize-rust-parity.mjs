@@ -15,6 +15,7 @@ const hostFoundationContract = "source/host/tests/host_foundation_contract.rs";
 const hostStorageContract = "source/host/tests/host_storage_contract.rs";
 const grokSmallFoundationContract = "source/host/tests/grok_small_foundation_parity_contract.rs";
 const manualFinalizationRequired = new Set([
+  "source/host/runner/stream-attempt.ts",
   "source/host/runner/turn-settle.ts",
 ]);
 
@@ -51,7 +52,6 @@ const completed = new Map([
   ["source/host/extensions/turn-execution/extension.ts", ["source/host/src/extensions/turn_execution/extension.rs", extensionContract]],
   ["source/host/extensions/turn-execution/turn-execution-service.ts", ["source/host/src/extensions/turn_execution/turn_execution_service.rs", extensionContract]],
   ["source/host/runner/conversation-state.ts", ["source/host/src/runner/conversation_state.rs", runnerContract]],
-  ["source/host/runner/stream-attempt.ts", ["source/host/src/runner/stream_attempt.rs", runnerContract]],
   ["source/host/runner/tool-call-identity.ts", ["source/host/src/runner/tool_call_identity.rs", runnerContract]],
   ["source/host/runner/transient-stream-error.ts", ["source/host/src/runner/transient_stream_error.rs", runnerContract]],
   ["source/host/runner/turn-run-shell.ts", ["source/host/src/runner/turn_run_shell.rs", runnerContract]],
@@ -71,6 +71,17 @@ for (const referencePath of manualFinalizationRequired) {
   if (completed.has(referencePath)) {
     throw new Error(
       `manual-finalization row cannot be auto-promoted by cargo coverage alone: ${referencePath}`
+    );
+  }
+}
+
+for (const row of manifest.modules) {
+  if (
+    row.status === "existing-needs-parity"
+    && completed.has(row.referencePath)
+  ) {
+    throw new Error(
+      `auto-finalizer cannot promote an architecture row that is explicitly existing-needs-parity: ${row.referencePath}`
     );
   }
 }
