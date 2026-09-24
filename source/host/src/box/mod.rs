@@ -10,6 +10,7 @@ pub mod box_transfer;
 pub mod box_file_transfer;
 pub mod box_remote_accessor;
 pub mod generated_production;
+pub mod exec_daemon_process;
 pub mod production;
 
 pub mod loopback_sand_box;
