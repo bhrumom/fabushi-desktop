@@ -16979,12 +16979,19 @@
       "targetPath": "source/host/src/transcript_mirror/transcript_mirror_router.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "3e9065ef29d442f6fbc5e66e89a1bb2058b46729",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/transcript_mirror/transcript_mirror_router.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_mirror_router_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port owns frozen sticky journal/legacy routing, concurrent first-route selection without split claims, existing-marker precedence over the experiment flag, legacy pending replacement, observational legacy commit failures, abort cleanup, and skip semantics that never claim a new journal but recover an already-owned journal before skipping. Final is withheld until FileTranscriptMirror and the production provider consume this router on the shipping Agent checkpoint path."
     },
     {
       "referencePath": "source/host/transcript-mirror/transcript-mirror.ts",
