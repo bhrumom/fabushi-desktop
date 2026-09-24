@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
@@ -17,7 +17,7 @@ use super::prompt_acceptance_ledger::{
     PromptAcceptanceLedger, SendInput,
 };
 use super::run_lifecycle::RunLifecycleState;
-use super::sand_pending_wake_store::SandPendingWakeStore;
+use super::sand_pending_wake_store::{PendingWakeKind, SandPendingWakeStore};
 use super::sand_upgrade_resume_store::SandUpgradeResumeStore;
 use super::session_runtime::SessionRuntime;
 use super::replica_writer::HostReplicaWriter;
@@ -992,7 +992,22 @@ impl ProductionTranscriptRuntime {
             .cloned()
     }
 
+    fn durable_subagent_parent_ids(&self) -> HashSet<String> {
+        self.pending_wake_store
+            .as_ref()
+            .map(|store| {
+                store
+                    .list_pending()
+                    .into_iter()
+                    .filter(|marker| marker.kind == PendingWakeKind::Subagent)
+                    .map(|marker| marker.agent_id)
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     pub fn decorate_agent_summaries(&self, value: &mut Value) {
+        let durable_subagent_parents = self.durable_subagent_parent_ids();
         let snapshot_epoch = self.replica_writer.process_epoch().to_string();
         let snapshot_seq = self
             .roster_snapshot_seq
@@ -1009,27 +1024,40 @@ impl ProductionTranscriptRuntime {
             let Some(agent_id) = object.get("id").and_then(Value::as_str).map(str::to_string) else {
                 continue;
             };
-            let running = state.lifecycle.is_running(&agent_id);
-            object.insert("isRunning".into(), Value::Bool(running));
-            object.insert("isRunningTurn".into(), Value::Bool(running));
+            let projected = state.lifecycle.project_run_state(
+                &agent_id,
+                durable_subagent_parents.contains(&agent_id),
+                None,
+            );
+            object.insert("isRunning".into(), Value::Bool(projected.is_running));
+            object.insert(
+                "isRunningTurn".into(),
+                Value::Bool(projected.is_running_turn),
+            );
             object.insert(
                 "isComposingMessage".into(),
-                Value::Bool(running && state.lifecycle.is_composing(&agent_id)),
+                Value::Bool(projected.is_composing_message),
             );
             object.insert(
                 "isRetrying".into(),
-                Value::Bool(running && state.lifecycle.is_retrying(&agent_id)),
+                Value::Bool(projected.is_retrying),
             );
-            let current_activity = if running {
-                state
-                    .lifecycle
-                    .structured_activity(&agent_id)
+            object.insert(
+                "currentActivity".into(),
+                projected
+                    .current_activity
+                    .as_ref()
                     .and_then(|activity| serde_json::to_value(activity).ok())
-                    .unwrap_or(Value::Null)
+                    .unwrap_or(Value::Null),
+            );
+            if let Some(active_remote_member_id) = projected.active_remote_member_id {
+                object.insert(
+                    "activeRemoteMemberId".into(),
+                    Value::String(active_remote_member_id),
+                );
             } else {
-                Value::Null
-            };
-            object.insert("currentActivity".into(), current_activity);
+                object.insert("activeRemoteMemberId".into(), Value::Null);
+            }
             object.insert(
                 "snapshotEpoch".into(),
                 Value::String(snapshot_epoch.clone()),

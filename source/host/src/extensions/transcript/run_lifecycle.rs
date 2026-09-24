@@ -40,6 +40,16 @@ struct SessionRun {
     turn_worthy_begins: u64,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct RunStateProjection {
+    pub is_running: bool,
+    pub is_running_turn: bool,
+    pub is_composing_message: bool,
+    pub is_retrying: bool,
+    pub current_activity: Option<AgentActivity>,
+    pub active_remote_member_id: Option<String>,
+}
+
 #[derive(Debug, Default)]
 pub struct RunLifecycleState {
     sessions: HashMap<String, SessionRun>,
@@ -155,6 +165,35 @@ impl RunLifecycleState {
 
     pub fn active_run_session(&self) -> Option<&str> {
         self.active_run_session.as_deref()
+    }
+
+    pub fn project_run_state(
+        &self,
+        agent_id: &str,
+        has_running_subagent: bool,
+        active_remote_member_id: Option<&str>,
+    ) -> RunStateProjection {
+        let is_running_turn = self.is_running(agent_id);
+        let is_running = is_running_turn || has_running_subagent;
+        RunStateProjection {
+            is_running,
+            is_running_turn,
+            is_composing_message: is_running && self.is_composing(agent_id),
+            is_retrying: is_running && self.is_retrying(agent_id),
+            current_activity: if is_running {
+                self.structured_activity(agent_id).cloned()
+            } else {
+                None
+            },
+            active_remote_member_id: if is_running {
+                active_remote_member_id
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned)
+            } else {
+                None
+            },
+        }
     }
 
     pub fn in_flight_count(&self, agent_id: &str) -> u64 {

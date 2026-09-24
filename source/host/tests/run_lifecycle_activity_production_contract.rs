@@ -1,5 +1,22 @@
+use std::fs;
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionTranscriptRuntime;
+use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
+    DurablePendingWakeMarker, PendingWakeKind,
+};
 use mahayana_host_runtime::sand_activity::{ActivityUpdate, AgentActivity};
+
+fn temp_root(label: &str) -> std::path::PathBuf {
+    let suffix = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    std::env::temp_dir().join(format!(
+        "fabushi-run-lifecycle-{label}-{}-{suffix}",
+        std::process::id()
+    ))
+}
 
 #[test]
 fn shipping_runtime_projects_runner_activity_into_agent_roster_rows() {
@@ -81,4 +98,43 @@ fn run_lifecycle_composing_and_retrying_follow_frozen_updates() {
     assert_eq!(sent[0]["isComposingMessage"], false);
     assert_eq!(sent[0]["isRetrying"], false);
     runtime.end_provider_run("agent-a");
+}
+
+#[test]
+fn durable_subagent_parent_projects_running_without_claiming_a_parent_turn() {
+    let root = temp_root("durable-subagent-parent");
+    fs::create_dir_all(&root).expect("root");
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    let store = runtime.pending_wake_store().expect("pending wake store");
+    assert!(store.mark_pending(DurablePendingWakeMarker {
+        agent_id: "agent-parent".into(),
+        kind: PendingWakeKind::Subagent,
+        work_id: "subagent-1".into(),
+        marked_at_ms: 100.0,
+        quiet_origin: None,
+        title: Some("Research".into()),
+        subagent_type: Some("cursor-agent".into()),
+        interrupted_by_recreate: false,
+    }));
+
+    let mut rows = serde_json::json!([
+        {"id":"agent-parent"},
+        {"id":"agent-idle"}
+    ]);
+    runtime.decorate_agent_summaries(&mut rows);
+    assert_eq!(rows[0]["isRunning"], true);
+    assert_eq!(rows[0]["isRunningTurn"], false);
+    assert_eq!(rows[0]["isComposingMessage"], false);
+    assert_eq!(rows[0]["isRetrying"], false);
+    assert!(rows[0]["currentActivity"].is_null());
+    assert!(rows[0]["activeRemoteMemberId"].is_null());
+    assert_eq!(rows[1]["isRunning"], false);
+
+    assert!(store.clear_one("agent-parent", PendingWakeKind::Subagent, "subagent-1"));
+    let mut cleared = serde_json::json!([{"id":"agent-parent"}]);
+    runtime.decorate_agent_summaries(&mut cleared);
+    assert_eq!(cleared[0]["isRunning"], false);
+    assert_eq!(cleared[0]["isRunningTurn"], false);
+
+    let _ = fs::remove_dir_all(root);
 }

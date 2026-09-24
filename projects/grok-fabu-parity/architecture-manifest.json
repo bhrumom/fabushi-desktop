@@ -14251,7 +14251,8 @@
         "source/host/src/extensions/transcript/transcript_manager.rs",
         "source/node-agent-coordinator/src/main.rs",
         "source/host/src/runner/tools/box_help_tool.rs",
-        "source/host/src/runner/production_turn_agent_owner.rs"
+        "source/host/src/runner/production_turn_agent_owner.rs",
+        "source/host/src/extensions/transcript/sand_pending_wake_store.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14274,7 +14275,7 @@
         "source/host/tests/box_help_tool_contract.rs",
         "source/host/tests/production_turn_agent_owner_contract.rs"
       ],
-      "notes": "Shipping ProductionTranscriptRuntime owns user/provider run counts, visible running/composing/retrying activity, request IDs and queue/watchdog settlement. Non-Cursor routed provider turns now hold the same Session run window from durable Host admission through actual Runner terminal via a stream-keyed RunScheduler lease; spawn/start errors release the lease fail-closed, and terminal settlement wakes the next turn. Live-session retirement remains fenced until both the routed lease and provider run are settled. Durable ack redrive uses per-Agent +5s boot/idle schedules. Final remains withheld for subagent-parent projection and group/remote-member run accounting."
+      "notes": "Shipping ProductionTranscriptRuntime owns user/provider run counts, visible running/composing/retrying activity, request IDs and queue/watchdog settlement. Non-Cursor routed provider turns hold the same Session run window from durable Host admission through actual Runner terminal via a stream-keyed RunScheduler lease; spawn/start errors release the lease fail-closed, and terminal settlement wakes the next turn. Durable pending-wake Subagent markers now project the frozen parent-state distinction isRunning=true/isRunningTurn=false after process restart through the real roster decoration path. Live-session retirement remains fenced until both the routed lease and provider run are settled. Final remains withheld for live Runner subagent-source fanout plus group/remote-member run accounting and activeRemoteMemberId production wiring."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",
