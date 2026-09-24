@@ -16966,12 +16966,14 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/transcript_mirror/transcript_journal_codec.rs",
-        "source/host/src/transcript_mirror/transcript_mirror.rs"
+        "source/host/src/transcript_mirror/transcript_mirror.rs",
+        "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_journal_codec_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/transcript_mirror_contract.rs"
+        "source/host/tests/transcript_mirror_contract.rs",
+        "source/host/tests/transcript_occurrence_deriver_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust port covers frozen SHA/checkpoint identity, byte equality, file identity, deferred/pending checkpoint validation, zero-progress-safe positioned writes, and legacy JSONL text/tool envelopes. FileTranscriptMirror now consumes the codec for production-shaped WAL/replay/atomic-install behavior. Kept non-final until the occurrence deriver and production provider route shipping Agent checkpoints through the journal."
@@ -17009,13 +17011,15 @@
       "behavioralEvidence": [
         "source/host/src/transcript_mirror/transcript_mirror.rs",
         "source/host/src/transcript_mirror/transcript_journal_codec.rs",
-        "source/host/src/transcript_mirror/transcript_mirror_router.rs"
+        "source/host/src/transcript_mirror/transcript_mirror_router.rs",
+        "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_contract.rs",
         "source/host/tests/transcript_journal_codec_contract.rs",
         "source/host/tests/transcript_mirror_router_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/transcript_occurrence_deriver_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust FileTranscriptMirror ports frozen safe paths, journal ownership marker, per-conversation serialization, atomic file install/fsync, canonical file identity fencing, pending WAL prepare/commit/abort/replay, deferred cursor persistence, skip semantics, unique occurrence validation and outcome reporting. It implements the Rust TranscriptJournalPort consumed by the sticky router. Final is withheld until the generated occurrence deriver and production provider feed real ConversationStateStructure Agent checkpoints on the shipping Runner path."
@@ -17025,12 +17029,22 @@
       "targetPath": "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f12f52765c75b824cfdc3583a653e2cc74082232",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs",
+        "source/host/src/transcript_mirror/transcript_mirror.rs",
+        "source/host/src/transcript_mirror/transcript_journal_codec.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_occurrence_deriver_contract.rs",
+        "source/host/tests/transcript_mirror_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port owns frozen occurrence derivation semantics: incremental turn/step monotonicity fences, user text-blob fallback with TextDecoder-equivalent lossy UTF-8, context-tag stripping, hidden-thinking stripping, deferred final text step, tool-use/result delta projection, immutable completed-tool checks, stable occurrence identities and fail-closed missing blobs. It plugs directly into FileTranscriptMirror's TranscriptDeriver trait. Final is withheld until generated-occurrence-codec is backed by canonical generated agent.v1 Rust bindings and production-provider feeds the shipping Runner checkpoint path."
     },
     {
       "referencePath": "source/host/transcript-mutation-events.ts",
