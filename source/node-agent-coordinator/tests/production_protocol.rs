@@ -85,7 +85,7 @@ mod unix {
                                     handler_stop.as_ref(),
                                     oauth_callback_port,
                                     oauth_completion.as_ref(),
-                                    oauth_completion_attempts.as_ref(),
+                                    worker_oauth_completion_attempts.as_ref(),
                                     webauthn_batches.as_ref(),
                                 );
                             });
