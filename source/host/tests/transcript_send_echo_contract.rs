@@ -1,8 +1,12 @@
 use std::collections::HashSet;
 
 use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
-    UserMessageOptions, create_user_message,
+    Reaction, UserAttachmentOptions, UserMessageOptions, build_composed_offline_note,
+    build_selected_videos, collect_inbound_images, create_user_attachment_entry,
+    create_user_message, skippable_prompt_summary, split_attachment_paths_by_channel,
+    toggle_reaction,
 };
+use mahayana_host_runtime::selected_image_inputs::read_image_dimensions;
 use mahayana_host_runtime::extensions::transcript::send_thread_stamping::{
     apply_auto_reply_thread, resolve_send_reply_threading, validate_ai_reply_target,
 };
@@ -104,4 +108,90 @@ fn user_message_shaping_preserves_offline_and_thread_metadata() {
     assert_eq!(entry["replyTo"], "t0u");
     assert_eq!(entry["branched"], true);
     assert_eq!(entry["clientNonce"], "nonce");
+}
+
+
+#[test]
+fn frozen_send_shaping_helpers_cover_reactions_widgets_offline_and_media_channels() {
+    let first = toggle_reaction(None, "👍", "me").expect("reaction");
+    assert_eq!(
+        first,
+        vec![Reaction {
+            emoji: "👍".into(),
+            by: "me".into(),
+        }]
+    );
+    assert_eq!(toggle_reaction(Some(&first), "👍", "me"), None);
+
+    assert_eq!(
+        build_composed_offline_note(0.0),
+        "[Composed offline at 1970-01-01T00:00:00.000Z]"
+    );
+    assert_eq!(build_composed_offline_note(f64::NAN), "");
+
+    assert_eq!(
+        skippable_prompt_summary(&json!({
+            "type":"widget",
+            "widget":{
+                "prompt":"Choose",
+                "options":[{"label":"A"},{"label":"B"}]
+            }
+        }))
+        .as_deref(),
+        Some("Choose — A / B")
+    );
+    assert_eq!(
+        skippable_prompt_summary(&json!({"type":"widget","widget":{}})).as_deref(),
+        Some("Question")
+    );
+
+    let channels = split_attachment_paths_by_channel([
+        "/tmp/a.png",
+        "/tmp/b.MOV",
+        "/tmp/c.txt",
+    ]);
+    assert_eq!(channels.image_attachment_paths, vec!["/tmp/a.png"]);
+    assert_eq!(channels.video_attachment_paths, vec!["/tmp/b.MOV"]);
+    assert_eq!(channels.file_attachment_paths, vec!["/tmp/c.txt"]);
+
+    let videos = build_selected_videos(["/tmp/a.mov", "/tmp/b.unknown"]);
+    assert_eq!(videos[0].mime_type, "video/quicktime");
+    assert_eq!(videos[0].filename, "a.mov");
+    assert_eq!(videos[0].fps, 4);
+    assert_eq!(videos[1].mime_type, "video/mp4");
+
+    assert_eq!(
+        collect_inbound_images(&[
+            json!({"images":[{"data":"abc","mimeType":"image/png"}]}),
+            json!({}),
+        ]),
+        vec![mahayana_host_runtime::extensions::transcript::send_message_shaping::InboundImage {
+            data: "abc".into(),
+            mime_type: "image/png".into(),
+        }]
+    );
+}
+
+#[test]
+fn user_attachment_dimensions_are_projected_and_common_image_headers_are_read() {
+    let mut png = vec![0u8; 24];
+    png[..8].copy_from_slice(b"\x89PNG\r\n\x1a\n");
+    png[12..16].copy_from_slice(b"IHDR");
+    png[16..20].copy_from_slice(&640u32.to_be_bytes());
+    png[20..24].copy_from_slice(&480u32.to_be_bytes());
+    let dimensions = read_image_dimensions(&png).expect("png dimensions");
+    assert_eq!(dimensions.width, 640);
+    assert_eq!(dimensions.height, 480);
+
+    let entry = create_user_attachment_entry(
+        "t0ua0",
+        "/tmp/image.png",
+        UserAttachmentOptions {
+            width: Some(640),
+            height: Some(480),
+            ..UserAttachmentOptions::default()
+        },
+    );
+    assert_eq!(entry["width"], 640);
+    assert_eq!(entry["height"], 480);
 }

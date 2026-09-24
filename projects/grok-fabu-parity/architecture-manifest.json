@@ -14309,14 +14309,15 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/send_message_shaping.rs",
-        "source/host/src/extensions/session/gateway.rs"
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/src/selected_image_inputs.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_send_echo_contract.rs",
         "source/host/tests/session_gateway_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Production Rust slice now owns user-message/user-attachment/send-message shaping, reply-to protected/threadable reconstruction, quote generation, box request stamping and attached file sizes. Shipping durable send echoes use these builders. Remaining frozen parity includes reaction toggling, composed-offline note formatting, widget prompt summaries, image/video MIME channel split, selected-video/inbound-image loading and image dimension projection; row remains non-final."
+      "notes": "Rust now ports frozen reaction toggling, ISO composed-offline notes, widget prompt summaries, image/video/file MIME channel splitting, selected-video descriptors, inbound-image flattening/file-URL loading, batch file-size helpers and PNG/GIF/JPEG/WebP dimension projection in addition to existing message/thread shaping. Shipping Session durable attachment echoes read real dimensions and persist width/height. Final remains withheld only for native HEIC/HEIF/AVIF dimension parity and for wiring selected image/video payloads through the shipping ProviderMessage/Runner composition rather than carrying counts alone."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-not-persisted-error.ts",

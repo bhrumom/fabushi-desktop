@@ -5,6 +5,7 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use serde_json::{Map, Value, json};
 
 use crate::agents::agent_profile::SandAgentProfile;
+use crate::selected_image_inputs::read_image_file_dimensions;
 use crate::extensions::transcript::send_acceptance::{
     mark_accepted_send_activity, prepare_send_acceptance,
 };
@@ -126,6 +127,8 @@ pub fn persist_accepted_send_prompt(
                 batch_id: batch_id.clone(),
                 client_nonce: client_nonce.clone(),
                 byte_size: stat_attached_file_size(file_path),
+                width: read_image_file_dimensions(file_path).map(|value| value.width),
+                height: read_image_file_dimensions(file_path).map(|value| value.height),
                 reply_to: threading.reply_to_id.clone(),
                 branched: threading.is_fork,
             },

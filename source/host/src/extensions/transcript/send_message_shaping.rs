@@ -1,4 +1,11 @@
+use chrono::{SecondsFormat, TimeZone, Utc};
 use serde_json::{Map, Value};
+use url::Url;
+
+use crate::selected_image_inputs::{
+    SelectedImageInput, image_mime_from_path, load_selected_image_inputs,
+    video_mime_from_path,
+};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct UserMessageOptions {
@@ -16,8 +23,195 @@ pub struct UserAttachmentOptions {
     pub batch_id: Option<String>,
     pub client_nonce: Option<String>,
     pub byte_size: Option<u64>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
     pub reply_to: Option<String>,
     pub branched: bool,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Reaction {
+    pub emoji: String,
+    pub by: String,
+}
+
+pub fn toggle_reaction(
+    reactions: Option<&[Reaction]>,
+    emoji: &str,
+    by: &str,
+) -> Option<Vec<Reaction>> {
+    let current = reactions.unwrap_or(&[]);
+    let has = current
+        .iter()
+        .any(|reaction| reaction.emoji == emoji && reaction.by == by);
+    let next = if has {
+        current
+            .iter()
+            .filter(|reaction| !(reaction.emoji == emoji && reaction.by == by))
+            .cloned()
+            .collect::<Vec<_>>()
+    } else {
+        let mut next = current.to_vec();
+        next.push(Reaction {
+            emoji: emoji.to_string(),
+            by: by.to_string(),
+        });
+        next
+    };
+    (!next.is_empty()).then_some(next)
+}
+
+pub fn build_composed_offline_note(composed_at_ms: f64) -> String {
+    if !composed_at_ms.is_finite() {
+        return String::new();
+    }
+    let millis = composed_at_ms.trunc();
+    if millis < i64::MIN as f64 || millis > i64::MAX as f64 {
+        return String::new();
+    }
+    Utc.timestamp_millis_opt(millis as i64)
+        .single()
+        .map(|date| {
+            format!(
+                "[Composed offline at {}]",
+                date.to_rfc3339_opts(SecondsFormat::Millis, true)
+            )
+        })
+        .unwrap_or_default()
+}
+
+pub fn skippable_prompt_summary(message: &Value) -> Option<String> {
+    if message.get("type").and_then(Value::as_str) != Some("widget") {
+        return None;
+    }
+    let widget = message.get("widget").and_then(Value::as_object);
+    let prompt = widget
+        .and_then(|widget| widget.get("prompt"))
+        .and_then(Value::as_str)
+        .unwrap_or("Question");
+    let labels = widget
+        .and_then(|widget| widget.get("options"))
+        .and_then(Value::as_array)
+        .map(|options| {
+            options
+                .iter()
+                .map(|option| {
+                    option
+                        .get("label")
+                        .map(js_join_string)
+                        .unwrap_or_default()
+                })
+                .collect::<Vec<_>>()
+                .join(" / ")
+        })
+        .unwrap_or_default();
+    Some(if labels.is_empty() {
+        prompt.to_string()
+    } else {
+        format!("{prompt} — {labels}")
+    })
+}
+
+fn js_join_string(value: &Value) -> String {
+    match value {
+        Value::Null => String::new(),
+        Value::String(value) => value.clone(),
+        Value::Bool(value) => value.to_string(),
+        Value::Number(value) => value.to_string(),
+        Value::Array(_) | Value::Object(_) => "[object Object]".to_string(),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct AttachmentChannels {
+    pub image_attachment_paths: Vec<String>,
+    pub video_attachment_paths: Vec<String>,
+    pub file_attachment_paths: Vec<String>,
+}
+
+pub fn split_attachment_paths_by_channel<I, S>(paths: I) -> AttachmentChannels
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    let mut channels = AttachmentChannels::default();
+    for path in paths {
+        let path = path.as_ref();
+        if image_mime_from_path(path).is_some() {
+            channels.image_attachment_paths.push(path.to_string());
+        } else if video_mime_from_path(path).is_some() {
+            channels.video_attachment_paths.push(path.to_string());
+        } else {
+            channels.file_attachment_paths.push(path.to_string());
+        }
+    }
+    channels
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SelectedVideo {
+    pub path: String,
+    pub mime_type: String,
+    pub filename: String,
+    pub fps: u32,
+}
+
+pub fn build_selected_videos<I, S>(paths: I) -> Vec<SelectedVideo>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    paths
+        .into_iter()
+        .map(|path| {
+            let path = path.as_ref();
+            SelectedVideo {
+                path: path.to_string(),
+                mime_type: video_mime_from_path(path)
+                    .unwrap_or("video/mp4")
+                    .to_string(),
+                filename: std::path::Path::new(path)
+                    .file_name()
+                    .and_then(|value| value.to_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                fps: 4,
+            }
+        })
+        .collect()
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InboundImage {
+    pub data: String,
+    pub mime_type: String,
+}
+
+pub fn collect_inbound_images(envelopes: &[Value]) -> Vec<InboundImage> {
+    envelopes
+        .iter()
+        .filter_map(|envelope| envelope.get("images").and_then(Value::as_array))
+        .flatten()
+        .filter_map(|image| {
+            Some(InboundImage {
+                data: image.get("data")?.as_str()?.to_string(),
+                mime_type: image.get("mimeType")?.as_str()?.to_string(),
+            })
+        })
+        .collect()
+}
+
+pub fn load_agent_inbound_images(images: Option<&[Value]>) -> Vec<SelectedImageInput> {
+    let paths = images
+        .unwrap_or(&[])
+        .iter()
+        .filter_map(|image| image.get("url").and_then(Value::as_str))
+        .filter_map(|url| Url::parse(url).ok())
+        .filter_map(|url| url.to_file_path().ok())
+        .filter_map(|path| path.to_str().map(ToOwned::to_owned))
+        .collect::<Vec<_>>();
+    load_selected_image_inputs(paths)
 }
 
 pub fn is_user_message_entry(entry: &Value) -> bool {
@@ -124,6 +318,8 @@ pub fn create_user_attachment_entry(
         entry.insert("clientNonce".into(), Value::String(client_nonce));
     }
     if let Some(byte_size) = options.byte_size { entry.insert("byteSize".into(), Value::Number(byte_size.into())); }
+    if let Some(width) = options.width { entry.insert("width".into(), Value::Number(width.into())); }
+    if let Some(height) = options.height { entry.insert("height".into(), Value::Number(height.into())); }
     if let Some(reply_to) = options.reply_to { entry.insert("replyTo".into(), Value::String(reply_to)); }
     if options.branched { entry.insert("branched".into(), Value::Bool(true)); }
     Value::Object(entry)
@@ -132,6 +328,21 @@ pub fn create_user_attachment_entry(
 pub fn stat_attached_file_size(path: &str) -> Option<u64> {
     std::fs::metadata(path).ok().filter(|metadata| metadata.is_file()).map(|metadata| metadata.len())
 }
+
+pub fn stat_attached_file_sizes<I, S>(paths: I) -> std::collections::HashMap<String, u64>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    paths
+        .into_iter()
+        .filter_map(|path| {
+            let path = path.as_ref();
+            stat_attached_file_size(path).map(|size| (path.to_string(), size))
+        })
+        .collect()
+}
+
 
 pub fn strip_reply_to(message: &Value) -> Value {
     if protected_reply_type(message) { return message.clone(); }
