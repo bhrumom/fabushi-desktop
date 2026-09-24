@@ -47,6 +47,12 @@ pub enum ProductionSendError {
     Internal(String),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RoutedSendAcceptance {
+    pub duplicate: bool,
+    pub context: PersistedSendContext,
+}
+
 struct RuntimeState {
     pipeline: SendPipelineState,
     ledger: PromptAcceptanceLedger,
@@ -234,6 +240,137 @@ impl ProductionTranscriptRuntime {
                 "outcome": "not-found",
             }),
         })
+    }
+
+    /// Admit a non-Cursor Coordinator-routed prompt into the authoritative
+    /// Host/Session send pipeline without pretending provider execution happened
+    /// on the Host lane. The Coordinator starts the independent Runner only
+    /// after this durable admission returns.
+    pub fn accept_routed_send<Persist, Persisted>(
+        &self,
+        args: &Value,
+        persist_accepted: Persist,
+    ) -> Result<RoutedSendAcceptance, ProductionSendError>
+    where
+        Persist: Fn(&Value) -> Result<Persisted, ProductionSendError>,
+        Persisted: Into<PersistedSendContext>,
+    {
+        let input = parse_send_input(args)?;
+        if input.prompt.trim().is_empty() && input.attachment_paths.is_empty() {
+            return Err(ProductionSendError::BadRequest(
+                "routed send requires prompt or attachments".into(),
+            ));
+        }
+        let nonce = optional_non_empty(args, "clientNonce").map(ToOwned::to_owned);
+        let agent_id = input.agent_id.clone();
+        let is_fork = optional_bool(args, "isFork")?.unwrap_or(false);
+        let accepted = json!({ "accepted": true, "routed": true });
+
+        let mut state = self.lock_state();
+        loop {
+            let begin = {
+                let RuntimeState {
+                    pipeline, ledger, ..
+                } = &mut *state;
+                pipeline
+                    .begin_send(ledger, &input, nonce.as_deref())
+                    .map_err(map_acceptance_error)?
+            };
+            match begin {
+                SendBegin::EmptyNoop => {
+                    return Err(ProductionSendError::BadRequest(
+                        "routed send requires prompt or attachments".into(),
+                    ));
+                }
+                SendBegin::Coalesced { client_nonce } => {
+                    state = self
+                        .send_settled
+                        .wait_while(state, |state| state.pipeline.is_in_flight(&client_nonce))
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    drop(state);
+                    let context = persist_accepted(&accepted)?.into();
+                    return Ok(RoutedSendAcceptance {
+                        duplicate: true,
+                        context,
+                    });
+                }
+                SendBegin::DuplicateNoop { .. } => {
+                    drop(state);
+                    let context = persist_accepted(&accepted)?.into();
+                    return Ok(RoutedSendAcceptance {
+                        duplicate: true,
+                        context,
+                    });
+                }
+                SendBegin::Dispatch { .. } => {
+                    let context = match persist_accepted(&accepted) {
+                        Ok(persisted) => persisted.into(),
+                        Err(error) => {
+                            {
+                                let RuntimeState {
+                                    pipeline, ledger, ..
+                                } = &mut *state;
+                                pipeline.finish_send(ledger, nonce.as_deref(), false);
+                            }
+                            drop(state);
+                            self.send_settled.notify_all();
+                            return Err(error);
+                        }
+                    };
+
+                    if let Some(client_nonce) = nonce.as_deref() {
+                        let pending = {
+                            let RuntimeState {
+                                pipeline, ledger, ..
+                            } = &mut *state;
+                            pipeline.record_pending_acceptance(
+                                ledger,
+                                client_nonce,
+                                SendEchoIdentity {
+                                    agent_id: agent_id.clone().unwrap_or_default(),
+                                    echo_entry_id: context.echo_entry_id.clone(),
+                                },
+                            )
+                        };
+                        if let Err(error) = pending {
+                            let failure = map_acceptance_error(error);
+                            {
+                                let RuntimeState {
+                                    pipeline, ledger, ..
+                                } = &mut *state;
+                                pipeline.finish_send(ledger, nonce.as_deref(), false);
+                            }
+                            drop(state);
+                            self.send_settled.notify_all();
+                            return Err(failure);
+                        }
+                    }
+
+                    if let Some(agent_id) = agent_id.as_deref() {
+                        let epoch = state.pipeline.next_turn_epoch(agent_id);
+                        state.pipeline.register_recovery_turn(
+                            agent_id,
+                            epoch,
+                            &context,
+                            is_fork,
+                        );
+                    }
+                    {
+                        let RuntimeState {
+                            pipeline, ledger, ..
+                        } = &mut *state;
+                        pipeline.mark_send_accepted(ledger, nonce.as_deref());
+                        pipeline.finish_send(ledger, nonce.as_deref(), true);
+                    }
+                    drop(state);
+                    self.send_settled.notify_all();
+                    return Ok(RoutedSendAcceptance {
+                        duplicate: false,
+                        context,
+                    });
+                }
+            }
+        }
     }
 
     pub fn execute_send<Dispatch, Persist, Persisted>(

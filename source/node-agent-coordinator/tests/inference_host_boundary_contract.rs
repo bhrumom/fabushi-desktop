@@ -5,7 +5,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use mahayana_node_agent_coordinator::inference_router::{
     ActiveInferenceStreamRegistry, InferenceProvider, InferenceStreamSupersede,
     RunnerInferenceEvent, configured_inference_provider, host_transcript_method,
-    is_direct_user_send, parse_runner_inference_event, project_runner_turn_context,
+    is_direct_user_send, parse_host_routed_prompt_acceptance,
+    parse_runner_inference_event, project_runner_turn_context,
 };
 use serde_json::json;
 
@@ -77,6 +78,26 @@ fn coordinator_projects_durable_turn_context_without_host_linkage() {
     assert_eq!(projected["composedAtMs"], 10);
     assert_eq!(projected["enterEpochMs"], 20);
     assert!(projected.get("ignored").is_none());
+}
+
+#[test]
+fn host_routed_prompt_acceptance_supplies_authoritative_recovery_identity() {
+    let acceptance = parse_host_routed_prompt_acceptance(&json!({
+        "accepted": true,
+        "duplicate": false,
+        "echoEntryId": "user-message:9",
+        "userMessageId": "user-message:9",
+        "recentUserMessages": [
+            {"id":"user-message:8","text":"older","confirmed":true},
+            {"id":"user-message:9","text":"current"}
+        ]
+    }))
+    .expect("Host acceptance");
+    assert!(!acceptance.duplicate);
+    assert_eq!(acceptance.echo_entry_id.as_deref(), Some("user-message:9"));
+    assert_eq!(acceptance.user_message_id.as_deref(), Some("user-message:9"));
+    assert_eq!(acceptance.recent_user_messages.len(), 2);
+    assert!(parse_host_routed_prompt_acceptance(&json!({"accepted":false})).is_err());
 }
 
 #[test]

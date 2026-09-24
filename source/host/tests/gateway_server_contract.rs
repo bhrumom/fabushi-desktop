@@ -35,7 +35,8 @@ impl GatewayApi for TestApi {
             })),
             method if matches!(
                 method,
-                "runner.startRoutedProvider"
+                "runner.acceptRoutedPrompt"
+                    | "runner.startRoutedProvider"
                     | "runner.cancelRoutedProvider"
                     | "runner.resolveRoutedToolRequest"
             ) => Ok(json!({
@@ -371,6 +372,7 @@ fn gateway_admits_only_explicit_internal_runner_methods() {
     .expect("gateway server");
 
     for method in [
+        "runner.acceptRoutedPrompt",
         "runner.startRoutedProvider",
         "runner.cancelRoutedProvider",
         "runner.resolveRoutedToolRequest",

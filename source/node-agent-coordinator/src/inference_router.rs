@@ -26,9 +26,8 @@ pub fn host_transcript_method(method: &str) -> &str {
 
 /// Project the sendPrompt fields that materially define one user turn across
 /// Coordinator -> Host -> Runner without linking the Coordinator to Host types.
-/// The current message id is minted by the Coordinator's durable inference
-/// transcript before the Runner starts, so recovery/supersede decisions never
-/// have to invent a post-dispatch identity.
+/// The current message id is returned by authoritative Host/Session routed
+/// prompt admission before the Runner starts.
 pub fn project_runner_turn_context(
     send_args: &Value,
     message_id: &str,
@@ -57,6 +56,43 @@ pub fn project_runner_turn_context(
         }
     }
     Value::Object(projected)
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct HostRoutedPromptAcceptance {
+    pub duplicate: bool,
+    pub echo_entry_id: Option<String>,
+    pub user_message_id: Option<String>,
+    pub recent_user_messages: Vec<Value>,
+}
+
+pub fn parse_host_routed_prompt_acceptance(
+    value: &Value,
+) -> Result<HostRoutedPromptAcceptance, Failure> {
+    if value.get("accepted").and_then(Value::as_bool) != Some(true) {
+        return Err(Failure::new(
+            "INFERENCE_HOST_ACCEPT_REJECTED",
+            "Host did not accept the routed prompt",
+        ));
+    }
+    let optional_id = |key: &str| {
+        value
+            .get(key)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned)
+    };
+    Ok(HostRoutedPromptAcceptance {
+        duplicate: value.get("duplicate").and_then(Value::as_bool) == Some(true),
+        echo_entry_id: optional_id("echoEntryId"),
+        user_message_id: optional_id("userMessageId"),
+        recent_user_messages: value
+            .get("recentUserMessages")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default(),
+    })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

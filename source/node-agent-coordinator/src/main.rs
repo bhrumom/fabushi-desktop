@@ -32,7 +32,8 @@ use mahayana_node_agent_coordinator::inference_router::{
     ActiveInferenceStreamRegistry, CoordinatorInferenceRouter, InferenceProvider,
     InferenceStreamSupersede, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, is_direct_user_send,
-    parse_runner_inference_event, parse_send_prompt_attachments,
+    parse_host_routed_prompt_acceptance, parse_runner_inference_event,
+    parse_send_prompt_attachments,
     project_runner_turn_context, project_transcript_entry,
 };
 use mahayana_node_agent_coordinator::webauthn::{
@@ -1856,6 +1857,21 @@ fn execute_local_inference(
     )?;
     let timestamp_ms = coordinator_now_ms();
 
+    let mut acceptance_args = args.clone();
+    if let Some(object) = acceptance_args.as_object_mut() {
+        object.insert("clientNonce".into(), Value::String(client_nonce.clone()));
+    }
+    let host_acceptance = parse_host_routed_prompt_acceptance(
+        &dispatch_gateway_value(
+            &state,
+            "runner.acceptRoutedPrompt",
+            acceptance_args,
+        )?,
+    )?;
+    if host_acceptance.duplicate {
+        return Ok(());
+    }
+
     let (turn, messages, recent_user_messages, current_message_id) = {
         let _guard = state.inference_store_lock.lock().map_err(|_| {
             Failure::new(
@@ -1865,12 +1881,17 @@ fn execute_local_inference(
         })?;
         let mut store = state.inference_store.load();
         let turn = store.next_turn_number(&agent_id, remote_transcript_ids(&remote));
+        let host_user_message_id = host_acceptance.user_message_id.clone();
+        let local_entry_id = host_user_message_id
+            .clone()
+            .or_else(|| host_acceptance.echo_entry_id.clone())
+            .unwrap_or_else(|| format!("t{turn}u"));
         let user_entry = StoredEntry {
             provider: provider.as_str().to_string(),
             role: StoredRole::User,
             content: prompt,
             rich_text,
-            id: format!("t{turn}u"),
+            id: local_entry_id,
             client_nonce: Some(client_nonce),
             attachments,
             reactions: Vec::new(),
@@ -1895,21 +1916,12 @@ fn execute_local_inference(
                 "content": entry.content,
             }))
             .collect::<Vec<_>>();
-        let recent_user_messages = stored_entries
-            .iter()
-            .filter(|entry| entry.role == StoredRole::User)
-            .map(|entry| {
-                let mut value = json!({
-                    "id": entry.id,
-                    "text": entry.content,
-                });
-                if let Some(rich_text) = entry.rich_text.as_ref() {
-                    value["richText"] = Value::String(rich_text.clone());
-                }
-                value
-            })
-            .collect::<Vec<_>>();
-        (turn, messages, recent_user_messages, user_entry.id)
+        (
+            turn,
+            messages,
+            host_acceptance.recent_user_messages.clone(),
+            host_user_message_id.unwrap_or_default(),
+        )
     };
 
     let activity = begin_inference_activity(&state, &agent_id);

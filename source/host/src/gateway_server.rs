@@ -73,6 +73,7 @@ const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
     // Internal Coordinator -> Host -> Runner methods. These are explicit
     // Fabushi architecture extensions and must never widen the runner.*
     // namespace generically.
+    "runner.acceptRoutedPrompt",
     "runner.startRoutedProvider",
     "runner.cancelRoutedProvider",
     "runner.resolveRoutedToolRequest",

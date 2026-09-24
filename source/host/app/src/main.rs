@@ -285,6 +285,7 @@ enum HostLaneRequest {
     StdinClosed,
 }
 
+const RUNNER_ACCEPT_ROUTED_PROMPT_GATEWAY_METHOD: &str = "runner.acceptRoutedPrompt";
 const RUNNER_START_ROUTED_PROVIDER_GATEWAY_METHOD: &str = "runner.startRoutedProvider";
 const RUNNER_CANCEL_ROUTED_PROVIDER_GATEWAY_METHOD: &str = "runner.cancelRoutedProvider";
 const RUNNER_INFERENCE_EVENT_CHANNEL: &str = "runner-inference";
@@ -1251,6 +1252,71 @@ impl GatewayApi for UnifiedGatewayApi {
             let status = self.forever_box.get_status(agent_id);
             let handoff = self.session_handoff.get(agent_id);
             return Ok(project_forever_box_status(&status, handoff.as_ref()));
+        }
+        if method == RUNNER_ACCEPT_ROUTED_PROMPT_GATEWAY_METHOD {
+            let durable_args = args.clone();
+            let acceptance = self
+                .transcript_runtime
+                .accept_routed_send(&durable_args, |accepted| {
+                    persist_accepted_send_prompt_context(
+                        &self.session_workers,
+                        &durable_args,
+                        accepted,
+                    )
+                    .map_err(map_session_send_error)
+                })
+                .map_err(map_production_send_error)?;
+
+            if !acceptance.duplicate
+                && durable_args
+                    .get("skipAckObligation")
+                    .and_then(serde_json::Value::as_bool)
+                    != Some(true)
+            {
+                let agent_id = durable_args
+                    .get("agentId")
+                    .or_else(|| durable_args.get("id"))
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty());
+                if let Some(agent_id) = agent_id {
+                    let direct_local = self
+                        .session_workers
+                        .summarize_agent_by_id(agent_id, None)
+                        .map_err(GatewayCommandError::Internal)?
+                        .is_some_and(|summary| !summary.is_group);
+                    if direct_local {
+                        self.ack_obligations
+                            .record_send(agent_id, started_at_ms() as f64)
+                            .map_err(|error| GatewayCommandError::Internal(format!(
+                                "could not record durable ack obligation for {agent_id}: {error}"
+                            )))?;
+                    }
+                }
+            }
+
+            let context = acceptance.context;
+            let recent_user_messages = context
+                .recent_user_messages
+                .into_iter()
+                .map(|message| {
+                    let mut value = serde_json::json!({
+                        "id": message.id,
+                        "text": message.text,
+                    });
+                    if let Some(confirmed) = message.confirmed {
+                        value["confirmed"] = serde_json::Value::Bool(confirmed);
+                    }
+                    value
+                })
+                .collect::<Vec<_>>();
+            return Ok(serde_json::json!({
+                "accepted": true,
+                "duplicate": acceptance.duplicate,
+                "echoEntryId": context.echo_entry_id,
+                "userMessageId": context.user_message_id,
+                "recentUserMessages": recent_user_messages,
+            }));
         }
         if method == RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD {
             return self
