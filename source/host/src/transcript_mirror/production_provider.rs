@@ -139,8 +139,9 @@ where
         checkpoint: &ProductionTranscriptCheckpoint,
         blob_store: &Store,
     ) -> Result<(), String> {
+        let _ = blob_store;
         self.journal
-            .skip_checkpoint(conversation_id, &checkpoint.journal, blob_store)
+            .skip_checkpoint(conversation_id, &checkpoint.journal)
             .map_err(|error| error.to_string())
     }
 }
@@ -201,7 +202,7 @@ where
         Self::with_offload_pool(
             transcripts_dir,
             codec,
-            Arc::new(TranscriptMirrorOffloadPool::new()),
+            Arc::new(TranscriptMirrorOffloadPool::production()),
         )
     }
 
