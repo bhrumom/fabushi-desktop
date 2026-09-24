@@ -113,7 +113,17 @@ fn turn_run_shell_enforces_owner_generation_and_pre_dispatch_supersede_rules() {
             TurnRunOptions {
                 inference_request_id: Some("request-1".into()),
                 message_id: Some("t1u".into()),
-                recent_message_text: Some("recover me".into()),
+                recent_message_text: Some("fallback should not matter".into()),
+                recent_user_messages: vec![
+                    mahayana_host_runtime::RecentUserMessage {
+                        id: "t0u".into(),
+                        text: "older".into(),
+                    },
+                    mahayana_host_runtime::RecentUserMessage {
+                        id: "t1u".into(),
+                        text: "recover me".into(),
+                    },
+                ],
                 ..TurnRunOptions::default()
             },
         )
@@ -132,6 +142,24 @@ fn turn_run_shell_enforces_owner_generation_and_pre_dispatch_supersede_rules() {
     let cancelled = shell.finish_cancelled(&first.owner).expect("cancelled");
     assert_eq!(cancelled.outcome, TerminalOutcome::Cancelled);
 
+    let fork = shell
+        .begin_run(
+            "forked",
+            TurnRunOptions {
+                inference_request_id: Some("request-fork".into()),
+                message_id: Some("fork-u".into()),
+                recent_user_messages: vec![mahayana_host_runtime::RecentUserMessage {
+                    id: "fork-u".into(),
+                    text: "forked".into(),
+                }],
+                is_fork: true,
+                ..TurnRunOptions::default()
+            },
+        )
+        .expect("fork run");
+    assert!(!fork.recovery_shaped);
+    let fork_done = shell.finish_completed(&fork.owner).expect("finish fork");
+
     let second = shell
         .begin_run(
             "new turn",
@@ -141,7 +169,8 @@ fn turn_run_shell_enforces_owner_generation_and_pre_dispatch_supersede_rules() {
             },
         )
         .expect("second run");
-    assert!(second.owner.generation > first.owner.generation);
+    assert!(fork_done.owner.generation > first.owner.generation);
+    assert!(second.owner.generation > fork_done.owner.generation);
     assert_eq!(
         shell.mark_dispatched(&first.owner),
         Err(TurnRunShellError::StaleOwner)
