@@ -13,6 +13,7 @@ use super::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedProviderRun, RoutedToolBridge,
     RunnerRequestContextSnapshot, run_routed_provider_in_runner,
 };
+use super::sand_action_audit::{AuditedRoutedToolBridge, RoutedMcpAuditConfig};
 use super::tools::send_message_tool::{SendMessageSink, SendMessageToolBridge};
 use super::tools::sand_reaction_tool::{ReactionSink, ReactionToolBridge};
 
@@ -34,6 +35,7 @@ pub struct TurnAgentComposition {
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
+    action_audit: Option<RoutedMcpAuditConfig>,
 }
 
 impl TurnAgentComposition {
@@ -54,6 +56,7 @@ impl TurnAgentComposition {
             box_resources: None,
             send_message_sink: None,
             reaction_sink: None,
+            action_audit: None,
         }
     }
 
@@ -101,6 +104,15 @@ impl TurnAgentComposition {
         self.reaction_sink.is_some()
     }
 
+    pub fn with_action_audit(mut self, config: RoutedMcpAuditConfig) -> Self {
+        self.action_audit = Some(config);
+        self
+    }
+
+    pub fn has_action_audit(&self) -> bool {
+        self.action_audit.is_some()
+    }
+
     pub fn provider(&self) -> RoutedProvider {
         self.provider
     }
@@ -115,12 +127,19 @@ impl TurnAgentComposition {
         messages: &[ProviderMessage],
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
-        let bridge: Arc<dyn RoutedToolBridge> = match &self.box_resources {
-            Some(box_resources) => Arc::new(RunnerBoxToolBridge::new(
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.action_audit {
+            Some(config) => Arc::new(AuditedRoutedToolBridge::new(
                 Arc::clone(&self.bridge),
-                Arc::clone(box_resources),
+                config.clone(),
             )),
             None => Arc::clone(&self.bridge),
+        };
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.box_resources {
+            Some(box_resources) => Arc::new(RunnerBoxToolBridge::new(
+                bridge,
+                Arc::clone(box_resources),
+            )),
+            None => bridge,
         };
         let bridge: Arc<dyn RoutedToolBridge> = match &self.reaction_sink {
             Some(sink) => Arc::new(ReactionToolBridge::new(

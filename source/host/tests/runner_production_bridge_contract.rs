@@ -69,6 +69,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
             box_resources: None,
             send_message_sink: None,
             reaction_sink: None,
+            action_audit: None,
         },
     );
 
@@ -80,4 +81,5 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
     assert!(!composition.has_box_resources());
     assert!(!composition.has_send_message_sink());
     assert!(!composition.has_reaction_sink());
+    assert!(!composition.has_action_audit());
 }

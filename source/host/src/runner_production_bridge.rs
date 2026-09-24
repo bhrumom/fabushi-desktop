@@ -8,6 +8,7 @@ use crate::runner::production_turn_run_shell_adapter::{
 use crate::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSnapshot,
 };
+use crate::runner::sand_action_audit::{ActionAuditSink, RoutedMcpAuditConfig};
 use crate::runner::tools::sand_reaction_tool::ReactionSink;
 use crate::runner::tools::send_message_tool::SendMessageSink;
 use crate::runner::turn_agent_composition::TurnAgentComposition;
@@ -19,6 +20,12 @@ use crate::runner::turn_agent_composition::TurnAgentComposition;
 /// composition. This keeps provider/cancellation/checkpoint/tool identities
 /// out of ad-hoc Host assembly while the full generated Agent turn engine is
 /// still being ported behind the same boundary.
+pub struct ProductionActionAuditInput {
+    pub agent_id: String,
+    pub turn_id: Option<String>,
+    pub sink: Arc<dyn ActionAuditSink>,
+}
+
 pub struct ProductionRunnerCompositionInput {
     pub provider: RoutedProvider,
     pub bridge: Arc<dyn RoutedToolBridge>,
@@ -29,6 +36,7 @@ pub struct ProductionRunnerCompositionInput {
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
+    pub action_audit: Option<ProductionActionAuditInput>,
 }
 
 pub fn create_production_runner_composition(
@@ -43,6 +51,13 @@ pub fn create_production_runner_composition(
     );
     if let Some(retry_sink) = input.retry_sink {
         composition = composition.with_retry_sink(retry_sink);
+    }
+    if let Some(action_audit) = input.action_audit {
+        composition = composition.with_action_audit(RoutedMcpAuditConfig::new(
+            action_audit.agent_id,
+            action_audit.turn_id,
+            action_audit.sink,
+        ));
     }
     if let Some(box_resources) = input.box_resources {
         composition = composition.with_box_resources(box_resources);

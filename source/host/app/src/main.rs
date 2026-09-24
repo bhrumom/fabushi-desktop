@@ -81,7 +81,11 @@ use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAg
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::ProviderRetryEvent;
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner_production_bridge::{
-    ProductionRunnerCompositionInput, create_production_runner_composition,
+    ProductionActionAuditInput, ProductionRunnerCompositionInput,
+    create_production_runner_composition,
+};
+use mahayana_host_runtime::runner::sand_action_audit::{
+    ActionAuditRecord, ActionAuditSink,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedToolBridge, RunnerRequestContextSource,
@@ -810,6 +814,15 @@ fn start_routed_provider_task(
                         started_at_ms(),
                     );
                 });
+            let audit_events = worker_events.clone();
+            let action_audit_sink: Arc<dyn ActionAuditSink> = Arc::new(
+                move |record: ActionAuditRecord| {
+                    audit_events.publish(serde_json::json!({
+                        "channel": "runner-action-audit",
+                        "payload": record,
+                    }));
+                },
+            );
             let composition = create_production_runner_composition(
                 ProductionRunnerCompositionInput {
                     provider,
@@ -821,6 +834,11 @@ fn start_routed_provider_task(
                     box_resources: Some(box_resources),
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),
+                    action_audit: Some(ProductionActionAuditInput {
+                        agent_id: agent_id.clone(),
+                        turn_id: Some(stream_id.clone()),
+                        sink: action_audit_sink,
+                    }),
                 },
             );
             let owner = ProductionTurnAgentOwner::new(composition);

@@ -15889,12 +15889,24 @@
       "targetPath": "source/host/src/runner/sand_action_audit.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "b67f15eb45c1921cbcdc0e4dcc870b65287d1a9d",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/sand_action_audit.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_action_audit_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust ports the frozen MCP audit status envelope, noisy CDP target parsing, navigation URL normalization/probe command and computer-use audit-kind mapping. The shipping TurnAgentComposition now wraps the real routed MCP bridge with AuditedRoutedToolBridge and Host publishes correlated agent/turn MCP audit records through the production Gateway event hub. Final remains withheld until browser navigation probing and computer-use action auditing are wired to the shipping generated resource/computer owner and MCP transport resolution is sourced from the live connector registry instead of the current fail-closed 'unknown' transport."
     },
     {
       "referencePath": "source/host/runner/sand-agent-profile-prompt.ts",
