@@ -176,13 +176,14 @@ fn queue_telemetry_mappers_keep_rounding_levels_and_optional_fields() {
         source: "composer".into(),
         queue_wait_ms: 10.6,
         accepted_to_run_ms: Some(12.4),
-        jumped_background: false,
+        jumped_background: 2,
         depth_user: 0,
         depth_agent: 0,
         depth_background: 1,
     });
     assert_eq!(dequeued.metadata["queue_wait_ms"], "11");
     assert_eq!(dequeued.metadata["accepted_to_run_ms"], "12");
+    assert_eq!(dequeued.metadata["jumped_background"], "2");
 
     let watchdog = queue_watchdog_telemetry(&QueueWatchdogReport {
         conversation_id: "conversation-1".into(),

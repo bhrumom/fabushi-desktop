@@ -8,7 +8,7 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
 use mahayana_host_runtime::extensions::transcript::run_scheduler::{
-    RunLane, WatchdogStage,
+    QueueAccepted, QueueDequeued, RunLane, WatchdogStage,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -376,6 +376,40 @@ fn ack_redrive_send_uses_background_lane_and_source() {
     let _ = fs::remove_dir_all(root);
 }
 
+
+#[test]
+fn production_send_runtime_emits_shipping_queue_observers() {
+    let root = temp_root("queue-observers");
+    let runtime = ProductionTranscriptRuntime::new(Some(&root));
+    let accepted = Arc::new(std::sync::Mutex::new(Vec::<QueueAccepted>::new()));
+    let dequeued = Arc::new(std::sync::Mutex::new(Vec::<QueueDequeued>::new()));
+    let accepted_sink = Arc::clone(&accepted);
+    let dequeued_sink = Arc::clone(&dequeued);
+    let args = serde_json::json!({"agentId":"agent-observer","prompt":"hello","clientNonce":"observer-nonce"});
+    runtime.execute_send_with_queue_observers(
+        &args,
+        || Ok(serde_json::json!({"accepted":true,"operationId":"observer-op"})),
+        |_| Ok(Some("observer:user".into())),
+        |_| false,
+        move |event| accepted_sink.lock().expect("accepted sink").push(event.clone()),
+        move |event| dequeued_sink.lock().expect("dequeued sink").push(event.clone()),
+    ).expect("observed send");
+    let accepted = accepted.lock().expect("accepted values");
+    assert_eq!(accepted.len(), 1);
+    assert_eq!(accepted[0].agent_id, "agent-observer");
+    assert_eq!(accepted[0].lane, RunLane::User);
+    assert_eq!(accepted[0].source, "turn");
+    assert_eq!(accepted[0].position, 0);
+    assert!(!accepted[0].has_active);
+    let dequeued = dequeued.lock().expect("dequeued values");
+    assert_eq!(dequeued.len(), 1);
+    assert_eq!(dequeued[0].agent_id, "agent-observer");
+    assert_eq!(dequeued[0].lane, RunLane::User);
+    assert_eq!(dequeued[0].source, "turn");
+    assert_eq!(dequeued[0].generation, 1);
+    assert_eq!(WatchdogStage::LateSettle.as_str(), "late_settle");
+    let _ = fs::remove_dir_all(root);
+}
 
 #[test]
 fn production_runtime_quiesce_reports_running_agents_and_blocks_until_resume() {

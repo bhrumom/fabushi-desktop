@@ -5,6 +5,9 @@ use mahayana_host_runtime::extensions::telemetry::extension::{
     TELEMETRY_EXTENSION_ID, start_host_telemetry_extension,
 };
 use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::PersistedHostTelemetryRecord;
+use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
+    QueueAcceptedReport, queue_accepted_telemetry,
+};
 use serde_json::json;
 
 fn temp_root() -> std::path::PathBuf {
@@ -32,6 +35,11 @@ fn telemetry_extension_owns_box_help_structured_log_and_product_analytics_ingres
             "reason": "auth"
         }))
         .expect("box help log");
+    extension.logs.report_projection(&queue_accepted_telemetry(&QueueAcceptedReport {
+        conversation_id: "agent-a".into(), lane: "user".into(), source: "turn".into(),
+        position: 0, depth_user: 1, depth_agent: 0, depth_background: 0, has_active: false,
+    })).expect("queue telemetry");
+
     extension
         .analytics
         .track_event(
@@ -52,7 +60,7 @@ fn telemetry_extension_owns_box_help_structured_log_and_product_analytics_ingres
         .lines()
         .map(|line| serde_json::from_str::<PersistedHostTelemetryRecord>(line).expect("record"))
         .collect::<Vec<_>>();
-    assert_eq!(records.len(), 2);
+    assert_eq!(records.len(), 3);
 
     assert_eq!(records[0].channel, "structured_log");
     assert_eq!(records[0].event, "sand.box_help");
@@ -67,13 +75,18 @@ fn telemetry_extension_owns_box_help_structured_log_and_product_analytics_ingres
     );
     assert_eq!(records[0].payload["metadata"]["meta.reason"], "auth");
 
-    assert_eq!(records[1].channel, "product_analytics");
-    assert_eq!(records[1].event, "sand.box_help");
-    assert_eq!(records[1].payload["agent_id"], "agent-a");
-    assert_eq!(records[1].payload["snapshot_captured"], true);
-    assert_eq!(records[1].payload["domain"], "example.com");
-    assert!(records[1].payload.get("ignored").is_none());
-    assert!(records[1].payload.get("nested").is_none());
+    assert_eq!(records[1].channel, "structured_log");
+    assert_eq!(records[1].event, "sand.queue.accepted");
+    assert_eq!(records[1].payload["level"], "info");
+    assert_eq!(records[1].payload["metadata"]["conversation_id"], "agent-a");
+    assert_eq!(records[1].payload["metadata"]["lane"], "user");
+    assert_eq!(records[2].channel, "product_analytics");
+    assert_eq!(records[2].event, "sand.box_help");
+    assert_eq!(records[2].payload["agent_id"], "agent-a");
+    assert_eq!(records[2].payload["snapshot_captured"], true);
+    assert_eq!(records[2].payload["domain"], "example.com");
+    assert!(records[2].payload.get("ignored").is_none());
+    assert!(records[2].payload.get("nested").is_none());
 
     let _ = fs::remove_dir_all(root);
 }

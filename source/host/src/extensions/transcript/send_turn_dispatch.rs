@@ -71,6 +71,22 @@ impl ProductionTurnDispatch {
         source: &str,
         ack_token: Option<&str>,
     ) -> Result<(UserTurnTicket, QueueAccepted), &'static str> {
+        let (ticket, accepted, _) = self.enqueue_turn_with_start(
+            agent_id, client_nonce, accepted_at_ms, now_ms, lane, source, ack_token,
+        )?;
+        Ok((ticket, accepted))
+    }
+
+    pub fn enqueue_turn_with_start(
+        &mut self,
+        agent_id: &str,
+        client_nonce: Option<&str>,
+        accepted_at_ms: u64,
+        now_ms: u64,
+        lane: RunLane,
+        source: &str,
+        ack_token: Option<&str>,
+    ) -> Result<(UserTurnTicket, QueueAccepted, Option<QueueDequeued>), &'static str> {
         self.next_task_seq = self.next_task_seq.saturating_add(1);
         let nonce = client_nonce
             .map(str::trim)
@@ -88,15 +104,18 @@ impl ProductionTurnDispatch {
                 ack_token: ack_token.map(ToOwned::to_owned),
             },
         )?;
-        if self.scheduler.active(agent_id).is_none() {
-            let _ = self.scheduler.start_next(agent_id, now_ms);
-        }
+        let started = if self.scheduler.active(agent_id).is_none() {
+            self.scheduler.start_next(agent_id, now_ms)
+        } else {
+            None
+        };
         Ok((
             UserTurnTicket {
                 agent_id: agent_id.to_string(),
                 task_id,
             },
             accepted,
+            started,
         ))
     }
 

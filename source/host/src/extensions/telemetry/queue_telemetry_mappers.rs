@@ -42,7 +42,7 @@ pub struct QueueDequeuedReport {
     pub source: String,
     pub queue_wait_ms: f64,
     pub accepted_to_run_ms: Option<f64>,
-    pub jumped_background: bool,
+    pub jumped_background: i64,
     pub depth_user: i64,
     pub depth_agent: i64,
     pub depth_background: i64,

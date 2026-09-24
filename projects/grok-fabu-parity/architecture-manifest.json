@@ -14086,7 +14086,9 @@
         "source/host/src/sand_activity.rs",
         "source/host/src/runner/production_turn_run_shell_adapter.rs",
         "source/host/src/runner/routed_provider_runtime.rs",
-        "source/host/src/runner/turn_agent_composition.rs"
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs",
+        "source/host/src/extensions/telemetry/queue_telemetry_mappers.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14099,9 +14101,11 @@
         "source/host/tests/sand_activity_contract.rs",
         "source/host/tests/run_lifecycle_activity_production_contract.rs",
         "source/host/tests/ack_redrive_production_contract.rs",
-        "source/host/tests/production_turn_run_shell_adapter_contract.rs"
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+        "source/host/tests/host_telemetry_service_contract.rs",
+        "source/host/tests/extensions_operational_telemetry_contract.rs"
       ],
-      "notes": "Rust run lifecycle is production-composed around shipping sendPrompt/RunScheduler and live provider-run activity. Routed-provider text/MCP-tool/SendMessage/terminal events feed frozen named-activity hold state and listAgents run-state projection. Provider-internal retry/resume decisions now emit a structured Runner-owned retry event before backoff; RoutedProviderRun and TurnAgentComposition carry that event to the shipping Host, which projects ActivityUpdate::Retrying without taking ownership of retry policy. Exact-deadline watchdog Trip-cancels the real provider, persists ack interrupt, Escape-releases queued user turns and fences late settlement. Durable ack obligations receive Host-owned boot/idle redrive scanning through the background lane. Final remains withheld for exact per-agent idle/boot redrive timer semantics, active/live-session retirement, subagent-parent/group remote-member projection and full queue/turn telemetry sinks."
+      "notes": "Rust run lifecycle is production-composed around shipping sendPrompt/RunScheduler and live provider-run activity. Routed-provider text/MCP-tool/SendMessage/terminal events feed frozen named-activity hold state and listAgents run-state projection; Runner-owned retry events project retry state without moving retry policy into Host. Exact-deadline watchdog Trip cancels the real provider and persists ack interrupt; Escape releases queued user turns, retires the scheduler ack token, and late settlement is fenced. Queue accepted/dequeued/watchdog events now flow from the shipping scheduler through ProductionTranscriptRuntime observers into the Host structured telemetry sink, with frozen `late_settle` spelling and numeric jumpedBackground semantics. Durable ack obligations receive Host-owned boot/idle redrive scanning. Final remains withheld for exact per-agent idle/boot redrive timer semantics, active/live-session retirement, and subagent-parent/group remote-member projection."
     },
     {
       "referencePath": "source/host/extensions/transcript/run-scheduler.ts",

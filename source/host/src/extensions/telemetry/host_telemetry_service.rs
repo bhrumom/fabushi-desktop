@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
+use super::HostTelemetryProjection;
 use super::analytics_service::product_analytics_event;
 use super::structured_log_telemetry::{BOX_HELP_EVENT, box_help_telemetry};
 
@@ -58,16 +59,21 @@ pub struct HostStructuredLogTelemetry {
 }
 
 impl HostStructuredLogTelemetry {
-    pub fn report_box_help(&self, report: &Value) -> io::Result<()> {
-        let projection = box_help_telemetry(report);
+    pub fn report_projection(&self, projection: &HostTelemetryProjection) -> io::Result<()> {
         self.sink.emit(&PersistedHostTelemetryRecord {
             channel: "structured_log".into(),
-            event: projection.event.unwrap_or(BOX_HELP_EVENT).to_string(),
+            event: projection.event.unwrap_or("sand.host.telemetry").to_string(),
             payload: json!({
                 "level": projection.level.unwrap_or("info"),
                 "metadata": projection.metadata,
             }),
         })
+    }
+
+    pub fn report_box_help(&self, report: &Value) -> io::Result<()> {
+        let projection = box_help_telemetry(report);
+        debug_assert_eq!(projection.event, Some(BOX_HELP_EVENT));
+        self.report_projection(&projection)
     }
 }
 

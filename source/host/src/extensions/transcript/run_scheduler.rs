@@ -85,7 +85,7 @@ impl WatchdogStage {
         match self {
             Self::Trip => "trip",
             Self::Escape => "escape",
-            Self::LateSettle => "late-settle",
+            Self::LateSettle => "late_settle",
         }
     }
 }

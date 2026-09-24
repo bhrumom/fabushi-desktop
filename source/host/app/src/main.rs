@@ -57,6 +57,11 @@ use mahayana_host_runtime::extensions::webauthn_proxy::extension::{
 use mahayana_host_runtime::extensions::telemetry::webauthn_proxy_telemetry::{
     WebAuthnProxyReport, webauthn_proxy_telemetry,
 };
+use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
+    QueueAcceptedReport, QueueDequeuedReport, QueueWatchdogReport,
+    queue_accepted_telemetry, queue_dequeued_telemetry, queue_watchdog_telemetry,
+};
+use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use mahayana_host_runtime::extensions::telemetry::extension::start_host_telemetry_extension;
 use mahayana_host_runtime::extensions::trays::extension::{
     HostTraysExtension, start_trays_extension,
@@ -355,6 +360,7 @@ struct UnifiedGatewayApi {
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     trays: Arc<HostTraysExtension>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
+    telemetry_logs: HostStructuredLogTelemetry,
 }
 
 fn start_ack_redrive_worker(
@@ -1103,9 +1109,12 @@ impl GatewayApi for UnifiedGatewayApi {
             let watchdog_registry = Arc::clone(&self.runner_registry);
             let watchdog_ack_obligations = Arc::clone(&self.ack_obligations);
             let watchdog_events = self.events.clone();
+            let watchdog_logs = self.telemetry_logs.clone();
+            let accepted_logs = self.telemetry_logs.clone();
+            let dequeued_logs = self.telemetry_logs.clone();
             return self
                 .transcript_runtime
-                .execute_send_with_watchdog(
+                .execute_send_with_queue_observers(
                     &durable_args,
                     || {
                         call_host_lane(&self.host_tx, method, args)
@@ -1164,6 +1173,22 @@ impl GatewayApi for UnifiedGatewayApi {
                         } else {
                             false
                         };
+                        if event.stage == WatchdogStage::Escape {
+                            let _ = watchdog_ack_obligations.retire_ack_run_token(
+                                &event.agent_id,
+                                event.ack_token.as_deref(),
+                            );
+                        }
+                        let projection = queue_watchdog_telemetry(&QueueWatchdogReport {
+                            conversation_id: event.agent_id.clone(),
+                            stage: event.stage.as_str().to_string(),
+                            active_lane: Some(event.active_lane.as_str().to_string()),
+                            active_source: Some(event.active_source.clone()),
+                            active_runtime_ms: event.active_runtime_ms as f64,
+                            waiting_user_age_ms: event.waiting_user_age_ms.map(|value| value as f64),
+                            interrupted: (event.stage == WatchdogStage::Trip).then_some(interrupted),
+                        });
+                        let _ = watchdog_logs.report_projection(&projection);
                         watchdog_events.publish(serde_json::json!({
                             "channel": "run-queue-watchdog",
                             "payload": {
@@ -1178,6 +1203,33 @@ impl GatewayApi for UnifiedGatewayApi {
                             }
                         }));
                         interrupted
+                    },
+                    move |event| {
+                        let projection = queue_accepted_telemetry(&QueueAcceptedReport {
+                            conversation_id: event.agent_id.clone(),
+                            lane: event.lane.as_str().to_string(),
+                            source: event.source.clone(),
+                            position: i64::try_from(event.position).unwrap_or(i64::MAX),
+                            depth_user: i64::try_from(event.depth_user).unwrap_or(i64::MAX),
+                            depth_agent: i64::try_from(event.depth_agent).unwrap_or(i64::MAX),
+                            depth_background: i64::try_from(event.depth_background).unwrap_or(i64::MAX),
+                            has_active: event.has_active,
+                        });
+                        let _ = accepted_logs.report_projection(&projection);
+                    },
+                    move |event| {
+                        let projection = queue_dequeued_telemetry(&QueueDequeuedReport {
+                            conversation_id: event.agent_id.clone(),
+                            lane: event.lane.as_str().to_string(),
+                            source: event.source.clone(),
+                            queue_wait_ms: event.queue_wait_ms as f64,
+                            accepted_to_run_ms: event.accepted_to_run_ms.map(|value| value as f64),
+                            jumped_background: i64::try_from(event.jumped_background).unwrap_or(i64::MAX),
+                            depth_user: i64::try_from(event.depth_user).unwrap_or(i64::MAX),
+                            depth_agent: i64::try_from(event.depth_agent).unwrap_or(i64::MAX),
+                            depth_background: i64::try_from(event.depth_background).unwrap_or(i64::MAX),
+                        });
+                        let _ = dequeued_logs.report_projection(&projection);
                     },
                 )
                 .map_err(map_production_send_error);
@@ -1615,6 +1667,7 @@ fn main() {
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
             trays: Arc::clone(&production_extensions.trays),
             transcript_runtime: Arc::clone(&transcript_runtime),
+            telemetry_logs: host_telemetry.logs.clone(),
         });
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: gateway_api.clone(),

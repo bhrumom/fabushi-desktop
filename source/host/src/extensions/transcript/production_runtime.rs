@@ -17,8 +17,8 @@ use super::sand_pending_wake_store::SandPendingWakeStore;
 use super::sand_upgrade_resume_store::SandUpgradeResumeStore;
 use super::session_runtime::SessionRuntime;
 use super::run_scheduler::{
-    RUN_WATCHDOG_DEFAULT_MS, RUN_WATCHDOG_GRACE_DEFAULT_MS, RunLane, RunSettlement,
-    WatchdogEvent,
+    QueueAccepted, QueueDequeued, RUN_WATCHDOG_DEFAULT_MS, RUN_WATCHDOG_GRACE_DEFAULT_MS,
+    RunLane, RunSettlement, WatchdogEvent,
 };
 use super::send_pipeline::{
     HOST_ACCOUNT_SLOT, SendBegin, SendEchoIdentity, SendPipelineState,
@@ -212,6 +212,25 @@ impl ProductionTranscriptRuntime {
         Persist: Fn(&Value) -> Result<Option<String>, ProductionSendError>,
         Watchdog: Fn(&WatchdogEvent) -> bool,
     {
+        self.execute_send_with_queue_observers(args, dispatch, persist_accepted, on_watchdog, |_| {}, |_| {})
+    }
+
+    pub fn execute_send_with_queue_observers<Dispatch, Persist, Watchdog, QueueAcceptedObserver, QueueDequeuedObserver>(
+        &self,
+        args: &Value,
+        dispatch: Dispatch,
+        persist_accepted: Persist,
+        on_watchdog: Watchdog,
+        on_queue_accepted: QueueAcceptedObserver,
+        on_queue_dequeued: QueueDequeuedObserver,
+    ) -> Result<Value, ProductionSendError>
+    where
+        Dispatch: FnOnce() -> Result<Value, ProductionSendError>,
+        Persist: Fn(&Value) -> Result<Option<String>, ProductionSendError>,
+        Watchdog: Fn(&WatchdogEvent) -> bool,
+        QueueAcceptedObserver: Fn(&QueueAccepted),
+        QueueDequeuedObserver: Fn(&QueueDequeued),
+    {
         let input = parse_send_input(args)?;
         let nonce = optional_non_empty(args, "clientNonce").map(ToOwned::to_owned);
         let agent_id = input.agent_id.clone();
@@ -226,6 +245,8 @@ impl ProductionTranscriptRuntime {
         let dispatch_ack_token = optional_non_empty(args, "ackToken");
         let mut turn_ticket: Option<UserTurnTicket> = None;
         let mut turn_generation: Option<u64> = None;
+        let mut queue_accepted_event: Option<QueueAccepted> = None;
+        let mut queue_dequeued_event: Option<QueueDequeued> = None;
 
         let mut state = self.lock_state();
         loop {
@@ -263,9 +284,9 @@ impl ProductionTranscriptRuntime {
                             .lifecycle
                             .begin_session_run(agent_id, accepted_at_ms, false);
                         state.pipeline.next_turn_epoch(agent_id);
-                        let (ticket, _) = state
+                        let (ticket, accepted, started) = state
                             .turn_dispatch
-                            .enqueue_turn(
+                            .enqueue_turn_with_start(
                                 agent_id,
                                 nonce.as_deref(),
                                 accepted_at_ms,
@@ -275,12 +296,25 @@ impl ProductionTranscriptRuntime {
                                 dispatch_ack_token,
                             )
                             .map_err(|error| ProductionSendError::Internal(error.to_string()))?;
+                        queue_accepted_event = Some(accepted);
+                        queue_dequeued_event = started;
                         turn_ticket = Some(ticket);
                     }
                     break;
                 }
             }
         }
+        if queue_accepted_event.is_some() || queue_dequeued_event.is_some() {
+            drop(state);
+            if let Some(event) = queue_accepted_event.as_ref() {
+                on_queue_accepted(event);
+            }
+            if let Some(event) = queue_dequeued_event.as_ref() {
+                on_queue_dequeued(event);
+            }
+            state = self.lock_state();
+        }
+
         if let Some(ticket) = turn_ticket.as_ref() {
             loop {
                 if let Some(generation) = state.turn_dispatch.active_generation_for(ticket) {
@@ -304,9 +338,13 @@ impl ProductionTranscriptRuntime {
                     .watchdog_tick(&ticket.agent_id, system_now_ms())
                 {
                     let event = tick.event;
-                    let escaped = tick.started_next.is_some();
+                    let started_next = tick.started_next;
+                    let escaped = started_next.is_some();
                     drop(state);
                     let _ = on_watchdog(&event);
+                    if let Some(event) = started_next.as_ref() {
+                        on_queue_dequeued(event);
+                    }
                     if escaped {
                         self.turn_ready.notify_all();
                     }
@@ -383,12 +421,14 @@ impl ProductionTranscriptRuntime {
         }
         let settled_at_ms = system_now_ms();
         let mut terminal_watchdog_event = None;
+        let mut settled_dequeued_event = None;
         if let (Some(ticket), Some(generation)) =
             (turn_ticket.as_ref(), turn_generation)
         {
-            let (settlement, _) = state
+            let (settlement, next) = state
                 .turn_dispatch
                 .settle_and_start_next(ticket, generation, settled_at_ms);
+            settled_dequeued_event = next;
             if let RunSettlement::ZombieSettled { watchdog, .. } = settlement {
                 terminal_watchdog_event = Some(watchdog);
             }
@@ -402,6 +442,9 @@ impl ProductionTranscriptRuntime {
         drop(state);
         if let Some(event) = terminal_watchdog_event.as_ref() {
             let _ = on_watchdog(event);
+        }
+        if let Some(event) = settled_dequeued_event.as_ref() {
+            on_queue_dequeued(event);
         }
         self.turn_ready.notify_all();
         self.send_settled.notify_all();
