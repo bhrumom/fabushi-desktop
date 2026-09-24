@@ -26,6 +26,7 @@ use mahayana_host_runtime::{
             delete_sand_agent_db_write_generation, get_sand_agent_db_write_generation,
             has_live_sand_agent_db_handle, live_db_handle_count, register_live_db_handle,
             release_live_db_handle, wal_frames_fully_folded, DB_BUSY_TIMEOUT_MS,
+            SQLITE_DB_SIDECAR_SUFFIXES,
         },
     },
 };
@@ -145,6 +146,9 @@ fn sqlite_busy_classification_and_retry_match_reference() {
 
 #[test]
 fn sqlite_recovery_quarantines_salvages_rows_and_store_db_tracks_handles() {
+    assert_eq!(DB_BUSY_TIMEOUT_MS, 5_000);
+    assert_eq!(SQLITE_DB_SIDECAR_SUFFIXES, ["-wal", "-shm", "-journal"]);
+
     let root = std::env::temp_dir().join(format!("fabushi-sqlite-storage-{}", Uuid::new_v4()));
     std::fs::create_dir_all(&root).expect("create storage root");
     let db_path = root.join("agent.sqlite");

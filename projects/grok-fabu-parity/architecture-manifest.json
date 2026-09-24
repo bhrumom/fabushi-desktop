@@ -16681,18 +16681,23 @@
       "targetPath": "source/host/src/storage/store_db.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "d0c68ab8b58a62642f72418622306519a5636b1d",
       "architecturalRole": "host/storage",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/storage/store_db.rs"
+        "source/host/src/storage/store_db.rs",
+        "source/host/src/extensions/session/agent_db.rs",
+        "source/host/src/extensions/session/session_roster.rs",
+        "source/host/src/extensions/session/session_maintenance.rs"
       ],
       "testEvidence": [
         "source/host/tests/host_storage_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/agent_db_owner_contract.rs",
+        "source/host/tests/session_summaries_roster_contract.rs"
       ],
-      "notes": "Rust implementation provides write-generation/live-handle accounting, WAL fold detection and checkpointing; sqlite-recovery consumes the canonical sidecar suffixes. It remains non-final because the remaining frozen Sand Agent DB production consumers have not yet been migrated onto this module."
+      "notes": "Final Rust store-db parity: exact 5000ms default and WAL/SHM/journal sidecar inventory, resolved-path write-generation accounting, live-handle registration/release, WAL-fold classification and truncate checkpoint fallback semantics. Shipping SandAgentDb owns these fences for lifecycle/recovery and write invalidation; Session maintenance consumes live-handle/generation race guards; roster extras caching consumes the canonical write generation. No parallel Sand Agent store accounting remains."
     },
     {
       "referencePath": "source/host/transcript-mirror/conversation-state-binary.ts",
