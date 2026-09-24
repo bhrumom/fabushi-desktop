@@ -8,6 +8,8 @@ use mahayana_host_runtime::agents::settings_file::{
 };
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
+use mahayana_host_runtime::automations::automation::AutomationSpec;
+use mahayana_host_runtime::workflows::workflow_library::WorkflowSpec;
 use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse;
 use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
     TranscriptPageQuery, TranscriptWindowQuery,
@@ -100,8 +102,6 @@ fn delete_session_closes_owned_blob_store_clears_directory_and_publishes_removal
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
 }
-
-#[test]
 
 #[test]
 fn session_facade_delegates_interaction_state_memory_capacity_and_time_zone() {
@@ -247,6 +247,112 @@ fn session_facade_delegates_interaction_state_memory_capacity_and_time_zone() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn session_facade_delegates_automation_workflow_and_channel_stores() {
+    let root = temp_root("stores");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+
+    let automations = store
+        .create_agent_automation(
+            &record.id,
+            &AutomationSpec {
+                name: "Daily review".into(),
+                prompt: "Review the inbox".into(),
+                trigger: serde_json::json!({"type":"cron","schedule":"0 9 * * *"}),
+                is_enabled: Some(true),
+            },
+        )
+        .expect("create automation");
+    assert_eq!(automations.len(), 1);
+    let automation_id = automations[0].id.clone();
+    assert!(automations[0].is_enabled);
+
+    let automations = store
+        .set_agent_automation_enabled(&record.id, &automation_id, false)
+        .expect("disable automation");
+    assert!(!automations[0].is_enabled);
+    let automations = store
+        .update_agent_automation(
+            &record.id,
+            &automation_id,
+            &AutomationSpec {
+                name: "Daily review updated".into(),
+                prompt: "Review everything".into(),
+                trigger: serde_json::json!({"type":"cron","schedule":"30 9 * * *"}),
+                is_enabled: Some(true),
+            },
+        )
+        .expect("update automation");
+    assert_eq!(automations[0].name, "Daily review updated");
+    assert!(automations[0].is_enabled);
+    assert_eq!(
+        store.list_agent_automations(&record.id).expect("list automations").len(),
+        1
+    );
+    assert!(store
+        .remove_agent_automation(&record.id, &automation_id)
+        .expect("remove automation")
+        .is_empty());
+
+    let workflows = store
+        .create_agent_workflow(
+            &record.id,
+            &WorkflowSpec {
+                name: "Research".into(),
+                description: "Research workflow".into(),
+                body: "Read sources and summarize.".into(),
+                trigger: None,
+                source_ref: None,
+            },
+        )
+        .expect("create workflow");
+    assert_eq!(workflows.len(), 1);
+    let workflow_id = workflows[0].id.clone();
+    assert_eq!(
+        store
+            .get_agent_workflow(&record.id, &workflow_id)
+            .expect("get workflow")
+            .expect("workflow")
+            .name,
+        "Research"
+    );
+    let workflows = store
+        .update_agent_workflow(
+            &record.id,
+            &workflow_id,
+            &WorkflowSpec {
+                name: "Research updated".into(),
+                description: "Updated".into(),
+                body: "Read more sources and summarize.".into(),
+                trigger: None,
+                source_ref: None,
+            },
+        )
+        .expect("update workflow");
+    assert_eq!(workflows[0].name, "Research updated");
+    let workflows = store
+        .set_agent_workflow_enabled(&record.id, &workflow_id, false)
+        .expect("disable workflow");
+    assert!(!workflows[0].is_enabled_for_agent);
+    assert_eq!(
+        store.list_agent_workflows(&record.id).expect("list workflows").len(),
+        1
+    );
+    assert!(store
+        .remove_agent_workflow(&record.id, &workflow_id)
+        .expect("remove workflow")
+        .is_empty());
+
+    let channel_store = store.open_channel_store(&record.id).expect("channel store");
+    assert!(channel_store.get_location().ends_with("channels"));
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn session_facade_delegates_transcript_and_channel_owners_without_duplication() {
     let root = temp_root("delegation");
     let production = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));

@@ -12,13 +12,17 @@ use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_f
 use crate::storage::store_db::delete_sand_agent_db_write_generation;
 use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::memory::memory_service::FileMemoryStore;
+use crate::automations::automation::{AUTOMATION_UI_LIMIT, AutomationRecord, AutomationSpec};
+use crate::automations::automation_store::FileAutomationStore;
+use crate::workflows::workflow_library::WorkflowSpec;
+use crate::workflows::workflow_store::{FileWorkflowStore, WorkflowRecord};
 
 use super::agent_db_serde::AwaitingUserResponse;
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
 use super::session_conversation_state::{ConversationOutlineItem, TranscriptThread};
-use super::channel_store::{ChannelConfig, ChannelConnection};
+use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::production::{PreparedAgentBlobStore, ProductionSessionWorkers};
 use super::session_materialization::MaterializedAgentRecord;
@@ -445,6 +449,122 @@ impl SandAgentSessionStore {
         )
     }
 
+    pub fn automation_store_for(&self, agent_id: &str) -> Result<FileAutomationStore, String> {
+        self.production.open_automation_store(agent_id)
+    }
+
+    pub fn list_agent_automations(&self, agent_id: &str) -> Result<Vec<AutomationRecord>, String> {
+        Ok(surface_automations(&self.automation_store_for(agent_id)?))
+    }
+
+    pub fn set_agent_automation_enabled(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        enabled: bool,
+    ) -> Result<Vec<AutomationRecord>, String> {
+        let store = self.automation_store_for(agent_id)?;
+        let _ = store
+            .set_enabled(automation_id, enabled)
+            .map_err(|error| error.to_string())?;
+        Ok(surface_automations(&store))
+    }
+
+    pub fn create_agent_automation(
+        &self,
+        agent_id: &str,
+        spec: &AutomationSpec,
+    ) -> Result<Vec<AutomationRecord>, String> {
+        let store = self.automation_store_for(agent_id)?;
+        let _ = store
+            .upsert(spec, now_ms())
+            .map_err(|error| error.to_string())?;
+        Ok(surface_automations(&store))
+    }
+
+    pub fn update_agent_automation(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        spec: &AutomationSpec,
+    ) -> Result<Vec<AutomationRecord>, String> {
+        let store = self.automation_store_for(agent_id)?;
+        let _ = store
+            .update(automation_id, spec)
+            .map_err(|error| error.to_string())?;
+        Ok(surface_automations(&store))
+    }
+
+    pub fn remove_agent_automation(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+    ) -> Result<Vec<AutomationRecord>, String> {
+        let store = self.automation_store_for(agent_id)?;
+        let _ = store
+            .remove(automation_id)
+            .map_err(|error| error.to_string())?;
+        Ok(surface_automations(&store))
+    }
+
+    pub fn workflow_store_for(&self, agent_id: &str) -> Result<FileWorkflowStore, String> {
+        self.production.open_workflow_store(agent_id)
+    }
+
+    pub fn list_agent_workflows(&self, agent_id: &str) -> Result<Vec<WorkflowRecord>, String> {
+        Ok(surface_workflows(&self.workflow_store_for(agent_id)?))
+    }
+
+    pub fn get_agent_workflow(
+        &self,
+        agent_id: &str,
+        workflow_id: &str,
+    ) -> Result<Option<WorkflowRecord>, String> {
+        Ok(self.workflow_store_for(agent_id)?.get(workflow_id))
+    }
+
+    pub fn create_agent_workflow(
+        &self,
+        agent_id: &str,
+        spec: &WorkflowSpec,
+    ) -> Result<Vec<WorkflowRecord>, String> {
+        let store = self.workflow_store_for(agent_id)?;
+        let _ = store.create(spec)?;
+        Ok(surface_workflows(&store))
+    }
+
+    pub fn update_agent_workflow(
+        &self,
+        agent_id: &str,
+        workflow_id: &str,
+        spec: &WorkflowSpec,
+    ) -> Result<Vec<WorkflowRecord>, String> {
+        let store = self.workflow_store_for(agent_id)?;
+        let _ = store.update(workflow_id, spec)?;
+        Ok(surface_workflows(&store))
+    }
+
+    pub fn set_agent_workflow_enabled(
+        &self,
+        agent_id: &str,
+        workflow_id: &str,
+        enabled: bool,
+    ) -> Result<Vec<WorkflowRecord>, String> {
+        let store = self.workflow_store_for(agent_id)?;
+        let _ = store.set_enabled_for_agent(workflow_id, enabled)?;
+        Ok(surface_workflows(&store))
+    }
+
+    pub fn remove_agent_workflow(
+        &self,
+        agent_id: &str,
+        workflow_id: &str,
+    ) -> Result<Vec<WorkflowRecord>, String> {
+        let store = self.workflow_store_for(agent_id)?;
+        let _ = store.remove(workflow_id)?;
+        Ok(surface_workflows(&store))
+    }
+
     fn write_settings(&self, agent_id: &str, update: Map<String, Value>) -> Result<(), String> {
         if !self.agent_dir_exists(agent_id) {
             return Err(format!("Agent missing: {agent_id}"));
@@ -454,6 +574,10 @@ impl SandAgentSessionStore {
             &update,
         )
         .map_err(|error| error.to_string())
+    }
+
+    pub fn open_channel_store(&self, agent_id: &str) -> Result<FileChannelStore, String> {
+        self.production.open_channel_store(agent_id)
     }
 
     pub fn list_agent_channels(&self, agent_id: &str) -> Result<Vec<ChannelConnection>, String> {
@@ -482,4 +606,34 @@ impl SandAgentSessionStore {
     pub fn close_worker_pool(&self) {
         self.production.shutdown();
     }
+}
+
+fn surface_automations(store: &FileAutomationStore) -> Vec<AutomationRecord> {
+    store
+        .list()
+        .into_iter()
+        .take(AUTOMATION_UI_LIMIT)
+        .collect()
+}
+
+fn surface_workflows(store: &FileWorkflowStore) -> Vec<WorkflowRecord> {
+    const WORKFLOW_UI_LIMIT: usize = 100;
+    let mut managed = Vec::new();
+    let mut user = Vec::new();
+    for workflow in store.list_all() {
+        if matches!(workflow.source.as_str(), "managed" | "plugin") {
+            managed.push(workflow);
+        } else {
+            user.push(workflow);
+        }
+    }
+    managed.extend(user.into_iter().take(WORKFLOW_UI_LIMIT));
+    managed
+}
+
+fn now_ms() -> f64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as f64
 }
