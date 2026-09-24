@@ -23,6 +23,10 @@ enum Behavior {
     OutputCheckpointThenFail,
     OutputThenFail,
     ToolCheckpointThenDelayedSuccess,
+    DelayedSuccess {
+        delay: Duration,
+        result: &'static str,
+    },
     Success {
         delta: &'static str,
         accumulated: &'static str,
@@ -106,6 +110,10 @@ impl RoutedProviderAttemptExecutor for FakeExecutor {
                 on_checkpoint(&tool_only_checkpoint())?;
                 thread::sleep(Duration::from_millis(40));
                 Ok("done".into())
+            }
+            Behavior::DelayedSuccess { delay, result } => {
+                thread::sleep(delay);
+                Ok(result.into())
             }
             Behavior::Success {
                 delta,
@@ -238,6 +246,35 @@ fn production_turn_adapter_emits_retry_event_before_next_attempt() {
             watchdog_expired: false,
         }]
     );
+}
+
+#[test]
+fn production_turn_adapter_doubles_first_output_deadline_after_retry() {
+    let adapter = ProductionTurnRunShellAdapter {
+        policy: policy(2),
+        watchdog_poll_interval: Duration::from_millis(1),
+    };
+    let cancellation = RoutedProviderCancellation::default();
+    let store = FakeStore::default();
+    let mut executor = FakeExecutor::new(VecDeque::from([
+        Behavior::FailBeforeOutput,
+        Behavior::DelayedSuccess {
+            delay: Duration::from_millis(35),
+            result: "done",
+        },
+    ]));
+
+    let result = adapter
+        .run(
+            &cancellation,
+            &store,
+            &mut executor,
+            &mut |_delta, _| {},
+        )
+        .expect("second attempt gets doubled first-output deadline");
+
+    assert_eq!(result, "done");
+    assert_eq!(executor.attempts, 2);
 }
 
 #[test]
