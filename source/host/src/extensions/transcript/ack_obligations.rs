@@ -20,6 +20,53 @@ pub fn build_ack_redrive_prompt() -> &'static str {
     "[System recovery] The user sent one or more messages that were never visibly acknowledged — the turns handling them were interrupted, or the app restarted before a reply went out. Their newest message may be MISSING from your context entirely. Respond now by actually invoking the SendMessage tool: if you can see their latest message and already completed what it asked, send a brief confirmation with the result; if you can see it but the work is not done, acknowledge them and continue the work; if you cannot be certain what they last asked, say you may have missed their latest message and ask them to resend it — NEVER guess or claim completion of work you cannot see. Plain assistant text is NEVER shown to the user; only a real SendMessage tool invocation reaches them. Do NOT end this turn with only thinking, an empty reply, or a plan to send later — ending the turn without a real SendMessage invocation delivers nothing and is a failure. Invoke SendMessage now, even if all you can send is a brief status update."
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AckRedriveTrigger {
+    Boot,
+    Idle,
+}
+
+impl AckRedriveTrigger {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Boot => "boot",
+            Self::Idle => "idle",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum AckRedrivePreparation {
+    Missing,
+    Ready(AckObligation),
+    LostAgentDeleted(AckObligation),
+    LostMaxRedrives(AckObligation),
+}
+
+pub fn build_ack_redrive_send_args(
+    agent_id: &str,
+    obligation: &AckObligation,
+    trigger: AckRedriveTrigger,
+    now_ms: u64,
+) -> serde_json::Value {
+    serde_json::json!({
+        "agentId": agent_id,
+        "prompt": build_ack_redrive_prompt(),
+        "appendUserMessage": false,
+        "awaitTurn": false,
+        "directAddressedAcceptance": true,
+        "requestSource": "handoff-resume",
+        "hidden": true,
+        "skipAckObligation": true,
+        "ackRedrive": true,
+        "ackRedriveTrigger": trigger.as_str(),
+        "clientNonce": format!(
+            "ack-redrive:{agent_id}:{}:{now_ms}",
+            obligation.redrive_attempts as u64,
+        ),
+    })
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct AckReservation {
     pub ack_token: String,
@@ -162,6 +209,32 @@ impl AckObligations {
 
     pub fn record_redrive_attempt(&self, agent_id: &str) -> io::Result<Option<AckObligation>> {
         self.store.record_redrive_attempt(agent_id)
+    }
+
+    pub fn pending_obligations(&self) -> Vec<AckObligation> {
+        self.store.list()
+    }
+
+    pub fn prepare_redrive(
+        &self,
+        agent_id: &str,
+        agent_exists: bool,
+    ) -> io::Result<AckRedrivePreparation> {
+        let Some(obligation) = self.store.get(agent_id) else {
+            return Ok(AckRedrivePreparation::Missing);
+        };
+        if !agent_exists {
+            self.store.clear(agent_id)?;
+            return Ok(AckRedrivePreparation::LostAgentDeleted(obligation));
+        }
+        if obligation.redrive_attempts >= MAX_ACK_REDRIVES as f64 {
+            self.store.clear(agent_id)?;
+            return Ok(AckRedrivePreparation::LostMaxRedrives(obligation));
+        }
+        Ok(match self.store.record_redrive_attempt(agent_id)? {
+            Some(bumped) => AckRedrivePreparation::Ready(bumped),
+            None => AckRedrivePreparation::Missing,
+        })
     }
 
     pub fn clear_lost(&self, agent_id: &str) -> io::Result<bool> {

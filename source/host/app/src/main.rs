@@ -33,7 +33,10 @@ use mahayana_host_runtime::extensions::session::gateway::{
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
-use mahayana_host_runtime::extensions::transcript::ack_obligations::AckObligations;
+use mahayana_host_runtime::extensions::transcript::ack_obligations::{
+    ACK_REDRIVE_IDLE_DELAY_MS, AckObligations, AckRedrivePreparation, AckRedriveTrigger,
+    build_ack_redrive_send_args,
+};
 use mahayana_host_runtime::extensions::transcript::runner_registry::TranscriptRunnerRegistry;
 use mahayana_host_runtime::extensions::transcript::run_scheduler::WatchdogStage;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
@@ -101,7 +104,10 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{
+    Arc, Mutex, mpsc,
+    atomic::{AtomicBool, Ordering},
+};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -342,6 +348,118 @@ struct UnifiedGatewayApi {
     trays: Arc<HostTraysExtension>,
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
 }
+
+fn start_ack_redrive_worker(
+    api: Arc<UnifiedGatewayApi>,
+    ack_obligations: Arc<AckObligations>,
+    session_workers: Arc<ProductionSessionWorkers>,
+    runner_registry: Arc<TranscriptRunnerRegistry>,
+    events: GatewayEventHub,
+    stop: Arc<AtomicBool>,
+) -> io::Result<thread::JoinHandle<()>> {
+    thread::Builder::new()
+        .name("mahayana-ack-redrive".into())
+        .spawn(move || {
+            let mut trigger = AckRedriveTrigger::Boot;
+            while !stop.load(Ordering::Acquire) {
+                let mut slept = 0u64;
+                while slept < ACK_REDRIVE_IDLE_DELAY_MS && !stop.load(Ordering::Acquire) {
+                    let slice = (ACK_REDRIVE_IDLE_DELAY_MS - slept).min(100);
+                    thread::sleep(Duration::from_millis(slice));
+                    slept = slept.saturating_add(slice);
+                }
+                if stop.load(Ordering::Acquire) {
+                    break;
+                }
+
+                for obligation in ack_obligations.pending_obligations() {
+                    if stop.load(Ordering::Acquire) {
+                        break;
+                    }
+                    let agent_id = obligation.agent_id.clone();
+                    if !runner_registry.active_stream_ids_for_agent(&agent_id).is_empty()
+                        || api.transcript_runtime.is_agent_running(&agent_id)
+                    {
+                        continue;
+                    }
+                    let agent_exists = session_workers
+                        .session_db_path(&agent_id)
+                        .is_ok_and(|path| path.is_file());
+                    match ack_obligations.prepare_redrive(&agent_id, agent_exists) {
+                        Ok(AckRedrivePreparation::Missing) => {}
+                        Ok(AckRedrivePreparation::LostAgentDeleted(lost)) => {
+                            events.publish(serde_json::json!({
+                                "channel": "ack-obligation",
+                                "payload": {
+                                    "agentId": agent_id,
+                                    "outcome": "lost",
+                                    "reason": "agent_deleted",
+                                    "ageMs": started_at_ms() as f64 - lost.created_at_ms,
+                                    "coalescedCount": lost.coalesced_count,
+                                    "redriveAttempts": lost.redrive_attempts,
+                                }
+                            }));
+                        }
+                        Ok(AckRedrivePreparation::LostMaxRedrives(lost)) => {
+                            events.publish(serde_json::json!({
+                                "channel": "ack-obligation",
+                                "payload": {
+                                    "agentId": agent_id,
+                                    "outcome": "lost",
+                                    "reason": "max_redrives",
+                                    "ageMs": started_at_ms() as f64 - lost.created_at_ms,
+                                    "coalescedCount": lost.coalesced_count,
+                                    "redriveAttempts": lost.redrive_attempts,
+                                }
+                            }));
+                        }
+                        Ok(AckRedrivePreparation::Ready(bumped)) => {
+                            let now_ms = started_at_ms();
+                            events.publish(serde_json::json!({
+                                "channel": "ack-obligation",
+                                "payload": {
+                                    "agentId": agent_id,
+                                    "outcome": "redrive",
+                                    "reason": trigger.as_str(),
+                                    "ageMs": now_ms as f64 - bumped.created_at_ms,
+                                    "coalescedCount": bumped.coalesced_count,
+                                    "redriveAttempts": bumped.redrive_attempts,
+                                }
+                            }));
+                            let args = build_ack_redrive_send_args(
+                                &agent_id,
+                                &bumped,
+                                trigger,
+                                now_ms,
+                            );
+                            if let Err(error) = api.call("sendPrompt", args) {
+                                eprintln!(
+                                    "mahayana-host-ack redrive_failed agent={agent_id} error={error}"
+                                );
+                                events.publish(serde_json::json!({
+                                    "channel": "ack-obligation",
+                                    "payload": {
+                                        "agentId": agent_id,
+                                        "outcome": "redrive_error",
+                                        "reason": trigger.as_str(),
+                                        "redriveAttempts": bumped.redrive_attempts,
+                                        "message": error.to_string(),
+                                    }
+                                }));
+                            }
+                        }
+                        Err(error) => {
+                            eprintln!(
+                                "mahayana-host-ack redrive_prepare_failed agent={agent_id} error={error}"
+                            );
+                        }
+                    }
+                }
+                trigger = AckRedriveTrigger::Idle;
+            }
+        })
+}
+
 
 fn project_forever_box_status(
     status: &BoxStatus,
@@ -938,6 +1056,10 @@ impl GatewayApi for UnifiedGatewayApi {
                         .map_err(map_session_send_error)?;
                         if accepted.get("accepted").and_then(serde_json::Value::as_bool)
                             == Some(true)
+                            && durable_args
+                                .get("skipAckObligation")
+                                .and_then(serde_json::Value::as_bool)
+                                != Some(true)
                         {
                             let agent_id = durable_args
                                 .get("agentId")
@@ -1404,8 +1526,7 @@ fn main() {
     let gateway_started_at = started_at_ms();
     let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
     let transcript_runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&app_data_dir)));
-    let gateway_server = match start_gateway_server(GatewayServerDeps {
-        api: Arc::new(UnifiedGatewayApi {
+    let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
             experiments: Arc::clone(&production_extensions.experiments),
             events: gateway_events.clone(),
@@ -1421,7 +1542,9 @@ fn main() {
             webauthn_proxy: Arc::clone(&production_extensions.webauthn_proxy),
             trays: Arc::clone(&production_extensions.trays),
             transcript_runtime: Arc::clone(&transcript_runtime),
-        }),
+        });
+    let gateway_server = match start_gateway_server(GatewayServerDeps {
+        api: gateway_api.clone(),
         events: gateway_events.clone(),
         local_exec: None,
         webauthn: Some(production_extensions.webauthn_proxy.gateway_bridge()),
@@ -1432,6 +1555,22 @@ fn main() {
         Err(error) => {
             eprintln!("failed to start Mahayana Host gateway: {error}");
             return;
+        }
+    };
+
+    let ack_redrive_stop = Arc::new(AtomicBool::new(false));
+    let _ack_redrive_worker = match start_ack_redrive_worker(
+        Arc::clone(&gateway_api),
+        Arc::clone(&ack_obligations),
+        Arc::clone(&session_workers),
+        Arc::clone(&runner_registry),
+        gateway_events.clone(),
+        Arc::clone(&ack_redrive_stop),
+    ) {
+        Ok(worker) => Some(worker),
+        Err(error) => {
+            eprintln!("failed to start Mahayana ack-redrive worker: {error}");
+            None
         }
     };
 
@@ -1539,6 +1678,7 @@ fn main() {
         }
     }
     drop(platform_tx);
+    ack_redrive_stop.store(true, Ordering::Release);
     drop(gateway_server);
     runner_registry.cancel_all("Mahayana Host shutting down");
     routed_tool_relay.cancel_all("Mahayana Host shutting down");

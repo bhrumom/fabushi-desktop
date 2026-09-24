@@ -444,6 +444,10 @@ impl ProductionTranscriptRuntime {
         self.lock_state().turn_dispatch.is_idle(agent_id)
     }
 
+    pub fn is_agent_running(&self, agent_id: &str) -> bool {
+        self.lock_state().lifecycle.is_running(agent_id)
+    }
+
     fn lock_state(&self) -> std::sync::MutexGuard<'_, RuntimeState> {
         self.state
             .lock()
