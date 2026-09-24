@@ -101,6 +101,10 @@ use mahayana_host_runtime::host_discovery::{
     GatewayDiscoveryInfo, clear_gateway_discovery, write_gateway_discovery,
 };
 use mahayana_host_runtime::host_lock::acquire_host_lock;
+use mahayana_host_runtime::host_initial_transcript_load::{
+    InitialTranscriptDegradedReason, ensure_initial_transcript_loaded,
+    load_initial_transcript_resiliently,
+};
 use mahayana_host_runtime::host_paths::{get_gateway_discovery_path, get_host_lock_path};
 use mahayana_host_runtime::r#box::box_env::BoxEnvironmentUpdate;
 use mahayana_host_runtime::r#box::production::{
@@ -1651,6 +1655,32 @@ fn main() {
     let gateway_started_at = started_at_ms();
     let routed_tool_relay = Arc::new(CoordinatorToolRelay::new(gateway_events.clone()));
     let transcript_runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&app_data_dir)));
+    match load_initial_transcript_resiliently(|| {
+        ensure_initial_transcript_loaded(&session_workers, transcript_runtime.session_runtime())
+    }) {
+        Ok(outcome) => match outcome.degraded {
+            Some(InitialTranscriptDegradedReason::SqliteBusy(error)) => {
+                eprintln!(
+                    "[sand-host] initial transcript load still locked after retries (kept alive): {error}"
+                );
+            }
+            Some(InitialTranscriptDegradedReason::AgentLimit) => {
+                eprintln!(
+                    "[sand-host] no session at the agent cap; starting without one so the roster and delete stay reachable"
+                );
+            }
+            None => {
+                eprintln!(
+                    "[sand-host] initial transcript loaded entries={}",
+                    outcome.entry_count
+                );
+            }
+        },
+        Err(error) => {
+            eprintln!("[sand-host] initial transcript load failed: {error}");
+            return;
+        }
+    }
     let gateway_api = Arc::new(UnifiedGatewayApi {
             host_tx: host_tx.clone(),
             experiments: Arc::clone(&production_extensions.experiments),

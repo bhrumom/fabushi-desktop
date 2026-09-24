@@ -15001,12 +15001,22 @@
       "targetPath": "source/host/src/host_initial_transcript_load.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "f9677d4121f13041128c8fbb09aef481905c7874",
       "architecturalRole": "host/host-initial-transcript-load",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/host_initial_transcript_load.rs",
+        "source/host/src/extensions/transcript/session_runtime.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_initial_transcript_load_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of frozen Host initial transcript resilience. Shipping Host restores the persisted/first openable Agent through SessionRuntime, creates the production fallback session when none can open, retries SQLite busy/locked startup with 100/200/400/800 ms backoff, degrades only after busy exhaustion or Agent cap so roster/delete remain reachable, and treats every other startup failure as fatal before Gateway publication."
     },
     {
       "referencePath": "source/host/host-lock.ts",
