@@ -16365,12 +16365,21 @@
       "targetPath": "source/host/src/runner/tools/mcp_meta_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "40e7ba55e6e7e1bc61d6754c363f1653aaebcf24",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/mcp_meta_tools.rs",
+        "source/host/src/runner/routed_provider_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/mcp_meta_tools_contract.rs",
+        "source/host/tests/runner_routed_provider_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust ports the frozen timeout tiers, block_until_ms guard math, timeout message shaping, effective routed-tool naming and MCP descriptor grouping. Shipping Runner now wraps both direct provider tool execution and the Claude routed-MCP HTTP tools/call path with the same per-call timeout guard. Final remains withheld until full generated Agent MCP meta-tool registration carries plugin/marketplace/account metadata and the computer-use-subagent-specific dynamic registry classification through the production Agent composition."
     },
     {
       "referencePath": "source/host/runner/tools/mcp-server-resolution.ts",

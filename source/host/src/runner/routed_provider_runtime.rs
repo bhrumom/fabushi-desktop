@@ -24,6 +24,7 @@ use crate::runner::production_turn_run_shell_adapter::{
     RoutedProviderCheckpointStore,
 };
 use crate::runner::system_prompt_assembly::render_request_context_system_prompt;
+use crate::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout;
 
 pub const ROUTED_MCP_PROTOCOL_VERSION: &str = "2025-03-26";
 pub const ROUTED_MCP_MAX_BODY_BYTES: usize = 1_048_576;
@@ -387,7 +388,25 @@ pub fn run_routed_provider_in_runner(
         tool_call_id: &str,
     | {
         tool_cancellation.check()?;
-        bridge.call_tool(tool, args, tool_call_id)
+        let operation_bridge = Arc::clone(&bridge);
+        let operation_cancellation = tool_cancellation.clone();
+        let owned_tool = tool.clone();
+        let guard_tool = owned_tool.clone();
+        let guard_args = args.clone();
+        let owned_tool_call_id = tool_call_id.to_string();
+        execute_routed_tool_with_timeout(
+            &guard_tool,
+            &guard_args,
+            false,
+            move || {
+                operation_cancellation.check()?;
+                operation_bridge.call_tool(
+                    &owned_tool,
+                    args,
+                    &owned_tool_call_id,
+                )
+            },
+        )
     };
     let delta_cancellation = run.cancellation.clone();
     let mut guarded_delta = |delta: &str, accumulated: &str| {
@@ -503,7 +522,7 @@ pub fn start_routed_mcp_server_with_cancellation(
                             stream,
                             &path,
                             &mut tools,
-                            bridge.as_ref(),
+                            &bridge,
                             &worker_cancellation,
                         );
                     }
@@ -529,7 +548,7 @@ fn serve_request(
     mut stream: TcpStream,
     expected_path: &str,
     tools: &mut HashMap<String, RoutedToolDefinition>,
-    bridge: &dyn RoutedToolBridge,
+    bridge: &Arc<dyn RoutedToolBridge>,
     cancellation: &RoutedProviderCancellation,
 ) -> std::io::Result<()> {
     stream.set_read_timeout(Some(Duration::from_secs(5)))?;
@@ -629,9 +648,25 @@ fn serve_request(
             let name = params.and_then(|value| value.get("name")).and_then(Value::as_str).unwrap_or("");
             let args = params.and_then(|value| value.get("arguments")).cloned().unwrap_or_else(|| json!({}));
             match tools.get(name) {
-                Some(tool) => match bridge.call_tool(tool, args, &Uuid::new_v4().to_string()) {
-                    Ok(value) => normalize_tool_result(value),
-                    Err(error) => tool_failure(error.to_string()),
+                Some(tool) => {
+                    let operation_bridge = Arc::clone(bridge);
+                    let owned_tool = tool.clone();
+                    let guard_tool = owned_tool.clone();
+                    let guard_args = args.clone();
+                    let tool_call_id = Uuid::new_v4().to_string();
+                    match execute_routed_tool_with_timeout(
+                        &guard_tool,
+                        &guard_args,
+                        false,
+                        move || operation_bridge.call_tool(
+                            &owned_tool,
+                            args,
+                            &tool_call_id,
+                        ),
+                    ) {
+                        Ok(value) => normalize_tool_result(value),
+                        Err(error) => tool_failure(error.to_string()),
+                    }
                 },
                 None => tool_failure(format!("Unknown Fabushi plugin tool: {name}")),
             }
