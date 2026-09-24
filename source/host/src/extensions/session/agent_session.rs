@@ -11,13 +11,14 @@ use crate::agents::agent_profile::SandAgentProfile;
 use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
 use crate::storage::store_db::delete_sand_agent_db_write_generation;
 use crate::transcript_mutation_events::publish_transcript_mutation;
+use crate::extensions::memory::memory_service::FileMemoryStore;
 
 use super::agent_db_serde::AwaitingUserResponse;
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
-use super::session_conversation_state::TranscriptThread;
-use super::channel_store::ChannelConnection;
+use super::session_conversation_state::{ConversationOutlineItem, TranscriptThread};
+use super::channel_store::{ChannelConfig, ChannelConnection};
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::production::{PreparedAgentBlobStore, ProductionSessionWorkers};
 use super::session_materialization::MaterializedAgentRecord;
@@ -45,6 +46,18 @@ impl SandAgentSessionStore {
 
     pub fn production(&self) -> &Arc<ProductionSessionWorkers> {
         &self.production
+    }
+
+    pub fn create_memory_store(&self, agent_dir: impl AsRef<Path>) -> FileMemoryStore {
+        self.production.memory_service().create_agent_store(agent_dir)
+    }
+
+    pub fn agent_has_content(&self, agent_dir: impl AsRef<Path>) -> bool {
+        self.production.memory_service().agent_has_content(agent_dir)
+    }
+
+    pub fn get_user_time_zone(&self) -> Option<String> {
+        self.production.resolve_user_time_zone()
     }
 
     pub fn get_root_dir(&self) -> &Path {
@@ -119,6 +132,14 @@ impl SandAgentSessionStore {
 
     pub fn count_owned_agents(&self) -> Result<usize, String> {
         self.production.count_owned_agents()
+    }
+
+    pub fn list_agent_ids(&self) -> Result<Vec<String>, String> {
+        self.production.list_agent_record_ids()
+    }
+
+    pub fn is_agent_cap_reached(&self) -> Result<bool, String> {
+        self.production.is_agent_cap_reached()
     }
 
     pub fn create_session(
@@ -227,6 +248,14 @@ impl SandAgentSessionStore {
             .set_agent_avatar_bytes(agent_id, png_bytes, active.as_deref())
     }
 
+    pub fn set_agent_avatar_bytes_by_id(
+        &self,
+        agent_id: &str,
+        png_bytes: Option<&[u8]>,
+    ) -> Result<Option<AgentSummary>, String> {
+        self.set_agent_avatar_bytes(agent_id, png_bytes)
+    }
+
     pub fn read_agent_transcript_entries(
         &self,
         agent_id: &str,
@@ -266,6 +295,45 @@ impl SandAgentSessionStore {
         self.production.read_agent_thread(agent_id, root_id)
     }
 
+    pub fn get_agent_transcript_entries(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<Value>, String> {
+        self.production.read_agent_transcript_entries(agent_id)
+    }
+
+    pub fn get_agent_outline(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<ConversationOutlineItem>, String> {
+        self.production.read_agent_outline(agent_id)
+    }
+
+    pub fn get_session_outline(
+        &self,
+        session: &PreparedAgentBlobStore,
+    ) -> Result<Vec<ConversationOutlineItem>, String> {
+        self.production.read_agent_outline(&session.agent_id)
+    }
+
+    pub fn mark_session_viewed(
+        &self,
+        session: &PreparedAgentBlobStore,
+        at: f64,
+        preserve_manual_unread: bool,
+    ) -> Result<bool, String> {
+        self.production
+            .mark_agent_viewed(&session.agent_id, at, preserve_manual_unread)
+    }
+
+    pub fn mark_session_activity(
+        &self,
+        session: &PreparedAgentBlobStore,
+        at: f64,
+    ) -> Result<bool, String> {
+        self.production.mark_agent_activity(&session.agent_id, at)
+    }
+
     pub fn mark_agent_viewed(
         &self,
         agent_id: &str,
@@ -296,6 +364,57 @@ impl SandAgentSessionStore {
     ) -> Result<bool, String> {
         self.production
             .set_agent_awaiting_user_response(agent_id, state)
+    }
+
+    pub fn set_awaiting_user_response_for_tab(
+        &self,
+        agent_id: &str,
+        tab_id: &str,
+        state: Option<&AwaitingUserResponse>,
+        if_since_before: Option<f64>,
+    ) -> Result<bool, String> {
+        self.production.set_agent_awaiting_user_response_for_tab(
+            agent_id,
+            tab_id,
+            state,
+            if_since_before,
+        )
+    }
+
+    pub fn expire_pending_auto_review_approvals(
+        &self,
+        agent_id: &str,
+        only_request_id: Option<&str>,
+    ) -> Result<Vec<String>, String> {
+        self.production
+            .expire_pending_auto_review_approvals(agent_id, only_request_id)
+    }
+
+    pub fn expire_pending_local_tool_permission_asks(
+        &self,
+        agent_id: &str,
+        only_request_id: Option<&str>,
+        if_pending_before_ms: Option<f64>,
+    ) -> Result<Vec<String>, String> {
+        self.production.expire_pending_local_tool_permission_asks(
+            agent_id,
+            only_request_id,
+            if_pending_before_ms,
+        )
+    }
+
+    pub fn clear_agent_memory_prompt_snapshot(
+        &self,
+        agent_id: &str,
+    ) -> Result<bool, String> {
+        self.production.clear_agent_memory_prompt_snapshot(agent_id)
+    }
+
+    pub fn ensure_conversation_capacity_for_turn(
+        &self,
+        session: &PreparedAgentBlobStore,
+    ) -> Result<(), String> {
+        self.production.ensure_capacity_for_turn(session)
     }
 
     pub fn set_session_notify_on_updates(
@@ -339,6 +458,10 @@ impl SandAgentSessionStore {
 
     pub fn list_agent_channels(&self, agent_id: &str) -> Result<Vec<ChannelConnection>, String> {
         self.production.list_agent_channels(agent_id)
+    }
+
+    pub fn list_channel_configs(&self, agent_id: &str) -> Result<Vec<ChannelConfig>, String> {
+        self.production.list_channel_configs(agent_id)
     }
 
     pub fn store_connector_credential(

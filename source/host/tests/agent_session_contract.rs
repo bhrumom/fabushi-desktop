@@ -7,6 +7,8 @@ use mahayana_host_runtime::agents::settings_file::{
     get_sand_settings_path, read_sand_settings_file,
 };
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
+use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse;
 use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
     TranscriptPageQuery, TranscriptWindowQuery,
 };
@@ -100,6 +102,151 @@ fn delete_session_closes_owned_blob_store_clears_directory_and_publishes_removal
 }
 
 #[test]
+
+#[test]
+fn session_facade_delegates_interaction_state_memory_capacity_and_time_zone() {
+    let root = temp_root("interaction-state");
+    let agents = root.join("agents");
+    let production = Arc::new(
+        ProductionSessionWorkers::with_agents_root_and_user_time_zone_resolver(
+            &agents,
+            500,
+            Arc::new(|| Some("America/Los_Angeles".to_string())),
+        ),
+    );
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let record = store.create_session(None, "user", None).expect("agent");
+
+    assert_eq!(store.list_agent_ids().expect("agent ids"), vec![record.id.clone()]);
+    assert!(!store.is_agent_cap_reached().expect("cap"));
+    assert_eq!(store.get_user_time_zone().as_deref(), Some("America/Los_Angeles"));
+
+    let memory = store.create_memory_store(agents.join(&record.id));
+    assert_eq!(memory.get_location(), agents.join(&record.id).join("memory"));
+    assert!(!store.agent_has_content(agents.join(&record.id)));
+    memory
+        .add_memory("Remember this", 1, MemoryKind::Profile)
+        .expect("memory write")
+        .expect("memory record");
+    assert!(store.agent_has_content(agents.join(&record.id)));
+
+    let prepared = store
+        .open_session(&record.id)
+        .expect("open")
+        .expect("prepared");
+    assert!(store.get_session_outline(&prepared).expect("session outline").is_empty());
+    assert!(store.get_agent_outline(&record.id).expect("agent outline").is_empty());
+    assert_eq!(
+        store
+            .get_agent_transcript_entries(&record.id)
+            .expect("transcript alias"),
+        store
+            .read_agent_transcript_entries(&record.id)
+            .expect("transcript owner")
+    );
+    assert!(store
+        .mark_session_activity(&prepared, 10.0)
+        .expect("session activity"));
+    assert!(store
+        .mark_session_viewed(&prepared, 20.0, false)
+        .expect("session viewed"));
+
+    let awaiting = AwaitingUserResponse {
+        tab_id: "tab-a".into(),
+        reason: "approval".into(),
+        since: 30.0,
+    };
+    assert!(store
+        .set_awaiting_user_response(&record.id, Some(&awaiting))
+        .expect("set awaiting"));
+    assert!(!store
+        .set_awaiting_user_response_for_tab(
+            &record.id,
+            "tab-b",
+            None,
+            Some(40.0),
+        )
+        .expect("wrong tab"));
+    assert!(store
+        .set_awaiting_user_response_for_tab(
+            &record.id,
+            "tab-a",
+            None,
+            Some(40.0),
+        )
+        .expect("matching tab"));
+
+    production
+        .set_agent_memory_prompt_snapshot(
+            &record.id,
+            &serde_json::json!({"render":"snapshot","compactionEpoch":1}),
+        )
+        .expect("set memory snapshot");
+    assert!(store
+        .clear_agent_memory_prompt_snapshot(&record.id)
+        .expect("clear memory snapshot"));
+
+    production
+        .append_agent_transcript_entries(
+            &record.id,
+            &[
+                serde_json::json!({
+                    "id":"approval",
+                    "kind":"send-message",
+                    "timestampMs":50,
+                    "message":{
+                        "type":"auto-review-approval",
+                        "approval":{"requestId":"req-approval","status":"pending"}
+                    }
+                }),
+                serde_json::json!({
+                    "id":"permission",
+                    "kind":"send-message",
+                    "timestampMs":60,
+                    "message":{
+                        "type":"local-tool-permission",
+                        "ask":{"requestId":"req-permission","status":"pending"}
+                    }
+                }),
+            ],
+        )
+        .expect("pending transcript");
+    assert_eq!(
+        store
+            .expire_pending_auto_review_approvals(
+                &record.id,
+                Some("req-approval"),
+            )
+            .expect("expire approval"),
+        vec!["req-approval".to_string()]
+    );
+    assert_eq!(
+        store
+            .expire_pending_local_tool_permission_asks(
+                &record.id,
+                Some("req-permission"),
+                None,
+            )
+            .expect("expire permission"),
+        vec!["req-permission".to_string()]
+    );
+
+    store
+        .ensure_conversation_capacity_for_turn(&prepared)
+        .expect("default capacity policy");
+
+    assert!(store
+        .store_connector_credential(&record.id, "slack", "token", "secret")
+        .expect("credential"));
+    let configs = store.list_channel_configs(&record.id).expect("channel configs");
+    assert_eq!(configs.len(), 1);
+    assert_eq!(configs[0].platform, "slack");
+    assert_eq!(configs[0].token, "secret");
+
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
 fn session_facade_delegates_transcript_and_channel_owners_without_duplication() {
     let root = temp_root("delegation");
     let production = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));

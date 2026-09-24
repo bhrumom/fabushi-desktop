@@ -230,6 +230,10 @@ impl ProductionSessionWorkers {
         Arc::clone(&self.memory_service)
     }
 
+    pub fn resolve_user_time_zone(&self) -> Option<String> {
+        (self.user_time_zone_resolver)()
+    }
+
     pub fn session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {
         get_agent_db_path(&self.agents_root, agent_id).map_err(|error| error.to_string())
     }
