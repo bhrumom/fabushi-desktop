@@ -55,6 +55,9 @@ use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
     build_box_handoff_resume_send_args, settle_box_handoff_state,
 };
 use mahayana_host_runtime::extensions::transcript::box_request_entries::resolve_box_request_entry;
+use mahayana_host_runtime::extensions::transcript::workflow_commands::{
+    WorkflowCommandError, dispatch_workflow_command,
+};
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     AckObligations, AckRedrivePreparation, build_ack_redrive_empty_delivery_report,
     build_ack_redrive_send_args,
@@ -1774,6 +1777,18 @@ impl GatewayApi for UnifiedGatewayApi {
             return Ok(serde_json::Value::Bool(
                 self.experiments.is_agent_network_enabled(),
             ));
+        }
+        if let Some(result) =
+            dispatch_workflow_command(Arc::clone(&self.session_workers), method, &args)
+        {
+            return result.map_err(|error| match error {
+                WorkflowCommandError::BadRequest(message) => {
+                    GatewayCommandError::BadRequest(message)
+                }
+                WorkflowCommandError::Internal(message) => {
+                    GatewayCommandError::Internal(message)
+                }
+            });
         }
         if method == "promptAcceptanceStatus" {
             return self
