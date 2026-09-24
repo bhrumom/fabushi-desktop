@@ -479,6 +479,25 @@ fn production_runtime_quiesce_reports_running_agents_and_blocks_until_resume() {
     assert_eq!(summary.running_turns, 2);
     assert!(runtime.is_quiescing_for_upgrade());
 
+    let store = runtime.upgrade_resume_store().expect("upgrade resume store");
+    let mut markers = store.list_pending();
+    markers.sort_by(|a, b| a.agent_id.cmp(&b.agent_id));
+    assert_eq!(markers.len(), 2);
+    assert_eq!(markers[0].agent_id, "agent-a");
+    assert_eq!(markers[0].source.as_deref(), Some("turn"));
+    assert_eq!(markers[1].agent_id, "agent-b");
+    assert_eq!(markers[1].source.as_deref(), Some("turn"));
+    assert_eq!(
+        runtime.upgrade_resume_agent_ids(),
+        vec!["agent-a".to_string(), "agent-b".to_string()]
+    );
+
+    runtime.clear_agent_durable_recovery("agent-a");
+    assert_eq!(
+        runtime.upgrade_resume_agent_ids(),
+        vec!["agent-b".to_string()]
+    );
+
     runtime.resume_after_recreate();
     assert!(!runtime.is_quiescing_for_upgrade());
     runtime.end_provider_run("agent-a");

@@ -1768,6 +1768,7 @@ impl GatewayApi for UnifiedGatewayApi {
         Ok(serde_json::json!({
             "quiescing": summary.quiescing,
             "runningTurns": summary.running_turns,
+            "resumeAgentIds": self.transcript_runtime.upgrade_resume_agent_ids(),
         }))
     }
 

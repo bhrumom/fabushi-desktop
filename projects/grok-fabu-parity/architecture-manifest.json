@@ -14404,7 +14404,7 @@
       "targetPath": "source/host/src/extensions/transcript/sand_upgrade_resume_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "6123ddd0fd6bbcb815544a89c14c746438691fbe",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -14416,10 +14416,11 @@
       "testEvidence": [
         "source/host/tests/durable_recovery_stores_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/transcript_production_composition_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production slice ports frozen resume-marker coercion, per-agent upsert, read/clear/clearAll and durable part-file replacement. ProductionTranscriptRuntime owns the store under app_data_dir and successful agent deletion clears its marker. Final remains withheld until upgrade quiesce, running-agent capture, resumeAfterRecreate and automation/background-revival resume paths consume the store."
+      "notes": "Rust port fully owns the frozen durable upgrade-resume marker store (coercion, per-Agent upsert, list/clear/clearAll, atomic part-file replacement) and is now consumed on the shipping Host upgrade path: quiesce snapshots every currently running Agent with its scheduler source into the durable store, /prepare-upgrade returns the persisted resumeAgentIds, and Agent deletion clears its marker. Actual post-recreate turn execution remains owned by upgrade-recreate-resume.ts and stays non-final until the Coordinator-crossing resume path is complete."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-acceptance.ts",

@@ -18,7 +18,7 @@ use super::prompt_acceptance_ledger::{
 };
 use super::run_lifecycle::RunLifecycleState;
 use super::sand_pending_wake_store::{PendingWakeKind, SandPendingWakeStore};
-use super::sand_upgrade_resume_store::SandUpgradeResumeStore;
+use super::sand_upgrade_resume_store::{SandUpgradeResumeStore, UpgradeResumeMarker};
 use super::session_runtime::SessionRuntime;
 use super::replica_writer::HostReplicaWriter;
 use super::run_scheduler::{
@@ -205,9 +205,49 @@ impl ProductionTranscriptRuntime {
     }
 
     pub fn quiesce_for_upgrade(&self) -> UpgradeQuiesceSummary {
-        let running_turns = self.lock_state().lifecycle.running_agent_ids().len();
+        let running = {
+            let state = self.lock_state();
+            state
+                .lifecycle
+                .running_agent_ids()
+                .into_iter()
+                .map(|agent_id| {
+                    let source = state
+                        .turn_dispatch
+                        .active_source(&agent_id)
+                        .unwrap_or("turn")
+                        .to_string();
+                    (agent_id, source)
+                })
+                .collect::<Vec<_>>()
+        };
+        if let Some(store) = self.upgrade_resume_store.as_ref() {
+            let marked_at_ms = system_now_ms() as f64;
+            for (agent_id, source) in &running {
+                store.mark_pending(UpgradeResumeMarker {
+                    agent_id: agent_id.clone(),
+                    marked_at_ms,
+                    source: Some(source.clone()),
+                    automation_id: None,
+                    automation_run_id: None,
+                });
+            }
+        }
         self.upgrade_recreate_resume
-            .quiesce_for_upgrade(running_turns)
+            .quiesce_for_upgrade(running.len())
+    }
+
+    pub fn upgrade_resume_agent_ids(&self) -> Vec<String> {
+        self.upgrade_resume_store
+            .as_ref()
+            .map(|store| {
+                store
+                    .list_pending()
+                    .into_iter()
+                    .map(|marker| marker.agent_id)
+                    .collect()
+            })
+            .unwrap_or_default()
     }
 
     pub fn is_quiescing_for_upgrade(&self) -> bool {
