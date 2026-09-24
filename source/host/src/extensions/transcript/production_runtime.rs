@@ -53,6 +53,29 @@ pub struct RoutedSendAcceptance {
     pub context: PersistedSendContext,
 }
 
+pub fn classify_send_dispatch(
+    args: &Value,
+) -> Result<(RunLane, &'static str), ProductionSendError> {
+    let is_handoff_resume =
+        optional_non_empty(args, "requestSource") == Some("handoff-resume");
+    let is_ack_redrive =
+        optional_bool(args, "ackRedrive")?.unwrap_or(false) && is_handoff_resume;
+    Ok((
+        if is_handoff_resume {
+            RunLane::Background
+        } else {
+            RunLane::User
+        },
+        if is_ack_redrive {
+            "ack-redrive"
+        } else if is_handoff_resume {
+            "handoff-resume"
+        } else {
+            "turn"
+        },
+    ))
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct RoutedTurnLease {
     agent_id: String,
@@ -315,14 +338,7 @@ impl ProductionTranscriptRuntime {
             .to_string();
         let nonce = optional_non_empty(args, "clientNonce").map(ToOwned::to_owned);
         let agent_id = input.agent_id.clone();
-        let is_ack_redrive = optional_bool(args, "ackRedrive")?.unwrap_or(false)
-            && optional_non_empty(args, "requestSource") == Some("handoff-resume");
-        let dispatch_lane = if is_ack_redrive {
-            RunLane::Background
-        } else {
-            RunLane::User
-        };
-        let dispatch_source = if is_ack_redrive { "ack-redrive" } else { "turn" };
+        let (dispatch_lane, dispatch_source) = classify_send_dispatch(args)?;
         let dispatch_ack_token = optional_non_empty(args, "ackToken");
         let is_fork = optional_bool(args, "isFork")?.unwrap_or(false);
         let accepted = json!({ "accepted": true, "routed": true });
@@ -639,14 +655,7 @@ impl ProductionTranscriptRuntime {
         let input = parse_send_input(args)?;
         let nonce = optional_non_empty(args, "clientNonce").map(ToOwned::to_owned);
         let agent_id = input.agent_id.clone();
-        let is_ack_redrive = optional_bool(args, "ackRedrive")?.unwrap_or(false)
-            && optional_non_empty(args, "requestSource") == Some("handoff-resume");
-        let dispatch_lane = if is_ack_redrive {
-            RunLane::Background
-        } else {
-            RunLane::User
-        };
-        let dispatch_source = if is_ack_redrive { "ack-redrive" } else { "turn" };
+        let (dispatch_lane, dispatch_source) = classify_send_dispatch(args)?;
         let dispatch_ack_token = optional_non_empty(args, "ackToken");
         let is_fork = optional_bool(args, "isFork")?.unwrap_or(false);
         let has_reply_context = optional_non_empty(args, "replyToId").is_some()

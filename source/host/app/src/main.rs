@@ -23,9 +23,9 @@ use mahayana_host_runtime::extensions::session::production::ProductionSessionWor
 use mahayana_host_runtime::extensions::memory::extension::HostMemoryExtension;
 use mahayana_host_runtime::extensions::memory::production::start_production_memory_extension;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
-    BoxHandoffDeps, BoxHandoffService, HandoffTrigger, PendingHandoff, ScreenshotPayload,
+    BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffTrigger, PendingHandoff,
+    ScreenshotPayload, decide_box_hand_back,
 };
-use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse;
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
@@ -38,6 +38,9 @@ use mahayana_host_runtime::extensions::transcript::production_runtime::{
 use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManager;
 use mahayana_host_runtime::extensions::transcript::extension::start_transcript_extension;
 use mahayana_host_runtime::extensions::transcript::send_message_shaping::shape_send_prompt_media_args;
+use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
+    build_box_handoff_resume_send_args, settle_box_handoff_state,
+};
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     AckObligations, AckRedrivePreparation, build_ack_redrive_send_args,
 };
@@ -1333,9 +1336,36 @@ impl GatewayApi for UnifiedGatewayApi {
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
                 .unwrap_or("button");
+            let handoff_trigger = HandoffTrigger::Name(trigger.to_string());
+            let decision = decide_box_hand_back(
+                self.session_handoff.get(agent_id).as_ref(),
+                &handoff_trigger,
+            );
             self.session_handoff
-                .end(agent_id, HandoffTrigger::Name(trigger.to_string()))
+                .end(agent_id, handoff_trigger)
                 .map_err(GatewayCommandError::Internal)?;
+            if let HandoffDecision::End(decision) = decision {
+                if let Err(error) = settle_box_handoff_state(
+                    &self.session_workers,
+                    agent_id,
+                    &decision.request_id,
+                    &decision.resolution,
+                ) {
+                    eprintln!(
+                        "mahayana-host box_handoff_settlement_failed agent={agent_id} error={error}"
+                    );
+                }
+                let resume_args = build_box_handoff_resume_send_args(
+                    agent_id,
+                    &decision.trigger,
+                    started_at_ms(),
+                );
+                if let Err(error) = self.call("sendPrompt", resume_args) {
+                    eprintln!(
+                        "mahayana-host box_handoff_resume_failed agent={agent_id} error={error}"
+                    );
+                }
+            }
             let status = self.forever_box.get_status(agent_id);
             let handoff = self.session_handoff.get(agent_id);
             return Ok(project_forever_box_status(&status, handoff.as_ref()));

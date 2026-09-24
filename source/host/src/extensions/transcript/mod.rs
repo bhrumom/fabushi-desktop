@@ -29,6 +29,7 @@ pub mod replica_writer;
 pub mod roster_emit;
 pub mod roster_search;
 pub mod profile_watch;
+pub mod box_handoff_resume;
 
 pub mod channel_delivery_unregistered_error;
 pub mod send_not_persisted_error;
