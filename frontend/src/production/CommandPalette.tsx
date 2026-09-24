@@ -254,6 +254,14 @@ export function CommandPalette({ agents, commands, routines, routineStatus, mess
     setHighlight(0);
     inputRef.current?.focus();
   };
+  const handlePaletteKeyDownCapture = (event: ReactKeyboardEvent<HTMLElement>) => {
+    // Root-level Escape must close before query/provider descendants can consume
+    // the event during an async search-state rerender. Nested command trails keep
+    // their existing bubble-phase Back semantics.
+    if (event.key !== "Escape" || isNested || event.defaultPrevented) return;
+    event.preventDefault();
+    onClose();
+  };
   const handlePaletteKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
     if (event.defaultPrevented) return;
     if (event.key === "Escape") {
@@ -276,7 +284,7 @@ export function CommandPalette({ agents, commands, routines, routineStatus, mess
 
   return <>
     <div aria-hidden="true" onMouseDown={(event) => { if (!event.ctrlKey) onClose(); }} style={PALETTE_BACKDROP_STYLE} />
-    <section aria-label="Search" aria-modal="true" className="sand-command-palette" onKeyDown={handlePaletteKeyDown} ref={paletteRef} role="dialog">
+    <section aria-label="Search" aria-modal="true" className="sand-command-palette" onKeyDown={handlePaletteKeyDown} onKeyDownCapture={handlePaletteKeyDownCapture} ref={paletteRef} role="dialog">
       {isNested ? <button
         aria-label="Back"
         onClick={goBack}
