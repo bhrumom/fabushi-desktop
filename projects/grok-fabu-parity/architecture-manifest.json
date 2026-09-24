@@ -14359,14 +14359,16 @@
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/send_message_shaping.rs",
         "source/host/src/extensions/session/gateway.rs",
-        "source/host/src/selected_image_inputs.rs"
+        "source/host/src/selected_image_inputs.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_send_echo_contract.rs",
         "source/host/tests/session_gateway_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust now ports frozen reaction toggling, ISO composed-offline notes, widget prompt summaries, image/video/file MIME channel splitting, selected-video descriptors, inbound-image flattening/file-URL loading, batch file-size helpers and PNG/GIF/JPEG/WebP dimension projection in addition to existing message/thread shaping. Shipping Session durable attachment echoes read real dimensions and persist width/height. Final remains withheld only for native HEIC/HEIF/AVIF dimension parity and for wiring selected image/video payloads through the shipping ProviderMessage/Runner composition rather than carrying counts alone."
+      "notes": "Rust ports frozen reaction/thread/message shaping, attachment channel splitting, selected-video descriptors, image/video/file MIME projection, inbound image handling, file-size helpers and common image dimensions. Shipping Host sendPrompt now executes the frozen attachment channel split before crossing into Coordinator: image files are materialized as selectedImages bytes/path/mimeType, videos become selectedVideos path/mimeType/filename/fps descriptors, and only non-media paths/names remain in attachmentPaths/attachmentNames; durable Session echo still retains the original attachments. Final remains withheld for native HEIC/HEIF/AVIF dimension parity and the exact generated Agent media consumer surface."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-not-persisted-error.ts",
@@ -14423,7 +14425,7 @@
         "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
         "source/host/tests/production_turn_input_projection_contract.rs"
       ],
-      "notes": "Rust send pipeline is production-composed by ProductionTranscriptRuntime and shipping Host Gateway. Nonce digest admission/coalescing/replay, durable Session echo, failure retry clearing, acceptance lookup, turn epochs and attachment batch identity are present; same-agent sends serialize through RunScheduler, and queued sends escape a wedged predecessor only after watchdog Trip + grace while the real provider is cancelled by agent ownership. The independent Coordinator now preserves current message identity/history plus fork/reply/attachment turn metadata into the Runner, closing the prior context-loss boundary. Final still requires frozen attachment materialization/group fanout, exact recovery epoch/prepend suppression, direct Runner dispatch ownership and remaining ack/recovery guard composition."
+      "notes": "Rust send pipeline is production-composed by ProductionTranscriptRuntime and shipping Host Gateway. Nonce admission/coalescing/replay, durable Session echo, failure retry clearing, acceptance lookup, turn epochs and attachment batch identity are present; same-agent sends serialize through RunScheduler with watchdog escape. The shipping Host now performs frozen media materialization before Coordinator dispatch: image/video paths are removed from generic attachments, real selectedImages/selectedVideos payloads are produced, and file path/name alignment is preserved while durable echo keeps the original set. Final still requires group fanout, exact recovery epoch/prepend suppression, direct Runner dispatch ownership, remaining ack/recovery guard composition, and consumption of the selected media by the full generated Agent composition."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",

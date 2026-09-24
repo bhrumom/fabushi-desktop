@@ -182,6 +182,127 @@ where
         .collect()
 }
 
+pub fn shape_send_prompt_media_args(args: &Value) -> Value {
+    let Some(object) = args.as_object() else {
+        return args.clone();
+    };
+    let Some(raw_paths) = object.get("attachmentPaths").and_then(Value::as_array) else {
+        return args.clone();
+    };
+    let Some(paths) = raw_paths
+        .iter()
+        .map(Value::as_str)
+        .collect::<Option<Vec<_>>>()
+    else {
+        return args.clone();
+    };
+
+    let names = object
+        .get("attachmentNames")
+        .and_then(Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .map(|value| value.as_str().unwrap_or_default())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+
+    let channels = split_attachment_paths_by_channel(paths.iter().copied());
+    let selected_images = load_selected_image_inputs(&channels.image_attachment_paths);
+    let selected_videos = build_selected_videos(&channels.video_attachment_paths);
+
+    let mut file_names = Vec::with_capacity(channels.file_attachment_paths.len());
+    for (index, path) in paths.iter().enumerate() {
+        if image_mime_from_path(path).is_some() || video_mime_from_path(path).is_some() {
+            continue;
+        }
+        let name = names
+            .get(index)
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned)
+            .unwrap_or_else(|| {
+                std::path::Path::new(path)
+                    .file_name()
+                    .and_then(|value| value.to_str())
+                    .unwrap_or_default()
+                    .to_string()
+            });
+        file_names.push(name);
+    }
+
+    let mut shaped = object.clone();
+    shaped.insert(
+        "attachmentPaths".into(),
+        Value::Array(
+            channels
+                .file_attachment_paths
+                .iter()
+                .cloned()
+                .map(Value::String)
+                .collect(),
+        ),
+    );
+    shaped.insert(
+        "attachmentNames".into(),
+        Value::Array(file_names.into_iter().map(Value::String).collect()),
+    );
+
+    if !channels.image_attachment_paths.is_empty() {
+        shaped.insert(
+            "selectedImages".into(),
+            Value::Array(
+                selected_images
+                    .into_iter()
+                    .map(|image| {
+                        let mut value = Map::new();
+                        value.insert(
+                            "data".into(),
+                            Value::Array(
+                                image
+                                    .data
+                                    .into_iter()
+                                    .map(|byte| Value::Number(u64::from(byte).into()))
+                                    .collect(),
+                            ),
+                        );
+                        value.insert("path".into(), Value::String(image.path));
+                        if let Some(mime_type) = image.mime_type {
+                            value.insert(
+                                "mimeType".into(),
+                                Value::String(mime_type.to_string()),
+                            );
+                        }
+                        Value::Object(value)
+                    })
+                    .collect(),
+            ),
+        );
+    }
+
+    if !channels.video_attachment_paths.is_empty() {
+        shaped.insert(
+            "selectedVideos".into(),
+            Value::Array(
+                selected_videos
+                    .into_iter()
+                    .map(|video| {
+                        let mut value = Map::new();
+                        value.insert("path".into(), Value::String(video.path));
+                        value.insert("mimeType".into(), Value::String(video.mime_type));
+                        value.insert("filename".into(), Value::String(video.filename));
+                        value.insert("fps".into(), Value::Number(video.fps.into()));
+                        Value::Object(value)
+                    })
+                    .collect(),
+            ),
+        );
+    }
+
+    Value::Object(shaped)
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InboundImage {
     pub data: String,

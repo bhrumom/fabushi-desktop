@@ -35,6 +35,7 @@ use mahayana_host_runtime::extensions::session::gateway::{
 use mahayana_host_runtime::extensions::transcript::production_runtime::{
     ProductionSendError, ProductionTranscriptRuntime,
 };
+use mahayana_host_runtime::extensions::transcript::send_message_shaping::shape_send_prompt_media_args;
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     AckObligations, AckRedrivePreparation, build_ack_redrive_send_args,
 };
@@ -1231,6 +1232,7 @@ impl GatewayApi for UnifiedGatewayApi {
         // worker above streams through the Host event hub.
         if method == "sendPrompt" {
             let durable_args = args.clone();
+            let runner_args = shape_send_prompt_media_args(&args);
             let watchdog_registry = Arc::clone(&self.runner_registry);
             let watchdog_ack_obligations = Arc::clone(&self.ack_obligations);
             let watchdog_events = self.events.clone();
@@ -1242,7 +1244,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 .execute_send_with_queue_observers(
                     &durable_args,
                     || {
-                        call_host_lane(&self.host_tx, method, args)
+                        call_host_lane(&self.host_tx, method, runner_args)
                             .map_err(map_gateway_send_error)
                     },
                     |accepted| {

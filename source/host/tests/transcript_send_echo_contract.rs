@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use mahayana_host_runtime::extensions::transcript::send_message_shaping::{
     Reaction, UserAttachmentOptions, UserMessageOptions, build_composed_offline_note,
     build_selected_videos, collect_inbound_images, create_user_attachment_entry,
-    create_user_message, skippable_prompt_summary, split_attachment_paths_by_channel,
-    toggle_reaction,
+    create_user_message, shape_send_prompt_media_args, skippable_prompt_summary,
+    split_attachment_paths_by_channel, toggle_reaction,
 };
 use mahayana_host_runtime::selected_image_inputs::read_image_dimensions;
 use mahayana_host_runtime::extensions::transcript::send_thread_stamping::{
@@ -170,6 +170,60 @@ fn frozen_send_shaping_helpers_cover_reactions_widgets_offline_and_media_channel
             mime_type: "image/png".into(),
         }]
     );
+}
+
+#[test]
+fn send_prompt_media_args_materialize_images_and_videos_before_runner_dispatch() {
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-send-media-shaping-{}",
+        uuid::Uuid::new_v4()
+    ));
+    std::fs::create_dir_all(&root).expect("temp media root");
+    let image = root.join("photo.png");
+    let video = root.join("clip.mov");
+    let file = root.join("notes.txt");
+    std::fs::write(&image, [1_u8, 2, 3, 4]).expect("image bytes");
+    std::fs::write(&video, [5_u8, 6]).expect("video bytes");
+    std::fs::write(&file, b"notes").expect("file bytes");
+
+    let args = json!({
+        "agentId": "agent-a",
+        "attachmentPaths": [
+            image.to_string_lossy(),
+            video.to_string_lossy(),
+            file.to_string_lossy()
+        ],
+        "attachmentNames": ["photo-name.png", "clip-name.mov", "notes-name.txt"],
+        "clientNonce": "nonce-1"
+    });
+    let shaped = shape_send_prompt_media_args(&args);
+
+    assert_eq!(
+        shaped["attachmentPaths"],
+        json!([file.to_string_lossy().to_string()])
+    );
+    assert_eq!(shaped["attachmentNames"], json!(["notes-name.txt"]));
+    assert_eq!(shaped["selectedImages"].as_array().map(Vec::len), Some(1));
+    assert_eq!(
+        shaped["selectedImages"][0]["path"],
+        image.to_string_lossy().to_string()
+    );
+    assert_eq!(shaped["selectedImages"][0]["mimeType"], "image/png");
+    assert_eq!(shaped["selectedImages"][0]["data"], json!([1, 2, 3, 4]));
+    assert_eq!(shaped["selectedVideos"].as_array().map(Vec::len), Some(1));
+    assert_eq!(
+        shaped["selectedVideos"][0]["path"],
+        video.to_string_lossy().to_string()
+    );
+    assert_eq!(shaped["selectedVideos"][0]["mimeType"], "video/quicktime");
+    assert_eq!(shaped["selectedVideos"][0]["filename"], "clip.mov");
+    assert_eq!(shaped["selectedVideos"][0]["fps"], 4);
+    assert_eq!(shaped["clientNonce"], "nonce-1");
+
+    let reshaped = shape_send_prompt_media_args(&shaped);
+    assert_eq!(reshaped, shaped);
+
+    let _ = std::fs::remove_dir_all(root);
 }
 
 #[test]
