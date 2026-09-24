@@ -32,8 +32,15 @@ use super::session_materialization::MaterializedAgentRecord;
 use super::session_paths::ACTIVE_AGENT_FILENAME;
 use super::session_profile_files::{
     AgentAvatarResponse, AgentProfileUpdate, resolve_profile_name as resolve_profile_name_impl,
+    write_agent_profile_update,
 };
 use super::session_summaries::AgentSummary;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SessionDbStat {
+    pub size: u64,
+    pub mtime_ms: f64,
+}
 
 pub fn resolve_profile_name(
     trimmed_name: &str,
@@ -161,6 +168,23 @@ impl SandAgentSessionStore {
         self.production.is_agent_cap_reached()
     }
 
+    pub fn mint_agent_with<T>(
+        &self,
+        mint: impl FnOnce(&str) -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.production.mint_agent_with(mint)
+    }
+
+    pub fn write_agent_profile_file(
+        &self,
+        agent_id: &str,
+        update: &AgentProfileUpdate,
+    ) -> Result<(), String> {
+        write_agent_profile_update(&self.get_agent_dir(agent_id), update)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
     pub fn create_session(
         &self,
         profile: Option<&SandAgentProfile>,
@@ -233,6 +257,23 @@ impl SandAgentSessionStore {
             .summarize_agent_by_id(agent_id, active.as_deref())
     }
 
+    pub fn summarize_open_session(
+        &self,
+        session: &PreparedAgentBlobStore,
+    ) -> Result<Option<AgentSummary>, String> {
+        self.production
+            .summarize_agent_by_id(&session.agent_id, Some(&session.agent_id))
+    }
+
+    pub fn summarize_session(
+        &self,
+        session: &PreparedAgentBlobStore,
+        active_agent_id: Option<&str>,
+    ) -> Result<Option<AgentSummary>, String> {
+        self.production
+            .summarize_agent_by_id(&session.agent_id, active_agent_id)
+    }
+
     pub fn update_agent_profile(
         &self,
         agent_id: &str,
@@ -281,6 +322,13 @@ impl SandAgentSessionStore {
         agent_id: &str,
     ) -> Result<Vec<Value>, String> {
         self.production.read_agent_transcript_entries(agent_id)
+    }
+
+    pub fn get_transcript_entries(
+        &self,
+        session: &PreparedAgentBlobStore,
+    ) -> Result<Vec<Value>, String> {
+        self.production.read_agent_transcript_entries(&session.agent_id)
     }
 
     pub fn read_agent_transcript_page(
@@ -725,6 +773,23 @@ impl SandAgentSessionStore {
 
     pub fn disconnect_channel(&self, agent_id: &str, platform: &str) -> Result<bool, String> {
         self.production.disconnect_channel(agent_id, platform)
+    }
+
+    pub fn stat_open_db(
+        &self,
+        session: &PreparedAgentBlobStore,
+    ) -> Option<SessionDbStat> {
+        let metadata = fs::metadata(&session.session_db_path).ok()?;
+        let mtime_ms = metadata
+            .modified()
+            .ok()
+            .and_then(|value| value.duration_since(UNIX_EPOCH).ok())
+            .map(|duration| duration.as_secs_f64() * 1000.0)
+            .unwrap_or_default();
+        Some(SessionDbStat {
+            size: metadata.len(),
+            mtime_ms,
+        })
     }
 
     pub fn close_worker_pool(&self) {

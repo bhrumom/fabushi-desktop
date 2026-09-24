@@ -7,6 +7,7 @@ use mahayana_host_runtime::agents::settings_file::{
     get_sand_settings_path, read_sand_settings_file,
 };
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
 use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
 use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::workflows::workflow_library::WorkflowSpec;
@@ -101,6 +102,83 @@ fn delete_session_closes_owned_blob_store_clears_directory_and_publishes_removal
     assert_eq!(removals.load(Ordering::SeqCst), 1);
 
     subscription.unsubscribe();
+    store.close_worker_pool();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn session_facade_exposes_frozen_mint_profile_summary_transcript_and_stat_surfaces() {
+    let root = temp_root("frozen-facade");
+    let agents = root.join("agents");
+    let production = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+
+    let minted = store
+        .mint_agent_with(|agent_id| Ok(agent_id.to_string()))
+        .expect("mint agent id");
+    assert!(!minted.is_empty());
+    assert!(!agents.join(&minted).exists());
+
+    let record = store
+        .create_session(None, "user", None)
+        .expect("materialized agent");
+    store
+        .write_agent_profile_file(
+            &record.id,
+            &AgentProfileUpdate {
+                name: "  Facade Agent  ".into(),
+                description: "  profile description  ".into(),
+                title: Some("  Builder  ".into()),
+                avatar_shape: Some("  rounded  ".into()),
+                avatar_color: Some("  violet  ".into()),
+            },
+        )
+        .expect("profile write");
+
+    production
+        .append_agent_transcript_entries(
+            &record.id,
+            &[serde_json::json!({
+                "id":"facade-entry",
+                "kind":"message",
+                "role":"user",
+                "content":"hello facade",
+                "timestampMs":10
+            })],
+        )
+        .expect("transcript append");
+
+    let open = store
+        .open_session(&record.id)
+        .expect("open session")
+        .expect("prepared session");
+    assert_eq!(
+        store
+            .get_transcript_entries(&open)
+            .expect("session transcript")
+            .len(),
+        1
+    );
+
+    let open_summary = store
+        .summarize_open_session(&open)
+        .expect("open summary")
+        .expect("summary");
+    assert_eq!(open_summary.name, "Facade Agent");
+    assert!(open_summary.is_active);
+    assert_eq!(open_summary.title, "Builder");
+
+    let inactive_summary = store
+        .summarize_session(&open, None)
+        .expect("session summary")
+        .expect("summary");
+    assert!(!inactive_summary.is_active);
+    assert_eq!(inactive_summary.description, "profile description");
+
+    let stat = store.stat_open_db(&open).expect("db stat");
+    assert!(stat.size > 0);
+    assert!(stat.mtime_ms >= 0.0);
+
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
 }
