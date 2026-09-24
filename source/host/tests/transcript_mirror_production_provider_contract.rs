@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::runner::persist_checkpoint_with_mirror;
 use mahayana_host_runtime::transcript_mirror::production_provider::{
     ProductionTranscriptCheckpoint, ProductionTranscriptMirrorProvider,
 };
@@ -94,6 +95,7 @@ fn production_checkpoint_preserves_journal_and_legacy_views() {
     );
     let checkpoint =
         ProductionTranscriptCheckpoint::from_state_bytes(&bytes).expect("checkpoint");
+    assert_eq!(checkpoint.state_bytes, bytes);
     assert_eq!(checkpoint.journal.turns, vec![vec![0x01], vec![0x02]]);
     assert_eq!(checkpoint.legacy.root_prompt_messages_json.len(), 2);
     assert_eq!(checkpoint.legacy.summary_archives, vec![b"archive".to_vec()]);
@@ -134,22 +136,26 @@ fn provider_routes_real_worker_blob_store_through_shared_journal() {
     routed
         .recover(&session.record.id, &base, &store)
         .expect("recover");
-    let next = ProductionTranscriptCheckpoint::from_state_bytes(
-        &state_bytes(&[], &[&[0x01]], &[]),
-    )
-    .expect("next state");
-    routed
-        .prepare_checkpoint(
-            &session.record.id,
-            &next,
-            &store,
-            true,
-            true,
-        )
-        .expect("prepare");
-    routed
-        .commit_checkpoint(&session.record.id, &[0xaa])
-        .expect("commit");
+    let next_bytes = state_bytes(&[], &[&[0x01]], &[]);
+    let next = ProductionTranscriptCheckpoint::from_state_bytes(&next_bytes)
+        .expect("next state");
+    futures::executor::block_on(persist_checkpoint_with_mirror(
+        Some(&routed),
+        Some(session.agent_store.as_ref()),
+        &session.record.id,
+        &next,
+        &store,
+        true,
+        false,
+        true,
+        |_| Err("local checkpoint fallback must not run for a production AgentStore".into()),
+    ))
+    .expect("production settle checkpoint transaction");
+    assert_eq!(
+        session.agent_store.latest_checkpoint_bytes().as_deref(),
+        Some(next_bytes.as_slice())
+    );
+    assert!(!session.agent_store.latest_root_blob_id().is_empty());
 
     let jsonl = fs::read_to_string(
         transcripts_dir

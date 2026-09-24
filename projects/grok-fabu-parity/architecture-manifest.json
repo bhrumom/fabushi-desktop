@@ -16758,17 +16758,19 @@
       "processOrPackage": "mahayana-runner",
       "behavioralEvidence": [
         "source/host/src/runner/turn_settle.rs",
-        "source/host/src/extensions/session/production_agent_store.rs"
+        "source/host/src/extensions/session/production_agent_store.rs",
+        "source/host/src/transcript_mirror/production_provider.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_contract.rs",
         ".github/workflows/grok-rust-parity-finalize.yml",
         "source/host/tests/turn_settle_checkpoint_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/production_agent_store_contract.rs"
+        "source/host/tests/production_agent_store_contract.rs",
+        "source/host/tests/transcript_mirror_production_provider_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Corrected prior false-final status. Rust now preserves existing exactly-once terminal settlement and adds the frozen checkpoint transaction seam: journal prepare precedes durable Agent checkpoint, durable failure best-effort aborts the prepared journal, successful durable checkpoint commits using latestRootBlobId, and disabled persistence invokes skip. Still non-final because shipping ProductionTurnAgentOwner/Agent checkpoint composition does not yet supply the mirror/provider and the broader frozen turn-settle profile/token-details/labeling semantics remain to be ported. Automatic Rust cargo finalization is explicitly forbidden for this row until those production ownership requirements are satisfied. Shipping materialization now composes a real Rust ProductionAgentStore over the live SandAgentDb + WorkerBlobStore checkpoint owners; Runner checkpoint/mirror adapter and broader typed AgentStore surfaces remain non-final."
+      "notes": "Rust preserves exactly-once terminal settlement and the frozen checkpoint transaction seam. The production RoutedTranscriptMirror now implements TranscriptCheckpointMirror and the real ProductionAgentStore implements DurableTurnCheckpointStore for exact ConversationStateStructure bytes, so a materialized Session contract proves mirror prepare -> durable AgentStore/root update -> mirror commit, with the existing abort-on-durable-failure and skip paths retained. Still non-final because shipping SandAgentRunner has not yet been cut over to the real generated Agent stream/checkpoint source, and broader frozen profile/token-details/labeling/memory settle semantics remain incomplete."
     },
     {
       "referencePath": "source/host/runner/turn-shape.ts",
@@ -17147,7 +17149,8 @@
         "source/host/src/agent_isolation/transcript_mirror_offload.rs",
         "source/host/src/agent_isolation/transcript_mirror_worker.rs",
         "source/host/src/extensions/session/production_agent_store.rs",
-        "source/host/src/transcript_mirror/generated_occurrence_codec.rs"
+        "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
+        "source/host/src/runner/turn_settle.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_production_provider_contract.rs",
@@ -17156,10 +17159,11 @@
         "source/host/tests/transcript_mirror_offload_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/generated_occurrence_codec_contract.rs"
+        "source/host/tests/generated_occurrence_codec_contract.rs",
+        "source/host/tests/turn_settle_checkpoint_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production provider now preserves the frozen dual-view checkpoint boundary: one complete ConversationStateStructure projection feeds a shared FileTranscriptMirror journal plus per-session OffloadingTranscriptMirror legacy path, reusing the real Production WorkerBlobStore and sticky router. The provider contract exercises real Session materialization, WorkerBlobStore reads and canonical JSONL commit. Final remains withheld because generated-occurrence-codec is not yet backed by the canonical generated agent.v1 Rust bindings and the shipping Runner still emits provider retry checkpoints rather than real Agent ConversationStateStructure checkpoints."
+      "notes": "Rust production provider preserves the frozen dual-view checkpoint boundary and now directly implements Runner turn-settle's TranscriptCheckpointMirror over the real RoutedTranscriptMirror. ProductionTranscriptCheckpoint retains the exact ConversationStateStructure bytes, and the same settle transaction drives mirror prepare/abort/commit around the real ProductionAgentStore durable checkpoint. The production contract exercises a materialized Session, WorkerBlobStore, AgentStore latestRootBlobId advancement and canonical JSONL commit. Final remains withheld because generated-occurrence-codec is not yet backed by canonical generated agent.v1 Rust bindings and shipping SandAgentRunner still does not originate real Agent ConversationStateStructure checkpoints."
     },
     {
       "referencePath": "source/host/transcript-mirror/transcript-journal-codec.ts",

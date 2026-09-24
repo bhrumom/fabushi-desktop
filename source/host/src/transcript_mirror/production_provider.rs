@@ -5,7 +5,12 @@ use crate::agent_isolation::{
     AgentBlobWorkerBackend, OffloadingTranscriptMirror, OffloadingTranscriptMirrorOptions,
     ProductionAgentStoreWorkerBackend, TranscriptMirrorOffloadPool, WorkerBlobStore,
 };
-use crate::extensions::session::production_agent_store::ProductionWorkerBlobStore;
+use crate::extensions::session::production_agent_store::{
+    ProductionAgentStore, ProductionWorkerBlobStore,
+};
+use crate::runner::{
+    DurableTurnCheckpointStore, TranscriptCheckpointMirror, TurnCheckpointFuture,
+};
 
 use super::conversation_state_binary::{
     TranscriptMirrorConversationState, decode_transcript_mirror_conversation_state,
@@ -15,7 +20,7 @@ use super::transcript_journal_codec::TranscriptCheckpoint;
 use super::transcript_mirror::{FileTranscriptMirror, TranscriptDeriver};
 use super::transcript_mirror_router::{
     JournalEnabledReader, LegacyTranscriptMirrorPort, RoutedTranscriptMirror,
-    TranscriptJournalPort,
+    TranscriptJournalPort, TranscriptMirrorRoute,
 };
 use super::transcript_occurrence_deriver::{
     ArtifactTranscriptOccurrenceDeriver, TranscriptOccurrenceBlobStore,
@@ -24,6 +29,7 @@ use super::transcript_occurrence_deriver::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ProductionTranscriptCheckpoint {
+    pub state_bytes: Vec<u8>,
     pub journal: TranscriptCheckpoint,
     pub legacy: LegacyTranscriptState,
 }
@@ -32,11 +38,19 @@ impl ProductionTranscriptCheckpoint {
     pub fn from_state_bytes(bytes: &[u8]) -> Result<Self, String> {
         let state = decode_transcript_mirror_conversation_state(bytes)
             .map_err(|error| error.to_string())?;
-        Ok(Self::from_decoded_state(state))
+        Ok(Self::from_decoded_state_with_bytes(state, bytes.to_vec()))
     }
 
     pub fn from_decoded_state(state: TranscriptMirrorConversationState) -> Self {
+        Self::from_decoded_state_with_bytes(state, Vec::new())
+    }
+
+    fn from_decoded_state_with_bytes(
+        state: TranscriptMirrorConversationState,
+        state_bytes: Vec<u8>,
+    ) -> Self {
         Self {
+            state_bytes,
             journal: TranscriptCheckpoint {
                 turns: state.turns.clone(),
             },
@@ -180,6 +194,113 @@ pub type ProductionRoutedTranscriptMirror = RoutedTranscriptMirror<
     ProductionTranscriptCheckpoint,
     Arc<ProductionWorkerBlobStore>,
 >;
+
+impl TranscriptCheckpointMirror<
+    ProductionTranscriptCheckpoint,
+    Arc<ProductionWorkerBlobStore>,
+> for ProductionRoutedTranscriptMirror {
+    fn prepare_checkpoint<'a>(
+        &'a self,
+        transcript_id: &'a str,
+        checkpoint: &'a ProductionTranscriptCheckpoint,
+        blob_store: &'a Arc<ProductionWorkerBlobStore>,
+        finalize: bool,
+        force: bool,
+    ) -> TurnCheckpointFuture<'a, Result<(), String>> {
+        Box::pin(async move {
+            RoutedTranscriptMirror::prepare_checkpoint(
+                self,
+                transcript_id,
+                checkpoint,
+                blob_store,
+                finalize,
+                force,
+            )
+        })
+    }
+
+    fn abort_checkpoint<'a>(
+        &'a self,
+        transcript_id: &'a str,
+    ) -> TurnCheckpointFuture<'a, Result<(), String>> {
+        Box::pin(async move {
+            RoutedTranscriptMirror::abort_checkpoint(self, transcript_id)
+        })
+    }
+
+    fn commit_checkpoint<'a>(
+        &'a self,
+        transcript_id: &'a str,
+        latest_root_blob_id: Option<&'a str>,
+    ) -> TurnCheckpointFuture<'a, Result<(), String>> {
+        Box::pin(async move {
+            let root = match RoutedTranscriptMirror::route(self, transcript_id)? {
+                TranscriptMirrorRoute::Journal => Vec::new(),
+                TranscriptMirrorRoute::Legacy => {
+                    let value = latest_root_blob_id.ok_or_else(|| {
+                        "legacy transcript mirror commit requires latestRootBlobId".to_string()
+                    })?;
+                    decode_hex_id(value)?
+                }
+            };
+            RoutedTranscriptMirror::commit_checkpoint(self, transcript_id, &root)
+        })
+    }
+
+    fn skip_checkpoint<'a>(
+        &'a self,
+        transcript_id: &'a str,
+        checkpoint: &'a ProductionTranscriptCheckpoint,
+        blob_store: &'a Arc<ProductionWorkerBlobStore>,
+    ) -> TurnCheckpointFuture<'a, Result<(), String>> {
+        Box::pin(async move {
+            RoutedTranscriptMirror::skip_checkpoint(
+                self,
+                transcript_id,
+                checkpoint,
+                blob_store,
+            )
+        })
+    }
+}
+
+impl DurableTurnCheckpointStore<ProductionTranscriptCheckpoint>
+    for ProductionAgentStore
+{
+    fn handle_checkpoint<'a>(
+        &'a self,
+        checkpoint: &'a ProductionTranscriptCheckpoint,
+    ) -> TurnCheckpointFuture<'a, Result<(), String>> {
+        Box::pin(async move {
+            self.handle_checkpoint_bytes(&checkpoint.state_bytes)
+                .map(|_| ())
+        })
+    }
+
+    fn latest_root_blob_id(&self) -> Option<String> {
+        let root = ProductionAgentStore::latest_root_blob_id(self);
+        (!root.is_empty()).then(|| encode_hex_id(&root))
+    }
+}
+
+fn encode_hex_id(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+fn decode_hex_id(value: &str) -> Result<Vec<u8>, String> {
+    let clean = value.trim();
+    if clean.len() % 2 != 0 {
+        return Err("latestRootBlobId has odd-length hex".into());
+    }
+    let mut output = Vec::with_capacity(clean.len() / 2);
+    for index in (0..clean.len()).step_by(2) {
+        output.push(
+            u8::from_str_radix(&clean[index..index + 2], 16)
+                .map_err(|_| format!("latestRootBlobId has invalid hex at offset {index}"))?,
+        );
+    }
+    Ok(output)
+}
 
 pub struct ProductionTranscriptMirrorProvider<Codec>
 where
