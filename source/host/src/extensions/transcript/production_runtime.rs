@@ -238,16 +238,19 @@ impl ProductionTranscriptRuntime {
     }
 
     pub fn upgrade_resume_agent_ids(&self) -> Vec<String> {
-        self.upgrade_resume_store
+        let mut agent_ids = self
+            .upgrade_resume_store
             .as_ref()
             .map(|store| {
                 store
                     .list_pending()
                     .into_iter()
                     .map(|marker| marker.agent_id)
-                    .collect()
+                    .collect::<Vec<_>>()
             })
-            .unwrap_or_default()
+            .unwrap_or_default();
+        agent_ids.sort();
+        agent_ids
     }
 
     pub fn is_quiescing_for_upgrade(&self) -> bool {
