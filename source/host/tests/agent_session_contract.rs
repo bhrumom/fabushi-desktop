@@ -114,7 +114,7 @@ fn session_facade_exposes_frozen_mint_profile_summary_transcript_and_stat_surfac
     let store = SandAgentSessionStore::new(Arc::clone(&production));
 
     let minted = store
-        .mint_agent_with(|agent_id| Ok(agent_id.to_string()))
+        .mint_agent(|agent_id| Ok(agent_id.to_string()))
         .expect("mint agent id");
     assert!(!minted.is_empty());
     assert!(!agents.join(&minted).exists());
@@ -230,6 +230,9 @@ fn session_facade_delegates_interaction_state_memory_capacity_and_time_zone() {
     assert!(store
         .mark_session_viewed(&prepared, 20.0, false)
         .expect("session viewed"));
+    assert!(store
+        .mark_session_viewed_now(&prepared, 25.0, false)
+        .expect("session viewed now"));
 
     let awaiting = AwaitingUserResponse {
         tab_id: "tab-a".into(),

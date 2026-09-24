@@ -168,11 +168,18 @@ impl SandAgentSessionStore {
         self.production.is_agent_cap_reached()
     }
 
-    pub fn mint_agent_with<T>(
+    pub fn mint_agent<T>(
         &self,
         mint: impl FnOnce(&str) -> Result<T, String>,
     ) -> Result<T, String> {
         self.production.mint_agent_with(mint)
+    }
+
+    pub fn mint_agent_with<T>(
+        &self,
+        mint: impl FnOnce(&str) -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.mint_agent(mint)
     }
 
     pub fn write_agent_profile_file(
@@ -392,6 +399,15 @@ impl SandAgentSessionStore {
     ) -> Result<bool, String> {
         self.production
             .mark_agent_viewed(&session.agent_id, at, preserve_manual_unread)
+    }
+
+    pub fn mark_session_viewed_now(
+        &self,
+        session: &PreparedAgentBlobStore,
+        at: f64,
+        preserve_manual_unread: bool,
+    ) -> Result<bool, String> {
+        self.mark_session_viewed(session, at, preserve_manual_unread)
     }
 
     pub fn mark_session_activity(
