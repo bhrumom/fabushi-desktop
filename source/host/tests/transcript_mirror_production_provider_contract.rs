@@ -116,7 +116,7 @@ fn provider_routes_real_worker_blob_store_through_shared_journal() {
     );
     futures::executor::block_on(store.set_blob(&(), &[0x01], &[0x01]))
         .expect("turn blob");
-    futures::executor::block_on(store.set_blob(&(), &[0x09], b"user"))
+    futures::executor::block_on(store.set_blob(&(), &[0x09], &[0x09]))
         .expect("user blob");
 
     let provider =
