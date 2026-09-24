@@ -20,21 +20,19 @@ fn routed_prompt_admission_owns_nonce_durability_and_recovery_identity() {
     });
     let persists = AtomicUsize::new(0);
 
-    let persist = |_| {
-        persists.fetch_add(1, Ordering::SeqCst);
-        Ok::<_, ProductionSendError>(PersistedSendContext {
-            echo_entry_id: Some("user-message:1".into()),
-            user_message_id: Some("user-message:1".into()),
-            recent_user_messages: vec![RecoveryUserMessage {
-                id: "user-message:1".into(),
-                text: "hello".into(),
-                confirmed: None,
-            }],
-        })
-    };
-
     let first = runtime
-        .accept_routed_send(&args, persist)
+        .accept_routed_send(&args, |_: &serde_json::Value| {
+            persists.fetch_add(1, Ordering::SeqCst);
+            Ok::<_, ProductionSendError>(PersistedSendContext {
+                echo_entry_id: Some("user-message:1".into()),
+                user_message_id: Some("user-message:1".into()),
+                recent_user_messages: vec![RecoveryUserMessage {
+                    id: "user-message:1".into(),
+                    text: "hello".into(),
+                    confirmed: None,
+                }],
+            })
+        })
         .expect("first routed admission");
     assert!(!first.duplicate);
     assert_eq!(first.context.user_message_id.as_deref(), Some("user-message:1"));
@@ -43,7 +41,18 @@ fn routed_prompt_admission_owns_nonce_durability_and_recovery_identity() {
     assert!(runtime.is_turn_dispatch_idle("agent-a"));
 
     let duplicate = runtime
-        .accept_routed_send(&args, persist)
+        .accept_routed_send(&args, |_: &serde_json::Value| {
+            persists.fetch_add(1, Ordering::SeqCst);
+            Ok::<_, ProductionSendError>(PersistedSendContext {
+                echo_entry_id: Some("user-message:1".into()),
+                user_message_id: Some("user-message:1".into()),
+                recent_user_messages: vec![RecoveryUserMessage {
+                    id: "user-message:1".into(),
+                    text: "hello".into(),
+                    confirmed: None,
+                }],
+            })
+        })
         .expect("duplicate routed admission");
     assert!(duplicate.duplicate);
     assert_eq!(duplicate.context.echo_entry_id.as_deref(), Some("user-message:1"));
