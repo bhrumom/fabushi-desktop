@@ -13965,12 +13965,25 @@
       "targetPath": "source/host/src/extensions/transcript/group_chat_glue.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "83c041092a99840bc81bebf731c4cf306700920d",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/group_chat_glue.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "source/host/src/extensions/session/agent_session.rs",
+        "source/host/src/groups/group_store.rs",
+        "source/host/src/groups/group_chat.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/session_gateway_contract.rs",
+        "source/host/tests/group_chat_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Shipping Rust Session Gateway now owns createGroup and setGroupMembers ahead of the compatibility Host: stable member dedupe/caps, nested-group rejection, existing-member filtering, duplicate-group reuse, group.json persistence, active pointer, refreshed AgentSummary and transcript response all use the real ProductionSessionWorkers/SandAgentSessionStore owners. Final remains withheld for local/remote member Runner turns, streaming preview/reaction delivery, shared-room guardrails, remote-turn projection, redrive/preemption and group orchestration wiring."
     },
     {
       "referencePath": "source/host/extensions/transcript/group-chat-orchestrator.ts",
@@ -14904,15 +14917,18 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/groups/group_chat.rs",
-        "source/host/src/extensions/transcript/group_chat_orchestrator.rs"
+        "source/host/src/extensions/transcript/group_chat_orchestrator.rs",
+        "source/host/src/extensions/transcript/group_chat_glue.rs",
+        "source/host/src/extensions/session/gateway.rs"
       ],
       "testEvidence": [
         "source/host/tests/group_chat_contract.rs",
         "source/host/tests/group_chat_orchestrator_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/session_gateway_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Complete Rust translation of frozen group-chat pure contract: caps, nesting guard, member-set semantics, mention parsing, responder selection, pass/prefix handling, redrive note, history formatting and group system/turn prompt construction. Consumed by the Rust bounded orchestrator. Kept existing-needs-parity until shipping group-chat glue/Gateway uses this owner for real room turns."
+      "notes": "Complete Rust translation of frozen group-chat pure contract: caps, nesting guard, member-set semantics, mention parsing, responder selection, pass/prefix handling, redrive note, history formatting and group system/turn prompt construction. Consumed by the Rust bounded orchestrator. Kept existing-needs-parity until shipping group-chat glue/Gateway uses this owner for real room turns. Shipping createGroup/setGroupMembers now consume the Rust member-set/nesting helpers through the real Session Gateway; final still waits for room-turn prompt/orchestrator use on the shipping Runner path."
     },
     {
       "referencePath": "source/host/groups/group-store.ts",

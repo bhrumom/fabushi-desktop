@@ -5,6 +5,9 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use serde_json::{Map, Value, json};
 
 use crate::agents::agent_profile::SandAgentProfile;
+use crate::extensions::transcript::group_chat_glue::{
+    GroupChatGlue, GroupChatGlueError,
+};
 use crate::selected_image_inputs::read_image_file_dimensions;
 use crate::extensions::transcript::send_acceptance::{
     mark_accepted_send_activity, prepare_send_acceptance,
@@ -184,6 +187,29 @@ pub fn dispatch_production_session_gateway_call(
             .list_agents()
             .and_then(|agents| serde_json::to_value(agents).map_err(|error| error.to_string()))
             .map_err(SessionGatewayError::internal),
+        "createGroup" => {
+            required_string(args, "name").and_then(|name| {
+                let description = optional_string(args, "description")?.unwrap_or_default();
+                let member_ids = required_string_array(args, "memberIds")?;
+                GroupChatGlue::new(Arc::clone(session))
+                    .create_group(name, description, &member_ids)
+                    .map_err(map_group_chat_error)
+                    .and_then(|created| {
+                        serde_json::to_value(created)
+                            .map_err(|error| SessionGatewayError::internal(error.to_string()))
+                    })
+            })
+        },
+        "setGroupMembers" => required_string(args, "id").and_then(|group_id| {
+            let member_ids = required_string_array(args, "memberIds")?;
+            GroupChatGlue::new(Arc::clone(session))
+                .set_group_members(group_id, &member_ids)
+                .map_err(map_group_chat_error)
+                .and_then(|summary| {
+                    serde_json::to_value(summary)
+                        .map_err(|error| SessionGatewayError::internal(error.to_string()))
+                })
+        }),
         "createAgent" => {
             parse_create_agent_profile(args).and_then(|profile| {
                 let origin = optional_string(args, "origin")?.unwrap_or("user");
@@ -449,6 +475,32 @@ fn object_optional_string<'a>(
             "invalid profile.{field}"
         ))),
     }
+}
+
+fn map_group_chat_error(error: GroupChatGlueError) -> SessionGatewayError {
+    match error {
+        GroupChatGlueError::BadRequest(message) => SessionGatewayError::bad(message),
+        GroupChatGlueError::Internal(message) => SessionGatewayError::internal(message),
+    }
+}
+
+fn required_string_array(
+    args: &Value,
+    field: &str,
+) -> Result<Vec<String>, SessionGatewayError> {
+    let values = args
+        .get(field)
+        .and_then(Value::as_array)
+        .ok_or_else(|| SessionGatewayError::bad(format!("missing or invalid {field}")))?;
+    values
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .map(ToOwned::to_owned)
+                .ok_or_else(|| SessionGatewayError::bad(format!("{field} must contain only strings")))
+        })
+        .collect()
 }
 
 fn optional_string<'a>(

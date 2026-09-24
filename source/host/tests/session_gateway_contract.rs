@@ -417,3 +417,78 @@ fn production_gateway_owns_conversation_outline_for_fresh_agents() {
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn production_gateway_owns_group_creation_membership_and_nested_group_rejection() {
+    let root = temp_root("groups");
+    let agents = root.join("agents");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+
+    let first = dispatch(
+        &runtime,
+        "createAgent",
+        json!({"name":"Alice","description":"","origin":"user","isIntroductionSuppressed":true}),
+    );
+    let second = dispatch(
+        &runtime,
+        "createAgent",
+        json!({"name":"Bob","description":"","origin":"user","isIntroductionSuppressed":true}),
+    );
+    let first_id = first["agent"]["id"].as_str().expect("alice id").to_string();
+    let second_id = second["agent"]["id"].as_str().expect("bob id").to_string();
+
+    let created = dispatch(
+        &runtime,
+        "createGroup",
+        json!({
+            "name":"Team",
+            "description":"Production group",
+            "memberIds":[first_id.clone(), second_id.clone(), first_id.clone()]
+        }),
+    );
+    let group_id = created["agent"]["id"].as_str().expect("group id").to_string();
+    assert_eq!(created["agent"]["isGroup"], true);
+    assert_eq!(
+        created["agent"]["memberIds"],
+        json!([first_id.clone(), second_id.clone()])
+    );
+    assert_eq!(created["transcript"], json!([]));
+
+    let duplicate = dispatch(
+        &runtime,
+        "createGroup",
+        json!({
+            "name":"Ignored duplicate name",
+            "memberIds":[second_id.clone(), first_id.clone()]
+        }),
+    );
+    assert_eq!(duplicate["agent"]["id"], group_id);
+
+    let updated = dispatch(
+        &runtime,
+        "setGroupMembers",
+        json!({"id":group_id.clone(),"memberIds":[second_id.clone()]}),
+    );
+    assert_eq!(updated["isGroup"], true);
+    assert_eq!(updated["memberIds"], json!([second_id.clone()]));
+
+    let nested = dispatch_production_session_gateway_call(
+        &runtime,
+        "createGroup",
+        &json!({"name":"Nested","memberIds":[group_id.clone()]}),
+    )
+    .expect("createGroup handled")
+    .expect_err("nested group rejected");
+    assert!(matches!(nested, SessionGatewayError::BadRequest(message) if message.contains("individual agents")));
+
+    let listed = dispatch(&runtime, "listAgents", json!({}));
+    assert!(listed
+        .as_array()
+        .expect("agents")
+        .iter()
+        .any(|agent| agent["id"] == group_id && agent["isGroup"] == true));
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
