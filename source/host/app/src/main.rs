@@ -71,6 +71,7 @@ use mahayana_host_runtime::extensions::browser_ua::{
 use mahayana_host_runtime::runner_context_production_provider::ProductionRunnerRequestContextSource;
 use mahayana_host_runtime::sand_activity::ActivityUpdate;
 use mahayana_host_runtime::runner::production_turn_agent_owner::ProductionTurnAgentOwner;
+use mahayana_host_runtime::runner::production_turn_run_shell_adapter::ProviderRetryEvent;
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedToolBridge, RunnerRequestContextSource,
@@ -782,6 +783,16 @@ fn start_routed_provider_task(
                     agent_id: agent_id.clone(),
                 },
             );
+            let retry_runtime = Arc::clone(&worker_transcript_runtime);
+            let retry_agent_id = agent_id.clone();
+            let retry_sink: Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync> =
+                Arc::new(move |_event: &ProviderRetryEvent| {
+                    retry_runtime.track_runner_activity_update(
+                        &retry_agent_id,
+                        &ActivityUpdate::Retrying,
+                        started_at_ms(),
+                    );
+                });
             let composition = TurnAgentComposition::new(
                 provider,
                 bridge,
@@ -789,6 +800,7 @@ fn start_routed_provider_task(
                 cancellation,
                 checkpoint_store,
             )
+            .with_retry_sink(retry_sink)
             .with_box_resources(box_resources)
             .with_reaction_sink(reaction_sink)
             .with_send_message_sink(send_message_sink);
