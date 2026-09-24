@@ -31,7 +31,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     host_transcript_method,
     CoordinatorInferenceRouter, InferenceProvider, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, parse_runner_inference_event,
-    parse_send_prompt_attachments, project_transcript_entry,
+    parse_send_prompt_attachments, project_runner_turn_context, project_transcript_entry,
 };
 use mahayana_node_agent_coordinator::webauthn::{
     ApprovedWebAuthnConsent, WebAuthnCeremony,
@@ -1797,7 +1797,7 @@ fn execute_local_inference(
     )?;
     let timestamp_ms = coordinator_now_ms();
 
-    let (turn, messages) = {
+    let (turn, messages, recent_user_messages, current_message_id) = {
         let _guard = state.inference_store_lock.lock().map_err(|_| {
             Failure::new(
                 "INFERENCE_STORE_LOCK_FAILED",
@@ -1825,8 +1825,8 @@ fn execute_local_inference(
             "appended",
             project_transcript_entry(&user_entry),
         );
-        let messages = store
-            .entries(&agent_id)
+        let stored_entries = store.entries(&agent_id);
+        let messages = stored_entries
             .iter()
             .map(|entry| json!({
                 "role": match entry.role {
@@ -1836,7 +1836,21 @@ fn execute_local_inference(
                 "content": entry.content,
             }))
             .collect::<Vec<_>>();
-        (turn, messages)
+        let recent_user_messages = stored_entries
+            .iter()
+            .filter(|entry| entry.role == StoredRole::User)
+            .map(|entry| {
+                let mut value = json!({
+                    "id": entry.id,
+                    "text": entry.content,
+                });
+                if let Some(rich_text) = entry.rich_text.as_ref() {
+                    value["richText"] = Value::String(rich_text.clone());
+                }
+                value
+            })
+            .collect::<Vec<_>>();
+        (turn, messages, recent_user_messages, user_entry.id)
     };
 
     let activity = begin_inference_activity(&state, &agent_id);
@@ -1858,15 +1872,23 @@ fn execute_local_inference(
     }
 
     let result = (|| -> Result<String, Failure> {
+        let mut runner_args = json!({
+            "provider": provider.as_str(),
+            "agentId": agent_id,
+            "streamId": stream_id,
+            "messages": messages,
+        });
+        let turn_context =
+            project_runner_turn_context(&args, &current_message_id, recent_user_messages);
+        if let (Some(target), Some(context)) =
+            (runner_args.as_object_mut(), turn_context.as_object())
+        {
+            target.extend(context.clone());
+        }
         let accepted = dispatch_gateway_value(
             &state,
             "runner.startRoutedProvider",
-            json!({
-                "provider": provider.as_str(),
-                "agentId": agent_id,
-                "streamId": stream_id,
-                "messages": messages,
-            }),
+            runner_args,
         )?;
         if accepted.get("accepted").and_then(Value::as_bool) != Some(true) {
             return Err(Failure::new(
