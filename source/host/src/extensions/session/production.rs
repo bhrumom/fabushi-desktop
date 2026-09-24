@@ -133,7 +133,7 @@ pub struct ProductionSessionWorkers {
     pool: Arc<ProductionAgentWorkerPool>,
     conversation_size_maintenance: ConversationSizeMaintenance,
     conversation_state: SessionConversationState,
-    memory_service: MemoryService,
+    memory_service: Arc<MemoryService>,
     mint_queue: SessionMintQueue,
     db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
     deleting_agents: Mutex<BTreeSet<String>>,
@@ -150,10 +150,25 @@ impl ProductionSessionWorkers {
     pub fn production_with_user_time_zone_resolver(
         user_time_zone_resolver: UserTimeZoneResolver,
     ) -> Self {
-        Self::with_agents_root_and_user_time_zone_resolver(
+        let agents_root = get_sand_agents_root_dir(None);
+        let memory_service = Arc::new(MemoryService::new(agents_root.clone()));
+        Self::with_agents_root_and_dependencies(
+            agents_root,
+            PRODUCTION_BLOB_BUSY_TIMEOUT_MS,
+            user_time_zone_resolver,
+            memory_service,
+        )
+    }
+
+    pub fn production_with_dependencies(
+        user_time_zone_resolver: UserTimeZoneResolver,
+        memory_service: Arc<MemoryService>,
+    ) -> Self {
+        Self::with_agents_root_and_dependencies(
             get_sand_agents_root_dir(None),
             PRODUCTION_BLOB_BUSY_TIMEOUT_MS,
             user_time_zone_resolver,
+            memory_service,
         )
     }
 
@@ -174,8 +189,24 @@ impl ProductionSessionWorkers {
         user_time_zone_resolver: UserTimeZoneResolver,
     ) -> Self {
         let agents_root = agents_root.into();
+        let memory_service = Arc::new(MemoryService::new(agents_root.clone()));
+        Self::with_agents_root_and_dependencies(
+            agents_root,
+            busy_timeout_ms,
+            user_time_zone_resolver,
+            memory_service,
+        )
+    }
+
+    pub fn with_agents_root_and_dependencies(
+        agents_root: impl Into<PathBuf>,
+        busy_timeout_ms: u64,
+        user_time_zone_resolver: UserTimeZoneResolver,
+        memory_service: Arc<MemoryService>,
+    ) -> Self {
+        let agents_root = agents_root.into();
         Self {
-            memory_service: MemoryService::new(agents_root.clone()),
+            memory_service,
             agents_root,
             pool: Arc::new(AgentWorkerPool::new(
                 create_production_agent_store_worker_backend(busy_timeout_ms),
@@ -193,6 +224,10 @@ impl ProductionSessionWorkers {
 
     pub fn worker_pool(&self) -> Arc<ProductionAgentWorkerPool> {
         Arc::clone(&self.pool)
+    }
+
+    pub fn memory_service(&self) -> Arc<MemoryService> {
+        Arc::clone(&self.memory_service)
     }
 
     pub fn session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {

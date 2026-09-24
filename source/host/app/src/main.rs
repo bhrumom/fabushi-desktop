@@ -20,6 +20,8 @@ use mahayana_host_runtime::extensions::box_lifecycle::production::{
     ProductionBoxLifecycleClient, ProductionBoxLifecycleClientFactory,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::memory::extension::HostMemoryExtension;
+use mahayana_host_runtime::extensions::memory::production::start_production_memory_extension;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffTrigger, PendingHandoff, ScreenshotPayload,
 };
@@ -145,6 +147,7 @@ fn start_production_browser_ua(
 struct ProductionHostExtensions {
     auth: Arc<HostAuthExtension>,
     experiments: Arc<HostExperimentsExtension>,
+    memory: HostMemoryExtension,
     team_rules: Arc<ProductionTeamRulesResolver>,
     team_rules_renewal_subscription: Option<u64>,
     source_map: Arc<SandSourceMap>,
@@ -179,6 +182,7 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
         .map_err(|error| error.to_string())?,
     );
     let experiments = Arc::new(start_host_experiments_extension());
+    let memory = start_production_memory_extension();
     let team_rules = Arc::new(ProductionTeamRulesResolver::new(
         backend_url,
         Arc::clone(&auth),
@@ -222,6 +226,7 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
     Ok(ProductionHostExtensions {
         auth,
         experiments,
+        memory,
         team_rules,
         team_rules_renewal_subscription: Some(team_rules_renewal_subscription),
         source_map,
@@ -1476,8 +1481,9 @@ fn main() {
         }
     };
     let session_workers = Arc::new(
-        ProductionSessionWorkers::production_with_user_time_zone_resolver(
+        ProductionSessionWorkers::production_with_dependencies(
             Arc::new(move || settings_for_session.get_user_time_zone()),
+            production_extensions.memory.service(),
         ),
     );
     let handoff_prepare_box = Arc::clone(&forever_box);

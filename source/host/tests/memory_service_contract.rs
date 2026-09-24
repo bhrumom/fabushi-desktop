@@ -119,3 +119,21 @@ fn memory_service_creates_real_agent_scoped_store() {
     assert!(!service.agent_has_content(&agent_dir));
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn production_session_workers_can_share_host_memory_extension_owner() {
+    let root = temp_root("shared-owner");
+    let memory = std::sync::Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(&root),
+    );
+    let workers = ProductionSessionWorkers::with_agents_root_and_dependencies(
+        &root,
+        500,
+        std::sync::Arc::new(|| None),
+        std::sync::Arc::clone(&memory),
+    );
+    assert!(std::sync::Arc::ptr_eq(&workers.memory_service(), &memory));
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
