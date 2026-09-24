@@ -993,3 +993,12 @@ The evidence must make it possible to answer â€œwhere did this turn spend time?â
 Allowed statuses: `passed`, `blocked`, `not-applicable`.
 
 Implementation must update this compliance table with exact commit/workflow/artifact evidence before any claim that Grok parity is complete.
+
+
+### 2026-09-24 exact-HEAD recovery note
+
+- PR #20 HEAD `64f8fb78c1e3309ddf18fb7839fd66ac0aa81dda` remains draft.
+- Architecture manifest at this SHA: 1700 implemented, 261 planned, 41 existing-needs-parity.
+- Forbidden legacy roots `desktop/src`, `desktop/electron`, `frontend/apps/web`, and `third_party/mahayana` are still present.
+- Exact-HEAD workflow runs `35937158440` (Rust desktop runtime) and `35937158480` (Desktop Chat Parity CI) both ended `action_required` before any job was created, so they are not test evidence.
+- This documentation-only commit exists solely to retrigger both exact-HEAD workflows under the active PR branch; it does not advance any compliance item to passed.
