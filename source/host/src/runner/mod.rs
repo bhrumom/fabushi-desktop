@@ -33,11 +33,12 @@ pub use turn_run_shell::{
 };
 pub use conversation_state::{
     CompletedAwaitOutcome, ContextWindowTracker, FullStreamSanitizer, HIDDEN_PROMPT_MARKER,
-    ModelResolutionTicket, RecentUserMessage, ResolvedModelTracker, SUMMARIZATION_MAX_OUTPUT_TOKENS,
+    ModelResolutionTicket, RecentUserMessage, RecoveryUserMessage, ResolvedModelTracker, SUMMARIZATION_MAX_OUTPUT_TOKENS,
     SUMMARIZATION_MAX_PROMPT_CHARS, SanitizedExtendedUsage, SanitizedUsage, StreamSanitizerItem,
     SummarizationPolicy, await_block_until_ms, build_unanswered_questions_note,
     classify_completed_await_outcome, sanitize_usage, select_unconfirmed_user_messages,
     should_use_self_summary, summarization_policy, to_safe_usage_count,
+    would_recover_via_prepend,
 };
 pub use tool_call_identity::{ToolCallIdentity, ToolSurfaceUpdate, TOOL_CALL_IDENTITY_CAP};
 pub use turn_usage::{

@@ -4,7 +4,7 @@ use mahayana_host_runtime::extensions::transcript::send_pipeline::{
 use mahayana_host_runtime::extensions::transcript::turn_runtime::{
     QueuedTurnRecoveryCheck, should_supersede_stale_turn,
 };
-use mahayana_host_runtime::runner::conversation_state::{
+use mahayana_host_runtime::runner::{
     RecoveryUserMessage, would_recover_via_prepend,
 };
 

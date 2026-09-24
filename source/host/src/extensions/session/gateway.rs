@@ -45,7 +45,7 @@ impl SessionGatewayError {
 
 fn recent_recovery_user_messages(
     entries: &[Value],
-) -> Vec<crate::runner::conversation_state::RecoveryUserMessage> {
+) -> Vec<crate::runner::RecoveryUserMessage> {
     entries
         .iter()
         .filter(|entry| {
@@ -59,7 +59,7 @@ fn recent_recovery_user_messages(
             if id.is_empty() {
                 return None;
             }
-            Some(crate::runner::conversation_state::RecoveryUserMessage {
+            Some(crate::runner::RecoveryUserMessage {
                 id: id.to_string(),
                 text: entry
                     .get("content")

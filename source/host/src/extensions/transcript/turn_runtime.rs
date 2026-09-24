@@ -1,4 +1,4 @@
-use crate::runner::conversation_state::would_recover_via_prepend;
+use crate::runner::would_recover_via_prepend;
 
 use super::send_pipeline::{PersistedSendContext, RecoverySend};
 

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use uuid::Uuid;
 
-use crate::runner::conversation_state::RecoveryUserMessage;
+use crate::runner::RecoveryUserMessage;
 
 use super::prompt_acceptance_ledger::{
     AcceptanceRecord, PromptAcceptanceError, PromptAcceptanceLedger, SendAdmission, SendInput,
