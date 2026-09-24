@@ -9268,13 +9268,15 @@
       "behavioralEvidence": [
         "source/host/src/agent_isolation/transcript_mirror_offload.rs",
         "source/host/src/agent_isolation/transcript_mirror_worker.rs",
-        "source/host/src/transcript_mirror/legacy_transcript_mirror.rs"
+        "source/host/src/transcript_mirror/legacy_transcript_mirror.rs",
+        "source/host/src/transcript_mirror/production_provider.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_offload_contract.rs",
         "source/host/tests/transcript_mirror_worker_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/legacy_transcript_mirror_contract.rs"
+        "source/host/tests/legacy_transcript_mirror_contract.rs",
+        "source/host/tests/transcript_mirror_production_provider_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust now ports the complete frozen offload layer: UTF-16/i32 sharding, lazy long-lived workers, same-conversation serialization/coalescing, plus OffloadingTranscriptMirror incremental-first behavior, inline full fallback, WorkerBlobStore full offload, root-prompt cursor advancement and fail-open stale diagnostics for unavailable/failed worker writes. Final remains withheld only until production-provider composes this wrapper with FileTranscriptMirror/generated occurrence decoding and the shipping Runner Agent checkpoint path."
@@ -9292,12 +9294,14 @@
         "source/host/src/agent_isolation/transcript_mirror_worker.rs",
         "source/host/src/transcript_mirror/legacy_transcript_mirror.rs",
         "source/host/src/transcript_mirror/conversation_state_binary.rs",
-        "source/host/src/agent_isolation/transcript_mirror_offload.rs"
+        "source/host/src/agent_isolation/transcript_mirror_offload.rs",
+        "source/host/src/transcript_mirror/production_provider.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_worker_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/transcript_mirror_offload_contract.rs"
+        "source/host/tests/transcript_mirror_offload_contract.rs",
+        "source/host/tests/transcript_mirror_production_provider_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust worker owns frozen read-only multi-SQLite blob lookup, ConversationStateStructure decode and full legacy mirror write. The production OffloadingTranscriptMirror now routes WorkerBlobStore fallback through TranscriptMirrorOffloadPool and this worker. Final remains withheld until production-provider routes shipping Runner Agent checkpoints through the wrapper."
@@ -16987,11 +16991,13 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/transcript_mirror/legacy_transcript_mirror.rs",
-        "source/host/src/transcript_mirror/conversation_state_binary.rs"
+        "source/host/src/transcript_mirror/conversation_state_binary.rs",
+        "source/host/src/transcript_mirror/production_provider.rs"
       ],
       "testEvidence": [
         "source/host/tests/legacy_transcript_mirror_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/transcript_mirror_production_provider_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust port owns frozen observational legacy JSONL projection: summary-archive/root-prompt hydration, oversize/binary placeholders, context/thinking stripping, tool-use formatting, monotonic full writes and incremental append semantics. Final is withheld until the offload pool and production transcript provider route shipping Runner checkpoints through this mirror."
@@ -17001,12 +17007,28 @@
       "targetPath": "source/host/src/transcript_mirror/production_provider.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "e6a24755eceb5a58088526c1ea05c8e8e9352e52",
       "architecturalRole": "host/transcript-mirror",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/transcript_mirror/production_provider.rs",
+        "source/host/src/transcript_mirror/transcript_mirror.rs",
+        "source/host/src/transcript_mirror/transcript_mirror_router.rs",
+        "source/host/src/agent_isolation/transcript_mirror_offload.rs",
+        "source/host/src/agent_isolation/transcript_mirror_worker.rs",
+        "source/host/src/extensions/session/production_agent_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/transcript_mirror_production_provider_contract.rs",
+        "source/host/tests/transcript_mirror_contract.rs",
+        "source/host/tests/transcript_mirror_router_contract.rs",
+        "source/host/tests/transcript_mirror_offload_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production provider now preserves the frozen dual-view checkpoint boundary: one complete ConversationStateStructure projection feeds a shared FileTranscriptMirror journal plus per-session OffloadingTranscriptMirror legacy path, reusing the real Production WorkerBlobStore and sticky router. The provider contract exercises real Session materialization, WorkerBlobStore reads and canonical JSONL commit. Final remains withheld because generated-occurrence-codec is not yet backed by the canonical generated agent.v1 Rust bindings and the shipping Runner still emits provider retry checkpoints rather than real Agent ConversationStateStructure checkpoints."
     },
     {
       "referencePath": "source/host/transcript-mirror/transcript-journal-codec.ts",
@@ -17020,13 +17042,15 @@
       "behavioralEvidence": [
         "source/host/src/transcript_mirror/transcript_journal_codec.rs",
         "source/host/src/transcript_mirror/transcript_mirror.rs",
-        "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs"
+        "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs",
+        "source/host/src/transcript_mirror/production_provider.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_journal_codec_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/transcript_mirror_contract.rs",
-        "source/host/tests/transcript_occurrence_deriver_contract.rs"
+        "source/host/tests/transcript_occurrence_deriver_contract.rs",
+        "source/host/tests/transcript_mirror_production_provider_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust port covers frozen SHA/checkpoint identity, byte equality, file identity, deferred/pending checkpoint validation, zero-progress-safe positioned writes, and legacy JSONL text/tool envelopes. FileTranscriptMirror now consumes the codec for production-shaped WAL/replay/atomic-install behavior. Kept non-final until the occurrence deriver and production provider route shipping Agent checkpoints through the journal."
@@ -17042,12 +17066,14 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/transcript_mirror/transcript_mirror_router.rs",
-        "source/host/src/transcript_mirror/transcript_mirror.rs"
+        "source/host/src/transcript_mirror/transcript_mirror.rs",
+        "source/host/src/transcript_mirror/production_provider.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_router_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/transcript_mirror_contract.rs"
+        "source/host/tests/transcript_mirror_contract.rs",
+        "source/host/tests/transcript_mirror_production_provider_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust port owns frozen sticky journal/legacy routing, concurrent first-route selection without split claims, existing-marker precedence over the experiment flag, legacy pending replacement, observational legacy commit failures, abort cleanup, and skip semantics that never claim a new journal but recover an already-owned journal before skipping. Final is withheld until FileTranscriptMirror and the production provider consume this router on the shipping Agent checkpoint path."
@@ -17065,14 +17091,16 @@
         "source/host/src/transcript_mirror/transcript_mirror.rs",
         "source/host/src/transcript_mirror/transcript_journal_codec.rs",
         "source/host/src/transcript_mirror/transcript_mirror_router.rs",
-        "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs"
+        "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs",
+        "source/host/src/transcript_mirror/production_provider.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_mirror_contract.rs",
         "source/host/tests/transcript_journal_codec_contract.rs",
         "source/host/tests/transcript_mirror_router_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/transcript_occurrence_deriver_contract.rs"
+        "source/host/tests/transcript_occurrence_deriver_contract.rs",
+        "source/host/tests/transcript_mirror_production_provider_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust FileTranscriptMirror ports frozen safe paths, journal ownership marker, per-conversation serialization, atomic file install/fsync, canonical file identity fencing, pending WAL prepare/commit/abort/replay, deferred cursor persistence, skip semantics, unique occurrence validation and outcome reporting. It implements the Rust TranscriptJournalPort consumed by the sticky router. Final is withheld until the generated occurrence deriver and production provider feed real ConversationStateStructure Agent checkpoints on the shipping Runner path."
@@ -17089,12 +17117,14 @@
       "behavioralEvidence": [
         "source/host/src/transcript_mirror/transcript_occurrence_deriver.rs",
         "source/host/src/transcript_mirror/transcript_mirror.rs",
-        "source/host/src/transcript_mirror/transcript_journal_codec.rs"
+        "source/host/src/transcript_mirror/transcript_journal_codec.rs",
+        "source/host/src/transcript_mirror/production_provider.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_occurrence_deriver_contract.rs",
         "source/host/tests/transcript_mirror_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/transcript_mirror_production_provider_contract.rs"
       ],
       "parityMode": "rust-port",
       "notes": "Rust port owns frozen occurrence derivation semantics: incremental turn/step monotonicity fences, user text-blob fallback with TextDecoder-equivalent lossy UTF-8, context-tag stripping, hidden-thinking stripping, deferred final text step, tool-use/result delta projection, immutable completed-tool checks, stable occurrence identities and fail-closed missing blobs. It plugs directly into FileTranscriptMirror's TranscriptDeriver trait. Final is withheld until generated-occurrence-codec is backed by canonical generated agent.v1 Rust bindings and production-provider feeds the shipping Runner checkpoint path."
