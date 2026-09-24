@@ -76,7 +76,7 @@ impl TranscriptManager {
         &self,
         is_focused: bool,
         now_ms: f64,
-    ) -> Result<(), String> {
+    ) -> Result<bool, String> {
         self.transcript_runtime
             .session_runtime()
             .set_window_focused(&self.session_workers, is_focused, now_ms)
