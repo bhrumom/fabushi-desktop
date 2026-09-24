@@ -11,6 +11,7 @@ use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::sand_activity::{ActivityUpdate, AgentActivity};
 
 use super::async_task_union::{AsyncTask, merge_async_tasks};
+use super::box_request_entries::{ActiveBoxRequest, BoxRequestTrackDecision};
 use super::prompt_acceptance_ledger::{
     AcceptanceLookup, AcceptanceRecord, AcceptanceStatus, PromptAcceptanceError,
     PromptAcceptanceLedger, SendInput,
@@ -966,6 +967,29 @@ impl ProductionTranscriptRuntime {
         state.lifecycle.track_activity_from_update(agent_id, update, now_ms);
         state.lifecycle.track_composing_from_update(agent_id, update);
         state.lifecycle.track_retrying_from_update(agent_id, update);
+    }
+
+    pub fn track_box_request_entry(
+        &self,
+        agent_id: &str,
+        entry: &Value,
+    ) -> BoxRequestTrackDecision {
+        self.lock_state()
+            .pipeline
+            .track_box_request_entry(agent_id, entry)
+    }
+
+    pub fn resolve_box_request_tracking(&self, request_id: &str) -> bool {
+        self.lock_state()
+            .pipeline
+            .resolve_box_request_tracking(request_id)
+    }
+
+    pub fn active_box_request(&self) -> Option<ActiveBoxRequest> {
+        self.lock_state()
+            .pipeline
+            .active_box_request()
+            .cloned()
     }
 
     pub fn decorate_agent_summaries(&self, value: &mut Value) {

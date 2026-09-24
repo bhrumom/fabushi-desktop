@@ -6,6 +6,7 @@ use mahayana_host_runtime::extensions::transcript::box_request_entries::{
     ActiveBoxRequest, pending_box_request_from_entry, resolve_box_request_entry,
     track_box_request_entry,
 };
+use mahayana_host_runtime::extensions::transcript::send_pipeline::SendPipelineState;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -130,4 +131,57 @@ fn production_resolution_updates_only_matching_unresolved_request() {
 
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn shipping_send_pipeline_owns_active_box_request_supersede_and_resolution_identity() {
+    let mut pipeline = SendPipelineState::default();
+    let first = serde_json::json!({
+        "id":"entry-1",
+        "kind":"send-message",
+        "message":{"type":"text","content":"first"},
+        "boxRequestId":"request-1"
+    });
+    let first_decision = pipeline.track_box_request_entry("agent-a", &first);
+    assert_eq!(first_decision.superseded_request_id, None);
+    assert_eq!(
+        pipeline.active_box_request().map(|active| active.request_id.as_str()),
+        Some("request-1")
+    );
+
+    let second = serde_json::json!({
+        "id":"entry-2",
+        "kind":"send-message",
+        "message":{"type":"text","content":"second"},
+        "boxRequestId":"request-2"
+    });
+    let second_decision = pipeline.track_box_request_entry("agent-a", &second);
+    assert_eq!(
+        second_decision.superseded_request_id.as_deref(),
+        Some("request-1")
+    );
+    assert_eq!(
+        pipeline.active_box_request().map(|active| active.request_id.as_str()),
+        Some("request-2")
+    );
+    assert!(!pipeline.resolve_box_request_tracking("request-1"));
+    assert!(pipeline.resolve_box_request_tracking("request-2"));
+    assert!(pipeline.active_box_request().is_none());
+
+    pipeline.track_box_request_entry("agent-a", &first);
+    let other_agent = serde_json::json!({
+        "id":"entry-b",
+        "kind":"send-message",
+        "message":{"type":"text","content":"other"},
+        "boxRequestId":"request-b"
+    });
+    let other_decision = pipeline.track_box_request_entry("agent-b", &other_agent);
+    assert_eq!(other_decision.superseded_request_id, None);
+    assert_eq!(
+        pipeline.active_box_request().map(|active| {
+            (active.agent_id.as_str(), active.request_id.as_str())
+        }),
+        Some(("agent-b", "request-b"))
+    );
 }

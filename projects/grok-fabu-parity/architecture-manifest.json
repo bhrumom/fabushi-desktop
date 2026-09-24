@@ -13910,12 +13910,14 @@
       "targetPath": "source/host/src/extensions/transcript/box_request_entries.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "3177624599ff1f09720077194ce40470e60a8a4b",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/transcript/box_request_entries.rs",
+        "source/host/src/extensions/transcript/send_pipeline.rs",
+        "source/host/src/extensions/transcript/production_runtime.rs",
         "source/host/src/extensions/transcript/box_handoff_resume.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/src/runner/tools/box_help_tool.rs",
@@ -13924,12 +13926,12 @@
       "testEvidence": [
         "source/host/tests/box_request_entries_contract.rs",
         "source/host/tests/box_handoff_resume_contract.rs",
+        "source/host/tests/box_help_tool_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        "source/host/tests/box_help_tool_contract.rs"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust owner restores unresolved box-request recognition, same-agent supersede decisions and durable requestId-specific resolution. Shipping request_box_help now creates the frozen stamped boxRequestId/boxInstruction card and handBackForeverBox resolves it. Final remains withheld because new-card production still appends directly rather than invoking the stateful tracker, so automatic dismissal of a previously tracked same-Agent request and authoritative activeBoxRequest identity remain to wire."
+      "notes": "Rust owner now matches frozen BoxRequestEntries end to end: SendPipelineState owns the authoritative activeBoxRequest identity; shipping request_box_help tracks every new stamped card before durable append, dismisses the prior unresolved same-Agent request, and rolls back live tracking if append fails. handBackForeverBox clears the matching live identity while durable requestId-specific resolution updates the transcript. Contract coverage exercises recognition, supersede, active identity replacement and resolution clearing."
     },
     {
       "referencePath": "source/host/extensions/transcript/channel-delivery-unregistered-error.ts",
@@ -14525,7 +14527,8 @@
         "source/host/src/extensions/transcript/transcript_manager.rs",
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/extensions/session/production_agent_store.rs",
-        "source/host/src/runner/production_agent_checkpoint.rs"
+        "source/host/src/runner/production_agent_checkpoint.rs",
+        "source/host/src/extensions/transcript/box_request_entries.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14543,9 +14546,10 @@
         "source/host/tests/production_agent_checkpoint_contract.rs",
         "source/host/tests/routed_send_acceptance_contract.rs",
         "source/host/tests/gateway_server_contract.rs",
-        "source/host/tests/turn_settle_checkpoint_contract.rs"
+        "source/host/tests/turn_settle_checkpoint_contract.rs",
+        "source/host/tests/box_request_entries_contract.rs"
       ],
-      "notes": "Production Rust send pipeline owns nonce admission/coalescing/replay, durable Session echo, acceptance/recovery state, queue/watchdog dispatch, turn epochs, attachment batch identity, recovery sends/break epochs and stale queued-turn suppression. Non-Cursor Coordinator admission carries streamId into runner.acceptRoutedPrompt and Host retains a per-Agent RunScheduler lease through real Runner terminal. Durable ack obligations remain Host-owned. Generated Agent checkpoint settlement now atomically advances latestRootBlobId and confirms the exact user echo; missing echo aborts root advancement. Final remains withheld for real group/shared-room fanout, remaining ack/recovery guard composition and full generated Agent media consumption."
+      "notes": "Production Rust send pipeline owns nonce admission/coalescing/replay, durable Session echo, acceptance/recovery state, queue/watchdog dispatch, turn epochs, attachment batch identity, recovery sends/break epochs and stale queued-turn suppression. Non-Cursor Coordinator admission carries streamId into runner.acceptRoutedPrompt and Host retains a per-Agent RunScheduler lease through real Runner terminal. Durable ack obligations remain Host-owned. Generated Agent checkpoint settlement atomically advances latestRootBlobId and confirms the exact user echo. The frozen stateful BoxRequestEntries owner is now composed into SendPipelineState and the shipping request_box_help path. Final remains withheld for real group/shared-room fanout, remaining ack/recovery guard composition and full generated Agent media consumption."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",

@@ -41,6 +41,7 @@ use mahayana_host_runtime::extensions::transcript::send_message_shaping::shape_s
 use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
     build_box_handoff_resume_send_args, settle_box_handoff_state,
 };
+use mahayana_host_runtime::extensions::transcript::box_request_entries::resolve_box_request_entry;
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     AckObligations, AckRedrivePreparation, build_ack_redrive_send_args,
 };
@@ -365,10 +366,30 @@ impl SendMessageSink for ProductionSendMessageSink {
                     "boxRequestId": request_id.clone(),
                     "boxInstruction": request.instruction,
                 });
+                let tracking = self
+                    .transcript_runtime
+                    .track_box_request_entry(&self.agent_id, &entry);
+                if let Some(superseded_request_id) = tracking.superseded_request_id.as_deref() {
+                    if let Err(error) = resolve_box_request_entry(
+                        &self.sessions,
+                        &self.agent_id,
+                        superseded_request_id,
+                        "dismissed",
+                    ) {
+                        eprintln!(
+                            "mahayana-host box_request_supersede_failed agent={} request={} error={error}",
+                            self.agent_id,
+                            superseded_request_id,
+                        );
+                    }
+                }
                 if let Err(error) = self.sessions.append_agent_transcript_entries(
                     &self.agent_id,
                     &[entry],
                 ) {
+                    let _ = self
+                        .transcript_runtime
+                        .resolve_box_request_tracking(&request_id);
                     self.session_handoff.forget(&self.agent_id);
                     return Err(ProviderSessionError::Tool(format!(
                         "could not persist request_box_help for {}: {error}",
@@ -1419,6 +1440,9 @@ impl GatewayApi for UnifiedGatewayApi {
                 .end(agent_id, handoff_trigger)
                 .map_err(GatewayCommandError::Internal)?;
             if let HandoffDecision::End(decision) = decision {
+                let _ = self
+                    .transcript_runtime
+                    .resolve_box_request_tracking(&decision.request_id);
                 if let Err(error) = settle_box_handoff_state(
                     &self.session_workers,
                     agent_id,

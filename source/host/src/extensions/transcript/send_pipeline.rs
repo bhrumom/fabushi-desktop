@@ -1,9 +1,14 @@
 use std::collections::HashMap;
 
+use serde_json::Value;
 use uuid::Uuid;
 
 use crate::runner::RecoveryUserMessage;
 
+use super::box_request_entries::{
+    ActiveBoxRequest, BoxRequestTrackDecision,
+    track_box_request_entry as decide_box_request_tracking,
+};
 use super::prompt_acceptance_ledger::{
     AcceptanceRecord, PromptAcceptanceError, PromptAcceptanceLedger, SendAdmission, SendInput,
     send_input_digest,
@@ -68,6 +73,7 @@ pub struct SendPipelineState {
     latest_recovery_sends: HashMap<String, RecoverySend>,
     recovery_break_epochs: HashMap<String, u64>,
     attachment_batch_ids: HashMap<String, String>,
+    active_box_request: Option<ActiveBoxRequest>,
 }
 
 impl SendPipelineState {
@@ -238,5 +244,36 @@ impl SendPipelineState {
 
     pub fn clear_attachment_batch_id(&mut self, agent_id: &str) {
         self.attachment_batch_ids.remove(agent_id);
+    }
+
+    pub fn track_box_request_entry(
+        &mut self,
+        agent_id: &str,
+        entry: &Value,
+    ) -> BoxRequestTrackDecision {
+        let decision = decide_box_request_tracking(
+            self.active_box_request.as_ref(),
+            agent_id,
+            entry,
+        );
+        if let Some(next) = decision.next.as_ref() {
+            self.active_box_request = Some(next.clone());
+        }
+        decision
+    }
+
+    pub fn resolve_box_request_tracking(&mut self, request_id: &str) -> bool {
+        let matches = self
+            .active_box_request
+            .as_ref()
+            .is_some_and(|active| active.request_id == request_id);
+        if matches {
+            self.active_box_request = None;
+        }
+        matches
+    }
+
+    pub fn active_box_request(&self) -> Option<&ActiveBoxRequest> {
+        self.active_box_request.as_ref()
     }
 }
