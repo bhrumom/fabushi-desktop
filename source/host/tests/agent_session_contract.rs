@@ -7,6 +7,9 @@ use mahayana_host_runtime::agents::settings_file::{
     get_sand_settings_path, read_sand_settings_file,
 };
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
+use mahayana_host_runtime::extensions::session::agent_db_transcript_pages::{
+    TranscriptPageQuery, TranscriptWindowQuery,
+};
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
 
@@ -108,12 +111,37 @@ fn session_facade_delegates_transcript_and_channel_owners_without_duplication() 
     production
         .append_agent_transcript_entries(
             &record.id,
-            &[serde_json::json!({
-                "id":"entry-1",
-                "kind":"message",
-                "role":"user",
-                "content":"hello"
-            })],
+            &[
+                serde_json::json!({
+                    "id":"entry-1",
+                    "kind":"message",
+                    "role":"user",
+                    "content":"hello",
+                    "timestampMs":10
+                }),
+                serde_json::json!({
+                    "id":"entry-2",
+                    "kind":"tool-call",
+                    "name":"search",
+                    "timestampMs":20
+                }),
+                serde_json::json!({
+                    "id":"entry-3",
+                    "kind":"message",
+                    "role":"assistant",
+                    "content":"reply",
+                    "timestampMs":30
+                }),
+                serde_json::json!({
+                    "id":"entry-4",
+                    "kind":"message",
+                    "role":"assistant",
+                    "content":"branch reply",
+                    "replyTo":"entry-1",
+                    "branched":true,
+                    "timestampMs":40
+                })
+            ],
         )
         .expect("transcript");
     assert_eq!(
@@ -121,7 +149,73 @@ fn session_facade_delegates_transcript_and_channel_owners_without_duplication() 
             .read_agent_transcript_entries(&record.id)
             .expect("read transcript")
             .len(),
-        1
+        4
+    );
+
+    let page = store
+        .read_agent_transcript_page(
+            &record.id,
+            TranscriptPageQuery {
+                before_seq: None,
+                since_ms: Some(0),
+                until_ms: 100,
+                limit: 10,
+            },
+        )
+        .expect("page");
+    assert_eq!(
+        page.entries
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["entry-1"]
+    );
+
+    let window = store
+        .read_agent_transcript_window(
+            &record.id,
+            TranscriptWindowQuery {
+                before_seq: None,
+                limit: 10,
+            },
+        )
+        .expect("window");
+    assert_eq!(
+        window
+            .entries
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["entry-1", "entry-3"]
+    );
+
+    let tail = store
+        .read_agent_transcript_tail(
+            &record.id,
+            TranscriptWindowQuery {
+                before_seq: None,
+                limit: 10,
+            },
+        )
+        .expect("tail");
+    assert_eq!(
+        tail.entries
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["entry-1", "entry-2", "entry-3", "entry-4"]
+    );
+
+    let thread = store
+        .read_agent_thread(&record.id, "entry-1")
+        .expect("thread");
+    assert_eq!(
+        thread
+            .entries
+            .iter()
+            .filter_map(|entry| entry.get("id").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>(),
+        vec!["entry-1", "entry-4"]
     );
 
     assert!(store

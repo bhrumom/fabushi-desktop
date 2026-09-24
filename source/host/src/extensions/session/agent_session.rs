@@ -13,6 +13,10 @@ use crate::storage::store_db::delete_sand_agent_db_write_generation;
 use crate::transcript_mutation_events::publish_transcript_mutation;
 
 use super::agent_db_serde::AwaitingUserResponse;
+use super::agent_db_transcript_pages::{
+    TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
+};
+use super::session_conversation_state::TranscriptThread;
 use super::channel_store::ChannelConnection;
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::production::{PreparedAgentBlobStore, ProductionSessionWorkers};
@@ -228,6 +232,38 @@ impl SandAgentSessionStore {
         agent_id: &str,
     ) -> Result<Vec<Value>, String> {
         self.production.read_agent_transcript_entries(agent_id)
+    }
+
+    pub fn read_agent_transcript_page(
+        &self,
+        agent_id: &str,
+        query: TranscriptPageQuery,
+    ) -> Result<TranscriptPage, String> {
+        self.production.read_agent_transcript_page(agent_id, query)
+    }
+
+    pub fn read_agent_transcript_window(
+        &self,
+        agent_id: &str,
+        query: TranscriptWindowQuery,
+    ) -> Result<TranscriptWindow<std::collections::BTreeMap<String, usize>>, String> {
+        self.production.read_agent_transcript_window(agent_id, query)
+    }
+
+    pub fn read_agent_transcript_tail(
+        &self,
+        agent_id: &str,
+        query: TranscriptWindowQuery,
+    ) -> Result<TranscriptPage, String> {
+        self.production.read_agent_transcript_tail(agent_id, query)
+    }
+
+    pub fn read_agent_thread(
+        &self,
+        agent_id: &str,
+        root_id: &str,
+    ) -> Result<TranscriptThread, String> {
+        self.production.read_agent_thread(agent_id, root_id)
     }
 
     pub fn mark_agent_viewed(
