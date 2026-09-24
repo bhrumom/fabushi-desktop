@@ -14480,13 +14480,24 @@
       "referencePath": "source/host/extensions/transcript/send-group-fanout.ts",
       "targetPath": "source/host/src/extensions/transcript/send_group_fanout.rs",
       "targetLanguage": "rust",
-      "owner": "mahayana-host",
-      "status": "planned",
+      "owner": "host/transcript",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "86c77e169929d7c6662cde944efb087a59c1a528",
       "architecturalRole": "host/extensions",
-      "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "processOrPackage": "host",
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/send_group_fanout.rs",
+        "source/host/src/extensions/transcript/group_chat_orchestrator.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/send_group_fanout_contract.rs",
+        "source/host/tests/group_chat_orchestrator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Production Rust local-group fanout owner now reads durable room history, resolves real local Session agents, executes the frozen bounded GroupChatOrchestrator through an injected member-turn executor, and durably appends authored SendMessage entries to the room transcript with turn-epoch cancellation. It deliberately defers shared-room/remote-member groups rather than faking them. Final requires Host wiring to the real Runner executor plus Cursor and remote/shared-room fanout."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-message-shaping.ts",

@@ -8,6 +8,7 @@ pub mod send_acceptance;
 pub mod run_lifecycle;
 pub mod group_chat_orchestrator;
 pub mod group_chat_glue;
+pub mod send_group_fanout;
 pub mod sand_ack_obligation_store;
 pub mod sand_pending_wake_store;
 pub mod sand_upgrade_resume_store;
