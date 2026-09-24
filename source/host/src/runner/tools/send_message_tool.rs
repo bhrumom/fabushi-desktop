@@ -11,6 +11,7 @@ use crate::extensions::inference::provider_session::{
 };
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
 
+use super::box_help_tool::{BoxHelpOutcome, BoxHelpRequest};
 use super::send_message_encoding::encode_send_message;
 use super::send_message_schema::{
     SendMessageInput, SendMessageType, parse_send_message_input, send_message_input_schema,
@@ -49,6 +50,17 @@ pub fn identity_attachment_source(raw: &str) -> ResolvedAttachmentSource {
 pub trait SendMessageSink: Send + Sync {
     fn is_awaiting_user_selection(&self) -> bool {
         false
+    }
+
+    fn request_box_help(
+        &self,
+        _request: BoxHelpRequest,
+        _timestamp_ms: u64,
+        _tool_call_id: &str,
+    ) -> Result<BoxHelpOutcome, ProviderSessionError> {
+        Err(ProviderSessionError::Tool(
+            "request_box_help is unavailable for this Runner".into(),
+        ))
     }
 
     fn resolve_attachment_source(

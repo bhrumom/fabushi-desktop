@@ -15,6 +15,7 @@ use super::routed_provider_runtime::{
 };
 use super::sand_action_audit::{AuditedRoutedToolBridge, RoutedMcpAuditConfig};
 use super::turn_observation::{ObservedRoutedToolBridge, TurnObservationHandle};
+use super::tools::box_help_tool::BoxHelpToolBridge;
 use super::tools::send_message_tool::{SendMessageSink, SendMessageToolBridge};
 use super::tools::sand_reaction_tool::{ReactionSink, ReactionToolBridge};
 
@@ -160,6 +161,14 @@ impl TurnAgentComposition {
             Some(sink) => Arc::new(ReactionToolBridge::new(
                 bridge,
                 Arc::clone(sink),
+            )),
+            None => bridge,
+        };
+        let bridge: Arc<dyn RoutedToolBridge> = match &self.send_message_sink {
+            Some(sink) => Arc::new(BoxHelpToolBridge::new(
+                bridge,
+                Arc::clone(sink),
+                self.cancellation.clone(),
             )),
             None => bridge,
         };
