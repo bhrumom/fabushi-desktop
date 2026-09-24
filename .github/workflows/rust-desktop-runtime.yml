@@ -72,6 +72,7 @@ jobs:
             source/host -> target
             source/host/app -> target
             source/node-agent-coordinator -> target
+            source/box-exec-daemon -> target
           shared-key: desktop-restored-rust-1.97.1
       - name: Validate local Cargo dependency closure
         shell: bash
@@ -87,6 +88,9 @@ jobs:
       - name: Test independent Mahayana Coordinator contract
         shell: bash
         run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml
+      - name: Test independent Grok box exec daemon contract
+        shell: bash
+        run: cargo test --manifest-path source/box-exec-daemon/Cargo.toml
       - name: Test independent Mahayana Host Runner contract
         shell: bash
         run: cargo test --manifest-path source/host/Cargo.toml

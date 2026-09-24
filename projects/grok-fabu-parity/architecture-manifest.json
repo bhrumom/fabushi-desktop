@@ -5304,36 +5304,60 @@
       "targetPath": "source/box-exec-daemon/src/cli.rs",
       "targetLanguage": "rust",
       "owner": "box-exec",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c0ba12e400c0c53dc6c20b1289fe66ab4981ce89",
       "architecturalRole": "box-exec-daemon",
       "processOrPackage": "box-exec",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/box-exec-daemon/src/cli.rs",
+        "source/box-exec-daemon/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/box-exec-daemon/src/server.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust CLI owns the frozen daemon entrypoint error boundary: it invokes the production entrypoint, reports `box-exec-daemon: ...` on stderr, and exits non-zero on failure. The independent crate is compiled and tested by the exact-HEAD Rust desktop runtime workflow."
     },
     {
       "referencePath": "source/box-exec-daemon/main.ts",
       "targetPath": "source/box-exec-daemon/src/main.rs",
       "targetLanguage": "rust",
       "owner": "box-exec",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "9709bcaa5ad3cdf58137826c36feae4fdb7cfeda",
       "architecturalRole": "box-exec-daemon",
       "processOrPackage": "box-exec",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/box-exec-daemon/src/main.rs",
+        "source/box-exec-daemon/src/server.rs"
+      ],
+      "testEvidence": [
+        "source/box-exec-daemon/src/server.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production entrypoint resolves SAND_BOX_WORKSPACE_ROOT/PORT/TERMINALS_DIRECTORY/AUTH_TOKEN, starts the independent daemon, prints the frozen ready JSON event with URL/workspace/terminals, and performs signal-driven shutdown without depending on third_party/mahayana."
     },
     {
       "referencePath": "source/box-exec-daemon/server.ts",
       "targetPath": "source/box-exec-daemon/src/server.rs",
       "targetLanguage": "rust",
       "owner": "box-exec",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "c2f9f7ac4428d124bfab5898f006a574737c4cbf",
       "architecturalRole": "box-exec-daemon",
       "processOrPackage": "box-exec",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/box-exec-daemon/src/server.rs",
+        "source/box-exec-daemon/Cargo.toml"
+      ],
+      "testEvidence": [
+        "source/box-exec-daemon/src/server.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Real standalone Rust production server now owns Bearer-authenticated Connect/protobuf ControlService Ping/GetCapabilities/UpdateEnvironmentVariables/LoadMcpServers and ExecService read/shell/shell-stream/background-shell/stdin routes with frozen field numbers, workspace/terminal path confinement, symlink read rejection, environment replacement, terminal transcript files, process-group stop and raw-wire contract tests. Final is intentionally withheld because shellStream currently buffers process output before writing Connect envelopes instead of forwarding stdout/stderr incrementally while the child is running, and request-abort propagation to foreground processes is not yet wire-equivalent to the frozen AbortSignal path."
     },
     {
       "referencePath": "source/electron-dev-controls/main.ts",
