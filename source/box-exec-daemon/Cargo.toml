@@ -22,3 +22,8 @@ serde_json = "1"
 
 [dev-dependencies]
 tempfile = "3"
+
+[profile.ci]
+inherits = "dev"
+debug = 0
+incremental = true
