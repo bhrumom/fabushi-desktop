@@ -12,6 +12,7 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
 };
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
 use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
+use mahayana_host_runtime::runner::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
 use mahayana_host_runtime::runner::{TerminalOutcome, TurnRunOptions};
 use serde_json::Value;
 
@@ -119,6 +120,23 @@ fn shipping_sand_agent_owner_settles_provider_cancellation() {
     assert!(matches!(
         runner.last_finished().map(|finished| &finished.outcome),
         Some(TerminalOutcome::Cancelled)
+    ));
+}
+
+#[test]
+fn shipping_sand_agent_owner_settles_box_help_as_waiting_user() {
+    let mut runner = runner();
+    let error = runner
+        .run_with(&user_messages(), || {
+            Err(ProviderSessionError::Cancelled(format!(
+                "{WAITING_USER_CANCELLATION_PREFIX}request-1"
+            )))
+        })
+        .expect_err("waiting user turn");
+    assert!(matches!(error, ProviderSessionError::Cancelled(_)));
+    assert!(matches!(
+        runner.last_finished().map(|finished| &finished.outcome),
+        Some(TerminalOutcome::WaitingUser)
     ));
 }
 

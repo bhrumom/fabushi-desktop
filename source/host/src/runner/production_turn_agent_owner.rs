@@ -6,6 +6,7 @@ use crate::extensions::inference::provider_session::{
 };
 
 use super::production_agent_checkpoint::AgentStateCheckpointSink;
+use super::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
 use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::TurnAgentComposition;
 use super::{
@@ -157,6 +158,13 @@ where
     }
     let settlement = match &result {
         Ok(_) => shell.finish_completed(&started.owner),
+        Err(ProviderSessionError::Cancelled(reason))
+            if reason.starts_with(WAITING_USER_CANCELLATION_PREFIX) =>
+        {
+            shell
+                .end_turn_awaiting_user(&started.owner, reason.clone())
+                .and_then(|()| shell.finish_cancelled(&started.owner))
+        }
         Err(ProviderSessionError::Cancelled(_)) => {
             shell.finish_cancelled(&started.owner)
         }
