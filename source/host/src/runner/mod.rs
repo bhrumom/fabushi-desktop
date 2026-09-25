@@ -48,6 +48,7 @@ pub use turn_usage::{
 
 pub mod sand_agent_profile_prompt;
 pub mod sand_action_audit;
+pub mod sand_auto_review;
 pub mod bot_block_detection;
 pub mod background_work;
 pub mod auto_review_gate;
