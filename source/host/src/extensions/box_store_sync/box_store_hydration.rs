@@ -27,19 +27,10 @@ pub struct HydrationEvidence {
 }
 
 pub fn is_hydration_handoff_manifest_path(rel_path: &str) -> bool {
-    if rel_path == BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH {
-        return true;
-    }
-
-    let Some(temp_suffix) = rel_path
-        .strip_prefix(BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH)
-        .and_then(|suffix| suffix.strip_prefix('.'))
-        .and_then(|suffix| suffix.strip_suffix(".tmp"))
-    else {
-        return false;
-    };
-
-    !temp_suffix.is_empty() && temp_suffix.bytes().all(|byte| byte.is_ascii_digit())
+    rel_path == BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH
+        || (rel_path.starts_with(&format!(
+            "{BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH}."
+        )) && rel_path.ends_with(".tmp"))
 }
 
 pub fn is_box_store_fully_hydrated(evidence: Option<&HydrationEvidence>) -> bool {
