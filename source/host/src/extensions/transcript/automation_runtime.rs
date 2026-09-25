@@ -8,6 +8,9 @@ use crate::automations::automation_store::FileAutomationStore;
 use crate::extensions::session::agent_session::{AgentAutomationEntry, SandAgentSessionStore};
 use crate::extensions::session::production::ProductionSessionWorkers;
 
+use super::automation_event_fires::{
+    AutomationEventFires, DroppedFireReporter, EventBatchExecutor, EventFireBatch,
+};
 use super::automation_run_path::{
     AutomationExecutionResult, AutomationRunPath, AutomationRunTrigger, FireAutomationArgs,
     FireAutomationOutcome,
@@ -262,6 +265,7 @@ pub struct AutomationLifecycleEvent {
 pub struct AutomationRuntime {
     sessions: Arc<ProductionSessionWorkers>,
     run_path: Arc<AutomationRunPath>,
+    event_fires: Arc<AutomationEventFires>,
     spend_guard: Arc<AutomationSpendGuardRuntime>,
     last_known: Arc<Mutex<HashMap<String, BTreeMap<String, AutomationSnapshot>>>>,
     mutation_locks: Arc<Mutex<HashMap<String, Arc<Mutex<()>>>>>,
@@ -272,6 +276,7 @@ impl AutomationRuntime {
         Self {
             sessions: Arc::clone(&sessions),
             run_path: Arc::new(AutomationRunPath::default()),
+            event_fires: Arc::new(AutomationEventFires::default()),
             spend_guard: Arc::new(AutomationSpendGuardRuntime::new(sessions)),
             last_known: Arc::new(Mutex::new(HashMap::new())),
             mutation_locks: Arc::new(Mutex::new(HashMap::new())),
@@ -280,6 +285,14 @@ impl AutomationRuntime {
 
     pub fn run_path(&self) -> Arc<AutomationRunPath> {
         Arc::clone(&self.run_path)
+    }
+
+    pub fn event_fires(&self) -> Arc<AutomationEventFires> {
+        Arc::clone(&self.event_fires)
+    }
+
+    pub fn set_dropped_fire_reporter(&self, reporter: Option<DroppedFireReporter>) {
+        self.event_fires.set_dropped_fire_reporter(reporter);
     }
 
     pub fn spend_guard(&self) -> Arc<AutomationSpendGuardRuntime> {
@@ -491,6 +504,81 @@ impl AutomationRuntime {
             Ok(())
         })?;
         Ok(outcome)
+    }
+
+    pub fn enqueue_event_automation_fire_with(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        event: Value,
+        run_uuid: Option<String>,
+        execute: Arc<
+            dyn Fn(&str, &str, &str, &str) -> Result<AutomationExecutionResult, String>
+                + Send
+                + Sync
+                + 'static,
+        >,
+    ) -> Result<Option<FireAutomationOutcome>, String> {
+        let store = self.automation_store(agent_id)?;
+        let Some(automation) = store.get(automation_id) else {
+            return Ok(None);
+        };
+        let runtime = self.clone();
+        let executor: EventBatchExecutor = Arc::new(move |batch: EventFireBatch| {
+            let execute = Arc::clone(&execute);
+            let agent_id = batch.agent_id.clone();
+            let automation_id = batch.automation.id.clone();
+            let automation_name = batch.automation.name.clone();
+            runtime.run_background_automation_with(
+                &batch.agent_id,
+                &batch.automation.id,
+                AutomationRunTrigger::Event,
+                batch.events,
+                batch.run_uuid,
+                batch.coalesced_run_uuids,
+                now_ms(),
+                move |prompt| {
+                    execute(
+                        &agent_id,
+                        &automation_id,
+                        &automation_name,
+                        prompt,
+                    )
+                },
+            )
+        });
+        let receiver = self.event_fires.enqueue_event_automation_fire(
+            agent_id,
+            automation,
+            event,
+            run_uuid,
+            executor,
+        );
+        receiver
+            .recv()
+            .map_err(|_| "automation event batch settled without a result".to_string())
+    }
+
+    pub fn run_server_scheduled_automation_with<Execute>(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_uuid: String,
+        execute: Execute,
+    ) -> Result<Option<FireAutomationOutcome>, String>
+    where
+        Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
+    {
+        self.run_background_automation_with(
+            agent_id,
+            automation_id,
+            AutomationRunTrigger::Schedule,
+            Vec::new(),
+            Some(run_uuid),
+            Vec::new(),
+            now_ms(),
+            execute,
+        )
     }
 
     pub fn handle_spend_guard_answer(
