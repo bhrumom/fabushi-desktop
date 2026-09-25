@@ -1232,3 +1232,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Re-read PR #20 at exact HEAD `7c82dd0fe0e7b060fc0b8c9045424004034d796a`; exact-HEAD Desktop Chat Parity CI run `36186038197` and Rust desktop runtime run `36186038184` were both green.
 - Reconciled nine stale `planned` rows whose Rust targets already exist on the implementation branch. The Action Audit backend and the Automations relay/watcher/integration/cloud-sync/cloud-trigger/fire-consumer/trigger-hub/extension owners now carry concrete behavioral/test evidence and move only to `existing-needs-parity`, not final.
 - No row was marked `implemented`: generated Dashboard audit sending, authenticated automation backend clients, notify/poll scheduling, durable fire ack/completion semantics, live Host dependency composition and production transcript/session callbacks remain explicit blockers.
+
+
+### 2026-09-26 channel attachment Host ownership slice
+
+- Added `source/host/src/connectors/channel_attachment.rs` and the `connectors` Host module for frozen `source/host/connectors/channel-attachment.ts` responsibility.
+- The Rust owner preserves HTTP(S) URL pass-through, local/file URL resolution, data-root reanchoring, regular-file and 50 MiB upload fences, byte reads, basename projection and image/video/generic MIME selection.
+- `channel_attachment_contract.rs` covers remote URL/image detection, file URL and plain-path uploads, MIME projection, directory/empty/oversize rejection and unsupported schemes.
+- The manifest row advances only to `existing-needs-parity`; final waits on canonical shared media-MIME reuse and full exact-HEAD CI evidence.
