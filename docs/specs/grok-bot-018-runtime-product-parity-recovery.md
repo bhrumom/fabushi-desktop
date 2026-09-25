@@ -1160,3 +1160,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 
 - After the Rust 2024 raw-identifier fix, the next cargo failure was test-only: `unwrap_err()` requires the success value to implement `Debug`, while the in-memory `MemoryBox` fixture only derived `Default`.
 - The fixture now derives `Debug`; production file-transfer/prompt-glue code and manifest status are unchanged.
+
+
+### 2026-09-25 shell-terminal-watch ownership slice
+
+- Starting from green full-cargo HEAD `d543327189f51b9145c18baabb42072f7a6e2bd9`, added a Rust Runner port of the frozen terminal-watch decision core.
+- The module reuses existing `background_work` footer/time limits, `conversation_state` queued-message selection, hidden prompt markers and `system_prompt` message addressing.
+- Independent contracts cover text/binary/not-found terminal reads, success/stream-error/missing/permission/300-minute timeout settlement, hidden/group watermark filtering, cache invalidation, fail-closed unreadable turns and rich-text queued-message prepend projection.
+- The row advances only to `existing-needs-parity`; generated Read executor/local-tool scope, real box readiness/path, Agent proto blob decoding and the asynchronous polling owner remain required before final.

@@ -90,3 +90,5 @@ pub mod agent_adapters;
 pub mod computer_use;
 
 pub mod runner_prompt_glue;
+
+pub mod shell_terminal_watch;

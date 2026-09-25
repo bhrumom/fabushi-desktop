@@ -16652,12 +16652,22 @@
       "targetPath": "source/host/src/runner/shell_terminal_watch.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "211878c7eba16bbc901f0bd04b234257679ae90f",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/shell_terminal_watch.rs",
+        "source/host/src/runner/background_work.rs",
+        "source/host/src/runner/conversation_state.rs",
+        "source/host/src/runner/system_prompt.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/shell_terminal_watch_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Runner now owns the frozen terminal-watch decision core: text/data/not-found decoding, footer settlement, missing-file threshold, permission/timeout outcomes, group/hidden-turn filtering, confirmed-turn watermark/cache validation and queued-user-message prepend projection. Final remains withheld until the generated Read executor, local-tool permission scope, real box readiness/terminal path, ConversationStateStructure blob store decoding and asynchronous poll loop are production-bound to this state machine."
     },
     {
       "referencePath": "source/host/runner/site-visit-tracking.ts",
