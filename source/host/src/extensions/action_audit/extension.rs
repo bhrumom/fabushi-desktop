@@ -3,7 +3,7 @@ use std::sync::Arc;
 use super::action_audit_backend::ActionAuditBackend;
 use super::action_audit_service::SandActionAuditor;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ActionAuditExtension {
     backend: ActionAuditBackend,
 }

@@ -28,7 +28,7 @@ impl SandAutomationFireConsumer {
     }
 
     pub fn is_firing(&self) -> bool { self.firing }
-    pub fn pending_len(&self) -> usize { self.queue.len(); }
+    pub fn pending_len(&self) -> usize { self.queue.len() }
 
     pub fn drain(
         &mut self,
