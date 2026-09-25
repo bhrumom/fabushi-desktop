@@ -13272,24 +13272,38 @@
       "targetPath": "source/host/src/extensions/state_backstop/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "c5fbb1eb4ebffd709849f5c8e836ce84322ee4f7",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/state_backstop/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/state_backstop_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Extension dependency/gate/API semantics are ported. Final parity is blocked on the still-planned Box Store Sync production object-store provider and shipping Host composition; it is intentionally not marked implemented."
     },
     {
       "referencePath": "source/host/extensions/state-backstop/state-backstop-service.ts",
       "targetPath": "source/host/src/extensions/state_backstop/state_backstop_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "6e6662938f80fb4c0886c9f50377c4e38f516973",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/state_backstop/state_backstop_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/state_backstop_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust Host-owned translation of frozen state/store.db snapshot sizing, source/store routing, readback, debounce/dispose semantics and environment gate behavior."
     },
     {
       "referencePath": "source/host/extensions/teach-recording/extension.ts",

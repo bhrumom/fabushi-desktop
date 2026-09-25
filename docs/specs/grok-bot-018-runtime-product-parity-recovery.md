@@ -1185,3 +1185,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Runner coverage includes drag/click/wait/follow-up validation, enforce-mode description and safe-follow-up restrictions, protocol action defaults, reported pointer position, automatic final screenshot, result rendering and screenshot persistence.
 - Host coverage includes strict generated-action conversion, generated result normalization, approval→audit→shell-execute ordering and ensureReady→window lookup ordering.
 - `computer_tool_projection_contract.rs` independently pins both layers. Both manifest rows advance only to `existing-needs-parity`; canonical generated proto executors, live resource accessor/AutoReview/display state and shipping first-party tool registration remain required.
+
+
+### 2026-09-25 Rust Secrets owner and State Backstop service slice
+
+- Baseline \`1093730d4fca351b3fa1103c8dd5c6939428451d\` had 1,761 implemented / 93 existing-needs-parity / 148 planned frozen modules and green exact-HEAD Desktop Chat Parity plus Rust desktop runtime; the strict final gate remained skipped because PR #20 is still draft.
+- \`9b54364c769ee4fb8108d1d435a52325b6ce093b\` ports the frozen Secrets service to a Rust Host owner: box-secret validation, UTF-16 size accounting, deterministic redaction-name projection, mode-0600 atomic persistence, startup restore, generation-aware background apply, bounded retry/backoff and status projection. The shipping Host starts it against the existing ForeverBox environment-control path and stops it before ForeverBox teardown.
+- The Secrets service manifest row is implemented with \`secrets_extension_contract.rs\`; the extension remains existing-needs-parity until the frozen external set/getStatus command surface is traced and wired instead of inventing a new RPC.
+- The State Backstop service now has a Rust owner for \`state/store.db\` snapshot/readback, 64 MiB cap, per-agent debounce/dispose behavior and \`SAND_STATE_S3_BACKSTOP\` gate semantics. Its extension remains existing-needs-parity because the production Box Store Sync object-store provider is still a planned responsibility; no fake provider or second storage runtime is introduced.
