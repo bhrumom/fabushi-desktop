@@ -51,3 +51,5 @@ pub mod host_upgrade;
 pub mod mcp;
 
 pub mod automations;
+
+pub mod notifications;
