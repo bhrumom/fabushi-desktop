@@ -11,7 +11,45 @@ use crate::transcript_mirror::conversation_state_binary::{
     decode_conversation_state_recovery_fields,
 };
 
-use super::agent_db::SandAgentDb;
+use super::agent_db::{AgentDbSubscription, SandAgentDb};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProductionAgentMetadataKey {
+    AgentId,
+    LatestRootBlobId,
+    Name,
+    Mode,
+    IsRunEverything,
+    ApprovalMode,
+    CreatedAt,
+    LastUsedModel,
+    LastDebugServerPort,
+    CurrentPlanUri,
+    SubagentInfo,
+    BlobEncryptionKey,
+}
+
+impl ProductionAgentMetadataKey {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::AgentId => "agentId",
+            Self::LatestRootBlobId => "latestRootBlobId",
+            Self::Name => "name",
+            Self::Mode => "mode",
+            Self::IsRunEverything => "isRunEverything",
+            Self::ApprovalMode => "approvalMode",
+            Self::CreatedAt => "createdAt",
+            Self::LastUsedModel => "lastUsedModel",
+            Self::LastDebugServerPort => "lastDebugServerPort",
+            Self::CurrentPlanUri => "currentPlanUri",
+            Self::SubagentInfo => "subagentInfo",
+            Self::BlobEncryptionKey => "blobEncryptionKey",
+        }
+    }
+}
+
+pub type ProductionMetadataListener =
+    Arc<dyn Fn(Option<Value>) + Send + Sync + 'static>;
 
 pub type ProductionWorkerBlobStore =
     WorkerBlobStore<ProductionAgentStoreWorkerBackend>;
@@ -53,6 +91,50 @@ impl ProductionAgentStore {
 
     pub fn db(&self) -> Arc<SandAgentDb> {
         Arc::clone(&self.db)
+    }
+
+    pub fn subscribe_to_metadata(
+        &self,
+        key: ProductionAgentMetadataKey,
+        callback: ProductionMetadataListener,
+    ) -> AgentDbSubscription {
+        let db = Arc::clone(&self.db);
+        let key_name = key.as_str().to_string();
+        let callback_for_listener = Arc::clone(&callback);
+        self.db.subscribe_metadata(
+            key_name.clone(),
+            Arc::new(move || {
+                let value = db.get_metadata(&key_name).ok().flatten();
+                callback_for_listener(value);
+            }),
+        )
+    }
+
+    pub fn set_metadata(
+        &self,
+        key: ProductionAgentMetadataKey,
+        value: Value,
+    ) -> Result<bool, String> {
+        self.db
+            .set_metadata(key.as_str(), value)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn get_metadata(
+        &self,
+        key: ProductionAgentMetadataKey,
+    ) -> Result<Option<Value>, String> {
+        self.db
+            .get_metadata(key.as_str())
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn get_id(&self) -> String {
+        self.get_metadata(ProductionAgentMetadataKey::AgentId)
+            .ok()
+            .flatten()
+            .and_then(|value| value.as_str().map(ToOwned::to_owned))
+            .unwrap_or_else(|| self.agent_id.clone())
     }
 
     /// Frozen AgentStore2.tryResetFromDb semantics: bad metadata, missing blob,
