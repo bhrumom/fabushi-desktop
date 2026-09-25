@@ -27,3 +27,5 @@ pub mod managed_setup;
 pub mod forever_box;
 
 pub mod cross_user_sharing;
+
+pub mod wallpaper;
