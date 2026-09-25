@@ -1280,3 +1280,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The module owns strict schema/error-class/signal/timestamp parsing, frozen metadata projection, file-store read/delete outcomes, compare-before-delete race fencing, forwarded-marker dedupe and deferred/pending/delivered/parse-error settlement.
 - `source/host/tests/host_crash_marker_contract.rs` independently covers valid/invalid marker variants, rounded metadata, file-store lifecycle, changed-marker fencing and forwarding failure/dedupe behavior.
 - The manifest row advances only to `existing-needs-parity`; final status still requires production Host startup/crash telemetry composition to invoke this owner and exact-HEAD CI evidence.
+
+
+### 2026-09-26 Host event-loop telemetry decision slice
+
+- From exact HEAD `fe4fed178bce03e81a2c078ea18fcbac6601ef15`, ported the frozen event-loop pressure/heartbeat decision and telemetry projection into the Rust Host telemetry boundary.
+- The contract preserves the 50 ms p95 pressure threshold, five-window heartbeat cadence, pressure precedence, rounded p50/p95/max values and three-decimal utilization projection; a zero custom heartbeat is handled fail-safe rather than allowing a Rust modulo panic.
+- `event_loop_telemetry_contract.rs` covers defaults, overrides, precedence and projection. The row advances only to `existing-needs-parity`: production still needs a Host-owned delay/utilization sampler and lifecycle wiring equivalent to Node's perf-hooks monitor.

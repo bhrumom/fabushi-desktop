@@ -41,3 +41,4 @@ pub mod host_lifecycle_progress;
 
 pub mod model_experiment_exposure;
 pub mod host_crash_marker;
+pub mod event_loop_telemetry;

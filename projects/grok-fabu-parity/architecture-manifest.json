@@ -13737,12 +13737,17 @@
       "targetPath": "source/host/src/extensions/telemetry/event_loop_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "1ad776b5951d0befee087ef1510d3fd1509161b9",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [],
-      "testEvidence": []
+      "testEvidence": [],
+      "evidence": [
+        "source/host/tests/event_loop_telemetry_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host owns frozen event-loop emission thresholds and telemetry projection. Final parity still requires a production event-loop delay/utilization sampler wired to Host lifecycle without reintroducing renderer polling."
     },
     {
       "referencePath": "source/host/extensions/telemetry/experiments-diagnostic-telemetry.ts",
@@ -38572,5 +38577,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-25T22:30:00Z"
+  "generatedAt": "2026-09-25T22:35:00Z"
 }
