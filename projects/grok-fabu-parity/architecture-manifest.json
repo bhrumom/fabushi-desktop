@@ -15932,12 +15932,19 @@
       "targetPath": "source/host/src/mcp_auth/mcp_auth_wait_registry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "fa160ba4add8d1af2d2ec835a97f75e54114ce1a",
       "architecturalRole": "host/mcp-auth",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/mcp_auth/mcp_auth_wait_registry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/mcp_auth_wait_registry_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports connector normalization, TTL pruning, replacement, server-id precedence over legacy name matching, and one-shot take semantics."
     },
     {
       "referencePath": "source/host/notify-drain-gate.ts",

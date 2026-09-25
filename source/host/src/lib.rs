@@ -58,3 +58,5 @@ pub mod runner_context_production_provider;
 pub mod agent_isolation;
 pub mod host_secret_store;
 pub mod transcript_mirror;
+
+pub mod mcp_auth;
