@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use chrono::{DateTime, NaiveDate, Utc};
 use sha1::{Digest, Sha1};
 
+use crate::watched_directory::{ChangeListener, WatchedDirectory};
+
 pub const MEMORY_DIRNAME: &str = "memory";
 pub const PROFILE_FILENAME: &str = "profile.md";
 pub const LOG_DIRNAME: &str = "log";
@@ -55,7 +57,7 @@ struct StoredMemoryFact {
 
 #[derive(Debug, Clone)]
 pub struct FileMemoryStore {
-    memory_dir: PathBuf,
+    dir: WatchedDirectory,
     profile_file: PathBuf,
     log_dir: PathBuf,
 }
@@ -66,12 +68,16 @@ impl FileMemoryStore {
         Self {
             profile_file: memory_dir.join(PROFILE_FILENAME),
             log_dir: memory_dir.join(LOG_DIRNAME),
-            memory_dir,
+            dir: WatchedDirectory::new(memory_dir, MEMORY_CHANGE_DEBOUNCE_MS),
         }
     }
 
     pub fn get_location(&self) -> PathBuf {
-        self.memory_dir.clone()
+        self.dir.get_location().to_path_buf()
+    }
+
+    pub fn set_on_change(&self, listener: Option<ChangeListener>) -> Result<(), String> {
+        self.dir.set_on_change(listener)
     }
 
     pub fn recall(&self, recent_limit: usize) -> MemoryRecall {
@@ -159,7 +165,7 @@ impl FileMemoryStore {
         }
         next.push_str(&serialize_fact_line(&normalized, created_at));
         next.push('\n');
-        write_atomic(&path, next.as_bytes())?;
+        self.dir.write_file_atomic(&path, next.as_bytes())?;
 
         Ok(Some(MemoryRecord {
             id: memory_id_for(&normalized),
@@ -187,7 +193,7 @@ impl FileMemoryStore {
             return Ok(false);
         }
         lines.remove(fact.line);
-        write_atomic(&fact.path, lines.join("\n").as_bytes())?;
+        self.dir.write_file_atomic(&fact.path, lines.join("\n").as_bytes())?;
         Ok(true)
     }
 
@@ -200,7 +206,7 @@ impl FileMemoryStore {
             Err(error) if error.kind() == io::ErrorKind::NotFound => {}
             Err(error) => return Err(error),
         }
-        write_atomic(&self.profile_file, PROFILE_HEADER.as_bytes())
+        self.dir.write_file_atomic(&self.profile_file, PROFILE_HEADER.as_bytes())
     }
 
     fn facts(&self) -> Vec<StoredMemoryFact> {
@@ -393,27 +399,4 @@ fn parse_memory_date_ms(value: &str) -> Option<i64> {
 
 fn valid_memory_date(value: &str) -> bool {
     NaiveDate::parse_from_str(value, "%Y-%m-%d").is_ok()
-}
-
-fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let temporary = PathBuf::from(format!(
-        "{}.{}.tmp",
-        path.display(),
-        std::process::id()
-    ));
-    fs::write(&temporary, bytes)?;
-    match fs::rename(&temporary, path) {
-        Ok(()) => Ok(()),
-        Err(first) if path.exists() => {
-            fs::remove_file(path)?;
-            fs::rename(&temporary, path).map_err(|_| first)
-        }
-        Err(error) => {
-            let _ = fs::remove_file(&temporary);
-            Err(error)
-        }
-    }
 }

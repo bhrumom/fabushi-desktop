@@ -42,6 +42,7 @@ pub mod host_initial_transcript_load;
 pub mod r#box;
 pub mod automations;
 pub mod workflows;
+pub mod watched_directory;
 pub mod groups;
 pub mod attachment_paths;
 pub mod ports;

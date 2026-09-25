@@ -1044,3 +1044,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The evidence covers event debounce/coalescing and bounded drop reporting; durable run begin/finish and duplicate suppression; shipping CRUD/manual/background dispatch; unread/spend-guard nudge/pause/snooze/opt-out persistence; and run-now production routing through the Host-owned AutomationRuntime.
 - This audit changes status only where implementation and tests already prove production ownership; it does not infer parity for the remaining missing Host extension targets.
 
+### 2026-09-25 watched-directory production cutover
+
+- Starting exact HEAD: `7e1fbb1f8a601c98354e40ae66107f742c1aacc4`.
+- Added the Host-owned `source/host/src/watched_directory.rs` primitive using the crate's existing native `notify` dependency: recursive filesystem events and explicit atomic writes converge on one debounced callback generation, and stop/dispose cancels pending delivery without introducing polling.
+- `FileMemoryStore` now owns this primitive, writes profile/log state through its atomic writer and exposes the same on-change boundary for external edits. This makes the frozen `source/host/watched-directory.ts` responsibility part of the production Memory path rather than a detached mirror.
+- `source/host/tests/watched_directory_contract.rs` covers sorted directory discovery plus notification from both internal atomic writes and external filesystem writes. The watched-directory manifest row advances to `implemented`; the broader memory-service row remains non-final for synthesis origin/tombstone/shared-memory responsibilities.
+
