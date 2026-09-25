@@ -13744,12 +13744,19 @@
       "targetPath": "source/host/src/extensions/telemetry/model_experiment_exposure.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "a146becbab3ea95e78f24983284d611f6d2b9c55",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/model_experiment_exposure.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/model_experiment_exposure_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports env override parsing, hydration wait gate, active-state check, SDK exposure fallback and exactly-once analytics exposure latch."
     },
     {
       "referencePath": "source/host/extensions/telemetry/pressure-cpu-profiler.ts",

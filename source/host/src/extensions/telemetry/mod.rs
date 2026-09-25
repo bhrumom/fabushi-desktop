@@ -38,3 +38,5 @@ pub mod extension;
 pub mod host_telemetry_service;
 pub mod structured_log_telemetry;
 pub mod host_lifecycle_progress;
+
+pub mod model_experiment_exposure;
