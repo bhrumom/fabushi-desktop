@@ -16933,12 +16933,25 @@
       "targetPath": "source/host/src/runner/tools/sand_spotlight_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "83ba0d7f46dc00e6638e34fca01027cc71cc63e0",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/sand_spotlight_tools.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/runner_production_bridge.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/experiments/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_spotlight_tools_contract.rs",
+        "source/host/tests/runner_production_bridge_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust shipping adaptation of the frozen spotlight tool wrapper. The existing Host sand_spotlight experiment gate now controls both the real provider-turn safety prompt and an outer RoutedToolBridge that fences every routed tool result content array, coalesces adjacent text, preserves non-text parts, redacts forged fence tags case-insensitively, and sanitizes source names. The production bridge carries the gate into TurnAgentComposition. Kept non-final until the latest exact-HEAD Rust cargo gate exercises the new module; after that evidence it can be promoted without an additional product semantic gap."
     },
     {
       "referencePath": "source/host/runner/tools/sand-state-tool.ts",

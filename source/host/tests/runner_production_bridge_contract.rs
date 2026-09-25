@@ -67,6 +67,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
             checkpoint_store: Arc::new(MemoryCheckpointStore),
             retry_sink: None,
             retry_report_sink: None,
+            spotlight_enabled: true,
             box_resources: None,
             send_message_sink: None,
             reaction_sink: None,
@@ -84,4 +85,5 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
     assert!(!composition.has_send_message_sink());
     assert!(!composition.has_reaction_sink());
     assert!(!composition.has_action_audit());
+    assert!(composition.has_spotlight_enabled());
 }

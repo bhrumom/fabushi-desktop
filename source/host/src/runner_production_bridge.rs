@@ -38,6 +38,7 @@ pub struct ProductionRunnerCompositionInput {
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
+    pub spotlight_enabled: bool,
     pub action_audit: Option<ProductionActionAuditInput>,
     pub observation: Option<TurnObservationHandle>,
 }
@@ -58,6 +59,7 @@ pub fn create_production_runner_composition(
     if let Some(retry_report_sink) = input.retry_report_sink {
         composition = composition.with_retry_report_sink(retry_report_sink);
     }
+    composition = composition.with_spotlight_enabled(input.spotlight_enabled);
     if let Some(action_audit) = input.action_audit {
         composition = composition.with_action_audit(RoutedMcpAuditConfig::new(
             action_audit.agent_id,

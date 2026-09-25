@@ -131,6 +131,7 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::prompt_collector_glue::project_provider_messages_for_turn;
 use mahayana_host_runtime::runner::sand_memory::MEMORY_RECENT_PROMPT_LIMIT;
+use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
 use mahayana_host_runtime::runner::system_prompt_assembly::append_memory_system_prompt;
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
@@ -1521,6 +1522,13 @@ fn start_routed_provider_task(
         &memory_recall,
         Some(&memory_location),
     );
+    let spotlight_enabled = experiments.check_feature_gate("sand_spotlight");
+    if spotlight_enabled {
+        provider_messages.push(ProviderMessage {
+            role: "system".into(),
+            content: spotlight_prompt_section(true),
+        });
+    }
 
     let agent_store = session_workers
         .open_agent_store_owner(&agent_id)
@@ -1768,6 +1776,7 @@ fn start_routed_provider_task(
                     checkpoint_store,
                     retry_sink: Some(retry_sink),
                     retry_report_sink: Some(retry_report_sink),
+                    spotlight_enabled,
                     box_resources: Some(box_resources),
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),

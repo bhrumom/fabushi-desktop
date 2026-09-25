@@ -9,6 +9,7 @@ pub mod send_message_tool;
 pub mod box_help_tool;
 pub mod sand_reaction_tool;
 pub mod sand_agent_management_tools;
+pub mod sand_spotlight_tools;
 
 pub mod sand_browser_use_subagent;
 

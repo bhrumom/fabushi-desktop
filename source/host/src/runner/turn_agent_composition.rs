@@ -21,6 +21,7 @@ use super::tools::sand_reaction_tool::{ReactionSink, ReactionToolBridge};
 use super::tools::sand_agent_management_tools::{
     AgentManagementSink, AgentManagementToolBridge,
 };
+use super::tools::sand_spotlight_tools::SpotlightedRoutedToolBridge;
 
 /// Shipping Runner composition for one provider-backed turn.
 ///
@@ -42,6 +43,7 @@ pub struct TurnAgentComposition {
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
     agent_management_sink: Option<Arc<dyn AgentManagementSink>>,
+    spotlight_enabled: bool,
     action_audit: Option<RoutedMcpAuditConfig>,
     observation: Option<TurnObservationHandle>,
 }
@@ -66,6 +68,7 @@ impl TurnAgentComposition {
             send_message_sink: None,
             reaction_sink: None,
             agent_management_sink: None,
+            spotlight_enabled: false,
             action_audit: None,
             observation: None,
         }
@@ -133,6 +136,15 @@ impl TurnAgentComposition {
 
     pub fn has_agent_management_sink(&self) -> bool {
         self.agent_management_sink.is_some()
+    }
+
+    pub fn with_spotlight_enabled(mut self, enabled: bool) -> Self {
+        self.spotlight_enabled = enabled;
+        self
+    }
+
+    pub fn has_spotlight_enabled(&self) -> bool {
+        self.spotlight_enabled
     }
 
     pub fn with_action_audit(mut self, config: RoutedMcpAuditConfig) -> Self {
@@ -219,6 +231,11 @@ impl TurnAgentComposition {
                 Arc::clone(observation),
             )),
             None => bridge,
+        };
+        let bridge: Arc<dyn RoutedToolBridge> = if self.spotlight_enabled {
+            Arc::new(SpotlightedRoutedToolBridge::new(bridge))
+        } else {
+            bridge
         };
         run_routed_provider_in_runner(
             RoutedProviderRun {
