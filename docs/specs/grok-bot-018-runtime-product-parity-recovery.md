@@ -1027,3 +1027,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The shipping Runner transient classifier now covers the frozen Grok transport/deadline token families used by bounded retry, with executable cargo coverage in `source/host/tests/runner_contract.rs`.
 - On exact SHA `5d1c786bfcf5ad6232ae64c817f58e0a23af3e81`, the Rust workflow had already passed the independent Mahayana Coordinator contract, independent Grok box-exec daemon contract, shipping Host build, and box-exec supervisor before later commits moved HEAD. Those runs are slice evidence only, not final completion evidence.
 - Final parity remains blocked: the strict architecture gate is still skipped while the architecture manifest contains non-final rows, and exact-HEAD workflows must be re-established on the latest branch HEAD after this note.
+
+### 2026-09-25 production automation status reminder cutover
+
+- Starting exact HEAD for this slice: `34704c8ae296ce2b62094bd749098e972a34c254`.
+- The frozen Grok `source/host/automations/automation-status-reminder.ts` responsibility is now implemented in `source/host/src/automations/automation_status_reminder.rs`: it reads the immutable per-Agent automation definitions, applies the UI cap, resolves the user's current timezone, renders live run status, and excludes the currently firing routine's in-flight run from its own authoritative status snapshot.
+- Shipping `runner.startRoutedProvider` now opens the production Agent automation store and injects that snapshot as system context before the Runner starts. The firing identity comes from the canonical `automationWake.id`; Renderer and Coordinator do not own or synthesize this status.
+- `source/host/tests/automation_status_reminder_contract.rs` covers live-running, firing-run filtering, settled success, empty-store and explicit cleared-snapshot behavior. The architecture manifest advances this one frozen module from `planned` to `implemented` only because production wiring and executable test evidence are present.
+- The previous exact-HEAD rerun already proved the independent Coordinator, box-exec daemon and Host box-exec supervisor gates after the accepted-socket fix; final architecture completion remains blocked until all other non-final manifest rows and forbidden legacy runtime roots are removed.
+

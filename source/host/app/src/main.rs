@@ -63,6 +63,7 @@ use mahayana_host_runtime::extensions::transcript::automation_run_path::Automati
 use mahayana_host_runtime::extensions::transcript::automation_runtime::{
     AutomationCommandError, dispatch_automation_command,
 };
+use mahayana_host_runtime::automations::automation_status_reminder::create_automation_status_reminder;
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     AckObligations, AckRedrivePreparation, build_ack_redrive_empty_delivery_report,
     build_ack_redrive_send_args,
@@ -1522,6 +1523,24 @@ fn start_routed_provider_task(
         &memory_recall,
         Some(&memory_location),
     );
+    let automation_store = session_workers
+        .open_automation_store(&agent_id)
+        .map_err(|error| GatewayCommandError::Internal(format!(
+            "could not open production automation store for {agent_id}: {error}"
+        )))?;
+    let firing_automation_id = args
+        .get("automationWake")
+        .and_then(serde_json::Value::as_object)
+        .and_then(|wake| wake.get("id"))
+        .and_then(serde_json::Value::as_str);
+    if let Some(reminder) =
+        create_automation_status_reminder(&automation_store, firing_automation_id)
+    {
+        provider_messages.push(ProviderMessage {
+            role: "system".into(),
+            content: reminder,
+        });
+    }
     let spotlight_enabled = experiments.check_feature_gate("sand_spotlight");
     if spotlight_enabled {
         provider_messages.push(ProviderMessage {

@@ -9541,12 +9541,19 @@
       "targetPath": "source/host/src/automations/automation_status_reminder.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "9c8cdda79c674199856b88d4d08b1823be82bcf0",
       "architecturalRole": "host/automations",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/automations/automation_status_reminder.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automation_status_reminder_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now projects the live per-Agent FileAutomationStore into the Runner prompt context on every routed provider turn, caps the immutable definition snapshot, uses the live timezone resolver, and filters the currently firing routine's in-flight run exactly at the automationWake boundary. The shipping start_routed_provider_task path is wired to the provider and cargo integration coverage proves live, firing, settled, empty and cleared status semantics."
     },
     {
       "referencePath": "source/host/automations/automation-store.ts",
