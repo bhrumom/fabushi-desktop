@@ -317,6 +317,36 @@ fn turn_usage_clamps_bigint_equivalent_and_merges_without_overflow() {
 }
 
 #[test]
+fn transient_stream_error_matches_frozen_transport_tokens() {
+    use mahayana_host_runtime::{StreamFailureKind, TransientStreamError};
+
+    for message in [
+        "socket hang up",
+        "premature close",
+        "stream closed",
+        "ECONNRESET",
+        "EPIPE",
+        "ENETUNREACH",
+        "EAI_AGAIN",
+        "the operation was aborted",
+        "[UNAVAILABLE]",
+    ] {
+        let error = TransientStreamError::classify(message, None, None);
+        assert!(
+            error.retryable(),
+            "frozen transient token should be retryable: {message}"
+        );
+        assert_eq!(error.kind, StreamFailureKind::Transport);
+    }
+
+    for message in ["ETIMEDOUT", "[DEADLINE_EXCEEDED]"] {
+        let error = TransientStreamError::classify(message, None, None);
+        assert!(error.retryable());
+        assert_eq!(error.kind, StreamFailureKind::Timeout);
+    }
+}
+
+#[test]
 fn conversation_state_recovers_unconfirmed_user_messages_and_rejects_stale_model_resolution() {
     use mahayana_host_runtime::{
         HIDDEN_PROMPT_MARKER, RecentUserMessage, ResolvedModelTracker,
