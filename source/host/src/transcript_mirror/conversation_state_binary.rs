@@ -14,6 +14,29 @@ pub struct ConversationStateRecoveryFields {
     pub todos: Vec<Vec<u8>>,
     pub summary: Option<Vec<u8>>,
     pub summary_archives: Vec<Vec<u8>>,
+    pub subagent_states: Vec<(String, Vec<u8>)>,
+    pub subagent_state_refs: Vec<(String, Vec<u8>)>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConversationTurnStructureFields {
+    Agent {
+        user_message: Vec<u8>,
+        steps: Vec<Vec<u8>>,
+        request_id: Option<String>,
+    },
+    Shell {
+        shell_command: Vec<u8>,
+        shell_output: Vec<u8>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SubagentPersistedStateFields {
+    pub conversation_state: Option<Vec<u8>>,
+    pub created_timestamp_ms: u64,
+    pub last_used_timestamp_ms: u64,
+    pub subagent_type: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -38,6 +61,8 @@ pub enum TranscriptMirrorProtobufDecodeError {
     TruncatedField,
     #[error("invalid protobuf field number")]
     InvalidFieldNumber,
+    #[error("protobuf string field is not valid UTF-8")]
+    InvalidUtf8,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -147,6 +172,34 @@ fn skip_field(
     Ok(())
 }
 
+
+fn read_string(
+    bytes: &[u8],
+    cursor: &mut Cursor,
+) -> Result<String, TranscriptMirrorProtobufDecodeError> {
+    let value = read_bytes(bytes, cursor)?;
+    String::from_utf8(value).map_err(|_| TranscriptMirrorProtobufDecodeError::InvalidUtf8)
+}
+
+fn decode_string_bytes_map_entry(
+    bytes: &[u8],
+) -> Result<Option<(String, Vec<u8>)>, TranscriptMirrorProtobufDecodeError> {
+    let mut cursor = Cursor { offset: 0 };
+    let mut key = None;
+    let mut value = None;
+    while cursor.offset < bytes.len() {
+        let tag = read_varint(bytes, &mut cursor)?;
+        let field_number = tag / 8;
+        let wire_type = (tag & 7) as u8;
+        match (field_number, wire_type) {
+            (1, 2) => key = Some(read_string(bytes, &mut cursor)?),
+            (2, 2) => value = Some(read_bytes(bytes, &mut cursor)?),
+            _ => skip_field(bytes, &mut cursor, wire_type, field_number)?,
+        }
+    }
+    Ok(key.zip(value))
+}
+
 pub fn decode_conversation_state_recovery_fields(
     bytes: &[u8],
 ) -> Result<ConversationStateRecoveryFields, TranscriptMirrorProtobufDecodeError> {
@@ -180,6 +233,20 @@ pub fn decode_conversation_state_recovery_fields(
                 }
                 13 => {
                     state.summary_archives.push(read_bytes(bytes, &mut cursor)?);
+                    continue;
+                }
+                16 => {
+                    let entry = read_bytes(bytes, &mut cursor)?;
+                    if let Some(entry) = decode_string_bytes_map_entry(&entry)? {
+                        state.subagent_states.push(entry);
+                    }
+                    continue;
+                }
+                31 => {
+                    let entry = read_bytes(bytes, &mut cursor)?;
+                    if let Some(entry) = decode_string_bytes_map_entry(&entry)? {
+                        state.subagent_state_refs.push(entry);
+                    }
                     continue;
                 }
                 _ => {}
@@ -221,4 +288,92 @@ pub fn decode_summary_archive_message_ids(
         skip_field(bytes, &mut cursor, wire_type, field_number)?;
     }
     Ok(message_ids)
+}
+
+
+pub fn decode_conversation_turn_structure_fields(
+    bytes: &[u8],
+) -> Result<Option<ConversationTurnStructureFields>, TranscriptMirrorProtobufDecodeError> {
+    let mut cursor = Cursor { offset: 0 };
+    while cursor.offset < bytes.len() {
+        let tag = read_varint(bytes, &mut cursor)?;
+        let field_number = tag / 8;
+        let wire_type = (tag & 7) as u8;
+        if wire_type != 2 || (field_number != 1 && field_number != 2) {
+            skip_field(bytes, &mut cursor, wire_type, field_number)?;
+            continue;
+        }
+        let nested = read_bytes(bytes, &mut cursor)?;
+        if field_number == 1 {
+            let mut nested_cursor = Cursor { offset: 0 };
+            let mut user_message = Vec::new();
+            let mut steps = Vec::new();
+            let mut request_id = None;
+            while nested_cursor.offset < nested.len() {
+                let nested_tag = read_varint(&nested, &mut nested_cursor)?;
+                let nested_field = nested_tag / 8;
+                let nested_wire = (nested_tag & 7) as u8;
+                match (nested_field, nested_wire) {
+                    (1, 2) => user_message = read_bytes(&nested, &mut nested_cursor)?,
+                    (2, 2) => steps.push(read_bytes(&nested, &mut nested_cursor)?),
+                    (3, 2) => request_id = Some(read_string(&nested, &mut nested_cursor)?),
+                    _ => skip_field(
+                        &nested,
+                        &mut nested_cursor,
+                        nested_wire,
+                        nested_field,
+                    )?,
+                }
+            }
+            return Ok(Some(ConversationTurnStructureFields::Agent {
+                user_message,
+                steps,
+                request_id,
+            }));
+        }
+
+        let mut nested_cursor = Cursor { offset: 0 };
+        let mut shell_command = Vec::new();
+        let mut shell_output = Vec::new();
+        while nested_cursor.offset < nested.len() {
+            let nested_tag = read_varint(&nested, &mut nested_cursor)?;
+            let nested_field = nested_tag / 8;
+            let nested_wire = (nested_tag & 7) as u8;
+            match (nested_field, nested_wire) {
+                (1, 2) => shell_command = read_bytes(&nested, &mut nested_cursor)?,
+                (2, 2) => shell_output = read_bytes(&nested, &mut nested_cursor)?,
+                _ => skip_field(
+                    &nested,
+                    &mut nested_cursor,
+                    nested_wire,
+                    nested_field,
+                )?,
+            }
+        }
+        return Ok(Some(ConversationTurnStructureFields::Shell {
+            shell_command,
+            shell_output,
+        }));
+    }
+    Ok(None)
+}
+
+pub fn decode_subagent_persisted_state_fields(
+    bytes: &[u8],
+) -> Result<SubagentPersistedStateFields, TranscriptMirrorProtobufDecodeError> {
+    let mut cursor = Cursor { offset: 0 };
+    let mut state = SubagentPersistedStateFields::default();
+    while cursor.offset < bytes.len() {
+        let tag = read_varint(bytes, &mut cursor)?;
+        let field_number = tag / 8;
+        let wire_type = (tag & 7) as u8;
+        match (field_number, wire_type) {
+            (1, 2) => state.conversation_state = Some(read_bytes(bytes, &mut cursor)?),
+            (2, 0) => state.created_timestamp_ms = read_varint(bytes, &mut cursor)?,
+            (3, 0) => state.last_used_timestamp_ms = read_varint(bytes, &mut cursor)?,
+            (4, 2) => state.subagent_type = Some(read_bytes(bytes, &mut cursor)?),
+            _ => skip_field(bytes, &mut cursor, wire_type, field_number)?,
+        }
+    }
+    Ok(state)
 }
