@@ -1,9 +1,11 @@
 use std::fs;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
-use mahayana_host_runtime::extensions::session::production_agent_store::ProductionAgentStore;
+use mahayana_host_runtime::extensions::session::production_agent_store::{
+    ProductionAgentMetadataKey, ProductionAgentStore,
+};
 use sha2::{Digest, Sha256};
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -83,6 +85,58 @@ fn production_agent_store_rejects_malformed_checkpoint_without_advancing_metadat
             .get_latest_root_blob_id()
             .expect("metadata root")
             .is_empty()
+    );
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_agent_store_metadata_bridge_gets_sets_and_subscribes() {
+    let root = temp_root("metadata-bridge");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let session = workers
+        .materialize_session_with_active(None, "user", None, None)
+        .expect("materialized session");
+
+    assert_eq!(session.agent_store.get_id(), session.record.id);
+    assert_eq!(
+        session
+            .agent_store
+            .get_metadata(ProductionAgentMetadataKey::Mode)
+            .expect("read mode"),
+        Some(serde_json::Value::String("default".into()))
+    );
+
+    let seen = Arc::new(Mutex::new(Vec::new()));
+    let capture = Arc::clone(&seen);
+    let _subscription = session.agent_store.subscribe_to_metadata(
+        ProductionAgentMetadataKey::Name,
+        Arc::new(move |value| {
+            capture.lock().expect("capture metadata").push(value);
+        }),
+    );
+
+    assert!(
+        session
+            .agent_store
+            .set_metadata(
+                ProductionAgentMetadataKey::Name,
+                serde_json::Value::String("Renamed Agent".into()),
+            )
+            .expect("set name")
+    );
+    assert_eq!(
+        session
+            .agent_store
+            .get_metadata(ProductionAgentMetadataKey::Name)
+            .expect("read name"),
+        Some(serde_json::Value::String("Renamed Agent".into()))
+    );
+    assert_eq!(
+        *seen.lock().expect("read captured metadata"),
+        vec![Some(serde_json::Value::String("Renamed Agent".into()))]
     );
 
     workers.shutdown();
