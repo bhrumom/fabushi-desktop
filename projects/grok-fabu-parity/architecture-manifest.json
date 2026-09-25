@@ -10250,12 +10250,18 @@
       "targetPath": "source/host/src/extensions/attachments/generate_image_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "89647ae8951e29beb5603802c167b3c3fb9f7508",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/attachments/generate_image_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/generate_image_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host service now preserves generated-image base64 decoding, byte persistence, MIME forwarding, returned media path/original base64 and fail-closed persistence semantics. Final remains withheld for the frozen authenticated Cursor generate-image backend construction, model selection/request-id projection and production Attachments extension wiring."
     },
     {
       "referencePath": "source/host/extensions/attachments/link-preview-image-bounds.ts",

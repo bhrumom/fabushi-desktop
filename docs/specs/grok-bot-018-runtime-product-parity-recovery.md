@@ -1256,3 +1256,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The executor preserves first-seen provider ordering, groups tools per provider, exposes each server as `connected`, and retains description/input-schema data; provider errors remain fail-closed.
 - `mcp_state_executor_contract.rs` covers multi-provider grouping/order, schema projection, empty success and provider failure propagation.
 - The row advances only to `existing-needs-parity`; final waits on generated `agent.v1` result types and production executor/tool registration.
+
+
+### 2026-09-26 generated-image persistence service slice
+
+- Added Rust `extensions/attachments/generate_image_service.rs` as the Host-owned post-generation persistence boundary.
+- The service decodes backend base64, persists exact bytes with MIME, returns the saved path plus original base64 and fails closed on invalid data or missing persistence.
+- `generate_image_service_contract.rs` proves byte/MIME preservation and failure behavior.
+- The row remains `existing-needs-parity` until authenticated Cursor image generation, model/request-id projection and production Attachments-extension wiring are connected.
