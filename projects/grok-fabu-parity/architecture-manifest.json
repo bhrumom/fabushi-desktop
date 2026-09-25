@@ -14150,12 +14150,17 @@
       "targetPath": "source/host/src/extensions/telemetry/turn_telemetry_mappers.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "2bff1766de6d1d7b9a3ab188d776168f684fc809",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [],
-      "testEvidence": []
+      "testEvidence": [],
+      "evidence": [
+        "source/host/tests/turn_telemetry_mappers_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host owns the frozen turn interrupt/await/retry/user-message/closing-send/TTFT/turn-usage/computer-use telemetry projections and bounded retry error type. Final parity requires all shipping turn/Runner call sites to route through this owner."
     },
     {
       "referencePath": "source/host/extensions/telemetry/webauthn-proxy-telemetry.ts",
@@ -38577,5 +38582,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-25T22:35:00Z"
+  "generatedAt": "2026-09-25T22:40:00Z"
 }

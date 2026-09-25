@@ -1287,3 +1287,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - From exact HEAD `fe4fed178bce03e81a2c078ea18fcbac6601ef15`, ported the frozen event-loop pressure/heartbeat decision and telemetry projection into the Rust Host telemetry boundary.
 - The contract preserves the 50 ms p95 pressure threshold, five-window heartbeat cadence, pressure precedence, rounded p50/p95/max values and three-decimal utilization projection; a zero custom heartbeat is handled fail-safe rather than allowing a Rust modulo panic.
 - `event_loop_telemetry_contract.rs` covers defaults, overrides, precedence and projection. The row advances only to `existing-needs-parity`: production still needs a Host-owned delay/utilization sampler and lifecycle wiring equivalent to Node's perf-hooks monitor.
+
+
+### 2026-09-26 Turn telemetry mapper ownership slice
+
+- From exact HEAD `0d7369cad7fdb689ebfbc7616a10fbac2fe8995f`, ported the frozen turn telemetry mapping boundary into Rust Host: interrupt, await, retry, user-message received, closing-send nudge, TTFT, turn usage and computer-use usage.
+- The owner preserves event names/levels, optional-field omission, token schema v2, total-input behavior, retry error-type bounding, retry/TTFT/duration rounding and computer-use error severity.
+- `turn_telemetry_mappers_contract.rs` covers all projection families. The manifest row advances only to `existing-needs-parity`; final requires shipping Runner/Transcript/Computer call sites to route through this owner rather than parallel mappings.
