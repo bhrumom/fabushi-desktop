@@ -10115,12 +10115,20 @@
       "targetPath": "source/host/src/extensions/action_audit/action_audit_backend.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "82af35ce20b5d267ca73e490738bfd2f68031aa5",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/action_audit/action_audit_backend.rs",
+        "source/host/src/extensions/action_audit/action_audit_service.rs",
+        "source/host/src/extensions/action_audit/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/action_audit_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust ActionAuditBackend now exists as the Host-owned backend boundary over the production SandActionAuditor and is composed by ActionAuditExtension. It remains existing-needs-parity because the frozen Dashboard RecordSandAuditEvents generated-proto projection/authenticated backend sender is not yet reproduced in Rust."
     },
     {
       "referencePath": "source/host/extensions/action-audit/action-audit-service.ts",
@@ -10431,96 +10439,170 @@
       "targetPath": "source/host/src/extensions/automations/backend_relay_source.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "1b131df1e702e60cacce49e50d359787d323ab45",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/automations/backend_relay_source.rs",
+        "source/host/src/extensions/automations/extension.rs",
+        "source/host/src/automations/automation_trigger.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automations_extension_runtime_contract.rs",
+        "source/host/tests/automation_trigger_matching_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust BackendRelaySource owns started/stopped listener admission and delegates frozen listener matching to the canonical automation-trigger matcher. It is wired through AutomationExtensionRuntime. Final remains withheld for the frozen authenticated backend polling/notify-gate transport and error/backoff telemetry."
     },
     {
       "referencePath": "source/host/extensions/automations/extension.ts",
       "targetPath": "source/host/src/extensions/automations/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "0225bff58ea3480a7fbe94ffbad251ad83feef2f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/automations/extension.rs",
+        "source/host/src/extensions/automations/backend_relay_source.rs",
+        "source/host/src/extensions/automations/listener_connect_watcher.rs",
+        "source/host/src/extensions/automations/listener_integrations.rs",
+        "source/host/src/extensions/automations/sand_automation_cloud_sync.rs",
+        "source/host/src/extensions/automations/sand_automation_fire_consumer.rs",
+        "source/host/src/extensions/automations/sand_trigger_hub.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automations_extension_runtime_contract.rs",
+        "source/host/tests/automations_listener_cloud_sync_contract.rs",
+        "source/host/tests/automations_trigger_foundations_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust AutomationExtensionRuntime is the single Host owner that composes relay sources, listener reconnect watching, listener integrations, cloud-trigger projection, fire queueing and trigger reconciliation. Final remains withheld for frozen HostExtensions dependency registration, auth/settings/notify-bus lifecycle composition, real backend clients, trays/telemetry, wake suspend/resume and production Session transcript hooks."
     },
     {
       "referencePath": "source/host/extensions/automations/listener-connect-watcher.ts",
       "targetPath": "source/host/src/extensions/automations/listener_connect_watcher.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "b13e226d5ee3ba5d20a6ae2bd5b9fd0d9c49845a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/automations/listener_connect_watcher.rs",
+        "source/host/src/extensions/automations/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automations_trigger_foundations_contract.rs",
+        "source/host/tests/automations_extension_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust ListenerConnectWatcher preserves disconnect-before-reconnect arming, expiry, suspend/resume and disposal semantics and is owned by AutomationExtensionRuntime. Final remains withheld for the frozen polling-policy timer owner and live transcript resumeAfterListenerConnect production callback."
     },
     {
       "referencePath": "source/host/extensions/automations/listener-integrations.ts",
       "targetPath": "source/host/src/extensions/automations/listener_integrations.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "ba6a1542cd67bf30bc72e699af2dd911c81bfaae",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/automations/listener_integrations.rs",
+        "source/host/src/extensions/automations/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automations_listener_cloud_sync_contract.rs",
+        "source/host/tests/automations_extension_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust ListenerIntegrations projects supported listener platform connection state and is consumed by AutomationExtensionRuntime. Final remains withheld for frozen authenticated integration reads/connect URLs/channel reads against live Host auth/transcript services."
     },
     {
       "referencePath": "source/host/extensions/automations/sand-automation-cloud-sync.ts",
       "targetPath": "source/host/src/extensions/automations/sand_automation_cloud_sync.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "3d49bd91b4c0209f55925a8eed2f2321de9f851a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/automations/sand_automation_cloud_sync.rs",
+        "source/host/src/extensions/automations/sand_automation_cloud_trigger.rs",
+        "source/host/src/extensions/automations/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automations_listener_cloud_sync_contract.rs",
+        "source/host/tests/automations_extension_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust cloud-sync decision layer deterministically projects enabled locally-authoritative automations into backend trigger definitions and is composed by AutomationExtensionRuntime. Final remains withheld for the frozen AutomationsService diff/upsert/delete/shadow-prune client, auth retry/recovery, scheduling-authority state and production backend reconciliation."
     },
     {
       "referencePath": "source/host/extensions/automations/sand-automation-cloud-trigger.ts",
       "targetPath": "source/host/src/extensions/automations/sand_automation_cloud_trigger.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "d02be97a67f3e1edb552c96670de144850a5249d",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/automations/sand_automation_cloud_trigger.rs",
+        "source/host/src/extensions/automations/sand_automation_cloud_sync.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automations_trigger_foundations_contract.rs",
+        "source/host/tests/automations_listener_cloud_sync_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust backend cloud-trigger projection covers frozen Teams, Linear, Sentry and PagerDuty cases consumed by cloud-sync. Final remains withheld for generated backend protobuf types/hashes and any remaining frozen trigger-normalization fields."
     },
     {
       "referencePath": "source/host/extensions/automations/sand-automation-fire-consumer.ts",
       "targetPath": "source/host/src/extensions/automations/sand_automation_fire_consumer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "d23a5f148acf470c964ee39788070e31f96ee5cc",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/automations/sand_automation_fire_consumer.rs",
+        "source/host/src/extensions/automations/extension.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automations_extension_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust SandAutomationFireConsumer owns serialized fire-intent draining and isolates per-fire failures inside AutomationExtensionRuntime. Final remains withheld for the frozen backend poll/ack protocol, definition revision fencing, durable existing-run detection, notify drain gate, next-poll delay, completion reporting, rejection telemetry and delivery-error backoff."
     },
     {
       "referencePath": "source/host/extensions/automations/sand-trigger-hub.ts",
       "targetPath": "source/host/src/extensions/automations/sand_trigger_hub.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "e839d9c43abcd7d25d1275fc2b862cc6c240ec0d",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/automations/sand_trigger_hub.rs",
+        "source/host/src/extensions/automations/backend_relay_source.rs",
+        "source/host/src/extensions/automations/extension.rs",
+        "source/host/src/automations/automation_trigger.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automations_trigger_foundations_contract.rs",
+        "source/host/tests/automations_extension_runtime_contract.rs",
+        "source/host/tests/automation_trigger_matching_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust SandTriggerHub decision core derives locally-authoritative listeners and matching fire intents through the canonical trigger matcher and is composed by AutomationExtensionRuntime. Final remains withheld for the frozen polling owner, source-status aggregation, async reconcile lifecycle and production cloud-sync/fire callbacks."
     },
     {
       "referencePath": "source/host/extensions/box-lifecycle/box-lifecycle-service.ts",

@@ -1225,3 +1225,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 
 - Ported Host Upgrade bundle-source semantics to Rust: override normalization, frozen S3 paths, strict lowercase git-SHA validation, version TTL cache, fail-soft latest lookup, fail-closed tarball fetch and lazy resolved source.
 - Ported MCP plugin-skill cache to Rust with frozen safe-id/absolute-path validation, legacy field defaults, positive user/team IDs, auth-block fallback, pretty JSON atomic replace and agent-readable 0755/0644 permissions.
+
+
+### 2026-09-26 Action Audit / Automations evidence reconciliation
+
+- Re-read PR #20 at exact HEAD `7c82dd0fe0e7b060fc0b8c9045424004034d796a`; exact-HEAD Desktop Chat Parity CI run `36186038197` and Rust desktop runtime run `36186038184` were both green.
+- Reconciled nine stale `planned` rows whose Rust targets already exist on the implementation branch. The Action Audit backend and the Automations relay/watcher/integration/cloud-sync/cloud-trigger/fire-consumer/trigger-hub/extension owners now carry concrete behavioral/test evidence and move only to `existing-needs-parity`, not final.
+- No row was marked `implemented`: generated Dashboard audit sending, authenticated automation backend clients, notify/poll scheduling, durable fire ack/completion semantics, live Host dependency composition and production transcript/session callbacks remain explicit blockers.
