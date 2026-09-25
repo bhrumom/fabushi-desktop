@@ -17167,7 +17167,7 @@
         ".github/workflows/grok-rust-parity-finalize.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust translation of the frozen Grok transient-stream classifier used by the shipping ProductionTurnRunShellAdapter. It now recognizes the frozen errno/message families including ECONNRESET/EPIPE/ECONNABORTED/ECONNREFUSED/ENETRESET/ENETDOWN/ENETUNREACH/EHOSTUNREACH/EAI_AGAIN, socket hang up, premature/closed stream, aborted/unavailable, and deadline/timeout tokens; structured HTTP/provider failures remain fail-closed for auth/protocol/invalid-request/cancelled cases. Cargo contract coverage exercises these retry classifications."
+      "notes": "Rust translation of the frozen Grok module with executable cargo contract coverage; finalized only after the parity workflow cargo test succeeds."
     },
     {
       "referencePath": "source/host/runner/turn-agent-composition.ts",
