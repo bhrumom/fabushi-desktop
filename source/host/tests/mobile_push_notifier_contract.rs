@@ -54,11 +54,12 @@ fn finished_turn_requires_a_new_message_and_unfocused_window() {
     notifier.handle_agent_upserted(agent(false, None, Some("m2")), Some(8_000), 8_001);
     assert!(sent.lock().unwrap().is_empty());
 
-    notifier.handle_agent_upserted(agent(true, None, Some("m2")), None, 14_000);
+    let stale_now_ms = SAND_MOBILE_PUSH_FOCUS_FRESHNESS_MS + 14_000;
+    notifier.handle_agent_upserted(agent(true, None, Some("m2")), None, stale_now_ms);
     notifier.handle_agent_upserted(
         agent(false, None, Some("m3")),
-        Some(14_000 - SAND_MOBILE_PUSH_FOCUS_FRESHNESS_MS - 1),
-        14_000,
+        Some(stale_now_ms - SAND_MOBILE_PUSH_FOCUS_FRESHNESS_MS - 1),
+        stale_now_ms,
     );
     let sent = sent.lock().unwrap();
     assert_eq!(sent.len(), 1);
