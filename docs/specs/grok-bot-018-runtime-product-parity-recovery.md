@@ -1154,3 +1154,9 @@ Implementation must update this compliance table with exact commit/workflow/arti
 
 - Exact HEAD `a5bf42a133871b130782f35078d92273b4c00db2` reached the full cargo compile and failed before behavior tests because Rust 2024 reserves `box` as a keyword in module paths.
 - The new file-transfer and prompt-glue source/tests now use the repository's required raw identifier path `r#box` (including `ports::r#box`). No runtime behavior or architecture status changed.
+
+
+### 2026-09-25 file-transfer contract Debug fixture correction
+
+- After the Rust 2024 raw-identifier fix, the next cargo failure was test-only: `unwrap_err()` requires the success value to implement `Debug`, while the in-memory `MemoryBox` fixture only derived `Default`.
+- The fixture now derives `Debug`; production file-transfer/prompt-glue code and manifest status are unchanged.

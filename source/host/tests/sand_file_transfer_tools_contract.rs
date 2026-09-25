@@ -9,7 +9,7 @@ use mahayana_host_runtime::runner::tools::sand_file_transfer_tools::{
     copy_file_from_box, copy_file_to_box, format_bytes,
 };
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct MemoryBox {
     files: Mutex<HashMap<String, Vec<u8>>>,
 }
