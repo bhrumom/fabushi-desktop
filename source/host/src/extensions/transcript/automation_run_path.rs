@@ -228,7 +228,8 @@ impl AutomationRunPath {
             *occurrence += 1;
             *occurrence
         };
-        should_notify_automation_failure(occurrence).then_some(occurrence)
+        let policy_occurrence = i64::try_from(occurrence).unwrap_or(i64::MAX);
+        should_notify_automation_failure(policy_occurrence).then_some(occurrence)
     }
 
     pub fn clear_automation_failure_state(&self, agent_id: &str, automation_id: &str) {
