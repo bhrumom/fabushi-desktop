@@ -321,3 +321,206 @@ pub fn github_listener_matches(
     }
     github_subject_allowed(users, event_string(event, "actor"), admit_missing_subject)
 }
+
+
+fn optional_filter(values: Option<&Vec<Value>>, actual: Option<&str>, platform_matched: bool) -> bool {
+    let Some(values) = values else { return true; };
+    if values.is_empty() { return true; }
+    let Some(actual) = actual else { return platform_matched; };
+    values.iter().filter_map(Value::as_str).any(|value| value == actual)
+}
+
+pub fn listener_matches_event(
+    listener: &Value,
+    event: &Value,
+    platform_matched: bool,
+    admit_missing_subject: bool,
+) -> bool {
+    let ty = listener.get("type").and_then(Value::as_str).unwrap_or_default();
+    let source = event_string(event, "source").unwrap_or_default();
+
+    match ty {
+        "slack" => source == "slack" && slack_listener_matches(listener, event),
+        "github" => source == "github"
+            && github_listener_matches(listener, event, admit_missing_subject),
+        "microsoftTeams" => {
+            if source != "microsoftTeams" { return false; }
+            if let Some(tenant) = event_string(listener, "tenantId") {
+                if event_string(event, "tenantId") != Some(tenant) { return false; }
+            }
+            let team_ids = listener.get("teamIds").and_then(Value::as_array);
+            let team_matches = if team_ids.is_some_and(|values| !values.is_empty()) {
+                optional_filter(team_ids, event_string(event, "teamId"), false)
+            } else {
+                event_string(listener, "teamId")
+                    .is_some_and(|team| event_string(event, "teamId") == Some(team))
+            };
+            if !team_matches {
+                return false;
+            }
+            if !optional_filter(
+                listener.get("channelIds").and_then(Value::as_array),
+                event_string(event, "channelId"),
+                false,
+            ) {
+                return false;
+            }
+            let contains = event_string(listener, "messageContains").unwrap_or_default();
+            let filtered = !contains.is_empty();
+            if event.get("rootMessageId").is_some() && !filtered {
+                return false;
+            }
+            if listener.get("blockUnauthenticatedTeamsUsers").and_then(Value::as_bool) == Some(true)
+                && !platform_matched
+            {
+                return false;
+            }
+            if !filtered {
+                return true;
+            }
+            if listener.get("messageContainsIsRegex").and_then(Value::as_bool) == Some(true) {
+                return platform_matched;
+            }
+            event_string(event, "text")
+                .is_some_and(|text| text.to_lowercase().contains(&contains.to_lowercase()))
+        }
+        "linear" => {
+            if source != "linear" { return false; }
+            let expected = listener.pointer("/event/case").and_then(Value::as_str)
+                .unwrap_or_default();
+            if event_string(event, "event") != Some(expected) {
+                return false;
+            }
+            if !optional_filter(
+                listener.get("projectIds").and_then(Value::as_array),
+                event_string(event, "projectId"),
+                platform_matched,
+            ) || !optional_filter(
+                listener.get("teamIds").and_then(Value::as_array),
+                event_string(event, "teamId"),
+                platform_matched,
+            ) {
+                return false;
+            }
+            match expected {
+                "issueCreated" => true,
+                "statusChanged" => optional_filter(
+                    listener.pointer("/event/statusIds").and_then(Value::as_array),
+                    event_string(event, "statusId"),
+                    platform_matched,
+                ),
+                "endOfCycle" => optional_filter(
+                    listener.pointer("/event/cycleIds").and_then(Value::as_array),
+                    event_string(event, "cycleId"),
+                    platform_matched,
+                ),
+                _ => false,
+            }
+        }
+        "sentry" => {
+            if source != "sentry" { return false; }
+            let expected = listener.pointer("/event/case").and_then(Value::as_str)
+                .unwrap_or_default();
+            optional_filter(
+                listener.get("projectIds").and_then(Value::as_array),
+                event_string(event, "projectId"),
+                platform_matched,
+            ) && (expected == "issueAny" || event_string(event, "event") == Some(expected))
+        }
+        "pagerduty" => {
+            if source != "pagerduty" { return false; }
+            let expected = listener.pointer("/event/case").and_then(Value::as_str)
+                .unwrap_or_default();
+            optional_filter(
+                listener.get("serviceIds").and_then(Value::as_array),
+                event_string(event, "serviceId"),
+                platform_matched,
+            ) && (expected == "incidentAny" || event_string(event, "event") == Some(expected))
+        }
+        _ => false,
+    }
+}
+
+pub fn trigger_matches_event(
+    trigger: &Value,
+    event: &Value,
+    platform_matched: bool,
+    admit_missing_subject: bool,
+) -> bool {
+    trigger_members(trigger).iter().any(|listener| {
+        listener.get("type").and_then(Value::as_str) != Some("cron")
+            && listener_matches_event(listener, event, platform_matched, admit_missing_subject)
+    })
+}
+
+fn event_line(value: Option<&Value>) -> String {
+    value.and_then(Value::as_str).unwrap_or_default()
+        .replace(['\r', '\n'], " ").trim().chars().take(120).collect()
+}
+
+pub fn describe_trigger_event(event: &Value) -> String {
+    let source = event_string(event, "source").unwrap_or_default();
+    if source == "slack" {
+        let sender = event_string(event, "sender").unwrap_or_default();
+        let channel = event_string(event, "channel").unwrap_or_default();
+        return event_string(event, "reactionEmoji")
+            .map(|emoji| format!("{sender} reacted {emoji} in {channel}"))
+            .unwrap_or_else(|| format!("{sender} in {channel}: \"{}\"", event_line(event.get("text"))));
+    }
+    if source == "github" {
+        let kind = event_string(event, "kind").unwrap_or_default();
+        let label = match kind {
+            "pr-opened" => "PR opened",
+            "pr-pushed" => "PR updated",
+            "pr-merged" => "PR merged",
+            "review-requested" => "Review requested",
+            "review-approved" => "Review approved",
+            "review-changes-requested" => "Changes requested",
+            "review-commented" => "Review commented",
+            "pr-comment" => "PR comment",
+            "inline-review-comment" => "Inline review comment",
+            "review-thread-resolved" => "Review thread resolved",
+            "review-thread-unresolved" => "Review thread reopened",
+            "issue-assigned" => "Issue assigned",
+            "ci-passed" => "CI passed",
+            "ci-failed" => "CI failed",
+            other => other,
+        };
+        return format!(
+            "{label} in {}: \"{}\" by {}",
+            event_string(event, "repo").unwrap_or_default(),
+            event_line(event.get("title")),
+            event_string(event, "actor").unwrap_or_default(),
+        );
+    }
+    let kind = event_string(event, "event").unwrap_or_default();
+    let label = match kind {
+        "issueCreated" => "Issue created",
+        "statusChanged" => "Issue status changed",
+        "endOfCycle" => "Cycle ended",
+        "incidentTriggered" => "Incident triggered",
+        other => other,
+    };
+    format!(
+        "{label}: \"{}\"",
+        event_line(event.get("title").or_else(|| event.get("cycleName")).or_else(|| event.get("issueIdentifier"))),
+    )
+}
+
+fn escape_trigger_xml(value: &str) -> String {
+    value.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+}
+
+pub fn build_trigger_event_context_block(event: &Value) -> String {
+    let tag = match event_string(event, "source") {
+        Some("slack") => "slack_message",
+        Some("github") => "github_event",
+        Some("microsoftTeams") => "microsoft_teams_message",
+        Some("linear") => "linear_event",
+        Some("sentry") => "sentry_event",
+        Some("pagerduty") => "pagerduty_event",
+        _ => "trigger_event",
+    };
+    let json = serde_json::to_string_pretty(event).unwrap_or_else(|_| "{}".into());
+    format!("<{tag}>\n{}\n</{tag}>", escape_trigger_xml(&json))
+}
