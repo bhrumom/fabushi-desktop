@@ -1071,3 +1071,8 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The fix is deliberately behavior-neutral: `WatchedDirectory` now has a manual debug view that does not require debug-printing callback/watcher internals, Agent DB writes preserve millisecond values as `f64`, and episode prompt/persistence projection converts finite in-range values back to `i64` with the turn timestamp as the invalid-value fallback.
 - No parity status is advanced by this compile repair; exact-HEAD CI must re-prove the shipping Host and Runner contracts.
 
+### 2026-09-25 turn-memory contract fixture closure
+
+- Exact HEAD `bc8ca31029342fb6314754487174e4913936affa` passed the shipping Host build, independent Coordinator, independent box-exec daemon and shipping box-exec supervisor. The first Runner-suite failure was compile-only in the new `turn_memory_contract`: its persisted Agent DB `EpisodeTurn.ts` fixture used integer `1` instead of the canonical `f64` timestamp.
+- The fixture now uses `1.0`; production code is unchanged. This commit advances no parity status and exists only to let the exact-HEAD Runner suite execute the intended behavior assertions.
+

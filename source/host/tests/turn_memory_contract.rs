@@ -88,7 +88,7 @@ fn evidence_mode_clears_pending_episode_state_without_running_extraction() {
     session
         .db
         .record_episode_turn(&EpisodeTurn {
-            ts: 1,
+            ts: 1.0,
             user: "old user".into(),
             agent: "old agent".into(),
         })
