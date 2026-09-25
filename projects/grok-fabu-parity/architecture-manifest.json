@@ -16434,7 +16434,7 @@
       "targetPath": "source/host/src/runner/sand_auto_review_summaries.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "d6256a486199a1038624b54da15f82160743238c",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -16450,7 +16450,7 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port covers the frozen summary/redaction helpers used by Runner auto-review surfaces: shell location/description, secret-safe MCP argument projection and destination hints, automation writes, cloud-agent lifecycle, subagent actions, browser actions, typed-text secrecy and computer text summaries. Dedicated contract tests pin representative frozen outputs and secret-redaction behavior. Kept non-final until the latest exact-HEAD Rust cargo gate passes this new evidence."
+      "notes": "Rust port covers the frozen summary/redaction helpers used by Runner auto-review surfaces: shell location/description, secret-safe MCP argument projection and destination hints, automation writes, cloud-agent lifecycle, subagent actions, browser actions, typed-text secrecy and computer text summaries. Dedicated contract tests pin representative frozen outputs and secret-redaction behavior. Exact-head Rust desktop runtime run 36152447820 passed the complete Mahayana Host/Runner cargo suite at 0d800e7aea66409ab7288bf98d4ab180f47d62a3, closing the only remaining evidence gate for this row."
     },
     {
       "referencePath": "source/host/runner/sand-auto-review-tool-escalations.ts",
@@ -17145,7 +17145,7 @@
       "targetPath": "source/host/src/runner/tools/sand_spotlight_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "83ba0d7f46dc00e6638e34fca01027cc71cc63e0",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
@@ -17163,7 +17163,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust shipping adaptation of the frozen spotlight tool wrapper. The existing Host sand_spotlight experiment gate now controls both the real provider-turn safety prompt and an outer RoutedToolBridge that fences every routed tool result content array, coalesces adjacent text, preserves non-text parts, redacts forged fence tags case-insensitively, and sanitizes source names. The production bridge carries the gate into TurnAgentComposition. Kept non-final until the latest exact-HEAD Rust cargo gate exercises the new module; after that evidence it can be promoted without an additional product semantic gap."
+      "notes": "Rust shipping adaptation of the frozen spotlight tool wrapper. The Host sand_spotlight experiment gate controls both the real provider-turn safety prompt and an outer RoutedToolBridge that fences routed tool result content, coalesces adjacent text, preserves non-text parts, redacts forged fence tags case-insensitively, and sanitizes source names. The production bridge carries the gate into TurnAgentComposition. Exact-head Rust desktop runtime run 36152447820 passed the full Host/Runner suite at 0d800e7aea66409ab7288bf98d4ab180f47d62a3, closing the final evidence-only hold for this row."
     },
     {
       "referencePath": "source/host/runner/tools/sand-state-tool.ts",
