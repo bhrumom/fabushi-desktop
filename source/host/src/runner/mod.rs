@@ -54,6 +54,13 @@ pub mod sand_auto_review_summaries;
 pub mod bot_block_detection;
 pub mod background_work;
 pub mod auto_review_gate;
+pub mod sand_auto_review_tool_escalations;
+pub mod sand_automation_auto_review;
+pub mod sand_browser_auto_review;
+pub mod sand_cloud_agent_auto_review;
+pub mod sand_computer_auto_review;
+pub mod sand_shell_auto_review_enrichment;
+pub mod sand_subagent_auto_review;
 
 pub mod send_message_reminder_middleware;
 pub mod start_of_turn_ack_reminder_middleware;

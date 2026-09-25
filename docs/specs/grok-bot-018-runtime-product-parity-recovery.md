@@ -1084,3 +1084,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The first real Runner blocker was `sand_auto_review_summaries_contract::automation_cloud_and_subagent_summaries_match_frozen_wording`: the Rust inline-secret redactor repeatedly rediscovered an already-redacted `token=…` assignment and replaced the ellipsis with itself forever, unlike the frozen Grok regex replacement.
 - `source/host/src/runner/sand_auto_review_summaries.rs` now advances a byte-safe scan cursor after each replacement and continues past non-assignment keyword occurrences; the contract adds two same-key assignments in one prompt to prove forward progress and complete redaction.
 - No architecture-manifest status is advanced by this commit. The mapped `source/host/runner/sand-auto-review-summaries.ts` entry remains `existing-needs-parity` until a fresh exact-HEAD Rust runtime run passes the Runner contract and downstream architecture gates.
+
+
+### 2026-09-25 Runner Auto Review specialized parity slice
+
+- Baseline for this slice: `e558b5a1eecfff1b14dadba2d90bfd8908b7fade`.
+- Added the seven missing Grok Runner Auto Review responsibility modules under `source/host/src/runner/**`: automation writes, browser actions, cloud-agent actions/lifecycle, computer actions, shell approval binding enrichment, subagent actions, and shell/MCP escalation providers.
+- These modules reuse the existing Mahayana Runner `SandAutoReviewController`, classifier decision model, fingerprinting, summaries, expiry policy, and pending approval lifecycle. They do not create a second approval runtime.
+- The specialized contract `source/host/tests/sand_auto_review_specialized_contract.rs` covers off/shadow/enforce classification, approval resolution, browser/computer display binding, cloud image hashing and lifecycle fail-closed behavior, subagent risk targets, shared shell/MCP escalation, package-script definition hashing, and classifier abort propagation.
+- `scripts/finalize-rust-parity.mjs` may promote only these seven previously-planned rows after the full Host cargo suite succeeds and the target/test files both exist. Existing-needs-parity core Auto Review rows remain manual-review-only.

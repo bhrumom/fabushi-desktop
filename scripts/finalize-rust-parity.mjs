@@ -9,6 +9,7 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 
 const runnerContract = "source/host/tests/runner_contract.rs";
 const utilityContract = "source/host/tests/runner_small_modules_contract.rs";
+const specializedAutoReviewContract = "source/host/tests/sand_auto_review_specialized_contract.rs";
 const extensionContract = "source/host/tests/extensions_turn_execution_contract.rs";
 const localExecContract = "source/host/tests/extensions_local_exec_contract.rs";
 const hostFoundationContract = "source/host/tests/host_foundation_contract.rs";
@@ -20,6 +21,13 @@ const manualFinalizationRequired = new Set([
 ]);
 
 const completed = new Map([
+  ["source/host/runner/sand-auto-review-tool-escalations.ts", ["source/host/src/runner/sand_auto_review_tool_escalations.rs", specializedAutoReviewContract]],
+  ["source/host/runner/sand-automation-auto-review.ts", ["source/host/src/runner/sand_automation_auto_review.rs", specializedAutoReviewContract]],
+  ["source/host/runner/sand-browser-auto-review.ts", ["source/host/src/runner/sand_browser_auto_review.rs", specializedAutoReviewContract]],
+  ["source/host/runner/sand-cloud-agent-auto-review.ts", ["source/host/src/runner/sand_cloud_agent_auto_review.rs", specializedAutoReviewContract]],
+  ["source/host/runner/sand-computer-auto-review.ts", ["source/host/src/runner/sand_computer_auto_review.rs", specializedAutoReviewContract]],
+  ["source/host/runner/sand-shell-auto-review-enrichment.ts", ["source/host/src/runner/sand_shell_auto_review_enrichment.rs", specializedAutoReviewContract]],
+  ["source/host/runner/sand-subagent-auto-review.ts", ["source/host/src/runner/sand_subagent_auto_review.rs", specializedAutoReviewContract]],
   ["source/host/ports/product-analytics.ts", ["source/host/src/ports/product_analytics.rs", grokSmallFoundationContract]],
   ["source/host/ports/sand-analytics-types.ts", ["source/host/src/ports/sand_analytics_types.rs", grokSmallFoundationContract]],
   ["source/host/transcript-mutation-events.ts", ["source/host/src/transcript_mutation_events.rs", grokSmallFoundationContract]],
