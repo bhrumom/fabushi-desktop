@@ -51,15 +51,21 @@ fn legacy_hydration_uses_authoritative_store_db_counts() {
 }
 
 #[test]
-fn hydration_handoff_path_recognizes_marker_and_pid_temp_files_only() {
+fn hydration_handoff_path_matches_frozen_marker_and_temp_family() {
     assert!(is_hydration_handoff_manifest_path(
         BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH
     ));
     assert!(is_hydration_handoff_manifest_path(&format!(
         "{BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH}.123.tmp"
     )));
-    assert!(!is_hydration_handoff_manifest_path(&format!(
+    assert!(is_hydration_handoff_manifest_path(&format!(
         "{BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH}.tmp"
+    )));
+    assert!(is_hydration_handoff_manifest_path(&format!(
+        "{BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH}.worker.tmp"
+    )));
+    assert!(!is_hydration_handoff_manifest_path(&format!(
+        "{BOX_STORE_HYDRATION_HANDOFF_MANIFEST_PATH}.worker"
     )));
     assert!(!is_hydration_handoff_manifest_path("manifest.json"));
 }
