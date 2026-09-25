@@ -296,7 +296,6 @@ fn run_debounce_worker(
         }
     }
 }
-}
 
 pub fn is_state_backstop_enabled_value(raw: Option<&str>) -> bool {
     raw.map(str::trim)
