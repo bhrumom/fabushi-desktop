@@ -11063,12 +11063,19 @@
       "targetPath": "source/host/src/extensions/codebase_telemetry/codebase_snapshot_trigger.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "9d2ba65ae818504c0c9f936fb6447bf3e26df8da",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/codebase_telemetry/codebase_snapshot_trigger.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/codebase_snapshot_trigger_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports inactive-session drop, frozen reason key, per-reason dedupe, 1,000-entry FIFO retention, failure retry eligibility and power-of-two warning cadence."
     },
     {
       "referencePath": "source/host/extensions/codebase-telemetry/codebase-telemetry-adapter.ts",
