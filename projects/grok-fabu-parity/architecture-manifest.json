@@ -10704,12 +10704,20 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_vacuum_worker.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "c09ccf00e266de0806956386a34bea53142eb6ad",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_store_vacuum_worker.rs",
+        "source/host/src/extensions/box_store_sync/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sqlite_snapshot_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production slice preserves the frozen isolated vacuum-worker responsibility using a named OS thread, typed job payload and structured success/error terminal result around sqlite_vacuum_into. It is exported and contract-tested. Final remains withheld until the production Box Store Sync service dispatches real snapshot jobs through this worker."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/chrome-session-stage.ts",
@@ -10814,12 +10822,20 @@
       "targetPath": "source/host/src/extensions/box_store_sync/sqlite_snapshot.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "361f832e8276508291b42e368e83ec7bf871ca54",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/sqlite_snapshot.rs",
+        "source/host/src/extensions/box_store_sync/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sqlite_snapshot_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production slice implements the frozen read-only SQLite VACUUM INTO boundary with busy-timeout and destination quoting, exported from the Host box-store-sync module and covered by source/host/tests/sqlite_snapshot_contract.rs. Final remains withheld because the frozen three-attempt locked-copy path, source-stability/sidecar/quick_check failure classification, and production Box Store Sync service consumption are not yet ported."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/store-db-bundle-capture.ts",
