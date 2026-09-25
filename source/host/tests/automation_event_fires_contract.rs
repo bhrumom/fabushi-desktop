@@ -43,7 +43,7 @@ fn runtime_event_fire_debounces_and_coalesces_run_uuids_into_one_durable_run() {
             &AutomationSpec {
                 name: "Events".into(),
                 prompt: "Review events".into(),
-                trigger: json!({"type":"github","repo":"openai/example"}),
+                trigger: json!({"type":"github","repo":"openai/example","events":["pr-opened"]}),
                 is_enabled: Some(true),
             },
         )
@@ -129,7 +129,7 @@ fn event_fire_queue_sheds_oldest_overflow_and_deduplicates_drop_reporting() {
             &AutomationSpec {
                 name: "Overflow".into(),
                 prompt: "Review events".into(),
-                trigger: json!({"type":"github","repo":"openai/example"}),
+                trigger: json!({"type":"github","repo":"openai/example","events":["pr-opened"]}),
                 is_enabled: Some(true),
             },
         )
@@ -164,7 +164,8 @@ fn event_fire_queue_sheds_oldest_overflow_and_deduplicates_drop_reporting() {
     );
     assert_eq!(drops.lock().expect("drops").len(), 1);
 
-    event_fires.report_fire_dropped(drops.lock().expect("drops")[0].clone());
+    let first_drop = { drops.lock().expect("drops")[0].clone() };
+    event_fires.report_fire_dropped(first_drop);
     assert_eq!(drops.lock().expect("drops").len(), 1);
 
     for index in 0..(MAX_REPORTED_DROPPED_FIRES + 4) {
