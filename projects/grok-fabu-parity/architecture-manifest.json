@@ -10120,24 +10120,37 @@
       "targetPath": "source/host/src/extensions/action_audit/action_audit_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "a25e5ef5ec7cf9b8893b885b654186134f9b423e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/action_audit/action_audit_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/action_audit_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports local JSONL projection, stdio-only MCP backend forwarding, durable bounded outbox, 50-event batching, 2,000-event cap, periodic flush, failure backoff and dispose-time drain/persist."
     },
     {
       "referencePath": "source/host/extensions/action-audit/extension.ts",
       "targetPath": "source/host/src/extensions/action_audit/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "4bbc9c4c6c1ebe697f288623caf022b595be8f7c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/action_audit/action_audit_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/action_audit_service_contract.rs"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Core auditor service is Rust-owned. Final extension parity waits on the generated Dashboard RecordSandAuditEvents production sender plus Auth/Experiments/Telemetry composition."
     },
     {
       "referencePath": "source/host/extensions/attachments/attachments-service.ts",
