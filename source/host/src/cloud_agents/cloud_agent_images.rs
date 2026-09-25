@@ -53,7 +53,7 @@ fn allowed_host_path(roots: &[PathBuf; 2], path: &Path) -> bool {
 }
 
 fn format_too_large_notice(path: &str) -> String {
-    format!(""{path}" is too large to attach (max 25 MB).")
+    format!("\"{path}\" is too large to attach (max 25 MB).")
 }
 
 pub fn load_cloud_agent_images(
