@@ -1,23 +1,10 @@
-use std::collections::BTreeSet;
+use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SandAutoReviewMode {
-    Off,
-    Ask,
-    Enforce,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AutoReviewModes {
-    pub host_shell: SandAutoReviewMode,
-    pub box_shell: SandAutoReviewMode,
-    pub mcp: SandAutoReviewMode,
-    pub computer: SandAutoReviewMode,
-    pub automation_write: SandAutoReviewMode,
-    pub cloud_agent: SandAutoReviewMode,
-    pub subagent_launch: SandAutoReviewMode,
-}
+use super::sand_auto_review::{
+    SandAutoReviewController, SandAutoReviewMode, SandAutoReviewModes,
+    SandAutoReviewSurface,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AutoReviewInstructions {
@@ -25,17 +12,12 @@ pub struct AutoReviewInstructions {
     pub block_instructions: Vec<String>,
 }
 
-pub trait AutoReviewGateController: Send + Sync {
-    fn expire_surfaces(&self, non_enforcing_surfaces: &BTreeSet<&'static str>);
-    fn pending_approval_count(&self) -> usize;
-}
-
 pub trait AutoReviewGateDependencies: Send + Sync {
-    fn base_modes(&self) -> AutoReviewModes;
-    fn current_modes(&self) -> Option<AutoReviewModes> {
+    fn base_modes(&self) -> SandAutoReviewModes;
+    fn current_modes(&self) -> Option<SandAutoReviewModes> {
         None
     }
-    fn controller(&self) -> Option<Arc<dyn AutoReviewGateController>> {
+    fn controller(&self) -> Option<Arc<SandAutoReviewController>> {
         None
     }
     fn resolve_box_id(&self) -> String;
@@ -82,32 +64,32 @@ impl AutoReviewGate {
         }
     }
 
-    pub fn current_modes(&self) -> AutoReviewModes {
+    pub fn current_modes(&self) -> SandAutoReviewModes {
         let modes = self
             .deps
             .current_modes()
             .unwrap_or_else(|| self.deps.base_modes());
-        let mut non_enforcing = BTreeSet::new();
+        let mut non_enforcing = HashSet::new();
         if modes.host_shell != SandAutoReviewMode::Enforce {
-            non_enforcing.insert("host_shell");
+            non_enforcing.insert(SandAutoReviewSurface::HostShell);
         }
         if modes.box_shell != SandAutoReviewMode::Enforce {
-            non_enforcing.insert("box_shell");
+            non_enforcing.insert(SandAutoReviewSurface::BoxShell);
         }
         if modes.mcp != SandAutoReviewMode::Enforce {
-            non_enforcing.insert("mcp");
+            non_enforcing.insert(SandAutoReviewSurface::Mcp);
         }
         if modes.computer != SandAutoReviewMode::Enforce {
-            non_enforcing.insert("computer");
+            non_enforcing.insert(SandAutoReviewSurface::Computer);
         }
         if modes.automation_write != SandAutoReviewMode::Enforce {
-            non_enforcing.insert("automation_write");
+            non_enforcing.insert(SandAutoReviewSurface::AutomationWrite);
         }
         if modes.cloud_agent != SandAutoReviewMode::Enforce {
-            non_enforcing.insert("cloud_agent");
+            non_enforcing.insert(SandAutoReviewSurface::CloudAgent);
         }
         if modes.subagent_launch != SandAutoReviewMode::Enforce {
-            non_enforcing.insert("subagent");
+            non_enforcing.insert(SandAutoReviewSurface::SubagentLaunch);
         }
         if let Some(controller) = self.deps.controller() {
             controller.expire_surfaces(&non_enforcing);
@@ -121,7 +103,7 @@ impl AutoReviewGate {
         if self
             .deps
             .controller()
-            .is_some_and(|controller| controller.pending_approval_count() > 0)
+            .is_some_and(|controller| !controller.get_pending_approvals().is_empty())
         {
             return Err(SandAutoReviewPendingApprovalError);
         }
