@@ -10835,7 +10835,7 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust production slice implements the frozen read-only SQLite VACUUM INTO boundary with busy-timeout and destination quoting, exported from the Host box-store-sync module and covered by source/host/tests/sqlite_snapshot_contract.rs. Final remains withheld because the frozen three-attempt locked-copy path, source-stability/sidecar/quick_check failure classification, and production Box Store Sync service consumption are not yet ported."
+      "notes": "Rust port now covers the frozen SQLite snapshot behavior: read-only VACUUM INTO with busy-timeout/destination quoting; three-attempt locked-copy; source main and sidecar staging; source-stability re-read; WAL checkpoint(TRUNCATE); journal_mode=DELETE; quick_check verification; structured operation/path/cause classification; close/cleanup behavior; and final failure reporting. Contract tests cover successful VACUUM, locked copy, source-change retries/final failure, cleanup, and isolated vacuum worker. Final remains withheld only until the production Box Store Sync service consumes this module for real store DB snapshot capture/upload."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/store-db-bundle-capture.ts",
