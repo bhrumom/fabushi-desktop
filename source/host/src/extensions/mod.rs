@@ -45,3 +45,5 @@ pub mod action_audit;
 pub mod attachments;
 
 pub mod notify_bus;
+
+pub mod host_upgrade;

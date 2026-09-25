@@ -1212,3 +1212,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 
 - Ported the frozen ClientSideToolV2/Agent ToolCall inventory and explicit projection policy to Rust. Supported mappings are allowlisted; SendMessage, approval cards and Await remain ordinary-transcript-only exactly as frozen; unrecovered Agent oneofs and ClientSide variants remain fail-closed.
 - Contract coverage verifies every projected source/target belongs to the frozen shipped unions and that unrecovered entries cannot silently become projected.
+
+
+### 2026-09-25 Host roster, upgrade marker and cloud transcript helpers
+
+- Ported Host roster bookkeeping to Rust with frozen active-agent fallback, live-running/busy calculation, newly-running disk-pressure enrollment, stopped-agent snapshot scheduling and source-map materialization semantics.
+- Ported Host upgrade marker parsing, timing metadata and idempotent forwarding/deletion lifecycle; deferred emits do not retire markers, parse errors do, and callback failures are isolated after successful emit.
+- Ported cloud-agent transcript dump path/write/format/augmentation behavior with byte-accurate size reporting and fail-soft watch augmentation.

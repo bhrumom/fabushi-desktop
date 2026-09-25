@@ -60,3 +60,6 @@ pub mod host_secret_store;
 pub mod transcript_mirror;
 
 pub mod mcp_auth;
+
+pub mod host_roster_bookkeeping;
+pub mod cloud_agents;
