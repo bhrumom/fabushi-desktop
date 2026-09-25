@@ -13878,12 +13878,21 @@
       "targetPath": "source/host/src/extensions/transcript/automation_snapshot.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "083e1243801ed9ff55780e9c1112ae0130eca996",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/automation_snapshot.rs",
+        "source/host/src/extensions/transcript/automation_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automation_snapshot_contract.rs",
+        "source/host/tests/automation_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Exact Rust port of the frozen pure automation snapshot/diff contract. snapshot_automations projects id/name/prompt/trigger identity/type/schedule/enabled/createdAt/run-count, and diff_automation_action preserves frozen updated-before-enabled/disabled precedence while ignoring snapshot metadata that is not part of the diff decision. Shipping AutomationRuntime consumes these functions for serialized lifecycle mutation detection."
     },
     {
       "referencePath": "source/host/extensions/transcript/automation-spend-guard-runtime.ts",
