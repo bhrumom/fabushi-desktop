@@ -9,6 +9,130 @@ use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::workflows::workflow_library::{WorkflowSpec, WorkflowTrigger};
 use crate::workflows::workflow_store::{WorkflowImportBatch, WorkflowRecord};
 
+pub const WORKFLOW_REFERENCE_NODE_TYPE: &str = "workflowReference";
+pub const WORKFLOW_INJECTED_BODY_LIMIT: usize = 8_000;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WorkflowRunNowPlan {
+    Automation {
+        agent_id: String,
+        automation_id: String,
+    },
+    Reference {
+        agent_id: String,
+        workflow_id: String,
+        workflow_name: String,
+        visible_prompt: String,
+        rich_text: String,
+        runtime_prompt: String,
+    },
+}
+
+pub fn prepare_workflow_run_now(
+    workers: Arc<ProductionSessionWorkers>,
+    args: &Value,
+) -> Result<Option<WorkflowRunNowPlan>, WorkflowCommandError> {
+    let agent_id = agent_id(args)?;
+    let workflow_id = required_string(args, &["workflowId"], "workflowId")?;
+    let store = SandAgentSessionStore::new(workers);
+    let Some(workflow) = store
+        .get_agent_workflow(agent_id, workflow_id)
+        .map_err(WorkflowCommandError::Internal)?
+    else {
+        return Ok(None);
+    };
+
+    if workflow.source == "automation" {
+        return Ok(Some(WorkflowRunNowPlan::Automation {
+            agent_id: agent_id.to_string(),
+            automation_id: workflow.id,
+        }));
+    }
+
+    let visible_prompt = format!("@{}", workflow.name);
+    let rich_text = workflow_reference_rich_text(&workflow)?;
+    let runtime_prompt = if workflow.is_enabled_for_agent {
+        format!(
+            "{}\n\n{}",
+            build_workflow_run_prompt(&workflow),
+            visible_prompt
+        )
+    } else {
+        visible_prompt.clone()
+    };
+    Ok(Some(WorkflowRunNowPlan::Reference {
+        agent_id: agent_id.to_string(),
+        workflow_id: workflow.id,
+        workflow_name: workflow.name,
+        visible_prompt,
+        rich_text,
+        runtime_prompt,
+    }))
+}
+
+pub fn build_workflow_run_prompt(workflow: &WorkflowRecord) -> String {
+    let identity = match workflow.source.as_str() {
+        "managed" => format!("managed skill id {}", workflow.id),
+        "plugin" => format!(
+            "plugin skill id {}, file {}",
+            workflow.id,
+            workflow.file_path.display()
+        ),
+        _ => format!("folder {}", workflow.id),
+    };
+    let mut lines = vec![format!(
+        "The user invoked the \"{}\" workflow ({}). Run it now.",
+        workflow.name, identity
+    )];
+    if !workflow.description.is_empty() {
+        lines.push(format!("What it does: {}", workflow.description));
+    }
+    lines.push("Recipe to follow:".into());
+    lines.push(
+        workflow
+            .body
+            .trim()
+            .chars()
+            .take(WORKFLOW_INJECTED_BODY_LIMIT)
+            .collect(),
+    );
+    if !workflow.helper_scripts.is_empty() {
+        let workflow_dir = workflow
+            .file_path
+            .parent()
+            .unwrap_or(workflow.file_path.as_path());
+        lines.push(format!(
+            "Helper files live beside this workflow in {}: {}. Use them with Shell as the recipe directs.",
+            workflow_dir.display(),
+            workflow.helper_scripts.join(", ")
+        ));
+    }
+    lines.push(
+        "Carry out the recipe now, adapting it to anything else the user said in this message."
+            .into(),
+    );
+    lines.join("\n")
+}
+
+fn workflow_reference_rich_text(
+    workflow: &WorkflowRecord,
+) -> Result<String, WorkflowCommandError> {
+    serde_json::to_string(&serde_json::json!({
+        "type": "doc",
+        "content": [{
+            "type": "paragraph",
+            "content": [{
+                "type": WORKFLOW_REFERENCE_NODE_TYPE,
+                "attrs": {
+                    "id": workflow.id,
+                    "label": workflow.name,
+                }
+            }]
+        }]
+    }))
+    .map_err(|error| WorkflowCommandError::Internal(error.to_string()))
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum WorkflowCommandError {
     #[error("{0}")]

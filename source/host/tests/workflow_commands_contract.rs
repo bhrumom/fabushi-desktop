@@ -4,7 +4,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
-use mahayana_host_runtime::extensions::transcript::workflow_commands::dispatch_workflow_command;
+use mahayana_host_runtime::extensions::transcript::workflow_commands::{
+    WORKFLOW_INJECTED_BODY_LIMIT, WorkflowRunNowPlan, build_workflow_run_prompt,
+    dispatch_workflow_command, prepare_workflow_run_now,
+};
+use mahayana_host_runtime::workflows::workflow_store::WorkflowRecord;
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -174,13 +178,119 @@ fn automation_backed_workflow_creation_is_owned_by_rust_session_store() {
         .iter()
         .any(|workflow| workflow["source"] == "automation"));
 
-    assert!(dispatch_workflow_command(
+    let automation_id = created[0]["id"].as_str().expect("automation id");
+    let plan = prepare_workflow_run_now(
         Arc::clone(&workers),
-        "runAgentWorkflowNow",
+        &serde_json::json!({"id":agent.id,"workflowId":automation_id}),
+    )
+    .expect("automation plan")
+    .expect("automation exists");
+    assert_eq!(
+        plan,
+        WorkflowRunNowPlan::Automation {
+            agent_id: agent.id.clone(),
+            automation_id: automation_id.to_string(),
+        }
+    );
+    assert!(prepare_workflow_run_now(
+        Arc::clone(&workers),
         &serde_json::json!({"id":agent.id,"workflowId":"missing"}),
     )
+    .expect("missing workflow lookup")
     .is_none());
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn workflow_run_now_reference_plan_matches_frozen_rich_text_and_recipe_expansion() {
+    let root = temp_root("run-now-reference");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let session = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = session.create_session(None, "user", None).expect("agent");
+    let created = call(
+        Arc::clone(&workers),
+        "createAgentWorkflow",
+        serde_json::json!({
+            "id": agent.id,
+            "spec": {
+                "name": "Research",
+                "description": "Read sources",
+                "body": "Collect evidence and summarize."
+            }
+        }),
+    );
+    let workflow_id = created[0]["id"].as_str().expect("workflow id").to_string();
+
+    let plan = prepare_workflow_run_now(
+        Arc::clone(&workers),
+        &serde_json::json!({"id":agent.id,"workflowId":workflow_id}),
+    )
+    .expect("plan")
+    .expect("workflow");
+    let WorkflowRunNowPlan::Reference {
+        agent_id,
+        workflow_id,
+        workflow_name,
+        visible_prompt,
+        rich_text,
+        runtime_prompt,
+    } = plan
+    else {
+        panic!("expected reference plan");
+    };
+    assert_eq!(agent_id, agent.id);
+    assert_eq!(workflow_name, "Research");
+    assert_eq!(visible_prompt, "@Research");
+    assert!(rich_text.contains("\"type\":\"workflowReference\""));
+    assert!(rich_text.contains(&format!("\"id\":\"{workflow_id}\"")));
+    assert!(runtime_prompt.contains(
+        "The user invoked the \"Research\" workflow (folder"
+    ));
+    assert!(runtime_prompt.contains("What it does: Read sources"));
+    assert!(runtime_prompt.contains("Recipe to follow:\nCollect evidence and summarize."));
+    assert!(runtime_prompt.ends_with("@Research"));
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn workflow_run_prompt_clamps_recipe_body_and_preserves_helper_location() {
+    let body = "x".repeat(WORKFLOW_INJECTED_BODY_LIMIT + 50);
+    let record = WorkflowRecord {
+        id: "deep-research".into(),
+        name: "Deep Research".into(),
+        description: String::new(),
+        body,
+        trigger: None,
+        source: "plugin".into(),
+        source_ref: None,
+        is_enabled_for_agent: true,
+        created_at: 1.0,
+        last_run_at: None,
+        next_run_at: None,
+        helper_scripts: vec!["collect.sh".into(), "parse.py".into()],
+        file_path: std::path::PathBuf::from("/tmp/workflows/deep-research/SKILL.md"),
+    };
+    let prompt = build_workflow_run_prompt(&record);
+    assert!(prompt.contains(
+        "plugin skill id deep-research, file /tmp/workflows/deep-research/SKILL.md"
+    ));
+    assert!(prompt.contains(
+        "Helper files live beside this workflow in /tmp/workflows/deep-research: collect.sh, parse.py."
+    ));
+    let recipe = prompt
+        .split("Recipe to follow:\n")
+        .nth(1)
+        .expect("recipe")
+        .split("\nHelper files")
+        .next()
+        .expect("recipe body");
+    assert_eq!(recipe.chars().count(), WORKFLOW_INJECTED_BODY_LIMIT);
 }
