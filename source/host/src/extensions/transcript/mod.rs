@@ -48,3 +48,4 @@ pub mod sand_automation_spend_guard;
 pub mod inline_image_materialization;
 
 pub mod client_side_tool_v2_producer;
+pub mod client_side_tool_v2_inventory;

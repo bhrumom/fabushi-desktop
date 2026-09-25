@@ -1206,3 +1206,9 @@ Implementation must update this compliance table with exact commit/workflow/arti
 
 - Audited the pre-existing Rust `chrome_session_stage.rs` against the frozen Grok module rather than reimplementing it. Added contract coverage for exact DB relative-path projection and mode preservation, retry destination pre-clean, busy/locked raw-copy fallback, non-busy skip/report behavior, raw-copy failure reporting, and staging cleanup.
 - The manifest row advances from planned to implemented only after this behavioral evidence; the wider Box Store Sync extension/service remains non-final.
+
+
+### 2026-09-25 Client-side Tool V2 projection inventory closure
+
+- Ported the frozen ClientSideToolV2/Agent ToolCall inventory and explicit projection policy to Rust. Supported mappings are allowlisted; SendMessage, approval cards and Await remain ordinary-transcript-only exactly as frozen; unrecovered Agent oneofs and ClientSide variants remain fail-closed.
+- Contract coverage verifies every projected source/target belongs to the frozen shipped unions and that unrecovered entries cannot silently become projected.

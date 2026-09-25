@@ -14360,12 +14360,19 @@
       "targetPath": "source/host/src/extensions/transcript/client_side_tool_v2_inventory.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "ac1182e4f2b94246975f2701073ce8d645e80903",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/client_side_tool_v2_inventory.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/client_side_tool_v2_inventory_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust preserves the frozen full shipped ClientSideToolV2 enum inventory, Agent ToolCall oneof inventory, explicit supported mappings, ordinary-transcript-only exclusions, unrecovered oneofs/variants and lossless-projection policy."
     },
     {
       "referencePath": "source/host/extensions/transcript/client-side-tool-v2-producer.ts",
