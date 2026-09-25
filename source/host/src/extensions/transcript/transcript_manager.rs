@@ -7,6 +7,7 @@ use serde_json::Value;
 use crate::extensions::session::production::ProductionSessionWorkers;
 
 use super::ack_obligations::AckObligations;
+use super::automation_runtime::AutomationRuntime;
 use super::async_task_union::AsyncTask;
 use super::production_runtime::{ProductionSendError, ProductionTranscriptRuntime};
 use super::runner_registry::TranscriptRunnerRegistry;
@@ -22,6 +23,7 @@ pub struct TranscriptManager {
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     runner_registry: Arc<TranscriptRunnerRegistry>,
     ack_obligations: Arc<AckObligations>,
+    automation_runtime: Arc<AutomationRuntime>,
     disposed: AtomicBool,
 }
 
@@ -31,11 +33,13 @@ impl TranscriptManager {
         session_workers: Arc<ProductionSessionWorkers>,
     ) -> Self {
         let root_dir = root_dir.as_ref();
+        let automation_runtime = Arc::new(AutomationRuntime::new(Arc::clone(&session_workers)));
         Self {
             session_workers,
             transcript_runtime: Arc::new(ProductionTranscriptRuntime::new(Some(root_dir))),
             runner_registry: Arc::new(TranscriptRunnerRegistry::default()),
             ack_obligations: Arc::new(AckObligations::new(root_dir)),
+            automation_runtime,
             disposed: AtomicBool::new(false),
         }
     }
@@ -54,6 +58,10 @@ impl TranscriptManager {
 
     pub fn ack_obligations(&self) -> Arc<AckObligations> {
         Arc::clone(&self.ack_obligations)
+    }
+
+    pub fn automation_runtime(&self) -> Arc<AutomationRuntime> {
+        Arc::clone(&self.automation_runtime)
     }
 
     pub fn prompt_acceptance_status(

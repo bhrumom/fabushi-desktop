@@ -36,6 +36,7 @@ pub mod box_request_entries;
 pub mod workflow_commands;
 pub mod automation_snapshot;
 pub mod automation_run_path;
+pub mod automation_runtime;
 
 pub mod channel_delivery_unregistered_error;
 pub mod send_not_persisted_error;
