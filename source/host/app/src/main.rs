@@ -34,6 +34,7 @@ use mahayana_host_runtime::extensions::session::box_handoff_service::{
 };
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
+use mahayana_host_runtime::extensions::wallpaper::extension::start_wallpaper_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
     persist_accepted_send_prompt_context,
@@ -2932,6 +2933,10 @@ fn main() {
         ));
     let gateway_events = GatewayEventHub::default();
     let settings_extension = start_settings_extension();
+    let mut wallpaper_extension = start_wallpaper_extension(
+        Arc::clone(&settings_extension),
+        Arc::new(|message| eprintln!("mahayana-host-wallpaper {message}")),
+    );
     let settings_for_session = Arc::clone(&settings_extension);
     let host_telemetry = match start_host_telemetry_extension(&app_data_dir) {
         Ok(telemetry) => telemetry,
@@ -3278,6 +3283,7 @@ fn main() {
     runner_registry.cancel_all("Mahayana Host shutting down");
     routed_tool_relay.cancel_all("Mahayana Host shutting down");
     session_extension.shutdown();
+    wallpaper_extension.stop();
     browser_ua_runtime.stop();
     forever_box.dispose();
     if let Some(daemon) = box_exec_daemon.as_mut() {
