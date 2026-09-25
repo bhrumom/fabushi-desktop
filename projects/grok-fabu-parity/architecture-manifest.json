@@ -11434,12 +11434,19 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_wire_normalization.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "85d28316a5ed85c15d8f7b68aebc903b92f90cab",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_wire_normalization.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_wire_normalization_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports permissive mirror-entry parsing, 4-image cap, media fallback, 24-message cap, guest-name clamp and timestamp fallback. Shared-room prompt assembly remains owned by the separate groups/xuser row."
     },
     {
       "referencePath": "source/host/extensions/experiments/extension.ts",
