@@ -4,6 +4,8 @@ use serde_json::Value;
 
 use super::backend_relay_source::BackendRelaySource;
 use super::listener_connect_watcher::ListenerConnectWatcher;
+use super::listener_integrations::ListenerIntegrations;
+use super::sand_automation_cloud_sync::{DesiredCloudTrigger, desired_cloud_triggers};
 use super::sand_automation_fire_consumer::{AutomationFireEnvelope, AutomationFireFailure, SandAutomationFireConsumer};
 use super::sand_trigger_hub::{ScheduledAutomation, desired_listeners_by_kind, matching_fires};
 
@@ -11,6 +13,7 @@ use super::sand_trigger_hub::{ScheduledAutomation, desired_listeners_by_kind, ma
 pub struct AutomationExtensionRuntime {
     sources: BTreeMap<String, BackendRelaySource>,
     watcher: ListenerConnectWatcher,
+    integrations: ListenerIntegrations,
     consumer: SandAutomationFireConsumer,
     stopped: bool,
 }
@@ -23,6 +26,7 @@ impl AutomationExtensionRuntime {
         Self {
             sources,
             watcher: ListenerConnectWatcher::default(),
+            integrations: ListenerIntegrations::default(),
             consumer: SandAutomationFireConsumer::default(),
             stopped: false,
         }
@@ -30,6 +34,33 @@ impl AutomationExtensionRuntime {
 
     pub fn watcher_mut(&mut self) -> &mut ListenerConnectWatcher {
         &mut self.watcher
+    }
+
+    pub fn integrations(&self) -> &ListenerIntegrations {
+        &self.integrations
+    }
+
+    pub fn set_listener_connected(&mut self, kind: impl Into<String>, connected: bool) {
+        self.integrations.set_connected(kind, connected);
+    }
+
+    pub fn poll_listener_connections(&mut self, now_ms: u64) -> Vec<(String, String)> {
+        let integrations = &self.integrations;
+        self.watcher.tick(now_ms, |kind| {
+            integrations.is_connected(kind)
+                .ok_or_else(|| format!("connection state unavailable for {kind}"))
+        })
+    }
+
+    pub fn desired_cloud_triggers(
+        &self,
+        scheduled: &[ScheduledAutomation],
+        should_sync: impl Fn(&str, &ScheduledAutomation) -> bool,
+    ) -> Vec<DesiredCloudTrigger> {
+        if self.stopped {
+            return Vec::new();
+        }
+        desired_cloud_triggers(scheduled, should_sync)
     }
 
     pub fn stop(&mut self) {
