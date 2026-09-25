@@ -309,7 +309,7 @@ fn parse_char_class(
 ) -> Result<Option<(Token, usize)>, ()> {
     let mut cursor = start + 1;
     let mut negated = false;
-    if matches!(chars.get(cursor), Some('!') | Some('^')) {
+    if matches!(chars.get(cursor), Some(&'!') | Some(&'^')) {
         negated = true;
         cursor += 1;
     }
