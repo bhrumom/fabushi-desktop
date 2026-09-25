@@ -97,7 +97,7 @@ fn runtime_event_fire_debounces_and_coalesces_run_uuids_into_one_durable_run() {
     assert_eq!(second.join().expect("second thread"), Some(FireAutomationOutcome::Ok));
     let prompts = prompts.lock().expect("prompts");
     assert_eq!(prompts.len(), 1);
-    assert!(prompts[0].contains("2 new events"));
+    assert!(prompts[0].contains("2 events"));
 
     let store = sessions.automation_store_for(&agent.id).expect("store");
     let runs = store.read_runs(&automation_id);
