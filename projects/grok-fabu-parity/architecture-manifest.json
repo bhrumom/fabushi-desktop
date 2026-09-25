@@ -10633,12 +10633,19 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_hydration.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "141b679f28ceccf3e8a984bba9a33e62dea53fbe",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_store_hydration.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_hydration_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Existing Rust port is now independently verified against frozen hydration evidence rules, legacy store.db completeness, handoff-manifest temp matching, atomic 0600 marker write+rename+directory sync, cleanup, and durable marker removal."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-manifest-format.ts",
@@ -14357,12 +14364,20 @@
       "targetPath": "source/host/src/extensions/transcript/client_side_tool_v2_producer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c9370818843af5410b89c4be33e000d023a4ce4a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/client_side_tool_v2_producer.rs",
+        "source/shared/rpc/client-side-tool-v2-transport.ts"
+      ],
+      "testEvidence": [
+        "source/host/tests/client_side_tool_v2_producer_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust Host owns the frozen typed side-stream ordering/lifecycle authority: per-agent monotonic sequence, stable epoch, call-open/result-close fencing, unknown-result drop, reset semantics and exact protobuf-base64 transport envelope shared with the frozen renderer contract."
     },
     {
       "referencePath": "source/host/extensions/transcript/client-side-tool-v2-projection.ts",

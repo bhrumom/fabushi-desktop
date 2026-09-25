@@ -1193,3 +1193,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - \`9b54364c769ee4fb8108d1d435a52325b6ce093b\` ports the frozen Secrets service to a Rust Host owner: box-secret validation, UTF-16 size accounting, deterministic redaction-name projection, mode-0600 atomic persistence, startup restore, generation-aware background apply, bounded retry/backoff and status projection. The shipping Host starts it against the existing ForeverBox environment-control path and stops it before ForeverBox teardown.
 - The Secrets service manifest row is implemented with \`secrets_extension_contract.rs\`; the extension remains existing-needs-parity until the frozen external set/getStatus command surface is traced and wired instead of inventing a new RPC.
 - The State Backstop service now has a Rust owner for \`state/store.db\` snapshot/readback, 64 MiB cap, per-agent debounce/dispose behavior and \`SAND_STATE_S3_BACKSTOP\` gate semantics. Its extension remains existing-needs-parity because the production Box Store Sync object-store provider is still a planned responsibility; no fake provider or second storage runtime is introduced.
+
+
+### 2026-09-25 Client-side Tool V2 producer and Box Store hydration closure
+
+- Re-audited PR #20 at exact HEAD `4824665f8cc8f5d2d895b2787c23497f0480100b`: 1,779 implemented / 96 existing-needs-parity / 127 planned before this slice; shipping Host, independent Coordinator and box-exec daemon gates were green while the remaining Host/Runner gates continued.
+- Added a Rust `ClientSideToolV2Producer` that preserves the frozen Host ordering/lifecycle contract and emits the exact shared `protobuf-base64` envelope consumed by `source/shared/rpc/client-side-tool-v2-transport.ts`. It owns stable epoch, per-agent sequence, open-call/result fencing, unknown-result drop and reset behavior.
+- The already-present Rust Box Store hydration port was not rewritten; it now has an independent contract covering normal/legacy completeness evidence, handoff manifest path matching, atomic mode-0600 marker persistence, directory sync and removal. Its manifest row is advanced only after that evidence.
