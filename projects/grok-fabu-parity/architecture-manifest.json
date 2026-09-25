@@ -11295,12 +11295,19 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_pending_departure_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "f11af61a5c6d5f01212487936cf813b679b2048f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_pending_departure_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_durable_stores_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports leave-room/remove-agent keys, permissive v2 pending parsing, idempotent durable record/clear and in-memory form."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-relay.ts",
@@ -11331,12 +11338,19 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_room_tombstone_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "ec99953560ca678caf096d559f914f2e2d6738b3",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_room_tombstone_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_durable_stores_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports owner+room tombstone identity, permissive parsing, idempotent record/clear, cached durable atomic persistence and in-memory form."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-sharing-environment.ts",
@@ -11388,12 +11402,19 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_turn_dedupe_store.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "f175477a736ce5fe871f6a0c4c04b7efc2c23e31",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_turn_dedupe_store.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_durable_stores_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports durable nonce TTL dedupe, permissive parsing, prune-before-check, cache and atomic part-file replacement."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-wire-normalization.ts",
