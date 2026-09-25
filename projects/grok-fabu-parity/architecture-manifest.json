@@ -16298,12 +16298,22 @@
       "targetPath": "source/host/src/runner/runner_prompt_glue.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "9598054147aa9aa785a0b1cc3870c4422134d888",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/runner_prompt_glue.rs",
+        "source/host/src/runner/prompt_collector_glue.rs",
+        "source/host/src/runner/tools/sand_file_transfer_tools.rs",
+        "source/host/src/runner/large_output_spill.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_prompt_glue_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Runner now owns a single prompt-glue composition over the existing provider prompt projection, file-transfer controller and MCP large-output spill policy. This prevents Host-side reassembly of those concerns. Final remains withheld for live getter semantics covering MCP instructions/discovery, automation/profile/video/browser/remote-box state, shell-watch host, user-computer registry and the generated Agent prompt collector factory."
     },
     {
       "referencePath": "source/host/runner/sand-action-audit.ts",

@@ -1134,3 +1134,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The port covers connected/default computer resolution, offline/unknown diagnostics, box-preparing fencing, default `/workspace/uploads/<basename>` ingress, workspace path normalization, reverse transfer defaults and frozen binary-size labels.
 - `sand_file_transfer_tools_contract.rs` uses in-memory TransferBox implementations to prove verbatim binary ingress and egress.
 - The row advances only to `existing-needs-parity`; live UserComputer registry ownership plus generated communicate-tool registration through Runner prompt glue remain required.
+
+
+### 2026-09-25 Runner prompt-glue ownership slice
+
+- Added `runner_prompt_glue.rs` as the single Rust Runner join for the already-real prompt collector projection, file-transfer controller and MCP large-output spill policy.
+- The glue intentionally reuses `prompt_collector_glue.rs`, `sand_file_transfer_tools.rs` and `large_output_spill.rs`; it does not copy their logic into Host/app.
+- `runner_prompt_glue_contract.rs` proves durable user-message/attachment projection and enabled-vs-disabled MCP spill through the same glue owner.
+- The row advances only to `existing-needs-parity`; frozen live getters for MCP/custom instructions/discovery, automation/profile/video/browser/remote-box state, shell watch and generated Agent factory construction remain required.
