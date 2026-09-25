@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::io;
 use std::sync::{Arc, Mutex};
 
-use mahayana_host_runtime::box::box_transfer::TransferBox;
+use mahayana_host_runtime::r#box::box_transfer::TransferBox;
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
 };

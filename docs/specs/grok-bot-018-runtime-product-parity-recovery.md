@@ -1148,3 +1148,9 @@ Implementation must update this compliance table with exact commit/workflow/arti
 
 - The first full-cargo failure after the subagent-management slice was test-only: the fixture expected `elapsedLabel(61_000ms)` to render `1m 1s`, but the frozen Grok implementation deliberately keeps all rounded durations below 90 seconds in seconds.
 - The contract now expects `61s`. Production code and manifest status are unchanged.
+
+
+### 2026-09-25 Rust 2024 box-module path correction
+
+- Exact HEAD `a5bf42a133871b130782f35078d92273b4c00db2` reached the full cargo compile and failed before behavior tests because Rust 2024 reserves `box` as a keyword in module paths.
+- The new file-transfer and prompt-glue source/tests now use the repository's required raw identifier path `r#box` (including `ports::r#box`). No runtime behavior or architecture status changed.

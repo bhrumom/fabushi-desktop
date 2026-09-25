@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::io;
 use std::sync::{Arc, Mutex};
 
-use mahayana_host_runtime::box::box_transfer::TransferBox;
-use mahayana_host_runtime::ports::box::SAND_BOX_NOT_READY_MESSAGE;
+use mahayana_host_runtime::r#box::box_transfer::TransferBox;
+use mahayana_host_runtime::ports::r#box::SAND_BOX_NOT_READY_MESSAGE;
 use mahayana_host_runtime::runner::tools::sand_file_transfer_tools::{
     CopyFromBoxArgs, CopyToBoxArgs, FileTransferController, UserComputerHandle,
     copy_file_from_box, copy_file_to_box, format_bytes,

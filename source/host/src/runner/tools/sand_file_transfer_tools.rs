@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use crate::box::box_transfer::{
+use crate::r#box::box_transfer::{
     BoxTransferError, SAND_BOX_UPLOADS_DIR, TransferBox, TransferEndpoint,
     resolve_box_workspace_path, transfer_file_between_boxes,
 };
-use crate::ports::box::SAND_BOX_NOT_READY_MESSAGE;
+use crate::ports::r#box::SAND_BOX_NOT_READY_MESSAGE;
 
 #[derive(Debug, Clone)]
 pub struct UserComputerHandle<BoxType> {
