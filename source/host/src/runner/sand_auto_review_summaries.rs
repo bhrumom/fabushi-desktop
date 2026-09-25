@@ -316,7 +316,8 @@ pub fn summarize_sand_automation_write_action(
     is_enabled: Option<bool>,
     referencing_routine_names: &[String],
 ) -> String {
-    let name = non_empty(&compact(name, 80), "a routine");
+    let compact_name = compact(name, 80);
+    let name = non_empty(&compact_name, "a routine");
     let instruction = compact_head_and_tail(&redact_inline_secrets(prompt), 240);
     if operation == "workflow_body" {
         let routines = referencing_routine_names
@@ -329,7 +330,8 @@ pub fn summarize_sand_automation_write_action(
         let routines = if routines.is_empty() { "standing orders" } else { &routines };
         return format!("Change workflow “{name}” used by {routines}: “{instruction}”");
     }
-    let when = non_empty(&compact(trigger_description, 120), "on a trigger").to_lowercase();
+    let compact_trigger = compact(trigger_description, 120);
+    let when = non_empty(&compact_trigger, "on a trigger").to_lowercase();
     let verb = if operation == "create" { "Save" } else { "Change" };
     let paused = if is_enabled == Some(false) { " (paused)" } else { "" };
     format!("{verb} the routine “{name}”{paused} to run {when}: “{instruction}”")
