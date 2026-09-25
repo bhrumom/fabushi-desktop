@@ -1065,3 +1065,9 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Shipping `runner.startRoutedProvider` now invokes memory maintenance only after a successful visible memorable turn and before publishing renderer-visible completion. The memory inference request has no tools and uses the already selected routed provider; failures remain opportunistic and do not overturn the user's completed turn.
 - `source/host/tests/turn_memory_contract.rs` proves deduplicated extraction, six-turn episode summarization/clear and evidence-mode bypass. The manifest moves `turn-memory.ts` from `planned` to `existing-needs-parity`, not final, because the production Memory synthesis bridge and frozen auxiliary agent-message collector still need to be wired.
 
+### 2026-09-25 post-turn memory compile blocker closure
+
+- Exact failing HEAD `644c922c9e1e4a7eda2f22b2f9441ed3dee91268` reached the real shipping Host compile gate and exposed five local type/trait errors only: the watched-directory wrapper lacked a `Debug` projection required by `FileMemoryStore`, and the durable Agent DB represents episode timestamps as `f64` while `sand_memory::EpisodeTurn` / markdown persistence use `i64`.
+- The fix is deliberately behavior-neutral: `WatchedDirectory` now has a manual debug view that does not require debug-printing callback/watcher internals, Agent DB writes preserve millisecond values as `f64`, and episode prompt/persistence projection converts finite in-range values back to `i64` with the turn timestamp as the invalid-value fallback.
+- No parity status is advanced by this compile repair; exact-HEAD CI must re-prove the shipping Host and Runner contracts.
+

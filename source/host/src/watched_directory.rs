@@ -27,6 +27,16 @@ pub struct WatchedDirectory {
     inner: Arc<WatchedDirectoryInner>,
 }
 
+impl std::fmt::Debug for WatchedDirectory {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("WatchedDirectory")
+            .field("root", &self.inner.root)
+            .field("debounce_ms", &self.inner.debounce_ms)
+            .finish_non_exhaustive()
+    }
+}
+
 impl WatchedDirectory {
     pub fn new(root: impl Into<PathBuf>, debounce_ms: u64) -> Self {
         Self::with_reporter(root, debounce_ms, Arc::new(|message| {

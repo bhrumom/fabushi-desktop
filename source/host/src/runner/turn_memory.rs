@@ -72,7 +72,7 @@ where
     if progress
         .record_episode_turn(
             &crate::extensions::session::agent_db_serde::EpisodeTurn {
-                ts: turn_timestamp,
+                ts: turn_timestamp as f64,
                 user: exchange.user.clone(),
                 agent: exchange.agent.clone(),
             },
@@ -95,14 +95,14 @@ where
     let turns = pending
         .iter()
         .map(|turn| MemoryEpisodeTurn {
-            ts: turn.ts,
+            ts: timestamp_ms_i64(turn.ts, turn_timestamp),
             user: turn.user.clone(),
             agent: turn.agent.clone(),
         })
         .collect::<Vec<_>>();
     let latest_timestamp = pending
         .last()
-        .map(|turn| turn.ts)
+        .map(|turn| timestamp_ms_i64(turn.ts, turn_timestamp))
         .unwrap_or(turn_timestamp);
 
     let summary = execute(
@@ -171,4 +171,15 @@ fn run_memory_extraction<Execute>(
     };
     report.added_memories = applied.added.len();
     report.removed_memories = applied.removed.len();
+}
+
+fn timestamp_ms_i64(value: f64, fallback: i64) -> i64 {
+    if value.is_finite()
+        && value >= i64::MIN as f64
+        && value <= i64::MAX as f64
+    {
+        value.trunc() as i64
+    } else {
+        fallback
+    }
 }
