@@ -1501,6 +1501,13 @@ fn serve_connection(
     runtime: Arc<BoxExecRuntime>,
     auth_token: &str,
 ) -> Result<(), String> {
+    // A nonblocking listener may yield an accepted socket that is still
+    // nonblocking on some Unix platforms. Normalize the per-request socket
+    // before the worker starts its bounded blocking HTTP read so a scheduling
+    // race cannot turn the first read into WouldBlock and close the connection.
+    stream
+        .set_nonblocking(false)
+        .map_err(|error| error.to_string())?;
     stream
         .set_read_timeout(Some(Duration::from_secs(5)))
         .map_err(|error| error.to_string())?;
