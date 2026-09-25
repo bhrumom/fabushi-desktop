@@ -47,7 +47,7 @@ fn check_projection_lists_and_expands_live_runtime_without_second_registry() {
     let list = check_subagent(&runtime, None, 62_000);
     assert!(list.starts_with("1 subagent(s) running:"));
     assert!(list.contains("worker-a [computerUse]"));
-    assert!(list.contains("running for 1m 1s"));
+    assert!(list.contains("running for 61s"));
     assert!(list.contains("3 tool call(s)"));
     assert!(list.contains("Pass a subagent_id"));
 

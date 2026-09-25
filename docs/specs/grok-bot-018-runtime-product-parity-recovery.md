@@ -1142,3 +1142,9 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The glue intentionally reuses `prompt_collector_glue.rs`, `sand_file_transfer_tools.rs` and `large_output_spill.rs`; it does not copy their logic into Host/app.
 - `runner_prompt_glue_contract.rs` proves durable user-message/attachment projection and enabled-vs-disabled MCP spill through the same glue owner.
 - The row advances only to `existing-needs-parity`; frozen live getters for MCP/custom instructions/discovery, automation/profile/video/browser/remote-box state, shell watch and generated Agent factory construction remain required.
+
+
+### 2026-09-25 subagent management contract fixture correction
+
+- The first full-cargo failure after the subagent-management slice was test-only: the fixture expected `elapsedLabel(61_000ms)` to render `1m 1s`, but the frozen Grok implementation deliberately keeps all rounded durations below 90 seconds in seconds.
+- The contract now expects `61s`. Production code and manifest status are unchanged.
