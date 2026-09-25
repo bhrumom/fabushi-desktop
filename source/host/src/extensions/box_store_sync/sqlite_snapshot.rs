@@ -18,7 +18,7 @@ pub fn sqlite_vacuum_into(
     let escaped = dest_path
         .as_ref()
         .to_string_lossy()
-        .replace(''', "''");
+        .replace('\'', "''");
     db.execute_batch(&format!("VACUUM INTO '{escaped}'"))?;
     Ok(())
 }
