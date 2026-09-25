@@ -16063,12 +16063,20 @@
       "targetPath": "source/host/src/runner/computer_use.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "22df2bd6818ef6abb71bd1eecee6f235886037ea",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/computer_use.rs",
+        "source/host/src/runner/sand_action_audit.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/computer_use_coordination_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Runner now owns the frozen computer-use coordination state: one desktop window lease, per-subagent prewarm bookkeeping, fail-soft box/browser diagnostics, audit-kind counting, turn-usage aggregation, mixed-model projection and lazy navigation-probe ownership. Final remains withheld until generated computerUse/shell executor resources, remoteBox.ensureReady/browser prewarm and the concrete SandNavigationProbe are wired through this owner in the shipping generated Agent graph."
     },
     {
       "referencePath": "source/host/runner/conversation-outline.ts",

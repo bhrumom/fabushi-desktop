@@ -1102,3 +1102,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `agent_adapters.rs` owns request-context projection, single-computer-use admission, resume/running fences, launch-review settlement, background dispatch metadata and the text/thinking/usage/tool forwarding contract including unresolved shell/read/await detection.
 - `subagent_runtime_adapter_contract.rs` pins request identity, steer-vs-abort semantics, empty-output fallback, computer-use usage/audit projection, resume/window fencing, fail-closed request-context completeness and forwarding behavior.
 - Both manifest rows move only from `planned` to `existing-needs-parity`; they are intentionally not final until generated Agent proto/session wiring and live Host callbacks replace the remaining adapter-neutral projections.
+
+
+### 2026-09-25 computer-use coordination ownership slice
+
+- Exact baseline: `32efadcd140dcdace9252bb88aee25f8967bd662`, where PR-triggered Rust desktop runtime and Desktop Chat Parity are both green and the push-only failure remains the expected final architecture gate.
+- Added `source/host/src/runner/computer_use.rs` as the Runner-owned Rust port of the frozen coordination state: reentrant single desktop-window allocation, preparation lifecycle, fail-soft prewarm diagnostics, action-audit counting via the existing `sand_action_audit` mapping, turn-usage aggregation, model-id collapse and lazy navigation-probe ownership.
+- `source/host/tests/computer_use_coordination_contract.rs` independently covers the single-controller invariant, preparation cleanup/failure classification, usage aggregation, mixed-model semantics, audit filtering and no-auditor navigation behavior.
+- The manifest row advances only from `planned` to `existing-needs-parity`. Generated computer/shell resource accessors, real remote box prewarm and concrete navigation-probe execution remain mandatory before finalization.

@@ -86,3 +86,5 @@ pub mod turn_memory;
 
 pub mod subagent_runtime;
 pub mod agent_adapters;
+
+pub mod computer_use;
