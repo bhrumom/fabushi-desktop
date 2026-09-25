@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{
-    Arc, Mutex,
-    atomic::{AtomicBool, AtomicU64, Ordering},
+    Arc, Condvar, Mutex, Weak,
+    atomic::{AtomicBool, Ordering},
 };
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 pub const SAND_STATE_BACKSTOP_REL_PATH: &str = "state/store.db";
 pub const DEFAULT_MAX_SNAPSHOT_BYTES: usize = 64 * 1024 * 1024;
@@ -74,6 +74,35 @@ pub fn read_store_db_bytes(
         .map_err(|error| error.to_string())
 }
 
+#[derive(Debug, Default)]
+struct DebounceState {
+    revision: u64,
+    stopped: bool,
+}
+
+#[derive(Debug, Default)]
+struct DebounceSlot {
+    state: Mutex<DebounceState>,
+    changed: Condvar,
+}
+
+impl DebounceSlot {
+    fn trigger(&self) {
+        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if state.stopped {
+            return;
+        }
+        state.revision = state.revision.wrapping_add(1);
+        self.changed.notify_all();
+    }
+
+    fn stop(&self) {
+        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        state.stopped = true;
+        self.changed.notify_all();
+    }
+}
+
 pub struct SandStateBackstop {
     object_store_provider: StateBackstopStoreProvider,
     source_id_for_agent: StateBackstopSourceResolver,
@@ -83,8 +112,7 @@ pub struct SandStateBackstop {
     debounce: Duration,
     log: StateBackstopLog,
     disposed: Arc<AtomicBool>,
-    next_generation: AtomicU64,
-    pending: Arc<Mutex<HashMap<String, u64>>>,
+    pending: Arc<Mutex<HashMap<String, Arc<DebounceSlot>>>>,
 }
 
 impl SandStateBackstop {
@@ -98,7 +126,6 @@ impl SandStateBackstop {
             debounce: options.debounce,
             log: options.log,
             disposed: Arc::new(AtomicBool::new(false)),
-            next_generation: AtomicU64::new(1),
             pending: Arc::new(Mutex::new(HashMap::new())),
         })
     }
@@ -111,39 +138,46 @@ impl SandStateBackstop {
         if self.disposed.load(Ordering::Acquire) {
             return;
         }
-        let agent_id = agent_id.into();
-        let generation = self.next_generation.fetch_add(1, Ordering::AcqRel);
-        self.pending
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .insert(agent_id.clone(), generation);
 
-        let this = Arc::clone(self);
-        let debounce = self.debounce;
-        let _ = thread::Builder::new()
-            .name("sand-state-backstop-snapshot".into())
-            .spawn(move || {
-                thread::sleep(debounce);
-                if this.disposed.load(Ordering::Acquire) {
-                    return;
+        let agent_id = agent_id.into();
+        let (slot, created) = {
+            let mut pending = self
+                .pending
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            match pending.get(&agent_id) {
+                Some(slot) => (Arc::clone(slot), false),
+                None => {
+                    let slot = Arc::new(DebounceSlot::default());
+                    pending.insert(agent_id.clone(), Arc::clone(&slot));
+                    (slot, true)
                 }
-                let is_current = this
-                    .pending
+            }
+        };
+
+        if created {
+            let service = Arc::downgrade(self);
+            let worker_slot = Arc::clone(&slot);
+            let worker_agent_id = agent_id.clone();
+            let debounce = self.debounce;
+            if let Err(error) = thread::Builder::new()
+                .name("sand-state-backstop-snapshot".into())
+                .spawn(move || {
+                    run_debounce_worker(service, worker_slot, worker_agent_id, debounce);
+                })
+            {
+                self.pending
                     .lock()
                     .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .get(&agent_id)
-                    .copied()
-                    == Some(generation);
-                if !is_current {
-                    return;
-                }
-                let result = this.snapshot_now(&agent_id);
-                if let StateBackstopSnapshotResult::Error { error } = result {
-                    (this.log)(&format!(
-                        "snapshot rejected for {agent_id}: {error}"
-                    ));
-                }
-            });
+                    .remove(&agent_id);
+                (self.log)(&format!(
+                    "could not start snapshot debounce worker for {agent_id}: {error}"
+                ));
+                return;
+            }
+        }
+
+        slot.trigger();
     }
 
     pub fn snapshot_now(&self, agent_id: &str) -> StateBackstopSnapshotResult {
@@ -186,11 +220,82 @@ impl SandStateBackstop {
 
     pub fn dispose(&self) {
         self.disposed.store(true, Ordering::Release);
-        self.pending
+        let slots = self
+            .pending
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clear();
+            .drain()
+            .map(|(_, slot)| slot)
+            .collect::<Vec<_>>();
+        for slot in slots {
+            slot.stop();
+        }
     }
+}
+
+fn run_debounce_worker(
+    service: Weak<SandStateBackstop>,
+    slot: Arc<DebounceSlot>,
+    agent_id: String,
+    debounce: Duration,
+) {
+    let mut seen_revision = 0u64;
+
+    loop {
+        let mut state = slot
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        while !state.stopped && state.revision == seen_revision {
+            state = slot
+                .changed
+                .wait(state)
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+        }
+        if state.stopped {
+            return;
+        }
+
+        seen_revision = state.revision;
+        let mut deadline = Instant::now() + debounce;
+        loop {
+            let now = Instant::now();
+            if now >= deadline {
+                break;
+            }
+            let wait_for = deadline.saturating_duration_since(now);
+            let (next_state, timeout) = slot
+                .changed
+                .wait_timeout(state, wait_for)
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            state = next_state;
+
+            if state.stopped {
+                return;
+            }
+            if state.revision != seen_revision {
+                seen_revision = state.revision;
+                deadline = Instant::now() + debounce;
+                continue;
+            }
+            if timeout.timed_out() {
+                break;
+            }
+        }
+        drop(state);
+
+        let Some(service) = service.upgrade() else {
+            return;
+        };
+        if service.disposed.load(Ordering::Acquire) {
+            return;
+        }
+        if let StateBackstopSnapshotResult::Error { error } = service.snapshot_now(&agent_id) {
+            (service.log)(&format!("snapshot rejected for {agent_id}: {error}"));
+        }
+    }
+}
 }
 
 pub fn is_state_backstop_enabled_value(raw: Option<&str>) -> bool {
