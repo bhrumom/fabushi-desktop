@@ -1076,3 +1076,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Exact HEAD `bc8ca31029342fb6314754487174e4913936affa` passed the shipping Host build, independent Coordinator, independent box-exec daemon and shipping box-exec supervisor. The first Runner-suite failure was compile-only in the new `turn_memory_contract`: its persisted Agent DB `EpisodeTurn.ts` fixture used integer `1` instead of the canonical `f64` timestamp.
 - The fixture now uses `1.0`; production code is unchanged. This commit advances no parity status and exists only to let the exact-HEAD Runner suite execute the intended behavior assertions.
 
+
+
+### 2026-09-25 Runner auto-review secret-redaction deadlock closure
+
+- Exact HEAD `43eeab1d17f320bcc0f16b990b41be487ce8e28a` passed Desktop Chat Parity and the Rust job's shipping Host build, independent Mahayana Coordinator contract, independent box-exec daemon contract, and shipping box-exec supervisor before the Runner suite stalled.
+- The first real Runner blocker was `sand_auto_review_summaries_contract::automation_cloud_and_subagent_summaries_match_frozen_wording`: the Rust inline-secret redactor repeatedly rediscovered an already-redacted `token=…` assignment and replaced the ellipsis with itself forever, unlike the frozen Grok regex replacement.
+- `source/host/src/runner/sand_auto_review_summaries.rs` now advances a byte-safe scan cursor after each replacement and continues past non-assignment keyword occurrences; the contract adds two same-key assignments in one prompt to prove forward progress and complete redaction.
+- No architecture-manifest status is advanced by this commit. The mapped `source/host/runner/sand-auto-review-summaries.ts` entry remains `existing-needs-parity` until a fresh exact-HEAD Rust runtime run passes the Runner contract and downstream architecture gates.

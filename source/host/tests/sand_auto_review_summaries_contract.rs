@@ -89,6 +89,18 @@ fn automation_cloud_and_subagent_summaries_match_frozen_wording() {
         "Change workflow “Research” used by Daily, Weekly: “Read sources”"
     );
     assert_eq!(
+        summarize_sand_automation_write_action(
+            "create",
+            "Secrets",
+            "Every day",
+            "token=abcdefghijklmnopqrstuvwxyz012345 token=zyxwvutsrqponmlkjihgfedcba987654",
+            None,
+            &[],
+        ),
+        "Save the routine “Secrets” to run every day: “token=… token=…”"
+    );
+
+    assert_eq!(
         summarize_sand_cloud_agent_action(
             "reply",
             "Check the failing job",

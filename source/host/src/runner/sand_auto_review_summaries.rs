@@ -578,26 +578,58 @@ fn contains_inline_secret_assignment(value: &str) -> bool {
 
 fn redact_inline_secrets(value: &str) -> String {
     let mut output = value.to_string();
-    for key in ["authorization", "api_key", "api-key", "apikey", "password", "secret", "token"] {
+    for key in [
+        "authorization",
+        "api_key",
+        "api-key",
+        "apikey",
+        "password",
+        "secret",
+        "token",
+    ] {
+        let mut search_from = 0usize;
         loop {
-            let lower = output.to_lowercase();
-            let Some(start) = lower.find(key) else {
-                break;
-            };
-            let after_key = start + key.len();
-            let suffix = &output[after_key..];
-            let whitespace = suffix.chars().take_while(|ch| ch.is_whitespace()).count();
-            let separator_index = after_key + whitespace;
-            let separator = output[separator_index..].chars().next();
-            if !matches!(separator, Some(':') | Some('=')) {
-                let prefix = output[..after_key].to_string();
-                let rest = output[after_key..].to_string();
-                output = format!("{prefix}{rest}");
+            if search_from >= output.len() {
                 break;
             }
-            let value_start = separator_index + 1;
-            let following = &output[value_start..];
-            let leading = following.chars().take_while(|ch| ch.is_whitespace()).count();
+            let bytes = output.as_bytes();
+            let needle = key.as_bytes();
+            let Some(start) = (search_from..=bytes.len().saturating_sub(needle.len()))
+                .find(|&index| {
+                    bytes
+                        .get(index..index + needle.len())
+                        .is_some_and(|candidate| {
+                            candidate
+                                .iter()
+                                .zip(needle)
+                                .all(|(left, right)| left.to_ascii_lowercase() == *right)
+                        })
+                })
+            else {
+                break;
+            };
+
+            let after_key = start + needle.len();
+            let whitespace = output[after_key..]
+                .chars()
+                .take_while(|ch| ch.is_whitespace())
+                .map(char::len_utf8)
+                .sum::<usize>();
+            let separator_index = after_key + whitespace;
+            let Some(separator) = output[separator_index..].chars().next() else {
+                break;
+            };
+            if !matches!(separator, ':' | '=') {
+                search_from = after_key;
+                continue;
+            }
+
+            let value_start = separator_index + separator.len_utf8();
+            let leading = output[value_start..]
+                .chars()
+                .take_while(|ch| ch.is_whitespace())
+                .map(char::len_utf8)
+                .sum::<usize>();
             let secret_start = value_start + leading;
             let secret_len = output[secret_start..]
                 .chars()
@@ -605,9 +637,12 @@ fn redact_inline_secrets(value: &str) -> String {
                 .map(char::len_utf8)
                 .sum::<usize>();
             if secret_len == 0 {
-                break;
+                search_from = secret_start;
+                continue;
             }
+
             output.replace_range(secret_start..secret_start + secret_len, "…");
+            search_from = secret_start + "…".len();
         }
     }
     output
