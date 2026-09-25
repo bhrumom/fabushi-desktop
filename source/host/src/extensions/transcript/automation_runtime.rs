@@ -9,8 +9,10 @@ use crate::extensions::session::agent_session::{AgentAutomationEntry, SandAgentS
 use crate::extensions::session::production::ProductionSessionWorkers;
 
 use super::automation_run_path::{
-    AutomationExecutionResult, AutomationRunPath, FireAutomationArgs, FireAutomationOutcome,
+    AutomationExecutionResult, AutomationRunPath, AutomationRunTrigger, FireAutomationArgs,
+    FireAutomationOutcome,
 };
+use super::automation_spend_guard_runtime::AutomationSpendGuardRuntime;
 use super::automation_snapshot::{
     AutomationAction as AutomationDiffAction, AutomationSnapshot, diff_automation_action,
     snapshot_automations,
@@ -260,6 +262,7 @@ pub struct AutomationLifecycleEvent {
 pub struct AutomationRuntime {
     sessions: Arc<ProductionSessionWorkers>,
     run_path: Arc<AutomationRunPath>,
+    spend_guard: Arc<AutomationSpendGuardRuntime>,
     last_known: Arc<Mutex<HashMap<String, BTreeMap<String, AutomationSnapshot>>>>,
     mutation_locks: Arc<Mutex<HashMap<String, Arc<Mutex<()>>>>>,
 }
@@ -269,6 +272,7 @@ impl AutomationRuntime {
         Self {
             sessions,
             run_path: Arc::new(AutomationRunPath::default()),
+            spend_guard: Arc::new(AutomationSpendGuardRuntime::new(Arc::clone(&sessions))),
             last_known: Arc::new(Mutex::new(HashMap::new())),
             mutation_locks: Arc::new(Mutex::new(HashMap::new())),
         }
@@ -276,6 +280,10 @@ impl AutomationRuntime {
 
     pub fn run_path(&self) -> Arc<AutomationRunPath> {
         Arc::clone(&self.run_path)
+    }
+
+    pub fn spend_guard(&self) -> Arc<AutomationSpendGuardRuntime> {
+        Arc::clone(&self.spend_guard)
     }
 
     pub fn get_agent_automations(&self, agent_id: &str) -> Result<Vec<AutomationRecord>, String> {
@@ -410,6 +418,110 @@ impl AutomationRuntime {
             Ok(())
         })?;
         Ok(outcome)
+    }
+
+    pub fn run_background_automation_with<Execute>(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        trigger: AutomationRunTrigger,
+        events: Vec<Value>,
+        run_uuid: Option<String>,
+        coalesced_run_uuids: Vec<String>,
+        fired_at_ms: f64,
+        execute: Execute,
+    ) -> Result<Option<FireAutomationOutcome>, String>
+    where
+        Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
+    {
+        if !trigger.is_background() {
+            return Err("background automation run requires schedule or event trigger".into());
+        }
+        let Some((store, automation, reminder)) = self.with_agent_mutation_lock(agent_id, || {
+            let store = self.automation_store(agent_id)?;
+            let Some(automation) = store.get(automation_id) else {
+                return Ok(None);
+            };
+            let before = store.list_definitions();
+            self.sync_baseline(agent_id, &before);
+            let guard = self.spend_guard.apply_with_store(
+                agent_id,
+                &store,
+                automation_id,
+                fired_at_ms,
+            )?;
+            let after_guard = store.list_definitions();
+            let _ = self.record_changes(
+                agent_id,
+                &before,
+                &after_guard,
+                AutomationLifecycleSource::SpendGuard,
+            );
+            if guard.paused {
+                return Ok(None);
+            }
+            Ok(Some((store, automation, guard.reminder)))
+        })? else {
+            return Ok(None);
+        };
+
+        let outcome = self.run_path.fire_automation_with(
+            &store,
+            FireAutomationArgs {
+                agent_id: agent_id.to_string(),
+                automation,
+                trigger,
+                events,
+                run_uuid,
+                coalesced_run_uuids,
+                fired_at_ms,
+                spend_guard_reminder: reminder,
+            },
+            execute,
+        )?;
+
+        self.with_agent_mutation_lock(agent_id, || {
+            let current = store.list_definitions();
+            let _ = self.record_changes(
+                agent_id,
+                &current,
+                &current,
+                AutomationLifecycleSource::Agent,
+            );
+            Ok(())
+        })?;
+        Ok(outcome)
+    }
+
+    pub fn handle_spend_guard_answer(
+        &self,
+        agent_id: &str,
+        entry_id: &str,
+        value: &str,
+        now_ms: f64,
+    ) -> Result<Option<String>, String> {
+        self.with_agent_mutation_lock(agent_id, || {
+            let store = self.automation_store(agent_id)?;
+            let before = store.list_definitions();
+            self.sync_baseline(agent_id, &before);
+            let ack = self.spend_guard.handle_widget_answer_with_store(
+                agent_id,
+                &store,
+                entry_id,
+                value,
+                now_ms,
+            )?;
+            if ack.is_some() {
+                let after = store.list_definitions();
+                let _ = self.record_changes(
+                    agent_id,
+                    &before,
+                    &after,
+                    AutomationLifecycleSource::SpendGuard,
+                );
+            }
+            Ok(ack)
+        })
     }
 
     pub fn with_workflow_ui_mutation<T, Mutation>(

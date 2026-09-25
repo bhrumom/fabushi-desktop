@@ -31,7 +31,7 @@ use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
 use super::agent_db_serde::{
-    AwaitingUserResponse, EpisodeTurn, SandProfile, SpendGuardState,
+    AwaitingUserResponse, EpisodeTurn, SandProfile, SpendGuardState, UnreadState,
 };
 use super::session_conversation_state::{
     ConversationOutlineItem, ResolvedConversationState, SessionConversationState, TranscriptThread,
@@ -813,6 +813,12 @@ impl ProductionSessionWorkers {
     pub fn mark_agent_activity(&self, agent_id: &str, at: f64) -> Result<bool, String> {
         self.open_agent_db_owner(agent_id)?
             .mark_activity(at)
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn get_agent_unread_state(&self, agent_id: &str) -> Result<UnreadState, String> {
+        self.open_agent_db_owner(agent_id)?
+            .get_unread_state()
             .map_err(|error| error.to_string())
     }
 
