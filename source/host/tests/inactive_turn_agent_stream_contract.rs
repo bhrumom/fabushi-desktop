@@ -89,9 +89,9 @@ impl OuterStreamPersistence<String, String> for Persistence<'_> {
     }
 }
 
-struct Source<'a>(&'a Events);
+struct Source(Arc<Events>);
 
-impl InactiveTurnAgentStreamSource<String, String> for Source<'_> {
+impl InactiveTurnAgentStreamSource<String, String> for Source {
     fn start_stream<'a>(
         &'a self,
         context: &'a String,
@@ -133,16 +133,16 @@ impl InactiveTurnAgentLifecycleHooks<String> for Hooks<'_> {
 
 #[test]
 fn inactive_generated_agent_stream_drains_checkpoint_and_owns_outer_lifecycle() {
-    let events = Events::default();
+    let events = Arc::new(Events::default());
     let source: Arc<dyn InactiveTurnAgentStreamSource<String, String>> =
-        Arc::new(Source(&events));
+        Arc::new(Source(Arc::clone(&events)));
     let path = InactiveTurnAgentStreamPath::new(source);
     let persistence = Persistence {
-        events: &events,
+        events: events.as_ref(),
         generation: 7,
         active_generation: 7,
     };
-    let hooks = Hooks(&events);
+    let hooks = Hooks(events.as_ref());
     let context = "ctx".to_string();
     let resume = "resume".to_string();
 
@@ -175,16 +175,16 @@ fn inactive_generated_agent_stream_drains_checkpoint_and_owns_outer_lifecycle() 
 
 #[test]
 fn inactive_generated_agent_stream_skips_stale_checkpoint_persistence_but_releases_claim() {
-    let events = Events::default();
+    let events = Arc::new(Events::default());
     let source: Arc<dyn InactiveTurnAgentStreamSource<String, String>> =
-        Arc::new(Source(&events));
+        Arc::new(Source(Arc::clone(&events)));
     let path = InactiveTurnAgentStreamPath::new(source);
     let persistence = Persistence {
-        events: &events,
+        events: events.as_ref(),
         generation: 7,
         active_generation: 8,
     };
-    let hooks = Hooks(&events);
+    let hooks = Hooks(events.as_ref());
     let context = "ctx".to_string();
 
     let state = futures::executor::block_on(path.run_lifecycle(
