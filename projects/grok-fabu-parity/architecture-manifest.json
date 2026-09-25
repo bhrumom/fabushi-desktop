@@ -16286,12 +16286,24 @@
       "targetPath": "source/host/src/runner/remote_box_resources.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "7c4b982cbe8100f2fada98a58cc8340a26e2e121",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/remote_box_resources.rs",
+        "source/host/src/runner/computer_use.rs",
+        "source/host/src/runner/auto_review_gate.rs",
+        "source/host/src/runner/sand_action_audit.rs",
+        "source/host/src/box/box_capabilities.rs",
+        "source/host/src/box/box_windows.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/remote_box_resources_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Runner now owns the frozen remote-resource lifecycle decision core: prepared/cached connection reuse, terminal-folder publication, preparing/connection failure mapping with retryable cache reset, no-monitor invalidation, shell/background barrier+audit+navigation ordering, read/shell/computer side-effect plans, monitor busy lease intent and classifier registration policy. Final remains withheld until RegistryResourceAccessor/generated shell/read/background/computer/classifier executors, async connection-promise coalescing and live AutoReview/NavigationProbe/Host audit callbacks execute these plans in production."
     },
     {
       "referencePath": "source/host/runner/runner-prompt-glue.ts",

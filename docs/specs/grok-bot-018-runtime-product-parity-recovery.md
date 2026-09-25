@@ -1168,3 +1168,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The module reuses existing `background_work` footer/time limits, `conversation_state` queued-message selection, hidden prompt markers and `system_prompt` message addressing.
 - Independent contracts cover text/binary/not-found terminal reads, success/stream-error/missing/permission/300-minute timeout settlement, hidden/group watermark filtering, cache invalidation, fail-closed unreadable turns and rich-text queued-message prepend projection.
 - The row advances only to `existing-needs-parity`; generated Read executor/local-tool scope, real box readiness/path, Agent proto blob decoding and the asynchronous polling owner remain required before final.
+
+
+### 2026-09-25 remote-box Runner resource ownership slice
+
+- Baseline `5d71b7e20906cc7640fa55cb2373a35714b98a7b` passed the full Rust parity cargo suite for shell-terminal-watch.
+- Added `remote_box_resources.rs` as the Runner-owned decision layer for frozen remote-resource behavior: prepared/cached connection reuse, terminal-folder publication, fail-closed preparing and connection errors, retryable cache invalidation, no-monitor recovery, shell/background barrier-audit-navigation ordering, read/shell/computer execution plans and smart-mode classifier registration.
+- `remote_box_resources_contract.rs` pins connection caching/retry, timeout/crash vs generic error messages, no-monitor invalidation, exact side-effect ordering and classifier gate conditions.
+- The row advances only to `existing-needs-parity`; generated RegistryResourceAccessor executors, async connection-promise coalescing, real AutoReview/NavigationProbe/Host audit callbacks and executor delegation remain required.
