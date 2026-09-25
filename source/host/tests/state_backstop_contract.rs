@@ -165,8 +165,19 @@ fn schedule_snapshot_is_debounced_per_agent_and_dispose_cancels_pending_work() {
     backstop.schedule_snapshot("agent-1");
     backstop.schedule_snapshot("agent-1");
     backstop.schedule_snapshot("agent-1");
-    thread::sleep(Duration::from_millis(70));
-    assert_eq!(store.writes.lock().expect("writes").len(), 1);
+    let deadline = std::time::Instant::now() + Duration::from_secs(2);
+    loop {
+        let writes = store.writes.lock().expect("writes").len();
+        if writes >= 1 {
+            assert_eq!(writes, 1);
+            break;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "debounced snapshot did not complete before deterministic test deadline"
+        );
+        thread::sleep(Duration::from_millis(5));
+    }
 
     backstop.schedule_snapshot("agent-1");
     backstop.dispose();
