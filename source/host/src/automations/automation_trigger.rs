@@ -196,3 +196,128 @@ pub fn slack_scope_matches(scope:&str,actual:&str)->bool{
     let (a_sigil,a)=split(scope); let (b_sigil,b)=split(actual);
     !(a_sigil.is_some()&&b_sigil.is_some()&&a_sigil!=b_sigil)&&a==b
 }
+
+
+pub fn serialize_stored_trigger(trigger: &Value) -> Value {
+    parse_stored_trigger(trigger).unwrap_or(Value::Null)
+}
+
+fn event_string<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
+    value.get(key).and_then(Value::as_str)
+}
+
+pub fn slack_listener_matches(listener: &Value, event: &Value) -> bool {
+    let (Some(scope), Some(channel)) = (
+        event_string(listener, "channel"),
+        event_string(event, "channel"),
+    ) else {
+        return false;
+    };
+    if !slack_scope_matches(scope, channel) {
+        return false;
+    }
+    let Some(rule) = listener.get("match").and_then(Value::as_object) else {
+        return false;
+    };
+    let kind = rule.get("kind").and_then(Value::as_str).unwrap_or_default();
+    let reaction = event.get("reactionEmoji").is_some_and(|value| !value.is_null());
+    match kind {
+        "reaction" => {
+            if !reaction {
+                return false;
+            }
+            if rule.get("bySelf").and_then(Value::as_bool) == Some(true)
+                && event.get("isSelf").and_then(Value::as_bool) != Some(true)
+            {
+                return false;
+            }
+            let Some(emojis) = rule.get("emoji").and_then(Value::as_array) else {
+                return true;
+            };
+            if emojis.is_empty() {
+                return true;
+            }
+            let Some(actual) = event_string(event, "reactionEmoji") else {
+                return false;
+            };
+            let actual = normalize_reaction_emoji(actual);
+            emojis.iter().filter_map(Value::as_str)
+                .any(|emoji| normalize_reaction_emoji(emoji) == actual)
+        }
+        "mention" => !reaction && event.get("isMention").and_then(Value::as_bool) == Some(true),
+        "message" => !reaction,
+        "keyword" => {
+            if reaction {
+                return false;
+            }
+            let Some(text) = event_string(event, "text") else {
+                return false;
+            };
+            let Some(keyword) = rule.get("keyword").and_then(Value::as_str) else {
+                return false;
+            };
+            text.to_lowercase().contains(&keyword.to_lowercase())
+        }
+        _ => false,
+    }
+}
+
+fn github_subject_allowed(
+    users: &[Value],
+    subject: Option<&str>,
+    admit_missing_subject: bool,
+) -> bool {
+    let Some(subject) = subject else {
+        return admit_missing_subject;
+    };
+    users.iter().filter_map(Value::as_str)
+        .any(|user| user.eq_ignore_ascii_case(subject))
+}
+
+pub fn github_listener_matches(
+    listener: &Value,
+    event: &Value,
+    admit_missing_subject: bool,
+) -> bool {
+    let (Some(expected_repo), Some(actual_repo), Some(kind)) = (
+        event_string(listener, "repo"),
+        event_string(event, "repo"),
+        event_string(event, "kind"),
+    ) else {
+        return false;
+    };
+    if !expected_repo.eq_ignore_ascii_case(actual_repo) {
+        return false;
+    }
+    let events = listener.get("events").and_then(Value::as_array)
+        .map(Vec::as_slice).unwrap_or(&[]);
+    if !events.iter().filter_map(Value::as_str).any(|candidate| candidate == kind) {
+        return false;
+    }
+    if is_github_ci_event_kind(kind) {
+        let Some(branch) = event_string(listener, "ciBranch") else {
+            return false;
+        };
+        return match event_string(event, "branch") {
+            Some(actual) => actual == branch,
+            None => admit_missing_subject,
+        };
+    }
+    let users = listener.get("userAllowlist").and_then(Value::as_array)
+        .map(Vec::as_slice).unwrap_or(&[]);
+    if users.is_empty() {
+        return true;
+    }
+    if matches!(kind, "pr-opened" | "pr-pushed" | "pr-merged" | "pr-comment" | "inline-review-comment") {
+        return github_subject_allowed(users, event_string(event, "prOwner"), admit_missing_subject);
+    }
+    if matches!(
+        kind,
+        "review-approved" | "review-changes-requested" | "review-commented"
+            | "review-thread-resolved" | "review-thread-unresolved" | "review-requested"
+    ) {
+        return github_subject_allowed(users, event_string(event, "actor"), admit_missing_subject)
+            && github_subject_allowed(users, event_string(event, "prOwner"), admit_missing_subject);
+    }
+    github_subject_allowed(users, event_string(event, "actor"), admit_missing_subject)
+}
