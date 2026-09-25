@@ -1126,3 +1126,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The port preserves frozen elapsed-time rounding, compact and detailed status text, recent activity/transcript projection, not-running guidance, steer-review denial, MessageSubagent continuation and StopSubagent confirmation.
 - `sand_subagent_management_tools_contract.rs` proves the management surface against a live Rust `SubagentRuntime` fixture.
 - The row advances only to `existing-needs-parity`; final requires registration through generated communicate tools and live `reviewSteer` / toolCallId / InteractionHandler production wiring.
+
+
+### 2026-09-25 file-transfer Runner tool ownership slice
+
+- `sand-file-transfer-tools.ts` now maps to a real Rust tool module that delegates byte movement to the existing `box::box_transfer::transfer_file_between_boxes`; no duplicate transport was introduced.
+- The port covers connected/default computer resolution, offline/unknown diagnostics, box-preparing fencing, default `/workspace/uploads/<basename>` ingress, workspace path normalization, reverse transfer defaults and frozen binary-size labels.
+- `sand_file_transfer_tools_contract.rs` uses in-memory TransferBox implementations to prove verbatim binary ingress and egress.
+- The row advances only to `existing-needs-parity`; live UserComputer registry ownership plus generated communicate-tool registration through Runner prompt glue remain required.
