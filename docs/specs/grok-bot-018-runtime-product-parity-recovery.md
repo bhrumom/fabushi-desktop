@@ -1264,3 +1264,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The service decodes backend base64, persists exact bytes with MIME, returns the saved path plus original base64 and fails closed on invalid data or missing persistence.
 - `generate_image_service_contract.rs` proves byte/MIME preservation and failure behavior.
 - The row remains `existing-needs-parity` until authenticated Cursor image generation, model/request-id projection and production Attachments-extension wiring are connected.
+
+
+### 2026-09-26 mobile push notifier slice
+
+- Added Rust `extensions/notifications/mobile_push_notifier.rs` with the frozen notification lifecycle: baseline seeding, pre-seed buffering, focus freshness, done/needs-input transitions, message-id duplicate suppression, per-kind throttle and forget/reset behavior.
+- Delivery errors are deliberately non-fatal, matching the fire-and-forget notification surface.
+- `mobile_push_notifier_contract.rs` proves buffered needs-input delivery, new-message gating, focused-window suppression, stale-focus delivery and forget behavior.
+- The row advances only to `existing-needs-parity`; final waits on canonical shared notification helpers plus authenticated GrokBotService/Host event wiring.

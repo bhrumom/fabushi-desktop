@@ -12522,12 +12522,18 @@
       "targetPath": "source/host/src/extensions/notifications/mobile_push_notifier.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "a444b72d2dc8b5d968b07807c8b13e609d0fbc5f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/notifications/mobile_push_notifier.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/mobile_push_notifier_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host notifier now owns baseline seeding, pre-seed delta buffering, focus freshness, running-to-done and awaiting-user transitions, message-id duplicate suppression, per-kind throttle, forget semantics and fail-open notification delivery. Final remains withheld for canonical shared notification snapshot/content helpers and the authenticated GrokBotService mobile-push client/Host extension event wiring."
     },
     {
       "referencePath": "source/host/extensions/notify-bus/extension.ts",
