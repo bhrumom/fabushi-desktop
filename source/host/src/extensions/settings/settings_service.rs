@@ -2,6 +2,15 @@ use std::collections::BTreeMap;use std::fs;use std::io;use std::path::{Path,Path
 use chrono_tz::Tz;use serde_json::{Map,Value};use crate::host_paths::get_sand_root_dir;
 pub type UserTimeZoneListener=Arc<dyn Fn(Option<String>)+Send+Sync+'static>;pub type SettingsChangeListener=Arc<dyn Fn(Vec<String>)+Send+Sync+'static>;
 pub fn is_valid_iana_time_zone(value:&str)->bool{value.parse::<Tz>().is_ok()}
+
+#[derive(Debug,Clone,Copy,PartialEq,Eq)]
+pub enum SandLocalToolPermission{Always,Ask,Never}
+pub const SAND_DEFAULT_LOCAL_TOOL_PERMISSION:SandLocalToolPermission=SandLocalToolPermission::Ask;
+impl SandLocalToolPermission{
+pub const fn as_str(self)->&'static str{match self{Self::Always=>"always",Self::Ask=>"ask",Self::Never=>"never"}}
+pub fn parse(value:&str)->Option<Self>{match value{ "always"=>Some(Self::Always),"ask"=>Some(Self::Ask),"never"=>Some(Self::Never),_=>None}}
+}
+pub fn normalize_sand_local_tool_permission(value:Option<&str>)->SandLocalToolPermission{value.and_then(SandLocalToolPermission::parse).unwrap_or(SAND_DEFAULT_LOCAL_TOOL_PERMISSION)}
 pub struct SettingsSubscription<T:?Sized>{id:u64,listeners:Arc<Mutex<BTreeMap<u64,Arc<T>>>>,active:bool}
 impl<T:?Sized>SettingsSubscription<T>{pub fn unsubscribe(mut self){if self.active{if let Ok(mut l)=self.listeners.lock(){l.remove(&self.id);}self.active=false;}}}
 impl<T:?Sized>Drop for SettingsSubscription<T>{fn drop(&mut self){if self.active{if let Ok(mut l)=self.listeners.lock(){l.remove(&self.id);}self.active=false;}}}
@@ -15,10 +24,12 @@ fn persist(&self,v:&Map<String,Value>)->io::Result<()>{if let Some(p)=self.setti
 pub fn get_detected_user_time_zone(&self)->Option<String>{self.load().get("userTimeZone").and_then(Value::as_str).filter(|v|!v.is_empty()).map(ToOwned::to_owned)}
 pub fn get_user_time_zone_override(&self)->Option<String>{self.load().get("userTimeZoneOverride").and_then(Value::as_str).filter(|v|!v.is_empty()).map(ToOwned::to_owned)}
 pub fn get_user_time_zone(&self)->Option<String>{self.get_user_time_zone_override().or_else(||self.get_detected_user_time_zone())}
-pub fn get_host_settings(&self)->Value{let mut o=Map::new();if let Some(v)=self.get_detected_user_time_zone(){o.insert("userTimeZone".into(),Value::String(v));}if let Some(v)=self.get_user_time_zone_override(){o.insert("userTimeZoneOverride".into(),Value::String(v));}Value::Object(o)}
+pub fn get_host_settings(&self)->Value{let mut o=Map::new();if let Some(v)=self.get_detected_user_time_zone(){o.insert("userTimeZone".into(),Value::String(v));}if let Some(v)=self.get_user_time_zone_override(){o.insert("userTimeZoneOverride".into(),Value::String(v));}o.insert("localToolPermission".into(),Value::String(self.get_local_tool_permission().as_str().into()));Value::Object(o)}
 pub fn set_user_time_zone(&self,v:Option<&str>)->Result<bool,String>{self.set_zone_field("userTimeZone",v)}
 pub fn set_user_time_zone_override(&self,v:Option<&str>)->Result<bool,String>{self.set_zone_field("userTimeZoneOverride",v)}
 fn set_zone_field(&self,field:&str,value:Option<&str>)->Result<bool,String>{let trimmed=value.map(str::trim).filter(|v|!v.is_empty());if let Some(z)=trimmed{if !is_valid_iana_time_zone(z){return Ok(false);}}let before=self.get_user_time_zone();let mut s=self.load();let changed=match trimmed{Some(z)=>{if s.get(field).and_then(Value::as_str)==Some(z){false}else{s.insert(field.into(),Value::String(z.into()));true}},None=>s.remove(field).is_some()};if !changed{return Ok(false);}self.persist(&s).map_err(|e|e.to_string())?;let after=self.get_user_time_zone();if after!=before{let ls=self.user_time_zone_listeners.lock().map(|l|l.values().cloned().collect::<Vec<_>>()).unwrap_or_default();for l in ls{l(after.clone());}}let ls=self.change_listeners.lock().map(|l|l.values().cloned().collect::<Vec<_>>()).unwrap_or_default();for l in ls{l(vec![field.to_string()]);}Ok(true)}
+pub fn get_local_tool_permission(&self)->SandLocalToolPermission{normalize_sand_local_tool_permission(self.load().get("localToolPermission").and_then(Value::as_str))}
+pub fn set_local_tool_permission(&self,value:SandLocalToolPermission)->Result<bool,String>{let mut s=self.load();if s.get("localToolPermission").and_then(Value::as_str)==Some(value.as_str()){return Ok(false);}s.insert("localToolPermission".into(),Value::String(value.as_str().into()));self.persist(&s).map_err(|e|e.to_string())?;let ls=self.change_listeners.lock().map(|l|l.values().cloned().collect::<Vec<_>>()).unwrap_or_default();for l in ls{l(vec!["localToolPermission".to_string()]);}Ok(true)}
 pub fn subscribe_to_user_time_zone(&self,listener:UserTimeZoneListener)->SettingsSubscription<dyn Fn(Option<String>)+Send+Sync+'static>{let id=self.next_listener_id.fetch_add(1,Ordering::Relaxed);self.user_time_zone_listeners.lock().expect("settings timezone listeners poisoned").insert(id,listener);SettingsSubscription{id,listeners:Arc::clone(&self.user_time_zone_listeners),active:true}}
 pub fn subscribe_to_changes(&self,listener:SettingsChangeListener)->SettingsSubscription<dyn Fn(Vec<String>)+Send+Sync+'static>{let id=self.next_listener_id.fetch_add(1,Ordering::Relaxed);self.change_listeners.lock().expect("settings change listeners poisoned").insert(id,listener);SettingsSubscription{id,listeners:Arc::clone(&self.change_listeners),active:true}}
 }
