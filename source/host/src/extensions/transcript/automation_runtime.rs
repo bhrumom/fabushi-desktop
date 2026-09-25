@@ -270,9 +270,9 @@ pub struct AutomationRuntime {
 impl AutomationRuntime {
     pub fn new(sessions: Arc<ProductionSessionWorkers>) -> Self {
         Self {
-            sessions,
+            sessions: Arc::clone(&sessions),
             run_path: Arc::new(AutomationRunPath::default()),
-            spend_guard: Arc::new(AutomationSpendGuardRuntime::new(Arc::clone(&sessions))),
+            spend_guard: Arc::new(AutomationSpendGuardRuntime::new(sessions)),
             last_known: Arc::new(Mutex::new(HashMap::new())),
             mutation_locks: Arc::new(Mutex::new(HashMap::new())),
         }
