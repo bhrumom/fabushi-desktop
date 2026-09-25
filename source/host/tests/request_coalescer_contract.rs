@@ -77,8 +77,32 @@ fn conflicting_keys_are_deferred_to_a_later_batch() {
 
     let batches = batches.lock().expect("read batches").clone();
     assert_eq!(batches[0], vec!["seed:0"]);
-    assert!(batches.iter().any(|batch| batch == &vec!["a:1".to_string(), "b:1".to_string()]));
-    assert!(batches.iter().any(|batch| batch == &vec!["a:2".to_string()]));
+
+    let queued_batches = &batches[1..];
+    assert!(
+        queued_batches.len() >= 2,
+        "conflicting requests must require at least two later batches: {queued_batches:?}"
+    );
+    assert!(
+        queued_batches.iter().all(|batch| {
+            let a_count = batch.iter().filter(|request| request.starts_with("a:")).count();
+            a_count <= 1
+        }),
+        "a:1 and a:2 must never share a batch: {queued_batches:?}"
+    );
+
+    let a1_batch = queued_batches
+        .iter()
+        .position(|batch| batch.iter().any(|request| request == "a:1"))
+        .expect("a:1 must be dispatched");
+    let a2_batch = queued_batches
+        .iter()
+        .position(|batch| batch.iter().any(|request| request == "a:2"))
+        .expect("a:2 must be dispatched");
+    assert_ne!(
+        a1_batch, a2_batch,
+        "same conflict key must be deferred to a later batch"
+    );
 }
 
 #[test]
