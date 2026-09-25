@@ -20,8 +20,8 @@ use crate::extensions::inference::provider_session::{
 };
 use crate::host_request_context::HostRequestContext;
 use crate::runner::production_turn_run_shell_adapter::{
-    ProductionTurnRunShellAdapter, ProviderRetryEvent, RoutedProviderAttemptExecutor,
-    RoutedProviderCheckpointStore,
+    ProductionTurnRunShellAdapter, ProviderRetryEvent, ProviderRetryReport,
+    RoutedProviderAttemptExecutor, RoutedProviderCheckpointStore,
 };
 use crate::runner::system_prompt_assembly::render_request_context_system_prompt;
 use crate::runner::tools::mcp_meta_tools::execute_routed_tool_with_timeout;
@@ -338,6 +338,7 @@ pub struct RoutedProviderRun<'a> {
     pub cancellation: RoutedProviderCancellation,
     pub checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     pub retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
+    pub retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
 }
 
 pub fn run_routed_provider_in_runner(
@@ -429,12 +430,19 @@ pub fn run_routed_provider_in_runner(
             sink(event);
         }
     };
-    let result = ProductionTurnRunShellAdapter::default().run_with_retry(
+    let retry_report_sink = run.retry_report_sink.clone();
+    let mut on_retry_report = move |report: &ProviderRetryReport| {
+        if let Some(sink) = retry_report_sink.as_ref() {
+            sink(report);
+        }
+    };
+    let result = ProductionTurnRunShellAdapter::default().run_with_retry_reporting(
         &run.cancellation,
         run.checkpoint_store.as_ref(),
         &mut executor,
         &mut guarded_delta,
         &mut on_retry,
+        &mut on_retry_report,
     );
 
     if let Some(server) = mcp_server.as_mut() {
