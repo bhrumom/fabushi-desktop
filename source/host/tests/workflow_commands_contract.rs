@@ -135,8 +135,8 @@ fn shipping_workflow_commands_delegate_crud_and_imports_to_session_store() {
 }
 
 #[test]
-fn automation_create_and_run_now_stay_on_compatibility_owner_until_runtime_cutover() {
-    let root = temp_root("compat");
+fn automation_backed_workflow_creation_is_owned_by_rust_session_store() {
+    let root = temp_root("automation-create");
     let workers = Arc::new(ProductionSessionWorkers::with_agents_root(
         root.join("agents"),
         500,
@@ -144,20 +144,36 @@ fn automation_create_and_run_now_stay_on_compatibility_owner_until_runtime_cutov
     let session = SandAgentSessionStore::new(Arc::clone(&workers));
     let agent = session.create_session(None, "user", None).expect("agent");
 
-    let automation_create = serde_json::json!({
-        "id": agent.id,
-        "spec": {
-            "name": "Scheduled",
-            "body": "Run later",
-            "trigger": {"schedule":"0 9 * * *","isEnabled":true}
-        }
-    });
-    assert!(dispatch_workflow_command(
+    let created = call(
         Arc::clone(&workers),
         "createAgentWorkflow",
-        &automation_create,
-    )
-    .is_none());
+        serde_json::json!({
+            "id": agent.id,
+            "spec": {
+                "name": "Scheduled",
+                "body": "Run later",
+                "trigger": {"schedule":"0 9 * * *","isEnabled":true}
+            }
+        }),
+    );
+    let created = created.as_array().expect("workflow list");
+    assert_eq!(created.len(), 1);
+    assert_eq!(created[0]["name"], "Scheduled");
+    assert_eq!(created[0]["source"], "automation");
+    assert_eq!(created[0]["trigger"]["schedule"], "0 9 * * *");
+    assert_eq!(created[0]["trigger"]["isEnabled"], true);
+
+    let listed = call(
+        Arc::clone(&workers),
+        "getAgentWorkflows",
+        serde_json::json!({"id": agent.id}),
+    );
+    assert!(listed
+        .as_array()
+        .expect("workflow list")
+        .iter()
+        .any(|workflow| workflow["source"] == "automation"));
+
     assert!(dispatch_workflow_command(
         Arc::clone(&workers),
         "runAgentWorkflowNow",
