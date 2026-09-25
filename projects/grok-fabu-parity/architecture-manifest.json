@@ -10169,12 +10169,19 @@
       "targetPath": "source/host/src/extensions/attachments/box_staging.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "aa0948c949f176263f268f6efb41afa2324620f1",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/attachments/box_staging.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/attachments_helpers_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports running-state gate, owner filtering, video exclusion, 50 MiB file cap, /workspace/uploads projection and all-or-nothing empty result on upload failure."
     },
     {
       "referencePath": "source/host/extensions/attachments/extension.ts",
@@ -10193,12 +10200,19 @@
       "targetPath": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "fc922d67611532db05d4d48b387dc782742f5ff3",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/attachments/generate_image_resource_accessor.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/attachments_helpers_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports absolute-path enforcement, lexical containment, nearest-existing realpath/symlink containment, sandboxed assets writes, media-root reads and frozen refusal/result semantics."
     },
     {
       "referencePath": "source/host/extensions/attachments/generate-image-service.ts",
