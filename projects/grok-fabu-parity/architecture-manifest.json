@@ -13940,12 +13940,22 @@
       "targetPath": "source/host/src/extensions/telemetry/lifecycle_telemetry.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "85597911c87430f0f8dd846c7023d65d830226af",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/lifecycle_telemetry.rs",
+        "source/host/src/extensions/telemetry/host_lifecycle_progress.rs",
+        "source/host/src/extensions/telemetry/sand_error_tags.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/lifecycle_telemetry_contract.rs",
+        "source/host/tests/extensions_error_telemetry_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust semantic port of Grok lifecycle telemetry projection. Preserves startup/lifecycle/daemon/image-check/box-infrastructure event names, severity selection, conditional metadata fields, and registered SAND error tags; reuses the existing Rust lifecycle-progress and error-registry owners rather than duplicating state."
     },
     {
       "referencePath": "source/host/extensions/telemetry/local-exec-telemetry.ts",
