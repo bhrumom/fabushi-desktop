@@ -33,6 +33,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     InferenceStreamSupersede, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, is_direct_user_send,
     parse_host_routed_prompt_acceptance, parse_runner_inference_event,
+    should_append_user_message,
     parse_send_prompt_attachments,
     prepare_workflow_run_now_route, project_runner_turn_context, project_transcript_entry,
     CoordinatorWorkflowRunNowRoute,
@@ -1835,6 +1836,7 @@ fn execute_local_inference(
         .map(str::to_string)
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     let attachments = parse_send_prompt_attachments(&args)?;
+    let append_user_message = should_append_user_message(&args);
 
     if agent_id.is_empty() || (prompt.is_empty() && attachments.is_empty()) {
         return Err(Failure::new(
@@ -1890,36 +1892,42 @@ fn execute_local_inference(
         let mut store = state.inference_store.load();
         let turn = store.next_turn_number(&agent_id, remote_transcript_ids(&remote));
         let host_user_message_id = host_acceptance.user_message_id.clone();
-        let local_entry_id = host_user_message_id
+        let current_message_id = host_user_message_id
             .clone()
             .or_else(|| host_acceptance.echo_entry_id.clone())
             .unwrap_or_else(|| format!("t{turn}u"));
-        let user_entry = StoredEntry {
-            provider: provider.as_str().to_string(),
-            role: StoredRole::User,
-            content: prompt,
-            rich_text,
-            id: local_entry_id,
-            client_nonce: Some(client_nonce),
-            attachments,
-            reactions: Vec::new(),
-            timestamp_ms,
-        };
-        store.append(&agent_id, [user_entry.clone()]);
-        state.inference_store.persist(&store)?;
-        emit_inference_transcript(
-            &state,
-            &agent_id,
-            "appended",
-            project_transcript_entry(&user_entry),
-        );
+
+        if append_user_message {
+            let user_entry = StoredEntry {
+                provider: provider.as_str().to_string(),
+                role: StoredRole::User,
+                content: prompt,
+                rich_text,
+                id: current_message_id.clone(),
+                client_nonce: Some(client_nonce),
+                attachments,
+                reactions: Vec::new(),
+                timestamp_ms,
+            };
+            store.append(&agent_id, [user_entry.clone()]);
+            state.inference_store.persist(&store)?;
+            emit_inference_transcript(
+                &state,
+                &agent_id,
+                "appended",
+                project_transcript_entry(&user_entry),
+            );
+        }
+
         let stored_entries = store.entries(&agent_id);
-        let current_entry_id = user_entry.id.clone();
-        let messages = stored_entries
+        let mut messages = stored_entries
             .iter()
             .map(|entry| {
                 let content =
-                    if entry.id == current_entry_id && entry.role == StoredRole::User {
+                    if append_user_message
+                        && entry.id == current_message_id
+                        && entry.role == StoredRole::User
+                    {
                         runner_prompt.clone()
                     } else {
                         entry.content.clone()
@@ -1933,11 +1941,17 @@ fn execute_local_inference(
                 })
             })
             .collect::<Vec<_>>();
+        if !append_user_message {
+            messages.push(json!({
+                "role": "user",
+                "content": runner_prompt,
+            }));
+        }
         (
             turn,
             messages,
             host_acceptance.recent_user_messages.clone(),
-            host_user_message_id.unwrap_or_default(),
+            current_message_id,
         )
     };
 

@@ -6,6 +6,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     ActiveInferenceStreamRegistry, CoordinatorWorkflowRunNowRoute, InferenceProvider,
     InferenceStreamSupersede, RunnerInferenceEvent, WORKFLOW_INJECTED_BODY_LIMIT,
     configured_inference_provider, host_transcript_method, is_direct_user_send,
+    should_append_user_message,
     parse_host_routed_prompt_acceptance, parse_runner_inference_event,
     prepare_workflow_run_now_route, project_runner_turn_context,
 };
@@ -287,4 +288,26 @@ fn coordinator_workflow_run_now_preserves_visible_reference_and_expanded_runner_
             .expect("missing route"),
         CoordinatorWorkflowRunNowRoute::Missing
     );
+}
+
+
+#[test]
+fn coordinator_respects_append_user_message_hidden_turn_contract() {
+    assert!(should_append_user_message(&json!({
+        "agentId":"agent-a",
+        "prompt":"visible"
+    })));
+    assert!(should_append_user_message(&json!({
+        "agentId":"agent-a",
+        "prompt":"visible",
+        "appendUserMessage":true
+    })));
+    assert!(!should_append_user_message(&json!({
+        "agentId":"agent-a",
+        "prompt":"hidden system ack",
+        "appendUserMessage":false
+    })));
+    assert!(should_append_user_message(&json!({
+        "appendUserMessage":"false"
+    })));
 }

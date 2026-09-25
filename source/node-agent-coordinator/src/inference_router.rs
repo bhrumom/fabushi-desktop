@@ -349,6 +349,13 @@ impl ActiveInferenceStreamRegistry {
     }
 }
 
+pub fn should_append_user_message(send_args: &Value) -> bool {
+    send_args
+        .get("appendUserMessage")
+        .and_then(Value::as_bool)
+        != Some(false)
+}
+
 pub fn is_direct_user_send(send_args: &Value) -> bool {
     let automation = send_args.get("automationWake");
     let group = send_args.get("groupContext");
