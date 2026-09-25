@@ -35,6 +35,7 @@ use mahayana_host_runtime::extensions::session::box_handoff_service::{
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
 use mahayana_host_runtime::extensions::secrets::extension::start_secrets_extension;
+use mahayana_host_runtime::extensions::notify_bus::extension::{HostNotifyBusExtension, start_notify_bus_extension};
 use mahayana_host_runtime::extensions::wallpaper::extension::start_wallpaper_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
@@ -241,6 +242,7 @@ fn start_production_browser_ua(
 struct ProductionHostExtensions {
     auth: Arc<HostAuthExtension>,
     experiments: Arc<HostExperimentsExtension>,
+    notify_bus: HostNotifyBusExtension,
     memory: HostMemoryExtension,
     managed_setup: Arc<ManagedSetupExtension>,
     source_map: Arc<SandSourceMap>,
@@ -267,6 +269,12 @@ fn start_production_host_extensions(app_data_dir: &Path) -> Result<ProductionHos
         .map_err(|error| error.to_string())?,
     );
     let experiments = Arc::new(start_host_experiments_extension());
+    let notify_bus = start_notify_bus_extension(
+        Arc::clone(&auth),
+        Arc::clone(&experiments),
+        Arc::new(|message| eprintln!("{message}")),
+    )
+    .map_err(|error| error.to_string())?;
     let memory = start_production_memory_extension();
     let managed_setup = start_managed_setup_extension(
         backend_url,
@@ -296,6 +304,7 @@ fn start_production_host_extensions(app_data_dir: &Path) -> Result<ProductionHos
     Ok(ProductionHostExtensions {
         auth,
         experiments,
+        notify_bus,
         memory,
         managed_setup,
         source_map,
@@ -3196,6 +3205,8 @@ fn main() {
         return;
     }
 
+    production_extensions.notify_bus.mark_background_work_ready();
+
     // Runtime events travel as unsolicited JSON frames. The event worker blocks
     // in Rust instead of issuing 500 ms JSON-RPC receive requests from Electron.
     // Test mode has a non-blocking deterministic backend, so a small sleep keeps
@@ -3287,6 +3298,7 @@ fn main() {
     drop(gateway_server);
     runner_registry.cancel_all("Mahayana Host shutting down");
     routed_tool_relay.cancel_all("Mahayana Host shutting down");
+    production_extensions.notify_bus.stop();
     session_extension.shutdown();
     wallpaper_extension.stop();
     browser_ua_runtime.stop();

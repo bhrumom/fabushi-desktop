@@ -12387,12 +12387,22 @@
       "targetPath": "source/host/src/extensions/notify_bus/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "f3b7b9c523391474046383b3476d5fea41e59977",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/notify_bus/extension.rs",
+        "source/host/src/extensions/notify_bus/notify_bus_client.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/notify_bus_extension_contract.rs",
+        "source/host/tests/notify_bus_client_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Shipping Rust Host preserves Auth/Experiments dependencies, topic handler lifecycle, connected fanout, background-ready gate subscription, safety-poll default/current gate, dynamic start/stop and shutdown cleanup."
     },
     {
       "referencePath": "source/host/extensions/notify-bus/notify-bus-client.ts",
