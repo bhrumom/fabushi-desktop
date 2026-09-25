@@ -22,7 +22,7 @@ pub trait InactiveTurnAgentStreamSource<Context, State>: Send + Sync {
         &'a self,
         context: &'a Context,
         resume_from: Option<&'a State>,
-        persist_checkpoint: &'a mut dyn FnMut(&Context, &mut State) -> Result<(), String>,
+        persist_checkpoint: &'a mut (dyn FnMut(&Context, &mut State) -> Result<(), String> + Send),
     ) -> InactiveTurnStreamFuture<'a, Result<State, String>>;
 }
 
@@ -74,7 +74,7 @@ where
         &self,
         context: &Context,
         resume_from: Option<&State>,
-        persist_checkpoint: &mut dyn FnMut(&Context, &mut State) -> Result<(), String>,
+        persist_checkpoint: &mut (dyn FnMut(&Context, &mut State) -> Result<(), String> + Send),
     ) -> Result<State, String> {
         self.source
             .start_stream(context, resume_from, persist_checkpoint)
