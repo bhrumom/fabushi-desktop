@@ -15796,12 +15796,20 @@
       "targetPath": "source/host/src/groups/xuser.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e9a80f88690b8daba1ec901dd279749426ce1d4c",
       "architecturalRole": "host/groups",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/groups/xuser.rs",
+        "source/host/src/groups/group_chat.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port of the frozen cross-user group-room boundary: exact shared-room tool override semantics, privacy guardrail wording, bounded turn-history/text projection, self-member identity restoration, remote member prompt composition, and guest-name clamping. It composes the existing Rust group-chat prompt owner instead of creating a parallel group runtime."
     },
     {
       "referencePath": "source/host/host-diagnostics.ts",
