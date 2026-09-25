@@ -8,8 +8,9 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     RoutedProviderCheckpoint,
 };
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
-    ProductionTurnRunShellAdapter, ProviderRetryEvent, RoutedProviderAttemptExecutor,
-    RoutedProviderCheckpointStore, first_output_timeout_for_attempt,
+    ProductionTurnRunShellAdapter, ProviderRetryEvent, ProviderRetryOutcome,
+    ProviderRetryReport, RoutedProviderAttemptExecutor, RoutedProviderCheckpointStore,
+    first_output_timeout_for_attempt,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     RoutedProviderCancellation,
@@ -238,6 +239,72 @@ fn production_turn_adapter_emits_retry_event_before_next_attempt() {
             watchdog_expired: false,
         }]
     );
+}
+
+#[test]
+fn production_turn_adapter_reports_retried_then_exhausted_without_false_retry_activity() {
+    let adapter = ProductionTurnRunShellAdapter {
+        policy: policy(2),
+        watchdog_poll_interval: Duration::from_millis(1),
+    };
+    let cancellation = RoutedProviderCancellation::default();
+    let store = FakeStore::default();
+    let mut executor = FakeExecutor::new(VecDeque::from([
+        Behavior::FailBeforeOutput,
+        Behavior::FailBeforeOutput,
+    ]));
+    let mut retries = Vec::<ProviderRetryEvent>::new();
+    let mut reports = Vec::<ProviderRetryReport>::new();
+
+    let error = adapter
+        .run_with_retry_reporting(
+            &cancellation,
+            &store,
+            &mut executor,
+            &mut |_delta, _| {},
+            &mut |event| retries.push(event.clone()),
+            &mut |report| reports.push(report.clone()),
+        )
+        .expect_err("second retryable failure exhausts the bounded policy");
+
+    assert!(error.to_string().contains("connection reset"));
+    assert_eq!(retries.len(), 1, "terminal exhaustion is not another retry activity");
+    assert_eq!(reports.len(), 2);
+    assert_eq!(reports[0].outcome, ProviderRetryOutcome::Retried);
+    assert_eq!(reports[0].attempt, 1);
+    assert_eq!(reports[0].max_attempts, 2);
+    assert_eq!(reports[1].outcome, ProviderRetryOutcome::Exhausted);
+    assert_eq!(reports[1].attempt, 2);
+    assert_eq!(reports[1].max_attempts, 2);
+    assert_eq!(reports[1].delay_ms, None);
+}
+
+#[test]
+fn production_turn_adapter_reports_gave_up_when_partial_output_has_no_checkpoint() {
+    let adapter = ProductionTurnRunShellAdapter {
+        policy: policy(3),
+        watchdog_poll_interval: Duration::from_millis(1),
+    };
+    let cancellation = RoutedProviderCancellation::default();
+    let store = FakeStore::default();
+    let mut executor = FakeExecutor::new(VecDeque::from([Behavior::OutputThenFail]));
+    let mut reports = Vec::<ProviderRetryReport>::new();
+
+    let _ = adapter
+        .run_with_retry_reporting(
+            &cancellation,
+            &store,
+            &mut executor,
+            &mut |_delta, _| {},
+            &mut |_| {},
+            &mut |report| reports.push(report.clone()),
+        )
+        .expect_err("unsafe partial output must not retry");
+
+    assert_eq!(reports.len(), 1);
+    assert_eq!(reports[0].outcome, ProviderRetryOutcome::GaveUpIneligible);
+    assert_eq!(reports[0].attempt, 1);
+    assert_eq!(reports[0].max_attempts, 3);
 }
 
 #[test]
