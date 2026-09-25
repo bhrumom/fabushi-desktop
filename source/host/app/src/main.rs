@@ -80,7 +80,9 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderOptions,
     RoutedToolDefinition, configured_routed_provider, run_routed_provider_text,
 };
-use mahayana_host_runtime::extensions::managed_setup::team_rules::ProductionTeamRulesResolver;
+use mahayana_host_runtime::extensions::managed_setup::extension::{
+    ManagedSetupExtension, start_managed_setup_extension,
+};
 use mahayana_host_runtime::extensions::webauthn_proxy::extension::{
     HostWebAuthnProxyExtension, start_webauthn_proxy_extension,
 };
@@ -110,7 +112,6 @@ use mahayana_host_runtime::extensions::forever_box::{
     ForeverBoxExtensionOptions, ForeverBoxLifecycle, ForeverBoxRunnerResourcePort,
     BoxStatus, ForeverBoxService, start_forever_box_extension,
 };
-use mahayana_host_runtime::extensions::auth::credential_renewer::RenewalOutcome;
 use mahayana_host_runtime::extensions::browser_ua::{
     BrowserUaExtensionRuntime, BrowserUaHostLog, start_browser_ua_extension,
 };
@@ -239,23 +240,14 @@ struct ProductionHostExtensions {
     auth: Arc<HostAuthExtension>,
     experiments: Arc<HostExperimentsExtension>,
     memory: HostMemoryExtension,
-    team_rules: Arc<ProductionTeamRulesResolver>,
-    team_rules_renewal_subscription: Option<u64>,
+    managed_setup: Arc<ManagedSetupExtension>,
     source_map: Arc<SandSourceMap>,
     trays: Arc<HostTraysExtension>,
     box_lifecycle: Arc<BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>>,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
 }
 
-impl Drop for ProductionHostExtensions {
-    fn drop(&mut self) {
-        if let Some(subscription) = self.team_rules_renewal_subscription.take() {
-            self.auth.service().unsubscribe_from_renewal(subscription);
-        }
-    }
-}
-
-fn start_production_host_extensions() -> Result<ProductionHostExtensions, String> {
+fn start_production_host_extensions(app_data_dir: &Path) -> Result<ProductionHostExtensions, String> {
     let auth_options = HostAuthServiceOptions::production(|message| {
         eprintln!("mahayana-host-auth {message}");
     })
@@ -274,26 +266,11 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
     );
     let experiments = Arc::new(start_host_experiments_extension());
     let memory = start_production_memory_extension();
-    let team_rules = Arc::new(ProductionTeamRulesResolver::new(
+    let managed_setup = start_managed_setup_extension(
         backend_url,
         Arc::clone(&auth),
-    ));
-    team_rules.preload();
-    let weak_team_rules = Arc::downgrade(&team_rules);
-    let team_rules_renewal_subscription =
-        auth.service().subscribe_to_renewal(Arc::new(move |event| {
-            if event.result.outcome != RenewalOutcome::Renewed {
-                return;
-            }
-            let Some(resolver) = weak_team_rules.upgrade() else {
-                return;
-            };
-            let _ = thread::Builder::new()
-                .name("host-managed-team-rules-renewal".into())
-                .spawn(move || {
-                    let _ = resolver.refresh();
-                });
-        }));
+        app_data_dir,
+    );
 
     let source_map = Arc::new(start_source_map_extension());
 
@@ -318,8 +295,7 @@ fn start_production_host_extensions() -> Result<ProductionHostExtensions, String
         auth,
         experiments,
         memory,
-        team_rules,
-        team_rules_renewal_subscription: Some(team_rules_renewal_subscription),
+        managed_setup,
         source_map,
         trays,
         box_lifecycle,
@@ -2930,7 +2906,7 @@ fn main() {
             }
         };
 
-    let production_extensions = match start_production_host_extensions() {
+    let production_extensions = match start_production_host_extensions(&app_data_dir) {
         Ok(extensions) => extensions,
         Err(error) => {
             eprintln!("failed to start production Host extensions: {error}");
@@ -2951,7 +2927,7 @@ fn main() {
     let runner_request_context: Arc<dyn RunnerRequestContextSource> =
         Arc::new(ProductionRunnerRequestContextSource::new(
             Arc::clone(&production_extensions.auth),
-            Arc::clone(&production_extensions.team_rules),
+            Arc::clone(production_extensions.managed_setup.team_rules()),
             app_data_dir.join("transcripts"),
         ));
     let gateway_events = GatewayEventHub::default();
