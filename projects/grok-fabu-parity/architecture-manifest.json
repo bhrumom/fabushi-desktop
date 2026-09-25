@@ -10601,12 +10601,20 @@
       "targetPath": "source/host/src/extensions/box_store_sync/box_store_manifest_format.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "826545e279891d26586812b71924284bd049f43b",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_store_manifest_format.rs",
+        "source/host/src/extensions/box_store_sync/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_store_manifest_format_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port implements v1/v2 manifest header validation, legacy/file/symlink entry validation, mode bounds, entry predicates and frozen equality semantics. Final remains withheld until the production box-store manifest/download/transfer path consumes this canonical parser."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-store-manifest.ts",
@@ -10798,12 +10806,20 @@
       "targetPath": "source/host/src/extensions/box_store_sync/request_coalescer.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "6c5d901629755333bba49632a51fe104284f5aae",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/request_coalescer.rs",
+        "source/host/src/extensions/box_store_sync/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/request_coalescer_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port owns max-batch draining, conflict-key deferral, exact result-count validation, optional split-on-error individual retry and fail-closed worker settlement. Final remains withheld until production box-store transfer/upload requests use this coalescer."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/sand-box-store-files.ts",
@@ -10878,12 +10894,20 @@
       "targetPath": "source/host/src/extensions/box_store_sync/workspace_ignore.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "21652cbc99d3003e17b129ca2206bd7ec3aea29f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/workspace_ignore.rs",
+        "source/host/src/extensions/box_store_sync/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/workspace_ignore_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port implements .sandignore parsing, frozen default patterns, anchored/unanchored glob, *, **, **/, ?, character classes, negation reach and safe directory-prune behavior without adding a second matcher runtime. Final remains withheld until production box-store workspace pack/copy paths consume it."
     },
     {
       "referencePath": "source/host/extensions/browser-ua/extension.ts",
@@ -11293,12 +11317,21 @@
       "targetPath": "source/host/src/extensions/cross_user_sharing/xuser_sharing_environment.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "edf17b551a38007239394a5909f8f09960fd670f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_sharing_environment.rs",
+        "source/host/src/extensions/cross_user_sharing/mod.rs",
+        "source/host/src/extensions/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_sharing_environment_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port preserves packaged/dev gating, explicit dev opt-in, production-origin comparison, deliberate production opt-in and fail-closed malformed backend URLs. Final remains withheld until the production cross-user-sharing extension consumes this gate before acquiring relay/listener ownership."
     },
     {
       "referencePath": "source/host/extensions/cross-user-sharing/xuser-sharing-service.ts",
@@ -11819,101 +11852,170 @@
       "targetPath": "source/host/src/extensions/managed_setup/cursor_skills_marketplace.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "6059d6fc135f11fbac0c55af7cb7239ab147cb4f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/managed_setup/managed_skills_cache.rs",
+        "source/host/src/extensions/managed_setup/sand_managed_skills.rs",
+        "source/host/src/extensions/managed_setup/cursor_skills_marketplace.rs",
+        "source/host/src/extensions/managed_setup/managed_skills_service.rs",
+        "source/host/src/extensions/managed_setup/production.rs",
+        "source/host/src/extensions/managed_setup/extension.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/managed_skills_contract.rs",
+        "source/host/tests/managed_skills_runtime_contract.rs",
+        "source/host/tests/managed_setup_team_rules_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Final Rust production mapping. Shipping Host uses the shared authenticated Cursor unary transport for Dashboard GetManagedSkills and ListMarketplacePlugins with the frozen 10s timeout, exclude-cloud-agent request bit, optional enabled default, publisher/logo projection, case-insensitive skill dedupe and stable sorted catalog."
     },
     {
       "referencePath": "source/host/extensions/managed-setup/extension.ts",
       "targetPath": "source/host/src/extensions/managed_setup/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "e8302dfdb174eb14d4e3560511b29204f7400140",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
+        "source/host/src/extensions/managed_setup/managed_skills_cache.rs",
+        "source/host/src/extensions/managed_setup/sand_managed_skills.rs",
+        "source/host/src/extensions/managed_setup/cursor_skills_marketplace.rs",
+        "source/host/src/extensions/managed_setup/managed_skills_service.rs",
+        "source/host/src/extensions/managed_setup/production.rs",
+        "source/host/src/extensions/managed_setup/extension.rs",
+        "source/host/app/src/main.rs",
         "source/host/src/extensions/managed_setup/team_rules.rs",
-        "source/host/app/src/main.rs"
+        "source/host/src/runner_context_production_provider.rs"
       ],
       "testEvidence": [
-        "source/host/tests/managed_setup_team_rules_contract.rs"
+        "source/host/tests/managed_skills_contract.rs",
+        "source/host/tests/managed_skills_runtime_contract.rs",
+        "source/host/tests/managed_setup_team_rules_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Production Host now owns the managed team-rules slice, including startup preload and credential-renewal refresh, but managed-skills ownership from the frozen extension is still pending; mapping remains planned."
+      "notes": "Final Rust production extension boundary. ProductionHostExtensions starts ManagedSetupExtension after Auth, preloads team rules, starts managed skills only with credentials, reacts to first/renewed credentials, disposes subscriptions/service, exposes skill catalog/ensure and team rules, and shipping Runner request-context consumes the same team-rules owner.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/managed-setup/managed-skills-cache.ts",
       "targetPath": "source/host/src/extensions/managed_setup/managed_skills_cache.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "c03bb94f9ca89f3e733c116df6c5b7834318bd15",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/managed_setup/managed_skills_cache.rs",
-        "source/host/src/extensions/managed_setup/mod.rs"
+        "source/host/src/extensions/managed_setup/sand_managed_skills.rs",
+        "source/host/src/extensions/managed_setup/cursor_skills_marketplace.rs",
+        "source/host/src/extensions/managed_setup/managed_skills_service.rs",
+        "source/host/src/extensions/managed_setup/production.rs",
+        "source/host/src/extensions/managed_setup/extension.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/managed_skills_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/managed_skills_runtime_contract.rs",
+        "source/host/tests/managed_setup_team_rules_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port implements managed-skills/cache.json validation and round-trip, atomic temp+rename writes, Unix agent-readable 0755/0644 modes, stale skill removal, and SKILL.md materialization. Contract tests cover cache validation, round-trip, rewrite and stale cleanup. Final remains withheld until the production Managed Setup service consumes the cache/materialized directory."
+      "notes": "Final Rust production mapping. The shipping Managed Setup extension now consumes the cache directly: validated cache.json round-trip, atomic temp+rename writes, 0755/0644 agent-readable modes on Unix, stale materialized skill cleanup, and SKILL.md materialization. ProductionManagedSetup owns the service and the shipping Host starts the extension."
     },
     {
       "referencePath": "source/host/extensions/managed-setup/managed-skills-service.ts",
       "targetPath": "source/host/src/extensions/managed_setup/managed_skills_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c04dcc193028e3997103b0030209f5ebae7f6874",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/managed_setup/managed_skills_cache.rs",
+        "source/host/src/extensions/managed_setup/sand_managed_skills.rs",
+        "source/host/src/extensions/managed_setup/cursor_skills_marketplace.rs",
+        "source/host/src/extensions/managed_setup/managed_skills_service.rs",
+        "source/host/src/extensions/managed_setup/production.rs",
+        "source/host/src/extensions/managed_setup/extension.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/managed_skills_contract.rs",
+        "source/host/tests/managed_skills_runtime_contract.rs",
+        "source/host/tests/managed_setup_team_rules_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Final Rust production mapping. SandManagedSkillsService owns startup/auth-change/on-demand refresh, in-flight trigger coalescing, normalization, cache materialization, ensureSkill and disposal. It is instantiated by ProductionManagedSetup and started/refreshed from the shipping Auth lifecycle."
     },
     {
       "referencePath": "source/host/extensions/managed-setup/production.ts",
       "targetPath": "source/host/src/extensions/managed_setup/production.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "25699155c2fdf1d73da2b61d40a834a9f0ebe87a",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/managed_setup/team_rules.rs",
-        "source/host/src/cursor_backend.rs",
+        "source/host/src/extensions/managed_setup/managed_skills_cache.rs",
+        "source/host/src/extensions/managed_setup/sand_managed_skills.rs",
+        "source/host/src/extensions/managed_setup/cursor_skills_marketplace.rs",
+        "source/host/src/extensions/managed_setup/managed_skills_service.rs",
+        "source/host/src/extensions/managed_setup/production.rs",
+        "source/host/src/extensions/managed_setup/extension.rs",
         "source/host/app/src/main.rs"
       ],
       "testEvidence": [
-        "source/host/tests/managed_setup_team_rules_contract.rs"
+        "source/host/tests/managed_skills_contract.rs",
+        "source/host/tests/managed_skills_runtime_contract.rs",
+        "source/host/tests/managed_setup_team_rules_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Production Dashboard transport for managed team rules is wired through the shared Cursor identity/privacy client and shipping Auth. Managed-skills/catalog production wiring is still pending; mapping remains planned."
+      "notes": "Final Rust production binding. ProductionManagedSetup derives access token and machine id from the shipping Auth owner, uses the shared Cursor backend transport for managed skills/catalog, emits refresh failures through Host auth logging, and owns the canonical managed-skills cache under the Host data root.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/managed-setup/sand-managed-skills.ts",
       "targetPath": "source/host/src/extensions/managed_setup/sand_managed_skills.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "8cb69d987fac0a29a8478dfc2ed51c65351936b4",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
+        "source/host/src/extensions/managed_setup/managed_skills_cache.rs",
         "source/host/src/extensions/managed_setup/sand_managed_skills.rs",
-        "source/host/src/extensions/managed_setup/mod.rs"
+        "source/host/src/extensions/managed_setup/cursor_skills_marketplace.rs",
+        "source/host/src/extensions/managed_setup/managed_skills_service.rs",
+        "source/host/src/extensions/managed_setup/production.rs",
+        "source/host/src/extensions/managed_setup/extension.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/managed_skills_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/managed_skills_runtime_contract.rs",
+        "source/host/tests/managed_setup_team_rules_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port implements enabled filtering, trimmed safe folder IDs, workflow frontmatter name/description projection, fallback metadata, body/name/description clamps and empty-body rejection. Contract tests cover frontmatter normalization, unsafe IDs and disabled skills. Final remains withheld until the production Managed Setup service uses this normalization for fetched managed skills."
+      "notes": "Final Rust production mapping. Enabled filtering, safe folder ids, workflow frontmatter projection/fallbacks, body/name/description clamps and empty-body rejection feed the live managed-skills refresh path before cache materialization."
     },
     {
       "referencePath": "source/host/extensions/managed-setup/team-rules.ts",
@@ -14205,12 +14307,20 @@
       "targetPath": "source/host/src/extensions/transcript/inline_image_materialization.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "7b20d21c1228160416042eadd1ba07ab1a0c8146",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/inline_image_materialization.rs",
+        "source/host/src/extensions/transcript/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inline_image_materialization_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port preserves max-four images, fail-soft base64 decoding, SHA-256 stable materialization, frozen image MIME extension mapping, unknown-MIME .png fallback, xuser-attachments placement, file URLs and alt projection. Final remains withheld until the production cross-user/group inbound transcript path calls this materializer."
     },
     {
       "referencePath": "source/host/extensions/transcript/pending-wake-rearm.ts",
