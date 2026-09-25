@@ -67,7 +67,7 @@ fn empty_directory_zero_and_oversize_local_inputs_fail_closed() {
     assert!(resolve_channel_attachment(root.to_str()).is_none());
 
     let empty = root.join("empty.bin");
-    fs::write(&empty, []).unwrap();
+    fs::write(&empty, b"").unwrap();
     assert!(resolve_channel_attachment(empty.to_str()).is_none());
 
     let huge = root.join("huge.bin");
