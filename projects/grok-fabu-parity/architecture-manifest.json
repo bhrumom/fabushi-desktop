@@ -11101,12 +11101,21 @@
       "targetPath": "source/host/src/extensions/codebase_telemetry/csnaps_capability.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "a54575ab0a774db209cb17a4ac8e2f5d5acc5aef",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/codebase_telemetry/csnaps_capability.rs",
+        "source/host/src/extensions/codebase_telemetry/mod.rs",
+        "source/host/src/extensions/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/csnaps_capability_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port preserves frozen SAND_CSNAPS_BIN override trimming, default extensions/codebase-telemetry/csnaps path shape, and missing/not-file/not-executable capability reasons with Unix executable-bit enforcement. Final remains withheld because the parent codebase-telemetry production extension and packaged csnaps staging are not yet wired."
     },
     {
       "referencePath": "source/host/extensions/codebase-telemetry/csnaps-process.ts",
