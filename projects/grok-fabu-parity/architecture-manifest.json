@@ -13706,12 +13706,17 @@
       "targetPath": "source/host/src/extensions/telemetry/desktop_health_forwarder.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "d6e664ade9a4a896f04f068672dbc0ca6c10ef52",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [],
-      "testEvidence": []
+      "testEvidence": [],
+      "evidence": [
+        "source/host/tests/desktop_health_forwarder_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host owns frozen desktop-health parsing/normalization/merge/overall/metadata/heartbeat-forward decisions and injectable forwarding settlement. Final parity requires the production Host health-file reader and telemetry emitter composition."
     },
     {
       "referencePath": "source/host/extensions/telemetry/disk-pressure-telemetry.ts",
@@ -38582,5 +38587,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-25T22:40:00Z"
+  "generatedAt": "2026-09-25T22:45:00Z"
 }

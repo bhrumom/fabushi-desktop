@@ -1294,3 +1294,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - From exact HEAD `0d7369cad7fdb689ebfbc7616a10fbac2fe8995f`, ported the frozen turn telemetry mapping boundary into Rust Host: interrupt, await, retry, user-message received, closing-send nudge, TTFT, turn usage and computer-use usage.
 - The owner preserves event names/levels, optional-field omission, token schema v2, total-input behavior, retry error-type bounding, retry/TTFT/duration rounding and computer-use error severity.
 - `turn_telemetry_mappers_contract.rs` covers all projection families. The manifest row advances only to `existing-needs-parity`; final requires shipping Runner/Transcript/Computer call sites to route through this owner rather than parallel mappings.
+
+
+### 2026-09-26 Desktop health forwarder ownership slice
+
+- From exact HEAD `1bdb19535587086c82117e3fe21cfcc7fb3c0a7e`, ported the frozen desktop-health normalization/aggregation/forwarding decision boundary into Rust Host.
+- The owner validates component scopes/kinds, normalizes bounded down reasons and restart counts, preserves first-seen duplicate merge order, computes healthy/degraded/crashloop metadata, and forwards on revision change or heartbeat with absent/parse/skipped/emitted settlement.
+- `desktop_health_forwarder_contract.rs` covers normalization, duplicate merge, invalid snapshots, metadata, heartbeat/revision decisions and forwarding state. The row remains `existing-needs-parity` until the production Host health-file reader and telemetry emitter are composed against it.

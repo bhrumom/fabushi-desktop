@@ -43,3 +43,4 @@ pub mod model_experiment_exposure;
 pub mod host_crash_marker;
 pub mod event_loop_telemetry;
 pub mod turn_telemetry_mappers;
+pub mod desktop_health_forwarder;
