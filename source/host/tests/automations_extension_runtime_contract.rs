@@ -77,3 +77,39 @@ fn extension_reconciles_sources_and_queues_real_fire_intents() {
         true,false,|_,_|true
     ),0);
 }
+
+
+#[test]
+fn extension_listener_and_cloud_sync_wiring_share_the_same_runtime_owner() {
+    let scheduled=vec![ScheduledAutomation{
+        agent_id:"agent".into(),
+        automation_id:"routine".into(),
+        is_enabled:true,
+        trigger:parse_stored_trigger(&json!({
+            "type":"microsoftTeams","tenantId":"tenant","teamIds":["team"],
+            "channelIds":[],"messageContains":"deploy"
+        })).unwrap(),
+    }];
+
+    let mut runtime=AutomationExtensionRuntime::with_source_kinds(vec![
+        "microsoftTeams".into(),
+        "slack".into(),
+    ]);
+    runtime.watcher_mut().watch("agent","slack",0);
+    runtime.set_listener_connected("slack",false);
+    assert!(runtime.poll_listener_connections(10).is_empty());
+    runtime.set_listener_connected("slack",true);
+    assert_eq!(
+        runtime.poll_listener_connections(20),
+        vec![("agent".to_string(),"slack".to_string())]
+    );
+
+    let cloud=runtime.desired_cloud_triggers(&scheduled,|_,_|true);
+    assert_eq!(cloud.len(),1);
+    assert_eq!(cloud[0].agent_id,"agent");
+    assert_eq!(cloud[0].automation_id,"routine");
+    assert_eq!(cloud[0].trigger.case,"microsoftTeamsTrigger");
+
+    runtime.stop();
+    assert!(runtime.desired_cloud_triggers(&scheduled,|_,_|true).is_empty());
+}
