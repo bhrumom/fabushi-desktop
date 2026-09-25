@@ -104,7 +104,7 @@ impl SandActionAuditor{
 impl Drop for SandActionAuditor{fn drop(&mut self){self.dispose();}}
 fn load(path:&Path)->Vec<AuditEvent>{fs::read_to_string(path).ok().and_then(|s|serde_json::from_str::<Vec<AuditEvent>>(&s).ok()).unwrap_or_default().into_iter().take(MAX_PENDING_AUDIT_EVENTS).collect()}
 fn persist(path:&Path,pending:&[AuditEvent]){if pending.is_empty(){let _=fs::remove_file(path);return}if let Some(parent)=path.parent(){let _=fs::create_dir_all(parent)}let temp=PathBuf::from(format!("{}.{}.tmp",path.display(),std::process::id()));if fs::write(&temp,serde_json::to_vec(pending).unwrap_or_default()).is_ok(){let _=fs::rename(temp,path);}}
-fn flush_locked(st:&mut State,outbox:&Path,enabled:&dyn Fn()->bool,send:&dyn Fn(&[AuditEvent])->Result<(),String>,now:&dyn Fn()->u64){
+fn flush_locked(st:&mut State,outbox:&Path,enabled:&dyn Fn()->bool,send:&dyn Fn(&[AuditEvent])->Result<(),AuditSendError>,now:&dyn Fn()->u64){
  if !st.loaded{let prior=load(outbox);let room=MAX_PENDING_AUDIT_EVENTS.saturating_sub(prior.len());let tail=st.pending.iter().rev().take(room).cloned().collect::<Vec<_>>();st.pending=prior.into_iter().chain(tail.into_iter().rev()).collect();st.loaded=true}
  let t=now();if t<st.backoff_until_ms{return}if st.pending.is_empty()||!enabled(){persist(outbox,&st.pending);return}
  while !st.pending.is_empty(){let batch=st.pending.iter().take(MAX_AUDIT_BATCH_SIZE).cloned().collect::<Vec<_>>();match send(&batch){Ok(())=>{let ids=batch.iter().map(|e|e.event_id.clone()).collect::<HashSet<_>>();st.pending.retain(|e|!ids.contains(&e.event_id));},Err(error)=>{st.backoff_until_ms=t.saturating_add(flush_failure_backoff_ms(&error));persist(outbox,&st.pending);return}}}
