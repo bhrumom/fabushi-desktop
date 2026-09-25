@@ -43,3 +43,5 @@ pub mod local_tool_permission;
 pub mod action_audit;
 
 pub mod attachments;
+
+pub mod notify_bus;

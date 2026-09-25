@@ -9,7 +9,7 @@ publish = false
 base64 = "0.22"
 chrono = "0.4"
 chrono-tz = "0.10"
-reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls", "stream"] }
 flate2 = "1"
 futures = "0.3"
 libc = "0.2"
@@ -24,7 +24,7 @@ sha1 = "0.10"
 sha2 = "0.10"
 subtle = "2"
 thiserror = "2"
-tokio = { version = "1", features = ["rt", "time", "net"] }
+tokio = { version = "1", features = ["rt", "time", "net", "sync", "macros"] }
 uuid = { version = "1", features = ["v4"] }
 url = "2"
 

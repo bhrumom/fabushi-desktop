@@ -12399,12 +12399,19 @@
       "targetPath": "source/host/src/extensions/notify_bus/notify_bus_client.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c14ed789cfd0a80783937bcf48747217d46d1e19",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/notify_bus/notify_bus_client.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/notify_bus_client_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports frozen topics/frame parser, real authenticated SSE transport, metadata headers, stall timeout, connected lifetime, healthy-attempt reset, exponential reconnect, callbacks, idempotent start and cancellable stop."
     },
     {
       "referencePath": "source/host/extensions/registry.ts",
