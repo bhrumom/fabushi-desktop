@@ -11874,12 +11874,19 @@
       "targetPath": "source/host/src/extensions/local_tool_permission/local_tool_permission_resolution.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "4bf0a7b7614ae77902d6ed3974dac2978acc1bc0",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/local_tool_permission/local_tool_permission_resolution.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/local_tool_permission_resolution_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports strict resolution validation, already-settled idempotence, stale widget settlement/retirement, agent-id fencing and fail-closed request resolution."
     },
     {
       "referencePath": "source/host/extensions/managed-setup/cursor-skills-marketplace.ts",

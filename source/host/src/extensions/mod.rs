@@ -37,3 +37,5 @@ pub mod auto_review;
 pub mod secrets;
 
 pub mod state_backstop;
+
+pub mod local_tool_permission;
