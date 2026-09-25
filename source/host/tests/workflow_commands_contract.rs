@@ -93,6 +93,18 @@ fn shipping_workflow_commands_delegate_crud_and_imports_to_session_store() {
     );
     assert_eq!(disabled[0]["isEnabledForAgent"], false);
 
+    let disabled_record = call(
+        Arc::clone(&workers),
+        "getAgentWorkflow",
+        serde_json::json!({
+            "id": agent.id,
+            "workflowId": workflow_id
+        }),
+    );
+    assert_eq!(disabled_record["id"], workflow_id);
+    assert_eq!(disabled_record["name"], "Research updated");
+    assert_eq!(disabled_record["isEnabledForAgent"], false);
+
     let imported = call(
         Arc::clone(&workers),
         "importAgentWorkflowText",

@@ -34,7 +34,8 @@ use mahayana_node_agent_coordinator::inference_router::{
     RunnerInferenceEvent, StoredEntry, StoredRole, is_direct_user_send,
     parse_host_routed_prompt_acceptance, parse_runner_inference_event,
     parse_send_prompt_attachments,
-    project_runner_turn_context, project_transcript_entry,
+    prepare_workflow_run_now_route, project_runner_turn_context, project_transcript_entry,
+    CoordinatorWorkflowRunNowRoute,
 };
 use mahayana_node_agent_coordinator::webauthn::{
     ApprovedWebAuthnConsent, WebAuthnCeremony,
@@ -1818,6 +1819,11 @@ fn execute_local_inference(
         .and_then(Value::as_str)
         .unwrap_or("")
         .to_string();
+    let runner_prompt = root
+        .get("_runnerPrompt")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .unwrap_or_else(|| prompt.clone());
     let rich_text = root
         .get("richText")
         .and_then(Value::as_str)
@@ -1859,6 +1865,7 @@ fn execute_local_inference(
 
     let mut acceptance_args = args.clone();
     if let Some(object) = acceptance_args.as_object_mut() {
+        object.remove("_runnerPrompt");
         object.insert("clientNonce".into(), Value::String(client_nonce.clone()));
         object.insert("streamId".into(), Value::String(stream_id.clone()));
     }
@@ -1907,15 +1914,24 @@ fn execute_local_inference(
             project_transcript_entry(&user_entry),
         );
         let stored_entries = store.entries(&agent_id);
+        let current_entry_id = user_entry.id.clone();
         let messages = stored_entries
             .iter()
-            .map(|entry| json!({
-                "role": match entry.role {
-                    StoredRole::User => "user",
-                    StoredRole::Assistant => "assistant",
-                },
-                "content": entry.content,
-            }))
+            .map(|entry| {
+                let content =
+                    if entry.id == current_entry_id && entry.role == StoredRole::User {
+                        runner_prompt.clone()
+                    } else {
+                        entry.content.clone()
+                    };
+                json!({
+                    "role": match entry.role {
+                        StoredRole::User => "user",
+                        StoredRole::Assistant => "assistant",
+                    },
+                    "content": content,
+                })
+            })
             .collect::<Vec<_>>();
         (
             turn,
@@ -2136,6 +2152,73 @@ fn merged_local_transcript(
     Ok(remote)
 }
 
+fn enqueue_inference_request(
+    state: &Arc<CoordinatorState>,
+    channel: CarrierChannel,
+    request_id: &str,
+    provider: InferenceProvider,
+    args: Value,
+) {
+    let agent_id = args
+        .get("agentId")
+        .or_else(|| args.get("id"))
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    if is_direct_user_send(&args) {
+        if let InferenceStreamSupersede::CancelNow { stream_id } =
+            state.active_inference_streams.request_supersede(&agent_id)
+        {
+            cancel_runner_stream_best_effort(
+                state,
+                &stream_id,
+                "Superseded by a newer user message",
+            );
+        }
+    }
+    let queue_key = if agent_id.trim().is_empty() {
+        format!("invalid-{}", uuid::Uuid::new_v4())
+    } else {
+        agent_id.clone()
+    };
+    let client_nonce = args
+        .get("clientNonce")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let worker_state = Arc::clone(state);
+    let worker_args = args;
+    let enqueue = state.inference_queue.enqueue(&queue_key, move || {
+        if let Err(error) =
+            execute_local_inference(Arc::clone(&worker_state), provider, worker_args)
+        {
+            if error.code != "INFERENCE_PROVIDER_CANCELLED" {
+                record_inference_error(&worker_state, provider, &agent_id, &error);
+            }
+        }
+    });
+    match enqueue {
+        Ok(()) => {
+            let mut value = json!({
+                "accepted": true,
+                "provider": provider.as_str(),
+            });
+            if let Some(client_nonce) = client_nonce {
+                value["clientNonce"] = Value::String(client_nonce);
+            }
+            state.complete_request(
+                channel,
+                request_id,
+                ReplyOutcome::Ok { value },
+            );
+        }
+        Err(failure) => state.complete_request(
+            channel,
+            request_id,
+            ReplyOutcome::Failed { failure },
+        ),
+    }
+}
+
 fn dispatch_inference_if_handled(
     state: &Arc<CoordinatorState>,
     channel: CarrierChannel,
@@ -2218,65 +2301,98 @@ fn dispatch_inference_if_handled(
         return true;
     }
 
+    if method == "runAgentWorkflowNow" {
+        let worker_state = Arc::clone(state);
+        let request_id = request_id.to_string();
+        let args = args.clone();
+        thread::spawn(move || {
+            let agent_id = args
+                .get("agentId")
+                .or_else(|| args.get("id"))
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .unwrap_or("")
+                .to_string();
+            let workflow_id = args
+                .get("workflowId")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .unwrap_or("")
+                .to_string();
+            if agent_id.is_empty() || workflow_id.is_empty() {
+                worker_state.complete_request(
+                    channel,
+                    &request_id,
+                    ReplyOutcome::Failed {
+                        failure: Failure::new(
+                            "INFERENCE_WORKFLOW_INVALID",
+                            "runAgentWorkflowNow requires agent id and workflowId",
+                        ),
+                    },
+                );
+                return;
+            }
+            let workflow = match dispatch_gateway_value(
+                &worker_state,
+                "getAgentWorkflow",
+                json!({"id":agent_id,"workflowId":workflow_id}),
+            ) {
+                Ok(value) => value,
+                Err(failure) => {
+                    worker_state.complete_request(
+                        channel,
+                        &request_id,
+                        ReplyOutcome::Failed { failure },
+                    );
+                    return;
+                }
+            };
+            match prepare_workflow_run_now_route(&agent_id, &workflow) {
+                Ok(CoordinatorWorkflowRunNowRoute::Missing) => worker_state.complete_request(
+                    channel,
+                    &request_id,
+                    ReplyOutcome::Ok { value: Value::Null },
+                ),
+                Ok(CoordinatorWorkflowRunNowRoute::Automation) => {
+                    match dispatch_gateway_value(&worker_state, "runAgentWorkflowNow", args) {
+                        Ok(value) => worker_state.complete_request(
+                            channel,
+                            &request_id,
+                            ReplyOutcome::Ok { value },
+                        ),
+                        Err(failure) => worker_state.complete_request(
+                            channel,
+                            &request_id,
+                            ReplyOutcome::Failed { failure },
+                        ),
+                    }
+                }
+                Ok(CoordinatorWorkflowRunNowRoute::Reference { send_args }) => {
+                    enqueue_inference_request(
+                        &worker_state,
+                        channel,
+                        &request_id,
+                        provider,
+                        send_args,
+                    );
+                }
+                Err(failure) => worker_state.complete_request(
+                    channel,
+                    &request_id,
+                    ReplyOutcome::Failed { failure },
+                ),
+            }
+        });
+        return true;
+    }
+
     if method != "sendPrompt" {
         return false;
     }
 
-    let agent_id = inference_agent_id.to_string();
-    if is_direct_user_send(&args) {
-        if let InferenceStreamSupersede::CancelNow { stream_id } =
-            state.active_inference_streams.request_supersede(&agent_id)
-        {
-            cancel_runner_stream_best_effort(
-                state,
-                &stream_id,
-                "Superseded by a newer user message",
-            );
-        }
-    }
-    let queue_key = if agent_id.trim().is_empty() {
-        format!("invalid-{}", uuid::Uuid::new_v4())
-    } else {
-        agent_id.clone()
-    };
-    let client_nonce = args
-        .get("clientNonce")
-        .and_then(Value::as_str)
-        .map(str::to_string);
-    let worker_state = Arc::clone(state);
-    let worker_args = args.clone();
-    let enqueue = state.inference_queue.enqueue(&queue_key, move || {
-        if let Err(error) =
-            execute_local_inference(Arc::clone(&worker_state), provider, worker_args)
-        {
-            if error.code != "INFERENCE_PROVIDER_CANCELLED" {
-                record_inference_error(&worker_state, provider, &agent_id, &error);
-            }
-        }
-    });
-    match enqueue {
-        Ok(()) => {
-            let mut value = json!({
-                "accepted": true,
-                "provider": provider.as_str(),
-            });
-            if let Some(client_nonce) = client_nonce {
-                value["clientNonce"] = Value::String(client_nonce);
-            }
-            state.complete_request(
-                channel,
-                request_id,
-                ReplyOutcome::Ok { value },
-            );
-        }
-        Err(failure) => {
-            state.complete_request(
-                channel,
-                request_id,
-                ReplyOutcome::Failed { failure },
-            );
-        }
-    }
+    enqueue_inference_request(state, channel, request_id, provider, args.clone());
     true
 }
 

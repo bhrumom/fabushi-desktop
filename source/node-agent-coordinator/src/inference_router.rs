@@ -62,6 +62,131 @@ pub fn project_runner_turn_context(
     Value::Object(projected)
 }
 
+
+pub const WORKFLOW_REFERENCE_NODE_TYPE: &str = "workflowReference";
+pub const WORKFLOW_INJECTED_BODY_LIMIT: usize = 8_000;
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CoordinatorWorkflowRunNowRoute {
+    Missing,
+    Automation,
+    Reference { send_args: Value },
+}
+
+pub fn prepare_workflow_run_now_route(
+    agent_id: &str,
+    workflow: &Value,
+) -> Result<CoordinatorWorkflowRunNowRoute, Failure> {
+    if workflow.is_null() {
+        return Ok(CoordinatorWorkflowRunNowRoute::Missing);
+    }
+    let workflow = workflow.as_object().ok_or_else(|| {
+        Failure::new(
+            "INFERENCE_WORKFLOW_INVALID",
+            "getAgentWorkflow returned a non-object workflow",
+        )
+    })?;
+    let string_field = |field: &str| {
+        workflow
+            .get(field)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned)
+    };
+    let id = string_field("id").ok_or_else(|| {
+        Failure::new("INFERENCE_WORKFLOW_INVALID", "workflow is missing id")
+    })?;
+    let name = string_field("name").ok_or_else(|| {
+        Failure::new("INFERENCE_WORKFLOW_INVALID", "workflow is missing name")
+    })?;
+    let source = string_field("source").unwrap_or_else(|| "workflow".into());
+    if source == "automation" {
+        return Ok(CoordinatorWorkflowRunNowRoute::Automation);
+    }
+
+    let visible_prompt = format!("@{name}");
+    let rich_text = serde_json::json!({
+        "type": "doc",
+        "content": [{
+            "type": "paragraph",
+            "content": [{
+                "type": WORKFLOW_REFERENCE_NODE_TYPE,
+                "attrs": { "id": id, "label": name }
+            }]
+        }]
+    })
+    .to_string();
+
+    let enabled = workflow
+        .get("isEnabledForAgent")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
+    let runner_prompt = if enabled {
+        let identity = match source.as_str() {
+            "managed" => format!("managed skill id {id}"),
+            "plugin" => format!(
+                "plugin skill id {id}, file {}",
+                string_field("filePath").unwrap_or_default()
+            ),
+            _ => format!("folder {id}"),
+        };
+        let mut lines = vec![format!(
+            "The user invoked the \"{name}\" workflow ({identity}). Run it now."
+        )];
+        if let Some(description) = string_field("description") {
+            lines.push(format!("What it does: {description}"));
+        }
+        lines.push("Recipe to follow:".into());
+        lines.push(
+            workflow
+                .get("body")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .trim()
+                .chars()
+                .take(WORKFLOW_INJECTED_BODY_LIMIT)
+                .collect::<String>(),
+        );
+        let helper_scripts = workflow
+            .get("helperScripts")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .filter(|value| !value.trim().is_empty())
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        if !helper_scripts.is_empty() {
+            let file_path = string_field("filePath").unwrap_or_default();
+            let workflow_dir = Path::new(&file_path)
+                .parent()
+                .map(|path| path.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            lines.push(format!(
+                "Helper files live beside this workflow in {workflow_dir}: {}. Use them with Shell as the recipe directs.",
+                helper_scripts.join(", ")
+            ));
+        }
+        lines.push(
+            "Carry out the recipe now, adapting it to anything else the user said in this message."
+                .into(),
+        );
+        format!("{}\n\n{visible_prompt}", lines.join("\n"))
+    } else {
+        visible_prompt.clone()
+    };
+
+    Ok(CoordinatorWorkflowRunNowRoute::Reference {
+        send_args: serde_json::json!({
+            "agentId": agent_id,
+            "prompt": visible_prompt,
+            "richText": rich_text,
+            "_runnerPrompt": runner_prompt,
+        }),
+    })
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct HostRoutedPromptAcceptance {
     pub duplicate: bool,

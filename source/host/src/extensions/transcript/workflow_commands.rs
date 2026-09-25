@@ -161,6 +161,7 @@ pub fn dispatch_workflow_command_with_runtime(
     if !matches!(
         method,
         "getAgentWorkflows"
+            | "getAgentWorkflow"
             | "createAgentWorkflow"
             | "updateAgentWorkflow"
             | "setAgentWorkflowEnabled"
@@ -181,6 +182,20 @@ pub fn dispatch_workflow_command_with_runtime(
                     .map_err(WorkflowCommandError::Internal)
             })
             .map(workflow_records_value),
+        "getAgentWorkflow" => {
+            let agent_id = match agent_id(args) {
+                Ok(value) => value,
+                Err(error) => return Some(Err(error)),
+            };
+            let workflow_id = match required_string(args, &["workflowId"], "workflowId") {
+                Ok(value) => value,
+                Err(error) => return Some(Err(error)),
+            };
+            store
+                .get_agent_workflow(agent_id, workflow_id)
+                .map(|record| record.map(workflow_record_value).unwrap_or(Value::Null))
+                .map_err(WorkflowCommandError::Internal)
+        }
         "createAgentWorkflow" => {
             let agent_id = match agent_id(args) {
                 Ok(value) => value,

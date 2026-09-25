@@ -3,10 +3,11 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_node_agent_coordinator::inference_router::{
-    ActiveInferenceStreamRegistry, InferenceProvider, InferenceStreamSupersede,
-    RunnerInferenceEvent, configured_inference_provider, host_transcript_method,
-    is_direct_user_send, parse_host_routed_prompt_acceptance,
-    parse_runner_inference_event, project_runner_turn_context,
+    ActiveInferenceStreamRegistry, CoordinatorWorkflowRunNowRoute, InferenceProvider,
+    InferenceStreamSupersede, RunnerInferenceEvent, WORKFLOW_INJECTED_BODY_LIMIT,
+    configured_inference_provider, host_transcript_method, is_direct_user_send,
+    parse_host_routed_prompt_acceptance, parse_runner_inference_event,
+    prepare_workflow_run_now_route, project_runner_turn_context,
 };
 use serde_json::json;
 
@@ -203,4 +204,87 @@ fn runner_inference_events_are_correlated_by_stream_id() {
         "type":"unknown"
     }))
     .is_err());
+}
+
+
+#[test]
+fn coordinator_workflow_run_now_preserves_visible_reference_and_expanded_runner_prompt() {
+    let body = "x".repeat(WORKFLOW_INJECTED_BODY_LIMIT + 25);
+    let route = prepare_workflow_run_now_route(
+        "agent-a",
+        &json!({
+            "id":"research",
+            "name":"Research",
+            "description":"Read sources",
+            "body":body,
+            "source":"plugin",
+            "isEnabledForAgent":true,
+            "helperScripts":["collect.sh","parse.py"],
+            "filePath":"/tmp/workflows/research/SKILL.md"
+        }),
+    )
+    .expect("workflow route");
+    let CoordinatorWorkflowRunNowRoute::Reference { send_args } = route else {
+        panic!("expected reference route");
+    };
+    assert_eq!(send_args["agentId"], "agent-a");
+    assert_eq!(send_args["prompt"], "@Research");
+    let rich_text: serde_json::Value =
+        serde_json::from_str(send_args["richText"].as_str().expect("richText"))
+            .expect("richText json");
+    assert_eq!(
+        rich_text["content"][0]["content"][0]["type"],
+        "workflowReference"
+    );
+    assert_eq!(
+        rich_text["content"][0]["content"][0]["attrs"]["id"],
+        "research"
+    );
+    let runner_prompt = send_args["_runnerPrompt"].as_str().expect("runner prompt");
+    assert!(runner_prompt.contains(
+        "The user invoked the \"Research\" workflow (plugin skill id research, file /tmp/workflows/research/SKILL.md). Run it now."
+    ));
+    assert!(runner_prompt.contains("What it does: Read sources"));
+    assert!(runner_prompt.contains(
+        "Helper files live beside this workflow in /tmp/workflows/research: collect.sh, parse.py."
+    ));
+    let recipe = runner_prompt
+        .split("Recipe to follow:\n")
+        .nth(1)
+        .expect("recipe")
+        .split("\nHelper files")
+        .next()
+        .expect("body");
+    assert_eq!(recipe.chars().count(), WORKFLOW_INJECTED_BODY_LIMIT);
+    assert!(runner_prompt.ends_with("@Research"));
+
+    let disabled = prepare_workflow_run_now_route(
+        "agent-a",
+        &json!({
+            "id":"disabled",
+            "name":"Disabled",
+            "body":"do not inject",
+            "source":"workflow",
+            "isEnabledForAgent":false
+        }),
+    )
+    .expect("disabled route");
+    let CoordinatorWorkflowRunNowRoute::Reference { send_args } = disabled else {
+        panic!("expected disabled reference route");
+    };
+    assert_eq!(send_args["_runnerPrompt"], "@Disabled");
+
+    assert_eq!(
+        prepare_workflow_run_now_route(
+            "agent-a",
+            &json!({"id":"auto","name":"Auto","source":"automation"})
+        )
+        .expect("automation route"),
+        CoordinatorWorkflowRunNowRoute::Automation
+    );
+    assert_eq!(
+        prepare_workflow_run_now_route("agent-a", &serde_json::Value::Null)
+            .expect("missing route"),
+        CoordinatorWorkflowRunNowRoute::Missing
+    );
 }
