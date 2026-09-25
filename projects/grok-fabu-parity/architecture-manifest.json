@@ -16056,12 +16056,21 @@
       "targetPath": "source/host/src/runner/inactive_turn_agent_stream.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "5ab083d9d433777bcab660dd95f0a9ba7c280b62",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/inactive_turn_agent_stream.rs",
+        "source/host/src/runner/stream_attempt.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inactive_turn_agent_stream_contract.rs",
+        "source/host/tests/stream_attempt_outer_lifecycle_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Real dormant generated-Agent stream boundary now exists in Rust: resume state is forwarded to the stream source; checkpoint persistence is synchronously drained before resume eligibility; outer generation fencing, completion, cleanup, final-state persistence and exactly-once release are composed with contract coverage. Final remains withheld because this dormant path is not yet installed as the shipping SandAgentRunner turn source and the generated Agent/action/MCP factory graph is still incomplete."
     },
     {
       "referencePath": "source/host/runner/large-output-spill.ts",
@@ -16167,7 +16176,7 @@
         "source/host/tests/inference_provider_session_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Shipping routed-provider path enters ProductionTurnRunShellAdapter for bounded retry/backoff, first-output watchdog, cancellation, durable checkpoint-before-resume and tool-only checkpoint progress. Provider retry/resume decisions now surface a structured Runner-owned retry event before backoff and the shipping Host consumes that event only for lifecycle projection. The full frozen prepared-turn/Agent stream/session/settle/context-linking adapter remains to be ported before final."
+      "notes": "Shipping routed-provider path enters ProductionTurnRunShellAdapter for bounded retry/backoff, exponentially relaxed first-output watchdog, per-attempt watchdog cancellation, durable checkpoint-before-resume and tool-only checkpoint progress. Retry activity and retry telemetry are now separate: only a real next attempt projects ActivityUpdate::Retrying, while reports cover retried/exhausted/gave_up_ineligible with attempt/max-attempt/deadline/resume evidence. The full frozen prepared-turn/generated-Agent stream/session/context-linking adapter remains to be cut over before final."
     },
     {
       "referencePath": "source/host/runner/prompt-collector-glue.ts",
@@ -16541,7 +16550,7 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Corrected false-final status and protected it from the cargo-only auto-finalizer. Rust retains retry policy/watchdog and shipping provider retry/resume via ProductionTurnRunShellAdapter, plus the frozen outer generation-gated checkpoint/final persistence contract including prepare->persist->note ordering, disk-pressure/automation hooks, awaiting-user and forced-upgrade cancellation reasons, stale-generation fencing and explicit finally release. Shipping provider attempts now also apply the frozen exponentially relaxed first-token stall deadline (base * 2^(attempt-1)), with behavioral coverage proving a second attempt can outlive the base deadline. Final remains withheld because the frozen generic createStreamAttempt owner still requires per-attempt cancel contexts, concurrent checkpoint-operation draining, resettable first-token deadline hooks, accepted-resume checkpoint capture and retry telemetry; inactive-turn-agent-stream is not yet production-composed."
+      "notes": "Rust retains retry policy/watchdog and shipping provider retry/resume via ProductionTurnRunShellAdapter, plus the frozen outer generation-gated checkpoint/final persistence contract. The dormant generated-Agent stream boundary now drains checkpoint persistence synchronously (the Rust adaptation has no outstanding async checkpoint operations), and shipping retry telemetry distinguishes retried/exhausted/gave_up_ineligible without projecting terminal outcomes as Retry UI. Final remains withheld because resettable first-token deadline hooks and the generated Agent stream cutover are not yet production-composed."
     },
     {
       "referencePath": "source/host/runner/subagent-runtime.ts",
