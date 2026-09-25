@@ -87,7 +87,7 @@ impl SandActionAuditor{
  pub fn with_clock_and_id(mut self,now:Now,random_id:Id)->Self{self.now=now;self.random_id=random_id;self}
  pub fn record(&self,record:AuditRecord){
   let event_id=(self.random_id)();
-  let path=(self.audit_path)(&record.agent_id);if let Some(parent)=path.parent(){let _=fs::create_dir_all(parent)};if let Ok(mut f)=OpenOptions::new().create(true).append(true).open(path){let _=f.write_all(local_audit_jsonl_line(&record,&event_id).as_bytes());}
+  let path=(self.audit_path)(&record.agent_id);if let Some(parent)=path.parent(){let _=fs::create_dir_all(parent);};if let Ok(mut f)=OpenOptions::new().create(true).append(true).open(path){let _=f.write_all(local_audit_jsonl_line(&record,&event_id).as_bytes());}
   if !is_backend_forwardable(&record){return}
   let (lock,_)=&*self.state;let mut st=lock.lock().unwrap_or_else(|p|p.into_inner());if !st.accepting{return}
   st.pending.push(AuditEvent{event_id,occurred_at_ms:record.occurred_at_ms,agent_id:record.agent_id,turn_id:record.turn_id.unwrap_or_default(),box_id:record.box_id.unwrap_or_default(),action:record.action});
@@ -103,7 +103,7 @@ impl SandActionAuditor{
 }
 impl Drop for SandActionAuditor{fn drop(&mut self){self.dispose();}}
 fn load(path:&Path)->Vec<AuditEvent>{fs::read_to_string(path).ok().and_then(|s|serde_json::from_str::<Vec<AuditEvent>>(&s).ok()).unwrap_or_default().into_iter().take(MAX_PENDING_AUDIT_EVENTS).collect()}
-fn persist(path:&Path,pending:&[AuditEvent]){if pending.is_empty(){let _=fs::remove_file(path);return}if let Some(parent)=path.parent(){let _=fs::create_dir_all(parent)}let temp=PathBuf::from(format!("{}.{}.tmp",path.display(),std::process::id()));if fs::write(&temp,serde_json::to_vec(pending).unwrap_or_default()).is_ok(){let _=fs::rename(temp,path);}}
+fn persist(path:&Path,pending:&[AuditEvent]){if pending.is_empty(){let _=fs::remove_file(path);return}if let Some(parent)=path.parent(){let _=fs::create_dir_all(parent);}let temp=PathBuf::from(format!("{}.{}.tmp",path.display(),std::process::id()));if fs::write(&temp,serde_json::to_vec(pending).unwrap_or_default()).is_ok(){let _=fs::rename(temp,path);}}
 fn flush_locked(st:&mut State,outbox:&Path,enabled:&dyn Fn()->bool,send:&dyn Fn(&[AuditEvent])->Result<(),AuditSendError>,now:&dyn Fn()->u64){
  if !st.loaded{let prior=load(outbox);let room=MAX_PENDING_AUDIT_EVENTS.saturating_sub(prior.len());let tail=st.pending.iter().rev().take(room).cloned().collect::<Vec<_>>();st.pending=prior.into_iter().chain(tail.into_iter().rev()).collect();st.loaded=true}
  let t=now();if t<st.backoff_until_ms{return}if st.pending.is_empty()||!enabled(){persist(outbox,&st.pending);return}

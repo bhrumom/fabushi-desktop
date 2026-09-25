@@ -24,7 +24,7 @@ impl SandXuserRoomTombstoneStore{
  pub fn new(root:&Path)->Self{Self{file_path:root.join(SAND_XUSER_ROOM_TOMBSTONE_FILE_NAME),cache:Mutex::new(None)}}
  fn with_map<R>(&self,f:impl FnOnce(&mut BTreeMap<String,XuserRoomTombstone>)->(R,bool))->R{
   let mut g=self.cache.lock().unwrap_or_else(|p|p.into_inner()); if g.is_none(){*g=Some(parse_tombstone_file(fs::read_to_string(&self.file_path).ok().as_deref()));}
-  let map=g.as_mut().unwrap(); let (out,changed)=f(map); if changed{if let Some(p)=self.file_path.parent(){let _=fs::create_dir_all(p)};let part=PathBuf::from(format!("{}.part",self.file_path.display()));let values=map.values().cloned().collect::<Vec<_>>();if fs::write(&part,serde_json::json!({"version":1,"tombstones":values}).to_string()).is_ok(){let _=fs::rename(part,&self.file_path);}} out
+  let map=g.as_mut().unwrap(); let (out,changed)=f(map); if changed{if let Some(p)=self.file_path.parent(){let _=fs::create_dir_all(p);};let part=PathBuf::from(format!("{}.part",self.file_path.display()));let values=map.values().cloned().collect::<Vec<_>>();if fs::write(&part,serde_json::json!({"version":1,"tombstones":values}).to_string()).is_ok(){let _=fs::rename(part,&self.file_path);}} out
  }
  pub fn list(&self)->Vec<XuserRoomTombstone>{self.with_map(|m|(m.values().cloned().collect(),false))}
  pub fn record(&self,v:XuserRoomTombstone){self.with_map(|m|{let k=tombstone_key(&v);if m.contains_key(&k){((),false)}else{m.insert(k,v);((),true)}})}
