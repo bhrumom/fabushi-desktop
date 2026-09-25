@@ -1058,3 +1058,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Production wiring is explicit: the Host MemoryService creates the membership owner and `ProductionSessionWorkers::compose_materialized_session` places it on every shipping `ProductionMaterializedSession`. This establishes one per-Agent ownership source for the upcoming project-memory/agent-state cutover rather than a detached compatibility object.
 - `source/host/tests/project_membership_contract.rs` covers malformed input, safe-slug filtering, deterministic persistence, join/leave/prune and creation through real shipping Session materialization. The frozen project-membership row is now `implemented`.
 
+### 2026-09-25 post-turn memory runtime cutover
+
+- Starting exact HEAD: `d11d12b8019c5558a3a81f924b6f4e1e886039bb`.
+- Added `source/host/src/runner/turn_memory.rs` with the frozen extraction and episode responsibilities: recent/archive memory context, add/remove application, durable pending episode turns in the Agent DB, configured episode interval, episode summary persistence and the dreaming/evidence branch that clears stale episode state.
+- Shipping `runner.startRoutedProvider` now invokes memory maintenance only after a successful visible memorable turn and before publishing renderer-visible completion. The memory inference request has no tools and uses the already selected routed provider; failures remain opportunistic and do not overturn the user's completed turn.
+- `source/host/tests/turn_memory_contract.rs` proves deduplicated extraction, six-turn episode summarization/clear and evidence-mode bypass. The manifest moves `turn-memory.ts` from `planned` to `existing-needs-parity`, not final, because the production Memory synthesis bridge and frozen auxiliary agent-message collector still need to be wired.
+

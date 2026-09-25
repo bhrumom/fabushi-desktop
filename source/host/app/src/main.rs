@@ -77,8 +77,8 @@ use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
 use mahayana_host_runtime::extensions::source_map::extension::start_source_map_extension;
 use mahayana_host_runtime::extensions::source_map::source_map_service::SandSourceMap;
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
-    configured_routed_provider,
+    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderOptions,
+    RoutedToolDefinition, configured_routed_provider, run_routed_provider_text,
 };
 use mahayana_host_runtime::extensions::managed_setup::team_rules::ProductionTeamRulesResolver;
 use mahayana_host_runtime::extensions::webauthn_proxy::extension::{
@@ -131,7 +131,12 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
 };
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::prompt_collector_glue::project_provider_messages_for_turn;
-use mahayana_host_runtime::runner::sand_memory::MEMORY_RECENT_PROMPT_LIMIT;
+use mahayana_host_runtime::runner::sand_memory::{
+    MEMORY_RECENT_PROMPT_LIMIT, is_memorable_exchange,
+};
+use mahayana_host_runtime::runner::turn_memory::{
+    TurnExchange, TurnMemoryMode, run_turn_memory_with,
+};
 use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
 use mahayana_host_runtime::runner::system_prompt_assembly::append_memory_system_prompt;
 use mahayana_host_runtime::runner_production_bridge::{
@@ -1480,6 +1485,10 @@ fn start_routed_provider_task(
         .get("ackRedrive")
         .and_then(serde_json::Value::as_bool)
         .unwrap_or(false);
+    let turn_hidden = args
+        .get("hidden")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false);
     transcript_runtime
         .require_routed_turn_lease(&agent_id, &stream_id)
         .map_err(map_production_send_error)?;
@@ -1647,6 +1656,8 @@ fn start_routed_provider_task(
     let worker_telemetry_logs = telemetry_logs.clone();
     let worker_request_source = request_source.clone();
     let worker_is_ack_redrive = is_ack_redrive;
+    let worker_memory_store = memory_store.clone();
+    let worker_turn_hidden = turn_hidden;
     let spawn_error_agent_id = agent_id.clone();
     let spawn = thread::Builder::new()
         .name(format!("mahayana-runner-provider-{agent_id}"))
@@ -1822,6 +1833,72 @@ fn start_routed_provider_task(
                 runner.last_finished().map(|finished| &finished.outcome),
                 Some(mahayana_host_runtime::runner::TerminalOutcome::WaitingUser)
             );
+
+            if !waiting_user && !worker_turn_hidden {
+                if let Ok(content) = result.as_ref() {
+                    if let Some(user_prompt) = lifecycle_messages
+                        .iter()
+                        .rev()
+                        .find(|message| {
+                            message.role == "user" && !message.content.trim().is_empty()
+                        })
+                        .map(|message| message.content.trim().to_string())
+                        .filter(|prompt| is_memorable_exchange(prompt))
+                    {
+                        if let Ok(episode_db) =
+                            worker_retire_sessions.open_agent_db_owner(&agent_id)
+                        {
+                            let memory_cancellation = worker_cancellation.clone();
+                            let mut execute_memory_prompt =
+                                |system_prompt: &str, user_prompt: &str| -> Result<String, String> {
+                                    let messages = vec![
+                                        ProviderMessage {
+                                            role: "system".into(),
+                                            content: system_prompt.to_string(),
+                                        },
+                                        ProviderMessage {
+                                            role: "user".into(),
+                                            content: user_prompt.to_string(),
+                                        },
+                                    ];
+                                    let mut reject_tool = |
+                                        _tool: &RoutedToolDefinition,
+                                        _args: serde_json::Value,
+                                        _tool_call_id: &str,
+                                    | -> Result<serde_json::Value, ProviderSessionError> {
+                                        Err(ProviderSessionError::Tool(
+                                            "turn-memory inference exposes no tools".into(),
+                                        ))
+                                    };
+                                    let mut ignore_delta = |_delta: &str, _accumulated: &str| {};
+                                    let should_cancel = || memory_cancellation.is_cancelled();
+                                    let mut options = RoutedProviderOptions {
+                                        data_dir: &data_dir,
+                                        tools: &[],
+                                        mcp_server_url: None,
+                                        execute_tool: &mut reject_tool,
+                                        on_text_delta: &mut ignore_delta,
+                                        should_cancel: &should_cancel,
+                                    };
+                                    run_routed_provider_text(provider, &messages, &mut options)
+                                        .map_err(|error| error.to_string())
+                                };
+                            let _ = run_turn_memory_with(
+                                &worker_memory_store,
+                                Some(episode_db.as_ref()),
+                                runner_started_at_ms as i64,
+                                TurnExchange {
+                                    user: user_prompt,
+                                    agent: content.clone(),
+                                },
+                                TurnMemoryMode::Extract,
+                                &mut execute_memory_prompt,
+                            );
+                        }
+                    }
+                }
+            }
+
             if worker_is_ack_redrive
                 && !waiting_user
                 && !worker_cancellation.is_cancelled()

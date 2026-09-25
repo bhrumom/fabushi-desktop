@@ -17207,12 +17207,22 @@
       "targetPath": "source/host/src/runner/turn_memory.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "fc39a00c7fff813bd5e39d5c0d3db3b4bbe0d301",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/turn_memory.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/runner/sand_memory.rs",
+        "source/host/src/extensions/session/agent_db.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/turn_memory_contract.rs",
+        "source/host/tests/sand_memory_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Runner now ports the frozen post-turn memory engine: extraction uses recent+archive context and applies add/remove results; episode progress persists in the Agent DB, summarizes at the configured interval and clears after summary; evidence mode clears pending episodes and bypasses extraction. Shipping routed-provider completion now invokes this path only for successful, visible, memorable user turns before the renderer completed event, with tool-free inference on the selected provider. Final remains withheld until the Memory synthesis service production-wires recordMemoryEvidence and auxiliary agent-message collectors are projected into the exchange exactly like the frozen turn-settle path."
     },
     {
       "referencePath": "source/host/runner/turn-observation.ts",
