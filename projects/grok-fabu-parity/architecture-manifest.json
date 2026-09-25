@@ -15898,12 +15898,19 @@
       "targetPath": "source/host/src/runner/auto_review_gate.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "d3f67282ba284a8a55c82074119ee6f01234e47a",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/auto_review_gate.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/auto_review_gate_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port owns the frozen side-effect gate semantics: live/base mode resolution, expiry of every non-enforcing surface, fail-closed pending-approval fencing, cloned user allow/block instructions, and independent host/box shell approval-generation identity. Final remains withheld until the full SandAutoReviewController/classifier/tool-escalation family is production-composed into generated Agent tools and computer/MCP/shell side effects."
     },
     {
       "referencePath": "source/host/runner/background-work.ts",
