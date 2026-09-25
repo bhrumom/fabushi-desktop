@@ -1240,3 +1240,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The Rust owner preserves HTTP(S) URL pass-through, local/file URL resolution, data-root reanchoring, regular-file and 50 MiB upload fences, byte reads, basename projection and image/video/generic MIME selection.
 - `channel_attachment_contract.rs` covers remote URL/image detection, file URL and plain-path uploads, MIME projection, directory/empty/oversize rejection and unsupported schemes.
 - The manifest row advances only to `existing-needs-parity`; final waits on canonical shared media-MIME reuse and full exact-HEAD CI evidence.
+
+
+### 2026-09-26 Cloud Agent image loading slice
+
+- Added Rust `cloud_agent_images.rs` under the existing Host cloud-agents boundary rather than merging it into the Cloud Agent tool/API owner.
+- The port enforces file:// input, agent attachments/assets containment, /workspace-only box reads, image-only MIME gating, unreadable/refused distinctions and the frozen 25 MiB attachment limit.
+- `cloud_agent_images_contract.rs` covers host media roots, box reads, non-file/non-image rejection, outside-root refusal, unreadable box paths and both host/box oversize rejection.
+- The row advances only to `existing-needs-parity`; final waits on exact shared media MIME/error helper reuse and live CloudAgent-tool production wiring.

@@ -10041,12 +10041,20 @@
       "targetPath": "source/host/src/cloud_agents/cloud_agent_images.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "ff98922b8684ee9b6ef996647fec8e506eefb2a2",
       "architecturalRole": "host/cloud-agents",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/cloud_agents/cloud_agent_images.rs",
+        "source/host/src/cloud_agents/mod.rs",
+        "source/host/src/attachment_paths.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/cloud_agent_images_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host port now owns file:// validation, agent media-root containment, /workspace box reads, image MIME gating, unreadable/refused classification and the frozen 25 MiB image limit. Final remains withheld for exact shared media MIME inventory/error-text reuse and production CloudAgent tool composition with the canonical box reader."
     },
     {
       "referencePath": "source/host/cloud-agents/cloud-agent-tool.ts",
