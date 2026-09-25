@@ -50,6 +50,25 @@ pub struct ProviderRetryEvent {
     pub watchdog_expired: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProviderRetryOutcome {
+    Retried,
+    Exhausted,
+    GaveUpIneligible,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProviderRetryReport {
+    pub outcome: ProviderRetryOutcome,
+    pub attempt: u32,
+    pub max_attempts: u32,
+    pub delay_ms: Option<u64>,
+    pub server_paced: bool,
+    pub resume_from_checkpoint: bool,
+    pub watchdog_expired: bool,
+    pub error: String,
+}
+
 #[derive(Debug, Clone)]
 pub struct ProductionTurnRunShellAdapter {
     pub policy: StreamAttemptPolicy,
@@ -89,6 +108,25 @@ impl ProductionTurnRunShellAdapter {
         executor: &mut dyn RoutedProviderAttemptExecutor,
         on_text_delta: &mut dyn FnMut(&str, &str),
         on_retry: &mut dyn FnMut(&ProviderRetryEvent),
+    ) -> Result<String, ProviderSessionError> {
+        self.run_with_retry_reporting(
+            cancellation,
+            checkpoint_store,
+            executor,
+            on_text_delta,
+            on_retry,
+            &mut |_| {},
+        )
+    }
+
+    pub fn run_with_retry_reporting(
+        &self,
+        cancellation: &RoutedProviderCancellation,
+        checkpoint_store: &dyn RoutedProviderCheckpointStore,
+        executor: &mut dyn RoutedProviderAttemptExecutor,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+        on_retry: &mut dyn FnMut(&ProviderRetryEvent),
+        on_report: &mut dyn FnMut(&ProviderRetryReport),
     ) -> Result<String, ProviderSessionError> {
         let mut attempt = 1_u32;
         let mut resume_from: Option<RoutedProviderCheckpoint> = None;
@@ -191,6 +229,7 @@ impl ProductionTurnRunShellAdapter {
                         cancellation,
                         resume_from.as_ref(),
                         on_retry,
+                        on_report,
                     )? {
                         return Err(error);
                     }
@@ -212,6 +251,7 @@ impl ProductionTurnRunShellAdapter {
                         cancellation,
                         resume_from.as_ref(),
                         on_retry,
+                        on_report,
                     )? {
                         return Err(error);
                     }
@@ -229,6 +269,7 @@ impl ProductionTurnRunShellAdapter {
         cancellation: &RoutedProviderCancellation,
         accepted_resume: Option<&RoutedProviderCheckpoint>,
         on_retry: &mut dyn FnMut(&ProviderRetryEvent),
+        on_report: &mut dyn FnMut(&ProviderRetryReport),
     ) -> Result<bool, ProviderSessionError> {
         let transient =
             classify_provider_failure(error, watchdog_expired);
@@ -246,13 +287,46 @@ impl ProductionTurnRunShellAdapter {
                 }
                 (delay, true)
             }
-            RetryDecision::Fail => return Ok(false),
+            RetryDecision::Fail => {
+                let outcome = if *attempt > 1 && *attempt >= self.policy.max_attempts {
+                    Some(ProviderRetryOutcome::Exhausted)
+                } else if *attempt > 1 || transient.retryable() {
+                    Some(ProviderRetryOutcome::GaveUpIneligible)
+                } else {
+                    None
+                };
+                if let Some(outcome) = outcome {
+                    on_report(&ProviderRetryReport {
+                        outcome,
+                        attempt: *attempt,
+                        max_attempts: self.policy.max_attempts,
+                        delay_ms: None,
+                        server_paced: false,
+                        resume_from_checkpoint: accepted_resume.is_some(),
+                        watchdog_expired,
+                        error: error.to_string(),
+                    });
+                }
+                return Ok(false);
+            }
         };
         let next_attempt = attempt.saturating_add(1);
+        let delay_ms = delay.as_millis().min(u64::MAX as u128) as u64;
+        let server_paced = transient.retry_after_ms.is_some();
+        on_report(&ProviderRetryReport {
+            outcome: ProviderRetryOutcome::Retried,
+            attempt: *attempt,
+            max_attempts: self.policy.max_attempts,
+            delay_ms: Some(delay_ms),
+            server_paced,
+            resume_from_checkpoint,
+            watchdog_expired,
+            error: error.to_string(),
+        });
         on_retry(&ProviderRetryEvent {
             attempt: *attempt,
             next_attempt,
-            delay_ms: delay.as_millis().min(u64::MAX as u128) as u64,
+            delay_ms,
             resume_from_checkpoint,
             watchdog_expired,
         });
