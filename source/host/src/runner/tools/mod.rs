@@ -14,3 +14,6 @@ pub mod sand_spotlight_tools;
 pub mod sand_browser_use_subagent;
 
 pub mod sand_computer_use_subagent;
+
+pub mod communicate_tool;
+pub mod listener_connect_cards;

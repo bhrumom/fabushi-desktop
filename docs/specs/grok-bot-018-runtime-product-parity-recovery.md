@@ -1110,3 +1110,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `source/host/src/runner/computer_use.rs` as the Runner-owned Rust port of the frozen coordination state: reentrant single desktop-window allocation, preparation lifecycle, fail-soft prewarm diagnostics, action-audit counting via the existing `sand_action_audit` mapping, turn-usage aggregation, model-id collapse and lazy navigation-probe ownership.
 - `source/host/tests/computer_use_coordination_contract.rs` independently covers the single-controller invariant, preparation cleanup/failure classification, usage aggregation, mixed-model semantics, audit filtering and no-auditor navigation behavior.
 - The manifest row advances only from `planned` to `existing-needs-parity`. Generated computer/shell resource accessors, real remote box prewarm and concrete navigation-probe execution remain mandatory before finalization.
+
+
+### 2026-09-25 communicate/listener Runner tool foundation
+
+- Added Rust ports for the two smallest frozen Runner tool foundations: `communicate-tool.ts` and `listener-connect-cards.ts`.
+- The communicate port preserves Sand marker JSON, executing partial envelopes, success/error completion encoding, render fallback and exception conversion without inventing a second tool protocol.
+- The listener-card port preserves ordered platform probing, fail-soft connectivity lookup, one card per disconnected platform, display-name rendering and the frozen resumed-automatically user guidance.
+- `runner_communicate_listener_contract.rs` pins both surfaces. Both manifest rows advance only to `existing-needs-parity`: generated CommunicateUpdate/ToolCall proto wiring and live Automation listener/transcript production wiring remain required.

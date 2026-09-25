@@ -16824,24 +16824,38 @@
       "targetPath": "source/host/src/runner/tools/communicate_tool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "53813c008054da214ea775881b591fa4fa8a7cb1",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/communicate_tool.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_communicate_listener_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust now owns the frozen communicate-tool envelope semantics: Sand marker JSON, executing partial wrapper, empty wrapper, success/error args and result envelopes, terminal completion wrapper, render fallback and exception-to-error conversion. Final remains withheld until canonical generated CommunicateUpdate*/ToolCall protobuf bindings and InteractionHandler executeToolCall lifecycle are the shipping representation."
     },
     {
       "referencePath": "source/host/runner/tools/listener-connect-cards.ts",
       "targetPath": "source/host/src/runner/tools/listener_connect_cards.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "cd5362220f6040249804952ece405960138e95b3",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/listener_connect_cards.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/runner_communicate_listener_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust now owns the frozen listener connect-card decision semantics: no-op without connectivity support, ordered trigger-platform checks, fail-soft lookup errors, per-platform listener-connect events and exact singular/plural resumed-automatically reminder text. Final remains withheld until the live Automation listener trigger parser/connectivity service and transcript emitter call this projection in production."
     },
     {
       "referencePath": "source/host/runner/tools/mcp-meta-tools.ts",
