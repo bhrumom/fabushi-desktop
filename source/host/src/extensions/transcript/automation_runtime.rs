@@ -9,7 +9,7 @@ use crate::extensions::session::agent_session::{AgentAutomationEntry, SandAgentS
 use crate::extensions::session::production::ProductionSessionWorkers;
 
 use super::automation_event_fires::{
-    AutomationEventFires, DroppedFireReporter, EventBatchExecutor, EventFireBatch,
+    AutomationEventFires, DroppedFire, DroppedFireReporter, EventBatchExecutor, EventFireBatch,
 };
 use super::automation_run_path::{
     AutomationExecutionResult, AutomationRunPath, AutomationRunTrigger, FireAutomationArgs,
@@ -295,6 +295,16 @@ impl AutomationRuntime {
         self.event_fires.set_dropped_fire_reporter(reporter);
     }
 
+    fn report_fire_dropped(&self, args: &FireAutomationArgs, reason: &str) {
+        self.event_fires.report_fire_dropped(DroppedFire {
+            agent_id: args.agent_id.clone(),
+            trigger: args.trigger,
+            reason: reason.to_string(),
+            scheduled_for_ms: None,
+            run_uuid: args.run_uuid.clone(),
+        });
+    }
+
     pub fn spend_guard(&self) -> Arc<AutomationSpendGuardRuntime> {
         Arc::clone(&self.spend_guard)
     }
@@ -414,9 +424,12 @@ impl AutomationRuntime {
             return Ok(None);
         };
 
-        let outcome = self.run_path.fire_automation_with(
+        let args = FireAutomationArgs::manual(agent_id, automation, now_ms());
+        let runtime = self.clone();
+        let outcome = self.run_path.fire_automation_with_on_duplicate(
             &store,
-            FireAutomationArgs::manual(agent_id, automation, now_ms()),
+            args,
+            move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
             execute,
         )?;
 
@@ -471,6 +484,13 @@ impl AutomationRuntime {
                 AutomationLifecycleSource::SpendGuard,
             );
             if guard.paused {
+                self.event_fires.report_fire_dropped(DroppedFire {
+                    agent_id: agent_id.to_string(),
+                    trigger,
+                    reason: "user_away_paused".into(),
+                    scheduled_for_ms: None,
+                    run_uuid: run_uuid.clone(),
+                });
                 return Ok(None);
             }
             Ok(Some((store, automation, guard.reminder)))
@@ -478,18 +498,21 @@ impl AutomationRuntime {
             return Ok(None);
         };
 
-        let outcome = self.run_path.fire_automation_with(
+        let args = FireAutomationArgs {
+            agent_id: agent_id.to_string(),
+            automation,
+            trigger,
+            events,
+            run_uuid,
+            coalesced_run_uuids,
+            fired_at_ms,
+            spend_guard_reminder: reminder,
+        };
+        let runtime = self.clone();
+        let outcome = self.run_path.fire_automation_with_on_duplicate(
             &store,
-            FireAutomationArgs {
-                agent_id: agent_id.to_string(),
-                automation,
-                trigger,
-                events,
-                run_uuid,
-                coalesced_run_uuids,
-                fired_at_ms,
-                spend_guard_reminder: reminder,
-            },
+            args,
+            move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
             execute,
         )?;
 

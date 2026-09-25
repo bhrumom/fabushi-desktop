@@ -93,6 +93,20 @@ impl AutomationRunPath {
     where
         Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
     {
+        self.fire_automation_with_on_duplicate(store, args, |_| {}, execute)
+    }
+
+    pub fn fire_automation_with_on_duplicate<Execute, OnDuplicate>(
+        &self,
+        store: &FileAutomationStore,
+        args: FireAutomationArgs,
+        on_duplicate: OnDuplicate,
+        execute: Execute,
+    ) -> Result<Option<FireAutomationOutcome>, String>
+    where
+        Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
+        OnDuplicate: FnOnce(&FireAutomationArgs),
+    {
         let run_key = format!("{}:{}", args.agent_id, args.automation.id);
         let suppress_duplicate = args.trigger != AutomationRunTrigger::Event;
         if suppress_duplicate {
@@ -101,6 +115,8 @@ impl AutomationRunPath {
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
             if !in_flight.insert(run_key.clone()) {
+                drop(in_flight);
+                on_duplicate(&args);
                 return Ok(None);
             }
         }

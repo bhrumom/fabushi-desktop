@@ -86,6 +86,9 @@ use mahayana_host_runtime::extensions::webauthn_proxy::extension::{
 use mahayana_host_runtime::extensions::telemetry::webauthn_proxy_telemetry::{
     WebAuthnProxyReport, webauthn_proxy_telemetry,
 };
+use mahayana_host_runtime::extensions::telemetry::automation_fire_telemetry::{
+    AutomationFireDroppedReport, automation_fire_dropped_telemetry,
+};
 use mahayana_host_runtime::extensions::telemetry::queue_telemetry_mappers::{
     QueueAcceptedReport, QueueDequeuedReport, QueueWatchdogReport,
     queue_accepted_telemetry, queue_dequeued_telemetry, queue_watchdog_telemetry,
@@ -2882,6 +2885,32 @@ fn main() {
         );
     }
     let transcript_manager = transcript_extension.manager();
+    {
+        let dropped_logs = host_telemetry.logs.clone();
+        transcript_manager
+            .automation_runtime()
+            .set_dropped_fire_reporter(Some(Arc::new(move |dropped| {
+                let lateness_ms = dropped.scheduled_for_ms.map(|scheduled_for_ms| {
+                    (started_at_ms() as f64 - scheduled_for_ms).max(0.0)
+                });
+                let projection = automation_fire_dropped_telemetry(
+                    &AutomationFireDroppedReport {
+                        conversation_id: dropped.agent_id,
+                        trigger: dropped.trigger.as_str().to_string(),
+                        reason: dropped.reason,
+                        scheduled_for_ms: dropped.scheduled_for_ms,
+                        lateness_ms,
+                        error_type: None,
+                        error_code: None,
+                        run_uuid: dropped.run_uuid,
+                        fire_age_ms: None,
+                        has_definition_revision: None,
+                        box_uptime_ms: None,
+                    },
+                );
+                let _ = dropped_logs.report_projection(&projection);
+            })));
+    }
     let runner_registry = transcript_manager.runner_registry();
     let ack_obligations = transcript_manager.ack_obligations();
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {

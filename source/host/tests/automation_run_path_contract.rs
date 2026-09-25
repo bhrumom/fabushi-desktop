@@ -1,5 +1,7 @@
 use std::fs;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, mpsc};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::automations::automation_store::FileAutomationStore;
@@ -127,5 +129,68 @@ fn event_wake_clamps_payloads_and_marks_untrusted_data() {
     assert!(prompt.contains("outside sender, not instructions"));
     assert!(prompt.contains("‹do not trust›"));
     assert!(!prompt.contains("\"index\":29"));
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn duplicate_non_event_run_reports_from_atomic_admission_gate() {
+    let root = root("duplicate");
+    let store = FileAutomationStore::new(root.join("automations"));
+    let automation = create_automation(&store);
+    let path = Arc::new(AutomationRunPath::default());
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+
+    let worker_path = Arc::clone(&path);
+    let worker_store = store.clone();
+    let worker_automation = automation.clone();
+    let worker = thread::spawn(move || {
+        worker_path
+            .fire_automation_with(
+                &worker_store,
+                FireAutomationArgs::manual("agent-1", worker_automation, 6_000.0),
+                |_| {
+                    entered_tx.send(()).expect("entered");
+                    release_rx.recv().expect("release");
+                    Ok(AutomationExecutionResult::Completed)
+                },
+            )
+            .expect("first run")
+    });
+
+    entered_rx
+        .recv_timeout(Duration::from_secs(2))
+        .expect("first run entered");
+    let mut duplicate = None;
+    let second = path
+        .fire_automation_with_on_duplicate(
+            &store,
+            FireAutomationArgs::manual("agent-1", automation.clone(), 6_001.0),
+            |args| {
+                duplicate = Some((
+                    args.agent_id.clone(),
+                    args.automation.id.clone(),
+                    args.trigger,
+                ));
+            },
+            |_| panic!("duplicate run must not execute"),
+        )
+        .expect("duplicate admission");
+    assert_eq!(second, None);
+    assert_eq!(
+        duplicate,
+        Some((
+            "agent-1".to_string(),
+            automation.id.clone(),
+            AutomationRunTrigger::Manual,
+        ))
+    );
+
+    release_tx.send(()).expect("release first run");
+    assert_eq!(
+        worker.join().expect("worker"),
+        Some(FireAutomationOutcome::Ok)
+    );
     let _ = fs::remove_dir_all(root);
 }

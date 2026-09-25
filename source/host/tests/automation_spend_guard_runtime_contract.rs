@@ -1,11 +1,12 @@
 use std::fs;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::transcript::automation_event_fires::DroppedFire;
 use mahayana_host_runtime::extensions::transcript::automation_run_path::{
     AutomationExecutionResult, AutomationRunTrigger, FireAutomationOutcome,
 };
@@ -52,6 +53,11 @@ fn background_run_nudges_then_pauses_and_resume_answer_restores_only_guard_pause
     let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
     let agent = sessions.create_session(None, "user", None).expect("agent");
     let runtime = AutomationRuntime::new(Arc::clone(&workers));
+    let drops = Arc::new(Mutex::new(Vec::<DroppedFire>::new()));
+    runtime.set_dropped_fire_reporter(Some({
+        let drops = Arc::clone(&drops);
+        Arc::new(move |drop| drops.lock().expect("drops").push(drop))
+    }));
 
     let mut ids = Vec::new();
     for name in ["Daily one", "Daily two"] {
@@ -115,6 +121,12 @@ fn background_run_nudges_then_pauses_and_resume_answer_restores_only_guard_pause
         .expect("paused background run");
     assert_eq!(second, None);
     assert!(!called.load(Ordering::SeqCst));
+    let drops = drops.lock().expect("drops");
+    assert_eq!(drops.len(), 1);
+    assert_eq!(drops[0].reason, "user_away_paused");
+    assert_eq!(drops[0].trigger, AutomationRunTrigger::Schedule);
+    assert_eq!(drops[0].run_uuid.as_deref(), Some("scheduled-run-2"));
+    drop(drops);
 
     let paused = workers
         .get_agent_automation_spend_guard_state(&agent.id)
