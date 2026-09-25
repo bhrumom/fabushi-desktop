@@ -1176,3 +1176,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added `remote_box_resources.rs` as the Runner-owned decision layer for frozen remote-resource behavior: prepared/cached connection reuse, terminal-folder publication, fail-closed preparing and connection errors, retryable cache invalidation, no-monitor recovery, shell/background barrier-audit-navigation ordering, read/shell/computer execution plans and smart-mode classifier registration.
 - `remote_box_resources_contract.rs` pins connection caching/retry, timeout/crash vs generic error messages, no-monitor invalidation, exact side-effect ordering and classifier gate conditions.
 - The row advances only to `existing-needs-parity`; generated RegistryResourceAccessor executors, async connection-promise coalescing, real AutoReview/NavigationProbe/Host audit callbacks and executor delegation remain required.
+
+
+### 2026-09-25 Computer tool and Host dependency projection slice
+
+- Baseline `f7583daf7e833d603981b914e5767d42bc7f67a2` passed the full remote-box cargo contract job.
+- Added `sand_computer_tool.rs` for Runner-owned action/schema semantics and `host_computer_tool_dependencies.rs` for the separate Host projection boundary; these responsibilities are intentionally not merged.
+- Runner coverage includes drag/click/wait/follow-up validation, enforce-mode description and safe-follow-up restrictions, protocol action defaults, reported pointer position, automatic final screenshot, result rendering and screenshot persistence.
+- Host coverage includes strict generated-action conversion, generated result normalization, approval→audit→shell-execute ordering and ensureReady→window lookup ordering.
+- `computer_tool_projection_contract.rs` independently pins both layers. Both manifest rows advance only to `existing-needs-parity`; canonical generated proto executors, live resource accessor/AutoReview/display state and shipping first-party tool registration remain required.

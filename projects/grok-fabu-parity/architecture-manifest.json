@@ -16125,12 +16125,21 @@
       "targetPath": "source/host/src/runner/host_computer_tool_dependencies.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f52f844cf1a2dd80fda02995ce469bd100a725f6",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/host_computer_tool_dependencies.rs",
+        "source/host/src/runner/tools/sand_computer_tool.rs",
+        "source/host/src/box/box_shell_command.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/computer_tool_projection_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust now owns the Host-to-Runner Computer dependency projection core: strict protocol-action field validation, generated action/argument/result normalization, mandatory shell approval+audit-before-execute ordering and ensure-ready-before-window identity lookup. Final remains withheld until canonical generated ComputerUse/Shell protobuf executors, live resource accessor, persisted-image callback, browser file transfer and Auto-review options are bound in shipping Host composition."
     },
     {
       "referencePath": "source/host/runner/inactive-turn-agent-stream.ts",
@@ -17002,12 +17011,20 @@
       "targetPath": "source/host/src/runner/tools/sand_computer_tool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "4aab3efb0944dab3724ccfeeb02df246e88ec171",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/sand_computer_tool.rs",
+        "source/host/src/runner/sand_computer_auto_review.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/computer_tool_projection_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Runner now owns the frozen Computer/Screenshot tool semantic core: action validation/defaults, enforce-mode description/follow-up restrictions, drag path resolution, protocol action projection, reported pointer position, automatic final screenshot, outcome rendering and persisted screenshot decoding. Final remains withheld until generated tool schemas/InteractionHandler, async executor invocation, live Auto-review preflight/display-state capture, abort/state/workspace metadata and production first-party tool registration use this module."
     },
     {
       "referencePath": "source/host/runner/tools/sand-computer-use-subagent.ts",
