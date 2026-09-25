@@ -3,7 +3,8 @@ use std::sync::{Arc, Mutex};
 use futures::future;
 use mahayana_host_runtime::runner::inactive_turn_agent_stream::{
     InactiveTurnAgentLifecycleHooks, InactiveTurnAgentStreamPath,
-    InactiveTurnAgentStreamSource, InactiveTurnStreamFuture,
+    InactiveTurnAgentStreamSource, InactiveTurnCheckpointSink,
+    InactiveTurnStreamFuture,
 };
 use mahayana_host_runtime::runner::{
     OuterStreamFuture, OuterStreamPersistence, StreamCancelReason,
@@ -96,9 +97,7 @@ impl InactiveTurnAgentStreamSource<String, String> for Source {
         &'a self,
         context: &'a String,
         resume_from: Option<&'a String>,
-        persist_checkpoint: &'a mut (
-            dyn FnMut(&String, &mut String) -> Result<(), String> + Send
-        ),
+        persist_checkpoint: &'a mut dyn InactiveTurnCheckpointSink<String, String>,
     ) -> InactiveTurnStreamFuture<'a, Result<String, String>> {
         Box::pin(async move {
             self.0.push(format!(
@@ -107,7 +106,7 @@ impl InactiveTurnAgentStreamSource<String, String> for Source {
                 resume_from.map(String::as_str).unwrap_or("none")
             ));
             let mut checkpoint = "checkpoint".to_string();
-            persist_checkpoint(context, &mut checkpoint)?;
+            persist_checkpoint.persist(context, &mut checkpoint).await?;
             self.0.push(format!("accepted:{checkpoint}"));
             Ok(format!("{checkpoint}:completed"))
         })

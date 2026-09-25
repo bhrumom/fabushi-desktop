@@ -13,16 +13,25 @@ pub type InactiveTurnStreamFuture<'a, T> =
 
 /// Rust adaptation of the frozen generated Agent stream boundary.
 ///
-/// The shipping Rust provider bridge is synchronous at checkpoint callbacks, so
-/// checkpoint persistence is deliberately drained before the callback returns.
-/// That preserves the reference invariant that a checkpoint cannot authorize
-/// resume until its persistence operation has settled.
+/// Checkpoint callback boundary used by the dormant generated Agent stream.
+///
+/// The frozen Grok owner exposes an async persist callback. Keep that shape in
+/// Rust instead of nesting an executor: a checkpoint is not eligible for
+/// resume until this future has settled successfully.
+pub trait InactiveTurnCheckpointSink<Context, State>: Send {
+    fn persist<'a>(
+        &'a mut self,
+        context: &'a Context,
+        checkpoint: &'a mut State,
+    ) -> InactiveTurnStreamFuture<'a, Result<(), String>>;
+}
+
 pub trait InactiveTurnAgentStreamSource<Context, State>: Send + Sync {
     fn start_stream<'a>(
         &'a self,
         context: &'a Context,
         resume_from: Option<&'a State>,
-        persist_checkpoint: &'a mut (dyn FnMut(&Context, &mut State) -> Result<(), String> + Send),
+        persist_checkpoint: &'a mut dyn InactiveTurnCheckpointSink<Context, State>,
     ) -> InactiveTurnStreamFuture<'a, Result<State, String>>;
 }
 
@@ -74,7 +83,7 @@ where
         &self,
         context: &Context,
         resume_from: Option<&State>,
-        persist_checkpoint: &mut (dyn FnMut(&Context, &mut State) -> Result<(), String> + Send),
+        persist_checkpoint: &mut dyn InactiveTurnCheckpointSink<Context, State>,
     ) -> Result<State, String> {
         self.source
             .start_stream(context, resume_from, persist_checkpoint)
@@ -98,15 +107,35 @@ where
         P: OuterStreamPersistence<Context, State>,
         H: InactiveTurnAgentLifecycleHooks<State>,
     {
-        let mut persist = |checkpoint_context: &Context, checkpoint: &mut State| {
-            futures::executor::block_on(persist_outer_stream_checkpoint(
-                persistence,
-                checkpoint_context,
-                checkpoint,
-            ))
-            .map(|_| ())
-        };
+        struct OuterCheckpointSink<'a, P> {
+            persistence: &'a P,
+        }
 
+        impl<P, Context, State> InactiveTurnCheckpointSink<Context, State>
+            for OuterCheckpointSink<'_, P>
+        where
+            P: OuterStreamPersistence<Context, State>,
+            Context: Send + Sync,
+            State: Send + Sync,
+        {
+            fn persist<'a>(
+                &'a mut self,
+                checkpoint_context: &'a Context,
+                checkpoint: &'a mut State,
+            ) -> InactiveTurnStreamFuture<'a, Result<(), String>> {
+                Box::pin(async move {
+                    persist_outer_stream_checkpoint(
+                        self.persistence,
+                        checkpoint_context,
+                        checkpoint,
+                    )
+                    .await
+                    .map(|_| ())
+                })
+            }
+        }
+
+        let mut persist = OuterCheckpointSink { persistence };
         let stream_result = self
             .start_stream(context, resume_from, &mut persist)
             .await;
