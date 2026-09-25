@@ -1,1 +1,1 @@
-pub mod host_upgrade_marker;\n
+pub mod host_upgrade_marker;

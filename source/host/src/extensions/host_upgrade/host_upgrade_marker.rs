@@ -91,14 +91,14 @@ pub fn compute_host_upgrade_metadata(
     let has_applied = marker.applied_at_ms.is_some_and(|value| value > 0.0);
     if has_issued && has_applied {
         let value = (marker.applied_at_ms.unwrap() - marker.issued_at_ms.unwrap()).max(0.0);
-        metadata.insert("deliver_to_apply_ms".into(), format!("{}", value.round() as i128));
+        metadata.insert("deliver_to_apply_ms".into(), format!("{value}"));
     }
     if let Some(swap_ms) = marker.swap_ms {
-        metadata.insert("swap_ms".into(), format!("{}", swap_ms.round() as i128));
+        metadata.insert("swap_ms".into(), format!("{swap_ms}"));
     }
     if has_issued {
         let value = (now_ms - marker.issued_at_ms.unwrap()).max(0.0);
-        metadata.insert("total_ms".into(), format!("{}", value.round() as i128));
+        metadata.insert("total_ms".into(), format!("{value}"));
     }
     metadata
 }

@@ -1,1 +1,1 @@
-pub mod cloud_agent_transcript_dump;\n
+pub mod cloud_agent_transcript_dump;
