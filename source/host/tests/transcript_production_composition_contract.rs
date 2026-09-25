@@ -401,6 +401,61 @@ fn ack_redrive_send_uses_background_lane_and_source() {
 
 
 #[test]
+fn automation_send_uses_background_lane_and_source() {
+    let root = temp_root("automation-lane");
+    let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+
+    let worker_runtime = Arc::clone(&runtime);
+    let worker = thread::spawn(move || {
+        let args = serde_json::json!({
+            "agentId": "agent-automation",
+            "prompt": "[routine] execute standing instruction",
+            "clientNonce": "automation:agent-automation:run-1",
+            "requestSource": "automation",
+            "appendUserMessage": false,
+            "hidden": true,
+            "skipAckObligation": true
+        });
+        worker_runtime.execute_send_with_watchdog(
+            &args,
+            || {
+                entered_tx.send(()).expect("signal automation dispatch");
+                release_rx.recv().expect("release automation dispatch");
+                Ok(serde_json::json!({
+                    "accepted": true,
+                    "operationId": "op-automation"
+                }))
+            },
+            |_| Ok(None),
+            |_| false,
+        )
+    });
+
+    entered_rx
+        .recv_timeout(Duration::from_secs(5))
+        .expect("automation dispatch entered");
+    assert_eq!(
+        runtime.active_turn_lane("agent-automation"),
+        Some(RunLane::Background)
+    );
+    assert_eq!(
+        runtime.active_turn_source("agent-automation").as_deref(),
+        Some("automation")
+    );
+
+    release_tx.send(()).expect("release automation");
+    assert_eq!(
+        worker.join().expect("automation worker").expect("automation result")["operationId"],
+        "op-automation"
+    );
+    assert!(runtime.is_turn_dispatch_idle("agent-automation"));
+    let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
 fn production_send_runtime_emits_shipping_queue_observers() {
     let root = temp_root("queue-observers");
     let runtime = ProductionTranscriptRuntime::new(Some(&root));
