@@ -1036,3 +1036,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `source/host/tests/automation_status_reminder_contract.rs` covers live-running, firing-run filtering, settled success, empty-store and explicit cleared-snapshot behavior. The architecture manifest advances this one frozen module from `planned` to `implemented` only because production wiring and executable test evidence are present.
 - The previous exact-HEAD rerun already proved the independent Coordinator, box-exec daemon and Host box-exec supervisor gates after the accepted-socket fix; final architecture completion remains blocked until all other non-final manifest rows and forbidden legacy runtime roots are removed.
 
+### 2026-09-25 automation transcript runtime audit closure
+
+- Starting exact HEAD for this audit: `bc7a0e7e8de0e43691fd3d96e4f648d5ec0b96e0`.
+- Five frozen transcript/automation rows had remained `planned` even though their Rust implementations, production AutomationRuntime wiring and executable integration contracts were already present. They were individually re-audited against the frozen Grok modules rather than bulk-promoted from filename existence.
+- Finalized rows: `automation-event-fires.ts`, `automation-run-path.ts`, `automation-runtime.ts`, `automation-spend-guard-runtime.ts`, and `sand-automation-spend-guard.ts`.
+- The evidence covers event debounce/coalescing and bounded drop reporting; durable run begin/finish and duplicate suppression; shipping CRUD/manual/background dispatch; unread/spend-guard nudge/pause/snooze/opt-out persistence; and run-now production routing through the Host-owned AutomationRuntime.
+- This audit changes status only where implementation and tests already prove production ownership; it does not infer parity for the remaining missing Host extension targets.
+

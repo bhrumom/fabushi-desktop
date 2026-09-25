@@ -13849,36 +13849,62 @@
       "targetPath": "source/host/src/extensions/transcript/automation_event_fires.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "6fb9a51be2ca8f1523ddbba1c98124ee098df524",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/automation_event_fires.rs",
+        "source/host/src/extensions/transcript/automation_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automation_event_fires_contract.rs",
+        "source/host/tests/automation_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Audited final: the Rust Host owns per-Agent event-fire batching, debounce/coalescing, overflow/drop reporting and disposal; AutomationRuntime wires it into the production automation fire path and integration tests exercise durable coalesced execution and drop bounds."
     },
     {
       "referencePath": "source/host/extensions/transcript/automation-run-path.ts",
       "targetPath": "source/host/src/extensions/transcript/automation_run_path.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "8a337bb13b610445d1927c046fa53ae2070e4fab",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/automation_run_path.rs",
+        "source/host/src/extensions/transcript/automation_runtime.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automation_run_path_contract.rs",
+        "source/host/tests/automation_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Audited final: Rust AutomationRunPath owns durable begin/finish, duplicate suppression, wake prompt construction, failure/interruption settlement and routine notices; shipping AutomationRuntime/runAgentAutomationNow reaches this path and contract tests cover terminal and concurrent behavior."
     },
     {
       "referencePath": "source/host/extensions/transcript/automation-runtime.ts",
       "targetPath": "source/host/src/extensions/transcript/automation_runtime.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "2817fa3328e1ab1d805052f42fcfbe0c7eda4635",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/automation_runtime.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automation_runtime_contract.rs",
+        "source/host/tests/automation_event_fires_contract.rs",
+        "source/host/tests/automation_spend_guard_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Audited final: the production Host constructs and dispatches AutomationRuntime for CRUD, manual/background execution, event fires and spend-guard handling; gateway run-now/workflow paths call the Rust runtime rather than a renderer or legacy owner."
     },
     {
       "referencePath": "source/host/extensions/transcript/automation-snapshot.ts",
@@ -13906,12 +13932,19 @@
       "targetPath": "source/host/src/extensions/transcript/automation_spend_guard_runtime.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "c418ada1f08eb1c45cf515abe9401693bd4ba9fd",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/automation_spend_guard_runtime.rs",
+        "source/host/src/extensions/transcript/automation_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automation_spend_guard_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Audited final: the Rust spend-guard runtime reads durable unread/guard state, evaluates nudge/pause/snooze/opt-out transitions, persists cards/state, pauses only guard-owned routines and is invoked by background AutomationRuntime execution."
     },
     {
       "referencePath": "source/host/extensions/transcript/background-wakes.ts",
@@ -14419,12 +14452,19 @@
       "targetPath": "source/host/src/extensions/transcript/sand_automation_spend_guard.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "8f0193fd56d10f1629a404992106158d2edf1c8c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/transcript/sand_automation_spend_guard.rs",
+        "source/host/src/extensions/transcript/automation_spend_guard_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/automation_spend_guard_runtime_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Audited final: Rust ports the frozen spend-guard thresholds, decisions, widgets, answer values, run-counting and reminder/ack rendering and the production spend-guard runtime exercises those rules."
     },
     {
       "referencePath": "source/host/extensions/transcript/sand-pending-wake-store.ts",
