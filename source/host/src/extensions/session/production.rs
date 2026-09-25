@@ -48,6 +48,7 @@ use super::session_store_factories::{
     workflow_store_for_db_path_with_time_zone_resolver,
 };
 use crate::extensions::memory::memory_service::{FileMemoryStore, MemoryService};
+use crate::extensions::memory::project_membership::AgentProjectMembership;
 use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, agent_has_automations};
 use crate::workflows::workflow_store::{FileWorkflowStore, agent_has_workflows};
 use super::session_maintenance::{
@@ -102,6 +103,7 @@ pub struct ProductionMaterializedSession {
     pub db: Arc<SandAgentDb>,
     pub agent_store: Arc<ProductionAgentStore>,
     pub memory: FileMemoryStore,
+    pub project_membership: AgentProjectMembership,
     pub automations: FileAutomationStore,
     pub workflows: FileWorkflowStore,
     pub channels: FileChannelStore,
@@ -407,6 +409,9 @@ impl ProductionSessionWorkers {
         let memory = self
             .memory_service
             .create_agent_store(self.agents_root.join(&record.id));
+        let project_membership = self
+            .memory_service
+            .project_membership_for_agent(&record.id);
         let automations = self.open_automation_store(&record.id)?;
         let workflows = self.open_workflow_store(&record.id)?;
         let channels = self.open_channel_store(&record.id)?;
@@ -417,6 +422,7 @@ impl ProductionSessionWorkers {
             db,
             agent_store,
             memory,
+            project_membership,
             automations,
             workflows,
             channels,

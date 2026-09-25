@@ -1051,3 +1051,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `FileMemoryStore` now owns this primitive, writes profile/log state through its atomic writer and exposes the same on-change boundary for external edits. This makes the frozen `source/host/watched-directory.ts` responsibility part of the production Memory path rather than a detached mirror.
 - `source/host/tests/watched_directory_contract.rs` covers sorted directory discovery plus notification from both internal atomic writes and external filesystem writes. The watched-directory manifest row advances to `implemented`; the broader memory-service row remains non-final for synthesis origin/tombstone/shared-memory responsibilities.
 
+### 2026-09-25 project-membership production ownership
+
+- Starting exact HEAD: `b26f67753c5b2187ee0c3d8f562369b018dbeb91`.
+- Ported the frozen `source/host/extensions/memory/project-membership.ts` contract to Rust: `projects.json` is path-safe filtered, sorted and atomically persisted; join/leave are idempotent; pruning removes missing projects without accepting traversal-like slugs.
+- Production wiring is explicit: the Host MemoryService creates the membership owner and `ProductionSessionWorkers::compose_materialized_session` places it on every shipping `ProductionMaterializedSession`. This establishes one per-Agent ownership source for the upcoming project-memory/agent-state cutover rather than a detached compatibility object.
+- `source/host/tests/project_membership_contract.rs` covers malformed input, safe-slug filtering, deterministic persistence, join/leave/prune and creation through real shipping Session materialization. The frozen project-membership row is now `implemented`.
+

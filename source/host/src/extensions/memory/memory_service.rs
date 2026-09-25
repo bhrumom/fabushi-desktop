@@ -6,6 +6,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use sha1::{Digest, Sha1};
 
 use crate::watched_directory::{ChangeListener, WatchedDirectory};
+use super::project_membership::AgentProjectMembership;
 
 pub const MEMORY_DIRNAME: &str = "memory";
 pub const PROFILE_FILENAME: &str = "profile.md";
@@ -248,6 +249,17 @@ impl MemoryService {
 
     pub fn create_agent_store(&self, agent_dir: impl AsRef<Path>) -> FileMemoryStore {
         FileMemoryStore::new(get_agent_memory_dir(agent_dir))
+    }
+
+    pub fn create_project_membership(
+        &self,
+        agent_dir: impl AsRef<Path>,
+    ) -> AgentProjectMembership {
+        AgentProjectMembership::new(agent_dir.as_ref())
+    }
+
+    pub fn project_membership_for_agent(&self, agent_id: &str) -> AgentProjectMembership {
+        self.create_project_membership(self.agents_root_dir.join(agent_id))
     }
 
     pub fn store_for_agent(&self, agent_id: &str) -> FileMemoryStore {
