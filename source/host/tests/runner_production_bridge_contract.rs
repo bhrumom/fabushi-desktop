@@ -66,6 +66,7 @@ fn production_bridge_preserves_provider_and_cancellation_identity() {
             cancellation: cancellation.clone(),
             checkpoint_store: Arc::new(MemoryCheckpointStore),
             retry_sink: None,
+            retry_report_sink: None,
             box_resources: None,
             send_message_sink: None,
             reaction_sink: None,
