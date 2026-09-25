@@ -1219,3 +1219,9 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Ported Host roster bookkeeping to Rust with frozen active-agent fallback, live-running/busy calculation, newly-running disk-pressure enrollment, stopped-agent snapshot scheduling and source-map materialization semantics.
 - Ported Host upgrade marker parsing, timing metadata and idempotent forwarding/deletion lifecycle; deferred emits do not retire markers, parse errors do, and callback failures are isolated after successful emit.
 - Ported cloud-agent transcript dump path/write/format/augmentation behavior with byte-accurate size reporting and fail-soft watch augmentation.
+
+
+### 2026-09-25 Host bundle source and MCP plugin skill cache
+
+- Ported Host Upgrade bundle-source semantics to Rust: override normalization, frozen S3 paths, strict lowercase git-SHA validation, version TTL cache, fail-soft latest lookup, fail-closed tarball fetch and lazy resolved source.
+- Ported MCP plugin-skill cache to Rust with frozen safe-id/absolute-path validation, legacy field defaults, positive user/team IDs, auth-block fallback, pretty JSON atomic replace and agent-readable 0755/0644 permissions.

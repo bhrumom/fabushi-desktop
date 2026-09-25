@@ -47,3 +47,5 @@ pub mod attachments;
 pub mod notify_bus;
 
 pub mod host_upgrade;
+
+pub mod mcp;

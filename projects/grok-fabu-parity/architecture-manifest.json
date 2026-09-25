@@ -11660,12 +11660,19 @@
       "targetPath": "source/host/src/extensions/host_upgrade/host_bundle_source.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "bbbd1fd9922e6bc38f9e70c79189b9ab39f21353",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/host_upgrade/host_bundle_source.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_bundle_and_plugin_cache_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports bundle base override normalization, latest-version URL/tarball URL, 7-40 lowercase git SHA validation, 10-minute cache, fail-soft version fetch, fail-closed tarball fetch, empty-body rejection, and resolved lazy bundle source."
     },
     {
       "referencePath": "source/host/extensions/host-upgrade/host-bundle-upgrade.ts",
@@ -12221,12 +12228,19 @@
       "targetPath": "source/host/src/extensions/mcp/plugin_skills_cache.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "cc11356b6ac0627a280a7989ff0e06980fdb1a0e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/mcp/plugin_skills_cache.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_bundle_and_plugin_cache_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports plugin-skill cache pathing, safe-id and absolute-path validation, legacy defaults, positive identity normalization, auth-block validation, pretty JSON atomic replace, and agent-readable 0755/0644 permissions."
     },
     {
       "referencePath": "source/host/extensions/mcp/plugin-skills.ts",
