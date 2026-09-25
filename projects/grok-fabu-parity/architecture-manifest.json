@@ -15171,36 +15171,65 @@
       "targetPath": "source/host/src/extensions/wallpaper/box_wallpaper_commands.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "718da762f16c28da79ec81b34e95442fdc113e67",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/wallpaper/box_wallpaper_commands.rs",
+        "source/host/src/extensions/wallpaper/extension.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/wallpaper_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Final Rust production mapping of the frozen wallpaper command boundary: exact tone-plan parsing, helper availability gating, 10s command timeout, live X-socket discovery/sort, display-owner uid/gid projection, fail-soft per-display paint and shipping Host startup through the Settings-owned extension."
     },
     {
       "referencePath": "source/host/extensions/wallpaper/extension.ts",
       "targetPath": "source/host/src/extensions/wallpaper/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "08002b8ba8878d6a848ea530fa8a51176bb4a942",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/wallpaper/extension.rs",
+        "source/host/src/extensions/wallpaper/box_wallpaper_commands.rs",
+        "source/host/src/extensions/wallpaper/wallpaper_service.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/settings/settings_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/wallpaper_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Final Rust production extension boundary. The frozen Wallpaper extension id and Settings dependency are preserved; shipping Host constructs it from the canonical SettingsService, disables it when helpers are unavailable, subscribes to timezone changes, starts the scheduler and stops it during Host shutdown."
     },
     {
       "referencePath": "source/host/extensions/wallpaper/wallpaper-service.ts",
       "targetPath": "source/host/src/extensions/wallpaper/wallpaper_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "9cc49b806fdfac1183af19cde7a856674cab29ce",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/wallpaper/wallpaper_service.rs",
+        "source/host/src/extensions/wallpaper/extension.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/wallpaper_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Final Rust production mapping of WallpaperToneScheduler: generation-fenced resync, timezone-triggered sync, unresolved-plan 60s retry, paint elapsed-time subtraction, boundary wake scheduling and explicit disposal in the shipping Host."
     },
     {
       "referencePath": "source/host/extensions/webauthn-proxy/extension.ts",
