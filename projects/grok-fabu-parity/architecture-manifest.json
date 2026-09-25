@@ -11849,12 +11849,20 @@
       "targetPath": "source/host/src/extensions/managed_setup/managed_skills_cache.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "c03bb94f9ca89f3e733c116df6c5b7834318bd15",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/managed_setup/managed_skills_cache.rs",
+        "source/host/src/extensions/managed_setup/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/managed_skills_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port implements managed-skills/cache.json validation and round-trip, atomic temp+rename writes, Unix agent-readable 0755/0644 modes, stale skill removal, and SKILL.md materialization. Contract tests cover cache validation, round-trip, rewrite and stale cleanup. Final remains withheld until the production Managed Setup service consumes the cache/materialized directory."
     },
     {
       "referencePath": "source/host/extensions/managed-setup/managed-skills-service.ts",
@@ -11892,12 +11900,20 @@
       "targetPath": "source/host/src/extensions/managed_setup/sand_managed_skills.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "8cb69d987fac0a29a8478dfc2ed51c65351936b4",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/managed_setup/sand_managed_skills.rs",
+        "source/host/src/extensions/managed_setup/mod.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/managed_skills_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port implements enabled filtering, trimmed safe folder IDs, workflow frontmatter name/description projection, fallback metadata, body/name/description clamps and empty-body rejection. Contract tests cover frontmatter normalization, unsafe IDs and disabled skills. Final remains withheld until the production Managed Setup service uses this normalization for fetched managed skills."
     },
     {
       "referencePath": "source/host/extensions/managed-setup/team-rules.ts",
