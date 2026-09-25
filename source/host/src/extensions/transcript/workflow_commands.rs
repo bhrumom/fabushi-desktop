@@ -54,13 +54,6 @@ pub fn dispatch_workflow_command(
                 Ok(value) => value,
                 Err(error) => return Some(Err(error)),
             };
-            // Frozen Host Gateway marks automation-backed workflow creation as
-            // a user action and emits sand.automation.created analytics. Keep
-            // that variant on the compatibility owner until the Transcript
-            // automation runtime and telemetry hook are migrated together.
-            if spec.trigger.is_some() {
-                return None;
-            }
             store
                 .create_agent_workflow(agent_id, &spec)
                 .map(workflow_records_value)
