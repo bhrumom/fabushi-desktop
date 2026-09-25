@@ -1272,3 +1272,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Delivery errors are deliberately non-fatal, matching the fire-and-forget notification surface.
 - `mobile_push_notifier_contract.rs` proves buffered needs-input delivery, new-message gating, focused-window suppression, stale-focus delivery and forget behavior.
 - The row advances only to `existing-needs-parity`; final waits on canonical shared notification helpers plus authenticated GrokBotService/Host event wiring.
+
+
+### 2026-09-26 Host crash-marker ownership slice
+
+- Starting from exact implementation HEAD `7ea96551789c9b80bc281e70a5ec219b84069026`, restored the frozen Host crash-marker boundary in Rust rather than folding it into Coordinator or renderer telemetry.
+- The module owns strict schema/error-class/signal/timestamp parsing, frozen metadata projection, file-store read/delete outcomes, compare-before-delete race fencing, forwarded-marker dedupe and deferred/pending/delivered/parse-error settlement.
+- `source/host/tests/host_crash_marker_contract.rs` independently covers valid/invalid marker variants, rounded metadata, file-store lifecycle, changed-marker fencing and forwarding failure/dedupe behavior.
+- The manifest row advances only to `existing-needs-parity`; final status still requires production Host startup/crash telemetry composition to invoke this owner and exact-HEAD CI evidence.

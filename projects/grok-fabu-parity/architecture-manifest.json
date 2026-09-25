@@ -13787,12 +13787,17 @@
       "targetPath": "source/host/src/extensions/telemetry/host_crash_marker.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "1025d75ceee69342f04f4361d5c9a8865443abd5",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [],
-      "testEvidence": []
+      "testEvidence": [],
+      "evidence": [
+        "source/host/tests/host_crash_marker_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host owns frozen crash-marker parsing, metadata, file-store read/delete, unchanged-delete fencing, forwarded dedupe and delivery/defer/pending settlement. Final parity still requires production Host startup/crash telemetry composition to invoke this boundary."
     },
     {
       "referencePath": "source/host/extensions/telemetry/host-diagnostic-telemetry.ts",
@@ -38567,5 +38572,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-25T17:16:09Z"
+  "generatedAt": "2026-09-25T22:30:00Z"
 }
