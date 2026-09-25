@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
 
+use serde_json::{Map, Value};
+
 use crate::automations::automation::{AutomationRecord, AutomationSpec};
 use crate::automations::automation_store::FileAutomationStore;
 use crate::extensions::session::agent_session::{AgentAutomationEntry, SandAgentSessionStore};
@@ -13,6 +15,217 @@ use super::automation_snapshot::{
     AutomationAction as AutomationDiffAction, AutomationSnapshot, diff_automation_action,
     snapshot_automations,
 };
+
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum AutomationCommandError {
+    #[error("{0}")]
+    BadRequest(String),
+    #[error("{0}")]
+    Internal(String),
+}
+
+pub fn dispatch_automation_command(
+    runtime: &AutomationRuntime,
+    method: &str,
+    args: &Value,
+) -> Option<Result<Value, AutomationCommandError>> {
+    if !matches!(
+        method,
+        "getAgentAutomations"
+            | "createAgentAutomation"
+            | "updateAgentAutomation"
+            | "setAgentAutomationEnabled"
+            | "deleteAgentAutomation"
+    ) {
+        return None;
+    }
+
+    let agent_id = match required_automation_string(args, &["id", "agentId"], "id") {
+        Ok(value) => value,
+        Err(error) => return Some(Err(error)),
+    };
+    let result = match method {
+        "getAgentAutomations" => runtime
+            .get_agent_automations(agent_id)
+            .map(automation_records_value)
+            .map_err(AutomationCommandError::Internal),
+        "createAgentAutomation" => {
+            let spec = match automation_spec(args.get("spec").unwrap_or(args)) {
+                Ok(value) => value,
+                Err(error) => return Some(Err(error)),
+            };
+            runtime
+                .create_agent_automation(agent_id, &spec)
+                .map(|(records, _events)| automation_records_value(records))
+                .map_err(AutomationCommandError::Internal)
+        }
+        "updateAgentAutomation" => {
+            let automation_id = match required_automation_string(
+                args,
+                &["automationId"],
+                "automationId",
+            ) {
+                Ok(value) => value,
+                Err(error) => return Some(Err(error)),
+            };
+            let spec = match automation_spec(args.get("spec").unwrap_or(args)) {
+                Ok(value) => value,
+                Err(error) => return Some(Err(error)),
+            };
+            runtime
+                .update_agent_automation(agent_id, automation_id, &spec)
+                .map(|(records, _events)| automation_records_value(records))
+                .map_err(AutomationCommandError::Internal)
+        }
+        "setAgentAutomationEnabled" => {
+            let automation_id = match required_automation_string(
+                args,
+                &["automationId"],
+                "automationId",
+            ) {
+                Ok(value) => value,
+                Err(error) => return Some(Err(error)),
+            };
+            let is_enabled = match args.get("isEnabled").and_then(Value::as_bool) {
+                Some(value) => value,
+                None => {
+                    return Some(Err(AutomationCommandError::BadRequest(
+                        "setAgentAutomationEnabled requires boolean isEnabled".into(),
+                    )));
+                }
+            };
+            runtime
+                .set_agent_automation_enabled(agent_id, automation_id, is_enabled)
+                .map(|(records, _events)| automation_records_value(records))
+                .map_err(AutomationCommandError::Internal)
+        }
+        "deleteAgentAutomation" => {
+            let automation_id = match required_automation_string(
+                args,
+                &["automationId"],
+                "automationId",
+            ) {
+                Ok(value) => value,
+                Err(error) => return Some(Err(error)),
+            };
+            runtime
+                .delete_agent_automation(agent_id, automation_id)
+                .map(|(records, _events)| automation_records_value(records))
+                .map_err(AutomationCommandError::Internal)
+        }
+        _ => unreachable!(),
+    };
+    Some(result)
+}
+
+fn required_automation_string<'a>(
+    value: &'a Value,
+    keys: &[&str],
+    label: &str,
+) -> Result<&'a str, AutomationCommandError> {
+    keys.iter()
+        .find_map(|key| value.get(*key))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| {
+            AutomationCommandError::BadRequest(format!(
+                "automation command requires non-empty {label}"
+            ))
+        })
+}
+
+fn automation_spec(value: &Value) -> Result<AutomationSpec, AutomationCommandError> {
+    let object = value.as_object().ok_or_else(|| {
+        AutomationCommandError::BadRequest("automation spec must be an object".into())
+    })?;
+    Ok(AutomationSpec {
+        name: object
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+        prompt: object
+            .get("prompt")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+        trigger: object.get("trigger").cloned().unwrap_or(Value::Null),
+        is_enabled: object.get("isEnabled").and_then(Value::as_bool),
+    })
+}
+
+pub fn automation_records_value(records: Vec<AutomationRecord>) -> Value {
+    Value::Array(records.into_iter().map(automation_record_value).collect())
+}
+
+pub fn automation_record_value(record: AutomationRecord) -> Value {
+    let runs = record
+        .runs
+        .into_iter()
+        .map(|run| {
+            let mut value = Map::new();
+            value.insert("id".into(), Value::String(run.id));
+            value.insert("trigger".into(), Value::String(run.trigger));
+            value.insert("startedAt".into(), number_value(run.started_at));
+            if let Some(finished_at) = run.finished_at {
+                value.insert("finishedAt".into(), number_value(finished_at));
+            }
+            value.insert("status".into(), Value::String(run.status));
+            if let Some(detail) = run.detail {
+                value.insert("detail".into(), Value::String(detail));
+            }
+            if let Some(event) = run.event {
+                value.insert("event".into(), Value::String(event));
+            }
+            if let Some(ids) = run.coalesced_run_ids {
+                value.insert(
+                    "coalescedRunIds".into(),
+                    Value::Array(ids.into_iter().map(Value::String).collect()),
+                );
+            }
+            Value::Object(value)
+        })
+        .collect::<Vec<_>>();
+
+    let mut value = Map::new();
+    value.insert("id".into(), Value::String(record.id));
+    value.insert("name".into(), Value::String(record.name));
+    value.insert("prompt".into(), Value::String(record.prompt));
+    value.insert("trigger".into(), record.trigger);
+    value.insert(
+        "isEnabled".into(),
+        Value::Bool(record.is_enabled),
+    );
+    value.insert("createdAt".into(), number_value(record.created_at));
+    if let Some(last_run_at) = record.last_run_at {
+        value.insert("lastRunAt".into(), number_value(last_run_at));
+    }
+    value.insert(
+        "raisedNotices".into(),
+        Value::Array(record.raised_notices.into_iter().map(Value::String).collect()),
+    );
+    value.insert("schedule".into(), Value::String(record.schedule));
+    value.insert(
+        "triggerDescription".into(),
+        Value::String(record.trigger_description),
+    );
+    if let Some(next_run_at) = record.next_run_at {
+        value.insert("nextRunAt".into(), number_value(next_run_at));
+    }
+    value.insert("runs".into(), Value::Array(runs));
+    value.insert(
+        "filePath".into(),
+        Value::String(record.file_path.to_string_lossy().into_owned()),
+    );
+    Value::Object(value)
+}
+
+fn number_value(value: f64) -> Value {
+    serde_json::Number::from_f64(value)
+        .map(Value::Number)
+        .unwrap_or(Value::Null)
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AutomationLifecycleSource {

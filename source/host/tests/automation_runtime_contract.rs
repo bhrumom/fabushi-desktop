@@ -9,7 +9,7 @@ use mahayana_host_runtime::extensions::transcript::automation_run_path::{
     AutomationExecutionResult, FireAutomationOutcome,
 };
 use mahayana_host_runtime::extensions::transcript::automation_runtime::{
-    AutomationLifecycleAction, AutomationRuntime,
+    AutomationLifecycleAction, AutomationRuntime, dispatch_automation_command,
 };
 use serde_json::json;
 
@@ -167,6 +167,106 @@ fn workflow_ui_mutation_uses_same_automation_lifecycle_owner() {
         .expect("delete workflow");
     assert_eq!(events.len(), 1);
     assert_eq!(events[0].action, AutomationLifecycleAction::Deleted);
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+
+fn automation_call(
+    runtime: &AutomationRuntime,
+    method: &str,
+    args: serde_json::Value,
+) -> serde_json::Value {
+    dispatch_automation_command(runtime, method, &args)
+        .expect("automation command handled")
+        .expect("automation command result")
+}
+
+#[test]
+fn automation_gateway_commands_use_runtime_owner_and_renderer_shape() {
+    let root = root("gateway");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = sessions.create_session(None, "user", None).expect("agent");
+    let runtime = AutomationRuntime::new(Arc::clone(&workers));
+
+    let created = automation_call(
+        &runtime,
+        "createAgentAutomation",
+        json!({
+            "id": agent.id,
+            "spec": {
+                "name": "Inbox review",
+                "prompt": "Review the inbox",
+                "trigger": {"type":"cron","schedule":"0 9 * * *"},
+                "isEnabled": true
+            }
+        }),
+    );
+    let created = created.as_array().expect("automation list");
+    assert_eq!(created.len(), 1);
+    assert_eq!(created[0]["name"], "Inbox review");
+    assert_eq!(created[0]["prompt"], "Review the inbox");
+    assert_eq!(created[0]["isEnabled"], true);
+    assert_eq!(created[0]["trigger"]["type"], "cron");
+    assert_eq!(created[0]["triggerDescription"], "Scheduled: 0 9 * * *");
+    assert!(created[0]["runs"].as_array().expect("runs").is_empty());
+    assert!(created[0]["createdAt"].is_number());
+    let automation_id = created[0]["id"].as_str().expect("automation id").to_string();
+
+    let listed = automation_call(
+        &runtime,
+        "getAgentAutomations",
+        json!({"id": agent.id}),
+    );
+    assert_eq!(listed[0]["id"], automation_id);
+
+    let disabled = automation_call(
+        &runtime,
+        "setAgentAutomationEnabled",
+        json!({
+            "id": agent.id,
+            "automationId": automation_id,
+            "isEnabled": false
+        }),
+    );
+    assert_eq!(disabled[0]["isEnabled"], false);
+
+    let updated = automation_call(
+        &runtime,
+        "updateAgentAutomation",
+        json!({
+            "id": agent.id,
+            "automationId": automation_id,
+            "spec": {
+                "name": "Inbox review updated",
+                "prompt": "Review mail and calendar",
+                "trigger": {"type":"cron","schedule":"30 9 * * *"},
+                "isEnabled": true
+            }
+        }),
+    );
+    assert_eq!(updated[0]["name"], "Inbox review updated");
+    assert_eq!(updated[0]["prompt"], "Review mail and calendar");
+    assert_eq!(updated[0]["schedule"], "30 9 * * *");
+
+    let deleted = automation_call(
+        &runtime,
+        "deleteAgentAutomation",
+        json!({"id": agent.id, "automationId": automation_id}),
+    );
+    assert!(deleted.as_array().expect("automation list").is_empty());
+
+    assert!(dispatch_automation_command(
+        &runtime,
+        "runAgentAutomationNow",
+        &json!({"id":agent.id,"automationId":"missing"}),
+    )
+    .is_none());
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);

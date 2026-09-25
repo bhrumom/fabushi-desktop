@@ -60,6 +60,9 @@ use mahayana_host_runtime::extensions::transcript::workflow_commands::{
     prepare_workflow_run_now,
 };
 use mahayana_host_runtime::extensions::transcript::automation_run_path::AutomationExecutionResult;
+use mahayana_host_runtime::extensions::transcript::automation_runtime::{
+    AutomationCommandError, dispatch_automation_command,
+};
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     AckObligations, AckRedrivePreparation, build_ack_redrive_empty_delivery_report,
     build_ack_redrive_send_args,
@@ -1910,6 +1913,62 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.experiments.is_agent_network_enabled(),
             ));
         }
+        if method == "runAgentAutomationNow" {
+            let agent_id = args
+                .get("id")
+                .or_else(|| args.get("agentId"))
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "runAgentAutomationNow requires id".into(),
+                ))?
+                .to_string();
+            let automation_id = args
+                .get("automationId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "runAgentAutomationNow requires automationId".into(),
+                ))?
+                .to_string();
+            let runtime = self.transcript_manager.automation_runtime();
+            let automation = runtime
+                .get_agent_automations(&agent_id)
+                .map_err(GatewayCommandError::Internal)?
+                .into_iter()
+                .find(|automation| automation.id == automation_id);
+            let Some(automation) = automation else {
+                return Ok(serde_json::Value::Null);
+            };
+            let Some(provider) =
+                configured_routed_provider(&self.data_dir.join("settings.json"))
+            else {
+                return call_host_lane(&self.host_tx, method, args);
+            };
+            if provider == RoutedProvider::Cursor {
+                return call_host_lane(&self.host_tx, method, args);
+            }
+            let deps = self.local_routed_runner_deps();
+            runtime
+                .run_agent_automation_now_with(
+                    &agent_id,
+                    &automation_id,
+                    |prompt| {
+                        run_local_automation_turn(
+                            deps,
+                            provider,
+                            &agent_id,
+                            &automation_id,
+                            &automation.name,
+                            prompt,
+                        )
+                    },
+                )
+                .map_err(GatewayCommandError::Internal)?;
+            return Ok(serde_json::Value::Null);
+        }
         if method == "runAgentWorkflowNow" {
             let plan = prepare_workflow_run_now(Arc::clone(&self.session_workers), &args)
                 .map_err(map_workflow_command_error)?;
@@ -1957,6 +2016,14 @@ impl GatewayApi for UnifiedGatewayApi {
                     return call_host_lane(&self.host_tx, method, args);
                 }
             }
+        }
+        let automation_runtime = self.transcript_manager.automation_runtime();
+        if let Some(result) = dispatch_automation_command(
+            automation_runtime.as_ref(),
+            method,
+            &args,
+        ) {
+            return result.map_err(map_automation_command_error);
         }
         let workflow_automation_runtime = self.transcript_manager.automation_runtime();
         if let Some(result) = dispatch_workflow_command_with_runtime(
@@ -2425,6 +2492,13 @@ impl GatewayApi for UnifiedGatewayApi {
 
     fn on_command_error(&self, report: GatewayCommandReport) {
         log_gateway_command_report("error", &report);
+    }
+}
+
+fn map_automation_command_error(error: AutomationCommandError) -> GatewayCommandError {
+    match error {
+        AutomationCommandError::BadRequest(message) => GatewayCommandError::BadRequest(message),
+        AutomationCommandError::Internal(message) => GatewayCommandError::Internal(message),
     }
 }
 
