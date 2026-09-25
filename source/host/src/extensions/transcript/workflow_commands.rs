@@ -17,6 +17,7 @@ pub enum WorkflowRunNowPlan {
     Automation {
         agent_id: String,
         automation_id: String,
+        automation_name: String,
     },
     Reference {
         agent_id: String,
@@ -46,6 +47,7 @@ pub fn prepare_workflow_run_now(
         return Ok(Some(WorkflowRunNowPlan::Automation {
             agent_id: agent_id.to_string(),
             automation_id: workflow.id,
+            automation_name: workflow.name,
         }));
     }
 

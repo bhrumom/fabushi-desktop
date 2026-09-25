@@ -56,8 +56,10 @@ use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
 };
 use mahayana_host_runtime::extensions::transcript::box_request_entries::resolve_box_request_entry;
 use mahayana_host_runtime::extensions::transcript::workflow_commands::{
-    WorkflowCommandError, dispatch_workflow_command,
+    WorkflowCommandError, WorkflowRunNowPlan, dispatch_workflow_command,
+    prepare_workflow_run_now,
 };
+use mahayana_host_runtime::extensions::transcript::automation_run_path::AutomationExecutionResult;
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
     AckObligations, AckRedrivePreparation, build_ack_redrive_empty_delivery_report,
     build_ack_redrive_send_args,
@@ -738,7 +740,7 @@ struct UnifiedGatewayApi {
 }
 
 #[derive(Clone)]
-struct GroupMemberRunnerDeps {
+struct LocalRoutedRunnerDeps {
     routed_tool_relay: Arc<CoordinatorToolRelay>,
     events: GatewayEventHub,
     host_tx: mpsc::Sender<HostLaneRequest>,
@@ -756,8 +758,8 @@ struct GroupMemberRunnerDeps {
 }
 
 impl UnifiedGatewayApi {
-    fn group_member_runner_deps(&self) -> GroupMemberRunnerDeps {
-        GroupMemberRunnerDeps {
+    fn local_routed_runner_deps(&self) -> LocalRoutedRunnerDeps {
+        LocalRoutedRunnerDeps {
             routed_tool_relay: Arc::clone(&self.routed_tool_relay),
             events: self.events.clone(),
             host_tx: self.host_tx.clone(),
@@ -832,7 +834,7 @@ impl UnifiedGatewayApi {
             return Ok(None);
         }
 
-        let deps = self.group_member_runner_deps();
+        let deps = self.local_routed_runner_deps();
         let executor: GroupMemberTurnExecutor = Arc::new(move |request| {
             run_local_group_member_turn(deps.clone(), provider, request)
         });
@@ -862,7 +864,7 @@ impl UnifiedGatewayApi {
 }
 
 fn run_local_group_member_turn(
-    deps: GroupMemberRunnerDeps,
+    deps: LocalRoutedRunnerDeps,
     provider: RoutedProvider,
     request: GroupMemberTurnRequest,
 ) -> Result<Vec<String>, String> {
@@ -981,6 +983,136 @@ fn run_local_group_member_turn(
         .session_workers
         .read_agent_transcript_entries(&member_id)?;
     Ok(collect_new_member_send_messages(&before, &after))
+}
+
+fn automation_terminal_from_event(
+    event: &serde_json::Value,
+    stream_id: &str,
+) -> Option<Result<AutomationExecutionResult, String>> {
+    if event.get("channel").and_then(serde_json::Value::as_str)
+        != Some(RUNNER_INFERENCE_EVENT_CHANNEL)
+    {
+        return None;
+    }
+    let payload = event.get("payload")?;
+    if payload.get("streamId").and_then(serde_json::Value::as_str) != Some(stream_id) {
+        return None;
+    }
+    match payload.get("type").and_then(serde_json::Value::as_str) {
+        Some("completed") => Some(Ok(AutomationExecutionResult::Completed)),
+        Some("cancelled") => Some(Ok(AutomationExecutionResult::Interrupted {
+            detail: "Interrupted before it finished.".into(),
+        })),
+        Some("failed") => Some(Err(
+            payload
+                .get("message")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("automation Runner failed")
+                .to_string(),
+        )),
+        _ => None,
+    }
+}
+
+fn run_local_automation_turn(
+    deps: LocalRoutedRunnerDeps,
+    provider: RoutedProvider,
+    agent_id: &str,
+    automation_id: &str,
+    automation_name: &str,
+    prompt: &str,
+) -> Result<AutomationExecutionResult, String> {
+    if provider == RoutedProvider::Cursor {
+        return Err("Cursor automation turns remain on the compatibility path".into());
+    }
+    let stream_id = format!("automation-{}", uuid::Uuid::new_v4());
+    let client_nonce = format!(
+        "automation:{}:{}:{}",
+        agent_id,
+        automation_id,
+        uuid::Uuid::new_v4()
+    );
+    let automation_wake = serde_json::json!({
+        "id": automation_id,
+        "name": automation_name,
+    });
+    let admission_args = serde_json::json!({
+        "agentId": agent_id,
+        "prompt": prompt,
+        "clientNonce": client_nonce,
+        "streamId": stream_id,
+        "appendUserMessage": false,
+        "hidden": true,
+        "requestSource": "automation",
+        "automationWake": automation_wake,
+        "skipAckObligation": true,
+    });
+    deps.transcript_runtime
+        .accept_routed_send(&admission_args, |_| {
+            Ok::<_, ProductionSendError>(PersistedSendContext::default())
+        })
+        .map_err(|error| error.to_string())?;
+
+    let receiver = deps.events.subscribe();
+    let runner_args = serde_json::json!({
+        "provider": provider.as_str(),
+        "agentId": agent_id,
+        "streamId": stream_id,
+        "requestSource": "automation",
+        "automationWake": {
+            "id": automation_id,
+            "name": automation_name,
+        },
+        "messages": [{
+            "role": "user",
+            "content": prompt,
+        }],
+    });
+    start_routed_provider_task(
+        deps.routed_tool_relay,
+        deps.events.clone(),
+        deps.host_tx,
+        deps.data_dir,
+        deps.request_context,
+        deps.experiments,
+        Arc::clone(&deps.session_workers),
+        Arc::clone(&deps.runner_registry),
+        deps.ack_obligations,
+        deps.transcript_runtime,
+        deps.forever_box,
+        deps.session_handoff,
+        deps.trays,
+        deps.telemetry_logs,
+        runner_args,
+    )
+    .map_err(|error| error.to_string())?;
+
+    let deadline = Instant::now() + Duration::from_secs(30 * 60);
+    loop {
+        let now = Instant::now();
+        if now >= deadline {
+            let _ = deps
+                .runner_registry
+                .cancel_stream(&stream_id, "automation turn timed out");
+            return Ok(AutomationExecutionResult::Interrupted {
+                detail: "Interrupted before it finished.".into(),
+            });
+        }
+        let wait = deadline
+            .saturating_duration_since(now)
+            .min(Duration::from_millis(250));
+        match receiver.recv_timeout(wait) {
+            Ok(event) => {
+                if let Some(result) = automation_terminal_from_event(&event, &stream_id) {
+                    return result;
+                }
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => continue,
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                return Err("Host event bus disconnected during automation turn".into());
+            }
+        }
+    }
 }
 
 fn start_ack_redrive_worker(
@@ -1778,17 +1910,58 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.experiments.is_agent_network_enabled(),
             ));
         }
+        if method == "runAgentWorkflowNow" {
+            let plan = prepare_workflow_run_now(Arc::clone(&self.session_workers), &args)
+                .map_err(map_workflow_command_error)?;
+            match plan {
+                None => return Ok(serde_json::Value::Null),
+                Some(WorkflowRunNowPlan::Automation {
+                    agent_id,
+                    automation_id,
+                    automation_name,
+                }) => {
+                    let Some(provider) =
+                        configured_routed_provider(&self.data_dir.join("settings.json"))
+                    else {
+                        return call_host_lane(&self.host_tx, method, args);
+                    };
+                    if provider == RoutedProvider::Cursor {
+                        return call_host_lane(&self.host_tx, method, args);
+                    }
+                    let runtime = self.transcript_manager.automation_runtime();
+                    let deps = self.local_routed_runner_deps();
+                    runtime
+                        .run_agent_automation_now_with(
+                            &agent_id,
+                            &automation_id,
+                            |prompt| {
+                                run_local_automation_turn(
+                                    deps,
+                                    provider,
+                                    &agent_id,
+                                    &automation_id,
+                                    &automation_name,
+                                    prompt,
+                                )
+                            },
+                        )
+                        .map_err(GatewayCommandError::Internal)?;
+                    return Ok(serde_json::Value::Null);
+                }
+                Some(WorkflowRunNowPlan::Reference { .. }) => {
+                    // A normal workflow reference is a visible user turn. Keep
+                    // it on the compatibility path until the Rust user-turn
+                    // history/context projection is complete; sending only the
+                    // expanded recipe here would silently drop conversation
+                    // history.
+                    return call_host_lane(&self.host_tx, method, args);
+                }
+            }
+        }
         if let Some(result) =
             dispatch_workflow_command(Arc::clone(&self.session_workers), method, &args)
         {
-            return result.map_err(|error| match error {
-                WorkflowCommandError::BadRequest(message) => {
-                    GatewayCommandError::BadRequest(message)
-                }
-                WorkflowCommandError::Internal(message) => {
-                    GatewayCommandError::Internal(message)
-                }
-            });
+            return result.map_err(map_workflow_command_error);
         }
         if method == "promptAcceptanceStatus" {
             return self
@@ -2248,6 +2421,13 @@ impl GatewayApi for UnifiedGatewayApi {
 
     fn on_command_error(&self, report: GatewayCommandReport) {
         log_gateway_command_report("error", &report);
+    }
+}
+
+fn map_workflow_command_error(error: WorkflowCommandError) -> GatewayCommandError {
+    match error {
+        WorkflowCommandError::BadRequest(message) => GatewayCommandError::BadRequest(message),
+        WorkflowCommandError::Internal(message) => GatewayCommandError::Internal(message),
     }
 }
 
@@ -2882,7 +3062,7 @@ mod tests {
         ProductionHostExtensions, ProductionRunnerRequestContextSource, UnifiedGatewayApi,
         decode_provider_messages,
         dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
-        project_forever_box_status, reaction_gateway_args,
+        automation_terminal_from_event, project_forever_box_status, reaction_gateway_args,
     };
     use mahayana_host_runtime::extensions::forever_box::BoxStatus;
     use mahayana_host_runtime::extensions::session::box_handoff_service::PendingHandoff;
@@ -2935,6 +3115,44 @@ mod tests {
         assert_eq!(messages.len(), 1);
         assert_eq!(messages[0].role, "user");
         assert_eq!(messages[0].content, "hello");
+    }
+
+    #[test]
+    fn automation_terminal_event_maps_runner_settlement_without_guessing() {
+        let completed = serde_json::json!({
+            "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+            "payload": {"streamId":"automation-1","type":"completed","content":""}
+        });
+        assert_eq!(
+            automation_terminal_from_event(&completed, "automation-1"),
+            Some(Ok(AutomationExecutionResult::Completed))
+        );
+
+        let cancelled = serde_json::json!({
+            "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+            "payload": {"streamId":"automation-1","type":"cancelled","message":"stop"}
+        });
+        assert_eq!(
+            automation_terminal_from_event(&cancelled, "automation-1"),
+            Some(Ok(AutomationExecutionResult::Interrupted {
+                detail: "Interrupted before it finished.".into()
+            }))
+        );
+
+        let failed = serde_json::json!({
+            "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+            "payload": {"streamId":"automation-1","type":"failed","message":"provider failed"}
+        });
+        assert_eq!(
+            automation_terminal_from_event(&failed, "automation-1"),
+            Some(Err("provider failed".into()))
+        );
+
+        let other = serde_json::json!({
+            "channel": RUNNER_INFERENCE_EVENT_CHANNEL,
+            "payload": {"streamId":"automation-2","type":"completed"}
+        });
+        assert_eq!(automation_terminal_from_event(&other, "automation-1"), None);
     }
 
     #[test]

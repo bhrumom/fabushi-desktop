@@ -168,7 +168,7 @@ impl AutomationRuntime {
     where
         Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
     {
-        let (store, automation, before) = self.with_agent_mutation_lock(agent_id, || {
+        let Some((store, automation, before)) = self.with_agent_mutation_lock(agent_id, || {
             let store = self.automation_store(agent_id)?;
             let Some(automation) = store.get(automation_id) else {
                 return Ok(None);
@@ -176,8 +176,9 @@ impl AutomationRuntime {
             let before = store.list_definitions();
             self.sync_baseline(agent_id, &before);
             Ok(Some((store, automation, before)))
-        })?
-        .ok_or_else(|| format!("automation missing: {automation_id}"))?;
+        })? else {
+            return Ok(None);
+        };
 
         let outcome = self.run_path.fire_automation_with(
             &store,
