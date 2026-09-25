@@ -147,7 +147,8 @@ impl SandMobilePushNotifier {
     ) {
         let focused = is_focused(window_focused_at_ms, now_ms);
         for agent in agents {
-            self.fire_transitions(self.decider.decide_agent(agent, now_ms, focused));
+            let transitions = self.decider.decide_agent(agent, now_ms, focused);
+            self.fire_transitions(transitions);
         }
         self.flush_pre_seed_deltas(now_ms);
     }
