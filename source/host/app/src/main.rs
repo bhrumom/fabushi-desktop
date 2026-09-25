@@ -34,6 +34,7 @@ use mahayana_host_runtime::extensions::session::box_handoff_service::{
 };
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
+use mahayana_host_runtime::extensions::secrets::extension::start_secrets_extension;
 use mahayana_host_runtime::extensions::wallpaper::extension::start_wallpaper_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
@@ -2925,6 +2926,10 @@ fn main() {
         lifecycle,
         ForeverBoxExtensionOptions::from_process_env(),
     );
+    let secrets_extension = start_secrets_extension(
+        Arc::clone(&forever_box),
+        Arc::new(|message| eprintln!("mahayana-host-secrets {message}")),
+    );
     let runner_request_context: Arc<dyn RunnerRequestContextSource> =
         Arc::new(ProductionRunnerRequestContextSource::new(
             Arc::clone(&production_extensions.auth),
@@ -3285,6 +3290,7 @@ fn main() {
     session_extension.shutdown();
     wallpaper_extension.stop();
     browser_ua_runtime.stop();
+    secrets_extension.stop();
     forever_box.dispose();
     if let Some(daemon) = box_exec_daemon.as_mut() {
         if let Err(error) = daemon.close() {

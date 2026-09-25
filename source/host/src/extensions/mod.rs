@@ -33,3 +33,5 @@ pub mod wallpaper;
 pub mod codebase_telemetry;
 
 pub mod auto_review;
+
+pub mod secrets;
