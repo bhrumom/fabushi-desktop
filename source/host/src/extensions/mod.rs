@@ -31,3 +31,5 @@ pub mod cross_user_sharing;
 pub mod wallpaper;
 
 pub mod codebase_telemetry;
+
+pub mod auto_review;
