@@ -1200,3 +1200,9 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Re-audited PR #20 at exact HEAD `4824665f8cc8f5d2d895b2787c23497f0480100b`: 1,779 implemented / 96 existing-needs-parity / 127 planned before this slice; shipping Host, independent Coordinator and box-exec daemon gates were green while the remaining Host/Runner gates continued.
 - Added a Rust `ClientSideToolV2Producer` that preserves the frozen Host ordering/lifecycle contract and emits the exact shared `protobuf-base64` envelope consumed by `source/shared/rpc/client-side-tool-v2-transport.ts`. It owns stable epoch, per-agent sequence, open-call/result fencing, unknown-result drop and reset behavior.
 - The already-present Rust Box Store hydration port was not rewritten; it now has an independent contract covering normal/legacy completeness evidence, handoff manifest path matching, atomic mode-0600 marker persistence, directory sync and removal. Its manifest row is advanced only after that evidence.
+
+
+### 2026-09-25 Chrome session stage evidence closure
+
+- Audited the pre-existing Rust `chrome_session_stage.rs` against the frozen Grok module rather than reimplementing it. Added contract coverage for exact DB relative-path projection and mode preservation, retry destination pre-clean, busy/locked raw-copy fallback, non-busy skip/report behavior, raw-copy failure reporting, and staging cleanup.
+- The manifest row advances from planned to implemented only after this behavioral evidence; the wider Box Store Sync extension/service remains non-final.

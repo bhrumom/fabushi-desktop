@@ -1,8 +1,5 @@
 use std::fs;
-use std::sync::{
-    Arc, Mutex,
-    atomic::{AtomicUsize, Ordering},
-};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::box_store_sync::chrome_session_stage::{
     ChromeStageRetryPolicy, stage_box_chrome_session_with,
@@ -10,186 +7,152 @@ use mahayana_host_runtime::extensions::box_store_sync::chrome_session_stage::{
 use mahayana_host_runtime::extensions::box_store_sync::sqlite_snapshot::{
     SqliteSnapshotFailure, SqliteSnapshotOperation, SqliteSnapshotPathStage,
 };
-use uuid::Uuid;
 
-fn scratch() -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!(
-        "fabushi-chrome-stage-{}",
-        Uuid::new_v4().simple()
-    ));
-    fs::create_dir_all(&root).expect("create scratch");
-    root
+fn scratch(label: &str) -> std::path::PathBuf {
+    let n=SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+    let path=std::env::temp_dir().join(format!("fabushi-chrome-stage-{label}-{}-{n}",std::process::id()));
+    fs::create_dir_all(&path).unwrap();
+    path
 }
 
-fn failure(cause: &str) -> SqliteSnapshotFailure {
-    SqliteSnapshotFailure {
-        operation: SqliteSnapshotOperation::VacuumInto,
-        path_stage: SqliteSnapshotPathStage::SourceMain,
-        cause: cause.into(),
-        error_class: "Error".into(),
-        errno: None,
-        sqlite_code: None,
+fn failure(cause:&str,error_class:&str)->SqliteSnapshotFailure{
+    SqliteSnapshotFailure{
+        operation:SqliteSnapshotOperation::VacuumInto,
+        path_stage:SqliteSnapshotPathStage::SourceOrStagedMain,
+        cause:cause.into(),
+        error_class:error_class.into(),
+        errno:None,
+        sqlite_code:None,
     }
 }
 
 #[test]
-fn stages_existing_database_and_reports_mode() {
-    let root = scratch();
-    let source_dir = root.join("Default");
-    fs::create_dir_all(&source_dir).expect("create source dir");
-    fs::write(source_dir.join("Cookies"), b"cookie-db").expect("seed db");
-
-    let reports = Arc::new(Mutex::new(Vec::new()));
-    let capture = Arc::clone(&reports);
-    let staged = stage_box_chrome_session_with(
-        &source_dir,
+fn stages_existing_db_with_frozen_relative_path_and_mode_then_cleans_up() {
+    let root=scratch("success");
+    let source=root.join("profile");
+    fs::create_dir_all(&source).unwrap();
+    let cookies=source.join("Cookies");
+    fs::write(&cookies,b"db").unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&cookies,fs::Permissions::from_mode(0o640)).unwrap();
+    }
+    let mut reports=Vec::new();
+    let staged=stage_box_chrome_session_with(
+        &source,
         "home/box/chrome-profile/Default",
-        &["Cookies", "Missing"],
-        ChromeStageRetryPolicy {
-            max_attempts: 1,
-            delay_ms: 0,
-        },
-        |src, dest| {
-            fs::copy(src, dest).map(|_| ()).map_err(|_| failure("io"))
-        },
-        |_src, _dest| Err(failure("should-not-copy")),
-        |_| {},
-        move |report| capture.lock().expect("report lock").push(report),
-    )
-    .expect("stage chrome");
-
-    assert_eq!(staged.files.len(), 1);
-    assert_eq!(
-        staged.files[0].rel_path,
-        "home/box/chrome-profile/Default/Cookies"
-    );
-    assert!(staged.files[0].abs_path.is_file());
-    assert_eq!(staged.skipped, 0);
-    let reports = reports.lock().expect("reports");
-    assert_eq!(reports.len(), 1);
-    assert_eq!(reports[0].staged, 1);
-    assert_eq!(reports[0].skipped, 0);
-    drop(reports);
-
-    staged.cleanup().expect("cleanup stage");
-    let _ = fs::remove_dir_all(root);
+        &["Cookies","Web Data"],
+        ChromeStageRetryPolicy{max_attempts:1,delay_ms:0},
+        |src,dest|{fs::copy(src,dest).map(|_|()).map_err(|e|failure("error",&e.to_string()))},
+        |_src,_dest|panic!("raw copy must not run"),
+        |_|{},
+        |report|reports.push(report),
+    ).unwrap();
+    assert_eq!(staged.files.len(),1);
+    assert_eq!(staged.skipped,0);
+    assert_eq!(staged.files[0].rel_path,"home/box/chrome-profile/Default/Cookies");
+    assert_eq!(fs::read(&staged.files[0].abs_path).unwrap(),b"db");
+    #[cfg(unix)]
+    assert_eq!(staged.files[0].mode,0o640);
+    assert_eq!(reports.len(),1);
+    assert_eq!(reports[0].staged,1);
+    let staged_path=staged.files[0].abs_path.clone();
+    staged.cleanup().unwrap();
+    assert!(!staged_path.exists());
+    let _=fs::remove_dir_all(root);
 }
 
 #[test]
-fn busy_vacuum_uses_locked_copy_fallback() {
-    let root = scratch();
-    let source_dir = root.join("Default");
-    fs::create_dir_all(&source_dir).expect("create source dir");
-    fs::write(source_dir.join("Login Data"), b"locked-db").expect("seed db");
-
-    let copies = Arc::new(AtomicUsize::new(0));
-    let copies_for_closure = Arc::clone(&copies);
-    let logs = Arc::new(Mutex::new(Vec::<String>::new()));
-    let logs_for_closure = Arc::clone(&logs);
-
-    let staged = stage_box_chrome_session_with(
-        &source_dir,
-        "profile",
-        &["Login Data"],
-        ChromeStageRetryPolicy {
-            max_attempts: 1,
-            delay_ms: 0,
-        },
-        |_src, _dest| Err(failure("busy")),
-        move |src, dest| {
-            copies_for_closure.fetch_add(1, Ordering::SeqCst);
-            fs::copy(src, dest).map(|_| ()).map_err(|_| failure("io"))
-        },
-        move |message| logs_for_closure.lock().expect("logs").push(message),
-        |_| {},
-    )
-    .expect("stage locked chrome db");
-
-    assert_eq!(copies.load(Ordering::SeqCst), 1);
-    assert_eq!(staged.files.len(), 1);
-    assert_eq!(staged.skipped, 0);
-    assert!(logs
-        .lock()
-        .expect("logs")
-        .iter()
-        .any(|message| message.contains("raw-copy fallback")));
-
-    staged.cleanup().expect("cleanup stage");
-    let _ = fs::remove_dir_all(root);
-}
-
-#[test]
-fn nonbusy_failure_is_skipped_and_reported() {
-    let root = scratch();
-    let source_dir = root.join("Default");
-    fs::create_dir_all(&source_dir).expect("create source dir");
-    fs::write(source_dir.join("Web Data"), b"db").expect("seed db");
-
-    let reports = Arc::new(Mutex::new(Vec::new()));
-    let capture = Arc::clone(&reports);
-    let staged = stage_box_chrome_session_with(
-        &source_dir,
-        "profile",
-        &["Web Data"],
-        ChromeStageRetryPolicy {
-            max_attempts: 1,
-            delay_ms: 0,
-        },
-        |_src, _dest| Err(failure("corrupt")),
-        |_src, _dest| panic!("raw copy should only run for busy/locked failures"),
-        |_| {},
-        move |report| capture.lock().expect("report lock").push(report),
-    )
-    .expect("stage with skip");
-
-    assert!(staged.files.is_empty());
-    assert_eq!(staged.skipped, 1);
-    let reports = reports.lock().expect("reports");
-    assert_eq!(reports[0].skipped_db_names, vec!["Web Data"]);
-    assert_eq!(
-        reports[0].failure.as_ref().expect("failure").phase,
-        "vacuum"
-    );
-    drop(reports);
-
-    staged.cleanup().expect("cleanup stage");
-    let _ = fs::remove_dir_all(root);
-}
-
-#[test]
-fn busy_failure_retries_when_policy_allows_it() {
-    let root = scratch();
-    let source_dir = root.join("Default");
-    fs::create_dir_all(&source_dir).expect("create source dir");
-    fs::write(source_dir.join("Cookies"), b"db").expect("seed db");
-
-    let attempts = Arc::new(AtomicUsize::new(0));
-    let attempts_for_closure = Arc::clone(&attempts);
-    let staged = stage_box_chrome_session_with(
-        &source_dir,
-        "profile",
+fn retry_removes_partial_destination_before_next_vacuum_attempt() {
+    let root=scratch("retry");
+    let source=root.join("profile");
+    fs::create_dir_all(&source).unwrap();
+    fs::write(source.join("Cookies"),b"source").unwrap();
+    let mut attempts=0usize;
+    let staged=stage_box_chrome_session_with(
+        &source,
+        "rel",
         &["Cookies"],
-        ChromeStageRetryPolicy {
-            max_attempts: 2,
-            delay_ms: 0,
-        },
-        move |src, dest| {
-            if attempts_for_closure.fetch_add(1, Ordering::SeqCst) == 0 {
-                fs::write(dest, b"partial").expect("partial first attempt");
-                return Err(failure("busy"));
+        ChromeStageRetryPolicy{max_attempts:2,delay_ms:0},
+        |_src,dest|{
+            attempts+=1;
+            if attempts==1{
+                fs::write(dest,b"partial").unwrap();
+                Err(failure("busy","database is busy"))
+            }else{
+                assert!(!dest.exists(),"retry must pre-clean partial destination");
+                fs::write(dest,b"clean").unwrap();
+                Ok(())
             }
-            fs::copy(src, dest).map(|_| ()).map_err(|_| failure("io"))
         },
-        |_src, _dest| panic!("retry should succeed before raw copy"),
-        |_| {},
-        |_| {},
-    )
-    .expect("retry stage");
+        |_src,_dest|panic!("raw copy not reached after retry success"),
+        |_|{},
+        |_|{},
+    ).unwrap();
+    assert_eq!(attempts,2);
+    assert_eq!(fs::read(&staged.files[0].abs_path).unwrap(),b"clean");
+    staged.cleanup().unwrap();
+    let _=fs::remove_dir_all(root);
+}
 
-    assert_eq!(attempts.load(Ordering::SeqCst), 2);
-    assert_eq!(staged.files.len(), 1);
-    assert_eq!(fs::read(&staged.files[0].abs_path).expect("staged bytes"), b"db");
+#[test]
+fn busy_failure_falls_back_to_locked_copy_but_nonbusy_failure_is_skipped() {
+    let root=scratch("fallback");
+    let source=root.join("profile");
+    fs::create_dir_all(&source).unwrap();
+    fs::write(source.join("Cookies"),b"cookie").unwrap();
+    fs::write(source.join("Web Data"),b"web").unwrap();
+    let mut reports=Vec::new();
+    let staged=stage_box_chrome_session_with(
+        &source,
+        "rel",
+        &["Cookies","Web Data"],
+        ChromeStageRetryPolicy{max_attempts:1,delay_ms:0},
+        |src,_dest|{
+            if src.file_name().unwrap()=="Cookies"{Err(failure("busy","database is locked"))}
+            else{Err(failure("io","disk error"))}
+        },
+        |src,dest|{
+            fs::copy(src,dest).map(|_|()).map_err(|e|failure("error",&e.to_string()))
+        },
+        |_|{},
+        |report|reports.push(report),
+    ).unwrap();
+    assert_eq!(staged.files.len(),1);
+    assert_eq!(staged.files[0].rel_path,"rel/Cookies");
+    assert_eq!(staged.skipped,1);
+    assert_eq!(reports.len(),1);
+    assert_eq!(reports[0].staged,1);
+    assert_eq!(reports[0].skipped,1);
+    assert_eq!(reports[0].skipped_db_names,vec!["Web Data"]);
+    assert_eq!(reports[0].error_class.as_deref(),Some("disk error"));
+    assert_eq!(reports[0].failure.as_ref().map(|f|f.phase.as_str()),Some("vacuum"));
+    staged.cleanup().unwrap();
+    let _=fs::remove_dir_all(root);
+}
 
-    staged.cleanup().expect("cleanup stage");
-    let _ = fs::remove_dir_all(root);
+#[test]
+fn raw_copy_failure_reports_raw_copy_phase() {
+    let root=scratch("raw-fail");
+    let source=root.join("profile");
+    fs::create_dir_all(&source).unwrap();
+    fs::write(source.join("Cookies"),b"cookie").unwrap();
+    let mut reports=Vec::new();
+    let staged=stage_box_chrome_session_with(
+        &source,
+        "rel",
+        &["Cookies"],
+        ChromeStageRetryPolicy{max_attempts:1,delay_ms:0},
+        |_src,_dest|Err(failure("busy","database is busy")),
+        |_src,_dest|Err(failure("corrupt","raw copy failed")),
+        |_|{},
+        |report|reports.push(report),
+    ).unwrap();
+    assert!(staged.files.is_empty());
+    assert_eq!(staged.skipped,1);
+    assert_eq!(reports[0].failure.as_ref().map(|f|f.phase.as_str()),Some("raw_copy"));
+    assert_eq!(reports[0].error_class.as_deref(),Some("raw copy failed"));
+    staged.cleanup().unwrap();
+    let _=fs::remove_dir_all(root);
 }
