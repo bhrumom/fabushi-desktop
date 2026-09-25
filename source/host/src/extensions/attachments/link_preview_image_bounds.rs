@@ -135,7 +135,7 @@ pub fn read_jpeg_dimensions(bytes:&[u8])->Option<ImageSize>{
 }
 fn ico_bitmap(bytes:&[u8],o:usize)->Option<ImageSize>{
     if o.saturating_add(12)>bytes.len()||!DIB_HEADER_SIZES.contains(&u32le(bytes,o)?){return None}
-    let w=i64::from(i32le(bytes,o)?);let h=i64::from(i32le(bytes,o+8)?).abs().div_ceil(2);
+    let w=i64::from(i32le(bytes,o)?);let raw_h=i64::from(i32le(bytes,o+8)?).abs();let h=(raw_h+1)/2;
     if w<=0||h<=0{return None} size(u32::try_from(w).ok()?,u32::try_from(h).ok()?)
 }
 pub fn read_ico_size(bytes:&[u8])->Option<ImageSize>{

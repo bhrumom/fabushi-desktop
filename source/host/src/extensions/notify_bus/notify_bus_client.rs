@@ -130,8 +130,8 @@ impl SandNotifyBusClient{
   if let Ok(worker)=worker{*self.worker.lock().unwrap_or_else(|p|p.into_inner())=Some(worker)}
  }
  pub fn stop(&self){
-  if let Some(tx)=self.stop_tx.lock().unwrap_or_else(|p|p.into_inner()).take(){let _=tx.send(true)}
-  if let Some(worker)=self.worker.lock().unwrap_or_else(|p|p.into_inner()).take(){let _=worker.join()}
+  if let Some(tx)=self.stop_tx.lock().unwrap_or_else(|p|p.into_inner()).take(){let _=tx.send(true);}
+  if let Some(worker)=self.worker.lock().unwrap_or_else(|p|p.into_inner()).take(){let _=worker.join();}
   self.state.lock().unwrap_or_else(|p|p.into_inner()).connected_at_ms=None;
  }
 }
