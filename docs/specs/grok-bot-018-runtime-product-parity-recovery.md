@@ -1248,3 +1248,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The port enforces file:// input, agent attachments/assets containment, /workspace-only box reads, image-only MIME gating, unreadable/refused distinctions and the frozen 25 MiB attachment limit.
 - `cloud_agent_images_contract.rs` covers host media roots, box reads, non-file/non-image rejection, outside-root refusal, unreadable box paths and both host/box oversize rejection.
 - The row advances only to `existing-needs-parity`; final waits on exact shared media MIME/error helper reuse and live CloudAgent-tool production wiring.
+
+
+### 2026-09-26 MCP state executor slice
+
+- Added Rust `ports/mcp_state_executor.rs` for the frozen MCP-state projection responsibility, reusing the shipping `RoutedToolDefinition` instead of creating a second tool inventory.
+- The executor preserves first-seen provider ordering, groups tools per provider, exposes each server as `connected`, and retains description/input-schema data; provider errors remain fail-closed.
+- `mcp_state_executor_contract.rs` covers multi-provider grouping/order, schema projection, empty success and provider failure propagation.
+- The row advances only to `existing-needs-parity`; final waits on generated `agent.v1` result types and production executor/tool registration.

@@ -16261,12 +16261,19 @@
       "targetPath": "source/host/src/ports/mcp_state_executor.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "e4dcfebc238e66703e3f49e1f7558c96ef79e4e2",
       "architecturalRole": "host/ports",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/ports/mcp_state_executor.rs",
+        "source/host/src/extensions/inference/provider_session.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/mcp_state_executor_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host port now consumes the shipping routed MCP tool definition, groups tools by provider identifier in first-seen order, projects connected server state and preserves tool description/input schema. Final remains withheld until this owner is bound to the canonical generated agent.v1 McpStateExecResult/McpStateServer/McpToolDefinition executor and registered on the production Runner/Host tool surface."
     },
     {
       "referencePath": "source/host/ports/product-analytics.ts",
