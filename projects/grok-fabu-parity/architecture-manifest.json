@@ -18185,12 +18185,22 @@
       "targetPath": "source/host/src/send_trace_host.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "5c99286392aa37e5f34e2e0152c804e3cad79a2c",
       "architecturalRole": "host/send-trace-host",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/send_trace_host.rs",
+        "source/host/src/extensions/telemetry/send_trace_sampler.rs",
+        "source/shared/observability/send-trace.ts"
+      ],
+      "testEvidence": [
+        "source/host/tests/send_trace_host_contract.rs",
+        "source/host/tests/extensions_small_parity_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Host-side port of the frozen send/turn tracing owner. It preserves strict lowercase W3C traceparent validation, remote-parent adoption, gateway/send span naming, sampling and minted roots, turn type/outcome precedence, inheritable conversation/type attributes, host bundle tagging, fail-closed span mutation/error recording, and child phase span settlement. The shared TypeScript traceparent contract remains byte-identical for shared consumers."
     },
     {
       "referencePath": "source/host/sha256.ts",

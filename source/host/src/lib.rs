@@ -65,3 +65,4 @@ pub mod host_roster_bookkeeping;
 pub mod cloud_agents;
 
 pub mod connectors;
+pub mod send_trace_host;
