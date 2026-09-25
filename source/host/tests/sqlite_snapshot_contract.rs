@@ -1,9 +1,13 @@
 use std::fs;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use mahayana_host_runtime::extensions::box_store_sync::box_store_vacuum_worker::{
     BoxStoreVacuumJob, run_box_store_vacuum_job, spawn_box_store_vacuum_job,
 };
-use mahayana_host_runtime::extensions::box_store_sync::sqlite_snapshot::sqlite_vacuum_into;
+use mahayana_host_runtime::extensions::box_store_sync::sqlite_snapshot::{
+    LOCKED_DB_COPY_ATTEMPTS, SqliteSnapshotOperation, SqliteSnapshotPathStage,
+    copy_locked_sqlite_db, copy_locked_sqlite_db_with_reader, sqlite_vacuum_into,
+};
 use rusqlite::Connection;
 use uuid::Uuid;
 
@@ -45,6 +49,64 @@ fn vacuum_into_creates_verified_sqlite_snapshot() {
     seed_db(&source);
     sqlite_vacuum_into(&source, &dest, 5_000).expect("vacuum into");
     assert_snapshot(&dest);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn locked_copy_preserves_database_and_cleans_staged_sidecars() {
+    let root = scratch("locked-copy");
+    let source = root.join("source.sqlite");
+    let dest = root.join("dest.sqlite");
+    seed_db(&source);
+
+    let mut failure = None;
+    assert!(copy_locked_sqlite_db(&source, &dest, |value| failure = Some(value)));
+    assert!(failure.is_none());
+    assert_snapshot(&dest);
+    for suffix in ["-wal", "-shm", "-journal"] {
+        assert!(!std::path::PathBuf::from(format!("{}{}", dest.display(), suffix)).exists());
+    }
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn locked_copy_retries_source_changes_and_reports_final_failure() {
+    let root = scratch("locked-copy-source-change");
+    let source = root.join("source.sqlite");
+    let dest = root.join("dest.sqlite");
+    fs::write(&source, b"placeholder").expect("write source");
+    let reads = AtomicUsize::new(0);
+    let mut final_failure = None;
+
+    let copied = copy_locked_sqlite_db_with_reader(
+        &source,
+        &dest,
+        |_| {
+            let call = reads.fetch_add(1, Ordering::SeqCst);
+            if call % 2 == 0 {
+                Ok(b"first".to_vec())
+            } else {
+                Ok(b"changed".to_vec())
+            }
+        },
+        |failure| final_failure = Some(failure),
+    );
+
+    assert!(!copied);
+    assert_eq!(
+        reads.load(Ordering::SeqCst),
+        LOCKED_DB_COPY_ATTEMPTS * 2
+    );
+    let failure = final_failure.expect("final failure");
+    assert_eq!(
+        failure.operation,
+        SqliteSnapshotOperation::VerifySourceStability
+    );
+    assert_eq!(failure.path_stage, SqliteSnapshotPathStage::SourceMain);
+    assert_eq!(failure.cause, "source_changed");
+    assert!(!dest.exists());
+
     let _ = fs::remove_dir_all(root);
 }
 
