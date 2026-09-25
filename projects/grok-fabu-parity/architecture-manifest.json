@@ -16378,12 +16378,24 @@
       "targetPath": "source/host/src/runner/sand_memory.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "aa686cca6a8dc2c363d96a89e6c3b8f9203f3966",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/sand_memory.rs",
+        "source/host/src/runner/system_prompt_assembly.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/memory/memory_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_memory_contract.rs",
+        "source/host/tests/system_prompt_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production slice ports frozen deterministic memory semantics used by the live prompt path: freeze snapshot resolution, memorable-exchange filtering, normalization/dedupe importance/ranking, prompt rendering with the 4k recent-fact budget, extraction prompt parsing/apply helpers, relevance selection/gathering and episode prompt construction. Shipping startRoutedProvider reads the canonical per-agent FileMemoryStore and appends exactly one frozen memory section to the actual provider system message. Final remains withheld for the inference-backed extractMemories/summarizeEpisode executor, shared user/project shard rendering, and turn-settlement writeback owned by turn-memory."
     },
     {
       "referencePath": "source/host/runner/sand-prompt-markers.ts",
@@ -16544,14 +16556,18 @@
         "source/host/src/runner/system_prompt_assembly.rs",
         "source/host/src/runner/routed_provider_runtime.rs",
         "source/host/src/extensions/inference/provider_session.rs",
-        "source/host/src/runner/system_prompt.rs"
+        "source/host/src/runner/system_prompt.rs",
+        "source/host/src/runner/sand_memory.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/memory/memory_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/runner_request_context_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/tests/system_prompt_contract.rs"
+        "source/host/tests/system_prompt_contract.rs",
+        "source/host/tests/sand_memory_contract.rs"
       ],
-      "notes": "Shipping Rust assembly now prepends the exact frozen Grok base system prompt (CloudAgent-disabled variant until that tool is production-composed), its explicit disabled section, timezone, user identity and team-rule sections into every routed-provider system message. Remaining assembly parity is memory/automations/workflows/channels/profile snapshots and other feature-dependent sections, so this mapping remains existing-needs-parity."
+      "notes": "Shipping Rust assembly includes the frozen base/CloudAgent-disabled, timezone, user identity and team-rule sections, and now injects the canonical per-agent FileMemoryStore recall into the actual routed-provider system message through frozen sand-memory rendering. Remaining assembly parity is automations/workflows/channels/profile/shared user+project memory and other feature-dependent sections, so this mapping remains existing-needs-parity."
     },
     {
       "referencePath": "source/host/runner/system-prompt.ts",

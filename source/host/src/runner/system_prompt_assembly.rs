@@ -1,9 +1,14 @@
 use serde_json::Value;
 
 use crate::host_request_context::HostRequestContext;
+use crate::extensions::inference::provider_session::ProviderMessage;
+use crate::extensions::memory::memory_service::MemoryRecall;
 
 use super::system_prompt::{
     SAND_CLOUD_AGENTS_DISABLED_PROMPT_SECTION, build_sand_base_system_prompt,
+};
+use super::sand_memory::{
+    MEMORY_SYSTEM_PROMPT_HEADER, render_memory_system_prompt,
 };
 
 pub fn render_request_context_system_prompt(
@@ -82,4 +87,35 @@ fn render_team_rules(rules: Option<&[Value]>) -> Option<String> {
             rendered.join("\n\n")
         )
     })
+}
+
+
+pub fn append_memory_system_prompt(
+    messages: &mut Vec<ProviderMessage>,
+    recall: &MemoryRecall,
+    location: Option<&str>,
+) {
+    let memory = render_memory_system_prompt(recall, location);
+    if memory.is_empty() {
+        return;
+    }
+    if messages.iter().any(|message| {
+        message.role == "system" && message.content.contains(MEMORY_SYSTEM_PROMPT_HEADER)
+    }) {
+        return;
+    }
+    if let Some(system) = messages.iter_mut().find(|message| message.role == "system") {
+        if !system.content.trim().is_empty() {
+            system.content.push_str("\n\n");
+        }
+        system.content.push_str(&memory);
+    } else {
+        messages.insert(
+            0,
+            ProviderMessage {
+                role: "system".into(),
+                content: memory,
+            },
+        );
+    }
 }

@@ -127,6 +127,8 @@ use mahayana_host_runtime::transcript_mirror::production_provider::{
 };
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::ProviderRetryEvent;
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
+use mahayana_host_runtime::runner::sand_memory::MEMORY_RECENT_PROMPT_LIMIT;
+use mahayana_host_runtime::runner::system_prompt_assembly::append_memory_system_prompt;
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
     create_production_runner_composition,
@@ -1482,7 +1484,7 @@ fn start_routed_provider_task(
         stream_id.clone(),
         events.clone(),
     );
-    let messages = decode_provider_messages(&args)?;
+    let mut messages = decode_provider_messages(&args)?;
     let turn_input = create_production_turn_input_projection(
         &args,
         &stream_id,
@@ -1505,6 +1507,15 @@ fn start_routed_provider_task(
                 ))
             })?;
     }
+
+    let memory_store = session_workers.memory_service().store_for_agent(&agent_id);
+    let memory_recall = memory_store.recall(MEMORY_RECENT_PROMPT_LIMIT);
+    let memory_location = memory_store.get_location().to_string_lossy().into_owned();
+    append_memory_system_prompt(
+        &mut messages,
+        &memory_recall,
+        Some(&memory_location),
+    );
 
     let agent_store = session_workers
         .open_agent_store_owner(&agent_id)

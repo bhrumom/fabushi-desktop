@@ -67,4 +67,5 @@ pub mod production_turn_input_projection;
 pub mod sand_agent_runner;
 pub mod system_prompt;
 pub mod system_prompt_assembly;
+pub mod sand_memory;
 pub mod turn_observation;
