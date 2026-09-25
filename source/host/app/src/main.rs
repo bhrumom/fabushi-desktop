@@ -2238,8 +2238,14 @@ impl GatewayApi for UnifiedGatewayApi {
                         .map_err(GatewayCommandError::Internal)?
                         .is_some_and(|summary| !summary.is_group);
                     if direct_local {
+                        let accepted_at_ms = started_at_ms() as f64;
+                        let _ack_guard = self.ack_obligations.arm_send_guard(
+                            agent_id,
+                            accepted_at_ms,
+                            true,
+                        );
                         self.ack_obligations
-                            .record_send(agent_id, started_at_ms() as f64)
+                            .record_send(agent_id, accepted_at_ms)
                             .map_err(|error| GatewayCommandError::Internal(format!(
                                 "could not record durable ack obligation for {agent_id}: {error}"
                             )))?;
@@ -2361,7 +2367,8 @@ impl GatewayApi for UnifiedGatewayApi {
             let watchdog_logs = self.telemetry_logs.clone();
             let accepted_logs = self.telemetry_logs.clone();
             let dequeued_logs = self.telemetry_logs.clone();
-            return self
+            let send_ack_guard = Mutex::new(None);
+            let send_result = self
                 .transcript_runtime
                 .execute_send_with_queue_observers(
                     &durable_args,
@@ -2401,13 +2408,24 @@ impl GatewayApi for UnifiedGatewayApi {
                                     .map_err(ProductionSendError::Internal)?
                                     .is_some_and(|summary| !summary.is_group);
                                 if direct_local {
+                                    let accepted_at_ms = started_at_ms() as f64;
+                                    let guard = self.ack_obligations.arm_send_guard(
+                                        agent_id,
+                                        accepted_at_ms,
+                                        true,
+                                    );
                                     self.ack_obligations
-                                        .record_send(agent_id, started_at_ms() as f64)
+                                        .record_send(agent_id, accepted_at_ms)
                                         .map_err(|error| ProductionSendError::Internal(
                                             format!(
                                                 "could not record durable ack obligation for {agent_id}: {error}"
                                             )
                                         ))?;
+                                    *send_ack_guard
+                                        .lock()
+                                        .map_err(|_| ProductionSendError::Internal(
+                                            "send ack guard slot poisoned".into()
+                                        ))? = Some(guard);
                                 }
                             }
                         }
@@ -2485,8 +2503,12 @@ impl GatewayApi for UnifiedGatewayApi {
                         });
                         let _ = dequeued_logs.report_projection(&projection);
                     },
-                )
-                .map_err(map_production_send_error);
+                );
+            // Dropping the guard after the complete dispatch scope mirrors
+            // Grok's Symbol.dispose send guard: it only recreates a missing
+            // direct-local obligation and never double-coalesces an existing one.
+            drop(send_ack_guard);
+            return send_result.map_err(map_production_send_error);
         }
         call_host_lane(&self.host_tx, method, args)
     }

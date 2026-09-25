@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io;
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use uuid::Uuid;
 
@@ -127,6 +127,40 @@ struct ReservationState {
     recorded: AckObligation,
 }
 
+/// Frozen Grok SendAckGuard translated to Rust RAII.
+///
+/// The guard is armed only after a durable user echo has been accepted. If the
+/// surrounding send path exits before the ordinary record_send call sticks, Drop
+/// recreates the obligation best-effort. An already-recorded obligation is never
+/// coalesced a second time by the guard.
+pub struct AckSendGuard {
+    obligations: Arc<AckObligations>,
+    agent_id: String,
+    accepted_at_ms: f64,
+    armed: bool,
+}
+
+impl AckSendGuard {
+    pub fn disarm(&mut self) {
+        self.armed = false;
+    }
+
+    pub fn is_armed(&self) -> bool {
+        self.armed
+    }
+}
+
+impl Drop for AckSendGuard {
+    fn drop(&mut self) {
+        if !self.armed || self.obligations.store.get(&self.agent_id).is_some() {
+            return;
+        }
+        let _ = self
+            .obligations
+            .record_send(&self.agent_id, self.accepted_at_ms);
+    }
+}
+
 pub struct AckObligations {
     store: SandAckObligationStore,
     reservations: Mutex<HashMap<String, ReservationState>>,
@@ -144,6 +178,20 @@ impl AckObligations {
 
     pub fn store(&self) -> &SandAckObligationStore {
         &self.store
+    }
+
+    pub fn arm_send_guard(
+        self: &Arc<Self>,
+        agent_id: &str,
+        accepted_at_ms: f64,
+        owes_ack: bool,
+    ) -> AckSendGuard {
+        AckSendGuard {
+            obligations: Arc::clone(self),
+            agent_id: agent_id.to_string(),
+            accepted_at_ms,
+            armed: owes_ack,
+        }
     }
 
     pub fn record_send(

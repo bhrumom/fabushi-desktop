@@ -13734,7 +13734,7 @@
         "source/host/tests/agent_error_telemetry_contract.rs"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust AckObligations is production-composed across accepted send and Runner delivery: durable sends record/coalesce, provider turns mint scoped tokens, SendMessage fulfills only after durable append, terminal paths retire tokens, watchdog interruption records interrupts, and agent deletion purges durable/in-memory state. Frozen per-Agent boot/idle redrive schedules and max-redrive loss semantics are preserved. Ack redrive carries authoritative recentUserMessages across Coordinator -> Host -> Runner; successful empty delivery emits sand.turn.empty_delivery. Failed ack-redrive Runner turns now emit the frozen sand.agent.error summary plus sand.agent.error.detail with source=ack_redrive, conversation/request identity, registered SAND agent error classification and bounded detail before the existing failure Tray/event path. This closes the frozen ack-obligation production contract."
+      "notes": "Rust AckObligations is production-composed across accepted send and Runner delivery: durable sends record/coalesce, provider turns mint scoped tokens, SendMessage fulfills only after durable append, terminal paths retire tokens, watchdog interruption records interrupts, and agent deletion purges durable/in-memory state. Frozen per-Agent boot/idle redrive schedules and max-redrive loss semantics are preserved. Ack redrive carries authoritative recentUserMessages across Coordinator -> Host -> Runner; successful empty delivery emits sand.turn.empty_delivery. Failed ack-redrive Runner turns now emit the frozen sand.agent.error summary plus sand.agent.error.detail with source=ack_redrive, conversation/request identity, registered SAND agent error classification and bounded detail before the existing failure Tray/event path. This closes the frozen ack-obligation production contract. Frozen armSendGuard/disarm/RAII disposal semantics are now explicitly ported: both shipping send paths arm after durable direct-local acceptance, ordinary record_send satisfies the guard, and exceptional early exit best-effort restores a missing obligation without incrementing an existing coalesced record."
     },
     {
       "referencePath": "source/host/extensions/transcript/agent-lifecycle.ts",
@@ -14589,7 +14589,8 @@
         "source/host/src/extensions/session/production_agent_store.rs",
         "source/host/src/runner/production_agent_checkpoint.rs",
         "source/host/src/extensions/transcript/box_request_entries.rs",
-        "source/host/src/extensions/transcript/send_group_fanout.rs"
+        "source/host/src/extensions/transcript/send_group_fanout.rs",
+        "source/host/src/extensions/transcript/ack_obligations.rs"
       ],
       "testEvidence": [
         "source/host/tests/transcript_production_composition_contract.rs",
@@ -14609,9 +14610,10 @@
         "source/host/tests/gateway_server_contract.rs",
         "source/host/tests/turn_settle_checkpoint_contract.rs",
         "source/host/tests/box_request_entries_contract.rs",
-        "source/host/tests/send_group_fanout_contract.rs"
+        "source/host/tests/send_group_fanout_contract.rs",
+        "source/host/tests/ack_obligations_contract.rs"
       ],
-      "notes": "Shipping Rust owns nonce admission/coalescing, durable Session echo, queue/watchdog, turn epochs, attachment batch identity, recovery sends, ack obligations, checkpoint settlement, BoxRequestEntries, and now real local non-Cursor group fanout through per-member Runner leases and durable room SendMessage projection. Final remains withheld for Cursor/remote/shared-room fanout, remaining ack/recovery guard composition, and full generated Agent media consumption."
+      "notes": "Shipping Rust owns nonce admission/coalescing, durable Session echo, queue/watchdog, turn epochs, attachment batch identity, recovery sends, ack obligations, checkpoint settlement, BoxRequestEntries, and real local non-Cursor group fanout through per-member Runner leases and durable room SendMessage projection. Frozen SendAckGuard is now production-wired as a Rust RAII guard around both routed admission and ordinary sendPrompt: after durable direct-local acceptance it best-effort recreates a missing obligation on early exit without double-coalescing an already recorded obligation. Final remains withheld for Cursor/remote/shared-room fanout and full generated Agent media consumption."
     },
     {
       "referencePath": "source/host/extensions/transcript/send-thread-stamping.ts",

@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::transcript::ack_obligations::{
@@ -15,6 +16,44 @@ fn temp_root(label: &str) -> std::path::PathBuf {
         "fabushi-ack-manager-{label}-{}-{suffix}",
         std::process::id()
     ))
+}
+
+#[test]
+fn send_ack_guard_backstops_early_exit_without_double_recording() {
+    let root = temp_root("send-guard");
+    let ack = Arc::new(AckObligations::new(&root));
+
+    {
+        let guard = ack.arm_send_guard("agent-a", 10.0, true);
+        assert!(guard.is_armed());
+    }
+    let recovered = ack.store().get("agent-a").expect("guard records missing obligation");
+    assert_eq!(recovered.created_at_ms, 10.0);
+    assert_eq!(recovered.coalesced_count, 1.0);
+
+    ack.store().clear("agent-a").expect("clear guarded obligation");
+    {
+        let guard = ack.arm_send_guard("agent-a", 20.0, true);
+        let recorded = ack.record_send("agent-a", 20.0).expect("ordinary send record");
+        assert!(recorded.created);
+        drop(guard);
+    }
+    let explicit = ack.store().get("agent-a").expect("explicit obligation");
+    assert_eq!(explicit.coalesced_count, 1.0);
+
+    ack.store().clear("agent-a").expect("clear explicit obligation");
+    {
+        let mut guard = ack.arm_send_guard("agent-a", 30.0, true);
+        guard.disarm();
+    }
+    assert!(ack.store().get("agent-a").is_none());
+
+    {
+        let _guard = ack.arm_send_guard("agent-a", 40.0, false);
+    }
+    assert!(ack.store().get("agent-a").is_none());
+
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
