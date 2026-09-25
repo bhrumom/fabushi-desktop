@@ -10356,12 +10356,22 @@
       "targetPath": "source/host/src/extensions/auto_review/sand_auto_review_awaiting.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "bfb05fdbf6c9f41eec6db3394d4db5dbe5eab8cc",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/auto_review/sand_auto_review_awaiting.rs",
+        "source/host/src/extensions/auto_review/mod.rs",
+        "source/host/src/extensions/mod.rs",
+        "source/host/src/runner/sand_auto_review.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_auto_review_awaiting_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port consumes the shipping SandAutoReviewEvent type and preserves frozen awaiting-card ordering: created approvals assert the newest Map value, duplicate ids update without reordering, resolved/expired approvals fall back to the previous pending reason, and only the final pending approval clears the auto-review tab. Final remains withheld because a production awaiting-state sink/session integration is not yet present."
     },
     {
       "referencePath": "source/host/extensions/auto-review/sand-backend-smart-mode-classifier-exec.ts",
