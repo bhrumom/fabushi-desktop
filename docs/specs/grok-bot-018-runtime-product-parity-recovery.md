@@ -1093,3 +1093,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - These modules reuse the existing Mahayana Runner `SandAutoReviewController`, classifier decision model, fingerprinting, summaries, expiry policy, and pending approval lifecycle. They do not create a second approval runtime.
 - The specialized contract `source/host/tests/sand_auto_review_specialized_contract.rs` covers off/shadow/enforce classification, approval resolution, browser/computer display binding, cloud image hashing and lifecycle fail-closed behavior, subagent risk targets, shared shell/MCP escalation, package-script definition hashing, and classifier abort propagation.
 - `scripts/finalize-rust-parity.mjs` may promote only these seven previously-planned rows after the full Host cargo suite succeeds and the target/test files both exist. Existing-needs-parity core Auto Review rows remain manual-review-only.
+
+
+### 2026-09-25 subagent runtime and adapter Rust ownership slice
+
+- Starting from exact HEAD `01a3071aa960b78c1d954ba126c8018d84c4ee0b`, the frozen `source/host/runner/subagent-runtime.ts` and `agent-adapters.ts` planned rows now have concrete Rust targets instead of placeholder mappings.
+- `subagent_runtime.rs` owns request-id/lineage generation, background task admission, pending-wake metadata, steer continuation, abort settlement, running/subagent projection, retained outline and computer-use usage/audit aggregation.
+- `agent_adapters.rs` owns request-context projection, single-computer-use admission, resume/running fences, launch-review settlement, background dispatch metadata and the text/thinking/usage/tool forwarding contract including unresolved shell/read/await detection.
+- `subagent_runtime_adapter_contract.rs` pins request identity, steer-vs-abort semantics, empty-output fallback, computer-use usage/audit projection, resume/window fencing, fail-closed request-context completeness and forwarding behavior.
+- Both manifest rows move only from `planned` to `existing-needs-parity`; they are intentionally not final until generated Agent proto/session wiring and live Host callbacks replace the remaining adapter-neutral projections.

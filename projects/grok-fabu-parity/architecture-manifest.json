@@ -15926,12 +15926,19 @@
       "targetPath": "source/host/src/runner/agent_adapters.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "72b1947632c8dbac744cce55ba88231111720e66",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/agent_adapters.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/subagent_runtime_adapter_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust now owns the frozen adapter protocol core: request lineage, request-context projection, single-computer-use session admission, resume/running fences, launch review settlement, background dispatch metadata, turn-usage forwarding and unresolved shell/read/await tool projection. Final remains withheld for the canonical generated RequestContext/AgentSkill/CursorRule protos, client-side-tool-v2 projection and live generated Agent InteractionListener/session wiring."
     },
     {
       "referencePath": "source/host/runner/agent-state.ts",
@@ -16699,12 +16706,19 @@
       "targetPath": "source/host/src/runner/subagent_runtime.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "b08c81d50f39c1886f01910f8178ebddbbf55cae",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/subagent_runtime.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/subagent_runtime_adapter_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust now owns the frozen subagent request-id/lineage helpers and the background subagent lifecycle state machine: dispatch, pending wake metadata, steer interruption/continuation, abort, terminal status, running projection, retained outline, computer-use usage projection and audit aggregation. Final remains withheld until the shipping generated Agent session owns this runtime and async runner sessions/Host callbacks are bound to these state transitions."
     },
     {
       "referencePath": "source/host/runner/system-prompt-assembly.ts",
