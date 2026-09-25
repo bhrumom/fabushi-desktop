@@ -15857,12 +15857,20 @@
       "targetPath": "source/host/src/process_crash_guard.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "15725a072efc7301e75c20e9611008f282d04444",
       "architecturalRole": "host/process-crash-guard",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/process_crash_guard.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/process_crash_guard_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust production adaptation of Grok's process crash guard. The shipping source/host/app process installs the guard at startup. Rust panics are reported through a replaceable reporter while reporter failures are swallowed; typed async/provider failures remain Result-based Host/Runner settlements rather than a JavaScript unhandled-rejection channel. The panic hook preserves normal Rust unwind ownership, so worker-thread panics are observable without introducing a second legacy runtime."
     },
     {
       "referencePath": "source/host/production-binding-providers.ts",

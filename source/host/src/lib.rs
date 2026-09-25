@@ -39,6 +39,7 @@ pub mod sha256;
 pub mod storage;
 pub mod host_diagnostics;
 pub mod host_initial_transcript_load;
+pub mod process_crash_guard;
 pub mod r#box;
 pub mod automations;
 pub mod workflows;

@@ -2872,6 +2872,11 @@ fn drain_ready_runtime_events(
 }
 
 fn main() {
+    let _process_crash_guard =
+        mahayana_host_runtime::process_crash_guard::install_process_crash_guards(
+            "sand-host",
+            None,
+        );
     let app_data_dir = default_unified_app_data_dir();
     if let Err(error) = ensure_managed_runtime_layout(&app_data_dir) {
         eprintln!(
