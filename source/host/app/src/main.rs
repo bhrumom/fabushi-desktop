@@ -125,7 +125,9 @@ use mahayana_host_runtime::transcript_mirror::generated_occurrence_codec::{
 use mahayana_host_runtime::transcript_mirror::production_provider::{
     ProductionTranscriptMirrorProvider,
 };
-use mahayana_host_runtime::runner::production_turn_run_shell_adapter::ProviderRetryEvent;
+use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
+    ProviderRetryEvent, ProviderRetryOutcome, ProviderRetryReport,
+};
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
 use mahayana_host_runtime::runner::prompt_collector_glue::project_provider_messages_for_turn;
 use mahayana_host_runtime::runner::sand_memory::MEMORY_RECENT_PROMPT_LIMIT;
@@ -1719,21 +1721,32 @@ fn start_routed_provider_task(
             );
             let retry_runtime = Arc::clone(&worker_transcript_runtime);
             let retry_agent_id = agent_id.clone();
-            let retry_observation = Arc::clone(&observation);
             let retry_sink: Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync> =
-                Arc::new(move |event: &ProviderRetryEvent| {
+                Arc::new(move |_event: &ProviderRetryEvent| {
                     retry_runtime.track_runner_activity_update(
                         &retry_agent_id,
                         &ActivityUpdate::Retrying,
                         started_at_ms(),
                     );
+                });
+            let retry_observation = Arc::clone(&observation);
+            let retry_report_sink: Arc<dyn Fn(&ProviderRetryReport) + Send + Sync> =
+                Arc::new(move |report: &ProviderRetryReport| {
                     if let Ok(observation) = retry_observation.lock() {
+                        let outcome = match report.outcome {
+                            ProviderRetryOutcome::Retried => "retried",
+                            ProviderRetryOutcome::Exhausted => "exhausted",
+                            ProviderRetryOutcome::GaveUpIneligible => "gave_up_ineligible",
+                        };
                         observation.report_turn_retry(serde_json::json!({
-                            "attempt": event.attempt,
-                            "nextAttempt": event.next_attempt,
-                            "delayMs": event.delay_ms,
-                            "resumeFromCheckpoint": event.resume_from_checkpoint,
-                            "watchdogExpired": event.watchdog_expired,
+                            "outcome": outcome,
+                            "attempt": report.attempt,
+                            "maxAttempts": report.max_attempts,
+                            "delayMs": report.delay_ms,
+                            "serverPaced": report.server_paced,
+                            "resumeFromCheckpoint": report.resume_from_checkpoint,
+                            "watchdogExpired": report.watchdog_expired,
+                            "error": report.error,
                         }));
                     }
                 });
@@ -1754,6 +1767,7 @@ fn start_routed_provider_task(
                     cancellation,
                     checkpoint_store,
                     retry_sink: Some(retry_sink),
+                    retry_report_sink: Some(retry_report_sink),
                     box_resources: Some(box_resources),
                     send_message_sink: Some(send_message_sink),
                     reaction_sink: Some(reaction_sink),
