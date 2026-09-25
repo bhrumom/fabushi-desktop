@@ -189,7 +189,7 @@ pub fn copy_locked_sqlite_db<F>(
 where
     F: FnMut(SqliteSnapshotFailure),
 {
-    copy_locked_sqlite_db_with_reader(src_path, dest_path, fs::read, on_failure)
+    copy_locked_sqlite_db_with_reader(src_path, dest_path, |path| fs::read(path), on_failure)
 }
 
 pub fn copy_locked_sqlite_db_with_reader<R, F>(
