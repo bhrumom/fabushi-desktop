@@ -1118,3 +1118,11 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The communicate port preserves Sand marker JSON, executing partial envelopes, success/error completion encoding, render fallback and exception conversion without inventing a second tool protocol.
 - The listener-card port preserves ordered platform probing, fail-soft connectivity lookup, one card per disconnected platform, display-name rendering and the frozen resumed-automatically user guidance.
 - `runner_communicate_listener_contract.rs` pins both surfaces. Both manifest rows advance only to `existing-needs-parity`: generated CommunicateUpdate/ToolCall proto wiring and live Automation listener/transcript production wiring remain required.
+
+
+### 2026-09-25 subagent management tool ownership slice
+
+- `sand-subagent-management-tools.ts` now has a Rust target that reads and mutates the existing `SubagentRuntime`; there is no parallel subagent registry.
+- The port preserves frozen elapsed-time rounding, compact and detailed status text, recent activity/transcript projection, not-running guidance, steer-review denial, MessageSubagent continuation and StopSubagent confirmation.
+- `sand_subagent_management_tools_contract.rs` proves the management surface against a live Rust `SubagentRuntime` fixture.
+- The row advances only to `existing-needs-parity`; final requires registration through generated communicate tools and live `reviewSteer` / toolCallId / InteractionHandler production wiring.

@@ -17,3 +17,5 @@ pub mod sand_computer_use_subagent;
 
 pub mod communicate_tool;
 pub mod listener_connect_cards;
+
+pub mod sand_subagent_management_tools;
