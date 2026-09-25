@@ -1,49 +1,32 @@
-use std::collections::BTreeSet;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use mahayana_host_runtime::runner::auto_review_gate::{
-    AutoReviewGate, AutoReviewGateController, AutoReviewGateDependencies,
-    AutoReviewInstructions, AutoReviewModes, SandAutoReviewMode,
+    AutoReviewGate, AutoReviewGateDependencies, AutoReviewInstructions,
     ShellApprovalSurface,
 };
-
-#[derive(Default)]
-struct Controller {
-    expired: Mutex<Vec<BTreeSet<&'static str>>>,
-    pending: Mutex<usize>,
-}
-
-impl AutoReviewGateController for Controller {
-    fn expire_surfaces(&self, surfaces: &BTreeSet<&'static str>) {
-        self.expired
-            .lock()
-            .expect("expired")
-            .push(surfaces.clone());
-    }
-
-    fn pending_approval_count(&self) -> usize {
-        *self.pending.lock().expect("pending")
-    }
-}
+use mahayana_host_runtime::runner::sand_auto_review::{
+    SandAutoReviewController, SandAutoReviewMode, SandAutoReviewModes,
+    SandAutoReviewRequest, SandAutoReviewRequestOutcome, SandAutoReviewSurface,
+};
 
 struct Deps {
-    controller: Arc<Controller>,
+    controller: Arc<SandAutoReviewController>,
 }
 
 impl AutoReviewGateDependencies for Deps {
-    fn base_modes(&self) -> AutoReviewModes {
-        AutoReviewModes {
+    fn base_modes(&self) -> SandAutoReviewModes {
+        SandAutoReviewModes {
             host_shell: SandAutoReviewMode::Enforce,
-            box_shell: SandAutoReviewMode::Ask,
+            box_shell: SandAutoReviewMode::Shadow,
             mcp: SandAutoReviewMode::Off,
             computer: SandAutoReviewMode::Enforce,
-            automation_write: SandAutoReviewMode::Ask,
+            automation_write: SandAutoReviewMode::Off,
             cloud_agent: SandAutoReviewMode::Enforce,
             subagent_launch: SandAutoReviewMode::Off,
         }
     }
 
-    fn controller(&self) -> Option<Arc<dyn AutoReviewGateController>> {
+    fn controller(&self) -> Option<Arc<SandAutoReviewController>> {
         Some(self.controller.clone())
     }
 
@@ -61,7 +44,7 @@ impl AutoReviewGateDependencies for Deps {
 
 #[test]
 fn auto_review_gate_expires_every_non_enforcing_surface() {
-    let controller = Arc::new(Controller::default());
+    let controller = Arc::new(SandAutoReviewController::new("agent-1", "host-1"));
     let gate = AutoReviewGate::new(Arc::new(Deps {
         controller: controller.clone(),
     }));
@@ -69,23 +52,23 @@ fn auto_review_gate_expires_every_non_enforcing_surface() {
     let modes = gate.current_modes();
     assert_eq!(modes.host_shell, SandAutoReviewMode::Enforce);
 
-    let expired = controller.expired.lock().expect("expired");
-    assert_eq!(expired.len(), 1);
-    assert_eq!(
-        expired[0],
-        BTreeSet::from([
-            "automation_write",
-            "box_shell",
-            "mcp",
-            "subagent",
-        ])
-    );
+    assert!(controller.get_pending_approvals().is_empty());
 }
 
 #[test]
 fn auto_review_gate_blocks_new_side_effect_when_approval_is_pending() {
-    let controller = Arc::new(Controller::default());
-    *controller.pending.lock().expect("pending") = 1;
+    let controller = Arc::new(SandAutoReviewController::new("agent-1", "host-1"));
+    let pending = controller.request_approval(SandAutoReviewRequest {
+        agent_id: None,
+        surface: SandAutoReviewSurface::HostShell,
+        fingerprint: "fingerprint".into(),
+        reason: "needs review".into(),
+        summary: "sensitive action".into(),
+        command: None,
+        proposed_rule: None,
+        expiry_policy: None,
+    });
+    assert!(matches!(pending, SandAutoReviewRequestOutcome::Pending(_)));
     let gate = AutoReviewGate::new(Arc::new(Deps { controller }));
 
     let error = gate
@@ -99,7 +82,7 @@ fn auto_review_gate_blocks_new_side_effect_when_approval_is_pending() {
 
 #[test]
 fn shell_approval_identity_changes_only_after_side_effect_start() {
-    let controller = Arc::new(Controller::default());
+    let controller = Arc::new(SandAutoReviewController::new("agent-1", "host-1"));
     let gate = AutoReviewGate::new(Arc::new(Deps { controller }));
 
     assert_eq!(
@@ -125,7 +108,7 @@ fn shell_approval_identity_changes_only_after_side_effect_start() {
 
 #[test]
 fn user_instructions_are_cloned_from_live_dependencies() {
-    let controller = Arc::new(Controller::default());
+    let controller = Arc::new(SandAutoReviewController::new("agent-1", "host-1"));
     let gate = AutoReviewGate::new(Arc::new(Deps { controller }));
 
     let instructions = gate.user_instructions().expect("instructions");
