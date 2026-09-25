@@ -16346,12 +16346,21 @@
       "targetPath": "source/host/src/runner/sand_auto_review.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "3d6b1dd5874a249f684f518649e9d61815409da4",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/sand_auto_review.rs",
+        "source/host/src/runner/auto_review_gate.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_auto_review_contract.rs",
+        "source/host/tests/auto_review_gate_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust now owns the frozen Auto-review controller core: off/shadow/enforce mode resolution, park-vs-TTL approval policy, bounded per-agent pending queue, sanitized approval payloads, user-message epoch/host-generation/expiry fences, resolve/expire/quiesce semantics, event subscription, settings-surface expiry and stable target fingerprints. auto_review_gate reuses these exact modes/controller rather than a parallel policy type. Final remains withheld until classifier execution, summaries/escalations and each shell/MCP/computer/browser/cloud/subagent surface are production-composed through this controller."
     },
     {
       "referencePath": "source/host/runner/sand-automation-auto-review.ts",
