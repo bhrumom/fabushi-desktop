@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
+use std::net::{Shutdown, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
@@ -1532,7 +1532,7 @@ fn serve_connection(
         );
     }
 
-    match request.path.as_str() {
+    let response = match request.path.as_str() {
         "/agent.v1.ControlService/Ping" => {
             let _ = PingRequest::decode(request.body.as_slice())
                 .map_err(|error| error.to_string())?;
@@ -1580,7 +1580,15 @@ fn serve_connection(
             b"Not Found",
             &[],
         ),
+    };
+    if response.is_ok() {
+        // HTTP/1.1 responses advertise Connection: close. Make the successful
+        // write-half close explicit instead of relying on TcpStream::drop so
+        // Darwin clients receive a FIN after the final response bytes rather
+        // than an intermittent ECONNRESET while reading the completed reply.
+        let _ = stream.shutdown(Shutdown::Write);
     }
+    response
 }
 
 struct HttpRequest {
