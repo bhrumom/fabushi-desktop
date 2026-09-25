@@ -134,6 +134,37 @@ fn classify_snapshot_error(
     }
 }
 
+
+pub fn classify_sqlite_snapshot_io_failure(
+    error: &io::Error,
+    operation: SqliteSnapshotOperation,
+    path_stage: SqliteSnapshotPathStage,
+) -> SqliteSnapshotFailure {
+    classify_snapshot_error(
+        &SnapshotError::Io(io::Error::new(error.kind(), error.to_string())),
+        operation,
+        path_stage,
+    )
+}
+
+pub fn classify_sqlite_snapshot_db_failure(
+    error: &rusqlite::Error,
+    operation: SqliteSnapshotOperation,
+    path_stage: SqliteSnapshotPathStage,
+) -> SqliteSnapshotFailure {
+    let owned = match error {
+        rusqlite::Error::SqliteFailure(inner, message) => {
+            rusqlite::Error::SqliteFailure(*inner, message.clone())
+        }
+        other => rusqlite::Error::InvalidParameterName(other.to_string()),
+    };
+    classify_snapshot_error(
+        &SnapshotError::Sqlite(owned),
+        operation,
+        path_stage,
+    )
+}
+
 pub fn sqlite_vacuum_into(
     src_path: impl AsRef<Path>,
     dest_path: impl AsRef<Path>,
