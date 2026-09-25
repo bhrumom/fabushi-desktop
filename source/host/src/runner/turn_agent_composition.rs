@@ -7,7 +7,7 @@ use crate::extensions::inference::provider_session::{
 
 use super::box_tool_access::{RunnerBoxResourcePort, RunnerBoxToolBridge};
 use super::production_turn_run_shell_adapter::{
-    ProviderRetryEvent, RoutedProviderCheckpointStore,
+    ProviderRetryEvent, ProviderRetryReport, RoutedProviderCheckpointStore,
 };
 use super::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedProviderRun, RoutedToolBridge,
@@ -37,6 +37,7 @@ pub struct TurnAgentComposition {
     cancellation: RoutedProviderCancellation,
     checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
+    retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
     box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     send_message_sink: Option<Arc<dyn SendMessageSink>>,
     reaction_sink: Option<Arc<dyn ReactionSink>>,
@@ -60,6 +61,7 @@ impl TurnAgentComposition {
             cancellation,
             checkpoint_store,
             retry_sink: None,
+            retry_report_sink: None,
             box_resources: None,
             send_message_sink: None,
             reaction_sink: None,
@@ -74,6 +76,14 @@ impl TurnAgentComposition {
         sink: Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>,
     ) -> Self {
         self.retry_sink = Some(sink);
+        self
+    }
+
+    pub fn with_retry_report_sink(
+        mut self,
+        sink: Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>,
+    ) -> Self {
+        self.retry_report_sink = Some(sink);
         self
     }
 
@@ -220,6 +230,7 @@ impl TurnAgentComposition {
                 cancellation: self.cancellation.clone(),
                 checkpoint_store: Arc::clone(&self.checkpoint_store),
                 retry_sink: self.retry_sink.clone(),
+                retry_report_sink: self.retry_report_sink.clone(),
             },
             on_text_delta,
         )
