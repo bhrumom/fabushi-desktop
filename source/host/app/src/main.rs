@@ -127,6 +127,7 @@ use mahayana_host_runtime::transcript_mirror::production_provider::{
 };
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::ProviderRetryEvent;
 use mahayana_host_runtime::runner::production_turn_input_projection::create_production_turn_input_projection;
+use mahayana_host_runtime::runner::prompt_collector_glue::project_provider_messages_for_turn;
 use mahayana_host_runtime::runner::sand_memory::MEMORY_RECENT_PROMPT_LIMIT;
 use mahayana_host_runtime::runner::system_prompt_assembly::append_memory_system_prompt;
 use mahayana_host_runtime::runner_production_bridge::{
@@ -1484,13 +1485,15 @@ fn start_routed_provider_task(
         stream_id.clone(),
         events.clone(),
     );
-    let mut messages = decode_provider_messages(&args)?;
+    let lifecycle_messages = decode_provider_messages(&args)?;
     let turn_input = create_production_turn_input_projection(
         &args,
         &stream_id,
-        &messages,
+        &lifecycle_messages,
     )
     .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+    let mut provider_messages =
+        project_provider_messages_for_turn(&args, &lifecycle_messages).messages;
     if let Some(prepared_session) = session_workers
         .prepare_existing_agent(&agent_id)
         .map_err(|error| {
@@ -1512,7 +1515,7 @@ fn start_routed_provider_task(
     let memory_recall = memory_store.recall(MEMORY_RECENT_PROMPT_LIMIT);
     let memory_location = memory_store.get_location().to_string_lossy().into_owned();
     append_memory_system_prompt(
-        &mut messages,
+        &mut provider_messages,
         &memory_recall,
         Some(&memory_location),
     );
@@ -1766,9 +1769,10 @@ fn start_routed_provider_task(
             let owner = ProductionTurnAgentOwner::new(composition)
                 .with_agent_state_checkpoint_sink(agent_state_checkpoint_sink);
             let mut runner = SandAgentRunner::new(owner);
-            let result = runner.run_routed_provider_with_options(
+            let result = runner.run_routed_provider_with_projected_messages(
                 &data_dir,
-                &messages,
+                &lifecycle_messages,
+                &provider_messages,
                 turn_input.options,
                 &mut on_text_delta,
             );

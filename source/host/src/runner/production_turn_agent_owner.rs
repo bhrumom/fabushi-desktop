@@ -73,6 +73,23 @@ impl ProductionTurnAgentOwner {
         options: TurnRunOptions,
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
+        self.run_routed_provider_with_projected_messages(
+            data_dir,
+            messages,
+            messages,
+            options,
+            on_text_delta,
+        )
+    }
+
+    pub fn run_routed_provider_with_projected_messages(
+        &mut self,
+        data_dir: &Path,
+        lifecycle_messages: &[ProviderMessage],
+        provider_messages: &[ProviderMessage],
+        options: TurnRunOptions,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+    ) -> Result<String, ProviderSessionError> {
         let Self {
             composition,
             shell,
@@ -83,9 +100,9 @@ impl ProductionTurnAgentOwner {
             shell,
             last_finished,
             agent_state_checkpoint_sink.as_deref(),
-            messages,
+            lifecycle_messages,
             options,
-            || composition.run(data_dir, messages, on_text_delta),
+            || composition.run(data_dir, provider_messages, on_text_delta),
         )
     }
 

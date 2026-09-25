@@ -64,6 +64,7 @@ pub mod turn_agent_composition;
 pub mod production_turn_agent_owner;
 pub mod production_agent_checkpoint;
 pub mod production_turn_input_projection;
+pub mod prompt_collector_glue;
 pub mod sand_agent_runner;
 pub mod system_prompt;
 pub mod system_prompt_assembly;

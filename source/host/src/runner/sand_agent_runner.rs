@@ -51,6 +51,23 @@ impl SandAgentRunner {
             .run_routed_provider_with_options(data_dir, messages, options, on_text_delta)
     }
 
+    pub fn run_routed_provider_with_projected_messages(
+        &mut self,
+        data_dir: &Path,
+        lifecycle_messages: &[ProviderMessage],
+        provider_messages: &[ProviderMessage],
+        options: TurnRunOptions,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+    ) -> Result<String, ProviderSessionError> {
+        self.owner.run_routed_provider_with_projected_messages(
+            data_dir,
+            lifecycle_messages,
+            provider_messages,
+            options,
+            on_text_delta,
+        )
+    }
+
     pub fn run_with<Execute>(
         &mut self,
         messages: &[ProviderMessage],
