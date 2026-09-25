@@ -1508,31 +1508,29 @@ fn serve_connection(
         .set_write_timeout(Some(Duration::from_secs(5)))
         .map_err(|error| error.to_string())?;
     let request = read_http_request(&mut stream)?;
-    if request.method != "POST" {
-        return write_http_response(
+    let response = if request.method != "POST" {
+        write_http_response(
             &mut stream,
             405,
             "text/plain; charset=utf-8",
             b"Method Not Allowed",
             &[],
-        );
-    }
-    if request
+        )
+    } else if request
         .headers
         .get("authorization")
         .map(String::as_str)
         != Some(format!("Bearer {auth_token}").as_str())
     {
-        return write_http_response(
+        write_http_response(
             &mut stream,
             401,
             "text/plain; charset=utf-8",
             b"Unauthorized",
             &[],
-        );
-    }
-
-    let response = match request.path.as_str() {
+        )
+    } else {
+        match request.path.as_str() {
         "/agent.v1.ControlService/Ping" => {
             let _ = PingRequest::decode(request.body.as_slice())
                 .map_err(|error| error.to_string())?;
@@ -1573,13 +1571,14 @@ fn serve_connection(
                 .map_err(|error| error.to_string())?;
             write_connect_stream(&mut stream, runtime, request)
         }
-        _ => write_http_response(
-            &mut stream,
-            404,
-            "text/plain; charset=utf-8",
-            b"Not Found",
-            &[],
-        ),
+            _ => write_http_response(
+                &mut stream,
+                404,
+                "text/plain; charset=utf-8",
+                b"Not Found",
+                &[],
+            ),
+        }
     };
     if response.is_ok() {
         // HTTP/1.1 responses advertise Connection: close. Make the successful
