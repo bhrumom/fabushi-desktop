@@ -263,6 +263,7 @@ fn automation_spend_guard_matches_frozen_grok_decisions_and_copy() {
     );
     assert_eq!(
         evaluate_automation_spend_guard(SpendGuardEvaluation {
+            last_viewed_at_ms: now - SPEND_GUARD_IDLE_TTL_MS - 2.0,
             unread_count: 0,
             fires_since_viewed_count: 0,
             nudged_at_ms: Some(now - SPEND_GUARD_PAUSE_DELAY_MS - 1.0),
