@@ -24,6 +24,10 @@ use mahayana_host_runtime::extensions::telemetry::search_index_health_telemetry:
 use mahayana_host_runtime::extensions::telemetry::send_trace_sampler::{
     NOT_RECORD, create_send_trace_sampler,
 };
+use mahayana_host_runtime::extensions::transcript::automation_snapshot::{
+    AutomationAction, diff_automation_action, snapshot_automations,
+};
+use mahayana_host_runtime::automations::automation::{AutomationConfig, AutomationRecord};
 use mahayana_host_runtime::extensions::transcript::sand_automation_failure::{
     is_background_automation_trigger, normalize_automation_error_kind,
     should_notify_automation_failure,
@@ -179,4 +183,64 @@ fn session_diagnostics_reporter_can_be_pinned_replaced_and_cleared() {
         metadata: BTreeMap::new(),
     });
     assert_eq!(seen.lock().expect("cleared diagnostic values").len(), 1);
+}
+
+
+#[test]
+fn automation_snapshot_matches_frozen_grok_diff_semantics() {
+    let record = AutomationRecord {
+        id: "morning-check".into(),
+        name: "Morning Check".into(),
+        prompt: "Check the inbox".into(),
+        trigger: json!({"type":"cron","schedule":"0 9 * * *"}),
+        is_enabled: true,
+        created_at: 1_000.0,
+        last_run_at: None,
+        raised_notices: Vec::new(),
+        schedule: "0 9 * * *".into(),
+        trigger_description: "Scheduled: 0 9 * * *".into(),
+        next_run_at: Some(2_000.0),
+        runs: Vec::new(),
+        file_path: std::path::PathBuf::from("/tmp/automation.json"),
+    };
+    let snapshots = snapshot_automations(std::slice::from_ref(&record));
+    let before = snapshots.get("morning-check").expect("snapshot");
+    assert_eq!(before.id, "morning-check");
+    assert_eq!(before.trigger_type, "cron");
+    assert_eq!(before.recorded_run_count, 0);
+
+    let mut updated = before.clone();
+    updated.prompt = "Check mail and calendar".into();
+    assert_eq!(
+        diff_automation_action(before, &updated),
+        Some(AutomationAction::Updated)
+    );
+
+    let mut disabled = before.clone();
+    disabled.is_enabled = false;
+    assert_eq!(
+        diff_automation_action(before, &disabled),
+        Some(AutomationAction::Disabled)
+    );
+
+    let mut enabled = disabled.clone();
+    enabled.is_enabled = true;
+    assert_eq!(
+        diff_automation_action(&disabled, &enabled),
+        Some(AutomationAction::Enabled)
+    );
+
+    let mut run_count_only = before.clone();
+    run_count_only.recorded_run_count = 9;
+    assert_eq!(diff_automation_action(before, &run_count_only), None);
+
+    let _shape_guard = AutomationConfig {
+        name: record.name,
+        prompt: record.prompt,
+        trigger: record.trigger,
+        is_enabled: record.is_enabled,
+        created_at: record.created_at,
+        last_run_at: record.last_run_at,
+        raised_notices: record.raised_notices,
+    };
 }

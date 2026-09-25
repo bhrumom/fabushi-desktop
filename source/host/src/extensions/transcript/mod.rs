@@ -34,6 +34,7 @@ pub mod profile_watch;
 pub mod box_handoff_resume;
 pub mod box_request_entries;
 pub mod workflow_commands;
+pub mod automation_snapshot;
 
 pub mod channel_delivery_unregistered_error;
 pub mod send_not_persisted_error;
