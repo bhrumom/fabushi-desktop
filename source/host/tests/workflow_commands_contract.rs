@@ -190,6 +190,7 @@ fn automation_backed_workflow_creation_is_owned_by_rust_session_store() {
         WorkflowRunNowPlan::Automation {
             agent_id: agent.id.clone(),
             automation_id: automation_id.to_string(),
+            automation_name: "Scheduled".to_string(),
         }
     );
     assert!(prepare_workflow_run_now(

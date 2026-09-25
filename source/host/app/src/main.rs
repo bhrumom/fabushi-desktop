@@ -3062,7 +3062,8 @@ mod tests {
         ProductionHostExtensions, ProductionRunnerRequestContextSource, UnifiedGatewayApi,
         decode_provider_messages,
         dispatch_box_environment_call, ensure_managed_runtime_layout, is_platform_request_json,
-        automation_terminal_from_event, project_forever_box_status, reaction_gateway_args,
+        AutomationExecutionResult, automation_terminal_from_event,
+        project_forever_box_status, reaction_gateway_args,
     };
     use mahayana_host_runtime::extensions::forever_box::BoxStatus;
     use mahayana_host_runtime::extensions::session::box_handoff_service::PendingHandoff;
