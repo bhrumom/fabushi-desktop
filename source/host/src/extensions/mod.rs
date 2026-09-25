@@ -49,3 +49,5 @@ pub mod notify_bus;
 pub mod host_upgrade;
 
 pub mod mcp;
+
+pub mod automations;
