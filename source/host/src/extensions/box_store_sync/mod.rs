@@ -5,3 +5,4 @@ pub mod object_store_port;
 pub mod box_store_vacuum_worker;
 pub mod sqlite_snapshot;
 pub mod box_store_manifest_format;
+pub mod request_coalescer;
