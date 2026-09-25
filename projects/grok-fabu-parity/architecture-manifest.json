@@ -16329,12 +16329,23 @@
       "targetPath": "source/host/src/runner/sand_auto_review_summaries.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "d6256a486199a1038624b54da15f82160743238c",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/sand_auto_review_summaries.rs",
+        "source/host/src/runner/sand_auto_review.rs",
+        "source/host/src/runner/auto_review_gate.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_auto_review_summaries_contract.rs",
+        "source/host/tests/sand_auto_review_contract.rs",
+        "source/host/tests/auto_review_gate_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust port covers the frozen summary/redaction helpers used by Runner auto-review surfaces: shell location/description, secret-safe MCP argument projection and destination hints, automation writes, cloud-agent lifecycle, subagent actions, browser actions, typed-text secrecy and computer text summaries. Dedicated contract tests pin representative frozen outputs and secret-redaction behavior. Kept non-final until the latest exact-HEAD Rust cargo gate passes this new evidence."
     },
     {
       "referencePath": "source/host/runner/sand-auto-review-tool-escalations.ts",
