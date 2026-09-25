@@ -27,7 +27,15 @@ use mahayana_host_runtime::extensions::telemetry::send_trace_sampler::{
 use mahayana_host_runtime::extensions::transcript::automation_snapshot::{
     AutomationAction, diff_automation_action, snapshot_automations,
 };
-use mahayana_host_runtime::automations::automation::{AutomationConfig, AutomationRecord};
+use mahayana_host_runtime::automations::automation::{AutomationRecord, AutomationRun};
+use mahayana_host_runtime::extensions::transcript::sand_automation_spend_guard::{
+    SPEND_GUARD_IDLE_TTL_MS, SPEND_GUARD_PAUSE_DELAY_MS, SPEND_GUARD_SNOOZE_MS,
+    SpendGuardAnswer, SpendGuardDecision, SpendGuardEvaluation,
+    build_spend_guard_nudge_widget, build_spend_guard_paused_widget,
+    count_automation_runs_since, evaluate_automation_spend_guard,
+    interpret_spend_guard_answer, is_spend_guard_card, render_spend_guard_answer_ack,
+    render_spend_guard_nudge_reminder,
+};
 use mahayana_host_runtime::extensions::transcript::sand_automation_failure::{
     is_background_automation_trigger, normalize_automation_error_kind,
     should_notify_automation_failure,
@@ -234,13 +242,128 @@ fn automation_snapshot_matches_frozen_grok_diff_semantics() {
     run_count_only.recorded_run_count = 9;
     assert_eq!(diff_automation_action(before, &run_count_only), None);
 
-    let _shape_guard = AutomationConfig {
-        name: record.name,
-        prompt: record.prompt,
-        trigger: record.trigger,
-        is_enabled: record.is_enabled,
-        created_at: record.created_at,
-        last_run_at: record.last_run_at,
-        raised_notices: record.raised_notices,
+}
+
+
+#[test]
+fn automation_spend_guard_matches_frozen_grok_decisions_and_copy() {
+    let now = 1_800_000_000_000.0;
+    let inactive = SpendGuardEvaluation {
+        now_ms: now,
+        last_viewed_at_ms: now - SPEND_GUARD_IDLE_TTL_MS - 1.0,
+        unread_count: 15,
+        fires_since_viewed_count: 0,
+        nudged_at_ms: None,
+        snoozed_until_ms: None,
+        opted_out: false,
     };
+    assert_eq!(
+        evaluate_automation_spend_guard(inactive),
+        SpendGuardDecision::Nudge
+    );
+    assert_eq!(
+        evaluate_automation_spend_guard(SpendGuardEvaluation {
+            unread_count: 0,
+            fires_since_viewed_count: 0,
+            nudged_at_ms: Some(now - SPEND_GUARD_PAUSE_DELAY_MS - 1.0),
+            ..inactive
+        }),
+        SpendGuardDecision::Pause
+    );
+    assert_eq!(
+        evaluate_automation_spend_guard(SpendGuardEvaluation {
+            unread_count: 0,
+            fires_since_viewed_count: 0,
+            nudged_at_ms: Some(now - 1000.0),
+            ..inactive
+        }),
+        SpendGuardDecision::AwaitingAck
+    );
+    assert_eq!(
+        evaluate_automation_spend_guard(SpendGuardEvaluation {
+            snoozed_until_ms: Some(now + SPEND_GUARD_SNOOZE_MS),
+            unread_count: 0,
+            fires_since_viewed_count: 0,
+            ..inactive
+        }),
+        SpendGuardDecision::Snoozed
+    );
+    assert_eq!(
+        evaluate_automation_spend_guard(SpendGuardEvaluation {
+            opted_out: true,
+            ..inactive
+        }),
+        SpendGuardDecision::OptedOut
+    );
+    assert_eq!(
+        evaluate_automation_spend_guard(SpendGuardEvaluation {
+            last_viewed_at_ms: now - 1000.0,
+            unread_count: 100,
+            ..inactive
+        }),
+        SpendGuardDecision::UserActive
+    );
+
+    assert_eq!(
+        interpret_spend_guard_answer("spend-guard:never-ask"),
+        Some(SpendGuardAnswer::OptOut)
+    );
+    assert_eq!(interpret_spend_guard_answer("unknown"), None);
+
+    let nudge = build_spend_guard_nudge_widget();
+    assert_eq!(
+        nudge.prompt,
+        "You've been away for a bit — keep my routines running?"
+    );
+    assert!(is_spend_guard_card(&nudge, SpendGuardAnswer::Keep.value()));
+    assert!(!is_spend_guard_card(&nudge, "spend-guard:resume"));
+    let paused = build_spend_guard_paused_widget();
+    assert!(is_spend_guard_card(
+        &paused,
+        SpendGuardAnswer::Resume.value()
+    ));
+    assert!(render_spend_guard_answer_ack(SpendGuardAnswer::Pause)
+        .contains("pause every one of your routines"));
+
+    let reminder = render_spend_guard_nudge_reminder(inactive, Some("UTC"));
+    assert!(reminder.contains("15 of your messages are unread"));
+    assert!(reminder.contains("pause ALL of this agent's routines"));
+
+    let record = AutomationRecord {
+        id: "daily".into(),
+        name: "Daily".into(),
+        prompt: "Do it".into(),
+        trigger: json!({"type":"cron","schedule":"@daily"}),
+        is_enabled: true,
+        created_at: 100.0,
+        last_run_at: Some(300.0),
+        raised_notices: Vec::new(),
+        schedule: "@daily".into(),
+        trigger_description: "Scheduled: @daily".into(),
+        next_run_at: None,
+        runs: vec![
+            AutomationRun {
+                id: "r1".into(),
+                trigger: "schedule".into(),
+                started_at: 200.0,
+                finished_at: Some(210.0),
+                status: "ok".into(),
+                detail: None,
+                event: None,
+                coalesced_run_ids: None,
+            },
+            AutomationRun {
+                id: "r2".into(),
+                trigger: "manual".into(),
+                started_at: 400.0,
+                finished_at: Some(410.0),
+                status: "ok".into(),
+                detail: None,
+                event: None,
+                coalesced_run_ids: None,
+            },
+        ],
+        file_path: std::path::PathBuf::from("/tmp/automation.json"),
+    };
+    assert_eq!(count_automation_runs_since(&[record], 250.0), 1);
 }
