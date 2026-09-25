@@ -44,3 +44,5 @@ pub mod channel_delivery_unregistered_error;
 pub mod send_not_persisted_error;
 pub mod sand_automation_failure;
 pub mod sand_automation_spend_guard;
+
+pub mod inline_image_materialization;
