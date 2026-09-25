@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::extensions::inference::provider_session::RoutedProvider;
 use crate::runner::box_tool_access::RunnerBoxResourcePort;
 use crate::runner::production_turn_run_shell_adapter::{
-    ProviderRetryEvent, RoutedProviderCheckpointStore,
+    ProviderRetryEvent, ProviderRetryReport, RoutedProviderCheckpointStore,
 };
 use crate::runner::routed_provider_runtime::{
     RoutedProviderCancellation, RoutedToolBridge, RunnerRequestContextSnapshot,
@@ -34,6 +34,7 @@ pub struct ProductionRunnerCompositionInput {
     pub cancellation: RoutedProviderCancellation,
     pub checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     pub retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
+    pub retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
     pub box_resources: Option<Arc<dyn RunnerBoxResourcePort>>,
     pub send_message_sink: Option<Arc<dyn SendMessageSink>>,
     pub reaction_sink: Option<Arc<dyn ReactionSink>>,
@@ -53,6 +54,9 @@ pub fn create_production_runner_composition(
     );
     if let Some(retry_sink) = input.retry_sink {
         composition = composition.with_retry_sink(retry_sink);
+    }
+    if let Some(retry_report_sink) = input.retry_report_sink {
+        composition = composition.with_retry_report_sink(retry_report_sink);
     }
     if let Some(action_audit) = input.action_audit {
         composition = composition.with_action_audit(RoutedMcpAuditConfig::new(
