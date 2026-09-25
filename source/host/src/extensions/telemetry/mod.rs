@@ -37,3 +37,4 @@ pub mod analytics_service;
 pub mod extension;
 pub mod host_telemetry_service;
 pub mod structured_log_telemetry;
+pub mod host_lifecycle_progress;

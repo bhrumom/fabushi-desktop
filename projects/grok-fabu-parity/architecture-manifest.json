@@ -13624,12 +13624,19 @@
       "targetPath": "source/host/src/extensions/telemetry/host_lifecycle_progress.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "00dea7b92df1a86031feb835a468e6afc018dd78",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/host_lifecycle_progress.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_lifecycle_progress_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports ordered phase ownership, exact-phase completion fence, watchdog re-arm, failed/stuck reports and non-negative rounded elapsed timing."
     },
     {
       "referencePath": "source/host/extensions/telemetry/host-telemetry-service.ts",
