@@ -56,7 +56,7 @@ use mahayana_host_runtime::extensions::transcript::box_handoff_resume::{
 };
 use mahayana_host_runtime::extensions::transcript::box_request_entries::resolve_box_request_entry;
 use mahayana_host_runtime::extensions::transcript::workflow_commands::{
-    WorkflowCommandError, WorkflowRunNowPlan, dispatch_workflow_command,
+    WorkflowCommandError, WorkflowRunNowPlan, dispatch_workflow_command_with_runtime,
     prepare_workflow_run_now,
 };
 use mahayana_host_runtime::extensions::transcript::automation_run_path::AutomationExecutionResult;
@@ -1958,9 +1958,13 @@ impl GatewayApi for UnifiedGatewayApi {
                 }
             }
         }
-        if let Some(result) =
-            dispatch_workflow_command(Arc::clone(&self.session_workers), method, &args)
-        {
+        let workflow_automation_runtime = self.transcript_manager.automation_runtime();
+        if let Some(result) = dispatch_workflow_command_with_runtime(
+            Arc::clone(&self.session_workers),
+            Some(workflow_automation_runtime.as_ref()),
+            method,
+            &args,
+        ) {
             return result.map_err(map_workflow_command_error);
         }
         if method == "promptAcceptanceStatus" {

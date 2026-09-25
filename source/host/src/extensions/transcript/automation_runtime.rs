@@ -199,6 +199,30 @@ impl AutomationRuntime {
         Ok(outcome)
     }
 
+    pub fn with_workflow_ui_mutation<T, Mutation>(
+        &self,
+        agent_id: &str,
+        mutation: Mutation,
+    ) -> Result<(T, Vec<AutomationLifecycleEvent>), String>
+    where
+        Mutation: FnOnce(&SandAgentSessionStore) -> Result<T, String>,
+    {
+        self.with_agent_mutation_lock(agent_id, || {
+            let session = SandAgentSessionStore::new(Arc::clone(&self.sessions));
+            let before = session.automation_store_for(agent_id)?.list_definitions();
+            self.sync_baseline(agent_id, &before);
+            let result = mutation(&session)?;
+            let after = session.automation_store_for(agent_id)?.list_definitions();
+            let events = self.record_changes(
+                agent_id,
+                &before,
+                &after,
+                AutomationLifecycleSource::WorkflowUi,
+            );
+            Ok((result, events))
+        })
+    }
+
     pub fn record_external_changes(
         &self,
         agent_id: &str,

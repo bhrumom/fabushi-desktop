@@ -119,3 +119,55 @@ fn runtime_manual_run_uses_durable_run_path_and_terminal_executor() {
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn workflow_ui_mutation_uses_same_automation_lifecycle_owner() {
+    let root = root("workflow-ui");
+    let workers = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let sessions = SandAgentSessionStore::new(Arc::clone(&workers));
+    let agent = sessions.create_session(None, "user", None).expect("agent");
+    let runtime = AutomationRuntime::new(Arc::clone(&workers));
+
+    let (workflows, events) = runtime
+        .with_workflow_ui_mutation(&agent.id, |session| {
+            session.create_agent_workflow(
+                &agent.id,
+                &mahayana_host_runtime::workflows::workflow_library::WorkflowSpec {
+                    name: "Scheduled workflow".into(),
+                    description: String::new(),
+                    body: "Check the queue".into(),
+                    trigger: Some(
+                        mahayana_host_runtime::workflows::workflow_library::WorkflowTrigger {
+                            schedule: "0 8 * * *".into(),
+                            is_enabled: true,
+                        },
+                    ),
+                    source_ref: None,
+                },
+            )
+        })
+        .expect("workflow mutation");
+    assert_eq!(workflows.len(), 1);
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].action, AutomationLifecycleAction::Created);
+    assert_eq!(
+        events[0].source,
+        mahayana_host_runtime::extensions::transcript::automation_runtime::AutomationLifecycleSource::WorkflowUi
+    );
+
+    let automation_id = workflows[0].id.clone();
+    let (_, events) = runtime
+        .with_workflow_ui_mutation(&agent.id, |session| {
+            session.remove_agent_workflow(&agent.id, &automation_id)
+        })
+        .expect("delete workflow");
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].action, AutomationLifecycleAction::Deleted);
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}

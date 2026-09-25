@@ -6,6 +6,7 @@ use crate::extensions::session::agent_session::{
     SandAgentSessionStore, WorkflowImportResponse,
 };
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::extensions::transcript::automation_runtime::AutomationRuntime;
 use crate::workflows::workflow_library::{WorkflowSpec, WorkflowTrigger};
 use crate::workflows::workflow_store::{WorkflowImportBatch, WorkflowRecord};
 
@@ -148,6 +149,15 @@ pub fn dispatch_workflow_command(
     method: &str,
     args: &Value,
 ) -> Option<Result<Value, WorkflowCommandError>> {
+    dispatch_workflow_command_with_runtime(workers, None, method, args)
+}
+
+pub fn dispatch_workflow_command_with_runtime(
+    workers: Arc<ProductionSessionWorkers>,
+    automation_runtime: Option<&AutomationRuntime>,
+    method: &str,
+    args: &Value,
+) -> Option<Result<Value, WorkflowCommandError>> {
     if !matches!(
         method,
         "getAgentWorkflows"
@@ -180,10 +190,10 @@ pub fn dispatch_workflow_command(
                 Ok(value) => value,
                 Err(error) => return Some(Err(error)),
             };
-            store
-                .create_agent_workflow(agent_id, &spec)
-                .map(workflow_records_value)
-                .map_err(WorkflowCommandError::Internal)
+            mutate_workflow_ui(&store, automation_runtime, agent_id, |session| {
+                session.create_agent_workflow(agent_id, &spec)
+            })
+            .map(workflow_records_value)
         }
         "updateAgentWorkflow" => {
             let agent_id = match agent_id(args) {
@@ -198,10 +208,10 @@ pub fn dispatch_workflow_command(
                 Ok(value) => value,
                 Err(error) => return Some(Err(error)),
             };
-            store
-                .update_agent_workflow(agent_id, workflow_id, &spec)
-                .map(workflow_records_value)
-                .map_err(WorkflowCommandError::Internal)
+            mutate_workflow_ui(&store, automation_runtime, agent_id, |session| {
+                session.update_agent_workflow(agent_id, workflow_id, &spec)
+            })
+            .map(workflow_records_value)
         }
         "setAgentWorkflowEnabled" => {
             let agent_id = match agent_id(args) {
@@ -234,10 +244,10 @@ pub fn dispatch_workflow_command(
                 Ok(value) => value,
                 Err(error) => return Some(Err(error)),
             };
-            store
-                .remove_agent_workflow(agent_id, workflow_id)
-                .map(workflow_records_value)
-                .map_err(WorkflowCommandError::Internal)
+            mutate_workflow_ui(&store, automation_runtime, agent_id, |session| {
+                session.remove_agent_workflow(agent_id, workflow_id)
+            })
+            .map(workflow_records_value)
         }
         "importAgentWorkflowText" => {
             let agent_id = match agent_id(args) {
@@ -279,6 +289,25 @@ pub fn dispatch_workflow_command(
         _ => unreachable!(),
     };
     Some(result)
+}
+
+fn mutate_workflow_ui<T, Mutation>(
+    store: &SandAgentSessionStore,
+    automation_runtime: Option<&AutomationRuntime>,
+    agent_id: &str,
+    mutation: Mutation,
+) -> Result<T, WorkflowCommandError>
+where
+    Mutation: FnOnce(&SandAgentSessionStore) -> Result<T, String>,
+{
+    if let Some(runtime) = automation_runtime {
+        runtime
+            .with_workflow_ui_mutation(agent_id, mutation)
+            .map(|(result, _events)| result)
+            .map_err(WorkflowCommandError::Internal)
+    } else {
+        mutation(store).map_err(WorkflowCommandError::Internal)
+    }
 }
 
 fn agent_id(args: &Value) -> Result<&str, WorkflowCommandError> {
