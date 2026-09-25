@@ -16310,12 +16310,19 @@
       "targetPath": "source/host/src/runner/sand_auto_review_classifier_run.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "42b2293f5352720dbfea66c1a216b0f969c0c65d",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/sand_auto_review_classifier_run.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_auto_review_classifier_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust now owns the frozen classifier execution contract: one measured attempt, suppressed tool-call-id logging, parent conversation/tool/mode/workspace projection, allow/block/reject mapping, trimmed proposed rules, frozen default block reason, abort propagation, and fail-closed handling for non-success/unknown/non-abort errors. Final remains withheld because the canonical generated SmartModeRiskTarget/ConversationMessage proto resource and executeSmartModeClassifierWithMeasurement implementation are not yet production-bound to this adapter."
     },
     {
       "referencePath": "source/host/runner/sand-auto-review-summaries.ts",
