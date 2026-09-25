@@ -10231,12 +10231,19 @@
       "targetPath": "source/host/src/extensions/attachments/link_preview_image_bounds.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "0950f34e97625109efd2d56a1d872bf1bd451c5c",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/attachments/link_preview_image_bounds.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/link_preview_image_bounds_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Rust ports data-URL decode, PNG/JPEG/GIF/ICO/WebP/HEIC dimensions, 24M decode-pixel guard and frozen resize targeting/fallback."
     },
     {
       "referencePath": "source/host/extensions/attachments/safe-link-preview-fetch.ts",
