@@ -1018,3 +1018,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - The turn-scoped durable checkpoint wrapper is used only when the shipping run carries a real \`messageId\`; background/redrive turns without an addressed transcript message retain the normal AgentStore checkpoint path.
 - Contract coverage proves both success and the failure invariant: a missing addressed user entry rejects the durable checkpoint and does not advance the Agent root.
 
+
+
+### 2026-09-25 box-exec close and Runner transient-retry recovery
+
+- Exact implementation commits in this slice: `5d1c786bfcf5ad6232ae64c817f58e0a23af3e81`, `261c24661ddb096b0bd10f06e688154efed4b652`, and `530a0b2ff4ac883f617b7fc93c2a434d3eae5fc8`.
+- The independent box-exec daemon now routes 401/405 responses through the same graceful write-half shutdown as successful Connect/HTTP responses, removing the Darwin ECONNRESET race that failed the exact-HEAD daemon contract. The disconnect/process-group contract now records the real shell PID with `$$` instead of the literal `$`, so it actually verifies process termination.
+- The shipping Runner transient classifier now covers the frozen Grok transport/deadline token families used by bounded retry, with executable cargo coverage in `source/host/tests/runner_contract.rs`.
+- On exact SHA `5d1c786bfcf5ad6232ae64c817f58e0a23af3e81`, the Rust workflow had already passed the independent Mahayana Coordinator contract, independent Grok box-exec daemon contract, shipping Host build, and box-exec supervisor before later commits moved HEAD. Those runs are slice evidence only, not final completion evidence.
+- Final parity remains blocked: the strict architecture gate is still skipped while the architecture manifest contains non-final rows, and exact-HEAD workflows must be re-established on the latest branch HEAD after this note.
