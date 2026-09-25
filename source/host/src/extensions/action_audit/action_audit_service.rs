@@ -31,7 +31,12 @@ pub struct AuditEvent{pub event_id:String,pub occurred_at_ms:u64,pub agent_id:St
 pub fn is_backend_forwardable(record:&AuditRecord)->bool{
  match &record.action{AuditAction::McpToolCall{transport,..}=>transport=="stdio",_=>true}
 }
-fn iso_ms(ms:u64)->String{let secs=ms/1000;let millis=ms%1000;format!("{secs}.{millis:03}Z")}
+fn iso_ms(ms:u64)->String{
+ let millis=i64::try_from(ms).unwrap_or(i64::MAX);
+ chrono::DateTime::<chrono::Utc>::from_timestamp_millis(millis)
+  .map(|value|value.to_rfc3339_opts(chrono::SecondsFormat::Millis,true))
+  .unwrap_or_else(||"1970-01-01T00:00:00.000Z".into())
+}
 pub fn local_audit_jsonl_line(record:&AuditRecord,event_id:&str)->String{
  let mut base=serde_json::Map::new();
  base.insert("ts".into(),serde_json::Value::String(iso_ms(record.occurred_at_ms)));
@@ -50,7 +55,11 @@ pub fn local_audit_jsonl_line(record:&AuditRecord,event_id:&str)->String{
 }
 
 type Enabled=Arc<dyn Fn()->bool+Send+Sync>;
-type SendBatch=Arc<dyn Fn(&[AuditEvent])->Result<(),String>+Send+Sync>;
+#[derive(Debug,Clone,PartialEq,Eq)]
+pub struct AuditSendError{pub message:String,pub retry_after_ms:Option<u64>}
+impl AuditSendError{pub fn new(message:impl Into<String>)->Self{Self{message:message.into(),retry_after_ms:None}}}
+pub fn flush_failure_backoff_ms(error:&AuditSendError)->u64{error.retry_after_ms.unwrap_or(0).max(AUDIT_FLUSH_FAILURE_BACKOFF_MS)}
+type SendBatch=Arc<dyn Fn(&[AuditEvent])->Result<(),AuditSendError>+Send+Sync>;
 type Now=Arc<dyn Fn()->u64+Send+Sync>;
 type Id=Arc<dyn Fn()->String+Send+Sync>;
 type AuditPath=Arc<dyn Fn(&str)->PathBuf+Send+Sync>;
@@ -98,6 +107,6 @@ fn persist(path:&Path,pending:&[AuditEvent]){if pending.is_empty(){let _=fs::rem
 fn flush_locked(st:&mut State,outbox:&Path,enabled:&dyn Fn()->bool,send:&dyn Fn(&[AuditEvent])->Result<(),String>,now:&dyn Fn()->u64){
  if !st.loaded{let prior=load(outbox);let room=MAX_PENDING_AUDIT_EVENTS.saturating_sub(prior.len());let tail=st.pending.iter().rev().take(room).cloned().collect::<Vec<_>>();st.pending=prior.into_iter().chain(tail.into_iter().rev()).collect();st.loaded=true}
  let t=now();if t<st.backoff_until_ms{return}if st.pending.is_empty()||!enabled(){persist(outbox,&st.pending);return}
- while !st.pending.is_empty(){let batch=st.pending.iter().take(MAX_AUDIT_BATCH_SIZE).cloned().collect::<Vec<_>>();match send(&batch){Ok(())=>{let ids=batch.iter().map(|e|e.event_id.clone()).collect::<HashSet<_>>();st.pending.retain(|e|!ids.contains(&e.event_id));},Err(_)=>{st.backoff_until_ms=t.saturating_add(AUDIT_FLUSH_FAILURE_BACKOFF_MS);persist(outbox,&st.pending);return}}}
+ while !st.pending.is_empty(){let batch=st.pending.iter().take(MAX_AUDIT_BATCH_SIZE).cloned().collect::<Vec<_>>();match send(&batch){Ok(())=>{let ids=batch.iter().map(|e|e.event_id.clone()).collect::<HashSet<_>>();st.pending.retain(|e|!ids.contains(&e.event_id));},Err(error)=>{st.backoff_until_ms=t.saturating_add(flush_failure_backoff_ms(&error));persist(outbox,&st.pending);return}}}
  persist(outbox,&st.pending);
 }
