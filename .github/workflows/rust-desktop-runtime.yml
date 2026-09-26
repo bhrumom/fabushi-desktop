@@ -171,6 +171,8 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - name: Install desktop dependencies
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+      - name: Build Grok-shaped Electron runtime
+        run: npm --prefix desktop run build:electron
       - name: Check Electron Host boundary
         run: |
           node --test desktop/electron/host-process.test.cjs desktop/electron/update-state.test.cjs
