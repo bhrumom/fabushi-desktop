@@ -412,3 +412,53 @@ fn parse_memory_date_ms(value: &str) -> Option<i64> {
 fn valid_memory_date(value: &str) -> bool {
     NaiveDate::parse_from_str(value, "%Y-%m-%d").is_ok()
 }
+
+pub fn get_user_memory_dir(sand_root: impl AsRef<Path>) -> PathBuf {
+    sand_root.as_ref().join("user-memory")
+}
+
+pub fn get_user_memory_shards_dir(sand_root: impl AsRef<Path>) -> PathBuf {
+    get_user_memory_dir(sand_root).join("agents")
+}
+
+pub fn get_user_memory_shard_dir(
+    sand_root: impl AsRef<Path>,
+    agent_id: &str,
+) -> PathBuf {
+    get_user_memory_shards_dir(sand_root).join(agent_id)
+}
+
+pub fn get_projects_root_dir(sand_root: impl AsRef<Path>) -> PathBuf {
+    sand_root.as_ref().join("projects")
+}
+
+pub fn get_project_dir(
+    sand_root: impl AsRef<Path>,
+    slug: &str,
+) -> PathBuf {
+    get_projects_root_dir(sand_root).join(slug)
+}
+
+pub fn get_project_memory_shards_dir(
+    sand_root: impl AsRef<Path>,
+    slug: &str,
+) -> PathBuf {
+    get_project_dir(sand_root, slug).join("memory").join("agents")
+}
+
+pub fn get_project_memory_shard_dir(
+    sand_root: impl AsRef<Path>,
+    slug: &str,
+    agent_id: &str,
+) -> PathBuf {
+    get_project_memory_shards_dir(sand_root, slug).join(agent_id)
+}
+
+pub fn project_dir_exists(
+    sand_root: impl AsRef<Path>,
+    slug: &str,
+) -> bool {
+    fs::metadata(get_project_dir(sand_root, slug))
+        .map(|metadata| metadata.is_dir())
+        .unwrap_or(false)
+}
