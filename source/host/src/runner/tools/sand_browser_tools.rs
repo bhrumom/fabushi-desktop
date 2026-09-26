@@ -9,11 +9,15 @@ use serde_json::{Map, Value, json};
 use crate::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
+use crate::runner::box_tool_access::{
+    RunnerBoxReadRequest, RunnerBoxResourcePort, RunnerBoxShellRequest,
+    RunnerBoxWriteRequest,
+};
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
 
 use super::sand_browser_driver_source::{
     SAND_BROWSER_DRIVER_BOX_DIR, SAND_BROWSER_DRIVER_BOX_PATH,
-    SAND_BROWSER_RESULT_MARKER,
+    SAND_BROWSER_DRIVER_SOURCE, SAND_BROWSER_RESULT_MARKER,
 };
 
 pub const BOX_CDP_PORT_BASE: u32 = 9_222;
@@ -363,6 +367,181 @@ pub struct BrowserDriverError {
 impl BrowserDriverError {
     pub fn new(message: impl Into<String>) -> Self {
         Self { message: message.into() }
+    }
+}
+
+#[derive(Clone)]
+pub struct ProductionBrowserToolExecutor {
+    box_resources: Arc<dyn RunnerBoxResourcePort>,
+    default_view_id: String,
+}
+
+impl ProductionBrowserToolExecutor {
+    pub fn new(
+        box_resources: Arc<dyn RunnerBoxResourcePort>,
+        default_view_id: impl Into<String>,
+    ) -> Self {
+        Self {
+            box_resources,
+            default_view_id: default_view_id.into(),
+        }
+    }
+
+    fn ensure_driver_uploaded(&self, tool_call_id: &str) -> Result<(), ProviderSessionError> {
+        self.ensure_shell_success(
+            self.box_resources.execute_shell(RunnerBoxShellRequest {
+                command: format!("mkdir -p {SAND_BROWSER_DRIVER_BOX_DIR}"),
+                working_directory: "/workspace".into(),
+                tool_call_id: format!("{tool_call_id}:browser-driver-dir"),
+            })?,
+            "prepare browser driver directory",
+        )?;
+        self.box_resources.execute_write(RunnerBoxWriteRequest {
+            path: SAND_BROWSER_DRIVER_BOX_PATH.into(),
+            data: SAND_BROWSER_DRIVER_SOURCE.as_bytes().to_vec(),
+            tool_call_id: format!("{tool_call_id}:browser-driver-upload"),
+        })
+    }
+
+    fn ensure_shell_success(
+        &self,
+        result: Value,
+        operation: &str,
+    ) -> Result<(), ProviderSessionError> {
+        if result.get("kind").and_then(Value::as_str) != Some("success") {
+            return Err(ProviderSessionError::Tool(format!(
+                "Could not {operation}: {result}"
+            )));
+        }
+        if result
+            .get("exitCode")
+            .and_then(Value::as_i64)
+            .is_some_and(|code| code != 0)
+        {
+            return Err(ProviderSessionError::Tool(format!(
+                "Could not {operation}: shell exited non-zero ({result})"
+            )));
+        }
+        Ok(())
+    }
+
+    fn read_text_file(
+        &self,
+        path: &str,
+        tool_call_id: &str,
+    ) -> Result<String, ProviderSessionError> {
+        let result = self.box_resources.execute_read(RunnerBoxReadRequest {
+            path: path.into(),
+            tool_call_id: tool_call_id.into(),
+            offset: None,
+            limit: None,
+            encoding_hint: Some("utf-8".into()),
+        })?;
+        if result.get("kind").and_then(Value::as_str) != Some("success") {
+            return Err(ProviderSessionError::Tool(format!(
+                "Browser driver result could not be read: {result}"
+            )));
+        }
+        result
+            .pointer("/output/content")
+            .and_then(Value::as_str)
+            .map(str::to_string)
+            .ok_or_else(|| ProviderSessionError::Tool(
+                "Browser driver result file was not textual".into(),
+            ))
+    }
+
+    fn read_binary_file(
+        &self,
+        path: &str,
+        tool_call_id: &str,
+    ) -> Result<Option<Vec<u8>>, ProviderSessionError> {
+        let result = self.box_resources.execute_read(RunnerBoxReadRequest {
+            path: path.into(),
+            tool_call_id: tool_call_id.into(),
+            offset: None,
+            limit: None,
+            encoding_hint: None,
+        })?;
+        if result.get("kind").and_then(Value::as_str) != Some("success") {
+            return Ok(None);
+        }
+        if let Some(values) = result.pointer("/output/data").and_then(Value::as_array) {
+            let mut bytes = Vec::with_capacity(values.len());
+            for value in values {
+                let Some(raw) = value.as_u64().and_then(|raw| u8::try_from(raw).ok()) else {
+                    return Ok(None);
+                };
+                bytes.push(raw);
+            }
+            return Ok((!bytes.is_empty()).then_some(bytes));
+        }
+        if let Some(encoded) = result.pointer("/output/content").and_then(Value::as_str) {
+            if let Ok(bytes) = base64::engine::general_purpose::STANDARD.decode(encoded) {
+                return Ok((!bytes.is_empty()).then_some(bytes));
+            }
+        }
+        Ok(None)
+    }
+}
+
+impl BrowserToolExecutor for ProductionBrowserToolExecutor {
+    fn execute(
+        &self,
+        spec: &BrowserToolSpec,
+        args: &Map<String, Value>,
+        tool_call_id: &str,
+    ) -> Result<BrowserDriverOutput, ProviderSessionError> {
+        self.ensure_driver_uploaded(tool_call_id)?;
+        let window_index = self.box_resources.browser_window_index()?;
+        let invocation = build_browser_driver_invocation(
+            window_index,
+            &self.default_view_id,
+            spec.op,
+            tool_call_id,
+            args,
+            spec.skip_screenshot,
+        );
+        let result_path = format!(
+            "{SAND_BROWSER_DRIVER_BOX_DIR}/result-{}.txt",
+            sanitize_for_box_path(tool_call_id)
+        );
+        let shell_command = format!(
+            "rm -f {result_path} && {} > {result_path} 2>&1",
+            invocation.shell_command
+        );
+        self.ensure_shell_success(
+            self.box_resources.execute_shell(RunnerBoxShellRequest {
+                command: shell_command,
+                working_directory: "/workspace".into(),
+                tool_call_id: format!("{tool_call_id}:browser-driver-run"),
+            })?,
+            "run browser driver",
+        )?;
+        let stdout = self.read_text_file(
+            &result_path,
+            &format!("{tool_call_id}:browser-driver-result"),
+        )?;
+        let response = parse_driver_response(&stdout).ok_or_else(|| {
+            ProviderSessionError::Tool(
+                "Browser driver produced no parseable result".into(),
+            )
+        })?;
+
+        let image_b64 = if response.ok && response.screenshot == Some(true) {
+            match invocation.screenshot_path.as_deref() {
+                Some(path) => self
+                    .read_binary_file(
+                        path,
+                        &format!("{tool_call_id}:browser-driver-screenshot"),
+                    )?
+                    .map(|bytes| base64::engine::general_purpose::STANDARD.encode(bytes)),
+                None => None,
+            }
+        } else {
+            None
+        };
+        Ok(render_driver_response(&response, image_b64))
     }
 }
 
