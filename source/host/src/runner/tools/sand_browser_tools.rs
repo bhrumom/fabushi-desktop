@@ -446,7 +446,7 @@ fn browser_tool_definition(spec: &BrowserToolSpec) -> RoutedToolDefinition {
     for (key, values) in &spec.schema.enum_values {
         properties.insert((*key).to_string(), json!({"type":"string","enum":values}));
     }
-    properties.entry("viewId".into()).or_insert_with(|| json!({"type":"string"}));
+    properties.entry("viewId").or_insert_with(|| json!({"type":"string"}));
     RoutedToolDefinition {
         name: spec.name.into(),
         provider_identifier: "fabushi-runner".into(),
