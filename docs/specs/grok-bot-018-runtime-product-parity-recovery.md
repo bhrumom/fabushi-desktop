@@ -1395,3 +1395,12 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added the first-party Runner `CloudAgent` tool with the frozen action surface: launch/list/models/get/dump/watch/reply/rename/cancel/archive/unarchive/delete/list_artifacts. Destructive confirmation, cancellation, model validation, saved/private-worker environments and managed-id fencing are preserved.
 - Launch/reply image inputs now reach the already-audited `load_cloud_agent_images` implementation in the shipping path. `/workspace` bytes come from the existing ForeverBox Runner Read port and must be binary data; dump output uses the existing Box Write port.
 - The generated CloudAgent conversation-to-trace converter remains an explicit production Host adapter, matching frozen `ProductionExtensionHostAdapters`. The current binding fails closed for dump instead of inventing a trace shape. Auto-review and reviving cloud-agent watcher ownership are also still explicit non-final dependencies, so the CloudAgent tool/extension rows remain `existing-needs-parity`; the image-loader row is now final.
+
+
+### 2026-09-26 Memory agent-state ownership slice
+
+- Starting implementation HEAD: `646e2620e010a5e2f9dc4658ad96735c97c4ac6e`.
+- Added canonical user/project memory shard path helpers in `source/host/src/extensions/memory/memory_service.rs` and restored `source/host/extensions/memory/agent-state.ts` as a Rust Memory-extension owner at `source/host/src/extensions/memory/agent_state.rs` rather than extending the Runner placeholder.
+- The owner now covers explicit agent/user/project memory writes/removals with project-membership fencing, routine CRUD, workflow CRUD, profile/settings mutation, channel disconnect, project create/join/leave, and avatar install/clear through the existing canonical Host stores.
+- Added `source/host/tests/agent_state_contract.rs` for memory-scope routing/fencing and routine/workflow/profile/settings/channel/avatar behavior. The manifest is intentionally only `existing-needs-parity`; final status requires the shipping sand-state/update_state tool to delegate to this owner and an exact-HEAD CI pass.
+- Commits in this slice: `30c5fbc4ac267165a6e122f436307888408e37dc`, `1345de2e9705583e4bdbd1a1f0d1a298e6a0fab2`, `4b0efcc836e1bd960b4bdb4ef1355159945b1e30`, `7ca2f6e126d476f1d499915e647fda3b6adfd140`, `0c27b1e42f00c3fc02c589d39a75597aa08231f1`, `8a78c3890205e6f00f148844b4c5102955d487d0`, and `ca8ed60d25256eabc33c398e639acaf5855e7ea3`.
