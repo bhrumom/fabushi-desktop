@@ -11186,12 +11186,20 @@
       "targetPath": "source/host/src/extensions/cloud_agents/cloud_agent_poll_loop.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "9042250d24cdeec5ad8b0cb429e065687d06d799",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cloud_agents/cloud_agent_poll_loop.rs",
+        "source/host/src/extensions/cloud_agents/model_catalog_fetch.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/cloud_agent_poll_loop_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Final Rust adaptation: preserves frozen status normalization, included-limit text, diff/watch result formatting, environment id/name resolution and listing notes, five-minute model catalog TTL, fail-open five-minute team-admin policy refresh, completion polling cadence/max-wait/RPC timeout, restart grace and rate-limit retry+jitter. Rust uses an injected blocking poll/sleep boundary suitable for Host worker execution rather than a JS PollingPolicy; parent manager/extension composition remains tracked separately."
     },
     {
       "referencePath": "source/host/extensions/cloud-agents/cloud-agent-request-composition.ts",

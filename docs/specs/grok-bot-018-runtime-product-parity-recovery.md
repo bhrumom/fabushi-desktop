@@ -1372,3 +1372,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added a real Rust `AiService/AvailableModels` Host client on the existing authenticated Cursor unary transport. The request encodes exactly the frozen CloudAgent catalog flags: model parameters on, Markdown off, USER_AVAILABLE scope.
 - Added a generated-wire decoder for the subset consumed by the frozen model catalog: model id/display name/aliases, boolean and enum parameter definitions/values, and parameter variants.
 - Added byte-level request and response contract tests. Model-catalog fetch is final independently; the five-minute catalog cache and CloudAgent manager/extension lifecycle remain owned by their separate poll-loop/service/extension mappings.
+
+
+### 2026-09-26 CloudAgent poll/cache cutover
+
+- Ported the frozen CloudAgent polling/cache layer to Rust: status normalization, included-limit projection, watch result/diff formatting, saved-environment id/name resolution and environment-list hints.
+- Added the five-minute model-catalog cache, five-minute fail-open team-admin policy cache with background refresh, and completion polling with 10s cadence, 30s RPC timeout, five-hour max wait, three-minute restart grace and rate-limit retry+jitter.
+- Polling is exposed behind injected clock/sleep/fetch boundaries so deterministic contracts can cover restart/rate-limit/terminal behavior while the production CloudAgent manager remains responsible for running it off the request lane.
