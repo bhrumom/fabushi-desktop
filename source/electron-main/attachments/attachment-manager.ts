@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { getSandRootDir, reanchorSandPath } from "../../host/host-paths.js";
+import { getSandRootDir, reanchorSandPath } from "../../shared/node/sand-data-root.js";
 import { isPathWithin } from "../../shared/node/paths.js";
 
 export const STAGING_DIRNAME = "attachment-staging";
