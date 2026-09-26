@@ -58,16 +58,16 @@
       "targetBlobSha": "c9b7b30158ab2fa9cde1ac62794115c7ed8efe39",
       "behavioralEvidence": [
         "source/electron-preload/preload.ts",
-        "desktop/electron/preload.cjs",
-        "desktop/electron/production-renderer-bridge.cjs"
+        "source/electron-preload/runtime/primary.ts",
+        "desktop/scripts/build-electron-runtime.mjs"
       ],
       "testEvidence": [
         "source/electron-preload/preload-boundaries.test.ts",
-        "desktop/electron/production-renderer-bridge.test.cjs",
+        "source/electron-preload/coordinator-port-bridge.test.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. This keeps binary conversion and native response-shape adaptation in the preload bridge instead of leaking native IPC details into the React renderer."
+      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",

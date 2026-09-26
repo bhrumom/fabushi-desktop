@@ -10,7 +10,6 @@
   "main": "dist/electron-main/main.cjs",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 1420",
-    "prebuild:renderer": "node scripts/prepare-desktop-window-branding.mjs",
     "typecheck": "tsc --noEmit",
     "build:renderer": "tsc --noEmit && vite build && node scripts/check-desktop-bundle.mjs",
     "build:host": "cargo build --release --manifest-path ../source/host/app/Cargo.toml --bin mahayana-app-host && cargo build --release --manifest-path ../source/node-agent-coordinator/Cargo.toml && cargo build --release --manifest-path ../source/box-exec-daemon/Cargo.toml --bin box-exec-daemon && node scripts/stage-host.mjs release",
