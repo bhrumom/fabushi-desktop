@@ -3,6 +3,7 @@ export const COORDINATOR_MAIN_METHOD_TABLE = {
   readAttachmentImage: { args: "object" },
   readAttachmentText: { args: "object" },
   readAttachmentChunk: { args: "object" },
+  fetchLinkMetadata: { args: "object" },
   getHostSettings: { args: "none" },
   setHostSettings: { args: "object" },
   setBoxSecrets: { args: "object" },
