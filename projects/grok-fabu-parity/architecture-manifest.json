@@ -10476,24 +10476,51 @@
       "targetPath": "source/host/src/extensions/auto_review/auto_review_service.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "b977baf6c2ec2996654e6c31d5398bed9d9bd022",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/auto_review/auto_review_service.rs",
+        "source/host/src/extensions/auto_review/sand_auto_review_awaiting.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/src/runner/sand_auto_review.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/auto_review_service_contract.rs",
+        "source/host/tests/sand_auto_review_contract.rs",
+        "source/host/tests/sand_auto_review_awaiting_contract.rs",
+        "source/host/tests/settings_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Host service now owns per-agent controller binding, durable approval-card projection, durable awaiting-user state, duplicate settlement memory, stale-card retirement, boot stale sweep, mode projection, update sink, and telemetry sink. Final remains withheld until the shipping Host entrypoint registers this extension and the real backend smart-mode classifier plus Runner tool preflights are wired end-to-end."
     },
     {
       "referencePath": "source/host/extensions/auto-review/extension.ts",
       "targetPath": "source/host/src/extensions/auto_review/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "95280ba8db524dfe8be2047edd3ecb0bbb976a52",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/auto_review/extension.rs",
+        "source/host/src/extensions/auto_review/auto_review_service.rs",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/src/extensions/experiments/extension.rs",
+        "source/host/src/extensions/extension_ids.generated.rs",
+        "source/host/src/extensions/registry.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/auto_review_service_contract.rs",
+        "source/host/tests/settings_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-port",
+      "notes": "Rust Host extension declares the frozen Auth/Experiments/Settings/Telemetry/Transcript dependency boundary and reads persisted auto-review enablement plus local mode override. Final remains withheld until production Host registration/start-stop, renderer approval RPC/update delivery, classifier backend wiring, and Runner preflight composition are shipping."
     },
     {
       "referencePath": "source/host/extensions/auto-review/sand-auto-review-awaiting.ts",
@@ -10506,16 +10533,19 @@
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/auto_review/sand_auto_review_awaiting.rs",
-        "source/host/src/extensions/auto_review/mod.rs",
-        "source/host/src/extensions/mod.rs",
+        "source/host/src/extensions/auto_review/auto_review_service.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/agent_db_serde.rs",
         "source/host/src/runner/sand_auto_review.rs"
       ],
       "testEvidence": [
         "source/host/tests/sand_auto_review_awaiting_contract.rs",
+        "source/host/tests/auto_review_service_contract.rs",
+        "source/host/tests/session_production_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-port",
-      "notes": "Rust port consumes the shipping SandAutoReviewEvent type and preserves frozen awaiting-card ordering: created approvals assert the newest Map value, duplicate ids update without reordering, resolved/expired approvals fall back to the previous pending reason, and only the final pending approval clears the auto-review tab. Final remains withheld because a production awaiting-state sink/session integration is not yet present."
+      "notes": "Rust port preserves frozen awaiting-card ordering and now has a durable ProductionSessionWorkers sink consumed by AutoReviewService. Final remains withheld until AutoReviewExtension is started by the shipping Host entrypoint and the live Runner path binds its controller."
     },
     {
       "referencePath": "source/host/extensions/auto-review/sand-backend-smart-mode-classifier-exec.ts",
