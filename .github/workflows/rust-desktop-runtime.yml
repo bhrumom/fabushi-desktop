@@ -9,8 +9,8 @@ on:
       - 'projects/grok-fabu-parity/architecture-manifest.json'
       - 'projects/grok-fabu-parity/architecture-semantic-adaptations.json'
       - 'scripts/check-grok-architecture.mjs'
-      - 'third_party/mahayana/mahayana-rs/**'
-      - 'third_party/mahayana/codex-rs/**'
+      - 'source/mahayana/mahayana-rs/**'
+      - 'source/mahayana/codex-rs/**'
       - 'native/mahayana-messaging/**'
       - '.github/workflows/rust-desktop-runtime.yml'
       - 'RUST_RUNTIME_SOURCE.md'
@@ -25,8 +25,8 @@ on:
       - 'projects/grok-fabu-parity/architecture-manifest.json'
       - 'projects/grok-fabu-parity/architecture-semantic-adaptations.json'
       - 'scripts/check-grok-architecture.mjs'
-      - 'third_party/mahayana/mahayana-rs/**'
-      - 'third_party/mahayana/codex-rs/**'
+      - 'source/mahayana/mahayana-rs/**'
+      - 'source/mahayana/codex-rs/**'
       - 'native/mahayana-messaging/**'
       - '.github/workflows/rust-desktop-runtime.yml'
       - 'RUST_RUNTIME_SOURCE.md'
@@ -69,7 +69,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            third_party/mahayana/mahayana-rs -> target
+            source/mahayana/mahayana-rs -> target
             source/host -> target
             source/host/app -> target
             source/node-agent-coordinator -> target
@@ -79,10 +79,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f third_party/mahayana/mahayana-rs/Cargo.toml
-          test -f third_party/mahayana/codex-rs/Cargo.toml
+          test -f source/mahayana/mahayana-rs/Cargo.toml
+          test -f source/mahayana/codex-rs/Cargo.toml
           test -f native/mahayana-messaging/Cargo.toml
-          cargo metadata --no-deps --format-version 1 --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml >/dev/null
+          cargo metadata --no-deps --format-version 1 --manifest-path source/mahayana/mahayana-rs/Cargo.toml >/dev/null
       - name: Check Grok-aligned shipping Mahayana Host
         shell: bash
         run: cargo check --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml
@@ -104,13 +104,13 @@ jobs:
         run: cargo test --manifest-path source/host/Cargo.toml
       - name: Test Grok prompt attachment projection contract
         shell: bash
-        run: cargo test -p mahayana-feature-host grok_send_prompt_projects_attachment_context_into_user_transcript_event --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml
+        run: cargo test -p mahayana-feature-host grok_send_prompt_projects_attachment_context_into_user_transcript_event --manifest-path source/mahayana/mahayana-rs/Cargo.toml
       - name: Test human Computer takeover lifecycle
         shell: bash
-        run: cargo test -p mahayana-feature-host computer_takeover_acquires_and_releases_a_human_control_lease --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml
+        run: cargo test -p mahayana-feature-host computer_takeover_acquires_and_releases_a_human_control_lease --manifest-path source/mahayana/mahayana-rs/Cargo.toml
       - name: Test ConversationActor and CapabilityBroker ownership
         shell: bash
-        run: cargo test -p mahayana-runtime --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml
+        run: cargo test -p mahayana-runtime --manifest-path source/mahayana/mahayana-rs/Cargo.toml
 
   platform-worker:
     runs-on: ubuntu-24.04
@@ -138,11 +138,11 @@ jobs:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: third_party/mahayana/mahayana-rs -> target
+          workspaces: source/mahayana/mahayana-rs -> target
           shared-key: mahayana-platform-worker-wasm-1.97.1
       - name: Check Mahayana platform Worker
         shell: bash
-        run: cargo check --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path third_party/mahayana/mahayana-rs/Cargo.toml
+        run: cargo check --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
 
   renderer:
     runs-on: ubuntu-24.04
