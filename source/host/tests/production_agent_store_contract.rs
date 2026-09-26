@@ -19,6 +19,24 @@ fn temp_root(label: &str) -> std::path::PathBuf {
     ))
 }
 
+fn encode_varint(mut value: u64, output: &mut Vec<u8>) {
+    while value >= 0x80 {
+        output.push((value as u8) | 0x80);
+        value >>= 7;
+    }
+    output.push(value as u8);
+}
+
+fn push_bytes(field: u64, value: &[u8], output: &mut Vec<u8>) {
+    encode_varint((field << 3) | 2, output);
+    encode_varint(value.len() as u64, output);
+    output.extend_from_slice(value);
+}
+
+fn push_string(field: u64, value: &str, output: &mut Vec<u8>) {
+    push_bytes(field, value.as_bytes(), output);
+}
+
 #[test]
 fn production_agent_store_persists_content_addressed_checkpoint_and_resets_from_db() {
     let root = temp_root("checkpoint");
@@ -141,4 +159,93 @@ fn production_agent_store_metadata_bridge_gets_sets_and_subscribes() {
 
     workers.shutdown();
     let _ = fs::remove_dir_all(root);
+}
+
+
+#[test]
+fn production_agent_store_reads_latest_request_and_full_conversation_from_same_root() {
+    let root = temp_root("conversation-read");
+    let workers = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let session = workers
+        .materialize_session_with_active(None, "user", None, None)
+        .expect("materialized session");
+    let blob_store = workers
+        .create_agent_blob_store(&session.record.id)
+        .expect("blob store");
+
+    let mut user = Vec::new();
+    push_string(1, "hello from durable state", &mut user);
+    push_string(2, "message-1", &mut user);
+    let user_id = Sha256::digest(&user).to_vec();
+    futures::executor::block_on(blob_store.set_blob(&(), &user_id, &user))
+        .expect("user blob");
+
+    let mut agent_turn = Vec::new();
+    push_bytes(1, &user_id, &mut agent_turn);
+    push_string(3, "request-42", &mut agent_turn);
+    let mut turn = Vec::new();
+    push_bytes(1, &agent_turn, &mut turn);
+    let turn_id = Sha256::digest(&turn).to_vec();
+    futures::executor::block_on(blob_store.set_blob(&(), &turn_id, &turn))
+        .expect("turn blob");
+
+    let mut checkpoint = Vec::new();
+    push_bytes(8, &turn_id, &mut checkpoint);
+    session
+        .agent_store
+        .handle_checkpoint_bytes(&checkpoint)
+        .expect("checkpoint");
+
+    assert_eq!(
+        session
+            .agent_store
+            .get_last_request_id_from_conversation()
+            .expect("last request id"),
+        Some("request-42".into())
+    );
+    let conversation = session
+        .agent_store
+        .get_full_conversation()
+        .expect("full conversation");
+    assert_eq!(conversation.turns.len(), 1);
+    assert!(conversation.todos.is_empty());
+    assert_eq!(conversation.summary, None);
+
+    workers.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_agent_store_metadata_key_surface_matches_frozen_agent_store() {
+    let keys = [
+        ProductionAgentMetadataKey::AgentId,
+        ProductionAgentMetadataKey::LatestRootBlobId,
+        ProductionAgentMetadataKey::Name,
+        ProductionAgentMetadataKey::Mode,
+        ProductionAgentMetadataKey::IsRunEverything,
+        ProductionAgentMetadataKey::ApprovalMode,
+        ProductionAgentMetadataKey::CreatedAt,
+        ProductionAgentMetadataKey::LastUsedModel,
+        ProductionAgentMetadataKey::LastDebugServerPort,
+        ProductionAgentMetadataKey::CurrentPlanUri,
+        ProductionAgentMetadataKey::SubagentInfo,
+        ProductionAgentMetadataKey::BlobEncryptionKey,
+    ];
+    assert_eq!(
+        keys.map(ProductionAgentMetadataKey::as_str),
+        [
+            "agentId",
+            "latestRootBlobId",
+            "name",
+            "mode",
+            "isRunEverything",
+            "approvalMode",
+            "createdAt",
+            "lastUsedModel",
+            "lastDebugServerPort",
+            "currentPlanUri",
+            "subagentInfo",
+            "blobEncryptionKey",
+        ]
+    );
 }
