@@ -1556,3 +1556,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Ported the remaining safety-critical frozen controller policy that was still absent from the first Rust owner: refusal-direction memory, hashed refusal keys, bounded per-agent saturation, forgotten-agent fencing, standing-grant direction epochs, preparatory-action rejection, approval retirement callbacks and permission-change settlement.
 - Added contract coverage proving a denied action cannot be retried in the same direction, forgotten tasks stay fenced, preparatory access cannot bypass the action the user is actually being asked to approve, and one-time approval retirement is observable when scope ends.
 - The controller intentionally remains `existing-needs-parity`: AbortSignal-equivalent cancellation for individual joined waiters and the exact multi-listener subscription API are still controller-level gaps. Transcript ask cards, boot sweep and Gateway resolution remain extension-level gaps.
+
+
+### 2026-09-26 Local Tool Permission controller finalization
+
+- Starting exact HEAD: `49291e0009dc3d47bd8027601e337bd9538a5471`.
+- Completed the controller-owned frozen behavior rather than conflating it with extension wiring: joined-waiter cancellation now mirrors AbortSignal semantics (one waiter can cancel without cancelling another; the last cancelled waiter retires the pending ask), created/settled events support multiple disposable subscribers, production request ids use the frozen 64-hex shape, and target-size checks use JavaScript-equivalent UTF-16 units.
+- Corrected failure ordering to match the frozen controller: existing approval coverage wins before target-size fencing; ask-surface/live-computer checks precede preparatory/size failures; standing-grant direction fencing remains before ask creation.
+- Added contracts for joined cancellation, subscription lifecycle, UTF-16 sizing and the prior refusal/forgotten/preparatory/retirement behavior.
+- `source/host/extensions/local-tool-permission/local-tool-permission-controller.ts` advances to final `implemented`. The separate extension mapping deliberately remains non-final for transcript ask-card creation, boot sweep, stranded-retirement telemetry, approval-retired Host event fanout and Gateway `resolveLocalToolPermission` production wiring.
+- Manifest becomes **1,822 implemented / 108 existing-needs-parity / 72 planned** (180 non-final).

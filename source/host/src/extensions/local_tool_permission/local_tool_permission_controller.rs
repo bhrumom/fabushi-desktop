@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Condvar, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -123,6 +124,7 @@ struct PendingAsk {
     resource_path: Option<String>,
     outlives_scope: bool,
     direction_epoch: u64,
+    waiter_count: Mutex<usize>,
 }
 
 #[derive(Debug, Clone)]
@@ -151,6 +153,47 @@ struct ControllerState {
 
 type AgentPredicate = Arc<dyn Fn(&str) -> bool + Send + Sync>;
 type EventSink = Arc<dyn Fn(SandLocalToolAskRequest) + Send + Sync>;
+type ControllerEventListener = Arc<dyn Fn(SandLocalToolControllerEvent) + Send + Sync>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SandLocalToolControllerEventKind {
+    Created,
+    Settled,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SandLocalToolControllerEvent {
+    pub kind: SandLocalToolControllerEventKind,
+    pub request: SandLocalToolAskRequest,
+}
+
+pub struct SandLocalToolControllerSubscription {
+    id: u64,
+    listeners: Arc<Mutex<HashMap<u64, ControllerEventListener>>>,
+    active: bool,
+}
+
+impl SandLocalToolControllerSubscription {
+    pub fn unsubscribe(mut self) {
+        if self.active {
+            if let Ok(mut listeners) = self.listeners.lock() {
+                listeners.remove(&self.id);
+            }
+            self.active = false;
+        }
+    }
+}
+
+impl Drop for SandLocalToolControllerSubscription {
+    fn drop(&mut self) {
+        if self.active {
+            if let Ok(mut listeners) = self.listeners.lock() {
+                listeners.remove(&self.id);
+            }
+            self.active = false;
+        }
+    }
+}
 
 pub struct SandLocalToolPermissionController {
     settings: Arc<SettingsService>,
@@ -158,6 +201,8 @@ pub struct SandLocalToolPermissionController {
     can_ask: Mutex<AgentPredicate>,
     has_live_computer: Mutex<AgentPredicate>,
     event_sink: Mutex<Option<EventSink>>,
+    event_listeners: Arc<Mutex<HashMap<u64, ControllerEventListener>>>,
+    next_listener_id: AtomicU64,
     approval_retired_sink: Mutex<Option<Arc<dyn Fn(&str) + Send + Sync>>>,
     ask_ttl_ms: u64,
     now_ms: Arc<dyn Fn() -> u64 + Send + Sync>,
@@ -177,7 +222,13 @@ impl SandLocalToolPermissionController {
                     .try_into()
                     .unwrap_or(u64::MAX)
             }),
-            Arc::new(|| Uuid::new_v4().simple().to_string()),
+            Arc::new(|| {
+                format!(
+                    "{}{}",
+                    Uuid::new_v4().simple(),
+                    Uuid::new_v4().simple()
+                )
+            }),
         )
     }
 
@@ -193,6 +244,8 @@ impl SandLocalToolPermissionController {
             can_ask: Mutex::new(Arc::new(|_| false)),
             has_live_computer: Mutex::new(Arc::new(|_| false)),
             event_sink: Mutex::new(None),
+            event_listeners: Arc::new(Mutex::new(HashMap::new())),
+            next_listener_id: AtomicU64::new(1),
             approval_retired_sink: Mutex::new(None),
             ask_ttl_ms,
             now_ms,
@@ -223,6 +276,22 @@ impl SandLocalToolPermissionController {
             .approval_retired_sink
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = sink;
+    }
+
+    pub fn subscribe(
+        &self,
+        listener: ControllerEventListener,
+    ) -> SandLocalToolControllerSubscription {
+        let id = self.next_listener_id.fetch_add(1, Ordering::Relaxed);
+        self.event_listeners
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(id, listener);
+        SandLocalToolControllerSubscription {
+            id,
+            listeners: Arc::clone(&self.event_listeners),
+            active: true,
+        }
     }
 
     pub fn permission(&self) -> SandLocalToolPermission {
@@ -347,6 +416,15 @@ impl SandLocalToolPermissionController {
         scope: Option<&SandLocalToolScope>,
         request: &SandLocalToolRequest,
     ) -> SandLocalToolDecision {
+        self.authorize_with_cancel(scope, request, None)
+    }
+
+    pub fn authorize_with_cancel(
+        &self,
+        scope: Option<&SandLocalToolScope>,
+        request: &SandLocalToolRequest,
+        cancel: Option<&AtomicBool>,
+    ) -> SandLocalToolDecision {
         let permission = self.permission();
         if permission == SandLocalToolPermission::Never {
             return denied(SAND_LOCAL_TOOLS_DISABLED_MESSAGE);
@@ -368,10 +446,6 @@ impl SandLocalToolPermissionController {
             return denied(SAND_LOCAL_TOOLS_UNAPPROVED_MESSAGE);
         };
 
-        if request.target.chars().count() > SAND_LOCAL_TOOL_TARGET_MAX_CHARS {
-            return denied(SAND_LOCAL_TOOLS_TARGET_TOO_LARGE_MESSAGE);
-        }
-
         if let Some(decision) = self.covering_approval(scope, request) {
             return decision;
         }
@@ -379,6 +453,23 @@ impl SandLocalToolPermissionController {
         let Some(tool_call_id) = scope.tool_call_id.as_deref() else {
             return denied(SAND_LOCAL_TOOLS_UNAPPROVED_MESSAGE);
         };
+
+        let can_ask = self
+            .can_ask
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        if !can_ask(&scope.agent_id) {
+            return denied(SAND_LOCAL_TOOLS_ASK_UNAVAILABLE_MESSAGE);
+        }
+        let has_live = self
+            .has_live_computer
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        if !has_live(&scope.agent_id) {
+            return denied(SAND_NO_LOCAL_MACHINE_MESSAGE);
+        }
 
         let scope_approved = scope.action.as_deref().is_some_and(|scope_action| {
             self.state
@@ -398,31 +489,22 @@ impl SandLocalToolPermissionController {
             }
         }
 
-        let can_ask = self
-            .can_ask
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clone();
-        if !can_ask(&scope.agent_id) {
-            return denied(SAND_LOCAL_TOOLS_ASK_UNAVAILABLE_MESSAGE);
+        if cancel.is_some_and(|signal| signal.load(Ordering::Acquire)) {
+            return denied(SAND_LOCAL_TOOLS_ASK_CANCELLED_MESSAGE);
         }
-        let has_live = self
-            .has_live_computer
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clone();
-        if !has_live(&scope.agent_id) {
-            return denied(SAND_NO_LOCAL_MACHINE_MESSAGE);
+
+        if request.target.encode_utf16().count() > SAND_LOCAL_TOOL_TARGET_MAX_CHARS {
+            return denied(SAND_LOCAL_TOOLS_TARGET_TOO_LARGE_MESSAGE);
         }
 
         let key = format!(
             "{}\0{}\0{}\0{}",
             scope.agent_id, tool_call_id, request.action, request.target
         );
-        let pending = {
+        let (pending, created) = {
             let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
             if let Some(existing) = state.pending_by_key.get(&key) {
-                Arc::clone(existing)
+                (Arc::clone(existing), None)
             } else {
                 let now = (self.now_ms)();
                 let id = (self.random_id)();
@@ -448,56 +530,45 @@ impl SandLocalToolPermissionController {
                     resource_path: normalize_resource_path(request.resource_path.as_deref()),
                     outlives_scope: request.outlives_scope,
                     direction_epoch: self.scope_epoch(scope),
+                    waiter_count: Mutex::new(0),
                 });
-                state.pending_by_id.insert(id, key.clone());
-                state.pending_by_key.insert(key.clone(), Arc::clone(&pending));
-                if let Some(sink) = self
-                    .event_sink
+                let created = pending
+                    .request
                     .lock()
                     .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .clone()
-                {
-                    if let Ok(request) = pending.request.lock() {
-                        sink(request.clone());
-                    }
-                }
-                pending
+                    .clone();
+                state.pending_by_id.insert(id, key.clone());
+                state.pending_by_key.insert(key.clone(), Arc::clone(&pending));
+                (pending, Some(created))
             }
         };
 
-        let decision = pending
-            .decision
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let (decision, wait) = pending
-            .wake
-            .wait_timeout_while(
-                decision,
-                Duration::from_millis(self.ask_ttl_ms),
-                |decision| decision.is_none(),
-            )
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        if let Some(decision) = decision.clone() {
-            return decision;
+        if let Some(request) = created {
+            self.emit_event(SandLocalToolControllerEventKind::Created, request);
         }
-        drop(decision);
-        if wait.timed_out() {
-            let id = pending
-                .request
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .id
-                .clone();
-            let decision = denied(SAND_LOCAL_TOOLS_ASK_EXPIRED_MESSAGE);
-            self.settle_pending(
-                &id,
-                SandLocalToolRequestStatus::Expired,
-                decision.clone(),
-                true,
-            );
-            return decision;
-        }
-        denied(SAND_LOCAL_TOOLS_ASK_CANCELLED_MESSAGE)
+        self.wait_for_pending(&pending, cancel)
+    }
+
+    pub fn await_desktop_standing_decision(
+        &self,
+        agent_id: &str,
+        tool_call_id: &str,
+        command: Option<&str>,
+        description: Option<&str>,
+        cancel: Option<&AtomicBool>,
+    ) -> SandLocalToolDecision {
+        let scope = SandLocalToolScope {
+            agent_id: agent_id.to_string(),
+            tool_call_id: Some(tool_call_id.to_string()),
+            action: Some("run-command".into()),
+            direction_epoch: Some(self.direction_epoch(agent_id)),
+        };
+        let mut request = SandLocalToolRequest::simple("run-command", command.unwrap_or_default());
+        request.description = description
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string);
+        self.authorize_with_cancel(Some(&scope), &request, cancel)
     }
 
     pub fn remembered_refusal_count(&self) -> usize {
@@ -769,6 +840,126 @@ impl SandLocalToolPermissionController {
         ids
     }
 
+    fn wait_for_pending(
+        &self,
+        pending: &Arc<PendingAsk>,
+        cancel: Option<&AtomicBool>,
+    ) -> SandLocalToolDecision {
+        {
+            let mut waiters = pending
+                .waiter_count
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            *waiters = waiters.saturating_add(1);
+        }
+        let started = Instant::now();
+
+        loop {
+            if cancel.is_some_and(|signal| signal.load(Ordering::Acquire)) {
+                let last = self.leave_waiter(pending);
+                let decision = denied(SAND_LOCAL_TOOLS_ASK_CANCELLED_MESSAGE);
+                if last {
+                    let id = pending
+                        .request
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner())
+                        .id
+                        .clone();
+                    self.settle_pending(
+                        &id,
+                        SandLocalToolRequestStatus::Expired,
+                        decision.clone(),
+                        true,
+                    );
+                }
+                return decision;
+            }
+
+            let decision = pending
+                .decision
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if let Some(decision) = decision.clone() {
+                drop(decision);
+                self.leave_waiter(pending);
+                return decision;
+            }
+
+            let request = pending
+                .request
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .clone();
+            let logical_remaining = request.expires_at_ms.saturating_sub((self.now_ms)());
+            let wall_remaining = self
+                .ask_ttl_ms
+                .saturating_sub(started.elapsed().as_millis().try_into().unwrap_or(u64::MAX));
+            let remaining = logical_remaining.min(wall_remaining);
+            if remaining == 0 {
+                drop(decision);
+                self.leave_waiter(pending);
+                let expired = denied(SAND_LOCAL_TOOLS_ASK_EXPIRED_MESSAGE);
+                self.settle_pending(
+                    &request.id,
+                    SandLocalToolRequestStatus::Expired,
+                    expired.clone(),
+                    true,
+                );
+                return expired;
+            }
+
+            let wait_ms = if cancel.is_some() {
+                remaining.min(25)
+            } else {
+                remaining
+            };
+            let (decision, _) = pending
+                .wake
+                .wait_timeout(decision, Duration::from_millis(wait_ms))
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if let Some(decision) = decision.clone() {
+                drop(decision);
+                self.leave_waiter(pending);
+                return decision;
+            }
+        }
+    }
+
+    fn leave_waiter(&self, pending: &PendingAsk) -> bool {
+        let mut waiters = pending
+            .waiter_count
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        *waiters = waiters.saturating_sub(1);
+        *waiters == 0
+    }
+
+    fn emit_event(
+        &self,
+        kind: SandLocalToolControllerEventKind,
+        request: SandLocalToolAskRequest,
+    ) {
+        if let Some(sink) = self
+            .event_sink
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone()
+        {
+            sink(request.clone());
+        }
+        let listeners = self
+            .event_listeners
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .values()
+            .cloned()
+            .collect::<Vec<_>>();
+        let event = SandLocalToolControllerEvent { kind, request };
+        for listener in listeners {
+            listener(event.clone());
+        }
+    }
+
     fn scope_epoch(&self, scope: &SandLocalToolScope) -> u64 {
         scope
             .direction_epoch
@@ -908,14 +1099,7 @@ impl SandLocalToolPermissionController {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(decision);
         pending.wake.notify_all();
-        if let Some(sink) = self
-            .event_sink
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clone()
-        {
-            sink(settled.clone());
-        }
+        self.emit_event(SandLocalToolControllerEventKind::Settled, settled.clone());
         Some(settled)
     }
 }

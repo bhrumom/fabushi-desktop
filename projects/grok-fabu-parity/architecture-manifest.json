@@ -12225,21 +12225,20 @@
       "targetPath": "source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "3eb5497d7e699db6d1098a8426aaddbd68c1a7c5",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs",
-        "source/host/app/src/main.rs",
-        "source/host/src/extensions/settings/settings_service.rs",
-        "source/host/src/extensions/local_exec/extension.rs"
+        "source/host/src/extensions/settings/settings_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/local_tool_permission_controller_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host now owns settings-backed Always/Ask/Never decisions, scoped approvals, pending ask coalescing/waiting, TTL expiry, allow-once/deny/always/never settlement, approval-retired callbacks, begin-turn invalidation, refusal-direction memory, per-agent refusal saturation, forgotten-agent fencing, standing-grant epoch fencing, preparatory-action rejection, resource attachment coverage, target-size fencing and ask/live-computer gates. Final remains withheld for AbortSignal-equivalent per-waiter cancellation/join semantics and the exact multi-listener subscribe surface."
+      "notes": "Rust Host owns the frozen LocalToolPermission controller contract: Always/Ask/Never policy, standing-grant epoch fencing, refusal-direction memory/saturation, forgotten-agent fencing, preparatory-action rules, UTF-16 target limits, exact pending coalescing, joined waiter cancellation with last-waiter retirement, TTL expiry, allow-once/deny/always/never settlement, scoped/resource approvals, approval retirement, begin-turn invalidation, retained-agent/refusal diagnostics, and created/settled multi-listener subscriptions. The separate extension row remains non-final for transcript ask-card/boot-sweep/Gateway wiring.",
+      "parityMode": "rust-adaptation"
     },
     {
       "referencePath": "source/host/extensions/local-tool-permission/local-tool-permission-resolution.ts",
