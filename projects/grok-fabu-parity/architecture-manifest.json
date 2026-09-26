@@ -12510,7 +12510,7 @@
       "targetPath": "source/host/src/extensions/memory/agent_state.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "fb08a86f03dc8819e11c452574c7a58fecd6165f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12527,9 +12527,11 @@
       ],
       "testEvidence": [
         "source/host/tests/agent_state_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/host/tests/sand_state_tool_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Memory extension now owns the frozen agent-state mutation surface: agent/user/project memory shards with membership fencing, routine CRUD, workflow CRUD, profile/settings writes, channel disconnect, project create/join/leave, and validated avatar install/clear, reusing canonical Host stores instead of parallel persistence. Final remains withheld until the shipping sand-state/update_state tool delegates to this owner and exact-head CI verifies the contract."
+      "notes": "Rust Memory extension owns the frozen agent-state mutation surface across agent/user/project memory, routines, workflows, profile/settings, channels, projects and avatars. Shipping routed turns now construct this Host owner and inject it through the Runner SandStateWriter boundary into update_state. Exact-head verification at ad5b0832245c1106a22a6557c562de2987ada34a passed Rust runtime run 36230057493 rust-host job 108371404118 and Desktop Chat Parity run 36230057523."
     },
     {
       "referencePath": "source/host/extensions/memory/extension.ts",
@@ -12647,7 +12649,7 @@
       "targetPath": "source/host/src/extensions/notifications/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f4e20a32cdb3e378f376ebea725bea86afd49c6e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12665,14 +12667,14 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "notes": "Rust Notifications extension declares frozen Auth dependency, seeds from authoritative Session roster when available, buffers upserts until a full baseline otherwise, subscribes to the single Host/Gateway event bus for agents/agent-upserted/forget semantics, uses authoritative Transcript Session windowFocusedAtMs for the 5-minute focus gate, retires deleted agents from notifier state, and owns a fire-and-forget authenticated GrokBot mobile-push sender. Shipping Host starts exactly one extension after Transcript ownership is available. Final remains withheld only until exact-HEAD Host and desktop-chat verification succeeds."
+      "notes": "Rust Notifications extension owns the frozen Auth/Session/Transcript notification lifecycle, authoritative roster seeding, pre-baseline buffering, focus gating, forget semantics and shipping mobile-push notifier startup. Exact-head Host and Desktop Chat verification succeeded at ad5b0832245c1106a22a6557c562de2987ada34a via Rust runtime run 36230057493 and Desktop Chat Parity run 36230057523."
     },
     {
       "referencePath": "source/host/extensions/notifications/mobile-push-notifier.ts",
       "targetPath": "source/host/src/extensions/notifications/mobile_push_notifier.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "a444b72d2dc8b5d968b07807c8b13e609d0fbc5f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12686,7 +12688,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "source/host/tests/notifications_extension_contract.rs"
       ],
-      "notes": "Rust Host notifier owns frozen baseline/pre-seed buffering, focus freshness, running->done and awaiting-user transitions, message-id duplicate suppression, per-kind throttle, hidden/notify gates, forget semantics and fail-open delivery. It now also owns the authenticated GrokBotService NotifySandAgentTurnFinished protobuf sender using Host Auth, Cursor privacy/ghost headers and the canonical Cursor backend transport. Shipping Notifications extension uses this notifier. Final remains withheld only until the new production sender/extension wiring passes exact-HEAD Host verification."
+      "notes": "Rust Host notifier owns baseline buffering, focus freshness, done/needs-input transitions, message-id dedupe, per-kind throttle, hidden/notify gates, forget semantics, fail-open delivery and authenticated GrokBotService NotifySandAgentTurnFinished transport. Shipping wiring and exact-head Host verification succeeded at ad5b0832245c1106a22a6557c562de2987ada34a in Rust runtime run 36230057493."
     },
     {
       "referencePath": "source/host/extensions/notify-bus/extension.ts",
@@ -17900,12 +17902,23 @@
       "targetPath": "source/host/src/runner/tools/sand_state_tool.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f8149a689566409e70191ac697e564c877400af7",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/sand_state_tool.rs",
+        "source/host/src/runner/turn_agent_composition.rs",
+        "source/host/src/extensions/memory/agent_state.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_state_tool_contract.rs",
+        "source/host/tests/agent_state_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Shipping Runner now advertises update_state and routes memory/routine/workflow/profile/settings/channel/project/avatar mutations through a typed SandStateWriter boundary into the Host-owned SandAgentState; routine updates preserve omitted name/prompt/trigger fields. Exact-head Host and desktop-chat verification passed at ad5b0832245c1106a22a6557c562de2987ada34a. Remaining frozen parity is the source auto-review/approval flow for routine and workflow-body writes, listener-routine post-save integration, richer trigger validation, communicate-tool activity projection, and avatar reads from box paths."
     },
     {
       "referencePath": "source/host/runner/tools/sand-subagent-management-tools.ts",
@@ -38775,5 +38788,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-26T08:24:00Z"
+  "generatedAt": "2026-09-26T08:39:00Z"
 }
