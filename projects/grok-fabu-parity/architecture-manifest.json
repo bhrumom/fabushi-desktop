@@ -12205,20 +12205,24 @@
       "targetPath": "source/host/src/extensions/local_tool_permission/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "0b0b6625728ea8044d4907aa5f89b5cba1934886",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
         "source/host/src/extensions/local_tool_permission/extension.rs",
+        "source/host/src/host_runner_composition.rs",
         "source/host/app/src/main.rs",
-        "source/host/src/extensions/settings/settings_service.rs"
+        "source/host/src/extensions/transcript/widget_responses.rs"
       ],
       "testEvidence": [
         "source/host/tests/local_tool_permission_controller_contract.rs",
+        "source/host/tests/widget_responses_local_tool_permission_contract.rs",
+        "source/host/tests/host_runner_composition_local_permission_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Shipping Host now starts a LocalToolPermission extension owner from the canonical SettingsService and binds its live-computer predicate to the production Local Exec bridge. The frozen Settings+Telemetry+Transcript dependency declaration is preserved. Final remains withheld for transcript ask-card creation/boot sweep, stranded-retirement telemetry, approval-retired host-event fanout and complete production resolveLocalToolPermission Gateway wiring."
+      "notes": "Rust Host now owns the frozen LocalToolPermission extension contract: Settings+Telemetry+Transcript dependencies, controller lifecycle, bindAskSurfaces/bindLiveComputerCheck, direct-runner created/settled ask-card projection through HostRunnerComposition, approval-retired Host event fanout, background-ready durable pending-card sweep, resolveAsk with stale-card retirement and stranded-retirement telemetry, notePermissionChanged and forgetAgent shipping Gateway wiring. Controller behavior is independently final.",
+      "parityMode": "rust-adaptation"
     },
     {
       "referencePath": "source/host/extensions/local-tool-permission/local-tool-permission-controller.ts",
@@ -16256,12 +16260,19 @@
       "targetPath": "source/host/src/host_runner_composition.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "ace10619912d86f2df768b5a842c09abdb0d050c",
       "architecturalRole": "host/host-runner-composition",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/host_runner_composition.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/host_runner_composition_local_permission_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust HostRunnerComposition now owns the frozen direct-runner LocalToolPermission surface subset: one surface subscription per direct agent session, created/settled transcript projection, canAsk ownership, group-member exclusion, unbind on run settlement and forgetAgent cleanup. The broader HostRunnerComposition remains non-final for the remaining runner/mirror/memory/tool-surface composition responsibilities."
     },
     {
       "referencePath": "source/host/host-secret-store.ts",

@@ -20,8 +20,16 @@ use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
     AgentWakeRequest, ProductionAgentToAgentMessaging,
 };
 use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
+use mahayana_host_runtime::extensions::telemetry::HostTelemetryProjection;
 use mahayana_host_runtime::extensions::local_exec::extension::start_local_exec_extension;
-use mahayana_host_runtime::extensions::local_tool_permission::extension::start_local_tool_permission_extension;
+use mahayana_host_runtime::extensions::local_tool_permission::extension::{
+    HostLocalToolPermissionExtension, start_local_tool_permission_extension,
+};
+use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_resolution::{
+    LocalToolPermissionResolutionArgs, SandLocalToolPermissionResolutionError,
+};
+use mahayana_host_runtime::extensions::transcript::widget_responses::WidgetResponses;
+use mahayana_host_runtime::host_runner_composition::HostRunnerComposition;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
     HandoffTelemetry, HandoffTrigger, PendingHandoff, ScreenshotPayload, decide_box_hand_back,
@@ -645,6 +653,8 @@ struct UnifiedGatewayApi {
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
     secrets: Arc<HostSecretsExtension>,
+    local_tool_permission: Arc<HostLocalToolPermissionExtension>,
+    host_runner_composition: Arc<HostRunnerComposition>,
 }
 
 #[derive(Clone)]
@@ -665,6 +675,7 @@ struct LocalRoutedRunnerDeps {
     telemetry_logs: HostStructuredLogTelemetry,
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
+    host_runner_composition: Arc<HostRunnerComposition>,
 }
 
 impl UnifiedGatewayApi {
@@ -686,6 +697,7 @@ impl UnifiedGatewayApi {
             telemetry_logs: self.telemetry_logs.clone(),
             production_action_auditor: self.production_action_auditor.clone(),
             cloud_agents: Arc::clone(&self.cloud_agents),
+            host_runner_composition: Arc::clone(&self.host_runner_composition),
         }
     }
 
@@ -840,6 +852,7 @@ fn run_local_group_member_turn(
         deps.telemetry_logs,
         deps.production_action_auditor,
         deps.cloud_agents,
+        deps.host_runner_composition,
         runner_args,
     )
     .map_err(|error| error.to_string())?;
@@ -999,6 +1012,7 @@ fn run_local_automation_turn(
         deps.telemetry_logs,
         deps.production_action_auditor,
         deps.cloud_agents,
+        deps.host_runner_composition,
         runner_args,
     )
     .map_err(|error| error.to_string())?;
@@ -1355,6 +1369,7 @@ fn start_routed_provider_task(
     telemetry_logs: HostStructuredLogTelemetry,
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
+    host_runner_composition: Arc<HostRunnerComposition>,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
@@ -1543,6 +1558,9 @@ fn start_routed_provider_task(
             );
             GatewayCommandError::Internal(error.to_string())
         })?;
+    if !is_group_member_turn {
+        host_runner_composition.bind_local_permission_surface(&agent_id);
+    }
     let checkpoint_store = Arc::new(
         ProductionRoutedProviderCheckpointStore::new(
             &data_dir,
@@ -1555,6 +1573,7 @@ fn start_routed_provider_task(
     let accepted_stream_id = stream_id.clone();
     let worker_stream_id = stream_id.clone();
     let worker_registry = Arc::clone(&runner_registry);
+    let worker_host_runner_composition = Arc::clone(&host_runner_composition);
     let worker_cancellation = cancellation.clone();
     let worker_sessions = Arc::clone(&session_workers);
     let worker_retire_sessions = Arc::clone(&session_workers);
@@ -1906,6 +1925,9 @@ fn start_routed_provider_task(
             );
             worker_transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
             worker_registry.finish_routed_provider(&worker_stream_id);
+            if !is_group_member_turn {
+                worker_host_runner_composition.unbind_local_permission_surface(&agent_id);
+            }
             worker_ack_obligations.retire_ack_run_token(
                 &agent_id,
                 worker_ack_token.as_deref(),
@@ -1985,6 +2007,9 @@ fn start_routed_provider_task(
             is_group_member_turn,
         );
         runner_registry.finish_routed_provider(&accepted_stream_id);
+        if !is_group_member_turn {
+            host_runner_composition.unbind_local_permission_surface(&spawn_error_agent_id);
+        }
         ack_obligations.retire_ack_run_token(
             &spawn_error_agent_id,
             ack_token.as_deref(),
@@ -2204,6 +2229,7 @@ impl GatewayApi for UnifiedGatewayApi {
                                 .session_runtime()
                                 .mark_agent_deleted(agent_id);
                             self.transcript_manager.clear_agent_durable_recovery(agent_id);
+                            self.host_runner_composition.forget_local_tool_permission(agent_id);
                         }
                     }
                     "deleteAgents" => {
@@ -2213,6 +2239,7 @@ impl GatewayApi for UnifiedGatewayApi {
                                     .session_runtime()
                                     .mark_agent_deleted(agent_id);
                                 self.transcript_manager.clear_agent_durable_recovery(agent_id);
+                                self.host_runner_composition.forget_local_tool_permission(agent_id);
                             }
                         }
                     }
@@ -2389,6 +2416,7 @@ impl GatewayApi for UnifiedGatewayApi {
                 self.telemetry_logs.clone(),
                 self.production_action_auditor.clone(),
                 Arc::clone(&self.cloud_agents),
+                Arc::clone(&self.host_runner_composition),
                 args,
             );
         }
@@ -2601,6 +2629,49 @@ impl GatewayApi for UnifiedGatewayApi {
             drop(send_ack_guard);
             return send_result.map_err(map_production_send_error);
         }
+        if method == "resolveLocalToolPermission" {
+            let agent_id = args
+                .get("agentId")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "resolveLocalToolPermission requires agentId".into(),
+                ))?;
+            let entry_id = args
+                .get("entryId")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "resolveLocalToolPermission requires entryId".into(),
+                ))?;
+            let request_id = args
+                .get("requestId")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "resolveLocalToolPermission requires requestId".into(),
+                ))?;
+            let resolution = args
+                .get("resolution")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| GatewayCommandError::BadRequest(
+                    "resolveLocalToolPermission requires resolution".into(),
+                ))?;
+            self.local_tool_permission
+                .resolve_ask(&LocalToolPermissionResolutionArgs {
+                    agent_id: agent_id.to_string(),
+                    entry_id: entry_id.to_string(),
+                    request_id: request_id.to_string(),
+                    resolution: resolution.to_string(),
+                })
+                .map_err(map_local_tool_permission_resolution_error)?;
+            return Ok(serde_json::Value::Null);
+        }
+        if method == "setHostSettings" {
+            let permission_changed = args.get("localToolPermission").is_some();
+            let result = call_host_lane(&self.host_tx, method, args)?;
+            if permission_changed {
+                self.local_tool_permission.note_permission_changed();
+            }
+            return Ok(result);
+        }
         call_host_lane(&self.host_tx, method, args)
     }
 
@@ -2633,6 +2704,20 @@ fn map_automation_command_error(error: AutomationCommandError) -> GatewayCommand
     match error {
         AutomationCommandError::BadRequest(message) => GatewayCommandError::BadRequest(message),
         AutomationCommandError::Internal(message) => GatewayCommandError::Internal(message),
+    }
+}
+
+fn map_local_tool_permission_resolution_error(
+    error: SandLocalToolPermissionResolutionError,
+) -> GatewayCommandError {
+    match error {
+        SandLocalToolPermissionResolutionError::UnknownResolution
+        | SandLocalToolPermissionResolutionError::Stale => {
+            GatewayCommandError::BadRequest(error.to_string())
+        }
+        SandLocalToolPermissionResolutionError::Transcript(message) => {
+            GatewayCommandError::Internal(message)
+        }
     }
 }
 
@@ -3050,6 +3135,30 @@ fn main() {
         );
     }
     let transcript_manager = transcript_extension.manager();
+    let permission_widget_responses =
+        Arc::new(WidgetResponses::new(Arc::clone(&session_workers)));
+    let stranded_permission_logs = host_telemetry.logs.clone();
+    local_tool_permission_extension.bind_transcript(
+        permission_widget_responses,
+        started_at_ms(),
+        Some(Arc::new(move || {
+            let projection = HostTelemetryProjection {
+                level: Some("warn"),
+                event: Some("sand.local_tool_permission.stranded_retirement"),
+                metadata: std::collections::BTreeMap::new(),
+            };
+            let _ = stranded_permission_logs.report_projection(&projection);
+        })),
+        Some(Arc::new(|message| eprintln!("{message}"))),
+    );
+    let retired_permission_events = gateway_events.clone();
+    local_tool_permission_extension.bind_approval_retired_sink(Some(Arc::new(move |approval_id| {
+        retired_permission_events.publish(serde_json::json!({
+            "channel": "local-tool-permission.approval-retired",
+            "payload": { "approvalId": approval_id },
+        }));
+    })));
+
     let notification_baseline = session_workers
         .list_agent_summaries(None)
         .ok()
@@ -3106,6 +3215,14 @@ fn main() {
             })));
     }
     let runner_registry = transcript_manager.runner_registry();
+    let host_runner_composition = Arc::new(HostRunnerComposition::production(
+        local_tool_permission_extension.controller(),
+        Arc::clone(&session_workers),
+    ));
+    let permission_surface_owner = Arc::clone(&host_runner_composition);
+    local_tool_permission_extension.bind_ask_surfaces(Arc::new(move |agent_id| {
+        permission_surface_owner.can_ask_local_tool_permission(agent_id)
+    }));
     let ack_obligations = transcript_manager.ack_obligations();
     let agent_deletion_runtime = AgentDeletionRuntimeDeps {
         cancel_runner: Some({
@@ -3202,6 +3319,8 @@ fn main() {
             production_action_auditor: production_extensions.action_audit.clone(),
             cloud_agents: production_extensions.cloud_agents.service(),
             secrets: Arc::clone(&secrets_extension),
+            local_tool_permission: Arc::clone(&local_tool_permission_extension),
+            host_runner_composition: Arc::clone(&host_runner_composition),
         });
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: gateway_api.clone(),
@@ -3252,6 +3371,7 @@ fn main() {
     }
 
     production_extensions.notify_bus.mark_background_work_ready();
+    let _ = local_tool_permission_extension.background_work_ready();
 
     // Runtime events travel as unsolicited JSON frames. The event worker blocks
     // in Rust instead of issuing 500 ms JSON-RPC receive requests from Electron.

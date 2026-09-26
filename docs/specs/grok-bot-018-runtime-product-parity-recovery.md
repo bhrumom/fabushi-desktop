@@ -1576,3 +1576,14 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Added SQLite-backed contract coverage proving durable `pending -> expired` mutation, stale-resolution idempotence and cutoff-aware multi-agent startup cleanup.
 - `widget-responses.ts` advances only to `existing-needs-parity`; generic widgets, AutoReview, secret submission, reactions, spend guard and active-session/roster projection remain explicit responsibilities.
 - Manifest becomes **1,822 implemented / 109 existing-needs-parity / 71 planned** (180 non-final).
+
+
+### 2026-09-26 LocalToolPermission extension + HostRunnerComposition surface cutover
+
+- Starting exact HEAD: `34632c697ab2950d0ea2202fcb34b8a567cbba8e`; Desktop Chat Parity is green and the Rust run has shipping Host, Coordinator, box-daemon and platform-worker checks green, with only the strict architecture gate expected red while the Runner suite completes.
+- Added `source/host/src/host_runner_composition.rs` to restore the frozen ownership boundary used by `host-runner-composition.ts`: direct runner sessions own a LocalToolPermission controller subscription, created/settled events project into durable transcript cards, group-member turns do not expose approval surfaces, and run settlement removes the surface.
+- Shipping Host now binds `bindAskSurfaces` to that composition and `bindLiveComputerCheck` to Local Exec. Agent deletion forgets permission state; approval retirement publishes `local-tool-permission.approval-retired`.
+- `HostLocalToolPermissionExtension` now owns the remaining frozen extension responsibilities: durable transcript binding, background-ready stale-card sweep, `resolveAsk` through the already-final resolution module, stranded-retirement telemetry and `notePermissionChanged`.
+- `resolveLocalToolPermission` is now a first-class Rust `UnifiedGatewayApi` method rather than falling through to the compatibility Host lane; `setHostSettings` still delegates its broad settings payload but now invokes the canonical permission-change settlement hook when `localToolPermission` changes.
+- `source/host/extensions/local-tool-permission/extension.ts` advances to **implemented**. `source/host/host-runner-composition.ts` advances only to **existing-needs-parity** because its non-permission runner/mirror/memory responsibilities remain open.
+- Manifest becomes **1,823 implemented / 109 existing-needs-parity / 70 planned** (179 non-final).

@@ -18,6 +18,7 @@ pub mod runner;
 pub mod runner_production_bridge;
 pub mod production_binding_providers;
 pub mod host_production_extensions;
+pub mod host_runner_composition;
 
 pub use runner::{
     AttemptCheckpoint, AttemptProgress, CheckpointBoundary, CompletedAwaitOutcome,
