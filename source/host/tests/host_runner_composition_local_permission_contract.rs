@@ -7,7 +7,9 @@ use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permiss
     SandLocalToolControllerEventKind, SandLocalToolPermissionController,
     SandLocalToolRequest, SandLocalToolScope,
 };
-use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_resolution::SandLocalToolResolution;
+use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_resolution::{
+    LocalToolPermissionAskStore, SandLocalToolResolution,
+};
 use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
 use mahayana_host_runtime::host_runner_composition::HostRunnerComposition;
 
