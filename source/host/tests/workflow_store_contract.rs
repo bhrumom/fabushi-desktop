@@ -122,12 +122,12 @@ fn workflow_library_watches_external_and_atomic_edits(){
 fn stat_parse_cache_reuses_stable_fingerprints_and_invalidates_changes(){
  let root=root("stat-cache");fs::create_dir_all(&root).unwrap();let path=root.join("value.txt");fs::write(&path,"one").unwrap();
  let parses=Arc::new(AtomicUsize::new(0));let cache=StatKeyedParseCache::with_now_ms(2,Arc::new(||u128::MAX));
- let p=Arc::clone(&parses);let first=cache.read(std::slice::from_ref(&path),move||{p.fetch_add(1,Ordering::SeqCst);fs::read_to_string(&path).unwrap()}).unwrap();
+ let p=Arc::clone(&parses);let read_path=path.clone();let first=cache.read(std::slice::from_ref(&path),move||{p.fetch_add(1,Ordering::SeqCst);fs::read_to_string(&read_path).unwrap()}).unwrap();
  assert_eq!(first,"one");
- let p=Arc::clone(&parses);let path2=path.clone();let second=cache.read(std::slice::from_ref(&path2),move||{p.fetch_add(1,Ordering::SeqCst);fs::read_to_string(&path2).unwrap()}).unwrap();
+ let p=Arc::clone(&parses);let path2=path.clone();let read_path=path2.clone();let second=cache.read(std::slice::from_ref(&path2),move||{p.fetch_add(1,Ordering::SeqCst);fs::read_to_string(&read_path).unwrap()}).unwrap();
  assert_eq!(second,"one");assert_eq!(parses.load(Ordering::SeqCst),1);
  fs::write(&path,"two-two").unwrap();
- let p=Arc::clone(&parses);let path3=path.clone();let third=cache.read(std::slice::from_ref(&path3),move||{p.fetch_add(1,Ordering::SeqCst);fs::read_to_string(&path3).unwrap()}).unwrap();
+ let p=Arc::clone(&parses);let path3=path.clone();let read_path=path3.clone();let third=cache.read(std::slice::from_ref(&path3),move||{p.fetch_add(1,Ordering::SeqCst);fs::read_to_string(&read_path).unwrap()}).unwrap();
  assert_eq!(third,"two-two");assert_eq!(parses.load(Ordering::SeqCst),2);
  fs::remove_file(&path).unwrap();
  let p=Arc::clone(&parses);let path4=path.clone();
