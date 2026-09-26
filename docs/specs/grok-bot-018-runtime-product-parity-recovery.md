@@ -1497,3 +1497,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Exact HEAD `5e37c999688f5cdf950d3430d99c6e08cdda20db` reached the shipping Mahayana Host compile and exposed one extraction-only regression: `ActionAuditExtension` is still a live Runner dependency type in `app/main.rs`, but its import was removed when the production extension constructor moved to `host_production_extensions.rs`.
 - Restored that type import and scoped `ProductionBrowserUaLog` / `ProductionHostExtensions` imports to `#[cfg(test)]`, since those names are only used by the Send+Sync boundary tests in the app target.
 - No production ownership, manifest status, gateway behavior or extension lifecycle changed. The new exact HEAD must rerun the same shipping Host/Coordinator/Runner and Desktop Chat gates.
+
+
+### 2026-09-26 Secrets external gateway finalization
+
+- Implementation baseline: `4ec8c7f4e83ce45f233c5bad1d1ff1743fe2b9b2`.
+- Traced the frozen Grok Host API instead of inventing a Rust RPC name: `source/host/host-gateway-api.ts` exposes exactly `setBoxSecrets` and `getBoxSecretsStatus` from the Secrets extension.
+- The Rust Secrets owner now owns decoding/encoding for those two methods. `setBoxSecrets` preserves validation as a bad-request failure; `getBoxSecretsStatus` returns the frozen `keys`, `isApplied`, and `lastAppliedAtMs` shape. Unknown methods remain unclaimed for normal Host dispatch.
+- Shipping `UnifiedGatewayApi` holds the same `Arc<HostSecretsExtension>` started against ForeverBox, so the externally reachable methods and startup/persisted-apply lifecycle share one production owner rather than a parallel adapter.
+- `source/host/tests/secrets_extension_contract.rs` now pins the exact frozen method names, status projection, invalid-value rejection, and unknown-method fallthrough in addition to the existing validation/persistence/retry/reload contracts.
+- Only `source/host/extensions/secrets/extension.ts` advances to final `implemented`. Manifest becomes 1,821 implemented / 103 existing-needs-parity / 78 planned (181 non-final). The PR remains draft; exact-HEAD Rust/Coordinator/Runner, Desktop Chat Parity, and strict architecture results remain authoritative, and the known legacy-root cutover is still required before the strict gate can pass.

@@ -6,7 +6,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::extension_ids_generated::HostExtensionId;
 use mahayana_host_runtime::extensions::secrets::extension::{
-    SECRETS_DEPENDENCIES, secrets_extension_id,
+    HostSecretsExtension, SECRETS_DEPENDENCIES, SecretsGatewayError,
+    dispatch_secrets_gateway_call, secrets_extension_id,
 };
 use mahayana_host_runtime::extensions::secrets::secrets_service::{
     BOX_SECRET_REDACTION_NAMES_ENV_VAR, BoxSecretsApplier, BoxSecretsApplierOptions,
@@ -153,4 +154,54 @@ fn invalid_secret_never_persists_or_applies() {
     assert!(matches!(error, BoxSecretsSetError::Validation(_)));
     assert!(!path.exists());
     service.stop();
+}
+
+
+#[test]
+fn secrets_gateway_uses_the_frozen_external_method_names_and_status_shape() {
+    let path = temp_path("gateway");
+    let apply = Arc::new(|_: &mahayana_host_runtime::r#box::box_env::BoxEnvironmentUpdate| Ok(()));
+    let mut options = BoxSecretsApplierOptions::new(apply);
+    options.store_path = path.clone();
+    options.apply_wait = Duration::from_millis(500);
+    options.now_ms = Arc::new(|| 4242);
+    options.log = Arc::new(|_| {});
+    let extension = HostSecretsExtension::new(BoxSecretsApplier::new(options));
+
+    let set = dispatch_secrets_gateway_call(
+        &extension,
+        "setBoxSecrets",
+        &serde_json::json!({ "secrets": { "API_TOKEN": "secret" } }),
+    )
+    .expect("setBoxSecrets is owned by Secrets")
+    .expect("setBoxSecrets succeeds");
+    assert_eq!(set["keys"], serde_json::json!(["API_TOKEN"]));
+    assert_eq!(set["isApplied"], true);
+    assert_eq!(set["lastAppliedAtMs"], 4242);
+
+    let status = dispatch_secrets_gateway_call(
+        &extension,
+        "getBoxSecretsStatus",
+        &serde_json::json!({}),
+    )
+    .expect("getBoxSecretsStatus is owned by Secrets")
+    .expect("getBoxSecretsStatus succeeds");
+    assert_eq!(status, set);
+
+    let invalid = dispatch_secrets_gateway_call(
+        &extension,
+        "setBoxSecrets",
+        &serde_json::json!({ "secrets": { "API_TOKEN": 7 } }),
+    )
+    .expect("setBoxSecrets is owned by Secrets")
+    .expect_err("non-string secret is rejected");
+    assert!(matches!(invalid, SecretsGatewayError::BadRequest(_)));
+
+    assert!(
+        dispatch_secrets_gateway_call(&extension, "unrelatedMethod", &serde_json::json!({}))
+            .is_none()
+    );
+
+    extension.stop();
+    let _ = fs::remove_file(path);
 }

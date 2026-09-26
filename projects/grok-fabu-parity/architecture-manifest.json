@@ -12755,7 +12755,7 @@
       "targetPath": "source/host/src/extensions/secrets/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "f3acba310b3c836d2f9120f1bc48884893a24b10",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
@@ -12768,7 +12768,7 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "parityMode": "rust-adaptation",
-      "notes": "Shipping Host now starts the Rust Secrets owner against ForeverBox and restores persisted secrets. Final parity still requires tracing and wiring the frozen external set/getStatus command surface rather than inventing an RPC name."
+      "notes": "Rust Host owns the frozen Secrets extension lifecycle, persisted secret recovery and ForeverBox environment application. Shipping UnifiedGatewayApi now exposes the exact frozen Grok external commands setBoxSecrets and getBoxSecretsStatus through the same HostSecretsExtension owner, preserves validation as bad-request failures, projects keys/isApplied/lastAppliedAtMs with the reference field names, and leaves unknown commands unclaimed. Production wiring and contract coverage make this mapping final."
     },
     {
       "referencePath": "source/host/extensions/secrets/secrets-service.ts",

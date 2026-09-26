@@ -26,7 +26,10 @@ use mahayana_host_runtime::extensions::session::box_handoff_service::{
 };
 use mahayana_host_runtime::extensions::session::extension::start_session_extension;
 use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
-use mahayana_host_runtime::extensions::secrets::extension::start_secrets_extension;
+use mahayana_host_runtime::extensions::secrets::extension::{
+    HostSecretsExtension, SecretsGatewayError, dispatch_secrets_gateway_call,
+    start_secrets_extension,
+};
 use mahayana_host_runtime::extensions::notifications::extension::{
     notification_agent_from_value, start_notifications_extension,
 };
@@ -639,6 +642,7 @@ struct UnifiedGatewayApi {
     telemetry_logs: HostStructuredLogTelemetry,
     production_action_auditor: ActionAuditExtension,
     cloud_agents: Arc<SandCloudAgentManager>,
+    secrets: Arc<HostSecretsExtension>,
 }
 
 #[derive(Clone)]
@@ -2002,6 +2006,9 @@ impl GatewayApi for UnifiedGatewayApi {
         method: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
+        if let Some(result) = dispatch_secrets_gateway_call(&self.secrets, method, &args) {
+            return result.map_err(map_secrets_gateway_error);
+        }
         if method == "isAgentNetworkEnabled" {
             return Ok(serde_json::Value::Bool(
                 self.experiments.is_agent_network_enabled(),
@@ -2613,6 +2620,13 @@ impl GatewayApi for UnifiedGatewayApi {
     }
 }
 
+fn map_secrets_gateway_error(error: SecretsGatewayError) -> GatewayCommandError {
+    match error {
+        SecretsGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
+        SecretsGatewayError::Internal(message) => GatewayCommandError::Internal(message),
+    }
+}
+
 fn map_automation_command_error(error: AutomationCommandError) -> GatewayCommandError {
     match error {
         AutomationCommandError::BadRequest(message) => GatewayCommandError::BadRequest(message),
@@ -2931,10 +2945,10 @@ fn main() {
         })),
     );
     let attachments_service = attachments_extension.service();
-    let secrets_extension = start_secrets_extension(
+    let secrets_extension = Arc::new(start_secrets_extension(
         Arc::clone(&forever_box),
         production_secrets_log(),
-    );
+    ));
     let runner_request_context: Arc<dyn RunnerRequestContextSource> =
         Arc::new(ProductionRunnerRequestContextSource::new(
             Arc::clone(&production_extensions.auth),
@@ -3177,6 +3191,7 @@ fn main() {
             telemetry_logs: host_telemetry.logs.clone(),
             production_action_auditor: production_extensions.action_audit.clone(),
             cloud_agents: production_extensions.cloud_agents.service(),
+            secrets: Arc::clone(&secrets_extension),
         });
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: gateway_api.clone(),
