@@ -26,6 +26,12 @@ const common = {
   absWorkingDir: desktopRoot,
   nodePaths: [path.join(desktopRoot, "node_modules")],
   external: ["electron"],
+  banner: {
+    js: 'const __fabushiImportMetaUrl = require("node:url").pathToFileURL(__filename).href;',
+  },
+  define: {
+    "import.meta.url": "__fabushiImportMetaUrl",
+  },
 };
 
 await build({
