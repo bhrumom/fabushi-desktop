@@ -17700,24 +17700,40 @@
       "targetPath": "source/host/src/runner/tools/sand_browser_driver_source.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "774a42d831116f713112e1630e66e689e633c116",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/sand_browser_driver_source.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/browser_driver_source_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Runner embeds the frozen Grok Bot 0.18 browser driver v2 JavaScript payload unchanged in runtime language form, including persistent per-display view state, cross-process claim locking, discarded-tab revival, raw CDP probing, Playwright CDP connection, structured snapshot refs and the full browser operation set. Exact-head 2502416fe03f9744ce36b8947239acd08bd3e74d passed rust-host job 108376132567; browser driver identity/behavior contracts are part of the full Host cargo test suite."
     },
     {
       "referencePath": "source/host/runner/tools/sand-browser-tools.ts",
       "targetPath": "source/host/src/runner/tools/sand_browser_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f2a16c950614c41fb1c93d65b76d34460f58f817",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/sand_browser_tools.rs",
+        "source/host/src/runner/tools/sand_browser_driver_source.rs",
+        "source/host/src/runner/sand_browser_auto_review.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_browser_tools_contract.rs",
+        "source/host/tests/browser_driver_source_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust Runner now owns the frozen browser-tool semantic core: envelope/result parsing, bounded screenshot cache, browser-review action projection, 15 first-party browser tool definitions and schemas, per-display CDP/view/screenshot request construction, driver shell command projection and a typed SandBrowserToolBridge. Exact-head 2502416fe03f9744ce36b8947239acd08bd3e74d passed rust-host job 108376132567 and Desktop Chat Parity run 36231765469. Final remains withheld until a shipping BrowserToolExecutor binds real box upload/download/shell execution, display/window resolution, screenshot persistence, SandBrowserAutoReview preflight/navigation state and TurnToolset registration."
     },
     {
       "referencePath": "source/host/runner/tools/sand-browser-use-subagent.ts",
@@ -38813,5 +38829,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-26T09:01:30Z"
+  "generatedAt": "2026-09-26T09:17:00Z"
 }
