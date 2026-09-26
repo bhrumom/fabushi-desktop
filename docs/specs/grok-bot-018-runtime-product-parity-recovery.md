@@ -1365,3 +1365,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Ported the frozen CloudAgent request-composition layer to Rust as a pure Host-owned module. It now owns requested-model/max-mode parameters, selected-image user messages, conversation actions, repository normalization/sanitization, saved-environment primary-repo policy, repo-config projection and private-worker routing labels.
 - Added contract coverage for scp-style Git remotes, credential-stripping normalization, short `owner/repo` references, secondary-repo rejection, model-params-without-model rejection, image context projection, pool labels and named-machine shared-assignment policy.
 - This module is final independently; network RPC, model-catalog retrieval, completion polling and Host extension lifecycle remain tracked by their own CloudAgent manifest rows.
+
+
+### 2026-09-26 CloudAgent model-catalog fetch cutover
+
+- Added a real Rust `AiService/AvailableModels` Host client on the existing authenticated Cursor unary transport. The request encodes exactly the frozen CloudAgent catalog flags: model parameters on, Markdown off, USER_AVAILABLE scope.
+- Added a generated-wire decoder for the subset consumed by the frozen model catalog: model id/display name/aliases, boolean and enum parameter definitions/values, and parameter variants.
+- Added byte-level request and response contract tests. Model-catalog fetch is final independently; the five-minute catalog cache and CloudAgent manager/extension lifecycle remain owned by their separate poll-loop/service/extension mappings.

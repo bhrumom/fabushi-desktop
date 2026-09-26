@@ -11241,12 +11241,20 @@
       "targetPath": "source/host/src/extensions/cloud_agents/model_catalog_fetch.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "implemented",
       "referenceBlobSha": "fffbad3ca0376ec36d2cc83a54b1f1ab997a620f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/cloud_agents/model_catalog_fetch.rs",
+        "source/host/src/cursor_backend.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/cloud_agent_model_catalog_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "parityMode": "rust-adaptation",
+      "notes": "Final Rust adaptation: authenticated AiService/AvailableModels unary uses the shared Cursor backend transport and frozen request options useModelParameters=true, doNotUseMarkdown=true, scope=USER_AVAILABLE. The decoder maps the generated response model name/display name/id aliases, boolean/enum parameter definitions and RequestedModel parameter variants into Host-owned catalog types. Parent CloudAgent cache/service composition remains tracked separately."
     },
     {
       "referencePath": "source/host/extensions/codebase-telemetry/codebase-snapshot-trigger.ts",
