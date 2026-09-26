@@ -1446,3 +1446,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - `source/host/tests/host_crash_marker_contract.rs` now proves real file-store -> production telemetry JSONL -> delete behavior in addition to parser/race/dedupe/defer coverage. Exact HEAD `ad55380002e3b8eb56499aa1bbe25feb85227136` passed the complete rust-host job in run `36233942302`; Desktop Chat Parity run `36233942301` passed renderer typecheck/build and the Grok Agent shell/Mahayana chat regression.
 - Accordingly `source/packages/agent-kv/agent-store.ts` and `source/host/extensions/telemetry/host-crash-marker.ts` advance to final `implemented`. No unrelated row is promoted. Manifest after this evidence update: 1818 implemented / 104 existing-needs-parity / 80 planned.
 - The PR remains draft. The strict architecture gate still has non-final Host/Runner/extension rows plus the six known legacy production-root blockers; this finalization is not a merge, packaged-acceptance, or release claim.
+
+
+### 2026-09-26 Desktop health telemetry production cutover
+
+- Starting from exact HEAD `dc75982509f0f72d284f1541f1b1ac7520700fe8`, the frozen Grok desktop-health lifecycle was audited against the Rust Telemetry extension instead of promoting the existing decision helper on code presence alone.
+- Production Host now owns the same source and cadence as Grok 0.18: `/tmp/sand-supervisor/desktop-health.json`, an immediate startup read, 30-second polling, revision-change forwarding, and a five-minute same-revision heartbeat. `SAND_DISABLE_TELEMETRY=1` disables the poller without moving health polling back into the renderer.
+- The existing Rust parser/normalizer remains the single decision owner. The new production bridge persists its projection through `HostStructuredLogTelemetry` as `sand.box.desktop_health`, and the poller is stopped/joined with `HostTelemetryExtension` lifecycle.
+- `host_telemetry_service_contract.rs` now proves file -> frozen forward decision -> durable structured-log JSONL, including degraded metadata, same-revision suppression and heartbeat re-emission. The existing `desktop_health_forwarder_contract.rs` continues to cover component/down-reason normalization, merge/clamping and forward decisions.
+- Only `source/host/extensions/telemetry/desktop-health-forwarder.ts` advances to final `implemented`; no adjacent TelemetryService/event-loop/transport row is promoted. Manifest for this commit is 1819 implemented / 103 existing-needs-parity / 80 planned.
+- PR #20 remains draft. The new exact HEAD must pass shipping Host/Coordinator/Runner and Desktop Chat Parity; the strict architecture gate is still expected to remain red on the other non-final rows and legacy-root blockers.

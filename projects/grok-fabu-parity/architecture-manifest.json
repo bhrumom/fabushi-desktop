@@ -13861,17 +13861,27 @@
       "targetPath": "source/host/src/extensions/telemetry/desktop_health_forwarder.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "existing-needs-parity",
+      "status": "implemented",
       "referenceBlobSha": "d6e664ade9a4a896f04f068672dbc0ca6c10ef52",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": [],
-      "evidence": [
+      "behavioralEvidence": [
+        "source/host/src/extensions/telemetry/desktop_health_forwarder.rs",
+        "source/host/src/extensions/telemetry/extension.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs"
+      ],
+      "testEvidence": [
         "source/host/tests/desktop_health_forwarder_contract.rs",
+        "source/host/tests/host_telemetry_service_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "notes": "Rust Host owns frozen desktop-health parsing/normalization/merge/overall/metadata/heartbeat-forward decisions and injectable forwarding settlement. Final parity requires the production Host health-file reader and telemetry emitter composition."
+      "evidence": [
+        "source/host/tests/desktop_health_forwarder_contract.rs",
+        "source/host/tests/host_telemetry_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Final Rust Host desktop-health parity: frozen snapshot parsing/normalization/merge/overall metadata and revision/heartbeat decisions are wired into the production Telemetry extension. Host startup immediately reads /tmp/sand-supervisor/desktop-health.json, then polls on the frozen 30-second cadence while telemetry is enabled; identical revisions emit only on the frozen five-minute heartbeat. Emissions use the canonical sand.box.desktop_health structured-log event and the forwarder is disposed with HostTelemetryExtension. Production and decision contracts cover durable JSONL emission, degraded metadata, duplicate revision suppression and heartbeat re-emission.",
+      "parityMode": "rust-port"
     },
     {
       "referencePath": "source/host/extensions/telemetry/disk-pressure-telemetry.ts",
