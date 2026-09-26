@@ -1343,3 +1343,10 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Closed the frozen `source/host/automations/automation.ts` semantic gap without copying reference source text: `automation.rs` now owns the routines capability guidance and the reference guidance/status constants, while existing Rust owners continue to own wake rendering, status reminders, timestamp rendering, persistence and trigger matching.
 - The shipping routed-provider path opens the Agent-owned `FileAutomationStore`, renders the current routines capability prompt with the resolved user timezone and durable automation location, and appends it through `system_prompt_assembly` before provider execution. Renderer state is not used to reconstruct routine policy.
 - Added `automation_prompt_contract.rs` covering schedule/listener/lifecycle guidance, enabled/paused current-routine projection, timezone/location context, and idempotent injection into the canonical system message. Existing wake/status/store contracts remain part of the manifest evidence.
+
+
+### 2026-09-26 action-audit production cutover
+
+- Closed the frozen action-audit backend/extension mappings in Rust. The Host now encodes the Dashboard `SandAuditEvent` oneof and `RecordSandAuditEventsRequest` wire contract, uses the existing authenticated Cursor unary transport with the live Auth token/machine id, and keeps the existing bounded durable outbox/backoff behavior.
+- `ActionAuditExtension` now composes Auth + `sand_action_audit_logs` Experiments + structured Telemetry around one `SandActionAuditor` owner. Runner MCP audit records are still observable on the Host event hub, but now also flow into that owner for local JSONL and feature-gated backend delivery.
+- Added a backend contract test for the Dashboard endpoint, repeated-event request envelope and all four frozen action oneof families.

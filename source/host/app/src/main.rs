@@ -11,6 +11,10 @@ use mahayana_host_runtime::extensions::auth::extension::{
     HostAuthExtension, start_host_auth_extension_with_options,
 };
 use mahayana_host_runtime::extensions::auth::user_full_name_service::production_user_full_name_fetch;
+use mahayana_host_runtime::extensions::action_audit::action_audit_service::{AuditAction, AuditRecord};
+use mahayana_host_runtime::extensions::action_audit::extension::{
+    ActionAuditExtension, start_action_audit_extension,
+};
 use mahayana_host_runtime::extensions::experiments::{
     HostExperimentsExtension, start_host_experiments_extension,
 };
@@ -249,9 +253,13 @@ struct ProductionHostExtensions {
     trays: Arc<HostTraysExtension>,
     box_lifecycle: Arc<BoxLifecycleService<ProductionBoxLifecycleClient<HostAuthExtension>>>,
     webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
+    action_audit: ActionAuditExtension,
 }
 
-fn start_production_host_extensions(app_data_dir: &Path) -> Result<ProductionHostExtensions, String> {
+fn start_production_host_extensions(
+    app_data_dir: &Path,
+    telemetry_logs: HostStructuredLogTelemetry,
+) -> Result<ProductionHostExtensions, String> {
     let auth_options = HostAuthServiceOptions::production(|message| {
         eprintln!("mahayana-host-auth {message}");
     })
@@ -269,6 +277,12 @@ fn start_production_host_extensions(app_data_dir: &Path) -> Result<ProductionHos
         .map_err(|error| error.to_string())?,
     );
     let experiments = Arc::new(start_host_experiments_extension());
+    let action_audit = start_action_audit_extension(
+        backend_url.clone(),
+        Arc::clone(&auth),
+        Arc::clone(&experiments),
+        telemetry_logs,
+    );
     let notify_bus = start_notify_bus_extension(
         Arc::clone(&auth),
         Arc::clone(&experiments),
@@ -311,6 +325,7 @@ fn start_production_host_extensions(app_data_dir: &Path) -> Result<ProductionHos
         trays,
         box_lifecycle,
         webauthn_proxy,
+        action_audit,
     })
 }
 
@@ -742,6 +757,7 @@ struct UnifiedGatewayApi {
     transcript_runtime: Arc<ProductionTranscriptRuntime>,
     transcript_manager: Arc<TranscriptManager>,
     telemetry_logs: HostStructuredLogTelemetry,
+    production_action_auditor: ActionAuditExtension,
 }
 
 #[derive(Clone)]
@@ -779,6 +795,7 @@ impl UnifiedGatewayApi {
             session_handoff: self.session_handoff.clone(),
             trays: Arc::clone(&self.trays),
             telemetry_logs: self.telemetry_logs.clone(),
+            production_action_auditor: self.production_action_auditor.clone(),
         }
     }
 
@@ -1442,6 +1459,7 @@ fn start_routed_provider_task(
     session_handoff: BoxHandoffService,
     trays: Arc<HostTraysExtension>,
     telemetry_logs: HostStructuredLogTelemetry,
+    production_action_auditor: ActionAuditExtension,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     let provider_name = args.get("provider").and_then(serde_json::Value::as_str).unwrap_or("");
@@ -1785,12 +1803,25 @@ fn start_routed_provider_task(
                     }
                 });
             let audit_events = worker_events.clone();
+            let host_action_auditor = Arc::clone(production_action_auditor.service());
             let action_audit_sink: Arc<dyn ActionAuditSink> = Arc::new(
                 move |record: ActionAuditRecord| {
                     audit_events.publish(serde_json::json!({
                         "channel": "runner-action-audit",
                         "payload": record,
                     }));
+                    match serde_json::from_value::<AuditAction>(record.action.clone()) {
+                        Ok(action) => host_action_auditor.record(AuditRecord {
+                            occurred_at_ms: record.occurred_at_ms,
+                            agent_id: record.agent_id,
+                            turn_id: record.turn_id,
+                            box_id: None,
+                            action,
+                        }),
+                        Err(error) => eprintln!(
+                            "mahayana-host-action-audit invalid runner action: {error}"
+                        ),
+                    }
                 },
             );
             let composition = create_production_runner_composition(
@@ -2926,7 +2957,17 @@ fn main() {
             }
         };
 
-    let production_extensions = match start_production_host_extensions(&app_data_dir) {
+    let host_telemetry = match start_host_telemetry_extension(&app_data_dir) {
+        Ok(telemetry) => telemetry,
+        Err(error) => {
+            eprintln!("failed to start Mahayana Host telemetry extension: {error}");
+            return;
+        }
+    };
+    let production_extensions = match start_production_host_extensions(
+        &app_data_dir,
+        host_telemetry.logs.clone(),
+    ) {
         Ok(extensions) => extensions,
         Err(error) => {
             eprintln!("failed to start production Host extensions: {error}");
@@ -2961,13 +3002,7 @@ fn main() {
         Arc::new(|message| eprintln!("mahayana-host-wallpaper {message}")),
     );
     let settings_for_session = Arc::clone(&settings_extension);
-    let host_telemetry = match start_host_telemetry_extension(&app_data_dir) {
-        Ok(telemetry) => telemetry,
-        Err(error) => {
-            eprintln!("failed to start Mahayana Host telemetry extension: {error}");
-            return;
-        }
-    };
+
     let session_workers = Arc::new(
         ProductionSessionWorkers::production_with_dependencies(
             Arc::new(move || settings_for_session.get_user_time_zone()),
@@ -3165,6 +3200,7 @@ fn main() {
             transcript_runtime: Arc::clone(&transcript_runtime),
             transcript_manager: Arc::clone(&transcript_manager),
             telemetry_logs: host_telemetry.logs.clone(),
+            production_action_auditor: production_extensions.action_audit.clone(),
         });
     let gateway_server = match start_gateway_server(GatewayServerDeps {
         api: gateway_api.clone(),

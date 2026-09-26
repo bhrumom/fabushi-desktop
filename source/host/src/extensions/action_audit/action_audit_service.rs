@@ -59,7 +59,7 @@ type Enabled=Arc<dyn Fn()->bool+Send+Sync>;
 pub struct AuditSendError{pub message:String,pub retry_after_ms:Option<u64>}
 impl AuditSendError{pub fn new(message:impl Into<String>)->Self{Self{message:message.into(),retry_after_ms:None}}}
 pub fn flush_failure_backoff_ms(error:&AuditSendError)->u64{error.retry_after_ms.unwrap_or(0).max(AUDIT_FLUSH_FAILURE_BACKOFF_MS)}
-type SendBatch=Arc<dyn Fn(&[AuditEvent])->Result<(),AuditSendError>+Send+Sync>;
+pub type SendBatch=Arc<dyn Fn(&[AuditEvent])->Result<(),AuditSendError>+Send+Sync>;
 type Now=Arc<dyn Fn()->u64+Send+Sync>;
 type Id=Arc<dyn Fn()->String+Send+Sync>;
 type AuditPath=Arc<dyn Fn(&str)->PathBuf+Send+Sync>;
