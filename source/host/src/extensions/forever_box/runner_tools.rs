@@ -161,6 +161,27 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
         })
     }
 
+    fn browser_window_index(&self) -> Result<u32, ProviderSessionError> {
+        self.service
+            .box_()
+            .ensure_ready(&self.agent_id)
+            .map_err(|error| {
+                ProviderSessionError::Tool(format!(
+                    "Box browser is not ready for {}: {error}",
+                    self.agent_id
+                ))
+            })?;
+        self.service
+            .box_()
+            .get_agent_window_index(&self.agent_id)
+            .ok_or_else(|| {
+                ProviderSessionError::Tool(format!(
+                    "Box has not assigned {} a browser window yet",
+                    self.agent_id
+                ))
+            })
+    }
+
     fn execute_write(
         &self,
         request: RunnerBoxWriteRequest,
