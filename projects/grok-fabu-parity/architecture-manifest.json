@@ -12633,12 +12633,25 @@
       "targetPath": "source/host/src/extensions/notifications/extension.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "f4e20a32cdb3e378f376ebea725bea86afd49c6e",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/notifications/extension.rs",
+        "source/host/src/extensions/notifications/mobile_push_notifier.rs",
+        "source/host/src/host_event_bus.rs",
+        "source/host/src/extensions/transcript/roster_emit.rs",
+        "source/host/src/extensions/transcript/session_runtime.rs",
+        "source/host/app/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/notifications_extension_contract.rs",
+        "source/host/tests/mobile_push_notifier_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust Notifications extension declares frozen Auth dependency, seeds from authoritative Session roster when available, buffers upserts until a full baseline otherwise, subscribes to the single Host/Gateway event bus for agents/agent-upserted/forget semantics, uses authoritative Transcript Session windowFocusedAtMs for the 5-minute focus gate, retires deleted agents from notifier state, and owns a fire-and-forget authenticated GrokBot mobile-push sender. Shipping Host starts exactly one extension after Transcript ownership is available. Final remains withheld only until exact-HEAD Host and desktop-chat verification succeeds."
     },
     {
       "referencePath": "source/host/extensions/notifications/mobile-push-notifier.ts",
@@ -12650,13 +12663,16 @@
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
       "behavioralEvidence": [
-        "source/host/src/extensions/notifications/mobile_push_notifier.rs"
+        "source/host/src/extensions/notifications/mobile_push_notifier.rs",
+        "source/host/src/extensions/notifications/extension.rs",
+        "source/host/app/src/main.rs"
       ],
       "testEvidence": [
         "source/host/tests/mobile_push_notifier_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/notifications_extension_contract.rs"
       ],
-      "notes": "Rust Host notifier now owns baseline seeding, pre-seed delta buffering, focus freshness, running-to-done and awaiting-user transitions, message-id duplicate suppression, per-kind throttle, forget semantics and fail-open notification delivery. Final remains withheld for canonical shared notification snapshot/content helpers and the authenticated GrokBotService mobile-push client/Host extension event wiring."
+      "notes": "Rust Host notifier owns frozen baseline/pre-seed buffering, focus freshness, running->done and awaiting-user transitions, message-id duplicate suppression, per-kind throttle, hidden/notify gates, forget semantics and fail-open delivery. It now also owns the authenticated GrokBotService NotifySandAgentTurnFinished protobuf sender using Host Auth, Cursor privacy/ghost headers and the canonical Cursor backend transport. Shipping Notifications extension uses this notifier. Final remains withheld only until the new production sender/extension wiring passes exact-HEAD Host verification."
     },
     {
       "referencePath": "source/host/extensions/notify-bus/extension.ts",
@@ -38745,5 +38761,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-26T07:59:00Z"
+  "generatedAt": "2026-09-26T08:05:00Z"
 }

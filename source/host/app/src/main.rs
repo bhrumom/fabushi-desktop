@@ -46,6 +46,9 @@ use mahayana_host_runtime::extensions::session::extension::start_session_extensi
 use mahayana_host_runtime::extensions::settings::extension::start_settings_extension;
 use mahayana_host_runtime::extensions::secrets::extension::start_secrets_extension;
 use mahayana_host_runtime::extensions::notify_bus::extension::{HostNotifyBusExtension, start_notify_bus_extension};
+use mahayana_host_runtime::extensions::notifications::extension::{
+    notification_agent_from_value, start_notifications_extension,
+};
 use mahayana_host_runtime::extensions::wallpaper::extension::start_wallpaper_extension;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
@@ -3149,6 +3152,35 @@ fn main() {
         );
     }
     let transcript_manager = transcript_extension.manager();
+    let notification_baseline = session_workers
+        .list_agent_summaries(None)
+        .ok()
+        .map(|summaries| {
+            summaries
+                .into_iter()
+                .filter_map(|summary| serde_json::to_value(summary).ok())
+                .filter_map(|value| notification_agent_from_value(&value))
+                .collect::<Vec<_>>()
+        });
+    let notification_transcript = transcript_manager.transcript_runtime();
+    let _notifications_extension = match start_notifications_extension(
+        Arc::clone(&production_extensions.auth),
+        gateway_events.clone(),
+        notification_baseline,
+        Arc::new(move || {
+            notification_transcript
+                .session_runtime()
+                .window_focused_at_ms()
+                .filter(|value| value.is_finite() && *value >= 0.0)
+                .map(|value| value as u64)
+        }),
+    ) {
+        Ok(extension) => extension,
+        Err(error) => {
+            eprintln!("failed to start production Notifications extension: {error}");
+            return;
+        }
+    };
     {
         let dropped_logs = host_telemetry.logs.clone();
         transcript_manager
