@@ -1538,3 +1538,13 @@ Implementation must update this compliance table with exact commit/workflow/arti
 - Contract coverage proves standing Never/Always/Ask behavior, exact dependency identity, a real blocked waiter resolved by allow-once, approval reuse and scope retirement.
 - Both mappings advance only from `planned` to `existing-needs-parity`. Final still requires the full refusal-direction/saturation memory, preparatory-action rules, transcript ask-card + boot-sweep lifecycle, stranded-retirement telemetry, approval-retired Host event propagation and shipping `resolveLocalToolPermission` Gateway command.
 - Manifest becomes **1,821 implemented / 108 existing-needs-parity / 73 planned** (181 non-final).
+
+
+### 2026-09-26 Local Exec production codec ownership
+
+- Starting exact HEAD: `573cf4995af12f3b90422f45852fbcc005a6806c`, whose Rust Host, independent Coordinator, Runner contracts and Desktop Chat Parity are green; only the strict architecture gate remains red.
+- Added `source/host/src/extensions/local_exec/production.rs` as the Rust owner corresponding to frozen `source/host/extensions/local-exec/production.ts`.
+- The owner preserves the production boundary that the reference module is responsible for: tolerant object-shaped Exec client JSON, control projection for `throw` and `streamClose`, unknown/heartbeat non-terminal handling, and a package-owned remote-resource accessor wrapper.
+- Added `source/host/tests/local_exec_production_codec_contract.rs` covering unknown-field tolerance, throw/stack projection, stream close, unknown control handling, oneof conflict rejection and accessor ownership.
+- This row advances only from `planned` to `existing-needs-parity`. The repository currently ships TypeScript-generated `source/packages/proto/generated/agent/v1/exec_pb.ts` but no canonical Rust-generated `ExecClientMessage`/`ExecClientControlMessage`; therefore exact generated `fromJson(..., ignoreUnknownFields: true)` semantics and live GatewayLocalExecManager consumption remain explicit blockers.
+- Manifest becomes **1,821 implemented / 109 existing-needs-parity / 72 planned** (181 non-final).

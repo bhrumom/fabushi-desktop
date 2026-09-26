@@ -12186,12 +12186,19 @@
       "targetPath": "source/host/src/extensions/local_exec/production.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-host",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "4d46d34794266cecf5cfc185e93941a04bd51d4f",
       "architecturalRole": "host/extensions",
       "processOrPackage": "mahayana-host",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/extensions/local_exec/production.rs",
+        "source/packages/proto/generated/agent/v1/exec_pb.ts"
+      ],
+      "testEvidence": [
+        "source/host/tests/local_exec_production_codec_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "notes": "Rust Host now owns a production Local Exec codec boundary mirroring the frozen TS module: object-shaped ExecClient JSON is retained without rejecting unknown fields, control JSON projects throw/streamClose while ignoring heartbeat/unknown controls, and RemoteResourceAccessor ownership is explicit. Final remains withheld because canonical generated agent.v1 ExecClientMessage/ExecClientControlMessage Rust protobuf bindings do not yet exist; this adapter must be replaced by generated fromJson semantics and consumed by the shipping GatewayLocalExecManager/Runner graph."
     },
     {
       "referencePath": "source/host/extensions/local-tool-permission/extension.ts",
