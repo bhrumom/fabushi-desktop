@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { getSandRootDir } from "../host-paths.js";
+import { getSandRootDir } from "../../shared/node/sand-data-root.js";
 import { isSandLocalToolAction, type SandLocalToolAction } from "../../shared/local-tool-permission.js";
 
 export const LOCAL_TOOL_APPROVALS_FILENAME = "local-tool-approvals.json";
