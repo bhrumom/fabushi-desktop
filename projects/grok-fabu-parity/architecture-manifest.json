@@ -17802,12 +17802,22 @@
       "targetPath": "source/host/src/runner/tools/sand_mcp_management_tools.rs",
       "targetLanguage": "rust",
       "owner": "mahayana-runner",
-      "status": "planned",
+      "status": "existing-needs-parity",
       "referenceBlobSha": "5c69029802590f51d96a4ec96394b820c6d6be76",
       "architecturalRole": "host/runner",
       "processOrPackage": "mahayana-runner",
-      "behavioralEvidence": [],
-      "testEvidence": []
+      "behavioralEvidence": [
+        "source/host/src/runner/tools/sand_mcp_management_tools.rs",
+        "source/host/src/runner/tools/mcp_server_resolution.rs",
+        "source/host/src/runner/tools/mcp_meta_tools.rs",
+        "source/host/src/ports/mcp_state_executor.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/sand_mcp_management_tools_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Rust Runner now owns the frozen MCP/plugin management semantic core: plugin lexical ranking/detail formatting, account-label safety, remote HTTP(S) URL and credential-in-URL validation, server config construction, installed-server status rendering/resolution, mutation fencing while awaiting user selection, install/add/remove/uninstall/instructions/restart/auth/account mutation dispatch and connector-card decisions behind a typed McpManagementSink. Exact-head 0732eca06c10f55264894accd48e9d5b9ac8aaf9 passed rust-host job 108374222301 and Desktop Chat Parity run 36231064762. Final remains withheld because the shipping Host does not yet provide the concrete marketplace/plugin management sink, durable connector mutation/auth transport, question-widget confirmation state and connector-card transcript projection to this Runner owner."
     },
     {
       "referencePath": "source/host/runner/tools/sand-permission-request.ts",
@@ -38803,5 +38813,5 @@
       "notes": "Frozen Grok 0.18 semantics are present at the mapped target and exercised by the exact-HEAD boundary contract."
     }
   ],
-  "generatedAt": "2026-09-26T08:41:30Z"
+  "generatedAt": "2026-09-26T09:01:30Z"
 }
