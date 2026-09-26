@@ -37,6 +37,7 @@ use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
     AgentWakeRequest, ProductionAgentToAgentMessaging,
 };
 use mahayana_host_runtime::extensions::memory::extension::HostMemoryExtension;
+use mahayana_host_runtime::extensions::memory::agent_state::SandAgentState;
 use mahayana_host_runtime::extensions::memory::production::start_production_memory_extension;
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
@@ -155,6 +156,7 @@ use mahayana_host_runtime::runner::turn_memory::{
     TurnExchange, TurnMemoryMode, run_turn_memory_with,
 };
 use mahayana_host_runtime::runner::tools::sand_spotlight_tools::spotlight_prompt_section;
+use mahayana_host_runtime::runner::tools::sand_state_tool::SandStateWriter;
 use mahayana_host_runtime::runner::system_prompt_assembly::{append_automations_system_prompt, append_memory_system_prompt};
 use mahayana_host_runtime::runner_production_bridge::{
     ProductionActionAuditInput, ProductionRunnerCompositionInput,
@@ -1704,6 +1706,20 @@ fn start_routed_provider_task(
     let worker_is_ack_redrive = is_ack_redrive;
     let worker_memory_store = memory_store.clone();
     let worker_turn_hidden = turn_hidden;
+    let state_sand_root = session_workers
+        .memory_service()
+        .agents_root_dir()
+        .parent()
+        .map(Path::to_path_buf)
+        .ok_or_else(|| GatewayCommandError::Internal(
+            "production memory agents root has no sand root parent".into()
+        ))?;
+    let state_writer: Arc<dyn SandStateWriter> = Arc::new(
+        SandAgentState::new(state_sand_root, agent_id.clone())
+            .map_err(|error| GatewayCommandError::Internal(format!(
+                "could not create production agent-state owner for {agent_id}: {error}"
+            )))?,
+    );
     let cloud_agent_dir = session_workers
         .session_db_path(&agent_id)
         .map_err(GatewayCommandError::Internal)?
@@ -1896,7 +1912,8 @@ fn start_routed_provider_task(
                     observation: Some(Arc::clone(&observation)),
                 },
             )
-            .with_agent_management_sink(agent_management_sink);
+            .with_agent_management_sink(agent_management_sink)
+            .with_state_writer(state_writer);
             let owner = ProductionTurnAgentOwner::new(composition)
                 .with_agent_state_checkpoint_sink(agent_state_checkpoint_sink);
             let mut runner = SandAgentRunner::new(owner);
