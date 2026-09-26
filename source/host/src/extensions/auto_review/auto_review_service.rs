@@ -158,6 +158,21 @@ impl AutoReviewService {
         resolution: SandAutoReviewResolution,
         agent_id: &str,
     ) -> Result<(), String> {
+        self.resolve_approval_for_entry(
+            request_id,
+            resolution,
+            agent_id,
+            request_id,
+        )
+    }
+
+    pub fn resolve_approval_for_entry(
+        &self,
+        request_id: &str,
+        resolution: SandAutoReviewResolution,
+        agent_id: &str,
+        entry_id: &str,
+    ) -> Result<(), String> {
         let owner = {
             let controllers = self
                 .controllers
@@ -190,11 +205,25 @@ impl AutoReviewService {
             return Ok(());
         }
 
-        let retired = self
-            .sessions
-            .expire_pending_auto_review_approvals(agent_id, Some(request_id))?;
-        if retired.iter().any(|id| id == request_id) {
-            return Ok(());
+        let entries = self.sessions.read_agent_transcript_entries(agent_id)?;
+        let exact_pending_card = entries.iter().any(|entry| {
+            entry.get("id").and_then(Value::as_str) == Some(entry_id)
+                && entry
+                    .pointer("/message/approval/requestId")
+                    .and_then(Value::as_str)
+                    == Some(request_id)
+                && entry
+                    .pointer("/message/approval/status")
+                    .and_then(Value::as_str)
+                    == Some("pending")
+        });
+        if exact_pending_card {
+            let retired = self
+                .sessions
+                .expire_pending_auto_review_approvals(agent_id, Some(request_id))?;
+            if retired.iter().any(|id| id == request_id) {
+                return Ok(());
+            }
         }
 
         Err(format!(
