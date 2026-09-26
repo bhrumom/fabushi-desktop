@@ -18,7 +18,6 @@ import { SAND_BOX_NAMESPACE_HEADER, SAND_CLIENT_TYPE, getSandBoxNamespace, getSa
 import { createSandRpcTracingInterceptor } from "./rpc-tracing.js";
 import { SandSettingsStore } from "../settings/sand-settings-store.js";
 import { getSandRootDir } from "../sand-data-root.js";
-import { createProviderPromptSession } from "../../../host/extensions/inference/provider-session.js";
 
 export const PRIVACY_MODE_CACHE_MAX_AGE_MS = 5 * 60_000;
 export const PRIVACY_MODE_FALLBACK_CACHE_MAX_AGE_MS = 10_000;
@@ -187,7 +186,7 @@ export function createCursorInferencePromptSession(options: Omit<SandInferenceOp
 }) {
   const settingsPath = join(getSandRootDir(), "settings.json");
   const routedProvider = new SandSettingsStore(settingsPath).getInferenceProvider();
-  if (routedProvider !== "cursor") return createProviderPromptSession(routedProvider);
+  if (routedProvider !== "cursor") throw new Error(`Inference provider "${routedProvider}" must be routed through Mahayana Coordinator/Runner.`);
   const client = createSandCursorBackendClient(InferenceService, options);
   return createProtoSessionProvider(client, options.requestedModel, undefined, options.inferenceReason).getSession(imageResizingMiddleware);
 }
