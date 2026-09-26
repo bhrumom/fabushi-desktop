@@ -1,5 +1,6 @@
 import { _electron as electron, expect, test, type Page } from '@playwright/test';
 import { mkdtemp, rm } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,7 +30,64 @@ import {
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
 
+let e2eAuthServer: ReturnType<typeof createServer> | null = null;
+let e2eAuthBackendPromise: Promise<string> | null = null;
+
+function e2eAuthToken(): string {
+  const encode = (value: Record<string, unknown>) => Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
+  return [
+    encode({ alg: 'none', typ: 'JWT' }),
+    encode({ sub: 'fabushi-e2e-account', email: 'e2e@fabushi.local', exp: 4_102_444_800 }),
+    'fabushi-e2e',
+  ].join('.');
+}
+
+async function ensureE2eAuthBackend(): Promise<string> {
+  if (e2eAuthBackendPromise != null) return await e2eAuthBackendPromise;
+  e2eAuthBackendPromise = new Promise<string>((resolve, reject) => {
+    const token = e2eAuthToken();
+    const server = createServer((request, response) => {
+      const requestUrl = new URL(request.url ?? '/', 'http://127.0.0.1');
+      response.setHeader('content-type', 'application/json');
+      if (requestUrl.pathname === '/auth/poll') {
+        response.statusCode = 200;
+        response.end(JSON.stringify({ accessToken: token, refreshToken: token }));
+        return;
+      }
+      if (requestUrl.pathname === '/oauth/token') {
+        response.statusCode = 200;
+        response.end(JSON.stringify({ access_token: token, refresh_token: token }));
+        return;
+      }
+      response.statusCode = 404;
+      response.end(JSON.stringify({ error: 'not-found' }));
+    });
+    e2eAuthServer = server;
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (address == null || typeof address === 'string') {
+        reject(new Error('Focused Electron auth backend did not bind a TCP address.'));
+        return;
+      }
+      resolve(`http://127.0.0.1:${address.port}`);
+    });
+  });
+  return await e2eAuthBackendPromise;
+}
+
+test.afterAll(async () => {
+  const server = e2eAuthServer;
+  e2eAuthServer = null;
+  e2eAuthBackendPromise = null;
+  if (server == null || !server.listening) return;
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => error == null ? resolve() : reject(error));
+  });
+});
+
 async function launchDesktopApp(appDataDir: string) {
+  const e2eAuthBackendUrl = await ensureE2eAuthBackend();
   return electron.launch({
     ...(packagedExecutable
       ? { executablePath: packagedExecutable, args: [] }
@@ -41,6 +99,12 @@ async function launchDesktopApp(appDataDir: string) {
       // cleanup path instead of being converted into a hidden-window session.
       FABUSHI_E2E: '1',
       SAND_USER_DATA_DIR: appDataDir,
+      // Keep the frozen Grok account implementation byte-identical while
+      // giving focused CI a deterministic local OAuth exchange.
+      SAND_BACKEND_URL: e2eAuthBackendUrl,
+      CURSOR_API_BASE_URL: e2eAuthBackendUrl,
+      SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
+      SAND_DISABLE_SENTRY: '1',
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
       // Agent Network is a frozen Grok feature gate whose bundled default is OFF.
       // This focused parity test opts in through the same dev override contract
