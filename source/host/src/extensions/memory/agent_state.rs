@@ -103,6 +103,10 @@ impl SandAgentState {
     }
 
 
+    pub fn automation_record(&self, id: &str) -> Option<AutomationRecord> {
+        self.workflows.automations.get(id)
+    }
+
     pub fn create_automation(&self, spec: &AutomationSpec) -> StateWriteResult {
         match self.workflows.automations.upsert(spec, (self.now)() as f64) {
             Ok(Some(record)) => automation_result("Saved", &record),
